@@ -4,7 +4,28 @@ import { useState } from "react";
 
 declare global {
   interface Window {
-    IMP: any;
+    IMP: {
+      init: (merchantId: string) => void;
+      request_pay: (
+        options: {
+          pg: string;
+          pay_method: string;
+          merchant_uid: string;
+          name: string;
+          amount: number;
+          buyer_email: string;
+          buyer_name: string;
+          buyer_tel: string;
+          buyer_addr: string;
+          buyer_postcode: string;
+        },
+        callback: (response: {
+          success: boolean;
+          imp_uid?: string;
+          error_msg?: string;
+        }) => void
+      ) => void;
+    };
   }
 }
 
@@ -18,7 +39,7 @@ export default function Payment() {
       return;
     }
     const IMP = window.IMP;
-    IMP.init(process.env.NEXT_PUBLIC_MERCHANT_ID);
+    IMP.init(process.env.NEXT_PUBLIC_MERCHANT_ID!);
     IMP.request_pay(
       {
         pg: "uplus",
@@ -32,7 +53,7 @@ export default function Payment() {
         buyer_addr: "서울 강남구 삼성동",
         buyer_postcode: "123-456",
       },
-      (rsp: any) => {
+      (rsp: { success: boolean; imp_uid?: string; error_msg?: string }) => {
         if (rsp.success) {
           alert(`결제가 완료되었습니다! 결제 ID: ${rsp.imp_uid}`);
         } else {
