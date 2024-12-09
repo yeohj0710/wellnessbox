@@ -14,8 +14,8 @@ export const metadata: Metadata = {
     icon: "/icon.png",
   },
   openGraph: {
-    title: "코딩테라스",
-    description: "코드로 구현된 기능들을 체험하세요!",
+    title: "웰니스박스",
+    description: "맞춤형 건강기능식품 소분 판매 중개 플랫폼",
     url: SITE_URL,
     images: [
       {
