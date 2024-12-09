@@ -31,8 +31,7 @@ declare global {
 
 export default function Payment() {
   const [amount, setAmount] = useState(1000);
-  const [merchantUid, setMerchantUid] = useState(`mid_${new Date().getTime()}`);
-
+  const [merchantUid] = useState(`mid_${new Date().getTime()}`);
   const handlePayment = () => {
     if (!window.IMP) {
       alert("포트원 SDK 로드 실패");
@@ -62,7 +61,6 @@ export default function Payment() {
       }
     );
   };
-
   return (
     <div className="flex flex-col items-center justify-center py-4 px-4 bg-gray-50">
       <h1 className="text-lg font-bold text-gray-800 mb-4">결제 테스트</h1>
