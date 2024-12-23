@@ -57,7 +57,7 @@ export default function Payment() {
           name: "건강기능식품 결제",
           amount,
           buyer_email: "buyer@example.com",
-          buyer_name: "홍길동",
+          buyer_name: "user",
           buyer_tel: "010-1234-5678",
           buyer_addr: "서울 강남구 삼성동",
           buyer_postcode: "123-456",
@@ -81,8 +81,10 @@ export default function Payment() {
         onLoad={() => setSdkLoaded(true)}
         strategy="beforeInteractive"
       />
-      <div className="flex flex-col items-center justify-center py-4 px-4 bg-gray-50">
-        <h1 className="text-lg font-bold text-gray-800 mb-4">결제 테스트</h1>
+      <div className="flex flex-col items-center justify-center py-4 px-4">
+        <h1 className="text-lg font-bold text-gray-800 mb-4">
+          결제할 금액을 입력해 주세요.
+        </h1>
         <input
           type="number"
           value={amount}

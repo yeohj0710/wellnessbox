@@ -7,7 +7,7 @@ import TopBar from "@/components/topBar";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "웰니스박스",
+  title: "웰니스박스 | 맞춤형 건강기능식품 소분 판매 중개 플랫폼",
   description: "맞춤형 건강기능식품 소분 판매 중개 플랫폼",
   metadataBase: new URL(SITE_URL),
   icons: {
