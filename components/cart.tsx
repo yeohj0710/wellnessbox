@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Script from "next/script";
 import CartTopBar from "./cartTopBar";
-import { useRouter } from "next/navigation";
 
 declare global {
   interface Window {
@@ -49,7 +48,6 @@ type CartProps = {
 
 export default function Cart({ cartItems, onBack, onUpdateCart }: CartProps) {
   const [sdkLoaded, setSdkLoaded] = useState(false);
-  const router = useRouter();
   const totalPrice = cartItems.reduce(
     (acc, item) => acc + item.price * item.quantity,
     0

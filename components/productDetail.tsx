@@ -30,13 +30,11 @@ export default function ProductDetail({
   const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
   const [quantity, setQuantity] = useState(1);
   const [totalPrice, setTotalPrice] = useState(product.price);
-
   const options: Option[] = [
     { id: 1, name: "순살 선택", price: 0 },
     { id: 2, name: "뼈 선택", price: 0 },
     { id: 3, name: "콤보 선택", price: 2000 },
   ];
-
   const handleOptionChange = (option: Option) => {
     if (selectedOptions.includes(option.id)) {
       setSelectedOptions((prev) => prev.filter((id) => id !== option.id));
@@ -46,19 +44,16 @@ export default function ProductDetail({
       setTotalPrice((prev) => prev + option.price);
     }
   };
-
   const handleQuantityChange = (delta: number) => {
     setQuantity((prev) => Math.max(1, prev + delta));
     setTotalPrice(
-      (prev) =>
-        product.price * (quantity + delta) +
+      product.price * (quantity + delta) +
         selectedOptions.reduce((sum, id) => {
           const option = options.find((o) => o.id === id);
           return sum + (option ? option.price : 0);
         }, 0)
     );
   };
-
   return (
     <div className="fixed inset-0 bg-white overflow-auto z-50">
       <div className="relative">
