@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import Script from "next/script";
 
 declare global {
@@ -30,11 +30,8 @@ declare global {
   }
 }
 
-type PaymentProps = {
-  totalAmount: number;
-};
-
-export default function Payment({ totalAmount }: PaymentProps) {
+export default function PaymentTest() {
+  const [amount, setAmount] = useState(1000);
   const [loading, setLoading] = useState(false);
   const [merchantUid] = useState(`mid_${new Date().getTime()}`);
   const [sdkLoaded, setSdkLoaded] = useState(false);
@@ -58,7 +55,7 @@ export default function Payment({ totalAmount }: PaymentProps) {
           pay_method: "card",
           merchant_uid: merchantUid,
           name: "건강기능식품 결제",
-          amount: totalAmount,
+          amount,
           buyer_email: "buyer@example.com",
           buyer_name: "user",
           buyer_tel: "010-1234-5678",
@@ -86,8 +83,15 @@ export default function Payment({ totalAmount }: PaymentProps) {
       />
       <div className="flex flex-col items-center justify-center py-4 px-4">
         <h1 className="text-lg font-bold text-gray-800 mb-4">
-          결제 금액: ₩{totalAmount.toLocaleString()}
+          결제할 금액을 입력해 주세요.
         </h1>
+        <input
+          type="number"
+          value={amount}
+          onChange={(e) => setAmount(Number(e.target.value))}
+          placeholder="결제 금액 입력"
+          className="w-full max-w-md p-4 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-4"
+        />
         <button
           onClick={handlePayment}
           disabled={loading || !sdkLoaded}

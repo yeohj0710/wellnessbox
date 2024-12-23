@@ -1,6 +1,6 @@
 "use client";
 
-import Payment from "@/components/payment";
+import PaymentTest from "@/components/paymentTest";
 
 export default function Features() {
   return (
@@ -9,7 +9,7 @@ export default function Features() {
         <h1 className="text-2xl font-bold text-gray-800">결제하기</h1>
       </div>
       <hr className="border-t border-gray-300 mb-6" />
-      <Payment />
+      <PaymentTest />
     </div>
   );
 }
