@@ -1,0 +1,33 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("POSTGRES_PRISMA_URL")
+  directUrl         = env("POSTGRES_URL_NON_POOLING")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+  schemas           = ["wellnessbox"]
+}
+
+model Category {
+  idx      Int       @id @default(autoincrement())
+  name     String?   @unique
+  image    String?
+  products Product[]
+
+  @@schema("wellnessbox")
+}
+
+model Product {
+  idx         Int      @id @default(autoincrement())
+  name        String?
+  images      String[]
+  description String?
+  price       Int?
+  categoryId  Int
+  category    Category @relation(fields: [categoryId], references: [idx])
+
+  @@schema("wellnessbox")
+}
