@@ -70,11 +70,10 @@ export default function Home() {
     {
       id: 2,
       name: "엄청 큰 반반 치킨",
-      price: 20000,
+      price: 10,
       description: "두 가지 맛을 동시에 즐길 수 있는 반반 치킨",
     },
   ];
-
   return isCartVisible ? (
     <Cart
       cartItems={cartItems}
