@@ -7,7 +7,10 @@ export function MenuLinks() {
   return (
     <>
       <Link href="/features" className={menuItemClasses()}>
-        구현 완료 기능
+        기능 테스트
+      </Link>
+      <Link href="/admin" className={menuItemClasses()}>
+        상품 관리
       </Link>
     </>
   );

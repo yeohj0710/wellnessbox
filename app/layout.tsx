@@ -38,7 +38,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <TopBar />
-        <main className="pt-14 flex flex-col items-center gap-8 my-5 sm:my-8">
+        <main className="pt-14 flex flex-col items-center gap-8 my-1 sm:my-8">
           {children}
         </main>
       </body>
