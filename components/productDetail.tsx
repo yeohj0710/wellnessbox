@@ -117,7 +117,7 @@ export default function ProductDetail({
             +
           </button>
         </div>
-        <div className="fixed bottom-0 left-0 w-full bg-teal-500 text-white p-4 flex justify-between items-center text-lg font-bold">
+        <div className="fixed bottom-0 left-0 w-full bg-sky-400 text-white p-4 flex justify-between items-center text-lg font-bold">
           <span>₩{totalPrice.toLocaleString()}</span>
           <button
             onClick={() => {
@@ -127,7 +127,7 @@ export default function ProductDetail({
               onAddToCart(totalPrice, quantity, selectedOptionNames);
               onClose();
             }}
-            className="bg-white text-teal-500 px-6 py-2 rounded-md shadow-md hover:bg-teal-100 transition"
+            className="bg-white text-sky-400 px-6 py-2 rounded-md shadow-md hover:bg-sky-500 transition"
           >
             담기
           </button>

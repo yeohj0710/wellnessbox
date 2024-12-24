@@ -5,7 +5,7 @@ import Link from "next/link";
 import { MenuLinks } from "./menuLinks";
 
 function menuItemClasses(additionalClasses = "") {
-  return `relative transition-transform duration-200 ease-in-out hover:scale-105 hover:text-blue-600 ${additionalClasses}`;
+  return `relative transition-transform duration-200 ease-in-out hover:scale-105 hover:text-sky-400 ${additionalClasses}`;
 }
 
 export default function TopBar() {
@@ -19,9 +19,16 @@ export default function TopBar() {
         <div className="flex items-center gap-6 menu-container">
           <Link
             href="/"
-            className={menuItemClasses("text-lg font-bold flex flex-row gap-2")}
+            className={menuItemClasses(
+              "text-lg font-bold flex flex-row gap-1.5 items-center"
+            )}
           >
-            💊 웰니스박스
+            <img
+              src="/icon.png"
+              alt="웰니스박스"
+              className="w-[2em] h-[2em] object-contain"
+            />
+            웰니스박스
           </Link>
           <div className="hidden sm:flex gap-5">
             <MenuLinks />

@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function MenuLinks() {
   const menuItemClasses = (additionalClasses = "") =>
-    `relative font-semibold transition-transform duration-200 ease-in-out hover:scale-105 hover:text-blue-600 ${additionalClasses}`;
+    `relative font-semibold transition-transform duration-200 ease-in-out hover:scale-105 hover:text-sky-400 ${additionalClasses}`;
 
   return (
     <>

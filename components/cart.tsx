@@ -158,11 +158,11 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: CartProps) {
       <div className="px-4">{/* 지역 입력 UI */}</div>
       <h2 className="text-lg font-bold p-4">연락처 입력</h2>
       <div className="px-4">{/* 연락처 입력 UI */}</div>
-      <div className="fixed bottom-0 left-0 w-full bg-teal-500 text-white p-4 flex justify-between items-center">
+      <div className="fixed bottom-0 left-0 w-full bg-sky-400 text-white p-4 flex justify-between items-center">
         <span className="font-bold">₩{totalPrice.toLocaleString()}</span>
         <button
           onClick={handlePayment}
-          className="bg-white text-teal-500 px-6 py-2 rounded-full font-semibold shadow-lg hover:bg-teal-100 transition"
+          className="bg-white text-sky-400 px-6 py-2 rounded-full font-semibold shadow-lg hover:bg-sky-500 transition"
         >
           결제하기
         </button>
