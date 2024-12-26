@@ -8,8 +8,6 @@ datasource db {
   directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
-// Wellnessbox
-
 model Category_ {
   idx      Int        @id @default(autoincrement())
   name     String?    @unique
@@ -26,8 +24,6 @@ model Product_ {
   categoryId  Int
   category    Category_ @relation(fields: [categoryId], references: [idx])
 }
-
-// Codingterrace
 
 model Comment {
   idx           Int       @id @default(autoincrement())

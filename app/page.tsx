@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ProductDetail from "@/components/productDetail";
 import Cart from "@/components/cart";
+import { getCategories } from "@/lib/product";
 
 type Product = {
   id: number;
@@ -21,11 +22,25 @@ type CartItem = {
   imageUrl?: string;
 };
 
+type Category = {
+  idx: number;
+  name: string | null;
+  image: string | null;
+};
+
 export default function Home() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [totalPrice, setTotalPrice] = useState(0);
   const [isCartVisible, setIsCartVisible] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  useEffect(() => {
+    const fetchData = async () => {
+      const categories: Category[] = await getCategories();
+      setCategories(categories);
+    };
+    fetchData();
+  }, []);
   const handleAddToCart = (
     product: Product,
     quantity: number,
@@ -147,6 +162,23 @@ export default function Home() {
           }}
         />
       )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        {categories.map((category) => (
+          <div
+            key={category.idx}
+            className="bg-white rounded-lg shadow-md p-4 flex flex-col items-center"
+          >
+            {category.image && category.name && (
+              <img
+                src={category.image}
+                alt={category.name}
+                className="w-full h-40 object-cover rounded-md mb-4"
+              />
+            )}
+            <h2 className="text-lg font-semibold">{category.name}</h2>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
