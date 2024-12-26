@@ -172,7 +172,7 @@ export default function Home() {
               <img
                 src={category.image}
                 alt={category.name}
-                className="w-full h-40 object-cover rounded-md mb-4"
+                className="w-full h-40 object-cover rounded-md mb-5"
               />
             )}
             <h2 className="text-lg font-semibold">{category.name}</h2>
