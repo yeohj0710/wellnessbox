@@ -10,7 +10,7 @@ export default function ProductDetail({ product, onClose, onAddToCart }: any) {
     setTotalPrice(product.price * (quantity + delta));
   };
   return (
-    <div className="fixed inset-x-0 top-14 bg-white overflow-auto z-50 w-full max-w-[640px] mx-auto">
+    <div className="fixed inset-x-0 top-14 bottom-0 bg-white overflow-auto z-50 w-full max-w-[640px] mx-auto">
       <div className="relative">
         <div className="relative">
           {product.images && product.images.length > 0 ? (
