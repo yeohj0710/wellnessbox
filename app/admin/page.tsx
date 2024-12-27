@@ -170,8 +170,8 @@ export default function Admin() {
                         ...selectedCategory,
                         image: fileUrl,
                       });
-                    } catch (error) {
-                      alert("이미지 업로드 중 에러가 발생했습니다.");
+                    } catch (error: any) {
+                      alert(`이미지 업로드 중 에러가 발생했습니다: ${error}`);
                     } finally {
                       setIsUploadingImage(false);
                     }
