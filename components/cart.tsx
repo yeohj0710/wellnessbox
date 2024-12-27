@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Script from "next/script";
-import CartTopBar from "./cartTopBar";
+import { TrashIcon } from "@heroicons/react/16/solid";
 
 declare global {
   interface Window {
@@ -92,7 +92,12 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
         }}
         strategy="afterInteractive"
       />
-      <CartTopBar onBack={onBack} />
+      <div className="w-full max-w-[640px] mx-auto bg-sky-400 h-12 sm:h-14 flex items-center px-4 mb-6 border-b border-gray-200">
+        <button onClick={onBack} className="text-white text-xl mr-4 font-bold">
+          ←
+        </button>
+        <h1 className="sm:text-lg font-bold text-white">장바구니</h1>
+      </div>
       <div className="px-4">
         <h2 className="text-lg font-bold pb-4 border-b mb-4">선택한 상품</h2>
       </div>
@@ -143,6 +148,17 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
               >
                 +
               </button>
+              <button
+                onClick={() => {
+                  const updatedItems = cartItems.filter(
+                    (i: any) => i.idx !== item.idx
+                  );
+                  onUpdateCart(updatedItems);
+                }}
+                className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center"
+              >
+                <TrashIcon className="w-5 h-5 text-red-500" />
+              </button>
             </div>
           </div>
         ))}
@@ -167,57 +183,59 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
           className="w-full border rounded-md p-2"
         />
       </div>
-      <div className="fixed bottom-0 left-0 right-0 w-full max-w-[640px] mx-auto bg-sky-400 text-white p-4 flex justify-between items-center text-lg font-bold">
-        <span className="font-bold">₩{totalPrice.toLocaleString()}</span>
-        <button
-          onClick={() => {
-            if (!userAddress || !userContact) {
-              alert("주소 및 연락처를 입력해주세요.");
-              return;
-            }
-            setShowModal(true);
-          }}
-          className="bg-white text-sky-400 px-6 py-2 rounded-full font-semibold shadow-lg hover:bg-sky-500 transition"
-        >
-          결제하기
-        </button>
-        {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-lg w-full max-w-sm overflow-hidden">
-              <div className="px-6 py-4">
-                <h2 className="text-base font-medium text-gray-800">
-                  주소와 연락처가 확실한가요?
-                </h2>
-                <p className="text-sm text-gray-600 mt-2">
-                  <span className="font-medium text-gray-700">주소:</span>{" "}
-                  {userAddress}
-                </p>
-                <p className="text-sm text-gray-600 mt-1">
-                  <span className="font-medium text-gray-700">연락처:</span>{" "}
-                  {userContact}
-                </p>
-              </div>
-              <div className="flex border-t border-gray-200">
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="w-1/2 text-sm text-gray-500 py-3 hover:bg-gray-100 transition"
-                >
-                  취소
-                </button>
-                <button
-                  onClick={() => {
-                    setShowModal(false);
-                    handlePayment();
-                  }}
-                  className="w-1/2 text-sm text-sky-500 py-3 font-medium hover:bg-sky-50 transition"
-                >
-                  확인
-                </button>
+      {totalPrice > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 w-full max-w-[640px] mx-auto bg-sky-400 text-white p-4 flex justify-between items-center text-lg font-bold">
+          <span className="font-bold">₩{totalPrice.toLocaleString()}</span>
+          <button
+            onClick={() => {
+              if (!userAddress || !userContact) {
+                alert("주소 및 연락처를 입력해주세요.");
+                return;
+              }
+              setShowModal(true);
+            }}
+            className="bg-white text-sky-400 px-6 py-2 rounded-full font-semibold shadow-lg hover:bg-sky-500 transition"
+          >
+            결제하기
+          </button>
+          {showModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg shadow-lg w-full max-w-sm overflow-hidden">
+                <div className="px-6 py-4">
+                  <h2 className="text-base font-medium text-gray-800">
+                    주소와 연락처가 확실한가요?
+                  </h2>
+                  <p className="text-sm text-gray-600 mt-2">
+                    <span className="font-medium text-gray-700">주소:</span>{" "}
+                    {userAddress}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    <span className="font-medium text-gray-700">연락처:</span>{" "}
+                    {userContact}
+                  </p>
+                </div>
+                <div className="flex border-t border-gray-200">
+                  <button
+                    onClick={() => setShowModal(false)}
+                    className="w-1/2 text-sm text-gray-500 py-3 hover:bg-gray-100 transition"
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowModal(false);
+                      handlePayment();
+                    }}
+                    className="w-1/2 text-sm text-sky-500 py-3 font-medium hover:bg-sky-50 transition"
+                  >
+                    확인
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

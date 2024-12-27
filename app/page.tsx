@@ -76,11 +76,18 @@ export default function Home() {
     <Cart
       cartItems={cartItems}
       onBack={() => setIsCartVisible(false)}
-      onUpdateCart={(updatedItems: any) => setCartItems(updatedItems)}
+      onUpdateCart={(updatedItems: any) => {
+        setCartItems(updatedItems);
+        const updatedTotalPrice = updatedItems.reduce(
+          (acc: number, item: any) => acc + item.price * item.quantity,
+          0
+        );
+        setTotalPrice(updatedTotalPrice);
+      }}
     />
   ) : (
     <div
-      className={`w-full max-w-[640px] mx-auto ${
+      className={`w-full max-w-[640px] mx-auto mt-2 ${
         totalPrice > 0 ? "pb-20" : ""
       }`}
     >
