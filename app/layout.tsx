@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { SITE_URL } from "@/lib/constants";
 import TopBar from "@/components/topBar";
+import Footer from "@/components/footer";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -36,11 +37,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body
+        className={`${inter.className} flex flex-col min-h-[120vh] bg-gray-50`}
+      >
         <TopBar />
-        <main className="pt-14 flex flex-col items-center gap-8 my-1 sm:my-8">
+        <main className="flex-grow pt-14 flex flex-col items-center gap-8 my-1 sm:my-8">
           {children}
         </main>
+        <Footer />
       </body>
     </html>
   );

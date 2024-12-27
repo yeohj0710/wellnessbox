@@ -2,72 +2,70 @@
 
 import { useState } from "react";
 
-type Product = {
-  id: number;
-  name: string;
-  price: number;
-  description: string;
-  imageUrl?: string;
-};
-
-type Option = {
-  id: number;
-  name: string;
-  price: number;
-};
-
-type ProductDetailProps = {
-  product: Product;
-  onClose: () => void;
-  onAddToCart: (price: number, quantity: number, options: string[]) => void;
-};
-
-export default function ProductDetail({
-  product,
-  onClose,
-  onAddToCart,
-}: ProductDetailProps) {
-  const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
+export default function ProductDetail({ product, onClose, onAddToCart }: any) {
   const [quantity, setQuantity] = useState(1);
   const [totalPrice, setTotalPrice] = useState(product.price);
-  const options: Option[] = [
-    { id: 1, name: "순살 선택", price: 0 },
-    { id: 2, name: "뼈 선택", price: 0 },
-    { id: 3, name: "콤보 선택", price: 2000 },
-  ];
-  const handleOptionChange = (option: Option) => {
-    if (selectedOptions.includes(option.id)) {
-      setSelectedOptions((prev) => prev.filter((id) => id !== option.id));
-      setTotalPrice((prev) => prev - option.price);
-    } else {
-      setSelectedOptions((prev) => [...prev, option.id]);
-      setTotalPrice((prev) => prev + option.price);
-    }
-  };
   const handleQuantityChange = (delta: number) => {
     setQuantity((prev) => Math.max(1, prev + delta));
-    setTotalPrice(
-      product.price * (quantity + delta) +
-        selectedOptions.reduce((sum, id) => {
-          const option = options.find((o) => o.id === id);
-          return sum + (option ? option.price : 0);
-        }, 0)
-    );
+    setTotalPrice(product.price * (quantity + delta));
   };
   return (
-    <div className="fixed inset-0 bg-white overflow-auto z-50">
+    <div className="fixed inset-x-0 top-14 bg-white overflow-auto z-50 w-full max-w-[640px] mx-auto">
       <div className="relative">
-        {product.imageUrl ? (
-          <img
-            src={product.imageUrl}
-            alt={product.name}
-            className="w-full h-60 object-cover"
-          />
-        ) : (
-          <div className="w-full h-60 bg-gray-300 flex items-center justify-center text-gray-500">
-            이미지 없음
-          </div>
-        )}
+        <div className="relative">
+          {product.images && product.images.length > 0 ? (
+            <div className="relative w-full h-80 overflow-hidden">
+              {product.images.map((image: any, index: any) => (
+                <img
+                  key={index}
+                  src={image}
+                  alt={`${product.name} 이미지 ${index + 1}`}
+                  className={`absolute w-full h-80 object-cover transition-transform ${
+                    index === 0 ? "block" : "hidden"
+                  }`}
+                  data-image-index={index}
+                />
+              ))}
+              <button
+                className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white p-2 rounded-full shadow-md"
+                onClick={() => {
+                  const images = document.querySelectorAll(
+                    `[data-image-index]`
+                  ) as NodeListOf<HTMLImageElement>;
+                  let currentIndex = Array.from(images).findIndex(
+                    (img) => img.style.display !== "none"
+                  );
+                  images[currentIndex].style.display = "none";
+                  images[
+                    (currentIndex - 1 + images.length) % images.length
+                  ].style.display = "block";
+                }}
+              >
+                ◀
+              </button>
+              <button
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white p-2 rounded-full shadow-md"
+                onClick={() => {
+                  const images = document.querySelectorAll(
+                    `[data-image-index]`
+                  ) as NodeListOf<HTMLImageElement>;
+                  let currentIndex = Array.from(images).findIndex(
+                    (img) => img.style.display !== "none"
+                  );
+                  images[currentIndex].style.display = "none";
+                  images[(currentIndex + 1) % images.length].style.display =
+                    "block";
+                }}
+              >
+                ▶
+              </button>
+            </div>
+          ) : (
+            <div className="w-full h-60 bg-gray-300 flex items-center justify-center text-gray-500">
+              이미지 없음
+            </div>
+          )}
+        </div>
         <button
           onClick={onClose}
           className="absolute top-4 left-4 bg-white p-2 rounded-full shadow-md"
@@ -79,29 +77,6 @@ export default function ProductDetail({
         <h1 className="text-xl font-bold">{product.name}</h1>
         <p className="text-gray-500 text-sm mt-2">{product.description}</p>
         <p className="text-lg font-bold mt-4">₩{totalPrice.toLocaleString()}</p>
-        <div className="mt-6">
-          <h2 className="font-bold text-lg mb-3">부위 선택</h2>
-          {options.map((option) => (
-            <label
-              key={option.id}
-              className="flex items-center justify-between border-b pb-2 mb-2"
-            >
-              <div>
-                <input
-                  type="checkbox"
-                  value={option.id}
-                  checked={selectedOptions.includes(option.id)}
-                  onChange={() => handleOptionChange(option)}
-                  className="mr-2"
-                />
-                {option.name}
-              </div>
-              <span className="text-sm text-gray-500">
-                +₩{option.price.toLocaleString()}
-              </span>
-            </label>
-          ))}
-        </div>
         <div className="flex items-center justify-between mt-4">
           <button
             onClick={() => handleQuantityChange(-1)}
@@ -117,14 +92,11 @@ export default function ProductDetail({
             +
           </button>
         </div>
-        <div className="fixed bottom-0 left-0 w-full bg-sky-400 text-white p-4 flex justify-between items-center text-lg font-bold">
+        <div className="fixed bottom-0 left-0 right-0 w-full max-w-[640px] mx-auto bg-sky-400 text-white p-4 flex justify-between items-center text-lg font-bold">
           <span>₩{totalPrice.toLocaleString()}</span>
           <button
             onClick={() => {
-              const selectedOptionNames = selectedOptions.map(
-                (id) => options.find((o) => o.id === id)?.name || ""
-              );
-              onAddToCart(totalPrice, quantity, selectedOptionNames);
+              onAddToCart(totalPrice, quantity, []);
               onClose();
             }}
             className="bg-white text-sky-400 px-6 py-2 rounded-md shadow-md hover:bg-sky-500 transition"

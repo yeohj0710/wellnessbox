@@ -7,7 +7,6 @@ import { MenuLinks } from "./menuLinks";
 function menuItemClasses(additionalClasses = "") {
   return `relative transition-transform duration-200 ease-in-out hover:scale-105 hover:text-sky-400 ${additionalClasses}`;
 }
-
 export default function TopBar() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const closeDrawer = () => {
@@ -47,7 +46,7 @@ export default function TopBar() {
         className={`fixed top-0 right-0 h-full bg-white shadow-lg z-40 transform transition-transform duration-300 ${
           isDrawerOpen ? "translate-x-0" : "translate-x-full"
         }`}
-        style={{ width: "150px" }}
+        style={{ width: "160px" }}
       >
         <button className="p-4 text-2xl" onClick={closeDrawer}>
           ✕
