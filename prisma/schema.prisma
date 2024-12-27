@@ -12,7 +12,7 @@ model Category_ {
   idx      Int        @id @default(autoincrement())
   name     String?    @unique
   image    String?
-  products Product_[]
+  Product_ Product_[]
 }
 
 model Product_ {
@@ -21,8 +21,8 @@ model Product_ {
   images      String[]
   description String?
   price       Int?
-  categoryId  Int
-  category    Category_ @relation(fields: [categoryId], references: [idx])
+  categoryIdx Int       @default(1)
+  Category_   Category_ @relation(fields: [categoryIdx], references: [idx])
 }
 
 model Comment {

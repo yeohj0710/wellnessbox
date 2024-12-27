@@ -3,46 +3,26 @@
 import { useEffect, useState } from "react";
 import ProductDetail from "@/components/productDetail";
 import Cart from "@/components/cart";
-import { getCategories } from "@/lib/product";
-
-type Product = {
-  id: number;
-  name: string;
-  price: number;
-  description: string;
-  imageUrl?: string;
-};
-
-type CartItem = {
-  id: number;
-  name: string;
-  price: number;
-  options: string[];
-  quantity: number;
-  imageUrl?: string;
-};
-
-type Category = {
-  idx: number;
-  name: string | null;
-  image: string | null;
-};
+import { getCategories, getProducts } from "@/lib/product";
 
 export default function Home() {
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [totalPrice, setTotalPrice] = useState(0);
   const [isCartVisible, setIsCartVisible] = useState(false);
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [cartItems, setCartItems] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
   useEffect(() => {
     const fetchData = async () => {
-      const categories: Category[] = await getCategories();
-      setCategories(categories);
+      const fetchedCategories = await getCategories();
+      const fetchedProducts = await getProducts();
+      setCategories(fetchedCategories);
+      setProducts(fetchedProducts);
     };
     fetchData();
   }, []);
   const handleAddToCart = (
-    product: Product,
+    product: any,
     quantity: number,
     options: string[]
   ) => {
@@ -75,20 +55,6 @@ export default function Home() {
     });
     setTotalPrice((prev) => prev + product.price * quantity);
   };
-  const products: Product[] = [
-    {
-      id: 1,
-      name: "엄청 큰 후라이드 치킨",
-      price: 19000,
-      description: "가마솥에 튀겨 바삭바삭한 노랑통닭 대표 후라이드 치킨",
-    },
-    {
-      id: 2,
-      name: "엄청 큰 반반 치킨",
-      price: 10,
-      description: "두 가지 맛을 동시에 즐길 수 있는 반반 치킨",
-    },
-  ];
   return isCartVisible ? (
     <Cart
       cartItems={cartItems}
@@ -102,14 +68,43 @@ export default function Home() {
       }`}
     >
       <section className="flex gap-4 px-4 py-3 overflow-x-auto scrollbar-hide">
-        <div className="flex flex-col items-center">
-          <div className="w-12 h-12 rounded-full bg-gray-300"></div>
-          <span className="text-sm mt-1">카테고리1</span>
+        <div
+          className="flex flex-col items-center cursor-pointer"
+          onClick={async () => {
+            const allProducts = await getProducts();
+            setProducts(allProducts);
+          }}
+        >
+          <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+            <span className="text-sm font-bold">전체</span>
+          </div>
+          <span className="text-sm mt-1">전체</span>
         </div>
-        <div className="flex flex-col items-center">
-          <div className="w-12 h-12 rounded-full bg-gray-300"></div>
-          <span className="text-sm mt-1">카테고리2</span>
-        </div>
+        {categories.map((category) => (
+          <div
+            key={category.idx}
+            className="flex flex-col items-center cursor-pointer"
+            onClick={async () => {
+              const allProducts = await getProducts();
+              setProducts(
+                allProducts.filter(
+                  (product: any) => product.categoryIdx === category.idx
+                )
+              );
+            }}
+          >
+            {category.image ? (
+              <img
+                src={category.image?.replace("/public", "/avatar")}
+                alt={category.name || "Category"}
+                className="w-12 h-12 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-gray-300"></div>
+            )}
+            <span className="text-sm mt-1">{category.name || "카테고리"}</span>
+          </div>
+        ))}
       </section>
       <section className="flex gap-2 px-4 py-3 bg-gray-100">
         <button className="px-4 py-2 bg-white border rounded-full text-sm">
@@ -123,13 +118,21 @@ export default function Home() {
         </button>
       </section>
       <section className="grid grid-cols-2 gap-4 px-4 py-4">
-        {products.map((product) => (
+        {products.map((product, index) => (
           <div
-            key={product.id}
+            key={`${product.id}-${index}`}
             className="flex flex-col border rounded-lg overflow-hidden shadow-sm cursor-pointer"
             onClick={() => setSelectedProduct(product)}
           >
-            <div className="h-32 bg-gray-300"></div>
+            {product.images[0] ? (
+              <img
+                src={product.images[0]}
+                alt={product.name}
+                className="h-32 w-full object-cover"
+              />
+            ) : (
+              <div className="h-32 bg-gray-300"></div>
+            )}
             <div className="p-2">
               <h3 className="text-sm font-bold">{product.name}</h3>
               <p className="text-xs text-gray-600">{product.description}</p>
@@ -162,23 +165,6 @@ export default function Home() {
           }}
         />
       )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {categories.map((category) => (
-          <div
-            key={category.idx}
-            className="bg-white rounded-lg shadow-md p-4 flex flex-col items-center"
-          >
-            {category.image && category.name && (
-              <img
-                src={category.image}
-                alt={category.name}
-                className="w-full h-40 object-cover rounded-md mb-5"
-              />
-            )}
-            <h2 className="text-lg font-semibold">{category.name}</h2>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
