@@ -1,15 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
 
 export default function AdminLogin() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirectPath = searchParams.get("redirect") || "/admin";
+  const [redirectPath, setRedirectPath] = useState("/admin");
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const redirect = searchParams.get("redirect");
+    if (redirect) setRedirectPath(redirect);
+  }, []);
   const handleSubmit = async () => {
     setIsLoading(true);
     const res = await fetch("/api/verify-password", {

@@ -46,7 +46,7 @@ export default function TopBar() {
         className={`fixed top-0 right-0 h-full bg-white shadow-lg z-40 transform transition-transform duration-300 ${
           isDrawerOpen ? "translate-x-0" : "translate-x-full"
         }`}
-        style={{ width: "160px" }}
+        style={{ width: "170px" }}
       >
         <button className="p-4 text-2xl" onClick={closeDrawer}>
           ✕

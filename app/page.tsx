@@ -23,12 +23,14 @@ export default function Home() {
   const [categories, setCategories] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       const fetchedCategories = await getCategories();
       const fetchedProducts = await getProducts();
       setCategories(fetchedCategories);
+      setAllProducts(fetchedProducts);
       setProducts(fetchedProducts);
       setIsLoading(false);
     };
@@ -96,9 +98,8 @@ export default function Home() {
           <>
             <div
               className="flex flex-col items-center cursor-pointer"
-              onClick={async () => {
+              onClick={() => {
                 setIsLoading(true);
-                const allProducts = await getProducts();
                 setProducts(allProducts);
                 setIsLoading(false);
               }}
@@ -112,14 +113,12 @@ export default function Home() {
               <div
                 key={category.idx}
                 className="flex flex-col items-center cursor-pointer"
-                onClick={async () => {
+                onClick={() => {
                   setIsLoading(true);
-                  const allProducts = await getProducts();
-                  setProducts(
-                    allProducts.filter(
-                      (product: any) => product.categoryIdx === category.idx
-                    )
+                  const filteredProducts = allProducts.filter(
+                    (product: any) => product.categoryIdx === category.idx
                   );
+                  setProducts(filteredProducts);
                   setIsLoading(false);
                 }}
               >
