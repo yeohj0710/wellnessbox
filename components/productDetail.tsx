@@ -32,7 +32,7 @@ export default function ProductDetail({ product, onClose, onAddToCart }: any) {
                   const images = document.querySelectorAll(
                     `[data-image-index]`
                   ) as NodeListOf<HTMLImageElement>;
-                  let currentIndex = Array.from(images).findIndex(
+                  const currentIndex = Array.from(images).findIndex(
                     (img) => img.style.display !== "none"
                   );
                   images[currentIndex].style.display = "none";
@@ -49,7 +49,7 @@ export default function ProductDetail({ product, onClose, onAddToCart }: any) {
                   const images = document.querySelectorAll(
                     `[data-image-index]`
                   ) as NodeListOf<HTMLImageElement>;
-                  let currentIndex = Array.from(images).findIndex(
+                  const currentIndex = Array.from(images).findIndex(
                     (img) => img.style.display !== "none"
                   );
                   images[currentIndex].style.display = "none";
