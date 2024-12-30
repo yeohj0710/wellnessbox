@@ -179,7 +179,7 @@ export default function Home() {
           : products.map((product, index) => (
               <div
                 key={`${product.id}-${index}`}
-                className="flex flex-col border rounded-lg overflow-hidden shadow-sm cursor-pointer"
+                className="flex flex-col border rounded-md overflow-hidden shadow-sm hover:shadow transition-shadow duration-150 cursor-pointer bg-white"
                 onClick={() => setSelectedProduct(product)}
               >
                 {product.images[0] ? (
@@ -189,14 +189,25 @@ export default function Home() {
                     className="h-32 w-full object-contain bg-white"
                   />
                 ) : (
-                  <div className="h-32 bg-gray-300"></div>
+                  <div className="h-28 bg-gray-200 flex items-center justify-center text-gray-500">
+                    이미지 없음
+                  </div>
                 )}
-                <div className="p-2">
-                  <h3 className="text-sm font-bold">{product.name}</h3>
-                  <p className="text-xs text-gray-600">{product.description}</p>
-                  <p className="text-sm font-bold mt-2">
-                    ₩{product.price.toLocaleString()}
-                  </p>
+                <div className="p-2 flex flex-col gap-1 flex-grow">
+                  <span className="text-xs text-gray-500">
+                    {product.Category_.name}
+                  </span>
+                  <h3 className="text-sm font-bold text-gray-800 line-clamp-2">
+                    {product.name}
+                  </h3>
+                  <div className="mt-auto">
+                    <p className="text-xs text-gray-500 line-clamp-1">
+                      {product.description}
+                    </p>
+                    <p className="text-sm font-bold text-sky-500 mt-1">
+                      ₩{product.price.toLocaleString()}
+                    </p>
+                  </div>
                 </div>
               </div>
             ))}

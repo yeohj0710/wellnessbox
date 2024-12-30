@@ -33,7 +33,7 @@ export default function Admin() {
   }, []);
   return (
     <>
-      <div className="w-full sm:w-[640px] xl:w-1/2 px-5 py-7 bg-white sm:border sm:border-gray-200 sm:rounded-lg sm:shadow-lg">
+      <div className="mt-8 w-full sm:w-[640px] xl:w-1/2 px-5 py-7 bg-white sm:border sm:border-gray-200 sm:rounded-lg sm:shadow-lg">
         <div className="flex flex-row gap-[2%] justify-between mb-5 sm:mb-6 items-center">
           <h1 className="text-2xl font-bold text-gray-800">카테고리 관리</h1>
           <button
@@ -51,7 +51,7 @@ export default function Admin() {
           {categories.map((category) => (
             <div
               key={category.idx}
-              className="bg-gray-100 rounded-lg shadow-md p-4 flex flex-col items-center hover:bg-gray-200 cursor-pointer"
+              className="flex flex-col border rounded-md overflow-hidden shadow-sm hover:shadow transition-shadow duration-150 cursor-pointer bg-white"
               onClick={() => {
                 setSelectedCategory(category);
                 setIsCategoryModalOpen(true);
@@ -61,12 +61,18 @@ export default function Admin() {
                 <img
                   src={category.image}
                   alt={category.name || "Category"}
-                  className="w-full h-40 object-cover rounded-md mb-4"
+                  className="h-32 w-full object-contain bg-white"
                 />
               ) : (
-                <div className="w-full h-40 bg-gray-300 rounded-md mb-4"></div>
+                <div className="h-28 bg-gray-200 flex items-center justify-center text-gray-500">
+                  이미지 없음
+                </div>
               )}
-              <h2 className="text-lg font-semibold">{category.name || ""}</h2>
+              <div className="p-2 flex flex-col gap-1">
+                <h2 className="text-sm font-semibold text-gray-800 line-clamp-1">
+                  {category.name || ""}
+                </h2>
+              </div>
             </div>
           ))}
         </div>
@@ -121,7 +127,7 @@ export default function Admin() {
                   <img
                     src={selectedCategory.image}
                     alt="카테고리 이미지"
-                    className="w-full h-40 object-cover rounded-md bg-gray-300 transition-transform duration-200 transform group-hover:scale-105"
+                    className="w-full h-40 object-contain bg-white rounded-md transition-transform duration-200 transform group-hover:scale-105"
                   />
                 ) : (
                   <div className="w-full h-40 bg-gray-300 rounded-md"></div>
@@ -227,7 +233,7 @@ export default function Admin() {
           </div>
         </div>
       )}
-      <div className="w-full sm:w-[640px] xl:w-1/2 px-5 py-7 bg-white sm:border sm:border-gray-200 sm:rounded-lg sm:shadow-lg">
+      <div className="mb-12 w-full sm:w-[640px] xl:w-1/2 px-5 py-7 bg-white sm:border sm:border-gray-200 sm:rounded-lg sm:shadow-lg">
         <div className="flex flex-row gap-[2%] justify-between mb-5 sm:mb-6 items-center">
           <h1 className="text-2xl font-bold text-gray-800">상품 관리</h1>
           <button
@@ -245,7 +251,7 @@ export default function Admin() {
           {products.map((product) => (
             <div
               key={product.idx}
-              className="bg-gray-100 rounded-lg shadow-md p-4 flex flex-col items-center hover:bg-gray-200 cursor-pointer"
+              className="flex flex-col border rounded-md overflow-hidden shadow-sm hover:shadow transition-shadow duration-150 cursor-pointer bg-white"
               onClick={() => {
                 setSelectedProduct(product);
                 setIsProductModalOpen(true);
@@ -255,21 +261,29 @@ export default function Admin() {
                 <img
                   src={product.images[0]}
                   alt={product.name || "Product"}
-                  className="w-full h-40 object-cover rounded-md mb-4"
+                  className="h-32 w-full object-contain bg-white"
                 />
               ) : (
-                <div className="w-full h-40 bg-gray-300 rounded-md mb-4"></div>
+                <div className="h-28 bg-gray-200 flex items-center justify-center text-gray-500">
+                  이미지 없음
+                </div>
               )}
-              <span className="text-xs text-gray-500">
-                {product.Category_.name}
-              </span>
-              <h2 className="text-lg font-semibold">{product.name || ""}</h2>
-              <p className="text-sm text-gray-600">
-                {product.description || ""}
-              </p>
-              <p className="text-lg font-bold text-gray-800">
-                {product.price ? `${product.price.toLocaleString()}원` : "0원"}
-              </p>
+              <div className="p-2 flex flex-col gap-1">
+                <span className="text-xs text-gray-500">
+                  {product.Category_.name}
+                </span>
+                <h2 className="text-sm font-bold text-gray-800 line-clamp-2">
+                  {product.name || ""}
+                </h2>
+                <p className="text-xs text-gray-500 line-clamp-1">
+                  {product.description || ""}
+                </p>
+                <p className="mt-1 text-sm font-bold text-sky-500">
+                  {product.price
+                    ? `${product.price.toLocaleString()}원`
+                    : "0원"}
+                </p>
+              </div>
             </div>
           ))}
         </div>

@@ -27,7 +27,7 @@ export default function AdminLogin() {
     }
   };
   return (
-    <div className="w-full sm:w-[640px] xl:w-1/2 px-5 py-7 bg-white sm:border sm:border-gray-200 sm:rounded-lg sm:shadow-lg">
+    <div className="mt-8 w-full sm:w-[640px] xl:w-1/2 px-5 py-7 bg-white sm:border sm:border-gray-200 sm:rounded-lg sm:shadow-lg">
       <div className="flex flex-col gap-6">
         <h1 className="text-2xl font-bold text-gray-800 text-center">
           관리자 로그인
@@ -36,6 +36,7 @@ export default function AdminLogin() {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
           placeholder="비밀번호를 입력하세요"
           className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-sky-400"
         />
