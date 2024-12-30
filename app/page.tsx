@@ -179,7 +179,7 @@ export default function Home() {
           : products.map((product, index) => (
               <div
                 key={`${product.id}-${index}`}
-                className="flex flex-col border rounded-md overflow-hidden shadow-sm hover:shadow transition-shadow duration-150 cursor-pointer bg-white"
+                className="px-[0.5px] sm:px-1 sm:pb-1 flex flex-col border rounded-md overflow-hidden shadow-sm hover:shadow-lg hover:scale-105 transition-transform duration-300 cursor-pointer bg-white"
                 onClick={() => setSelectedProduct(product)}
               >
                 {product.images[0] ? (
