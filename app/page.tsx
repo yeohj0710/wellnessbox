@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import ProductDetail from "@/components/productDetail";
 import Cart from "@/components/cart";
 import { getCategories, getProducts } from "@/lib/product";
+import { useFooter } from "@/components/footerContext";
 
 const Skeleton = () => (
   <div className="flex flex-col border rounded-lg overflow-hidden shadow-sm cursor-pointer">
@@ -24,6 +25,7 @@ export default function Home() {
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [allProducts, setAllProducts] = useState<any[]>([]);
+  const { hideFooter, showFooter } = useFooter();
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -36,6 +38,13 @@ export default function Home() {
     };
     fetchData();
   }, []);
+  useEffect(() => {
+    if (totalPrice > 0 || isCartVisible) {
+      hideFooter();
+    } else {
+      showFooter();
+    }
+  }, [totalPrice, isCartVisible, hideFooter, showFooter]);
   const handleAddToCart = (
     product: any,
     quantity: number,
