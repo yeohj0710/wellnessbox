@@ -5,6 +5,7 @@
     "@next/next/no-img-element": "off",
     "@typescript-eslint/no-unused-vars": "off",
     "prefer-const": "off",
-    "@next/next/no-before-interactive-script-outside-document": "off"
+    "@next/next/no-before-interactive-script-outside-document": "off",
+    "react/no-unescaped-entities": "off"
   }
 }
