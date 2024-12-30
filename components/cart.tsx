@@ -184,20 +184,32 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
         />
       </div>
       {totalPrice > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 w-full max-w-[640px] mx-auto bg-sky-400 text-white p-4 flex justify-between items-center text-lg font-bold">
+        <div
+          className={`fixed bottom-0 left-0 right-0 w-full max-w-[640px] mx-auto ${
+            totalPrice < 15000 ? "bg-gray-400" : "bg-sky-400"
+          } text-white p-4 flex justify-between items-center text-lg font-bold`}
+        >
           <span className="font-bold">₩{totalPrice.toLocaleString()}</span>
-          <button
-            onClick={() => {
-              if (!userAddress || !userContact) {
-                alert("주소 및 연락처를 입력해주세요.");
-                return;
-              }
-              setShowModal(true);
-            }}
-            className="bg-white text-sky-400 px-6 py-2 rounded-full font-semibold shadow-lg hover:bg-sky-100 transition"
-          >
-            결제하기
-          </button>
+          {totalPrice < 15000 ? (
+            <span className="text-sm text-white py-3">
+              {`${(
+                15000 - totalPrice
+              ).toLocaleString()}원만 더 담으면 주문할 수 있어요.`}
+            </span>
+          ) : (
+            <button
+              onClick={() => {
+                if (!userAddress || !userContact) {
+                  alert("주소 및 연락처를 입력해주세요.");
+                  return;
+                }
+                setShowModal(true);
+              }}
+              className="bg-white text-sky-400 px-6 py-2 rounded-full font-semibold shadow-lg hover:bg-sky-100 transition"
+            >
+              결제하기
+            </button>
+          )}
           {showModal && (
             <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
               <div className="bg-white rounded-lg shadow-lg w-full max-w-sm overflow-hidden">
