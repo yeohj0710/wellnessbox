@@ -37,12 +37,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${inter.className} flex flex-col min-h-[130vh] bg-gray-50`}
-      >
+      <body className={`${inter.className} flex flex-col bg-gray-50`}>
         <FooterProvider>
           <TopBar />
-          <main className="flex-grow pt-14 flex flex-col items-center gap-8">
+          <main className="flex-grow pt-14 min-h-[105vh] flex flex-col items-center gap-8">
             {children}
           </main>
         </FooterProvider>

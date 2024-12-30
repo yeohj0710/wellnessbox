@@ -32,7 +32,7 @@ export default function About() {
     };
   }, []);
   return (
-    <div className="relative h-[105vh] w-full mx-auto overflow-hidden">
+    <div className="relative h-[100vh] w-full mx-auto overflow-hidden">
       <div className="absolute inset-0 z-0">
         <video
           ref={videoRef1}
