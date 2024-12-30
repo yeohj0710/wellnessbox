@@ -1,26 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function ProductDetail({ product, onClose, onAddToCart }: any) {
   const [quantity, setQuantity] = useState(1);
   const [totalPrice, setTotalPrice] = useState(product.price);
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
   const handleQuantityChange = (delta: number) => {
-    setQuantity((prev) => Math.max(1, prev + delta));
-    setTotalPrice(product.price * (quantity + delta));
+    setQuantity((prev) => {
+      const newQuantity = Math.max(1, prev + delta);
+      setTotalPrice(product.price * newQuantity);
+      return newQuantity;
+    });
   };
   return (
-    <div className="fixed inset-x-0 top-14 bottom-0 bg-white overflow-auto z-50 w-full max-w-[640px] mx-auto">
+    <div className="overflow-y-auto h-screen fixed inset-x-0 top-14 bg-white w-full max-w-[640px] mx-auto">
       <div className="relative">
         <div className="relative">
           {product.images && product.images.length > 0 ? (
-            <div className="relative w-full h-80 overflow-hidden">
+            <div className="relative w-full h-72 sm:h-80 overflow-hidden">
               {product.images.map((image: any, index: any) => (
                 <img
                   key={index}
                   src={image}
                   alt={`${product.name} 이미지 ${index + 1}`}
-                  className={`absolute w-full h-80 object-cover transition-transform ${
+                  className={`absolute w-full h-72 sm:h-80 object-contain bg-white transition-transform ${
                     index === 0 ? "block" : "hidden"
                   }`}
                   data-image-index={index}
@@ -73,7 +82,7 @@ export default function ProductDetail({ product, onClose, onAddToCart }: any) {
           ✕
         </button>
       </div>
-      <div className="p-6">
+      <div className="p-6 pb-[calc(12rem)]">
         <h1 className="text-xl font-bold">{product.name}</h1>
         <p className="text-gray-500 text-sm mt-2">{product.description}</p>
         <p className="text-lg font-bold mt-4">₩{totalPrice.toLocaleString()}</p>
@@ -99,7 +108,7 @@ export default function ProductDetail({ product, onClose, onAddToCart }: any) {
               onAddToCart(totalPrice, quantity, []);
               onClose();
             }}
-            className="bg-white text-sky-400 px-6 py-2 rounded-md shadow-md hover:bg-sky-500 transition"
+            className="bg-white text-sky-400 px-6 py-2 rounded-md shadow-md hover:bg-sky-100 transition"
           >
             담기
           </button>

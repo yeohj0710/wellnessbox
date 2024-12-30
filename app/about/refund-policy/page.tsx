@@ -2,7 +2,7 @@
 
 export default function RefundPolicy() {
   return (
-    <div className="w-full max-w-[640px] mx-auto px-6 py-10 bg-white sm:border sm:border-gray-200 sm:rounded-lg sm:shadow-lg">
+    <div className="mt-8 w-full max-w-[640px] mx-auto px-6 py-10 bg-white sm:border sm:border-gray-200 sm:rounded-lg sm:shadow-lg">
       <h1 className="text-xl font-bold text-gray-800 mb-10 text-center">
         취소 및 환불 규정
       </h1>

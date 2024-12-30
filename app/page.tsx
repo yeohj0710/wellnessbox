@@ -71,7 +71,6 @@ export default function Home() {
     });
     setTotalPrice((prev) => prev + product.price * quantity);
   };
-
   return isCartVisible ? (
     <Cart
       cartItems={cartItems}
@@ -102,51 +101,54 @@ export default function Home() {
               </div>
             ))
         ) : (
-          <>
-            <div
-              className="flex flex-col items-center cursor-pointer"
-              onClick={() => {
-                setIsLoading(true);
-                setProducts(allProducts);
-                setIsLoading(false);
-              }}
-            >
-              <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
-                <span className="text-sm font-bold">전체</span>
-              </div>
-              <span className="text-sm mt-1">전체</span>
-            </div>
-            {categories.map((category) => (
+          <div className="flex flex-nowrap items-start overflow-x-auto gap-5 w-full max-w-[640px]">
+            <>
               <div
-                key={category.idx}
-                className="flex flex-col items-center cursor-pointer"
+                className="flex flex-col items-center w-12 shrink-0 cursor-pointer"
                 onClick={() => {
                   setIsLoading(true);
-                  const filteredProducts = allProducts.filter(
-                    (product: any) => product.categoryIdx === category.idx
-                  );
-                  setProducts(filteredProducts);
+                  setProducts(allProducts);
                   setIsLoading(false);
                 }}
               >
-                {category.image ? (
-                  <img
-                    src={category.image?.replace("/public", "/avatar")}
-                    alt={category.name || "Category"}
-                    className="w-12 h-12 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-gray-300"></div>
-                )}
-                <span className="text-sm mt-1">
-                  {category.name || "카테고리"}
+                <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center ">
+                  <span className="text-sm font-bold">전체</span>
+                </div>
+                <span className="text-xs mt-1 text-center break-words">
+                  전체
                 </span>
               </div>
-            ))}
-          </>
+              {categories.map((category) => (
+                <div
+                  key={category.idx}
+                  className="flex flex-col items-center w-12 shrink-0 cursor-pointer"
+                  onClick={() => {
+                    setIsLoading(true);
+                    const filteredProducts = allProducts.filter(
+                      (product: any) => product.categoryIdx === category.idx
+                    );
+                    setProducts(filteredProducts);
+                    setIsLoading(false);
+                  }}
+                >
+                  {category.image ? (
+                    <img
+                      src={category.image?.replace("/public", "/avatar")}
+                      alt={category.name || "Category"}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-gray-300"></div>
+                  )}
+                  <span className="-mx-5 text-xs mt-1 text-center break-words">
+                    {category.name || "카테고리"}
+                  </span>
+                </div>
+              ))}
+            </>
+          </div>
         )}
       </section>
-
       <section className="flex gap-2 px-4 py-3 bg-gray-100">
         <button className="px-4 py-2 bg-white border rounded-full text-sm">
           기본순
@@ -160,7 +162,7 @@ export default function Home() {
         </button>
         */}
       </section>
-      <section className="grid grid-cols-2 gap-4 px-4 py-4">
+      <section className="mb-4 grid grid-cols-2 gap-4 px-4 py-4">
         {isLoading
           ? Array(4)
               .fill(0)
@@ -175,7 +177,7 @@ export default function Home() {
                   <img
                     src={product.images[0]}
                     alt={product.name}
-                    className="h-32 w-full object-cover"
+                    className="h-32 w-full object-contain bg-white"
                   />
                 ) : (
                   <div className="h-32 bg-gray-300"></div>

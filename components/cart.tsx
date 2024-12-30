@@ -194,7 +194,7 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
               }
               setShowModal(true);
             }}
-            className="bg-white text-sky-400 px-6 py-2 rounded-full font-semibold shadow-lg hover:bg-sky-500 transition"
+            className="bg-white text-sky-400 px-6 py-2 rounded-full font-semibold shadow-lg hover:bg-sky-100 transition"
           >
             결제하기
           </button>

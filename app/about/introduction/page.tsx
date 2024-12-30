@@ -2,7 +2,7 @@
 
 export default function Introduction() {
   return (
-    <div className="w-full max-w-[640px] mx-auto px-6 py-10 bg-white sm:border sm:border-gray-200 sm:rounded-lg sm:shadow-lg">
+    <div className="mt-8 w-full max-w-[640px] mx-auto px-6 py-10 bg-white sm:border sm:border-gray-200 sm:rounded-lg sm:shadow-lg">
       <h1 className="text-xl font-bold text-gray-800 mb-10 text-center">
         맞춤형 건강기능식품 소분 판매 중개 플랫폼, 웰니스박스
       </h1>
