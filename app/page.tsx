@@ -159,18 +159,38 @@ export default function Home() {
         )}
       </section>
       <section className="flex gap-2 px-4 py-3 bg-gray-100">
-        <button className="px-4 py-2 bg-white border rounded-full text-sm">
+        <button
+          className="px-4 py-2 bg-white border rounded-full text-sm"
+          onClick={() => {
+            setProducts(allProducts); // 기본순 (전체 상품)
+          }}
+        >
           기본순
         </button>
-        {/*
-        <button className="px-4 py-2 bg-white border rounded-full text-sm">
-          쿠폰
+        <button
+          className="px-4 py-2 bg-white border rounded-full text-sm"
+          onClick={() => {
+            const filteredProducts = allProducts.filter((product: any) =>
+              product.description?.includes("7일")
+            );
+            setProducts(filteredProducts); // '7일' 패키지 필터링
+          }}
+        >
+          7일 패키지
         </button>
-        <button className="px-4 py-2 bg-white border rounded-full text-sm">
-          배달방식
+        <button
+          className="px-4 py-2 bg-white border rounded-full text-sm"
+          onClick={() => {
+            const filteredProducts = allProducts.filter((product: any) =>
+              product.description?.includes("30일")
+            );
+            setProducts(filteredProducts); // '30일' 패키지 필터링
+          }}
+        >
+          30일 패키지
         </button>
-        */}
       </section>
+
       <section className="mb-4 grid grid-cols-2 gap-4 px-4 py-4">
         {isLoading
           ? Array(10)

@@ -65,8 +65,24 @@ export async function getProducts() {
         },
       },
     },
+    orderBy: {
+      idx: "asc",
+    },
   });
-  return products;
+  const sortedProducts = products.sort((a, b) => {
+    const getPriority = (description: string | null | undefined) => {
+      if (description?.includes("7일")) return 1;
+      if (description?.includes("30일")) return 2;
+      return 3;
+    };
+    const priorityA = getPriority(a.description);
+    const priorityB = getPriority(b.description);
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB;
+    }
+    return a.idx - b.idx;
+  });
+  return sortedProducts;
 }
 
 export async function createProduct(data: {

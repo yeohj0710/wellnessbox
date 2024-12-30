@@ -9,10 +9,12 @@ datasource db {
 }
 
 model Category_ {
-  idx      Int        @id @default(autoincrement())
-  name     String?    @unique
-  image    String?
-  Product_ Product_[]
+  idx       Int        @id @default(autoincrement())
+  name      String?    @unique
+  image     String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @default(now())
+  Product_  Product_[]
 }
 
 model Product_ {
@@ -22,6 +24,8 @@ model Product_ {
   description String?
   price       Int?
   categoryIdx Int       @default(1)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now())
   Category_   Category_ @relation(fields: [categoryIdx], references: [idx])
 }
 
