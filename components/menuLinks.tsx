@@ -36,7 +36,7 @@ export function MenuLinks() {
   return (
     <>
       <Link
-        href="/about/introduction"
+        href="/about"
         className={menuItemClasses()}
         onMouseDown={handlePressStart}
         onMouseUp={handlePressEnd}
@@ -45,12 +45,12 @@ export function MenuLinks() {
       >
         서비스 소개
       </Link>
-      <Link href="/about/refund-policy" className={menuItemClasses()}>
+      {/*<Link href="/about/refund-policy" className={menuItemClasses()}>
         취소 및 환불 규정
       </Link>
       <Link href="/about/contact" className={menuItemClasses()}>
         문의하기
-      </Link>
+      </Link>*/}
       {adminVisible && (
         <Link href="/admin-login" className={menuItemClasses()}>
           관리자 로그인

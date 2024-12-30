@@ -92,7 +92,7 @@ export default function Home() {
     >
       <section className="flex gap-4 px-4 py-3 overflow-x-auto scrollbar-hide">
         {isLoading ? (
-          Array(3)
+          Array(10)
             .fill(0)
             .map((_, index) => (
               <div key={index} className="flex flex-col items-center">
@@ -140,7 +140,7 @@ export default function Home() {
                   ) : (
                     <div className="w-12 h-12 rounded-full bg-gray-300"></div>
                   )}
-                  <span className="-mx-5 text-xs mt-1 text-center break-words">
+                  <span className="-mx-3 text-xs mt-1 text-center break-words">
                     {category.name || "카테고리"}
                   </span>
                 </div>
@@ -164,7 +164,7 @@ export default function Home() {
       </section>
       <section className="mb-4 grid grid-cols-2 gap-4 px-4 py-4">
         {isLoading
-          ? Array(4)
+          ? Array(10)
               .fill(0)
               .map((_, index) => <Skeleton key={index} />)
           : products.map((product, index) => (
