@@ -125,7 +125,24 @@ export default function Home() {
         totalPrice > 0 ? "pb-20" : ""
       }`}
     >
-      <section className="flex gap-4 px-4 py-3 overflow-x-auto scrollbar-hide">
+      <section
+        className="flex gap-4 px-4 py-3 overflow-x-auto"
+        style={{
+          WebkitOverflowScrolling: "touch",
+        }}
+      >
+        <style jsx>{`
+          ::-webkit-scrollbar {
+            height: 8px;
+          }
+          ::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 4px;
+          }
+          ::-webkit-scrollbar-track {
+            background: transparent;
+          }
+        `}</style>
         {isLoading ? (
           Array(10)
             .fill(0)
@@ -136,53 +153,49 @@ export default function Home() {
               </div>
             ))
         ) : (
-          <div className="flex flex-nowrap items-start overflow-x-auto gap-5 w-full max-w-[640px]">
-            <>
+          <div className="flex flex-nowrap items-start gap-5 w-full max-w-[640px]">
+            <div
+              className={`flex flex-col items-center w-12 shrink-0 cursor-pointer hover:text-gray-700 ${
+                selectedCategory === null ? "font-bold" : ""
+              }`}
+              onClick={() => {
+                setIsLoading(true);
+                setSelectedCategory(null);
+                setSelectedPackage("");
+                setIsLoading(false);
+              }}
+            >
+              <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                <span className="text-sm font-bold">전체</span>
+              </div>
+              <span className="text-xs mt-1 text-center break-words">전체</span>
+            </div>
+            {categories.map((category) => (
               <div
+                key={category.idx}
                 className={`flex flex-col items-center w-12 shrink-0 cursor-pointer hover:text-gray-700 ${
-                  selectedCategory === null ? "font-bold" : ""
+                  selectedCategory === category.idx ? "font-bold" : ""
                 }`}
                 onClick={() => {
                   setIsLoading(true);
-                  setSelectedCategory(null);
-                  setSelectedPackage("");
+                  setSelectedCategory(category.idx);
                   setIsLoading(false);
                 }}
               >
-                <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center ">
-                  <span className="text-sm font-bold">전체</span>
-                </div>
+                {category.image ? (
+                  <img
+                    src={category.image?.replace("/public", "/avatar")}
+                    alt={category.name || "Category"}
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-gray-300"></div>
+                )}
                 <span className="text-xs mt-1 text-center break-words">
-                  전체
+                  {category.name || "카테고리"}
                 </span>
               </div>
-              {categories.map((category) => (
-                <div
-                  key={category.idx}
-                  className={`flex flex-col items-center w-12 shrink-0 cursor-pointer hover:text-gray-700 ${
-                    selectedCategory === category.idx ? "font-bold" : ""
-                  }`}
-                  onClick={() => {
-                    setIsLoading(true);
-                    setSelectedCategory(category.idx);
-                    setIsLoading(false);
-                  }}
-                >
-                  {category.image ? (
-                    <img
-                      src={category.image?.replace("/public", "/avatar")}
-                      alt={category.name || "Category"}
-                      className="w-12 h-12 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-gray-300"></div>
-                  )}
-                  <span className="text-xs mt-1 text-center break-words">
-                    {category.name || "카테고리"}
-                  </span>
-                </div>
-              ))}
-            </>
+            ))}
           </div>
         )}
       </section>
