@@ -215,7 +215,7 @@ export default function Home() {
                 setIsLoading(false);
               }}
             >
-              {pkg === "" ? "기본순" : `${pkg} 패키지`}
+              {pkg === "" ? "전체" : `${pkg} 패키지`}
             </button>
           ))}
         </div>

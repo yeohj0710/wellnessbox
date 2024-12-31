@@ -4,43 +4,57 @@ import { useState, useEffect } from "react";
 import Script from "next/script";
 import { TrashIcon } from "@heroicons/react/16/solid";
 
-declare global {
-  interface Window {
-    IMP: {
-      init: (merchantId: string) => void;
-      request_pay: (
-        options: {
-          pg: string;
-          pay_method: string;
-          merchant_uid: string;
-          name: string;
-          amount: number;
-          buyer_email: string;
-          buyer_name: string;
-          buyer_tel: string;
-          buyer_addr: string;
-          buyer_postcode: string;
-        },
-        callback: (response: {
-          success: boolean;
-          imp_uid?: string;
-          error_msg?: string;
-        }) => void
-      ) => void;
-    };
-  }
-}
-
 export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
   const [sdkLoaded, setSdkLoaded] = useState(false);
   const [userAddress, setUserAddress] = useState("");
   const [userContact, setUserContact] = useState("");
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("card");
   const [showModal, setShowModal] = useState(false);
   const totalPrice = cartItems.reduce(
     (acc: any, item: any) => acc + item.price * item.quantity,
     0
   );
-  const handlePayment = () => {
+  const handlePaymentRequest = async (
+    payMethod: string,
+    channelKey: string
+  ) => {
+    const PortOne: any = await import("@portone/browser-sdk/v2");
+    try {
+      const response = await PortOne.requestPayment({
+        storeId: process.env.NEXT_PUBLIC_PORTONE_STORE_ID!,
+        paymentId: `payment${Date.now()}`,
+        orderName: "웰니스박스 건강기능식품",
+        totalAmount: totalPrice,
+        currency: "KRW",
+        channelKey,
+        payMethod,
+        customer: {
+          customerId: "customer_1234",
+          fullName: "user",
+          email: "buyer@example.com",
+          phoneNumber: userContact,
+        },
+      });
+      if (!response.txId || response.transactionType !== "PAYMENT") {
+        alert("결제에 실패하였습니다. 결제 상태를 확인해주세요.");
+        return;
+      }
+      alert("결제가 완료되었습니다.");
+      const queryString = new URLSearchParams({
+        userAddress,
+        userContact,
+        totalPrice: totalPrice.toString(),
+        cartItems: encodeURIComponent(JSON.stringify(cartItems)),
+      }).toString();
+      window.location.href = "/order-complete?" + queryString;
+    } catch (error) {
+      console.error("결제 요청 중 오류 발생:", error);
+      alert(
+        `결제 요청 중 오류가 발생했습니다. 상세 정보: ${JSON.stringify(error)}`
+      );
+    }
+  };
+  const handlePayment = async () => {
     if (!sdkLoaded || !window.IMP) {
       alert("포트원 SDK 로드 실패");
       return;
@@ -49,29 +63,42 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
       alert("주소와 연락처를 입력해주세요.");
       return;
     }
+
     const IMP = window.IMP;
-    IMP.init(process.env.NEXT_PUBLIC_MERCHANT_ID!);
-    IMP.request_pay(
-      {
-        pg: "uplus",
-        pay_method: "card",
-        merchant_uid: `mid_${new Date().getTime()}`,
-        name: "건강기능식품 결제",
-        amount: totalPrice,
-        buyer_email: "buyer@example.com",
-        buyer_name: "user",
-        buyer_tel: userContact,
-        buyer_addr: userAddress,
-        buyer_postcode: "123-456",
-      },
-      (rsp: { success: boolean; imp_uid?: string; error_msg?: string }) => {
-        if (rsp.success) {
-          alert(`결제가 완료되었습니다! 결제 ID: ${rsp.imp_uid}`);
-        } else {
-          alert(`결제에 실패하였습니다. 오류 메시지: ${rsp.error_msg}`);
+    if (selectedPaymentMethod === "card") {
+      await handlePaymentRequest(
+        "CARD",
+        process.env.NEXT_PUBLIC_PORTONE_CARD_CHANNEL_KEY!
+      );
+    } else if (selectedPaymentMethod === "kakao") {
+      await handlePaymentRequest(
+        "EASY_PAY",
+        process.env.NEXT_PUBLIC_PORTONE_KAKAO_CHANNEL_KEY!
+      );
+    } else if (selectedPaymentMethod === "toss") {
+      IMP.init(process.env.NEXT_PUBLIC_MERCHANT_ID!);
+      IMP.request_pay(
+        {
+          pg: "uplus",
+          pay_method: "card",
+          merchant_uid: `mid_${new Date().getTime()}`,
+          name: "웰니스박스 건강기능식품",
+          amount: totalPrice,
+          buyer_email: "buyer@example.com",
+          buyer_name: "user",
+          buyer_tel: userContact,
+          buyer_addr: userAddress,
+          buyer_postcode: "123-456",
+        },
+        (rsp: { success: boolean; imp_uid?: string; error_msg?: string }) => {
+          if (rsp.success) {
+            alert(`결제가 완료되었습니다! 결제 ID: ${rsp.imp_uid}`);
+          } else {
+            alert(`결제에 실패하였습니다. 오류 메시지: ${rsp.error_msg}`);
+          }
         }
-      }
-    );
+      );
+    }
   };
   useEffect(() => {
     if (window.IMP) {
@@ -101,7 +128,7 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
       <div className="px-4">
         <h2 className="text-lg font-bold pb-4 border-b mb-4">선택한 상품</h2>
       </div>
-      <div className="space-y-4 px-4">
+      <div className="space-y-4 px-4 mb-2">
         {cartItems.map((item: any) => (
           <div key={item.idx} className="flex items-center gap-4 border-b pb-4">
             {item.images && item.images.length > 0 ? (
@@ -163,18 +190,18 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
           </div>
         ))}
       </div>
-      <h2 className="text-lg font-bold p-4">주소 입력</h2>
+      <h2 className="text-lg font-bold p-4 pb-2">주소 입력</h2>
       <div className="px-4">
         <input
           type="text"
           placeholder="예: 서울특별시 서초구 반포대로 1길 23 456호"
           value={userAddress}
           onChange={(e) => setUserAddress(e.target.value)}
-          className="w-full border rounded-md p-2"
+          className="w-full border rounded-md p-2 mb-2"
         />
       </div>
-      <h2 className="text-lg font-bold p-4">연락처 입력</h2>
-      <div className="px-4 mb-16">
+      <h2 className="text-lg font-bold p-4 pb-2">연락처 입력</h2>
+      <div className="px-4">
         <input
           type="text"
           placeholder="예: 010-1234-5678"
@@ -182,6 +209,48 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
           onChange={(e) => setUserContact(e.target.value)}
           className="w-full border rounded-md p-2"
         />
+      </div>
+      <h2 className="text-lg font-bold p-4 mt-2">결제 방법</h2>
+      <div className="px-4 space-y-3 mb-8">
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="radio"
+            name="paymentMethod"
+            value="card"
+            className="w-5 h-5 text-sky-500 border-gray-300"
+            onChange={() => setSelectedPaymentMethod("card")}
+          />
+          <span className="text-base font-medium text-gray-700">
+            신용/체크카드
+          </span>
+        </label>
+        <label className="flex items-center cursor-pointer">
+          <input
+            type="radio"
+            name="paymentMethod"
+            value="kakao"
+            className="w-5 h-5 text-sky-500 border-gray-300"
+            onChange={() => setSelectedPaymentMethod("kakao")}
+          />
+          <img
+            src="/kakaopay.svg"
+            alt="카카오페이 아이콘"
+            className="w-12 h-6 ml-2.5"
+          />
+          <span className="text-base font-medium text-gray-700 ml-1.5">
+            카카오페이
+          </span>
+        </label>
+        {/* <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="radio"
+            name="paymentMethod"
+            value="toss"
+            className="w-5 h-5 text-sky-500 border-gray-300"
+            onChange={() => setSelectedPaymentMethod("toss")}
+          />
+          <span className="text-base font-medium text-gray-700">토스페이</span>
+        </label> */}
       </div>
       {totalPrice > 0 && (
         <div

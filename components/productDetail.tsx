@@ -6,11 +6,18 @@ export default function ProductDetail({ product, onClose, onAddToCart }: any) {
   const [quantity, setQuantity] = useState(1);
   const [totalPrice, setTotalPrice] = useState(product.price);
   useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
     document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.body.style.overflow = "";
+      document.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
+  }, [onClose]);
   const handleQuantityChange = (delta: number) => {
     setQuantity((prev) => {
       const newQuantity = Math.max(1, prev + delta);
