@@ -174,7 +174,7 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
         />
       </div>
       <h2 className="text-lg font-bold p-4">연락처 입력</h2>
-      <div className="px-4">
+      <div className="px-4 mb-16">
         <input
           type="text"
           placeholder="예: 010-1234-5678"
