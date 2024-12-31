@@ -12,6 +12,15 @@ export default {
         background: "var(--background)",
         foreground: "var(--foreground)",
       },
+      animation: {
+        "bounce-custom": "bounce-custom 0.6s infinite",
+      },
+      keyframes: {
+        "bounce-custom": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-10px)" },
+        },
+      },
     },
   },
   plugins: [require("tailwind-scrollbar-hide")],

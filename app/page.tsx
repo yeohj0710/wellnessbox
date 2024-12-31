@@ -25,6 +25,8 @@ export default function Home() {
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [selectedPackage, setSelectedPackage] = useState<string>("");
   const { hideFooter, showFooter } = useFooter();
   useEffect(() => {
     const fetchData = async () => {
@@ -45,6 +47,30 @@ export default function Home() {
       showFooter();
     }
   }, [totalPrice, isCartVisible, hideFooter, showFooter]);
+  useEffect(() => {
+    let filtered = [...allProducts];
+    if (selectedCategory !== null) {
+      filtered = filtered.filter(
+        (product) => product.categoryIdx === selectedCategory
+      );
+    }
+    if (selectedPackage === "7일") {
+      filtered = filtered.filter((product: any) =>
+        product.description?.includes("7일")
+      );
+    } else if (selectedPackage === "30일") {
+      filtered = filtered.filter((product: any) =>
+        product.description?.includes("30일")
+      );
+    } else if (selectedPackage === "단품형") {
+      filtered = filtered.filter(
+        (product: any) =>
+          !product.description?.includes("7일") &&
+          !product.description?.includes("30일")
+      );
+    }
+    setProducts(filtered);
+  }, [selectedCategory, selectedPackage, allProducts]);
   const handleAddToCart = (
     product: any,
     quantity: number,
@@ -113,10 +139,13 @@ export default function Home() {
           <div className="flex flex-nowrap items-start overflow-x-auto gap-5 w-full max-w-[640px]">
             <>
               <div
-                className="flex flex-col items-center w-12 shrink-0 cursor-pointer"
+                className={`flex flex-col items-center w-12 shrink-0 cursor-pointer hover:text-gray-700 ${
+                  selectedCategory === null ? "font-bold" : ""
+                }`}
                 onClick={() => {
                   setIsLoading(true);
-                  setProducts(allProducts);
+                  setSelectedCategory(null);
+                  setSelectedPackage("");
                   setIsLoading(false);
                 }}
               >
@@ -130,13 +159,12 @@ export default function Home() {
               {categories.map((category) => (
                 <div
                   key={category.idx}
-                  className="flex flex-col items-center w-12 shrink-0 cursor-pointer"
+                  className={`flex flex-col items-center w-12 shrink-0 cursor-pointer hover:text-gray-700 ${
+                    selectedCategory === category.idx ? "font-bold" : ""
+                  }`}
                   onClick={() => {
                     setIsLoading(true);
-                    const filteredProducts = allProducts.filter(
-                      (product: any) => product.categoryIdx === category.idx
-                    );
-                    setProducts(filteredProducts);
+                    setSelectedCategory(category.idx);
                     setIsLoading(false);
                   }}
                 >
@@ -149,7 +177,7 @@ export default function Home() {
                   ) : (
                     <div className="w-12 h-12 rounded-full bg-gray-300"></div>
                   )}
-                  <span className="-mx-3 text-xs mt-1 text-center break-words">
+                  <span className="text-xs mt-1 text-center break-words">
                     {category.name || "카테고리"}
                   </span>
                 </div>
@@ -158,40 +186,28 @@ export default function Home() {
           </div>
         )}
       </section>
-      <section className="flex gap-2 px-4 py-3 bg-gray-100">
-        <button
-          className="px-4 py-2 bg-white border rounded-full text-sm"
-          onClick={() => {
-            setProducts(allProducts); // 기본순 (전체 상품)
-          }}
-        >
-          기본순
-        </button>
-        <button
-          className="px-4 py-2 bg-white border rounded-full text-sm"
-          onClick={() => {
-            const filteredProducts = allProducts.filter((product: any) =>
-              product.description?.includes("7일")
-            );
-            setProducts(filteredProducts); // '7일' 패키지 필터링
-          }}
-        >
-          7일 패키지
-        </button>
-        <button
-          className="px-4 py-2 bg-white border rounded-full text-sm"
-          onClick={() => {
-            const filteredProducts = allProducts.filter((product: any) =>
-              product.description?.includes("30일")
-            );
-            setProducts(filteredProducts); // '30일' 패키지 필터링
-          }}
-        >
-          30일 패키지
-        </button>
+      <section className="px-4 py-3 bg-gray-100 overflow-x-auto scrollbar-hide">
+        <div className="flex flex-nowrap items-center gap-2 w-max">
+          {["", "7일", "30일", "단품형"].map((pkg) => (
+            <button
+              key={pkg}
+              className={`px-4 py-2 border rounded-full text-sm transition-transform duration-300 ${
+                selectedPackage === pkg
+                  ? "bg-gray-200 font-bold shadow-sm"
+                  : "bg-white hover:bg-gray-100"
+              }`}
+              onClick={() => {
+                setIsLoading(true);
+                setSelectedPackage(pkg);
+                setIsLoading(false);
+              }}
+            >
+              {pkg === "" ? "기본순" : `${pkg} 패키지`}
+            </button>
+          ))}
+        </div>
       </section>
-
-      <section className="mb-4 grid grid-cols-2 gap-4 px-4 py-4">
+      <section className="mb-4 grid grid-cols-2 sm:grid-cols-3 gap-4 px-4 py-4">
         {isLoading
           ? Array(10)
               .fill(0)

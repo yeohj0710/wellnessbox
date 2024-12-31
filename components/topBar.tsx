@@ -19,13 +19,13 @@ export default function TopBar() {
           <Link
             href="/"
             className={menuItemClasses(
-              "text-lg font-bold flex flex-row gap-1.5 items-center"
+              "group text-lg font-bold flex flex-row gap-1.5 items-center"
             )}
           >
             <img
               src="/icon.png"
               alt="웰니스박스"
-              className="w-[2em] h-[2em] object-contain"
+              className="w-[2em] h-[2em] object-contain group-hover:animate-bounce-custom"
             />
             웰니스박스
           </Link>
