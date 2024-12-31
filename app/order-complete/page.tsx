@@ -1,15 +1,28 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function OrderComplete() {
-  const searchParams = useSearchParams();
-  const userAddress = searchParams.get("userAddress");
-  const userContact = searchParams.get("userContact");
-  const totalPrice = parseFloat(searchParams.get("totalPrice") || "0");
-  const cartItems = JSON.parse(
-    decodeURIComponent(searchParams.get("cartItems") || "[]")
-  );
+  const [paymentDetails, setPaymentDetails] = useState<any>(null);
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const userAddress = searchParams.get("userAddress");
+    const userContact = searchParams.get("userContact");
+    const totalPrice = parseFloat(searchParams.get("totalPrice") || "0");
+    const cartItems = JSON.parse(
+      decodeURIComponent(searchParams.get("cartItems") || "[]")
+    );
+    setPaymentDetails({
+      userAddress,
+      userContact,
+      totalPrice,
+      cartItems,
+    });
+  }, []);
+  if (!paymentDetails) {
+    return <span className="mt-8">처리 중...</span>;
+  }
+  const { userAddress, userContact, totalPrice, cartItems } = paymentDetails;
   return (
     <div className="w-full max-w-[640px] mx-auto mt-4">
       <h1 className="text-2xl font-bold text-center text-gray-800 mb-4 mt-8">
@@ -52,7 +65,7 @@ export default function OrderComplete() {
         </div>
       </div>
       <button
-        className="w-full bg-sky-400 hover:bg-sky-500 text-white py-2 mt-4 rounded-lg font-bold"
+        className="w-full bg-sky-400 text-white py-2 mt-4 rounded-lg font-bold"
         onClick={() => (window.location.href = "/")}
       >
         홈으로 이동
