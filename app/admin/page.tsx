@@ -9,6 +9,7 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
+  getPharmacies,
 } from "@/lib/product";
 import { getUploadUrl } from "@/lib/upload";
 import { useEffect, useState } from "react";
@@ -16,6 +17,7 @@ import { useEffect, useState } from "react";
 export default function Admin() {
   const [categories, setCategories] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
+  const [pharmacies, setPharmacies] = useState<any[]>([]);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<any>(null);
@@ -26,8 +28,10 @@ export default function Admin() {
     const fetchData = async () => {
       const categories: any[] = await getCategories();
       const products: any[] = await getProducts();
+      const pharmacies: any[] = await getPharmacies();
       setCategories(categories);
       setProducts(products);
+      setPharmacies(pharmacies);
     };
     fetchData();
   }, []);
@@ -190,6 +194,7 @@ export default function Admin() {
                 <button
                   className="px-3 py-1 bg-rose-400 text-white rounded hover:bg-rose-500"
                   onClick={async () => {
+                    if (!confirm("정말로 삭제하시겠습니까?")) return;
                     try {
                       await deleteCategory(selectedCategory.idx);
                       const updatedCategories = await getCategories();
@@ -270,7 +275,9 @@ export default function Admin() {
               )}
               <div className="p-2 flex flex-col gap-1">
                 <span className="text-xs text-gray-500">
-                  {product.Category_.name}
+                  {product.categories
+                    .map((category: any) => category.name)
+                    .join(", ")}
                 </span>
                 <h2 className="text-sm font-bold text-gray-800 line-clamp-2">
                   {product.name || ""}
@@ -344,24 +351,81 @@ export default function Admin() {
               }
               className="border w-full mb-2 p-2"
             />
-            <select
-              value={selectedProduct?.categoryIdx || ""}
-              onChange={(e) =>
-                setSelectedProduct({
-                  ...selectedProduct,
-                  categoryIdx: parseInt(e.target.value, 10),
-                })
-              }
-              className="border w-full mb-2 p-2"
-            >
-              <option value="">카테고리 선택</option>
-              {categories.map((category) => (
-                <option key={category.idx} value={category.idx}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-            <div className="mb-2">
+            <div className="mb-4">
+              <h3 className="font-bold text-gray-700 my-2">카테고리 선택</h3>
+              <div className="flex flex-wrap gap-2">
+                {categories.map((category) => (
+                  <label
+                    key={category.idx}
+                    className="flex items-center space-x-2"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={
+                        selectedProduct?.categories?.some(
+                          (selectedCategory: any) =>
+                            selectedCategory.idx === category.idx
+                        ) || false
+                      }
+                      onChange={(e) => {
+                        const updatedCategories = e.target.checked
+                          ? [
+                              ...(selectedProduct?.categories || []),
+                              { idx: category.idx, name: category.name },
+                            ]
+                          : selectedProduct.categories.filter(
+                              (selectedCategory: any) =>
+                                selectedCategory.idx !== category.idx
+                            );
+                        setSelectedProduct({
+                          ...selectedProduct,
+                          categories: updatedCategories,
+                        });
+                      }}
+                    />
+                    <span>{category.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="mb-4">
+              <h3 className="font-bold text-gray-700 my-2">약국 선택</h3>
+              <div className="flex flex-wrap gap-2">
+                {pharmacies.map((pharmacy) => (
+                  <label
+                    key={pharmacy.idx}
+                    className="flex items-center space-x-2"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={
+                        selectedProduct?.pharmacies?.some(
+                          (selectedPharmacy: any) =>
+                            selectedPharmacy.idx === pharmacy.idx
+                        ) || false
+                      }
+                      onChange={(e) => {
+                        const updatedPharmacies = e.target.checked
+                          ? [
+                              ...(selectedProduct?.pharmacies || []),
+                              { idx: pharmacy.idx, name: pharmacy.name },
+                            ]
+                          : selectedProduct.pharmacies.filter(
+                              (selectedPharmacy: any) =>
+                                selectedPharmacy.idx !== pharmacy.idx
+                            );
+                        setSelectedProduct({
+                          ...selectedProduct,
+                          pharmacies: updatedPharmacies,
+                        });
+                      }}
+                    />
+                    <span>{pharmacy.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="mb-2 flex items-center gap-2">
               <input
                 type="file"
                 accept="image/*"
@@ -369,10 +433,10 @@ export default function Admin() {
                   const file = e.target.files?.[0];
                   if (file) setSelectedFile(file);
                 }}
-                className="border w-full mb-2 p-2"
+                className="border w-full p-2"
               />
               <button
-                className="px-3 py-1 bg-blue-400 text-white rounded hover:bg-blue-500"
+                className="text-sm cursor-pointer w-20 h-8 px-3 py-1 bg-sky-400 text-white rounded hover:bg-sky-500"
                 onClick={async () => {
                   if (!selectedFile) return;
                   setIsUploadingImage(true);
@@ -446,10 +510,17 @@ export default function Admin() {
                 <button
                   className="px-3 py-1 bg-rose-400 text-white rounded hover:bg-rose-500"
                   onClick={async () => {
-                    await deleteProduct(selectedProduct.idx);
-                    const updatedProducts = await getProducts();
-                    setProducts(updatedProducts);
-                    setIsProductModalOpen(false);
+                    if (!confirm("정말로 삭제하시겠습니까?")) return;
+                    try {
+                      await deleteProduct(selectedProduct.idx);
+                      const updatedProducts = await getProducts();
+                      setProducts(updatedProducts);
+                      setIsProductModalOpen(false);
+                    } catch (error: any) {
+                      alert(
+                        error.message || "상품 삭제 중 오류가 발생했습니다."
+                      );
+                    }
                   }}
                 >
                   삭제

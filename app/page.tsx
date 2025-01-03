@@ -50,8 +50,10 @@ export default function Home() {
   useEffect(() => {
     let filtered = [...allProducts];
     if (selectedCategory !== null) {
-      filtered = filtered.filter(
-        (product) => product.categoryIdx === selectedCategory
+      filtered = filtered.filter((product) =>
+        product.categories.some(
+          (category: any) => category.idx === selectedCategory
+        )
       );
     }
     if (selectedPackage === "7일") {
@@ -144,7 +146,7 @@ export default function Home() {
           }
         `}</style>
         {isLoading ? (
-          Array(10)
+          Array(12)
             .fill(0)
             .map((_, index) => (
               <div key={index} className="flex flex-col items-center">
@@ -222,7 +224,7 @@ export default function Home() {
       </section>
       <section className="mb-4 grid grid-cols-2 sm:grid-cols-3 gap-4 px-4 py-4">
         {isLoading
-          ? Array(10)
+          ? Array(12)
               .fill(0)
               .map((_, index) => <Skeleton key={index} />)
           : products.map((product, index) => (
@@ -244,7 +246,9 @@ export default function Home() {
                 )}
                 <div className="p-2 flex flex-col gap-1 flex-grow">
                   <span className="text-xs text-gray-500">
-                    {product.Category_.name}
+                    {product.categories
+                      .map((category: any) => category.name)
+                      .join(", ")}
                   </span>
                   <h3 className="text-sm font-bold text-gray-800 line-clamp-2">
                     {product.name}

@@ -13,38 +13,55 @@ model Category_ {
   name      String?    @unique
   image     String?
   createdAt DateTime   @default(now())
-  updatedAt DateTime   @default(now())
-  Product_  Product_[]
+  updatedAt DateTime   @default(now()) @updatedAt
+  products  Product_[] @relation("CategoryProductRelation")
 }
 
 model Product_ {
-  idx         Int       @id @default(autoincrement())
+  idx         Int         @id @default(autoincrement())
   name        String?
   images      String[]
   description String?
   price       Int?
-  categoryIdx Int       @default(1)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @default(now())
-  Category_   Category_ @relation(fields: [categoryIdx], references: [idx])
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @default(now()) @updatedAt
+  categories  Category_[] @relation("CategoryProductRelation")
+  pharmacies  Pharmacy_[] @relation("PharmacyProductRelation")
 }
 
-model Comment {
-  idx           Int       @id @default(autoincrement())
-  content       String
-  images        String[]
-  created_at    DateTime  @default(now())
-  updated_at    DateTime
-  nickname      String?
-  ip            String?
-  password      String?
-  userIdx       Int?
-  postIdx       Int
-  parentIdx     Int?
-  Comment       Comment?  @relation("CommentToComment", fields: [parentIdx], references: [idx])
-  other_Comment Comment[] @relation("CommentToComment")
-  Post          Post      @relation(fields: [postIdx], references: [idx], onDelete: Cascade)
-  User          User?     @relation(fields: [userIdx], references: [idx], onDelete: Cascade)
+model Pharmacy_ {
+  idx       Int        @id @default(autoincrement())
+  name      String?
+  address   String?
+  userId    String?    @unique
+  password  String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @default(now()) @updatedAt
+  products  Product_[] @relation("PharmacyProductRelation")
+  orders    Order_[]
+}
+
+model Order_ {
+  idx         Int        @id @default(autoincrement())
+  phone       String?
+  address     String?
+  password    String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @default(now()) @updatedAt
+  pharmacyIdx Int?
+  pharmacy    Pharmacy_? @relation(fields: [pharmacyIdx], references: [idx])
+}
+
+model User {
+  idx        Int       @id @default(autoincrement())
+  id         String    @unique
+  password   String
+  nickname   String    @unique
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  avatar     String?
+  comment    Comment[]
+  post       Post[]
 }
 
 model Post {
@@ -54,12 +71,30 @@ model Post {
   content    String
   password   String?
   created_at DateTime  @default(now())
-  updated_at DateTime
+  updated_at DateTime  @updatedAt
   userIdx    Int?
   ip         String?
   nickname   String?
-  Comment    Comment[]
-  User       User?     @relation(fields: [userIdx], references: [idx], onDelete: Cascade)
+  comment    Comment[]
+  user       User?     @relation(fields: [userIdx], references: [idx], onDelete: Cascade)
+}
+
+model Comment {
+  idx           Int       @id @default(autoincrement())
+  content       String
+  images        String[]
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  nickname      String?
+  ip            String?
+  password      String?
+  userIdx       Int?
+  postIdx       Int
+  parentIdx     Int?
+  Comment       Comment?  @relation("CommentToComment", fields: [parentIdx], references: [idx])
+  other_Comment Comment[] @relation("CommentToComment")
+  post          Post      @relation(fields: [postIdx], references: [idx], onDelete: Cascade)
+  user          User?     @relation(fields: [userIdx], references: [idx], onDelete: Cascade)
 }
 
 model Subscription {
@@ -75,16 +110,4 @@ model Subscription {
   commentId  Int?
 
   @@unique([endpoint, type, postId, commentId])
-}
-
-model User {
-  idx        Int       @id @default(autoincrement())
-  id         String    @unique
-  password   String
-  nickname   String    @unique
-  created_at DateTime  @default(now())
-  updated_at DateTime
-  avatar     String?
-  Comment    Comment[]
-  Post       Post[]
 }

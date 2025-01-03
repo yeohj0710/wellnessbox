@@ -39,7 +39,11 @@ export async function updateCategory(
 
 export async function deleteCategory(categoryIdx: number) {
   const relatedProducts = await db.product_.findMany({
-    where: { categoryIdx },
+    where: {
+      categories: {
+        some: { idx: categoryIdx },
+      },
+    },
   });
   if (relatedProducts.length > 0) {
     throw new Error("해당 카테고리에 포함된 상품을 먼저 삭제해야 합니다.");
@@ -58,9 +62,15 @@ export async function getProducts() {
       images: true,
       description: true,
       price: true,
-      categoryIdx: true,
-      Category_: {
+      categories: {
         select: {
+          idx: true,
+          name: true,
+        },
+      },
+      pharmacies: {
+        select: {
+          idx: true,
           name: true,
         },
       },
@@ -90,15 +100,23 @@ export async function createProduct(data: {
   images: string[];
   description: string;
   price: number;
-  categoryIdx: number;
+  categories: { idx: number; name?: string }[];
+  pharmacies: { idx: number; name?: string }[];
 }) {
+  const formatRelation = (relation: any[]) =>
+    relation.map((item) => ({ idx: item.idx }));
   const newProduct = await db.product_.create({
     data: {
       name: data.name,
       images: data.images || [],
       description: data.description || "",
       price: data.price || 0,
-      categoryIdx: data.categoryIdx,
+      categories: {
+        connect: formatRelation(data.categories),
+      },
+      pharmacies: {
+        connect: formatRelation(data.pharmacies),
+      },
     },
   });
   return newProduct;
@@ -111,7 +129,8 @@ export async function updateProduct(
     images: string[];
     description: string;
     price: number;
-    categoryIdx: number;
+    categories: { idx: number; name: string }[];
+    pharmacies: { idx: number; name: string }[];
   }
 ) {
   const updatedProduct = await db.product_.update({
@@ -121,7 +140,14 @@ export async function updateProduct(
       images: data.images || [],
       description: data.description || "",
       price: data.price || 0,
-      categoryIdx: data.categoryIdx,
+      categories: {
+        set: [],
+        connect: data.categories.map((category) => ({ idx: category.idx })),
+      },
+      pharmacies: {
+        set: [],
+        connect: data.pharmacies.map((pharmacy) => ({ idx: pharmacy.idx })),
+      },
     },
   });
   return updatedProduct;
@@ -132,4 +158,13 @@ export async function deleteProduct(productIdx: number) {
     where: { idx: productIdx },
   });
   return deletedProduct;
+}
+
+export async function getPharmacies() {
+  return await db.pharmacy_.findMany({
+    select: {
+      idx: true,
+      name: true,
+    },
+  });
 }

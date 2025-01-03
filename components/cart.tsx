@@ -114,7 +114,6 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
       <Script
         src="https://cdn.iamport.kr/js/iamport.payment-1.2.0.js"
         onLoad={() => {
-          console.log("IAMPORT script loaded");
           setSdkLoaded(true);
         }}
         strategy="afterInteractive"
