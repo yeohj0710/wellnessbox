@@ -35,6 +35,11 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
           phoneNumber: userContact,
         },
       });
+      console.log(response);
+      if (response.code === "FAILURE_TYPE_PG") {
+        alert(`결제가 취소되었습니다.`);
+        return;
+      }
       if (!response.txId || response.transactionType !== "PAYMENT") {
         alert("결제에 실패하였습니다. 결제 상태를 확인해주세요.");
         return;
@@ -63,7 +68,6 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
       alert("주소와 연락처를 입력해주세요.");
       return;
     }
-
     const IMP = window.IMP;
     if (selectedPaymentMethod === "card") {
       await handlePaymentRequest(
@@ -119,7 +123,10 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
         strategy="afterInteractive"
       />
       <div className="w-full max-w-[640px] mx-auto bg-sky-400 h-12 sm:h-14 flex items-center px-4 mb-6 border-b border-gray-200">
-        <button onClick={onBack} className="text-white text-xl mr-4 font-bold">
+        <button
+          onClick={onBack}
+          className="text-white text-xl mr-4 font-bold hover:scale-110"
+        >
           ←
         </button>
         <h1 className="sm:text-lg font-bold text-white">장바구니</h1>
@@ -157,6 +164,10 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
                       : i
                   );
                   onUpdateCart(updatedItems);
+                  localStorage.setItem(
+                    "cartItems",
+                    JSON.stringify(updatedItems)
+                  );
                 }}
                 className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-lg"
               >
@@ -169,6 +180,10 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
                     i.idx === item.idx ? { ...i, quantity: i.quantity + 1 } : i
                   );
                   onUpdateCart(updatedItems);
+                  localStorage.setItem(
+                    "cartItems",
+                    JSON.stringify(updatedItems)
+                  );
                 }}
                 className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-lg"
               >
@@ -180,6 +195,10 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
                     (i: any) => i.idx !== item.idx
                   );
                   onUpdateCart(updatedItems);
+                  localStorage.setItem(
+                    "cartItems",
+                    JSON.stringify(updatedItems)
+                  );
                 }}
                 className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center"
               >

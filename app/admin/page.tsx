@@ -35,6 +35,15 @@ export default function Admin() {
     };
     fetchData();
   }, []);
+  const Skeleton = () => (
+    <div className="flex flex-col border rounded-lg overflow-hidden shadow-sm cursor-pointer">
+      <div className="h-32 bg-gray-300 animate-pulse"></div>
+      <div className="p-2">
+        <div className="w-2/3 h-4 bg-gray-300 rounded-md animate-pulse mb-2"></div>
+        <div className="w-1/2 h-4 bg-gray-300 rounded-md animate-pulse"></div>
+      </div>
+    </div>
+  );
   return (
     <>
       <div className="mt-8 w-full sm:w-[640px] xl:w-1/2 px-5 py-7 bg-white sm:border sm:border-gray-200 sm:rounded-lg sm:shadow-lg">
@@ -51,34 +60,38 @@ export default function Admin() {
           </button>
         </div>
         <hr className="border-t border-gray-300 mb-6" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {categories.map((category) => (
-            <div
-              key={category.idx}
-              className="flex flex-col border rounded-md overflow-hidden shadow-sm hover:shadow transition-shadow duration-150 cursor-pointer bg-white"
-              onClick={() => {
-                setSelectedCategory(category);
-                setIsCategoryModalOpen(true);
-              }}
-            >
-              {category.image ? (
-                <img
-                  src={category.image}
-                  alt={category.name || "Category"}
-                  className="h-32 w-full object-contain bg-white"
-                />
-              ) : (
-                <div className="h-28 bg-gray-200 flex items-center justify-center text-gray-500">
-                  이미지 없음
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {categories.length === 0
+            ? Array(12)
+                .fill(0)
+                .map((_, index) => <Skeleton key={index} />)
+            : categories.map((category) => (
+                <div
+                  key={category.idx}
+                  className="flex flex-col border rounded-md overflow-hidden shadow-sm hover:shadow-lg hover:scale-105 transition-transform duration-300 cursor-pointer bg-white"
+                  onClick={() => {
+                    setSelectedCategory(category);
+                    setIsCategoryModalOpen(true);
+                  }}
+                >
+                  {category.image ? (
+                    <img
+                      src={category.image}
+                      alt={category.name || "Category"}
+                      className="h-32 w-full object-contain bg-white"
+                    />
+                  ) : (
+                    <div className="h-28 bg-gray-200 flex items-center justify-center text-gray-500">
+                      이미지 없음
+                    </div>
+                  )}
+                  <div className="p-2 flex flex-col gap-1">
+                    <h2 className="text-sm font-semibold text-gray-800 line-clamp-1">
+                      {category.name || ""}
+                    </h2>
+                  </div>
                 </div>
-              )}
-              <div className="p-2 flex flex-col gap-1">
-                <h2 className="text-sm font-semibold text-gray-800 line-clamp-1">
-                  {category.name || ""}
-                </h2>
-              </div>
-            </div>
-          ))}
+              ))}
         </div>
       </div>
       {isCategoryModalOpen && (
@@ -252,47 +265,51 @@ export default function Admin() {
           </button>
         </div>
         <hr className="border-t border-gray-300 mb-6" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {products.map((product) => (
-            <div
-              key={product.idx}
-              className="flex flex-col border rounded-md overflow-hidden shadow-sm hover:shadow transition-shadow duration-150 cursor-pointer bg-white"
-              onClick={() => {
-                setSelectedProduct(product);
-                setIsProductModalOpen(true);
-              }}
-            >
-              {product.images?.[0] ? (
-                <img
-                  src={product.images[0]}
-                  alt={product.name || "Product"}
-                  className="h-32 w-full object-contain bg-white"
-                />
-              ) : (
-                <div className="h-28 bg-gray-200 flex items-center justify-center text-gray-500">
-                  이미지 없음
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {products.length === 0
+            ? Array(12)
+                .fill(0)
+                .map((_, index) => <Skeleton key={index} />)
+            : products.map((product) => (
+                <div
+                  key={product.idx}
+                  className="flex flex-col border rounded-md overflow-hidden shadow-sm hover:shadow-lg hover:scale-105 transition-transform duration-300 cursor-pointer bg-white"
+                  onClick={() => {
+                    setSelectedProduct(product);
+                    setIsProductModalOpen(true);
+                  }}
+                >
+                  {product.images?.[0] ? (
+                    <img
+                      src={product.images[0]}
+                      alt={product.name || "Product"}
+                      className="h-32 w-full object-contain bg-white"
+                    />
+                  ) : (
+                    <div className="h-28 bg-gray-200 flex items-center justify-center text-gray-500">
+                      이미지 없음
+                    </div>
+                  )}
+                  <div className="p-2 flex flex-col gap-1">
+                    <span className="text-xs text-gray-500">
+                      {product.categories
+                        .map((category: any) => category.name)
+                        .join(", ")}
+                    </span>
+                    <h2 className="text-sm font-bold text-gray-800 line-clamp-2">
+                      {product.name || ""}
+                    </h2>
+                    <p className="text-xs text-gray-500 line-clamp-1">
+                      {product.description || ""}
+                    </p>
+                    <p className="mt-1 text-sm font-bold text-sky-500">
+                      {product.price
+                        ? `${product.price.toLocaleString()}원`
+                        : "0원"}
+                    </p>
+                  </div>
                 </div>
-              )}
-              <div className="p-2 flex flex-col gap-1">
-                <span className="text-xs text-gray-500">
-                  {product.categories
-                    .map((category: any) => category.name)
-                    .join(", ")}
-                </span>
-                <h2 className="text-sm font-bold text-gray-800 line-clamp-2">
-                  {product.name || ""}
-                </h2>
-                <p className="text-xs text-gray-500 line-clamp-1">
-                  {product.description || ""}
-                </p>
-                <p className="mt-1 text-sm font-bold text-sky-500">
-                  {product.price
-                    ? `${product.price.toLocaleString()}원`
-                    : "0원"}
-                </p>
-              </div>
-            </div>
-          ))}
+              ))}
         </div>
       </div>
       {isProductModalOpen && (

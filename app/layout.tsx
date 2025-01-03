@@ -3,7 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { SITE_URL } from "@/lib/constants";
 import TopBar from "@/components/topBar";
-import { FooterProvider, useFooter } from "@/components/footerContext";
+import { FooterProvider } from "@/components/footerContext";
+import { LocalStorageProvider } from "@/components/localStorage";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -39,10 +40,12 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.className} flex flex-col bg-gray-50`}>
         <FooterProvider>
-          <TopBar />
-          <main className="flex-grow pt-14 min-h-[105vh] flex flex-col items-center gap-8">
-            {children}
-          </main>
+          <LocalStorageProvider>
+            <TopBar />
+            <main className="flex-grow pt-14 min-h-[105vh] flex flex-col items-center gap-8">
+              {children}
+            </main>
+          </LocalStorageProvider>
         </FooterProvider>
       </body>
     </html>

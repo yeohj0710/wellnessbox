@@ -90,12 +90,12 @@ export default function PaymentTest() {
           value={amount}
           onChange={(e) => setAmount(Number(e.target.value))}
           placeholder="결제 금액 입력"
-          className="w-full max-w-md p-4 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-4"
+          className="w-full max-w-md px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 mb-2"
         />
         <button
           onClick={handlePayment}
           disabled={loading || !sdkLoaded}
-          className={`w-full max-w-md bg-blue-500 text-white py-3 rounded-md shadow-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition duration-300 ${
+          className={`w-full max-w-md bg-sky-400 text-white py-2 rounded-md shadow-lg hover:bg-sky-500 transition duration-300 ${
             loading || !sdkLoaded ? "cursor-not-allowed opacity-50" : ""
           }`}
         >

@@ -18,16 +18,30 @@ const Skeleton = () => (
 
 export default function Home() {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [totalPrice, setTotalPrice] = useState(0);
   const [isCartVisible, setIsCartVisible] = useState(false);
-  const [cartItems, setCartItems] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [selectedPackage, setSelectedPackage] = useState<string>("");
+  const [totalPrice, setTotalPrice] = useState(0);
   const { hideFooter, showFooter } = useFooter();
+  const [cartItems, setCartItems] = useState<any[]>(() => {
+    if (typeof window !== "undefined") {
+      const storedCart = localStorage.getItem("cartItems");
+      return storedCart ? JSON.parse(storedCart) : [];
+    }
+    return [];
+  });
+  useEffect(() => {
+    localStorage.setItem("cartItems", JSON.stringify(cartItems));
+    const updatedTotalPrice = cartItems.reduce(
+      (acc: number, item: any) => acc + item.price * item.quantity,
+      0
+    );
+    setTotalPrice(updatedTotalPrice);
+  }, [cartItems]);
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -106,7 +120,7 @@ export default function Home() {
         },
       ];
     });
-    setTotalPrice((prev) => prev + product.price * quantity);
+    setTotalPrice((prev: any) => prev + product.price * quantity);
   };
   return isCartVisible ? (
     <Cart
@@ -269,7 +283,7 @@ export default function Home() {
         <div className="fixed bottom-0 left-0 right-0 w-full max-w-[640px] mx-auto bg-sky-400 text-white p-4 flex justify-between items-center text-lg font-bold">
           <span>₩{totalPrice.toLocaleString()}</span>
           <button
-            className="bg-white text-sky-400 px-6 py-2 rounded-full font-semibold"
+            className="bg-white text-sky-400 hover:bg-sky-100 transition px-6 py-2 rounded-full font-semibold"
             onClick={() => setIsCartVisible(true)}
           >
             장바구니 보기
