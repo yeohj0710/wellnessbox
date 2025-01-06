@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 
 interface AddressModalProps {
@@ -16,6 +16,13 @@ export default function AddressModal({ onClose, onSave }: AddressModalProps) {
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
   const handleSearch = async () => {
     if (searchQuery.length <= 4) {
       setIsLoading(true);
@@ -58,8 +65,14 @@ export default function AddressModal({ onClose, onSave }: AddressModalProps) {
   };
   return (
     <>
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-        <div className="bg-white rounded-lg shadow-lg p-6 w-96 m-2">
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+        onClick={onClose}
+      >
+        <div
+          className="bg-white rounded-lg shadow-lg p-6 w-96 m-2"
+          onClick={(e) => e.stopPropagation()}
+        >
           <h2 className="text-black text-xl font-bold mb-4">주소 설정</h2>
           <div className="mb-4 flex items-center">
             <input

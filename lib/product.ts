@@ -168,3 +168,18 @@ export async function getPharmacies() {
     },
   });
 }
+
+export async function getPharmaciesByProduct(productIdx: number) {
+  return await db.pharmacy_.findMany({
+    where: {
+      products: {
+        some: { idx: productIdx },
+      },
+    },
+    select: {
+      idx: true,
+      name: true,
+      address: true,
+    },
+  });
+}

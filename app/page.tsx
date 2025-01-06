@@ -5,6 +5,8 @@ import ProductDetail from "@/components/productDetail";
 import Cart from "@/components/cart";
 import { getCategories, getProducts } from "@/lib/product";
 import { useFooter } from "@/components/footerContext";
+import axios from "axios";
+import AddressModal from "@/components/addressModal";
 
 const Skeleton = () => (
   <div className="flex flex-col border rounded-lg overflow-hidden shadow-sm cursor-pointer">
@@ -28,6 +30,9 @@ export default function Home() {
   const [totalPrice, setTotalPrice] = useState(0);
   const { hideFooter, showFooter } = useFooter();
   const [userAddress, setUserAddress] = useState("");
+  const [pharmacies, setPharmacies] = useState<any[]>([]);
+  const [selectedPharmacy, setSelectedPharmacy] = useState<any>(null);
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [cartItems, setCartItems] = useState<any[]>(() => {
     if (typeof window !== "undefined") {
       const storedCart = localStorage.getItem("cartItems");
@@ -35,14 +40,6 @@ export default function Home() {
     }
     return [];
   });
-  useEffect(() => {
-    localStorage.setItem("cartItems", JSON.stringify(cartItems));
-    const updatedTotalPrice = cartItems.reduce(
-      (acc: number, item: any) => acc + item.price * item.quantity,
-      0
-    );
-    setTotalPrice(updatedTotalPrice);
-  }, [cartItems]);
   useEffect(() => {
     const storedAddress = localStorage.getItem("address");
     setUserAddress(storedAddress || "");
@@ -65,6 +62,45 @@ export default function Home() {
     fetchData();
   }, []);
   useEffect(() => {
+    localStorage.setItem("cartItems", JSON.stringify(cartItems));
+    const updatedTotalPrice = cartItems.reduce(
+      (acc: number, item: any) => acc + item.price * item.quantity,
+      0
+    );
+    setTotalPrice(updatedTotalPrice);
+    if (cartItems.length === 0) {
+      setProducts(allProducts);
+      setPharmacies([]);
+      setSelectedPharmacy(null);
+      return;
+    }
+    const fetchPharmacies = async () => {
+      if (cartItems.length === 0) {
+        setPharmacies([]);
+        setSelectedPharmacy(null);
+        return;
+      }
+      setIsLoading(true);
+      try {
+        const response = await axios.post("/api/get-sorted-pharmacies", {
+          productIdx: cartItems[0].idx,
+          userAddress,
+        });
+        setPharmacies(response.data.pharmacies);
+        if (response.data.pharmacies.length > 0) {
+          setSelectedPharmacy(response.data.pharmacies[0]);
+        }
+      } catch (error) {
+        console.error("약국 정보를 가져오는 데 실패했습니다:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    if (userAddress && cartItems.length > 0) {
+      fetchPharmacies();
+    }
+  }, [userAddress, cartItems]);
+  useEffect(() => {
     if (totalPrice > 0 || isCartVisible) {
       hideFooter();
     } else {
@@ -73,6 +109,11 @@ export default function Home() {
   }, [totalPrice, isCartVisible, hideFooter, showFooter]);
   useEffect(() => {
     let filtered = [...allProducts];
+    if (selectedPharmacy) {
+      filtered = filtered.filter((product: any) =>
+        product.pharmacies.some((p: any) => p.idx === selectedPharmacy.idx)
+      );
+    }
     if (selectedCategory !== null) {
       filtered = filtered.filter((product) =>
         product.categories.some(
@@ -96,7 +137,7 @@ export default function Home() {
       );
     }
     setProducts(filtered);
-  }, [selectedCategory, selectedPackage, allProducts]);
+  }, [allProducts, selectedPharmacy, selectedCategory, selectedPackage]);
   const handleAddToCart = (
     product: any,
     quantity: number,
@@ -152,8 +193,50 @@ export default function Home() {
       }`}
     >
       {userAddress && (
-        <div className="bg-gray-100 px-4 py-2 mx-2 sm:mx-0 mb-4 rounded-md text-sm text-gray-700">
-          현재 주소: {userAddress}
+        <div className="bg-gray-100 px-4 gap-3 py-4 mx-3 sm:mx-2 mb-4 rounded-md flex items-center justify-between text-sm text-gray-700 shadow-sm">
+          <div>
+            <p className="font-semibold text-gray-800">현재 주소</p>
+            <p className="text-gray-600 mt-1">{userAddress}</p>
+          </div>
+          <button
+            onClick={() => setIsAddressModalOpen(true)}
+            className="text-sm min-w-12 font-normal px-1.5 sm:px-3 py-1 bg-sky-400 text-white rounded hover:bg-sky-500 transition duration-200"
+          >
+            수정
+          </button>
+        </div>
+      )}
+      {isAddressModalOpen && (
+        <AddressModal
+          onClose={() => setIsAddressModalOpen(false)}
+          onSave={(newAddress) => {
+            setUserAddress(newAddress);
+            localStorage.setItem("address", newAddress);
+          }}
+        />
+      )}
+      {pharmacies.length > 0 && (
+        <div>
+          <div className="flex gap-2 px-2 mx-1 sm:mx-0 mb-2 overflow-x-auto scrollbar-hide">
+            {pharmacies.map((pharmacy: any) => (
+              <div
+                key={pharmacy.idx}
+                className={`min-w-[120px] p-2 mb-2 border rounded-lg shadow-sm cursor-pointer 
+          hover:bg-gray-100 transition 
+          ${selectedPharmacy?.idx === pharmacy.idx ? "bg-gray-100" : ""}`}
+                onClick={() => {
+                  setSelectedPharmacy(pharmacy);
+                }}
+              >
+                <h4 className="text-sm font-medium text-gray-700 text-center">
+                  {pharmacy.name}
+                </h4>
+                <p className="text-xs text-gray-500 text-center">
+                  {pharmacy.distance?.toFixed(1)} km
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
       <section
@@ -251,7 +334,18 @@ export default function Home() {
           ))}
         </div>
       </section>
-      <section className="mb-4 grid grid-cols-2 sm:grid-cols-3 gap-4 px-4 py-4">
+      {selectedPharmacy && (
+        <div className="bg-gray-100 px-4 py-2 mt-1.5 mb-4 rounded-md text-sm text-gray-700">
+          선택한 상품을 보유한 약국 중{" "}
+          <strong className="text-sky-500">
+            {selectedPharmacy.distance?.toFixed(1)}km
+          </strong>{" "}
+          거리에 위치한{" "}
+          <strong className="text-sky-500">{selectedPharmacy.name}</strong> 의
+          상품들이에요.
+        </div>
+      )}
+      <section className="mb-4 grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 p-3 sm:p-4">
         {isLoading
           ? Array(12)
               .fill(0)
@@ -294,6 +388,16 @@ export default function Home() {
               </div>
             ))}
       </section>
+      {products.length === 0 && !isLoading && (
+        <div className="min-h-[30vh] mb-12 flex flex-col items-center justify-center py-10">
+          <p className="text-gray-500 text-sm mb-3">
+            조건에 맞는 상품이 없어요.
+          </p>
+          <p className="text-gray-400 text-xs">
+            필터를 변경하거나 다시 확인해 주세요.
+          </p>
+        </div>
+      )}
       {totalPrice > 0 && (
         <div className="px-5 fixed bottom-0 left-0 right-0 w-full max-w-[640px] mx-auto bg-sky-400 text-white p-4 flex justify-between items-center text-lg font-bold">
           <span>₩{totalPrice.toLocaleString()}</span>
