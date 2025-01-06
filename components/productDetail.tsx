@@ -223,6 +223,7 @@ function FirstModal({
             setIsAddressModalOpen(false);
             onClose();
             onProductDetailClose();
+            window.location.reload();
           }}
         />
       )}

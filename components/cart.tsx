@@ -164,9 +164,6 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
               )}
               <div className="flex-1">
                 <h2 className="font-bold">{item.name}</h2>
-                <p className="text-sm text-gray-500">
-                  {item.options.join(", ")}
-                </p>
                 <p className="font-bold text-lg text-sky-500">
                   ₩{item.price.toLocaleString()}
                 </p>
