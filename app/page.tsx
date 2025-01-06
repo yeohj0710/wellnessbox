@@ -27,6 +27,9 @@ export default function Home() {
   const [selectedPackage, setSelectedPackage] = useState<string>("");
   const [totalPrice, setTotalPrice] = useState(0);
   const { hideFooter, showFooter } = useFooter();
+  const [userAddress, setUserAddress] = useState(
+    () => localStorage.getItem("address") || ""
+  );
   const [cartItems, setCartItems] = useState<any[]>(() => {
     if (typeof window !== "undefined") {
       const storedCart = localStorage.getItem("cartItems");
@@ -137,12 +140,17 @@ export default function Home() {
     />
   ) : (
     <div
-      className={`w-full max-w-[640px] mx-auto mt-2 ${
+      className={`w-full max-w-[640px] mx-auto mt-4 ${
         totalPrice > 0 ? "pb-20" : ""
       }`}
     >
+      {userAddress && (
+        <div className="bg-gray-100 px-4 py-2 mb-4 rounded-md text-sm text-gray-700">
+          현재 주소: {userAddress}
+        </div>
+      )}
       <section
-        className="flex gap-4 px-4 py-3 overflow-x-auto"
+        className="flex gap-4 px-4 mt-1 pb-3 overflow-x-auto"
         style={{
           WebkitOverflowScrolling: "touch",
         }}
@@ -280,7 +288,7 @@ export default function Home() {
             ))}
       </section>
       {totalPrice > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 w-full max-w-[640px] mx-auto bg-sky-400 text-white p-4 flex justify-between items-center text-lg font-bold">
+        <div className="px-5 fixed bottom-0 left-0 right-0 w-full max-w-[640px] mx-auto bg-sky-400 text-white p-4 flex justify-between items-center text-lg font-bold">
           <span>₩{totalPrice.toLocaleString()}</span>
           <button
             className="bg-white text-sky-400 hover:bg-sky-100 transition px-6 py-2 rounded-full font-semibold"

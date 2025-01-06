@@ -6,10 +6,13 @@ import { TrashIcon } from "@heroicons/react/16/solid";
 
 export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
   const [sdkLoaded, setSdkLoaded] = useState(false);
-  const [userAddress, setUserAddress] = useState("");
+  const [userAddress, setUserAddress] = useState(
+    localStorage.getItem("address") || ""
+  );
   const [userContact, setUserContact] = useState("");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("card");
   const [showModal, setShowModal] = useState(false);
+
   const totalPrice = cartItems.reduce(
     (acc: any, item: any) => acc + item.price * item.quantity,
     0
@@ -105,13 +108,18 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
     }
   };
   useEffect(() => {
+    window.scrollTo(0, 0);
+    const storedAddress = localStorage.getItem("address");
+    if (storedAddress) {
+      setUserAddress(storedAddress);
+    }
     if (window.IMP) {
       setSdkLoaded(true);
     }
   }, []);
   return (
     <div
-      className={`w-full max-w-[640px] mx-auto bg-white ${
+      className={`w-full mt-16 max-w-[640px] mx-auto bg-white min-h-[100vh] ${
         totalPrice > 0 ? "pb-20" : ""
       }`}
     >
@@ -122,7 +130,7 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
         }}
         strategy="afterInteractive"
       />
-      <div className="w-full max-w-[640px] mx-auto bg-sky-400 h-12 sm:h-14 flex items-center px-4 mb-6 border-b border-gray-200">
+      <div className="fixed top-14 left-0 right-0 w-full max-w-[640px] mx-auto bg-sky-400 h-12 sm:h-14 flex items-center px-4 mb-6 border-b border-gray-200">
         <button
           onClick={onBack}
           className="text-white text-xl mr-4 font-bold hover:scale-110"
@@ -131,85 +139,103 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
         </button>
         <h1 className="sm:text-lg font-bold text-white">장바구니</h1>
       </div>
-      <div className="px-4">
+      <div className="px-4 sm:mt-2">
         <h2 className="text-lg font-bold pb-4 border-b mb-4">선택한 상품</h2>
       </div>
       <div className="space-y-4 px-4 mb-2">
-        {cartItems.map((item: any) => (
-          <div key={item.idx} className="flex items-center gap-4 border-b pb-4">
-            {item.images && item.images.length > 0 ? (
-              <img
-                src={item.images[0]}
-                alt={item.name}
-                className="w-16 h-16 rounded-md object-cover"
-              />
-            ) : (
-              <div className="w-16 h-16 rounded-md bg-gray-300 flex items-center justify-center text-xs text-gray-500">
-                이미지 없음
+        {cartItems.length > 0 ? (
+          cartItems.map((item: any) => (
+            <div
+              key={item.idx}
+              className="flex items-center gap-4 border-b pb-4"
+            >
+              {item.images && item.images.length > 0 ? (
+                <img
+                  src={item.images[0]}
+                  alt={item.name}
+                  className="w-16 h-16 rounded-md object-cover"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-md bg-gray-300 flex items-center justify-center text-xs text-gray-500">
+                  이미지 없음
+                </div>
+              )}
+              <div className="flex-1">
+                <h2 className="font-bold">{item.name}</h2>
+                <p className="text-sm text-gray-500">
+                  {item.options.join(", ")}
+                </p>
+                <p className="font-bold text-lg text-sky-500">
+                  ₩{item.price.toLocaleString()}
+                </p>
               </div>
-            )}
-            <div className="flex-1">
-              <h2 className="font-bold">{item.name}</h2>
-              <p className="text-sm text-gray-500">{item.options.join(", ")}</p>
-              <p className="font-bold text-lg">
-                ₩{item.price.toLocaleString()}
-              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    const updatedItems = cartItems.map((i: any) =>
+                      i.idx === item.idx && i.quantity > 1
+                        ? { ...i, quantity: i.quantity - 1 }
+                        : i
+                    );
+                    onUpdateCart(updatedItems);
+                    localStorage.setItem(
+                      "cartItems",
+                      JSON.stringify(updatedItems)
+                    );
+                  }}
+                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-lg"
+                >
+                  -
+                </button>
+                <span className="font-bold">{item.quantity}</span>
+                <button
+                  onClick={() => {
+                    const updatedItems = cartItems.map((i: any) =>
+                      i.idx === item.idx
+                        ? { ...i, quantity: i.quantity + 1 }
+                        : i
+                    );
+                    onUpdateCart(updatedItems);
+                    localStorage.setItem(
+                      "cartItems",
+                      JSON.stringify(updatedItems)
+                    );
+                  }}
+                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-lg"
+                >
+                  +
+                </button>
+                <button
+                  onClick={() => {
+                    const updatedItems = cartItems.filter(
+                      (i: any) => i.idx !== item.idx
+                    );
+                    onUpdateCart(updatedItems);
+                    localStorage.setItem(
+                      "cartItems",
+                      JSON.stringify(updatedItems)
+                    );
+                  }}
+                  className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center"
+                >
+                  <TrashIcon className="w-5 h-5 text-red-500" />
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  const updatedItems = cartItems.map((i: any) =>
-                    i.idx === item.idx && i.quantity > 1
-                      ? { ...i, quantity: i.quantity - 1 }
-                      : i
-                  );
-                  onUpdateCart(updatedItems);
-                  localStorage.setItem(
-                    "cartItems",
-                    JSON.stringify(updatedItems)
-                  );
-                }}
-                className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-lg"
-              >
-                -
-              </button>
-              <span className="font-bold">{item.quantity}</span>
-              <button
-                onClick={() => {
-                  const updatedItems = cartItems.map((i: any) =>
-                    i.idx === item.idx ? { ...i, quantity: i.quantity + 1 } : i
-                  );
-                  onUpdateCart(updatedItems);
-                  localStorage.setItem(
-                    "cartItems",
-                    JSON.stringify(updatedItems)
-                  );
-                }}
-                className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-lg"
-              >
-                +
-              </button>
-              <button
-                onClick={() => {
-                  const updatedItems = cartItems.filter(
-                    (i: any) => i.idx !== item.idx
-                  );
-                  onUpdateCart(updatedItems);
-                  localStorage.setItem(
-                    "cartItems",
-                    JSON.stringify(updatedItems)
-                  );
-                }}
-                className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center"
-              >
-                <TrashIcon className="w-5 h-5 text-red-500" />
-              </button>
-            </div>
+          ))
+        ) : (
+          <div className="flex justify-center items-center h-28">
+            <p className="text-gray-500 font-medium">장바구니가 텅 비었어요.</p>
           </div>
-        ))}
+        )}
       </div>
-      <h2 className="text-lg font-bold p-4 pb-2">주소 입력</h2>
+      <h2 className="text-lg font-bold p-4 pb-2">배송 주소</h2>
       <div className="px-4">
+        <p className="text-base text-gray-500 bg-gray-100 px-2.5 py-2 rounded cursor-not-allowed">
+          {userAddress || "저장된 주소가 없습니다."}
+        </p>
+      </div>
+      {/* <div className="px-4">
         <input
           type="text"
           placeholder="예: 서울특별시 서초구 반포대로 1길 23 456호"
@@ -217,7 +243,7 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
           onChange={(e) => setUserAddress(e.target.value)}
           className="w-full border rounded-md p-2 mb-2"
         />
-      </div>
+      </div> */}
       <h2 className="text-lg font-bold p-4 pb-2">연락처 입력</h2>
       <div className="px-4">
         <input
@@ -225,7 +251,7 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
           placeholder="예: 010-1234-5678"
           value={userContact}
           onChange={(e) => setUserContact(e.target.value)}
-          className="w-full border rounded-md p-2"
+          className="w-full border rounded-md px-2.5 py-2"
         />
       </div>
       <h2 className="text-lg font-bold p-4 mt-2">결제 방법</h2>
@@ -272,7 +298,7 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
       </div>
       {totalPrice > 0 && (
         <div
-          className={`fixed bottom-0 left-0 right-0 w-full max-w-[640px] mx-auto ${
+          className={`px-6 fixed bottom-0 left-0 right-0 w-full max-w-[640px] mx-auto ${
             totalPrice < 15000 ? "bg-gray-400" : "bg-sky-400"
           } text-white p-4 flex justify-between items-center text-lg font-bold`}
         >
