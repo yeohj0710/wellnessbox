@@ -28,7 +28,13 @@ export default function Home() {
   const [totalPrice, setTotalPrice] = useState(0);
   const { hideFooter, showFooter } = useFooter();
   const [userAddress, setUserAddress] = useState("");
-  const [cartItems, setCartItems] = useState<any[]>([]);
+  const [cartItems, setCartItems] = useState<any[]>(() => {
+    if (typeof window !== "undefined") {
+      const storedCart = localStorage.getItem("cartItems");
+      return storedCart ? JSON.parse(storedCart) : [];
+    }
+    return [];
+  });
   useEffect(() => {
     localStorage.setItem("cartItems", JSON.stringify(cartItems));
     const updatedTotalPrice = cartItems.reduce(
@@ -38,20 +44,23 @@ export default function Home() {
     setTotalPrice(updatedTotalPrice);
   }, [cartItems]);
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedAddress = localStorage.getItem("address");
-      setUserAddress(storedAddress || "");
-      const storedCart = localStorage.getItem("cartItems");
-      setCartItems(storedCart ? JSON.parse(storedCart) : []);
-    }
+    const storedAddress = localStorage.getItem("address");
+    setUserAddress(storedAddress || "");
     const fetchData = async () => {
-      setIsLoading(true);
-      const fetchedCategories = await getCategories();
-      const fetchedProducts = await getProducts();
-      setCategories(fetchedCategories);
-      setAllProducts(fetchedProducts);
-      setProducts(fetchedProducts);
-      setIsLoading(false);
+      try {
+        setIsLoading(true);
+        const [fetchedCategories, fetchedProducts] = await Promise.all([
+          getCategories(),
+          getProducts(),
+        ]);
+        setCategories(fetchedCategories);
+        setAllProducts(fetchedProducts);
+        setProducts(fetchedProducts);
+      } catch (error) {
+        console.error("데이터를 가져오는 데 실패하였습니다:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
     fetchData();
   }, []);

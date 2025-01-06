@@ -23,6 +23,12 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
   ) => {
     const PortOne: any = await import("@portone/browser-sdk/v2");
     try {
+      const queryString = new URLSearchParams({
+        userAddress,
+        userContact,
+        totalPrice: totalPrice.toString(),
+        cartItems: encodeURIComponent(JSON.stringify(cartItems)),
+      }).toString();
       const response = await PortOne.requestPayment({
         storeId: process.env.NEXT_PUBLIC_PORTONE_STORE_ID!,
         paymentId: `payment${Date.now()}`,
@@ -37,6 +43,7 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
           email: "buyer@example.com",
           phoneNumber: userContact,
         },
+        redirectUrl: `${window.location.origin}/order-complete?${queryString}`,
       });
       console.log(response);
       if (response.code === "FAILURE_TYPE_PG") {
@@ -48,12 +55,6 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
         return;
       }
       alert("결제가 완료되었습니다.");
-      const queryString = new URLSearchParams({
-        userAddress,
-        userContact,
-        totalPrice: totalPrice.toString(),
-        cartItems: encodeURIComponent(JSON.stringify(cartItems)),
-      }).toString();
       window.location.href = "/order-complete?" + queryString;
     } catch (error) {
       console.error("결제 요청 중 오류 발생:", error);
@@ -71,7 +72,6 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
       alert("주소와 연락처를 입력해주세요.");
       return;
     }
-    const IMP = window.IMP;
     if (selectedPaymentMethod === "card") {
       await handlePaymentRequest(
         "CARD",
@@ -82,30 +82,32 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
         "EASY_PAY",
         process.env.NEXT_PUBLIC_PORTONE_KAKAO_CHANNEL_KEY!
       );
-    } else if (selectedPaymentMethod === "toss") {
-      IMP.init(process.env.NEXT_PUBLIC_MERCHANT_ID!);
-      IMP.request_pay(
-        {
-          pg: "uplus",
-          pay_method: "card",
-          merchant_uid: `mid_${new Date().getTime()}`,
-          name: "웰니스박스 건강기능식품",
-          amount: totalPrice,
-          buyer_email: "buyer@example.com",
-          buyer_name: "user",
-          buyer_tel: userContact,
-          buyer_addr: userAddress,
-          buyer_postcode: "123-456",
-        },
-        (rsp: { success: boolean; imp_uid?: string; error_msg?: string }) => {
-          if (rsp.success) {
-            alert(`결제가 완료되었습니다! 결제 ID: ${rsp.imp_uid}`);
-          } else {
-            alert(`결제에 실패하였습니다. 오류 메시지: ${rsp.error_msg}`);
-          }
-        }
-      );
     }
+    // else if (selectedPaymentMethod === "toss") {
+    //   const IMP = window.IMP;
+    //   IMP.init(process.env.NEXT_PUBLIC_MERCHANT_ID!);
+    //   IMP.request_pay(
+    //     {
+    //       pg: "uplus",
+    //       pay_method: "card",
+    //       merchant_uid: `mid_${new Date().getTime()}`,
+    //       name: "웰니스박스 건강기능식품",
+    //       amount: totalPrice,
+    //       buyer_email: "buyer@example.com",
+    //       buyer_name: "user",
+    //       buyer_tel: userContact,
+    //       buyer_addr: userAddress,
+    //       buyer_postcode: "123-456",
+    //     },
+    //     (rsp: { success: boolean; imp_uid?: string; error_msg?: string }) => {
+    //       if (rsp.success) {
+    //         alert(`결제가 완료되었습니다! 결제 ID: ${rsp.imp_uid}`);
+    //       } else {
+    //         alert(`결제에 실패하였습니다. 오류 메시지: ${rsp.error_msg}`);
+    //       }
+    //     }
+    //   );
+    // }
   };
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -325,7 +327,7 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
           )}
           {showModal && (
             <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg shadow-lg w-full max-w-sm overflow-hidden">
+              <div className="mx-2 bg-white rounded-lg shadow-lg w-full max-w-sm overflow-hidden">
                 <div className="px-6 py-4">
                   <h2 className="text-base font-medium text-gray-800">
                     주소와 연락처가 확실한가요?

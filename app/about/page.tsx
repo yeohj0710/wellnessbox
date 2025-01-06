@@ -43,7 +43,7 @@ export default function About() {
           src="/background.mp4"
           className="absolute inset-0 w-full h-full object-cover
             opacity-100 transition-opacity duration-1000 ease-in-out
-            filter brightness-110
+            filter brightness-110 pointer-events: none
           "
           muted
           autoPlay
@@ -54,7 +54,7 @@ export default function About() {
           className="
             absolute inset-0 w-full h-full object-cover
             opacity-0 transition-opacity duration-1000 ease-in-out
-            filter brightness-110
+            filter brightness-110 pointer-events: none
           "
           muted
         />
