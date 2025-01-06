@@ -15,13 +15,23 @@ export default function AddressModal({ onClose, onSave }: AddressModalProps) {
   const [detailedAddress, setDetailedAddress] = useState("");
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const handleSearch = async () => {
+    if (searchQuery.length <= 4) {
+      setIsLoading(true);
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      setHasSearched(true);
+      setSearchResults([]);
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     try {
       const response = await axios.get("/api/search-address", {
         params: { query: searchQuery },
       });
       const data = response.data;
+      setHasSearched(true);
       if (data.status === "OK" && data.addresses.length > 0) {
         setSearchResults(data.addresses);
       } else {
@@ -58,55 +68,65 @@ export default function AddressModal({ onClose, onSave }: AddressModalProps) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && searchQuery.length > 4) handleSearch();
+                if (e.key === "Enter") handleSearch();
               }}
               disabled={isLoading}
-              className="text-gray-700 text-base font-normal border px-2 py-1.5 flex-grow rounded mr-2 focus:outline-none focus:ring-2 focus:ring-sky-400"
+              className="text-gray-700 text-sm sm:text-base font-normal border px-2 py-1.5 flex-grow rounded mr-2 focus:outline-none focus:ring-2 focus:ring-sky-400"
             />
             <button
-              onClick={() => {
-                if (searchQuery.length > 4) handleSearch();
-              }}
+              onClick={handleSearch}
               disabled={isLoading}
-              className="text-base font-normal px-3 py-1 bg-sky-400 text-white rounded hover:bg-sky-500 transition duration-200"
+              className="w-14 h-8 text-base font-normal px-3 py-1 bg-sky-400 text-white rounded hover:bg-sky-500 transition duration-200 flex justify-center items-center"
             >
-              {isLoading ? "검색 중..." : "검색"}
+              {isLoading ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                "검색"
+              )}
             </button>
           </div>
           <div className="mb-4 max-h-40 overflow-y-auto">
-            {searchResults.length > 0 ? (
-              searchResults.map((result, index) => (
-                <div
-                  key={index}
-                  className={`px-2 py-1 border gap-2 rounded mb-2 flex items-center justify-between ${
-                    selectedAddress ===
-                    (result.roadAddress || result.jibunAddress)
-                      ? "bg-blue-100"
-                      : ""
-                  }`}
-                >
-                  <span className="text-gray-700 font-normal text-sm">
-                    {result.roadAddress || result.jibunAddress}
-                  </span>
-                  <button
-                    onClick={() =>
-                      setSelectedAddress(
-                        result.roadAddress || result.jibunAddress
-                      )
-                    }
-                    className="font-normal px-2 py-1 h-7 w-12 bg-sky-400 text-white rounded hover:bg-sky-500 text-sm"
+            {hasSearched ? (
+              searchResults.length > 0 ? (
+                searchResults.map((result, index) => (
+                  <div
+                    key={index}
+                    className={`px-2 py-1 border gap-2 rounded mb-2 flex items-center justify-between ${
+                      selectedAddress ===
+                      (result.roadAddress || result.jibunAddress)
+                        ? "bg-blue-100"
+                        : ""
+                    }`}
                   >
-                    선택
-                  </button>
+                    <span className="text-gray-700 font-normal text-sm">
+                      {result.roadAddress || result.jibunAddress}
+                    </span>
+                    <button
+                      onClick={() =>
+                        setSelectedAddress(
+                          result.roadAddress || result.jibunAddress
+                        )
+                      }
+                      className="font-normal px-2 py-1 h-7 min-w-12 bg-sky-400 text-white rounded hover:bg-sky-500 text-sm"
+                    >
+                      선택
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center h-24 text-center">
+                  <p className="text-sm font-normal text-gray-500 mb-5">
+                    검색 결과가 없습니다.
+                  </p>
+                  <p className="text-gray-500 font-normal text-xs">
+                    혹시 <b>지번</b> 주소 또는 건물 <b>이름</b>을 입력하셨나요?
+                    <br />
+                    <b>도로명</b>과 건물 <b>번호</b>를 입력해 주세요. (예:
+                    송도과학로 85)
+                  </p>
                 </div>
-              ))
-            ) : (
-              <p className="text-gray-500 text-sm">
-                혹시 지번 주소 또는 건물 이름을 입력하셨나요?
-                <br />
-                도로명주소(예: 송도과학로 85)로 검색해 주세요.
-              </p>
-            )}
+              )
+            ) : null}
           </div>
           {selectedAddress && (
             <div className="mb-4">
@@ -121,7 +141,7 @@ export default function AddressModal({ onClose, onSave }: AddressModalProps) {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleSave();
                 }}
-                className="font-normal text-base text-gray-700 border px-2 py-1.5 w-full rounded focus:outline-none focus:ring-2 focus:ring-sky-400"
+                className="font-normal text-sm text-gray-700 border px-2 py-1.5 w-full rounded focus:outline-none focus:ring-2 focus:ring-sky-400"
               />
             </div>
           )}

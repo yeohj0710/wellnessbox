@@ -152,7 +152,7 @@ export default function Home() {
       }`}
     >
       {userAddress && (
-        <div className="bg-gray-100 px-4 py-2 mb-4 rounded-md text-sm text-gray-700">
+        <div className="bg-gray-100 px-4 py-2 mx-2 sm:mx-0 mb-4 rounded-md text-sm text-gray-700">
           현재 주소: {userAddress}
         </div>
       )}

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import PaymentTest from "@/components/paymentTest";
-import AddressModal from "@/components/adressModal";
+import AddressModal from "@/components/addressModal";
 
 export default function Features() {
   const [address, setAddress] = useState("");

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AddressModal from "./adressModal";
+import AddressModal from "./addressModal";
 
 export default function ProductDetail({ product, onClose, onAddToCart }: any) {
   const [quantity, setQuantity] = useState(1);
