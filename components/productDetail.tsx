@@ -171,10 +171,16 @@ function FirstModal({
   onProductDetailClose,
 }: any) {
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const handleBackgroundClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) onClose();
+  };
   return (
     <>
       {!isAddressModalOpen ? (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+          onClick={handleBackgroundClick}
+        >
           <div className="bg-white rounded-xl shadow-2xl px-6 sm:px-8 py-8 w-128">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">
               주소를 입력해 주세요!

@@ -22,7 +22,6 @@ export async function POST(req: Request) {
         return { ...pharmacy, distance };
       })
     );
-
     const sorted = sortedPharmacies.sort((a, b) => a.distance - b.distance);
     return NextResponse.json({ pharmacies: sorted }, { status: 200 });
   } catch (error) {
