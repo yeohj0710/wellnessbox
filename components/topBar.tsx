@@ -21,6 +21,12 @@ export default function TopBar() {
             className={menuItemClasses(
               "group text-lg font-bold flex flex-row gap-1.5 items-center"
             )}
+            onClick={(e) => {
+              if (window.location.pathname === "/") {
+                e.preventDefault();
+                window.location.reload();
+              }
+            }}
           >
             <img
               src="/icon.png"

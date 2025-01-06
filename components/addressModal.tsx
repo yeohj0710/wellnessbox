@@ -73,7 +73,7 @@ export default function AddressModal({ onClose, onSave }: AddressModalProps) {
           className="bg-white rounded-lg shadow-lg p-6 w-96 m-2"
           onClick={(e) => e.stopPropagation()}
         >
-          <h2 className="text-black text-xl font-bold mb-4">주소 설정</h2>
+          <h2 className="text-black text-lg font-bold mb-4">주소 설정</h2>
           <div className="mb-4 flex items-center">
             <input
               type="text"
@@ -84,7 +84,7 @@ export default function AddressModal({ onClose, onSave }: AddressModalProps) {
                 if (e.key === "Enter") handleSearch();
               }}
               disabled={isLoading}
-              className="text-gray-700 text-sm sm:text-base font-normal border px-2 py-1.5 flex-grow rounded mr-2 focus:outline-none focus:ring-2 focus:ring-sky-400"
+              className="text-gray-700 text-sm font-normal border px-2 py-1.5 flex-grow rounded mr-2 focus:outline-none focus:ring-2 focus:ring-sky-400"
             />
             <button
               onClick={handleSearch}
@@ -104,22 +104,28 @@ export default function AddressModal({ onClose, onSave }: AddressModalProps) {
                 searchResults.map((result, index) => (
                   <div
                     key={index}
-                    className={`px-2 py-1 border gap-2 rounded mb-2 flex items-center justify-between ${
+                    className={`px-2 py-1 border gap-2 rounded mb-2 flex items-center justify-between cursor-pointer ${
                       selectedAddress ===
                       (result.roadAddress || result.jibunAddress)
                         ? "bg-blue-100"
-                        : ""
+                        : "hover:bg-gray-100"
                     }`}
+                    onClick={() =>
+                      setSelectedAddress(
+                        result.roadAddress || result.jibunAddress
+                      )
+                    }
                   >
                     <span className="text-gray-700 font-normal text-sm">
                       {result.roadAddress || result.jibunAddress}
                     </span>
                     <button
-                      onClick={() =>
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setSelectedAddress(
                           result.roadAddress || result.jibunAddress
-                        )
-                      }
+                        );
+                      }}
                       className="font-normal px-2 py-1 h-7 min-w-12 bg-sky-400 text-white rounded hover:bg-sky-500 text-sm"
                     >
                       선택

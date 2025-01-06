@@ -26,6 +26,14 @@ export default function Footer() {
                 문의하기
               </Link>
             </div>
+            <div className="flex justify-center sm:justify-start gap-4 mt-1.5">
+              <Link href="/pharm-login" className="text-sm text-gray-400">
+                약국으로 로그인
+              </Link>
+              <Link href="/rider-login" className="text-sm text-gray-400">
+                라이더로 로그인
+              </Link>
+            </div>
             <span className="text-center text-xs sm:text-left text-gray-400 mt-4">
               © 2024 웰니스박스. All rights reserved.
             </span>
