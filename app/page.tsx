@@ -27,16 +27,8 @@ export default function Home() {
   const [selectedPackage, setSelectedPackage] = useState<string>("");
   const [totalPrice, setTotalPrice] = useState(0);
   const { hideFooter, showFooter } = useFooter();
-  const [userAddress, setUserAddress] = useState(
-    () => localStorage.getItem("address") || ""
-  );
-  const [cartItems, setCartItems] = useState<any[]>(() => {
-    if (typeof window !== "undefined") {
-      const storedCart = localStorage.getItem("cartItems");
-      return storedCart ? JSON.parse(storedCart) : [];
-    }
-    return [];
-  });
+  const [userAddress, setUserAddress] = useState("");
+  const [cartItems, setCartItems] = useState<any[]>([]);
   useEffect(() => {
     localStorage.setItem("cartItems", JSON.stringify(cartItems));
     const updatedTotalPrice = cartItems.reduce(
@@ -46,6 +38,12 @@ export default function Home() {
     setTotalPrice(updatedTotalPrice);
   }, [cartItems]);
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedAddress = localStorage.getItem("address");
+      setUserAddress(storedAddress || "");
+      const storedCart = localStorage.getItem("cartItems");
+      setCartItems(storedCart ? JSON.parse(storedCart) : []);
+    }
     const fetchData = async () => {
       setIsLoading(true);
       const fetchedCategories = await getCategories();
