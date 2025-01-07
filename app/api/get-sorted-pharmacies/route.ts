@@ -4,7 +4,6 @@ import axios from "axios";
 
 export async function POST(req: Request) {
   const { productIdx, roadAddress } = await req.json();
-  console.log("Received data:", { productIdx, roadAddress });
   if (!productIdx || !roadAddress) {
     return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }

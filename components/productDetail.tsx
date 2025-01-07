@@ -126,7 +126,7 @@ export default function ProductDetail({ product, onClose, onAddToCart }: any) {
               onClick={() => {
                 const storedCart = localStorage.getItem("cartItems");
                 const cart = storedCart ? JSON.parse(storedCart) : [];
-                if (cart.length === 0 && !localStorage.getItem("address")) {
+                if (cart.length === 0 && !localStorage.getItem("roadAddress")) {
                   setIsFirstModalOpen(true);
                   return;
                 }

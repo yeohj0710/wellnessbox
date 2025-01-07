@@ -86,7 +86,6 @@ export default function Home() {
       }
       setIsLoading(true);
       try {
-        console.log(cartItems[0].idx, roadAddress);
         const response = await axios.post("/api/get-sorted-pharmacies", {
           productIdx: cartItems[0].idx,
           roadAddress,
