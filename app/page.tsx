@@ -12,16 +12,6 @@ import { useFooter } from "@/components/footerContext";
 import axios from "axios";
 import AddressModal from "@/components/addressModal";
 
-const Skeleton = () => (
-  <div className="flex flex-col border rounded-lg overflow-hidden shadow-sm cursor-pointer">
-    <div className="h-32 bg-gray-300 animate-pulse"></div>
-    <div className="p-2">
-      <div className="w-2/3 h-4 bg-gray-300 rounded-md animate-pulse mb-2"></div>
-      <div className="w-1/2 h-4 bg-gray-300 rounded-md animate-pulse"></div>
-    </div>
-  </div>
-);
-
 export default function Home() {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [isCartVisible, setIsCartVisible] = useState(false);
@@ -44,6 +34,21 @@ export default function Home() {
     }
     return [];
   });
+  useEffect(() => {
+    const timestampKey = "cartTimestamp";
+    const now = Date.now();
+    const storedTimestamp = localStorage.getItem(timestampKey);
+    if (
+      !storedTimestamp ||
+      now - parseInt(storedTimestamp, 10) > 10 * 60 * 1000
+    ) {
+      localStorage.clear();
+      localStorage.setItem(timestampKey, now.toString());
+      setCartItems([]);
+    } else {
+      localStorage.setItem(timestampKey, now.toString());
+    }
+  }, []);
   useEffect(() => {
     const storedRoadAddress = localStorage.getItem("roadAddress") || "";
     setRoadAddress(storedRoadAddress.trim());
@@ -177,44 +182,33 @@ export default function Home() {
     }
     setProducts(filtered);
   }, [allProducts, selectedPharmacy, selectedCategory, selectedPackage]);
-  const handleAddToCart = (
-    product: any,
-    quantity: number,
-    options: string[]
-  ) => {
+  const handleAddToCart = (product: any, quantity: number) => {
     setCartItems((prev) => {
-      const existingItemIndex = prev.findIndex(
-        (item) => item.idx === product.idx
-      );
-      if (existingItemIndex !== -1) {
-        const updatedItems = prev.map((item, index) =>
-          index === existingItemIndex
+      const existingItem = prev.find((item) => item.idx === product.idx);
+      if (existingItem) {
+        return prev.map((item) =>
+          item.idx === product.idx
             ? {
                 ...item,
                 quantity: item.quantity + quantity,
-                options: Array.from(new Set([...item.options, ...options])),
               }
             : item
         );
-        return updatedItems;
       }
       return [
         ...prev,
         {
-          idx: product.idx,
-          name: product.name,
-          price: product.price,
-          options,
+          product,
           quantity,
-          images: product.images,
         },
       ];
     });
-    setTotalPrice((prev: any) => prev + product.price * quantity);
+    setTotalPrice((prev) => prev + product.price * quantity);
   };
   return isCartVisible ? (
     <Cart
       cartItems={cartItems}
+      selectedPharmacy={selectedPharmacy}
       onBack={() => setIsCartVisible(false)}
       onUpdateCart={(updatedItems: any) => {
         setCartItems(updatedItems);
@@ -375,13 +369,13 @@ export default function Home() {
         </div>
       </section>
       {cartItems.length > 0 && selectedPharmacy && (
-        <div className="bg-gray-100 px-4 py-2 mt-1.5 mb-4 rounded-md text-sm text-gray-700">
-          선택한 상품을 보유한 약국 중{" "}
+        <div className="mx-2 sm:mx-0 bg-gray-100 px-3 py-2 mt-1.5 mb-4 rounded-md text-sm text-gray-700">
+          선택하신 상품을 보유한 약국 중 주소로부터{" "}
           <strong className="text-sky-500">
             {selectedPharmacy.distance?.toFixed(1)}km
           </strong>{" "}
           거리에 위치한{" "}
-          <strong className="text-sky-500">{selectedPharmacy.name}</strong> 의
+          <strong className="text-sky-500">{selectedPharmacy.name}</strong>의
           상품들이에요.
         </div>
       )}
@@ -453,9 +447,9 @@ export default function Home() {
         <ProductDetail
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
-          onAddToCart={(price: any, quantity: any, options: any) => {
+          onAddToCart={(quantity: number) => {
             if (selectedProduct) {
-              handleAddToCart(selectedProduct, quantity, options);
+              handleAddToCart(selectedProduct, quantity);
             }
           }}
         />
@@ -463,3 +457,13 @@ export default function Home() {
     </div>
   );
 }
+
+const Skeleton = () => (
+  <div className="flex flex-col border rounded-lg overflow-hidden shadow-sm cursor-pointer">
+    <div className="h-32 bg-gray-300 animate-pulse"></div>
+    <div className="p-2">
+      <div className="w-2/3 h-4 bg-gray-300 rounded-md animate-pulse mb-2"></div>
+      <div className="w-1/2 h-4 bg-gray-300 rounded-md animate-pulse"></div>
+    </div>
+  </div>
+);

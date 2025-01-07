@@ -4,21 +4,30 @@ import { useState, useEffect } from "react";
 import Script from "next/script";
 import { TrashIcon } from "@heroicons/react/16/solid";
 import { createOrder } from "@/lib/order";
+import { ExpandableSection } from "./expandableSection";
 
-export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
+export default function Cart({
+  cartItems,
+  selectedPharmacy,
+  onBack,
+  onUpdateCart,
+}: any) {
   const [sdkLoaded, setSdkLoaded] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [roadAddress, setRoadAddress] = useState(
     localStorage.getItem("roadAddress") || ""
   );
   const [detailAddress, setDetailAddress] = useState(
     localStorage.getItem("detailAddress") || ""
   );
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("card");
-  const [showModal, setShowModal] = useState(false);
+  const [requestNotes, setRequestNotes] = useState("");
+  const [entrancePassword, setEntrancePassword] = useState("");
+  const [directions, setDirections] = useState("");
   const [phonePart1, setPhonePart1] = useState("010");
   const [phonePart2, setPhonePart2] = useState("");
   const [phonePart3, setPhonePart3] = useState("");
   const [userContact, setUserContact] = useState("");
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
   useEffect(() => {
     setUserContact(`${phonePart1}-${phonePart2}-${phonePart3}`);
   }, [phonePart1, phonePart2, phonePart3]);
@@ -26,6 +35,8 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
     (acc: any, item: any) => acc + item.price * item.quantity,
     0
   );
+  const shippingFee = 3000;
+  const totalPriceWithShipping = totalPrice + shippingFee;
   const handlePaymentRequest = async (
     payMethod: string,
     channelKey: string
@@ -60,12 +71,12 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
         roadAddress,
         detailAddress,
         phone: userContact,
-        requestNotes: "",
-        entrancePassword: "",
-        directions: "",
+        requestNotes,
+        entrancePassword,
+        directions,
       });
       alert("결제가 완료되었습니다.");
-      window.location.href = "/order-complete"; // 주문 완료 페이지로 이동
+      window.location.href = "/order-complete";
     } catch (error) {
       console.error("결제 요청 중 오류 발생:", error);
       alert(
@@ -74,14 +85,6 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
     }
   };
   const handlePayment = async () => {
-    if (!sdkLoaded || !window.IMP) {
-      alert("포트원 SDK 로드 실패");
-      return;
-    }
-    if (!roadAddress || !userContact) {
-      alert("주소와 연락처를 입력해주세요.");
-      return;
-    }
     if (selectedPaymentMethod === "card") {
       await handlePaymentRequest(
         "CARD",
@@ -109,11 +112,7 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
     }
   }, []);
   return (
-    <div
-      className={`w-full mt-16 max-w-[640px] mx-auto bg-white min-h-[100vh] ${
-        totalPrice > 0 ? "pb-20" : ""
-      }`}
-    >
+    <div className="w-full mt-16 mb-8 max-w-[640px] mx-auto bg-white min-h-[100vh]">
       <Script
         src="https://cdn.iamport.kr/js/iamport.payment-1.2.0.js"
         onLoad={() => {
@@ -121,7 +120,7 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
         }}
         strategy="afterInteractive"
       />
-      <div className="fixed top-14 left-0 right-0 w-full max-w-[640px] mx-auto bg-sky-400 h-12 sm:h-14 flex items-center px-4 mb-6 border-b border-gray-200">
+      <div className="z-10 fixed top-14 left-0 right-0 w-full max-w-[640px] mx-auto bg-sky-400 h-12 sm:h-14 flex items-center px-4 mb-6 border-b border-gray-200">
         <button
           onClick={onBack}
           className="text-white text-xl mr-4 font-bold hover:scale-110"
@@ -153,6 +152,11 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
               )}
               <div className="flex-1">
                 <h2 className="font-bold">{item.name}</h2>
+                <p className="text-sm text-gray-500">
+                  {item.categories
+                    ?.map((category: any) => category.name)
+                    .join(", ") || "카테고리 없음"}
+                </p>
                 <p className="font-bold text-lg text-sky-500">
                   ₩{item.price.toLocaleString()}
                 </p>
@@ -236,48 +240,41 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
             value={detailAddress}
             onChange={(e) => setDetailAddress(e.target.value)}
             placeholder="예: A동 101호"
-            className={`w-full border rounded-md px-3 py-2 text-base transition-colors 
-      ${
-        detailAddress.trim().length > 0
-          ? "text-gray-500 bg-gray-100"
-          : "text-gray-700"
-      }`}
+            className="w-full border rounded-md px-3 py-2 text-base transition-colors text-gray-700"
           />
         </div>
       </div>
       <h2 className="text-lg font-bold p-4 pb-2 mt-2">추가 요청사항</h2>
       <div className="px-4 space-y-3">
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700">
-            배송 시 요청사항 (선택)
-          </label>
+        <ExpandableSection title="배송 시 요청사항 (선택)">
           <input
             type="text"
+            value={requestNotes}
+            onChange={(e) => setRequestNotes(e.target.value)}
             placeholder="예: 문 앞에 놓아주세요."
-            className="w-full border rounded-md px-3 py-2 text-base transition-colors text-gray-700"
+            className="w-full border rounded-md px-3 py-2 text-base"
           />
-        </div>
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700">
-            공동현관 비밀번호 (선택)
-          </label>
+        </ExpandableSection>
+        <ExpandableSection title="공동현관 비밀번호 (선택)">
           <input
             type="text"
+            value={entrancePassword}
+            onChange={(e) => setEntrancePassword(e.target.value)}
             placeholder="예: #1234"
-            className="w-full border rounded-md px-3 py-2 text-base transition-colors text-gray-700"
+            className="w-full border rounded-md px-3 py-2 text-base"
           />
-        </div>
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700">
-            찾아오는 길 안내 (선택)
-          </label>
+        </ExpandableSection>
+        <ExpandableSection title="찾아오는 길 안내 (선택)">
           <input
+            type="text"
+            value={directions}
+            onChange={(e) => setDirections(e.target.value)}
             placeholder="예: 마트 옆에 건물 입구가 있어요."
-            className="w-full border rounded-md px-3 py-2 text-base transition-colors text-gray-700"
+            className="w-full border rounded-md px-3 py-2 text-base"
           />
-        </div>
+        </ExpandableSection>
       </div>
-      <h2 className="text-lg font-bold p-4 pb-2">연락처 입력</h2>
+      <h2 className="text-lg font-bold p-4 pb-2 mt-3">연락처 입력</h2>
       <div className="px-4 flex gap-2 items-center">
         <input
           type="text"
@@ -339,8 +336,29 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
           className="w-20 border rounded-md px-2 py-1.5 text-center transition-colors"
         />
       </div>
+      {selectedPharmacy && (
+        <div className="px-4 mt-8">
+          <h2 className="text-lg font-bold border-gray-300">약국 정보</h2>
+          <div className="mt-2">
+            <div className="flex items-center">
+              <span className="w-24 text-sm font-medium text-gray-600">
+                약국명
+              </span>
+              <p className="flex-1 font-semibold text-gray-800">
+                {selectedPharmacy.name}
+              </p>
+            </div>
+            <div className="flex items-center mt-1">
+              <span className="w-24 text-sm font-medium text-gray-600">
+                약국 주소
+              </span>
+              <p className="flex-1 text-gray-700">{selectedPharmacy.address}</p>
+            </div>
+          </div>
+        </div>
+      )}
       <h2 className="text-lg font-bold p-4 mt-2">결제 방법</h2>
-      <div className="px-4 space-y-3 mb-8">
+      <div className="px-4 space-y-3">
         <label className="flex items-center gap-3 cursor-pointer">
           <input
             type="radio"
@@ -371,71 +389,50 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
           </span>
         </label>
       </div>
-      {totalPrice > 0 && (
-        <div
-          className={`px-6 fixed bottom-0 left-0 right-0 w-full max-w-[640px] mx-auto ${
-            totalPrice < 15000 ? "bg-gray-400" : "bg-sky-400"
-          } text-white p-4 flex justify-between items-center text-lg font-bold`}
-        >
+      <h2 className="text-lg font-bold p-4 mt-2">최종 금액</h2>
+      <div className="px-4">
+        <div className="flex justify-between items-center">
+          <span className="text-sm font-medium text-gray-700">상품 합계</span>
           <span className="font-bold">₩{totalPrice.toLocaleString()}</span>
-          {totalPrice < 15000 ? (
-            <span className="text-sm text-white py-3">
-              {`${(
-                15000 - totalPrice
-              ).toLocaleString()}원만 더 담으면 주문할 수 있어요.`}
-            </span>
-          ) : (
-            <button
-              onClick={() => {
-                if (!roadAddress || !userContact) {
-                  alert("주소 및 연락처를 입력해주세요.");
-                  return;
-                }
-                setShowModal(true);
-              }}
-              className="bg-white text-sky-400 px-6 py-2 rounded-full font-semibold shadow-lg hover:bg-sky-100 transition"
-            >
-              결제하기
-            </button>
-          )}
-          {showModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-              <div className="mx-2 bg-white rounded-lg shadow-lg w-full max-w-sm overflow-hidden">
-                <div className="px-6 py-4">
-                  <h2 className="text-base font-medium text-gray-800">
-                    주소와 연락처가 확실한가요?
-                  </h2>
-                  <p className="text-sm text-gray-600 mt-2">
-                    <span className="font-medium text-gray-700">주소:</span>{" "}
-                    {roadAddress} {detailAddress}
-                  </p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    <span className="font-medium text-gray-700">연락처:</span>{" "}
-                    {userContact}
-                  </p>
-                </div>
-                <div className="flex border-t border-gray-200">
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="w-1/2 text-sm text-gray-500 py-3 hover:bg-gray-100 transition"
-                  >
-                    취소
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowModal(false);
-                      handlePayment();
-                    }}
-                    className="w-1/2 text-sm text-sky-500 py-3 font-medium hover:bg-sky-50 transition"
-                  >
-                    확인
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
-      )}
+        <div className="flex justify-between items-center mt-2">
+          <span className="text-sm font-medium text-gray-700">배송비</span>
+          <span className="font-bold">₩{shippingFee.toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between items-center border-t pt-4 mt-4">
+          <span className="text-lg font-bold text-gray-900">최종 금액</span>
+          <span className="text-lg font-bold text-sky-500">
+            ₩{totalPriceWithShipping.toLocaleString()}
+          </span>
+        </div>
+      </div>
+      <div className="px-4 mt-6">
+        <button
+          onClick={() => {
+            if (!sdkLoaded || !window.IMP) {
+              alert(
+                "결제 모듈을 불러오는 데 실패하였습니다. 페이지를 새로고침해 주세요."
+              );
+              return;
+            }
+            const isValidPhone = /^[0-9]{3}-[0-9]{4}-[0-9]{4}$/.test(
+              userContact
+            );
+            if (!isValidPhone) {
+              alert("전화번호를 올바른 형식으로 입력해 주세요.");
+              return;
+            }
+            if (!selectedPaymentMethod) {
+              alert("결제 수단을 선택해 주세요.");
+              return;
+            }
+            setShowModal(true);
+          }}
+          className="w-full bg-sky-400 text-white py-2.5 sm:py-3 rounded-lg font-bold hover:bg-sky-500 transition"
+        >
+          결제하기
+        </button>
+      </div>
     </div>
   );
 }

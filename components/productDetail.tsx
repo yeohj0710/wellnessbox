@@ -130,15 +130,19 @@ export default function ProductDetail({ product, onClose, onAddToCart }: any) {
                   setIsFirstModalOpen(true);
                   return;
                 }
-                onAddToCart(totalPrice, quantity, []);
-                cart.push({
-                  idx: product.idx,
-                  name: product.name,
-                  price: product.price,
-                  quantity,
-                  images: product.images,
-                });
+                const existingItemIndex = cart.findIndex(
+                  (item: any) => item.idx === product.idx
+                );
+                if (existingItemIndex !== -1) {
+                  cart[existingItemIndex].quantity += quantity;
+                } else {
+                  cart.push({
+                    ...product,
+                    quantity,
+                  });
+                }
                 localStorage.setItem("cartItems", JSON.stringify(cart));
+                onAddToCart(quantity);
                 onClose();
               }}
               className="bg-white text-sky-400 px-10 py-2 rounded-full shadow-md hover:bg-sky-100 transition"
@@ -218,15 +222,19 @@ function FirstModal({
             localStorage.setItem("detailAddress", detailAddress);
             const storedCart = localStorage.getItem("cartItems");
             const cart = storedCart ? JSON.parse(storedCart) : [];
-            onAddToCart(totalPrice, quantity, []);
-            cart.push({
-              idx: product.idx,
-              name: product.name,
-              price: product.price,
-              quantity,
-              images: product.images,
-            });
+            const existingItemIndex = cart.findIndex(
+              (item: any) => item.idx === product.idx
+            );
+            if (existingItemIndex !== -1) {
+              cart[existingItemIndex].quantity += quantity;
+            } else {
+              cart.push({
+                ...product,
+                quantity,
+              });
+            }
             localStorage.setItem("cartItems", JSON.stringify(cart));
+            onAddToCart(quantity);
             setIsAddressModalOpen(false);
             onClose();
             onProductDetailClose();
