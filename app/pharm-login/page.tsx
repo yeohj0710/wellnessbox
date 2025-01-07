@@ -1,30 +1,32 @@
 "use client";
 
 import { useState } from "react";
-import { validatePharmacyLogin } from "@/lib/pharmacy";
+import { pharmacyLogin } from "@/lib/pharmacy";
 import Link from "next/link";
 
 export default function PharmLogin() {
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-
+  const [isLoading, setIsLoading] = useState(false);
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setIsLoading(true);
     try {
-      const result = await validatePharmacyLogin(userId, password);
+      const result = await pharmacyLogin(userId, password);
       if (result.success) {
         alert("로그인 성공!");
       }
     } catch (err: any) {
       setError(err.message);
+    } finally {
+      setIsLoading(false);
     }
   };
-
   return (
-    <div className="flex flex-col w-full max-w-[640px] mx-auto items-center min-h-screen bg-gray-50 py-12">
-      <div className="bg-white shadow-md rounded-lg w-full max-w-md p-8">
+    <div className="px-2 flex flex-col w-full max-w-[640px] mx-auto items-center min-h-screen bg-gray-50 py-12">
+      <div className="w-full bg-white shadow-md rounded-lg max-w-md p-8">
         <h1 className="text-3xl font-bold text-gray-800 mb-4 text-center">
           로그인
         </h1>
@@ -55,9 +57,14 @@ export default function PharmLogin() {
           )}
           <button
             type="submit"
-            className="w-full bg-sky-400 hover:bg-sky-500 text-white font-semibold py-2 rounded-lg transition duration-200"
+            className="w-full h-10 bg-sky-400 hover:bg-sky-500 text-white font-semibold py-2 rounded-lg transition duration-200 flex justify-center items-center"
+            disabled={isLoading}
           >
-            로그인
+            {isLoading ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              "로그인"
+            )}
           </button>
         </form>
         <div className="flex flex-row justify-center gap-2 mt-6 text-sm text-gray-600">

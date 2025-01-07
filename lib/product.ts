@@ -183,3 +183,16 @@ export async function getPharmaciesByProduct(productIdx: number) {
     },
   });
 }
+
+export async function getProductsByPharmacy(pharmacyIdx: number) {
+  return await db.product_.findMany({
+    where: {
+      pharmacies: {
+        some: { idx: pharmacyIdx },
+      },
+    },
+    select: {
+      idx: true,
+    },
+  });
+}

@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import ProductDetail from "@/components/productDetail";
 import Cart from "@/components/cart";
-import { getCategories, getProducts } from "@/lib/product";
+import {
+  getCategories,
+  getProducts,
+  getProductsByPharmacy,
+} from "@/lib/product";
 import { useFooter } from "@/components/footerContext";
 import axios from "axios";
 import AddressModal from "@/components/addressModal";
@@ -29,7 +33,7 @@ export default function Home() {
   const [selectedPackage, setSelectedPackage] = useState<string>("");
   const [totalPrice, setTotalPrice] = useState(0);
   const { hideFooter, showFooter } = useFooter();
-  const [userAddress, setUserAddress] = useState("");
+  const [roadAddress, setRoadAddress] = useState("");
   const [pharmacies, setPharmacies] = useState<any[]>([]);
   const [selectedPharmacy, setSelectedPharmacy] = useState<any>(null);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
@@ -41,8 +45,8 @@ export default function Home() {
     return [];
   });
   useEffect(() => {
-    const storedAddress = localStorage.getItem("address");
-    setUserAddress(storedAddress || "");
+    const storedRoadAddress = localStorage.getItem("roadAddress") || "";
+    setRoadAddress(storedRoadAddress.trim());
     const fetchData = async () => {
       try {
         setIsLoading(true);
@@ -84,10 +88,15 @@ export default function Home() {
       try {
         const response = await axios.post("/api/get-sorted-pharmacies", {
           productIdx: cartItems[0].idx,
-          userAddress,
+          roadAddress,
         });
         setPharmacies(response.data.pharmacies);
-        if (response.data.pharmacies.length > 0) {
+        if (
+          !selectedPharmacy ||
+          !response.data.pharmacies.some(
+            (pharmacy: any) => pharmacy.idx === selectedPharmacy.idx
+          )
+        ) {
           setSelectedPharmacy(response.data.pharmacies[0]);
         }
       } catch (error) {
@@ -96,10 +105,40 @@ export default function Home() {
         setIsLoading(false);
       }
     };
-    if (userAddress && cartItems.length > 0) {
+    if (roadAddress && cartItems.length > 0) {
       fetchPharmacies();
     }
-  }, [userAddress, cartItems]);
+  }, [roadAddress, cartItems[0]?.idx]);
+  useEffect(() => {
+    const filterCartItems = async () => {
+      if (selectedPharmacy && cartItems.length > 0) {
+        try {
+          const products = await getProductsByPharmacy(selectedPharmacy.idx);
+          const productIdxs = products.map((product) => product.idx);
+          const filteredCartItems = cartItems.filter((item) =>
+            productIdxs.includes(item.idx)
+          );
+          if (JSON.stringify(filteredCartItems) !== JSON.stringify(cartItems)) {
+            setCartItems(filteredCartItems);
+            localStorage.setItem(
+              "cartItems",
+              JSON.stringify(filteredCartItems)
+            );
+          }
+        } catch (error) {
+          console.error("약국 상품 데이터를 가져오는 데 실패했습니다:", error);
+        }
+      }
+    };
+    filterCartItems();
+  }, [selectedPharmacy]);
+  useEffect(() => {
+    const updatedTotalPrice = cartItems.reduce(
+      (acc: number, item: any) => acc + item.price * item.quantity,
+      0
+    );
+    setTotalPrice(updatedTotalPrice);
+  }, [cartItems]);
   useEffect(() => {
     if (totalPrice > 0 || isCartVisible) {
       hideFooter();
@@ -192,11 +231,11 @@ export default function Home() {
         totalPrice > 0 ? "pb-20" : ""
       }`}
     >
-      {userAddress && (
+      {roadAddress && (
         <div className="bg-gray-100 px-4 gap-3 py-4 mx-3 sm:mx-2 mb-4 rounded-md flex items-center justify-between text-sm text-gray-700 shadow-sm">
           <div>
             <p className="font-semibold text-gray-800">현재 주소</p>
-            <p className="text-gray-600 mt-1">{userAddress}</p>
+            <p className="text-gray-600 mt-1">{roadAddress}</p>
           </div>
           <button
             onClick={() => setIsAddressModalOpen(true)}
@@ -209,15 +248,16 @@ export default function Home() {
       {isAddressModalOpen && (
         <AddressModal
           onClose={() => setIsAddressModalOpen(false)}
-          onSave={(newAddress) => {
-            setUserAddress(newAddress);
-            localStorage.setItem("address", newAddress);
+          onSave={(roadAddress: string, detailAddress: string) => {
+            setRoadAddress(roadAddress);
+            localStorage.setItem("roadAddress", roadAddress);
+            localStorage.setItem("detailAddress", detailAddress);
           }}
         />
       )}
-      {pharmacies.length > 0 && (
+      {cartItems.length > 0 && pharmacies.length > 0 && (
         <div>
-          <div className="flex gap-2 px-2 mx-1 sm:mx-0 mb-2 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-2 px-2 mx-1 sm:mx-0 mb-3 -mt-1 overflow-x-auto scrollbar-hide">
             {pharmacies.map((pharmacy: any) => (
               <div
                 key={pharmacy.idx}
@@ -334,7 +374,7 @@ export default function Home() {
           ))}
         </div>
       </section>
-      {selectedPharmacy && (
+      {cartItems.length > 0 && selectedPharmacy && (
         <div className="bg-gray-100 px-4 py-2 mt-1.5 mb-4 rounded-md text-sm text-gray-700">
           선택한 상품을 보유한 약국 중{" "}
           <strong className="text-sky-500">

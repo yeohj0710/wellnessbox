@@ -2,7 +2,7 @@
 
 import db from "@/lib/db";
 
-export async function validatePharmacyLogin(userId: string, password: string) {
+export async function pharmacyLogin(userId: string, password: string) {
   const pharmacy = await db.pharmacy_.findUnique({
     where: { userId },
   });

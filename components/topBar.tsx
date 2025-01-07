@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { MenuLinks } from "./menuLinks";
 
@@ -12,6 +12,18 @@ export default function TopBar() {
   const closeDrawer = () => {
     setIsDrawerOpen(false);
   };
+  const logoRef = useRef<HTMLImageElement>(null);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (logoRef.current) {
+        logoRef.current.classList.add("animate-bounce-custom");
+        setTimeout(() => {
+          logoRef.current?.classList.remove("animate-bounce-custom");
+        }, 1200);
+      }
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
   return (
     <>
       <header className="flex items-center justify-between fixed top-0 w-full bg-white z-50 h-14 shadow-sm px-6">
@@ -21,16 +33,11 @@ export default function TopBar() {
             className={menuItemClasses(
               "group text-lg font-bold flex flex-row gap-1.5 items-center"
             )}
-            onClick={(e) => {
-              if (window.location.pathname === "/") {
-                e.preventDefault();
-                window.location.reload();
-              }
-            }}
           >
             <img
               src="/icon.png"
               alt="웰니스박스"
+              ref={logoRef}
               className="w-[2em] h-[2em] object-contain group-hover:animate-bounce-custom"
             />
             웰니스박스

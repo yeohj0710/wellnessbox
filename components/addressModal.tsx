@@ -3,12 +3,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-interface AddressModalProps {
-  onClose: () => void;
-  onSave: (fullAddress: string) => void;
-}
-
-export default function AddressModal({ onClose, onSave }: AddressModalProps) {
+export default function AddressModal({ onClose, onSave }: any) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [selectedAddress, setSelectedAddress] = useState("");
@@ -59,7 +54,7 @@ export default function AddressModal({ onClose, onSave }: AddressModalProps) {
     setIsConfirmModalOpen(true);
   };
   const confirmSave = () => {
-    onSave(`${selectedAddress} ${detailedAddress}`);
+    onSave(selectedAddress, detailedAddress);
     setIsConfirmModalOpen(false);
     onClose();
   };

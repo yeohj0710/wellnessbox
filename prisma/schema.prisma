@@ -42,14 +42,18 @@ model Pharmacy_ {
 }
 
 model Order_ {
-  idx         Int        @id @default(autoincrement())
-  phone       String?
-  address     String?
-  password    String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @default(now()) @updatedAt
-  pharmacyIdx Int?
-  pharmacy    Pharmacy_? @relation(fields: [pharmacyIdx], references: [idx])
+  idx              Int        @id @default(autoincrement())
+  roadAddress      String?
+  detailAddress    String?
+  phone            String?
+  password         String?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @default(now()) @updatedAt
+  requestNotes     String?
+  entrancePassword String?
+  directions       String?
+  pharmacyIdx      Int?
+  pharmacy         Pharmacy_? @relation(fields: [pharmacyIdx], references: [idx])
 }
 
 model User {

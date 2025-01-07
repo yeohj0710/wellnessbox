@@ -3,16 +3,25 @@
 import { useState, useEffect } from "react";
 import Script from "next/script";
 import { TrashIcon } from "@heroicons/react/16/solid";
+import { createOrder } from "@/lib/order";
 
 export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
   const [sdkLoaded, setSdkLoaded] = useState(false);
-  const [userAddress, setUserAddress] = useState(
-    localStorage.getItem("address") || ""
+  const [roadAddress, setRoadAddress] = useState(
+    localStorage.getItem("roadAddress") || ""
   );
-  const [userContact, setUserContact] = useState("");
+  const [detailAddress, setDetailAddress] = useState(
+    localStorage.getItem("detailAddress") || ""
+  );
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("card");
   const [showModal, setShowModal] = useState(false);
-
+  const [phonePart1, setPhonePart1] = useState("010");
+  const [phonePart2, setPhonePart2] = useState("");
+  const [phonePart3, setPhonePart3] = useState("");
+  const [userContact, setUserContact] = useState("");
+  useEffect(() => {
+    setUserContact(`${phonePart1}-${phonePart2}-${phonePart3}`);
+  }, [phonePart1, phonePart2, phonePart3]);
   const totalPrice = cartItems.reduce(
     (acc: any, item: any) => acc + item.price * item.quantity,
     0
@@ -23,12 +32,6 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
   ) => {
     const PortOne: any = await import("@portone/browser-sdk/v2");
     try {
-      const queryString = new URLSearchParams({
-        userAddress,
-        userContact,
-        totalPrice: totalPrice.toString(),
-        cartItems: encodeURIComponent(JSON.stringify(cartItems)),
-      }).toString();
       const response = await PortOne.requestPayment({
         storeId: process.env.NEXT_PUBLIC_PORTONE_STORE_ID!,
         paymentId: `payment${Date.now()}`,
@@ -43,9 +46,8 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
           email: "buyer@example.com",
           phoneNumber: userContact,
         },
-        redirectUrl: `${window.location.origin}/order-complete?${queryString}`,
+        redirectUrl: `${window.location.origin}/order-complete`,
       });
-      console.log(response);
       if (response.code === "FAILURE_TYPE_PG") {
         alert(`결제가 취소되었습니다.`);
         return;
@@ -54,8 +56,16 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
         alert("결제에 실패하였습니다. 결제 상태를 확인해주세요.");
         return;
       }
+      await createOrder({
+        roadAddress,
+        detailAddress,
+        phone: userContact,
+        requestNotes: "",
+        entrancePassword: "",
+        directions: "",
+      });
       alert("결제가 완료되었습니다.");
-      window.location.href = "/order-complete?" + queryString;
+      window.location.href = "/order-complete"; // 주문 완료 페이지로 이동
     } catch (error) {
       console.error("결제 요청 중 오류 발생:", error);
       alert(
@@ -68,7 +78,7 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
       alert("포트원 SDK 로드 실패");
       return;
     }
-    if (!userAddress || !userContact) {
+    if (!roadAddress || !userContact) {
       alert("주소와 연락처를 입력해주세요.");
       return;
     }
@@ -83,37 +93,16 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
         process.env.NEXT_PUBLIC_PORTONE_KAKAO_CHANNEL_KEY!
       );
     }
-    // else if (selectedPaymentMethod === "toss") {
-    //   const IMP = window.IMP;
-    //   IMP.init(process.env.NEXT_PUBLIC_MERCHANT_ID!);
-    //   IMP.request_pay(
-    //     {
-    //       pg: "uplus",
-    //       pay_method: "card",
-    //       merchant_uid: `mid_${new Date().getTime()}`,
-    //       name: "웰니스박스 건강기능식품",
-    //       amount: totalPrice,
-    //       buyer_email: "buyer@example.com",
-    //       buyer_name: "user",
-    //       buyer_tel: userContact,
-    //       buyer_addr: userAddress,
-    //       buyer_postcode: "123-456",
-    //     },
-    //     (rsp: { success: boolean; imp_uid?: string; error_msg?: string }) => {
-    //       if (rsp.success) {
-    //         alert(`결제가 완료되었습니다! 결제 ID: ${rsp.imp_uid}`);
-    //       } else {
-    //         alert(`결제에 실패하였습니다. 오류 메시지: ${rsp.error_msg}`);
-    //       }
-    //     }
-    //   );
-    // }
   };
   useEffect(() => {
     window.scrollTo(0, 0);
-    const storedAddress = localStorage.getItem("address");
-    if (storedAddress) {
-      setUserAddress(storedAddress);
+    const storedRoadAddress = localStorage.getItem("roadAddress");
+    const storedDetailAddress = localStorage.getItem("detailAddress");
+    if (storedRoadAddress) {
+      setRoadAddress(storedRoadAddress);
+    }
+    if (storedDetailAddress) {
+      setDetailAddress(storedDetailAddress);
     }
     if (window.IMP) {
       setSdkLoaded(true);
@@ -228,29 +217,126 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
           </div>
         )}
       </div>
-      <h2 className="text-lg font-bold p-4 pb-2">배송 주소</h2>
-      <div className="px-4">
-        <p className="text-base text-gray-500 bg-gray-100 px-2.5 py-2 rounded cursor-not-allowed">
-          {userAddress || "저장된 주소가 없습니다."}
-        </p>
+      <h2 className="text-lg font-bold p-4 pb-2">주소 입력</h2>
+      <div className="px-4 space-y-3">
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-gray-700">
+            도로명 주소
+          </label>
+          <p className="text-base text-gray-500 bg-gray-100 px-2.5 py-2 rounded-md border">
+            {roadAddress || "저장된 도로명 주소가 없습니다."}
+          </p>
+        </div>
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-gray-700">
+            상세 주소 (선택)
+          </label>
+          <input
+            type="text"
+            value={detailAddress}
+            onChange={(e) => setDetailAddress(e.target.value)}
+            placeholder="예: A동 101호"
+            className={`w-full border rounded-md px-3 py-2 text-base transition-colors 
+      ${
+        detailAddress.trim().length > 0
+          ? "text-gray-500 bg-gray-100"
+          : "text-gray-700"
+      }`}
+          />
+        </div>
       </div>
-      {/* <div className="px-4">
-        <input
-          type="text"
-          placeholder="예: 서울특별시 서초구 반포대로 1길 23 456호"
-          value={userAddress}
-          onChange={(e) => setUserAddress(e.target.value)}
-          className="w-full border rounded-md p-2 mb-2"
-        />
-      </div> */}
+      <h2 className="text-lg font-bold p-4 pb-2 mt-2">추가 요청사항</h2>
+      <div className="px-4 space-y-3">
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-gray-700">
+            배송 시 요청사항 (선택)
+          </label>
+          <input
+            type="text"
+            placeholder="예: 문 앞에 놓아주세요."
+            className="w-full border rounded-md px-3 py-2 text-base transition-colors text-gray-700"
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-gray-700">
+            공동현관 비밀번호 (선택)
+          </label>
+          <input
+            type="text"
+            placeholder="예: #1234"
+            className="w-full border rounded-md px-3 py-2 text-base transition-colors text-gray-700"
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-gray-700">
+            찾아오는 길 안내 (선택)
+          </label>
+          <input
+            placeholder="예: 마트 옆에 건물 입구가 있어요."
+            className="w-full border rounded-md px-3 py-2 text-base transition-colors text-gray-700"
+          />
+        </div>
+      </div>
       <h2 className="text-lg font-bold p-4 pb-2">연락처 입력</h2>
-      <div className="px-4">
+      <div className="px-4 flex gap-2 items-center">
         <input
           type="text"
-          placeholder="예: 010-1234-5678"
-          value={userContact}
-          onChange={(e) => setUserContact(e.target.value)}
-          className="w-full border rounded-md px-2.5 py-2"
+          maxLength={3}
+          value={phonePart1}
+          onChange={(e) => setPhonePart1(e.target.value.replace(/\D/g, ""))}
+          onInput={(e) => {
+            const input = e.target as HTMLInputElement;
+            if (input.value.length === 3) {
+              input.classList.add("bg-gray-100", "text-gray-500");
+            } else {
+              input.classList.remove("bg-gray-100", "text-gray-500");
+            }
+          }}
+          className={`w-14 border rounded-md px-2 py-1.5 text-center transition-colors ${
+            phonePart1.length === 3 ? "bg-gray-100 text-gray-500" : ""
+          }`}
+        />
+        <span className="text-gray-500">-</span>
+        <input
+          type="text"
+          maxLength={4}
+          value={phonePart2}
+          onChange={(e) => setPhonePart2(e.target.value.replace(/\D/g, ""))}
+          onInput={(e) => {
+            if ((e.target as HTMLInputElement).value.length === 4) {
+              (e.target as HTMLInputElement).classList.add(
+                "bg-gray-100",
+                "text-gray-500"
+              );
+            } else {
+              (e.target as HTMLInputElement).classList.remove(
+                "bg-gray-100",
+                "text-gray-500"
+              );
+            }
+          }}
+          className="w-20 border rounded-md px-2 py-1.5 text-center transition-colors"
+        />
+        <span className="text-gray-500">-</span>
+        <input
+          type="text"
+          maxLength={4}
+          value={phonePart3}
+          onChange={(e) => setPhonePart3(e.target.value.replace(/\D/g, ""))}
+          onInput={(e) => {
+            if ((e.target as HTMLInputElement).value.length === 4) {
+              (e.target as HTMLInputElement).classList.add(
+                "bg-gray-100",
+                "text-gray-500"
+              );
+            } else {
+              (e.target as HTMLInputElement).classList.remove(
+                "bg-gray-100",
+                "text-gray-500"
+              );
+            }
+          }}
+          className="w-20 border rounded-md px-2 py-1.5 text-center transition-colors"
         />
       </div>
       <h2 className="text-lg font-bold p-4 mt-2">결제 방법</h2>
@@ -284,16 +370,6 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
             카카오페이
           </span>
         </label>
-        {/* <label className="flex items-center gap-3 cursor-pointer">
-          <input
-            type="radio"
-            name="paymentMethod"
-            value="toss"
-            className="w-5 h-5 text-sky-500 border-gray-300"
-            onChange={() => setSelectedPaymentMethod("toss")}
-          />
-          <span className="text-base font-medium text-gray-700">토스페이</span>
-        </label> */}
       </div>
       {totalPrice > 0 && (
         <div
@@ -311,7 +387,7 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
           ) : (
             <button
               onClick={() => {
-                if (!userAddress || !userContact) {
+                if (!roadAddress || !userContact) {
                   alert("주소 및 연락처를 입력해주세요.");
                   return;
                 }
@@ -331,7 +407,7 @@ export default function Cart({ cartItems, onBack, onUpdateCart }: any) {
                   </h2>
                   <p className="text-sm text-gray-600 mt-2">
                     <span className="font-medium text-gray-700">주소:</span>{" "}
-                    {userAddress}
+                    {roadAddress} {detailAddress}
                   </p>
                   <p className="text-sm text-gray-600 mt-1">
                     <span className="font-medium text-gray-700">연락처:</span>{" "}

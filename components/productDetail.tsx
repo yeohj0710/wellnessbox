@@ -213,8 +213,9 @@ function FirstModal({
             setIsAddressModalOpen(false);
             onClose();
           }}
-          onSave={(fullAddress: string) => {
-            localStorage.setItem("address", fullAddress);
+          onSave={(roadAddress: string, detailAddress: string) => {
+            localStorage.setItem("roadAddress", roadAddress);
+            localStorage.setItem("detailAddress", detailAddress);
             const storedCart = localStorage.getItem("cartItems");
             const cart = storedCart ? JSON.parse(storedCart) : [];
             onAddToCart(totalPrice, quantity, []);

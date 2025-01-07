@@ -25,7 +25,9 @@ export default function Features() {
       {showModal && (
         <AddressModal
           onClose={() => setShowModal(false)}
-          onSave={(fullAddress) => setAddress(fullAddress)}
+          onSave={(roadAddress: string, detailAddress: string) =>
+            setAddress(`${roadAddress} ${detailAddress}`)
+          }
         />
       )}
       <div className="mb-8 w-full sm:w-[640px] xl:w-1/2 px-5 py-7 bg-white sm:border sm:border-gray-200 sm:rounded-lg sm:shadow-lg">
