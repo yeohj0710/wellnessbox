@@ -3,13 +3,14 @@ import { getPharmaciesByProduct } from "@/lib/product";
 import axios from "axios";
 
 export async function POST(req: Request) {
-  const { productIdx, userAddress } = await req.json();
-  if (!productIdx || !userAddress) {
+  const { productIdx, roadAddress } = await req.json();
+  console.log("Received data:", { productIdx, roadAddress });
+  if (!productIdx || !roadAddress) {
     return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }
   try {
     const pharmacies = await getPharmaciesByProduct(productIdx);
-    const userLocation = await getGeocode(userAddress);
+    const userLocation = await getGeocode(roadAddress);
     const sortedPharmacies = await Promise.all(
       pharmacies.map(async (pharmacy) => {
         const pharmacyLocation = await getGeocode(pharmacy.address!);
