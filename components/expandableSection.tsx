@@ -4,11 +4,11 @@ export function ExpandableSection({ title, children }: any) {
   const [isOpen, setIsOpen] = useState(() => {
     return localStorage.getItem(`expandable-${title}`) === "true";
   });
-  const contentRef = useRef<HTMLDivElement>(null);
+  const contentRef: any = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState("0px");
   useEffect(() => {
     if (isOpen) {
-      setHeight(`${contentRef.current?.scrollHeight! + 2}px`);
+      setHeight(`${contentRef.current?.scrollHeight + 2}px`);
     } else {
       setHeight("0px");
     }

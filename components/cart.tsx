@@ -164,7 +164,6 @@ export default function Cart({
       );
     }
   };
-
   const handlePayment = async () => {
     if (selectedPaymentMethod === "card") {
       await handlePaymentRequest(
@@ -178,7 +177,6 @@ export default function Cart({
       );
     }
   };
-
   return (
     <div className="w-full mt-16 mb-8 max-w-[640px] mx-auto bg-white min-h-[100vh]">
       <Script
