@@ -45,12 +45,9 @@ export function MenuLinks() {
       >
         서비스 소개
       </Link>
-      {/*<Link href="/about/refund-policy" className={menuItemClasses()}>
-        취소 및 환불 규정
+      <Link href="/my-orders" className={menuItemClasses()}>
+        내 주문 조회
       </Link>
-      <Link href="/about/contact" className={menuItemClasses()}>
-        문의하기
-      </Link>*/}
       {adminVisible && (
         <Link href="/admin-login" className={menuItemClasses()}>
           관리자 로그인

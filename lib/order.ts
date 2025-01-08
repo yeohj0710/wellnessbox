@@ -2,22 +2,49 @@
 
 import db from "@/lib/db";
 
+export async function getOrdersByPhoneAndPassword(
+  phone: string,
+  password: string
+) {
+  const orders = await db.order_.findMany({
+    where: { phone },
+    include: {
+      pharmacy: true,
+      orderItems: {
+        include: {
+          product: {
+            include: {
+              categories: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  if (orders.length === 0) {
+    throw new Error("해당 전화번호로 조회된 주문이 없습니다.");
+  }
+  if (password !== orders[0].password) {
+    throw new Error("비밀번호가 일치하지 않습니다.");
+  }
+  return orders;
+}
+
 export async function getOrders() {
   return await db.order_.findMany({
-    select: {
-      idx: true,
-      roadAddress: true,
-      detailAddress: true,
-      phone: true,
-      createdAt: true,
-      updatedAt: true,
-      requestNotes: true,
-      entrancePassword: true,
-      directions: true,
-      pharmacy: {
-        select: {
-          idx: true,
-          name: true,
+    include: {
+      pharmacy: true,
+      orderItems: {
+        include: {
+          product: true,
         },
       },
     },
@@ -30,20 +57,11 @@ export async function getOrders() {
 export async function getOrderById(orderIdx: number) {
   return await db.order_.findUnique({
     where: { idx: orderIdx },
-    select: {
-      idx: true,
-      roadAddress: true,
-      detailAddress: true,
-      phone: true,
-      createdAt: true,
-      updatedAt: true,
-      requestNotes: true,
-      entrancePassword: true,
-      directions: true,
-      pharmacy: {
-        select: {
-          idx: true,
-          name: true,
+    include: {
+      pharmacy: true,
+      orderItems: {
+        include: {
+          product: true,
         },
       },
     },
@@ -58,16 +76,38 @@ export async function createOrder(data: {
   entrancePassword?: string;
   directions?: string;
   pharmacyIdx?: number;
+  paymentId?: string;
+  transactionType?: string;
+  txId?: string;
+  status?: string;
+  orderItems: { productId: number; quantity: number }[];
 }) {
+  const { orderItems, ...orderData } = data;
   return await db.order_.create({
     data: {
-      roadAddress: data.roadAddress || null,
-      detailAddress: data.detailAddress || null,
-      phone: data.phone || null,
-      requestNotes: data.requestNotes || null,
-      entrancePassword: data.entrancePassword || null,
-      directions: data.directions || null,
-      pharmacyIdx: data.pharmacyIdx || null,
+      ...orderData,
+      orderItems: {
+        create: orderItems.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+        })),
+      },
+    },
+    include: {
+      pharmacy: true,
+      orderItems: {
+        include: {
+          product: {
+            include: {
+              categories: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      },
     },
   });
 }
@@ -82,23 +122,52 @@ export async function updateOrder(
     entrancePassword?: string;
     directions?: string;
     pharmacyIdx?: number;
+    paymentId?: string;
+    transactionType?: string;
+    txId?: string;
+    status?: string;
+    orderItems?: { productId: number; quantity: number }[];
   }
 ) {
-  return await db.order_.update({
+  const { orderItems, ...orderData } = data;
+
+  const updatedOrder = await db.order_.update({
     where: { idx: orderIdx },
     data: {
-      roadAddress: data.roadAddress || null,
-      detailAddress: data.detailAddress || null,
-      phone: data.phone || null,
-      requestNotes: data.requestNotes || null,
-      entrancePassword: data.entrancePassword || null,
-      directions: data.directions || null,
-      pharmacyIdx: data.pharmacyIdx || null,
+      ...orderData,
+    },
+    include: {
+      pharmacy: true,
+      orderItems: {
+        include: {
+          product: true,
+        },
+      },
     },
   });
+
+  if (orderItems && orderItems.length > 0) {
+    await db.orderItem_.deleteMany({
+      where: { orderId: orderIdx },
+    });
+
+    await db.orderItem_.createMany({
+      data: orderItems.map((item) => ({
+        orderId: orderIdx,
+        productId: item.productId,
+        quantity: item.quantity,
+      })),
+    });
+  }
+
+  return updatedOrder;
 }
 
 export async function deleteOrder(orderIdx: number) {
+  await db.orderItem_.deleteMany({
+    where: { orderId: orderIdx },
+  });
+
   return await db.order_.delete({
     where: { idx: orderIdx },
   });

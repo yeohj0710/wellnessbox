@@ -18,15 +18,16 @@ model Category_ {
 }
 
 model Product_ {
-  idx         Int         @id @default(autoincrement())
+  idx         Int          @id @default(autoincrement())
   name        String?
   images      String[]
   description String?
   price       Int?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @default(now()) @updatedAt
-  categories  Category_[] @relation("CategoryProductRelation")
-  pharmacies  Pharmacy_[] @relation("PharmacyProductRelation")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @default(now()) @updatedAt
+  categories  Category_[]  @relation("CategoryProductRelation")
+  pharmacies  Pharmacy_[]  @relation("PharmacyProductRelation")
+  orderItems  OrderItem_[]
 }
 
 model Pharmacy_ {
@@ -43,18 +44,32 @@ model Pharmacy_ {
 }
 
 model Order_ {
-  idx              Int        @id @default(autoincrement())
+  idx              Int          @id @default(autoincrement())
   roadAddress      String?
   detailAddress    String?
   phone            String?
   password         String?
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @default(now()) @updatedAt
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @default(now()) @updatedAt
   requestNotes     String?
   entrancePassword String?
   directions       String?
   pharmacyIdx      Int?
-  pharmacy         Pharmacy_? @relation(fields: [pharmacyIdx], references: [idx])
+  pharmacy         Pharmacy_?   @relation(fields: [pharmacyIdx], references: [idx])
+  paymentId        String?
+  transactionType  String?
+  txId             String?
+  status           String?
+  orderItems       OrderItem_[]
+}
+
+model OrderItem_ {
+  idx       Int       @id @default(autoincrement())
+  quantity  Int?
+  orderId   Int?
+  productId Int?
+  order     Order_?   @relation(fields: [orderId], references: [idx])
+  product   Product_? @relation(fields: [productId], references: [idx])
 }
 
 model User {
