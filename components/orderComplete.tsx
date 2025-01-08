@@ -6,17 +6,17 @@ import { useEffect } from "react";
 export default function OrderComplete({ order }: { order?: any }) {
   const router = useRouter();
   const finalOrder = order || mockOrder;
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo(0, 0);
+    }
+  }, []);
   if (!finalOrder || !finalOrder.orderItems) {
     router.push("/");
     return null;
   }
   const { roadAddress, detailAddress, phone, totalPrice, orderItems } =
     finalOrder;
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.scrollTo(0, 0);
-    }
-  }, []);
   return (
     <div className="w-full max-w-[640px] mx-auto mt-4 px-3">
       <h1 className="text-2xl font-bold text-center text-gray-800 mb-4 mt-8">
