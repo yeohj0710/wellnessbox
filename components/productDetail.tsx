@@ -53,7 +53,7 @@ export default function ProductDetail({ product, onClose, onAddToCart }: any) {
                   />
                 ))}
                 <button
-                  className="text-gray-600 absolute left-2 top-1/2 transform -translate-y-1/2 bg-gray-200 hover:bg-gray-300 w-10 h-10 p-2 rounded-full shadow-md"
+                  className="leading-none text-gray-600 absolute left-2 top-1/2 transform -translate-y-1/2 bg-gray-200 hover:bg-gray-300 w-10 h-10 p-2 rounded-full shadow-md"
                   onClick={() => {
                     const images = document.querySelectorAll(
                       `[data-image-index]`
@@ -70,7 +70,7 @@ export default function ProductDetail({ product, onClose, onAddToCart }: any) {
                   ◀
                 </button>
                 <button
-                  className="text-gray-600 absolute right-2 top-1/2 transform -translate-y-1/2 bg-gray-200 hover:bg-gray-300 w-10 h-10 p-2 rounded-full shadow-md"
+                  className="leading-none text-gray-600 absolute right-2 top-1/2 transform -translate-y-1/2 bg-gray-200 hover:bg-gray-300 w-10 h-10 p-2 rounded-full shadow-md"
                   onClick={() => {
                     const images = document.querySelectorAll(
                       `[data-image-index]`
@@ -108,14 +108,14 @@ export default function ProductDetail({ product, onClose, onAddToCart }: any) {
           <div className="flex items-center justify-between mt-4">
             <button
               onClick={() => handleQuantityChange(-1)}
-              className="font-bold px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md"
+              className="leading-none text-lg w-10 h-10 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md"
             >
               -
             </button>
             <span className="font-bold text-lg">{quantity}</span>
             <button
               onClick={() => handleQuantityChange(1)}
-              className="font-bold px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md"
+              className="leading-none text-lg w-10 h-10 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md"
             >
               +
             </button>
@@ -154,7 +154,6 @@ export default function ProductDetail({ product, onClose, onAddToCart }: any) {
                 product={product}
                 quantity={quantity}
                 onAddToCart={onAddToCart}
-                totalPrice={totalPrice}
                 onClose={() => setIsFirstModalOpen(false)}
                 onProductDetailClose={onClose}
               />
@@ -170,7 +169,6 @@ function FirstModal({
   product,
   quantity,
   onAddToCart,
-  totalPrice,
   onClose,
   onProductDetailClose,
 }: any) {

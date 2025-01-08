@@ -40,7 +40,7 @@ export default function Home() {
     const storedTimestamp = localStorage.getItem(timestampKey);
     if (
       !storedTimestamp ||
-      now - parseInt(storedTimestamp, 10) > 10 * 60 * 1000
+      now - parseInt(storedTimestamp, 10) > 3 * 60 * 60 * 1000
     ) {
       localStorage.clear();
       localStorage.setItem(timestampKey, now.toString());
@@ -138,11 +138,17 @@ export default function Home() {
     filterCartItems();
   }, [selectedPharmacy]);
   useEffect(() => {
-    const updatedTotalPrice = cartItems.reduce(
-      (acc: number, item: any) => acc + item.price * item.quantity,
-      0
-    );
-    setTotalPrice(updatedTotalPrice);
+    const storedCart = localStorage.getItem("cartItems");
+    if (storedCart) {
+      const parsedCart = JSON.parse(storedCart);
+      const updatedTotalPrice = parsedCart.reduce(
+        (acc: number, item: any) => acc + item.price * item.quantity,
+        0
+      );
+      setTotalPrice(updatedTotalPrice);
+    } else {
+      setTotalPrice(0);
+    }
   }, [cartItems]);
   useEffect(() => {
     if (totalPrice > 0 || isCartVisible) {
@@ -188,17 +194,14 @@ export default function Home() {
       if (existingItem) {
         return prev.map((item) =>
           item.idx === product.idx
-            ? {
-                ...item,
-                quantity: item.quantity + quantity,
-              }
+            ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       }
       return [
         ...prev,
         {
-          product,
+          ...product,
           quantity,
         },
       ];
@@ -448,9 +451,7 @@ export default function Home() {
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
           onAddToCart={(quantity: number) => {
-            if (selectedProduct) {
-              handleAddToCart(selectedProduct, quantity);
-            }
+            handleAddToCart(selectedProduct, quantity);
           }}
         />
       )}

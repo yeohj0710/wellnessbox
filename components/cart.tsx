@@ -5,6 +5,7 @@ import Script from "next/script";
 import { TrashIcon } from "@heroicons/react/16/solid";
 import { createOrder } from "@/lib/order";
 import { ExpandableSection } from "./expandableSection";
+import { useRouter } from "next/navigation";
 
 export default function Cart({
   cartItems,
@@ -14,12 +15,8 @@ export default function Cart({
 }: any) {
   const [sdkLoaded, setSdkLoaded] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [roadAddress, setRoadAddress] = useState(
-    localStorage.getItem("roadAddress") || ""
-  );
-  const [detailAddress, setDetailAddress] = useState(
-    localStorage.getItem("detailAddress") || ""
-  );
+  const [roadAddress, setRoadAddress] = useState("");
+  const [detailAddress, setDetailAddress] = useState("");
   const [requestNotes, setRequestNotes] = useState("");
   const [entrancePassword, setEntrancePassword] = useState("");
   const [directions, setDirections] = useState("");
@@ -28,9 +25,92 @@ export default function Cart({
   const [phonePart3, setPhonePart3] = useState("");
   const [userContact, setUserContact] = useState("");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
+  const router: any = useRouter();
+  const currentPath = router.asPath;
+  useEffect(() => {
+    const storedRoadAddress = localStorage.getItem("roadAddress");
+    const storedDetailAddress = localStorage.getItem("detailAddress");
+    const storedDetailAddressInput = localStorage.getItem(
+      "detailAddress_input"
+    );
+    const storedRequestNotes = localStorage.getItem("requestNotes_input");
+    const storedEntrancePassword = localStorage.getItem(
+      "entrancePassword_input"
+    );
+    const storedDirections = localStorage.getItem("directions_input");
+    const storedPhonePart1 = localStorage.getItem("phonePart1_input");
+    const storedPhonePart2 = localStorage.getItem("phonePart2_input");
+    const storedPhonePart3 = localStorage.getItem("phonePart3_input");
+    if (storedRoadAddress) setRoadAddress(storedRoadAddress);
+    if (storedDetailAddressInput) {
+      setDetailAddress(storedDetailAddressInput);
+    } else if (storedDetailAddress) {
+      setDetailAddress(storedDetailAddress);
+    }
+    if (storedRequestNotes) setRequestNotes(storedRequestNotes);
+    if (storedEntrancePassword) setEntrancePassword(storedEntrancePassword);
+    if (storedDirections) setDirections(storedDirections);
+    if (storedPhonePart1) setPhonePart1(storedPhonePart1);
+    if (storedPhonePart2) setPhonePart2(storedPhonePart2);
+    if (storedPhonePart3) setPhonePart3(storedPhonePart3);
+    if (window.IMP) {
+      setSdkLoaded(true);
+    }
+    setUserContact(
+      `${storedPhonePart1 || phonePart1}-${storedPhonePart2 || phonePart2}-${
+        storedPhonePart3 || phonePart3
+      }`
+    );
+    window.scrollTo(0, 0);
+  }, []);
+  useEffect(() => {
+    localStorage.setItem("roadAddress_input", roadAddress);
+  }, [roadAddress]);
+  useEffect(() => {
+    localStorage.setItem("detailAddress_input", detailAddress);
+  }, [detailAddress]);
+  useEffect(() => {
+    localStorage.setItem("requestNotes_input", requestNotes);
+  }, [requestNotes]);
+  useEffect(() => {
+    localStorage.setItem("entrancePassword_input", entrancePassword);
+  }, [entrancePassword]);
+  useEffect(() => {
+    localStorage.setItem("directions_input", directions);
+  }, [directions]);
+  useEffect(() => {
+    localStorage.setItem("phonePart1_input", phonePart1);
+  }, [phonePart1]);
+  useEffect(() => {
+    localStorage.setItem("phonePart2_input", phonePart2);
+  }, [phonePart2]);
+  useEffect(() => {
+    localStorage.setItem("phonePart3_input", phonePart3);
+  }, [phonePart3]);
   useEffect(() => {
     setUserContact(`${phonePart1}-${phonePart2}-${phonePart3}`);
   }, [phonePart1, phonePart2, phonePart3]);
+  useEffect(() => {
+    const phonePart1Input = document.querySelector("input[value='010']");
+    const phonePart2Input = document.querySelector(
+      "input[value='" + phonePart2 + "']"
+    );
+    const phonePart3Input = document.querySelector(
+      "input[value='" + phonePart3 + "']"
+    );
+
+    if (phonePart1Input) {
+      phonePart1Input.classList.add("bg-gray-100", "text-gray-500");
+    }
+
+    if (phonePart2.length === 4 && phonePart2Input) {
+      phonePart2Input.classList.add("bg-gray-100", "text-gray-500");
+    }
+
+    if (phonePart3.length === 4 && phonePart3Input) {
+      phonePart3Input.classList.add("bg-gray-100", "text-gray-500");
+    }
+  }, [phonePart2, phonePart3]);
   const totalPrice = cartItems.reduce(
     (acc: any, item: any) => acc + item.price * item.quantity,
     0
@@ -57,7 +137,7 @@ export default function Cart({
           email: "buyer@example.com",
           phoneNumber: userContact,
         },
-        redirectUrl: `${window.location.origin}/order-complete`,
+        redirectUrl: currentPath,
       });
       if (response.code === "FAILURE_TYPE_PG") {
         alert(`결제가 취소되었습니다.`);
@@ -67,7 +147,8 @@ export default function Cart({
         alert("결제에 실패하였습니다. 결제 상태를 확인해주세요.");
         return;
       }
-      await createOrder({
+      console.log(response);
+      console.log({
         roadAddress,
         detailAddress,
         phone: userContact,
@@ -75,8 +156,7 @@ export default function Cart({
         entrancePassword,
         directions,
       });
-      alert("결제가 완료되었습니다.");
-      window.location.href = "/order-complete";
+      return;
     } catch (error) {
       console.error("결제 요청 중 오류 발생:", error);
       alert(
@@ -84,6 +164,7 @@ export default function Cart({
       );
     }
   };
+
   const handlePayment = async () => {
     if (selectedPaymentMethod === "card") {
       await handlePaymentRequest(
@@ -97,20 +178,7 @@ export default function Cart({
       );
     }
   };
-  useEffect(() => {
-    window.scrollTo(0, 0);
-    const storedRoadAddress = localStorage.getItem("roadAddress");
-    const storedDetailAddress = localStorage.getItem("detailAddress");
-    if (storedRoadAddress) {
-      setRoadAddress(storedRoadAddress);
-    }
-    if (storedDetailAddress) {
-      setDetailAddress(storedDetailAddress);
-    }
-    if (window.IMP) {
-      setSdkLoaded(true);
-    }
-  }, []);
+
   return (
     <div className="w-full mt-16 mb-8 max-w-[640px] mx-auto bg-white min-h-[100vh]">
       <Script
@@ -152,12 +220,12 @@ export default function Cart({
               )}
               <div className="flex-1">
                 <h2 className="font-bold">{item.name}</h2>
-                <p className="text-sm text-gray-500">
+                <p className="mt-1 text-sm text-gray-500">
                   {item.categories
                     ?.map((category: any) => category.name)
                     .join(", ") || "카테고리 없음"}
                 </p>
-                <p className="font-bold text-lg text-sky-500">
+                <p className="mt-1 font-bold text-sky-500">
                   ₩{item.price.toLocaleString()}
                 </p>
               </div>
@@ -175,7 +243,7 @@ export default function Cart({
                       JSON.stringify(updatedItems)
                     );
                   }}
-                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-lg"
+                  className="leading-none w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-lg"
                 >
                   -
                 </button>
@@ -193,7 +261,7 @@ export default function Cart({
                       JSON.stringify(updatedItems)
                     );
                   }}
-                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-lg"
+                  className="leading-none w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-lg"
                 >
                   +
                 </button>
@@ -208,7 +276,7 @@ export default function Cart({
                       JSON.stringify(updatedItems)
                     );
                   }}
-                  className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center"
+                  className="leading-none w-8 h-8 bg-red-100 hover:bg-red-200 rounded-full flex items-center justify-center"
                 >
                   <TrashIcon className="w-5 h-5 text-red-500" />
                 </button>
@@ -238,9 +306,12 @@ export default function Cart({
           <input
             type="text"
             value={detailAddress}
-            onChange={(e) => setDetailAddress(e.target.value)}
+            onChange={(e) => {
+              setDetailAddress(e.target.value);
+              localStorage.setItem("detailAddress_input", e.target.value);
+            }}
             placeholder="예: A동 101호"
-            className="w-full border rounded-md px-3 py-2 text-base transition-colors text-gray-700"
+            className="focus:outline-none focus:ring-2 focus:ring-sky-400 w-full border rounded-md px-3 py-2 text-base transition-colors text-gray-700"
           />
         </div>
       </div>
@@ -250,27 +321,36 @@ export default function Cart({
           <input
             type="text"
             value={requestNotes}
-            onChange={(e) => setRequestNotes(e.target.value)}
+            onChange={(e) => {
+              setRequestNotes(e.target.value);
+              localStorage.setItem("requestNotes_input", e.target.value);
+            }}
             placeholder="예: 문 앞에 놓아주세요."
-            className="w-full border rounded-md px-3 py-2 text-base"
+            className="focus:outline-none focus:ring-2 focus:ring-sky-400 w-full border rounded-md px-3 py-2 text-base"
           />
         </ExpandableSection>
         <ExpandableSection title="공동현관 비밀번호 (선택)">
           <input
             type="text"
             value={entrancePassword}
-            onChange={(e) => setEntrancePassword(e.target.value)}
+            onChange={(e) => {
+              setEntrancePassword(e.target.value);
+              localStorage.setItem("entrancePassword_input", e.target.value);
+            }}
             placeholder="예: #1234"
-            className="w-full border rounded-md px-3 py-2 text-base"
+            className="focus:outline-none focus:ring-2 focus:ring-sky-400 w-full border rounded-md px-3 py-2 text-base"
           />
         </ExpandableSection>
         <ExpandableSection title="찾아오는 길 안내 (선택)">
           <input
             type="text"
             value={directions}
-            onChange={(e) => setDirections(e.target.value)}
+            onChange={(e) => {
+              setDirections(e.target.value);
+              localStorage.setItem("directions_input", e.target.value);
+            }}
             placeholder="예: 마트 옆에 건물 입구가 있어요."
-            className="w-full border rounded-md px-3 py-2 text-base"
+            className="focus:outline-none focus:ring-2 focus:ring-sky-400 w-full border rounded-md px-3 py-2 text-base"
           />
         </ExpandableSection>
       </div>
@@ -280,7 +360,11 @@ export default function Cart({
           type="text"
           maxLength={3}
           value={phonePart1}
-          onChange={(e) => setPhonePart1(e.target.value.replace(/\D/g, ""))}
+          onChange={(e) => {
+            const newValue = e.target.value.replace(/\D/g, "");
+            setPhonePart1(newValue);
+            localStorage.setItem("phonePart1_input", newValue);
+          }}
           onInput={(e) => {
             const input = e.target as HTMLInputElement;
             if (input.value.length === 3) {
@@ -289,7 +373,7 @@ export default function Cart({
               input.classList.remove("bg-gray-100", "text-gray-500");
             }
           }}
-          className={`w-14 border rounded-md px-2 py-1.5 text-center transition-colors ${
+          className={`focus:outline-none focus:ring-2 focus:ring-sky-400 w-14 border rounded-md px-2 py-1.5 text-center transition-colors ${
             phonePart1.length === 3 ? "bg-gray-100 text-gray-500" : ""
           }`}
         />
@@ -298,42 +382,46 @@ export default function Cart({
           type="text"
           maxLength={4}
           value={phonePart2}
-          onChange={(e) => setPhonePart2(e.target.value.replace(/\D/g, ""))}
-          onInput={(e) => {
-            if ((e.target as HTMLInputElement).value.length === 4) {
-              (e.target as HTMLInputElement).classList.add(
-                "bg-gray-100",
-                "text-gray-500"
-              );
-            } else {
-              (e.target as HTMLInputElement).classList.remove(
-                "bg-gray-100",
-                "text-gray-500"
-              );
+          onChange={(e) => {
+            const newValue = e.target.value.replace(/\D/g, "");
+            setPhonePart2(newValue);
+            localStorage.setItem("phonePart2_input", newValue);
+            if (newValue.length === 4) {
+              (
+                document.getElementById("phonePart3") as HTMLInputElement
+              )?.focus();
             }
           }}
-          className="w-20 border rounded-md px-2 py-1.5 text-center transition-colors"
+          onInput={(e) => {
+            const input = e.target as HTMLInputElement;
+            if (input.value.length === 4) {
+              input.classList.add("bg-gray-100", "text-gray-500");
+            } else {
+              input.classList.remove("bg-gray-100", "text-gray-500");
+            }
+          }}
+          className="focus:outline-none focus:ring-2 focus:ring-sky-400 w-20 border rounded-md px-2 py-1.5 text-center transition-colors"
         />
         <span className="text-gray-500">-</span>
         <input
+          id="phonePart3"
           type="text"
           maxLength={4}
           value={phonePart3}
-          onChange={(e) => setPhonePart3(e.target.value.replace(/\D/g, ""))}
+          onChange={(e) => {
+            const newValue = e.target.value.replace(/\D/g, "");
+            setPhonePart3(newValue);
+            localStorage.setItem("phonePart3_input", newValue);
+          }}
           onInput={(e) => {
-            if ((e.target as HTMLInputElement).value.length === 4) {
-              (e.target as HTMLInputElement).classList.add(
-                "bg-gray-100",
-                "text-gray-500"
-              );
+            const input = e.target as HTMLInputElement;
+            if (input.value.length === 4) {
+              input.classList.add("bg-gray-100", "text-gray-500");
             } else {
-              (e.target as HTMLInputElement).classList.remove(
-                "bg-gray-100",
-                "text-gray-500"
-              );
+              input.classList.remove("bg-gray-100", "text-gray-500");
             }
           }}
-          className="w-20 border rounded-md px-2 py-1.5 text-center transition-colors"
+          className="focus:outline-none focus:ring-2 focus:ring-sky-400 w-20 border rounded-md px-2 py-1.5 text-center transition-colors"
         />
       </div>
       {selectedPharmacy && (
@@ -348,11 +436,19 @@ export default function Cart({
                 {selectedPharmacy.name}
               </p>
             </div>
-            <div className="flex items-center mt-1">
+            <div className="flex items-center mt-2">
               <span className="w-24 text-sm font-medium text-gray-600">
                 약국 주소
               </span>
               <p className="flex-1 text-gray-700">{selectedPharmacy.address}</p>
+            </div>
+            <div className="flex items-center mt-2">
+              <span className="w-24 text-sm font-medium text-gray-600">
+                전화번호
+              </span>
+              <p className="flex-1 text-gray-700">
+                {selectedPharmacy.phone || "없음"}
+              </p>
             </div>
           </div>
         </div>
@@ -406,33 +502,90 @@ export default function Cart({
           </span>
         </div>
       </div>
-      <div className="px-4 mt-6">
-        <button
-          onClick={() => {
-            if (!sdkLoaded || !window.IMP) {
-              alert(
-                "결제 모듈을 불러오는 데 실패하였습니다. 페이지를 새로고침해 주세요."
-              );
-              return;
-            }
-            const isValidPhone = /^[0-9]{3}-[0-9]{4}-[0-9]{4}$/.test(
-              userContact
-            );
-            if (!isValidPhone) {
-              alert("전화번호를 올바른 형식으로 입력해 주세요.");
-              return;
-            }
-            if (!selectedPaymentMethod) {
-              alert("결제 수단을 선택해 주세요.");
-              return;
-            }
-            setShowModal(true);
-          }}
-          className="w-full bg-sky-400 text-white py-2.5 sm:py-3 rounded-lg font-bold hover:bg-sky-500 transition"
+      {totalPrice < 15000 ? (
+        <div
+          className={`px-6 fixed bottom-0 left-0 right-0 w-full max-w-[640px] mx-auto ${
+            totalPrice < 15000 ? "bg-gray-400" : "bg-sky-400"
+          } text-white p-4 flex justify-between items-center text-lg font-bold`}
         >
-          결제하기
-        </button>
-      </div>
+          <span className="font-bold">₩{totalPrice.toLocaleString()}</span>
+          <span className="text-sm text-white py-3">
+            {`${(
+              15000 - totalPrice
+            ).toLocaleString()}원만 더 담으면 주문할 수 있어요.`}
+          </span>
+        </div>
+      ) : (
+        <div className="px-4 mt-6">
+          <button
+            onClick={() => {
+              if (!sdkLoaded || !window.IMP) {
+                alert(
+                  "결제 모듈을 불러오는 데 실패하였습니다. 페이지를 새로고침해 주세요."
+                );
+                return;
+              }
+              const isValidPhone = /^[0-9]{3}-[0-9]{4}-[0-9]{4}$/.test(
+                userContact
+              );
+              if (!phonePart1 || !phonePart2 || !phonePart3) {
+                alert("전화번호를 입력해 주세요.");
+                return;
+              }
+              if (!isValidPhone) {
+                alert("전화번호를 올바른 형식으로 입력해 주세요.");
+                return;
+              }
+              if (!selectedPaymentMethod) {
+                alert("결제 수단을 선택해 주세요.");
+                return;
+              }
+              setShowModal(true);
+            }}
+            className="w-full bg-sky-400 text-white py-2.5 sm:py-3 rounded-lg font-bold hover:bg-sky-500 transition"
+          >
+            결제하기
+          </button>
+        </div>
+      )}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="mx-2 bg-white rounded-lg shadow-lg w-full max-w-sm overflow-hidden">
+            <div className="px-6 py-4">
+              <h2 className="text-base font-medium text-gray-800">
+                주소와 연락처가 확실한가요?
+              </h2>
+              <p className="text-sm text-gray-600 mt-2">
+                <span className="font-medium text-gray-700">주소:</span>{" "}
+                <span className="font-bold">
+                  {roadAddress} {detailAddress}
+                </span>
+              </p>
+              <p className="text-sm text-gray-600 mt-1">
+                <span className="font-medium text-gray-700">연락처:</span>{" "}
+                <span className="font-bold">{userContact}</span>
+              </p>
+            </div>
+            <div className="flex border-t border-gray-200">
+              <button
+                onClick={() => setShowModal(false)}
+                className="w-1/2 text-sm text-gray-500 py-3 hover:bg-gray-100 transition"
+              >
+                취소
+              </button>
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  handlePayment();
+                }}
+                className="w-1/2 text-sm text-sky-500 py-3 font-medium hover:bg-sky-50 transition"
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

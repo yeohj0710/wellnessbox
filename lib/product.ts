@@ -180,6 +180,7 @@ export async function getPharmaciesByProduct(productIdx: number) {
       idx: true,
       name: true,
       address: true,
+      phone: true,
     },
   });
 }

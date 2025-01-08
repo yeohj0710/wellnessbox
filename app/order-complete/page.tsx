@@ -24,7 +24,7 @@ export default function OrderComplete() {
   }
   const { userAddress, userContact, totalPrice, cartItems } = paymentDetails;
   return (
-    <div className="w-full max-w-[640px] mx-auto mt-4">
+    <div className="w-full max-w-[640px] mx-auto mt-4 px-3">
       <h1 className="text-2xl font-bold text-center text-gray-800 mb-4 mt-8">
         결제가 완료되었습니다! 🎉
       </h1>

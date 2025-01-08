@@ -1,15 +1,18 @@
 import { useState, useRef, useEffect } from "react";
 
 export function ExpandableSection({ title, children }: any) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(() => {
+    return localStorage.getItem(`expandable-${title}`) === "true";
+  });
   const contentRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState("0px");
   useEffect(() => {
     if (isOpen) {
-      setHeight(`${contentRef.current?.scrollHeight}px`);
+      setHeight(`${contentRef.current?.scrollHeight! + 2}px`);
     } else {
       setHeight("0px");
     }
+    localStorage.setItem(`expandable-${title}`, String(isOpen));
   }, [isOpen]);
   const handleToggle = () => {
     setIsOpen(!isOpen);
@@ -29,7 +32,7 @@ export function ExpandableSection({ title, children }: any) {
         onClick={handleToggle}
       >
         <span
-          className={`transform transition-transform duration-300 text-sm ${
+          className={`text-gray-700 transform transition-transform duration-300 text-sm ${
             isOpen ? "rotate-90" : "rotate-0"
           }`}
           style={{ fontSize: "10px" }}
@@ -44,7 +47,7 @@ export function ExpandableSection({ title, children }: any) {
         className="overflow-hidden transition-all duration-300 ease-in-out"
         onClick={stopPropagation}
       >
-        {isOpen && <div className="mt-2 pl-3">{children}</div>}
+        {isOpen && <div className="mt-2 pl-3 pr-1">{children}</div>}
       </div>
     </div>
   );
