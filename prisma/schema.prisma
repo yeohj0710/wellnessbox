@@ -61,6 +61,7 @@ model Order_ {
   txId             String?
   status           String?
   orderItems       OrderItem_[]
+  totalPrice       Int?
 }
 
 model OrderItem_ {

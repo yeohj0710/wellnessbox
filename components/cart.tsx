@@ -25,6 +25,7 @@ export default function Cart({
   const [phonePart2, setPhonePart2] = useState("");
   const [phonePart3, setPhonePart3] = useState("");
   const [userContact, setUserContact] = useState("");
+  const [password, setPassword] = useState("");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
   const [orderCompleted, setOrderCompleted] = useState(false);
   const [orderData, setOrderData] = useState<any>(null);
@@ -44,6 +45,7 @@ export default function Cart({
     const storedPhonePart1 = localStorage.getItem("phonePart1_input");
     const storedPhonePart2 = localStorage.getItem("phonePart2_input");
     const storedPhonePart3 = localStorage.getItem("phonePart3_input");
+    const password = localStorage.getItem("password_input");
     if (storedRoadAddress) setRoadAddress(storedRoadAddress);
     if (storedDetailAddressInput) {
       setDetailAddress(storedDetailAddressInput);
@@ -56,6 +58,7 @@ export default function Cart({
     if (storedPhonePart1) setPhonePart1(storedPhonePart1);
     if (storedPhonePart2) setPhonePart2(storedPhonePart2);
     if (storedPhonePart3) setPhonePart3(storedPhonePart3);
+    if (password) setPassword(password);
     if (window.IMP) {
       setSdkLoaded(true);
     }
@@ -101,19 +104,19 @@ export default function Cart({
     const phonePart3Input = document.querySelector(
       "input[value='" + phonePart3 + "']"
     );
-
     if (phonePart1Input) {
       phonePart1Input.classList.add("bg-gray-100", "text-gray-500");
     }
-
     if (phonePart2.length === 4 && phonePart2Input) {
       phonePart2Input.classList.add("bg-gray-100", "text-gray-500");
     }
-
     if (phonePart3.length === 4 && phonePart3Input) {
       phonePart3Input.classList.add("bg-gray-100", "text-gray-500");
     }
   }, [phonePart2, phonePart3]);
+  useEffect(() => {
+    localStorage.setItem("password_input", password);
+  }, [password]);
   const totalPrice = cartItems.reduce(
     (acc: any, item: any) => acc + item.price * item.quantity,
     0
@@ -130,7 +133,7 @@ export default function Cart({
         storeId: process.env.NEXT_PUBLIC_PORTONE_STORE_ID!,
         paymentId: `payment${Date.now()}`,
         orderName: "웰니스박스 건강기능식품",
-        totalAmount: totalPrice,
+        totalAmount: totalPriceWithShipping,
         currency: "KRW",
         channelKey,
         payMethod,
@@ -155,6 +158,7 @@ export default function Cart({
           roadAddress,
           detailAddress,
           phone: userContact,
+          password,
           requestNotes,
           entrancePassword,
           directions,
@@ -167,6 +171,7 @@ export default function Cart({
             productId: item.idx,
             quantity: item.quantity,
           })),
+          totalPrice: totalPriceWithShipping,
         });
         alert("주문이 완료되었습니다.");
         setOrderData(order);
@@ -195,7 +200,7 @@ export default function Cart({
   };
   return (
     <>
-      {orderCompleted ? (
+      {!orderCompleted ? (
         <div className="w-full mt-16 mb-8 max-w-[640px] mx-auto bg-white min-h-[100vh]">
           <Script
             src="https://cdn.iamport.kr/js/iamport.payment-1.2.0.js"
@@ -447,6 +452,21 @@ export default function Cart({
               className="focus:outline-none focus:ring-2 focus:ring-sky-400 w-20 border rounded-md px-2 py-1.5 text-center transition-colors"
             />
           </div>
+          <h2 className="text-lg font-bold p-4 pb-2 mt-2">
+            주문 조회 비밀번호
+          </h2>
+          <div className="px-4 space-y-3">
+            <input
+              type="text"
+              value={password}
+              onChange={(e) => {
+                const newValue = e.target.value.replace(/\D/g, "").slice(0, 8);
+                setPassword(newValue);
+              }}
+              placeholder="내 주문 조회 시 필요한 비밀번호에요."
+              className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-400"
+            />
+          </div>
           {selectedPharmacy && (
             <div className="px-4 mt-8">
               <h2 className="text-lg font-bold border-gray-300">약국 정보</h2>
@@ -561,6 +581,14 @@ export default function Cart({
                   }
                   if (!isValidPhone) {
                     alert("전화번호를 올바른 형식으로 입력해 주세요.");
+                    return;
+                  }
+                  if (!password) {
+                    alert("주문 조회 비밀번호를 입력해 주세요.");
+                    return;
+                  }
+                  if (password.length < 4) {
+                    alert("비밀번호는 최소한 4자리 이상으로 입력해 주세요.");
                     return;
                   }
                   if (!selectedPaymentMethod) {

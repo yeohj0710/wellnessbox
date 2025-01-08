@@ -7,7 +7,7 @@ export async function getOrdersByPhoneAndPassword(
   password: string
 ) {
   const orders = await db.order_.findMany({
-    where: { phone },
+    where: { phone, password },
     include: {
       pharmacy: true,
       orderItems: {
@@ -28,7 +28,6 @@ export async function getOrdersByPhoneAndPassword(
       createdAt: "desc",
     },
   });
-
   if (orders.length === 0) {
     throw new Error("해당 전화번호로 조회된 주문이 없습니다.");
   }
@@ -72,6 +71,7 @@ export async function createOrder(data: {
   roadAddress?: string;
   detailAddress?: string;
   phone?: string;
+  password?: string;
   requestNotes?: string;
   entrancePassword?: string;
   directions?: string;
@@ -81,6 +81,7 @@ export async function createOrder(data: {
   txId?: string;
   status?: string;
   orderItems: { productId: number; quantity: number }[];
+  totalPrice: number;
 }) {
   const { orderItems, ...orderData } = data;
   return await db.order_.create({
@@ -118,6 +119,7 @@ export async function updateOrder(
     roadAddress?: string;
     detailAddress?: string;
     phone?: string;
+    password?: string;
     requestNotes?: string;
     entrancePassword?: string;
     directions?: string;
@@ -127,10 +129,10 @@ export async function updateOrder(
     txId?: string;
     status?: string;
     orderItems?: { productId: number; quantity: number }[];
+    totalPrice?: number;
   }
 ) {
   const { orderItems, ...orderData } = data;
-
   const updatedOrder = await db.order_.update({
     where: { idx: orderIdx },
     data: {
@@ -145,12 +147,10 @@ export async function updateOrder(
       },
     },
   });
-
   if (orderItems && orderItems.length > 0) {
     await db.orderItem_.deleteMany({
       where: { orderId: orderIdx },
     });
-
     await db.orderItem_.createMany({
       data: orderItems.map((item) => ({
         orderId: orderIdx,

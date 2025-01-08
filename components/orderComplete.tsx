@@ -1,4 +1,7 @@
+"use client";
+
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function OrderComplete({ order }: { order?: any }) {
   const router = useRouter();
@@ -9,6 +12,11 @@ export default function OrderComplete({ order }: { order?: any }) {
   }
   const { roadAddress, detailAddress, phone, totalPrice, orderItems } =
     finalOrder;
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo(0, 0);
+    }
+  }, []);
   return (
     <div className="w-full max-w-[640px] mx-auto mt-4 px-3">
       <h1 className="text-2xl font-bold text-center text-gray-800 mb-4 mt-8">
@@ -46,14 +54,18 @@ export default function OrderComplete({ order }: { order?: any }) {
             </p>
           </div>
         ))}
+        <div className="flex justify-end mt-4 text-sm text-gray-600 gap-1">
+          <span>배송비</span>
+          <span className="font-bold">₩3,000</span>
+        </div>
         <div className="mt-4 text-right">
           <p className="text-base text-gray-600">
             주소: {roadAddress} {detailAddress}
           </p>
           <p className="text-base text-gray-600 mt-1">연락처: {phone}</p>
-          <h3 className="text-lg font-bold text-sky-400 mt-1">
-            <span className="text-gray-700">총 결제 금액:</span> ₩
-            {totalPrice.toLocaleString()}
+          <h3 className="flex justify-end gap-2 text-lg font-bold mt-2">
+            <span className="text-gray-700">총 결제 금액</span>
+            <span className="text-sky-400">₩{totalPrice.toLocaleString()}</span>
           </h3>
         </div>
       </div>
