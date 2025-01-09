@@ -41,6 +41,7 @@ model Pharmacy_ {
   updatedAt DateTime   @default(now()) @updatedAt
   products  Product_[] @relation("PharmacyProductRelation")
   orders    Order_[]
+  messages  Message_[]
 }
 
 model Order_ {
@@ -49,8 +50,6 @@ model Order_ {
   detailAddress    String?
   phone            String?
   password         String?
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @default(now()) @updatedAt
   requestNotes     String?
   entrancePassword String?
   directions       String?
@@ -62,6 +61,9 @@ model Order_ {
   status           String?
   orderItems       OrderItem_[]
   totalPrice       Int?
+  messages         Message_[]
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @default(now()) @updatedAt
 }
 
 model OrderItem_ {
@@ -71,6 +73,17 @@ model OrderItem_ {
   productId Int?
   order     Order_?   @relation(fields: [orderId], references: [idx])
   product   Product_? @relation(fields: [productId], references: [idx])
+}
+
+model Message_ {
+  idx         Int        @id @default(autoincrement())
+  orderId     Int
+  senderPhone String?
+  pharmacyId  Int?
+  content     String
+  timestamp   DateTime   @default(now())
+  order       Order_     @relation(fields: [orderId], references: [idx])
+  pharmacy    Pharmacy_? @relation(fields: [pharmacyId], references: [idx])
 }
 
 model User {

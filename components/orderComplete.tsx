@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -69,7 +70,7 @@ export default function OrderComplete({ order }: { order?: any }) {
           </h3>
         </div>
       </div>
-      <div className="px-4 py-4 bg-gray-50 shadow rounded-lg mt-6">
+      <div className="px-4 py-4 bg-white shadow rounded-lg mt-4">
         <p className="text-sm text-gray-600">
           결제 시 입력한
           <span className="text-sky-400 font-bold"> 전화번호</span>와
@@ -78,12 +79,12 @@ export default function OrderComplete({ order }: { order?: any }) {
         </p>
       </div>
       <div className="mt-6 flex justify-center">
-        <button
-          onClick={() => (window.location.href = "/")}
+        <Link
+          href="/my-orders"
           className="bg-sky-400 text-white font-bold py-2 px-6 rounded-lg hover:bg-sky-500 transition mb-12"
         >
-          홈으로 돌아가기
-        </button>
+          내 주문 조회하기
+        </Link>
       </div>
     </div>
   );

@@ -128,15 +128,17 @@ export default function AddressModal({ onClose, onSave }: any) {
                   </div>
                 ))
               ) : (
-                <div className="flex flex-col items-center justify-center h-24 text-center">
+                <div className="flex flex-col items-center justify-center h-28 text-center">
                   <p className="text-sm font-normal text-gray-500 mb-5">
                     검색 결과가 없습니다.
                   </p>
                   <p className="text-gray-500 font-normal text-xs">
-                    혹시 <b>지번</b> 주소 또는 건물 <b>이름</b>을 입력하셨나요?
+                    혹시 건물 <b>이름</b>을 입력하셨나요?
                     <br />
-                    <b>도로명</b>과 건물 <b>번호</b>를 입력해 주세요. (예:
-                    송도과학로 85)
+                    <b>도로명</b>과 건물 <b>번호</b>, 또는 <b>지번</b>을 입력해
+                    주세요.
+                    <br />
+                    (예: 송도과학로 85 또는 송도동 162-1)
                   </p>
                 </div>
               )

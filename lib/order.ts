@@ -37,6 +37,36 @@ export async function getOrdersByPhoneAndPassword(
   return orders;
 }
 
+export async function getOrdersByPharmacy(pharmacyIdx: number) {
+  return await db.order_.findMany({
+    where: { pharmacyIdx },
+    include: {
+      pharmacy: true,
+      orderItems: {
+        include: {
+          product: {
+            include: {
+              categories: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      },
+      messages: {
+        orderBy: {
+          timestamp: "asc",
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+}
+
 export async function getOrders() {
   return await db.order_.findMany({
     include: {

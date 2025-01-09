@@ -13,9 +13,13 @@ export default function MyOrders() {
   const [error, setError] = useState("");
   const [isViewingDetails, setIsViewingDetails] = useState(false);
   const [loading, setLoading] = useState(false);
-
+  useEffect(() => {
+    setPhonePart1(localStorage.getItem("my-orders-phonePart1") || "010");
+    setPhonePart2(localStorage.getItem("my-orders-phonePart2") || "");
+    setPhonePart3(localStorage.getItem("my-orders-phonePart3") || "");
+    setPassword(localStorage.getItem("my-orders-password") || "");
+  }, []);
   const getFormattedPhone = () => `${phonePart1}-${phonePart2}-${phonePart3}`;
-
   const handleFetchOrders = async () => {
     setLoading(true);
     setError("");
@@ -33,17 +37,20 @@ export default function MyOrders() {
       setLoading(false);
     }
   };
-
   return (
-    <div className="w-full max-w-[640px] mx-auto mt-8 p-6 bg-white shadow rounded-lg">
+    <div className="w-full max-w-[640px] mt-8 mb-12 px-10 pt-10 pb-14 bg-white sm:shadow-md sm:rounded-lg">
       {!isViewingDetails ? (
-        <>
-          <h1 className="text-2xl font-bold text-gray-800 mb-6">
-            내 주문 조회
-          </h1>
-          <div className="mb-4">
-            <h2 className="text-lg font-bold p-4 pb-2 mt-3">연락처 입력</h2>
-            <div className="px-4 flex gap-2 items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">내 주문 조회</h1>
+          <p className="text-sm text-gray-600 mt-6">
+            결제 시 입력한
+            <span className="text-sky-400 font-bold"> 전화번호</span>와
+            <span className="text-sky-400 font-bold"> 비밀번호</span>로 주문을
+            쉽게 조회할 수 있어요.
+          </p>
+          <div className="mt-6 mb-4">
+            <h2 className="text-lg font-bold pb-2 mt-3">연락처 입력</h2>
+            <div className="flex gap-2 items-center">
               <input
                 type="text"
                 maxLength={3}
@@ -51,6 +58,7 @@ export default function MyOrders() {
                 onChange={(e) => {
                   const newValue = e.target.value.replace(/\D/g, "");
                   setPhonePart1(newValue);
+                  localStorage.setItem("my-orders-phonePart1", newValue);
                   if (newValue.length === 3) {
                     document.getElementById("phonePart2")?.focus();
                   }
@@ -68,6 +76,7 @@ export default function MyOrders() {
                 onChange={(e) => {
                   const newValue = e.target.value.replace(/\D/g, "");
                   setPhonePart2(newValue);
+                  localStorage.setItem("my-orders-phonePart2", newValue);
                   if (newValue.length === 4) {
                     document.getElementById("phonePart3")?.focus();
                   }
@@ -85,6 +94,7 @@ export default function MyOrders() {
                 onChange={(e) => {
                   const newValue = e.target.value.replace(/\D/g, "");
                   setPhonePart3(newValue);
+                  localStorage.setItem("my-orders-phonePart3", newValue);
                 }}
                 className={`focus:outline-none focus:ring-2 focus:ring-sky-400 w-20 border rounded-md px-2 py-1.5 text-center transition-colors ${
                   phonePart3.length === 4 ? "bg-gray-100 text-gray-500" : ""
@@ -93,13 +103,19 @@ export default function MyOrders() {
             </div>
           </div>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              비밀번호
-            </label>
+            <h2 className="text-lg font-bold pb-2 mt-3">주문 조회 비밀번호</h2>
             <input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                localStorage.setItem("my-orders-password", e.target.value);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleFetchOrders();
+                }
+              }}
               placeholder="주문 시 입력한 비밀번호"
               className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-400"
               disabled={loading}
@@ -107,21 +123,21 @@ export default function MyOrders() {
           </div>
           <button
             onClick={handleFetchOrders}
-            className={`w-full bg-sky-400 text-white font-bold py-2 rounded-lg hover:bg-sky-500 transition ${
+            className={`w-full h-10 bg-sky-400 text-white font-bold rounded-lg hover:bg-sky-500 transition ${
               loading ? "opacity-50 cursor-not-allowed" : ""
             }`}
             disabled={loading}
           >
             {loading ? (
-              <div className="flex items-center justify-center gap-2">
-                <span className="loader"></span> 조회 중...
+              <div className="flex items-center justify-center">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               </div>
             ) : (
               "주문 조회"
             )}
           </button>
           {error && <p className="text-red-500 text-sm mt-4">{error}</p>}
-        </>
+        </div>
       ) : (
         <OrderDetails
           orders={orders}

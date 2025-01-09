@@ -42,7 +42,7 @@ export default function RootLayout({
         <FooterProvider>
           <LocalStorageProvider>
             <TopBar />
-            <main className="flex-grow pt-14 min-h-[105vh] flex flex-col items-center gap-8">
+            <main className="pt-14 min-h-[105vh] flex flex-col items-center">
               {children}
             </main>
           </LocalStorageProvider>

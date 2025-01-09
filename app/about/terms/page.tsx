@@ -2,7 +2,7 @@
 
 export default function Terms() {
   return (
-    <div className="mt-8 mb-12 w-full max-w-[640px] mx-auto px-6 py-10 bg-white sm:border sm:border-gray-200 sm:rounded-lg sm:shadow-lg">
+    <div className="w-full max-w-[640px] mt-8 mb-12 px-8 py-10 bg-white sm:shadow-md sm:rounded-lg">
       <h1 className="text-xl font-bold text-gray-800 mb-10 text-center">
         이용약관
       </h1>

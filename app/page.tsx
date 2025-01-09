@@ -40,7 +40,7 @@ export default function Home() {
     const storedTimestamp = localStorage.getItem(timestampKey);
     if (
       !storedTimestamp ||
-      now - parseInt(storedTimestamp, 10) > 3 * 60 * 60 * 1000
+      now - parseInt(storedTimestamp, 10) > 7 * 24 * 60 * 60 * 1000
     ) {
       localStorage.clear();
       localStorage.setItem(timestampKey, now.toString());
