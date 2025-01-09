@@ -87,7 +87,6 @@ export default function Pharm() {
   return (
     <div className="w-full max-w-[640px] mt-8 mb-12 px-6 sm:px-10 pt-10 pb-14 bg-white sm:shadow-md sm:rounded-lg">
       <h1 className="text-xl font-bold mb-4">주문 관리 페이지</h1>
-
       <div className="mb-8">
         <h2 className="text-lg font-bold mb-4">주문 목록</h2>
         <ul className="space-y-4">
