@@ -129,6 +129,11 @@ export default function Cart({
   ) => {
     const PortOne: any = await import("@portone/browser-sdk/v2");
     try {
+      const absoluteRedirectUrl =
+        window.location.hostname === "localhost"
+          ? currentPath
+          : `${window.location.origin}${currentPath}`;
+      console.log(absoluteRedirectUrl);
       const response = await PortOne.requestPayment({
         storeId: process.env.NEXT_PUBLIC_PORTONE_STORE_ID!,
         paymentId: `payment${Date.now()}`,
@@ -143,7 +148,7 @@ export default function Cart({
           email: "buyer@example.com",
           phoneNumber: userContact,
         },
-        redirectUrl: currentPath,
+        redirectUrl: absoluteRedirectUrl,
       });
       if (response.code === "FAILURE_TYPE_PG") {
         alert(`결제가 취소되었습니다.`);
