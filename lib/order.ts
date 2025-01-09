@@ -67,6 +67,14 @@ export async function getOrdersByPharmacy(pharmacyIdx: number) {
   });
 }
 
+export async function updateOrderStatus(orderIdx: number, newStatus: string) {
+  const updatedOrder = await db.order_.update({
+    where: { idx: orderIdx },
+    data: { status: newStatus },
+  });
+  return updatedOrder;
+}
+
 export async function getOrders() {
   return await db.order_.findMany({
     include: {

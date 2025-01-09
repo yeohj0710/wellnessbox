@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { getOrdersByPharmacy } from "@/lib/order";
+import { getOrdersByPharmacy, updateOrderStatus } from "@/lib/order";
 import { createMessage, getMessagesByOrder } from "@/lib/message";
 import { getPharmacy } from "@/lib/pharmacy";
 import { useRouter } from "next/navigation";
@@ -17,7 +17,7 @@ export default function Pharm() {
     async function fetchPharmacy() {
       const pharmacy = await getPharmacy();
       if (!pharmacy) {
-        router.push("pharm-login");
+        router.push("/pharm-login");
       } else {
         setPharm(pharmacy);
       }
@@ -43,15 +43,39 @@ export default function Pharm() {
     fetchMessages();
   }, [selectedOrder]);
   const sendMessage = async () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !selectedOrder) return;
     const messageData = {
       orderId: selectedOrder.idx,
       content: newMessage,
       pharmacyId: pharm.idx,
     };
-    const newMsg = await createMessage(messageData);
-    setMessages((prev) => [...prev, newMsg]);
-    setNewMessage("");
+    try {
+      const newMsg = await createMessage(messageData);
+      setMessages((prev) => [...prev, newMsg]);
+      setNewMessage("");
+    } catch (error) {
+      console.error(error);
+      alert("메시지 전송에 실패했습니다.");
+    }
+  };
+  const handleUpdateOrderStatus = async (
+    orderIdx: number,
+    newStatus: string
+  ) => {
+    try {
+      const updatedOrder = await updateOrderStatus(orderIdx, newStatus);
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order.idx === updatedOrder.idx ? updatedOrder : order
+        )
+      );
+      if (selectedOrder && selectedOrder.idx === updatedOrder.idx) {
+        setSelectedOrder(updatedOrder);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("주문 상태 업데이트에 실패했습니다.");
+    }
   };
   if (!pharm) {
     return (
@@ -61,8 +85,9 @@ export default function Pharm() {
     );
   }
   return (
-    <div className="w-full max-w-[640px] mt-8 mb-12 px-10 pt-10 pb-14 bg-white sm:shadow-md sm:rounded-lg">
+    <div className="w-full max-w-[640px] mt-8 mb-12 px-6 sm:px-10 pt-10 pb-14 bg-white sm:shadow-md sm:rounded-lg">
       <h1 className="text-xl font-bold mb-4">주문 관리 페이지</h1>
+
       <div className="mb-8">
         <h2 className="text-lg font-bold mb-4">주문 목록</h2>
         <ul className="space-y-4">
@@ -86,11 +111,39 @@ export default function Pharm() {
               <p className="text-sm text-gray-600">
                 총 결제 금액: ₩{order.totalPrice.toLocaleString()}
               </p>
+              <div className="mt-2 flex gap-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleUpdateOrderStatus(order.idx, "상담 완료");
+                  }}
+                  className="px-2 py-1 bg-green-500 text-white rounded"
+                >
+                  상담 완료
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleUpdateOrderStatus(order.idx, "조제 완료");
+                  }}
+                  className="px-2 py-1 bg-blue-500 text-white rounded"
+                >
+                  조제 완료
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleUpdateOrderStatus(order.idx, "주문 취소");
+                  }}
+                  className="px-2 py-1 bg-red-500 text-white rounded"
+                >
+                  주문 취소
+                </button>
+              </div>
             </li>
           ))}
         </ul>
       </div>
-
       {selectedOrder && (
         <div className="mt-8">
           <h2 className="text-lg font-bold mb-4">

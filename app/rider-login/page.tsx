@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { pharmacyLogin } from "@/lib/pharmacy";
 import Link from "next/link";
+import { riderLogin } from "@/lib/rider";
 
-export default function PharmLogin() {
+export default function RiderLogin() {
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -14,7 +14,7 @@ export default function PharmLogin() {
     setError("");
     setIsLoading(true);
     try {
-      await pharmacyLogin(userId, password);
+      await riderLogin(userId, password);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -25,7 +25,7 @@ export default function PharmLogin() {
     <div className="px-2 flex flex-col w-full max-w-[640px] mx-auto items-center min-h-screen bg-gray-50 py-12">
       <div className="w-full bg-white shadow-md rounded-lg max-w-md p-8">
         <h1 className="text-3xl font-bold text-gray-800 mb-4 text-center">
-          약국 로그인
+          라이더 로그인
         </h1>
         <p className="text-sm text-gray-600 mb-6 text-center">
           아이디와 비밀번호를 입력해 주세요.

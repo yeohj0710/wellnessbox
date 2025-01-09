@@ -64,6 +64,8 @@ model Order_ {
   messages         Message_[]
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @default(now()) @updatedAt
+  rider            Rider_?      @relation(fields: [riderIdx], references: [idx])
+  riderIdx         Int?
 }
 
 model OrderItem_ {
@@ -84,6 +86,16 @@ model Message_ {
   timestamp   DateTime   @default(now())
   order       Order_     @relation(fields: [orderId], references: [idx])
   pharmacy    Pharmacy_? @relation(fields: [pharmacyId], references: [idx])
+}
+
+model Rider_ {
+  idx       Int      @id @default(autoincrement())
+  phone     String?
+  userId    String?  @unique
+  password  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  orders    Order_[]
 }
 
 model User {
