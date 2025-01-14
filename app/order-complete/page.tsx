@@ -97,6 +97,7 @@ export default function OrderComplete() {
           totalPrice,
         });
         setOrder(createdOrder);
+        localStorage.removeItem("cartItems");
       } catch (err) {
         alert("주문 정보를 불러오는 중 오류가 발생했습니다.");
       } finally {
