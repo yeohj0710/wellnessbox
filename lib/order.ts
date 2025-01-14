@@ -105,6 +105,20 @@ export async function getOrderById(orderIdx: number) {
   });
 }
 
+export async function getOrderByPaymentId(paymentId: string) {
+  return await db.order_.findFirst({
+    where: { paymentId },
+    include: {
+      pharmacy: true,
+      orderItems: {
+        include: {
+          product: true,
+        },
+      },
+    },
+  });
+}
+
 export async function createOrder(data: {
   roadAddress?: string;
   detailAddress?: string;
