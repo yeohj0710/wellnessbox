@@ -100,6 +100,12 @@ export default function RiderPage() {
                         <p className="text-sm text-gray-700">
                           {order.pharmacy?.address || "정보 없음"}
                         </p>
+                        <p className="text-sm font-semibold text-gray-600 mt-2">
+                          약국 전화번호
+                        </p>
+                        <p className="text-sm text-gray-700">
+                          {order.pharmacy?.phone || "정보 없음"}
+                        </p>
                       </div>
                       <div className="mb-4">
                         <p className="text-sm font-semibold text-gray-600">
