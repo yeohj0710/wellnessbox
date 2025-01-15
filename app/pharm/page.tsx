@@ -47,7 +47,7 @@ export default function Pharm() {
       }
     }
     fetchMessages();
-    const intervalId = setInterval(fetchMessages, 60000);
+    const intervalId = setInterval(fetchMessages, 5000);
     return () => clearInterval(intervalId);
   }, [selectedOrder]);
   useEffect(() => {
@@ -343,6 +343,37 @@ export default function Pharm() {
                         "전송"
                       )}
                     </button>
+                  </div>
+                  <div className="mt-4 p-4 mb-4 bg-gray-100 rounded-lg shadow-md">
+                    <h3 className="text-base font-bold text-gray-800 mb-2">
+                      주문자 정보
+                    </h3>
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-600">
+                        <span className="font-bold text-gray-700">
+                          전화번호:
+                        </span>{" "}
+                        {order.phone}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        <span className="font-bold text-gray-700">
+                          요청 사항:
+                        </span>{" "}
+                        {order.requestNotes || "없음"}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        <span className="font-bold text-gray-700">
+                          주문 날짜:
+                        </span>{" "}
+                        {new Date(order.createdAt).toLocaleString("ko-KR", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}

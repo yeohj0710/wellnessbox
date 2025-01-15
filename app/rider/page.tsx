@@ -48,7 +48,7 @@ export default function RiderPage() {
   };
   return (
     <div className="w-full max-w-[640px] mx-auto mt-8 mb-12 px-6 sm:px-10 pt-10 pb-14 bg-white sm:shadow-md sm:rounded-lg">
-      <h1 className="text-xl font-bold mb-4">라이더 페이지</h1>
+      <h1 className="text-xl font-bold mb-4">라이더 주문 관리</h1>
       {loading ? (
         <div className="flex justify-center items-center w-full h-20">
           <div className="w-6 h-6 border-4 border-sky-400 border-t-transparent rounded-full animate-spin" />
@@ -67,13 +67,13 @@ export default function RiderPage() {
                   key={order.idx}
                   className="p-3 border rounded-lg hover:bg-gray-100 transition"
                 >
-                  <div className="flex justify-between items-center">
-                    <div className="space-y-2 p-4 bg-gray-50 rounded-lg shadow-sm">
-                      <p className="text-lg font-extrabold text-gray-800">
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="flex-1 p-4 bg-gray-50 rounded-lg shadow-md">
+                      <p className="text-lg font-bold text-gray-800 mb-2">
                         주문 번호:{" "}
                         <span className="text-sky-500">{order.idx}</span>
                       </p>
-                      <p className="text-sm text-gray-700">
+                      <p className="text-sm text-gray-700 mb-2">
                         상태:{" "}
                         <span
                           className={`font-bold ${
@@ -87,32 +87,49 @@ export default function RiderPage() {
                           {order.status}
                         </span>
                       </p>
-                      <div className="text-sm">
-                        <p className="font-semibold text-gray-600">
-                          약국명: {order.pharmacy?.name || "정보 없음"}
+                      <div className="mb-4">
+                        <p className="text-sm font-semibold text-gray-600">
+                          약국명
                         </p>
-                        <p className="font-semibold text-gray-600">
-                          약국 주소:
+                        <p className="text-sm text-gray-700">
+                          {order.pharmacy?.name || "정보 없음"}
                         </p>
-                        <p className="text-gray-700 ml-4">
+                        <p className="text-sm font-semibold text-gray-600 mt-2">
+                          약국 주소
+                        </p>
+                        <p className="text-sm text-gray-700">
                           {order.pharmacy?.address || "정보 없음"}
                         </p>
                       </div>
-                      <div className="text-sm">
-                        <p className="font-semibold text-gray-600">
-                          배송지 주소:
+                      <div className="mb-4">
+                        <p className="text-sm font-semibold text-gray-600">
+                          배송지 주소
                         </p>
-                        <p className="text-gray-700 ml-4">
+                        <p className="text-sm text-gray-700">
                           {order.roadAddress} {order.detailAddress}
                         </p>
                       </div>
-                      <p className="text-sm text-gray-700">
+                      <div className="text-sm space-y-1">
+                        <p className="text-gray-700">
+                          주문자 전화번호: {order.phone}
+                        </p>
+                        <p className="text-gray-700">
+                          배송 시 요청 사항: {order.requestNotes || "없음"}
+                        </p>
+                        <p className="text-gray-700">
+                          공동현관 비밀번호: {order.entrancePassword || "없음"}
+                        </p>
+                        <p className="text-gray-700">
+                          찾아오는 길 안내: {order.directions || "없음"}
+                        </p>
+                      </div>
+                      <p className="text-sm text-gray-700 mt-4">
                         총 결제 금액:{" "}
                         <span className="text-lg font-bold text-sky-400">
                           ₩{order.totalPrice?.toLocaleString()}
                         </span>
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 mt-2">
                         최종 업데이트:{" "}
                         {new Date(order.updatedAt).toLocaleString("ko-KR", {
                           year: "numeric",
@@ -123,13 +140,12 @@ export default function RiderPage() {
                         })}
                       </p>
                     </div>
-
-                    <div className="flex flex-col gap-2 ml-4">
+                    <div className="flex flex-col gap-2">
                       <button
                         onClick={() =>
                           handleUpdateStatus(order.idx, "조제 완료")
                         }
-                        className="w-24 h-8 bg-yellow-500 text-white rounded text-sm flex items-center justify-center"
+                        className="w-28 h-9 bg-yellow-500 text-white rounded text-sm flex items-center justify-center shadow-sm hover:bg-yellow-600 transition"
                         disabled={
                           updatingOrderIdx === order.idx ||
                           order.status === "조제 완료"
@@ -146,7 +162,7 @@ export default function RiderPage() {
                         onClick={() =>
                           handleUpdateStatus(order.idx, "픽업 완료")
                         }
-                        className="w-24 h-8 bg-sky-500 text-white rounded text-sm flex items-center justify-center"
+                        className="w-28 h-9 bg-sky-500 text-white rounded text-sm flex items-center justify-center shadow-sm hover:bg-sky-600 transition"
                         disabled={updatingOrderIdx === order.idx}
                       >
                         {updatingOrderIdx === order.idx ? (
@@ -159,7 +175,7 @@ export default function RiderPage() {
                         onClick={() =>
                           handleUpdateStatus(order.idx, "배송 완료")
                         }
-                        className="w-24 h-8 bg-green-500 text-white rounded text-sm flex items-center justify-center"
+                        className="w-28 h-9 bg-green-500 text-white rounded text-sm flex items-center justify-center shadow-sm hover:bg-green-600 transition"
                         disabled={updatingOrderIdx === order.idx}
                       >
                         {updatingOrderIdx === order.idx ? (

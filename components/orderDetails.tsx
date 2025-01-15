@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createMessage, getMessagesByOrder } from "@/lib/message";
 import { ArrowPathIcon } from "@heroicons/react/24/outline";
+import { getOrderById } from "@/lib/order";
 
 export default function OrderDetails({
   orders,
@@ -19,8 +20,9 @@ export default function OrderDetails({
   const [currentOrder, setCurrentOrder] = useState(orders[0]);
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isStateRefreshing, setIsStateRefreshing] = useState(false);
+  const [isMessagesRefreshing, setIsMessagesRefreshing] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     setCurrentOrder(orders[0]);
@@ -31,12 +33,16 @@ export default function OrderDetails({
     fetchMessages();
   }, [orders]);
   useEffect(() => {
-    async function fetchMessages() {
-      const msgs = await getMessagesByOrder(currentOrder.idx);
-      setMessages(msgs);
-    }
-    fetchMessages();
-    const intervalId = setInterval(fetchMessages, 60000);
+    const intervalId = setInterval(() => {
+      refreshOrderStatus();
+    }, 5000);
+    return () => clearInterval(intervalId);
+  }, [currentOrder]);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      refreshMessages();
+    }, 5000);
     return () => clearInterval(intervalId);
   }, [currentOrder]);
   useEffect(() => {
@@ -45,11 +51,20 @@ export default function OrderDetails({
         messagesContainerRef.current.scrollHeight;
     }
   }, [messages]);
-  const refreshMessages = async () => {
-    setIsRefreshing(true);
+  const refreshOrderStatus = async (manual: boolean = false) => {
+    if (manual) setIsStateRefreshing(true);
+    const updatedOrder = await getOrderById(currentOrder.idx);
+    setCurrentOrder((prevOrder: any) => ({
+      ...prevOrder,
+      status: updatedOrder!.status,
+    }));
+    if (manual) setIsStateRefreshing(false);
+  };
+  const refreshMessages = async (manual: boolean = false) => {
+    if (manual) setIsMessagesRefreshing(true);
     const msgs = await getMessagesByOrder(currentOrder.idx);
     setMessages(msgs);
-    setIsRefreshing(false);
+    if (manual) setIsMessagesRefreshing(false);
   };
   const getStatusClass = (step: number, currentStatus: string) => {
     const currentStepIndex =
@@ -96,11 +111,21 @@ export default function OrderDetails({
     setNewMessage("");
     setIsSending(false);
   };
-
   return (
     <div className="-mb-4">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">내 주문 조회</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-gray-800">내 주문 조회</h1>
+          <button
+            onClick={() => refreshOrderStatus(true)}
+            className="flex items-center gap-1 text-sky-400 hover:underline"
+          >
+            <ArrowPathIcon
+              className={`w-5 h-5 ${isStateRefreshing ? "animate-spin" : ""}`}
+            />
+            새로고침
+          </button>
+        </div>
         <button
           onClick={onBack}
           className="text-sky-400 font-bold hover:underline"
@@ -141,7 +166,6 @@ export default function OrderDetails({
             </React.Fragment>
           ))}
         </div>
-
         <div>
           <h2 className="text-lg font-bold text-gray-700 mb-4 mt-12">
             주문 상세 내역
@@ -159,9 +183,11 @@ export default function OrderDetails({
                     {item.product.name}
                   </h3>
                   <p className="text-xs text-gray-500">
-                    {item.product.categories
-                      .map((category: any) => category.name)
-                      .join(", ") || "옵션 없음"}
+                    {item.product.categories?.length
+                      ? item.product.categories
+                          .map((category: any) => category.name)
+                          .join(", ")
+                      : "옵션 없음"}
                   </p>
                   <p className="text-sm font-bold text-sky-400 mt-1">
                     ₩{item.product.price.toLocaleString()} x {item.quantity}
@@ -196,11 +222,13 @@ export default function OrderDetails({
           <div className="mb-4 flex justify-between items-center">
             <h2 className="text-lg font-bold text-gray-700">상담 메시지</h2>
             <button
-              onClick={refreshMessages}
+              onClick={() => refreshMessages(true)}
               className="flex items-center gap-1 text-sky-400 hover:underline"
             >
               <ArrowPathIcon
-                className={`w-5 h-5 ${isRefreshing ? "animate-spin" : ""}`}
+                className={`w-5 h-5 ${
+                  isMessagesRefreshing ? "animate-spin" : ""
+                }`}
               />
               새로고침
             </button>
@@ -249,7 +277,6 @@ export default function OrderDetails({
               </p>
             )}
           </div>
-
           <div className="mt-4 flex gap-2">
             <textarea
               rows={1}
@@ -280,6 +307,23 @@ export default function OrderDetails({
               )}
             </button>
           </div>
+        </div>
+      </div>
+      <div className="mt-12 p-4 bg-gray-100 rounded-lg shadow-md">
+        <h3 className="text-lg font-bold text-gray-700 mb-2">약국 정보</h3>
+        <div className="space-y-1">
+          <p className="text-base text-gray-800">
+            <span className="font-bold text-gray-600">약국 이름: </span>
+            {currentOrder.pharmacy.name}
+          </p>
+          <p className="text-base text-gray-800">
+            <span className="font-bold text-gray-600">주소: </span>
+            {currentOrder.pharmacy.address}
+          </p>
+          <p className="text-base text-gray-800">
+            <span className="font-bold text-gray-600">전화번호: </span>
+            {currentOrder.pharmacy.phone}
+          </p>
         </div>
       </div>
     </div>
