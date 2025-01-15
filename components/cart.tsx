@@ -518,7 +518,7 @@ export default function Cart({
         <div className="px-4 mt-6">
           <button
             onClick={() => {
-              if (!sdkLoaded || !window.IMP) {
+              if (!sdkLoaded || !(window as any).IMP) {
                 alert(
                   "결제 모듈을 불러오는 데 실패하였습니다. 페이지를 새로고침해 주세요."
                 );
