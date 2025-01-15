@@ -54,7 +54,7 @@ export default function Cart({
     if (storedPhonePart2) setPhonePart2(storedPhonePart2);
     if (storedPhonePart3) setPhonePart3(storedPhonePart3);
     if (password) setPassword(password);
-    if (window.IMP) {
+    if ((window as any).IMP) {
       setSdkLoaded(true);
     }
     setUserContact(
