@@ -3,10 +3,8 @@
 import { useState, useEffect } from "react";
 import Script from "next/script";
 import { TrashIcon } from "@heroicons/react/16/solid";
-import { createOrder } from "@/lib/order";
 import { ExpandableSection } from "./expandableSection";
 import { useRouter } from "next/navigation";
-import OrderComplete from "./orderComplete";
 
 export default function Cart({
   cartItems,
@@ -366,6 +364,7 @@ export default function Cart({
         />
         <span className="text-gray-500">-</span>
         <input
+          id="phonePart2"
           type="text"
           maxLength={4}
           value={phonePart2}
@@ -381,7 +380,7 @@ export default function Cart({
           }}
           onInput={(e) => {
             const input = e.target as HTMLInputElement;
-            if (input.value.length === 4) {
+            if (input.value.replace(/\D/g, "").length === 4) {
               input.classList.add("bg-gray-100", "text-gray-500");
             } else {
               input.classList.remove("bg-gray-100", "text-gray-500");
@@ -402,7 +401,7 @@ export default function Cart({
           }}
           onInput={(e) => {
             const input = e.target as HTMLInputElement;
-            if (input.value.length === 4) {
+            if (input.value.replace(/\D/g, "").length === 4) {
               input.classList.add("bg-gray-100", "text-gray-500");
             } else {
               input.classList.remove("bg-gray-100", "text-gray-500");

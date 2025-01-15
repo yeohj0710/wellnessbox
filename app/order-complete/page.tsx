@@ -40,7 +40,7 @@ export default function OrderComplete() {
         const paymentInfo = await response.json();
         const transaction = paymentInfo.payment.transactions?.[0];
         if (!transaction || transaction.status !== "PAID") {
-          alert("결제에 실패했습니다.");
+          alert("결제에 실패하였습니다. 다시 시도해 주세요.");
           goBackOrDefault();
           return;
         }

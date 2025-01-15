@@ -53,8 +53,25 @@ export default function Home() {
     const storedRoadAddress = localStorage.getItem("roadAddress") || "";
     setRoadAddress(storedRoadAddress.trim());
     const fetchData = async () => {
+      setIsLoading(true);
+      const cachedCategories = sessionStorage.getItem("categories");
+      const cachedProducts = sessionStorage.getItem("products");
+      const cacheTimestamp = sessionStorage.getItem("cacheTimestamp");
+      const now = Date.now();
+      const oneHour = 60 * 60 * 1000;
+      if (
+        cachedCategories &&
+        cachedProducts &&
+        cacheTimestamp &&
+        now - parseInt(cacheTimestamp, 10) < oneHour
+      ) {
+        setCategories(JSON.parse(cachedCategories));
+        setAllProducts(JSON.parse(cachedProducts));
+        setProducts(JSON.parse(cachedProducts));
+        setIsLoading(false);
+        return;
+      }
       try {
-        setIsLoading(true);
         const [fetchedCategories, fetchedProducts] = await Promise.all([
           getCategories(),
           getProducts(),
@@ -62,6 +79,9 @@ export default function Home() {
         setCategories(fetchedCategories);
         setAllProducts(fetchedProducts);
         setProducts(fetchedProducts);
+        sessionStorage.setItem("categories", JSON.stringify(fetchedCategories));
+        sessionStorage.setItem("products", JSON.stringify(fetchedProducts));
+        sessionStorage.setItem("cacheTimestamp", now.toString());
       } catch (error) {
         console.error("데이터를 가져오는 데 실패하였습니다:", error);
       } finally {

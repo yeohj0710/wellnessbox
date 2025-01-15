@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createMessage, getMessagesByOrder } from "@/lib/message";
+import { ArrowPathIcon } from "@heroicons/react/24/outline";
 
 export default function OrderDetails({
   orders,
@@ -18,6 +19,9 @@ export default function OrderDetails({
   const [currentOrder, setCurrentOrder] = useState(orders[0]);
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     setCurrentOrder(orders[0]);
     async function fetchMessages() {
@@ -26,6 +30,27 @@ export default function OrderDetails({
     }
     fetchMessages();
   }, [orders]);
+  useEffect(() => {
+    async function fetchMessages() {
+      const msgs = await getMessagesByOrder(currentOrder.idx);
+      setMessages(msgs);
+    }
+    fetchMessages();
+    const intervalId = setInterval(fetchMessages, 60000);
+    return () => clearInterval(intervalId);
+  }, [currentOrder]);
+  useEffect(() => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop =
+        messagesContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
+  const refreshMessages = async () => {
+    setIsRefreshing(true);
+    const msgs = await getMessagesByOrder(currentOrder.idx);
+    setMessages(msgs);
+    setIsRefreshing(false);
+  };
   const getStatusClass = (step: number, currentStatus: string) => {
     const currentStepIndex =
       steps.findIndex((s) => s.label === currentStatus) + 1;
@@ -59,7 +84,8 @@ export default function OrderDetails({
     }
   };
   const sendMessage = async () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || isSending) return;
+    setIsSending(true);
     const messageData = {
       orderId: currentOrder.idx,
       content: newMessage,
@@ -68,7 +94,9 @@ export default function OrderDetails({
     const newMsg = await createMessage(messageData);
     setMessages((prev) => [...prev, newMsg]);
     setNewMessage("");
+    setIsSending(false);
   };
+
   return (
     <div className="-mb-4">
       <div className="flex justify-between items-center mb-6">
@@ -164,41 +192,92 @@ export default function OrderDetails({
             </h3>
           </div>
         </div>
-
-        {/* 메시지 섹션 */}
         <div className="mt-12">
-          <h2 className="text-lg font-bold text-gray-700 mb-4">상담 메시지</h2>
-          <div className="space-y-4">
-            {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`p-4 rounded-lg ${
-                  message.pharmacyId
-                    ? "bg-sky-100 text-sky-800"
-                    : "bg-gray-100 text-gray-800"
-                }`}
-              >
-                <p className="text-sm">{message.content}</p>
-                <p className="text-xs text-gray-500 mt-2 text-right">
-                  {message.pharmacyId ? "약국" : "소비자"} -{" "}
-                  {new Date(message.timestamp).toLocaleString()}
-                </p>
-              </div>
-            ))}
+          <div className="mb-4 flex justify-between items-center">
+            <h2 className="text-lg font-bold text-gray-700">상담 메시지</h2>
+            <button
+              onClick={refreshMessages}
+              className="flex items-center gap-1 text-sky-400 hover:underline"
+            >
+              <ArrowPathIcon
+                className={`w-5 h-5 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+              새로고침
+            </button>
           </div>
+          <div
+            className="mt-3 space-y-3 max-h-60 overflow-y-auto scrollbar-hide py-2"
+            ref={messagesContainerRef}
+          >
+            {messages.length > 0 ? (
+              messages.map((message, index) => (
+                <div
+                  key={index}
+                  className={`flex ${
+                    message.pharmacyId ? "justify-start" : "justify-end"
+                  }`}
+                >
+                  <div
+                    className={`w-2/3 p-4 rounded-lg shadow-md ${
+                      message.pharmacyId
+                        ? "bg-sky-100 text-sky-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    <p className="text-sm whitespace-pre-wrap">
+                      {message.content}
+                    </p>
+                    <div className="flex justify-between items-center mt-2">
+                      <span className="text-xs text-gray-500">
+                        {message.pharmacyId ? currentOrder.pharmacy.name : "나"}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {new Date(message.timestamp).toLocaleString("ko-KR", {
+                          month: "long",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-center text-gray-500 text-sm">
+                메시지가 없습니다.
+              </p>
+            )}
+          </div>
+
           <div className="mt-4 flex gap-2">
-            <input
-              type="text"
+            <textarea
+              rows={1}
               value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              className="flex-1 p-2 border rounded-lg"
+              onChange={(e) => {
+                setNewMessage(e.target.value);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  sendMessage();
+                }
+              }}
+              className="flex-1 px-2 py-1.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400 resize-none overflow-hidden leading-normal"
               placeholder="메시지를 입력하세요..."
             />
             <button
               onClick={sendMessage}
-              className="p-2 bg-sky-400 text-white rounded-lg"
+              disabled={isSending}
+              className={`px-2 w-14 bg-sky-400 hover:bg-sky-500 text-white rounded-lg flex items-center justify-center ${
+                isSending ? "opacity-50 cursor-not-allowed" : ""
+              }`}
             >
-              전송
+              {isSending ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                "전송"
+              )}
             </button>
           </div>
         </div>

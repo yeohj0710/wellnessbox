@@ -55,9 +55,6 @@ export function MenuLinks() {
       )}
       {isLoggedIn ? (
         <>
-          <Link href="/features" className={menuItemClasses()}>
-            기능 테스트
-          </Link>
           <Link href="/admin" className={menuItemClasses()}>
             상품 관리
           </Link>

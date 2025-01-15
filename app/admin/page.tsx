@@ -138,7 +138,7 @@ export default function Admin() {
               <div className="relative group">
                 {isUploadingImage ? (
                   <div className="w-full h-40 bg-gray-300 flex items-center justify-center rounded-md">
-                    <div className="w-8 h-8 border-4 border-t-transparent border-white rounded-full animate-spin"></div>
+                    <div className="w-8 h-8 border-4 border-t-transparent border-white rounded-full animate-spin" />
                   </div>
                 ) : selectedCategory?.image ? (
                   <img

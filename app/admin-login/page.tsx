@@ -19,16 +19,16 @@ export default function AdminLogin() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password }),
     });
-    setIsLoading(false);
     if (res.ok) {
       window.location.href = redirectPath;
     } else {
       setError("비밀번호가 올바르지 않습니다.");
+      setIsLoading(false);
     }
   };
   return (
-    <div className="mt-8 w-full max-w-[640px] mx-auto xl:w-1/2 px-5 py-7 bg-white sm:border sm:border-gray-200 sm:rounded-lg sm:shadow-lg">
-      <div className="flex flex-col">
+    <div className="px-2 flex flex-col w-full max-w-[640px] mx-auto items-center min-h-screen bg-gray-50 py-12">
+      <div className="w-full bg-white shadow-md rounded-lg max-w-md p-8">
         <h1 className="text-2xl font-bold text-gray-800 text-center">
           관리자 로그인
         </h1>
@@ -40,17 +40,23 @@ export default function AdminLogin() {
           placeholder="비밀번호를 입력하세요"
           className="mt-6 w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-sky-400"
         />
-        {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+        {error && (
+          <p className="text-sm mt-2 text-red-500 text-center">{error}</p>
+        )}
         <button
           onClick={handleSubmit}
           disabled={isLoading}
-          className={`mt-3 w-full py-2 rounded-lg font-bold text-white transition ${
+          className={`h-10 flex justify-center items-center mt-3 w-full rounded-lg font-bold text-white transition ${
             isLoading
               ? "bg-sky-300 cursor-not-allowed"
               : "bg-sky-400 hover:bg-sky-500"
           }`}
         >
-          {isLoading ? "로그인 중..." : "확인"}
+          {isLoading ? (
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          ) : (
+            "로그인"
+          )}
         </button>
       </div>
     </div>
