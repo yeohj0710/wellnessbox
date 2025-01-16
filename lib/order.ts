@@ -65,22 +65,6 @@ export async function getOrderById(orderIdx: number) {
   });
 }
 
-export async function getOrdersStatusByPhoneAndPassword(
-  phone: string,
-  password: string
-) {
-  return await db.order_.findMany({
-    where: {
-      phone,
-      password,
-    },
-    select: {
-      idx: true,
-      status: true,
-    },
-  });
-}
-
 export async function getOrderStatusById(orderIdx: number) {
   return await db.order_.findUnique({
     where: { idx: orderIdx },
