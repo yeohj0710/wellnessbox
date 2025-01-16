@@ -8,6 +8,7 @@ export default function MyOrders() {
   const [phonePart1, setPhonePart1] = useState("010");
   const [phonePart2, setPhonePart2] = useState("");
   const [phonePart3, setPhonePart3] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [orders, setOrders] = useState([]);
   const [error, setError] = useState("");
@@ -19,18 +20,18 @@ export default function MyOrders() {
     setPhonePart3(localStorage.getItem("my-orders-phonePart3") || "");
     setPassword(localStorage.getItem("my-orders-password") || "");
   }, []);
-  const getFormattedPhone = () => `${phonePart1}-${phonePart2}-${phonePart3}`;
+  useEffect(() => {
+    setPhone(`${phonePart1}-${phonePart2}-${phonePart3}`);
+  }, [phonePart1, phonePart2, phonePart3]);
   const handleFetchOrders = async () => {
     setLoading(true);
     setError("");
     try {
-      const formattedPhone = getFormattedPhone();
       const response = await axios.post("/api/orders-by-phone", {
-        phone: formattedPhone,
+        phone,
         password,
       });
-      setOrders(response.data.orders);
-      setIsViewingDetails(true);
+      if (response.data.isOrderExists) setIsViewingDetails(true);
     } catch (err: any) {
       setError(err.response?.data?.message || "주문 조회에 실패했습니다.");
     } finally {
@@ -38,9 +39,9 @@ export default function MyOrders() {
     }
   };
   return (
-    <div className="w-full max-w-[640px] mt-8 mb-12 px-10 pt-10 pb-14 bg-white sm:shadow-md sm:rounded-lg">
+    <div className="w-full max-w-[640px] mt-8 mb-12">
       {!isViewingDetails ? (
-        <div>
+        <div className="w-full max-w-[640px] px-10 pt-10 pb-14 bg-white sm:shadow-md sm:rounded-lg">
           <h1 className="text-2xl font-bold text-gray-800">내 주문 조회</h1>
           <p className="text-sm text-gray-600 mt-6">
             결제 시 입력한
@@ -140,7 +141,8 @@ export default function MyOrders() {
         </div>
       ) : (
         <OrderDetails
-          orders={orders}
+          phone={phone}
+          password={password}
           onBack={() => setIsViewingDetails(false)}
         />
       )}

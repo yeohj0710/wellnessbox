@@ -2,12 +2,50 @@
 
 import db from "@/lib/db";
 
-export async function getOrdersByPhoneAndPassword(
+export async function checkOrderExists(phone: string, password: string) {
+  const exists = await db.order_.findFirst({
+    where: { phone, password },
+    select: { idx: true },
+  });
+  if (!exists) {
+    throw new Error("해당 전화번호와 비밀번호로 조회된 주문이 없습니다.");
+  }
+  return true;
+}
+
+export async function getOrdersWithItemsAndStatus(
   phone: string,
   password: string
 ) {
   const orders = await db.order_.findMany({
     where: { phone, password },
+    select: {
+      idx: true,
+      status: true,
+      orderItems: {
+        select: {
+          quantity: true,
+          product: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+  if (orders.length === 0) {
+    throw new Error("해당 전화번호와 비밀번호로 조회된 주문이 없습니다.");
+  }
+  return orders;
+}
+
+export async function getOrderById(orderIdx: number) {
+  return await db.order_.findUnique({
+    where: { idx: orderIdx },
     include: {
       pharmacy: true,
       orderItems: {
@@ -24,17 +62,32 @@ export async function getOrdersByPhoneAndPassword(
         },
       },
     },
-    orderBy: {
-      createdAt: "desc",
+  });
+}
+
+export async function getOrdersStatusByPhoneAndPassword(
+  phone: string,
+  password: string
+) {
+  return await db.order_.findMany({
+    where: {
+      phone,
+      password,
+    },
+    select: {
+      idx: true,
+      status: true,
     },
   });
-  if (orders.length === 0) {
-    throw new Error("해당 전화번호로 조회된 주문이 없습니다.");
-  }
-  if (password !== orders[0].password) {
-    throw new Error("비밀번호가 일치하지 않습니다.");
-  }
-  return orders;
+}
+
+export async function getOrderStatusById(orderIdx: number) {
+  return await db.order_.findUnique({
+    where: { idx: orderIdx },
+    select: {
+      status: true,
+    },
+  });
 }
 
 export async function getOrdersByPharmacy(pharmacyIdx: number) {
@@ -87,20 +140,6 @@ export async function getOrders() {
     },
     orderBy: {
       createdAt: "desc",
-    },
-  });
-}
-
-export async function getOrderById(orderIdx: number) {
-  return await db.order_.findUnique({
-    where: { idx: orderIdx },
-    include: {
-      pharmacy: true,
-      orderItems: {
-        include: {
-          product: true,
-        },
-      },
     },
   });
 }

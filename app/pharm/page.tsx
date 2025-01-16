@@ -7,6 +7,8 @@ import { getPharmacy } from "@/lib/pharmacy";
 import { ArrowPathIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 import { useRef } from "react";
+import { generateOrderNumber } from "@/lib/orderNumber";
+import StatusLabel from "@/components/statusLabel";
 
 export default function Pharm() {
   const [pharm, setPharm] = useState<any | null>(null);
@@ -121,9 +123,8 @@ export default function Pharm() {
   }
   return (
     <div className="w-full max-w-[640px] mt-8 mb-12 px-6 sm:px-10 pt-10 pb-14 bg-white sm:shadow-md sm:rounded-lg">
-      <h1 className="text-xl font-bold mb-4">주문 관리 페이지</h1>
+      <h1 className="text-xl font-bold mb-4">주문 관리</h1>
       <div className="mb-8">
-        <h2 className="text-lg font-bold mb-4">주문 목록</h2>
         <ul className="space-y-4">
           {orders.map((order) => (
             <React.Fragment key={order.idx}>
@@ -133,24 +134,11 @@ export default function Pharm() {
                 }`}
                 onClick={() => toggleOrderSelection(order)}
               >
-                <p className="text-sm font-bold text-gray-800">
-                  주문 번호: {order.idx}
+                <p className="text-sm text-gray-500">
+                  주문 번호 #{generateOrderNumber(order.idx)}
                 </p>
                 <p className="text-sm text-gray-600">
-                  상태:{" "}
-                  <span
-                    className={`font-bold transition-transform duration-500 ${
-                      order.status === "상담 완료"
-                        ? "text-green-500 status-update"
-                        : order.status === "조제 완료"
-                        ? "text-sky-400 status-update"
-                        : order.status === "주문 취소"
-                        ? "text-red-500 status-update"
-                        : "text-gray-600 status-update"
-                    }`}
-                  >
-                    {order.status}
-                  </span>
+                  상태: <StatusLabel status={order.status} />
                 </p>
                 <p className="text-sm text-gray-600">
                   주소: {order.roadAddress} {order.detailAddress}
@@ -256,6 +244,24 @@ export default function Pharm() {
                       </p>
                     </div>
                   </div>
+                  <div className="flex justify-between mt-4">
+                    <h3 className="text-lg font-bold text-gray-800">
+                      상담 메시지
+                    </h3>
+                    <div className="flex justify-between items-center">
+                      <button
+                        onClick={refreshMessages}
+                        className="text-sky-400 hover:underline flex items-center gap-1"
+                      >
+                        <ArrowPathIcon
+                          className={`w-5 h-5 ${
+                            isRefreshing ? "animate-spin" : ""
+                          }`}
+                        />
+                        새로고침
+                      </button>
+                    </div>
+                  </div>
                   <div
                     className="mt-3 space-y-3 max-h-60 overflow-y-auto scrollbar-hide py-2"
                     ref={messagesContainerRef}
@@ -280,7 +286,7 @@ export default function Pharm() {
                             </p>
                             <div className="flex justify-between items-center mt-2">
                               <span className="text-xs text-gray-500">
-                                {message.pharmacyId ? "약국" : "고객님"}
+                                {message.pharmacyId ? pharm.name : order.phone}
                               </span>
                               <span className="text-xs text-gray-400">
                                 {new Date(message.timestamp).toLocaleTimeString(
@@ -302,19 +308,6 @@ export default function Pharm() {
                         메시지가 없습니다.
                       </p>
                     )}
-                  </div>
-                  <div className="mt-4 flex justify-between items-center">
-                    <button
-                      onClick={refreshMessages}
-                      className="text-sky-400 hover:underline flex items-center gap-1"
-                    >
-                      <ArrowPathIcon
-                        className={`w-5 h-5 ${
-                          isRefreshing ? "animate-spin" : ""
-                        }`}
-                      />
-                      새로고침
-                    </button>
                   </div>
                   <div className="mt-4 flex gap-2">
                     <textarea
