@@ -22,6 +22,7 @@ export async function getOrdersWithItemsAndStatus(
     select: {
       idx: true,
       status: true,
+      createdAt: true,
       orderItems: {
         select: {
           quantity: true,
@@ -70,6 +71,30 @@ export async function getOrderStatusById(orderIdx: number) {
     where: { idx: orderIdx },
     select: {
       status: true,
+    },
+  });
+}
+
+export async function getBasicOrdersByPharmacy(pharmacyIdx: number) {
+  return await db.order_.findMany({
+    where: { pharmacyIdx },
+    select: {
+      idx: true,
+      status: true,
+      createdAt: true,
+      orderItems: {
+        select: {
+          quantity: true,
+          product: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
     },
   });
 }

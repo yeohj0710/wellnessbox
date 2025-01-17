@@ -2,19 +2,25 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import {
-  getOrdersByPharmacy,
   updateOrderStatus,
   getOrderById,
   getOrderStatusById,
+  getBasicOrdersByPharmacy,
 } from "@/lib/order";
-import { createMessage, getMessagesByOrder } from "@/lib/message";
+import {
+  createMessage,
+  deleteMessage,
+  getMessagesByOrder,
+} from "@/lib/message";
 import { getPharmacy } from "@/lib/pharmacy";
 import { useRouter } from "next/navigation";
-import { generateOrderNumber } from "@/lib/orderNumber";
-import StatusLabel from "@/components/statusLabel";
 import { ArrowPathIcon } from "@heroicons/react/24/outline";
+import OrderProgressBar from "@/components/orderProgressBar";
+import OrderAccordionHeader from "@/components/orderAccordionHeader";
+import FullPageLoader from "@/components/fullPageLoader";
 
 export default function Pharm() {
+  const [loading, setLoading] = useState<boolean>(true);
   const [pharm, setPharm] = useState<any | null>(null);
   const [orders, setOrders] = useState<any[]>([]);
   const router = useRouter();
@@ -30,53 +36,14 @@ export default function Pharm() {
     fetchPharmacy();
   }, [router]);
   useEffect(() => {
+    if (!pharm) return;
     async function fetchOrders() {
-      if (pharm) {
-        const fetchedOrders = await getOrdersByPharmacy(pharm.idx);
-        setOrders(fetchedOrders);
-      }
+      const fetchedOrders = await getBasicOrdersByPharmacy(pharm.idx);
+      setOrders(fetchedOrders);
+      setLoading(false);
     }
     fetchOrders();
   }, [pharm]);
-  const steps = [
-    { label: "결제 완료" },
-    { label: "상담 완료" },
-    { label: "조제 완료" },
-    { label: "픽업 완료" },
-    { label: "배송 완료" },
-  ];
-  const getStatusClass = (step: number, currentStatus: string) => {
-    const currentStepIndex =
-      steps.findIndex((s) => s.label === currentStatus) + 1;
-    return step < currentStepIndex
-      ? "bg-sky-400 text-white"
-      : step === currentStepIndex
-      ? "bg-sky-400 text-white"
-      : "bg-gray-200 text-gray-500";
-  };
-  const getLineClass = (step: number, currentStatus: string) => {
-    const currentStepIndex =
-      steps.findIndex((s) => s.label === currentStatus) + 1;
-    return step < currentStepIndex
-      ? "bg-sky-400"
-      : step === currentStepIndex
-      ? "bg-sky-400 animate-pulse shadow-lg"
-      : "bg-gray-200";
-  };
-  const getLineText = (step: number) => {
-    switch (step) {
-      case 1:
-        return "상담 진행 중";
-      case 2:
-        return "조제 진행 중";
-      case 3:
-        return "배송 대기 중";
-      case 4:
-        return "배송 중";
-      default:
-        return "진행 중";
-    }
-  };
   const OrderAccordionItem = ({
     initialOrder,
     isInitiallyExpanded,
@@ -85,63 +52,66 @@ export default function Pharm() {
     isInitiallyExpanded: boolean;
   }) => {
     const [isExpanded, setIsExpanded] = useState(isInitiallyExpanded);
-    const [order, setOrder] = useState<any>(initialOrder);
-    const [loadingDetails, setLoadingDetails] = useState(true);
+    const [order, setOrder] = useState(initialOrder);
+    const [isLoaded, setIsLoaded] = useState(false);
     const [messages, setMessages] = useState<any[]>([]);
     const [newMessage, setNewMessage] = useState("");
     const [isSending, setIsSending] = useState(false);
     const [isMessagesRefreshing, setIsMessagesRefreshing] = useState(false);
-    const messagesContainerRef = useRef<HTMLDivElement>(null);
     const [loadingStatus, setLoadingStatus] = useState<number | null>(null);
     const [isStateRefreshing, setIsStateRefreshing] = useState(false);
+    const messagesContainerRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
-      if (!isExpanded) return;
-      async function fetchDetails() {
-        try {
-          const detailedOrder = await getOrderById(initialOrder.idx);
-          setOrder(detailedOrder);
-        } catch (err) {
-          console.error(err);
-        } finally {
-          setLoadingDetails(false);
-        }
-      }
-      fetchDetails();
-    }, [isExpanded, initialOrder.idx]);
-    useEffect(() => {
-      if (!isExpanded) return;
-      async function fetchMessages() {
-        const msgs = await getMessagesByOrder(order.idx);
+      if (!isExpanded || isLoaded) return;
+      async function fetchDetailsAndMessages() {
+        const [detailedOrder, msgs] = await Promise.all([
+          getOrderById(initialOrder.idx),
+          getMessagesByOrder(initialOrder.idx),
+        ]);
+        setOrder(detailedOrder);
         setMessages(msgs);
+        setIsLoaded(true);
       }
-      fetchMessages();
-    }, [order, isExpanded]);
+      fetchDetailsAndMessages();
+    }, [isExpanded, isLoaded]);
     useEffect(() => {
-      if (!isExpanded) return;
+      if (!isExpanded || !isLoaded) return;
       const intervalId = setInterval(() => {
         refreshOrderStatus();
       }, 10000);
       return () => clearInterval(intervalId);
-    }, [order, isExpanded]);
+    }, [isExpanded, isLoaded]);
     useEffect(() => {
       if (!isExpanded) return;
       const intervalId = setInterval(() => {
         refreshMessages();
       }, 60000);
       return () => clearInterval(intervalId);
-    }, [order, isExpanded]);
-
+    }, [isExpanded, isLoaded]);
     useEffect(() => {
+      if (!isExpanded || !isLoaded) return;
       if (messagesContainerRef.current) {
         messagesContainerRef.current.scrollTop =
           messagesContainerRef.current.scrollHeight;
       }
-    }, [messages]);
+    }, [isExpanded, isLoaded, messages]);
     const toggleExpanded = () => {
       setIsExpanded((prev) => !prev);
     };
+    const refreshOrderStatus = async (manual: boolean = false) => {
+      try {
+        const updatedStatus = await getOrderStatusById(order.idx);
+        setOrder((prev: any) => ({
+          ...prev,
+          status: updatedStatus?.status,
+        }));
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (manual) setIsStateRefreshing(false);
+      }
+    };
     const refreshMessages = async (manual: boolean = false) => {
-      if (!isExpanded) return;
       if (manual) setIsMessagesRefreshing(true);
       try {
         const msgs = await getMessagesByOrder(order.idx);
@@ -150,21 +120,6 @@ export default function Pharm() {
         console.error(err);
       } finally {
         if (manual) setIsMessagesRefreshing(false);
-      }
-    };
-    const refreshOrderStatus = async (manual: boolean = false) => {
-      if (!isExpanded) return;
-      if (manual) setIsStateRefreshing(true);
-      try {
-        const updatedStatus = await getOrderStatusById(order.idx);
-        setOrder((prevOrder: any) => ({
-          ...prevOrder,
-          status: updatedStatus?.status,
-        }));
-      } catch (err) {
-        console.error(err);
-      } finally {
-        if (manual) setIsStateRefreshing(false);
       }
     };
     const sendMessage = async () => {
@@ -192,327 +147,319 @@ export default function Pharm() {
       newStatus: string
     ) => {
       setLoadingStatus(orderIdx);
-      try {
-        const updatedOrder = await updateOrderStatus(orderIdx, newStatus);
+      const updatedOrder = await updateOrderStatus(orderIdx, newStatus);
+      setOrder((prevOrder: any) => ({
+        ...prevOrder,
+        ...updatedOrder,
+      }));
+      setLoadingStatus(null);
+    };
+    const handleDeleteMessage = async (messageId: number) => {
+      const confirmDelete = window.confirm("정말로 메시지를 삭제하시겠습니까?");
+      if (!confirmDelete) return;
 
-        setOrder(updatedOrder);
+      try {
+        await deleteMessage(messageId);
+        setMessages((prevMessages) =>
+          prevMessages.filter((message) => message.idx !== messageId)
+        );
       } catch (error) {
         console.error(error);
-        alert("주문 상태 업데이트에 실패했습니다.");
-      } finally {
-        setLoadingStatus(null);
+        alert("메시지 삭제에 실패했습니다.");
       }
     };
-    return (
-      <div className="w-full max-w-[640px] mx-auto px-6 py-6 bg-white sm:shadow-md sm:rounded-lg">
-        <div
-          className="flex justify-between items-center cursor-pointer"
-          onClick={toggleExpanded}
-        >
-          <div className="flex flex-col gap-1">
-            <div className="text-sm text-gray-500">
-              주문 번호 #{generateOrderNumber(order.idx)}
+    if (isExpanded && !isLoaded) {
+      return (
+        <div className="w-full max-w-[640px] mx-auto px-6 py-6 bg-white sm:shadow-md sm:rounded-lg">
+          <OrderAccordionHeader
+            order={order}
+            isExpanded={isExpanded}
+            toggle={toggleExpanded}
+          />
+          <div className="mt-4 border-t sm:px-4 pt-16 sm:pt-12 pb-4">
+            <div className="flex justify-center items-center mt-2 mb-6">
+              <div className="w-6 h-6 border-2 border-sky-400 border-t-transparent rounded-full animate-spin"></div>
             </div>
-            <div className="text-base font-bold text-gray-800">
-              {order?.orderItems?.[0]?.product?.name}
-              {order?.orderItems?.length > 1 &&
-                ` 외 ${order.orderItems.length - 1}개`}
-            </div>
-            <div className="text-sm text-gray-600">
-              상태: <StatusLabel status={order.status} />
-            </div>
-          </div>
-          <div className="text-sm text-sky-400">
-            {isExpanded ? "접기 ▲" : "펼치기 ▼"}
           </div>
         </div>
+      );
+    }
+    return (
+      <div className="w-full max-w-[640px] mx-auto px-6 py-6 bg-white sm:shadow-md sm:rounded-lg">
+        <OrderAccordionHeader
+          order={order}
+          isExpanded={isExpanded}
+          toggle={toggleExpanded}
+        />
         {isExpanded && (
           <div className="mt-4 border-t sm:px-4 pt-16 sm:pt-12 pb-4">
-            {loadingDetails ? (
-              <div className="flex justify-center items-center mb-10">
-                <div className="w-6 h-6 border-2 border-sky-400 border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            ) : (
-              <>
-                <div className="flex items-center mb-6">
-                  {steps.map((step, stepIndex) => (
-                    <React.Fragment key={stepIndex}>
-                      <div className="flex flex-col items-center flex-1">
-                        <div
-                          className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm font-bold ${getStatusClass(
-                            stepIndex + 1,
-                            order.status
-                          )}`}
-                        >
-                          {stepIndex + 1}
-                        </div>
-                        <span className="whitespace-nowrap mt-2 text-xs text-center">
-                          {step.label}
-                        </span>
-                      </div>
-                      {stepIndex < steps.length - 1 && (
-                        <div className="relative flex items-center justify-center flex-1">
-                          <div
-                            className={`mb-5 h-1 w-full ${getLineClass(
-                              stepIndex + 1,
-                              order.status
-                            )}`}
-                          />
-                          <span className="absolute text-center bottom-[28px] text-xs text-gray-500">
-                            {getLineText(stepIndex + 1)}
-                          </span>
-                        </div>
-                      )}
-                    </React.Fragment>
-                  ))}
-                </div>
-                <div className="mb-6 flex gap-2">
-                  <button
-                    onClick={() =>
-                      handleUpdateOrderStatus(order.idx, "상담 완료")
-                    }
-                    className="text-sm flex justify-center items-center w-20 h-8 bg-green-500 text-white rounded"
-                  >
-                    {loadingStatus === order.idx ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    ) : (
-                      "상담 완료"
-                    )}
-                  </button>
-                  <button
-                    onClick={() =>
-                      handleUpdateOrderStatus(order.idx, "조제 완료")
-                    }
-                    className="text-sm flex justify-center items-center w-20 h-8 bg-blue-500 text-white rounded"
-                  >
-                    {loadingStatus === order.idx ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    ) : (
-                      "조제 완료"
-                    )}
-                  </button>
-                  <button
-                    onClick={() =>
-                      handleUpdateOrderStatus(order.idx, "주문 취소")
-                    }
-                    className="text-sm flex justify-center items-center w-20 h-8 bg-red-500 text-white rounded"
-                  >
-                    {loadingStatus === order.idx ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    ) : (
-                      "주문 취소"
-                    )}
-                  </button>
-                  <button
-                    onClick={() => refreshOrderStatus(true)}
-                    className="text-sm flex justify-center items-center w-20 h-8 bg-gray-300 text-gray-700 rounded"
-                  >
-                    {isStateRefreshing ? (
-                      <ArrowPathIcon className="w-4 h-4 animate-spin" />
-                    ) : (
-                      "새로고침"
-                    )}
-                  </button>
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-gray-700 mb-4 mt-6">
-                    주문 상세 내역
-                  </h2>
-                  <table className="w-full text-sm text-left text-gray-600 mt-2">
-                    <thead className="text-xs text-gray-700 uppercase bg-gray-100">
-                      <tr>
-                        <th className="py-2 px-4">상품명</th>
-                        <th className="py-2 px-2">카테고리</th>
-                        <th className="py-2 px-4 text-center">개수</th>
-                        <th className="py-2 px-4 text-right">가격</th>
-                        <th className="py-2 px-4 text-right">총 가격</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {order.orderItems?.map((item: any, idx: number) => (
-                        <tr key={idx} className="border-b hover:bg-gray-50">
-                          <td className="py-2 px-4">{item.product.name}</td>
-                          <td className="py-2 px-4">
-                            {item.product.categories
-                              ?.map((category: any) => category.name)
-                              .join(", ") || "카테고리 없음"}
-                          </td>
-                          <td className="py-2 px-4 text-center">
-                            {item.quantity}
-                          </td>
-                          <td className="py-2 px-4 text-right">
-                            ₩{item.product.price?.toLocaleString() || 0}
-                          </td>
-                          <td className="py-2 px-4 text-right">
-                            ₩
-                            {(
-                              (item.product.price || 0) * item.quantity
-                            )?.toLocaleString() || 0}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <div className="mt-4 text-right">
-                    <p className="text-sm">
-                      <span className="font-bold">총 결제 금액:</span>{" "}
-                      <span className="text-lg font-bold text-sky-500">
-                        ₩{order.totalPrice?.toLocaleString() || 0}
-                      </span>
-                    </p>
-                  </div>
-                  <div className="mt-4 text-sm text-gray-600">
-                    <p>
-                      주소: {order.roadAddress} {order.detailAddress}
-                    </p>
-                    <p className="mt-1">연락처: {order.phone}</p>
-                  </div>
-                </div>
-
-                {/* 상담 메시지 영역 */}
-                <div className="flex justify-between mt-8">
-                  <h3 className="text-lg font-bold text-gray-800">
-                    상담 메시지
-                  </h3>
-                  <div className="flex justify-between items-center">
-                    <button
-                      onClick={() => refreshMessages(true)}
-                      className="text-sky-400 hover:underline flex items-center gap-1"
-                    >
-                      <ArrowPathIcon
-                        className={`w-5 h-5 ${
-                          isMessagesRefreshing ? "animate-spin" : ""
-                        }`}
-                      />
-                      새로고침
-                    </button>
-                  </div>
-                </div>
-                <div
-                  className="mt-3 space-y-3 max-h-60 overflow-y-auto scrollbar-hide py-2"
-                  ref={messagesContainerRef}
+            <OrderProgressBar currentStatus={order.status} />
+            <div className="flex flex-col sm:flex-row justify-between sm:gap-8 mt-12 mb-6">
+              <span className="text-lg font-bold text-gray-700">
+                주문 상태 변경
+              </span>
+              <div className="flex gap-2 mt-4 sm:mt-0">
+                <button
+                  onClick={() =>
+                    handleUpdateOrderStatus(order.idx, "결제 완료")
+                  }
+                  className="text-sm flex justify-center items-center w-20 h-8 bg-emerald-500 hover:bg-emerald-600 text-white rounded"
+                  disabled={loadingStatus === order.idx}
                 >
-                  {messages.length > 0 ? (
-                    messages.map((message, index) => (
+                  {loadingStatus === order.idx ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    "상담 대기"
+                  )}
+                </button>
+                <button
+                  onClick={() =>
+                    handleUpdateOrderStatus(order.idx, "상담 완료")
+                  }
+                  className="text-sm flex justify-center items-center w-20 h-8 bg-indigo-500 hover:bg-indigo-600 text-white rounded"
+                  disabled={loadingStatus === order.idx}
+                >
+                  {loadingStatus === order.idx ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    "상담 완료"
+                  )}
+                </button>
+                <button
+                  onClick={() =>
+                    handleUpdateOrderStatus(order.idx, "조제 완료")
+                  }
+                  className="text-sm flex justify-center items-center w-20 h-8 bg-yellow-500 hover:bg-yellow-600 text-white rounded"
+                  disabled={loadingStatus === order.idx}
+                >
+                  {loadingStatus === order.idx ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    "조제 완료"
+                  )}
+                </button>
+                <button
+                  onClick={() => {
+                    const confirmCancel =
+                      window.confirm("정말로 주문을 취소하시겠습니까?");
+                    if (confirmCancel) {
+                      handleUpdateOrderStatus(order.idx, "주문 취소");
+                    }
+                  }}
+                  className="text-sm flex justify-center items-center w-20 h-8 bg-red-500 hover:bg-red-600 text-white rounded"
+                  disabled={loadingStatus === order.idx}
+                >
+                  {loadingStatus === order.idx ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    "주문 취소"
+                  )}
+                </button>
+              </div>
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-gray-700 mb-4 mt-4">
+                주문 상세 내역
+              </h2>
+              {order.orderItems.map((item: any, idx: number) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between mb-6"
+                >
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={item.product.images?.[0] || "/placeholder.png"}
+                      alt={item.product.name}
+                      className="w-16 h-16 object-cover rounded-lg"
+                    />
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-800">
+                        {item.product.name}
+                      </h3>
+                      <p className="text-xs text-gray-500">
+                        {item.product.categories?.length
+                          ? item.product.categories
+                              .map((category: any) => category.name)
+                              .join(", ")
+                          : "옵션 없음"}
+                      </p>
+                      <p className="text-sm font-bold text-sky-400 mt-1">
+                        ₩{item.product.price.toLocaleString()}
+                        <span className="text-rose-600">
+                          {" "}
+                          x {item.quantity}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-sm font-bold text-sky-400">
+                    ₩{(item.product.price * item.quantity).toLocaleString()}
+                  </p>
+                </div>
+              ))}
+              <div className="flex justify-end text-sm text-gray-600">
+                <span>배송비</span>
+                <span className="font-bold ml-2">₩3,000</span>
+              </div>
+              <div className="flex justify-end gap-2 text-base font-bold mt-2">
+                <span className="text-gray-700">총 결제 금액</span>
+                <span className="text-sky-400">
+                  ₩{order.totalPrice.toLocaleString()}
+                </span>
+              </div>
+            </div>
+            <div className="mt-8">
+              <div className="mb-4 flex justify-between items-center">
+                <h2 className="text-lg font-bold text-gray-700">상담 메시지</h2>
+                <button
+                  onClick={() => refreshMessages(true)}
+                  className="text-sm flex items-center gap-1 text-sky-400 hover:underline"
+                >
+                  새로고침
+                  <ArrowPathIcon
+                    className={`w-5 h-5 ${
+                      isMessagesRefreshing ? "animate-spin" : ""
+                    }`}
+                  />
+                </button>
+              </div>
+              <div
+                className="mt-3 space-y-3 max-h-96 overflow-y-auto scrollbar-hide py-2"
+                ref={messagesContainerRef}
+              >
+                {messages.length > 0 ? (
+                  messages.map((message, index) => (
+                    <div
+                      key={index}
+                      className={`flex ${
+                        !message.pharmacyId ? "justify-start" : "justify-end"
+                      }`}
+                    >
                       <div
-                        key={index}
-                        className={`flex ${
-                          message.pharmacyId ? "justify-end" : "justify-start"
+                        className={`relative w-2/3 p-4 rounded-lg shadow-md ${
+                          message.pharmacyId
+                            ? "bg-sky-100 text-sky-800"
+                            : "bg-gray-100 text-gray-800"
                         }`}
                       >
-                        <div
-                          className={`w-2/3 p-4 rounded-lg shadow-md ${
-                            message.pharmacyId
-                              ? "bg-sky-100 text-sky-800"
-                              : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          <p className="text-sm whitespace-pre-wrap">
-                            {message.content}
-                          </p>
-                          <div className="flex justify-between items-center mt-2">
-                            <span className="text-xs text-gray-500">
-                              {message.pharmacyId ? pharm?.name : order.phone}
-                            </span>
-                            <span className="text-xs text-gray-400">
-                              {new Date(message.timestamp).toLocaleString(
-                                "ko-KR",
-                                {
-                                  month: "long",
-                                  day: "numeric",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                }
-                              )}
-                            </span>
-                          </div>
+                        {message.pharmacyId && (
+                          <button
+                            className="absolute top-1.5 right-2 text-gray-400 hover:text-gray-600 text-xs cursor:pointer"
+                            onClick={() => handleDeleteMessage(message.idx)}
+                          >
+                            ✕
+                          </button>
+                        )}
+                        <p className="text-sm whitespace-pre-wrap">
+                          {message.content}
+                        </p>
+                        <div className="flex justify-between items-center mt-2">
+                          <span className="text-xs text-gray-500">
+                            {message.pharmacyId
+                              ? order.pharmacy?.name
+                              : order.phone}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            {new Date(message.timestamp).toLocaleString(
+                              "ko-KR",
+                              {
+                                month: "long",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )}
+                          </span>
                         </div>
                       </div>
-                    ))
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-center text-gray-500 text-sm my-10">
+                    메시지가 없습니다.
+                  </p>
+                )}
+              </div>
+              <div className="mt-4 flex gap-2">
+                <textarea
+                  rows={1}
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      sendMessage();
+                    }
+                  }}
+                  className="flex-1 px-3 py-1.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400 resize-none overflow-hidden leading-normal"
+                  placeholder="메시지를 입력하세요..."
+                />
+                <button
+                  onClick={sendMessage}
+                  disabled={isSending}
+                  className={`px-2 w-14 bg-sky-400 hover:bg-sky-500 text-white rounded-lg flex items-center justify-center ${
+                    isSending ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                >
+                  {isSending ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   ) : (
-                    <p className="text-center text-gray-500 text-sm">
-                      메시지가 없습니다.
-                    </p>
+                    "전송"
                   )}
-                </div>
-                <div className="mt-4 flex gap-2">
-                  <textarea
-                    rows={1}
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        sendMessage();
-                      }
-                    }}
-                    className="flex-1 px-2 py-1.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400 resize-none overflow-hidden leading-normal"
-                    placeholder="메시지를 입력하세요..."
-                  />
-                  <button
-                    onClick={sendMessage}
-                    disabled={isSending}
-                    className={`px-2 w-14 bg-sky-400 hover:bg-sky-500 text-white rounded-lg flex items-center justify-center ${
-                      isSending ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
-                  >
-                    {isSending ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    ) : (
-                      "전송"
-                    )}
-                  </button>
-                </div>
-
-                {/* 주문자 정보 */}
-                <div className="mt-4 p-4 mb-4 bg-gray-100 rounded-lg shadow-md">
-                  <h3 className="text-base font-bold text-gray-800 mb-2">
-                    주문자 정보
-                  </h3>
-                  <div className="space-y-2">
-                    <p className="text-sm text-gray-600">
-                      <span className="font-bold text-gray-700">
-                        전화번호:{" "}
-                      </span>
-                      {order.phone}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      <span className="font-bold text-gray-700">
-                        요청 사항:{" "}
-                      </span>
-                      {order.requestNotes || "없음"}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      <span className="font-bold text-gray-700">
-                        주문 날짜:{" "}
-                      </span>
-                      {new Date(order.createdAt).toLocaleString("ko-KR", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
-                </div>
-              </>
-            )}
+                </button>
+              </div>
+            </div>
+            <h3 className="mb-2 font-bold mt-4 border-t pt-6">주문자 정보</h3>
+            <div className="flex flex-col text-sm gap-1 mt-4">
+              <div className="flex items-center">
+                <span className="w-32 text-gray-600">주소</span>
+                <span className="flex-1 text-gray-800">
+                  {order.roadAddress} {order.detailAddress}
+                </span>
+              </div>
+              <div className="flex items-center">
+                <span className="w-32 text-gray-600">연락처</span>
+                <span className="flex-1 text-gray-800">{order.phone}</span>
+              </div>
+              <div className="flex items-center">
+                <span className="w-32 text-gray-600">주문일시</span>
+                <span className="flex-1 text-gray-800">
+                  {order.createdAt.toLocaleString("ko-KR", {
+                    month: "long",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </div>
+              <div className="flex items-center">
+                <span className="w-32 text-gray-600">배송 시 요청 사항</span>
+                <span className="flex-1 text-gray-800">
+                  {order.requestNotes || "없음"}
+                </span>
+              </div>
+              <div className="flex items-center">
+                <span className="w-32 text-gray-600">공동현관 비밀번호</span>
+                <span className="flex-1 text-gray-800">
+                  {order.entrancePassword || "없음"}
+                </span>
+              </div>
+              <div className="flex items-center">
+                <span className="w-32 text-gray-600">찾아오는 길 안내</span>
+                <span className="flex-1 text-gray-800">
+                  {order.directions || "없음"}
+                </span>
+              </div>
+            </div>
           </div>
         )}
       </div>
     );
   };
-  if (!pharm) {
-    return (
-      <div className="flex justify-center w-full max-w-[640px] mt-8 mb-12 px-10 pt-14 pb-14 bg-white sm:shadow-md sm:rounded-lg">
-        <div className="w-4 h-4 border-2 border-sky-400 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  if (loading) return <FullPageLoader />;
   return (
-    <div className="w-full mt-8 mb-10 flex flex-col gap-4">
-      {orders.map((order, index) => (
+    <div className="w-full mt-8 mb-12 flex flex-col gap-4">
+      {orders.map((order: any, index: number) => (
         <OrderAccordionItem
           key={order.idx}
           initialOrder={order}
