@@ -42,7 +42,6 @@ export default function OrderDetails({ phone, password, onBack }: any) {
     const [newMessage, setNewMessage] = useState("");
     const [isSending, setIsSending] = useState(false);
     const [isMessagesRefreshing, setIsMessagesRefreshing] = useState(false);
-    const [loadingStatus, setLoadingStatus] = useState<number | null>(null);
     const [isStateRefreshing, setIsStateRefreshing] = useState(false);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
@@ -315,23 +314,25 @@ export default function OrderDetails({ phone, password, onBack }: any) {
                 </button>
               </div>
             </div>
-            <div className="mt-6 border-t pt-6">
-              <h3 className="font-bold placeholder:after:text-lg mb-2">
-                약국 정보
-              </h3>
-              <div className="space-y-1">
-                <p className="text-sm text-gray-800">
-                  <span className="text-gray-600">약국명: </span>
+            <h3 className="mb-2 font-bold mt-8 border-t pt-6">약국 정보</h3>
+            <div className="flex flex-col text-sm gap-1 mt-4">
+              <div className="flex items-center">
+                <span className="w-20 font-bold text-gray-500">약국명</span>
+                <span className="flex-1 text-gray-800">
                   {order.pharmacy?.name}
-                </p>
-                <p className="text-sm text-gray-800">
-                  <span className="text-gray-600">약국 주소: </span>
+                </span>
+              </div>
+              <div className="flex items-center">
+                <span className="w-20 font-bold text-gray-500">약국 주소</span>
+                <span className="flex-1 text-gray-800">
                   {order.pharmacy?.address}
-                </p>
-                <p className="text-sm text-gray-800">
-                  <span className="text-gray-600">전화번호: </span>
+                </span>
+              </div>
+              <div className="flex items-center">
+                <span className="w-20 font-bold text-gray-500">전화번호</span>
+                <span className="flex-1 text-gray-800">
                   {order.pharmacy?.phone}
-                </p>
+                </span>
               </div>
             </div>
           </div>

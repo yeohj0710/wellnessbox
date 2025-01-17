@@ -203,7 +203,7 @@ export default function Pharm() {
                   onClick={() =>
                     handleUpdateOrderStatus(order.idx, "결제 완료")
                   }
-                  className="text-sm flex justify-center items-center w-20 h-8 bg-emerald-500 hover:bg-emerald-600 text-white rounded"
+                  className="text-sm flex justify-center items-center w-20 h-8 bg-emerald-400 hover:bg-emerald-500 text-white rounded"
                   disabled={loadingStatus === order.idx}
                 >
                   {loadingStatus === order.idx ? (
@@ -216,7 +216,7 @@ export default function Pharm() {
                   onClick={() =>
                     handleUpdateOrderStatus(order.idx, "상담 완료")
                   }
-                  className="text-sm flex justify-center items-center w-20 h-8 bg-indigo-500 hover:bg-indigo-600 text-white rounded"
+                  className="text-sm flex justify-center items-center w-20 h-8 bg-indigo-400 hover:bg-indigo-500 text-white rounded"
                   disabled={loadingStatus === order.idx}
                 >
                   {loadingStatus === order.idx ? (
@@ -229,7 +229,7 @@ export default function Pharm() {
                   onClick={() =>
                     handleUpdateOrderStatus(order.idx, "조제 완료")
                   }
-                  className="text-sm flex justify-center items-center w-20 h-8 bg-yellow-500 hover:bg-yellow-600 text-white rounded"
+                  className="text-sm flex justify-center items-center w-20 h-8 bg-yellow-400 hover:bg-yellow-500 text-white rounded"
                   disabled={loadingStatus === order.idx}
                 >
                   {loadingStatus === order.idx ? (
@@ -246,7 +246,7 @@ export default function Pharm() {
                       handleUpdateOrderStatus(order.idx, "주문 취소");
                     }
                   }}
-                  className="text-sm flex justify-center items-center w-20 h-8 bg-red-500 hover:bg-red-600 text-white rounded"
+                  className="text-sm flex justify-center items-center w-20 h-8 bg-red-400 hover:bg-red-500 text-white rounded"
                   disabled={loadingStatus === order.idx}
                 >
                   {loadingStatus === order.idx ? (
@@ -284,11 +284,8 @@ export default function Pharm() {
                           : "옵션 없음"}
                       </p>
                       <p className="text-sm font-bold text-sky-400 mt-1">
-                        ₩{item.product.price.toLocaleString()}
-                        <span className="text-rose-600">
-                          {" "}
-                          x {item.quantity}
-                        </span>
+                        ₩{item.product.price.toLocaleString()} x
+                        <span className="text-rose-600"> {item.quantity}</span>
                       </p>
                     </div>
                   </div>
@@ -409,20 +406,20 @@ export default function Pharm() {
                 </button>
               </div>
             </div>
-            <h3 className="mb-2 font-bold mt-4 border-t pt-6">주문자 정보</h3>
+            <h3 className="mb-2 font-bold mt-8 border-t pt-6">주문자 정보</h3>
             <div className="flex flex-col text-sm gap-1 mt-4">
               <div className="flex items-center">
-                <span className="w-32 text-gray-600">주소</span>
+                <span className="w-32 font-bold text-gray-500">주소</span>
                 <span className="flex-1 text-gray-800">
                   {order.roadAddress} {order.detailAddress}
                 </span>
               </div>
               <div className="flex items-center">
-                <span className="w-32 text-gray-600">연락처</span>
+                <span className="w-32 font-bold text-gray-500">연락처</span>
                 <span className="flex-1 text-gray-800">{order.phone}</span>
               </div>
               <div className="flex items-center">
-                <span className="w-32 text-gray-600">주문일시</span>
+                <span className="w-32 font-bold text-gray-500">주문일시</span>
                 <span className="flex-1 text-gray-800">
                   {order.createdAt.toLocaleString("ko-KR", {
                     month: "long",
@@ -433,19 +430,25 @@ export default function Pharm() {
                 </span>
               </div>
               <div className="flex items-center">
-                <span className="w-32 text-gray-600">배송 시 요청 사항</span>
+                <span className="w-32 font-bold text-gray-500">
+                  배송 시 요청 사항
+                </span>
                 <span className="flex-1 text-gray-800">
                   {order.requestNotes || "없음"}
                 </span>
               </div>
               <div className="flex items-center">
-                <span className="w-32 text-gray-600">공동현관 비밀번호</span>
+                <span className="w-32 font-bold text-gray-500">
+                  공동현관 비밀번호
+                </span>
                 <span className="flex-1 text-gray-800">
                   {order.entrancePassword || "없음"}
                 </span>
               </div>
               <div className="flex items-center">
-                <span className="w-32 text-gray-600">찾아오는 길 안내</span>
+                <span className="w-32 font-bold text-gray-500">
+                  찾아오는 길 안내
+                </span>
                 <span className="flex-1 text-gray-800">
                   {order.directions || "없음"}
                 </span>

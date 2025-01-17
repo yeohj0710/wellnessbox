@@ -99,6 +99,32 @@ export async function getBasicOrdersByPharmacy(pharmacyIdx: number) {
   });
 }
 
+export async function getBasicOrdersByRider() {
+  return await db.order_.findMany({
+    where: {
+      NOT: [{ status: "결제 완료" }, { status: "상담 완료" }],
+    },
+    select: {
+      idx: true,
+      status: true,
+      createdAt: true,
+      orderItems: {
+        select: {
+          quantity: true,
+          product: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+}
+
 export async function getOrdersByPharmacy(pharmacyIdx: number) {
   return await db.order_.findMany({
     where: { pharmacyIdx },
