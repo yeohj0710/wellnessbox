@@ -8,7 +8,9 @@ import { useRouter } from "next/navigation";
 
 export default function Cart({
   cartItems,
+  totalPrice,
   selectedPharmacy,
+  allProducts,
   onBack,
   onUpdateCart,
 }: any) {
@@ -25,7 +27,7 @@ export default function Cart({
   const [phonePart3, setPhonePart3] = useState("");
   const [userContact, setUserContact] = useState("");
   const [password, setPassword] = useState("");
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("card");
   useEffect(() => {
     const storedRoadAddress = localStorage.getItem("roadAddress");
     const storedDetailAddress = localStorage.getItem("detailAddress");
@@ -113,12 +115,8 @@ export default function Cart({
     localStorage.setItem("password_input", password);
   }, [password]);
   useEffect(() => {
-    localStorage.setItem("selectedPharmacyIdx", selectedPharmacy?.idx);
+    localStorage.setItem("selectedPharmacyId", selectedPharmacy?.id);
   }, [selectedPharmacy]);
-  const totalPrice = cartItems.reduce(
-    (acc: any, item: any) => acc + item.price * item.quantity,
-    0
-  );
   const deliveryFee = 3000;
   const totalPriceWithDelivery = totalPrice + deliveryFee;
   const handlePaymentRequest = async (
@@ -165,7 +163,7 @@ export default function Cart({
     }
   };
   return (
-    <div className="w-full mt-16 mb-8 max-w-[640px] mx-auto bg-white min-h-[100vh]">
+    <div className="w-full mt-32 mb-8 max-w-[640px] mx-auto bg-white min-h-[100vh]">
       <Script
         src="https://cdn.iamport.kr/js/iamport.payment-1.2.0.js"
         onLoad={() => {
@@ -187,87 +185,108 @@ export default function Cart({
       </div>
       <div className="space-y-4 px-4 mb-2">
         {cartItems.length > 0 ? (
-          cartItems.map((item: any) => (
-            <div
-              key={item.idx}
-              className="flex items-center gap-4 border-b pb-4"
-            >
-              {item.images && item.images.length > 0 ? (
-                <img
-                  src={item.images[0]}
-                  alt={item.name}
-                  className="w-16 h-16 rounded-md object-cover"
-                />
-              ) : (
-                <div className="w-16 h-16 rounded-md bg-gray-300 flex items-center justify-center text-xs text-gray-500">
-                  이미지 없음
+          cartItems.map((item: any) => {
+            const product = allProducts.find(
+              (product: any) => product.id === item.productId
+            );
+            const pharmacyProduct = product?.pharmacyProducts.find(
+              (pharmacyProduct: any) =>
+                pharmacyProduct.optionType === item.optionType &&
+                pharmacyProduct.pharmacy.id === selectedPharmacy?.id
+            );
+            return (
+              <div
+                key={pharmacyProduct.id}
+                className="flex items-center gap-4 border-b pb-4"
+              >
+                {product.images && product.images.length > 0 ? (
+                  <img
+                    src={product.images[0]}
+                    alt={product.name}
+                    className="w-16 h-16 rounded-md object-cover"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-md bg-gray-300 flex items-center justify-center text-xs text-gray-500">
+                    이미지 없음
+                  </div>
+                )}
+                <div className="flex-1">
+                  <h2 className="font-bold">
+                    {product.name} ({pharmacyProduct.optionType})
+                  </h2>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {product.categories
+                      ?.map((category: any) => category.name)
+                      .join(", ") || "카테고리 없음"}
+                  </p>
+                  <p className="mt-1 font-bold text-sky-500">
+                    ₩{pharmacyProduct.price.toLocaleString()}
+                  </p>
                 </div>
-              )}
-              <div className="flex-1">
-                <h2 className="font-bold">{item.name}</h2>
-                <p className="mt-1 text-sm text-gray-500">
-                  {item.categories
-                    ?.map((category: any) => category.name)
-                    .join(", ") || "카테고리 없음"}
-                </p>
-                <p className="mt-1 font-bold text-sky-500">
-                  ₩{item.price.toLocaleString()}
-                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      const updatedItems = cartItems.map((i: any) =>
+                        i.id === item.id && i.quantity > 1
+                          ? { ...i, quantity: i.quantity - 1 }
+                          : i
+                      );
+                      onUpdateCart(updatedItems);
+                      localStorage.setItem(
+                        "cartItems",
+                        JSON.stringify(updatedItems)
+                      );
+                    }}
+                    className="leading-none w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-lg"
+                  >
+                    -
+                  </button>
+                  <span className="font-bold">{item.quantity}</span>
+                  <button
+                    onClick={() => {
+                      if (
+                        pharmacyProduct &&
+                        item.quantity < pharmacyProduct.stock
+                      ) {
+                        const updatedItems = cartItems.map((i: any) =>
+                          i.id === item.id
+                            ? { ...i, quantity: i.quantity + 1 }
+                            : i
+                        );
+                        onUpdateCart(updatedItems);
+                        localStorage.setItem(
+                          "cartItems",
+                          JSON.stringify(updatedItems)
+                        );
+                      } else {
+                        alert(
+                          `${selectedPharmacy.name}에서 담을 수 있는 ${product.name} (${pharmacyProduct.optionType})의 최대 개수예요.`
+                        );
+                      }
+                    }}
+                    className="leading-none w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-lg"
+                  >
+                    +
+                  </button>
+                  <button
+                    onClick={() => {
+                      const updatedItems = cartItems.filter(
+                        (i: any) => i.id !== item.id
+                      );
+                      onUpdateCart(updatedItems);
+                      localStorage.setItem(
+                        "cartItems",
+                        JSON.stringify(updatedItems)
+                      );
+                    }}
+                    className="leading-none w-8 h-8 bg-red-100 hover:bg-red-200 rounded-full flex items-center justify-center"
+                  >
+                    <TrashIcon className="w-5 h-5 text-red-500" />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    const updatedItems = cartItems.map((i: any) =>
-                      i.idx === item.idx && i.quantity > 1
-                        ? { ...i, quantity: i.quantity - 1 }
-                        : i
-                    );
-                    onUpdateCart(updatedItems);
-                    localStorage.setItem(
-                      "cartItems",
-                      JSON.stringify(updatedItems)
-                    );
-                  }}
-                  className="leading-none w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-lg"
-                >
-                  -
-                </button>
-                <span className="font-bold">{item.quantity}</span>
-                <button
-                  onClick={() => {
-                    const updatedItems = cartItems.map((i: any) =>
-                      i.idx === item.idx
-                        ? { ...i, quantity: i.quantity + 1 }
-                        : i
-                    );
-                    onUpdateCart(updatedItems);
-                    localStorage.setItem(
-                      "cartItems",
-                      JSON.stringify(updatedItems)
-                    );
-                  }}
-                  className="leading-none w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-lg"
-                >
-                  +
-                </button>
-                <button
-                  onClick={() => {
-                    const updatedItems = cartItems.filter(
-                      (i: any) => i.idx !== item.idx
-                    );
-                    onUpdateCart(updatedItems);
-                    localStorage.setItem(
-                      "cartItems",
-                      JSON.stringify(updatedItems)
-                    );
-                  }}
-                  className="leading-none w-8 h-8 bg-red-100 hover:bg-red-200 rounded-full flex items-center justify-center"
-                >
-                  <TrashIcon className="w-5 h-5 text-red-500" />
-                </button>
-              </div>
-            </div>
-          ))
+            );
+          })
         ) : (
           <div className="flex justify-center items-center h-28">
             <p className="text-gray-500 font-medium">장바구니가 텅 비었어요.</p>
@@ -461,6 +480,7 @@ export default function Cart({
             value="card"
             className="w-5 h-5 text-sky-500 border-gray-300"
             onChange={() => setSelectedPaymentMethod("card")}
+            defaultChecked={true}
           />
           <span className="text-base font-medium text-gray-700">
             신용/체크카드
@@ -485,7 +505,7 @@ export default function Cart({
         </label>
       </div>
       <h2 className="text-lg font-bold p-4 mt-2">최종 금액</h2>
-      <div className={`px-4 ${totalPrice < 15000 ? "mb-16 pb-2" : ""}`}>
+      <div className={`px-4 ${totalPrice <= 0 ? "mb-24 pb-2" : ""}`}>
         <div className="flex justify-between items-center">
           <span className="text-sm font-medium text-gray-700">상품 합계</span>
           <span className="font-bold">₩{totalPrice.toLocaleString()}</span>
@@ -501,17 +521,15 @@ export default function Cart({
           </span>
         </div>
       </div>
-      {totalPrice < 15000 ? (
+      {totalPrice <= 0 ? (
         <div
           className={`px-6 fixed bottom-0 left-0 right-0 w-full max-w-[640px] mx-auto ${
-            totalPrice < 15000 ? "bg-gray-400" : "bg-sky-400"
+            totalPrice <= 0 ? "bg-gray-400" : "bg-sky-400"
           } text-white p-4 flex justify-between items-center text-lg font-bold`}
         >
           <span className="font-bold">₩{totalPrice.toLocaleString()}</span>
           <span className="text-sm text-white py-3">
-            {`${(
-              15000 - totalPrice
-            ).toLocaleString()}원만 더 담으면 주문할 수 있어요.`}
+            상품을 1개만 담으면 주문할 수 있어요.
           </span>
         </div>
       ) : (

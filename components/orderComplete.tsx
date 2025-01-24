@@ -91,7 +91,7 @@ export default function OrderComplete({ order }: { order?: any }) {
 }
 
 const mockOrder = {
-  idx: 6,
+  id: 6,
   roadAddress: "인천광역시 연수구 송도과학로 85 연세대학교 국제캠퍼스",
   detailAddress: "A동 102호",
   phone: "010-2342-1222",
@@ -105,9 +105,9 @@ const mockOrder = {
   status: "결제 완료",
   createdAt: "2025-01-08T08:11:59.693Z",
   updatedAt: "2025-01-08T08:11:59.693Z",
-  pharmacyIdx: 1,
+  pharmacyid: 1,
   pharmacy: {
-    idx: 1,
+    id: 1,
     name: "송도캠퍼스약국",
     address: "인천 연수구 송도과학로27번길 55 롯데캐슬캠퍼스타운상가 A동 3층",
     phone: "0507-1386-4450",
@@ -119,12 +119,12 @@ const mockOrder = {
   totalPrice: 16700,
   orderItems: [
     {
-      idx: 5,
+      id: 5,
       quantity: 1,
       orderId: 6,
       productId: 11,
       product: {
-        idx: 11,
+        id: 11,
         name: "지큐랩 장건강 포스트 솔루션 (7일 패키지)",
         images: [
           "https://imagedelivery.net/9kyXN1C-THXijlwsh9RpXw/0158d983-7d87-4b57-0e28-4caeff7a2900/public",
@@ -141,12 +141,12 @@ const mockOrder = {
       },
     },
     {
-      idx: 6,
+      id: 6,
       quantity: 4,
       orderId: 6,
       productId: 13,
       product: {
-        idx: 13,
+        id: 13,
         name: "트리플 스트렝스 오메가3 피쉬오일 (7일 패키지)",
         images: [
           "https://imagedelivery.net/9kyXN1C-THXijlwsh9RpXw/9465bfc8-6ae2-4112-b56c-a36de1ff3e00/public",

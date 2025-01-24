@@ -10,11 +10,11 @@ export default function MyOrders() {
   const [phonePart3, setPhonePart3] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [orders, setOrders] = useState([]);
   const [error, setError] = useState("");
   const [isViewingDetails, setIsViewingDetails] = useState(false);
   const [loading, setLoading] = useState(false);
   useEffect(() => {
+    window.scrollTo(0, 0);
     setPhonePart1(localStorage.getItem("my-orders-phonePart1") || "010");
     setPhonePart2(localStorage.getItem("my-orders-phonePart2") || "");
     setPhonePart3(localStorage.getItem("my-orders-phonePart3") || "");

@@ -48,10 +48,10 @@ export default function OrderDetails({ phone, password, onBack }: any) {
       if (!isExpanded || isLoaded) return;
       async function fetchDetailsAndMessages() {
         const [detailedOrder, msgs] = await Promise.all([
-          getOrderById(initialOrder.idx),
-          getMessagesByOrder(initialOrder.idx),
+          getOrderById(initialOrder.id),
+          getMessagesByOrder(initialOrder.id),
         ]);
-        setOrder(detailedOrder);
+        setOrder((prevOrder: any) => ({ ...prevOrder, ...detailedOrder }));
         setMessages(msgs);
         setIsLoaded(true);
       }
@@ -83,13 +83,13 @@ export default function OrderDetails({ phone, password, onBack }: any) {
     };
     const refreshOrderStatus = async (manual: boolean = false) => {
       try {
-        const updatedStatus = await getOrderStatusById(order.idx);
+        const updatedStatus = await getOrderStatusById(order.id);
         setOrder((prev: any) => ({
           ...prev,
           status: updatedStatus?.status,
         }));
-      } catch (err) {
-        console.error(err);
+      } catch (error) {
+        console.error(error);
       } finally {
         if (manual) setIsStateRefreshing(false);
       }
@@ -97,10 +97,10 @@ export default function OrderDetails({ phone, password, onBack }: any) {
     const refreshMessages = async (manual: boolean = false) => {
       if (manual) setIsMessagesRefreshing(true);
       try {
-        const msgs = await getMessagesByOrder(order.idx);
+        const msgs = await getMessagesByOrder(order.id);
         setMessages(msgs);
-      } catch (err) {
-        console.error(err);
+      } catch (error) {
+        console.error(error);
       } finally {
         if (manual) setIsMessagesRefreshing(false);
       }
@@ -109,7 +109,7 @@ export default function OrderDetails({ phone, password, onBack }: any) {
       if (!newMessage.trim() || isSending) return;
       setIsSending(true);
       const messageData = {
-        orderId: order.idx,
+        orderId: order.id,
         content: newMessage,
       };
       try {
@@ -129,7 +129,7 @@ export default function OrderDetails({ phone, password, onBack }: any) {
       try {
         await deleteMessage(messageId);
         setMessages((prevMessages) =>
-          prevMessages.filter((message) => message.idx !== messageId)
+          prevMessages.filter((message) => message.id !== messageId)
         );
       } catch (error) {
         console.error(error);
@@ -146,7 +146,7 @@ export default function OrderDetails({ phone, password, onBack }: any) {
           />
           <div className="mt-4 border-t sm:px-4 pt-16 sm:pt-12 pb-4">
             <div className="flex justify-center items-center mt-2 mb-6">
-              <div className="w-6 h-6 border-2 border-sky-400 border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-6 h-6 border-2 border-sky-400 border-t-transparent rounded-full animate-spin" />
             </div>
           </div>
         </div>
@@ -166,42 +166,49 @@ export default function OrderDetails({ phone, password, onBack }: any) {
               <h2 className="text-lg font-bold text-gray-700 mb-4 mt-12">
                 주문 상세 내역
               </h2>
-              {order.orderItems.map((item: any, idx: number) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between mb-6"
-                >
-                  <div className="flex items-center gap-4">
-                    <img
-                      src={item.product.images?.[0] || "/placeholder.png"}
-                      alt={item.product.name}
-                      className="w-16 h-16 object-cover rounded-lg"
-                    />
-                    <div>
-                      <h3 className="text-sm font-bold text-gray-800">
-                        {item.product.name}
-                      </h3>
-                      <p className="text-xs text-gray-500">
-                        {item.product.categories?.length
-                          ? item.product.categories
-                              .map((category: any) => category.name)
-                              .join(", ")
-                          : "옵션 없음"}
-                      </p>
-                      <p className="text-sm font-bold text-sky-400 mt-1">
-                        ₩{item.product.price.toLocaleString()}
-                        <span className="text-rose-600">
-                          {" "}
-                          x {item.quantity}
-                        </span>
-                      </p>
+              {order.orderItems.map((orderItem: any, orderId: number) => {
+                const { pharmacyProduct } = orderItem;
+                const { product } = pharmacyProduct;
+                const productImage = product.images?.[0] || "/placeholder.png";
+                const productName = product.name;
+                const productCategories = product.categories?.length
+                  ? product.categories
+                      .map((category: any) => category.name)
+                      .join(", ")
+                  : "옵션 없음";
+                const productPrice = pharmacyProduct.price.toLocaleString();
+                const totalPrice = (
+                  pharmacyProduct.price * orderItem.quantity
+                ).toLocaleString();
+                return (
+                  <div
+                    key={orderId}
+                    className="flex items-center justify-between mb-6"
+                  >
+                    <div className="flex items-center gap-4">
+                      <img
+                        src={productImage}
+                        alt={productName}
+                        className="w-16 h-16 object-cover rounded-lg"
+                      />
+                      <div>
+                        <h3 className="text-sm font-bold text-gray-800">
+                          {productName}
+                        </h3>
+                        <p className="text-xs text-gray-500">
+                          {productCategories}
+                        </p>
+                        <p className="text-sm font-bold text-sky-400 mt-1">
+                          ₩{productPrice} × {orderItem.quantity}
+                        </p>
+                      </div>
                     </div>
+                    <p className="text-sm font-bold text-sky-400">
+                      ₩{totalPrice}
+                    </p>
                   </div>
-                  <p className="text-sm font-bold text-sky-400">
-                    ₩{(item.product.price * item.quantity).toLocaleString()}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
               <div className="flex justify-end text-sm text-gray-600">
                 <span>배송비</span>
                 <span className="font-bold ml-2">₩3,000</span>
@@ -250,7 +257,7 @@ export default function OrderDetails({ phone, password, onBack }: any) {
                         {!message.pharmacyId && (
                           <button
                             className="absolute top-1.5 right-2 text-gray-400 hover:text-gray-600 text-xs cursor:pointer"
-                            onClick={() => handleDeleteMessage(message.idx)}
+                            onClick={() => handleDeleteMessage(message.id)}
                           >
                             ✕
                           </button>
@@ -345,7 +352,7 @@ export default function OrderDetails({ phone, password, onBack }: any) {
     <div className="w-full flex flex-col gap-4">
       {orders.map((order: any, index: number) => (
         <OrderAccordionItem
-          key={order.idx}
+          key={order.id}
           initialOrder={order}
           isInitiallyExpanded={index === 0}
         />

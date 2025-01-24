@@ -9,43 +9,57 @@ datasource db {
 }
 
 model Category_ {
-  idx       Int        @id @default(autoincrement())
-  name      String?    @unique
+  id        Int        @id @default(autoincrement())
+  name      String?
   image     String?
+  products  Product_[] @relation("CategoryProductRelation")
   createdAt DateTime   @default(now())
   updatedAt DateTime   @default(now()) @updatedAt
-  products  Product_[] @relation("CategoryProductRelation")
 }
 
 model Product_ {
-  idx         Int          @id @default(autoincrement())
-  name        String?
-  images      String[]
-  description String?
-  price       Int?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @default(now()) @updatedAt
-  categories  Category_[]  @relation("CategoryProductRelation")
-  pharmacies  Pharmacy_[]  @relation("PharmacyProductRelation")
-  orderItems  OrderItem_[]
+  id               Int                @id @default(autoincrement())
+  name             String?
+  images           String[]
+  description      String?
+  rating           Float?
+  categories       Category_[]        @relation("CategoryProductRelation")
+  pharmacyProducts PharmacyProduct_[]
+  reviews          Review_[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @default(now()) @updatedAt
 }
 
 model Pharmacy_ {
-  idx       Int        @id @default(autoincrement())
-  name      String?
-  address   String?
-  phone     String?
-  userId    String?    @unique
-  password  String?
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @default(now()) @updatedAt
-  products  Product_[] @relation("PharmacyProductRelation")
-  orders    Order_[]
-  messages  Message_[]
+  id               Int                @id @default(autoincrement())
+  name             String?
+  address          String?
+  phone            String?
+  userId           String?
+  password         String?
+  pharmacyProducts PharmacyProduct_[]
+  orders           Order_[]
+  messages         Message_[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @default(now()) @updatedAt
+}
+
+model PharmacyProduct_ {
+  id         Int          @id @default(autoincrement())
+  optionType String?
+  price      Int?
+  stock      Int?
+  pharmacy   Pharmacy_?   @relation(fields: [pharmacyId], references: [id], onDelete: SetNull)
+  pharmacyId Int?
+  product    Product_?    @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productId  Int?
+  orderItems OrderItem_[]
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @default(now()) @updatedAt
 }
 
 model Order_ {
-  idx              Int          @id @default(autoincrement())
+  id               Int          @id @default(autoincrement())
   roadAddress      String?
   detailAddress    String?
   phone            String?
@@ -53,54 +67,72 @@ model Order_ {
   requestNotes     String?
   entrancePassword String?
   directions       String?
-  pharmacyIdx      Int?
-  pharmacy         Pharmacy_?   @relation(fields: [pharmacyIdx], references: [idx])
   paymentId        String?
   transactionType  String?
   txId             String?
+  totalPrice       Int?
   status           String?
   orderItems       OrderItem_[]
-  totalPrice       Int?
   messages         Message_[]
+  pharmacy         Pharmacy_?   @relation(fields: [pharmacyId], references: [id], onDelete: SetNull)
+  pharmacyId       Int?
+  rider            Rider_?      @relation(fields: [riderId], references: [id], onDelete: SetNull)
+  riderId          Int?
+  review           Review_?     @relation(fields: [reviewId], references: [id], onDelete: SetNull)
+  reviewId         Int?         @unique
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @default(now()) @updatedAt
-  rider            Rider_?      @relation(fields: [riderIdx], references: [idx])
-  riderIdx         Int?
 }
 
 model OrderItem_ {
-  idx       Int       @id @default(autoincrement())
-  quantity  Int?
-  orderId   Int?
-  productId Int?
-  order     Order_?   @relation(fields: [orderId], references: [idx])
-  product   Product_? @relation(fields: [productId], references: [idx])
+  id                Int               @id @default(autoincrement())
+  quantity          Int?
+  order             Order_?           @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  orderId           Int?
+  pharmacyProduct   PharmacyProduct_? @relation(fields: [pharmacyProductId], references: [id], onDelete: SetNull)
+  pharmacyProductId Int?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @default(now()) @updatedAt
 }
 
 model Message_ {
-  idx         Int        @id @default(autoincrement())
-  orderId     Int
-  senderPhone String?
-  pharmacyId  Int?
-  content     String
-  timestamp   DateTime   @default(now())
-  order       Order_     @relation(fields: [orderId], references: [idx])
-  pharmacy    Pharmacy_? @relation(fields: [pharmacyId], references: [idx])
+  id         Int        @id @default(autoincrement())
+  orderId    Int?
+  content    String?
+  timestamp  DateTime   @default(now())
+  order      Order_?    @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  pharmacy   Pharmacy_? @relation(fields: [pharmacyId], references: [id])
+  pharmacyId Int?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @default(now()) @updatedAt
 }
 
 model Rider_ {
-  idx       Int      @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   phone     String?
-  userId    String?  @unique
+  userId    String?
   password  String?
+  orders    Order_[]
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
-  orders    Order_[]
+}
+
+model Review_ {
+  id         Int       @id @default(autoincrement())
+  rate       Float?
+  content    String?
+  images     String[]
+  order      Order_?
+  orderId    Int?      @unique
+  Product_   Product_? @relation(fields: [product_Id], references: [id])
+  product_Id Int?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @default(now()) @updatedAt
 }
 
 model User {
   idx        Int       @id @default(autoincrement())
-  id         String    @unique
+  id         String
   password   String
   nickname   String    @unique
   created_at DateTime  @default(now())

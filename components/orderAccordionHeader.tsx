@@ -1,5 +1,6 @@
 import React from "react";
 import { generateOrderNumber } from "@/lib/orderNumber";
+import { ChevronUpIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import StatusLabel from "./statusLabel";
 
 type OrderAccordionHeaderProps = {
@@ -20,10 +21,10 @@ export default function OrderAccordionHeader({
     >
       <div className="flex flex-col">
         <div className="text-sm text-gray-500">
-          주문번호 #{generateOrderNumber(order.idx)}
+          주문번호 #{generateOrderNumber(order.id)}
         </div>
         <div className="mt-1 text-sm sm:text-base font-bold text-gray-700">
-          {order.orderItems[0].product.name}
+          {order.orderItems[0].pharmacyProduct.product.name}
           {order.orderItems.length > 1 && (
             <span className="text-gray-500 text-sm">
               {` 외 ${order.orderItems.length - 1}개`}
@@ -47,12 +48,13 @@ export default function OrderAccordionHeader({
           </span>
         </div>
       </div>
-      <div className="sm:hidden -mr-2 text-sm text-gray-800">
-        {isExpanded ? "▲" : "▼"}
-      </div>
-      <div className="hidden sm:block text-sm text-sky-400">
-        {isExpanded ? "접기 ▲" : "펼치기 ▼"}
-      </div>
+      <span className="w-6 h-6">
+        {isExpanded ? (
+          <ChevronUpIcon className="text-gray-600" />
+        ) : (
+          <ChevronDownIcon className="text-gray-600" />
+        )}
+      </span>
     </div>
   );
 }

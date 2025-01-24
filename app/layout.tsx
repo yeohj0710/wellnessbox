@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   description: "맞춤형 건강기능식품 소분 판매 중개 플랫폼",
   metadataBase: new URL(SITE_URL),
   icons: {
-    icon: "/icon.png",
+    icon: "/logo.png",
   },
   openGraph: {
     title: "웰니스박스",
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     url: SITE_URL,
     images: [
       {
-        url: "/icon.png",
+        url: "/logo.png",
         width: 800,
         height: 800,
         alt: "웰니스박스",

@@ -53,8 +53,8 @@ export default function Rider() {
     useEffect(() => {
       if (!isExpanded || isLoaded) return;
       async function fetchDetails() {
-        const detailedOrder = await getOrderById(initialOrder.idx);
-        setOrder(detailedOrder);
+        const detailedOrder = await getOrderById(initialOrder.id);
+        setOrder((prevOrder: any) => ({ ...prevOrder, ...detailedOrder }));
         setIsLoaded(true);
       }
       fetchDetails();
@@ -71,7 +71,7 @@ export default function Rider() {
     };
     const refreshOrderStatus = async (manual: boolean = false) => {
       try {
-        const updatedStatus = await getOrderStatusById(order.idx);
+        const updatedStatus = await getOrderStatusById(order.id);
         setOrder((prev: any) => ({
           ...prev,
           status: updatedStatus?.status,
@@ -83,11 +83,11 @@ export default function Rider() {
       }
     };
     const handleUpdateOrderStatus = async (
-      orderIdx: number,
+      orderid: number,
       newStatus: string
     ) => {
-      setLoadingStatus(orderIdx);
-      const updatedOrder = await updateOrderStatus(orderIdx, newStatus);
+      setLoadingStatus(orderid);
+      const updatedOrder = await updateOrderStatus(orderid, newStatus);
       setOrder((prevOrder: any) => ({
         ...prevOrder,
         ...updatedOrder,
@@ -126,26 +126,22 @@ export default function Rider() {
               </span>
               <div className="flex gap-2 mt-4 sm:mt-0">
                 <button
-                  onClick={() =>
-                    handleUpdateOrderStatus(order.idx, "픽업 완료")
-                  }
+                  onClick={() => handleUpdateOrderStatus(order.id, "픽업 완료")}
                   className="text-sm flex justify-center items-center w-20 h-8 bg-orange-400 hover:bg-orange-500 text-white rounded"
-                  disabled={loadingStatus === order.idx}
+                  disabled={loadingStatus === order.id}
                 >
-                  {loadingStatus === order.idx ? (
+                  {loadingStatus === order.id ? (
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   ) : (
                     "픽업 완료"
                   )}
                 </button>
                 <button
-                  onClick={() =>
-                    handleUpdateOrderStatus(order.idx, "배송 완료")
-                  }
+                  onClick={() => handleUpdateOrderStatus(order.id, "배송 완료")}
                   className="text-sm flex justify-center items-center w-20 h-8 bg-gray-400 hover:bg-gray-500 text-white rounded"
-                  disabled={loadingStatus === order.idx}
+                  disabled={loadingStatus === order.id}
                 >
-                  {loadingStatus === order.idx ? (
+                  {loadingStatus === order.id ? (
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   ) : (
                     "배송 완료"
@@ -156,13 +152,13 @@ export default function Rider() {
                     const confirmCancel =
                       window.confirm("정말로 픽업을 취소하시겠습니까?");
                     if (confirmCancel) {
-                      handleUpdateOrderStatus(order.idx, "조제 완료");
+                      handleUpdateOrderStatus(order.id, "조제 완료");
                     }
                   }}
                   className="text-sm flex justify-center items-center w-20 h-8 bg-red-400 hover:bg-red-500 text-white rounded"
-                  disabled={loadingStatus === order.idx}
+                  disabled={loadingStatus === order.id}
                 >
-                  {loadingStatus === order.idx ? (
+                  {loadingStatus === order.id ? (
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   ) : (
                     "픽업 취소"
@@ -174,39 +170,49 @@ export default function Rider() {
               <h2 className="text-lg font-bold text-gray-700 mb-4 mt-4">
                 주문 상세 내역
               </h2>
-              {order.orderItems.map((item: any, idx: number) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between mb-6"
-                >
-                  <div className="flex items-center gap-4">
-                    <img
-                      src={item.product.images?.[0] || "/placeholder.png"}
-                      alt={item.product.name}
-                      className="w-16 h-16 object-cover rounded-lg"
-                    />
-                    <div>
-                      <h3 className="text-sm font-bold text-gray-800">
-                        {item.product.name}
-                      </h3>
-                      <p className="text-xs text-gray-500">
-                        {item.product.categories?.length
-                          ? item.product.categories
-                              .map((category: any) => category.name)
-                              .join(", ")
-                          : "옵션 없음"}
-                      </p>
-                      <p className="text-sm font-bold text-sky-400 mt-1">
-                        ₩{item.product.price.toLocaleString()} x
-                        <span className="text-rose-600"> {item.quantity}</span>
-                      </p>
+              {order.orderItems.map((orderItem: any, orderId: number) => {
+                const { pharmacyProduct } = orderItem;
+                const { product } = pharmacyProduct;
+                const productImage = product.images?.[0] || "/placeholder.png";
+                const productName = product.name;
+                const productCategories = product.categories?.length
+                  ? product.categories
+                      .map((category: any) => category.name)
+                      .join(", ")
+                  : "옵션 없음";
+                const productPrice = pharmacyProduct.price.toLocaleString();
+                const totalPrice = (
+                  pharmacyProduct.price * orderItem.quantity
+                ).toLocaleString();
+                return (
+                  <div
+                    key={orderId}
+                    className="flex items-center justify-between mb-6"
+                  >
+                    <div className="flex items-center gap-4">
+                      <img
+                        src={productImage}
+                        alt={productName}
+                        className="w-16 h-16 object-cover rounded-lg"
+                      />
+                      <div>
+                        <h3 className="text-sm font-bold text-gray-800">
+                          {productName}
+                        </h3>
+                        <p className="text-xs text-gray-500">
+                          {productCategories}
+                        </p>
+                        <p className="text-sm font-bold text-sky-400 mt-1">
+                          ₩{productPrice} × {orderItem.quantity}
+                        </p>
+                      </div>
                     </div>
+                    <p className="text-sm font-bold text-sky-400">
+                      ₩{totalPrice}
+                    </p>
                   </div>
-                  <p className="text-sm font-bold text-sky-400">
-                    ₩{(item.product.price * item.quantity).toLocaleString()}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
               <div className="flex justify-end text-sm text-gray-600">
                 <span>배송비</span>
                 <span className="font-bold ml-2">₩3,000</span>
@@ -297,7 +303,7 @@ export default function Rider() {
     <div className="w-full mt-8 mb-12 flex flex-col gap-4">
       {orders.map((order: any, index: number) => (
         <OrderAccordionItem
-          key={order.idx}
+          key={order.id}
           initialOrder={order}
           isInitiallyExpanded={index === 0}
         />

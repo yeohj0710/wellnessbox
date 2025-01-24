@@ -1,11 +1,11 @@
 const KEY = 123456;
 
-export function generateOrderNumber(idx: number): string {
+export function generateOrderNumber(id: number): string {
   const a = 15485863;
   const b = KEY % 1000000;
   const m = 1000000;
 
-  const hashed = (idx * a + b) % m;
+  const hashed = (id * a + b) % m;
 
   return hashed.toString().padStart(6, "0");
 }

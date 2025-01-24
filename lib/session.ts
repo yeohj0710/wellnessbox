@@ -4,7 +4,7 @@ import { getIronSession } from "iron-session";
 import { cookies } from "next/headers";
 
 interface SessionContent {
-  idx?: number;
+  id?: number;
   role?: "pharm" | "rider";
 }
 

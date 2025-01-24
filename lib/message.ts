@@ -8,9 +8,8 @@ export async function createMessage(data: {
   pharmacyId?: number | null;
 }) {
   if (!data.orderId || !data.content) {
-    throw new Error("orderId와 content는 필수입니다.");
+    throw new Error("orderId와 content가 입력되지 않았습니다.");
   }
-
   return await db.message_.create({
     data: {
       orderId: data.orderId,
@@ -32,6 +31,6 @@ export async function getMessagesByOrder(orderId: number) {
 
 export async function deleteMessage(messageId: number) {
   return await db.message_.delete({
-    where: { idx: messageId },
+    where: { id: messageId },
   });
 }

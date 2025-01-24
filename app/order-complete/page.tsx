@@ -1,5 +1,6 @@
 "use client";
 
+import FullPageLoader from "@/components/fullPageLoader";
 import { createOrder, getOrderByPaymentId } from "@/lib/order";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -7,7 +8,6 @@ import { useEffect, useState } from "react";
 
 export default function OrderComplete() {
   const [order, setOrder] = useState<any | null>(null);
-  const [cartItems, setCartItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const goBackOrDefault = () => {
@@ -44,7 +44,6 @@ export default function OrderComplete() {
           goBackOrDefault();
           return;
         }
-        console.log(transaction);
         const roadAddress = localStorage.getItem("roadAddress_input") || "";
         const detailAddress = localStorage.getItem("detailAddress_input") || "";
         const phone = `${localStorage.getItem(
@@ -57,23 +56,49 @@ export default function OrderComplete() {
         const entrancePassword =
           localStorage.getItem("entrancePassword_input") || "";
         const directions = localStorage.getItem("diretions_input") || "";
-        const pharmacyIdx = Number(localStorage.getItem("selectedPharmacyIdx"));
+        const pharmacyId = Number(localStorage.getItem("selectedPharmacyId"));
         const transactionType = "PAYMENT";
         const txId = transaction.id || "";
         const status = "결제 완료";
-        const storedCartItems = JSON.parse(
-          localStorage.getItem("cartItems") || "[]"
+        const cartItems = JSON.parse(localStorage.getItem("cartItems") || "[]");
+        const allProducts = JSON.parse(
+          localStorage.getItem("products") || "[]"
         );
-        setCartItems(storedCartItems);
-        const orderItems = storedCartItems.map((item: any) => ({
-          productId: item.idx,
-          quantity: item.quantity,
-        }));
+        const orderItems = cartItems
+          .map((cartItem: any) => {
+            const product = allProducts.find(
+              (prod: any) => prod.id === cartItem.productId
+            );
+            if (!product) return null;
+            const matchingPharmacyProduct = product.pharmacyProducts.find(
+              (pharmacyProduct: any) =>
+                pharmacyProduct.optionType === cartItem.optionType &&
+                pharmacyProduct.pharmacyId === pharmacyId
+            );
+            if (!matchingPharmacyProduct) return null;
+            return {
+              quantity: cartItem.quantity,
+              pharmacyProductId: matchingPharmacyProduct.id,
+            };
+          })
+          .filter((item: any) => item !== null);
         const deliveryFee = 3000;
-        const calculatedTotalPrice =
-          storedCartItems.reduce((sum: number, item: any) => {
-            return sum + item.price * item.quantity;
-          }, 0) + deliveryFee;
+        const calculatedTotalPrice = cartItems.reduce(
+          (total: any, cartItem: any) => {
+            const product = allProducts.find(
+              (prod: any) => prod.id === cartItem.productId
+            );
+            if (!product) return total;
+            const matchingPharmacyProduct = product.pharmacyProducts.find(
+              (pharmacyProduct: any) =>
+                pharmacyProduct.optionType === cartItem.optionType &&
+                pharmacyProduct.pharmacyId === pharmacyId
+            );
+            if (!matchingPharmacyProduct) return total;
+            return total + matchingPharmacyProduct.price * cartItem.quantity;
+          },
+          deliveryFee
+        );
         const totalPrice = transaction.amount.total;
         if (calculatedTotalPrice !== totalPrice) {
           alert("주문 금액과 결제 금액이 일치하지 않습니다.");
@@ -88,18 +113,22 @@ export default function OrderComplete() {
           requestNotes,
           entrancePassword,
           directions,
-          pharmacyIdx,
           paymentId,
           transactionType,
           txId,
-          status,
-          orderItems,
           totalPrice,
+          status,
+          pharmacyId,
+          orderItems,
         });
         setOrder(createdOrder);
         localStorage.removeItem("cartItems");
-      } catch (err) {
-        alert("주문 정보를 불러오는 중 오류가 발생했습니다.");
+      } catch (error: any) {
+        alert(
+          `주문 정보를 불러오는 중 오류가 발생했습니다: ${
+            error.message || error
+          }`
+        );
       } finally {
         setLoading(false);
       }
@@ -107,77 +136,78 @@ export default function OrderComplete() {
     fetchOrder();
     window.scrollTo(0, 0);
   }, []);
-  if (!order) return null;
-  const { roadAddress, detailAddress, phone, totalPrice } = order;
-  return loading || !order ? (
-    <div className="w-full max-w-[640px] mx-auto mt-4 px-3">
-      {[...Array(3)].map((_, index) => (
-        <div
-          key={index}
-          className="flex items-center justify-between mb-4 border-b pb-4 animate-pulse"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-gray-300 rounded-lg"></div>
-            <div>
-              <div className="w-32 h-4 bg-gray-300 mb-2"></div>
-              <div className="w-24 h-4 bg-gray-300"></div>
-            </div>
-          </div>
-          <div className="w-16 h-4 bg-gray-300"></div>
-        </div>
-      ))}
-    </div>
-  ) : (
-    <div className="w-full max-w-[640px] mx-auto mt-4 px-3">
-      <h1 className="text-2xl font-bold text-center text-gray-800 mb-4 mt-8">
+  if (loading) return <FullPageLoader />;
+  return (
+    <div className="w-full max-w-[640px] mx-auto">
+      <h1 className="text-2xl font-bold text-center text-gray-800 mb-6 mt-12">
         결제가 완료되었습니다! 🎉
       </h1>
-      <div className="px-4 py-4 bg-white shadow rounded-lg">
-        <h2 className="text-lg font-bold text-gray-700 mb-4">주문 상세 내역</h2>
-        {cartItems.map((item: any, index: number) => (
-          <div
-            key={index}
-            className="flex items-center justify-between mb-4 border-b pb-4"
-          >
-            <div className="flex items-center gap-4">
-              <img
-                src={item.images?.[0] || "/placeholder.png"}
-                alt={item.name}
-                className="w-16 h-16 object-cover rounded-lg"
-              />
-              <div>
-                <h3 className="text-sm font-bold text-gray-800">{item.name}</h3>{" "}
-                <p className="text-xs text-gray-500">
-                  {item.categories
-                    ?.map((category: any) => category.name)
-                    .join(", ") || ""}{" "}
-                </p>
-                <p className="text-sm font-bold text-sky-400 mt-1">
-                  ₩{item.price.toLocaleString()} x {item.quantity}{" "}
-                </p>
+      <div className="bg-white shadow rounded-lg px-8 py-8">
+        <h2 className="text-lg font-bold text-gray-700 mb-6">주문 상세 내역</h2>
+        {order.orderItems.map((item: any, id: number) => {
+          const pharmacyProduct = item.pharmacyProduct;
+          const product = pharmacyProduct.product;
+          return (
+            <div key={id} className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <img
+                  src={product.images?.[0] || "/placeholder.png"}
+                  alt={product.name}
+                  className="w-16 h-16 object-cover rounded-lg"
+                />
+                <div>
+                  <h3 className="text-sm font-bold text-gray-800">
+                    {product.name}
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    {product.categories?.length
+                      ? product.categories
+                          .map((category: any) => category.name)
+                          .join(", ")
+                      : "옵션 없음"}
+                  </p>
+                  <p className="text-sm font-bold text-sky-400 mt-1">
+                    ₩{pharmacyProduct.price.toLocaleString()} × {item.quantity}
+                  </p>
+                </div>
               </div>
+              <p className="text-sm font-bold text-sky-400">
+                ₩{(pharmacyProduct.price * item.quantity).toLocaleString()}
+              </p>
             </div>
-            <p className="text-sm font-bold text-sky-400">
-              ₩{(item.price * item.quantity).toLocaleString()}
-            </p>
-          </div>
-        ))}
-        <div className="flex justify-end mt-4 text-sm text-gray-600 gap-1">
+          );
+        })}
+        <div className="flex justify-end text-sm text-gray-600">
           <span>배송비</span>
-          <span className="font-bold">₩3,000</span>
+          <span className="font-bold ml-2">₩3,000</span>
         </div>
-        <div className="mt-4 text-right">
-          <p className="text-base text-gray-600">
-            주소: {roadAddress} {detailAddress}
-          </p>
-          <p className="text-base text-gray-600 mt-1">연락처: {phone}</p>
-          <h3 className="flex justify-end gap-2 text-lg font-bold mt-2">
-            <span className="text-gray-700">총 결제 금액</span>
-            <span className="text-sky-400">₩{totalPrice.toLocaleString()}</span>
-          </h3>
+        <div className="flex justify-end gap-2 text-base font-bold mt-2">
+          <span className="text-gray-700">총 결제 금액</span>
+          <span className="text-sky-400">
+            ₩{order.totalPrice.toLocaleString()}
+          </span>
+        </div>
+        <h3 className="mb-2 font-bold mt-8 border-t pt-6">약국 정보</h3>
+        <div className="flex flex-col text-sm gap-1 mt-4">
+          <div className="flex items-center">
+            <span className="w-20 font-bold text-gray-500">약국명</span>
+            <span className="flex-1 text-gray-800">{order.pharmacy?.name}</span>
+          </div>
+          <div className="flex items-center">
+            <span className="w-20 font-bold text-gray-500">약국 주소</span>
+            <span className="flex-1 text-gray-800">
+              {order.pharmacy?.address}
+            </span>
+          </div>
+          <div className="flex items-center">
+            <span className="w-20 font-bold text-gray-500">전화번호</span>
+            <span className="flex-1 text-gray-800">
+              {order.pharmacy?.phone}
+            </span>
+          </div>
         </div>
       </div>
-      <div className="px-4 py-4 bg-white shadow rounded-lg mt-4">
+      <div className="text-center py-4 bg-white shadow rounded-lg mt-4">
         <p className="text-sm text-gray-600">
           결제 시 입력한
           <span className="text-sky-400 font-bold"> 전화번호</span>와

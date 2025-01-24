@@ -2,11 +2,20 @@
 
 import { useEffect, useState } from "react";
 import AddressModal from "./addressModal";
+import { formatPriceRange } from "@/lib/utils";
 
-export default function ProductDetail({ product, onClose, onAddToCart }: any) {
+export default function ProductDetail({
+  product,
+  optionType,
+  onClose,
+  onAddToCart,
+}: any) {
   const [quantity, setQuantity] = useState(1);
   const [totalPrice, setTotalPrice] = useState(product.price);
   const [isFirstModalOpen, setIsFirstModalOpen] = useState(false);
+  const [selectedOption, setSelectedOption] = useState<string | null>(
+    () => optionType || product.pharmacyProducts[0]?.optionType || null
+  );
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -18,15 +27,18 @@ export default function ProductDetail({ product, onClose, onAddToCart }: any) {
       window.history.pushState(null, "", window.location.href);
     };
     window.history.pushState(null, "", window.location.href);
-    document.body.style.overflow = "hidden";
     document.addEventListener("keydown", handleKeyDown);
     window.addEventListener("popstate", handlePopState);
     return () => {
-      document.body.style.overflow = "";
       document.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("popstate", handlePopState);
     };
   }, [onClose]);
+  useEffect(() => {
+    if (product.pharmacyProducts.length > 0 && !selectedOption) {
+      setSelectedOption(product.pharmacyProducts[0].optionType);
+    }
+  }, [product.pharmacyProducts, selectedOption]);
   const handleQuantityChange = (delta: number) => {
     setQuantity((prev) => {
       const newQuantity = Math.max(1, prev + delta);
@@ -34,9 +46,24 @@ export default function ProductDetail({ product, onClose, onAddToCart }: any) {
       return newQuantity;
     });
   };
+  const handleOptionChange = (option: string) => {
+    setSelectedOption(option);
+    setQuantity(1);
+  };
   return (
     <div className="fixed inset-0 bg-white flex justify-center items-center">
-      <div className="overflow-y-auto h-screen fixed inset-x-0 top-14 bg-white w-full max-w-[640px] mx-auto">
+      <div
+        className="overflow-y-auto max-h-screen fixed inset-x-0 top-14 bg-white w-full max-w-[640px] mx-auto"
+        style={{
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+        }}
+      >
+        <style jsx>{`
+          div::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
         <div className="relative">
           <div className="relative">
             {product.images && product.images.length > 0 ? (
@@ -101,9 +128,32 @@ export default function ProductDetail({ product, onClose, onAddToCart }: any) {
         </div>
         <div className="p-6 pb-[calc(12rem)]">
           <h1 className="text-xl font-bold">{product.name}</h1>
-          <p className="text-gray-500 text-sm mt-2">{product.description}</p>
+          <div className="mt-4">
+            <label className="block text-gray-600 text-sm font-medium mb-2">
+              옵션 선택
+            </label>
+            <select
+              value={selectedOption || ""}
+              onChange={(e) => handleOptionChange(e.target.value)}
+              className="border rounded-md w-full px-3 py-2 text-gray-700 focus:ring-2 focus:ring-sky-400 focus:outline-none"
+            >
+              {Array.from(
+                new Set(
+                  product.pharmacyProducts.map((pp: any) => pp.optionType)
+                ) as Set<string>
+              ).map((optionType, index) => (
+                <option key={index} value={optionType}>
+                  {optionType}
+                </option>
+              ))}
+            </select>
+          </div>
           <p className="text-lg font-bold mt-4 text-sky-500">
-            ₩{totalPrice.toLocaleString()}
+            {formatPriceRange({
+              product,
+              quantity: 1,
+              optionType: selectedOption || undefined,
+            })}
           </p>
           <div className="flex items-center justify-between mt-4">
             <button
@@ -121,28 +171,40 @@ export default function ProductDetail({ product, onClose, onAddToCart }: any) {
             </button>
           </div>
           <div className="px-5 fixed bottom-0 left-0 right-0 w-full max-w-[640px] mx-auto bg-sky-400 text-white p-4 flex justify-between items-center text-lg font-bold">
-            <span>₩{totalPrice.toLocaleString()}</span>
+            <span>
+              {formatPriceRange({
+                product,
+                quantity,
+                optionType: selectedOption || undefined,
+              })}
+            </span>
             <button
-              onClick={() => {
+              onClick={async () => {
+                if (!selectedOption) return;
                 const storedCart = localStorage.getItem("cartItems");
                 const cart = storedCart ? JSON.parse(storedCart) : [];
                 if (cart.length === 0 && !localStorage.getItem("roadAddress")) {
                   setIsFirstModalOpen(true);
                   return;
                 }
+                const cartItem = {
+                  productId: product.id,
+                  productName: product.name,
+                  optionType: selectedOption,
+                  quantity,
+                };
                 const existingItemIndex = cart.findIndex(
-                  (item: any) => item.idx === product.idx
+                  (item: any) =>
+                    item.productId === cartItem.productId &&
+                    item.optionType === cartItem.optionType
                 );
                 if (existingItemIndex !== -1) {
                   cart[existingItemIndex].quantity += quantity;
                 } else {
-                  cart.push({
-                    ...product,
-                    quantity,
-                  });
+                  cart.push(cartItem);
                 }
                 localStorage.setItem("cartItems", JSON.stringify(cart));
-                onAddToCart(quantity);
+                onAddToCart(cartItem);
                 onClose();
               }}
               className="bg-white text-sky-400 px-10 py-2 rounded-full shadow-md hover:bg-sky-100 transition"
@@ -152,6 +214,7 @@ export default function ProductDetail({ product, onClose, onAddToCart }: any) {
             {isFirstModalOpen && (
               <FirstModal
                 product={product}
+                selectedOption={selectedOption}
                 quantity={quantity}
                 onAddToCart={onAddToCart}
                 onClose={() => setIsFirstModalOpen(false)}
@@ -167,6 +230,7 @@ export default function ProductDetail({ product, onClose, onAddToCart }: any) {
 
 function FirstModal({
   product,
+  selectedOption,
   quantity,
   onAddToCart,
   onClose,
@@ -215,24 +279,20 @@ function FirstModal({
             setIsAddressModalOpen(false);
             onClose();
           }}
-          onSave={(roadAddress: string, detailAddress: string) => {
+          onSave={async (roadAddress: string, detailAddress: string) => {
             localStorage.setItem("roadAddress", roadAddress);
             localStorage.setItem("detailAddress", detailAddress);
             const storedCart = localStorage.getItem("cartItems");
             const cart = storedCart ? JSON.parse(storedCart) : [];
-            const existingItemIndex = cart.findIndex(
-              (item: any) => item.idx === product.idx
-            );
-            if (existingItemIndex !== -1) {
-              cart[existingItemIndex].quantity += quantity;
-            } else {
-              cart.push({
-                ...product,
-                quantity,
-              });
-            }
+            const cartItem = {
+              productId: product.id,
+              productName: product.name,
+              optionType: selectedOption,
+              quantity,
+            };
+            cart.push(cartItem);
             localStorage.setItem("cartItems", JSON.stringify(cart));
-            onAddToCart(quantity);
+            onAddToCart(cartItem);
             setIsAddressModalOpen(false);
             onClose();
             onProductDetailClose();

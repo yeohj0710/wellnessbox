@@ -56,7 +56,7 @@ export function MenuLinks() {
       {isLoggedIn ? (
         <>
           <Link href="/admin" className={menuItemClasses()}>
-            상품 관리
+            데이터 관리
           </Link>
           <button
             onClick={handleLogout}

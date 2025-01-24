@@ -1,18 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ProductDetail from "@/components/productDetail";
 import Cart from "@/components/cart";
-import {
-  getCategories,
-  getProducts,
-  getProductsByPharmacy,
-} from "@/lib/product";
+import { getProducts } from "@/lib/product";
 import { useFooter } from "@/components/footerContext";
 import axios from "axios";
 import AddressModal from "@/components/addressModal";
+import { getCategories } from "@/lib/category";
+import { formatPriceRange, getLowestAverageOptionType } from "@/lib/utils";
 
 export default function Home() {
+  const { hideFooter, showFooter } = useFooter();
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [isCartVisible, setIsCartVisible] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
@@ -20,9 +19,8 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
-  const [selectedPackage, setSelectedPackage] = useState<string>("");
+  const [selectedPackage, setSelectedPackage] = useState<string>("전체");
   const [totalPrice, setTotalPrice] = useState(0);
-  const { hideFooter, showFooter } = useFooter();
   const [roadAddress, setRoadAddress] = useState("");
   const [pharmacies, setPharmacies] = useState<any[]>([]);
   const [selectedPharmacy, setSelectedPharmacy] = useState<any>(null);
@@ -54,16 +52,15 @@ export default function Home() {
     setRoadAddress(storedRoadAddress.trim());
     const fetchData = async () => {
       setIsLoading(true);
-      const cachedCategories = sessionStorage.getItem("categories");
-      const cachedProducts = sessionStorage.getItem("products");
-      const cacheTimestamp = sessionStorage.getItem("cacheTimestamp");
+      const cachedCategories = localStorage.getItem("categories");
+      const cachedProducts = localStorage.getItem("products");
+      const cacheTimestamp = localStorage.getItem("cacheTimestamp");
       const now = Date.now();
-      const oneHour = 60 * 60 * 1000;
       if (
         cachedCategories &&
         cachedProducts &&
         cacheTimestamp &&
-        now - parseInt(cacheTimestamp, 10) < oneHour
+        now - parseInt(cacheTimestamp, 10) < 60 * 60 * 1000
       ) {
         setCategories(JSON.parse(cachedCategories));
         setAllProducts(JSON.parse(cachedProducts));
@@ -79,9 +76,9 @@ export default function Home() {
         setCategories(fetchedCategories);
         setAllProducts(fetchedProducts);
         setProducts(fetchedProducts);
-        sessionStorage.setItem("categories", JSON.stringify(fetchedCategories));
-        sessionStorage.setItem("products", JSON.stringify(fetchedProducts));
-        sessionStorage.setItem("cacheTimestamp", now.toString());
+        localStorage.setItem("categories", JSON.stringify(fetchedCategories));
+        localStorage.setItem("products", JSON.stringify(fetchedProducts));
+        localStorage.setItem("cacheTimestamp", now.toString());
       } catch (error) {
         console.error("데이터를 가져오는 데 실패하였습니다:", error);
       } finally {
@@ -91,38 +88,60 @@ export default function Home() {
     fetchData();
   }, []);
   useEffect(() => {
-    localStorage.setItem("cartItems", JSON.stringify(cartItems));
-    const updatedTotalPrice = cartItems.reduce(
-      (acc: number, item: any) => acc + item.price * item.quantity,
-      0
-    );
-    setTotalPrice(updatedTotalPrice);
+    if (!selectedPharmacy) {
+      setTotalPrice(0);
+      return;
+    }
+    const total = cartItems.reduce((acc, item) => {
+      const matchingProduct = allProducts.find(
+        (product) => product.id === item.productId
+      );
+      const matchingPharmacyProduct = matchingProduct?.pharmacyProducts.find(
+        (pharmacyProduct: any) =>
+          pharmacyProduct.pharmacy.id === selectedPharmacy.id &&
+          pharmacyProduct.optionType === item.optionType
+      );
+      if (matchingPharmacyProduct) {
+        return acc + matchingPharmacyProduct.price * item.quantity;
+      }
+      return acc;
+    }, 0);
+    setTotalPrice(total);
+  }, [cartItems, selectedPharmacy, allProducts]);
+  const isRoadAddressChanged: any = useRef(false);
+  useEffect(() => {
     if (cartItems.length === 0) {
       setProducts(allProducts);
       setPharmacies([]);
       setSelectedPharmacy(null);
       return;
     }
+    if (!roadAddress) return;
     const fetchPharmacies = async () => {
-      if (cartItems.length === 0) {
-        setPharmacies([]);
-        setSelectedPharmacy(null);
-        return;
-      }
       setIsLoading(true);
       try {
         const response = await axios.post("/api/get-sorted-pharmacies", {
-          productIdx: cartItems[0].idx,
+          cartItem: cartItems[0],
           roadAddress,
         });
-        setPharmacies(response.data.pharmacies);
+        const sortedPharmacies = response.data.pharmacies;
+        if (!sortedPharmacies || sortedPharmacies.length === 0) {
+          alert(
+            "선택하신 상품의 해당량만큼의 재고를 보유한 약국이 존재하지 않아요. 해당 상품을 장바구니에서 제외할게요."
+          );
+          const updatedCartItems = cartItems.slice(1);
+          setCartItems(updatedCartItems);
+          localStorage.setItem("cartItems", JSON.stringify(updatedCartItems));
+          return;
+        }
+        setPharmacies(sortedPharmacies);
         if (
           !selectedPharmacy ||
           !response.data.pharmacies.some(
-            (pharmacy: any) => pharmacy.idx === selectedPharmacy.idx
+            (pharmacy: any) => pharmacy.id === selectedPharmacy.id
           )
         ) {
-          setSelectedPharmacy(response.data.pharmacies[0]);
+          setSelectedPharmacy(sortedPharmacies[0]);
         }
       } catch (error) {
         console.error("약국 정보를 가져오는 데 실패했습니다:", error);
@@ -130,46 +149,74 @@ export default function Home() {
         setIsLoading(false);
       }
     };
-    if (roadAddress && cartItems.length > 0) {
+    if (isRoadAddressChanged.current !== roadAddress) {
+      isRoadAddressChanged.current = roadAddress;
       fetchPharmacies();
+      return;
     }
-  }, [roadAddress, cartItems[0]?.idx]);
-  useEffect(() => {
-    const filterCartItems = async () => {
-      if (selectedPharmacy && cartItems.length > 0) {
-        try {
-          const products = await getProductsByPharmacy(selectedPharmacy.idx);
-          const productIdxs = products.map((product) => product.idx);
-          const filteredCartItems = cartItems.filter((item) =>
-            productIdxs.includes(item.idx)
-          );
-          if (JSON.stringify(filteredCartItems) !== JSON.stringify(cartItems)) {
-            setCartItems(filteredCartItems);
-            localStorage.setItem(
-              "cartItems",
-              JSON.stringify(filteredCartItems)
-            );
-          }
-        } catch (error) {
-          console.error("약국 상품 데이터를 가져오는 데 실패했습니다:", error);
-        }
-      }
-    };
-    filterCartItems();
-  }, [selectedPharmacy]);
-  useEffect(() => {
-    const storedCart = localStorage.getItem("cartItems");
-    if (storedCart) {
-      const parsedCart = JSON.parse(storedCart);
-      const updatedTotalPrice = parsedCart.reduce(
-        (acc: number, item: any) => acc + item.price * item.quantity,
-        0
+    if (selectedPharmacy) {
+      const isValid = selectedPharmacy?.pharmacyProducts?.some(
+        (pharmacyProduct: any) =>
+          pharmacyProduct.productId === cartItems[0]?.productId &&
+          pharmacyProduct.optionType === cartItems[0]?.optionType &&
+          pharmacyProduct.stock >= cartItems[0]?.quantity
       );
-      setTotalPrice(updatedTotalPrice);
-    } else {
-      setTotalPrice(0);
+      if (isValid) return;
     }
-  }, [cartItems]);
+    fetchPharmacies();
+  }, [roadAddress, cartItems[0]]);
+  useEffect(() => {
+    const filterProducts = async () => {
+      let filtered = [...allProducts];
+      if (selectedPharmacy && selectedPackage !== "전체") {
+        filtered = filtered.filter((product) =>
+          product.pharmacyProducts.some(
+            (pharmacyProduct: any) =>
+              pharmacyProduct.pharmacy.id === selectedPharmacy.id &&
+              pharmacyProduct.optionType === selectedPackage
+          )
+        );
+      }
+      if (selectedPharmacy) {
+        filtered = filtered.filter((product) =>
+          product.pharmacyProducts.some(
+            (pharmacyProduct: any) =>
+              pharmacyProduct.pharmacy.id === selectedPharmacy.id
+          )
+        );
+      }
+      if (selectedCategory) {
+        filtered = filtered.filter((product) =>
+          product.categories.some(
+            (category: any) => category.id === selectedCategory
+          )
+        );
+      }
+      if (selectedPackage === "7일 패키지") {
+        filtered = filtered.filter((product: any) =>
+          product.pharmacyProducts.some((pharmacyProduct: any) =>
+            pharmacyProduct.optionType?.includes("7일")
+          )
+        );
+      } else if (selectedPackage === "30일 패키지") {
+        filtered = filtered.filter((product: any) =>
+          product.pharmacyProducts.some((pharmacyProduct: any) =>
+            pharmacyProduct.optionType?.includes("30일")
+          )
+        );
+      } else if (selectedPackage === "일반 상품") {
+        filtered = filtered.filter((product: any) =>
+          product.pharmacyProducts.every(
+            (pharmacyProduct: any) =>
+              !pharmacyProduct.optionType?.includes("7일") &&
+              !pharmacyProduct.optionType?.includes("30일")
+          )
+        );
+      }
+      setProducts(filtered);
+    };
+    filterProducts();
+  }, [allProducts, selectedPharmacy, selectedCategory, selectedPackage]);
   useEffect(() => {
     if (totalPrice > 0 || isCartVisible) {
       hideFooter();
@@ -177,72 +224,37 @@ export default function Home() {
       showFooter();
     }
   }, [totalPrice, isCartVisible, hideFooter, showFooter]);
+  const scrollPositionRef = useRef(0);
   useEffect(() => {
-    let filtered = [...allProducts];
-    if (selectedPharmacy) {
-      filtered = filtered.filter((product: any) =>
-        product.pharmacies.some((p: any) => p.idx === selectedPharmacy.idx)
-      );
+    if (selectedProduct || isCartVisible) {
+      scrollPositionRef.current = window.scrollY;
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollPositionRef.current}px`;
+      document.body.style.width = "100%";
+    } else {
+      document.body.style.position = "";
+      document.body.style.top = "";
+      window.scrollTo(0, scrollPositionRef.current);
     }
-    if (selectedCategory !== null) {
-      filtered = filtered.filter((product) =>
-        product.categories.some(
-          (category: any) => category.idx === selectedCategory
-        )
-      );
-    }
-    if (selectedPackage === "7일") {
-      filtered = filtered.filter((product: any) =>
-        product.description?.includes("7일")
-      );
-    } else if (selectedPackage === "30일") {
-      filtered = filtered.filter((product: any) =>
-        product.description?.includes("30일")
-      );
-    } else if (selectedPackage === "단품형") {
-      filtered = filtered.filter(
-        (product: any) =>
-          !product.description?.includes("7일") &&
-          !product.description?.includes("30일")
-      );
-    }
-    setProducts(filtered);
-  }, [allProducts, selectedPharmacy, selectedCategory, selectedPackage]);
-  const handleAddToCart = (product: any, quantity: number) => {
+  }, [selectedProduct, isCartVisible]);
+  const handleAddToCart = (cartItem: any) => {
     setCartItems((prev) => {
-      const existingItem = prev.find((item) => item.idx === product.idx);
+      const existingItem = prev.find(
+        (item) =>
+          item.productId === cartItem.productId &&
+          item.optionType === cartItem.optionType
+      );
       if (existingItem) {
         return prev.map((item) =>
-          item.idx === product.idx
-            ? { ...item, quantity: item.quantity + quantity }
+          item.productId === cartItem.productId
+            ? { ...item, quantity: item.quantity + cartItem.quantity }
             : item
         );
       }
-      return [
-        ...prev,
-        {
-          ...product,
-          quantity,
-        },
-      ];
+      return [...prev, cartItem];
     });
-    setTotalPrice((prev) => prev + product.price * quantity);
   };
-  return isCartVisible ? (
-    <Cart
-      cartItems={cartItems}
-      selectedPharmacy={selectedPharmacy}
-      onBack={() => setIsCartVisible(false)}
-      onUpdateCart={(updatedItems: any) => {
-        setCartItems(updatedItems);
-        const updatedTotalPrice = updatedItems.reduce(
-          (acc: number, item: any) => acc + item.price * item.quantity,
-          0
-        );
-        setTotalPrice(updatedTotalPrice);
-      }}
-    />
-  ) : (
+  return (
     <div
       className={`w-full max-w-[640px] mx-auto mt-4 ${
         totalPrice > 0 ? "pb-20" : ""
@@ -277,10 +289,10 @@ export default function Home() {
           <div className="flex gap-2 px-2 mx-1 sm:mx-0 mb-3 -mt-1 overflow-x-auto scrollbar-hide">
             {pharmacies.map((pharmacy: any) => (
               <div
-                key={pharmacy.idx}
+                key={pharmacy.id}
                 className={`min-w-[120px] p-2 mb-2 border rounded-lg shadow-sm cursor-pointer 
           hover:bg-gray-100 transition 
-          ${selectedPharmacy?.idx === pharmacy.idx ? "bg-gray-100" : ""}`}
+          ${selectedPharmacy?.id === pharmacy.id ? "bg-gray-100" : ""}`}
                 onClick={() => {
                   setSelectedPharmacy(pharmacy);
                 }}
@@ -332,7 +344,7 @@ export default function Home() {
               onClick={() => {
                 setIsLoading(true);
                 setSelectedCategory(null);
-                setSelectedPackage("");
+                setSelectedPackage("전체");
                 setIsLoading(false);
               }}
             >
@@ -343,13 +355,13 @@ export default function Home() {
             </div>
             {categories.map((category) => (
               <div
-                key={category.idx}
+                key={category.id}
                 className={`flex flex-col items-center w-12 shrink-0 cursor-pointer hover:text-gray-700 ${
-                  selectedCategory === category.idx ? "font-bold" : ""
+                  selectedCategory === category.id ? "font-bold" : ""
                 }`}
                 onClick={() => {
                   setIsLoading(true);
-                  setSelectedCategory(category.idx);
+                  setSelectedCategory(category.id);
                   setIsLoading(false);
                 }}
               >
@@ -372,7 +384,7 @@ export default function Home() {
       </section>
       <section className="px-4 py-3 bg-gray-100 overflow-x-auto scrollbar-hide">
         <div className="flex flex-nowrap items-center gap-2 w-max">
-          {["", "7일", "30일", "단품형"].map((pkg) => (
+          {["전체", "7일 패키지", "30일 패키지", "일반 상품"].map((pkg) => (
             <button
               key={pkg}
               className={`px-4 py-2 border rounded-full text-sm transition-transform duration-300 ${
@@ -386,7 +398,7 @@ export default function Home() {
                 setIsLoading(false);
               }}
             >
-              {pkg === "" ? "전체" : `${pkg} 패키지`}
+              {pkg}
             </button>
           ))}
         </div>
@@ -430,17 +442,22 @@ export default function Home() {
                       .map((category: any) => category.name)
                       .join(", ")}
                   </span>
-                  <h3 className="text-sm font-bold text-gray-800 line-clamp-2">
+                  <span className="text-sm font-bold text-gray-800 line-clamp-2">
                     {product.name}
-                  </h3>
-                  <div className="mt-auto">
-                    <p className="text-xs text-gray-500 line-clamp-1">
-                      {product.description}
-                    </p>
-                    <p className="text-sm font-bold text-sky-500 mt-1">
-                      ₩{product.price.toLocaleString()}
-                    </p>
-                  </div>
+                  </span>
+                  <span className="text-xs text-sky-500 mt-1">
+                    {selectedPackage === "전체"
+                      ? getLowestAverageOptionType(product)
+                      : selectedPackage}{" "}
+                    기준
+                  </span>
+                  <span className="text-sm font-bold text-sky-500">
+                    {formatPriceRange(
+                      selectedPackage === "전체"
+                        ? { product }
+                        : { product, optionType: selectedPackage }
+                    )}
+                  </span>
                 </div>
               </div>
             ))}
@@ -455,7 +472,7 @@ export default function Home() {
           </p>
         </div>
       )}
-      {totalPrice > 0 && (
+      {totalPrice > 0 && selectedPharmacy && (
         <div className="px-5 fixed bottom-0 left-0 right-0 w-full max-w-[640px] mx-auto bg-sky-400 text-white p-4 flex justify-between items-center text-lg font-bold">
           <span>₩{totalPrice.toLocaleString()}</span>
           <button
@@ -469,11 +486,37 @@ export default function Home() {
       {selectedProduct && (
         <ProductDetail
           product={selectedProduct}
+          optionType={
+            selectedPackage === "전체"
+              ? getLowestAverageOptionType(selectedProduct)
+              : selectedPackage
+          }
           onClose={() => setSelectedProduct(null)}
-          onAddToCart={(quantity: number) => {
-            handleAddToCart(selectedProduct, quantity);
+          onAddToCart={(cartItem: any) => {
+            handleAddToCart(cartItem);
           }}
         />
+      )}
+      {isCartVisible && (
+        <div className="fixed inset-0 flex">
+          <div className="bg-white w-full h-full overflow-y-auto">
+            <Cart
+              cartItems={cartItems}
+              totalPrice={totalPrice}
+              selectedPharmacy={selectedPharmacy}
+              allProducts={allProducts}
+              onBack={() => setIsCartVisible(false)}
+              onUpdateCart={(updatedItems: any) => {
+                setCartItems(updatedItems);
+                const updatedTotalPrice = updatedItems.reduce(
+                  (acc: number, item: any) => acc + item.price * item.quantity,
+                  0
+                );
+                setTotalPrice(updatedTotalPrice);
+              }}
+            />
+          </div>
+        </div>
       )}
     </div>
   );

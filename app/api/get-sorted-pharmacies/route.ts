@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import { getPharmaciesByProduct } from "@/lib/product";
 import axios from "axios";
+import { getPharmaciesByProduct } from "@/lib/pharmacy";
 
 export async function POST(req: Request) {
-  const { productIdx, roadAddress } = await req.json();
-  if (!productIdx || !roadAddress) {
+  const { cartItem, roadAddress } = await req.json();
+  if (!cartItem || !roadAddress) {
     return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }
   try {
-    const pharmacies = await getPharmaciesByProduct(productIdx);
+    const pharmacies = await getPharmaciesByProduct(cartItem);
     const userLocation = await getGeocode(roadAddress);
     const sortedPharmacies = await Promise.all(
       pharmacies.map(async (pharmacy) => {

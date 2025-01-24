@@ -10,7 +10,7 @@ export default function Footer() {
           <div className="flex flex-col items-center sm:items-start w-full sm:w-1/2">
             <Link href="/about">
               <img
-                src="/icon.png"
+                src="/logo.png"
                 alt="웰니스박스 로고"
                 className="h-10 w-10 inline-block mb-2 hover:animate-bounce-custom"
               />

@@ -5,14 +5,21 @@
 html,
 body {
   overflow: auto;
-}
-
-.scrollbar-hide {
-  -ms-overflow-style: none;
   scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-.scrollbar-hide::-webkit-scrollbar {
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
   display: none;
 }
 

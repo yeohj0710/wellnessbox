@@ -12,7 +12,7 @@ export async function riderLogin(userId: string, password: string) {
     throw new Error("아이디 또는 비밀번호가 올바르지 않습니다.");
   }
   const session = await getSession();
-  session.idx = rider.idx;
+  session.id = rider.id;
   session.role = "rider";
   await session.save();
   redirect("/rider");
@@ -20,10 +20,10 @@ export async function riderLogin(userId: string, password: string) {
 
 export async function getRider() {
   const session = await getSession();
-  if (!session.idx) return null;
+  if (!session.id) return null;
   return db.rider_.findUnique({
     where: {
-      idx: session.idx,
+      id: session.id,
     },
   });
 }

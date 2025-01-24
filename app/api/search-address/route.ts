@@ -21,9 +21,6 @@ export async function GET(req: Request) {
         },
       }
     );
-    console.log("Query sent to API:", query);
-    console.log("API response:", response.data);
-
     return NextResponse.json(response.data, { status: 200 });
   } catch (error: any) {
     console.error("API Error Response:", error.response?.data || error.message);

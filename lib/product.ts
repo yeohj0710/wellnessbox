@@ -2,160 +2,111 @@
 
 import db from "@/lib/db";
 
-export async function getCategories() {
-  const categories = await db.category_.findMany({
-    select: {
-      idx: true,
-      name: true,
-      image: true,
-    },
-  });
-  return categories;
-}
-
-export async function createCategory(data: { name: string; image?: string }) {
-  const newCategory = await db.category_.create({
-    data: {
-      name: data.name,
-      image: data.image || null,
-    },
-  });
-  return newCategory;
-}
-
-export async function updateCategory(
-  categoryIdx: number,
-  data: { name: string; image?: string }
-) {
-  const updatedCategory = await db.category_.update({
-    where: { idx: categoryIdx },
-    data: {
-      name: data.name,
-      image: data.image || null,
-    },
-  });
-  return updatedCategory;
-}
-
-export async function deleteCategory(categoryIdx: number) {
-  const relatedProducts = await db.product_.findMany({
-    where: {
-      categories: {
-        some: { idx: categoryIdx },
-      },
-    },
-  });
-  if (relatedProducts.length > 0) {
-    throw new Error("해당 카테고리에 포함된 상품을 먼저 삭제해야 합니다.");
-  }
-  const deletedCategory = await db.category_.delete({
-    where: { idx: categoryIdx },
-  });
-  return deletedCategory;
-}
-
 export async function getProducts() {
   const products = await db.product_.findMany({
+    where: {
+      pharmacyProducts: {
+        some: {
+          stock: {
+            gt: 0,
+          },
+        },
+      },
+    },
     select: {
-      idx: true,
+      id: true,
       name: true,
       images: true,
       description: true,
-      price: true,
       categories: {
         select: {
-          idx: true,
+          id: true,
           name: true,
         },
       },
-      pharmacies: {
+      pharmacyProducts: {
         select: {
-          idx: true,
-          name: true,
+          id: true,
+          price: true,
+          optionType: true,
+          stock: true,
+          pharmacyId: true,
+          pharmacy: {
+            select: {
+              id: true,
+              name: true,
+              address: true,
+            },
+          },
         },
       },
     },
     orderBy: {
-      idx: "asc",
+      id: "asc",
     },
   });
-  const sortedProducts = products.sort((a, b) => {
-    const getPriority = (description: string | null | undefined) => {
-      if (description?.includes("7일")) return 1;
-      if (description?.includes("30일")) return 2;
-      return 3;
-    };
-    const priorityA = getPriority(a.description);
-    const priorityB = getPriority(b.description);
-    if (priorityA !== priorityB) {
-      return priorityA - priorityB;
-    }
-    return a.idx - b.idx;
-  });
-  return sortedProducts;
+  return products;
 }
 
 export async function createProduct(data: {
   name: string;
   images: string[];
   description: string;
-  price: number;
-  categories: { idx: number; name?: string }[];
-  pharmacies: { idx: number; name?: string }[];
+  categories: { id: number; name?: string }[];
 }) {
-  const formatRelation = (relation: any[]) =>
-    relation.map((item) => ({ idx: item.idx }));
+  const formatRelation = (relation: any[] = []) =>
+    relation.map((item) => ({ id: item.id }));
   const newProduct = await db.product_.create({
     data: {
-      name: data.name,
+      name: data.name || null,
       images: data.images || [],
-      description: data.description || "",
-      price: data.price || 0,
+      description: data.description || null,
       categories: {
         connect: formatRelation(data.categories),
       },
-      pharmacies: {
-        connect: formatRelation(data.pharmacies),
-      },
     },
   });
+
   return newProduct;
 }
 
 export async function updateProduct(
-  productIdx: number,
+  productid: number,
   data: {
-    name: string;
-    images: string[];
-    description: string;
-    price: number;
-    categories: { idx: number; name: string }[];
-    pharmacies: { idx: number; name: string }[];
+    name?: string;
+    images?: string[];
+    description?: string;
+    categories?: { id: number; name?: string }[];
   }
 ) {
+  const formatRelation = (relation: any[] = []) =>
+    relation.map((item) => ({ id: item.id }));
   const updatedProduct = await db.product_.update({
-    where: { idx: productIdx },
+    where: { id: productid },
     data: {
-      name: data.name,
-      images: data.images || [],
-      description: data.description || "",
-      price: data.price || 0,
-      categories: {
-        set: [],
-        connect: data.categories.map((category) => ({ idx: category.idx })),
-      },
-      pharmacies: {
-        set: [],
-        connect: data.pharmacies.map((pharmacy) => ({ idx: pharmacy.idx })),
-      },
+      name: data.name ?? undefined,
+      images: data.images ?? undefined,
+      description: data.description ?? undefined,
+      categories: data.categories
+        ? {
+            set: [],
+            connect: formatRelation(data.categories),
+          }
+        : undefined,
     },
   });
   return updatedProduct;
 }
 
-export async function deleteProduct(productIdx: number) {
+export async function deleteProduct(productId: number) {
+  const relatedPharmacyProducts = await db.pharmacyProduct_.findMany({
+    where: {
+      productId,
+    },
+  });
+  if (relatedPharmacyProducts.length > 0) return null;
   const deletedProduct = await db.product_.delete({
-    where: { idx: productIdx },
+    where: { id: productId },
   });
   return deletedProduct;
 }
@@ -163,37 +114,26 @@ export async function deleteProduct(productIdx: number) {
 export async function getPharmacies() {
   return await db.pharmacy_.findMany({
     select: {
-      idx: true,
+      id: true,
       name: true,
     },
   });
 }
 
-export async function getPharmaciesByProduct(productIdx: number) {
-  return await db.pharmacy_.findMany({
-    where: {
-      products: {
-        some: { idx: productIdx },
-      },
-    },
-    select: {
-      idx: true,
-      name: true,
-      address: true,
-      phone: true,
-    },
-  });
-}
-
-export async function getProductsByPharmacy(pharmacyIdx: number) {
+export async function getProductsByPharmacy(pharmacyId: number) {
   return await db.product_.findMany({
     where: {
-      pharmacies: {
-        some: { idx: pharmacyIdx },
+      pharmacyProducts: {
+        some: {
+          pharmacyId,
+        },
       },
     },
     select: {
-      idx: true,
+      id: true,
+      name: true,
+      description: true,
+      images: true,
     },
   });
 }

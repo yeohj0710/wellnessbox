@@ -35,7 +35,7 @@ export default function TopBar() {
             )}
           >
             <img
-              src="/icon.png"
+              src="/logo.png"
               alt="웰니스박스"
               ref={logoRef}
               className="w-[2em] h-[2em] object-contain group-hover:animate-bounce-custom"

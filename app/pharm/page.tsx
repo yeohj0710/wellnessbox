@@ -38,7 +38,7 @@ export default function Pharm() {
   useEffect(() => {
     if (!pharm) return;
     async function fetchOrders() {
-      const fetchedOrders = await getBasicOrdersByPharmacy(pharm.idx);
+      const fetchedOrders = await getBasicOrdersByPharmacy(pharm.id);
       setOrders(fetchedOrders);
       setLoading(false);
     }
@@ -65,10 +65,10 @@ export default function Pharm() {
       if (!isExpanded || isLoaded) return;
       async function fetchDetailsAndMessages() {
         const [detailedOrder, msgs] = await Promise.all([
-          getOrderById(initialOrder.idx),
-          getMessagesByOrder(initialOrder.idx),
+          getOrderById(initialOrder.id),
+          getMessagesByOrder(initialOrder.id),
         ]);
-        setOrder(detailedOrder);
+        setOrder((prevOrder: any) => ({ ...prevOrder, ...detailedOrder }));
         setMessages(msgs);
         setIsLoaded(true);
       }
@@ -100,13 +100,13 @@ export default function Pharm() {
     };
     const refreshOrderStatus = async (manual: boolean = false) => {
       try {
-        const updatedStatus = await getOrderStatusById(order.idx);
+        const updatedStatus = await getOrderStatusById(order.id);
         setOrder((prev: any) => ({
           ...prev,
           status: updatedStatus?.status,
         }));
-      } catch (err) {
-        console.error(err);
+      } catch (error) {
+        console.error(error);
       } finally {
         if (manual) setIsStateRefreshing(false);
       }
@@ -114,10 +114,10 @@ export default function Pharm() {
     const refreshMessages = async (manual: boolean = false) => {
       if (manual) setIsMessagesRefreshing(true);
       try {
-        const msgs = await getMessagesByOrder(order.idx);
+        const msgs = await getMessagesByOrder(order.id);
         setMessages(msgs);
-      } catch (err) {
-        console.error(err);
+      } catch (error) {
+        console.error(error);
       } finally {
         if (manual) setIsMessagesRefreshing(false);
       }
@@ -127,9 +127,9 @@ export default function Pharm() {
       if (!pharm) return;
       setIsSending(true);
       const messageData = {
-        orderId: order.idx,
+        orderId: order.id,
         content: newMessage,
-        pharmacyId: pharm.idx,
+        pharmacyId: pharm.id,
       };
       try {
         const newMsg = await createMessage(messageData);
@@ -143,11 +143,11 @@ export default function Pharm() {
       }
     };
     const handleUpdateOrderStatus = async (
-      orderIdx: number,
+      orderid: number,
       newStatus: string
     ) => {
-      setLoadingStatus(orderIdx);
-      const updatedOrder = await updateOrderStatus(orderIdx, newStatus);
+      setLoadingStatus(orderid);
+      const updatedOrder = await updateOrderStatus(orderid, newStatus);
       setOrder((prevOrder: any) => ({
         ...prevOrder,
         ...updatedOrder,
@@ -161,7 +161,7 @@ export default function Pharm() {
       try {
         await deleteMessage(messageId);
         setMessages((prevMessages) =>
-          prevMessages.filter((message) => message.idx !== messageId)
+          prevMessages.filter((message) => message.id !== messageId)
         );
       } catch (error) {
         console.error(error);
@@ -202,12 +202,12 @@ export default function Pharm() {
                 <div className="flex gap-2 mt-4 sm:mt-0">
                   <button
                     onClick={() =>
-                      handleUpdateOrderStatus(order.idx, "결제 완료")
+                      handleUpdateOrderStatus(order.id, "결제 완료")
                     }
                     className="text-sm flex justify-center items-center w-20 h-8 bg-emerald-400 hover:bg-emerald-500 text-white rounded"
-                    disabled={loadingStatus === order.idx}
+                    disabled={loadingStatus === order.id}
                   >
-                    {loadingStatus === order.idx ? (
+                    {loadingStatus === order.id ? (
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     ) : (
                       "상담 대기"
@@ -215,12 +215,12 @@ export default function Pharm() {
                   </button>
                   <button
                     onClick={() =>
-                      handleUpdateOrderStatus(order.idx, "상담 완료")
+                      handleUpdateOrderStatus(order.id, "상담 완료")
                     }
                     className="text-sm flex justify-center items-center w-20 h-8 bg-indigo-400 hover:bg-indigo-500 text-white rounded"
-                    disabled={loadingStatus === order.idx}
+                    disabled={loadingStatus === order.id}
                   >
-                    {loadingStatus === order.idx ? (
+                    {loadingStatus === order.id ? (
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     ) : (
                       "상담 완료"
@@ -228,12 +228,12 @@ export default function Pharm() {
                   </button>
                   <button
                     onClick={() =>
-                      handleUpdateOrderStatus(order.idx, "조제 완료")
+                      handleUpdateOrderStatus(order.id, "조제 완료")
                     }
                     className="text-sm flex justify-center items-center w-20 h-8 bg-yellow-400 hover:bg-yellow-500 text-white rounded"
-                    disabled={loadingStatus === order.idx}
+                    disabled={loadingStatus === order.id}
                   >
-                    {loadingStatus === order.idx ? (
+                    {loadingStatus === order.id ? (
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     ) : (
                       "조제 완료"
@@ -244,13 +244,13 @@ export default function Pharm() {
                       const confirmCancel =
                         window.confirm("정말로 주문을 취소하시겠습니까?");
                       if (confirmCancel) {
-                        handleUpdateOrderStatus(order.idx, "주문 취소");
+                        handleUpdateOrderStatus(order.id, "주문 취소");
                       }
                     }}
                     className="text-sm flex justify-center items-center w-20 h-8 bg-red-400 hover:bg-red-500 text-white rounded"
-                    disabled={loadingStatus === order.idx}
+                    disabled={loadingStatus === order.id}
                   >
-                    {loadingStatus === order.idx ? (
+                    {loadingStatus === order.id ? (
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     ) : (
                       "주문 취소"
@@ -263,39 +263,47 @@ export default function Pharm() {
               <h2 className="text-lg font-bold text-gray-700 mb-4 mt-12">
                 주문 상세 내역
               </h2>
-              {order.orderItems.map((item: any, idx: number) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between mb-6"
-                >
-                  <div className="flex items-center gap-4">
-                    <img
-                      src={item.product.images?.[0] || "/placeholder.png"}
-                      alt={item.product.name}
-                      className="w-16 h-16 object-cover rounded-lg"
-                    />
-                    <div>
-                      <h3 className="text-sm font-bold text-gray-800">
-                        {item.product.name}
-                      </h3>
-                      <p className="text-xs text-gray-500">
-                        {item.product.categories?.length
-                          ? item.product.categories
-                              .map((category: any) => category.name)
-                              .join(", ")
-                          : "옵션 없음"}
-                      </p>
-                      <p className="text-sm font-bold text-sky-400 mt-1">
-                        ₩{item.product.price.toLocaleString()} x
-                        <span className="text-rose-600"> {item.quantity}</span>
-                      </p>
+              {order.orderItems.map((orderItem: any, orderId: number) => {
+                const { pharmacyProduct } = orderItem;
+                const { product } = pharmacyProduct;
+                const productImage = product.images?.[0] || "/placeholder.png";
+                const productName = product.name;
+                const productCategories = product.categories?.length
+                  ? product.categories
+                      .map((category: any) => category.name)
+                      .join(", ")
+                  : "옵션 없음";
+                const totalPrice = pharmacyProduct.price * orderItem.quantity;
+                return (
+                  <div
+                    key={orderId}
+                    className="flex items-center justify-between mb-6"
+                  >
+                    <div className="flex items-center gap-4">
+                      <img
+                        src={productImage}
+                        alt={productName}
+                        className="w-16 h-16 object-cover rounded-lg"
+                      />
+                      <div>
+                        <h3 className="text-sm font-bold text-gray-800">
+                          {productName}
+                        </h3>
+                        <p className="text-xs text-gray-500">
+                          {productCategories}
+                        </p>
+                        <p className="text-sm font-bold text-sky-400 mt-1">
+                          ₩{pharmacyProduct.price.toLocaleString()} ×{" "}
+                          {orderItem.quantity}
+                        </p>
+                      </div>
                     </div>
+                    <p className="text-sm font-bold text-sky-400">
+                      ₩{totalPrice.toLocaleString()}
+                    </p>
                   </div>
-                  <p className="text-sm font-bold text-sky-400">
-                    ₩{(item.product.price * item.quantity).toLocaleString()}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
               <div className="flex justify-end text-sm text-gray-600">
                 <span>배송비</span>
                 <span className="font-bold ml-2">₩3,000</span>
@@ -344,7 +352,7 @@ export default function Pharm() {
                         {message.pharmacyId && (
                           <button
                             className="absolute top-1.5 right-2 text-gray-400 hover:text-gray-600 text-xs cursor:pointer"
-                            onClick={() => handleDeleteMessage(message.idx)}
+                            onClick={() => handleDeleteMessage(message.id)}
                           >
                             ✕
                           </button>
@@ -466,7 +474,7 @@ export default function Pharm() {
     <div className="w-full mt-8 mb-12 flex flex-col gap-4">
       {orders.map((order: any, index: number) => (
         <OrderAccordionItem
-          key={order.idx}
+          key={order.id}
           initialOrder={order}
           isInitiallyExpanded={index === 0}
         />
