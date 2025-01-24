@@ -5,7 +5,7 @@ import getSession from "./session";
 import db from "@/lib/db";
 
 export async function riderLogin(userId: string, password: string) {
-  const rider = await db.rider_.findUnique({
+  const rider = await db.rider_.findFirst({
     where: { userId },
   });
   if (!rider || rider.password !== password) {
