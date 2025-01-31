@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import AddressModal from "./addressModal";
 import { formatPriceRange } from "@/lib/utils";
 import { getReviewsByProductId } from "@/lib/review";
+import StarRating from "./starRating";
 
 export default function ProductDetail({
   product,
@@ -16,7 +17,7 @@ export default function ProductDetail({
   const [isFirstModalOpen, setIsFirstModalOpen] = useState(false);
   const [reviews, setReviews] = useState<any[]>([]);
   const [totalReviewCount, setTotalReviewCount] = useState(0);
-  const [averageRating, setAverageRating] = useState<any>(5.0);
+  const [averageRating, setAverageRating] = useState<number>(5.0);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedOption, setSelectedOption] = useState<string | null>(
     () => optionType || product.pharmacyProducts[0]?.optionType || null
@@ -48,8 +49,8 @@ export default function ProductDetail({
       setTotalReviewCount(maskedReviews.length);
       setAverageRating(
         maskedReviews.length > 0
-          ? (totalRating / maskedReviews.length).toFixed(1)
-          : "0.0"
+          ? parseFloat((totalRating / maskedReviews.length).toFixed(1))
+          : 0.0
       );
     }
     fetchReviews();
@@ -216,12 +217,9 @@ export default function ProductDetail({
               상품 리뷰 ({totalReviewCount}개)
             </h2>
             <div className="flex items-center mb-4">
-              <span className="text-yellow-400 text-xl">
-                {"★".repeat(Math.floor(averageRating))}
-                {parseFloat(averageRating) % 1 !== 0 ? "☆" : ""}
-              </span>
+              <StarRating rating={averageRating} size={24} />
               <span className="text-gray-700 text-lg ml-2">
-                {averageRating} / 5.0 ({totalReviewCount}개)
+                {averageRating.toFixed(1)} / 5.0 ({totalReviewCount}개)
               </span>
             </div>
             {reviews.length > 0 ? (
@@ -232,27 +230,8 @@ export default function ProductDetail({
                       {review.order.phone}
                     </span>
                     <div className="flex items-center">
-                      <div
-                        className="relative text-xl"
-                        style={{ width: "120px", height: "24px" }}
-                      >
-                        <div className="absolute top-0 left-0 w-full text-gray-300">
-                          ★★★★★
-                        </div>
-                        <div
-                          className="absolute top-0 left-0 text-yellow-400 overflow-hidden"
-                          style={{
-                            background: `linear-gradient(90deg, #FACC15 ${
-                              review.rate * 20
-                            }%, transparent ${review.rate * 20}%)`,
-                            WebkitBackgroundClip: "text",
-                            color: "transparent",
-                          }}
-                        >
-                          ★★★★★
-                        </div>
-                      </div>
-                      <span className="text-gray-600 text-sm">
+                      <StarRating rating={review.rate} size={20} />
+                      <span className="text-gray-600 text-sm ml-2">
                         {review.rate.toFixed(1)}
                       </span>
                     </div>

@@ -7,9 +7,7 @@ export async function getProducts() {
     where: {
       pharmacyProducts: {
         some: {
-          stock: {
-            gt: 0,
-          },
+          stock: { gt: 0 },
         },
       },
     },
@@ -41,12 +39,35 @@ export async function getProducts() {
           },
         },
       },
+      reviews: {
+        select: {
+          rate: true,
+        },
+      },
     },
     orderBy: {
       id: "asc",
     },
   });
-  return products;
+  return products.map((product) => {
+    const reviewCount = product.reviews.length;
+    const averageRating =
+      reviewCount > 0
+        ? parseFloat(
+            (
+              product.reviews.reduce(
+                (sum, review) => sum + (review.rate || 0),
+                0
+              ) / reviewCount
+            ).toFixed(1)
+          )
+        : 0.0;
+    return {
+      ...product,
+      rating: averageRating,
+      reviewCount,
+    };
+  });
 }
 
 export async function getProductsIdName() {

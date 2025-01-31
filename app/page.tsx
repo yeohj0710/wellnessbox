@@ -9,6 +9,7 @@ import axios from "axios";
 import AddressModal from "@/components/addressModal";
 import { getCategories } from "@/lib/category";
 import { formatPriceRange, getLowestAverageOptionType } from "@/lib/utils";
+import StarRating from "@/components/starRating";
 
 export default function Home() {
   const { hideFooter, showFooter } = useFooter();
@@ -38,7 +39,7 @@ export default function Home() {
     const storedTimestamp = localStorage.getItem(timestampKey);
     if (
       !storedTimestamp ||
-      now - parseInt(storedTimestamp, 10) > 7 * 24 * 60 * 60 * 1000
+      now - parseInt(storedTimestamp, 10) > 60 * 60 * 1000
     ) {
       localStorage.clear();
       localStorage.setItem(timestampKey, now.toString());
@@ -457,13 +458,19 @@ export default function Home() {
                       </span>
                     )}
                   </span>
-                  <span className="text-sm font-bold text-sky-500">
+                  <span className="-mt-1 backdrop:file:text-sm font-bold text-sky-500">
                     {formatPriceRange({
                       product,
                       optionType: selectedPackage,
                       pharmacy: selectedPharmacy,
                     })}
                   </span>
+                  <div className="flex items-center gap-1">
+                    <StarRating rating={product.rating} size={18} />
+                    <span className="text-xs text-gray-500 mt-1">
+                      ({product.reviewCount})
+                    </span>
+                  </div>
                 </div>
               </div>
             ))}
