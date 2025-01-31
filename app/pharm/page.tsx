@@ -155,7 +155,7 @@ export default function Pharm() {
       setLoadingStatus(null);
     };
     const handleDeleteMessage = async (messageId: number) => {
-      const confirmDelete = window.confirm("정말로 메시지를 삭제하시겠습니까?");
+      const confirmDelete = window.confirm("정말로 메시지를 삭제할까요?");
       if (!confirmDelete) return;
 
       try {
@@ -234,7 +234,7 @@ export default function Pharm() {
                     disabled={loadingStatus === order.id}
                   >
                     {loadingStatus === order.id ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     ) : (
                       "조제 완료"
                     )}
@@ -242,7 +242,7 @@ export default function Pharm() {
                   <button
                     onClick={() => {
                       const confirmCancel =
-                        window.confirm("정말로 주문을 취소하시겠습니까?");
+                        window.confirm("정말로 주문을 취소할까요?");
                       if (confirmCancel) {
                         handleUpdateOrderStatus(order.id, "주문 취소");
                       }
@@ -268,6 +268,7 @@ export default function Pharm() {
                 const { product } = pharmacyProduct;
                 const productImage = product.images?.[0] || "/placeholder.png";
                 const productName = product.name;
+                const optionType = pharmacyProduct.optionType;
                 const productCategories = product.categories?.length
                   ? product.categories
                       .map((category: any) => category.name)
@@ -287,31 +288,33 @@ export default function Pharm() {
                       />
                       <div>
                         <h3 className="text-sm font-bold text-gray-800">
-                          {productName}
+                          {productName} ({optionType})
                         </h3>
                         <p className="text-xs text-gray-500">
                           {productCategories}
                         </p>
                         <p className="text-sm font-bold text-sky-400 mt-1">
-                          ₩{pharmacyProduct.price.toLocaleString()} ×{" "}
-                          {orderItem.quantity}
+                          {pharmacyProduct.price.toLocaleString()}원 ×{" "}
+                          <span className="text-rose-500">
+                            {orderItem.quantity}
+                          </span>
                         </p>
                       </div>
                     </div>
                     <p className="text-sm font-bold text-sky-400">
-                      ₩{totalPrice.toLocaleString()}
+                      {totalPrice.toLocaleString()}원
                     </p>
                   </div>
                 );
               })}
               <div className="flex justify-end text-sm text-gray-600">
                 <span>배송비</span>
-                <span className="font-bold ml-2">₩3,000</span>
+                <span className="font-bold ml-2">3,000원</span>
               </div>
               <div className="flex justify-end gap-2 text-base font-bold mt-2">
                 <span className="text-gray-700">총 결제 금액</span>
                 <span className="text-sky-400">
-                  ₩{order.totalPrice.toLocaleString()}
+                  {order.totalPrice.toLocaleString()}원
                 </span>
               </div>
             </div>

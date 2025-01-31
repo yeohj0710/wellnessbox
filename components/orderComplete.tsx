@@ -46,18 +46,18 @@ export default function OrderComplete({ order }: { order?: any }) {
                     .join(", ") || "옵션 없음"}
                 </p>
                 <p className="text-sm font-bold text-sky-400 mt-1">
-                  ₩{item.product.price.toLocaleString()} x {item.quantity}
+                  {item.product.price.toLocaleString()}원 x {item.quantity}
                 </p>
               </div>
             </div>
             <p className="text-sm font-bold text-sky-400">
-              ₩{(item.product.price * item.quantity).toLocaleString()}
+              {(item.product.price * item.quantity).toLocaleString()}원
             </p>
           </div>
         ))}
         <div className="flex justify-end mt-4 text-sm text-gray-600 gap-1">
           <span>배송비</span>
-          <span className="font-bold">₩3,000</span>
+          <span className="font-bold">3,000원</span>
         </div>
         <div className="mt-4 text-right">
           <p className="text-base text-gray-600">
@@ -66,7 +66,9 @@ export default function OrderComplete({ order }: { order?: any }) {
           <p className="text-base text-gray-600 mt-1">연락처: {phone}</p>
           <h3 className="flex justify-end gap-2 text-lg font-bold mt-2">
             <span className="text-gray-700">총 결제 금액</span>
-            <span className="text-sky-400">₩{totalPrice.toLocaleString()}</span>
+            <span className="text-sky-400">
+              {totalPrice.toLocaleString()}원
+            </span>
           </h3>
         </div>
       </div>

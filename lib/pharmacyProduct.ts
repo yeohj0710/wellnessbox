@@ -7,6 +7,7 @@ export async function getPharmacyProducts() {
     select: {
       id: true,
       optionType: true,
+      capacity: true,
       price: true,
       stock: true,
       createdAt: true,
@@ -22,6 +23,11 @@ export async function getPharmacyProducts() {
           id: true,
           name: true,
           images: true,
+          categories: {
+            select: {
+              name: true,
+            },
+          },
         },
       },
     },
@@ -66,6 +72,7 @@ export async function getPharmacyProduct(
 
 export async function createPharmacyProduct(data: {
   optionType?: string;
+  capacity?: string;
   price?: number;
   stock?: number;
   pharmacyId: number;
@@ -74,6 +81,7 @@ export async function createPharmacyProduct(data: {
   return await db.pharmacyProduct_.create({
     data: {
       optionType: data.optionType || null,
+      capacity: data.capacity || null,
       price: data.price || null,
       stock: data.stock || null,
       pharmacy: {
@@ -94,6 +102,7 @@ export async function updatePharmacyProduct(
   id: number,
   data: {
     optionType?: string;
+    capacity?: string;
     price?: number;
     stock?: number;
     pharmacyId?: number;
@@ -104,6 +113,7 @@ export async function updatePharmacyProduct(
     where: { id },
     data: {
       optionType: data.optionType ?? undefined,
+      capacity: data.capacity ?? undefined,
       price: data.price ?? undefined,
       stock: data.stock ?? undefined,
       pharmacy: data.pharmacyId

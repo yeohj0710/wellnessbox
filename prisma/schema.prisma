@@ -49,6 +49,7 @@ model PharmacyProduct_ {
   optionType String?
   price      Int?
   stock      Int?
+  capacity   String?
   pharmacy   Pharmacy_?   @relation(fields: [pharmacyId], references: [id], onDelete: SetNull)
   pharmacyId Int?
   product    Product_?    @relation(fields: [productId], references: [id], onDelete: SetNull)
@@ -78,10 +79,9 @@ model Order_ {
   pharmacyId       Int?
   rider            Rider_?      @relation(fields: [riderId], references: [id], onDelete: SetNull)
   riderId          Int?
-  review           Review_?     @relation(fields: [reviewId], references: [id], onDelete: SetNull)
-  reviewId         Int?         @unique
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @default(now()) @updatedAt
+  reviews          Review_[]
 }
 
 model OrderItem_ {
@@ -91,6 +91,8 @@ model OrderItem_ {
   orderId           Int?
   pharmacyProduct   PharmacyProduct_? @relation(fields: [pharmacyProductId], references: [id], onDelete: SetNull)
   pharmacyProductId Int?
+  review            Review_?
+  reviewId          Int?              @unique
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @default(now()) @updatedAt
 }
@@ -118,16 +120,18 @@ model Rider_ {
 }
 
 model Review_ {
-  id         Int       @id @default(autoincrement())
-  rate       Float?
-  content    String?
-  images     String[]
-  order      Order_?
-  orderId    Int?      @unique
-  Product_   Product_? @relation(fields: [product_Id], references: [id])
-  product_Id Int?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @default(now()) @updatedAt
+  id          Int         @id @default(autoincrement())
+  rate        Float?
+  content     String?
+  images      String[]
+  order       Order_?     @relation(fields: [orderId], references: [id])
+  orderId     Int?
+  product     Product_?   @relation(fields: [productId], references: [id])
+  productId   Int?
+  orderItem   OrderItem_? @relation(fields: [orderItemId], references: [id])
+  orderItemId Int?        @unique
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @default(now()) @updatedAt
 }
 
 model User {

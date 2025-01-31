@@ -28,6 +28,15 @@ export async function getPharmacy() {
   });
 }
 
+export async function getPharmaciesIdName() {
+  return await db.pharmacy_.findMany({
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+}
+
 export async function getPharmaciesByProduct(cartItem: any) {
   const pharmacies = await db.pharmacy_.findMany({
     where: {

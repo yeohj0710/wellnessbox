@@ -29,6 +29,7 @@ export async function getProducts() {
           id: true,
           price: true,
           optionType: true,
+          capacity: true,
           stock: true,
           pharmacyId: true,
           pharmacy: {
@@ -40,6 +41,31 @@ export async function getProducts() {
           },
         },
       },
+    },
+    orderBy: {
+      id: "asc",
+    },
+  });
+  return products;
+}
+
+export async function getProductsIdName() {
+  const products = await db.product_.findMany({
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+  return products;
+}
+
+export async function getProductsForAdmin() {
+  const products = await db.product_.findMany({
+    select: {
+      id: true,
+      name: true,
+      images: true,
+      categories: true,
     },
     orderBy: {
       id: "asc",
@@ -109,15 +135,6 @@ export async function deleteProduct(productId: number) {
     where: { id: productId },
   });
   return deletedProduct;
-}
-
-export async function getPharmacies() {
-  return await db.pharmacy_.findMany({
-    select: {
-      id: true,
-      name: true,
-    },
-  });
 }
 
 export async function getProductsByPharmacy(pharmacyId: number) {

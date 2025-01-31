@@ -38,7 +38,7 @@ export default function OrderProgressBar({
                   currentStatus
                 )}`}
               />
-              <span className="absolute text-center bottom-[28px] text-xs text-gray-500">
+              <span className="absolute w-[120%] text-center bottom-[28px] text-xs text-gray-500">
                 {getLineText(stepIndex + 1)}
               </span>
             </div>

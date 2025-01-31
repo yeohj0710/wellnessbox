@@ -121,6 +121,7 @@ export default function CategoryManager() {
             <h3 className="text-lg font-bold mb-4">
               {selectedCategory ? "카테고리 수정" : "새 카테고리 등록"}
             </h3>
+            <h3 className="font-bold text-gray-700 my-2">카테고리 이름</h3>
             <input
               type="text"
               placeholder="카테고리 이름"
@@ -131,9 +132,10 @@ export default function CategoryManager() {
                   name: e.target.value,
                 })
               }
-              className="border w-full p-2 mb-4"
+              className="border w-full p-2 mb-2"
             />
-            <div className="mb-4">
+            <div className="mb-4 flex flex-col">
+              <h3 className="font-bold text-gray-700 my-2">카테고리 이미지</h3>
               <input
                 type="file"
                 accept="image/*"
@@ -153,7 +155,7 @@ export default function CategoryManager() {
                 <button
                   className="px-3 py-1 bg-rose-400 text-white rounded hover:bg-rose-500"
                   onClick={async () => {
-                    if (!confirm("정말로 삭제하시겠습니까?")) return;
+                    if (!confirm("정말로 삭제할까요?")) return;
                     const result = await deleteCategory(selectedCategory.idx);
                     if (!result) {
                       alert(

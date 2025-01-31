@@ -31,10 +31,8 @@ export default function OrderDetails({ phone, password, onBack }: any) {
   const OrderAccordionItem = ({
     initialOrder,
     isInitiallyExpanded,
-  }: {
-    initialOrder: any;
-    isInitiallyExpanded: boolean;
-  }) => {
+    onBack,
+  }: any) => {
     const [isExpanded, setIsExpanded] = useState(isInitiallyExpanded);
     const [order, setOrder] = useState(initialOrder);
     const [isLoaded, setIsLoaded] = useState(false);
@@ -79,7 +77,7 @@ export default function OrderDetails({ phone, password, onBack }: any) {
       }
     }, [isExpanded, isLoaded, messages]);
     const toggleExpanded = () => {
-      setIsExpanded((prev) => !prev);
+      setIsExpanded((prev: any) => !prev);
     };
     const refreshOrderStatus = async (manual: boolean = false) => {
       try {
@@ -124,7 +122,7 @@ export default function OrderDetails({ phone, password, onBack }: any) {
       }
     };
     const handleDeleteMessage = async (messageId: number) => {
-      const confirmDelete = window.confirm("정말로 메시지를 삭제하시겠습니까?");
+      const confirmDelete = window.confirm("정말로 메시지를 삭제할까요?");
       if (!confirmDelete) return;
       try {
         await deleteMessage(messageId);
@@ -143,6 +141,7 @@ export default function OrderDetails({ phone, password, onBack }: any) {
             order={order}
             isExpanded={isExpanded}
             toggle={toggleExpanded}
+            onBack={onBack}
           />
           <div className="mt-4 border-t sm:px-4 pt-16 sm:pt-12 pb-4">
             <div className="flex justify-center items-center mt-2 mb-6">
@@ -158,6 +157,7 @@ export default function OrderDetails({ phone, password, onBack }: any) {
           order={order}
           isExpanded={isExpanded}
           toggle={toggleExpanded}
+          onBack={onBack}
         />
         {isExpanded && (
           <div className="mt-4 border-t sm:px-4 pt-16 sm:pt-12 pb-4">
@@ -171,6 +171,7 @@ export default function OrderDetails({ phone, password, onBack }: any) {
                 const { product } = pharmacyProduct;
                 const productImage = product.images?.[0] || "/placeholder.png";
                 const productName = product.name;
+                const optionType = pharmacyProduct.optionType;
                 const productCategories = product.categories?.length
                   ? product.categories
                       .map((category: any) => category.name)
@@ -193,30 +194,30 @@ export default function OrderDetails({ phone, password, onBack }: any) {
                       />
                       <div>
                         <h3 className="text-sm font-bold text-gray-800">
-                          {productName}
+                          {productName} ({optionType})
                         </h3>
                         <p className="text-xs text-gray-500">
                           {productCategories}
                         </p>
                         <p className="text-sm font-bold text-sky-400 mt-1">
-                          ₩{productPrice} × {orderItem.quantity}
+                          {productPrice}원 × {orderItem.quantity}
                         </p>
                       </div>
                     </div>
                     <p className="text-sm font-bold text-sky-400">
-                      ₩{totalPrice}
+                      {totalPrice}원
                     </p>
                   </div>
                 );
               })}
               <div className="flex justify-end text-sm text-gray-600">
                 <span>배송비</span>
-                <span className="font-bold ml-2">₩3,000</span>
+                <span className="font-bold ml-2">3,000원</span>
               </div>
               <div className="flex justify-end gap-2 text-base font-bold mt-2">
                 <span className="text-gray-700">총 결제 금액</span>
                 <span className="text-sky-400">
-                  ₩{order.totalPrice.toLocaleString()}
+                  {order.totalPrice.toLocaleString()}원
                 </span>
               </div>
             </div>
@@ -355,6 +356,7 @@ export default function OrderDetails({ phone, password, onBack }: any) {
           key={order.id}
           initialOrder={order}
           isInitiallyExpanded={index === 0}
+          onBack={onBack}
         />
       ))}
     </div>

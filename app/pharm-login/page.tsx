@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { pharmacyLogin } from "@/lib/pharmacy";
 import Link from "next/link";
+import getSession from "@/lib/session";
+import { useRouter } from "next/navigation";
 
 export default function PharmLogin() {
+  const router = useRouter();
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import AddressModal from "./addressModal";
 import { formatPriceRange } from "@/lib/utils";
+import { getReviewsByProductId } from "@/lib/review";
 
 export default function ProductDetail({
   product,
@@ -13,9 +14,46 @@ export default function ProductDetail({
   const [quantity, setQuantity] = useState(1);
   const [totalPrice, setTotalPrice] = useState(product.price);
   const [isFirstModalOpen, setIsFirstModalOpen] = useState(false);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [totalReviewCount, setTotalReviewCount] = useState(0);
+  const [averageRating, setAverageRating] = useState<any>(5.0);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedOption, setSelectedOption] = useState<string | null>(
     () => optionType || product.pharmacyProducts[0]?.optionType || null
   );
+  useEffect(() => {
+    async function fetchReviews() {
+      if (!product.id) return;
+      const fetchedReviews = await getReviewsByProductId(product.id);
+      let totalRating = 0;
+      const maskedReviews = fetchedReviews.map((review: any) => {
+        totalRating += review.rate;
+        return {
+          ...review,
+          order: {
+            phone: review.order?.phone
+              ? review.order.phone.replace(
+                  /(\d{3})[-.]?(\d{4})[-.]?(\d{4})/,
+                  "$1-****-$3"
+                )
+              : null,
+          },
+          formattedCreatedAt: new Date(review.createdAt).toLocaleDateString(),
+          formattedOrderCreatedAt: review.order?.createdAt
+            ? new Date(review.order.createdAt).toLocaleDateString()
+            : null,
+        };
+      });
+      setReviews(maskedReviews);
+      setTotalReviewCount(maskedReviews.length);
+      setAverageRating(
+        maskedReviews.length > 0
+          ? (totalRating / maskedReviews.length).toFixed(1)
+          : "0.0"
+      );
+    }
+    fetchReviews();
+  }, [product.id]);
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -148,14 +186,17 @@ export default function ProductDetail({
               ))}
             </select>
           </div>
-          <p className="text-lg font-bold mt-4 text-sky-500">
+          <p className="text-lg font-bold mt-4 mb-2 text-sky-500">
             {formatPriceRange({
               product,
               quantity: 1,
               optionType: selectedOption || undefined,
             })}
           </p>
-          <div className="flex items-center justify-between mt-4">
+          <span className="text-xs text-gray-500">
+            * 주소 입력 후 약국 선택이 완료되면 정확한 상품 가격을 알려드려요.
+          </span>
+          <div className="flex items-center justify-between mt-6">
             <button
               onClick={() => handleQuantityChange(-1)}
               className="leading-none text-lg w-10 h-10 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md"
@@ -169,6 +210,104 @@ export default function ProductDetail({
             >
               +
             </button>
+          </div>
+          <div className="mt-16">
+            <h2 className="text-lg font-bold mb-4">
+              상품 리뷰 ({totalReviewCount}개)
+            </h2>
+            <div className="flex items-center mb-4">
+              <div
+                className="relative text-xl"
+                style={{ width: "120px", height: "24px" }}
+              >
+                <div className="absolute top-0 left-0 w-full text-gray-300">
+                  ★★★★★
+                </div>
+                <div
+                  className="absolute top-0 left-0 text-yellow-400 overflow-hidden"
+                  style={{
+                    background: `linear-gradient(90deg, #FACC15 ${
+                      averageRating * 20
+                    }%, transparent ${averageRating * 20}%)`,
+                    WebkitBackgroundClip: "text",
+                    color: "transparent",
+                  }}
+                >
+                  ★★★★★
+                </div>
+              </div>
+              <span className="text-gray-700 text-lg ml-2">
+                {averageRating} / 5.0 ({totalReviewCount}개)
+              </span>
+            </div>
+            {reviews.length > 0 ? (
+              reviews.map((review, index) => (
+                <div key={index} className="border-b mb-4">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-gray-500 text-sm">
+                      {review.order.phone}
+                    </span>
+                    <div className="flex items-center">
+                      <div
+                        className="relative text-xl"
+                        style={{ width: "120px", height: "24px" }}
+                      >
+                        <div className="absolute top-0 left-0 w-full text-gray-300">
+                          ★★★★★
+                        </div>
+                        <div
+                          className="absolute top-0 left-0 text-yellow-400 overflow-hidden"
+                          style={{
+                            background: `linear-gradient(90deg, #FACC15 ${
+                              review.rate * 20
+                            }%, transparent ${review.rate * 20}%)`,
+                            WebkitBackgroundClip: "text",
+                            color: "transparent",
+                          }}
+                        >
+                          ★★★★★
+                        </div>
+                      </div>
+                      <span className="text-gray-600 text-sm">
+                        {review.rate.toFixed(1)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex flex-row gap-4 mb-4">
+                    <span className="text-xs text-gray-400">
+                      주문일: {review.formattedOrderCreatedAt}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      옵션: {review.orderItem.pharmacyProduct.optionType}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-700">{review.content}</p>
+                  {review.images?.length > 0 && (
+                    <div className="flex gap-2 mt-4">
+                      {review.images.map((image: string, imgIndex: number) => (
+                        <img
+                          key={imgIndex}
+                          src={image.replace(/\/public$/, "/avatar")}
+                          alt="리뷰 이미지"
+                          className="w-16 h-16 object-cover rounded cursor-pointer"
+                          onClick={() => setSelectedImage(image)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  <div className="mt-4 mb-2">
+                    <span className="text-gray-400 text-xs">
+                      작성일 {review.formattedCreatedAt}
+                    </span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500 text-sm">
+                아직 리뷰가 없습니다. 상품을 구매하고 첫 번째 리뷰어가
+                되어주세요!
+              </p>
+            )}
           </div>
           <div className="px-5 fixed bottom-0 left-0 right-0 w-full max-w-[640px] mx-auto bg-sky-400 text-white p-4 flex justify-between items-center text-lg font-bold">
             <span>
@@ -211,6 +350,26 @@ export default function ProductDetail({
             >
               담기
             </button>
+            {selectedImage && (
+              <div
+                className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50"
+                onClick={() => setSelectedImage(null)}
+              >
+                <div className="relative max-w-[90vw] max-h-[90vh]">
+                  <button
+                    className="absolute top-2 right-4 text-gray-500 rounded-full"
+                    onClick={() => setSelectedImage(null)}
+                  >
+                    ✕
+                  </button>
+                  <img
+                    src={selectedImage}
+                    alt="리뷰 확대 이미지"
+                    className="max-w-full max-h-full rounded-lg"
+                  />
+                </div>
+              </div>
+            )}
             {isFirstModalOpen && (
               <FirstModal
                 product={product}

@@ -28,11 +28,18 @@ export async function getOrdersWithItemsAndStatus(
           quantity: true,
           pharmacyProduct: {
             select: {
+              optionType: true,
               product: {
                 select: {
                   name: true,
                 },
               },
+            },
+          },
+          review: {
+            select: {
+              rate: true,
+              content: true,
             },
           },
         },
@@ -67,6 +74,7 @@ export async function getOrderById(orderid: number) {
           quantity: true,
           pharmacyProduct: {
             select: {
+              optionType: true,
               price: true,
               product: {
                 select: {
@@ -81,6 +89,12 @@ export async function getOrderById(orderid: number) {
               },
             },
           },
+          review: {
+            select: {
+              rate: true,
+              content: true,
+            },
+          },
         },
       },
       pharmacy: {
@@ -88,6 +102,38 @@ export async function getOrderById(orderid: number) {
           name: true,
           address: true,
           phone: true,
+        },
+      },
+    },
+  });
+}
+
+export async function getOrderForReview(orderid: number) {
+  return await db.order_.findFirst({
+    where: { id: orderid },
+    select: {
+      id: true,
+      orderItems: {
+        select: {
+          id: true,
+          review: {
+            select: {
+              rate: true,
+              content: true,
+            },
+          },
+          pharmacyProduct: {
+            select: {
+              productId: true,
+              optionType: true,
+              product: {
+                select: {
+                  name: true,
+                  images: true,
+                },
+              },
+            },
+          },
         },
       },
     },

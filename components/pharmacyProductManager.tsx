@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { getPharmacies, getProducts } from "@/lib/product";
+import { getProductsIdName } from "@/lib/product";
 import {
   getPharmacyProducts,
   createPharmacyProduct,
@@ -9,7 +9,7 @@ import {
   deletePharmacyProduct,
 } from "@/lib/pharmacyProduct";
 import { getUploadUrl } from "@/lib/upload";
-import FullPageLoader from "./fullPageLoader";
+import { getPharmaciesIdName } from "@/lib/pharmacy";
 
 export default function PharmacyProductManager() {
   const [pharmacyProducts, setPharmacyProducts] = useState<any[]>([]);
@@ -24,8 +24,8 @@ export default function PharmacyProductManager() {
   useEffect(() => {
     const fetchData = async () => {
       const pharmacyProducts = await getPharmacyProducts();
-      const pharmacies = await getPharmacies();
-      const products = await getProducts();
+      const pharmacies = await getPharmaciesIdName();
+      const products = await getProductsIdName();
       setPharmacyProducts(pharmacyProducts);
       setPharmacies(pharmacies);
       setProducts(products);
@@ -108,7 +108,12 @@ export default function PharmacyProductManager() {
             key={`${pharmacyProduct.id}-${index}`}
             className="px-[0.5px] sm:px-1 sm:pb-1 flex flex-col border rounded-md overflow-hidden shadow-sm hover:shadow-lg hover:scale-105 transition-transform duration-300 cursor-pointer bg-white"
             onClick={() => {
-              setSelectedPharmacyProduct(pharmacyProduct);
+              setSelectedPharmacyProduct({
+                ...pharmacyProduct,
+                pharmacyId: pharmacyProduct.pharmacy?.id || null,
+                productId: pharmacyProduct.product?.id || null,
+                capacity: pharmacyProduct.capacity || "",
+              });
               setIsModalOpen(true);
             }}
           >
@@ -124,22 +129,21 @@ export default function PharmacyProductManager() {
               </div>
             )}
             <div className="p-2 flex flex-col gap-1 flex-grow">
-              <p className="text-xs text-gray-500">
-                {pharmacyProduct.pharmacy?.name || "약국 없음"}
-              </p>
-              <p className="text-sm font-bold text-gray-800">
-                {pharmacyProduct.product?.name || "상품 없음"}
-              </p>
-              <p className="text-sm font-bold text-sky-500">
-                ₩{pharmacyProduct.price.toLocaleString() || 0}
-              </p>
-              <p className="text-xs text-gray-500">
-                {pharmacyProduct.optionType || "옵션 없음"}
-              </p>
-
-              <p className="text-xs text-gray-500">
+              <span className="text-xs text-gray-500">
+                {pharmacyProduct.pharmacy?.name}
+              </span>
+              <span className="text-sm font-bold text-gray-800">
+                {pharmacyProduct.product?.name} ({pharmacyProduct.optionType})
+              </span>
+              <span className="text-xs text-gray-500">
+                {pharmacyProduct.capacity}
+              </span>
+              <span className="text-sm font-bold text-sky-500">
+                {pharmacyProduct.price.toLocaleString() || 0}원
+              </span>
+              <span className="text-xs text-gray-500">
                 재고 {pharmacyProduct.stock || 0}개 남음
-              </p>
+              </span>
             </div>
           </div>
         ))}
@@ -184,7 +188,6 @@ export default function PharmacyProductManager() {
                 ))}
               </select>
             </div>
-
             <div className="mb-4">
               <h3 className="font-bold text-gray-700 my-2">상품 선택</h3>
               <select
@@ -205,20 +208,35 @@ export default function PharmacyProductManager() {
                 ))}
               </select>
             </div>
-
-            <input
-              type="text"
-              placeholder="옵션 종류"
-              value={selectedPharmacyProduct?.optionType || ""}
+            <h3 className="font-bold text-gray-700 my-2">소분 분량 선택</h3>
+            <select
+              className="border w-full p-2 mb-2"
+              value={selectedPharmacyProduct?.optionType || "일반 상품"}
               onChange={(e) =>
                 setSelectedPharmacyProduct({
                   ...selectedPharmacyProduct,
                   optionType: e.target.value,
                 })
               }
-              className="border w-full p-2 mb-4"
+            >
+              <option value="7일 패키지">7일 패키지</option>
+              <option value="30일 패키지">30일 패키지</option>
+              <option value="일반 상품">일반 상품</option>
+            </select>
+            <h3 className="font-bold text-gray-700 my-2">용량 및 수량</h3>
+            <input
+              type="text"
+              placeholder="예: 2g, 80포"
+              value={selectedPharmacyProduct?.capacity || ""}
+              onChange={(e) =>
+                setSelectedPharmacyProduct({
+                  ...selectedPharmacyProduct,
+                  capacity: e.target.value,
+                })
+              }
+              className="border w-full p-2 mb-2"
             />
-
+            <h3 className="font-bold text-gray-700 my-2">가격 (원)</h3>
             <input
               type="number"
               placeholder="가격"
@@ -229,9 +247,9 @@ export default function PharmacyProductManager() {
                   price: parseInt(e.target.value, 10),
                 })
               }
-              className="border w-full p-2 mb-4"
+              className="border w-full p-2 mb-2"
             />
-
+            <h3 className="font-bold text-gray-700 my-2">재고 수량 (개)</h3>
             <input
               type="number"
               placeholder="재고"
@@ -244,13 +262,12 @@ export default function PharmacyProductManager() {
               }
               className="border w-full p-2 mb-4"
             />
-
             <div className="flex justify-end gap-2">
               {selectedPharmacyProduct?.id && (
                 <button
                   className="px-3 py-1 bg-rose-400 text-white rounded hover:bg-rose-500"
                   onClick={async () => {
-                    if (confirm("정말로 삭제하시겠습니까?")) {
+                    if (confirm("정말로 삭제할까요?")) {
                       await deletePharmacyProduct(selectedPharmacyProduct.id);
                       setPharmacyProducts(await getPharmacyProducts());
                       setIsModalOpen(false);

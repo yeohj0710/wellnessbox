@@ -167,24 +167,24 @@ export default function OrderComplete() {
                       : "옵션 없음"}
                   </p>
                   <p className="text-sm font-bold text-sky-400 mt-1">
-                    ₩{pharmacyProduct.price.toLocaleString()} × {item.quantity}
+                    {pharmacyProduct.price.toLocaleString()}원 × {item.quantity}
                   </p>
                 </div>
               </div>
               <p className="text-sm font-bold text-sky-400">
-                ₩{(pharmacyProduct.price * item.quantity).toLocaleString()}
+                {(pharmacyProduct.price * item.quantity).toLocaleString()}원
               </p>
             </div>
           );
         })}
         <div className="flex justify-end text-sm text-gray-600">
           <span>배송비</span>
-          <span className="font-bold ml-2">₩3,000</span>
+          <span className="font-bold ml-2">3,000원</span>
         </div>
         <div className="flex justify-end gap-2 text-base font-bold mt-2">
           <span className="text-gray-700">총 결제 금액</span>
           <span className="text-sky-400">
-            ₩{order.totalPrice.toLocaleString()}
+            {order.totalPrice.toLocaleString()}원
           </span>
         </div>
         <h3 className="mb-2 font-bold mt-8 border-t pt-6">약국 정보</h3>

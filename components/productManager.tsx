@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import {
-  getProducts,
   createProduct,
   updateProduct,
   deleteProduct,
+  getProductsForAdmin,
 } from "@/lib/product";
 import { getUploadUrl } from "@/lib/upload";
 import { getCategories } from "@/lib/category";
@@ -16,12 +16,13 @@ export default function ProductManager() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   useEffect(() => {
     const fetchData = async () => {
-      const products = await getProducts();
-      const categories = await getCategories();
-      setProducts(products);
-      setCategories(categories);
+      const fetchedProducts = await getProductsForAdmin();
+      const fetchedCategories = await getCategories();
+      setProducts(fetchedProducts);
+      setCategories(fetchedCategories);
       setIsLoading(false);
     };
     fetchData();
@@ -50,6 +51,7 @@ export default function ProductManager() {
     return uploadedUrls;
   };
   const handleSubmit = async () => {
+    setIsSubmitting(true);
     const imageUrls = [
       ...(selectedProduct?.images || []),
       ...(await handleImageUpload()),
@@ -65,10 +67,11 @@ export default function ProductManager() {
         images: imageUrls,
       });
     }
-    setProducts(await getProducts());
+    setProducts(await getProductsForAdmin());
     setSelectedProduct(null);
     setSelectedFiles([]);
     setIsProductModalOpen(false);
+    setIsSubmitting(false);
   };
   if (isLoading) {
     return (
@@ -145,9 +148,10 @@ export default function ProductManager() {
             >
               ×
             </button>
-            <h3 className="text-lg font-bold mb-4">
+            <h3 className="text-lg font-bold mb-6">
               {selectedProduct?.id ? "상품 수정" : "새 상품 등록"}
             </h3>
+            <h3 className="font-bold text-gray-700 my-2">상품명</h3>
             <input
               type="text"
               placeholder="상품명"
@@ -155,8 +159,9 @@ export default function ProductManager() {
               onChange={(e) =>
                 setSelectedProduct({ ...selectedProduct, name: e.target.value })
               }
-              className="border w-full p-2 mb-4"
+              className="border w-full p-2 mb-2"
             />
+            <h3 className="font-bold text-gray-700 my-2">상품 설명</h3>
             <textarea
               placeholder="상품 설명"
               value={selectedProduct?.description || ""}
@@ -166,7 +171,7 @@ export default function ProductManager() {
                   description: e.target.value,
                 })
               }
-              className="border w-full p-2 mb-4"
+              className="border w-full p-2 mb-1"
             />
             <div className="mb-4">
               <h3 className="font-bold text-gray-700 my-2">카테고리 선택</h3>
@@ -196,7 +201,7 @@ export default function ProductManager() {
               </div>
             </div>
             <div className="mb-4">
-              <h3 className="font-bold text-gray-700 my-2">이미지 업로드</h3>
+              <h3 className="font-bold text-gray-700 my-2">상품 이미지</h3>
               <input
                 type="file"
                 accept="image/*"
@@ -239,7 +244,7 @@ export default function ProductManager() {
                 <button
                   className="px-3 py-1 bg-rose-400 text-white rounded hover:bg-rose-500"
                   onClick={async () => {
-                    if (!confirm("정말로 삭제하시겠습니까?")) return;
+                    if (!confirm("정말로 삭제할까요?")) return;
                     const result = await deleteProduct(selectedProduct.id);
                     if (!result) {
                       alert(
@@ -247,7 +252,7 @@ export default function ProductManager() {
                       );
                       return;
                     }
-                    setProducts(await getProducts());
+                    setProducts(await getProductsForAdmin());
                     setIsProductModalOpen(false);
                   }}
                 >
@@ -255,13 +260,19 @@ export default function ProductManager() {
                 </button>
               )}
               <button
-                className={`px-3 py-1 bg-teal-400 text-white rounded ${
-                  isUploadingImage ? "opacity-50 cursor-not-allowed" : ""
+                className={`px-3 py-1 bg-teal-400 text-white rounded flex items-center justify-center ${
+                  isSubmitting ? "opacity-50 cursor-not-allowed" : ""
                 }`}
                 onClick={handleSubmit}
-                disabled={isUploadingImage}
+                disabled={isSubmitting}
               >
-                {selectedProduct?.id ? "수정" : "등록"}
+                {isSubmitting ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : selectedProduct?.id ? (
+                  "수정"
+                ) : (
+                  "등록"
+                )}
               </button>
             </div>
           </div>

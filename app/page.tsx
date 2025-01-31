@@ -224,19 +224,6 @@ export default function Home() {
       showFooter();
     }
   }, [totalPrice, isCartVisible, hideFooter, showFooter]);
-  const scrollPositionRef = useRef(0);
-  useEffect(() => {
-    if (selectedProduct || isCartVisible) {
-      scrollPositionRef.current = window.scrollY;
-      document.body.style.position = "fixed";
-      document.body.style.top = `-${scrollPositionRef.current}px`;
-      document.body.style.width = "100%";
-    } else {
-      document.body.style.position = "";
-      document.body.style.top = "";
-      window.scrollTo(0, scrollPositionRef.current);
-    }
-  }, [selectedProduct, isCartVisible]);
   const handleAddToCart = (cartItem: any) => {
     setCartItems((prev) => {
       const existingItem = prev.find(
@@ -285,27 +272,25 @@ export default function Home() {
         />
       )}
       {cartItems.length > 0 && pharmacies.length > 0 && (
-        <div>
-          <div className="flex gap-2 px-2 mx-1 sm:mx-0 mb-3 -mt-1 overflow-x-auto scrollbar-hide">
-            {pharmacies.map((pharmacy: any) => (
-              <div
-                key={pharmacy.id}
-                className={`min-w-[120px] p-2 mb-2 border rounded-lg shadow-sm cursor-pointer 
-          hover:bg-gray-100 transition 
-          ${selectedPharmacy?.id === pharmacy.id ? "bg-gray-100" : ""}`}
-                onClick={() => {
-                  setSelectedPharmacy(pharmacy);
-                }}
-              >
-                <h4 className="text-sm font-medium text-gray-700 text-center">
-                  {pharmacy.name}
-                </h4>
-                <p className="text-xs text-gray-500 text-center">
-                  {pharmacy.distance?.toFixed(1)} km
-                </p>
-              </div>
-            ))}
-          </div>
+        <div className="flex gap-2 px-2 mx-1 sm:mx-0 mb-3 -mt-1 overflow-x-auto scrollbar-hide">
+          {pharmacies.map((pharmacy: any) => (
+            <div
+              key={pharmacy.id}
+              className={`flex flex-col items-center justify-center min-w-[120px] max-w-none flex-grow p-2 mb-2 border rounded-lg shadow-sm cursor-pointer 
+            hover:bg-gray-100 transition 
+            ${selectedPharmacy?.id === pharmacy.id ? "bg-gray-100" : ""}`}
+              onClick={() => {
+                setSelectedPharmacy(pharmacy);
+              }}
+            >
+              <h4 className="text-sm font-medium text-gray-700 text-center whitespace-nowrap overflow-hidden text-ellipsis">
+                {pharmacy.name}
+              </h4>
+              <p className="text-xs text-gray-500 text-center">
+                {pharmacy.distance?.toFixed(1)} km
+              </p>
+            </div>
+          ))}
         </div>
       )}
       <section
@@ -445,18 +430,39 @@ export default function Home() {
                   <span className="text-sm font-bold text-gray-800 line-clamp-2">
                     {product.name}
                   </span>
-                  <span className="text-xs text-sky-500 mt-1">
-                    {selectedPackage === "전체"
-                      ? getLowestAverageOptionType(product)
-                      : selectedPackage}{" "}
-                    기준
+                  <span className="">
+                    <span className="text-xs text-sky-500">
+                      {selectedPackage === "전체"
+                        ? getLowestAverageOptionType(product)
+                        : selectedPackage}{" "}
+                      기준
+                    </span>{" "}
+                    {selectedPackage && selectedPharmacy && (
+                      <span className="text-xs text-gray-400">
+                        {product.pharmacyProducts.find(
+                          (pharmacyProduct: any) =>
+                            pharmacyProduct.optionType === selectedPackage &&
+                            pharmacyProduct.pharmacyId === selectedPharmacy.id
+                        )?.capacity
+                          ? `(${
+                              product.pharmacyProducts.find(
+                                (pharmacyProduct: any) =>
+                                  pharmacyProduct.optionType ===
+                                    selectedPackage &&
+                                  pharmacyProduct.pharmacyId ===
+                                    selectedPharmacy.id
+                              )?.capacity
+                            })`
+                          : ""}
+                      </span>
+                    )}
                   </span>
                   <span className="text-sm font-bold text-sky-500">
-                    {formatPriceRange(
-                      selectedPackage === "전체"
-                        ? { product }
-                        : { product, optionType: selectedPackage }
-                    )}
+                    {formatPriceRange({
+                      product,
+                      optionType: selectedPackage,
+                      pharmacy: selectedPharmacy,
+                    })}
                   </span>
                 </div>
               </div>
@@ -474,7 +480,7 @@ export default function Home() {
       )}
       {totalPrice > 0 && selectedPharmacy && (
         <div className="px-5 fixed bottom-0 left-0 right-0 w-full max-w-[640px] mx-auto bg-sky-400 text-white p-4 flex justify-between items-center text-lg font-bold">
-          <span>₩{totalPrice.toLocaleString()}</span>
+          <span>{totalPrice.toLocaleString()}원</span>
           <button
             className="bg-white text-sky-400 hover:bg-sky-100 transition px-6 py-2 rounded-full font-semibold"
             onClick={() => setIsCartVisible(true)}
