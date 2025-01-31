@@ -166,6 +166,7 @@ export default function ReviewModal({
               </span>
               <img
                 className="w-full h-24 object-contain mt-4"
+                alt=""
                 src={currentItem.pharmacyProduct.product.images[0]}
               />
               <p className="font-semibold text-gray-800 text-center">
