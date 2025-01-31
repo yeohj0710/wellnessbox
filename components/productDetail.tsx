@@ -216,26 +216,10 @@ export default function ProductDetail({
               상품 리뷰 ({totalReviewCount}개)
             </h2>
             <div className="flex items-center mb-4">
-              <div
-                className="relative text-xl"
-                style={{ width: "120px", height: "24px" }}
-              >
-                <div className="absolute top-0 left-0 w-full text-gray-300">
-                  ★★★★★
-                </div>
-                <div
-                  className="absolute top-0 left-0 text-yellow-400 overflow-hidden"
-                  style={{
-                    background: `linear-gradient(90deg, #FACC15 ${
-                      averageRating * 20
-                    }%, transparent ${averageRating * 20}%)`,
-                    WebkitBackgroundClip: "text",
-                    color: "transparent",
-                  }}
-                >
-                  ★★★★★
-                </div>
-              </div>
+              <span className="text-yellow-400 text-xl">
+                {"★".repeat(Math.floor(averageRating))}
+                {parseFloat(averageRating) % 1 !== 0 ? "☆" : ""}
+              </span>
               <span className="text-gray-700 text-lg ml-2">
                 {averageRating} / 5.0 ({totalReviewCount}개)
               </span>
