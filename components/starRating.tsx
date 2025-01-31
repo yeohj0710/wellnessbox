@@ -1,5 +1,5 @@
 import React from "react";
-// @ts-expect-error
+// @ts-expect-error: react-star-ratings에 대한 TypeScript 정의 파일이 없음
 import StarRatings from "react-star-ratings";
 
 interface StarRatingProps {
