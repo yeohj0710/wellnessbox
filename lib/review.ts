@@ -12,9 +12,15 @@ export async function getReviewsByProductId(productId: number) {
       createdAt: true,
       orderItem: {
         select: {
+          quantity: true,
           pharmacyProduct: {
             select: {
               optionType: true,
+              pharmacy: {
+                select: {
+                  name: true,
+                },
+              },
             },
           },
         },

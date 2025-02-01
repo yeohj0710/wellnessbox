@@ -165,7 +165,7 @@ export default function ProductDetail({
             ✕
           </button>
         </div>
-        <div className="p-6 pb-[calc(12rem)]">
+        <div className="p-6 mb-24">
           <h1 className="text-xl font-bold">{product.name}</h1>
           <div className="mt-4">
             <label className="block text-gray-600 text-sm font-medium mb-2">
@@ -236,12 +236,14 @@ export default function ProductDetail({
                       </span>
                     </div>
                   </div>
-                  <div className="flex flex-row gap-4 mb-4">
+                  <div className="gap-1 flex flex-col mb-4 mt-2">
                     <span className="text-xs text-gray-400">
-                      주문일: {review.formattedOrderCreatedAt}
+                      {product.name},{" "}
+                      {review.orderItem.pharmacyProduct.optionType} ×{" "}
+                      {review.orderItem.quantity}개
                     </span>
                     <span className="text-xs text-gray-400">
-                      옵션: {review.orderItem.pharmacyProduct.optionType}
+                      판매자: {review.orderItem.pharmacyProduct.pharmacy.name}
                     </span>
                   </div>
                   <p className="text-sm text-gray-700">{review.content}</p>
@@ -315,10 +317,10 @@ export default function ProductDetail({
             </button>
             {selectedImage && (
               <div
-                className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50"
+                className="px-2 sm:px-0 fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50"
                 onClick={() => setSelectedImage(null)}
               >
-                <div className="relative max-w-[90vw] max-h-[90vh]">
+                <div className="relative">
                   <button
                     className="absolute top-2 right-4 text-gray-500 rounded-full"
                     onClick={() => setSelectedImage(null)}

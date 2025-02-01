@@ -9,15 +9,15 @@ import { LocalStorageProvider } from "@/components/localStorage";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "웰니스박스 | 맞춤형 건강기능식품 소분 판매 중개 플랫폼",
-  description: "맞춤형 건강기능식품 소분 판매 중개 플랫폼",
+  title: "웰니스박스 | 약국에서만 파는 고효능 영양제, 7일치씩 주문해요",
+  description: "약국에서만 파는 고효능 영양제, 7일치씩 주문해요",
   metadataBase: new URL(SITE_URL),
   icons: {
     icon: "/logo.png",
   },
   openGraph: {
     title: "웰니스박스",
-    description: "맞춤형 건강기능식품 소분 판매 중개 플랫폼",
+    description: "약국에서만 파는 고효능 영양제, 7일치씩 주문해요",
     url: SITE_URL,
     images: [
       {
