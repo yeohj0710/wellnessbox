@@ -62,13 +62,14 @@ export default function About() {
       </div>
       <div className="relative z-10 mt-8 w-full max-w-[800px] mx-auto px-6 sm:px-12 py-10 bg-white/0 text-center">
         <h1 className="text-3xl font-bold text-white mb-10">
-          약국에서만 파는 고효능 영양제, 7일치씩 주문해요
+          약국에서만 파는 약국 전용 영양제, 7일치씩 주문해요
         </h1>
         <p className="text-white leading-relaxed break-words">
-          다른 온라인 쇼핑몰에서는 살 수 없는 <b>약국에서만 판매하는 영양제</b>
-          를, 웰니스박스에서는 제공합니다. <br />
+          다른 온라인 쇼핑몰에서는 살 수 없는{" "}
+          <b>약국에서만 판매하는 약국 전용 영양제</b>
+          를, 웰니스박스에서 제공해요. <br />
           <br />
-          내 몸에 맞을지도 모르는 영양제, 비타민, 유산균을 통 단위로 사는 건
+          내 몸에 맞을지도 모르는 영양제, 비타민, 유산균을 한 통 단위로 사는 건
           불필요하죠. <br />
           약국에서만 파는 건강기능식품들을 온라인으로 편하게 확인하고, 7일분,
           30일분씩만 복용해 보세요. <br />

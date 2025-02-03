@@ -218,10 +218,14 @@ export default function ProductDetail({
             </button>
           </div>
           <div className="mt-16">
-            <h2 className="text-lg font-bold mb-4">
+            <h2 className="text-lg font-bold mb-2">
               상품 리뷰 ({totalReviewCount}개)
             </h2>
-            <div className="flex items-center mb-4">
+            <span className="block text-xs text-gray-400 whitespace-pre-wrap !leading-[1.5]">
+              * 상품 리뷰는 배송 완료 처리된 상품에 한해 <b>내 주문 조회</b>에서
+              작성할 수 있어요.
+            </span>
+            <div className="flex items-center mb-4 mt-2">
               <StarRating rating={averageRating} size={24} />
               <span className="text-gray-700 text-lg ml-2">
                 {averageRating.toFixed(1)} / 5.0 ({totalReviewCount}개)

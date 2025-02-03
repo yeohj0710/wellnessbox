@@ -76,7 +76,11 @@ export default function PharmacyProductManager({ pharmacyId }: any) {
     } else {
       await createPharmacyProduct(data);
     }
-    setPharmacyProducts(await getPharmacyProducts());
+    setPharmacyProducts(
+      pharmacyId
+        ? await getPharmacyProductsByPharmacy(pharmacyId)
+        : await getPharmacyProducts()
+    );
     setSelectedPharmacyProduct(null);
     setSelectedFiles([]);
     setIsModalOpen(false);
@@ -98,7 +102,7 @@ export default function PharmacyProductManager({ pharmacyId }: any) {
               optionType: "",
               price: 0,
               stock: 0,
-              pharmacyId: null,
+              pharmacyId: pharmacyId || null,
               productId: null,
               images: [],
             });
@@ -174,26 +178,28 @@ export default function PharmacyProductManager({ pharmacyId }: any) {
                 ? "약국 상품 수정"
                 : "새 약국 상품 등록"}
             </h3>
-            <div className="mb-4">
-              <h3 className="font-bold text-gray-700 my-2">약국 선택</h3>
-              <select
-                className="border w-full p-2"
-                value={selectedPharmacyProduct?.pharmacyId || ""}
-                onChange={(e: any) =>
-                  setSelectedPharmacyProduct({
-                    ...selectedPharmacyProduct,
-                    pharmacyId: parseInt(e.target.value, 10) || null,
-                  })
-                }
-              >
-                <option value="">선택하세요</option>
-                {pharmacies.map((pharmacy) => (
-                  <option key={pharmacy.id} value={pharmacy.id}>
-                    {pharmacy.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {!pharmacyId && (
+              <div className="mb-4">
+                <h3 className="font-bold text-gray-700 my-2">약국 선택</h3>
+                <select
+                  className="border w-full p-2"
+                  value={selectedPharmacyProduct?.pharmacyId || ""}
+                  onChange={(e: any) =>
+                    setSelectedPharmacyProduct({
+                      ...selectedPharmacyProduct,
+                      pharmacyId: parseInt(e.target.value, 10) || null,
+                    })
+                  }
+                >
+                  <option value="">선택하세요</option>
+                  {pharmacies.map((pharmacy) => (
+                    <option key={pharmacy.id} value={pharmacy.id}>
+                      {pharmacy.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="mb-4">
               <h3 className="font-bold text-gray-700 my-2">상품 선택</h3>
               <select
@@ -275,7 +281,11 @@ export default function PharmacyProductManager({ pharmacyId }: any) {
                   onClick={async () => {
                     if (confirm("정말로 삭제할까요?")) {
                       await deletePharmacyProduct(selectedPharmacyProduct.id);
-                      setPharmacyProducts(await getPharmacyProducts());
+                      setPharmacyProducts(
+                        pharmacyId
+                          ? await getPharmacyProductsByPharmacy(pharmacyId)
+                          : await getPharmacyProducts()
+                      );
                       setIsModalOpen(false);
                     }
                   }}

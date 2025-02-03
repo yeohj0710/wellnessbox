@@ -161,6 +161,7 @@ export async function getBasicOrdersByPharmacy(pharmacyId: number) {
           quantity: true,
           pharmacyProduct: {
             select: {
+              optionType: true,
               product: {
                 select: {
                   name: true,
@@ -195,6 +196,7 @@ export async function getBasicOrdersByRider() {
           quantity: true,
           pharmacyProduct: {
             select: {
+              optionType: true,
               product: {
                 select: {
                   name: true,
