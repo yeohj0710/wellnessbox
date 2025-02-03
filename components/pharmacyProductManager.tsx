@@ -12,13 +12,7 @@ import {
 import { getUploadUrl } from "@/lib/upload";
 import { getPharmaciesIdName } from "@/lib/pharmacy";
 
-interface PharmacyProductManagerProps {
-  pharmacyId: number;
-}
-
-export default function PharmacyProductManager({
-  pharmacyId,
-}: PharmacyProductManagerProps) {
+export default function PharmacyProductManager({ pharmacyId }: any) {
   const [pharmacyProducts, setPharmacyProducts] = useState<any[]>([]);
   const [pharmacies, setPharmacies] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
@@ -30,7 +24,12 @@ export default function PharmacyProductManager({
   const [isLoading, setIsLoading] = useState(true);
   useEffect(() => {
     const fetchData = async () => {
-      const pharmacyProducts = await getPharmacyProductsByPharmacy(pharmacyId);
+      let pharmacyProducts;
+      if (pharmacyId) {
+        pharmacyProducts = await getPharmacyProductsByPharmacy(pharmacyId);
+      } else {
+        pharmacyProducts = await getPharmacyProducts();
+      }
       const pharmacies = await getPharmaciesIdName();
       const products = await getProductsIdName();
       setPharmacyProducts(pharmacyProducts);
