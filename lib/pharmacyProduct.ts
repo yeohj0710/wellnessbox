@@ -37,6 +37,42 @@ export async function getPharmacyProducts() {
   });
 }
 
+export async function getPharmacyProductsByPharmacy(pharmacyId: number) {
+  return await db.pharmacyProduct_.findMany({
+    where: { pharmacyId },
+    select: {
+      id: true,
+      optionType: true,
+      capacity: true,
+      price: true,
+      stock: true,
+      createdAt: true,
+      updatedAt: true,
+      pharmacy: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      product: {
+        select: {
+          id: true,
+          name: true,
+          images: true,
+          categories: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      updatedAt: "desc",
+    },
+  });
+}
+
 export async function getPharmacyProduct(
   productId: number,
   optionType: string
@@ -94,6 +130,18 @@ export async function createPharmacyProduct(data: {
           id: data.productId,
         },
       },
+    },
+  });
+}
+
+export async function reducePharmacyProductStock(
+  pharmacyProductId: number,
+  quantity: number
+) {
+  return await db.pharmacyProduct_.update({
+    where: { id: pharmacyProductId },
+    data: {
+      stock: { decrement: quantity },
     },
   });
 }

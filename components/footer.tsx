@@ -46,6 +46,12 @@ export default function Footer() {
               상호명: 코딩테라스 | 대표자: 박소현
             </span>
             <span className="text-xs text-gray-400">
+              대표 전화번호: 010-7603-8164
+            </span>
+            <span className="text-xs text-gray-400">
+              대표 이메일: smilerobert@naver.com
+            </span>
+            <span className="text-xs text-gray-400">
               주소: 서울특별시 서초구 반포대로19길 10
             </span>
           </div>

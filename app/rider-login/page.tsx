@@ -14,7 +14,10 @@ export default function RiderLogin() {
     setError("");
     setIsLoading(true);
     try {
-      await riderLogin(userId, password);
+      const result = await riderLogin(userId, password);
+      if (result?.success) {
+        window.location.href = "/rider";
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {

@@ -2,6 +2,7 @@
 
 import FullPageLoader from "@/components/fullPageLoader";
 import { createOrder, getOrderByPaymentId } from "@/lib/order";
+import { reducePharmacyProductStock } from "@/lib/pharmacyProduct";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -121,6 +122,11 @@ export default function OrderComplete() {
           pharmacyId,
           orderItems,
         });
+        await Promise.all(
+          createdOrder.orderItems.map((item: any) =>
+            reducePharmacyProductStock(item.pharmacyProductId, item.quantity)
+          )
+        );
         setOrder(createdOrder);
         localStorage.removeItem("cartItems");
       } catch (error: any) {

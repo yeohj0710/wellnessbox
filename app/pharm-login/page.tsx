@@ -1,13 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { pharmacyLogin } from "@/lib/pharmacy";
 import Link from "next/link";
-import getSession from "@/lib/session";
-import { useRouter } from "next/navigation";
 
 export default function PharmLogin() {
-  const router = useRouter();
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -17,7 +14,10 @@ export default function PharmLogin() {
     setError("");
     setIsLoading(true);
     try {
-      await pharmacyLogin(userId, password);
+      const result = await pharmacyLogin(userId, password);
+      if (result?.success) {
+        window.location.href = "/pharm";
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {

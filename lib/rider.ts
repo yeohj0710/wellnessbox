@@ -1,6 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import getSession from "./session";
 import db from "@/lib/db";
 
@@ -15,7 +15,9 @@ export async function riderLogin(userId: string, password: string) {
   session.id = rider.id;
   session.role = "rider";
   await session.save();
-  redirect("/rider");
+  const cookieStore = await cookies();
+  cookieStore.set("rider_logged_in", "true", { path: "/", httpOnly: false });
+  return { success: true };
 }
 
 export async function getRider() {

@@ -7,11 +7,18 @@ import {
   createPharmacyProduct,
   updatePharmacyProduct,
   deletePharmacyProduct,
+  getPharmacyProductsByPharmacy,
 } from "@/lib/pharmacyProduct";
 import { getUploadUrl } from "@/lib/upload";
 import { getPharmaciesIdName } from "@/lib/pharmacy";
 
-export default function PharmacyProductManager() {
+interface PharmacyProductManagerProps {
+  pharmacyId: number;
+}
+
+export default function PharmacyProductManager({
+  pharmacyId,
+}: PharmacyProductManagerProps) {
   const [pharmacyProducts, setPharmacyProducts] = useState<any[]>([]);
   const [pharmacies, setPharmacies] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
@@ -23,7 +30,7 @@ export default function PharmacyProductManager() {
   const [isLoading, setIsLoading] = useState(true);
   useEffect(() => {
     const fetchData = async () => {
-      const pharmacyProducts = await getPharmacyProducts();
+      const pharmacyProducts = await getPharmacyProductsByPharmacy(pharmacyId);
       const pharmacies = await getPharmaciesIdName();
       const products = await getProductsIdName();
       setPharmacyProducts(pharmacyProducts);
@@ -32,7 +39,7 @@ export default function PharmacyProductManager() {
       setIsLoading(false);
     };
     fetchData();
-  }, []);
+  }, [pharmacyId]);
   const handleImageUpload = async () => {
     if (selectedFiles.length === 0) return [];
     const uploadedUrls: string[] = [];

@@ -1,6 +1,5 @@
 "use server";
-
-import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import getSession from "./session";
 import db from "@/lib/db";
 
@@ -15,13 +14,18 @@ export async function pharmacyLogin(userId: string, password: string) {
   session.id = pharmacy.id;
   session.role = "pharm";
   await session.save();
-  redirect("/pharm");
+  const cookieStore = await cookies();
+  cookieStore.set("pharm_logged_in", "true", {
+    path: "/",
+    httpOnly: false,
+  });
+  return { success: true };
 }
 
 export async function getPharmacy() {
   const session = await getSession();
   if (!session.id) return null;
-  return db.pharmacy_.findUnique({
+  return await db.pharmacy_.findUnique({
     where: {
       id: session.id,
     },

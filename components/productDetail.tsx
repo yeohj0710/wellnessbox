@@ -165,7 +165,7 @@ export default function ProductDetail({
             ✕
           </button>
         </div>
-        <div className="p-6 mb-24">
+        <div className="p-6 pb-32">
           <h1 className="text-xl font-bold">{product.name}</h1>
           <div className="mt-4">
             <label className="block text-gray-600 text-sm font-medium mb-2">
@@ -194,9 +194,14 @@ export default function ProductDetail({
               optionType: selectedOption || undefined,
             })}
           </p>
-          <span className="text-xs text-gray-500">
-            * 주소 입력 후 약국 선택이 완료되면 정확한 상품 가격을 알려드려요.
-          </span>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-gray-500">
+              * 주소 입력 후 약국이 선택되면 정확한 상품 가격을 알려드려요.
+            </span>
+            <span className="text-xs text-gray-500">
+              * 상품 주문 후 배송 완료까지 2-3 영업일이 소요돼요.
+            </span>
+          </div>
           <div className="flex items-center justify-between mt-6">
             <button
               onClick={() => handleQuantityChange(-1)}
