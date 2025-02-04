@@ -6,12 +6,20 @@ import { formatPriceRange } from "@/lib/utils";
 import { getReviewsByProductId } from "@/lib/review";
 import StarRating from "./starRating";
 import FullPageLoader from "./fullPageLoader";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  XMarkIcon,
+  MinusIcon,
+  PlusIcon,
+} from "@heroicons/react/24/outline";
 
 export default function ProductDetail({
   product,
   optionType,
   onClose,
   onAddToCart,
+  pharmacy,
 }: any) {
   const [quantity, setQuantity] = useState(1);
   const [totalPrice, setTotalPrice] = useState(product.price);
@@ -21,9 +29,7 @@ export default function ProductDetail({
   const [totalReviewCount, setTotalReviewCount] = useState(0);
   const [averageRating, setAverageRating] = useState<number>(5.0);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [selectedOption, setSelectedOption] = useState<string | null>(
-    () => optionType || product.pharmacyProducts[0]?.optionType || null
-  );
+  const [selectedOption, setSelectedOption] = useState<any>(optionType);
   useEffect(() => {
     async function fetchReviews() {
       if (!product.id) return;
@@ -123,7 +129,7 @@ export default function ProductDetail({
                   />
                 ))}
                 <button
-                  className="leading-none text-gray-600 absolute left-2 top-1/2 transform -translate-y-1/2 bg-gray-200 hover:bg-gray-300 w-10 h-10 p-2 rounded-full shadow-md"
+                  className="absolute left-2 top-1/2 transform -translate-y-1/2 p-1"
                   onClick={() => {
                     const images = document.querySelectorAll(
                       `[data-image-index]`
@@ -137,10 +143,10 @@ export default function ProductDetail({
                     ].style.display = "block";
                   }}
                 >
-                  ◀
+                  <ChevronLeftIcon className="w-6 h-6 text-gray-600 hover:text-gray-800" />
                 </button>
                 <button
-                  className="leading-none text-gray-600 absolute right-2 top-1/2 transform -translate-y-1/2 bg-gray-200 hover:bg-gray-300 w-10 h-10 p-2 rounded-full shadow-md"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1"
                   onClick={() => {
                     const images = document.querySelectorAll(
                       `[data-image-index]`
@@ -153,7 +159,7 @@ export default function ProductDetail({
                       "block";
                   }}
                 >
-                  ▶
+                  <ChevronRightIcon className="w-6 h-6 text-gray-600 hover:text-gray-800" />
                 </button>
               </div>
             ) : (
@@ -164,9 +170,9 @@ export default function ProductDetail({
           </div>
           <button
             onClick={onClose}
-            className="text-gray-600 font-bold absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 p-2 rounded-full shadow-md w-10 h-10 flex items-center justify-center"
+            className="absolute top-4 right-4 p-1 text-gray-600 hover:text-gray-800"
           >
-            ✕
+            <XMarkIcon className="w-6 h-6" />
           </button>
         </div>
         <div className="p-6 pb-32">
@@ -182,7 +188,12 @@ export default function ProductDetail({
             >
               {Array.from(
                 new Set(
-                  product.pharmacyProducts.map((pp: any) => pp.optionType)
+                  (pharmacy
+                    ? product.pharmacyProducts.filter(
+                        (pp: any) => pp.pharmacy?.id === pharmacy.id
+                      )
+                    : product.pharmacyProducts
+                  ).map((pp: any) => pp.optionType)
                 ) as Set<string>
               ).map((optionType, index) => (
                 <option key={index} value={optionType}>
@@ -196,6 +207,7 @@ export default function ProductDetail({
               product,
               quantity: 1,
               optionType: selectedOption || undefined,
+              pharmacy,
             })}
           </p>
           <div className="flex flex-col gap-1">
@@ -209,16 +221,18 @@ export default function ProductDetail({
           <div className="flex items-center justify-between mt-6">
             <button
               onClick={() => handleQuantityChange(-1)}
-              className="leading-none text-lg w-10 h-10 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md"
+              className="p-3 rounded-full bg-gray-100 hover:bg-gray-200"
             >
-              -
+              <MinusIcon className="w-4 h-4 text-gray-700" />
             </button>
-            <span className="font-bold text-lg">{quantity}</span>
+            <span className="mx-4 text-xl font-bold text-gray-800">
+              {quantity}
+            </span>
             <button
               onClick={() => handleQuantityChange(1)}
-              className="leading-none text-lg w-10 h-10 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md"
+              className="p-3 rounded-full bg-gray-100 hover:bg-gray-200"
             >
-              +
+              <PlusIcon className="w-4 h-4 text-gray-700" />
             </button>
           </div>
           {isLoadingReviews ? (
@@ -301,6 +315,7 @@ export default function ProductDetail({
                 product,
                 quantity,
                 optionType: selectedOption || undefined,
+                pharmacy,
               })}
             </span>
             <button

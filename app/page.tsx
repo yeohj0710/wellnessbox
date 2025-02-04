@@ -109,6 +109,21 @@ export default function Home() {
     }, 0);
     setTotalPrice(total);
   }, [cartItems, selectedPharmacy, allProducts]);
+  useEffect(() => {
+    if (!selectedPharmacy) return;
+    const filteredCartItems = cartItems.filter((item) => {
+      const product = allProducts.find((p) => p.id === item.productId);
+      return product?.pharmacyProducts.some(
+        (pp: any) =>
+          pp.pharmacy?.id === selectedPharmacy.id &&
+          pp.optionType === item.optionType
+      );
+    });
+    if (filteredCartItems.length !== cartItems.length) {
+      setCartItems(filteredCartItems);
+      localStorage.setItem("cartItems", JSON.stringify(filteredCartItems));
+    }
+  }, [selectedPharmacy, allProducts]);
   const isRoadAddressChanged: any = useRef(false);
   useEffect(() => {
     if (cartItems.length === 0) {
@@ -432,7 +447,10 @@ export default function Home() {
                   <span className="">
                     <span className="text-xs text-sky-500">
                       {selectedPackage === "전체"
-                        ? getLowestAverageOptionType(product)
+                        ? getLowestAverageOptionType({
+                            product,
+                            pharmacy: selectedPharmacy,
+                          })
                         : selectedPackage}{" "}
                       기준
                     </span>{" "}
@@ -499,9 +517,13 @@ export default function Home() {
           product={selectedProduct}
           optionType={
             selectedPackage === "전체"
-              ? getLowestAverageOptionType(selectedProduct)
+              ? getLowestAverageOptionType({
+                  product: selectedProduct,
+                  pharmacy: selectedPharmacy,
+                })
               : selectedPackage
           }
+          pharmacy={selectedPharmacy}
           onClose={() => setSelectedProduct(null)}
           onAddToCart={(cartItem: any) => {
             handleAddToCart(cartItem);

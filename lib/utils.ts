@@ -5,7 +5,9 @@ export const formatPriceRange = ({
   pharmacy,
 }: any) => {
   const effectiveOptionType =
-    optionType === "전체" ? getLowestAverageOptionType(product) : optionType;
+    optionType === "전체"
+      ? getLowestAverageOptionType({ product, pharmacy })
+      : optionType;
   if (!effectiveOptionType) return "가격 정보 없음";
   const filteredPharmacyProducts = product.pharmacyProducts.filter(
     (pp: any) =>
@@ -23,8 +25,13 @@ export const formatPriceRange = ({
     : `${minPrice.toLocaleString()}원 ~ ${maxPrice.toLocaleString()}원`;
 };
 
-export const getLowestAverageOptionType = (product: any) => {
-  const optionTypeGroups = product.pharmacyProducts.reduce(
+export const getLowestAverageOptionType = ({ product, pharmacy }: any) => {
+  const relevantProducts = pharmacy
+    ? product.pharmacyProducts.filter(
+        (pp: any) => pp.pharmacy?.id === pharmacy.id
+      )
+    : product.pharmacyProducts;
+  const optionTypeGroups = relevantProducts.reduce(
     (acc: Record<string, any[]>, pp: any) => {
       const key = pp.optionType || "unknown";
       if (!acc[key]) acc[key] = [];
@@ -41,6 +48,7 @@ export const getLowestAverageOptionType = (product: any) => {
       return { optionType: type, avgPrice };
     }
   );
+  if (averages.length === 0) return null;
   const lowestAverage = averages.reduce((prev, current) =>
     prev.avgPrice < current.avgPrice ? prev : current
   );

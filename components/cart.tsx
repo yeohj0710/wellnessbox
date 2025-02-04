@@ -194,6 +194,7 @@ export default function Cart({
                 pharmacyProduct.optionType === item.optionType &&
                 pharmacyProduct.pharmacy.id === selectedPharmacy?.id
             );
+            if (!pharmacyProduct) return;
             return (
               <div
                 key={pharmacyProduct.id}
@@ -212,7 +213,7 @@ export default function Cart({
                 )}
                 <div className="flex-1">
                   <h2 className="font-bold">
-                    {product.name} ({pharmacyProduct.optionType})
+                    {product.name} ({pharmacyProduct?.optionType || ""})
                   </h2>
                   <p className="mt-1 text-sm text-gray-500">
                     {product.categories
@@ -220,7 +221,7 @@ export default function Cart({
                       .join(", ") || "카테고리 없음"}
                   </p>
                   <p className="mt-1 font-bold text-sky-500">
-                    {pharmacyProduct.price.toLocaleString()}원
+                    {pharmacyProduct?.price?.toLocaleString()}원
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
