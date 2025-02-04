@@ -264,6 +264,7 @@ export async function createOrder(data: {
           pharmacyProduct: {
             select: {
               price: true,
+              optionType: true,
               product: {
                 select: {
                   name: true,

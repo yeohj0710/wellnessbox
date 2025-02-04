@@ -163,14 +163,14 @@ export default function OrderComplete() {
                 />
                 <div>
                   <h3 className="text-sm font-bold text-gray-800">
-                    {product.name}
+                    {product.name} ({pharmacyProduct.optionType})
                   </h3>
                   <p className="text-xs text-gray-500">
                     {product.categories?.length
                       ? product.categories
                           .map((category: any) => category.name)
                           .join(", ")
-                      : "옵션 없음"}
+                      : "카테고리 없음"}
                   </p>
                   <p className="text-sm font-bold text-sky-400 mt-1">
                     {pharmacyProduct.price.toLocaleString()}원 × {item.quantity}
