@@ -9,7 +9,7 @@ export async function getCategories() {
       name: true,
       image: true,
     },
-    orderBy: { updatedAt: "desc" },
+    orderBy: { id: "asc" },
   });
   return categories;
 }
