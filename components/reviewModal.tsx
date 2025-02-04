@@ -151,7 +151,7 @@ export default function ReviewModal({
         <div className="mb-4 flex flex-row gap-1.5 items-center">
           <span className="text-lg font-bold">리뷰 작성</span>
           <span className="text-sm text-gray-400">
-            ({orderItemsLength - currentIndex} / {orderItemsLength})
+            ({currentIndex + 1} / {orderItemsLength})
           </span>
         </div>
         {loading ? (
