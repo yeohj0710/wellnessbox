@@ -303,6 +303,13 @@ export default function Rider() {
     );
   };
   if (loading) return <FullPageLoader />;
+  if (orders.length === 0) {
+    return (
+      <div className="flex justify-center items-center w-full max-w-[640px] mx-auto mt-8 mb-12 py-12 bg-white sm:shadow-md sm:rounded-lg">
+        <p className="text-gray-500">아직 들어온 주문이 없어요.</p>
+      </div>
+    );
+  }
   return (
     <div className="w-full mt-8 mb-12 flex flex-col gap-4">
       {orders.map((order: any, index: number) => (

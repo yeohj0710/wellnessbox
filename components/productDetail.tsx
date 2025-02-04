@@ -397,6 +397,7 @@ function FirstModal({
   onProductDetailClose,
 }: any) {
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const handleBackgroundClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onClose();
   };
@@ -453,13 +454,20 @@ function FirstModal({
             cart.push(cartItem);
             localStorage.setItem("cartItems", JSON.stringify(cart));
             onAddToCart(cartItem);
+            setIsSaving(true);
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+            setIsSaving(false);
             setIsAddressModalOpen(false);
             onClose();
             onProductDetailClose();
-            await new Promise((resolve) => setTimeout(resolve, 500));
             window.location.reload();
           }}
         />
+      )}
+      {isSaving && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+        </div>
       )}
     </>
   );
