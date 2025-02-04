@@ -117,6 +117,15 @@ export default function Cart({
   useEffect(() => {
     localStorage.setItem("selectedPharmacyId", selectedPharmacy?.id);
   }, [selectedPharmacy]);
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onBack();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onBack]);
   const deliveryFee = 3000;
   const totalPriceWithDelivery = totalPrice + deliveryFee;
   const handlePaymentRequest = async (

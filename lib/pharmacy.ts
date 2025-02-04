@@ -59,6 +59,7 @@ export async function getPharmaciesByProduct(cartItem: any) {
       id: true,
       name: true,
       address: true,
+      phone: true,
     },
   });
   return pharmacies;
