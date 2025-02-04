@@ -456,6 +456,7 @@ function FirstModal({
             setIsAddressModalOpen(false);
             onClose();
             onProductDetailClose();
+            await new Promise((resolve) => setTimeout(resolve, 500));
             window.location.reload();
           }}
         />
