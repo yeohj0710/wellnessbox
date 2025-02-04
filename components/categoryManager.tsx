@@ -25,6 +25,15 @@ export default function CategoryManager() {
     };
     fetchCategories();
   }, []);
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsCategoryModalOpen(false);
+      }
+    };
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, []);
   const handleFileUpload = async () => {
     if (!selectedFile) return null;
     setIsUploadingImage(true);
@@ -62,19 +71,21 @@ export default function CategoryManager() {
     }
   };
   const handleSubmit = async () => {
+    setIsSubmitting(true);
     const imageUrl = selectedFile ? await handleFileUpload() : null;
     const updatedCategory = {
       ...selectedCategory,
       image: imageUrl || selectedCategory?.image || null,
     };
-    if (selectedCategory?.idx) {
-      await updateCategory(selectedCategory.idx, updatedCategory);
+    if (selectedCategory?.id) {
+      await updateCategory(selectedCategory.id, updatedCategory);
     } else {
       await createCategory(updatedCategory);
     }
     const updatedCategories = await getCategories();
     setCategories(updatedCategories);
     setIsCategoryModalOpen(false);
+    setIsSubmitting(false);
   };
   if (isLoading) {
     return (
@@ -99,9 +110,10 @@ export default function CategoryManager() {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 p-3 sm:p-4">
         {categories.map((category, index) => (
           <div
-            key={`${category.idx}-${index}`}
+            key={`${category.id}-${index}`}
             className="px-[0.5px] sm:px-1 sm:pb-1 flex flex-col border rounded-md overflow-hidden shadow-sm hover:shadow-lg hover:scale-105 transition-transform duration-300 cursor-pointer bg-white"
             onClick={() => {
+              setSelectedFile(null);
               setSelectedCategory(category);
               setIsCategoryModalOpen(true);
             }}
@@ -175,12 +187,33 @@ export default function CategoryManager() {
                   className="hidden"
                 />
               </div>
-              {selectedCategory?.image && (
-                <img
-                  src={selectedCategory.image}
-                  alt="이미지 미리보기"
-                  className="mt-4 h-32 object-contain"
-                />
+              {(selectedFile || selectedCategory?.image) && (
+                <div className="relative mt-4 h-32">
+                  <img
+                    src={
+                      selectedFile
+                        ? URL.createObjectURL(selectedFile)
+                        : selectedCategory.image
+                    }
+                    alt="이미지 미리보기"
+                    className="h-32 object-contain w-full"
+                  />
+                  <button
+                    className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full p-1"
+                    onClick={() => {
+                      if (selectedFile) {
+                        setSelectedFile(null);
+                      } else {
+                        setSelectedCategory({
+                          ...selectedCategory,
+                          image: null,
+                        });
+                      }
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
               )}
             </div>
             <div className="flex justify-end gap-2">
@@ -189,7 +222,7 @@ export default function CategoryManager() {
                   className="px-3 py-1 bg-rose-400 text-white rounded hover:bg-rose-500"
                   onClick={async () => {
                     if (!confirm("정말로 삭제할까요?")) return;
-                    const result = await deleteCategory(selectedCategory.idx);
+                    const result = await deleteCategory(selectedCategory.id);
                     if (!result) {
                       alert(
                         "해당 카테고리에 포함된 상품을 먼저 삭제해야 합니다."
@@ -205,7 +238,7 @@ export default function CategoryManager() {
                 </button>
               )}
               <button
-                className={`w-14 h-8 bg-teal-400 hover:bg-teal-500 text-white rounded flex items-center justify-center ${
+                className={`w-14 h-8 bg-sky-400 hover:bg-sky-500 text-white rounded flex items-center justify-center ${
                   isUploadingImage || isSubmitting
                     ? "opacity-50 cursor-not-allowed"
                     : ""
@@ -215,7 +248,7 @@ export default function CategoryManager() {
               >
                 {isSubmitting ? (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : selectedCategory?.idx ? (
+                ) : selectedCategory?.id ? (
                   "수정"
                 ) : (
                   "등록"

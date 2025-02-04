@@ -38,6 +38,7 @@ export async function getPharmaciesIdName() {
       id: true,
       name: true,
     },
+    orderBy: { updatedAt: "desc" },
   });
 }
 

@@ -31,9 +31,7 @@ export async function getPharmacyProducts() {
         },
       },
     },
-    orderBy: {
-      updatedAt: "desc",
-    },
+    orderBy: { updatedAt: "desc" },
   });
 }
 
@@ -67,9 +65,7 @@ export async function getPharmacyProductsByPharmacy(pharmacyId: number) {
         },
       },
     },
-    orderBy: {
-      updatedAt: "desc",
-    },
+    orderBy: { updatedAt: "desc" },
   });
 }
 

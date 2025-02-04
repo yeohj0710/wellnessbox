@@ -26,6 +26,15 @@ export default function PharmacyProductManager({ pharmacyId }: any) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRefreshingProducts, setIsRefreshingProducts] = useState(false);
   useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsModalOpen(false);
+      }
+    };
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, []);
+  useEffect(() => {
     const fetchData = async () => {
       let pharmacyProducts;
       if (pharmacyId) {
@@ -316,7 +325,7 @@ export default function PharmacyProductManager({ pharmacyId }: any) {
                 </button>
               )}
               <button
-                className={`w-14 h-8 bg-teal-400 hover:bg-teal-500 text-white rounded flex items-center justify-center ${
+                className={`w-14 h-8 bg-sky-400 hover:bg-sky-500 text-white rounded flex items-center justify-center ${
                   isUploadingImage || isSubmitting
                     ? "opacity-50 cursor-not-allowed"
                     : ""

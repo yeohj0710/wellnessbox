@@ -29,6 +29,15 @@ export default function ProductManager() {
     };
     fetchData();
   }, []);
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsProductModalOpen(false);
+      }
+    };
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, []);
   const handleImageUpload = async () => {
     if (selectedFiles.length === 0) return [];
     const uploadedUrls: string[] = [];
@@ -113,6 +122,7 @@ export default function ProductManager() {
             key={`${product.id}-${index}`}
             className="px-[0.5px] sm:px-1 sm:pb-1 flex flex-col border rounded-md overflow-hidden shadow-sm hover:shadow-lg hover:scale-105 transition-transform duration-300 cursor-pointer bg-white"
             onClick={() => {
+              setSelectedFiles([]);
               setSelectedProduct(product);
               setIsProductModalOpen(true);
             }}
@@ -236,7 +246,10 @@ export default function ProductManager() {
                   accept="image/*"
                   multiple
                   onChange={(e) =>
-                    setSelectedFiles(Array.from(e.target.files || []))
+                    setSelectedFiles((prev) => [
+                      ...prev,
+                      ...Array.from(e.target.files || []),
+                    ])
                   }
                   className="hidden"
                 />
@@ -244,7 +257,7 @@ export default function ProductManager() {
               <div className="mt-2 flex flex-wrap gap-2">
                 {selectedProduct?.images?.map(
                   (image: string, index: number) => (
-                    <div key={index} className="relative">
+                    <div key={`saved-${index}`} className="relative">
                       <img
                         src={image}
                         alt={`이미지 ${index + 1}`}
@@ -267,6 +280,25 @@ export default function ProductManager() {
                     </div>
                   )
                 )}
+                {selectedFiles.map((file, index) => (
+                  <div key={`new-${index}`} className="relative">
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={`새 이미지 ${index + 1}`}
+                      className="w-16 h-16 object-cover rounded"
+                    />
+                    <button
+                      className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full p-1"
+                      onClick={() => {
+                        setSelectedFiles((prev) =>
+                          prev.filter((_, i) => i !== index)
+                        );
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
             <div className="flex justify-end gap-2">
@@ -290,7 +322,7 @@ export default function ProductManager() {
                 </button>
               )}
               <button
-                className={`w-14 h-8 bg-teal-400 hover:bg-teal-500 text-white rounded flex items-center justify-center ${
+                className={`w-14 h-8 bg-sky-400 hover:bg-sky-500 text-white rounded flex items-center justify-center ${
                   isUploadingImage || isSubmitting
                     ? "opacity-50 cursor-not-allowed"
                     : ""

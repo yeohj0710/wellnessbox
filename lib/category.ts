@@ -9,6 +9,7 @@ export async function getCategories() {
       name: true,
       image: true,
     },
+    orderBy: { updatedAt: "desc" },
   });
   return categories;
 }
@@ -37,17 +38,17 @@ export async function updateCategory(
   return updatedCategory;
 }
 
-export async function deleteCategory(categoryid: number) {
+export async function deleteCategory(categoryId: number) {
   const relatedProducts = await db.product_.findMany({
     where: {
       categories: {
-        some: { id: categoryid },
+        some: { id: categoryId },
       },
     },
   });
   if (relatedProducts.length > 0) return null;
   const deletedCategory = await db.category_.delete({
-    where: { id: categoryid },
+    where: { id: categoryId },
   });
   return deletedCategory;
 }

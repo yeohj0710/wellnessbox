@@ -76,6 +76,7 @@ export async function getProductsIdName() {
       id: true,
       name: true,
     },
+    orderBy: { updatedAt: "desc" },
   });
   return products;
 }
@@ -88,9 +89,7 @@ export async function getProductsForAdmin() {
       images: true,
       categories: true,
     },
-    orderBy: {
-      id: "asc",
-    },
+    orderBy: { updatedAt: "desc" },
   });
   return products;
 }
