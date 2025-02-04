@@ -288,8 +288,8 @@ export default function ProductDetail({
                   </div>
                 ))
               ) : (
-                <p className="text-gray-500 text-sm text-center mt-24">
-                  아직 리뷰가 없습니다. 상품을 구매하고 첫 번째 리뷰어가
+                <p className="text-gray-500 text-sm text-center mt-24 -mb-6">
+                  아직 리뷰가 없어요. 상품을 구매하고 첫 번째 리뷰어가
                   되어주세요!
                 </p>
               )}

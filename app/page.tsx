@@ -207,10 +207,8 @@ export default function Home() {
         );
       } else if (selectedPackage === "일반 상품") {
         filtered = filtered.filter((product: any) =>
-          product.pharmacyProducts.every(
-            (pharmacyProduct: any) =>
-              !pharmacyProduct.optionType?.includes("7일") &&
-              !pharmacyProduct.optionType?.includes("30일")
+          product.pharmacyProducts.some(
+            (pharmacyProduct: any) => pharmacyProduct.optionType === "일반 상품"
           )
         );
       }
