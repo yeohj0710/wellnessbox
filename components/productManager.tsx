@@ -7,6 +7,7 @@ import {
 } from "@/lib/product";
 import { getUploadUrl } from "@/lib/upload";
 import { getCategories } from "@/lib/category";
+import { ArrowPathIcon } from "@heroicons/react/24/outline";
 
 export default function ProductManager() {
   const [products, setProducts] = useState<any[]>([]);
@@ -15,6 +16,7 @@ export default function ProductManager() {
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isRefreshingCategories, setIsRefreshingCategories] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   useEffect(() => {
@@ -49,6 +51,12 @@ export default function ProductManager() {
     }
     setIsUploadingImage(false);
     return uploadedUrls;
+  };
+  const handleRefreshCategories = async () => {
+    setIsRefreshingCategories(true);
+    const refreshedCategories = await getCategories();
+    setCategories(refreshedCategories);
+    setIsRefreshingCategories(false);
   };
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -142,15 +150,15 @@ export default function ProductManager() {
             className="relative bg-white p-6 rounded shadow-md w-96"
             onClick={(e) => e.stopPropagation()}
           >
+            <h3 className="text-lg font-bold mb-6">
+              {selectedProduct?.id ? "상품 수정" : "새 상품 등록"}
+            </h3>
             <button
               className="absolute top-2 right-4 text-gray-600 hover:text-gray-900 text-2xl"
               onClick={() => setIsProductModalOpen(false)}
             >
               ×
             </button>
-            <h3 className="text-lg font-bold mb-6">
-              {selectedProduct?.id ? "상품 수정" : "새 상품 등록"}
-            </h3>
             <h3 className="font-bold text-gray-700 my-2">상품명</h3>
             <input
               type="text"
@@ -173,44 +181,66 @@ export default function ProductManager() {
               }
               className="border w-full p-2 mb-1"
             />
-            <div className="mb-4">
+            <div className="flex items-center justify-between">
               <h3 className="font-bold text-gray-700 my-2">카테고리 선택</h3>
-              <div className="flex flex-wrap gap-2">
-                {categories.map((category) => (
-                  <label key={category.id} className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedProduct?.categories?.some(
-                        (c: any) => c.id === category.id
-                      )}
-                      onChange={(e) => {
-                        const updatedCategories = e.target.checked
-                          ? [...(selectedProduct.categories || []), category]
-                          : selectedProduct.categories.filter(
-                              (c: any) => c.id !== category.id
-                            );
-                        setSelectedProduct({
-                          ...selectedProduct,
-                          categories: updatedCategories,
-                        });
-                      }}
-                    />
-                    <span>{category.name}</span>
-                  </label>
-                ))}
-              </div>
+              <button
+                onClick={handleRefreshCategories}
+                className="text-sm flex items-center gap-1 text-sky-400 hover:underline"
+              >
+                새로고침
+                <ArrowPathIcon
+                  className={`w-5 h-5 ${
+                    isRefreshingCategories ? "animate-spin" : ""
+                  }`}
+                />
+              </button>
             </div>
-            <div className="mb-4">
+            <div className="flex flex-wrap gap-2">
+              {categories.map((category) => (
+                <label key={category.id} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedProduct?.categories?.some(
+                      (c: any) => c.id === category.id
+                    )}
+                    onChange={(e) => {
+                      const updatedCategories = e.target.checked
+                        ? [...(selectedProduct.categories || []), category]
+                        : selectedProduct.categories.filter(
+                            (c: any) => c.id !== category.id
+                          );
+                      setSelectedProduct({
+                        ...selectedProduct,
+                        categories: updatedCategories,
+                      });
+                    }}
+                  />
+                  <span>{category.name}</span>
+                </label>
+              ))}
+            </div>
+            <div className="mb-4 mt-4">
               <h3 className="font-bold text-gray-700 my-2">상품 이미지</h3>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) =>
-                  setSelectedFiles(Array.from(e.target.files || []))
-                }
-                className="border w-full p-2"
-              />
+              <div className="flex items-center mt-1">
+                <button
+                  onClick={() =>
+                    document.getElementById("productImageUpload")?.click()
+                  }
+                  className="text-sm px-3 py-1 bg-sky-400 text-white rounded hover:bg-sky-500"
+                >
+                  이미지 추가하기
+                </button>
+                <input
+                  type="file"
+                  id="productImageUpload"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) =>
+                    setSelectedFiles(Array.from(e.target.files || []))
+                  }
+                  className="hidden"
+                />
+              </div>
               <div className="mt-2 flex flex-wrap gap-2">
                 {selectedProduct?.images?.map(
                   (image: string, index: number) => (
@@ -260,14 +290,16 @@ export default function ProductManager() {
                 </button>
               )}
               <button
-                className={`px-3 py-1 bg-teal-400 text-white rounded flex items-center justify-center ${
-                  isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+                className={`w-14 h-8 bg-teal-400 hover:bg-teal-500 text-white rounded flex items-center justify-center ${
+                  isUploadingImage || isSubmitting
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
                 }`}
                 onClick={handleSubmit}
-                disabled={isSubmitting}
+                disabled={isUploadingImage || isSubmitting}
               >
                 {isSubmitting ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : selectedProduct?.id ? (
                   "수정"
                 ) : (

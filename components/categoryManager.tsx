@@ -16,6 +16,7 @@ export default function CategoryManager() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   useEffect(() => {
     const fetchCategories = async () => {
       const fetchedCategories = await getCategories();
@@ -59,6 +60,21 @@ export default function CategoryManager() {
     } finally {
       setIsUploadingImage(false);
     }
+  };
+  const handleSubmit = async () => {
+    const imageUrl = selectedFile ? await handleFileUpload() : null;
+    const updatedCategory = {
+      ...selectedCategory,
+      image: imageUrl || selectedCategory?.image || null,
+    };
+    if (selectedCategory?.idx) {
+      await updateCategory(selectedCategory.idx, updatedCategory);
+    } else {
+      await createCategory(updatedCategory);
+    }
+    const updatedCategories = await getCategories();
+    setCategories(updatedCategories);
+    setIsCategoryModalOpen(false);
   };
   if (isLoading) {
     return (
@@ -115,12 +131,18 @@ export default function CategoryManager() {
           onClick={() => setIsCategoryModalOpen(false)}
         >
           <div
-            className="bg-white p-6 rounded shadow-md w-96"
+            className="relative bg-white p-6 rounded shadow-md w-96"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-bold mb-4">
               {selectedCategory ? "카테고리 수정" : "새 카테고리 등록"}
             </h3>
+            <button
+              className="absolute top-2 right-4 text-gray-600 hover:text-gray-900 text-2xl"
+              onClick={() => setIsCategoryModalOpen(false)}
+            >
+              ×
+            </button>
             <h3 className="font-bold text-gray-700 my-2">카테고리 이름</h3>
             <input
               type="text"
@@ -136,12 +158,23 @@ export default function CategoryManager() {
             />
             <div className="mb-4 flex flex-col">
               <h3 className="font-bold text-gray-700 my-2">카테고리 이미지</h3>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                className="border w-full p-2"
-              />
+              <div className="flex items-center mt-1">
+                <button
+                  onClick={() =>
+                    document.getElementById("categoryImageUpload")?.click()
+                  }
+                  className="text-sm px-3 py-1 bg-sky-400 text-white rounded hover:bg-sky-500"
+                >
+                  이미지 추가하기
+                </button>
+                <input
+                  type="file"
+                  id="categoryImageUpload"
+                  accept="image/*"
+                  onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                  className="hidden"
+                />
+              </div>
               {selectedCategory?.image && (
                 <img
                   src={selectedCategory.image}
@@ -172,32 +205,21 @@ export default function CategoryManager() {
                 </button>
               )}
               <button
-                className={`px-3 py-1 bg-teal-400 text-white rounded ${
-                  isUploadingImage
+                className={`w-14 h-8 bg-teal-400 hover:bg-teal-500 text-white rounded flex items-center justify-center ${
+                  isUploadingImage || isSubmitting
                     ? "opacity-50 cursor-not-allowed"
-                    : "hover:bg-teal-500"
+                    : ""
                 }`}
-                onClick={async () => {
-                  const imageUrl = selectedFile
-                    ? await handleFileUpload()
-                    : null;
-                  const updatedCategory = {
-                    ...selectedCategory,
-                    image: imageUrl || selectedCategory?.image || null,
-                  };
-
-                  if (selectedCategory?.idx) {
-                    await updateCategory(selectedCategory.idx, updatedCategory);
-                  } else {
-                    await createCategory(updatedCategory);
-                  }
-                  const updatedCategories = await getCategories();
-                  setCategories(updatedCategories);
-                  setIsCategoryModalOpen(false);
-                }}
-                disabled={isUploadingImage}
+                onClick={handleSubmit}
+                disabled={isUploadingImage || isSubmitting}
               >
-                {selectedCategory?.idx ? "수정" : "등록"}
+                {isSubmitting ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : selectedCategory?.idx ? (
+                  "수정"
+                ) : (
+                  "등록"
+                )}
               </button>
             </div>
           </div>

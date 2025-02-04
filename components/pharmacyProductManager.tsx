@@ -11,6 +11,7 @@ import {
 } from "@/lib/pharmacyProduct";
 import { getUploadUrl } from "@/lib/upload";
 import { getPharmaciesIdName } from "@/lib/pharmacy";
+import { ArrowPathIcon } from "@heroicons/react/24/outline";
 
 export default function PharmacyProductManager({ pharmacyId }: any) {
   const [pharmacyProducts, setPharmacyProducts] = useState<any[]>([]);
@@ -22,6 +23,8 @@ export default function PharmacyProductManager({ pharmacyId }: any) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRefreshingProducts, setIsRefreshingProducts] = useState(false);
   useEffect(() => {
     const fetchData = async () => {
       let pharmacyProducts;
@@ -63,6 +66,7 @@ export default function PharmacyProductManager({ pharmacyId }: any) {
     return uploadedUrls;
   };
   const handleSubmit = async () => {
+    setIsSubmitting(true);
     const imageUrls = [
       ...(selectedPharmacyProduct?.images || []),
       ...(await handleImageUpload()),
@@ -83,7 +87,14 @@ export default function PharmacyProductManager({ pharmacyId }: any) {
     );
     setSelectedPharmacyProduct(null);
     setSelectedFiles([]);
+    setIsSubmitting(false);
     setIsModalOpen(false);
+  };
+  const handleRefreshProducts = async () => {
+    setIsRefreshingProducts(true);
+    const refreshedProducts = await getProductsIdName();
+    setProducts(refreshedProducts);
+    setIsRefreshingProducts(false);
   };
   if (isLoading) {
     return (
@@ -99,7 +110,7 @@ export default function PharmacyProductManager({ pharmacyId }: any) {
           className="px-3 py-1 bg-sky-400 text-white rounded hover:bg-sky-500"
           onClick={() => {
             setSelectedPharmacyProduct({
-              optionType: "",
+              optionType: "일반 상품",
               price: 0,
               stock: 0,
               pharmacyId: pharmacyId || null,
@@ -200,30 +211,41 @@ export default function PharmacyProductManager({ pharmacyId }: any) {
                 </select>
               </div>
             )}
-            <div className="mb-4">
-              <h3 className="font-bold text-gray-700 my-2">상품 선택</h3>
-              <select
-                className="border w-full p-2"
-                value={selectedPharmacyProduct?.productId || ""}
-                onChange={(e) =>
-                  setSelectedPharmacyProduct({
-                    ...selectedPharmacyProduct,
-                    productId: parseInt(e.target.value, 10) || null,
-                  })
-                }
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-bold text-gray-700">상품 선택</h3>
+              <button
+                onClick={handleRefreshProducts}
+                className="text-sm flex items-center gap-1 text-sky-400 hover:underline"
               >
-                <option value="">선택하세요</option>
-                {products.map((product) => (
-                  <option key={product.id} value={product.id}>
-                    {product.name}
-                  </option>
-                ))}
-              </select>
+                새로고침
+                <ArrowPathIcon
+                  className={`w-5 h-5 ${
+                    isRefreshingProducts ? "animate-spin" : ""
+                  }`}
+                />
+              </button>
             </div>
+            <select
+              className="border w-full p-2 mb-2"
+              value={selectedPharmacyProduct?.productId || ""}
+              onChange={(e) =>
+                setSelectedPharmacyProduct({
+                  ...selectedPharmacyProduct,
+                  productId: parseInt(e.target.value, 10) || null,
+                })
+              }
+            >
+              <option value="">선택하세요</option>
+              {products.map((product) => (
+                <option key={product.id} value={product.id}>
+                  {product.name}
+                </option>
+              ))}
+            </select>
             <h3 className="font-bold text-gray-700 my-2">소분 분량 선택</h3>
             <select
               className="border w-full p-2 mb-2"
-              value={selectedPharmacyProduct?.optionType || "일반 상품"}
+              value={selectedPharmacyProduct?.optionType ?? "일반 상품"}
               onChange={(e) =>
                 setSelectedPharmacyProduct({
                   ...selectedPharmacyProduct,
@@ -294,13 +316,21 @@ export default function PharmacyProductManager({ pharmacyId }: any) {
                 </button>
               )}
               <button
-                className={`px-3 py-1 bg-teal-400 text-white rounded ${
-                  isUploadingImage ? "opacity-50 cursor-not-allowed" : ""
+                className={`w-14 h-8 bg-teal-400 hover:bg-teal-500 text-white rounded flex items-center justify-center ${
+                  isUploadingImage || isSubmitting
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
                 }`}
                 onClick={handleSubmit}
-                disabled={isUploadingImage}
+                disabled={isUploadingImage || isSubmitting}
               >
-                {selectedPharmacyProduct?.id ? "수정" : "등록"}
+                {isSubmitting ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : selectedPharmacyProduct?.id ? (
+                  "수정"
+                ) : (
+                  "등록"
+                )}
               </button>
             </div>
           </div>

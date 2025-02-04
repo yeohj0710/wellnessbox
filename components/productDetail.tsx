@@ -226,7 +226,7 @@ export default function ProductDetail({
               <FullPageLoader />
             </div>
           ) : (
-            <div className="mt-16">
+            <div className="mt-16 mb-36">
               <h2 className="text-lg font-bold mb-2">
                 상품 리뷰 ({totalReviewCount}개)
               </h2>
@@ -288,7 +288,7 @@ export default function ProductDetail({
                   </div>
                 ))
               ) : (
-                <p className="text-gray-500 text-sm">
+                <p className="text-gray-500 text-sm text-center mt-24">
                   아직 리뷰가 없습니다. 상품을 구매하고 첫 번째 리뷰어가
                   되어주세요!
                 </p>
