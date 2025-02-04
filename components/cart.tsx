@@ -237,7 +237,9 @@ export default function Cart({
                   <button
                     onClick={() => {
                       const updatedItems = cartItems.map((i: any) =>
-                        i.id === item.id && i.quantity > 1
+                        i.productId === item.productId &&
+                        i.optionType === item.optionType &&
+                        i.quantity > 1
                           ? { ...i, quantity: i.quantity - 1 }
                           : i
                       );
@@ -259,7 +261,8 @@ export default function Cart({
                         item.quantity < pharmacyProduct.stock
                       ) {
                         const updatedItems = cartItems.map((i: any) =>
-                          i.id === item.id
+                          i.productId === item.productId &&
+                          i.optionType === item.optionType
                             ? { ...i, quantity: i.quantity + 1 }
                             : i
                         );
@@ -281,7 +284,11 @@ export default function Cart({
                   <button
                     onClick={() => {
                       const updatedItems = cartItems.filter(
-                        (i: any) => i.id !== item.id
+                        (i: any) =>
+                          !(
+                            i.productId === item.productId &&
+                            i.optionType === item.optionType
+                          )
                       );
                       onUpdateCart(updatedItems);
                       localStorage.setItem(
