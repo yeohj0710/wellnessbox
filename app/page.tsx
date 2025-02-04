@@ -37,7 +37,10 @@ export default function Home() {
     const timestampKey = "cartTimestamp";
     const now = Date.now();
     const storedTimestamp = localStorage.getItem(timestampKey);
-    if (!storedTimestamp || now - parseInt(storedTimestamp, 10) > 60 * 1000) {
+    if (
+      !storedTimestamp ||
+      now - parseInt(storedTimestamp, 10) > 7 * 24 * 60 * 60 * 1000
+    ) {
       localStorage.clear();
       localStorage.setItem(timestampKey, now.toString());
       setCartItems([]);
@@ -58,7 +61,7 @@ export default function Home() {
         cachedCategories &&
         cachedProducts &&
         cacheTimestamp &&
-        now - parseInt(cacheTimestamp, 10) < 7 * 24 * 60 * 60 * 1000
+        now - parseInt(cacheTimestamp, 10) < 60 * 1000
       ) {
         setCategories(JSON.parse(cachedCategories));
         setAllProducts(JSON.parse(cachedProducts));
@@ -274,7 +277,7 @@ export default function Home() {
           {pharmacies.map((pharmacy: any) => (
             <div
               key={pharmacy.id}
-              className={`flex flex-col items-center justify-center min-w-[120px] max-w-none flex-grow p-2 mb-2 border rounded-lg shadow-sm cursor-pointer 
+              className={`flex flex-col items-center justify-center min-w-[120px] max-w-[120px] flex-grow p-2 mb-2 border rounded-lg shadow-sm cursor-pointer 
             hover:bg-gray-100 transition 
             ${selectedPharmacy?.id === pharmacy.id ? "bg-gray-100" : ""}`}
               onClick={() => {
