@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 export default function Terms() {
   return (
     <div className="w-full max-w-[640px] mt-8 mb-12 px-8 py-10 bg-white sm:shadow-md sm:rounded-lg">
@@ -94,7 +96,11 @@ export default function Terms() {
           교환해 드립니다.
           <br />
           2. 제품의 하자 또는 오배송으로 인한 환불 요청은 제품 수령 후 7일
-          이내에 고객센터를 통해 접수해야 합니다.
+          이내에 회사의{" "}
+          <Link href="/about/contact" className="text-blue-600 hover:underline">
+            문의 연락처
+          </Link>
+          를 통해 접수해야 합니다.
           <br />
           3. 단순 변심에 의한 환불 요청은 식품위생법에 따라 불가능합니다.
           <br />
