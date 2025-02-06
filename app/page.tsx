@@ -6,10 +6,16 @@ import Cart from "@/components/cart";
 import { getProducts } from "@/lib/product";
 import { useFooter } from "@/components/footerContext";
 import axios from "axios";
-import AddressModal from "@/components/addressModal";
 import { getCategories } from "@/lib/category";
-import { formatPriceRange, getLowestAverageOptionType } from "@/lib/utils";
-import StarRating from "@/components/starRating";
+import { getLowestAverageOptionType } from "@/lib/utils";
+
+import AddressSection from "./(components)/addressSection";
+import PharmacySelector from "./(components)/pharmacySelector";
+import CategoryFilter from "./(components)/categoryFilter";
+import PackageFilter from "./(components)/packageFilter";
+import ProductGrid from "./(components)/productGrid";
+import FooterCartBar from "./(components)/footerCartBar";
+import SearchModal from "./(components)/searchModal";
 
 export default function Home() {
   const { hideFooter, showFooter } = useFooter();
@@ -19,19 +25,30 @@ export default function Home() {
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [allProducts, setAllProducts] = useState<any[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<number[]>([]);
   const [selectedPackage, setSelectedPackage] = useState<string>("전체");
   const [totalPrice, setTotalPrice] = useState(0);
   const [roadAddress, setRoadAddress] = useState("");
   const [pharmacies, setPharmacies] = useState<any[]>([]);
   const [selectedPharmacy, setSelectedPharmacy] = useState<any>(null);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [searchKeywords, setSearchKeywords] = useState<string[]>([]);
   const [cartItems, setCartItems] = useState<any[]>(() => {
     if (typeof window !== "undefined") {
       const storedCart = localStorage.getItem("cartItems");
       return storedCart ? JSON.parse(storedCart) : [];
     }
     return [];
+  });
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  const [isSearchModalVisible, setIsSearchModalVisible] = useState(() => {
+    if (typeof window !== "undefined") {
+      // return localStorage.getItem("visited") ? false : true;
+    }
+    return true;
   });
   useEffect(() => {
     const timestampKey = "cartTimestamp";
@@ -201,10 +218,10 @@ export default function Home() {
           )
         );
       }
-      if (selectedCategory) {
+      if (selectedCategory.length > 0) {
         filtered = filtered.filter((product) =>
-          product.categories.some(
-            (category: any) => category.id === selectedCategory
+          product.categories.some((category: any) =>
+            selectedCategory.includes(category.id)
           )
         );
       }
@@ -238,6 +255,12 @@ export default function Home() {
       showFooter();
     }
   }, [totalPrice, isCartVisible, hideFooter, showFooter]);
+  useEffect(() => {
+    if (cartItems.length > 0) {
+      setSearchKeywords([]);
+      setSelectedCategory([]);
+    }
+  }, [cartItems]);
   const handleAddToCart = (cartItem: any) => {
     setCartItems((prev) => {
       const existingItem = prev.find(
@@ -255,153 +278,87 @@ export default function Home() {
       return [...prev, cartItem];
     });
   };
+  const searchCategoryMapping: { [key: string]: string[] } = {
+    피로감: ["비타민C", "비타민D"],
+    "눈 건강": ["루테인"],
+    "피부 건강": ["비타민A"],
+    체지방: ["오메가3"],
+    "혈관 & 혈액순환": ["칼슘", "마그네슘"],
+    "간 건강": ["밀크씨슬"],
+    "장 건강": ["프로바이오틱스(유산균)"],
+    "스트레스 & 수면": ["비타민D"],
+    "면역 기능": ["비타민C"],
+    "혈중 콜레스테롤": ["오메가3"],
+  };
+  const handleSearchSelect = (selectedItems: string[]) => {
+    const mappedCategoryNames = selectedItems.reduce<string[]>((acc, item) => {
+      const cats = searchCategoryMapping[item] || [];
+      return [...acc, ...cats];
+    }, []);
+    const matchedCategories = categories.filter((cat: any) =>
+      mappedCategoryNames.includes(cat.name)
+    );
+    if (matchedCategories.length > 0) {
+      setSelectedCategory(matchedCategories.map((cat: any) => cat.id));
+      setSearchKeywords(selectedItems);
+    }
+    setIsSearchModalVisible(false);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("visited", "true");
+    }
+  };
   return (
     <div
       className={`w-full max-w-[640px] mx-auto mt-4 ${
         totalPrice > 0 ? "pb-20" : ""
       }`}
     >
-      {roadAddress && (
-        <div className="bg-gray-100 px-4 gap-3 py-4 mx-3 sm:mx-2 mb-4 rounded-md flex items-center justify-between text-sm text-gray-700 shadow-sm">
-          <div>
-            <p className="font-semibold text-gray-800">현재 주소</p>
-            <p className="text-gray-600 mt-1">{roadAddress}</p>
-          </div>
-          <button
-            onClick={() => setIsAddressModalOpen(true)}
-            className="text-sm min-w-12 font-normal px-1.5 sm:px-3 py-1 bg-sky-400 text-white rounded hover:bg-sky-500 transition duration-200"
-          >
-            수정
-          </button>
-        </div>
-      )}
-      {isAddressModalOpen && (
-        <AddressModal
-          onClose={() => setIsAddressModalOpen(false)}
-          onSave={(roadAddress: string, detailAddress: string) => {
-            setRoadAddress(roadAddress);
-            localStorage.setItem("roadAddress", roadAddress);
-            localStorage.setItem("detailAddress", detailAddress);
-          }}
+      {mounted &&
+        isSearchModalVisible &&
+        cartItems.length === 0 &&
+        !isCartVisible && (
+          <SearchModal
+            onSelect={handleSearchSelect}
+            onClose={() => setIsSearchModalVisible(false)}
+          />
+        )}
+      <AddressSection
+        roadAddress={roadAddress}
+        setRoadAddress={setRoadAddress}
+        isAddressModalOpen={isAddressModalOpen}
+        setIsAddressModalOpen={setIsAddressModalOpen}
+      />
+      {cartItems.length > 0 && pharmacies.length > 0 && (
+        <PharmacySelector
+          pharmacies={pharmacies}
+          selectedPharmacy={selectedPharmacy}
+          setSelectedPharmacy={setSelectedPharmacy}
         />
       )}
-      {cartItems.length > 0 && pharmacies.length > 0 && (
-        <div className="flex gap-2 px-2 mx-1 sm:mx-0 mb-3 -mt-1 overflow-x-auto scrollbar-hide">
-          {pharmacies.map((pharmacy: any) => (
-            <div
-              key={pharmacy.id}
-              className={`flex flex-col items-center justify-center min-w-[120px] max-w-[120px] flex-grow p-2 mb-2 border rounded-lg shadow-sm cursor-pointer 
-            hover:bg-gray-100 transition 
-            ${selectedPharmacy?.id === pharmacy.id ? "bg-gray-100" : ""}`}
-              onClick={() => {
-                setSelectedPharmacy(pharmacy);
-              }}
-            >
-              <h4 className="text-sm font-medium text-gray-700 text-center whitespace-nowrap overflow-hidden text-ellipsis">
-                {pharmacy.name}
-              </h4>
-              <p className="text-xs text-gray-500 text-center">
-                {pharmacy.distance?.toFixed(1)} km
-              </p>
-            </div>
-          ))}
+      <CategoryFilter
+        categories={categories}
+        selectedCategory={
+          selectedCategory.length === 1 ? selectedCategory[0] : null
+        }
+        setSelectedCategory={(catId: number | null) =>
+          setSelectedCategory(catId ? [catId] : [])
+        }
+        setSelectedPackage={setSelectedPackage}
+        isLoading={isLoading}
+        setIsLoading={setIsLoading}
+      />
+      <PackageFilter
+        selectedPackage={selectedPackage}
+        setSelectedPackage={setSelectedPackage}
+        setIsLoading={setIsLoading}
+      />
+      {searchKeywords.length > 0 && cartItems.length === 0 && (
+        <div className="mx-2 sm:mx-0 bg-gray-100 px-3 py-2 mt-1.5 mb-4 rounded-md text-sm text-gray-700">
+          선택하신{" "}
+          <strong className="text-sky-500">{searchKeywords.join(", ")}</strong>{" "}
+          관련 기능을 개선시켜주는 상품들이에요.
         </div>
       )}
-      <section
-        className="flex gap-4 px-4 mt-1 pb-3 overflow-x-auto"
-        style={{
-          WebkitOverflowScrolling: "touch",
-        }}
-      >
-        <style jsx>{`
-          ::-webkit-scrollbar {
-            height: 8px;
-          }
-          ::-webkit-scrollbar-thumb {
-            background: rgba(0, 0, 0, 0.15);
-            border-radius: 4px;
-          }
-          ::-webkit-scrollbar-track {
-            background: transparent;
-          }
-        `}</style>
-        {isLoading ? (
-          Array(12)
-            .fill(0)
-            .map((_, index) => (
-              <div key={index} className="flex flex-col items-center">
-                <div className="w-12 h-12 rounded-full bg-gray-300 animate-pulse"></div>
-                <div className="w-10 h-4 bg-gray-300 mt-2 rounded-md animate-pulse"></div>
-              </div>
-            ))
-        ) : (
-          <div className="flex flex-nowrap items-start gap-5 w-full max-w-[640px]">
-            <div
-              className={`flex flex-col items-center w-12 shrink-0 cursor-pointer hover:text-gray-700 ${
-                selectedCategory === null ? "font-bold" : ""
-              }`}
-              onClick={() => {
-                setIsLoading(true);
-                setSelectedCategory(null);
-                setSelectedPackage("전체");
-                setIsLoading(false);
-              }}
-            >
-              <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
-                <span className="text-sm font-bold">전체</span>
-              </div>
-              <span className="text-xs mt-1 text-center break-words">전체</span>
-            </div>
-            {categories.map((category) => (
-              <div
-                key={category.id}
-                className={`flex flex-col items-center w-12 shrink-0 cursor-pointer hover:text-gray-700 ${
-                  selectedCategory === category.id ? "font-bold" : ""
-                }`}
-                onClick={() => {
-                  setIsLoading(true);
-                  setSelectedCategory(category.id);
-                  setIsLoading(false);
-                }}
-              >
-                {category.image ? (
-                  <img
-                    src={category.image?.replace("/public", "/avatar")}
-                    alt={category.name || "Category"}
-                    className="w-12 h-12 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-gray-300"></div>
-                )}
-                <span className="text-xs mt-1 text-center break-words">
-                  {category.name || "카테고리"}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-      <section className="px-4 py-3 bg-gray-100 overflow-x-auto scrollbar-hide">
-        <div className="flex flex-nowrap items-center gap-2 w-max">
-          {["전체", "7일 패키지", "30일 패키지", "일반 상품"].map((pkg) => (
-            <button
-              key={pkg}
-              className={`px-4 py-2 border rounded-full text-sm transition-transform duration-300 ${
-                selectedPackage === pkg
-                  ? "bg-gray-200 font-bold shadow-sm"
-                  : "bg-white hover:bg-gray-100"
-              }`}
-              onClick={() => {
-                setIsLoading(true);
-                setSelectedPackage(pkg);
-                setIsLoading(false);
-              }}
-            >
-              {pkg}
-            </button>
-          ))}
-        </div>
-      </section>
       {cartItems.length > 0 && selectedPharmacy && (
         <div className="mx-2 sm:mx-0 bg-gray-100 px-3 py-2 mt-1.5 mb-4 rounded-md text-sm text-gray-700">
           선택하신 상품을 보유한 약국 중 주소로부터{" "}
@@ -413,84 +370,13 @@ export default function Home() {
           상품들이에요.
         </div>
       )}
-      <section className="mb-4 grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 p-3 sm:p-4">
-        {isLoading
-          ? Array(12)
-              .fill(0)
-              .map((_, index) => <Skeleton key={index} />)
-          : products.map((product, index) => (
-              <div
-                key={`${product.id}-${index}`}
-                className="px-[0.5px] sm:px-1 sm:pb-1 flex flex-col border rounded-md overflow-hidden shadow-sm hover:shadow-lg hover:scale-105 transition-transform duration-300 cursor-pointer bg-white"
-                onClick={() => setSelectedProduct(product)}
-              >
-                {product.images[0] ? (
-                  <img
-                    src={product.images[0]}
-                    alt={product.name}
-                    className="h-32 w-full object-contain bg-white"
-                  />
-                ) : (
-                  <div className="h-28 bg-gray-200 flex items-center justify-center text-gray-500">
-                    이미지 없음
-                  </div>
-                )}
-                <div className="p-2 flex flex-col gap-1 flex-grow">
-                  <span className="text-xs text-gray-500">
-                    {product.categories
-                      .map((category: any) => category.name)
-                      .join(", ")}
-                  </span>
-                  <span className="text-sm font-bold text-gray-800 line-clamp-2">
-                    {product.name}
-                  </span>
-                  <span className="">
-                    <span className="text-xs text-sky-500">
-                      {selectedPackage === "전체"
-                        ? getLowestAverageOptionType({
-                            product,
-                            pharmacy: selectedPharmacy,
-                          })
-                        : selectedPackage}{" "}
-                      기준
-                    </span>{" "}
-                    {selectedPackage && selectedPharmacy && (
-                      <span className="text-xs text-gray-400">
-                        {product.pharmacyProducts.find(
-                          (pharmacyProduct: any) =>
-                            pharmacyProduct.optionType === selectedPackage &&
-                            pharmacyProduct.pharmacyId === selectedPharmacy.id
-                        )?.capacity
-                          ? `(${
-                              product.pharmacyProducts.find(
-                                (pharmacyProduct: any) =>
-                                  pharmacyProduct.optionType ===
-                                    selectedPackage &&
-                                  pharmacyProduct.pharmacyId ===
-                                    selectedPharmacy.id
-                              )?.capacity
-                            })`
-                          : ""}
-                      </span>
-                    )}
-                  </span>
-                  <span className="-mt-1 backdrop:file:text-sm font-bold text-sky-500">
-                    {formatPriceRange({
-                      product,
-                      optionType: selectedPackage,
-                      pharmacy: selectedPharmacy,
-                    })}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <StarRating rating={product.rating} size={18} />
-                    <span className="text-xs text-gray-500 mt-1">
-                      ({product.reviewCount})
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-      </section>
+      <ProductGrid
+        isLoading={isLoading}
+        products={products}
+        selectedPackage={selectedPackage}
+        selectedPharmacy={selectedPharmacy}
+        setSelectedProduct={setSelectedProduct}
+      />
       {products.length === 0 && !isLoading && (
         <div className="min-h-[30vh] mb-12 flex flex-col items-center justify-center py-10">
           <p className="text-gray-500 text-sm mb-3">
@@ -502,15 +388,10 @@ export default function Home() {
         </div>
       )}
       {totalPrice > 0 && selectedPharmacy && (
-        <div className="px-5 fixed bottom-0 left-0 right-0 w-full max-w-[640px] mx-auto bg-sky-400 text-white p-4 flex justify-between items-center text-lg font-bold">
-          <span>{totalPrice.toLocaleString()}원</span>
-          <button
-            className="bg-white text-sky-400 hover:bg-sky-100 transition px-6 py-2 rounded-full font-semibold"
-            onClick={() => setIsCartVisible(true)}
-          >
-            장바구니 보기
-          </button>
-        </div>
+        <FooterCartBar
+          totalPrice={totalPrice}
+          setIsCartVisible={setIsCartVisible}
+        />
       )}
       {selectedProduct && (
         <ProductDetail
@@ -554,13 +435,3 @@ export default function Home() {
     </div>
   );
 }
-
-const Skeleton = () => (
-  <div className="flex flex-col border rounded-lg overflow-hidden shadow-sm cursor-pointer">
-    <div className="h-32 bg-gray-300 animate-pulse"></div>
-    <div className="p-2">
-      <div className="w-2/3 h-4 bg-gray-300 rounded-md animate-pulse mb-2"></div>
-      <div className="w-1/2 h-4 bg-gray-300 rounded-md animate-pulse"></div>
-    </div>
-  </div>
-);
