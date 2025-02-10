@@ -70,7 +70,7 @@ export default function SearchModal({ onSelect, onClose }: SearchModalProps) {
       onClick={onClose}
     >
       <div
-        className="relative bg-white rounded-lg px-6 py-8 max-w-lg w-full"
+        className="mx-2 relative bg-white rounded-lg px-6 pt-8 pb-6 max-w-lg w-full"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -82,21 +82,20 @@ export default function SearchModal({ onSelect, onClose }: SearchModalProps) {
         <h2 className="text-2xl font-bold mb-6 text-center">
           어떤 영양제를 찾으세요?
         </h2>
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
           {searchItems.map((item, index) => {
             const Icon = searchIcons[index];
             return (
               <button
                 key={item}
                 onClick={() => toggleSelection(item)}
-                className={`flex flex-col items-center justify-center border rounded-lg p-2 
-            ${
-              selectedItems.includes(item)
-                ? "bg-sky-100 border-sky-500"
-                : "border-gray-300"
-            }
-            hover:bg-sky-50`}
-                style={{ aspectRatio: "1" }}
+                className={`flex flex-col items-center justify-center border rounded-lg px-2 aspect-square
+                  ${
+                    selectedItems.includes(item)
+                      ? "bg-sky-100 border-sky-500"
+                      : "border-gray-300"
+                  }
+                hover:bg-sky-50`}
               >
                 <Icon className="w-6 h-6 mb-1 text-sky-500" />
                 <span className="text-sm text-center">{item}</span>
@@ -106,7 +105,7 @@ export default function SearchModal({ onSelect, onClose }: SearchModalProps) {
         </div>
         <div className="mt-6 flex justify-end">
           <button
-            className="px-4 py-1.5 bg-sky-400 hover:bg-sky-500 text-white rounded disabled:opacity-50"
+            className="px-3 py-1 bg-sky-400 hover:bg-sky-500 text-white rounded disabled:opacity-50"
             onClick={() => selectedItems.length && onSelect(selectedItems)}
             disabled={selectedItems.length === 0}
           >

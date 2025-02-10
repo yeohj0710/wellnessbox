@@ -16,6 +16,7 @@ import PackageFilter from "./(components)/packageFilter";
 import ProductGrid from "./(components)/productGrid";
 import FooterCartBar from "./(components)/footerCartBar";
 import SearchModal from "./(components)/searchModal";
+import SymptomFilter from "./(components)/symptomFilter";
 
 export default function Home() {
   const { hideFooter, showFooter } = useFooter();
@@ -261,6 +262,20 @@ export default function Home() {
       setSelectedCategory([]);
     }
   }, [cartItems]);
+  useEffect(() => {
+    const mappedCategoryNames = searchKeywords.reduce<string[]>((acc, item) => {
+      const cats = searchCategoryMapping[item] || [];
+      return [...acc, ...cats];
+    }, []);
+    const matchedCategories = categories.filter((cat: any) =>
+      mappedCategoryNames.includes(cat.name)
+    );
+    if (matchedCategories.length > 0) {
+      setSelectedCategory(matchedCategories.map((cat: any) => cat.id));
+    } else {
+      setSelectedCategory([]);
+    }
+  }, [searchKeywords, categories]);
   const handleAddToCart = (cartItem: any) => {
     setCartItems((prev) => {
       const existingItem = prev.find(
@@ -291,17 +306,7 @@ export default function Home() {
     "혈중 콜레스테롤": ["오메가3"],
   };
   const handleSearchSelect = (selectedItems: string[]) => {
-    const mappedCategoryNames = selectedItems.reduce<string[]>((acc, item) => {
-      const cats = searchCategoryMapping[item] || [];
-      return [...acc, ...cats];
-    }, []);
-    const matchedCategories = categories.filter((cat: any) =>
-      mappedCategoryNames.includes(cat.name)
-    );
-    if (matchedCategories.length > 0) {
-      setSelectedCategory(matchedCategories.map((cat: any) => cat.id));
-      setSearchKeywords(selectedItems);
-    }
+    setSearchKeywords(selectedItems);
     setIsSearchModalVisible(false);
     if (typeof window !== "undefined") {
       localStorage.setItem("visited", "true");
@@ -335,6 +340,10 @@ export default function Home() {
           setSelectedPharmacy={setSelectedPharmacy}
         />
       )}
+      <SymptomFilter
+        selectedSymptoms={searchKeywords}
+        onChange={setSearchKeywords}
+      />
       <CategoryFilter
         categories={categories}
         selectedCategory={
@@ -352,13 +361,6 @@ export default function Home() {
         setSelectedPackage={setSelectedPackage}
         setIsLoading={setIsLoading}
       />
-      {searchKeywords.length > 0 && cartItems.length === 0 && (
-        <div className="mx-2 sm:mx-0 bg-gray-100 px-3 py-2 mt-1.5 mb-4 rounded-md text-sm text-gray-700">
-          선택하신{" "}
-          <strong className="text-sky-500">{searchKeywords.join(", ")}</strong>{" "}
-          관련 기능을 개선시켜주는 상품들이에요.
-        </div>
-      )}
       {cartItems.length > 0 && selectedPharmacy && (
         <div className="mx-2 sm:mx-0 bg-gray-100 px-3 py-2 mt-1.5 mb-4 rounded-md text-sm text-gray-700">
           선택하신 상품을 보유한 약국 중 주소로부터{" "}
