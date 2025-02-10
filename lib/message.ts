@@ -10,7 +10,7 @@ export async function createMessage(data: {
   if (!data.orderId || !data.content) {
     throw new Error("orderId와 content가 입력되지 않았습니다.");
   }
-  return await db.message_.create({
+  return await db.message.create({
     data: {
       orderId: data.orderId,
       content: data.content,
@@ -21,7 +21,7 @@ export async function createMessage(data: {
 }
 
 export async function getMessagesByOrder(orderId: number) {
-  return await db.message_.findMany({
+  return await db.message.findMany({
     where: { orderId },
     orderBy: {
       timestamp: "asc",
@@ -30,7 +30,7 @@ export async function getMessagesByOrder(orderId: number) {
 }
 
 export async function deleteMessage(messageId: number) {
-  return await db.message_.delete({
+  return await db.message.delete({
     where: { id: messageId },
   });
 }

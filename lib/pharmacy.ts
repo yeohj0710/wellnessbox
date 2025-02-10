@@ -4,7 +4,7 @@ import getSession from "./session";
 import db from "@/lib/db";
 
 export async function pharmacyLogin(userId: string, password: string) {
-  const pharmacy = await db.pharmacy_.findFirst({
+  const pharmacy = await db.pharmacy.findFirst({
     where: { userId },
   });
   if (!pharmacy || pharmacy.password !== password) {
@@ -25,7 +25,7 @@ export async function pharmacyLogin(userId: string, password: string) {
 export async function getPharmacy() {
   const session = await getSession();
   if (!session.id) return null;
-  return await db.pharmacy_.findUnique({
+  return await db.pharmacy.findUnique({
     where: {
       id: session.id,
     },
@@ -33,7 +33,7 @@ export async function getPharmacy() {
 }
 
 export async function getPharmaciesIdName() {
-  return await db.pharmacy_.findMany({
+  return await db.pharmacy.findMany({
     select: {
       id: true,
       name: true,
@@ -43,7 +43,7 @@ export async function getPharmaciesIdName() {
 }
 
 export async function getPharmaciesByProduct(cartItem: any) {
-  const pharmacies = await db.pharmacy_.findMany({
+  const pharmacies = await db.pharmacy.findMany({
     where: {
       pharmacyProducts: {
         some: {

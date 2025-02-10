@@ -3,7 +3,7 @@
 import db from "@/lib/db";
 
 export async function getPharmacyProducts() {
-  return await db.pharmacyProduct_.findMany({
+  return await db.pharmacyProduct.findMany({
     select: {
       id: true,
       optionType: true,
@@ -36,7 +36,7 @@ export async function getPharmacyProducts() {
 }
 
 export async function getPharmacyProductsByPharmacy(pharmacyId: number) {
-  return await db.pharmacyProduct_.findMany({
+  return await db.pharmacyProduct.findMany({
     where: { pharmacyId },
     select: {
       id: true,
@@ -73,7 +73,7 @@ export async function getPharmacyProduct(
   productId: number,
   optionType: string
 ) {
-  return await db.pharmacyProduct_.findFirst({
+  return await db.pharmacyProduct.findFirst({
     where: {
       productId,
       optionType,
@@ -110,7 +110,7 @@ export async function createPharmacyProduct(data: {
   pharmacyId: number;
   productId: number;
 }) {
-  return await db.pharmacyProduct_.create({
+  return await db.pharmacyProduct.create({
     data: {
       optionType: data.optionType || null,
       capacity: data.capacity || null,
@@ -134,7 +134,7 @@ export async function reducePharmacyProductStock(
   pharmacyProductId: number,
   quantity: number
 ) {
-  return await db.pharmacyProduct_.update({
+  return await db.pharmacyProduct.update({
     where: { id: pharmacyProductId },
     data: {
       stock: { decrement: quantity },
@@ -153,7 +153,7 @@ export async function updatePharmacyProduct(
     productId?: number;
   }
 ) {
-  return await db.pharmacyProduct_.update({
+  return await db.pharmacyProduct.update({
     where: { id },
     data: {
       optionType: data.optionType ?? undefined,
@@ -175,7 +175,7 @@ export async function updatePharmacyProduct(
 }
 
 export async function deletePharmacyProduct(id: number) {
-  return await db.pharmacyProduct_.delete({
+  return await db.pharmacyProduct.delete({
     where: { id },
   });
 }

@@ -14,7 +14,7 @@ export default function PackageFilter({
   setIsLoading,
 }: PackageFilterProps) {
   return (
-    <section className="px-4 py-3 bg-gray-100 overflow-x-auto scrollbar-hide">
+    <section className="px-4 py-2 bg-gray-100 overflow-x-auto scrollbar-hide">
       <div className="flex flex-nowrap items-center gap-2 w-max">
         {packages.map((pkg) => (
           <button

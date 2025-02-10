@@ -3,7 +3,7 @@
 import db from "@/lib/db";
 
 export async function getProducts() {
-  const products = await db.product_.findMany({
+  const products = await db.product.findMany({
     where: {
       pharmacyProducts: {
         some: {
@@ -71,7 +71,7 @@ export async function getProducts() {
 }
 
 export async function getProductsIdName() {
-  const products = await db.product_.findMany({
+  const products = await db.product.findMany({
     select: {
       id: true,
       name: true,
@@ -82,7 +82,7 @@ export async function getProductsIdName() {
 }
 
 export async function getProductsForAdmin() {
-  const products = await db.product_.findMany({
+  const products = await db.product.findMany({
     select: {
       id: true,
       name: true,
@@ -102,7 +102,7 @@ export async function createProduct(data: {
 }) {
   const formatRelation = (relation: any[] = []) =>
     relation.map((item) => ({ id: item.id }));
-  const newProduct = await db.product_.create({
+  const newProduct = await db.product.create({
     data: {
       name: data.name || null,
       images: data.images || [],
@@ -127,7 +127,7 @@ export async function updateProduct(
 ) {
   const formatRelation = (relation: any[] = []) =>
     relation.map((item) => ({ id: item.id }));
-  const updatedProduct = await db.product_.update({
+  const updatedProduct = await db.product.update({
     where: { id: productid },
     data: {
       name: data.name ?? undefined,
@@ -145,20 +145,20 @@ export async function updateProduct(
 }
 
 export async function deleteProduct(productId: number) {
-  const relatedPharmacyProducts = await db.pharmacyProduct_.findMany({
+  const relatedPharmacyProducts = await db.pharmacyProduct.findMany({
     where: {
       productId,
     },
   });
   if (relatedPharmacyProducts.length > 0) return null;
-  const deletedProduct = await db.product_.delete({
+  const deletedProduct = await db.product.delete({
     where: { id: productId },
   });
   return deletedProduct;
 }
 
 export async function getProductsByPharmacy(pharmacyId: number) {
-  return await db.product_.findMany({
+  return await db.product.findMany({
     where: {
       pharmacyProducts: {
         some: {

@@ -1,66 +1,67 @@
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
+  engineType = "binary"
 }
 
 datasource db {
   provider  = "postgresql"
-  url       = env("POSTGRES_PRISMA_URL")
-  directUrl = env("POSTGRES_URL_NON_POOLING")
+  url       = env("WELLNESSBOX_PRISMA_URL")
+  directUrl = env("WELLNESSBOX_PRISMA_URL")
 }
 
-model Category_ {
-  id        Int        @id @default(autoincrement())
+model Category {
+  id        Int       @id @default(autoincrement())
   name      String?
   image     String?
-  products  Product_[] @relation("CategoryProductRelation")
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @default(now()) @updatedAt
+  products  Product[] @relation("CategoryProductRelation")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) @updatedAt
 }
 
-model Product_ {
-  id               Int                @id @default(autoincrement())
+model Product {
+  id               Int               @id @default(autoincrement())
   name             String?
   images           String[]
   description      String?
   rating           Float?
-  categories       Category_[]        @relation("CategoryProductRelation")
-  pharmacyProducts PharmacyProduct_[]
-  reviews          Review_[]
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @default(now()) @updatedAt
+  categories       Category[]        @relation("CategoryProductRelation")
+  pharmacyProducts PharmacyProduct[]
+  reviews          Review[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @default(now()) @updatedAt
 }
 
-model Pharmacy_ {
-  id               Int                @id @default(autoincrement())
+model Pharmacy {
+  id               Int               @id @default(autoincrement())
   name             String?
   address          String?
   phone            String?
   userId           String?
   password         String?
-  pharmacyProducts PharmacyProduct_[]
-  orders           Order_[]
-  messages         Message_[]
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @default(now()) @updatedAt
+  pharmacyProducts PharmacyProduct[]
+  orders           Order[]
+  messages         Message[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @default(now()) @updatedAt
 }
 
-model PharmacyProduct_ {
-  id         Int          @id @default(autoincrement())
+model PharmacyProduct {
+  id         Int         @id @default(autoincrement())
   optionType String?
   price      Int?
   stock      Int?
   capacity   String?
-  pharmacy   Pharmacy_?   @relation(fields: [pharmacyId], references: [id], onDelete: SetNull)
+  pharmacy   Pharmacy?   @relation(fields: [pharmacyId], references: [id], onDelete: SetNull)
   pharmacyId Int?
-  product    Product_?    @relation(fields: [productId], references: [id], onDelete: SetNull)
+  product    Product?    @relation(fields: [productId], references: [id], onDelete: SetNull)
   productId  Int?
-  orderItems OrderItem_[]
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @default(now()) @updatedAt
+  orderItems OrderItem[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @default(now()) @updatedAt
 }
 
-model Order_ {
-  id               Int          @id @default(autoincrement())
+model Order {
+  id               Int         @id @default(autoincrement())
   roadAddress      String?
   detailAddress    String?
   phone            String?
@@ -73,123 +74,63 @@ model Order_ {
   txId             String?
   totalPrice       Int?
   status           String?
-  orderItems       OrderItem_[]
-  messages         Message_[]
-  pharmacy         Pharmacy_?   @relation(fields: [pharmacyId], references: [id], onDelete: SetNull)
+  orderItems       OrderItem[]
+  messages         Message[]
+  pharmacy         Pharmacy?   @relation(fields: [pharmacyId], references: [id], onDelete: SetNull)
   pharmacyId       Int?
-  rider            Rider_?      @relation(fields: [riderId], references: [id], onDelete: SetNull)
+  rider            Rider?      @relation(fields: [riderId], references: [id], onDelete: SetNull)
   riderId          Int?
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @default(now()) @updatedAt
-  reviews          Review_[]
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @default(now()) @updatedAt
+  reviews          Review[]
 }
 
-model OrderItem_ {
-  id                Int               @id @default(autoincrement())
+model OrderItem {
+  id                Int              @id @default(autoincrement())
   quantity          Int?
-  order             Order_?           @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  order             Order?           @relation(fields: [orderId], references: [id], onDelete: SetNull)
   orderId           Int?
-  pharmacyProduct   PharmacyProduct_? @relation(fields: [pharmacyProductId], references: [id], onDelete: SetNull)
+  pharmacyProduct   PharmacyProduct? @relation(fields: [pharmacyProductId], references: [id], onDelete: SetNull)
   pharmacyProductId Int?
-  review            Review_?
-  reviewId          Int?              @unique
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @default(now()) @updatedAt
+  review            Review?
+  reviewId          Int?             @unique
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @default(now()) @updatedAt
 }
 
-model Message_ {
-  id         Int        @id @default(autoincrement())
+model Message {
+  id         Int       @id @default(autoincrement())
   orderId    Int?
   content    String?
-  timestamp  DateTime   @default(now())
-  order      Order_?    @relation(fields: [orderId], references: [id], onDelete: SetNull)
-  pharmacy   Pharmacy_? @relation(fields: [pharmacyId], references: [id])
+  timestamp  DateTime  @default(now())
+  order      Order?    @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  pharmacy   Pharmacy? @relation(fields: [pharmacyId], references: [id])
   pharmacyId Int?
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @default(now()) @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @default(now()) @updatedAt
 }
 
-model Rider_ {
+model Rider {
   id        Int      @id @default(autoincrement())
   phone     String?
   userId    String?
   password  String?
-  orders    Order_[]
+  orders    Order[]
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 }
 
-model Review_ {
-  id          Int         @id @default(autoincrement())
+model Review {
+  id          Int        @id @default(autoincrement())
   rate        Float?
   content     String?
   images      String[]
-  order       Order_?     @relation(fields: [orderId], references: [id])
+  order       Order?     @relation(fields: [orderId], references: [id])
   orderId     Int?
-  product     Product_?   @relation(fields: [productId], references: [id])
+  product     Product?   @relation(fields: [productId], references: [id])
   productId   Int?
-  orderItem   OrderItem_? @relation(fields: [orderItemId], references: [id])
-  orderItemId Int?        @unique
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @default(now()) @updatedAt
-}
-
-model User {
-  idx        Int       @id @default(autoincrement())
-  id         String
-  password   String
-  nickname   String    @unique
-  created_at DateTime  @default(now())
-  updated_at DateTime  @updatedAt
-  avatar     String?
-  comment    Comment[]
-  post       Post[]
-}
-
-model Post {
-  idx        Int       @id @default(autoincrement())
-  category   String
-  title      String
-  content    String
-  password   String?
-  created_at DateTime  @default(now())
-  updated_at DateTime  @updatedAt
-  userIdx    Int?
-  ip         String?
-  nickname   String?
-  comment    Comment[]
-  user       User?     @relation(fields: [userIdx], references: [idx], onDelete: Cascade)
-}
-
-model Comment {
-  idx           Int       @id @default(autoincrement())
-  content       String
-  images        String[]
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
-  nickname      String?
-  ip            String?
-  password      String?
-  userIdx       Int?
-  postIdx       Int
-  parentIdx     Int?
-  Comment       Comment?  @relation("CommentToComment", fields: [parentIdx], references: [idx])
-  other_Comment Comment[] @relation("CommentToComment")
-  post          Post      @relation(fields: [postIdx], references: [idx], onDelete: Cascade)
-  user          User?     @relation(fields: [userIdx], references: [idx], onDelete: Cascade)
-}
-
-model Subscription {
-  id         Int      @id @default(autoincrement())
-  endpoint   String
-  p256dh     String
-  auth       String
-  type       String
-  postId     Int?
-  created_at DateTime @default(now())
-  latitude   Float?
-  longitude  Float?
-  commentId  Int?
-
-  @@unique([endpoint, type, postId, commentId])
+  orderItem   OrderItem? @relation(fields: [orderItemId], references: [id])
+  orderItemId Int?       @unique
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @default(now()) @updatedAt
 }

@@ -3,7 +3,7 @@
 import db from "@/lib/db";
 
 export async function checkOrderExists(phone: string, password: string) {
-  const exists = await db.order_.findFirst({
+  const exists = await db.order.findFirst({
     where: { phone, password },
     select: { id: true },
   });
@@ -17,7 +17,7 @@ export async function getOrdersWithItemsAndStatus(
   phone: string,
   password: string
 ) {
-  const orders = await db.order_.findMany({
+  const orders = await db.order.findMany({
     where: { phone, password },
     select: {
       id: true,
@@ -56,7 +56,7 @@ export async function getOrdersWithItemsAndStatus(
 }
 
 export async function getOrderById(orderid: number) {
-  return await db.order_.findFirst({
+  return await db.order.findFirst({
     where: { id: orderid },
     select: {
       status: true,
@@ -109,7 +109,7 @@ export async function getOrderById(orderid: number) {
 }
 
 export async function getOrderForReview(orderid: number) {
-  return await db.order_.findFirst({
+  return await db.order.findFirst({
     where: { id: orderid },
     select: {
       id: true,
@@ -141,7 +141,7 @@ export async function getOrderForReview(orderid: number) {
 }
 
 export async function getOrderStatusById(orderid: number) {
-  return await db.order_.findFirst({
+  return await db.order.findFirst({
     where: { id: orderid },
     select: {
       status: true,
@@ -150,7 +150,7 @@ export async function getOrderStatusById(orderid: number) {
 }
 
 export async function getBasicOrdersByPharmacy(pharmacyId: number) {
-  return await db.order_.findMany({
+  return await db.order.findMany({
     where: { pharmacyId },
     select: {
       id: true,
@@ -179,7 +179,7 @@ export async function getBasicOrdersByPharmacy(pharmacyId: number) {
 }
 
 export async function getBasicOrdersByRider() {
-  return await db.order_.findMany({
+  return await db.order.findMany({
     where: {
       NOT: [
         { status: "결제 완료" },
@@ -214,7 +214,7 @@ export async function getBasicOrdersByRider() {
 }
 
 export async function updateOrderStatus(orderid: number, newStatus: string) {
-  const updatedOrder = await db.order_.update({
+  const updatedOrder = await db.order.update({
     where: { id: orderid },
     data: { status: newStatus },
   });
@@ -222,7 +222,7 @@ export async function updateOrderStatus(orderid: number, newStatus: string) {
 }
 
 export async function getOrderByPaymentId(paymentId: string) {
-  return await db.order_.findFirst({
+  return await db.order.findFirst({
     where: { paymentId },
     select: {
       id: true,
@@ -247,7 +247,7 @@ export async function createOrder(data: {
   orderItems: { pharmacyProductId: number; quantity: number }[];
 }) {
   const { orderItems, ...orderData } = data;
-  return await db.order_.create({
+  return await db.order.create({
     data: {
       ...orderData,
       orderItems: {
@@ -304,7 +304,7 @@ export async function updateOrder(
   }
 ) {
   const { orderItems, ...orderData } = data;
-  const updatedOrder = await db.order_.update({
+  const updatedOrder = await db.order.update({
     where: { id: orderid },
     data: {
       ...orderData,
@@ -323,10 +323,10 @@ export async function updateOrder(
     },
   });
   if (orderItems && orderItems.length > 0) {
-    await db.orderItem_.deleteMany({
+    await db.orderItem.deleteMany({
       where: { orderId: orderid },
     });
-    await db.orderItem_.createMany({
+    await db.orderItem.createMany({
       data: orderItems.map((item) => ({
         orderId: orderid,
         productId: item.productId,
@@ -339,11 +339,11 @@ export async function updateOrder(
 }
 
 export async function deleteOrder(orderid: number) {
-  await db.orderItem_.deleteMany({
+  await db.orderItem.deleteMany({
     where: { orderId: orderid },
   });
 
-  return await db.order_.delete({
+  return await db.order.delete({
     where: { id: orderid },
   });
 }
