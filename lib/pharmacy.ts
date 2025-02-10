@@ -8,7 +8,10 @@ export async function pharmacyLogin(userId: string, password: string) {
     where: { userId },
   });
   if (!pharmacy || pharmacy.password !== password) {
-    throw new Error("아이디 또는 비밀번호가 올바르지 않습니다.");
+    return {
+      success: false,
+      error: "아이디 또는 비밀번호가 올바르지 않습니다.",
+    };
   }
   const session = await getSession();
   session.id = pharmacy.id;

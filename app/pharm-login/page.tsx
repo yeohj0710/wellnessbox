@@ -14,9 +14,11 @@ export default function PharmLogin() {
     setError("");
     setIsLoading(true);
     try {
-      const result = await pharmacyLogin(userId, password);
+      const result: any = await pharmacyLogin(userId, password);
       if (result?.success) {
         window.location.href = "/pharm";
+      } else {
+        setError(result.error);
       }
     } catch (err: any) {
       setError(err.message);
