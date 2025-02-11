@@ -18,10 +18,10 @@ export default function RiderLogin() {
       if (result?.success) {
         window.location.href = "/rider";
       } else {
-        setError(result.errorMessage);
+        setError("아이디 또는 비밀번호가 올바르지 않습니다.");
       }
     } catch (err: any) {
-      setError(err.message);
+      setError("아이디 또는 비밀번호가 올바르지 않습니다.");
     } finally {
       setIsLoading(false);
     }
