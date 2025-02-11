@@ -18,7 +18,7 @@ export default function PharmLogin() {
       if (result?.success) {
         window.location.href = "/pharm";
       } else {
-        setError(result.error);
+        setError(result.errorMessage);
       }
     } catch (err: any) {
       setError(err.message);

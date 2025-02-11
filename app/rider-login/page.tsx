@@ -18,7 +18,7 @@ export default function RiderLogin() {
       if (result?.success) {
         window.location.href = "/rider";
       } else {
-        setError(result.error);
+        setError(result.errorMessage);
       }
     } catch (err: any) {
       setError(err.message);
