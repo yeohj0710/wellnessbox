@@ -46,7 +46,7 @@ const searchIcons = [
   ChartPieIcon,
 ];
 
-export default function SearchModal({ onSelect, onClose }: SearchModalProps) {
+export default function SymptomModal({ onSelect, onClose }: SearchModalProps) {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const toggleSelection = (item: string) => {
     setSelectedItems((prev) =>
@@ -79,17 +79,17 @@ export default function SearchModal({ onSelect, onClose }: SearchModalProps) {
         >
           <XMarkIcon className="w-6 h-6" />
         </button>
-        <h2 className="text-2xl font-bold mb-6 text-center">
+        <h2 className="text-2xl font-bold mt-6 sm:mt-3 mb-6 text-center">
           어떤 영양제를 찾으세요?
         </h2>
-        <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
           {searchItems.map((item, index) => {
             const Icon = searchIcons[index];
             return (
               <button
                 key={item}
                 onClick={() => toggleSelection(item)}
-                className={`flex flex-col items-center justify-center border rounded-lg px-2 aspect-square
+                className={`flex flex-col items-center border rounded-lg px-2 py-2 aspect-[1.1] sm:aspect-square
                   ${
                     selectedItems.includes(item)
                       ? "bg-sky-100 border-sky-500"
@@ -97,8 +97,10 @@ export default function SearchModal({ onSelect, onClose }: SearchModalProps) {
                   }
                 hover:bg-sky-50`}
               >
-                <Icon className="w-6 h-6 mb-1 text-sky-500" />
-                <span className="text-sm text-center">{item}</span>
+                <div className="flex flex-col items-center my-auto">
+                  <Icon className="w-6 h-6 mb-1 text-sky-500" />
+                  <span className="text-sm text-center">{item}</span>
+                </div>
               </button>
             );
           })}
@@ -106,8 +108,13 @@ export default function SearchModal({ onSelect, onClose }: SearchModalProps) {
         <div className="mt-6 flex justify-end">
           <button
             className="px-3 py-1 bg-sky-400 hover:bg-sky-500 text-white rounded disabled:opacity-50"
-            onClick={() => selectedItems.length && onSelect(selectedItems)}
-            disabled={selectedItems.length === 0}
+            onClick={() => {
+              if (selectedItems.length === 0) {
+                onClose();
+              } else {
+                onSelect(selectedItems);
+              }
+            }}
           >
             선택
           </button>

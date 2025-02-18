@@ -35,7 +35,7 @@ export default function Footer() {
               </Link>
             </div>
             <span className="text-center text-xs sm:text-left text-gray-400 mt-4">
-              © 2024 웰니스박스. All rights reserved.
+              © 2025 웰니스박스. All rights reserved.
             </span>
           </div>
           <div className="flex flex-col items-center sm:items-end w-full sm:w-1/2 text-center sm:text-right gap-1 mt-auto">

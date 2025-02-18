@@ -1,23 +1,14 @@
 "use client";
 
+import { useLoginStatus } from "@/lib/useLoginStatus";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import Cookies from "js-cookie";
+import { useState } from "react";
 
 export function MenuLinks() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { isPharmLoggedIn, isRiderLoggedIn, isAdminLoggedIn, isTestLoggedIn } =
+    useLoginStatus();
   const [adminVisible, setAdminVisible] = useState(false);
   const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null);
-  const [isPharmLoggedIn, setIsPharmLoggedIn] = useState(false);
-  const [isRiderLoggedIn, setIsRiderLoggedIn] = useState(false);
-  useEffect(() => {
-    const accessPassword = Cookies.get("access_password");
-    setIsLoggedIn(!!accessPassword);
-    const pharmLoggedIn = Cookies.get("pharm_logged_in") === "true";
-    setIsPharmLoggedIn(pharmLoggedIn);
-    const riderLoggedIn = Cookies.get("rider_logged_in") === "true";
-    setIsRiderLoggedIn(riderLoggedIn);
-  }, []);
   const menuItemClasses = (additionalClasses = "") =>
     `relative font-semibold transition-transform duration-200 ease-in-out hover:scale-105 hover:text-sky-400 ${additionalClasses}`;
   const handlePressStart = () => {
@@ -71,12 +62,15 @@ export function MenuLinks() {
           관리자 로그인
         </Link>
       )}
-      {isLoggedIn ? (
+      {isAdminLoggedIn ? (
         <Link href="/admin" className={menuItemClasses()}>
           데이터 관리
         </Link>
       ) : null}
-      {(isLoggedIn || isPharmLoggedIn || isRiderLoggedIn) && (
+      {(isPharmLoggedIn ||
+        isRiderLoggedIn ||
+        isAdminLoggedIn ||
+        isTestLoggedIn) && (
         <button
           onClick={handleLogout}
           className={`${menuItemClasses()} text-left px-0`}

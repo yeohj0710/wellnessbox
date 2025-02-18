@@ -5,8 +5,9 @@ export async function GET() {
   const session = await getSession();
   await session.destroy();
   const response = NextResponse.json({ success: true });
-  response.cookies.delete("pharm_logged_in");
-  response.cookies.delete("access_password");
-  response.cookies.delete("rider_logged_in");
+  response.cookies.delete("pharm");
+  response.cookies.delete("rider");
+  response.cookies.delete("admin");
+  response.cookies.delete("test");
   return response;
 }

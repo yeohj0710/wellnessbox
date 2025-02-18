@@ -5,6 +5,7 @@ import Script from "next/script";
 import { TrashIcon } from "@heroicons/react/16/solid";
 import { ExpandableSection } from "./expandableSection";
 import { useRouter } from "next/navigation";
+import { useLoginStatus } from "@/lib/useLoginStatus";
 
 export default function Cart({
   cartItems,
@@ -15,6 +16,8 @@ export default function Cart({
   onUpdateCart,
 }: any) {
   const router = useRouter();
+  const { isAdminLoggedIn, isPharmLoggedIn, isRiderLoggedIn, isTestLoggedIn } =
+    useLoginStatus();
   const [sdkLoaded, setSdkLoaded] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [roadAddress, setRoadAddress] = useState("");
@@ -27,7 +30,7 @@ export default function Cart({
   const [phonePart3, setPhonePart3] = useState("");
   const [userContact, setUserContact] = useState("");
   const [password, setPassword] = useState("");
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("card");
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("inicis");
   useEffect(() => {
     const storedRoadAddress = localStorage.getItem("roadAddress");
     const storedDetailAddress = localStorage.getItem("detailAddress");
@@ -128,7 +131,40 @@ export default function Cart({
   }, [onBack]);
   const deliveryFee = 3000;
   const totalPriceWithDelivery = totalPrice + deliveryFee;
-  const handlePaymentRequest = async (
+  const handleKGInicisPayment = () => {
+    const IMP = (window as any).IMP;
+    if (!IMP) {
+      alert("결제 모듈을 불러오는 데 실패하였습니다.");
+      return;
+    }
+    IMP.init(process.env.NEXT_PUBLIC_MERCHANT_ID);
+    const paymentAmount =
+      isTestLoggedIn && selectedPaymentMethod === "inicis"
+        ? 1
+        : totalPriceWithDelivery;
+    IMP.request_pay(
+      {
+        pg: "html5_inicis",
+        pay_method: "card",
+        merchant_uid: `order_${Date.now()}`,
+        name: "웰니스박스 건강기능식품",
+        amount: paymentAmount,
+        buyer_email: "buyer@example.com",
+        buyer_name: userContact,
+        buyer_tel: userContact,
+        buyer_addr: `${roadAddress} ${detailAddress}`,
+      },
+      function (rsp: any) {
+        if (rsp.success) {
+          localStorage.setItem("paymentId", rsp.imp_uid);
+          router.push("/order-complete");
+        } else {
+          alert(`결제에 실패하였습니다: ${rsp.error_msg}`);
+        }
+      }
+    );
+  };
+  const handleKpnAndKakaoPayment = async (
     payMethod: string,
     channelKey: string
   ) => {
@@ -136,7 +172,7 @@ export default function Cart({
     try {
       const paymentId = `payment${Date.now()}`;
       localStorage.setItem("paymentId", paymentId);
-      await PortOne.requestPayment({
+      const response = await PortOne.requestPayment({
         storeId: process.env.NEXT_PUBLIC_PORTONE_STORE_ID!,
         paymentId,
         orderName: "웰니스박스 건강기능식품",
@@ -152,20 +188,27 @@ export default function Cart({
         },
         redirectUrl: `${window.location.origin}/order-complete`,
       });
-      router.push(`/order-complete`);
+      if (!response.code) {
+        router.push(`/order-complete`);
+      } else {
+        alert("결제가 취소되었습니다.");
+      }
     } catch (error) {
       console.error("결제 요청 중 오류 발생:", error);
       alert(`결제 요청 중 오류가 발생했습니다: ${JSON.stringify(error)}`);
     }
   };
   const handlePayment = async () => {
-    if (selectedPaymentMethod === "card") {
-      await handlePaymentRequest(
+    localStorage.setItem("paymentMethod", selectedPaymentMethod);
+    if (selectedPaymentMethod === "inicis") {
+      handleKGInicisPayment();
+    } else if (selectedPaymentMethod === "kpn") {
+      await handleKpnAndKakaoPayment(
         "CARD",
         process.env.NEXT_PUBLIC_PORTONE_CARD_CHANNEL_KEY!
       );
     } else if (selectedPaymentMethod === "kakao") {
-      await handlePaymentRequest(
+      await handleKpnAndKakaoPayment(
         "EASY_PAY",
         process.env.NEXT_PUBLIC_PORTONE_KAKAO_CHANNEL_KEY!
       );
@@ -494,32 +537,62 @@ export default function Cart({
           <input
             type="radio"
             name="paymentMethod"
-            value="card"
+            value="inicis"
             className="w-5 h-5 text-sky-500 border-gray-300"
-            onChange={() => setSelectedPaymentMethod("card")}
+            onChange={() => setSelectedPaymentMethod("inicis")}
             defaultChecked={true}
           />
           <span className="text-base font-medium text-gray-700">
             신용/체크카드
           </span>
         </label>
-        <label className="flex items-center cursor-pointer">
-          <input
-            type="radio"
-            name="paymentMethod"
-            value="kakao"
-            className="w-5 h-5 text-sky-500 border-gray-300"
-            onChange={() => setSelectedPaymentMethod("kakao")}
-          />
-          <img
-            src="/kakaopay.svg"
-            alt="카카오페이 아이콘"
-            className="w-12 h-6 ml-2.5"
-          />
-          <span className="text-base font-medium text-gray-700 ml-1.5">
-            카카오페이
-          </span>
-        </label>
+        {isTestLoggedIn && (
+          <>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="kpn"
+                className="w-5 h-5 text-sky-500 border-gray-300"
+                onChange={() => setSelectedPaymentMethod("kpn")}
+              />
+              <div className="flex flex-row gap-1.5 items-center justify-center">
+                <span className="text-base font-medium text-gray-700">
+                  한국결제네트웍스
+                </span>
+                <div className="bg-orange-400 px-2 rounded-full ">
+                  <span className="text-xs font-bold text-white">
+                    테스트 결제
+                  </span>
+                </div>
+              </div>
+            </label>
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="kakao"
+                className="w-5 h-5 text-sky-500 border-gray-300"
+                onChange={() => setSelectedPaymentMethod("kakao")}
+              />
+              <div className="flex flex-row gap-1.5 items-center justify-center">
+                <img
+                  src="/kakaopay.svg"
+                  alt="카카오페이 아이콘"
+                  className="w-12 h-6 ml-2.5"
+                />
+                <span className="text-base font-medium text-gray-700">
+                  카카오페이
+                </span>
+                <div className="bg-orange-400 px-2 rounded-full ">
+                  <span className="text-xs font-bold text-white">
+                    테스트 결제
+                  </span>
+                </div>
+              </div>
+            </label>
+          </>
+        )}
       </div>
       <h2 className="text-lg font-bold p-4 mt-2">최종 금액</h2>
       <div className={`px-4 ${totalPrice <= 0 ? "mb-24 pb-2" : ""}`}>

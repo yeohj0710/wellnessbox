@@ -16,6 +16,15 @@ export const LocalStorageProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [storage, setStorage] = useState<Record<string, any>>({});
   useEffect(() => {
+    const handleChunkError = (e: ErrorEvent) => {
+      if (e.message && e.message.includes("ChunkLoadError")) {
+        window.location.reload();
+      }
+    };
+    window.addEventListener("error", handleChunkError);
+    return () => window.removeEventListener("error", handleChunkError);
+  }, []);
+  useEffect(() => {
     const allKeys = Object.keys(localStorage);
     const initialStorage: Record<string, any> = {};
     allKeys.forEach((key) => {

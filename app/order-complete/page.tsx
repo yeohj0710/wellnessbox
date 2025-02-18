@@ -3,11 +3,14 @@
 import FullPageLoader from "@/components/fullPageLoader";
 import { createOrder, getOrderByPaymentId } from "@/lib/order";
 import { reducePharmacyProductStock } from "@/lib/pharmacyProduct";
+import { useLoginStatus } from "@/lib/useLoginStatus";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function OrderComplete() {
+  const { isAdminLoggedIn, isPharmLoggedIn, isRiderLoggedIn, isTestLoggedIn } =
+    useLoginStatus();
   const [order, setOrder] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -35,100 +38,210 @@ export default function OrderComplete() {
           router.push("/my-orders");
           return;
         }
-        const response = await fetch(
-          `/api/get-payment-info?paymentId=${paymentId}`
-        );
-        const paymentInfo = await response.json();
-        const transaction = paymentInfo.payment.transactions?.[0];
-        if (!transaction || transaction.status !== "PAID") {
-          alert("결제에 실패하였습니다. 다시 시도해 주세요.");
-          goBackOrDefault();
-          return;
-        }
-        const roadAddress = localStorage.getItem("roadAddress_input") || "";
-        const detailAddress = localStorage.getItem("detailAddress_input") || "";
-        const phone = `${localStorage.getItem(
-          "phonePart1_input"
-        )}-${localStorage.getItem("phonePart2_input")}-${localStorage.getItem(
-          "phonePart3_input"
-        )}`;
-        const password = localStorage.getItem("password_input") || "";
-        const requestNotes = localStorage.getItem("requestNotes_input") || "";
-        const entrancePassword =
-          localStorage.getItem("entrancePassword_input") || "";
-        const directions = localStorage.getItem("diretions_input") || "";
-        const pharmacyId = Number(localStorage.getItem("selectedPharmacyId"));
-        const transactionType = "PAYMENT";
-        const txId = transaction.id || "";
-        const status = "결제 완료";
-        const cartItems = JSON.parse(localStorage.getItem("cartItems") || "[]");
-        const allProducts = JSON.parse(
-          localStorage.getItem("products") || "[]"
-        );
-        const orderItems = cartItems
-          .map((cartItem: any) => {
-            const product = allProducts.find(
-              (prod: any) => prod.id === cartItem.productId
-            );
-            if (!product) return null;
-            const matchingPharmacyProduct = product.pharmacyProducts.find(
-              (pharmacyProduct: any) =>
-                pharmacyProduct.optionType === cartItem.optionType &&
-                pharmacyProduct.pharmacyId === pharmacyId
-            );
-            if (!matchingPharmacyProduct) return null;
-            return {
-              quantity: cartItem.quantity,
-              pharmacyProductId: matchingPharmacyProduct.id,
-            };
-          })
-          .filter((item: any) => item !== null);
-        const deliveryFee = 3000;
-        const calculatedTotalPrice = cartItems.reduce(
-          (total: any, cartItem: any) => {
-            const product = allProducts.find(
-              (prod: any) => prod.id === cartItem.productId
-            );
-            if (!product) return total;
-            const matchingPharmacyProduct = product.pharmacyProducts.find(
-              (pharmacyProduct: any) =>
-                pharmacyProduct.optionType === cartItem.optionType &&
-                pharmacyProduct.pharmacyId === pharmacyId
-            );
-            if (!matchingPharmacyProduct) return total;
-            return total + matchingPharmacyProduct.price * cartItem.quantity;
+        const paymentMethod = localStorage.getItem("paymentMethod");
+        const response = await fetch("/api/get-payment-info", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-          deliveryFee
-        );
-        const totalPrice = transaction.amount.total;
-        if (calculatedTotalPrice !== totalPrice) {
-          alert("주문 금액과 결제 금액이 일치하지 않습니다.");
-          goBackOrDefault();
-          return;
-        }
-        const createdOrder = await createOrder({
-          roadAddress,
-          detailAddress,
-          phone,
-          password,
-          requestNotes,
-          entrancePassword,
-          directions,
-          paymentId,
-          transactionType,
-          txId,
-          totalPrice,
-          status,
-          pharmacyId,
-          orderItems,
+          body: JSON.stringify({
+            paymentId,
+            paymentMethod,
+          }),
         });
-        await Promise.all(
-          createdOrder.orderItems.map((item: any) =>
-            reducePharmacyProductStock(item.pharmacyProductId, item.quantity)
-          )
-        );
-        setOrder(createdOrder);
-        localStorage.removeItem("cartItems");
+        if (paymentMethod === "inicis") {
+          const paymentInfo = await response.json();
+          console.log(paymentInfo);
+          const paymentResponse = paymentInfo.response;
+          console.log(JSON.stringify(paymentResponse, null, 2));
+          if (!paymentResponse || paymentResponse.status !== "paid") {
+            alert("결제에 실패하였습니다. 다시 시도해 주세요.");
+            goBackOrDefault();
+            return;
+          }
+          const roadAddress = localStorage.getItem("roadAddress_input") || "";
+          const detailAddress =
+            localStorage.getItem("detailAddress_input") || "";
+          const phone = `${localStorage.getItem(
+            "phonePart1_input"
+          )}-${localStorage.getItem("phonePart2_input")}-${localStorage.getItem(
+            "phonePart3_input"
+          )}`;
+          const password = localStorage.getItem("password_input") || "";
+          const requestNotes = localStorage.getItem("requestNotes_input") || "";
+          const entrancePassword =
+            localStorage.getItem("entrancePassword_input") || "";
+          const directions = localStorage.getItem("diretions_input") || "";
+          const pharmacyId = Number(localStorage.getItem("selectedPharmacyId"));
+          const transactionType = "PAYMENT";
+          const txId = paymentResponse.imp_uid || "";
+          const status = "결제 완료";
+          const cartItems = JSON.parse(
+            localStorage.getItem("cartItems") || "[]"
+          );
+          const allProducts = JSON.parse(
+            localStorage.getItem("products") || "[]"
+          );
+          const orderItems = cartItems
+            .map((cartItem: any) => {
+              const product = allProducts.find(
+                (prod: any) => prod.id === cartItem.productId
+              );
+              if (!product) return null;
+              const matchingPharmacyProduct = product.pharmacyProducts.find(
+                (pharmacyProduct: any) =>
+                  pharmacyProduct.optionType === cartItem.optionType &&
+                  pharmacyProduct.pharmacyId === pharmacyId
+              );
+              if (!matchingPharmacyProduct) return null;
+              return {
+                quantity: cartItem.quantity,
+                pharmacyProductId: matchingPharmacyProduct.id,
+              };
+            })
+            .filter((item: any) => item !== null);
+          const deliveryFee = 3000;
+          const calculatedTotalPrice = cartItems.reduce(
+            (total: any, cartItem: any) => {
+              const product = allProducts.find(
+                (prod: any) => prod.id === cartItem.productId
+              );
+              if (!product) return total;
+              const matchingPharmacyProduct = product.pharmacyProducts.find(
+                (pharmacyProduct: any) =>
+                  pharmacyProduct.optionType === cartItem.optionType &&
+                  pharmacyProduct.pharmacyId === pharmacyId
+              );
+              if (!matchingPharmacyProduct) return total;
+              return total + matchingPharmacyProduct.price * cartItem.quantity;
+            },
+            deliveryFee
+          );
+          const totalPrice = paymentResponse.amount;
+          // if (!isTestLoggedIn && calculatedTotalPrice !== totalPrice) {
+          //   alert("주문 금액과 결제 금액이 일치하지 않습니다.");
+          //   goBackOrDefault();
+          //   return;
+          // }
+          const createdOrder = await createOrder({
+            roadAddress,
+            detailAddress,
+            phone,
+            password,
+            requestNotes,
+            entrancePassword,
+            directions,
+            paymentId,
+            transactionType,
+            txId,
+            totalPrice,
+            status,
+            pharmacyId,
+            orderItems,
+          });
+          await Promise.all(
+            createdOrder.orderItems.map((item: any) =>
+              reducePharmacyProductStock(item.pharmacyProductId, item.quantity)
+            )
+          );
+          setOrder(createdOrder);
+          localStorage.removeItem("cartItems");
+        } else {
+          const paymentInfo = await response.json();
+          const transaction = paymentInfo.response.payment.transactions?.[0];
+          if (!transaction || transaction.status !== "PAID") {
+            alert("결제에 실패하였습니다. 다시 시도해 주세요.");
+            goBackOrDefault();
+            return;
+          }
+          const roadAddress = localStorage.getItem("roadAddress_input") || "";
+          const detailAddress =
+            localStorage.getItem("detailAddress_input") || "";
+          const phone = `${localStorage.getItem(
+            "phonePart1_input"
+          )}-${localStorage.getItem("phonePart2_input")}-${localStorage.getItem(
+            "phonePart3_input"
+          )}`;
+          const password = localStorage.getItem("password_input") || "";
+          const requestNotes = localStorage.getItem("requestNotes_input") || "";
+          const entrancePassword =
+            localStorage.getItem("entrancePassword_input") || "";
+          const directions = localStorage.getItem("diretions_input") || "";
+          const pharmacyId = Number(localStorage.getItem("selectedPharmacyId"));
+          const transactionType = "PAYMENT";
+          const txId = transaction.id || "";
+          const status = "결제 완료";
+          const cartItems = JSON.parse(
+            localStorage.getItem("cartItems") || "[]"
+          );
+          const allProducts = JSON.parse(
+            localStorage.getItem("products") || "[]"
+          );
+          const orderItems = cartItems
+            .map((cartItem: any) => {
+              const product = allProducts.find(
+                (prod: any) => prod.id === cartItem.productId
+              );
+              if (!product) return null;
+              const matchingPharmacyProduct = product.pharmacyProducts.find(
+                (pharmacyProduct: any) =>
+                  pharmacyProduct.optionType === cartItem.optionType &&
+                  pharmacyProduct.pharmacyId === pharmacyId
+              );
+              if (!matchingPharmacyProduct) return null;
+              return {
+                quantity: cartItem.quantity,
+                pharmacyProductId: matchingPharmacyProduct.id,
+              };
+            })
+            .filter((item: any) => item !== null);
+          const deliveryFee = 3000;
+          const calculatedTotalPrice = cartItems.reduce(
+            (total: any, cartItem: any) => {
+              const product = allProducts.find(
+                (prod: any) => prod.id === cartItem.productId
+              );
+              if (!product) return total;
+              const matchingPharmacyProduct = product.pharmacyProducts.find(
+                (pharmacyProduct: any) =>
+                  pharmacyProduct.optionType === cartItem.optionType &&
+                  pharmacyProduct.pharmacyId === pharmacyId
+              );
+              if (!matchingPharmacyProduct) return total;
+              return total + matchingPharmacyProduct.price * cartItem.quantity;
+            },
+            deliveryFee
+          );
+          const totalPrice = transaction.amount.total;
+          if (calculatedTotalPrice !== totalPrice) {
+            alert("주문 금액과 결제 금액이 일치하지 않습니다.");
+            goBackOrDefault();
+            return;
+          }
+          const createdOrder = await createOrder({
+            roadAddress,
+            detailAddress,
+            phone,
+            password,
+            requestNotes,
+            entrancePassword,
+            directions,
+            paymentId,
+            transactionType,
+            txId,
+            totalPrice,
+            status,
+            pharmacyId,
+            orderItems,
+          });
+          await Promise.all(
+            createdOrder.orderItems.map((item: any) =>
+              reducePharmacyProductStock(item.pharmacyProductId, item.quantity)
+            )
+          );
+          setOrder(createdOrder);
+          localStorage.removeItem("cartItems");
+        }
       } catch (error: any) {
         alert(
           `주문 정보를 불러오는 중 오류가 발생했습니다: ${

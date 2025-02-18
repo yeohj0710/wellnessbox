@@ -80,6 +80,7 @@ export async function getOrderById(orderid: number) {
                 select: {
                   name: true,
                   images: true,
+                  description: true,
                   categories: {
                     select: {
                       name: true,
@@ -99,6 +100,7 @@ export async function getOrderById(orderid: number) {
       },
       pharmacy: {
         select: {
+          id: true,
           name: true,
           address: true,
           phone: true,

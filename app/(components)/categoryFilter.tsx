@@ -1,5 +1,8 @@
 "use client";
 
+import React, { useEffect, useRef, useState } from "react";
+import { ChevronRightIcon } from "@heroicons/react/24/outline";
+
 interface Category {
   id: number;
   name: string;
@@ -8,93 +11,105 @@ interface Category {
 
 interface CategoryFilterProps {
   categories: Category[];
-  selectedCategory: number | null;
-  setSelectedCategory: (id: number | null) => void;
-  setSelectedPackage: (pkg: string) => void;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
+  selectedCategories: number[];
+  setSelectedCategories: React.Dispatch<React.SetStateAction<number[]>>;
 }
 
 export default function CategoryFilter({
   categories,
-  selectedCategory,
-  setSelectedCategory,
-  setSelectedPackage,
+  selectedCategories,
+  setSelectedCategories,
   isLoading,
   setIsLoading,
 }: CategoryFilterProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showChevron, setShowChevron] = useState(false);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const checkScroll = () => {
+      const tolerance = 2;
+      setShowChevron(
+        el.scrollWidth > el.clientWidth &&
+          el.scrollLeft + el.clientWidth < el.scrollWidth - tolerance
+      );
+    };
+    checkScroll();
+    el.addEventListener("scroll", checkScroll);
+    window.addEventListener("resize", checkScroll);
+    return () => {
+      el.removeEventListener("scroll", checkScroll);
+      window.removeEventListener("resize", checkScroll);
+    };
+  }, []);
+
   return (
-    <section
-      className="flex gap-4 px-4 mt-1 pb-3 overflow-x-auto"
-      style={{ WebkitOverflowScrolling: "touch" }}
-    >
-      <style jsx>{`
-        ::-webkit-scrollbar {
-          height: 8px;
-        }
-        ::-webkit-scrollbar-thumb {
-          background: rgba(0, 0, 0, 0.15);
-          border-radius: 4px;
-        }
-        ::-webkit-scrollbar-track {
-          background: transparent;
-        }
-      `}</style>
-      {isLoading ? (
-        Array(12)
-          .fill(0)
-          .map((_, index) => (
-            <div key={index} className="flex flex-col items-center">
-              <div className="w-12 h-12 rounded-full bg-gray-300 animate-pulse"></div>
-              <div className="w-10 h-4 bg-gray-300 mt-2 rounded-md animate-pulse"></div>
-            </div>
-          ))
-      ) : (
-        <div className="flex flex-nowrap items-start gap-5 w-full max-w-[640px]">
-          <div
-            className={`flex flex-col items-center w-12 shrink-0 cursor-pointer hover:text-gray-700 ${
-              selectedCategory === null ? "font-bold" : ""
-            }`}
-            onClick={() => {
-              setIsLoading(true);
-              setSelectedCategory(null);
-              setSelectedPackage("전체");
-              setIsLoading(false);
-            }}
-          >
-            <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
-              <span className="text-sm font-bold">전체</span>
-            </div>
-            <span className="text-xs mt-1 text-center break-words">전체</span>
-          </div>
-          {categories.map((category) => (
-            <div
-              key={category.id}
-              className={`flex flex-col items-center w-12 shrink-0 cursor-pointer hover:text-gray-700 ${
-                selectedCategory === category.id ? "font-bold" : ""
-              }`}
+    <section className="py-3 bg-gray-50">
+      <div className="relative">
+        <div
+          ref={scrollRef}
+          className="overflow-x-auto scrollbar-hide"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
+          <div className="mx-3 flex flex-nowrap items-start gap-2 w-full max-w-[640px]">
+            <button
               onClick={() => {
                 setIsLoading(true);
-                setSelectedCategory(category.id);
+                setSelectedCategories([]);
                 setIsLoading(false);
               }}
+              className={`flex flex-col items-center justify-center h-12 shrink-0 px-4 border rounded-full ${
+                selectedCategories.length === 0
+                  ? "bg-gray-200 font-bold"
+                  : "bg-white border-gray-300"
+              } hover:bg-gray-100`}
             >
-              {category.image ? (
-                <img
-                  src={category.image.replace("/public", "/avatar")}
-                  alt={category.name || "Category"}
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-12 h-12 rounded-full bg-gray-300"></div>
-              )}
-              <span className="text-xs mt-1 text-center break-words">
-                {category.name || "카테고리"}
-              </span>
-            </div>
-          ))}
+              <span className="text-sm">전체</span>
+            </button>
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                onClick={() => {
+                  setIsLoading(true);
+                  setSelectedCategories((prev: number[]) =>
+                    prev.includes(category.id)
+                      ? prev.filter((id: number) => id !== category.id)
+                      : [...prev, category.id]
+                  );
+                  setIsLoading(false);
+                }}
+                className={`gap-0.5 flex flex-col items-center justify-center h-12 min-w-24 shrink-0 px-4 border rounded-full ${
+                  selectedCategories.includes(category.id)
+                    ? "bg-sky-100 border-sky-400 font-bold"
+                    : "bg-white border-gray-300"
+                } hover:bg-sky-50`}
+              >
+                {category.image ? (
+                  <img
+                    src={category.image.replace("/public", "/avatar")}
+                    alt={category.name || "Category"}
+                    className="w-6 h-6 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-6 h-6 rounded-full bg-gray-300"></div>
+                )}
+                <span className="text-xs text-center whitespace-nowrap">
+                  {category.name || "카테고리"}
+                </span>
+              </button>
+            ))}
+            <span className="text-white text-xs cursor-default">_</span>
+          </div>
         </div>
-      )}
+        {showChevron && (
+          <div className="absolute right-0 top-1/2 transform -translate-y-1/2 pointer-events-none">
+            <ChevronRightIcon className="w-6 h-6 text-gray-400" />
+          </div>
+        )}
+      </div>
     </section>
   );
 }

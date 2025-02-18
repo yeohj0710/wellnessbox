@@ -168,6 +168,33 @@ export default function Pharm() {
         alert("메시지 삭제에 실패했습니다.");
       }
     };
+    const sendCounselMessage = async () => {
+      if (!order) return;
+      try {
+        await createMessage({
+          orderId: order.id,
+          content: `안녕하세요, ${order.pharmacy.name}입니다.`,
+          pharmacyId: order.pharmacy.id,
+        });
+        const sentDescriptions = new Set<string>();
+        for (const orderItem of order.orderItems) {
+          const description = orderItem.pharmacyProduct?.product?.description;
+          if (description && !sentDescriptions.has(description)) {
+            await createMessage({
+              orderId: order.id,
+              content: description,
+              pharmacyId: order.pharmacy.id,
+            });
+            sentDescriptions.add(description);
+          }
+        }
+        refreshMessages();
+        alert("복약지도 안내 메시지가 전송되었습니다.");
+      } catch (error) {
+        console.error(error);
+        alert("복약지도 안내 메시지 전송에 실패했습니다.");
+      }
+    };
     if (isExpanded && !isLoaded) {
       return (
         <div className="w-full max-w-[640px] mx-auto px-6 py-6 bg-white sm:shadow-md sm:rounded-lg">
@@ -321,17 +348,31 @@ export default function Pharm() {
             <div className="mt-8">
               <div className="mb-4 flex justify-between items-center">
                 <h2 className="text-lg font-bold text-gray-700">상담 메시지</h2>
-                <button
-                  onClick={() => refreshMessages(true)}
-                  className="text-sm flex items-center gap-1 text-sky-400 hover:underline"
-                >
-                  새로고침
-                  <ArrowPathIcon
-                    className={`w-5 h-5 ${
-                      isMessagesRefreshing ? "animate-spin" : ""
-                    }`}
-                  />
-                </button>
+                <div className="flex flex-row gap-2">
+                  <button
+                    onClick={() => {
+                      if (
+                        window.confirm("복약지도 안내 메시지를 전송할까요?")
+                      ) {
+                        sendCounselMessage();
+                      }
+                    }}
+                    className="bg-orange-400 text-white text-sm px-2 py-0.5 rounded-full hover:bg-orange-500"
+                  >
+                    복약지도 안내 전송
+                  </button>
+                  <button
+                    onClick={() => refreshMessages(true)}
+                    className="text-sm flex items-center gap-1 text-sky-400 hover:underline"
+                  >
+                    새로고침
+                    <ArrowPathIcon
+                      className={`w-5 h-5 ${
+                        isMessagesRefreshing ? "animate-spin" : ""
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
               <div
                 className="mt-3 space-y-3 max-h-96 overflow-y-auto scrollbar-hide py-2"

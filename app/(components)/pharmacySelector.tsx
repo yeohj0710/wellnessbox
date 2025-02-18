@@ -12,7 +12,7 @@ export default function PharmacySelector({
   setSelectedPharmacy,
 }: PharmacySelectorProps) {
   return (
-    <div className="flex gap-2 px-2 mx-1 sm:mx-0 mb-3 -mt-1 overflow-x-auto scrollbar-hide">
+    <div className="flex gap-2 px-2 mx-1 sm:mx-0 mb-1 -mt-1 overflow-x-auto scrollbar-hide">
       {pharmacies.map((pharmacy: any) => (
         <div
           key={pharmacy.id}

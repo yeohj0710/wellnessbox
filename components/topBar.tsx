@@ -3,11 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { MenuLinks } from "./menuLinks";
+import { useLoginStatus } from "@/lib/useLoginStatus";
 
-function menuItemClasses(additionalClasses = "") {
-  return `relative transition-transform duration-200 ease-in-out hover:scale-105 hover:text-sky-400 ${additionalClasses}`;
-}
 export default function TopBar() {
+  const { isAdminLoggedIn, isPharmLoggedIn, isRiderLoggedIn, isTestLoggedIn } =
+    useLoginStatus();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const closeDrawer = () => {
     setIsDrawerOpen(false);
@@ -24,6 +24,9 @@ export default function TopBar() {
     }, 30000);
     return () => clearInterval(interval);
   }, []);
+  const menuItemClasses = (additionalClasses = "") => {
+    return `relative transition-transform duration-200 ease-in-out hover:scale-105 hover:text-sky-400 ${additionalClasses}`;
+  };
   return (
     <>
       <header className="flex items-center justify-between fixed top-0 w-full bg-white z-40 h-14 shadow-sm px-6">
@@ -46,17 +49,26 @@ export default function TopBar() {
             <MenuLinks />
           </div>
         </div>
-        <div className="flex items-center gap-6">
-          <button
-            className={menuItemClasses("text-xl block sm:hidden")}
-            onClick={() => setIsDrawerOpen(!isDrawerOpen)}
-          >
-            ☰
-          </button>
+        <div className="flex items-center gap-4 sm:gap-0">
+          {isTestLoggedIn && (
+            <div className="bg-orange-400 px-3 py-1 rounded-full">
+              <span className="text-sm font-bold text-white cursor-default">
+                테스트
+              </span>
+            </div>
+          )}
+          <div className="flex items-center gap-6">
+            <button
+              className={menuItemClasses("text-xl block sm:hidden")}
+              onClick={() => setIsDrawerOpen(!isDrawerOpen)}
+            >
+              ☰
+            </button>
+          </div>
         </div>
       </header>
       <div
-        className={`fixed top-0 right-0 h-full bg-white shadow-lg z-40 transform transition-transform duration-300 ${
+        className={`fixed top-0 right-0 h-full bg-white shadow-lg z-30 transform transition-transform duration-300 ${
           isDrawerOpen ? "translate-x-0" : "translate-x-full"
         }`}
         style={{ width: "170px" }}
@@ -70,7 +82,7 @@ export default function TopBar() {
       </div>
       {isDrawerOpen && (
         <div
-          className="fixed inset-0 bg-black opacity-50 z-30"
+          className="fixed inset-0 bg-black opacity-50 z-20"
           onClick={closeDrawer}
         />
       )}

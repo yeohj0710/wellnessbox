@@ -53,56 +53,60 @@ export default function ProductGrid({
                 </div>
               )}
               <div className="p-2 flex flex-col gap-1 flex-grow">
-                <span className="text-xs text-gray-500">
-                  {product.categories
-                    .map((category) => category.name)
-                    .join(", ")}
-                </span>
-                <span className="text-sm font-bold text-gray-800 line-clamp-2">
-                  {product.name}
-                </span>
-                <span className="">
-                  <span className="text-xs text-sky-500">
-                    {selectedPackage === "전체"
-                      ? getLowestAverageOptionType({
-                          product,
-                          pharmacy: selectedPharmacy,
-                        })
-                      : selectedPackage}{" "}
-                    기준
-                  </span>{" "}
-                  {selectedPackage && selectedPharmacy && (
-                    <span className="text-xs text-gray-400">
-                      {product.pharmacyProducts.find(
-                        (pharmacyProduct: any) =>
-                          pharmacyProduct.optionType === selectedPackage &&
-                          pharmacyProduct.pharmacyId === selectedPharmacy.id
-                      )?.capacity
-                        ? `(${
-                            product.pharmacyProducts.find(
-                              (pharmacyProduct: any) =>
-                                pharmacyProduct.optionType ===
-                                  selectedPackage &&
-                                pharmacyProduct.pharmacyId ===
-                                  selectedPharmacy.id
-                            )?.capacity
-                          })`
-                        : ""}
-                    </span>
-                  )}
-                </span>
-                <span className="-mt-1 backdrop:file:text-sm font-bold text-sky-500">
-                  {formatPriceRange({
-                    product,
-                    optionType: selectedPackage,
-                    pharmacy: selectedPharmacy,
-                  })}
-                </span>
-                <div className="flex items-center gap-1">
-                  <StarRating rating={product.rating} size={18} />
-                  <span className="text-xs text-gray-500 mt-1">
-                    ({product.reviewCount})
+                <div className="flex flex-col gap-1 flex-grow">
+                  <span className="text-xs text-gray-500">
+                    {product.categories
+                      .map((category) => category.name)
+                      .join(", ")}
                   </span>
+                  <span className="text-sm font-bold text-gray-800 line-clamp-2">
+                    {product.name}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-1 mt-auto">
+                  <span className="">
+                    <span className="text-xs text-sky-500">
+                      {selectedPackage === "전체"
+                        ? getLowestAverageOptionType({
+                            product,
+                            pharmacy: selectedPharmacy,
+                          })
+                        : selectedPackage}{" "}
+                      기준
+                    </span>{" "}
+                    {selectedPackage && selectedPharmacy && (
+                      <span className="text-xs text-gray-400">
+                        {product.pharmacyProducts.find(
+                          (pharmacyProduct: any) =>
+                            pharmacyProduct.optionType === selectedPackage &&
+                            pharmacyProduct.pharmacyId === selectedPharmacy.id
+                        )?.capacity
+                          ? `(${
+                              product.pharmacyProducts.find(
+                                (pharmacyProduct: any) =>
+                                  pharmacyProduct.optionType ===
+                                    selectedPackage &&
+                                  pharmacyProduct.pharmacyId ===
+                                    selectedPharmacy.id
+                              )?.capacity
+                            })`
+                          : ""}
+                      </span>
+                    )}
+                  </span>
+                  <span className="-mt-1 backdrop:file:text-sm font-bold text-sky-500">
+                    {formatPriceRange({
+                      product,
+                      optionType: selectedPackage,
+                      pharmacy: selectedPharmacy,
+                    })}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <StarRating rating={product.rating} size={18} />
+                    <span className="text-xs text-gray-500 mt-1">
+                      ({product.reviewCount})
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

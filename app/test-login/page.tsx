@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from "react";
 
-export default function AdminLogin() {
+export default function TestLogin() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [redirectPath, setRedirectPath] = useState("/admin");
+  const [redirectPath, setRedirectPath] = useState("/");
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const redirect = searchParams.get("redirect");
@@ -17,7 +17,7 @@ export default function AdminLogin() {
     const res = await fetch("/api/verify-password", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password, loginType: "admin" }),
+      body: JSON.stringify({ password, loginType: "test" }),
     });
     if (res.ok) {
       window.location.href = redirectPath;
@@ -30,7 +30,7 @@ export default function AdminLogin() {
     <div className="px-2 flex flex-col w-full max-w-[640px] mx-auto items-center min-h-screen bg-gray-50 py-12">
       <div className="w-full bg-white shadow-md rounded-lg max-w-md p-8">
         <h1 className="text-2xl font-bold text-gray-800 text-center">
-          관리자 로그인
+          테스트 로그인
         </h1>
         <input
           type="password"

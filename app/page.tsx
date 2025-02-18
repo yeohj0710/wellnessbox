@@ -15,7 +15,7 @@ import CategoryFilter from "./(components)/categoryFilter";
 import PackageFilter from "./(components)/packageFilter";
 import ProductGrid from "./(components)/productGrid";
 import FooterCartBar from "./(components)/footerCartBar";
-import SearchModal from "./(components)/searchModal";
+import SymptomModal from "./(components)/symptomModal";
 import SymptomFilter from "./(components)/symptomFilter";
 
 export default function Home() {
@@ -26,14 +26,14 @@ export default function Home() {
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [allProducts, setAllProducts] = useState<any[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<number[]>([]);
+  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [selectedPackage, setSelectedPackage] = useState<string>("전체");
   const [totalPrice, setTotalPrice] = useState(0);
   const [roadAddress, setRoadAddress] = useState("");
   const [pharmacies, setPharmacies] = useState<any[]>([]);
   const [selectedPharmacy, setSelectedPharmacy] = useState<any>(null);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
-  const [searchKeywords, setSearchKeywords] = useState<string[]>([]);
   const [cartItems, setCartItems] = useState<any[]>(() => {
     if (typeof window !== "undefined") {
       const storedCart = localStorage.getItem("cartItems");
@@ -45,7 +45,7 @@ export default function Home() {
   useEffect(() => {
     setMounted(true);
   }, []);
-  const [isSearchModalVisible, setIsSearchModalVisible] = useState(() => {
+  const [isSymptomModalVisible, setIsSymptomModalVisible] = useState(() => {
     if (typeof window !== "undefined") {
       // return localStorage.getItem("visited") ? false : true;
     }
@@ -219,10 +219,10 @@ export default function Home() {
           )
         );
       }
-      if (selectedCategory.length > 0) {
+      if (selectedCategories.length > 0) {
         filtered = filtered.filter((product) =>
           product.categories.some((category: any) =>
-            selectedCategory.includes(category.id)
+            selectedCategories.includes(category.id)
           )
         );
       }
@@ -248,7 +248,7 @@ export default function Home() {
       setProducts(filtered);
     };
     filterProducts();
-  }, [allProducts, selectedPharmacy, selectedCategory, selectedPackage]);
+  }, [allProducts, selectedPharmacy, selectedCategories, selectedPackage]);
   useEffect(() => {
     if (totalPrice > 0 || isCartVisible) {
       hideFooter();
@@ -256,26 +256,6 @@ export default function Home() {
       showFooter();
     }
   }, [totalPrice, isCartVisible, hideFooter, showFooter]);
-  useEffect(() => {
-    if (cartItems.length > 0) {
-      setSearchKeywords([]);
-      setSelectedCategory([]);
-    }
-  }, [cartItems]);
-  useEffect(() => {
-    const mappedCategoryNames = searchKeywords.reduce<string[]>((acc, item) => {
-      const cats = searchCategoryMapping[item] || [];
-      return [...acc, ...cats];
-    }, []);
-    const matchedCategories = categories.filter((cat: any) =>
-      mappedCategoryNames.includes(cat.name)
-    );
-    if (matchedCategories.length > 0) {
-      setSelectedCategory(matchedCategories.map((cat: any) => cat.id));
-    } else {
-      setSelectedCategory([]);
-    }
-  }, [searchKeywords, categories]);
   const handleAddToCart = (cartItem: any) => {
     setCartItems((prev) => {
       const existingItem = prev.find(
@@ -306,8 +286,8 @@ export default function Home() {
     "혈중 콜레스테롤": ["오메가3"],
   };
   const handleSearchSelect = (selectedItems: string[]) => {
-    setSearchKeywords(selectedItems);
-    setIsSearchModalVisible(false);
+    setSelectedSymptoms(selectedItems);
+    setIsSymptomModalVisible(false);
     if (typeof window !== "undefined") {
       localStorage.setItem("visited", "true");
     }
@@ -319,12 +299,12 @@ export default function Home() {
       }`}
     >
       {mounted &&
-        isSearchModalVisible &&
+        isSymptomModalVisible &&
         cartItems.length === 0 &&
         !isCartVisible && (
-          <SearchModal
+          <SymptomModal
             onSelect={handleSearchSelect}
-            onClose={() => setIsSearchModalVisible(false)}
+            onClose={() => setIsSymptomModalVisible(false)}
           />
         )}
       <AddressSection
@@ -341,20 +321,15 @@ export default function Home() {
         />
       )}
       <SymptomFilter
-        selectedSymptoms={searchKeywords}
-        onChange={setSearchKeywords}
+        selectedSymptoms={selectedSymptoms}
+        setSelectedSymptoms={setSelectedSymptoms}
       />
       <CategoryFilter
         categories={categories}
-        selectedCategory={
-          selectedCategory.length === 1 ? selectedCategory[0] : null
-        }
-        setSelectedCategory={(catId: number | null) =>
-          setSelectedCategory(catId ? [catId] : [])
-        }
-        setSelectedPackage={setSelectedPackage}
         isLoading={isLoading}
         setIsLoading={setIsLoading}
+        selectedCategories={selectedCategories}
+        setSelectedCategories={setSelectedCategories}
       />
       <PackageFilter
         selectedPackage={selectedPackage}
