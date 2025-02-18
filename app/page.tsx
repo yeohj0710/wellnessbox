@@ -128,6 +128,19 @@ export default function Home() {
     setTotalPrice(total);
   }, [cartItems, selectedPharmacy, allProducts]);
   useEffect(() => {
+    const mappedCategoryNames = selectedSymptoms.reduce<string[]>(
+      (acc, item) => {
+        const cats = searchCategoryMapping[item] || [];
+        return [...acc, ...cats];
+      },
+      []
+    );
+    const matchedCategories = categories.filter((cat: any) =>
+      mappedCategoryNames.includes(cat.name)
+    );
+    setSelectedCategories(matchedCategories.map((cat: any) => cat.id));
+  }, [selectedSymptoms, categories]);
+  useEffect(() => {
     if (!selectedPharmacy) return;
     const filteredCartItems = cartItems.filter((item) => {
       const product = allProducts.find((p) => p.id === item.productId);
