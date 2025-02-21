@@ -3,14 +3,13 @@
 import FullPageLoader from "@/components/fullPageLoader";
 import { createOrder, getOrderByPaymentId } from "@/lib/order";
 import { reducePharmacyProductStock } from "@/lib/pharmacyProduct";
-import { useLoginStatus } from "@/lib/useLoginStatus";
+import { getLoginStatus } from "@/lib/useLoginStatus";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function OrderComplete() {
-  const { isAdminLoggedIn, isPharmLoggedIn, isRiderLoggedIn, isTestLoggedIn } =
-    useLoginStatus();
+  const [loginStatus, setLoginStatus] = useState<any>([]);
   const [order, setOrder] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -21,6 +20,13 @@ export default function OrderComplete() {
       router.push("/");
     }
   };
+  useEffect(() => {
+    const fetchLoginStatus = async () => {
+      const fetchgedLoginStatus = await getLoginStatus();
+      setLoginStatus(fetchgedLoginStatus);
+    };
+    fetchLoginStatus();
+  }, []);
   useEffect(() => {
     const fetchOrder = async () => {
       try {
