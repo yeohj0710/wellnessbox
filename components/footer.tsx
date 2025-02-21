@@ -88,7 +88,7 @@ export default function Footer() {
                   대표 이메일: smilerobert@naver.com
                 </span>
                 <span className="text-xs text-gray-400">
-                  주소: 서울특별시 서초구 반포대로19길 10
+                  주소: 서울특별시 서초구 반포대로19길 10 308호
                 </span>
               </div>
             </div>
