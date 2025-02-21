@@ -69,38 +69,49 @@ export default function CategoryFilter({
             >
               <span className="text-sm">전체</span>
             </button>
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => {
-                  setIsLoading(true);
-                  setSelectedCategories((prev: number[]) =>
-                    prev.includes(category.id)
-                      ? prev.filter((id: number) => id !== category.id)
-                      : [...prev, category.id]
-                  );
-                  setIsLoading(false);
-                }}
-                className={`gap-0.5 flex flex-col items-center justify-center h-12 min-w-24 shrink-0 px-4 border rounded-full ${
-                  selectedCategories.includes(category.id)
-                    ? "bg-sky-100 border-sky-400 font-bold"
-                    : "bg-white border-gray-300"
-                } hover:bg-sky-50`}
-              >
-                {category.image ? (
-                  <img
-                    src={category.image.replace("/public", "/avatar")}
-                    alt={category.name || "Category"}
-                    className="w-6 h-6 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-6 h-6 rounded-full bg-gray-300"></div>
-                )}
-                <span className="text-xs text-center whitespace-nowrap">
-                  {category.name || "카테고리"}
-                </span>
-              </button>
-            ))}
+            {isLoading
+              ? Array.from({ length: 10 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="animate-pulse gap-0.5 flex flex-col items-center justify-center h-12 min-w-24 shrink-0 px-4 border rounded-full bg-gray-200"
+                  >
+                    <div className="w-6 h-6 rounded-full bg-gray-300"></div>
+                    <div className="w-10 h-2 rounded-full bg-gray-300 mt-1"></div>
+                  </div>
+                ))
+              : categories.map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={async () => {
+                      setIsLoading(true);
+                      setSelectedCategories((prev: number[]) =>
+                        prev.includes(category.id)
+                          ? prev.filter((id: number) => id !== category.id)
+                          : [...prev, category.id]
+                      );
+                      setIsLoading(false);
+                    }}
+                    className={`gap-0.5 flex flex-col items-center justify-center h-12 min-w-24 shrink-0 px-4 border rounded-full ${
+                      selectedCategories.includes(category.id)
+                        ? "bg-sky-100 border-sky-400 font-bold"
+                        : "bg-white border-gray-300"
+                    } hover:bg-sky-50`}
+                  >
+                    {category.image ? (
+                      <img
+                        src={category.image.replace("/public", "/avatar")}
+                        alt={category.name || "Category"}
+                        className="w-6 h-6 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-6 h-6 rounded-full bg-gray-300"></div>
+                    )}
+                    <span className="text-xs text-center whitespace-nowrap">
+                      {category.name || "카테고리"}
+                    </span>
+                  </button>
+                ))}
+
             <span className="text-white text-xs cursor-default">_</span>
           </div>
         </div>

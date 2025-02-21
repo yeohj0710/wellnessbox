@@ -6,6 +6,7 @@ import { TrashIcon } from "@heroicons/react/16/solid";
 import { ExpandableSection } from "./expandableSection";
 import { useRouter } from "next/navigation";
 import { useLoginStatus } from "@/lib/useLoginStatus";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 
 export default function Cart({
   cartItems,
@@ -16,8 +17,8 @@ export default function Cart({
   onUpdateCart,
 }: any) {
   const router = useRouter();
-  const { isAdminLoggedIn, isPharmLoggedIn, isRiderLoggedIn, isTestLoggedIn } =
-    useLoginStatus();
+  const [loginStatus, setLoginStatus] = useState<any>([]);
+  const [showPharmacyDetail, setShowPharmacyDetail] = useState(false);
   const [sdkLoaded, setSdkLoaded] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [roadAddress, setRoadAddress] = useState("");
@@ -31,6 +32,13 @@ export default function Cart({
   const [userContact, setUserContact] = useState("");
   const [password, setPassword] = useState("");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("inicis");
+  useEffect(() => {
+    const getLoginStatus = async () => {
+      const fetchgedLoginStatus = await useLoginStatus();
+      setLoginStatus(fetchgedLoginStatus);
+    };
+    getLoginStatus();
+  }, []);
   useEffect(() => {
     const storedRoadAddress = localStorage.getItem("roadAddress");
     const storedDetailAddress = localStorage.getItem("detailAddress");
@@ -139,7 +147,7 @@ export default function Cart({
     }
     IMP.init(process.env.NEXT_PUBLIC_MERCHANT_ID);
     const paymentAmount =
-      isTestLoggedIn && selectedPaymentMethod === "inicis"
+      loginStatus.isTestLoggedIn && selectedPaymentMethod === "inicis"
         ? 1
         : totalPriceWithDelivery;
     IMP.request_pay(
@@ -504,31 +512,104 @@ export default function Cart({
       </div>
       {selectedPharmacy && (
         <div className="px-4 mt-8">
-          <h2 className="text-lg font-bold border-gray-300">약국 정보</h2>
-          <div className="mt-2">
+          <div className="flex justify-start items-center gap-3">
+            <h2 className="text-lg font-bold text-gray-800">약국 정보</h2>
+            <button
+              onClick={() => setShowPharmacyDetail(true)}
+              className="bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded-full text-xs text-gray-400 hover:text-gray-500"
+            >
+              사업자 정보
+            </button>
+          </div>
+          <div className="mt-3">
             <div className="flex items-center">
               <span className="w-24 text-sm font-medium text-gray-600">
                 약국명
               </span>
-              <p className="flex-1 font-semibold text-gray-800">
+              <p className="flex-1 text-sm sm:text-base font-semibold text-gray-800">
                 {selectedPharmacy.name}
               </p>
             </div>
-            <div className="flex items-center mt-2">
+            <div className="flex items-start mt-2">
               <span className="w-24 text-sm font-medium text-gray-600">
                 약국 주소
               </span>
-              <p className="flex-1 text-gray-700">{selectedPharmacy.address}</p>
+              <p className="flex-1 text-sm sm:text-base text-gray-700">
+                {selectedPharmacy.address}
+              </p>
             </div>
             <div className="flex items-center mt-2">
               <span className="w-24 text-sm font-medium text-gray-600">
                 전화번호
               </span>
-              <p className="flex-1 text-gray-700">
+              <p className="flex-1 text-sm sm:text-base text-gray-700">
                 {selectedPharmacy.phone || "없음"}
               </p>
             </div>
           </div>
+          {showPharmacyDetail && (
+            <div
+              className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-40"
+              onClick={() => setShowPharmacyDetail(false)}
+            >
+              <div
+                className="relative bg-white rounded-lg shadow-lg w-full sm:w-1/2 max-w-[480px] px-6 py-8 mx-2"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  className="absolute top-4 right-4 text-gray-600 hover:text-gray-900"
+                  onClick={() => setShowPharmacyDetail(false)}
+                >
+                  <XMarkIcon className="w-6 h-6" />
+                </button>
+                <h3 className="text-lg font-bold text-gray-800 mb-4">
+                  사업자 정보
+                </h3>
+                <div className="mt-3">
+                  {selectedPharmacy.representativeName && (
+                    <div className="flex items-center">
+                      <span className="w-24 text-sm font-medium text-gray-600">
+                        대표자명
+                      </span>
+                      <p className="flex-1 text-sm sm:text-base font-semibold text-gray-800">
+                        {selectedPharmacy.representativeName}
+                      </p>
+                    </div>
+                  )}
+                  {selectedPharmacy.name && (
+                    <div className="flex items-center mt-2">
+                      <span className="w-24 text-sm font-medium text-gray-600">
+                        상호명
+                      </span>
+                      <p className="flex-1 text-sm sm:text-base font-semibold text-gray-800">
+                        {selectedPharmacy.name}
+                      </p>
+                    </div>
+                  )}
+                  {selectedPharmacy.address && (
+                    <div className="flex items-start mt-2">
+                      <span className="w-24 text-sm font-medium text-gray-600">
+                        사업자주소
+                      </span>
+                      <p className="flex-1 text-sm sm:text-base text-gray-700">
+                        {selectedPharmacy.address}
+                      </p>
+                    </div>
+                  )}
+                  {selectedPharmacy.registrationNumber && (
+                    <div className="flex items-center mt-2">
+                      <span className="w-24 text-sm font-medium text-gray-600">
+                        사업자등록번호
+                      </span>
+                      <p className="flex-1 text-sm sm:text-base text-gray-700">
+                        {selectedPharmacy.registrationNumber}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
       <h2 className="text-lg font-bold p-4 mt-2">결제 방법</h2>
@@ -546,7 +627,7 @@ export default function Cart({
             신용/체크카드
           </span>
         </label>
-        {isTestLoggedIn && (
+        {loginStatus.isTestLoggedIn && (
           <>
             <label className="flex items-center gap-3 cursor-pointer">
               <input

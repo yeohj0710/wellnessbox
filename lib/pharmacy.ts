@@ -8,16 +8,16 @@ export async function pharmacyLogin(userId: string, password: string) {
     where: { userId },
   });
   if (!pharmacy || pharmacy.password !== password) {
-    return {
-      success: false,
-    };
+    return { success: false };
   }
   const session = await getSession();
-  session.id = pharmacy.id;
-  session.role = "pharm";
+  session.pharm = {
+    id: pharmacy.id,
+    loggedIn: true,
+  };
   await session.save();
   const cookieStore = await cookies();
-  cookieStore.set("pharm_logged_in", "true", {
+  cookieStore.set("pharm", "true", {
     path: "/",
     httpOnly: false,
   });
@@ -26,10 +26,10 @@ export async function pharmacyLogin(userId: string, password: string) {
 
 export async function getPharmacy() {
   const session = await getSession();
-  if (!session.id) return null;
+  if (!session.pharm?.id) return null;
   return await db.pharmacy.findUnique({
     where: {
-      id: session.id,
+      id: session.pharm.id,
     },
   });
 }
@@ -62,6 +62,8 @@ export async function getPharmaciesByProduct(cartItem: any) {
       name: true,
       address: true,
       phone: true,
+      representativeName: true,
+      registrationNumber: true,
     },
   });
   return pharmacies;

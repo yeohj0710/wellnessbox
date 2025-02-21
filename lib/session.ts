@@ -4,8 +4,22 @@ import { getIronSession } from "iron-session";
 import { cookies } from "next/headers";
 
 interface SessionContent {
-  id?: number;
-  role?: "pharm" | "rider";
+  pharm?: {
+    id?: number;
+    loggedIn: boolean;
+  };
+  rider?: {
+    id?: number;
+    loggedIn: boolean;
+  };
+  admin?: {
+    id?: number;
+    loggedIn: boolean;
+  };
+  test?: {
+    id?: number;
+    loggedIn: boolean;
+  };
 }
 
 export default async function getSession() {

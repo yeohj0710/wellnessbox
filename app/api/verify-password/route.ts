@@ -20,11 +20,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
   const session = await getSession();
-  session.role = loginType;
+  if (loginType === "admin") {
+    session.admin = { loggedIn: true };
+  } else if (loginType === "test") {
+    session.test = { loggedIn: true };
+  }
   await session.save();
   const cookieStore = await cookies();
-  const cookieName = loginType;
-  cookieStore.set(cookieName, password, {
+  cookieStore.set(loginType, password, {
     path: "/",
     httpOnly: false,
     secure: process.env.NODE_ENV === "production",

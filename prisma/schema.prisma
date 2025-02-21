@@ -32,17 +32,19 @@ model Product {
 }
 
 model Pharmacy {
-  id               Int               @id @default(autoincrement())
-  name             String?
-  address          String?
-  phone            String?
-  userId           String?
-  password         String?
-  pharmacyProducts PharmacyProduct[]
-  orders           Order[]
-  messages         Message[]
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @default(now()) @updatedAt
+  id                 Int               @id @default(autoincrement())
+  name               String?
+  address            String?
+  phone              String?
+  userId             String?
+  password           String?
+  representativeName String?
+  registrationNumber String?
+  pharmacyProducts   PharmacyProduct[]
+  orders             Order[]
+  messages           Message[]
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @default(now()) @updatedAt
 }
 
 model PharmacyProduct {

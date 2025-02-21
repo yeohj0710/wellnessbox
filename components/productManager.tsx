@@ -179,7 +179,7 @@ export default function ProductManager() {
               }
               className="border w-full p-2 mb-2"
             />
-            <h3 className="font-bold text-gray-700 my-2">상품 설명</h3>
+            {/* <h3 className="font-bold text-gray-700 my-2">상품 설명</h3>
             <textarea
               placeholder="상품 설명"
               value={selectedProduct?.description || ""}
@@ -190,7 +190,7 @@ export default function ProductManager() {
                 })
               }
               className="border w-full p-2 mb-1"
-            />
+            /> */}
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-gray-700 my-2">카테고리 선택</h3>
               <button

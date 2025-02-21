@@ -25,7 +25,7 @@ export default function ManageProducts() {
     };
     fetchPharmacy();
   }, []);
-  if (isLoading) return <FullPageLoader />;
+  if (isLoading || !pharm) return <FullPageLoader />;
   return (
     <div className="w-full flex flex-col items-center mt-8 mb-12 gap-6">
       <AccordionItem

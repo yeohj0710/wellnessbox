@@ -1,12 +1,9 @@
 "use client";
 
-import { useLoginStatus } from "@/lib/useLoginStatus";
 import Link from "next/link";
 import { useState } from "react";
 
-export function MenuLinks() {
-  const { isPharmLoggedIn, isRiderLoggedIn, isAdminLoggedIn, isTestLoggedIn } =
-    useLoginStatus();
+export function MenuLinks({ loginStatus }: any) {
   const [adminVisible, setAdminVisible] = useState(false);
   const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null);
   const menuItemClasses = (additionalClasses = "") =>
@@ -25,7 +22,7 @@ export function MenuLinks() {
   };
   const handleLogout = async () => {
     await fetch("/api/logout");
-    window.location.reload();
+    window.location.href = "/";
   };
   return (
     <>
@@ -42,17 +39,17 @@ export function MenuLinks() {
       <Link href="/my-orders" className={menuItemClasses()}>
         내 주문 조회
       </Link>
-      {isPharmLoggedIn && (
+      {loginStatus.isPharmLoggedIn && (
         <Link href="/pharm" className={menuItemClasses()}>
           주문 관리
         </Link>
       )}
-      {isRiderLoggedIn && (
+      {loginStatus.isRiderLoggedIn && (
         <Link href="/rider" className={menuItemClasses()}>
           배송 관리
         </Link>
       )}
-      {isPharmLoggedIn && (
+      {loginStatus.isPharmLoggedIn && (
         <Link href="/pharm/manage-products" className={menuItemClasses()}>
           상품 등록/관리
         </Link>
@@ -62,15 +59,15 @@ export function MenuLinks() {
           관리자 로그인
         </Link>
       )}
-      {isAdminLoggedIn ? (
+      {loginStatus.isAdminLoggedIn ? (
         <Link href="/admin" className={menuItemClasses()}>
           데이터 관리
         </Link>
       ) : null}
-      {(isPharmLoggedIn ||
-        isRiderLoggedIn ||
-        isAdminLoggedIn ||
-        isTestLoggedIn) && (
+      {(loginStatus.isPharmLoggedIn ||
+        loginStatus.isRiderLoggedIn ||
+        loginStatus.isAdminLoggedIn ||
+        loginStatus.isTestLoggedIn) && (
         <button
           onClick={handleLogout}
           className={`${menuItemClasses()} text-left px-0`}

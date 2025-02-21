@@ -9,25 +9,28 @@ export async function riderLogin(userId: string, password: string) {
     where: { userId },
   });
   if (!rider || rider.password !== password) {
-    return {
-      success: false,
-    };
+    return { success: false };
   }
   const session = await getSession();
-  session.id = rider.id;
-  session.role = "rider";
+  session.rider = {
+    id: rider.id,
+    loggedIn: true,
+  };
   await session.save();
   const cookieStore = await cookies();
-  cookieStore.set("rider_logged_in", "true", { path: "/", httpOnly: false });
+  cookieStore.set("rider", "true", {
+    path: "/",
+    httpOnly: false,
+  });
   return { success: true };
 }
 
 export async function getRider() {
   const session = await getSession();
-  if (!session.id) return null;
-  return db.rider.findUnique({
+  if (!session.rider?.id) return null;
+  return await db.rider.findUnique({
     where: {
-      id: session.id,
+      id: session.rider.id,
     },
   });
 }

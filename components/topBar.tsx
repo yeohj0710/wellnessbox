@@ -6,9 +6,15 @@ import { MenuLinks } from "./menuLinks";
 import { useLoginStatus } from "@/lib/useLoginStatus";
 
 export default function TopBar() {
-  const { isAdminLoggedIn, isPharmLoggedIn, isRiderLoggedIn, isTestLoggedIn } =
-    useLoginStatus();
+  const [loginStatus, setLoginStatus] = useState<any>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  useEffect(() => {
+    const getLoginStatus = async () => {
+      const fetchgedLoginStatus = await useLoginStatus();
+      setLoginStatus(fetchgedLoginStatus);
+    };
+    getLoginStatus();
+  }, []);
   const closeDrawer = () => {
     setIsDrawerOpen(false);
   };
@@ -46,11 +52,11 @@ export default function TopBar() {
             웰니스박스
           </Link>
           <div className="hidden sm:flex gap-5">
-            <MenuLinks />
+            <MenuLinks loginStatus={loginStatus} />
           </div>
         </div>
         <div className="flex items-center gap-4 sm:gap-0">
-          {isTestLoggedIn && (
+          {loginStatus.isTestLoggedIn && (
             <div className="bg-orange-400 px-3 py-1 rounded-full">
               <span className="text-sm font-bold text-white cursor-default">
                 테스트
@@ -77,7 +83,7 @@ export default function TopBar() {
           ✕
         </button>
         <div className="flex flex-col p-6 gap-4">
-          <MenuLinks />
+          <MenuLinks loginStatus={loginStatus} />
         </div>
       </div>
       {isDrawerOpen && (

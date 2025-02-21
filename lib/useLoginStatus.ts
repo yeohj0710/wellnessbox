@@ -1,21 +1,13 @@
-"use client";
-import { useState, useEffect } from "react";
-import Cookies from "js-cookie";
+"use server";
 
-export function useLoginStatus() {
-  const [status, setStatus] = useState({
-    isPharmLoggedIn: false,
-    isRiderLoggedIn: false,
-    isAdminLoggedIn: false,
-    isTestLoggedIn: false,
-  });
-  useEffect(() => {
-    setStatus({
-      isPharmLoggedIn: !!Cookies.get("pharm"),
-      isRiderLoggedIn: !!Cookies.get("rider"),
-      isAdminLoggedIn: !!Cookies.get("admin"),
-      isTestLoggedIn: !!Cookies.get("test"),
-    });
-  }, []);
-  return status;
+import getSession from "./session";
+
+export async function useLoginStatus() {
+  const session = await getSession();
+  return {
+    isAdminLoggedIn: !!session.admin?.loggedIn,
+    isPharmLoggedIn: !!session.pharm?.loggedIn,
+    isRiderLoggedIn: !!session.rider?.loggedIn,
+    isTestLoggedIn: !!session.test?.loggedIn,
+  };
 }
