@@ -195,11 +195,22 @@ export default function ProductDetail({
                     : product.pharmacyProducts
                   ).map((pp: any) => pp.optionType)
                 ) as Set<string>
-              ).map((optionType, index) => (
-                <option key={index} value={optionType}>
-                  {optionType}
-                </option>
-              ))}
+              ).map((optionType, index) => {
+                const relevantProducts = pharmacy
+                  ? product.pharmacyProducts.filter(
+                      (pp: any) => pp.pharmacy?.id === pharmacy.id
+                    )
+                  : product.pharmacyProducts;
+                const capacity = relevantProducts.find(
+                  (pp: any) => pp.optionType === optionType
+                )?.capacity;
+                return (
+                  <option key={index} value={optionType}>
+                    {optionType}
+                    {capacity ? ` (${capacity})` : ""}
+                  </option>
+                );
+              })}
             </select>
           </div>
           <p className="text-lg font-bold mt-4 mb-2 text-sky-500">
@@ -215,7 +226,7 @@ export default function ProductDetail({
               * 주소 입력 후 약국이 선택되면 정확한 상품 가격을 알려드려요.
             </span>
             <span className="text-xs text-gray-500">
-              * 상품 주문 후 배송 완료까지 2-3 영업일이 소요돼요.
+              * 상품 주문 후 배송 완료까지 최대 4-5 영업일이 소요돼요.
             </span>
           </div>
           <div className="flex items-center justify-between mt-6">

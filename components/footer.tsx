@@ -51,6 +51,11 @@ export default function Footer() {
             <span className="text-center text-xs sm:text-left text-gray-400 mt-4">
               © 2025 웰니스박스. All rights reserved.
             </span>
+            <span className="text-center text-xs sm:text-left text-gray-400 mt-4 max-w-[480px]">
+              본 플랫폼은 통신판매중개자로서, 상품의 판매 당사자가 아닙니다.
+              구매 관련 모든 거래는 판매자와 구매자 간에 직접 이루어지며, 당사는
+              중개 역할만을 수행합니다.
+            </span>
           </div>
           <div className="mt-auto flex flex-col items-center sm:items-end w-full sm:w-1/2 text-center sm:text-right gap-1">
             <button

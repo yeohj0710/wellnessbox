@@ -18,12 +18,10 @@ export default function Contact() {
           smilerobert@naver.com
         </a>
       </p>
-      <h2 className="text-lg font-semibold text-gray-800 mb-2">전화</h2>
-      <p className="text-gray-700 leading-relaxed mb-8">010-7603-8164</p>
-      <h2 className="text-lg font-semibold text-gray-800 mb-2">주소</h2>
-      <p className="text-gray-700 leading-relaxed">
-        인천 연수구 송도과학로 70 송도 AT센터
-      </p>
+      <h2 className="text-lg font-semibold text-gray-800 mb-2">
+        대표 전화번호
+      </h2>
+      <p className="text-gray-700 leading-relaxed">02-6013-4400</p>
     </div>
   );
 }

@@ -64,37 +64,29 @@ export default function ProductGrid({
                   </span>
                 </div>
                 <div className="flex flex-col gap-1 mt-auto">
-                  <span className="">
-                    <span className="text-xs text-sky-500">
-                      {selectedPackage === "전체"
+                  {(() => {
+                    const optionType =
+                      selectedPackage === "전체"
                         ? getLowestAverageOptionType({
                             product,
                             pharmacy: selectedPharmacy,
                           })
-                        : selectedPackage}{" "}
-                      기준
-                    </span>{" "}
-                    {selectedPackage && selectedPharmacy && (
-                      <span className="text-xs text-gray-400">
-                        {product.pharmacyProducts.find(
-                          (pharmacyProduct: any) =>
-                            pharmacyProduct.optionType === selectedPackage &&
-                            pharmacyProduct.pharmacyId === selectedPharmacy.id
-                        )?.capacity
-                          ? `(${
-                              product.pharmacyProducts.find(
-                                (pharmacyProduct: any) =>
-                                  pharmacyProduct.optionType ===
-                                    selectedPackage &&
-                                  pharmacyProduct.pharmacyId ===
-                                    selectedPharmacy.id
-                              )?.capacity
-                            })`
-                          : ""}
+                        : selectedPackage;
+                    const capacity = product.pharmacyProducts.find(
+                      (p: any) => p.optionType === optionType
+                    )?.capacity;
+                    return (
+                      <span className="leading-none">
+                        <span className="text-xs text-sky-500">
+                          {optionType} 기준
+                        </span>{" "}
+                        <span className="text-xs text-gray-400">
+                          {capacity ? `(${capacity})` : ""}
+                        </span>
                       </span>
-                    )}
-                  </span>
-                  <span className="-mt-1 backdrop:file:text-sm font-bold text-sky-500">
+                    );
+                  })()}
+                  <span className="mt-0.5 backdrop:file:text-sm font-bold text-sky-500">
                     {formatPriceRange({
                       product,
                       optionType: selectedPackage,
