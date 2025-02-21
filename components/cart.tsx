@@ -5,8 +5,8 @@ import Script from "next/script";
 import { TrashIcon } from "@heroicons/react/16/solid";
 import { ExpandableSection } from "./expandableSection";
 import { useRouter } from "next/navigation";
-import { useLoginStatus } from "@/lib/useLoginStatus";
 import { XMarkIcon } from "@heroicons/react/24/outline";
+import { getLoginStatus } from "@/lib/useLoginStatus";
 
 export default function Cart({
   cartItems,
@@ -33,11 +33,11 @@ export default function Cart({
   const [password, setPassword] = useState("");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("inicis");
   useEffect(() => {
-    const getLoginStatus = async () => {
-      const fetchgedLoginStatus = await useLoginStatus();
+    const fetchLoginStatus = async () => {
+      const fetchgedLoginStatus = await getLoginStatus();
       setLoginStatus(fetchgedLoginStatus);
     };
-    getLoginStatus();
+    fetchLoginStatus();
   }, []);
   useEffect(() => {
     const storedRoadAddress = localStorage.getItem("roadAddress");

@@ -3,17 +3,17 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { MenuLinks } from "./menuLinks";
-import { useLoginStatus } from "@/lib/useLoginStatus";
+import { getLoginStatus } from "@/lib/useLoginStatus";
 
 export default function TopBar() {
   const [loginStatus, setLoginStatus] = useState<any>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   useEffect(() => {
-    const getLoginStatus = async () => {
-      const fetchgedLoginStatus = await useLoginStatus();
+    const fetchLoginStatus = async () => {
+      const fetchgedLoginStatus = await getLoginStatus();
       setLoginStatus(fetchgedLoginStatus);
     };
-    getLoginStatus();
+    fetchLoginStatus();
   }, []);
   const closeDrawer = () => {
     setIsDrawerOpen(false);
