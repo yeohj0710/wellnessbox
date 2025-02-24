@@ -42,7 +42,10 @@ export const metadata: Metadata = {
     images: ["/logo.png"],
   },
   other: {
-    "google-site-verification": "rxIVuaujGlI5Tc8FtIqiIFwfntmlTl1MSA5EG9E67Rw",
+    "google-site-verification": [
+      "rxIVuaujGlI5Tc8FtIqiIFwfntmlTl1MSA5EG9E67Rw",
+      "EiOmKkr5y00llK20sdFBlYhBH_QYN7vLobIvNoNiAC4",
+    ],
     "naver-site-verification": "536a76956d9646a965851d58cf29ab28600a2577",
   },
 };
