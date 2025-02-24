@@ -8,5 +8,3 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/my-orders`, lastModified: new Date() },
   ];
 }
-
-export const revalidate = 24 * 60 * 60;
