@@ -13,6 +13,7 @@ import {
 import OrderProgressBar from "./orderProgressBar";
 import OrderAccordionHeader from "./orderAccordionHeader";
 import FullPageLoader from "./fullPageLoader";
+import Image from "next/image";
 
 export default function OrderDetails({ phone, password, onBack }: any) {
   const [loading, setLoading] = useState(true);
@@ -187,11 +188,15 @@ export default function OrderDetails({ phone, password, onBack }: any) {
                     className="flex items-center justify-between mb-6"
                   >
                     <div className="flex items-center gap-4">
-                      <img
-                        src={productImage}
-                        alt={productName}
-                        className="w-16 h-16 object-cover rounded-lg"
-                      />
+                      <div className="relative w-16 h-16">
+                        <Image
+                          src={productImage}
+                          alt={productName}
+                          fill
+                          sizes="128px"
+                          className="object-cover rounded-lg"
+                        />
+                      </div>
                       <div>
                         <h3 className="text-sm font-bold text-gray-800">
                           {productName} ({optionType})

@@ -7,6 +7,7 @@ import { ExpandableSection } from "./expandableSection";
 import { useRouter } from "next/navigation";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { getLoginStatus } from "@/lib/useLoginStatus";
+import Image from "next/image";
 
 export default function Cart({
   cartItems,
@@ -261,11 +262,15 @@ export default function Cart({
                 className="flex items-center gap-4 border-b pb-4"
               >
                 {product.images && product.images.length > 0 ? (
-                  <img
-                    src={product.images[0]}
-                    alt={product.name}
-                    className="w-16 h-16 rounded-md object-cover"
-                  />
+                  <div className="relative w-16 h-16">
+                    <Image
+                      src={product.images[0]}
+                      alt={product.name}
+                      fill
+                      sizes="128px"
+                      className="rounded-md object-cover"
+                    />
+                  </div>
                 ) : (
                   <div className="w-16 h-16 rounded-md bg-gray-300 flex items-center justify-center text-xs text-gray-500">
                     이미지 없음
@@ -657,11 +662,15 @@ export default function Cart({
                 onChange={() => setSelectedPaymentMethod("kakao")}
               />
               <div className="flex flex-row gap-1.5 items-center justify-center">
-                <img
-                  src="/kakaopay.svg"
-                  alt="카카오페이 아이콘"
-                  className="w-12 h-6 ml-2.5"
-                />
+                <div className="relative w-12 h-6 ml-2.5">
+                  <Image
+                    src="/kakaopay.svg"
+                    alt="카카오페이 아이콘"
+                    fill
+                    sizes="128px"
+                    className="object-contain"
+                  />
+                </div>
                 <span className="text-base font-medium text-gray-700">
                   카카오페이
                 </span>

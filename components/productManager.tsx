@@ -8,6 +8,7 @@ import {
 import { getUploadUrl } from "@/lib/upload";
 import { getCategories } from "@/lib/category";
 import { ArrowPathIcon } from "@heroicons/react/24/outline";
+import Image from "next/image";
 
 export default function ProductManager() {
   const [products, setProducts] = useState<any[]>([]);
@@ -128,11 +129,15 @@ export default function ProductManager() {
             }}
           >
             {product.images?.[0] ? (
-              <img
-                src={product.images[0]}
-                alt={product.name || "Product"}
-                className="h-32 w-full object-contain bg-white"
-              />
+              <div className="relative h-32 w-full bg-white">
+                <Image
+                  src={product.images[0]}
+                  alt={product.name || "Product"}
+                  fill
+                  sizes="512px"
+                  className="object-contain"
+                />
+              </div>
             ) : (
               <div className="h-28 bg-gray-200 flex items-center justify-center text-gray-500">
                 이미지 없음
@@ -257,11 +262,13 @@ export default function ProductManager() {
               <div className="mt-2 flex flex-wrap gap-2">
                 {selectedProduct?.images?.map(
                   (image: string, index: number) => (
-                    <div key={`saved-${index}`} className="relative">
-                      <img
+                    <div key={`saved-${index}`} className="relative w-16 h-16">
+                      <Image
                         src={image}
                         alt={`이미지 ${index + 1}`}
-                        className="w-16 h-16 object-cover rounded"
+                        fill
+                        sizes="128px"
+                        className="object-cover rounded"
                       />
                       <button
                         className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full p-1"
@@ -281,11 +288,13 @@ export default function ProductManager() {
                   )
                 )}
                 {selectedFiles.map((file, index) => (
-                  <div key={`new-${index}`} className="relative">
-                    <img
+                  <div key={`new-${index}`} className="relative w-16 h-16">
+                    <Image
                       src={URL.createObjectURL(file)}
                       alt={`새 이미지 ${index + 1}`}
-                      className="w-16 h-16 object-cover rounded"
+                      fill
+                      sizes="128px"
+                      className="object-cover rounded"
                     />
                     <button
                       className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full p-1"

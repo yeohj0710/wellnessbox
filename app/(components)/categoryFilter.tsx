@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { ChevronRightIcon } from "@heroicons/react/24/outline";
+import Image from "next/image";
 
 interface Category {
   id: number;
@@ -47,7 +48,7 @@ export default function CategoryFilter({
   }, []);
 
   return (
-    <section className="py-3 bg-gray-50">
+    <section className="py-2 bg-gray-50">
       <div className="relative">
         <div
           ref={scrollRef}
@@ -98,11 +99,15 @@ export default function CategoryFilter({
                     } hover:bg-sky-50`}
                   >
                     {category.image ? (
-                      <img
-                        src={category.image.replace("/public", "/avatar")}
-                        alt={category.name || "Category"}
-                        className="w-6 h-6 rounded-full object-cover"
-                      />
+                      <div className="relative w-6 h-6">
+                        <Image
+                          src={category.image.replace("/public", "/avatar")}
+                          alt={category.name || "Category"}
+                          fill
+                          sizes="128px"
+                          className="rounded-full object-cover"
+                        />
+                      </div>
                     ) : (
                       <div className="w-6 h-6 rounded-full bg-gray-300"></div>
                     )}

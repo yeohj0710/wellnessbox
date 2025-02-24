@@ -12,6 +12,7 @@ import {
 import { getUploadUrl } from "@/lib/upload";
 import { getPharmaciesIdName } from "@/lib/pharmacy";
 import { ArrowPathIcon } from "@heroicons/react/24/outline";
+import Image from "next/image";
 
 export default function PharmacyProductManager({ pharmacyId }: any) {
   const [pharmacyProducts, setPharmacyProducts] = useState<any[]>([]);
@@ -148,11 +149,15 @@ export default function PharmacyProductManager({ pharmacyId }: any) {
             }}
           >
             {pharmacyProduct.product?.images?.[0] ? (
-              <img
-                src={pharmacyProduct.product.images[0]}
-                alt={pharmacyProduct.product.name || "Pharmacy Product"}
-                className="h-32 w-full object-contain bg-white"
-              />
+              <div className="relative h-32 w-full bg-white">
+                <Image
+                  src={pharmacyProduct.product.images[0]}
+                  alt={pharmacyProduct.product.name || "Pharmacy Product"}
+                  fill
+                  sizes="512px"
+                  className="object-contain"
+                />
+              </div>
             ) : (
               <div className="h-28 bg-gray-200 flex items-center justify-center text-gray-500">
                 이미지 없음

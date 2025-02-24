@@ -21,6 +21,12 @@ export const metadata: Metadata = {
     url: SITE_URL,
     images: [
       {
+        url: "/kakao-logo.png",
+        width: 800,
+        height: 400,
+        alt: "웰니스박스",
+      },
+      {
         url: "/logo.png",
         width: 800,
         height: 800,
@@ -29,8 +35,15 @@ export const metadata: Metadata = {
     ],
     siteName: "웰니스박스",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "웰니스박스",
+    description: "약국 전용 영양제, 집에서도 주문해요",
+    images: ["/logo.png"],
+  },
   other: {
     "google-site-verification": "rxIVuaujGlI5Tc8FtIqiIFwfntmlTl1MSA5EG9E67Rw",
+    "naver-site-verification": "536a76956d9646a965851d58cf29ab28600a2577",
   },
 };
 

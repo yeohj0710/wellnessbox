@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { MenuLinks } from "./menuLinks";
 import { getLoginStatus } from "@/lib/useLoginStatus";
+import Image from "next/image";
 
 export default function TopBar() {
   const [loginStatus, setLoginStatus] = useState<any>([]);
@@ -43,12 +44,16 @@ export default function TopBar() {
               "group text-lg font-bold flex flex-row gap-1.5 items-center"
             )}
           >
-            <img
-              src="/logo.png"
-              alt="웰니스박스"
-              ref={logoRef}
-              className="w-[2em] h-[2em] object-contain group-hover:animate-bounce-custom"
-            />
+            <div className="relative w-9 h-9">
+              <Image
+                src="/logo.png"
+                alt="웰니스박스"
+                ref={logoRef}
+                fill
+                sizes="64px"
+                className="object-contain group-hover:animate-bounce-custom"
+              />
+            </div>
             웰니스박스
           </Link>
           <div className="hidden sm:flex gap-5">

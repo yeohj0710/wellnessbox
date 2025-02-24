@@ -5,6 +5,7 @@ import { XMarkIcon } from "@heroicons/react/24/outline";
 import { getReviewExistsByOrderItemId, upsertReview } from "@/lib/review";
 import { getOrderForReview } from "@/lib/order";
 import { getUploadUrl } from "@/lib/upload";
+import Image from "next/image";
 
 export default function ReviewModal({
   initialOrder,
@@ -164,11 +165,15 @@ export default function ReviewModal({
               <span className="text-base font-bold text-gray-800">
                 이 제품은 어떠셨나요?
               </span>
-              <img
-                className="w-full h-24 object-contain mt-4"
-                alt=""
-                src={currentItem.pharmacyProduct.product.images[0]}
-              />
+              <div className="relative w-full h-24 mt-4">
+                <Image
+                  src={currentItem.pharmacyProduct.product.images[0]}
+                  alt=""
+                  fill
+                  sizes="512px"
+                  className="object-contain"
+                />
+              </div>
               <p className="font-semibold text-gray-800 text-center">
                 {currentItem.pharmacyProduct.product.name} (
                 {currentItem.pharmacyProduct.optionType})
@@ -282,11 +287,13 @@ export default function ReviewModal({
             <div className="mt-4 flex flex-wrap gap-2">
               {reviews[currentItem.id]?.images?.map(
                 (image: string, index: number) => (
-                  <div key={index} className="relative">
-                    <img
+                  <div key={index} className="relative w-16 h-16">
+                    <Image
                       src={image}
                       alt={`이미지 ${index + 1}`}
-                      className="w-16 h-16 object-cover rounded"
+                      fill
+                      sizes="256px"
+                      className="object-cover rounded"
                     />
                     <button
                       className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full p-1"

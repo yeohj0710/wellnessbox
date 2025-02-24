@@ -4,6 +4,7 @@ import FullPageLoader from "@/components/fullPageLoader";
 import { createOrder, getOrderByPaymentId } from "@/lib/order";
 import { reducePharmacyProductStock } from "@/lib/pharmacyProduct";
 import { getLoginStatus } from "@/lib/useLoginStatus";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -275,11 +276,15 @@ export default function OrderComplete() {
           return (
             <div key={id} className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
-                <img
-                  src={product.images?.[0] || "/placeholder.png"}
-                  alt={product.name}
-                  className="w-16 h-16 object-cover rounded-lg"
-                />
+                <div className="relative w-16 h-16">
+                  <Image
+                    src={product.images?.[0] || "/placeholder.png"}
+                    alt={product.name}
+                    fill
+                    sizes="512px"
+                    className="object-cover rounded-lg"
+                  />
+                </div>
                 <div>
                   <h3 className="text-sm font-bold text-gray-800">
                     {product.name} ({pharmacyProduct.optionType})

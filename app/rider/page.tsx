@@ -12,6 +12,7 @@ import OrderProgressBar from "@/components/orderProgressBar";
 import OrderAccordionHeader from "@/components/orderAccordionHeader";
 import FullPageLoader from "@/components/fullPageLoader";
 import { getRider } from "@/lib/rider";
+import Image from "next/image";
 
 export default function Rider() {
   const [loading, setLoading] = useState<boolean>(true);
@@ -191,11 +192,15 @@ export default function Rider() {
                     className="flex items-center justify-between mb-6"
                   >
                     <div className="flex items-center gap-4">
-                      <img
-                        src={productImage}
-                        alt={productName}
-                        className="w-16 h-16 object-cover rounded-lg"
-                      />
+                      <div className="relative w-16 h-16">
+                        <Image
+                          src={productImage}
+                          alt={productName}
+                          fill
+                          sizes="128px"
+                          className="object-cover rounded-lg"
+                        />
+                      </div>
                       <div>
                         <h3 className="text-sm font-bold text-gray-800">
                           {productName} ({optionType})

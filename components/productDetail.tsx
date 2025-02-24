@@ -13,6 +13,7 @@ import {
   MinusIcon,
   PlusIcon,
 } from "@heroicons/react/24/outline";
+import Image from "next/image";
 
 export default function ProductDetail({
   product,
@@ -118,15 +119,21 @@ export default function ProductDetail({
             {product.images && product.images.length > 0 ? (
               <div className="relative w-full h-72 sm:h-80 overflow-hidden">
                 {product.images.map((image: any, index: any) => (
-                  <img
+                  <div
                     key={index}
-                    src={image}
-                    alt={`${product.name} 이미지 ${index + 1}`}
-                    className={`absolute w-full h-72 sm:h-80 object-contain bg-white transition-transform ${
+                    className={`absolute w-full h-72 sm:h-80 transition-transform ${
                       index === 0 ? "block" : "hidden"
                     }`}
                     data-image-index={index}
-                  />
+                  >
+                    <Image
+                      src={image}
+                      alt={`${product.name} 이미지 ${index + 1}`}
+                      fill
+                      sizes="1024px"
+                      className="object-contain bg-white"
+                    />
+                  </div>
                 ))}
                 <button
                   className="absolute left-2 top-1/2 transform -translate-y-1/2 p-1"
@@ -294,13 +301,16 @@ export default function ProductDetail({
                       <div className="flex gap-2 mt-4">
                         {review.images.map(
                           (image: string, imgIndex: number) => (
-                            <img
-                              key={imgIndex}
-                              src={image.replace(/\/public$/, "/avatar")}
-                              alt="리뷰 이미지"
-                              className="w-16 h-16 object-cover rounded cursor-pointer"
-                              onClick={() => setSelectedImage(image)}
-                            />
+                            <div key={imgIndex} className="relative w-16 h-16">
+                              <Image
+                                src={image.replace(/\/public$/, "/avatar")}
+                                alt="리뷰 이미지"
+                                fill
+                                sizes="256px"
+                                className="object-cover rounded cursor-pointer"
+                                onClick={() => setSelectedImage(image)}
+                              />
+                            </div>
                           )
                         )}
                       </div>
@@ -374,11 +384,15 @@ export default function ProductDetail({
                   >
                     ✕
                   </button>
-                  <img
-                    src={selectedImage}
-                    alt="리뷰 확대 이미지"
-                    className="max-w-full max-h-full rounded-lg"
-                  />
+                  <div className="relative max-w-full max-h-full">
+                    <Image
+                      src={selectedImage}
+                      alt="리뷰 확대 이미지"
+                      fill
+                      sizes="1024px"
+                      className="rounded-lg object-contain"
+                    />
+                  </div>
                 </div>
               </div>
             )}

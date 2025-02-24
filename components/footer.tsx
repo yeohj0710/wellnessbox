@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
+import Image from "next/image";
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 
@@ -23,11 +24,15 @@ export default function Footer() {
         <div className="flex flex-col sm:flex-row sm:justify-between gap-4">
           <div className="flex flex-col items-center sm:items-start w-full sm:w-1/2">
             <Link href="/about">
-              <img
-                src="/logo.png"
-                alt="웰니스박스 로고"
-                className="h-10 w-10 inline-block mb-2 hover:animate-bounce-custom"
-              />
+              <div className="relative h-10 w-10 inline-block mb-2">
+                <Image
+                  src="/logo.png"
+                  alt="웰니스박스 로고"
+                  fill
+                  sizes="128px"
+                  className="hover:animate-bounce-custom object-contain"
+                />
+              </div>
             </Link>
             <div className="flex justify-center sm:justify-start gap-4 mt-2">
               <Link href="/about/terms" className="text-sm text-gray-400">

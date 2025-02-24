@@ -8,6 +8,7 @@ import {
   deleteCategory,
 } from "@/lib/category";
 import { getUploadUrl } from "@/lib/upload";
+import Image from "next/image";
 
 export default function CategoryManager() {
   const [categories, setCategories] = useState<any[]>([]);
@@ -119,11 +120,15 @@ export default function CategoryManager() {
             }}
           >
             {category.image ? (
-              <img
-                src={category.image}
-                alt={category.name || "Category"}
-                className="h-32 w-full object-contain bg-white"
-              />
+              <div className="relative h-32 w-full bg-white">
+                <Image
+                  src={category.image}
+                  alt={category.name || "Category"}
+                  fill
+                  sizes="512px"
+                  className="object-contain"
+                />
+              </div>
             ) : (
               <div className="h-28 bg-gray-200 flex items-center justify-center text-gray-500">
                 이미지 없음
@@ -188,18 +193,20 @@ export default function CategoryManager() {
                 />
               </div>
               {(selectedFile || selectedCategory?.image) && (
-                <div className="relative mt-4 h-32">
-                  <img
+                <div className="relative mt-4 h-32 w-full">
+                  <Image
                     src={
                       selectedFile
                         ? URL.createObjectURL(selectedFile)
                         : selectedCategory.image
                     }
                     alt="이미지 미리보기"
-                    className="h-32 object-contain w-full"
+                    fill
+                    sizes="512px"
+                    className="object-contain"
                   />
                   <button
-                    className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full p-1"
+                    className="absolute right-1 bg-red-500 text-white text-xs rounded-full p-1"
                     onClick={() => {
                       if (selectedFile) {
                         setSelectedFile(null);

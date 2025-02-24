@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import React from "react";
 
 interface ErrorProps {
@@ -10,10 +11,12 @@ interface ErrorProps {
 export default function Error({ error, reset }: ErrorProps) {
   return (
     <div className="min-h-screen flex flex-col mt-[15vh] items-center px-12 text-center">
-      <img
+      <Image
         src="/logo.png"
         alt="웰니스박스"
-        className="w-24 h-24 object-contain"
+        width={96}
+        height={96}
+        className="object-contain"
       />
       <h1 className="mt-8 text-xl sm:text-3xl font-bold text-gray-800">
         에러가 발생했어요.
