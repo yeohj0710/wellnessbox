@@ -29,6 +29,9 @@ export const metadata: Metadata = {
     ],
     siteName: "웰니스박스",
   },
+  other: {
+    "google-site-verification": "rxIVuaujGlI5Tc8FtIqiIFwfntmlTl1MSA5EG9E67Rw",
+  },
 };
 
 export default function RootLayout({
