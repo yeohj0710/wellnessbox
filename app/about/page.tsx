@@ -62,7 +62,7 @@ export default function About() {
       </div>
       <div className="relative z-10 mt-8 w-full max-w-[800px] mx-auto px-6 sm:px-12 py-10 bg-white/0 text-center">
         <h1 className="text-3xl font-bold text-white mb-10">
-          약국에서만 파는 약국 전용 영양제, 집에서 주문해요
+          약국에서만 파는 약국 전용 영양제, 집에서도 주문해요
         </h1>
         <p className="text-white leading-relaxed break-words">
           다른 온라인 쇼핑몰에서는 살 수 없는{" "}

@@ -9,15 +9,15 @@ import { LocalStorageProvider } from "@/components/localStorage";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "웰니스박스 | 약국 전용 영양제, 7일치씩 주문해요",
-  description: "약국 전용 영양제, 7일치씩 주문해요",
+  title: "웰니스박스 | 약국 전용 영양제, 집에서도 주문해요",
+  description: "약국 전용 영양제, 집에서도 주문해요",
   metadataBase: new URL(SITE_URL),
   icons: {
     icon: "/logo.png",
   },
   openGraph: {
     title: "웰니스박스",
-    description: "약국 전용 영양제, 7일치씩 주문해요",
+    description: "약국 전용 영양제, 집에서도 주문해요",
     url: SITE_URL,
     images: [
       {
