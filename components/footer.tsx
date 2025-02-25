@@ -19,10 +19,10 @@ export default function Footer() {
     }
   }, [showBusinessInfo]);
   return (
-    <footer className="w-full  mx-auto bg-gray-800 text-gray-300 text-sm">
+    <footer className="w-full mx-auto bg-gray-800 text-gray-300 text-sm">
       <div className="px-6 py-4 flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:justify-between gap-4">
-          <div className="flex flex-col items-center sm:items-start w-full sm:w-1/2">
+          <div className="flex flex-col items-center sm:items-start w-full sm:w-full">
             <Link href="/about">
               <div className="relative h-10 w-10 inline-block mb-2">
                 <Image
@@ -56,10 +56,16 @@ export default function Footer() {
             <span className="text-center text-xs sm:text-left text-gray-400 mt-4">
               © 2025 웰니스박스. All rights reserved.
             </span>
-            <span className="text-center text-xs sm:text-left text-gray-400 mt-4 max-w-[480px]">
+            <span className="text-center text-xs sm:text-left text-gray-400 mt-4 max-w-full">
               본 플랫폼은 통신판매중개자로서, 상품의 판매 당사자가 아닙니다.
               구매 관련 모든 거래는 판매자와 구매자 간에 직접 이루어지며, 당사는
               중개 역할만을 수행합니다.
+            </span>
+            <span className="text-center text-xs sm:text-left text-gray-400 mt-0.5 max-w-full">
+              <span className="text-center text-xs sm:text-left text-gray-400 mt-4 max-w-full">
+                모든 거래에 대한 책임과 배송, 환불, 민원 등의 처리는
+                웰니스박스에서 진행합니다. 민원담당자: 권혁찬 02-6013-4400
+              </span>
             </span>
           </div>
           <div className="mt-auto flex flex-col items-center sm:items-end w-full sm:w-1/2 text-center sm:text-right gap-1">
