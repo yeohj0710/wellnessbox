@@ -61,7 +61,7 @@ export default function RootLayout({
         <LocalStorageProvider>
           <FooterProvider>
             <TopBar />
-            <main className="pt-14 min-h-[105vh] flex flex-col items-center">
+            <main className="pt-10 min-h-[105vh] flex flex-col items-center">
               {children}
             </main>
           </FooterProvider>

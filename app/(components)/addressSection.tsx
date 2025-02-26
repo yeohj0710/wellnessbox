@@ -24,7 +24,7 @@ export default function AddressSection({
   return (
     <>
       {roadAddress && (
-        <div className="bg-gray-100 px-4 gap-3 py-4 mx-3 sm:mx-2 mb-4 rounded-md flex items-center justify-between text-sm text-gray-700 shadow-sm">
+        <div className="mt-3 bg-gray-100 px-4 gap-3 py-4 mx-3 sm:mx-2 mb-4 rounded-md flex items-center justify-between text-sm text-gray-700 shadow-sm">
           <div>
             <p className="font-semibold text-gray-800">현재 주소</p>
             <p className="text-gray-600 mt-1">{roadAddress}</p>
