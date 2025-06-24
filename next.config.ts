@@ -7,18 +7,25 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [{ protocol: "https", hostname: "**" }],
   },
-  outputFileTracing: true,
-  outputFileTracingExcludes: {
-    "**/node_modules/onnxruntime-node/**": ["**/*"],
-  },
-  webpack: (config, { isServer }) => {
+  webpack(config, { isServer }) {
     if (isServer) {
-      config.externals = [...(config.externals || []), "onnxruntime-node"];
+      config.externals = config.externals || [];
+      config.externals.push("onnxruntime-node");
     }
-    config.module.rules.push({
-      test: /\.node$/,
-      use: "node-loader",
-    });
+    config.module.rules.push(
+      { test: /\.mjs$/, include: /node_modules/, type: "javascript/auto" },
+      {
+        test: /\.wasm$/,
+        type: "asset/resource",
+        generator: { filename: "static/chunks/[name][ext]" },
+      },
+      {
+        test: /\.onnx$/,
+        type: "asset/resource",
+        generator: { filename: "static/chunks/[name][ext]" },
+      },
+      { test: /\.node$/, use: { loader: "node-loader" } }
+    );
     return config;
   },
 };

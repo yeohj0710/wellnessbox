@@ -55,6 +55,11 @@ export default function CheckAI() {
       body: JSON.stringify({ responses: answers }),
     });
     const data: Result[] = await res.json();
+    if (!Array.isArray(data)) {
+      console.error("Predict error:", data);
+      setLoading(false);
+      return;
+    }
     const elapsed = Date.now() - start;
     if (elapsed < 3000) {
       await new Promise((resolve) => setTimeout(resolve, 3000 - elapsed));
@@ -123,9 +128,15 @@ export default function CheckAI() {
           </span>
         </div>
       )}
-      {modalOpen && results && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white rounded-lg p-6 w-11/12 max-w-md relative shadow-xl">
+      {modalOpen && Array.isArray(results) && (
+        <div
+          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
+          onClick={() => setModalOpen(false)}
+        >
+          <div
+            className="bg-white rounded-lg p-6 w-11/12 max-w-md relative shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               onClick={() => setModalOpen(false)}
               className="absolute top-4 right-5 text-gray-500 hover:text-gray-700 text-2xl"
