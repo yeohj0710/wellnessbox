@@ -12,6 +12,10 @@ const nextConfig: NextConfig = {
     ],
   },
   outputFileTracing: true,
+  outputFileTracingExcludes: {
+    "**/node_modules/onnxruntime-node/**": ["**/*"],
+  },
+
   webpack: (config, { isServer }) => {
     if (isServer) {
       config.externals = config.externals || [];
