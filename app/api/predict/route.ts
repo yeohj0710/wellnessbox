@@ -31,6 +31,7 @@ async function getSession() {
 }
 
 export async function POST(request: Request) {
+  const ort = await import("onnxruntime-node");
   const { responses } = await request.json();
   const sess = await getSession();
 
