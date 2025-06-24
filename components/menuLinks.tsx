@@ -39,6 +39,9 @@ export function MenuLinks({ loginStatus }: any) {
       <Link href="/my-orders" className={menuItemClasses()}>
         내 주문 조회
       </Link>
+      <Link href="/check-ai" className={menuItemClasses()}>
+        AI에게 추천받기
+      </Link>
       {loginStatus.isPharmLoggedIn && (
         <Link href="/pharm" className={menuItemClasses()}>
           주문 관리
