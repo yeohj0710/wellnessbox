@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import * as ort from "onnxruntime-node";
+import type { InferenceSession, Tensor } from "onnxruntime-node";
 
 const LABELS = [
   "비타민C",
@@ -21,9 +21,10 @@ const LABELS = [
   "비타민A",
 ];
 
-let session: ort.InferenceSession | null = null;
+let session: InferenceSession | null = null;
 
 async function getSession() {
+  const ort = await import("onnxruntime-node");
   if (!session) {
     session = await ort.InferenceSession.create("survey_model.onnx");
   }
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
   );
 
   const outputMap = await sess.run({ input: inputTensor });
-  const logits = (outputMap[sess.outputNames[0]] as ort.Tensor)
+  const logits = (outputMap[sess.outputNames[0]] as Tensor)
     .data as Float32Array;
 
   const probs = Array.from(logits).map((x) => 1 / (1 + Math.exp(-x)));
