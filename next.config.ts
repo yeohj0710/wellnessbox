@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  outputFileTracing: true,
   webpack: (config, { isServer }) => {
     if (isServer) {
       config.externals = config.externals || [];
