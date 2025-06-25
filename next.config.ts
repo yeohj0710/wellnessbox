@@ -1,13 +1,10 @@
 import type { NextConfig } from "next";
 import CopyPlugin from "copy-webpack-plugin";
+import path from "path";
 
 const nextConfig: NextConfig = {
   compress: true,
-
-  images: {
-    formats: ["image/avif", "image/webp"],
-    remotePatterns: [{ protocol: "https", hostname: "**" }],
-  },
+  images: {},
   webpack(config, { isServer, dev }) {
     if (isServer) {
       config.externals = config.externals || [];
@@ -33,16 +30,28 @@ const nextConfig: NextConfig = {
         new CopyPlugin({
           patterns: [
             {
-              from: "./node_modules/onnxruntime-web/dist/ort-wasm.wasm",
+              from: path.join(
+                __dirname,
+                "node_modules",
+                "onnxruntime-web",
+                "dist",
+                "ort-wasm.wasm"
+              ),
               to: "static/chunks",
             },
             {
-              from: "./node_modules/onnxruntime-web/dist/ort-wasm-simd.wasm",
+              from: path.join(
+                __dirname,
+                "node_modules",
+                "onnxruntime-web",
+                "dist",
+                "ort-wasm-simd.wasm"
+              ),
               to: "static/chunks",
             },
             {
-              from: "./public/model",
-              to: "static/chunks/app",
+              from: path.join(__dirname, "public", "survey_model.onnx"),
+              to: "static/chunks",
             },
           ],
         })
