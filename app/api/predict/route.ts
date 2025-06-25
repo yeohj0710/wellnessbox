@@ -1,5 +1,10 @@
 import path from "path";
+import fs from "fs";
 import { NextResponse } from "next/server";
+
+async function getOrt() {
+  return import("onnxruntime-web");
+}
 
 const LABELS = [
   "비타민C",
@@ -22,26 +27,34 @@ const LABELS = [
 ];
 
 let session: any = null;
+async function getSession() {
+  if (!session) {
+    const ort = await getOrt();
+
+    ort.env.wasm.numThreads = 1;
+    ort.env.wasm.proxy = false;
+
+    const modelPath = path.join(process.cwd(), "public", "survey_model.onnx");
+    session = await ort.InferenceSession.create(modelPath);
+  }
+  return session;
+}
 
 export async function POST(request: Request) {
   try {
     const { responses } = await request.json();
-
-    const ort = await import("onnxruntime-node");
-    if (!session) {
-      const modelPath = path.join(process.cwd(), "public", "survey_model.onnx");
-      session = await ort.InferenceSession.create(modelPath);
-    }
+    const ort = await getOrt();
+    const sess = await getSession();
 
     const input = new ort.Tensor("float32", Float32Array.from(responses), [
       1,
       responses.length,
     ]);
-    const output = await session.run({ input });
-    const logits = (output as any)[session.outputNames[0]].data as Float32Array;
-
-    const ranked = Array.from(logits)
-      .map((x, i) => ({ label: LABELS[i], prob: 1 / (1 + Math.exp(-x)) }))
+    const output = await sess.run({ input });
+    const logits = output[sess.outputNames[0]].data as Float32Array;
+    const probs = Array.from(logits).map((x) => 1 / (1 + Math.exp(-x)));
+    const ranked = probs
+      .map((p, i) => ({ label: LABELS[i], prob: p }))
       .sort((a, b) => b.prob - a.prob)
       .slice(0, 3);
 
