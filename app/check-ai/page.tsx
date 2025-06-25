@@ -33,6 +33,7 @@ export default function CheckAI() {
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [animateBars, setAnimateBars] = useState(false);
+
   useEffect(() => {
     if (modalOpen) {
       setAnimateBars(false);
@@ -41,11 +42,13 @@ export default function CheckAI() {
       setAnimateBars(false);
     }
   }, [modalOpen]);
+
   const handleChange = (idx: number, val: number) => {
     const next = [...answers];
     next[idx] = val;
     setAnswers(next);
   };
+
   const handleSubmit = async () => {
     setLoading(true);
     const start = Date.now();
@@ -62,12 +65,13 @@ export default function CheckAI() {
     }
     const elapsed = Date.now() - start;
     if (elapsed < 3000) {
-      await new Promise((resolve) => setTimeout(resolve, 3000 - elapsed));
+      await new Promise((r) => setTimeout(r, 3000 - elapsed));
     }
     setResults(data);
     setLoading(false);
     setModalOpen(true);
   };
+
   return (
     <div className="w-full max-w-[640px] mt-8 mb-12 mx-auto relative">
       <div className="px-10 pt-10 pb-10 bg-white shadow-md rounded-lg">
@@ -120,6 +124,7 @@ export default function CheckAI() {
           </button>
         </form>
       </div>
+
       {loading && (
         <div className="fixed inset-0 flex flex-col items-center justify-center bg-black bg-opacity-50 z-40">
           <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-white" />
@@ -128,6 +133,7 @@ export default function CheckAI() {
           </span>
         </div>
       )}
+
       {modalOpen && Array.isArray(results) && (
         <div
           className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
