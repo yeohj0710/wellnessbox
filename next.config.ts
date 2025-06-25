@@ -8,11 +8,13 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [{ protocol: "https", hostname: "**" }],
   },
+  outputFileTracingIncludes: {
+    "/api/predict": [".next/server/chunks/*"],
+  },
   webpack(config, { isServer, dev }) {
     if (isServer) {
       config.externals = config.externals || [];
       config.externals.push("onnxruntime-node");
-
       if (!dev) {
         config.module.rules.push(
           { test: /\.mjs$/, include: /node_modules/, type: "javascript/auto" },
@@ -52,7 +54,7 @@ const nextConfig: NextConfig = {
                 to: "chunks",
               },
               {
-                from: path.resolve(__dirname, "public", "survey_model.onnx"),
+                from: path.resolve(__dirname, "public/survey_model.onnx"),
                 to: "chunks",
               },
             ],
@@ -96,7 +98,6 @@ const nextConfig: NextConfig = {
         );
       }
     }
-
     return config;
   },
 };
