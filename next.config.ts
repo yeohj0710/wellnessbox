@@ -19,41 +19,41 @@ const nextConfig: NextConfig = {
           {
             test: /\.wasm$/,
             type: "asset/resource",
-            generator: { filename: "server/chunks/[name][ext]" },
+            generator: { filename: "chunks/[name][ext]" },
           },
           {
             test: /\.onnx$/,
             type: "asset/resource",
-            generator: { filename: "server/chunks/[name][ext]" },
+            generator: { filename: "chunks/[name][ext]" },
           }
         );
         config.plugins.push(
           new CopyPlugin({
             patterns: [
               {
-                from: path.join(
+                from: path.resolve(
                   __dirname,
                   "node_modules/onnxruntime-web/dist/ort-wasm.wasm"
                 ),
-                to: "server/chunks",
+                to: "chunks",
               },
               {
-                from: path.join(
+                from: path.resolve(
                   __dirname,
                   "node_modules/onnxruntime-web/dist/ort-wasm-simd.wasm"
                 ),
-                to: "server/chunks",
+                to: "chunks",
               },
               {
-                from: path.join(
+                from: path.resolve(
                   __dirname,
                   "node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm"
                 ),
-                to: "server/chunks",
+                to: "chunks",
               },
               {
-                from: path.join(__dirname, "public/survey_model.onnx"),
-                to: "server/chunks",
+                from: path.resolve(__dirname, "public", "survey_model.onnx"),
+                to: "chunks",
               },
             ],
           })
@@ -78,14 +78,14 @@ const nextConfig: NextConfig = {
           new CopyPlugin({
             patterns: [
               {
-                from: path.join(
+                from: path.resolve(
                   __dirname,
                   "node_modules/onnxruntime-web/dist/ort-wasm.wasm"
                 ),
                 to: "static/chunks",
               },
               {
-                from: path.join(
+                from: path.resolve(
                   __dirname,
                   "node_modules/onnxruntime-web/dist/ort-wasm-simd.wasm"
                 ),
