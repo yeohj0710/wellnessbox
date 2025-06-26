@@ -31,6 +31,10 @@ async function getSession() {
     const ort = await getOrt();
     ort.env.wasm.numThreads = 1;
     ort.env.wasm.proxy = false;
+    ort.env.wasm.wasmPaths = path.join(
+      process.cwd(),
+      ".next/server/vendor-chunks/"
+    )!;
     const modelPath = path.join(process.cwd(), "public", "survey_model.onnx");
     session = await ort.InferenceSession.create(modelPath);
   }
