@@ -9,24 +9,27 @@ const nextConfig: NextConfig = {
     remotePatterns: [{ protocol: "https", hostname: "**" }],
   },
   outputFileTracingIncludes: {
-    "/api/predict": [".next/server/chunks/*"],
+    "/api/predict": [".next/server/vendor-chunks/*"],
   },
   webpack(config, { isServer, dev }) {
     if (isServer) {
       config.externals = config.externals || [];
-      config.externals.push("onnxruntime-node");
+      config.externals.push("onnxruntime-web");
       if (!dev) {
         config.module.rules.push(
-          { test: /\.mjs$/, include: /node_modules/, type: "javascript/auto" },
           {
             test: /\.wasm$/,
             type: "asset/resource",
-            generator: { filename: "chunks/[name][ext]" },
+            generator: {
+              filename: "vendor-chunks/[name][ext]",
+            },
           },
           {
             test: /\.onnx$/,
             type: "asset/resource",
-            generator: { filename: "chunks/[name][ext]" },
+            generator: {
+              filename: "vendor-chunks/[name][ext]",
+            },
           }
         );
         config.plugins.push(
@@ -37,25 +40,25 @@ const nextConfig: NextConfig = {
                   __dirname,
                   "node_modules/onnxruntime-web/dist/ort-wasm.wasm"
                 ),
-                to: "chunks",
+                to: "vendor-chunks",
               },
               {
                 from: path.resolve(
                   __dirname,
                   "node_modules/onnxruntime-web/dist/ort-wasm-simd.wasm"
                 ),
-                to: "chunks",
+                to: "vendor-chunks",
               },
               {
                 from: path.resolve(
                   __dirname,
                   "node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm"
                 ),
-                to: "chunks",
+                to: "vendor-chunks",
               },
               {
-                from: path.resolve(__dirname, "public/survey_model.onnx"),
-                to: "chunks",
+                from: path.resolve(__dirname, "public", "survey_model.onnx"),
+                to: "vendor-chunks",
               },
             ],
           })
@@ -64,16 +67,19 @@ const nextConfig: NextConfig = {
     } else {
       if (!dev) {
         config.module.rules.push(
-          { test: /\.mjs$/, include: /node_modules/, type: "javascript/auto" },
           {
             test: /\.wasm$/,
             type: "asset/resource",
-            generator: { filename: "static/chunks/[name][ext]" },
+            generator: {
+              filename: "static/chunks/[name][ext]",
+            },
           },
           {
             test: /\.onnx$/,
             type: "asset/resource",
-            generator: { filename: "static/chunks/[name][ext]" },
+            generator: {
+              filename: "static/chunks/[name][ext]",
+            },
           }
         );
         config.plugins.push(
@@ -90,6 +96,13 @@ const nextConfig: NextConfig = {
                 from: path.resolve(
                   __dirname,
                   "node_modules/onnxruntime-web/dist/ort-wasm-simd.wasm"
+                ),
+                to: "static/chunks",
+              },
+              {
+                from: path.resolve(
+                  __dirname,
+                  "node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm"
                 ),
                 to: "static/chunks",
               },

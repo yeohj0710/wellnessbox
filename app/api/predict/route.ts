@@ -1,5 +1,4 @@
 import path from "path";
-import fs from "fs";
 import { NextResponse } from "next/server";
 
 async function getOrt() {
@@ -30,10 +29,8 @@ let session: any = null;
 async function getSession() {
   if (!session) {
     const ort = await getOrt();
-
     ort.env.wasm.numThreads = 1;
     ort.env.wasm.proxy = false;
-
     const modelPath = path.join(process.cwd(), "public", "survey_model.onnx");
     session = await ort.InferenceSession.create(modelPath);
   }
@@ -45,7 +42,6 @@ export async function POST(request: Request) {
     const { responses } = await request.json();
     const ort = await getOrt();
     const sess = await getSession();
-
     const input = new ort.Tensor("float32", Float32Array.from(responses), [
       1,
       responses.length,
@@ -57,7 +53,6 @@ export async function POST(request: Request) {
       .map((p, i) => ({ label: LABELS[i], prob: p }))
       .sort((a, b) => b.prob - a.prob)
       .slice(0, 3);
-
     return NextResponse.json(ranked);
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
