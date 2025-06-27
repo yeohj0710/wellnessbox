@@ -41,7 +41,13 @@ export default function MyOrders() {
   return (
     <div className="w-full max-w-[640px] mt-8 mb-12">
       {!isViewingDetails ? (
-        <div className="w-full max-w-[640px] px-10 pt-10 pb-14 bg-white sm:shadow-md sm:rounded-lg">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleFetchOrders();
+          }}
+          className="w-full max-w-[640px] px-10 pt-10 pb-14 bg-white sm:shadow-md sm:rounded-lg"
+        >
           <h1 className="text-2xl font-bold text-gray-800">내 주문 조회</h1>
           <p className="text-sm text-gray-600 mt-6">
             결제 시 입력한
@@ -123,7 +129,7 @@ export default function MyOrders() {
             />
           </div>
           <button
-            onClick={handleFetchOrders}
+            type="submit"
             className={`w-full h-10 bg-sky-400 text-white font-bold rounded-lg hover:bg-sky-500 transition ${
               loading ? "opacity-50 cursor-not-allowed" : ""
             }`}
@@ -138,7 +144,7 @@ export default function MyOrders() {
             )}
           </button>
           {error && <p className="text-red-500 text-sm mt-4">{error}</p>}
-        </div>
+        </form>
       ) : (
         <OrderDetails
           phone={phone}

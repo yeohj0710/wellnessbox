@@ -49,6 +49,7 @@ export default function ProductGrid({
                     alt={product.name}
                     fill
                     sizes="512px"
+                    priority={index === 0}
                     className="object-contain"
                   />
                 </div>

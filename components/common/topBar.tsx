@@ -51,6 +51,7 @@ export default function TopBar() {
                 ref={logoRef}
                 fill
                 sizes="64px"
+                priority
                 className="object-contain group-hover:animate-bounce-custom"
               />
             </div>
