@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import axios from "axios";
-import OrderDetails from "@/components/orderDetails";
+import OrderDetails from "@/components/order/orderDetails";
 
 export default function MyOrders() {
   const [phonePart1, setPhonePart1] = useState("010");

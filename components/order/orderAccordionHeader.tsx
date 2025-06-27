@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { generateOrderNumber } from "@/lib/orderNumber";
+import { generateOrderNumber } from "@/lib/order/orderNumber";
 import { ChevronUpIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
-import StatusLabel from "./statusLabel";
-import ReviewModal from "./reviewModal";
-import { ORDER_STATUS, OrderStatus } from "@/lib/orderStatus";
+import StatusLabel from "@/components/common/statusLabel";
+import ReviewModal from "@/components/modal/reviewModal";
+import { ORDER_STATUS, OrderStatus } from "@/lib/order/orderStatus";
 
 export default function OrderAccordionHeader({
   order,

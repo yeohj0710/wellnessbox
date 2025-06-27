@@ -6,7 +6,7 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
-} from "@/lib/category";
+} from "@/lib/product";
 import { getUploadUrl } from "@/lib/upload";
 import Image from "next/image";
 

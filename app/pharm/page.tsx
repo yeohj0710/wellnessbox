@@ -15,10 +15,10 @@ import {
 import { getPharmacy } from "@/lib/pharmacy";
 import { useRouter } from "next/navigation";
 import { ArrowPathIcon } from "@heroicons/react/24/outline";
-import OrderProgressBar from "@/components/orderProgressBar";
-import OrderAccordionHeader from "@/components/orderAccordionHeader";
-import FullPageLoader from "@/components/fullPageLoader";
-import { ORDER_STATUS, OrderStatus } from "@/lib/orderStatus";
+import OrderProgressBar from "@/components/order/orderProgressBar";
+import OrderAccordionHeader from "@/components/order/orderAccordionHeader";
+import FullPageLoader from "@/components/common/fullPageLoader";
+import { ORDER_STATUS, OrderStatus } from "@/lib/order/orderStatus";
 import Image from "next/image";
 
 export default function Pharm() {

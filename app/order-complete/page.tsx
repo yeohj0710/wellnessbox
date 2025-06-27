@@ -1,14 +1,14 @@
 "use client";
 
-import FullPageLoader from "@/components/fullPageLoader";
+import FullPageLoader from "@/components/common/fullPageLoader";
 import { createOrder, getOrderByPaymentId } from "@/lib/order";
-import { reducePharmacyProductStock } from "@/lib/pharmacyProduct";
+import { reducePharmacyProductStock } from "@/lib/product";
 import { getLoginStatus } from "@/lib/useLoginStatus";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ORDER_STATUS } from "@/lib/orderStatus";
+import { ORDER_STATUS } from "@/lib/order/orderStatus";
 
 export default function OrderComplete() {
   const [loginStatus, setLoginStatus] = useState<any>([]);

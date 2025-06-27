@@ -12,7 +12,7 @@ import {
 } from "@/lib/order";
 import OrderProgressBar from "./orderProgressBar";
 import OrderAccordionHeader from "./orderAccordionHeader";
-import FullPageLoader from "./fullPageLoader";
+import FullPageLoader from "@/components/common/fullPageLoader";
 import Image from "next/image";
 
 export default function OrderDetails({ phone, password, onBack }: any) {
