@@ -3,110 +3,54 @@ import CopyPlugin from "copy-webpack-plugin";
 import path from "path";
 
 const nextConfig: NextConfig = {
-  compress: true,
-  images: {
-    formats: ["image/avif", "image/webp"],
-    remotePatterns: [{ protocol: "https", hostname: "**" }],
-  },
   outputFileTracingIncludes: {
-    "/api/predict": [".next/server/vendor-chunks/*"],
+    "/api/predict": [".next/server/chunks/*"],
   },
   webpack(config, { isServer }) {
-    if (isServer) {
-      config.externals = config.externals || [];
-      config.externals.push("onnxruntime-node");
-
-      config.module.rules.unshift({
-        test: /\.node$/,
-        use: { loader: "node-loader" },
-      });
-
-      config.module.rules.push(
-        {
-          test: /\.wasm$/,
-          type: "asset/resource",
-          generator: { filename: "vendor-chunks/[name][ext]" },
-        },
-        {
-          test: /\.onnx$/,
-          type: "asset/resource",
-          generator: { filename: "vendor-chunks/[name][ext]" },
-        }
-      );
-
-      config.plugins.push(
-        new CopyPlugin({
-          patterns: [
-            {
-              from: path.resolve(
-                __dirname,
-                "node_modules/onnxruntime-web/dist/ort-wasm.wasm"
-              ),
-              to: "vendor-chunks",
-            },
-            {
-              from: path.resolve(
-                __dirname,
-                "node_modules/onnxruntime-web/dist/ort-wasm-simd.wasm"
-              ),
-              to: "vendor-chunks",
-            },
-            {
-              from: path.resolve(
-                __dirname,
-                "node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm"
-              ),
-              to: "vendor-chunks",
-            },
-            {
-              from: path.resolve(__dirname, "public", "survey_model.onnx"),
-              to: "vendor-chunks",
-            },
-          ],
-        })
-      );
-    } else {
-      config.module.rules.push(
-        {
-          test: /\.wasm$/,
-          type: "asset/resource",
-          generator: { filename: "static/chunks/[name][ext]" },
-        },
-        {
-          test: /\.onnx$/,
-          type: "asset/resource",
-          generator: { filename: "static/chunks/[name][ext]" },
-        }
-      );
-
-      config.plugins.push(
-        new CopyPlugin({
-          patterns: [
-            {
-              from: path.resolve(
-                __dirname,
-                "node_modules/onnxruntime-web/dist/ort-wasm.wasm"
-              ),
-              to: "static/chunks",
-            },
-            {
-              from: path.resolve(
-                __dirname,
-                "node_modules/onnxruntime-web/dist/ort-wasm-simd.wasm"
-              ),
-              to: "static/chunks",
-            },
-            {
-              from: path.resolve(
-                __dirname,
-                "node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm"
-              ),
-              to: "static/chunks",
-            },
-          ],
-        })
-      );
-    }
+    const dest = isServer ? "server/chunks" : "static/chunks";
+    config.module.rules.push(
+      {
+        test: /\.wasm$/,
+        type: "asset/resource",
+        generator: { filename: `${dest}/[name][ext]` },
+      },
+      {
+        test: /\.onnx$/,
+        type: "asset/resource",
+        generator: { filename: `${dest}/[name][ext]` },
+      }
+    );
+    config.plugins.push(
+      new CopyPlugin({
+        patterns: [
+          {
+            from: path.resolve(
+              __dirname,
+              "node_modules/onnxruntime-web/dist/ort-wasm.wasm"
+            ),
+            to: dest,
+          },
+          {
+            from: path.resolve(
+              __dirname,
+              "node_modules/onnxruntime-web/dist/ort-wasm-simd.wasm"
+            ),
+            to: dest,
+          },
+          {
+            from: path.resolve(
+              __dirname,
+              "node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm"
+            ),
+            to: dest,
+          },
+          {
+            from: path.resolve(__dirname, "public/survey_model.onnx"),
+            to: dest,
+          },
+        ],
+      })
+    );
     return config;
   },
 };

@@ -21,13 +21,25 @@ const LABELS = [
   "비타민A",
 ];
 
+const isDev = process.env.NODE_ENV !== "production";
 let session: any = null;
+
 async function getSession() {
   if (!session) {
     const ort = await import("onnxruntime-web");
     ort.env.wasm.numThreads = 1;
     ort.env.wasm.proxy = false;
-
+    const base = isDev
+      ? path.join(process.cwd(), "node_modules", "onnxruntime-web", "dist")
+      : path.join(process.cwd(), ".next", "server", "chunks");
+    ort.env.wasm.wasmPaths = {
+      "ort-wasm.wasm": path.join(base, "ort-wasm.wasm"),
+      "ort-wasm-simd.wasm": path.join(base, "ort-wasm-simd.wasm"),
+      "ort-wasm-simd-threaded.wasm": path.join(
+        base,
+        "ort-wasm-simd-threaded.wasm"
+      ),
+    };
     session = await ort.InferenceSession.create(
       path.join(process.cwd(), "public", "survey_model.onnx")
     );
