@@ -30,8 +30,8 @@ async function getSession() {
     ort.env.wasm.numThreads = 1;
     ort.env.wasm.proxy = false;
     const base = isDev
-      ? path.join(process.cwd(), "node_modules", "onnxruntime-web", "dist")
-      : path.join(process.cwd(), ".next", "server", "chunks");
+      ? path.resolve(process.cwd(), "node_modules", "onnxruntime-web", "dist")
+      : path.resolve(process.cwd(), ".next", "server", "chunks");
     ort.env.wasm.wasmPaths = {
       "ort-wasm.wasm": path.join(base, "ort-wasm.wasm"),
       "ort-wasm-simd.wasm": path.join(base, "ort-wasm-simd.wasm"),
