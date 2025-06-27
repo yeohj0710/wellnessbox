@@ -11,10 +11,15 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/api/predict": [".next/server/vendor-chunks/*"],
   },
-  webpack(config, { isServer, dev }) {
+  webpack(config, { isServer }) {
     if (isServer) {
       config.externals = config.externals || [];
-      config.externals.push("onnxruntime-web");
+      config.externals.push("onnxruntime-node");
+
+      config.module.rules.unshift({
+        test: /\.node$/,
+        use: { loader: "node-loader" },
+      });
 
       config.module.rules.push(
         {
@@ -73,6 +78,7 @@ const nextConfig: NextConfig = {
           generator: { filename: "static/chunks/[name][ext]" },
         }
       );
+
       config.plugins.push(
         new CopyPlugin({
           patterns: [
@@ -101,7 +107,6 @@ const nextConfig: NextConfig = {
         })
       );
     }
-
     return config;
   },
 };
