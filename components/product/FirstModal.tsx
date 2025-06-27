@@ -37,13 +37,13 @@ export default function FirstModal({
                 onClick={onClose}
                 className="text-sm font-medium px-3 sm:px-4 py-2 bg-gray-100 text-gray-600 rounded-md hover:bg-gray-200 transition duration-200"
               >
-                다른 상품을 구경할게요.
+                다른 상품을 구경할게요
               </button>
               <button
                 onClick={() => setIsAddressModalOpen(true)}
                 className="text-sm font-medium px-3 sm:px-4 py-2 bg-sky-500 text-white rounded-md shadow-md hover:bg-sky-600 transition duration-200"
               >
-                주소를 입력할게요.
+                주소를 입력할게요
               </button>
             </div>
           </div>

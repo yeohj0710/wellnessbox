@@ -8,6 +8,8 @@ import { useRouter } from "next/navigation";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { getLoginStatus } from "@/lib/useLoginStatus";
 import Image from "next/image";
+import PhoneNumberInputs from "./phoneNumberInputs";
+import CheckoutConfirmModal from "./checkoutConfirmModal";
 
 export default function Cart({
   cartItems,
@@ -94,35 +96,8 @@ export default function Cart({
     localStorage.setItem("directions_input", directions);
   }, [directions]);
   useEffect(() => {
-    localStorage.setItem("phonePart1_input", phonePart1);
-  }, [phonePart1]);
-  useEffect(() => {
-    localStorage.setItem("phonePart2_input", phonePart2);
-  }, [phonePart2]);
-  useEffect(() => {
-    localStorage.setItem("phonePart3_input", phonePart3);
-  }, [phonePart3]);
-  useEffect(() => {
     setUserContact(`${phonePart1}-${phonePart2}-${phonePart3}`);
   }, [phonePart1, phonePart2, phonePart3]);
-  useEffect(() => {
-    const phonePart1Input = document.querySelector("input[value='010']");
-    const phonePart2Input = document.getElementById(
-      "phonePart2"
-    ) as HTMLInputElement;
-    const phonePart3Input = document.getElementById(
-      "phonePart3"
-    ) as HTMLInputElement;
-    if (phonePart1Input) {
-      phonePart1Input.classList.add("bg-gray-100", "text-gray-500");
-    }
-    if (phonePart2.length === 4 && phonePart2Input) {
-      phonePart2Input.classList.add("bg-gray-100", "text-gray-500");
-    }
-    if (phonePart3.length === 4 && phonePart3Input) {
-      phonePart3Input.classList.add("bg-gray-100", "text-gray-500");
-    }
-  }, [phonePart2, phonePart3]);
   useEffect(() => {
     localStorage.setItem("password_input", password);
   }, [password]);
@@ -432,76 +407,14 @@ export default function Cart({
         </ExpandableSection>
       </div>
       <h2 className="text-lg font-bold p-4 pb-2 mt-3">연락처 입력</h2>
-      <div className="px-4 flex gap-2 items-center">
-        <input
-          type="text"
-          maxLength={3}
-          value={phonePart1}
-          onChange={(e) => {
-            const newValue = e.target.value.replace(/\D/g, "");
-            setPhonePart1(newValue);
-            localStorage.setItem("phonePart1_input", newValue);
-          }}
-          onInput={(e) => {
-            const input = e.target as HTMLInputElement;
-            if (input.value.length === 3) {
-              input.classList.add("bg-gray-100", "text-gray-500");
-            } else {
-              input.classList.remove("bg-gray-100", "text-gray-500");
-            }
-          }}
-          className={`focus:outline-none focus:ring-2 focus:ring-sky-400 w-14 border rounded-md px-2 py-1.5 text-center transition-colors ${
-            phonePart1.length === 3 ? "bg-gray-100 text-gray-500" : ""
-          }`}
-        />
-        <span className="text-gray-500">-</span>
-        <input
-          id="phonePart2"
-          type="text"
-          maxLength={4}
-          value={phonePart2}
-          onChange={(e) => {
-            const newValue = e.target.value.replace(/\D/g, "");
-            setPhonePart2(newValue);
-            localStorage.setItem("phonePart2_input", newValue);
-            if (newValue.length === 4) {
-              (
-                document.getElementById("phonePart3") as HTMLInputElement
-              )?.focus();
-            }
-          }}
-          onInput={(e) => {
-            const input = e.target as HTMLInputElement;
-            if (input.value.replace(/\D/g, "").length === 4) {
-              input.classList.add("bg-gray-100", "text-gray-500");
-            } else {
-              input.classList.remove("bg-gray-100", "text-gray-500");
-            }
-          }}
-          className="focus:outline-none focus:ring-2 focus:ring-sky-400 w-20 border rounded-md px-2 py-1.5 text-center transition-colors"
-        />
-        <span className="text-gray-500">-</span>
-        <input
-          id="phonePart3"
-          type="text"
-          maxLength={4}
-          value={phonePart3}
-          onChange={(e) => {
-            const newValue = e.target.value.replace(/\D/g, "");
-            setPhonePart3(newValue);
-            localStorage.setItem("phonePart3_input", newValue);
-          }}
-          onInput={(e) => {
-            const input = e.target as HTMLInputElement;
-            if (input.value.replace(/\D/g, "").length === 4) {
-              input.classList.add("bg-gray-100", "text-gray-500");
-            } else {
-              input.classList.remove("bg-gray-100", "text-gray-500");
-            }
-          }}
-          className="focus:outline-none focus:ring-2 focus:ring-sky-400 w-20 border rounded-md px-2 py-1.5 text-center transition-colors"
-        />
-      </div>
+      <PhoneNumberInputs
+        phonePart1={phonePart1}
+        phonePart2={phonePart2}
+        phonePart3={phonePart3}
+        setPhonePart1={setPhonePart1}
+        setPhonePart2={setPhonePart2}
+        setPhonePart3={setPhonePart3}
+      />
       <h2 className="text-lg font-bold p-4 pb-2 mt-2">주문 조회 비밀번호</h2>
       <div className="px-4 space-y-3">
         <input
@@ -753,44 +666,17 @@ export default function Cart({
           </button>
         </div>
       )}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="mx-2 bg-white rounded-lg shadow-lg w-full max-w-sm overflow-hidden">
-            <div className="px-6 py-4">
-              <h2 className="text-base font-medium text-gray-800">
-                주소와 연락처가 확실한가요?
-              </h2>
-              <p className="text-sm text-gray-600 mt-2">
-                <span className="font-medium text-gray-700">주소:</span>{" "}
-                <span className="font-bold">
-                  {roadAddress} {detailAddress}
-                </span>
-              </p>
-              <p className="text-sm text-gray-600 mt-1">
-                <span className="font-medium text-gray-700">연락처:</span>{" "}
-                <span className="font-bold">{userContact}</span>
-              </p>
-            </div>
-            <div className="flex border-t border-gray-200">
-              <button
-                onClick={() => setShowModal(false)}
-                className="w-1/2 text-sm text-gray-500 py-3 hover:bg-gray-100 transition"
-              >
-                취소
-              </button>
-              <button
-                onClick={() => {
-                  setShowModal(false);
-                  handlePayment();
-                }}
-                className="w-1/2 text-sm text-sky-500 py-3 font-medium hover:bg-sky-50 transition"
-              >
-                확인
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <CheckoutConfirmModal
+        visible={showModal}
+        roadAddress={roadAddress}
+        detailAddress={detailAddress}
+        userContact={userContact}
+        onCancel={() => setShowModal(false)}
+        onConfirm={() => {
+          setShowModal(false);
+          handlePayment();
+        }}
+      />
     </div>
   );
 }

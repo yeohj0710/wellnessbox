@@ -45,12 +45,13 @@ export default function HomeProductSection() {
   useEffect(() => {
     setMounted(true);
   }, []);
-  const [isSymptomModalVisible, setIsSymptomModalVisible] = useState(() => {
-    if (typeof window !== "undefined") {
-      // return localStorage.getItem("visited") ? false : true;
-    }
-    return true;
-  });
+  // const [isSymptomModalVisible, setIsSymptomModalVisible] = useState(() => {
+  //   if (typeof window !== "undefined") {
+  //     return localStorage.getItem("visited") ? false : true;
+  //   }
+  //   return true;
+  // });
+  const [isSymptomModalVisible, setIsSymptomModalVisible] = useState(false);
   useEffect(() => {
     const timestampKey = "cartTimestamp";
     const now = Date.now();
@@ -311,6 +312,7 @@ export default function HomeProductSection() {
         totalPrice > 0 ? "pb-20" : ""
       }`}
     >
+      {/*
       {mounted &&
         isSymptomModalVisible &&
         cartItems.length === 0 &&
@@ -320,6 +322,7 @@ export default function HomeProductSection() {
             onClose={() => setIsSymptomModalVisible(false)}
           />
         )}
+      */}
       <AddressSection
         roadAddress={roadAddress}
         setRoadAddress={setRoadAddress}

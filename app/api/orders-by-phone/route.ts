@@ -7,6 +7,6 @@ export async function POST(request: Request) {
     const isOrderExists = await checkOrderExists(phone, password);
     return NextResponse.json({ isOrderExists }, { status: 200 });
   } catch (error: any) {
-    return NextResponse.json({ message: error.message }, { status: 400 });
+    return NextResponse.json({ message: error.message }, { status: 500 });
   }
 }

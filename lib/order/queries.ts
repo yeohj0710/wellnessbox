@@ -8,10 +8,7 @@ export async function checkOrderExists(phone: string, password: string) {
     where: { phone, password },
     select: { id: true },
   });
-  if (!exists) {
-    throw new Error("해당 전화번호와 비밀번호로 조회된 주문이 없습니다.");
-  }
-  return true;
+  return !!exists;
 }
 
 export async function getOrdersWithItemsAndStatus(phone: string, password: string) {

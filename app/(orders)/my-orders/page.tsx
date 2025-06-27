@@ -24,6 +24,10 @@ export default function MyOrders() {
     setPhone(`${phonePart1}-${phonePart2}-${phonePart3}`);
   }, [phonePart1, phonePart2, phonePart3]);
   const handleFetchOrders = async () => {
+    if (!phonePart2 || !phonePart3 || !password) {
+      setError("전화번호와 비밀번호를 모두 입력해 주세요.");
+      return;
+    }
     setLoading(true);
     setError("");
     try {
@@ -31,7 +35,11 @@ export default function MyOrders() {
         phone,
         password,
       });
-      if (response.data.isOrderExists) setIsViewingDetails(true);
+      if (response.data.isOrderExists) {
+        setIsViewingDetails(true);
+      } else {
+        setError("해당 전화번호와 비밀번호로 조회된 주문이 없습니다.");
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || "주문 조회에 실패했습니다.");
     } finally {
@@ -60,6 +68,7 @@ export default function MyOrders() {
             <div className="flex gap-2 items-center">
               <input
                 type="text"
+                autoComplete="tel"
                 maxLength={3}
                 value={phonePart1}
                 onChange={(e) => {
@@ -78,6 +87,7 @@ export default function MyOrders() {
               <input
                 id="phonePart2"
                 type="text"
+                autoComplete="tel"
                 maxLength={4}
                 value={phonePart2}
                 onChange={(e) => {
@@ -96,6 +106,7 @@ export default function MyOrders() {
               <input
                 id="phonePart3"
                 type="text"
+                autoComplete="tel"
                 maxLength={4}
                 value={phonePart3}
                 onChange={(e) => {
@@ -113,6 +124,7 @@ export default function MyOrders() {
             <h2 className="text-lg font-bold pb-2 mt-3">주문 조회 비밀번호</h2>
             <input
               type="password"
+              autoComplete="current-password"
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
