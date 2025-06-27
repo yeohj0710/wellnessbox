@@ -15,102 +15,93 @@ const nextConfig: NextConfig = {
     if (isServer) {
       config.externals = config.externals || [];
       config.externals.push("onnxruntime-web");
-      if (!dev) {
-        config.module.rules.push(
-          {
-            test: /\.wasm$/,
-            type: "asset/resource",
-            generator: {
-              filename: "vendor-chunks/[name][ext]",
+
+      config.module.rules.push(
+        {
+          test: /\.wasm$/,
+          type: "asset/resource",
+          generator: { filename: "vendor-chunks/[name][ext]" },
+        },
+        {
+          test: /\.onnx$/,
+          type: "asset/resource",
+          generator: { filename: "vendor-chunks/[name][ext]" },
+        }
+      );
+
+      config.plugins.push(
+        new CopyPlugin({
+          patterns: [
+            {
+              from: path.resolve(
+                __dirname,
+                "node_modules/onnxruntime-web/dist/ort-wasm.wasm"
+              ),
+              to: "vendor-chunks",
             },
-          },
-          {
-            test: /\.onnx$/,
-            type: "asset/resource",
-            generator: {
-              filename: "vendor-chunks/[name][ext]",
+            {
+              from: path.resolve(
+                __dirname,
+                "node_modules/onnxruntime-web/dist/ort-wasm-simd.wasm"
+              ),
+              to: "vendor-chunks",
             },
-          }
-        );
-        config.plugins.push(
-          new CopyPlugin({
-            patterns: [
-              {
-                from: path.resolve(
-                  __dirname,
-                  "node_modules/onnxruntime-web/dist/ort-wasm.wasm"
-                ),
-                to: "vendor-chunks",
-              },
-              {
-                from: path.resolve(
-                  __dirname,
-                  "node_modules/onnxruntime-web/dist/ort-wasm-simd.wasm"
-                ),
-                to: "vendor-chunks",
-              },
-              {
-                from: path.resolve(
-                  __dirname,
-                  "node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm"
-                ),
-                to: "vendor-chunks",
-              },
-              {
-                from: path.resolve(__dirname, "public", "survey_model.onnx"),
-                to: "vendor-chunks",
-              },
-            ],
-          })
-        );
-      }
+            {
+              from: path.resolve(
+                __dirname,
+                "node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm"
+              ),
+              to: "vendor-chunks",
+            },
+            {
+              from: path.resolve(__dirname, "public", "survey_model.onnx"),
+              to: "vendor-chunks",
+            },
+          ],
+        })
+      );
     } else {
-      if (!dev) {
-        config.module.rules.push(
-          {
-            test: /\.wasm$/,
-            type: "asset/resource",
-            generator: {
-              filename: "static/chunks/[name][ext]",
+      config.module.rules.push(
+        {
+          test: /\.wasm$/,
+          type: "asset/resource",
+          generator: { filename: "static/chunks/[name][ext]" },
+        },
+        {
+          test: /\.onnx$/,
+          type: "asset/resource",
+          generator: { filename: "static/chunks/[name][ext]" },
+        }
+      );
+      config.plugins.push(
+        new CopyPlugin({
+          patterns: [
+            {
+              from: path.resolve(
+                __dirname,
+                "node_modules/onnxruntime-web/dist/ort-wasm.wasm"
+              ),
+              to: "static/chunks",
             },
-          },
-          {
-            test: /\.onnx$/,
-            type: "asset/resource",
-            generator: {
-              filename: "static/chunks/[name][ext]",
+            {
+              from: path.resolve(
+                __dirname,
+                "node_modules/onnxruntime-web/dist/ort-wasm-simd.wasm"
+              ),
+              to: "static/chunks",
             },
-          }
-        );
-        config.plugins.push(
-          new CopyPlugin({
-            patterns: [
-              {
-                from: path.resolve(
-                  __dirname,
-                  "node_modules/onnxruntime-web/dist/ort-wasm.wasm"
-                ),
-                to: "static/chunks",
-              },
-              {
-                from: path.resolve(
-                  __dirname,
-                  "node_modules/onnxruntime-web/dist/ort-wasm-simd.wasm"
-                ),
-                to: "static/chunks",
-              },
-              {
-                from: path.resolve(
-                  __dirname,
-                  "node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm"
-                ),
-                to: "static/chunks",
-              },
-            ],
-          })
-        );
-      }
+            {
+              from: path.resolve(
+                __dirname,
+                "node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm"
+              ),
+              to: "static/chunks",
+            },
+          ],
+        })
+      );
     }
+
     return config;
   },
 };

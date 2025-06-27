@@ -120,7 +120,7 @@ export default function CheckAI() {
             disabled={loading}
             className="mt-6 w-full py-2 bg-sky-500 text-white font-bold rounded-lg hover:bg-sky-600 disabled:opacity-50"
           >
-            {loading ? "로딩 중..." : "결과 확인하기"}
+            {loading ? "추론 중..." : "결과 확인하기"}
           </button>
         </form>
       </div>
