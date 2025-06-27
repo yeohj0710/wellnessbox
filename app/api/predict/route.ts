@@ -21,37 +21,25 @@ const LABELS = [
   "비타민A",
 ];
 
-const isDev = process.env.NODE_ENV !== "production";
 let session: any = null;
-
 async function getSession() {
-  if (session) return session;
-
-  if (isDev) {
+  if (!session) {
     const ort = await import("onnxruntime-web");
     ort.env.wasm.numThreads = 1;
     ort.env.wasm.proxy = false;
-    session = await ort.InferenceSession.create(
-      path.join(process.cwd(), "public", "survey_model.onnx")
-    );
-  } else {
-    const ort = await import("onnxruntime-node");
+
     session = await ort.InferenceSession.create(
       path.join(process.cwd(), "public", "survey_model.onnx")
     );
   }
-
   return session;
 }
 
 export async function POST(request: Request) {
   try {
     const { responses } = await request.json();
+    const ort = await import("onnxruntime-web");
     const sess = await getSession();
-    const ort = isDev
-      ? await import("onnxruntime-web")
-      : await import("onnxruntime-node");
-
     const input = new ort.Tensor("float32", Float32Array.from(responses), [
       1,
       responses.length,
@@ -63,7 +51,6 @@ export async function POST(request: Request) {
       .map((p, i) => ({ label: LABELS[i], prob: p }))
       .sort((a, b) => b.prob - a.prob)
       .slice(0, 3);
-
     return NextResponse.json(ranked);
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
