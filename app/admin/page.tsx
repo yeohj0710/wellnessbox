@@ -2,9 +2,9 @@
 
 import React, { useState } from "react";
 import { ChevronUpIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
-import CategoryManager from "@/components/categoryManager";
-import ProductManager from "@/components/productManager";
-import PharmacyProductManager from "@/components/pharmacyProductManager";
+import CategoryManager from "@/components/manager/categoryManager";
+import ProductManager from "@/components/manager/productManager";
+import PharmacyProductManager from "@/components/manager/pharmacyProductManager";
 
 export default function Admin() {
   return (

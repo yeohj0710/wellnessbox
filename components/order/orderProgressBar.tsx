@@ -4,8 +4,8 @@ import {
   getStatusClass,
   getLineClass,
   getLineText,
-} from "../lib/orderProgressUtils";
-import { OrderStatus } from "../lib/orderStatus";
+} from "@/lib/order/orderProgressUtils";
+import { OrderStatus } from "@/lib/order/orderStatus";
 
 type OrderProgressBarProps = {
   currentStatus: OrderStatus;

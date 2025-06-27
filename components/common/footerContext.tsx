@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode } from "react";
-import Footer from "@/components/footer";
+import Footer from "@/components/common/footer";
 
 type FooterContextType = {
   isFooterVisible: boolean;

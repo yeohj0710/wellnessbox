@@ -8,7 +8,7 @@ import {
   updatePharmacyProduct,
   deletePharmacyProduct,
   getPharmacyProductsByPharmacy,
-} from "@/lib/pharmacyProduct";
+} from "@/lib/product";
 import { getUploadUrl } from "@/lib/upload";
 import { getPharmaciesIdName } from "@/lib/pharmacy";
 import { ArrowPathIcon } from "@heroicons/react/24/outline";

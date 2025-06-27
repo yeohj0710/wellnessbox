@@ -1,22 +1,22 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import ProductDetail from "@/components/productDetail";
-import Cart from "@/components/cart";
+import ProductDetail from "@/components/product/productDetail";
+import Cart from "@/components/order/cart";
 import { getProducts } from "@/lib/product";
-import { useFooter } from "@/components/footerContext";
+import { useFooter } from "@/components/common/footerContext";
 import axios from "axios";
-import { getCategories } from "@/lib/category";
+import { getCategories } from "@/lib/product";
 import { getLowestAverageOptionType } from "@/lib/utils";
 
-import AddressSection from "./(components)/addressSection";
-import PharmacySelector from "./(components)/pharmacySelector";
-import CategoryFilter from "./(components)/categoryFilter";
-import PackageFilter from "./(components)/packageFilter";
-import ProductGrid from "./(components)/productGrid";
-import FooterCartBar from "./(components)/footerCartBar";
-import SymptomModal from "./(components)/symptomModal";
-import SymptomFilter from "./(components)/symptomFilter";
+import AddressSection from "@/app/(components)/addressSection";
+import PharmacySelector from "@/app/(components)/pharmacySelector";
+import CategoryFilter from "@/app/(components)/categoryFilter";
+import PackageFilter from "@/app/(components)/packageFilter";
+import ProductGrid from "@/app/(components)/productGrid";
+import FooterCartBar from "@/app/(components)/footerCartBar";
+import SymptomModal from "@/app/(components)/symptomModal";
+import SymptomFilter from "@/app/(components)/symptomFilter";
 
 export default function Home() {
   const { hideFooter, showFooter } = useFooter();

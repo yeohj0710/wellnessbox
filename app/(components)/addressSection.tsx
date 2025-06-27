@@ -1,6 +1,6 @@
 "use client";
 
-import AddressModal from "@/components/addressModal";
+import AddressModal from "@/components/modal/addressModal";
 
 interface AddressSectionProps {
   roadAddress: string;

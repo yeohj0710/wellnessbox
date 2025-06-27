@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Script from "next/script";
 import { TrashIcon } from "@heroicons/react/16/solid";
-import { ExpandableSection } from "./expandableSection";
+import { ExpandableSection } from "@/components/common/expandableSection";
 import { useRouter } from "next/navigation";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { getLoginStatus } from "@/lib/useLoginStatus";

@@ -1,6 +1,6 @@
 "use client";
 
-import { useFooter } from "@/components/footerContext";
+import { useFooter } from "@/components/common/footerContext";
 import { useEffect, useRef } from "react";
 
 export default function About() {

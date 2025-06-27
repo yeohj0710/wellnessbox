@@ -1,5 +1,5 @@
 import React from "react";
-import { ORDER_STATUS, OrderStatus } from "@/lib/orderStatus";
+import { ORDER_STATUS, OrderStatus } from "@/lib/order/orderStatus";
 
 const StatusLabel: React.FC<{ status: OrderStatus }> = ({ status }) => {
   const statusColors: Record<OrderStatus, string> = {

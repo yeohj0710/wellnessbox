@@ -1,6 +1,6 @@
 "use client";
 
-import StarRating from "@/components/starRating";
+import StarRating from "@/components/common/starRating";
 import { formatPriceRange, getLowestAverageOptionType } from "@/lib/utils";
 import Skeleton from "./skeleton";
 import Image from "next/image";

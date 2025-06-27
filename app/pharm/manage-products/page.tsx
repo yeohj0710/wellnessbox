@@ -4,10 +4,10 @@ import React, { useEffect, useState } from "react";
 import { ChevronUpIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { getPharmacy } from "@/lib/pharmacy";
 import { useRouter } from "next/navigation";
-import PharmacyProductManager from "@/components/pharmacyProductManager";
-import FullPageLoader from "@/components/fullPageLoader";
-import ProductManager from "@/components/productManager";
-import CategoryManager from "@/components/categoryManager";
+import PharmacyProductManager from "@/components/manager/pharmacyProductManager";
+import FullPageLoader from "@/components/common/fullPageLoader";
+import ProductManager from "@/components/manager/productManager";
+import CategoryManager from "@/components/manager/categoryManager";
 
 export default function ManageProducts() {
   const router = useRouter();

@@ -6,7 +6,7 @@ import {
   getProductsForAdmin,
 } from "@/lib/product";
 import { getUploadUrl } from "@/lib/upload";
-import { getCategories } from "@/lib/category";
+import { getCategories } from "@/lib/product";
 import { ArrowPathIcon } from "@heroicons/react/24/outline";
 import Image from "next/image";
 

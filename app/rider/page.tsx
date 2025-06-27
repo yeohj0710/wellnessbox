@@ -8,11 +8,11 @@ import {
   getBasicOrdersByRider,
 } from "@/lib/order";
 import { useRouter } from "next/navigation";
-import OrderProgressBar from "@/components/orderProgressBar";
-import OrderAccordionHeader from "@/components/orderAccordionHeader";
-import FullPageLoader from "@/components/fullPageLoader";
+import OrderProgressBar from "@/components/order/orderProgressBar";
+import OrderAccordionHeader from "@/components/order/orderAccordionHeader";
+import FullPageLoader from "@/components/common/fullPageLoader";
 import { getRider } from "@/lib/rider";
-import { ORDER_STATUS, OrderStatus } from "@/lib/orderStatus";
+import { ORDER_STATUS, OrderStatus } from "@/lib/order/orderStatus";
 import Image from "next/image";
 
 export default function Rider() {
