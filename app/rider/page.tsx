@@ -12,6 +12,7 @@ import OrderProgressBar from "@/components/orderProgressBar";
 import OrderAccordionHeader from "@/components/orderAccordionHeader";
 import FullPageLoader from "@/components/fullPageLoader";
 import { getRider } from "@/lib/rider";
+import { ORDER_STATUS, OrderStatus } from "@/lib/orderStatus";
 import Image from "next/image";
 
 export default function Rider() {
@@ -85,7 +86,7 @@ export default function Rider() {
     };
     const handleUpdateOrderStatus = async (
       orderid: number,
-      newStatus: string
+      newStatus: OrderStatus
     ) => {
       setLoadingStatus(orderid);
       const updatedOrder = await updateOrderStatus(orderid, newStatus);
@@ -127,7 +128,9 @@ export default function Rider() {
               </span>
               <div className="flex gap-2 mt-4 sm:mt-0">
                 <button
-                  onClick={() => handleUpdateOrderStatus(order.id, "픽업 완료")}
+                  onClick={() =>
+                    handleUpdateOrderStatus(order.id, ORDER_STATUS.PICKUP_COMPLETE)
+                  }
                   className="text-sm flex justify-center items-center w-20 h-8 bg-orange-400 hover:bg-orange-500 text-white rounded"
                   disabled={loadingStatus === order.id}
                 >
@@ -138,7 +141,9 @@ export default function Rider() {
                   )}
                 </button>
                 <button
-                  onClick={() => handleUpdateOrderStatus(order.id, "배송 완료")}
+                  onClick={() =>
+                    handleUpdateOrderStatus(order.id, ORDER_STATUS.DELIVERY_COMPLETE)
+                  }
                   className="text-sm flex justify-center items-center w-20 h-8 bg-gray-400 hover:bg-gray-500 text-white rounded"
                   disabled={loadingStatus === order.id}
                 >
@@ -153,7 +158,7 @@ export default function Rider() {
                     const confirmCancel =
                       window.confirm("정말로 픽업을 취소할까요?");
                     if (confirmCancel) {
-                      handleUpdateOrderStatus(order.id, "조제 완료");
+                      handleUpdateOrderStatus(order.id, ORDER_STATUS.DISPENSE_COMPLETE);
                     }
                   }}
                   className="text-sm flex justify-center items-center w-20 h-8 bg-red-400 hover:bg-red-500 text-white rounded"

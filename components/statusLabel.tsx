@@ -1,21 +1,22 @@
 import React from "react";
+import { ORDER_STATUS, OrderStatus } from "@/lib/orderStatus";
 
-const StatusLabel: React.FC<any> = ({ status }: any) => {
-  const statusColors: { [key: string]: string } = {
-    "결제 완료": "text-emerald-500",
-    "상담 완료": "text-indigo-500",
-    "조제 완료": "text-yellow-500",
-    "픽업 완료": "text-orange-400",
-    "배송 완료": "text-gray-500",
-    "주문 취소": "text-red-600",
+const StatusLabel: React.FC<{ status: OrderStatus }> = ({ status }) => {
+  const statusColors: Record<OrderStatus, string> = {
+    [ORDER_STATUS.PAYMENT_COMPLETE]: "text-emerald-500",
+    [ORDER_STATUS.COUNSEL_COMPLETE]: "text-indigo-500",
+    [ORDER_STATUS.DISPENSE_COMPLETE]: "text-yellow-500",
+    [ORDER_STATUS.PICKUP_COMPLETE]: "text-orange-400",
+    [ORDER_STATUS.DELIVERY_COMPLETE]: "text-gray-500",
+    [ORDER_STATUS.CANCELED]: "text-red-600",
   };
-  const nextSteps: { [key: string]: string } = {
-    "결제 완료": "상담 진행 중",
-    "상담 완료": "조제 진행 중",
-    "조제 완료": "배송 대기 중",
-    "픽업 완료": "배송 중",
-    "배송 완료": "배송 완료",
-    "주문 취소": "주문 취소",
+  const nextSteps: Record<OrderStatus, string> = {
+    [ORDER_STATUS.PAYMENT_COMPLETE]: "상담 진행 중",
+    [ORDER_STATUS.COUNSEL_COMPLETE]: "조제 진행 중",
+    [ORDER_STATUS.DISPENSE_COMPLETE]: "배송 대기 중",
+    [ORDER_STATUS.PICKUP_COMPLETE]: "배송 중",
+    [ORDER_STATUS.DELIVERY_COMPLETE]: "배송 완료",
+    [ORDER_STATUS.CANCELED]: "주문 취소",
   };
   const colorClass = `${statusColors[status] || "text-gray-500"} font-bold`;
   const nextStatus = nextSteps[status] || "알 수 없음";

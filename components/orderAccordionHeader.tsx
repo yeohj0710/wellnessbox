@@ -5,6 +5,7 @@ import { generateOrderNumber } from "@/lib/orderNumber";
 import { ChevronUpIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import StatusLabel from "./statusLabel";
 import ReviewModal from "./reviewModal";
+import { ORDER_STATUS, OrderStatus } from "@/lib/orderStatus";
 
 export default function OrderAccordionHeader({
   order,
@@ -57,7 +58,7 @@ export default function OrderAccordionHeader({
             <span className="hidden sm:inline">
               <StatusLabel status={order.status} />
             </span>
-            {!isLoading && onBack && order.status === "배송 완료" && (
+            {!isLoading && onBack && order.status === ORDER_STATUS.DELIVERY_COMPLETE && (
               <div>
                 <button
                   onClick={(e) => {

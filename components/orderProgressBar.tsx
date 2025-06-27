@@ -5,9 +5,10 @@ import {
   getLineClass,
   getLineText,
 } from "../lib/orderProgressUtils";
+import { OrderStatus } from "../lib/orderStatus";
 
 type OrderProgressBarProps = {
-  currentStatus: string;
+  currentStatus: OrderStatus;
 };
 
 export default function OrderProgressBar({

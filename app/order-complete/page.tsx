@@ -8,6 +8,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { ORDER_STATUS } from "@/lib/orderStatus";
 
 export default function OrderComplete() {
   const [loginStatus, setLoginStatus] = useState<any>([]);
@@ -82,7 +83,7 @@ export default function OrderComplete() {
           const pharmacyId = Number(localStorage.getItem("selectedPharmacyId"));
           const transactionType = "PAYMENT";
           const txId = paymentResponse.imp_uid || "";
-          const status = "결제 완료";
+          const status = ORDER_STATUS.PAYMENT_COMPLETE;
           const cartItems = JSON.parse(
             localStorage.getItem("cartItems") || "[]"
           );
@@ -177,7 +178,7 @@ export default function OrderComplete() {
           const pharmacyId = Number(localStorage.getItem("selectedPharmacyId"));
           const transactionType = "PAYMENT";
           const txId = transaction.id || "";
-          const status = "결제 완료";
+          const status = ORDER_STATUS.PAYMENT_COMPLETE;
           const cartItems = JSON.parse(
             localStorage.getItem("cartItems") || "[]"
           );

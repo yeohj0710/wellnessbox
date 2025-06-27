@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "node copy_wasm.js",
+    "predev": "prisma generate && node copy_wasm.js",
     "dev": "npm run predev && next dev",
     "prebuild": "npm run predev",
-    "build": "npm run prebuild && prisma generate && next build",
+    "build": "npm run prebuild && next build",
     "start": "next start",
     "lint": "next lint"
   },
@@ -29,8 +29,8 @@
   "devDependencies": {
     "@types/js-cookie": "^3.0.6",
     "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
+    "@types/react": "^18.3.23",
+    "@types/react-dom": "^18.3.7",
     "@types/tailwindcss": "^3.1.0",
     "eslint": "^8",
     "eslint-config-next": "15.0.3",

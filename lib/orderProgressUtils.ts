@@ -1,12 +1,8 @@
-export const steps = [
-  { label: "결제 완료" },
-  { label: "상담 완료" },
-  { label: "조제 완료" },
-  { label: "픽업 완료" },
-  { label: "배송 완료" },
-];
+import { ORDER_STATUS_STEPS, OrderStatus } from "./orderStatus";
 
-export function getStatusClass(step: number, currentStatus: string) {
+export const steps = ORDER_STATUS_STEPS.map((label) => ({ label }));
+
+export function getStatusClass(step: number, currentStatus: OrderStatus) {
   const currentStepIndex =
     steps.findIndex((s) => s.label === currentStatus) + 1;
   return step < currentStepIndex
@@ -16,7 +12,7 @@ export function getStatusClass(step: number, currentStatus: string) {
     : "bg-gray-200 text-gray-500";
 }
 
-export function getLineClass(step: number, currentStatus: string) {
+export function getLineClass(step: number, currentStatus: OrderStatus) {
   const currentStepIndex =
     steps.findIndex((s) => s.label === currentStatus) + 1;
   return step < currentStepIndex

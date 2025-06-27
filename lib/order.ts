@@ -1,6 +1,7 @@
 "use server";
 
 import db from "@/lib/db";
+import { ORDER_STATUS, OrderStatus } from "./orderStatus";
 
 export async function checkOrderExists(phone: string, password: string) {
   const exists = await db.order.findFirst({
@@ -184,9 +185,9 @@ export async function getBasicOrdersByRider() {
   return await db.order.findMany({
     where: {
       NOT: [
-        { status: "결제 완료" },
-        { status: "상담 완료" },
-        { status: "주문 취소" },
+        { status: ORDER_STATUS.PAYMENT_COMPLETE },
+        { status: ORDER_STATUS.COUNSEL_COMPLETE },
+        { status: ORDER_STATUS.CANCELED },
       ],
     },
     select: {
@@ -215,7 +216,7 @@ export async function getBasicOrdersByRider() {
   });
 }
 
-export async function updateOrderStatus(orderid: number, newStatus: string) {
+export async function updateOrderStatus(orderid: number, newStatus: OrderStatus) {
   const updatedOrder = await db.order.update({
     where: { id: orderid },
     data: { status: newStatus },
@@ -244,7 +245,7 @@ export async function createOrder(data: {
   transactionType?: string;
   txId?: string;
   totalPrice?: number;
-  status?: string;
+  status?: OrderStatus;
   pharmacyId?: number;
   orderItems: { pharmacyProductId: number; quantity: number }[];
 }) {
@@ -300,7 +301,7 @@ export async function updateOrder(
     paymentId?: string;
     transactionType?: string;
     txId?: string;
-    status?: string;
+    status?: OrderStatus;
     orderItems?: { productId: number; quantity: number }[];
     totalPrice?: number;
   }
