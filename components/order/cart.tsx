@@ -35,6 +35,9 @@ export default function Cart({
   const [userContact, setUserContact] = useState("");
   const [password, setPassword] = useState("");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("inicis");
+  const [customTestAmount, setCustomTestAmount] = useState<number>(
+    Number(process.env.NEXT_PUBLIC_TEST_PAYMENT_AMOUNT) || 1
+  );
   useEffect(() => {
     const fetchLoginStatus = async () => {
       const fetchgedLoginStatus = await getLoginStatus();
@@ -122,11 +125,9 @@ export default function Cart({
       return;
     }
     IMP.init(process.env.NEXT_PUBLIC_MERCHANT_ID);
-    const testPaymentAmount =
-      Number(process.env.NEXT_PUBLIC_TEST_PAYMENT_AMOUNT) || 1;
     const paymentAmount =
       loginStatus.isTestLoggedIn && selectedPaymentMethod === "inicis"
-        ? testPaymentAmount
+        ? customTestAmount
         : totalPriceWithDelivery;
     IMP.request_pay(
       {
@@ -629,6 +630,19 @@ export default function Cart({
         </div>
       ) : (
         <div className="px-4 mt-6">
+          {loginStatus.isTestLoggedIn && selectedPaymentMethod === "inicis" && (
+            <div className="px-4 py-2 mb-6">
+              <label className="text-sm font-medium text-gray-700">
+                테스트 결제 금액 (원)
+              </label>
+              <input
+                type="number"
+                value={customTestAmount}
+                onChange={(e) => setCustomTestAmount(Number(e.target.value))}
+                className="mt-1 w-full border rounded-md px-3 py-2"
+              />
+            </div>
+          )}
           <button
             onClick={() => {
               if (!sdkLoaded || !(window as any).IMP) {
