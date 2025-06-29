@@ -122,9 +122,11 @@ export default function Cart({
       return;
     }
     IMP.init(process.env.NEXT_PUBLIC_MERCHANT_ID);
+    const testPaymentAmount =
+      Number(process.env.NEXT_PUBLIC_TEST_PAYMENT_AMOUNT) || 1;
     const paymentAmount =
       loginStatus.isTestLoggedIn && selectedPaymentMethod === "inicis"
-        ? 1
+        ? testPaymentAmount
         : totalPriceWithDelivery;
     IMP.request_pay(
       {
