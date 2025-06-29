@@ -90,6 +90,9 @@ export default function Footer() {
                   사업자등록번호: 795-01-03612
                 </span>
                 <span className="text-xs text-gray-400">
+                  통신판매업신고번호: 2025-서울서초-0646
+                </span>
+                <span className="text-xs text-gray-400">
                   상호명: 웰니스박스 | 대표자: 박소현
                 </span>
                 <span className="text-xs text-gray-400">
