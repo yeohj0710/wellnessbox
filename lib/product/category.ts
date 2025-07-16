@@ -14,6 +14,18 @@ export async function getCategories() {
   return categories;
 }
 
+export async function getCategoriesByUpdatedAt() {
+  const categories = await db.category.findMany({
+    select: {
+      id: true,
+      name: true,
+      image: true,
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+  return categories;
+}
+
 export async function createCategory(data: { name: string; image?: string }) {
   const newCategory = await db.category.create({
     data: {
