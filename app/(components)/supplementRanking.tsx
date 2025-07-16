@@ -1,18 +1,31 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getProductsByUpdatedAt } from "@/lib/product";
+import { getProductsByUpdatedAt } from "@/lib/product/product";
 import ProductGrid from "@/app/(components)/productGrid";
 
+interface Product {
+  id: number;
+  name: string;
+  images: string[];
+  categories: { name: string }[];
+  pharmacyProducts: any[];
+  rating: number;
+  reviewCount: number;
+}
+
 export default function SupplementRanking() {
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       const fetched = await getProductsByUpdatedAt();
-      setProducts(fetched);
+      const productList = fetched.map((item: any) =>
+        item.product ? item.product : item
+      );
+      setProducts(productList);
       setIsLoading(false);
     };
     fetchData();
