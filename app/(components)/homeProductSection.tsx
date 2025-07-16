@@ -308,7 +308,7 @@ export default function HomeProductSection() {
   };
   return (
     <div
-      className={`w-full max-w-[640px] mx-auto mt-4 ${
+      className={`w-full max-w-[640px] mx-auto mt-8 ${
         totalPrice > 0 ? "pb-20" : ""
       }`}
     >

@@ -2,7 +2,7 @@
 
 export default function SymptomImprovement() {
   return (
-    <div className="w-full max-w-[640px] mt-8 mb-12 px-8 py-10 bg-white sm:shadow-md sm:rounded-lg">
+    <div className="w-full max-w-[640px] mt-8 px-8 py-10 bg-white sm:shadow-md sm:rounded-lg">
       <h1 className="text-2xl font-bold mb-4">증상별 개선</h1>
       <p className="text-sm text-gray-600">증상별 개선 섹션입니다.</p>
     </div>
