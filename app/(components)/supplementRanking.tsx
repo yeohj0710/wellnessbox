@@ -21,11 +21,8 @@ export default function SupplementRanking() {
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
-      const fetched = await getProductsByUpdatedAt();
-      const productList = fetched.map((item: any) =>
-        item.product ? item.product : item
-      );
-      setProducts(productList);
+      const fetched: any = await getProductsByUpdatedAt();
+      setProducts(fetched);
       setIsLoading(false);
     };
     fetchData();
