@@ -10,6 +10,7 @@ export async function getPharmacyProducts() {
       capacity: true,
       price: true,
       stock: true,
+      importance: true,
       createdAt: true,
       updatedAt: true,
       pharmacy: {
@@ -31,7 +32,10 @@ export async function getPharmacyProducts() {
         },
       },
     },
-    orderBy: { updatedAt: "desc" },
+    orderBy: [
+      { importance: "desc" },
+      { updatedAt: "desc" },
+    ],
   });
 }
 
@@ -44,6 +48,7 @@ export async function getPharmacyProductsByPharmacy(pharmacyId: number) {
       capacity: true,
       price: true,
       stock: true,
+      importance: true,
       createdAt: true,
       updatedAt: true,
       pharmacy: {
@@ -65,7 +70,10 @@ export async function getPharmacyProductsByPharmacy(pharmacyId: number) {
         },
       },
     },
-    orderBy: { updatedAt: "desc" },
+    orderBy: [
+      { importance: "desc" },
+      { updatedAt: "desc" },
+    ],
   });
 }
 
@@ -83,6 +91,7 @@ export async function getPharmacyProduct(
       optionType: true,
       price: true,
       stock: true,
+      importance: true,
       createdAt: true,
       updatedAt: true,
       pharmacy: {

@@ -16,6 +16,7 @@ export async function getProducts() {
       name: true,
       images: true,
       description: true,
+      importance: true,
       categories: {
         select: {
           id: true,
@@ -45,9 +46,10 @@ export async function getProducts() {
         },
       },
     },
-    orderBy: {
-      id: "asc",
-    },
+    orderBy: [
+      { importance: "desc" },
+      { updatedAt: "desc" },
+    ],
   });
   return products.map((product) => {
     const reviewCount = product.reviews.length;
@@ -84,6 +86,7 @@ export async function getProductsByUpdatedAt() {
       name: true,
       images: true,
       description: true,
+      importance: true,
       categories: {
         select: {
           id: true,
@@ -113,7 +116,10 @@ export async function getProductsByUpdatedAt() {
         },
       },
     },
-    orderBy: { updatedAt: "desc" },
+    orderBy: [
+      { importance: "desc" },
+      { updatedAt: "desc" },
+    ],
   });
   return products.map((product) => {
     const reviewCount = product.reviews.length;
@@ -153,9 +159,13 @@ export async function getProductsForAdmin() {
       id: true,
       name: true,
       images: true,
+      importance: true,
       categories: true,
     },
-    orderBy: { updatedAt: "desc" },
+    orderBy: [
+      { importance: "desc" },
+      { updatedAt: "desc" },
+    ],
   });
   return products;
 }

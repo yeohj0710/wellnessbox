@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import ProductDetail from "@/components/product/productDetail";
 import Cart from "@/components/order/cart";
 import { getProducts } from "@/lib/product";
+import { sortByImportanceDesc } from "@/lib/utils";
 import { useFooter } from "@/components/common/footerContext";
 import axios from "axios";
 import { getCategories } from "@/lib/product";
@@ -82,9 +83,12 @@ export default function HomeProductSection() {
         cacheTimestamp &&
         now - parseInt(cacheTimestamp, 10) < 60 * 1000
       ) {
-        setCategories(JSON.parse(cachedCategories));
-        setAllProducts(JSON.parse(cachedProducts));
-        setProducts(JSON.parse(cachedProducts));
+        setCategories(sortByImportanceDesc(JSON.parse(cachedCategories)));
+        const sortedProducts = sortByImportanceDesc(
+          JSON.parse(cachedProducts)
+        );
+        setAllProducts(sortedProducts);
+        setProducts(sortedProducts);
         setIsLoading(false);
         return;
       }
@@ -93,11 +97,13 @@ export default function HomeProductSection() {
           getCategories(),
           getProducts(),
         ]);
-        setCategories(fetchedCategories);
-        setAllProducts(fetchedProducts);
-        setProducts(fetchedProducts);
-        localStorage.setItem("categories", JSON.stringify(fetchedCategories));
-        localStorage.setItem("products", JSON.stringify(fetchedProducts));
+        const sortedCategories = sortByImportanceDesc(fetchedCategories);
+        const sortedProducts = sortByImportanceDesc(fetchedProducts);
+        setCategories(sortedCategories);
+        setAllProducts(sortedProducts);
+        setProducts(sortedProducts);
+        localStorage.setItem("categories", JSON.stringify(sortedCategories));
+        localStorage.setItem("products", JSON.stringify(sortedProducts));
         localStorage.setItem("cacheTimestamp", now.toString());
       } catch (error) {
         console.error("데이터를 가져오는 데 실패하였습니다:", error);

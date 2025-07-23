@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Skeleton from "./skeleton";
 import { getCategoriesByUpdatedAt } from "@/lib/product";
+import { sortByImportanceDesc } from "@/lib/utils";
 
 export default function PopularIngredients() {
   const [categories, setCategories] = useState<any[]>([]);
@@ -13,14 +14,14 @@ export default function PopularIngredients() {
     const fetchData = async () => {
       setIsLoading(true);
       const fetched = await getCategoriesByUpdatedAt();
-      setCategories(fetched);
+      setCategories(sortByImportanceDesc(fetched));
       setIsLoading(false);
     };
     fetchData();
   }, []);
 
   return (
-    <section className="w-full max-w-[640px] mx-auto mt-8 bg-white">
+    <section className="w-full max-w-[640px] mx-auto mt-8 bg-gray-50">
       <h1 className="text-xl font-bold px-4 mt-4">인기 성분</h1>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 p-3 sm:p-4">
         {isLoading

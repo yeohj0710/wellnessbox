@@ -8,8 +8,12 @@ export async function getCategories() {
       id: true,
       name: true,
       image: true,
+      importance: true,
     },
-    orderBy: { id: "asc" },
+    orderBy: [
+      { importance: "desc" },
+      { updatedAt: "desc" },
+    ],
   });
   return categories;
 }
@@ -20,8 +24,12 @@ export async function getCategoriesByUpdatedAt() {
       id: true,
       name: true,
       image: true,
+      importance: true,
     },
-    orderBy: { updatedAt: "desc" },
+    orderBy: [
+      { importance: "desc" },
+      { updatedAt: "desc" },
+    ],
   });
   return categories;
 }

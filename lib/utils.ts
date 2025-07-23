@@ -54,3 +54,18 @@ export const getLowestAverageOptionType = ({ product, pharmacy }: any) => {
   );
   return lowestAverage.optionType || null;
 };
+
+export const sortByImportanceDesc = <T extends { importance?: number | null }>(
+  items: T[]
+) => {
+  return items
+    .filter((item) => item.importance !== 0)
+    .sort((a, b) => {
+      const aVal = a.importance ?? null;
+      const bVal = b.importance ?? null;
+      if (aVal === null && bVal === null) return 0;
+      if (aVal === null) return 1;
+      if (bVal === null) return -1;
+      return bVal - aVal;
+    });
+};
