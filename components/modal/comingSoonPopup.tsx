@@ -30,16 +30,18 @@ export default function ComingSoonPopup() {
       onClick={handleClose}
     >
       <div
-        className="bg-white rounded-lg shadow-lg p-6 w-80 m-2"
+        className="bg-white rounded-lg shadow-lg p-6 w-96 m-2"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-black text-xl font-bold mb-4 text-center">
-          Coming Soon
+          현재 리뉴얼 작업 중이에요.
         </h2>
         <p className="text-gray-600 text-sm mb-4 text-center">
-          임시 판매(베타테스트) 기간이 종료되었습니다.
+          임시 판매(베타테스트) 기간이 종료되었어요.
           <br />
           보내주신 성원에 진심으로 감사드립니다.
+          <br />
+          8월 중으로 재판매가 시작됩니다.
         </p>
         <div className="flex items-center justify-between">
           <div className="flex items-center">

@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronUpIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
+import Image from "next/image";
 import { getProductsByUpdatedAt } from "@/lib/product/product";
 import StarRating from "@/components/common/starRating";
+import Skeleton from "./skeleton";
 import { sortByImportanceDesc } from "@/lib/utils";
 
 interface Product {
@@ -20,7 +21,6 @@ interface Product {
 export default function SupplementRanking() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -33,48 +33,51 @@ export default function SupplementRanking() {
   }, []);
 
   return (
-    <div className="w-full max-w-[640px] mx-auto mt-8 bg-gray-50 px-10 py-6 sm:shadow-md sm:rounded-lg">
-      <div
-        onClick={() => setIsExpanded((p) => !p)}
-        className="flex justify-between items-center cursor-pointer"
-      >
-        <span className="text-xl font-bold text-gray-800">인기 영양제 랭킹</span>
-        <span className="w-6 h-6">
-          {isExpanded ? (
-            <ChevronUpIcon className="text-gray-600" />
-          ) : (
-            <ChevronDownIcon className="text-gray-600" />
-          )}
-        </span>
-      </div>
-      <div
-        className={`overflow-hidden transition-all duration-300 ease-in-out border-gray-200 ${
-          isExpanded ? "h-auto opacity-100" : "max-h-0 opacity-0"
-        }`}
-      >
-        <div className="mt-4 border-t pt-6">
-          {isLoading ? (
-            <div className="flex justify-center py-6">
-              <div className="w-6 h-6 border-2 border-sky-400 border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : (
-            <ul className="flex flex-col gap-4">
-              {products.map((product, index) => (
-                <li key={product.id} className="flex items-center gap-3">
-                  <span className="w-6 text-right font-bold text-gray-700">
-                    {index + 1}
-                  </span>
-                  <span className="flex-1 text-sm font-medium text-gray-800">
+    <section className="w-full max-w-[640px] mx-auto mt-8 bg-gray-50">
+      <h1 className="text-xl font-bold px-4 mt-4">인기 영양제</h1>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 p-3 sm:p-4">
+        {isLoading
+          ? Array(6)
+              .fill(0)
+              .map((_, i) => <Skeleton key={i} />)
+          : products.map((product, index) => (
+              <div
+                key={product.id}
+                className="relative px-[0.5px] sm:px-1 sm:pb-1 flex flex-col border rounded-md overflow-hidden shadow-sm hover:shadow-lg hover:scale-105 transition-transform duration-300 cursor-pointer bg-white"
+              >
+                {product.images[0] ? (
+                  <div className="relative h-32 w-full bg-white">
+                    <Image
+                      src={product.images[0]}
+                      alt={product.name}
+                      fill
+                      sizes="512px"
+                      className="object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className="h-28 bg-gray-200 flex items-center justify-center text-gray-500">
+                    이미지 없음
+                  </div>
+                )}
+                <span className="absolute top-1 left-1 bg-sky-500 text-white text-xs font-bold px-1.5 py-0.5 rounded">
+                  {index + 1}
+                </span>
+                <div className="p-2 flex flex-col gap-1 flex-grow">
+                  <p className="text-xs text-gray-500 line-clamp-1">
+                    {product.categories.map((c) => c.name).join(', ') || ''}
+                  </p>
+                  <h3 className="text-sm font-bold text-gray-800 line-clamp-2">
                     {product.name}
-                  </span>
-                  <StarRating rating={product.rating} size={18} />
-                  <span className="text-xs text-gray-500 mt-1">({product.reviewCount})</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+                  </h3>
+                  <div className="flex items-center gap-1 mt-auto">
+                    <StarRating rating={product.rating} size={16} />
+                    <span className="text-xs text-gray-500 mt-1">({product.reviewCount})</span>
+                  </div>
+                </div>
+              </div>
+            ))}
       </div>
-    </div>
+    </section>
   );
 }
