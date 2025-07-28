@@ -13,7 +13,7 @@ export default function Home() {
       <ComingSoonPopup />
       <LandingSection />
       <PopularIngredients />
-      {/* <SymptomImprovement /> */}
+      <SymptomImprovement />
       <SupplementRanking />
       <HomeProductSection />
     </>
