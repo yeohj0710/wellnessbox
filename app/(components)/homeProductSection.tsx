@@ -84,9 +84,7 @@ export default function HomeProductSection() {
         now - parseInt(cacheTimestamp, 10) < 60 * 1000
       ) {
         setCategories(sortByImportanceDesc(JSON.parse(cachedCategories)));
-        const sortedProducts = sortByImportanceDesc(
-          JSON.parse(cachedProducts)
-        );
+        const sortedProducts = sortByImportanceDesc(JSON.parse(cachedProducts));
         setAllProducts(sortedProducts);
         setProducts(sortedProducts);
         setIsLoading(false);
@@ -179,7 +177,10 @@ export default function HomeProductSection() {
           roadAddress,
         });
         const sortedPharmacies = response.data.pharmacies;
-        if (!sortedPharmacies || sortedPharmacies.length === 0) {
+        const filteredPharmacies = sortedPharmacies.filter(
+          (pharmacy: any) => pharmacy.registrationNumber !== null
+        );
+        if (!filteredPharmacies.length) {
           alert(
             "선택하신 상품의 해당량만큼의 재고를 보유한 약국이 존재하지 않아요. 해당 상품을 장바구니에서 제외할게요."
           );
@@ -188,14 +189,14 @@ export default function HomeProductSection() {
           localStorage.setItem("cartItems", JSON.stringify(updatedCartItems));
           return;
         }
-        setPharmacies(sortedPharmacies);
+        setPharmacies(filteredPharmacies);
         if (
           !selectedPharmacy ||
-          !response.data.pharmacies.some(
+          !filteredPharmacies.some(
             (pharmacy: any) => pharmacy.id === selectedPharmacy.id
           )
         ) {
-          setSelectedPharmacy(sortedPharmacies[0]);
+          setSelectedPharmacy(filteredPharmacies[0]);
         }
       } catch (error) {
         console.error("약국 정보를 가져오는 데 실패했습니다:", error);

@@ -87,14 +87,17 @@ export default function Footer() {
             >
               <div className="mt-2 flex flex-col gap-1">
                 <span className="text-xs text-gray-400">
-                  사업자등록번호: 795-01-03612
+                  상호명: 주식회사 웰니스박스 | 대표자: 권혁찬
                 </span>
                 <span className="text-xs text-gray-400">
+                  사업자등록번호: 728-88-03267
+                </span>
+                <span className="text-xs text-gray-400">
+                  법인등록번호: 110111-0932570
+                </span>
+                {/* <span className="text-xs text-gray-400">
                   통신판매업신고번호: 2025-서울서초-0646
-                </span>
-                <span className="text-xs text-gray-400">
-                  상호명: 웰니스박스 | 대표자: 박소현
-                </span>
+                </span> */}
                 <span className="text-xs text-gray-400">
                   대표 전화번호: 02-6013-4400
                 </span>
@@ -102,7 +105,8 @@ export default function Footer() {
                   대표 이메일: smilerobert@naver.com
                 </span>
                 <span className="text-xs text-gray-400">
-                  주소: 서울특별시 서초구 반포대로19길 10 308호
+                  주소: 서울특별시 동대문구 경희대로 26, 2층 211호(회기동,
+                  삼의원창업센터)
                 </span>
               </div>
             </div>
