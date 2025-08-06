@@ -10,7 +10,7 @@ import ComingSoonPopup from "@/components/modal/comingSoonPopup";
 export default function Home() {
   return (
     <>
-      <ComingSoonPopup />
+      {/* <ComingSoonPopup /> */}
       <LandingSection />
       <PopularIngredients />
       <SymptomImprovement />
