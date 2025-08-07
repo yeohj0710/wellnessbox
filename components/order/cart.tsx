@@ -560,7 +560,7 @@ export default function Cart({
               />
               <div className="flex flex-row gap-1.5 items-center justify-center">
                 <span className="text-base font-medium text-gray-700">
-                  한국결제네트웍스
+                  NHN KCP
                 </span>
                 <div className="bg-orange-400 px-2 rounded-full ">
                   <span className="text-xs font-bold text-white">
