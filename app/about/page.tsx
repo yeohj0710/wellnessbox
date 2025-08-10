@@ -62,12 +62,11 @@ export default function About() {
       </div>
       <div className="relative z-10 mt-8 w-full max-w-[800px] mx-auto px-6 sm:px-12 py-10 bg-white/0 text-center">
         <h1 className="text-3xl font-bold text-white mb-10">
-          약국에서만 파는 약국 전용 영양제, 집에서도 주문해요
+          내 몸에 딱 맞는 프리미엄 건강 솔루션
         </h1>
         <p className="text-white leading-relaxed break-words">
-          다른 온라인 쇼핑몰에서는 살 수 없는{" "}
-          <b>약국에서만 판매하는 약국 전용 영양제</b>
-          를, 웰니스박스에서 제공해요. <br />
+          내 몸에 딱 맞는 프리미엄 건강 솔루션을, 웰니스박스에서 제공해요.{" "}
+          <br />
           <br />
           짝퉁, 가품 논란이 끊이지 않는 다른 온라인 쇼핑몰에서 영양제, 비타민을
           구매하는 것은 믿기 어렵죠. <br />
@@ -78,7 +77,7 @@ export default function About() {
           온라인 쇼핑몰과는 <b>3가지</b>가 다릅니다. <br />
           <br />
           <span className="font-bold">
-            1. 약국에서만 판매하는 믿을 수 있는 고효능 영양제 <br />
+            1. 약국에서 판매하는 믿을 수 있는 고효능 영양제 <br />
             2. 친절한 약사님과 메시지 상담을 통한 복약 지도 <br />
             3. 믿을 수 있는 약사님이 직접 조제, 포장하는 상품 <br />
           </span>
