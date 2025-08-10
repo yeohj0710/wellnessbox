@@ -29,6 +29,7 @@ export default function LandingSection2() {
       >
         <div className="pointer-events-none absolute -left-1/3 -top-1/4 h-[18rem] w-[18rem] rounded-full bg-[radial-gradient(closest-side,rgba(99,140,255,0.18),transparent)] sm:h-[24rem] sm:w-[24rem] md:h-[32rem] md:w-[32rem]" />
         <div className="pointer-events-none absolute -right-1/4 bottom-[-15%] h-[22rem] w-[22rem] rounded-full bg-[radial-gradient(closest-side,rgba(142,122,255,0.22),transparent)] sm:h-[30rem] sm:w-[30rem] md:h-[40rem] md:w-[40rem]" />
+
         <div className="relative mx-auto max-w-[90rem] px-4 sm:px-6 md:px-10 pt-24 sm:pt-28 md:pt-36 pb-16 sm:pb-20 md:pb-28">
           <div className="flex items-center justify-center gap-2 sm:gap-3">
             <div className="flex">
@@ -40,18 +41,27 @@ export default function LandingSection2() {
               당신만을 위한 프리미엄 맞춤 영양제
             </span>
           </div>
-          <h1 className="mt-4 sm:mt-6 text-center leading-tight tracking-tight text-[#0F1222] text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold">
-            내 몸에 딱 맞는 “AI+약사 설계”
-            <br className="hidden sm:block" />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#1E40FF] via-[#3B5BFF] to-[#6C4DFF]">
+
+          <h1 className="mt-4 sm:mt-6 text-center text-[#0F1222] text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight flex flex-col items-center gap-2 sm:gap-3 md:gap-4">
+            <span className="block sm:hidden leading-[1.4]">
+              내 몸에 딱 맞는
+              <br />
+              “AI+약사 설계”
+            </span>
+            <span className="hidden sm:block leading-none">
+              내 몸에 딱 맞는 “AI+약사 설계”
+            </span>
+            <span className="leading-none bg-clip-text text-transparent bg-gradient-to-r from-[#1E40FF] via-[#3B5BFF] to-[#6C4DFF]">
               Premium 건강 솔루션
             </span>
           </h1>
+
           <p className="mt-5 sm:mt-7 mx-auto max-w-xl sm:max-w-2xl text-center text-[13px] sm:text-sm md:text-base text-[#7A8094]">
             웰니스박스는 개인의 증상·복용약·검진 데이터를 기반으로 필요한
             <br className="hidden md:block" />
             영양성분을 추천해 안전하게 제공하는 서비스입니다.
           </p>
+
           <div className="mt-7 sm:mt-9 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4">
             <button className="h-11 sm:h-12 rounded-full px-5 sm:px-6 bg-white text-[#3B5BFF] ring-1 ring-white shadow-[0_6px_20px_rgba(67,103,230,0.20)]">
               7일 단위 시작으로 부담 없이!
@@ -60,6 +70,7 @@ export default function LandingSection2() {
               7일 무료체험
             </button>
           </div>
+
           <div className="mt-10 sm:mt-14 grid grid-cols-3 sm:flex sm:flex-wrap items-center justify-center gap-x-6 sm:gap-x-10 gap-y-3 sm:gap-y-4 text-[#B5BCD1] opacity-90">
             <div className="flex items-center justify-center gap-2 text-xs sm:text-sm">
               <RocketLaunchIcon className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -92,7 +103,7 @@ export default function LandingSection2() {
       <section
         className={`relative isolate z-[1] w-full min-h-[90vh] sm:min-h-[92vh] md:min-h-screen overflow-visible bg-gradient-to-b from-[#DDE7FF] via-[#EAF0FF] to-white ${pretendard.className}`}
       >
-        <div className="absolute inset-x-0 -top-12 z-[60] pointer-events-none overflow-visible">
+        <div className="absolute inset-x-0 -top-4 z-[60] pointer-events-none overflow-visible">
           <div className="relative mx-auto min-h-[9.5rem] md:min-h-[11rem]">
             <div className="absolute left-1/2 -translate-x-1/2 -top-2 rotate-[-8deg] w-[220vw]">
               <div className="mx-auto flex h-10 sm:h-12 items-center justify-center rounded-full bg-gradient-to-r from-[#59C1FF] to-[#7B61FF] shadow-[0_10px_30px_rgba(86,120,255,0.35)]">
@@ -129,26 +140,26 @@ export default function LandingSection2() {
           </div>
         </div>
 
-        <div className="relative mx-auto max-w-[100rem] px-4 sm:px-6 md:px-10 pt-24 sm:pt-28 md:pt-36 pb-16 sm:pb-20 md:pb-28">
-          <div className="mx-auto w-full max-w-[92rem] rounded-[32px] bg-white px-4 sm:px-8 md:px-12 py-12 md:py-16 shadow-[0_30px_80px_-20px_rgba(67,103,230,0.25)] ring-1 ring-white/60">
+        <div className="relative mx-auto max-w-[90rem] px-4 sm:px-6 md:px-10 pt-16 sm:pt-20 md:pt-24 pb-12 sm:pb-14 md:pb-16">
+          <div className="relative -mt-8 sm:-mt-12 md:-mt-16 z-[50] mx-auto w-full max-w-[72rem] rounded-[28px] bg-white px-4 sm:px-6 md:px-8 py-10 md:py-12 shadow-[0_24px_64px_-18px_rgba(67,103,230,0.22)] ring-1 ring-white/60">
             <div className="text-center">
-              <p className="text-xs sm:text-sm font-semibold tracking-widest text-[#4B63E6]">
+              <p className="text-[11px] sm:text-xs font-semibold tracking-widest text-[#4B63E6]">
                 PERSONALIZED PROCESS
               </p>
-              <h2 className="mt-2 text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-[#0F1222]">
+              <h2 className="mt-2 text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-[#0F1222]">
                 맞춤 프로세스 <span className="text-[#3B5BFF]">안내</span>
               </h2>
             </div>
 
-            <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-2xl bg-[#EEF3FF] px-6 py-7 shadow-[0_12px_30px_rgba(80,110,230,0.15)] ring-1 ring-white/70">
-                <div className="mx-auto mb-5 h-28 w-28 rounded-full bg-white/70 flex items-center justify-center">
-                  <ChartBarIcon className="h-12 w-12 text-[#4F68FF]" />
+            <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
+              <div className="rounded-xl bg-[#EEF3FF] px-4 sm:px-5 py-5 shadow-[0_10px_24px_rgba(80,110,230,0.12)] ring-1 ring-white/70">
+                <div className="mx-auto mb-4 h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 rounded-full bg-white/70 grid place-items-center">
+                  <ChartBarIcon className="h-8 w-8 md:h-10 md:w-10 text-[#4F68FF]" />
                 </div>
-                <div className="mx-auto mb-3 flex h-7 w-24 items-center justify-center rounded-full bg-gradient-to-r from-[#6C4DFF] to-[#4A6BFF] text-white text-[11px] font-semibold">
+                <div className="mx-auto mb-2 flex h-6 w-20 items-center justify-center rounded-full bg-gradient-to-r from-[#6C4DFF] to-[#4A6BFF] text-white text-[10px] font-semibold">
                   STEP 01
                 </div>
-                <p className="text-center text-sm text-[#5B5A74]">
+                <p className="text-center text-[13px] sm:text-sm text-[#5B5A74]">
                   건강
                   <br />
                   데이터{" "}
@@ -156,14 +167,14 @@ export default function LandingSection2() {
                 </p>
               </div>
 
-              <div className="rounded-2xl bg-[#EEF3FF] px-6 py-7 shadow-[0_12px_30px_rgba(80,110,230,0.15)] ring-1 ring-white/70">
-                <div className="mx-auto mb-5 h-28 w-28 rounded-full bg-white/70 flex items-center justify-center">
-                  <ChatBubbleBottomCenterTextIcon className="h-12 w-12 text-[#4F68FF]" />
+              <div className="rounded-xl bg-[#EEF3FF] px-4 sm:px-5 py-5 shadow-[0_10px_24px_rgba(80,110,230,0.12)] ring-1 ring-white/70">
+                <div className="mx-auto mb-4 h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 rounded-full bg-white/70 grid place-items-center">
+                  <ChatBubbleBottomCenterTextIcon className="h-8 w-8 md:h-10 md:w-10 text-[#4F68FF]" />
                 </div>
-                <div className="mx-auto mb-3 flex h-7 w-24 items-center justify-center rounded-full bg-gradient-to-r from-[#6C4DFF] to-[#4A6BFF] text-white text-[11px] font-semibold">
+                <div className="mx-auto mb-2 flex h-6 w-20 items-center justify-center rounded-full bg-gradient-to-r from-[#6C4DFF] to-[#4A6BFF] text-white text-[10px] font-semibold">
                   STEP 02
                 </div>
-                <p className="text-center text-sm text-[#5B5A74]">
+                <p className="text-center text-[13px] sm:text-sm text-[#5B5A74]">
                   전문가
                   <br />
                   상담{" "}
@@ -171,14 +182,14 @@ export default function LandingSection2() {
                 </p>
               </div>
 
-              <div className="rounded-2xl bg-[#EEF3FF] px-6 py-7 shadow-[0_12px_30px_rgba(80,110,230,0.15)] ring-1 ring-white/70">
-                <div className="mx-auto mb-5 h-28 w-28 rounded-full bg-white/70 flex items-center justify-center">
-                  <CubeIcon className="h-12 w-12 text-[#4F68FF]" />
+              <div className="rounded-xl bg-[#EEF3FF] px-4 sm:px-5 py-5 shadow-[0_10px_24px_rgba(80,110,230,0.12)] ring-1 ring-white/70">
+                <div className="mx-auto mb-4 h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 rounded-full bg-white/70 grid place-items-center">
+                  <CubeIcon className="h-8 w-8 md:h-10 md:w-10 text-[#4F68FF]" />
                 </div>
-                <div className="mx-auto mb-3 flex h-7 w-24 items-center justify-center rounded-full bg-gradient-to-r from-[#6C4DFF] to-[#4A6BFF] text-white text-[11px] font-semibold">
+                <div className="mx-auto mb-2 flex h-6 w-20 items-center justify-center rounded-full bg-gradient-to-r from-[#6C4DFF] to-[#4A6BFF] text-white text-[10px] font-semibold">
                   STEP 03
                 </div>
-                <p className="text-center text-sm text-[#5B5A74]">
+                <p className="text-center text-[13px] sm:text-sm text-[#5B5A74]">
                   맞춤
                   <br />
                   소분{" "}
@@ -186,23 +197,24 @@ export default function LandingSection2() {
                 </p>
               </div>
 
-              <div className="rounded-2xl bg-[#EEF3FF] px-6 py-7 shadow-[0_12px_30px_rgba(80,110,230,0.15)] ring-1 ring-white/70">
-                <div className="mx-auto mb-5 h-28 w-28 rounded-full bg-white/70 flex items-center justify-center">
-                  <BoltIcon className="h-12 w-12 text-[#4F68FF]" />
+              <div className="rounded-xl bg-[#EEF3FF] px-4 sm:px-5 py-5 shadow-[0_10px_24px_rgba(80,110,230,0.12)] ring-1 ring-white/70">
+                <div className="mx-auto mb-4 h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 rounded-full bg-white/70 grid place-items-center">
+                  <BoltIcon className="h-8 w-8 md:h-10 md:w-10 text-[#4F68FF]" />
                 </div>
-                <div className="mx-auto mb-3 flex h-7 w-24 items-center justify-center rounded-full bg-gradient-to-r from-[#6C4DFF] to-[#4A6BFF] text-white text-[11px] font-semibold">
+                <div className="mx-auto mb-2 flex h-6 w-20 items-center justify-center rounded-full bg-gradient-to-r from-[#6C4DFF] to-[#4A6BFF] text-white text-[10px] font-semibold">
                   STEP 04
                 </div>
-                <p className="text-center text-sm text-[#5B5A74]">
+                <p className="text-center text-[13px] sm:text-sm text-[#5B5A74]">
                   지속 케어
-                  <br />&{" "}
+                  <br />
+                  &nbsp;
                   <span className="font-semibold text-[#1E2A78]">피드백</span>
                 </p>
               </div>
             </div>
 
-            <div className="mt-10 flex justify-center">
-              <div className="h-8 w-8 rotate-45 rounded-[6px] border border-[#D3DBFF] bg-white shadow-[0_8px_24px_rgba(80,110,230,0.18)]" />
+            <div className="mt-8 md:mt-10 flex justify-center">
+              <div className="h-7 w-7 rotate-45 rounded-[6px] border border-[#D3DBFF] bg-white shadow-[0_6px_18px_rgba(80,110,230,0.16)]" />
             </div>
           </div>
         </div>
@@ -225,7 +237,7 @@ export default function LandingSection2() {
                 건강검진 결과·복용중인 약·증상 등을 입력하면 AI가 필요한
                 영양소를 추천합니다.
               </p>
-              <div className="mt-4 flex items-center gap-3">
+              <div className="mt-4 flex gap-3">
                 <div className="h-12 w-12 rounded-xl border border-[#E0E6FF] bg-white shadow-[0_8px_22px_rgba(67,103,230,0.15)] grid place-items-center text-[#4F68FF]">
                   <HeartIcon className="h-6 w-6" />
                 </div>
@@ -233,6 +245,7 @@ export default function LandingSection2() {
                   <CpuChipIcon className="h-6 w-6" />
                 </div>
               </div>
+              <div className="mt-6 h-px w-full max-w-md bg-[#E7E5FF]" />
               <div className="mt-6">
                 <button className="h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]">
                   7일 체험하기
@@ -283,23 +296,23 @@ export default function LandingSection2() {
                 추천된 영양제를 약국 소속 약사가 이중 확인하고, 1:1 상담을 통해
                 최종 처방합니다.
               </p>
-              <div className="mt-4 grid grid-cols-3 gap-3 max-w-xs">
-                <div className="h-12 w-full rounded-xl border border-[#E6E1FF] bg-white shadow-[0_8px_22px_rgba(108,77,255,0.15)] grid place-items-center text-[#6C4DFF]">
+              <div className="mt-4 flex gap-3">
+                <div className="h-12 w-12 rounded-xl border border-[#E6E1FF] bg-white shadow-[0_8px_22px_rgba(108,77,255,0.15)] grid place-items-center text-[#6C4DFF]">
                   <BeakerIcon className="h-6 w-6" />
                 </div>
-                <div className="h-12 w-full rounded-xl border border-[#E6E1FF] bg-white shadow-[0_8px_22px_rgba(108,77,255,0.15)] grid place-items-center text-[#6C4DFF]">
+                <div className="h-12 w-12 rounded-xl border border-[#E6E1FF] bg-white shadow-[0_8px_22px_rgba(108,77,255,0.15)] grid place-items-center text-[#6C4DFF]">
                   <UserCircleIcon className="h-6 w-6" />
                 </div>
-                <div className="h-12 w-full rounded-xl border border-[#E6E1FF] bg-white shadow-[0_8px_22px_rgba(108,77,255,0.15)] grid place-items-center text-[#6C4DFF]">
+                <div className="h-12 w-12 rounded-xl border border-[#E6E1FF] bg-white shadow-[0_8px_22px_rgba(108,77,255,0.15)] grid place-items-center text-[#6C4DFF]">
                   <MagnifyingGlassIcon className="h-6 w-6" />
                 </div>
               </div>
+              <div className="mt-6 h-px w-full max-w-md bg-[#E7E5FF]" />
               <div className="mt-6">
                 <button className="h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#6C4DFF] to-[#8A6BFF] shadow-[0_10px_28px_rgba(108,77,255,0.30)]">
                   7일 체험하기
                 </button>
               </div>
-              <div className="mt-6 h-px w-full max-w-md bg-[#E7E5FF]" />
             </div>
           </div>
         </div>
@@ -322,11 +335,11 @@ export default function LandingSection2() {
                 하루 복용량 기준으로 7일치씩 소분 포장해 배송합니다. 사용자는
                 최소 7일부터 부담 없이 시작할 수 있습니다.
               </p>
-              <div className="mt-4 grid grid-cols-2 gap-3 max-w-[220px]">
-                <div className="h-12 w-full rounded-xl border border-[#E0E6FF] bg-white shadow-[0_8px_22px_rgba(67,103,230,0.15)] grid place-items-center text-[#4F68FF]">
+              <div className="mt-4 flex gap-3">
+                <div className="h-12 w-12 rounded-xl border border-[#E0E6FF] bg-white shadow-[0_8px_22px_rgba(67,103,230,0.15)] grid place-items-center text-[#4F68FF]">
                   <CubeIcon className="h-6 w-6" />
                 </div>
-                <div className="h-12 w-full rounded-xl border border-[#E0E6FF] bg-white shadow-[0_8px_22px_rgba(67,103,230,0.15)] grid place-items-center text-[#4F68FF]">
+                <div className="h-12 w-12 rounded-xl border border-[#E0E6FF] bg-white shadow-[0_8px_22px_rgba(67,103,230,0.15)] grid place-items-center text-[#4F68FF]">
                   <ChartBarIcon className="h-6 w-6" />
                 </div>
               </div>
@@ -350,13 +363,12 @@ export default function LandingSection2() {
             </div>
           </div>
         </div>
-        <div className="pointer-events-none absolute inset-x-0 -bottom-1 h-6 bg-gradient-to-b from-transparent to-[#F6F3FF]" />
       </section>
 
       <section
         className={`relative w-full overflow-x-hidden bg-gradient-to-b from-[#F6F3FF] via-[#F6F3FF]/50 to-[#F3F6FF] ${pretendard.className}`}
       >
-        <div className="relative mx-auto max-w-[88rem] px-0 sm:px-2 md:px-4 pt-8 md:pt-10 pb-14 md:pb-16">
+        <div className="relative mx-auto max-w-[88rem] px-4 sm:px-6 md:px-8 pt-8 md:pt-10 pb-14 md:pb-16">
           <div className="grid grid-cols-1 md:grid-cols-12 items-center gap-6 md:gap-8">
             <div className="relative order-1 md:col-span-5 md:col-start-1">
               <div className="relative w-full aspect-[613/511] rounded-[28px] overflow-hidden">
@@ -380,11 +392,11 @@ export default function LandingSection2() {
                 챗봇 기반 피드백과 복약 알림으로 복용을 돕고, 앱에서 건강 변화를
                 모니터링합니다. 약사가 피드백을 받아 패키지를 조정합니다.
               </p>
-              <div className="mt-4 grid grid-cols-2 gap-3 max-w-[220px]">
-                <div className="h-12 w-full rounded-xl border border-[#E0E6FF] bg-white shadow-[0_8px_22px_rgba(67,103,230,0.15)] grid place-items-center text-[#4F68FF]">
+              <div className="mt-4 flex gap-3">
+                <div className="h-12 w-12 rounded-xl border border-[#E0E6FF] bg-white shadow-[0_8px_22px_rgba(67,103,230,0.15)] grid place-items-center text-[#4F68FF]">
                   <BoltIcon className="h-6 w-6" />
                 </div>
-                <div className="h-12 w-full rounded-xl border border-[#E0E6FF] bg-white shadow-[0_8px_22px_rgba(67,103,230,0.15)] grid place-items-center text-[#4F68FF]">
+                <div className="h-12 w-12 rounded-xl border border-[#E0E6FF] bg-white shadow-[0_8px_22px_rgba(67,103,230,0.15)] grid place-items-center text-[#4F68FF]">
                   <ChartBarIcon className="h-6 w-6" />
                 </div>
               </div>
@@ -397,14 +409,13 @@ export default function LandingSection2() {
             </div>
           </div>
         </div>
-        <div className="pointer-events-none absolute inset-x-0 -bottom-0 h-12 bg-gradient-to-b from-transparent via-[#F3F6FF] to-[#F3F6FF]" />
       </section>
 
       <section
-        className={`relative isolate z-[1] -mt-px w-full overflow-visible bg-gradient-to-b from-[#F3F6FF] via-[#E6ECFF] to-white pt-12 sm:pt-14 md:pt-16 ${pretendard.className}`}
+        className={`relative isolate z-[1] -mt-px w-full overflow-visible bg-gradient-to-b from-[#F3F6FF] via-[#E6ECFF] to-white pt-20 sm:pt-24 md:pt-28 ${pretendard.className}`}
       >
-        <div className="pointer-events-none absolute inset-x-0 -top-10 h-16 bg-gradient-to-b from-[#F3F6FF] to-transparent" />
-        <div className="absolute inset-x-0 -top-6 sm:-top-8 md:-top-10 z-[40] pointer-events-none overflow-visible">
+        <div className="pointer-events-none absolute inset-x-0 -top-8 h-14 bg-gradient-to-b from-[#F3F6FF] to-transparent" />
+        <div className="absolute inset-x-0 top-4 sm:top-6 md:top-8 z-[40] pointer-events-none overflow-visible">
           <div className="relative mx-auto h-[5.5rem]">
             <div className="absolute left-1/2 -translate-x-1/2 -top-2 rotate-[-8deg] w-[230vw]">
               <div className="mx-auto flex h-10 items-center justify-center rounded-full bg-gradient-to-r from-[#59C1FF] to-[#7B61FF] shadow-[0_10px_30px_rgba(86,120,255,0.35)]">
@@ -441,14 +452,14 @@ export default function LandingSection2() {
           </div>
         </div>
 
-        <div className="relative mx-auto max-w-[100rem] px-4 sm:px-6 md:px-10 pt-12 sm:pt-14 md:pt-16 pb-12 sm:pb-14 md:pb-16">
+        <div className="relative mx-auto max-w-[48rem] md:max-w-[50rem] lg:max-w-[52rem] px-4 sm:px-6 md:px-8 pt-12 sm:pt-14 md:pt-16 pb-12 sm:pb-14 md:pb-16">
           <div className="text-center">
             <p className="text-xs sm:text-sm font-semibold tracking-widest text-[#4B63E6]">
               START NOW
             </p>
             <h2 className="mt-2 text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-[#0F1222] leading-[1.28] sm:leading-[1.32] md:leading-[1.36]">
               지금 시작하고,
-              <br className="hidden sm:block" />
+              <br />
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#1E40FF] via-[#3B5BFF] to-[#6C4DFF]">
                 무료로 7일 체험
               </span>
@@ -463,8 +474,8 @@ export default function LandingSection2() {
           <div className="relative mt-8 sm:mt-10">
             <div className="pointer-events-none absolute -left-10 -top-8 h-24 w-24 rounded-full bg-[radial-gradient(closest-side,rgba(255,255,255,0.6),transparent)] blur-sm" />
             <div className="pointer-events-none absolute -right-8 bottom-3 h-28 w-28 rounded-full bg-[radial-gradient(closest-side,rgba(255,255,255,0.55),transparent)] blur-sm" />
-            <div className="mx-auto max-w-[64rem] md:max-w-[70rem] grid grid-cols-1 md:grid-cols-2 items-stretch gap-2 sm:gap-3 md:gap-4">
-              <div className="relative w-full rounded-[28px] bg-gradient-to-b from-[#5B4BFF] to-[#5637FF] px-6 sm:px-8 md:px-9 py-7 sm:py-9 md:py-10 text-white shadow-[0_28px_80px_-20px_rgba(77,76,220,0.55)] flex flex-col">
+            <div className="mx-auto grid grid-cols-1 md:grid-cols-none md:grid-flow-col md:auto-cols-max justify-center justify-items-center items-center md:justify-items-stretch md:items-stretch gap-6 md:gap-8">
+              <div className="relative h-full w-[16rem] sm:w-[18rem] md:w-[19rem] lg:w-[20rem] rounded-[28px] bg-gradient-to-b from-[#5B4BFF] to-[#5637FF] px-5 sm:px-6 md:px-7 py-7 sm:py-9 md:py-10 text-white shadow-[0_28px_80px_-20px_rgba(77,76,220,0.55)] flex flex-col">
                 <div className="absolute -top-3 left-4 inline-flex items-center rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold text-[#5A46FF] shadow-sm">
                   간편한 체험
                 </div>
@@ -473,10 +484,12 @@ export default function LandingSection2() {
                 </div>
                 <h3 className="text-base sm:text-lg font-bold">7일 체험판</h3>
                 <div className="mt-2 flex items-end gap-2">
-                  <span className="text-[42px] sm:text-5xl md:text-6xl font-extrabold leading-none tracking-tight">
+                  <span className="text-[34px] sm:text-[38px] md:text-5xl font-extrabold leading-none tracking-tight">
                     0
                   </span>
-                  <span className="pb-1 text-2xl sm:text-3xl">₩</span>
+                  <span className="pb-1 text-xl sm:text-2xl md:text-3xl">
+                    ₩
+                  </span>
                   <span className="pb-[6px] text-xs sm:text-sm text-white/90">
                     / 7일 후 정기구독 전환
                   </span>
@@ -547,7 +560,7 @@ export default function LandingSection2() {
                 </div>
               </div>
 
-              <div className="relative w-full rounded-[28px] bg-white px-6 sm:px-8 md:px-9 py-7 sm:py-9 md:py-10 text-[#0F1222] shadow-[0_28px_80px_-22px_rgba(67,103,230,0.35)] ring-1 ring-[#E7E9FF]">
+              <div className="relative h-full w-[16rem] sm:w-[18rem] md:w-[19rem] lg:w-[20rem] rounded-[28px] bg-white px-5 sm:px-6 md:px-7 py-7 sm:py-9 md:py-10 text-[#0F1222] shadow-[0_28px_80px_-22px_rgba(67,103,230,0.35)] ring-1 ring-[#E7E9FF]">
                 <div className="absolute -top-3 left-4 inline-flex items-center rounded-full bg-[#EAF0FF] px-3 py-1 text-[11px] font-semibold text-[#3B5BFF]">
                   첫 달 75% 할인
                 </div>
@@ -555,10 +568,12 @@ export default function LandingSection2() {
                   정기구독
                 </div>
                 <h3 className="text-base sm:text-lg font-bold">스탠다드</h3>
-                <div className="mt-2 text-[42px] sm:text-5xl md:text-6xl font-extrabold leading-none tracking-tight">
+                <div className="mt-2 text-[34px] sm:text-[38px] md:text-5xl font-extrabold leading-none tracking-tight">
                   19,000
-                  <span className="text-2xl sm:text-3xl align-top">₩</span>
-                  <span className="ml-1 text-sm sm:text-base font-bold text-[#5B5A74]">
+                  <span className="text-xl sm:text-2xl md:text-3xl align-top">
+                    ₩
+                  </span>
+                  <span className="ml-1 text-xs sm:text-sm md:text-base font-bold text-[#5B5A74]">
                     / 월
                   </span>
                 </div>

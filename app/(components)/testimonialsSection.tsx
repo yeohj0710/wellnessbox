@@ -204,7 +204,7 @@ export default function TestimonialsSection() {
           </p>
           <h2 className="mt-2 text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-[#0F1222]">
             나만을 위한 웰니스,
-            <br className="hidden sm:block" />
+            <br />
             구독자들의 이야기가{" "}
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#1E40FF] via-[#3B5BFF] to-[#6C4DFF]">
               증명합니다.
