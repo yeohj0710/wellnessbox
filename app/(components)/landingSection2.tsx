@@ -19,6 +19,7 @@ import {
   UserCircleIcon,
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
+import TestimonialsSection from "./testimonialsSection";
 
 export default function LandingSection2() {
   return (
@@ -651,6 +652,8 @@ export default function LandingSection2() {
           </div>
         </div>
       </section>
+
+      <TestimonialsSection />
     </>
   );
 }
