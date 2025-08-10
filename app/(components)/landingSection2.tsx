@@ -208,11 +208,11 @@ export default function LandingSection2() {
       </section>
 
       <section
-        className={`relative w-full min-h-[78vh] md:min-h-[82vh] overflow-x-hidden bg-gradient-to-b from-white via-[#F3F6FF] to-white ${pretendard.className}`}
+        className={`relative w-full overflow-x-hidden bg-gradient-to-b from-white via-[#F3F6FF] to-white ${pretendard.className}`}
       >
-        <div className="pointer-events-none absolute -top-3 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#9DB7FF] to-transparent opacity-70" />
-        <div className="relative mx-auto max-w-[88rem] px-4 sm:px-6 md:px-8 pt-12 md:pt-14 pb-14 md:pb-16">
-          <div className="grid grid-cols-1 md:grid-cols-12 items-center gap-8 md:gap-10">
+        <div className="pointer-events-none absolute -top-2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#9DB7FF] to-transparent opacity-70" />
+        <div className="relative mx-auto max-w-[88rem] px-4 sm:px-6 md:px-8 pt-8 md:pt-10 pb-10 md:pb-12">
+          <div className="grid grid-cols-1 md:grid-cols-12 items-center gap-6 md:gap-8">
             <div className="order-2 md:order-1 md:col-span-5 md:col-start-2">
               <p className="text-[10px] sm:text-xs font-semibold tracking-[0.18em] text-[#4B63E6]">
                 AI DATA ANALYSIS
@@ -224,7 +224,7 @@ export default function LandingSection2() {
                 건강검진 결과·복용중인 약·증상 등을 입력하면 AI가 필요한
                 영양소를 추천합니다.
               </p>
-              <div className="mt-5 flex items-center gap-4">
+              <div className="mt-4 flex items-center gap-3">
                 <div className="h-12 w-12 rounded-xl border border-[#E0E6FF] bg-white shadow-[0_8px_22px_rgba(67,103,230,0.15)] grid place-items-center text-[#4F68FF]">
                   <HeartIcon className="h-6 w-6" />
                 </div>
@@ -232,7 +232,7 @@ export default function LandingSection2() {
                   <CpuChipIcon className="h-6 w-6" />
                 </div>
               </div>
-              <div className="mt-7">
+              <div className="mt-6">
                 <button className="h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]">
                   7일 체험하기
                 </button>
@@ -255,11 +255,11 @@ export default function LandingSection2() {
       </section>
 
       <section
-        className={`relative w-full min-h-[78vh] md:min-h-[82vh] overflow-x-hidden bg-gradient-to-b from-white via-[#F6F3FF] to-white ${pretendard.className}`}
+        className={`relative w-full overflow-x-hidden bg-gradient-to-b from-white via-[#F6F3FF] to-white ${pretendard.className}`}
       >
-        <div className="pointer-events-none absolute -top-3 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#B7A9FF] to-transparent opacity-70" />
-        <div className="relative mx-auto max-w-[88rem] px-4 sm:px-6 md:px-8 pt-12 md:pt-14 pb-14 md:pb-16">
-          <div className="grid grid-cols-1 md:grid-cols-12 items-center gap-8 md:gap-10">
+        <div className="pointer-events-none absolute -top-2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#B7A9FF] to-transparent opacity-70" />
+        <div className="relative mx-auto max-w-[88rem] px-4 sm:px-6 md:px-8 pt-8 md:pt-10 pb-10 md:pb-12">
+          <div className="grid grid-cols-1 md:grid-cols-12 items-center gap-6 md:gap-8">
             <div className="relative order-1 md:col-span-5 md:col-start-2">
               <div className="relative w-full aspect-[613/511] rounded-[28px] overflow-hidden">
                 <Image
@@ -282,7 +282,7 @@ export default function LandingSection2() {
                 추천된 영양제를 약국 소속 약사가 이중 확인하고, 1:1 상담을 통해
                 최종 처방합니다.
               </p>
-              <div className="mt-5 grid grid-cols-3 gap-3 max-w-xs">
+              <div className="mt-4 grid grid-cols-3 gap-3 max-w-xs">
                 <div className="h-12 w-full rounded-xl border border-[#E6E1FF] bg-white shadow-[0_8px_22px_rgba(108,77,255,0.15)] grid place-items-center text-[#6C4DFF]">
                   <BeakerIcon className="h-6 w-6" />
                 </div>
@@ -293,23 +293,23 @@ export default function LandingSection2() {
                   <MagnifyingGlassIcon className="h-6 w-6" />
                 </div>
               </div>
-              <div className="mt-7">
+              <div className="mt-6">
                 <button className="h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#6C4DFF] to-[#8A6BFF] shadow-[0_10px_28px_rgba(108,77,255,0.30)]">
                   7일 체험하기
                 </button>
               </div>
-              <div className="mt-7 h-px w-full max-w-md bg-[#E7E5FF]" />
+              <div className="mt-6 h-px w-full max-w-md bg-[#E7E5FF]" />
             </div>
           </div>
         </div>
       </section>
 
       <section
-        className={`relative w-full min-h-[78vh] md:min-h-[82vh] overflow-x-hidden bg-gradient-to-b from-white via-[#F6F3FF]/60 to-[#F6F3FF] ${pretendard.className}`}
+        className={`relative w-full overflow-x-hidden bg-gradient-to-b from-white via-[#F6F3FF]/60 to-[#F6F3FF] ${pretendard.className}`}
       >
-        <div className="pointer-events-none absolute -top-3 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#B7A9FF] to-transparent opacity-70" />
-        <div className="relative mx-auto max-w-[88rem] px-4 sm:px-6 md:px-8 pt-12 md:pt-14 pb-14 md:pb-16">
-          <div className="grid grid-cols-1 md:grid-cols-12 items-center gap-8 md:gap-10">
+        <div className="pointer-events-none absolute -top-2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#B7A9FF] to-transparent opacity-70" />
+        <div className="relative mx-auto max-w-[88rem] px-4 sm:px-6 md:px-8 pt-8 md:pt-10 pb-10 md:pb-12">
+          <div className="grid grid-cols-1 md:grid-cols-12 items-center gap-6 md:gap-8">
             <div className="order-2 md:order-1 md:col-span-5 md:col-start-2">
               <p className="text-[10px] sm:text-xs font-semibold tracking-[0.18em] text-[#4B63E6]">
                 CUSTOMIZED 7-DAY SUPPLY
@@ -321,7 +321,7 @@ export default function LandingSection2() {
                 하루 복용량 기준으로 7일치씩 소분 포장해 배송합니다. 사용자는
                 최소 7일부터 부담 없이 시작할 수 있습니다.
               </p>
-              <div className="mt-5 grid grid-cols-2 gap-3 max-w-[220px]">
+              <div className="mt-4 grid grid-cols-2 gap-3 max-w-[220px]">
                 <div className="h-12 w-full rounded-xl border border-[#E0E6FF] bg-white shadow-[0_8px_22px_rgba(67,103,230,0.15)] grid place-items-center text-[#4F68FF]">
                   <CubeIcon className="h-6 w-6" />
                 </div>
@@ -329,8 +329,8 @@ export default function LandingSection2() {
                   <ChartBarIcon className="h-6 w-6" />
                 </div>
               </div>
-              <div className="mt-7 h-px w-full max-w-md bg-[#E7E5FF]" />
-              <div className="mt-7">
+              <div className="mt-6 h-px w-full max-w-md bg-[#E7E5FF]" />
+              <div className="mt-6">
                 <button className="h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]">
                   7일 체험하기
                 </button>
@@ -349,17 +349,15 @@ export default function LandingSection2() {
             </div>
           </div>
         </div>
-        <div className="pointer-events-none absolute inset-x-0 -bottom-2 h-8 bg-gradient-to-b from-transparent to-[#F6F3FF]" />
+        <div className="pointer-events-none absolute inset-x-0 -bottom-1 h-6 bg-gradient-to-b from-transparent to-[#F6F3FF]" />
       </section>
 
       <section
-        className={`relative -mt-1 w-full min-h-[78vh] md:min-h-[82vh] overflow-x-hidden bg-gradient-to-b from-[#F6F3FF] via-[#F6F3FF]/40 to-white ${pretendard.className}`}
+        className={`relative w-full overflow-x-hidden bg-gradient-to-b from-[#F6F3FF] via-[#F6F3FF]/50 to-[#F3F6FF] ${pretendard.className}`}
       >
-        <div className="pointer-events-none absolute -top-2 left-0 right-0 h-6 bg-gradient-to-b from-[#F6F3FF] to-transparent opacity-90" />
-        <div className="pointer-events-none absolute -top-3 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#B7A9FF] to-transparent opacity-70" />
-        <div className="relative mx-auto max-w-[88rem] px-4 sm:px-6 md:px-8 pt-12 md:pt-14 pb-14 md:pb-16">
-          <div className="grid grid-cols-1 md:grid-cols-12 items-center gap-8 md:gap-10">
-            <div className="relative order-1 md:col-span-5 md:col-start-2">
+        <div className="relative mx-auto max-w-[88rem] px-0 sm:px-2 md:px-4 pt-8 md:pt-10 pb-14 md:pb-16">
+          <div className="grid grid-cols-1 md:grid-cols-12 items-center gap-6 md:gap-8">
+            <div className="relative order-1 md:col-span-5 md:col-start-1">
               <div className="relative w-full aspect-[613/511] rounded-[28px] overflow-hidden">
                 <Image
                   src="/landingPage2/health-tracking-hero.png"
@@ -381,7 +379,7 @@ export default function LandingSection2() {
                 챗봇 기반 피드백과 복약 알림으로 복용을 돕고, 앱에서 건강 변화를
                 모니터링합니다. 약사가 피드백을 받아 패키지를 조정합니다.
               </p>
-              <div className="mt-5 grid grid-cols-2 gap-3 max-w-[220px]">
+              <div className="mt-4 grid grid-cols-2 gap-3 max-w-[220px]">
                 <div className="h-12 w-full rounded-xl border border-[#E0E6FF] bg-white shadow-[0_8px_22px_rgba(67,103,230,0.15)] grid place-items-center text-[#4F68FF]">
                   <BoltIcon className="h-6 w-6" />
                 </div>
@@ -389,8 +387,8 @@ export default function LandingSection2() {
                   <ChartBarIcon className="h-6 w-6" />
                 </div>
               </div>
-              <div className="mt-7 h-px w-full max-w-md bg-[#E7E5FF]" />
-              <div className="mt-7">
+              <div className="mt-6 h-px w-full max-w-md bg-[#E7E5FF]" />
+              <div className="mt-6">
                 <button className="h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]">
                   7일 체험하기
                 </button>
@@ -398,11 +396,13 @@ export default function LandingSection2() {
             </div>
           </div>
         </div>
+        <div className="pointer-events-none absolute inset-x-0 -bottom-0 h-12 bg-gradient-to-b from-transparent via-[#F3F6FF] to-[#F3F6FF]" />
       </section>
 
       <section
-        className={`relative isolate z-[1] -mt-px w-full overflow-visible bg-gradient-to-b from-[#F3F6FF] via-[#E6ECFF] to-white pt-6 sm:pt-8 md:pt-10 ${pretendard.className}`}
+        className={`relative isolate z-[1] -mt-px w-full overflow-visible bg-gradient-to-b from-[#F3F6FF] via-[#E6ECFF] to-white pt-12 sm:pt-14 md:pt-16 ${pretendard.className}`}
       >
+        <div className="pointer-events-none absolute inset-x-0 -top-10 h-16 bg-gradient-to-b from-[#F3F6FF] to-transparent" />
         <div className="absolute inset-x-0 -top-6 sm:-top-8 md:-top-10 z-[40] pointer-events-none overflow-visible">
           <div className="relative mx-auto h-[5.5rem]">
             <div className="absolute left-1/2 -translate-x-1/2 -top-2 rotate-[-8deg] w-[230vw]">
@@ -440,7 +440,7 @@ export default function LandingSection2() {
           </div>
         </div>
 
-        <div className="relative mx-auto max-w-[100rem] px-4 sm:px-6 md:px-10 pt-16 sm:pt-20 md:pt-24 pb-16 sm:pb-20 md:pb-24">
+        <div className="relative mx-auto max-w-[100rem] px-4 sm:px-6 md:px-10 pt-12 sm:pt-14 md:pt-16 pb-12 sm:pb-14 md:pb-16">
           <div className="text-center">
             <p className="text-xs sm:text-sm font-semibold tracking-widest text-[#4B63E6]">
               START NOW
@@ -454,17 +454,16 @@ export default function LandingSection2() {
               을 경험해보세요!
             </h2>
             <p className="mt-4 text-[13px] sm:text-sm md:text-base text-[#6F7690]">
-              7일 간단 체험 후, 나에게 맞으면 정기구독으로 건강 습관을
+              7일 간편 체험 후, 나에게 꼭 맞으면 정기구독으로 건강 습관을
               이어가세요.
             </p>
           </div>
 
-          <div className="relative mt-10 sm:mt-12">
+          <div className="relative mt-8 sm:mt-10">
             <div className="pointer-events-none absolute -left-10 -top-8 h-24 w-24 rounded-full bg-[radial-gradient(closest-side,rgba(255,255,255,0.6),transparent)] blur-sm" />
             <div className="pointer-events-none absolute -right-8 bottom-3 h-28 w-28 rounded-full bg-[radial-gradient(closest-side,rgba(255,255,255,0.55),transparent)] blur-sm" />
-
             <div className="mx-auto max-w-[64rem] md:max-w-[70rem] grid grid-cols-1 md:grid-cols-2 items-stretch gap-2 sm:gap-3 md:gap-4">
-              <div className="relative w-full rounded-[28px] bg-gradient-to-b from-[#5B4BFF] to-[#5637FF] px-6 sm:px-8 md:px-9 py-7 sm:py-9 md:py-10 text-white shadow-[0_28px_80px_-20px_rgba(77,76,220,0.55)]">
+              <div className="relative w-full rounded-[28px] bg-gradient-to-b from-[#5B4BFF] to-[#5637FF] px-6 sm:px-8 md:px-9 py-7 sm:py-9 md:py-10 text-white shadow-[0_28px_80px_-20px_rgba(77,76,220,0.55)] flex flex-col">
                 <div className="absolute -top-3 left-4 inline-flex items-center rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold text-[#5A46FF] shadow-sm">
                   간편한 체험
                 </div>
@@ -472,12 +471,15 @@ export default function LandingSection2() {
                   베스트
                 </div>
                 <h3 className="text-base sm:text-lg font-bold">7일 체험판</h3>
-                <div className="mt-2 text-[42px] sm:text-5xl md:text-6xl font-extrabold leading-none tracking-tight">
-                  0<span className="text-2xl sm:text-3xl align-top">원</span>
+                <div className="mt-2 flex items-end gap-2">
+                  <span className="text-[42px] sm:text-5xl md:text-6xl font-extrabold leading-none tracking-tight">
+                    0
+                  </span>
+                  <span className="pb-1 text-2xl sm:text-3xl">₩</span>
+                  <span className="pb-[6px] text-xs sm:text-sm text-white/90">
+                    / 7일 후 정기구독 전환
+                  </span>
                 </div>
-                <p className="mt-2 text-xs sm:text-sm text-white/90">
-                  7일 후 정기구독 전환
-                </p>
                 <div className="mt-6 border-t border-white/20 pt-5 space-y-3">
                   <div className="flex items-center gap-3">
                     <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/15">
@@ -496,7 +498,7 @@ export default function LandingSection2() {
                         />
                       </svg>
                     </span>
-                    <span className="text-sm">7일 무료 체험 제공</span>
+                    <span className="text-sm">7일 무료 체험</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/15">
@@ -515,7 +517,7 @@ export default function LandingSection2() {
                         />
                       </svg>
                     </span>
-                    <span className="text-sm">7일 이내 취소 가능</span>
+                    <span className="text-sm">7일 이내로 취소 가능</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/15">
@@ -534,10 +536,10 @@ export default function LandingSection2() {
                         />
                       </svg>
                     </span>
-                    <span className="text-sm">언제든 정기구독 전환</span>
+                    <span className="text-sm">언제든지 정기구독 전환</span>
                   </div>
                 </div>
-                <div className="mt-7">
+                <div className="mt-auto pt-7">
                   <button className="h-11 sm:h-12 w-full rounded-full bg-white text-[#3B2BFF] text-sm sm:text-base font-semibold shadow-[0_8px_22px_rgba(255,255,255,0.35)]">
                     구독하기
                   </button>
@@ -554,7 +556,7 @@ export default function LandingSection2() {
                 <h3 className="text-base sm:text-lg font-bold">스탠다드</h3>
                 <div className="mt-2 text-[42px] sm:text-5xl md:text-6xl font-extrabold leading-none tracking-tight">
                   19,000
-                  <span className="text-2xl sm:text-3xl align-top">원</span>
+                  <span className="text-2xl sm:text-3xl align-top">₩</span>
                   <span className="ml-1 text-sm sm:text-base font-bold text-[#5B5A74]">
                     / 월
                   </span>
@@ -577,7 +579,7 @@ export default function LandingSection2() {
                         />
                       </svg>
                     </span>
-                    <span className="text-sm">첫 달 75% 할인</span>
+                    <span className="text-sm">첫 달 75% 파격적 할인</span>
                   </div>
                   <div className="flex items-center gap-3 text-[#28314A]">
                     <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#EEF3FF] text-[#3B5BFF]">
@@ -596,7 +598,7 @@ export default function LandingSection2() {
                         />
                       </svg>
                     </span>
-                    <span className="text-sm">라이프스타일 맞춤 구독</span>
+                    <span className="text-sm">원하는 날짜에 맞춰 구독</span>
                   </div>
                   <div className="flex items-center gap-3 text-[#28314A]">
                     <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#EEF3FF] text-[#3B5BFF]">
@@ -634,7 +636,9 @@ export default function LandingSection2() {
                         />
                       </svg>
                     </span>
-                    <span className="text-sm">정기 구독자 배송 편의</span>
+                    <span className="text-sm">
+                      정기 구독자를 위한 배송 편의
+                    </span>
                   </div>
                 </div>
                 <div className="mt-7">
