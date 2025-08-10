@@ -1,37 +1,23 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { SITE_URL } from "@/lib/constants";
 import TopBar from "@/components/common/topBar";
 import { FooterProvider } from "@/components/common/footerContext";
 import { LocalStorageProvider } from "@/components/common/localStorage";
-
-const inter = Inter({ subsets: ["latin"] });
+import { pretendard } from "./fonts";
 
 export const metadata: Metadata = {
   title: "웰니스박스 | 약국 전용 영양제, 집에서도 주문해요",
   description: "약국 전용 영양제, 집에서도 주문해요",
   metadataBase: new URL(SITE_URL),
-  icons: {
-    icon: "/logo.png",
-  },
+  icons: { icon: "/logo.png" },
   openGraph: {
     title: "웰니스박스",
     description: "약국 전용 영양제, 집에서도 주문해요",
     url: SITE_URL,
     images: [
-      {
-        url: "/kakao-logo.png",
-        width: 800,
-        height: 400,
-        alt: "웰니스박스",
-      },
-      {
-        url: "/logo.png",
-        width: 800,
-        height: 800,
-        alt: "웰니스박스",
-      },
+      { url: "/kakao-logo.png", width: 800, height: 400, alt: "웰니스박스" },
+      { url: "/logo.png", width: 800, height: 800, alt: "웰니스박스" },
     ],
     siteName: "웰니스박스",
   },
@@ -52,12 +38,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
-      <body className={`${inter.className} flex flex-col bg-gray-50`}>
+      <body className={`${pretendard.className} flex flex-col bg-gray-50`}>
         <LocalStorageProvider>
           <FooterProvider>
             <TopBar />

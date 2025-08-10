@@ -6,12 +6,14 @@ import SymptomImprovement from "@/app/(components)/symptomImprovement";
 import SupplementRanking from "@/app/(components)/supplementRanking";
 import LandingSection from "@/app/(components)/landingSection";
 import ComingSoonPopup from "@/components/modal/comingSoonPopup";
+import LandingSection2 from "./(components)/landingSection2";
 
 export default function Home() {
   return (
     <>
       {/* <ComingSoonPopup /> */}
-      <LandingSection />
+      {/* <LandingSection /> */}
+      <LandingSection2 />
       <PopularIngredients />
       <SymptomImprovement />
       <SupplementRanking />
