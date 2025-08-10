@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useRouter } from "next/navigation";
 import JourneyCtaBridge from "@/app/(components)/journeyCtaBridge";
 import PopularIngredients from "@/app/(components)/popularIngredients";
@@ -19,7 +20,9 @@ export default function ExplorePage() {
       <PopularIngredients onSelectCategory={handleCategory} />
       <SymptomImprovement />
       <SupplementRanking onProductClick={handleProduct} />
-      <HomeProductSection />
+      <Suspense fallback={null}>
+        <HomeProductSection />
+      </Suspense>
     </>
   );
 }
