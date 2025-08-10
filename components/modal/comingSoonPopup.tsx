@@ -1,38 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
+interface ComingSoonPopupProps {
+  open: boolean;
+  onClose: () => void;
+}
 
-export default function ComingSoonPopup() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [doNotShow, setDoNotShow] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const hideUntil = localStorage.getItem("hideComingSoonUntil");
-    if (!hideUntil || Date.now() > parseInt(hideUntil, 10)) {
-      setIsOpen(true);
-    }
-  }, []);
-
-  const handleClose = () => {
-    if (typeof window !== "undefined" && doNotShow) {
-      const tomorrow = Date.now() + 24 * 60 * 60 * 1000;
-      localStorage.setItem("hideComingSoonUntil", tomorrow.toString());
-    }
-    setIsOpen(false);
-  };
-
-  if (!isOpen) return null;
+export default function ComingSoonPopup({
+  open,
+  onClose,
+}: ComingSoonPopupProps) {
+  if (!open) return null;
 
   return (
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
-      onClick={handleClose}
+      onClick={onClose}
     >
       <div
-        className="bg-white rounded-lg shadow-lg p-6 w-96 m-2"
+        className="relative bg-white rounded-lg shadow-lg p-6 w-96 m-2"
         onClick={(e) => e.stopPropagation()}
       >
+        <button
+          className="absolute top-3 right-4 text-gray-500"
+          onClick={onClose}
+        >
+          ✕
+        </button>
         <h2 className="text-black text-xl font-bold mb-4 text-center">
           현재 리뉴얼 작업 중이에요.
         </h2>
@@ -43,21 +36,9 @@ export default function ComingSoonPopup() {
           <br />
           8월 중으로 재판매가 시작됩니다.
         </p>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <input
-              id="dont-show"
-              type="checkbox"
-              checked={doNotShow}
-              onChange={() => setDoNotShow(!doNotShow)}
-              className="mr-2"
-            />
-            <label htmlFor="dont-show" className="text-sm text-gray-600">
-              하루동안 보지 않기
-            </label>
-          </div>
+        <div className="flex items-center justify-end">
           <button
-            onClick={handleClose}
+            onClick={onClose}
             className="text-base font-normal px-3 py-0.5 bg-sky-400 text-white rounded hover:bg-sky-500 transition duration-200"
           >
             확인

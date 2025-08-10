@@ -6,7 +6,13 @@ import Skeleton from "./skeleton";
 import { getCategoriesByUpdatedAt } from "@/lib/product";
 import { sortByImportanceDesc } from "@/lib/utils";
 
-export default function PopularIngredients() {
+interface PopularIngredientsProps {
+  onSelectCategory: (id: number) => void;
+}
+
+export default function PopularIngredients({
+  onSelectCategory,
+}: PopularIngredientsProps) {
   const [categories, setCategories] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -28,11 +34,12 @@ export default function PopularIngredients() {
           ? Array(6)
               .fill(0)
               .map((_, i) => <Skeleton key={i} />)
-          : categories.map((category) => (
-              <div
-                key={category.id}
-                className="px-[0.5px] sm:px-1 sm:pb-1 flex flex-col border rounded-md overflow-hidden shadow-sm hover:shadow-lg hover:scale-105 transition-transform duration-300 cursor-pointer bg-white"
-              >
+            : categories.map((category) => (
+                <div
+                  key={category.id}
+                  className="px-[0.5px] sm:px-1 sm:pb-1 flex flex-col border rounded-md overflow-hidden shadow-sm hover:shadow-lg hover:scale-105 transition-transform duration-300 cursor-pointer bg-white"
+                  onClick={() => onSelectCategory(category.id)}
+                >
                 {category.image ? (
                   <div className="relative h-32 w-full bg-white">
                     <Image

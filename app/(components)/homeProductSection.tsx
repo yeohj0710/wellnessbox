@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import ProductDetail from "@/components/product/productDetail";
 import Cart from "@/components/order/cart";
 import { getProducts } from "@/lib/product";
@@ -20,6 +21,7 @@ import SymptomModal from "@/app/(components)/symptomModal";
 import SymptomFilter from "@/app/(components)/symptomFilter";
 
 export default function HomeProductSection() {
+  const searchParams = useSearchParams();
   const { hideFooter, showFooter } = useFooter();
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [isCartVisible, setIsCartVisible] = useState(false);
@@ -53,6 +55,30 @@ export default function HomeProductSection() {
   //   return true;
   // });
   const [isSymptomModalVisible, setIsSymptomModalVisible] = useState(false);
+
+  useEffect(() => {
+    const pkg = searchParams.get("package");
+    if (pkg === "7") setSelectedPackage("7일 패키지");
+    else if (pkg === "30") setSelectedPackage("30일 패키지");
+    else if (pkg === "normal") setSelectedPackage("일반 상품");
+  }, [searchParams]);
+
+  useEffect(() => {
+    const cat = searchParams.get("category");
+    if (cat) {
+      const id = parseInt(cat, 10);
+      if (!isNaN(id)) setSelectedCategories([id]);
+    }
+  }, [searchParams, categories]);
+
+  useEffect(() => {
+    const prod = searchParams.get("product");
+    if (prod && allProducts.length > 0) {
+      const id = parseInt(prod, 10);
+      const target = allProducts.find((p) => p.id === id);
+      if (target) setSelectedProduct(target);
+    }
+  }, [searchParams, allProducts]);
   useEffect(() => {
     const timestampKey = "cartTimestamp";
     const now = Date.now();
@@ -133,6 +159,7 @@ export default function HomeProductSection() {
     setTotalPrice(total);
   }, [cartItems, selectedPharmacy, allProducts]);
   useEffect(() => {
+    if (selectedSymptoms.length === 0) return;
     const mappedCategoryNames = selectedSymptoms.reduce<string[]>(
       (acc, item) => {
         const cats = searchCategoryMapping[item] || [];
@@ -315,6 +342,7 @@ export default function HomeProductSection() {
   };
   return (
     <div
+      id="home-products"
       className={`w-full max-w-[640px] mx-auto mt-2 ${
         totalPrice > 0 ? "pb-20" : ""
       }`}

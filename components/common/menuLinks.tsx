@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { useState } from "react";
 
-export function MenuLinks({ loginStatus }: any) {
+interface MenuLinksProps {
+  loginStatus: any;
+  onItemClick?: () => void;
+}
+
+export function MenuLinks({ loginStatus, onItemClick }: MenuLinksProps) {
   const [adminVisible, setAdminVisible] = useState(false);
   const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null);
   const menuItemClasses = (additionalClasses = "") =>
@@ -22,48 +27,65 @@ export function MenuLinks({ loginStatus }: any) {
   };
   const handleLogout = async () => {
     await fetch("/api/logout");
+    if (onItemClick) onItemClick();
     window.location.href = "/";
+  };
+  const linkProps = {
+    onMouseDown: handlePressStart,
+    onMouseUp: handlePressEnd,
+    onTouchStart: handlePressStart,
+    onTouchEnd: handlePressEnd,
+    onClick: onItemClick,
   };
   return (
     <>
-      <Link
-        href="/about"
-        className={menuItemClasses()}
-        onMouseDown={handlePressStart}
-        onMouseUp={handlePressEnd}
-        onTouchStart={handlePressStart}
-        onTouchEnd={handlePressEnd}
-      >
-        서비스 소개
+      <Link href="/explore" className={menuItemClasses()} {...linkProps}>
+        상품 둘러보기
       </Link>
-      <Link href="/my-orders" className={menuItemClasses()}>
+      <Link
+        href="/my-orders"
+        className={menuItemClasses()}
+        onClick={onItemClick}
+      >
         내 주문 조회
       </Link>
-      <Link href="/check-ai" className={menuItemClasses()}>
+      <Link
+        href="/check-ai"
+        className={menuItemClasses()}
+        onClick={onItemClick}
+      >
         AI에게 추천받기
       </Link>
       {loginStatus.isPharmLoggedIn && (
-        <Link href="/pharm" className={menuItemClasses()}>
+        <Link href="/pharm" className={menuItemClasses()} onClick={onItemClick}>
           주문 관리
         </Link>
       )}
       {loginStatus.isRiderLoggedIn && (
-        <Link href="/rider" className={menuItemClasses()}>
+        <Link href="/rider" className={menuItemClasses()} onClick={onItemClick}>
           배송 관리
         </Link>
       )}
       {loginStatus.isPharmLoggedIn && (
-        <Link href="/pharm/manage-products" className={menuItemClasses()}>
+        <Link
+          href="/pharm/manage-products"
+          className={menuItemClasses()}
+          onClick={onItemClick}
+        >
           상품 등록/관리
         </Link>
       )}
       {adminVisible && (
-        <Link href="/admin-login" className={menuItemClasses()}>
+        <Link
+          href="/admin-login"
+          className={menuItemClasses()}
+          onClick={onItemClick}
+        >
           관리자 로그인
         </Link>
       )}
       {loginStatus.isAdminLoggedIn ? (
-        <Link href="/admin" className={menuItemClasses()}>
+        <Link href="/admin" className={menuItemClasses()} onClick={onItemClick}>
           데이터 관리
         </Link>
       ) : null}

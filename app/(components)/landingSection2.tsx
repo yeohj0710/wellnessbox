@@ -21,7 +21,15 @@ import {
 } from "@heroicons/react/24/outline";
 import TestimonialsSection from "./testimonialsSection";
 
-export default function LandingSection2() {
+interface LandingSection2Props {
+  onSelect7Day: () => void;
+  onSubscribe: () => void;
+}
+
+export default function LandingSection2({
+  onSelect7Day,
+  onSubscribe,
+}: LandingSection2Props) {
   return (
     <>
       <section
@@ -66,7 +74,10 @@ export default function LandingSection2() {
             <button className="h-11 sm:h-12 rounded-full px-5 sm:px-6 bg-white text-[#3B5BFF] ring-1 ring-white shadow-[0_6px_20px_rgba(67,103,230,0.20)]">
               7일 단위 시작으로 부담 없이!
             </button>
-            <button className="h-11 sm:h-12 rounded-full px-5 sm:px-6 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]">
+            <button
+              className="h-11 sm:h-12 rounded-full px-5 sm:px-6 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]"
+              onClick={onSelect7Day}
+            >
               7일 무료체험
             </button>
           </div>
@@ -101,9 +112,9 @@ export default function LandingSection2() {
       </section>
 
       <section
-        className={`relative isolate z-[1] w-full min-h-[90vh] sm:min-h-[92vh] md:min-h-screen overflow-visible bg-gradient-to-b from-[#DDE7FF] via-[#EAF0FF] to-white ${pretendard.className}`}
+        className={`relative isolate w-full min-h-[90vh] sm:min-h-[92vh] md:min-h-screen overflow-visible bg-gradient-to-b from-[#DDE7FF] via-[#EAF0FF] to-white ${pretendard.className}`}
       >
-        <div className="absolute inset-x-0 -top-4 z-[60] pointer-events-none overflow-visible">
+        <div className="absolute inset-x-0 z-10 -top-4 pointer-events-none overflow-visible">
           <div className="relative mx-auto min-h-[9.5rem] md:min-h-[11rem]">
             <div className="absolute left-1/2 -translate-x-1/2 -top-2 rotate-[-8deg] w-[220vw]">
               <div className="mx-auto flex h-10 sm:h-12 items-center justify-center rounded-full bg-gradient-to-r from-[#59C1FF] to-[#7B61FF] shadow-[0_10px_30px_rgba(86,120,255,0.35)]">
@@ -141,7 +152,7 @@ export default function LandingSection2() {
         </div>
 
         <div className="relative mx-auto max-w-[90rem] px-4 sm:px-6 md:px-10 pt-16 sm:pt-20 md:pt-24 pb-12 sm:pb-14 md:pb-16">
-          <div className="relative -mt-8 sm:-mt-12 md:-mt-16 z-[50] mx-auto w-full max-w-[72rem] rounded-[28px] bg-white px-4 sm:px-6 md:px-8 py-10 md:py-12 shadow-[0_24px_64px_-18px_rgba(67,103,230,0.22)] ring-1 ring-white/60">
+          <div className="relative -mt-8 sm:-mt-12 md:-mt-16 mx-auto w-full max-w-[72rem] rounded-[28px] bg-white px-4 sm:px-6 md:px-8 py-10 md:py-12 shadow-[0_24px_64px_-18px_rgba(67,103,230,0.22)] ring-1 ring-white/60">
             <div className="text-center">
               <p className="text-[11px] sm:text-xs font-semibold tracking-widest text-[#4B63E6]">
                 PERSONALIZED PROCESS
@@ -247,7 +258,10 @@ export default function LandingSection2() {
               </div>
               <div className="mt-6 h-px w-full max-w-md bg-[#E7E5FF]" />
               <div className="mt-6">
-                <button className="h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]">
+                <button
+                  className="h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]"
+                  onClick={onSelect7Day}
+                >
                   7일 체험하기
                 </button>
               </div>
@@ -309,7 +323,10 @@ export default function LandingSection2() {
               </div>
               <div className="mt-6 h-px w-full max-w-md bg-[#E7E5FF]" />
               <div className="mt-6">
-                <button className="h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#6C4DFF] to-[#8A6BFF] shadow-[0_10px_28px_rgba(108,77,255,0.30)]">
+                <button
+                  className="h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#6C4DFF] to-[#8A6BFF] shadow-[0_10px_28px_rgba(108,77,255,0.30)]"
+                  onClick={onSelect7Day}
+                >
                   7일 체험하기
                 </button>
               </div>
@@ -345,7 +362,10 @@ export default function LandingSection2() {
               </div>
               <div className="mt-6 h-px w-full max-w-md bg-[#E7E5FF]" />
               <div className="mt-6">
-                <button className="h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]">
+                <button
+                  className="h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]"
+                  onClick={onSelect7Day}
+                >
                   7일 체험하기
                 </button>
               </div>
@@ -402,7 +422,10 @@ export default function LandingSection2() {
               </div>
               <div className="mt-6 h-px w-full max-w-md bg-[#E7E5FF]" />
               <div className="mt-6">
-                <button className="h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]">
+                <button
+                  className="h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]"
+                  onClick={onSelect7Day}
+                >
                   7일 체험하기
                 </button>
               </div>
@@ -412,10 +435,10 @@ export default function LandingSection2() {
       </section>
 
       <section
-        className={`relative isolate z-[1] -mt-px w-full overflow-visible bg-gradient-to-b from-[#F3F6FF] via-[#E6ECFF] to-white pt-20 sm:pt-24 md:pt-28 ${pretendard.className}`}
+        className={`relative isolate -mt-px w-full overflow-visible bg-gradient-to-b from-[#F3F6FF] via-[#E6ECFF] to-white pt-20 sm:pt-24 md:pt-28 ${pretendard.className}`}
       >
         <div className="pointer-events-none absolute inset-x-0 -top-8 h-14 bg-gradient-to-b from-[#F3F6FF] to-transparent" />
-        <div className="absolute inset-x-0 top-4 sm:top-6 md:top-8 z-[40] pointer-events-none overflow-visible">
+        <div className="absolute inset-x-0 top-4 sm:top-6 md:top-8 pointer-events-none overflow-visible">
           <div className="relative mx-auto h-[5.5rem]">
             <div className="absolute left-1/2 -translate-x-1/2 -top-2 rotate-[-8deg] w-[230vw]">
               <div className="mx-auto flex h-10 items-center justify-center rounded-full bg-gradient-to-r from-[#59C1FF] to-[#7B61FF] shadow-[0_10px_30px_rgba(86,120,255,0.35)]">
@@ -554,7 +577,10 @@ export default function LandingSection2() {
                   </div>
                 </div>
                 <div className="mt-auto pt-7">
-                  <button className="h-11 sm:h-12 w-full rounded-full bg-white text-[#3B2BFF] text-sm sm:text-base font-semibold shadow-[0_8px_22px_rgba(255,255,255,0.35)]">
+                  <button
+                    className="h-11 sm:h-12 w-full rounded-full bg-white text-[#3B2BFF] text-sm sm:text-base font-semibold shadow-[0_8px_22px_rgba(255,255,255,0.35)]"
+                    onClick={onSelect7Day}
+                  >
                     구독하기
                   </button>
                 </div>
@@ -658,7 +684,10 @@ export default function LandingSection2() {
                   </div>
                 </div>
                 <div className="mt-7">
-                  <button className="h-11 sm:h-12 w-full rounded-full bg-white text-[#0F1222] text-sm sm:text-base ring-1 ring-[#E7E9FF] font-semibold shadow-[0_8px_22px_rgba(20,30,60,0.08)]">
+                  <button
+                    className="h-11 sm:h-12 w-full rounded-full bg-white text-[#0F1222] text-sm sm:text-base ring-1 ring-[#E7E9FF] font-semibold shadow-[0_8px_22px_rgba(20,30,60,0.08)]"
+                    onClick={onSubscribe}
+                  >
                     구독하기
                   </button>
                 </div>

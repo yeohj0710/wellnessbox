@@ -18,7 +18,13 @@ interface Product {
   importance?: number | null;
 }
 
-export default function SupplementRanking() {
+interface SupplementRankingProps {
+  onProductClick: (id: number) => void;
+}
+
+export default function SupplementRanking({
+  onProductClick,
+}: SupplementRankingProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -44,6 +50,7 @@ export default function SupplementRanking() {
               <div
                 key={product.id}
                 className="relative px-[0.5px] sm:px-1 sm:pb-1 flex flex-col border rounded-md overflow-hidden shadow-sm hover:shadow-lg hover:scale-105 transition-transform duration-300 cursor-pointer bg-white"
+                onClick={() => onProductClick(product.id)}
               >
                 {product.images[0] ? (
                   <div className="relative h-32 w-full bg-white">
