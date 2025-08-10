@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { pretendard } from "../fonts";
 import {
   RocketLaunchIcon,
@@ -12,6 +13,11 @@ import {
   ChatBubbleBottomCenterTextIcon,
   CubeIcon,
   BoltIcon,
+  HeartIcon,
+  CpuChipIcon,
+  BeakerIcon,
+  UserCircleIcon,
+  MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 
 export default function LandingSection2() {
@@ -83,37 +89,41 @@ export default function LandingSection2() {
       </section>
 
       <section
-        className={`relative w-full min-h-[90vh] sm:min-h-[92vh] md:min-h-screen bg-gradient-to-b from-[#DDE7FF] via-[#EAF0FF] to-white ${pretendard.className}`}
+        className={`relative isolate z-[1] w-full min-h-[90vh] sm:min-h-[92vh] md:min-h-screen overflow-visible bg-gradient-to-b from-[#DDE7FF] via-[#EAF0FF] to-white ${pretendard.className}`}
       >
-        <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-10 rotate-[-8deg] w-[220vw] z-20">
-          <div className="mx-auto flex h-10 sm:h-12 items-center justify-center rounded-full bg-gradient-to-r from-[#59C1FF] to-[#7B61FF] shadow-[0_10px_30px_rgba(86,120,255,0.35)]">
-            <div className="flex gap-10 text-white/95 text-xs sm:text-sm tracking-widest font-semibold whitespace-nowrap">
-              <span>WELLNESS BOX</span>
-              <span>WELLNESS BOX</span>
-              <span>WELLNESS BOX</span>
-              <span>WELLNESS BOX</span>
-              <span>WELLNESS BOX</span>
-              <span>WELLNESS BOX</span>
-              <span>WELLNESS BOX</span>
-              <span>WELLNESS BOX</span>
-              <span>WELLNESS BOX</span>
-              <span>WELLNESS BOX</span>
+        <div className="absolute inset-x-0 -top-12 z-[60] pointer-events-none overflow-visible">
+          <div className="relative mx-auto min-h-[9.5rem] md:min-h-[11rem]">
+            <div className="absolute left-1/2 -translate-x-1/2 -top-2 rotate-[-8deg] w-[220vw]">
+              <div className="mx-auto flex h-10 sm:h-12 items-center justify-center rounded-full bg-gradient-to-r from-[#59C1FF] to-[#7B61FF] shadow-[0_10px_30px_rgba(86,120,255,0.35)]">
+                <div className="flex gap-10 text-white/95 text-xs sm:text-sm tracking-widest font-semibold whitespace-nowrap">
+                  <span>WELLNESS BOX</span>
+                  <span>WELLNESS BOX</span>
+                  <span>WELLNESS BOX</span>
+                  <span>WELLNESS BOX</span>
+                  <span>WELLNESS BOX</span>
+                  <span>WELLNESS BOX</span>
+                  <span>WELLNESS BOX</span>
+                  <span>WELLNESS BOX</span>
+                  <span>WELLNESS BOX</span>
+                  <span>WELLNESS BOX</span>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-        <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-1 rotate-[8deg] w-[230vw] opacity-90 z-10">
-          <div className="mx-auto flex h-9 sm:h-11 items-center justify-center rounded-full bg-gradient-to-r from-[#4AA8FF] to-[#6C4DFF] shadow-[0_8px_24px_rgba(86,120,255,0.28)]">
-            <div className="flex gap-10 text-white/95 text-[11px] sm:text-xs tracking-widest font-semibold whitespace-nowrap">
-              <span>WELLNESS BOX</span>
-              <span>WELLNESS BOX</span>
-              <span>WELLNESS BOX</span>
-              <span>WELLNESS BOX</span>
-              <span>WELLNESS BOX</span>
-              <span>WELLNESS BOX</span>
-              <span>WELLNESS BOX</span>
-              <span>WELLNESS BOX</span>
-              <span>WELLNESS BOX</span>
-              <span>WELLNESS BOX</span>
+            <div className="absolute left-1/2 -translate-x-1/2 top-6 rotate-[8deg] w-[230vw] opacity-90">
+              <div className="mx-auto flex h-9 sm:h-11 items-center justify-center rounded-full bg-gradient-to-r from-[#4AA8FF] to-[#6C4DFF] shadow-[0_8px_24px_rgba(86,120,255,0.28)]">
+                <div className="flex gap-10 text-white/95 text-[11px] sm:text-xs tracking-widest font-semibold whitespace-nowrap">
+                  <span>WELLNESS BOX</span>
+                  <span>WELLNESS BOX</span>
+                  <span>WELLNESS BOX</span>
+                  <span>WELLNESS BOX</span>
+                  <span>WELLNESS BOX</span>
+                  <span>WELLNESS BOX</span>
+                  <span>WELLNESS BOX</span>
+                  <span>WELLNESS BOX</span>
+                  <span>WELLNESS BOX</span>
+                  <span>WELLNESS BOX</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -192,6 +202,192 @@ export default function LandingSection2() {
 
             <div className="mt-10 flex justify-center">
               <div className="h-8 w-8 rotate-45 rounded-[6px] border border-[#D3DBFF] bg-white shadow-[0_8px_24px_rgba(80,110,230,0.18)]" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        className={`relative w-full min-h-[88vh] md:min-h-screen overflow-x-hidden bg-gradient-to-b from-white via-[#F3F6FF] to-white ${pretendard.className}`}
+      >
+        <div className="pointer-events-none absolute -top-6 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#9DB7FF] to-transparent opacity-60" />
+        <div className="relative mx-auto max-w-[100rem] px-4 sm:px-6 md:px-10 pt-16 sm:pt-20 md:pt-24 pb-20 md:pb-28">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12 lg:gap-16 items-center">
+            <div className="order-2 md:order-1 md:pl-8 lg:pl-12 xl:pl-16">
+              <p className="text-[10px] sm:text-xs font-semibold tracking-[0.18em] text-[#5B74FF]">
+                AI DATA ANALYSIS
+              </p>
+              <h3 className="mt-3 text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-[#0F1222]">
+                건강 데이터 <span className="text-[#3B5BFF]">분석</span>
+              </h3>
+              <p className="mt-4 text-[13px] sm:text-sm md:text-base text-[#6F7690] leading-relaxed">
+                건강검진 결과·복용중인 약·증상 등을 입력하면 AI가 필요한
+                영양소를 추천합니다.
+              </p>
+              <div className="mt-6 flex items-center gap-4">
+                <div className="h-12 w-12 rounded-xl border border-[#E0E6FF] bg-white shadow-[0_8px_22px_rgba(67,103,230,0.15)] grid place-items-center text-[#6C7AFF]">
+                  <HeartIcon className="h-6 w-6" />
+                </div>
+                <div className="h-12 w-12 rounded-xl border border-[#E0E6FF] bg-white shadow-[0_8px_22px_rgba(67,103,230,0.15)] grid place-items-center text-[#6C7AFF]">
+                  <CpuChipIcon className="h-6 w-6" />
+                </div>
+              </div>
+              <div className="mt-8">
+                <button className="h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]">
+                  7일 체험하기
+                </button>
+              </div>
+            </div>
+
+            <div className="relative order-1 md:order-2 flex justify-end pr-6 lg:pr-8 xl:pr-10">
+              <div className="relative w-full md:w-[72%] lg:w-[520px] xl:w-[560px] aspect-[613/511] rounded-[28px] overflow-hidden">
+                <Image
+                  src="/landingPage2/ai-analysis-hero.png"
+                  alt="AI 건강 데이터 분석"
+                  fill
+                  priority
+                  sizes="(min-width:1280px) 560px, (min-width:1024px) 520px, 72vw"
+                  className="object-contain"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        className={`relative w-full min-h-[88vh] md:min-h-screen overflow-x-hidden bg-gradient-to-b from-white via-[#F6F3FF] to-white ${pretendard.className}`}
+      >
+        <div className="pointer-events-none absolute -top-6 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#B7A9FF] to-transparent opacity-60" />
+        <div className="relative mx-auto max-w-[100rem] px-4 sm:px-6 md:px-10 pt-8 sm:pt-12 md:pt-16 pb-20 md:pb-28">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-14 items-center">
+            <div className="relative order-1 flex justify-start">
+              <div className="relative w-full md:w-[72%] lg:w-[520px] xl:w-[560px] aspect-[613/511] rounded-[28px] overflow-hidden">
+                <Image
+                  src="/landingPage2/pharmacist-review-hero.png"
+                  alt="전문가 상담 검토"
+                  fill
+                  sizes="(min-width:1280px) 560px, (min-width:1024px) 520px, 72vw"
+                  className="object-contain"
+                />
+              </div>
+            </div>
+
+            <div className="order-2">
+              <p className="text-[10px] sm:text-xs font-semibold tracking-[0.18em] text-[#7A68FF]">
+                PHARMACIST-APPROVED
+              </p>
+              <h3 className="mt-3 text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-[#0F1222]">
+                전문가 <span className="text-[#6C4DFF]">상담 검토</span>
+              </h3>
+              <p className="mt-4 text-[13px] sm:text-sm md:text-base text-[#6F7690] leading-relaxed">
+                추천된 영양제를 약국 소속 약사가 이중 확인하고, 1:1 상담을 통해
+                최종 처방합니다.
+              </p>
+              <div className="mt-6 grid grid-cols-3 gap-3 max-w-xs">
+                <div className="h-12 w-full rounded-xl border border-[#E6E1FF] bg-white shadow-[0_8px_22px_rgba(108,77,255,0.15)] grid place-items-center text-[#6C4DFF]">
+                  <BeakerIcon className="h-6 w-6" />
+                </div>
+                <div className="h-12 w-full rounded-xl border border-[#E6E1FF] bg-white shadow-[0_8px_22px_rgba(108,77,255,0.15)] grid place-items-center text-[#6C4DFF]">
+                  <UserCircleIcon className="h-6 w-6" />
+                </div>
+                <div className="h-12 w-full rounded-xl border border-[#E6E1FF] bg-white shadow-[0_8px_22px_rgba(108,77,255,0.15)] grid place-items-center text-[#6C4DFF]">
+                  <MagnifyingGlassIcon className="h-6 w-6" />
+                </div>
+              </div>
+              <div className="mt-8">
+                <button className="h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#6C4DFF] to-[#8A6BFF] shadow-[0_10px_28px_rgba(108,77,255,0.30)]">
+                  7일 체험하기
+                </button>
+              </div>
+              <div className="mt-8 h-px w-full max-w-md bg-[#E7E5FF]" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        className={`relative w-full bg-gradient-to-b from-white via-white to-white ${pretendard.className}`}
+      >
+        <div className="relative mx-auto max-w-[100rem] px-4 sm:px-6 md:px-10 py-20 sm:py-24 md:py-28">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-14 items-center">
+            <div className="order-2 md:order-1 md:pl-8 lg:pl-12 xl:pl-16">
+              <p className="text-[10px] sm:text-xs font-semibold tracking-[0.18em] text-[#4B63E6]">
+                CUSTOMIZED 7-DAY SUPPLY
+              </p>
+              <h3 className="mt-3 text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-[#0F1222]">
+                맞춤 <span className="text-[#3B5BFF]">소분 패키징</span>
+              </h3>
+              <p className="mt-4 text-[13px] sm:text-sm md:text-base text-[#6F7690] leading-relaxed">
+                하루 복용량 기준으로 7일치씩 소분 포장해 배송합니다. 사용자는
+                최소 7일부터 부담 없이 시작할 수 있습니다.
+              </p>
+              <div className="mt-6 grid grid-cols-2 gap-3 max-w-[220px]">
+                <div className="h-12 w-full rounded-xl border border-[#E0E6FF] bg-white shadow-[0_8px_22px_rgba(67,103,230,0.15)] grid place-items-center text-[#4F68FF]">
+                  <CubeIcon className="h-6 w-6" />
+                </div>
+                <div className="h-12 w-full rounded-xl border border-[#E0E6FF] bg-white shadow-[0_8px_22px_rgba(67,103,230,0.15)] grid place-items-center text-[#4F68FF]">
+                  <ChartBarIcon className="h-6 w-6" />
+                </div>
+              </div>
+              <div className="mt-8 h-px w-full max-w-md bg-[#E7E5FF]" />
+              <div className="mt-8">
+                <button className="h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]">
+                  7일 체험하기
+                </button>
+              </div>
+            </div>
+            <div className="relative order-1 md:order-2 flex justify-end pr-6 lg:pr-8 xl:pr-10">
+              <div className="relative w-full md:w-[72%] lg:w-[520px] xl:w-[560px] aspect-[613/511] rounded-[28px] overflow-hidden">
+                <Image
+                  src="/landingPage2/customized-supply-hero.png"
+                  alt="맞춤 소분 패키징"
+                  fill
+                  sizes="(min-width:1280px) 560px, (min-width:1024px) 520px, 72vw"
+                  className="object-contain"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-20 md:mt-28 grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-14 items-center">
+            <div className="relative order-1 md:order-1 flex justify-start">
+              <div className="relative w-full md:w-[72%] lg:w-[520px] xl:w-[560px] aspect-[613/511] rounded-[28px] overflow-hidden">
+                <Image
+                  src="/landingPage2/health-tracking-hero.png"
+                  alt="건강 모니터링 이미지"
+                  fill
+                  sizes="(min-width:1280px) 560px, (min-width:1024px) 520px, 72vw"
+                  className="object-contain"
+                />
+              </div>
+            </div>
+            <div className="order-2 md:order-2 md:pl-8 lg:pl-12 xl:pl-16">
+              <p className="text-[10px] sm:text-xs font-semibold tracking-[0.18em] text-[#4B63E6]">
+                HEALTH TRACKING
+              </p>
+              <h3 className="mt-3 text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-[#0F1222]">
+                지속 <span className="text-[#3B5BFF]">케어 및 피드백</span>
+              </h3>
+              <p className="mt-4 text-[13px] sm:text-sm md:text-base text-[#6F7690] leading-relaxed">
+                챗봇 기반 피드백 시스템과 복약 알림으로 복용을 돕고, 앱에서 건강
+                변화를 모니터링합니다. 약사가 피드백을 받아 패키지를 조정하며
+                진짜 나에게 맞는 조합을 찾아갑니다.
+              </p>
+              <div className="mt-6 grid grid-cols-2 gap-3 max-w-[220px]">
+                <div className="h-12 w-full rounded-xl border border-[#E0E6FF] bg-white shadow-[0_8px_22px_rgba(67,103,230,0.15)] grid place-items-center text-[#4F68FF]">
+                  <BoltIcon className="h-6 w-6" />
+                </div>
+                <div className="h-12 w-full rounded-xl border border-[#E0E6FF] bg-white shadow-[0_8px_22px_rgba(67,103,230,0.15)] grid place-items-center text-[#4F68FF]">
+                  <ChartBarIcon className="h-6 w-6" />
+                </div>
+              </div>
+              <div className="mt-8 h-px w-full max-w-md bg-[#E7E5FF]" />
+              <div className="mt-8">
+                <button className="h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]">
+                  7일 체험하기
+                </button>
+              </div>
             </div>
           </div>
         </div>
