@@ -176,6 +176,25 @@ export async function getBasicOrdersByRider() {
 export async function getOrderByPaymentId(paymentId: string) {
   return await db.order.findFirst({
     where: { paymentId },
-    select: { id: true },
+    include: {
+      pharmacy: true,
+      orderItems: {
+        include: {
+          pharmacyProduct: {
+            select: {
+              optionType: true,
+              price: true,
+              product: {
+                select: {
+                  name: true,
+                  images: true,
+                  categories: { select: { name: true } },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   });
 }

@@ -39,6 +39,12 @@ export default function Cart({
     Number(process.env.NEXT_PUBLIC_TEST_PAYMENT_AMOUNT) || 1
   );
   useEffect(() => {
+    localStorage.setItem("cartItems", JSON.stringify(cartItems));
+  }, [cartItems]);
+  useEffect(() => {
+    localStorage.setItem("products", JSON.stringify(allProducts));
+  }, [allProducts]);
+  useEffect(() => {
     const fetchLoginStatus = async () => {
       const fetchgedLoginStatus = await getLoginStatus();
       setLoginStatus(fetchgedLoginStatus);

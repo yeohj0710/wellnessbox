@@ -38,7 +38,8 @@ export default function OrderComplete() {
     const params = new URLSearchParams(window.location.search);
     if (
       params.get("imp_success") === "false" ||
-      params.get("cancelled") === "true"
+      params.get("cancelled") === "true" ||
+      params.get("code")
     ) {
       setCancelled(true);
       setLoading(false);
@@ -69,13 +70,10 @@ export default function OrderComplete() {
         }
         const existingOrder = await getOrderByPaymentId(paymentId);
         if (existingOrder) {
-          alert(
-            "해당 주문은 이미 접수되었습니다. '내 주문 조회'를 통해 확인해 주세요."
-          );
+          setOrder(existingOrder);
           localStorage.removeItem("paymentId");
           localStorage.removeItem("paymentMethod");
           localStorage.removeItem("impUid");
-          router.push("/my-orders");
           return;
         }
         const response = await fetch("/api/get-payment-info", {
@@ -140,21 +138,40 @@ export default function OrderComplete() {
               };
             })
             .filter((item: any) => item !== null);
+          if (orderItems.length === 0) {
+            alert("주문 상품 정보를 불러오지 못했습니다. 다시 시도해 주세요.");
+            localStorage.removeItem("paymentId");
+            localStorage.removeItem("paymentMethod");
+            localStorage.removeItem("impUid");
+            returnToCart();
+            return;
+          }
           const deliveryFee = 3000;
-          cartItems.reduce((total: any, cartItem: any) => {
-            const product = allProducts.find(
-              (prod: any) => prod.id === cartItem.productId
-            );
-            if (!product) return total;
-            const matchingPharmacyProduct = product.pharmacyProducts.find(
-              (pharmacyProduct: any) =>
-                pharmacyProduct.optionType === cartItem.optionType &&
-                pharmacyProduct.pharmacyId === pharmacyId
-            );
-            if (!matchingPharmacyProduct) return total;
-            return total + matchingPharmacyProduct.price * cartItem.quantity;
-          }, deliveryFee);
+          const calculatedTotalPrice = cartItems.reduce(
+            (total: any, cartItem: any) => {
+              const product = allProducts.find(
+                (prod: any) => prod.id === cartItem.productId
+              );
+              if (!product) return total;
+              const matchingPharmacyProduct = product.pharmacyProducts.find(
+                (pharmacyProduct: any) =>
+                  pharmacyProduct.optionType === cartItem.optionType &&
+                  pharmacyProduct.pharmacyId === pharmacyId
+              );
+              if (!matchingPharmacyProduct) return total;
+              return total + matchingPharmacyProduct.price * cartItem.quantity;
+            },
+            deliveryFee
+          );
           const totalPrice = paymentResponse.amount;
+          if (calculatedTotalPrice !== totalPrice) {
+            alert("주문 금액과 결제 금액이 일치하지 않습니다.");
+            localStorage.removeItem("paymentId");
+            localStorage.removeItem("paymentMethod");
+            localStorage.removeItem("impUid");
+            returnToCart();
+            return;
+          }
           const createdOrder = await createOrder({
             roadAddress,
             detailAddress,
@@ -230,6 +247,13 @@ export default function OrderComplete() {
               };
             })
             .filter((item: any) => item !== null);
+          if (orderItems.length === 0) {
+            alert("주문 상품 정보를 불러오지 못했습니다. 다시 시도해 주세요.");
+            localStorage.removeItem("paymentId");
+            localStorage.removeItem("paymentMethod");
+            returnToCart();
+            return;
+          }
           const deliveryFee = 3000;
           const calculatedTotalPrice = cartItems.reduce(
             (total: any, cartItem: any) => {
