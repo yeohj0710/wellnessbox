@@ -138,10 +138,15 @@ export default function Cart({
       },
       function (rsp: any) {
         if (rsp.success) {
-          router.push(`/order-complete?paymentId=${paymentId}&imp_uid=${rsp.imp_uid}&method=inicis`);
+          // imp_uid는 결제 검증에 사용되므로 저장해둔다.
+          localStorage.setItem("impUid", rsp.imp_uid);
+          router.push(
+            `/order-complete?paymentId=${paymentId}&imp_uid=${rsp.imp_uid}&method=inicis`
+          );
         } else {
           localStorage.removeItem("paymentId");
           localStorage.removeItem("paymentMethod");
+          localStorage.removeItem("impUid");
           router.push("/order-complete?cancelled=true");
         }
       }

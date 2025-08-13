@@ -28,6 +28,13 @@ export default function OrderComplete() {
     fetchLoginStatus();
   }, []);
   useEffect(() => {
+    if (cancelled) {
+      localStorage.removeItem("paymentId");
+      localStorage.removeItem("paymentMethod");
+      localStorage.removeItem("impUid");
+    }
+  }, [cancelled]);
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (
       params.get("imp_success") === "false" ||
@@ -42,6 +49,8 @@ export default function OrderComplete() {
         let paymentId = localStorage.getItem("paymentId");
         let paymentMethod = localStorage.getItem("paymentMethod");
         const params = new URLSearchParams(window.location.search);
+        let impUid = localStorage.getItem("impUid") || params.get("imp_uid") || "";
+        if (impUid) localStorage.setItem("impUid", impUid);
         if (!paymentId) {
           paymentId =
             params.get("paymentId") || params.get("merchant_uid") || "";
@@ -54,6 +63,7 @@ export default function OrderComplete() {
         }
         if (!paymentId) {
           alert("결제 정보가 없습니다.");
+          localStorage.removeItem("impUid");
           returnToCart();
           return;
         }
@@ -62,21 +72,33 @@ export default function OrderComplete() {
           alert(
             "해당 주문은 이미 접수되었습니다. '내 주문 조회'를 통해 확인해 주세요."
           );
+          localStorage.removeItem("paymentId");
+          localStorage.removeItem("paymentMethod");
+          localStorage.removeItem("impUid");
           router.push("/my-orders");
           return;
         }
         const response = await fetch("/api/get-payment-info", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ paymentId, paymentMethod }),
+          body: JSON.stringify({
+            paymentId: paymentMethod === "inicis" ? impUid : paymentId,
+            paymentMethod,
+          }),
         });
         if (paymentMethod === "inicis") {
+          if (!impUid) {
+            alert("결제 정보가 없습니다.");
+            returnToCart();
+            return;
+          }
           const paymentInfo = await response.json();
           const paymentResponse = paymentInfo.response;
           if (!paymentResponse || paymentResponse.status !== "paid") {
             alert("결제에 실패하였습니다. 다시 시도해 주세요.");
             localStorage.removeItem("paymentId");
             localStorage.removeItem("paymentMethod");
+            localStorage.removeItem("impUid");
             returnToCart();
             return;
           }
@@ -158,6 +180,7 @@ export default function OrderComplete() {
           localStorage.removeItem("cartItems");
           localStorage.removeItem("paymentId");
           localStorage.removeItem("paymentMethod");
+          localStorage.removeItem("impUid");
         } else {
           const paymentInfo = await response.json();
           const transaction = paymentInfo.response.payment.transactions?.[0];
@@ -165,6 +188,7 @@ export default function OrderComplete() {
             alert("결제에 실패하였습니다. 다시 시도해 주세요.");
             localStorage.removeItem("paymentId");
             localStorage.removeItem("paymentMethod");
+            localStorage.removeItem("impUid");
             returnToCart();
             return;
           }
