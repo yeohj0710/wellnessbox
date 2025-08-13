@@ -117,7 +117,7 @@ export default function Cart({
     }
     const paymentId = `payment${Date.now()}`;
     localStorage.setItem("paymentId", paymentId);
-    const redirect = `${window.location.origin}/order-complete?paymentId=${paymentId}&method=inicis`;
+    const redirect = `${window.location.origin}/order-complete?method=inicis`;
     IMP.init(process.env.NEXT_PUBLIC_MERCHANT_ID);
     const paymentAmount =
       loginStatus.isTestLoggedIn && selectedPaymentMethod === "inicis"
@@ -140,9 +140,9 @@ export default function Cart({
         if (rsp.success) {
           router.push(`/order-complete?paymentId=${paymentId}&imp_uid=${rsp.imp_uid}&method=inicis`);
         } else {
-          alert(`결제에 실패하였습니다: ${rsp.error_msg}`);
           localStorage.removeItem("paymentId");
           localStorage.removeItem("paymentMethod");
+          router.push("/order-complete?cancelled=true");
         }
       }
     );
@@ -174,9 +174,9 @@ export default function Cart({
       if (!response.code) {
         router.push(`/order-complete?paymentId=${paymentId}&method=${selectedPaymentMethod}`);
       } else {
-        alert("결제가 취소되었습니다.");
         localStorage.removeItem("paymentId");
         localStorage.removeItem("paymentMethod");
+        router.push("/order-complete?cancelled=true");
       }
     } catch (error) {
       console.error("결제 요청 중 오류 발생:", error);

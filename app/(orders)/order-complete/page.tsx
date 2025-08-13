@@ -14,6 +14,7 @@ export default function OrderComplete() {
   const [loginStatus, setLoginStatus] = useState<any>([]);
   const [order, setOrder] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [cancelled, setCancelled] = useState(false);
   const router = useRouter();
   const returnToCart = () => {
     if (typeof window !== "undefined") localStorage.setItem("openCart", "true");
@@ -27,6 +28,15 @@ export default function OrderComplete() {
     fetchLoginStatus();
   }, []);
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (
+      params.get("imp_success") === "false" ||
+      params.get("cancelled") === "true"
+    ) {
+      setCancelled(true);
+      setLoading(false);
+      return;
+    }
     const fetchOrder = async () => {
       try {
         let paymentId = localStorage.getItem("paymentId");
@@ -261,6 +271,22 @@ export default function OrderComplete() {
     window.scrollTo(0, 0);
   }, []);
   if (loading) return <FullPageLoader />;
+  if (cancelled)
+    return (
+      <div className="w-full max-w-[640px] mx-auto">
+        <h1 className="text-2xl font-bold text-center text-gray-800 mb-6 mt-12">
+          결제가 취소되었습니다.
+        </h1>
+        <div className="text-center mt-6">
+          <button
+            onClick={returnToCart}
+            className="bg-sky-400 text-white font-bold py-2 px-6 rounded-lg hover:bg-sky-500 transition mb-12"
+          >
+            장바구니로 돌아가기
+          </button>
+        </div>
+      </div>
+    );
   return (
     <div className="w-full max-w-[640px] mx-auto">
       <h1 className="text-2xl font-bold text-center text-gray-800 mb-6 mt-12">
