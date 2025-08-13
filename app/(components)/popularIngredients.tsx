@@ -27,7 +27,7 @@ export default function PopularIngredients({
   }, []);
 
   return (
-    <section className="w-full max-w-[640px] mx-auto mt-8 bg-gray-50">
+    <section className="w-full max-w-[640px] mx-auto mt-8 bg-white">
       <h1 className="text-xl font-bold px-4 mt-4">인기 성분</h1>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 p-3 sm:p-4">
         {isLoading

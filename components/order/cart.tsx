@@ -48,24 +48,15 @@ export default function Cart({
   useEffect(() => {
     const storedRoadAddress = localStorage.getItem("roadAddress");
     const storedDetailAddress = localStorage.getItem("detailAddress");
-    const storedDetailAddressInput = localStorage.getItem(
-      "detailAddress_input"
-    );
-    const storedRequestNotes = localStorage.getItem("requestNotes_input");
-    const storedEntrancePassword = localStorage.getItem(
-      "entrancePassword_input"
-    );
-    const storedDirections = localStorage.getItem("directions_input");
-    const storedPhonePart1 = localStorage.getItem("phonePart1_input");
-    const storedPhonePart2 = localStorage.getItem("phonePart2_input");
-    const storedPhonePart3 = localStorage.getItem("phonePart3_input");
-    const password = localStorage.getItem("password_input");
+    const storedRequestNotes = localStorage.getItem("requestNotes");
+    const storedEntrancePassword = localStorage.getItem("entrancePassword");
+    const storedDirections = localStorage.getItem("directions");
+    const storedPhonePart1 = localStorage.getItem("phonePart1");
+    const storedPhonePart2 = localStorage.getItem("phonePart2");
+    const storedPhonePart3 = localStorage.getItem("phonePart3");
+    const password = localStorage.getItem("password");
     if (storedRoadAddress) setRoadAddress(storedRoadAddress);
-    if (storedDetailAddressInput) {
-      setDetailAddress(storedDetailAddressInput);
-    } else if (storedDetailAddress) {
-      setDetailAddress(storedDetailAddress);
-    }
+    if (storedDetailAddress) setDetailAddress(storedDetailAddress);
     if (storedRequestNotes) setRequestNotes(storedRequestNotes);
     if (storedEntrancePassword) setEntrancePassword(storedEntrancePassword);
     if (storedDirections) setDirections(storedDirections);
@@ -84,25 +75,25 @@ export default function Cart({
     window.scrollTo(0, 0);
   }, []);
   useEffect(() => {
-    localStorage.setItem("roadAddress_input", roadAddress);
+    localStorage.setItem("roadAddress", roadAddress);
   }, [roadAddress]);
   useEffect(() => {
-    localStorage.setItem("detailAddress_input", detailAddress);
+    localStorage.setItem("detailAddress", detailAddress);
   }, [detailAddress]);
   useEffect(() => {
-    localStorage.setItem("requestNotes_input", requestNotes);
+    localStorage.setItem("requestNotes", requestNotes);
   }, [requestNotes]);
   useEffect(() => {
-    localStorage.setItem("entrancePassword_input", entrancePassword);
+    localStorage.setItem("entrancePassword", entrancePassword);
   }, [entrancePassword]);
   useEffect(() => {
-    localStorage.setItem("directions_input", directions);
+    localStorage.setItem("directions", directions);
   }, [directions]);
   useEffect(() => {
     setUserContact(`${phonePart1}-${phonePart2}-${phonePart3}`);
   }, [phonePart1, phonePart2, phonePart3]);
   useEffect(() => {
-    localStorage.setItem("password_input", password);
+    localStorage.setItem("password", password);
   }, [password]);
   useEffect(() => {
     localStorage.setItem("selectedPharmacyId", selectedPharmacy?.id);
@@ -124,6 +115,9 @@ export default function Cart({
       alert("결제 모듈을 불러오는 데 실패하였습니다.");
       return;
     }
+    const paymentId = `payment${Date.now()}`;
+    localStorage.setItem("paymentId", paymentId);
+    const redirect = `${window.location.origin}/order-complete?paymentId=${paymentId}&method=inicis`;
     IMP.init(process.env.NEXT_PUBLIC_MERCHANT_ID);
     const paymentAmount =
       loginStatus.isTestLoggedIn && selectedPaymentMethod === "inicis"
@@ -133,20 +127,22 @@ export default function Cart({
       {
         pg: "html5_inicis",
         pay_method: "card",
-        merchant_uid: `order_${Date.now()}`,
+        merchant_uid: paymentId,
         name: "웰니스박스 건강기능식품",
         amount: paymentAmount,
         buyer_email: "buyer@example.com",
         buyer_name: userContact,
         buyer_tel: userContact,
         buyer_addr: `${roadAddress} ${detailAddress}`,
+        m_redirect_url: redirect,
       },
       function (rsp: any) {
         if (rsp.success) {
-          localStorage.setItem("paymentId", rsp.imp_uid);
-          router.push("/order-complete");
+          router.push(`/order-complete?paymentId=${paymentId}&imp_uid=${rsp.imp_uid}&method=inicis`);
         } else {
           alert(`결제에 실패하였습니다: ${rsp.error_msg}`);
+          localStorage.removeItem("paymentId");
+          localStorage.removeItem("paymentMethod");
         }
       }
     );
@@ -173,12 +169,14 @@ export default function Cart({
           email: "user@example.com",
           phoneNumber: userContact,
         },
-        redirectUrl: `${window.location.origin}/order-complete`,
+        redirectUrl: `${window.location.origin}/order-complete?paymentId=${paymentId}&method=${selectedPaymentMethod}`,
       });
       if (!response.code) {
-        router.push(`/order-complete`);
+        router.push(`/order-complete?paymentId=${paymentId}&method=${selectedPaymentMethod}`);
       } else {
         alert("결제가 취소되었습니다.");
+        localStorage.removeItem("paymentId");
+        localStorage.removeItem("paymentMethod");
       }
     } catch (error) {
       console.error("결제 요청 중 오류 발생:", error);
@@ -363,7 +361,7 @@ export default function Cart({
             value={detailAddress}
             onChange={(e) => {
               setDetailAddress(e.target.value);
-              localStorage.setItem("detailAddress_input", e.target.value);
+              localStorage.setItem("detailAddress", e.target.value);
             }}
             placeholder="예: A동 101호"
             className="focus:outline-none focus:ring-2 focus:ring-sky-400 w-full border rounded-md px-3 py-2 text-base transition-colors text-gray-700"
@@ -378,7 +376,7 @@ export default function Cart({
             value={requestNotes}
             onChange={(e) => {
               setRequestNotes(e.target.value);
-              localStorage.setItem("requestNotes_input", e.target.value);
+               localStorage.setItem("requestNotes", e.target.value);
             }}
             placeholder="예: 문 앞에 놓아주세요."
             className="focus:outline-none focus:ring-2 focus:ring-sky-400 w-full border rounded-md px-3 py-2 text-base"
@@ -390,7 +388,7 @@ export default function Cart({
             value={entrancePassword}
             onChange={(e) => {
               setEntrancePassword(e.target.value);
-              localStorage.setItem("entrancePassword_input", e.target.value);
+              localStorage.setItem("entrancePassword", e.target.value);
             }}
             placeholder="예: #1234"
             className="focus:outline-none focus:ring-2 focus:ring-sky-400 w-full border rounded-md px-3 py-2 text-base"
@@ -402,7 +400,7 @@ export default function Cart({
             value={directions}
             onChange={(e) => {
               setDirections(e.target.value);
-              localStorage.setItem("directions_input", e.target.value);
+              localStorage.setItem("directions", e.target.value);
             }}
             placeholder="예: 마트 옆에 건물 입구가 있어요."
             className="focus:outline-none focus:ring-2 focus:ring-sky-400 w-full border rounded-md px-3 py-2 text-base"
@@ -645,7 +643,10 @@ export default function Cart({
           )}
           <button
             onClick={() => {
-              if (!sdkLoaded || !(window as any).IMP) {
+              if (
+                selectedPaymentMethod === "inicis" &&
+                (!sdkLoaded || !(window as any).IMP)
+              ) {
                 alert(
                   "결제 모듈을 불러오는 데 실패하였습니다. 페이지를 새로고침해 주세요."
                 );

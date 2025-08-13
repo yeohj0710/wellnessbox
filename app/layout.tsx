@@ -44,7 +44,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${pretendard.className} overflow-x-hidden flex flex-col bg-gray-50`}
+        className={`${pretendard.className} overflow-x-hidden flex flex-col bg-white`}
       >
         <LocalStorageProvider>
           <FooterProvider>

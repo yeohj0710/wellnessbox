@@ -15,12 +15,9 @@ export default function OrderComplete() {
   const [order, setOrder] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const goBackOrDefault = () => {
-    if (document.referrer) {
-      router.back();
-    } else {
-      router.push("/");
-    }
+  const returnToCart = () => {
+    if (typeof window !== "undefined") localStorage.setItem("openCart", "true");
+    router.push("/");
   };
   useEffect(() => {
     const fetchLoginStatus = async () => {
@@ -32,10 +29,22 @@ export default function OrderComplete() {
   useEffect(() => {
     const fetchOrder = async () => {
       try {
-        const paymentId = localStorage.getItem("paymentId");
+        let paymentId = localStorage.getItem("paymentId");
+        let paymentMethod = localStorage.getItem("paymentMethod");
+        const params = new URLSearchParams(window.location.search);
+        if (!paymentId) {
+          paymentId =
+            params.get("paymentId") || params.get("merchant_uid") || "";
+          if (paymentId) localStorage.setItem("paymentId", paymentId);
+        }
+        if (!paymentMethod) {
+          paymentMethod = params.get("method") || "";
+          if (paymentMethod)
+            localStorage.setItem("paymentMethod", paymentMethod);
+        }
         if (!paymentId) {
           alert("결제 정보가 없습니다.");
-          goBackOrDefault();
+          returnToCart();
           return;
         }
         const existingOrder = await getOrderByPaymentId(paymentId);
@@ -46,40 +55,31 @@ export default function OrderComplete() {
           router.push("/my-orders");
           return;
         }
-        const paymentMethod = localStorage.getItem("paymentMethod");
         const response = await fetch("/api/get-payment-info", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            paymentId,
-            paymentMethod,
-          }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ paymentId, paymentMethod }),
         });
         if (paymentMethod === "inicis") {
           const paymentInfo = await response.json();
-          console.log(paymentInfo);
           const paymentResponse = paymentInfo.response;
-          console.log(JSON.stringify(paymentResponse, null, 2));
           if (!paymentResponse || paymentResponse.status !== "paid") {
             alert("결제에 실패하였습니다. 다시 시도해 주세요.");
-            goBackOrDefault();
+            localStorage.removeItem("paymentId");
+            localStorage.removeItem("paymentMethod");
+            returnToCart();
             return;
           }
-          const roadAddress = localStorage.getItem("roadAddress_input") || "";
-          const detailAddress =
-            localStorage.getItem("detailAddress_input") || "";
-          const phone = `${localStorage.getItem(
-            "phonePart1_input"
-          )}-${localStorage.getItem("phonePart2_input")}-${localStorage.getItem(
-            "phonePart3_input"
-          )}`;
-          const password = localStorage.getItem("password_input") || "";
-          const requestNotes = localStorage.getItem("requestNotes_input") || "";
+          const roadAddress = localStorage.getItem("roadAddress") || "";
+          const detailAddress = localStorage.getItem("detailAddress") || "";
+          const phone = `${localStorage.getItem("phonePart1") || ""}-${
+            localStorage.getItem("phonePart2") || ""
+          }-${localStorage.getItem("phonePart3") || ""}`;
+          const password = localStorage.getItem("password") || "";
+          const requestNotes = localStorage.getItem("requestNotes") || "";
           const entrancePassword =
-            localStorage.getItem("entrancePassword_input") || "";
-          const directions = localStorage.getItem("diretions_input") || "";
+            localStorage.getItem("entrancePassword") || "";
+          const directions = localStorage.getItem("directions") || "";
           const pharmacyId = Number(localStorage.getItem("selectedPharmacyId"));
           const transactionType = "PAYMENT";
           const txId = paymentResponse.imp_uid || "";
@@ -109,28 +109,20 @@ export default function OrderComplete() {
             })
             .filter((item: any) => item !== null);
           const deliveryFee = 3000;
-          const calculatedTotalPrice = cartItems.reduce(
-            (total: any, cartItem: any) => {
-              const product = allProducts.find(
-                (prod: any) => prod.id === cartItem.productId
-              );
-              if (!product) return total;
-              const matchingPharmacyProduct = product.pharmacyProducts.find(
-                (pharmacyProduct: any) =>
-                  pharmacyProduct.optionType === cartItem.optionType &&
-                  pharmacyProduct.pharmacyId === pharmacyId
-              );
-              if (!matchingPharmacyProduct) return total;
-              return total + matchingPharmacyProduct.price * cartItem.quantity;
-            },
-            deliveryFee
-          );
+          cartItems.reduce((total: any, cartItem: any) => {
+            const product = allProducts.find(
+              (prod: any) => prod.id === cartItem.productId
+            );
+            if (!product) return total;
+            const matchingPharmacyProduct = product.pharmacyProducts.find(
+              (pharmacyProduct: any) =>
+                pharmacyProduct.optionType === cartItem.optionType &&
+                pharmacyProduct.pharmacyId === pharmacyId
+            );
+            if (!matchingPharmacyProduct) return total;
+            return total + matchingPharmacyProduct.price * cartItem.quantity;
+          }, deliveryFee);
           const totalPrice = paymentResponse.amount;
-          // if (!isTestLoggedIn && calculatedTotalPrice !== totalPrice) {
-          //   alert("주문 금액과 결제 금액이 일치하지 않습니다.");
-          //   goBackOrDefault();
-          //   return;
-          // }
           const createdOrder = await createOrder({
             roadAddress,
             detailAddress,
@@ -154,27 +146,28 @@ export default function OrderComplete() {
           );
           setOrder(createdOrder);
           localStorage.removeItem("cartItems");
+          localStorage.removeItem("paymentId");
+          localStorage.removeItem("paymentMethod");
         } else {
           const paymentInfo = await response.json();
           const transaction = paymentInfo.response.payment.transactions?.[0];
           if (!transaction || transaction.status !== "PAID") {
             alert("결제에 실패하였습니다. 다시 시도해 주세요.");
-            goBackOrDefault();
+            localStorage.removeItem("paymentId");
+            localStorage.removeItem("paymentMethod");
+            returnToCart();
             return;
           }
-          const roadAddress = localStorage.getItem("roadAddress_input") || "";
-          const detailAddress =
-            localStorage.getItem("detailAddress_input") || "";
-          const phone = `${localStorage.getItem(
-            "phonePart1_input"
-          )}-${localStorage.getItem("phonePart2_input")}-${localStorage.getItem(
-            "phonePart3_input"
-          )}`;
-          const password = localStorage.getItem("password_input") || "";
-          const requestNotes = localStorage.getItem("requestNotes_input") || "";
+          const roadAddress = localStorage.getItem("roadAddress") || "";
+          const detailAddress = localStorage.getItem("detailAddress") || "";
+          const phone = `${localStorage.getItem("phonePart1") || ""}-${
+            localStorage.getItem("phonePart2") || ""
+          }-${localStorage.getItem("phonePart3") || ""}`;
+          const password = localStorage.getItem("password") || "";
+          const requestNotes = localStorage.getItem("requestNotes") || "";
           const entrancePassword =
-            localStorage.getItem("entrancePassword_input") || "";
-          const directions = localStorage.getItem("diretions_input") || "";
+            localStorage.getItem("entrancePassword") || "";
+          const directions = localStorage.getItem("directions") || "";
           const pharmacyId = Number(localStorage.getItem("selectedPharmacyId"));
           const transactionType = "PAYMENT";
           const txId = transaction.id || "";
@@ -223,7 +216,9 @@ export default function OrderComplete() {
           const totalPrice = transaction.amount.total;
           if (calculatedTotalPrice !== totalPrice) {
             alert("주문 금액과 결제 금액이 일치하지 않습니다.");
-            goBackOrDefault();
+            localStorage.removeItem("paymentId");
+            localStorage.removeItem("paymentMethod");
+            returnToCart();
             return;
           }
           const createdOrder = await createOrder({
@@ -249,6 +244,8 @@ export default function OrderComplete() {
           );
           setOrder(createdOrder);
           localStorage.removeItem("cartItems");
+          localStorage.removeItem("paymentId");
+          localStorage.removeItem("paymentMethod");
         }
       } catch (error: any) {
         alert(

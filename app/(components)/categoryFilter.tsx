@@ -48,7 +48,7 @@ export default function CategoryFilter({
   }, []);
 
   return (
-    <section className="py-2 bg-gray-50">
+    <section className="py-2 bg-white">
       <div className="relative">
         <div
           ref={scrollRef}

@@ -11,9 +11,9 @@ import HomeProductSection from "@/app/(components)/homeProductSection";
 export default function ExplorePage() {
   const router = useRouter();
   const handleCategory = (id: number) =>
-    router.push(`/?category=${id}#home-products`);
+    router.push(`/explore?category=${id}#home-products`);
   const handleProduct = (id: number) =>
-    router.push(`/?product=${id}#home-products`);
+    router.push(`/explore?product=${id}#home-products`);
   return (
     <>
       <JourneyCtaBridge />

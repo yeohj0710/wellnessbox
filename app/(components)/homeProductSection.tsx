@@ -48,6 +48,12 @@ export default function HomeProductSection() {
   useEffect(() => {
     setMounted(true);
   }, []);
+  useEffect(() => {
+    if (typeof window !== "undefined" && localStorage.getItem("openCart") === "true") {
+      setIsCartVisible(true);
+      localStorage.removeItem("openCart");
+    }
+  }, []);
   // const [isSymptomModalVisible, setIsSymptomModalVisible] = useState(() => {
   //   if (typeof window !== "undefined") {
   //     return localStorage.getItem("visited") ? false : true;
@@ -97,7 +103,7 @@ export default function HomeProductSection() {
   useEffect(() => {
     const storedRoadAddress = localStorage.getItem("roadAddress") || "";
     setRoadAddress(storedRoadAddress.trim());
-    const fetchData = async () => {
+    const fetchData = async (attempt = 0): Promise<void> => {
       setIsLoading(true);
       const cachedCategories = localStorage.getItem("categories");
       const cachedProducts = localStorage.getItem("products");
@@ -121,6 +127,10 @@ export default function HomeProductSection() {
           getCategories(),
           getProducts(),
         ]);
+        if (!fetchedProducts.length && attempt < 3) {
+          setTimeout(() => fetchData(attempt + 1), 1000);
+          return;
+        }
         const sortedCategories = sortByImportanceDesc(fetchedCategories);
         const sortedProducts = sortByImportanceDesc(fetchedProducts);
         setCategories(sortedCategories);
@@ -131,6 +141,10 @@ export default function HomeProductSection() {
         localStorage.setItem("cacheTimestamp", now.toString());
       } catch (error) {
         console.error("데이터를 가져오는 데 실패하였습니다:", error);
+        if (attempt < 3) {
+          setTimeout(() => fetchData(attempt + 1), 1000);
+          return;
+        }
       } finally {
         setIsLoading(false);
       }
@@ -343,7 +357,7 @@ export default function HomeProductSection() {
   return (
     <div
       id="home-products"
-      className={`w-full max-w-[640px] mx-auto mt-2 ${
+      className={`w-full max-w-[640px] mx-auto mt-2 bg-white ${
         totalPrice > 0 ? "pb-20" : ""
       }`}
     >

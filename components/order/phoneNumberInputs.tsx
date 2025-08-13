@@ -19,13 +19,13 @@ export default function PhoneNumberInputs({
   setPhonePart3,
 }: PhoneNumberInputsProps) {
   useEffect(() => {
-    localStorage.setItem("phonePart1_input", phonePart1);
+    localStorage.setItem("phonePart1", phonePart1);
   }, [phonePart1]);
   useEffect(() => {
-    localStorage.setItem("phonePart2_input", phonePart2);
+    localStorage.setItem("phonePart2", phonePart2);
   }, [phonePart2]);
   useEffect(() => {
-    localStorage.setItem("phonePart3_input", phonePart3);
+    localStorage.setItem("phonePart3", phonePart3);
   }, [phonePart3]);
   return (
     <div className="px-4 flex gap-2 items-center">
