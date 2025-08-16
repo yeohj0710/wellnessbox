@@ -19,6 +19,7 @@ import ProductGrid from "@/app/(components)/productGrid";
 import FooterCartBar from "@/app/(components)/footerCartBar";
 import SymptomModal from "@/app/(components)/symptomModal";
 import SymptomFilter from "@/app/(components)/symptomFilter";
+import LoadingScreen from "@/app/(components)/loadingScreen";
 
 export default function HomeProductSection() {
   const searchParams = useSearchParams();
@@ -63,6 +64,25 @@ export default function HomeProductSection() {
   // });
   const [isSymptomModalVisible, setIsSymptomModalVisible] = useState(false);
   const scrollPositionRef = useRef(0);
+  const reloadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasReloadedRef = useRef(false);
+
+  useEffect(() => {
+    if (isLoading && allProducts.length === 0) {
+      reloadTimeoutRef.current = setTimeout(() => {
+        if (!hasReloadedRef.current && typeof window !== "undefined") {
+          hasReloadedRef.current = true;
+          window.location.reload();
+        }
+      }, 10000);
+    } else if (reloadTimeoutRef.current) {
+      clearTimeout(reloadTimeoutRef.current);
+      reloadTimeoutRef.current = null;
+    }
+    return () => {
+      if (reloadTimeoutRef.current) clearTimeout(reloadTimeoutRef.current);
+    };
+  }, [isLoading, allProducts.length]);
 
   const openProductDetail = (product: any) => {
     if (typeof window !== "undefined") {
@@ -435,6 +455,7 @@ export default function HomeProductSection() {
         setSelectedPackage={setSelectedPackage}
         setIsLoading={setIsLoading}
       />
+      {isLoading && allProducts.length === 0 && <LoadingScreen />}
       {cartItems.length > 0 && selectedPharmacy && (
         <div className="mx-2 sm:mx-0 bg-gray-100 px-3 py-2 mt-1.5 mb-4 rounded-md text-sm text-gray-700">
           선택하신 상품을 보유한 약국 중 주소로부터{" "}
@@ -472,16 +493,6 @@ export default function HomeProductSection() {
           <button className="text-sky-500 text-sm" onClick={() => fetchData()}>
             새로고침
           </button>
-        </div>
-      )}
-      {!error && allProducts.length > 0 && products.length === 0 && !isLoading && (
-        <div className="min-h-[30vh] mb-12 flex flex-col items-center justify-center py-10">
-          <p className="text-gray-500 text-sm mb-3">
-            조건에 맞는 상품이 없어요.
-          </p>
-          <p className="text-gray-400 text-xs">
-            필터를 변경하거나 다시 확인해 주세요.
-          </p>
         </div>
       )}
       {totalPrice > 0 && selectedPharmacy && (
