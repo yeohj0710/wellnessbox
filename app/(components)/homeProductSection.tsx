@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import ProductDetail from "@/components/product/productDetail";
 import Cart from "@/components/order/cart";
@@ -28,6 +28,7 @@ export default function HomeProductSection() {
   const [categories, setCategories] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
@@ -61,6 +62,64 @@ export default function HomeProductSection() {
   //   return true;
   // });
   const [isSymptomModalVisible, setIsSymptomModalVisible] = useState(false);
+
+  const MAX_RETRIES = 5;
+
+  const fetchData = useCallback(
+    async (attempt = 0): Promise<void> => {
+      if (attempt === 0) setError(null);
+      setIsLoading(true);
+      const cachedCategories = localStorage.getItem("categories");
+      const cachedProducts = localStorage.getItem("products");
+      const cacheTimestamp = localStorage.getItem("cacheTimestamp");
+      const now = Date.now();
+      if (
+        cachedCategories &&
+        cachedProducts &&
+        cacheTimestamp &&
+        now - parseInt(cacheTimestamp, 10) < 60 * 1000
+      ) {
+        setCategories(sortByImportanceDesc(JSON.parse(cachedCategories)));
+        const sortedProducts = sortByImportanceDesc(
+          JSON.parse(cachedProducts)
+        );
+        setAllProducts(sortedProducts);
+        setProducts(sortedProducts);
+        setIsLoading(false);
+        return;
+      }
+      try {
+        const [fetchedCategories, fetchedProducts] = await Promise.all([
+          getCategories(),
+          getProducts(),
+        ]);
+        if (!fetchedProducts.length) {
+          throw new Error("no products");
+        }
+        const sortedCategories = sortByImportanceDesc(fetchedCategories);
+        const sortedProducts = sortByImportanceDesc(fetchedProducts);
+        setCategories(sortedCategories);
+        setAllProducts(sortedProducts);
+        setProducts(sortedProducts);
+        localStorage.setItem("categories", JSON.stringify(sortedCategories));
+        localStorage.setItem("products", JSON.stringify(sortedProducts));
+        localStorage.setItem("cacheTimestamp", now.toString());
+        setIsLoading(false);
+      } catch (error) {
+        console.error("데이터를 가져오는 데 실패하였습니다:", error);
+        if (attempt < MAX_RETRIES) {
+          const delay = Math.pow(2, attempt) * 1000;
+          setTimeout(() => fetchData(attempt + 1), delay);
+        } else {
+          setError(
+            "상품을 불러오는 데 실패했습니다. 새로고침 후 다시 시도해 주세요."
+          );
+          setIsLoading(false);
+        }
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     const pkg = searchParams.get("package");
@@ -103,54 +162,8 @@ export default function HomeProductSection() {
   useEffect(() => {
     const storedRoadAddress = localStorage.getItem("roadAddress") || "";
     setRoadAddress(storedRoadAddress.trim());
-    const fetchData = async (attempt = 0): Promise<void> => {
-      setIsLoading(true);
-      const cachedCategories = localStorage.getItem("categories");
-      const cachedProducts = localStorage.getItem("products");
-      const cacheTimestamp = localStorage.getItem("cacheTimestamp");
-      const now = Date.now();
-      if (
-        cachedCategories &&
-        cachedProducts &&
-        cacheTimestamp &&
-        now - parseInt(cacheTimestamp, 10) < 60 * 1000
-      ) {
-        setCategories(sortByImportanceDesc(JSON.parse(cachedCategories)));
-        const sortedProducts = sortByImportanceDesc(JSON.parse(cachedProducts));
-        setAllProducts(sortedProducts);
-        setProducts(sortedProducts);
-        setIsLoading(false);
-        return;
-      }
-      try {
-        const [fetchedCategories, fetchedProducts] = await Promise.all([
-          getCategories(),
-          getProducts(),
-        ]);
-        if (!fetchedProducts.length && attempt < 3) {
-          setTimeout(() => fetchData(attempt + 1), 1000);
-          return;
-        }
-        const sortedCategories = sortByImportanceDesc(fetchedCategories);
-        const sortedProducts = sortByImportanceDesc(fetchedProducts);
-        setCategories(sortedCategories);
-        setAllProducts(sortedProducts);
-        setProducts(sortedProducts);
-        localStorage.setItem("categories", JSON.stringify(sortedCategories));
-        localStorage.setItem("products", JSON.stringify(sortedProducts));
-        localStorage.setItem("cacheTimestamp", now.toString());
-      } catch (error) {
-        console.error("데이터를 가져오는 데 실패하였습니다:", error);
-        if (attempt < 3) {
-          setTimeout(() => fetchData(attempt + 1), 1000);
-          return;
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchData();
-  }, []);
+  }, [fetchData]);
   useEffect(() => {
     if (!selectedPharmacy) {
       setTotalPrice(0);
@@ -419,7 +432,18 @@ export default function HomeProductSection() {
         selectedPharmacy={selectedPharmacy}
         setSelectedProduct={setSelectedProduct}
       />
-      {products.length === 0 && !isLoading && (
+      {error && !isLoading && (
+        <div className="min-h-[30vh] mb-12 flex flex-col items-center justify-center py-10">
+          <p className="text-gray-500 text-sm mb-3">{error}</p>
+          <button
+            className="text-sky-500 text-sm"
+            onClick={() => fetchData()}
+          >
+            다시 시도
+          </button>
+        </div>
+      )}
+      {!error && products.length === 0 && !isLoading && (
         <div className="min-h-[30vh] mb-12 flex flex-col items-center justify-center py-10">
           <p className="text-gray-500 text-sm mb-3">
             조건에 맞는 상품이 없어요.

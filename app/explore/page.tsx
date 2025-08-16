@@ -20,7 +20,13 @@ export default function ExplorePage() {
       <PopularIngredients onSelectCategory={handleCategory} />
       <SymptomImprovement />
       <SupplementRanking onProductClick={handleProduct} />
-      <Suspense fallback={null}>
+      <Suspense
+        fallback={
+          <div className="w-full max-w-[640px] mx-auto mt-2 bg-white p-6 text-center text-gray-500">
+            상품을 불러오는 중이에요...
+          </div>
+        }
+      >
         <HomeProductSection />
       </Suspense>
     </>
