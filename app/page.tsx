@@ -2,7 +2,11 @@
 
 import { useState, Suspense } from "react";
 import { useRouter } from "next/navigation";
-import HomeProductSection from "@/app/(components)/homeProductSection";
+import dynamic from "next/dynamic";
+const HomeProductSection = dynamic(
+  () => import("@/app/(components)/homeProductSection"),
+  { suspense: true }
+);
 import PopularIngredients from "@/app/(components)/popularIngredients";
 import SymptomImprovement from "@/app/(components)/symptomImprovement";
 import SupplementRanking from "@/app/(components)/supplementRanking";

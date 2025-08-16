@@ -27,7 +27,7 @@ export default function HomeProductSection() {
   const [isCartVisible, setIsCartVisible] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
@@ -62,6 +62,21 @@ export default function HomeProductSection() {
   //   return true;
   // });
   const [isSymptomModalVisible, setIsSymptomModalVisible] = useState(false);
+  const scrollPositionRef = useRef(0);
+
+  const openProductDetail = (product: any) => {
+    if (typeof window !== "undefined") {
+      scrollPositionRef.current = window.scrollY;
+    }
+    setSelectedProduct(product);
+  };
+
+  const closeProductDetail = () => {
+    setSelectedProduct(null);
+    if (typeof window !== "undefined") {
+      window.scrollTo(0, scrollPositionRef.current);
+    }
+  };
 
   const MAX_RETRIES = 5;
 
@@ -164,6 +179,12 @@ export default function HomeProductSection() {
     setRoadAddress(storedRoadAddress.trim());
     fetchData();
   }, [fetchData]);
+  useEffect(() => {
+    if (!isLoading && !error && allProducts.length === 0) {
+      const timer = setTimeout(() => fetchData(), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, error, allProducts.length, fetchData]);
   useEffect(() => {
     if (!selectedPharmacy) {
       setTotalPrice(0);
@@ -430,7 +451,7 @@ export default function HomeProductSection() {
         products={products}
         selectedPackage={selectedPackage}
         selectedPharmacy={selectedPharmacy}
-        setSelectedProduct={setSelectedProduct}
+        setSelectedProduct={openProductDetail}
       />
       {error && !isLoading && (
         <div className="min-h-[30vh] mb-12 flex flex-col items-center justify-center py-10">
@@ -443,7 +464,17 @@ export default function HomeProductSection() {
           </button>
         </div>
       )}
-      {!error && products.length === 0 && !isLoading && (
+      {!error && allProducts.length === 0 && !isLoading && (
+        <div className="min-h-[30vh] mb-12 flex flex-col items-center justify-center py-10">
+          <p className="text-gray-500 text-sm mb-3">
+            상품을 불러오는 중이에요...
+          </p>
+          <button className="text-sky-500 text-sm" onClick={() => fetchData()}>
+            새로고침
+          </button>
+        </div>
+      )}
+      {!error && allProducts.length > 0 && products.length === 0 && !isLoading && (
         <div className="min-h-[30vh] mb-12 flex flex-col items-center justify-center py-10">
           <p className="text-gray-500 text-sm mb-3">
             조건에 맞는 상품이 없어요.
@@ -471,7 +502,7 @@ export default function HomeProductSection() {
               : selectedPackage
           }
           pharmacy={selectedPharmacy}
-          onClose={() => setSelectedProduct(null)}
+          onClose={closeProductDetail}
           onAddToCart={(cartItem: any) => {
             handleAddToCart(cartItem);
           }}

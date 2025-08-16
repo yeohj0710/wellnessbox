@@ -2,11 +2,15 @@
 
 import { Suspense } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import JourneyCtaBridge from "@/app/(components)/journeyCtaBridge";
 import PopularIngredients from "@/app/(components)/popularIngredients";
 import SymptomImprovement from "@/app/(components)/symptomImprovement";
 import SupplementRanking from "@/app/(components)/supplementRanking";
-import HomeProductSection from "@/app/(components)/homeProductSection";
+const HomeProductSection = dynamic(
+  () => import("@/app/(components)/homeProductSection"),
+  { suspense: true }
+);
 
 export default function ExplorePage() {
   const router = useRouter();
