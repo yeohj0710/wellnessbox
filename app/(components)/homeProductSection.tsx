@@ -19,7 +19,6 @@ import ProductGrid from "@/app/(components)/productGrid";
 import FooterCartBar from "@/app/(components)/footerCartBar";
 import SymptomModal from "@/app/(components)/symptomModal";
 import SymptomFilter from "@/app/(components)/symptomFilter";
-import LoadingScreen from "@/app/(components)/loadingScreen";
 
 export default function HomeProductSection() {
   const searchParams = useSearchParams();
@@ -455,7 +454,6 @@ export default function HomeProductSection() {
         setSelectedPackage={setSelectedPackage}
         setIsLoading={setIsLoading}
       />
-      {isLoading && allProducts.length === 0 && <LoadingScreen />}
       {cartItems.length > 0 && selectedPharmacy && (
         <div className="mx-2 sm:mx-0 bg-gray-100 px-3 py-2 mt-1.5 mb-4 rounded-md text-sm text-gray-700">
           선택하신 상품을 보유한 약국 중 주소로부터{" "}

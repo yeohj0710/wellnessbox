@@ -30,9 +30,10 @@ export default function ProductGrid({
   selectedPharmacy,
   setSelectedProduct,
 }: ProductGridProps) {
+  const showSkeleton = isLoading && products.length === 0;
   return (
     <section className="mb-4 grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 p-3 sm:p-4">
-      {isLoading
+      {showSkeleton
         ? Array(12)
             .fill(0)
             .map((_, index) => <Skeleton key={index} />)
