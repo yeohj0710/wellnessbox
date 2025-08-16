@@ -1,6 +1,5 @@
 "use client";
 
-import { Suspense } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import JourneyCtaBridge from "@/app/(components)/journeyCtaBridge";
@@ -9,7 +8,13 @@ import SymptomImprovement from "@/app/(components)/symptomImprovement";
 import SupplementRanking from "@/app/(components)/supplementRanking";
 const HomeProductSection = dynamic(
   () => import("@/app/(components)/homeProductSection"),
-  { suspense: true }
+  {
+    loading: () => (
+      <div className="w-full max-w-[640px] mx-auto mt-2 bg-white p-6 text-center text-gray-500">
+        상품을 불러오는 중이에요...
+      </div>
+    ),
+  }
 );
 
 export default function ExplorePage() {
@@ -24,15 +29,7 @@ export default function ExplorePage() {
       <PopularIngredients onSelectCategory={handleCategory} />
       <SymptomImprovement />
       <SupplementRanking onProductClick={handleProduct} />
-      <Suspense
-        fallback={
-          <div className="w-full max-w-[640px] mx-auto mt-2 bg-white p-6 text-center text-gray-500">
-            상품을 불러오는 중이에요...
-          </div>
-        }
-      >
-        <HomeProductSection />
-      </Suspense>
+      <HomeProductSection />
     </>
   );
 }

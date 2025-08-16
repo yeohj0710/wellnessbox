@@ -2,7 +2,7 @@
 
 export default function LoadingScreen() {
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-white z-50">
+    <div className="w-full min-h-[30vh] flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
         <svg
           className="animate-spin h-10 w-10 text-sky-500"
