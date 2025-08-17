@@ -2,12 +2,14 @@
 "use server";
 import db from "@/lib/db";
 import { OrderStatus } from "./orderStatus";
+import { sendOrderNotification } from "@/lib/notification";
 
 export async function updateOrderStatus(orderid: number, newStatus: OrderStatus) {
   const updatedOrder = await db.order.update({
     where: { id: orderid },
     data: { status: newStatus },
   });
+  await sendOrderNotification(orderid, newStatus);
   return updatedOrder;
 }
 

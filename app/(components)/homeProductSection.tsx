@@ -50,7 +50,10 @@ export default function HomeProductSection() {
     setMounted(true);
   }, []);
   useEffect(() => {
-    if (typeof window !== "undefined" && localStorage.getItem("openCart") === "true") {
+    if (
+      typeof window !== "undefined" &&
+      localStorage.getItem("openCart") === "true"
+    ) {
       setIsCartVisible(true);
       localStorage.removeItem("openCart");
     }
@@ -99,61 +102,56 @@ export default function HomeProductSection() {
 
   const MAX_RETRIES = 5;
 
-  const fetchData = useCallback(
-    async (attempt = 0): Promise<void> => {
-      if (attempt === 0) setError(null);
-      setIsLoading(true);
-      const cachedCategories = localStorage.getItem("categories");
-      const cachedProducts = localStorage.getItem("products");
-      const cacheTimestamp = localStorage.getItem("cacheTimestamp");
-      const now = Date.now();
-      if (
-        cachedCategories &&
-        cachedProducts &&
-        cacheTimestamp &&
-        now - parseInt(cacheTimestamp, 10) < 60 * 1000
-      ) {
-        setCategories(sortByImportanceDesc(JSON.parse(cachedCategories)));
-        const sortedProducts = sortByImportanceDesc(
-          JSON.parse(cachedProducts)
+  const fetchData = useCallback(async (attempt = 0): Promise<void> => {
+    if (attempt === 0) setError(null);
+    setIsLoading(true);
+    const cachedCategories = localStorage.getItem("categories");
+    const cachedProducts = localStorage.getItem("products");
+    const cacheTimestamp = localStorage.getItem("cacheTimestamp");
+    const now = Date.now();
+    if (
+      cachedCategories &&
+      cachedProducts &&
+      cacheTimestamp &&
+      now - parseInt(cacheTimestamp, 10) < 60 * 1000
+    ) {
+      setCategories(sortByImportanceDesc(JSON.parse(cachedCategories)));
+      const sortedProducts = sortByImportanceDesc(JSON.parse(cachedProducts));
+      setAllProducts(sortedProducts);
+      setProducts(sortedProducts);
+      setIsLoading(false);
+      return;
+    }
+    try {
+      const [fetchedCategories, fetchedProducts] = await Promise.all([
+        getCategories(),
+        getProducts(),
+      ]);
+      if (!fetchedProducts.length) {
+        throw new Error("no products");
+      }
+      const sortedCategories = sortByImportanceDesc(fetchedCategories);
+      const sortedProducts = sortByImportanceDesc(fetchedProducts);
+      setCategories(sortedCategories);
+      setAllProducts(sortedProducts);
+      setProducts(sortedProducts);
+      localStorage.setItem("categories", JSON.stringify(sortedCategories));
+      localStorage.setItem("products", JSON.stringify(sortedProducts));
+      localStorage.setItem("cacheTimestamp", now.toString());
+      setIsLoading(false);
+    } catch (error) {
+      console.error("데이터를 가져오는 데 실패하였습니다:", error);
+      if (attempt < MAX_RETRIES) {
+        const delay = Math.pow(2, attempt) * 1000;
+        setTimeout(() => fetchData(attempt + 1), delay);
+      } else {
+        setError(
+          "상품을 불러오는 데 실패했습니다. 새로고침 후 다시 시도해 주세요."
         );
-        setAllProducts(sortedProducts);
-        setProducts(sortedProducts);
         setIsLoading(false);
-        return;
       }
-      try {
-        const [fetchedCategories, fetchedProducts] = await Promise.all([
-          getCategories(),
-          getProducts(),
-        ]);
-        if (!fetchedProducts.length) {
-          throw new Error("no products");
-        }
-        const sortedCategories = sortByImportanceDesc(fetchedCategories);
-        const sortedProducts = sortByImportanceDesc(fetchedProducts);
-        setCategories(sortedCategories);
-        setAllProducts(sortedProducts);
-        setProducts(sortedProducts);
-        localStorage.setItem("categories", JSON.stringify(sortedCategories));
-        localStorage.setItem("products", JSON.stringify(sortedProducts));
-        localStorage.setItem("cacheTimestamp", now.toString());
-        setIsLoading(false);
-      } catch (error) {
-        console.error("데이터를 가져오는 데 실패하였습니다:", error);
-        if (attempt < MAX_RETRIES) {
-          const delay = Math.pow(2, attempt) * 1000;
-          setTimeout(() => fetchData(attempt + 1), delay);
-        } else {
-          setError(
-            "상품을 불러오는 데 실패했습니다. 새로고침 후 다시 시도해 주세요."
-          );
-          setIsLoading(false);
-        }
-      }
-    },
-    []
-  );
+    }
+  }, []);
 
   useEffect(() => {
     const pkg = searchParams.get("package");
@@ -389,15 +387,15 @@ export default function HomeProductSection() {
     });
   };
   const searchCategoryMapping: { [key: string]: string[] } = {
-    피로감: ["홍삼농축액", "종합비타민"],
-    "눈 건강": ["루테인"],
-    "피부 건강": ["종합비타민"],
-    체지방: ["오메가3"],
-    "혈관 & 혈액순환": ["코엔자임Q10", "미네랄"],
-    "간 건강": ["종합비타민"],
-    "장 건강": ["프로바이오틱스(유산균)"],
-    "스트레스 & 수면": ["종합비타민"],
-    "면역 기능": ["홍삼농축액"],
+    피로감: ["비타민B", "코엔자임Q10", "철분"],
+    "눈 건강": ["루테인", "비타민A"],
+    "피부 건강": ["콜라겐", "비타민C", "아연"],
+    체지방: ["가르시니아", "차전자피 식이섬유"],
+    "혈관 & 혈액순환": ["오메가3", "코엔자임Q10"],
+    "간 건강": ["밀크씨슬(실리마린)"],
+    "장 건강": ["프로바이오틱스(유산균)", "차전자피 식이섬유"],
+    "스트레스 & 수면": ["마그네슘", "포스파티딜세린"],
+    "면역 기능": ["비타민D", "아연", "비타민C"],
     "혈중 콜레스테롤": ["오메가3"],
   };
   const handleSearchSelect = (selectedItems: string[]) => {
@@ -475,20 +473,18 @@ export default function HomeProductSection() {
       {error && !isLoading && (
         <div className="min-h-[30vh] mb-12 flex flex-col items-center justify-center py-10">
           <p className="text-gray-500 text-sm mb-3">{error}</p>
-          <button
-            className="text-sky-500 text-sm"
-            onClick={() => fetchData()}
-          >
+          <button className="text-sky-500 text-sm" onClick={() => fetchData()}>
             다시 시도
           </button>
         </div>
       )}
       {!error && allProducts.length === 0 && !isLoading && (
-        <div className="min-h-[30vh] mb-12 flex flex-col items-center justify-center py-10">
-          <p className="text-gray-500 text-sm mb-3">
-            상품을 불러오는 중이에요...
-          </p>
-          <button className="text-sky-500 text-sm" onClick={() => fetchData()}>
+        <div className="min-h-[30vh] mb-12 flex flex-col items-center justify-center gap-6 py-10">
+          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600 transition"
+          >
             새로고침
           </button>
         </div>

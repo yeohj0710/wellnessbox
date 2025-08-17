@@ -24,7 +24,8 @@
     "react": "19.0.0-rc-66855b96-20241106",
     "react-dom": "19.0.0-rc-66855b96-20241106",
     "react-star-ratings": "^2.3.0",
-    "tailwind-scrollbar-hide": "^2.0.0"
+    "tailwind-scrollbar-hide": "^2.0.0",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@types/js-cookie": "^3.0.6",
@@ -32,6 +33,7 @@
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",
     "@types/tailwindcss": "^3.1.0",
+    "@types/web-push": "^3.6.4",
     "eslint": "^8",
     "eslint-config-next": "15.0.3",
     "postcss": "^8",
