@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import {
-  updateOrderStatus,
   getOrderById,
   getOrderStatusById,
   getBasicOrdersByPharmacy,
 } from "@/lib/order";
+import { updateOrderStatus } from "@/lib/order/mutations";
 import {
   createMessage,
   deleteMessage,
@@ -225,70 +225,82 @@ export default function Pharm() {
             <OrderProgressBar currentStatus={order.status} />
             {order.status !== ORDER_STATUS.PICKUP_COMPLETE &&
               order.status !== ORDER_STATUS.DELIVERY_COMPLETE && (
-              <div className="flex flex-col sm:flex-row justify-between sm:gap-8 mt-12 -mb-6">
-                <span className="text-lg font-bold text-gray-700">
-                  주문 상태 변경
-                </span>
-                <div className="flex gap-2 mt-4 sm:mt-0">
-                  <button
-                    onClick={() =>
-                      handleUpdateOrderStatus(order.id, ORDER_STATUS.PAYMENT_COMPLETE)
-                    }
-                    className="text-sm flex justify-center items-center w-20 h-8 bg-emerald-400 hover:bg-emerald-500 text-white rounded"
-                    disabled={loadingStatus === order.id}
-                  >
-                    {loadingStatus === order.id ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    ) : (
-                      "상담 대기"
-                    )}
-                  </button>
-                  <button
-                    onClick={() =>
-                      handleUpdateOrderStatus(order.id, ORDER_STATUS.COUNSEL_COMPLETE)
-                    }
-                    className="text-sm flex justify-center items-center w-20 h-8 bg-indigo-400 hover:bg-indigo-500 text-white rounded"
-                    disabled={loadingStatus === order.id}
-                  >
-                    {loadingStatus === order.id ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    ) : (
-                      "상담 완료"
-                    )}
-                  </button>
-                  <button
-                    onClick={() =>
-                      handleUpdateOrderStatus(order.id, ORDER_STATUS.DISPENSE_COMPLETE)
-                    }
-                    className="text-sm flex justify-center items-center w-20 h-8 bg-yellow-400 hover:bg-yellow-500 text-white rounded"
-                    disabled={loadingStatus === order.id}
-                  >
-                    {loadingStatus === order.id ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      "조제 완료"
-                    )}
-                  </button>
-                  <button
-                    onClick={() => {
-                      const confirmCancel =
-                        window.confirm("정말로 주문을 취소할까요?");
-                      if (confirmCancel) {
-                        handleUpdateOrderStatus(order.id, ORDER_STATUS.CANCELED);
+                <div className="flex flex-col sm:flex-row justify-between sm:gap-8 mt-12 -mb-6">
+                  <span className="text-lg font-bold text-gray-700">
+                    주문 상태 변경
+                  </span>
+                  <div className="flex gap-2 mt-4 sm:mt-0">
+                    <button
+                      onClick={() =>
+                        handleUpdateOrderStatus(
+                          order.id,
+                          ORDER_STATUS.PAYMENT_COMPLETE
+                        )
                       }
-                    }}
-                    className="text-sm flex justify-center items-center w-20 h-8 bg-red-400 hover:bg-red-500 text-white rounded"
-                    disabled={loadingStatus === order.id}
-                  >
-                    {loadingStatus === order.id ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    ) : (
-                      "주문 취소"
-                    )}
-                  </button>
+                      className="text-sm flex justify-center items-center w-20 h-8 bg-emerald-400 hover:bg-emerald-500 text-white rounded"
+                      disabled={loadingStatus === order.id}
+                    >
+                      {loadingStatus === order.id ? (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        "상담 대기"
+                      )}
+                    </button>
+                    <button
+                      onClick={() =>
+                        handleUpdateOrderStatus(
+                          order.id,
+                          ORDER_STATUS.COUNSEL_COMPLETE
+                        )
+                      }
+                      className="text-sm flex justify-center items-center w-20 h-8 bg-indigo-400 hover:bg-indigo-500 text-white rounded"
+                      disabled={loadingStatus === order.id}
+                    >
+                      {loadingStatus === order.id ? (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        "상담 완료"
+                      )}
+                    </button>
+                    <button
+                      onClick={() =>
+                        handleUpdateOrderStatus(
+                          order.id,
+                          ORDER_STATUS.DISPENSE_COMPLETE
+                        )
+                      }
+                      className="text-sm flex justify-center items-center w-20 h-8 bg-yellow-400 hover:bg-yellow-500 text-white rounded"
+                      disabled={loadingStatus === order.id}
+                    >
+                      {loadingStatus === order.id ? (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        "조제 완료"
+                      )}
+                    </button>
+                    <button
+                      onClick={() => {
+                        const confirmCancel =
+                          window.confirm("정말로 주문을 취소할까요?");
+                        if (confirmCancel) {
+                          handleUpdateOrderStatus(
+                            order.id,
+                            ORDER_STATUS.CANCELED
+                          );
+                        }
+                      }}
+                      className="text-sm flex justify-center items-center w-20 h-8 bg-red-400 hover:bg-red-500 text-white rounded"
+                      disabled={loadingStatus === order.id}
+                    >
+                      {loadingStatus === order.id ? (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        "주문 취소"
+                      )}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
             <div>
               <h2 className="text-lg font-bold text-gray-700 mb-4 mt-12">
                 주문 상세 내역

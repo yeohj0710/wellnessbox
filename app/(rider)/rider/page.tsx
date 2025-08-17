@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  updateOrderStatus,
   getOrderById,
   getOrderStatusById,
   getBasicOrdersByRider,
 } from "@/lib/order";
+import { updateOrderStatus } from "@/lib/order/mutations";
 import { useRouter } from "next/navigation";
 import OrderProgressBar from "@/components/order/orderProgressBar";
 import OrderAccordionHeader from "@/components/order/orderAccordionHeader";
@@ -129,7 +129,10 @@ export default function Rider() {
               <div className="flex gap-2 mt-4 sm:mt-0">
                 <button
                   onClick={() =>
-                    handleUpdateOrderStatus(order.id, ORDER_STATUS.PICKUP_COMPLETE)
+                    handleUpdateOrderStatus(
+                      order.id,
+                      ORDER_STATUS.PICKUP_COMPLETE
+                    )
                   }
                   className="text-sm flex justify-center items-center w-20 h-8 bg-orange-400 hover:bg-orange-500 text-white rounded"
                   disabled={loadingStatus === order.id}
@@ -142,7 +145,10 @@ export default function Rider() {
                 </button>
                 <button
                   onClick={() =>
-                    handleUpdateOrderStatus(order.id, ORDER_STATUS.DELIVERY_COMPLETE)
+                    handleUpdateOrderStatus(
+                      order.id,
+                      ORDER_STATUS.DELIVERY_COMPLETE
+                    )
                   }
                   className="text-sm flex justify-center items-center w-20 h-8 bg-gray-400 hover:bg-gray-500 text-white rounded"
                   disabled={loadingStatus === order.id}
@@ -158,7 +164,10 @@ export default function Rider() {
                     const confirmCancel =
                       window.confirm("정말로 픽업을 취소할까요?");
                     if (confirmCancel) {
-                      handleUpdateOrderStatus(order.id, ORDER_STATUS.DISPENSE_COMPLETE);
+                      handleUpdateOrderStatus(
+                        order.id,
+                        ORDER_STATUS.DISPENSE_COMPLETE
+                      );
                     }
                   }}
                   className="text-sm flex justify-center items-center w-20 h-8 bg-red-400 hover:bg-red-500 text-white rounded"
