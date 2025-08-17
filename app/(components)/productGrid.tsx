@@ -40,7 +40,7 @@ export default function ProductGrid({
         : products.map((product, index) => (
             <div
               key={`${product.id}-${index}`}
-              className="px-0 sm:px-0 sm:pb-1 flex flex-col border rounded-md overflow-hidden shadow-sm hover:shadow-lg hover:scale-105 transition-transform duration-300 cursor-pointer bg-white"
+              className="px-0 sm:px-0 sm:pb-1 flex flex-col border rounded-md overflow-hidden shadow-sm md:hover:shadow-lg md:hover:scale-105 transition-transform duration-300 cursor-pointer bg-white"
               onClick={() => setSelectedProduct(product)}
             >
               {product.images[0] ? (

@@ -66,7 +66,7 @@ export default function CategoryFilter({
                 selectedCategories.length === 0
                   ? "bg-gray-200 font-bold"
                   : "bg-white border-gray-300"
-              } hover:bg-gray-100`}
+              } md:hover:bg-gray-100`}
             >
               <span className="text-sm">전체</span>
             </button>
@@ -96,7 +96,7 @@ export default function CategoryFilter({
                       selectedCategories.includes(category.id)
                         ? "bg-sky-100 border-sky-400 font-bold"
                         : "bg-white border-gray-300"
-                    } hover:bg-sky-50`}
+                    } md:hover:bg-sky-50`}
                   >
                     {category.image ? (
                       <div className="relative w-6 h-6">

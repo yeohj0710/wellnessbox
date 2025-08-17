@@ -88,7 +88,7 @@ export default function SymptomFilter({
               selectedSymptoms.length === 0
                 ? "bg-gray-200 font-bold"
                 : "bg-white"
-            } hover:bg-gray-100`}
+            } md:hover:bg-gray-100`}
           >
             <span className="text-sm">전체</span>
           </button>
@@ -103,7 +103,7 @@ export default function SymptomFilter({
                   isSelected
                     ? "bg-sky-100 border-sky-400"
                     : "bg-white border-gray-300"
-                } hover:bg-sky-50`}
+                } md:hover:bg-sky-50`}
               >
                 <Icon className="w-6 h-6 mb-1 text-sky-500" />
                 <span className="text-xs text-center whitespace-nowrap">
