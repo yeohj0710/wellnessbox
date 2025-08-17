@@ -52,12 +52,11 @@ export async function sendOrderNotification(orderId: number, status: string) {
       keys: { auth: sub.auth, p256dh: sub.p256dh },
     } as any;
     try {
-      await webpush.sendNotification(
-        pushSub,
-        JSON.stringify({ title: "웰니스박스", body: message })
-      );
-    } catch (err) {
-      console.error(err);
+      const payload = JSON.stringify({ title: "웰니스박스", body: message });
+      const res = await webpush.sendNotification(pushSub, payload);
+      console.log("push ok", sub.endpoint, res);
+    } catch (err: any) {
+      console.error("push fail", sub.endpoint, err?.statusCode, err?.body);
     }
   }
 }
