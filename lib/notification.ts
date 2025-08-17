@@ -54,9 +54,16 @@ export async function sendOrderNotification(orderId: number, status: string) {
     try {
       const payload = JSON.stringify({ title: "웰니스박스", body: message });
       const res = await webpush.sendNotification(pushSub, payload);
-      console.log("push ok", sub.endpoint, res);
+      console.log("push ok", sub.endpoint);
     } catch (err: any) {
       console.error("push fail", sub.endpoint, err?.statusCode, err?.body);
+      if (
+        err?.statusCode === 403 ||
+        err?.statusCode === 404 ||
+        err?.statusCode === 410
+      ) {
+        await removeSubscription(sub.endpoint);
+      }
     }
   }
 }

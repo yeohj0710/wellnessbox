@@ -340,9 +340,14 @@ export default function OrderComplete() {
         const reg =
           (await navigator.serviceWorker.getRegistration()) ||
           (await navigator.serviceWorker.register("/sw.js"));
-        const existing = await reg.pushManager.getSubscription();
+        let existing = await reg.pushManager.getSubscription();
         const appKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").trim();
         if (!appKey) return;
+        const storedKey = localStorage.getItem("vapidKey");
+        if (existing && storedKey !== appKey) {
+          await existing.unsubscribe();
+          existing = null;
+        }
         const sub =
           existing ||
           (await reg.pushManager.subscribe({
@@ -354,6 +359,7 @@ export default function OrderComplete() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ orderId: order.id, subscription: sub }),
         });
+        localStorage.setItem("vapidKey", appKey);
         setSubscriptionInfo({ endpoint: sub.endpoint });
       }
     } catch (err) {
@@ -385,6 +391,7 @@ export default function OrderComplete() {
         await sub.unsubscribe();
       }
     }
+    localStorage.removeItem("vapidKey");
     setSubscriptionInfo(null);
   };
 
