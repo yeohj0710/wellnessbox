@@ -14,6 +14,30 @@ interface SubscriptionInfo {
   endpoint: string;
 }
 
+function base64ToUint8Array(base64: string) {
+  const padding = "=".repeat((4 - (base64.length % 4)) % 4);
+  const base64Safe = (base64 + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64Safe);
+  const output = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) output[i] = rawData.charCodeAt(i);
+  return output;
+}
+
+function uint8ArrayToUrlBase64(u8: Uint8Array) {
+  let s = "";
+  for (let i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]);
+  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+async function getSubAppKeyBase64(reg: ServiceWorkerRegistration) {
+  const sub = await reg.pushManager.getSubscription();
+  const ab = (sub as any)?.options?.applicationServerKey as
+    | ArrayBuffer
+    | undefined;
+  if (!ab) return null;
+  return uint8ArrayToUrlBase64(new Uint8Array(ab));
+}
+
 export default function OrderComplete() {
   const [loginStatus, setLoginStatus] = useState<any>([]);
   const [order, setOrder] = useState<any | null>(null);
@@ -23,10 +47,12 @@ export default function OrderComplete() {
   const [subscriptionInfo, setSubscriptionInfo] =
     useState<SubscriptionInfo | null>(null);
   const router = useRouter();
+
   const returnToCart = () => {
     if (typeof window !== "undefined") localStorage.setItem("openCart", "true");
     router.push("/");
   };
+
   useEffect(() => {
     const fetchLoginStatus = async () => {
       const fetchgedLoginStatus = await getLoginStatus();
@@ -34,6 +60,7 @@ export default function OrderComplete() {
     };
     fetchLoginStatus();
   }, []);
+
   useEffect(() => {
     if (cancelled) {
       localStorage.removeItem("paymentId");
@@ -41,6 +68,7 @@ export default function OrderComplete() {
       localStorage.removeItem("impUid");
     }
   }, [cancelled]);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (
@@ -167,7 +195,7 @@ export default function OrderComplete() {
             returnToCart();
             return;
           }
-          const createdOrder = await createOrder({
+          await createOrder({
             roadAddress,
             detailAddress,
             phone,
@@ -263,7 +291,7 @@ export default function OrderComplete() {
             returnToCart();
             return;
           }
-          const createdOrder = await createOrder({
+          await createOrder({
             roadAddress,
             detailAddress,
             phone,
@@ -313,7 +341,6 @@ export default function OrderComplete() {
     );
     const product = products.find((p: any) => p.id === cartItem.productId);
     if (!product) return undefined;
-
     const pp = product.pharmacyProducts?.find(
       (x: any) =>
         (x.pharmacyId ?? x.pharmacy?.id) === selectedPharmacyId &&
@@ -322,49 +349,65 @@ export default function OrderComplete() {
     return pp?.id;
   };
 
-  const base64ToUint8Array = (base64: string) => {
-    const padding = "=".repeat((4 - (base64.length % 4)) % 4);
-    const base64Safe = (base64 + padding).replace(/-/g, "+").replace(/_/g, "/");
-    const rawData = window.atob(base64Safe);
-    const output = new Uint8Array(rawData.length);
-    for (let i = 0; i < rawData.length; ++i) {
-      output[i] = rawData.charCodeAt(i);
+  const registerAndActivateSW = async () => {
+    const reg =
+      (await navigator.serviceWorker.getRegistration()) ||
+      (await navigator.serviceWorker.register("/sw.js"));
+    await reg.update();
+    if (reg.waiting) {
+      reg.waiting.postMessage({ type: "SKIP_WAITING" });
+      await new Promise<void>((resolve) => {
+        const onChange = () => {
+          if (navigator.serviceWorker.controller) {
+            navigator.serviceWorker.removeEventListener(
+              "controllerchange",
+              onChange
+            );
+            resolve();
+          }
+        };
+        navigator.serviceWorker.addEventListener("controllerchange", onChange);
+      });
     }
-    return output;
+    return reg;
   };
 
   const subscribePush = async () => {
     try {
       if (!order) return;
-      if ("serviceWorker" in navigator) {
-        const reg =
-          (await navigator.serviceWorker.getRegistration()) ||
-          (await navigator.serviceWorker.register("/sw.js"));
-        let existing = await reg.pushManager.getSubscription();
-        const appKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").trim();
-        if (!appKey) return;
-        const storedKey = localStorage.getItem("vapidKey");
-        if (existing && storedKey !== appKey) {
-          await existing.unsubscribe();
-          existing = null;
-        }
-        const sub =
-          existing ||
-          (await reg.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: base64ToUint8Array(appKey),
-          }));
-        await fetch("/api/push/subscribe", {
+      if (!("serviceWorker" in navigator)) return;
+      const reg = await registerAndActivateSW();
+      let existing = await reg.pushManager.getSubscription();
+      const appKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").trim();
+      if (!appKey) return;
+      const storedKey = localStorage.getItem("vapidKey") || "";
+      const subAppKey = existing ? await getSubAppKeyBase64(reg) : null;
+      const mismatch =
+        !!existing &&
+        (storedKey !== appKey || (subAppKey && subAppKey !== appKey));
+      if (mismatch && existing) {
+        await fetch("/api/push/unsubscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderId: order.id, subscription: sub }),
+          body: JSON.stringify({ endpoint: existing.endpoint }),
         });
-        localStorage.setItem("vapidKey", appKey);
-        setSubscriptionInfo({ endpoint: sub.endpoint });
+        await existing.unsubscribe();
+        existing = null;
       }
-    } catch (err) {
-      console.error(err);
-    }
+      const sub =
+        existing ||
+        (await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: base64ToUint8Array(appKey),
+        }));
+      await fetch("/api/push/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: order.id, subscription: sub }),
+      });
+      localStorage.setItem("vapidKey", appKey);
+      setSubscriptionInfo({ endpoint: sub.endpoint });
+    } catch {}
   };
 
   const handleAllowNotification = async () => {
@@ -449,7 +492,6 @@ export default function OrderComplete() {
           <h2 className="text-lg font-bold text-gray-700 mb-6">
             주문 상세 내역
           </h2>
-
           {(() => {
             const invalid =
               !!order &&
@@ -459,7 +501,6 @@ export default function OrderComplete() {
                   (i: any) =>
                     !i?.pharmacyProduct?.product || !i?.pharmacyProductId
                 ));
-
             if (invalid) {
               return (
                 <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -481,7 +522,6 @@ export default function OrderComplete() {
                 </div>
               );
             }
-
             return (
               <>
                 {order?.orderItems.map((item: any, id: number) => {
@@ -525,23 +565,22 @@ export default function OrderComplete() {
               </>
             );
           })()}
-
           <div className="border-t pt-4 mt-4">
             <div className="flex items-center mb-2">
               <span className="w-20 font-bold text-gray-500">총 결제금액</span>
-              <span className="flex-1 text-gray-800">
+              <span className="ml-2 text-gray-800">
                 {(order?.totalPrice || 0).toLocaleString()}원
               </span>
             </div>
             <div className="flex items-center mb-2">
               <span className="w-20 font-bold text-gray-500">수령주소</span>
-              <span className="flex-1 text-gray-800">
+              <span className="ml-2 text-gray-800">
                 {order?.roadAddress} {order?.detailAddress}
               </span>
             </div>
             <div className="flex items-center">
               <span className="w-20 font-bold text-gray-500">전화번호</span>
-              <span className="flex-1 text-gray-800">
+              <span className="ml-2 text-gray-800">
                 {order?.pharmacy?.phone}
               </span>
             </div>
