@@ -197,6 +197,11 @@ export default function HomeProductSection() {
     fetchData();
   }, [fetchData]);
   useEffect(() => {
+    if (roadAddress) {
+      localStorage.setItem("roadAddress", roadAddress);
+    }
+  }, [roadAddress]);
+  useEffect(() => {
     if (!isLoading && !error && allProducts.length === 0) {
       const timer = setTimeout(() => fetchData(), 3000);
       return () => clearTimeout(timer);
@@ -521,6 +526,8 @@ export default function HomeProductSection() {
               totalPrice={totalPrice}
               selectedPharmacy={selectedPharmacy}
               allProducts={allProducts}
+              roadAddress={roadAddress}
+              setRoadAddress={setRoadAddress}
               onBack={() => setIsCartVisible(false)}
               onUpdateCart={(updatedItems: any) => {
                 setCartItems(updatedItems);

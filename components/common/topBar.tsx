@@ -48,35 +48,28 @@ export default function TopBar() {
   };
 
   const checkFit = () => {
-    if (
-      !topBarRef.current ||
-      !logoLinkRef.current ||
-      !navRef.current ||
-      !rightRef.current
-    )
-      return;
-    const rightWidth =
-      rightRef.current.scrollWidth -
-      (useHamburger && hamburgerRef.current
-        ? hamburgerRef.current.scrollWidth
-        : 0);
-    const totalWidth =
-      logoLinkRef.current.scrollWidth +
-      navRef.current.scrollWidth +
-      rightWidth +
-      24; // gap between logo and nav
-    const titleWrapped =
-      logoLinkRef.current.scrollWidth > logoLinkRef.current.clientWidth;
-    setUseHamburger(totalWidth > topBarRef.current.clientWidth || titleWrapped);
+    if (!topBarRef.current || !navRef.current) return;
+    const menuWrapped =
+      navRef.current.scrollWidth > navRef.current.clientWidth ||
+      navRef.current.scrollHeight > navRef.current.clientHeight;
+    const needsHamburger =
+      topBarRef.current.scrollWidth > topBarRef.current.clientWidth ||
+      menuWrapped;
+    setUseHamburger(needsHamburger);
   };
 
   useEffect(() => {
     checkFit();
-    const ro = new ResizeObserver(() => checkFit());
-    if (topBarRef.current) ro.observe(topBarRef.current);
-    return () => ro.disconnect();
+    const handleResize = () => checkFit();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loginStatus, useHamburger]);
+  }, [loginStatus]);
+
+  useEffect(() => {
+    checkFit();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [useHamburger]);
   return (
     <>
       <header className="fixed top-0 z-40 w-full bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70">

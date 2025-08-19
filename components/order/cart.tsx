@@ -10,12 +10,15 @@ import { getLoginStatus } from "@/lib/useLoginStatus";
 import Image from "next/image";
 import PhoneNumberInputs from "./phoneNumberInputs";
 import CheckoutConfirmModal from "./checkoutConfirmModal";
+import AddressModal from "@/components/modal/addressModal";
 
 export default function Cart({
   cartItems,
   totalPrice,
   selectedPharmacy,
   allProducts,
+  roadAddress,
+  setRoadAddress,
   onBack,
   onUpdateCart,
 }: any) {
@@ -24,7 +27,6 @@ export default function Cart({
   const [showPharmacyDetail, setShowPharmacyDetail] = useState(false);
   const [sdkLoaded, setSdkLoaded] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [roadAddress, setRoadAddress] = useState("");
   const [detailAddress, setDetailAddress] = useState("");
   const [requestNotes, setRequestNotes] = useState("");
   const [entrancePassword, setEntrancePassword] = useState("");
@@ -38,6 +40,7 @@ export default function Cart({
   const [customTestAmount, setCustomTestAmount] = useState<number>(
     Number(process.env.NEXT_PUBLIC_TEST_PAYMENT_AMOUNT) || 1
   );
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   useEffect(() => {
     localStorage.setItem("cartItems", JSON.stringify(cartItems));
   }, [cartItems]);
@@ -52,7 +55,6 @@ export default function Cart({
     fetchLoginStatus();
   }, []);
   useEffect(() => {
-    const storedRoadAddress = localStorage.getItem("roadAddress");
     const storedDetailAddress = localStorage.getItem("detailAddress");
     const storedRequestNotes = localStorage.getItem("requestNotes");
     const storedEntrancePassword = localStorage.getItem("entrancePassword");
@@ -61,7 +63,6 @@ export default function Cart({
     const storedPhonePart2 = localStorage.getItem("phonePart2");
     const storedPhonePart3 = localStorage.getItem("phonePart3");
     const password = localStorage.getItem("password");
-    if (storedRoadAddress) setRoadAddress(storedRoadAddress);
     if (storedDetailAddress) setDetailAddress(storedDetailAddress);
     if (storedRequestNotes) setRequestNotes(storedRequestNotes);
     if (storedEntrancePassword) setEntrancePassword(storedEntrancePassword);
@@ -80,9 +81,6 @@ export default function Cart({
     );
     window.scrollTo(0, 0);
   }, []);
-  useEffect(() => {
-    localStorage.setItem("roadAddress", roadAddress);
-  }, [roadAddress]);
   useEffect(() => {
     localStorage.setItem("detailAddress", detailAddress);
   }, [detailAddress]);
@@ -115,6 +113,45 @@ export default function Cart({
   }, [onBack]);
   const deliveryFee = 3000;
   const totalPriceWithDelivery = totalPrice + deliveryFee;
+
+  const handleAddressSave = (newRoadAddress: string, detail: string) => {
+    setRoadAddress(newRoadAddress);
+    setDetailAddress(detail);
+    localStorage.setItem("roadAddress", newRoadAddress);
+    localStorage.setItem("detailAddress", detail);
+    setIsAddressModalOpen(false);
+  };
+
+  const handleBulkChange = (target: string) => {
+    const unavailable: string[] = [];
+    const updatedItems = cartItems.map((item: any) => {
+      const product = allProducts.find((p: any) => p.id === item.productId);
+      const newOption = product?.pharmacyProducts.find(
+        (pp: any) =>
+          pp.pharmacy.id === selectedPharmacy?.id &&
+          pp.optionType?.includes(target) &&
+          pp.stock >= item.quantity
+      );
+      if (!newOption) {
+        if (product?.name) unavailable.push(product.name);
+        return item;
+      }
+      return {
+        ...item,
+        optionType: newOption.optionType,
+        price: newOption.price,
+      };
+    });
+    onUpdateCart(updatedItems);
+    localStorage.setItem("cartItems", JSON.stringify(updatedItems));
+    if (unavailable.length) {
+      alert(
+        `${unavailable.join(
+          ", "
+        )} 상품은 재고가 없어 제외하고 다른 상품들의 재고만 ${target}치로 바꾸었어요.`
+      );
+    }
+  };
   const handleKGInicisPayment = () => {
     const IMP = (window as any).IMP;
     if (!IMP) {
@@ -183,7 +220,9 @@ export default function Cart({
         redirectUrl: `${window.location.origin}/order-complete?paymentId=${paymentId}&method=${selectedPaymentMethod}`,
       });
       if (!response.code) {
-        router.push(`/order-complete?paymentId=${paymentId}&method=${selectedPaymentMethod}`);
+        router.push(
+          `/order-complete?paymentId=${paymentId}&method=${selectedPaymentMethod}`
+        );
       } else {
         localStorage.removeItem("paymentId");
         localStorage.removeItem("paymentMethod");
@@ -353,15 +392,43 @@ export default function Cart({
           </div>
         )}
       </div>
+      <div className="justify-end px-4 mt-3 mb-2 flex gap-2">
+        <button
+          onClick={() => handleBulkChange("7일")}
+          className="px-3 py-1 text-sm bg-sky-400 text-white rounded hover:bg-sky-500"
+        >
+          전체 7일치
+        </button>
+        <button
+          onClick={() => handleBulkChange("30일")}
+          className="px-3 py-1 text-sm bg-sky-400 text-white rounded hover:bg-sky-500"
+        >
+          전체 30일치
+        </button>
+        <button
+          onClick={() => handleBulkChange("일반")}
+          className="px-3 py-1 text-sm bg-sky-400 text-white rounded hover:bg-sky-500"
+        >
+          전체 통상품
+        </button>
+      </div>
       <h2 className="text-lg font-bold p-4 pb-2">주소 입력</h2>
       <div className="px-4 space-y-3">
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-gray-700">
             도로명 주소
           </label>
-          <p className="text-base text-gray-500 bg-gray-100 px-2.5 py-2 rounded-md border">
-            {roadAddress || "저장된 도로명 주소가 없습니다."}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-base text-gray-500 bg-gray-100 px-2.5 py-2 rounded-md border flex-1">
+              {roadAddress || "저장된 도로명 주소가 없습니다."}
+            </p>
+            <button
+              onClick={() => setIsAddressModalOpen(true)}
+              className="text-sm min-w-12 font-normal px-1.5 sm:px-3 py-1 bg-sky-400 text-white rounded hover:bg-sky-500 transition duration-200"
+            >
+              수정
+            </button>
+          </div>
         </div>
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-gray-700">
@@ -387,7 +454,7 @@ export default function Cart({
             value={requestNotes}
             onChange={(e) => {
               setRequestNotes(e.target.value);
-               localStorage.setItem("requestNotes", e.target.value);
+              localStorage.setItem("requestNotes", e.target.value);
             }}
             placeholder="예: 문 앞에 놓아주세요."
             className="focus:outline-none focus:ring-2 focus:ring-sky-400 w-full border rounded-md px-3 py-2 text-base"
@@ -693,6 +760,12 @@ export default function Cart({
             결제하기
           </button>
         </div>
+      )}
+      {isAddressModalOpen && (
+        <AddressModal
+          onClose={() => setIsAddressModalOpen(false)}
+          onSave={handleAddressSave}
+        />
       )}
       <CheckoutConfirmModal
         visible={showModal}
