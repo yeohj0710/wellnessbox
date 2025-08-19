@@ -6,7 +6,11 @@ import {
   deleteMessage,
   getMessagesByOrder,
 } from "@/lib/message";
-import { ArrowPathIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowPathIcon,
+  BellIcon,
+  BellSlashIcon,
+} from "@heroicons/react/24/outline";
 import {
   getOrderById,
   getOrderStatusById,
@@ -51,7 +55,10 @@ const registerAndActivateSW = async () => {
     await new Promise<void>((resolve) => {
       const onChange = () => {
         if (navigator.serviceWorker.controller) {
-          navigator.serviceWorker.removeEventListener("controllerchange", onChange);
+          navigator.serviceWorker.removeEventListener(
+            "controllerchange",
+            onChange
+          );
           resolve();
         }
       };
@@ -93,14 +100,14 @@ export default function OrderDetails({ phone, password, onBack }: any) {
 
     useEffect(() => {
       const checkSubscription = async () => {
-        if (!('serviceWorker' in navigator)) return;
-        const reg = await navigator.serviceWorker.getRegistration();
-        const sub = await reg?.pushManager.getSubscription();
+        if (!("serviceWorker" in navigator)) return;
+        const reg = await registerAndActivateSW();
+        const sub = await reg.pushManager.getSubscription();
         if (!sub) return;
         try {
-          const res = await fetch('/api/push/status', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+          const res = await fetch("/api/push/status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ orderId: order.id, endpoint: sub.endpoint }),
           });
           const data = await res.json();
@@ -185,7 +192,10 @@ export default function OrderDetails({ phone, password, onBack }: any) {
         await fetch("/api/push/unsubscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderId: order.id, endpoint: existing.endpoint }),
+          body: JSON.stringify({
+            orderId: order.id,
+            endpoint: existing.endpoint,
+          }),
         });
         await existing.unsubscribe();
         existing = null;
@@ -215,7 +225,9 @@ export default function OrderDetails({ phone, password, onBack }: any) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ orderId: order.id, endpoint: sub.endpoint }),
         });
+        await sub.unsubscribe();
       }
+      localStorage.removeItem("vapidKey");
       setIsSubscribed(false);
     };
     const sendMessage = async () => {
@@ -268,9 +280,16 @@ export default function OrderDetails({ phone, password, onBack }: any) {
                   subscribePush();
                 }
               }}
-              className="text-xs text-sky-500 underline"
+              className="p-1 text-sky-500"
             >
-              {isSubscribed ? "알림 끄기" : "알림 켜기"}
+              {isSubscribed ? (
+                <BellSlashIcon className="w-5 h-5" />
+              ) : (
+                <BellIcon className="w-5 h-5" />
+              )}
+              <span className="sr-only">
+                {isSubscribed ? "알림 끄기" : "알림 켜기"}
+              </span>
             </button>
           </div>
           <div className="mt-4 border-t sm:px-4 pt-16 sm:pt-12 pb-4">
@@ -299,9 +318,16 @@ export default function OrderDetails({ phone, password, onBack }: any) {
                 subscribePush();
               }
             }}
-            className="text-xs text-sky-500 underline"
+            className="p-1 text-sky-500"
           >
-            {isSubscribed ? "알림 끄기" : "알림 켜기"}
+            {isSubscribed ? (
+              <BellSlashIcon className="w-5 h-5" />
+            ) : (
+              <BellIcon className="w-5 h-5" />
+            )}
+            <span className="sr-only">
+              {isSubscribed ? "알림 끄기" : "알림 켜기"}
+            </span>
           </button>
         </div>
         {isExpanded && (

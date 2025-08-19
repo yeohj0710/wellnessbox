@@ -27,7 +27,7 @@ export default function PharmLogin() {
     }
   };
   return (
-    <div className="px-2 flex flex-col w-full max-w-[640px] mx-auto items-center min-h-screen bg-gray-50 py-12">
+    <div className="px-2 flex flex-col w-full max-w-[640px] mx-auto items-center min-h-screen py-12">
       <div className="w-full bg-white shadow-md rounded-lg max-w-md p-8">
         <h1 className="text-3xl font-bold text-gray-800 mb-4 text-center">
           약국 로그인

@@ -414,6 +414,18 @@ export default function OrderComplete() {
     const permission = await Notification.requestPermission();
     if (permission === "granted") {
       await subscribePush();
+      try {
+        if (order) {
+          await fetch("/api/push/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              orderId: order.id,
+              status: ORDER_STATUS.PAYMENT_COMPLETE,
+            }),
+          });
+        }
+      } catch {}
     } else {
       alert("브라우저 설정에서 알림을 허용할 수 있어요.");
     }
@@ -431,12 +443,14 @@ export default function OrderComplete() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ orderId: order.id, endpoint: sub.endpoint }),
         });
+        await sub.unsubscribe();
       }
     }
+    localStorage.removeItem("vapidKey");
     setSubscriptionInfo(null);
   };
 
-  if (loading) return <FullPageLoader />;
+  if (loading || (!cancelled && !order)) return <FullPageLoader />;
   if (cancelled)
     return (
       <div className="w-full max-w-[640px] mx-auto">
@@ -522,54 +536,66 @@ export default function OrderComplete() {
             }
             return (
               <>
-                {order?.orderItems.map((item: any, id: number) => {
-                  const pharmacyProduct = item?.pharmacyProduct;
-                  const product = pharmacyProduct?.product;
+                {order?.orderItems.map((orderItem: any, orderId: number) => {
+                  const { pharmacyProduct } = orderItem;
+                  const { product } = pharmacyProduct;
+                  const productImage = product.images?.[0] || "/placeholder.png";
+                  const productName = product.name;
+                  const optionType = pharmacyProduct.optionType;
+                  const productCategories = product.categories?.length
+                    ? product.categories.map((c: any) => c.name).join(", ")
+                    : "옵션 없음";
+                  const unitPrice = pharmacyProduct.price.toLocaleString();
+                  const totalPrice = (
+                    pharmacyProduct.price * orderItem.quantity
+                  ).toLocaleString();
                   return (
                     <div
-                      key={id}
+                      key={orderId}
                       className="flex items-center justify-between mb-6"
                     >
                       <div className="flex items-center gap-4">
                         <div className="relative w-16 h-16">
                           <Image
-                            src={product?.images?.[0] || "/placeholder.png"}
-                            alt={product?.name || "상품"}
+                            src={productImage}
+                            alt={productName}
                             fill
-                            sizes="512px"
+                            sizes="128px"
                             className="object-cover rounded-lg"
                           />
                         </div>
                         <div>
                           <h3 className="text-sm font-bold text-gray-800">
-                            {product?.name || "상품"}{" "}
-                            {pharmacyProduct?.optionType
-                              ? `(${pharmacyProduct?.optionType})`
-                              : ""}
+                            {productName} ({optionType})
                           </h3>
                           <p className="text-xs text-gray-500">
-                            수량 {item?.quantity ?? 0}개
+                            {productCategories}
+                          </p>
+                          <p className="text-sm font-bold text-sky-400 mt-1">
+                            {unitPrice}원 × {orderItem.quantity}
                           </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-gray-800">
-                          {(pharmacyProduct?.price || 0).toLocaleString()}원
-                        </p>
-                      </div>
+                      <p className="text-sm font-bold text-sky-400">
+                        {totalPrice}원
+                      </p>
                     </div>
                   );
                 })}
+                <div className="flex justify-end text-sm text-gray-600">
+                  <span>배송비</span>
+                  <span className="font-bold ml-2">3,000원</span>
+                </div>
+                <div className="flex justify-end gap-2 text-base font-bold mt-2">
+                  <span className="text-gray-700">총 결제 금액</span>
+                  <span className="text-sky-400">
+                    {order.totalPrice.toLocaleString()}원
+                  </span>
+                </div>
               </>
             );
           })()}
           <div className="border-t pt-4 mt-4">
-            <div className="flex items-center mb-2">
-              <span className="w-20 font-bold text-gray-500">총 결제금액</span>
-              <span className="ml-2 text-gray-800">
-                {(order?.totalPrice || 0).toLocaleString()}원
-              </span>
-            </div>
             <div className="flex items-center mb-2">
               <span className="w-20 font-bold text-gray-500">수령주소</span>
               <span className="ml-2 text-gray-800">
