@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect, useRef } from "react";
 import {
   createMessage,
@@ -14,6 +16,50 @@ import OrderProgressBar from "./orderProgressBar";
 import OrderAccordionHeader from "./orderAccordionHeader";
 import FullPageLoader from "@/components/common/fullPageLoader";
 import Image from "next/image";
+
+function base64ToUint8Array(base64: string) {
+  const padding = "=".repeat((4 - (base64.length % 4)) % 4);
+  const base64Safe = (base64 + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64Safe);
+  const output = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) output[i] = rawData.charCodeAt(i);
+  return output;
+}
+
+function uint8ArrayToUrlBase64(u8: Uint8Array) {
+  let s = "";
+  for (let i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]);
+  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+async function getSubAppKeyBase64(reg: ServiceWorkerRegistration) {
+  const sub = await reg.pushManager.getSubscription();
+  const ab = (sub as any)?.options?.applicationServerKey as
+    | ArrayBuffer
+    | undefined;
+  if (!ab) return null;
+  return uint8ArrayToUrlBase64(new Uint8Array(ab));
+}
+
+const registerAndActivateSW = async () => {
+  const reg =
+    (await navigator.serviceWorker.getRegistration()) ||
+    (await navigator.serviceWorker.register("/sw.js"));
+  await reg.update();
+  if (reg.waiting) {
+    reg.waiting.postMessage({ type: "SKIP_WAITING" });
+    await new Promise<void>((resolve) => {
+      const onChange = () => {
+        if (navigator.serviceWorker.controller) {
+          navigator.serviceWorker.removeEventListener("controllerchange", onChange);
+          resolve();
+        }
+      };
+      navigator.serviceWorker.addEventListener("controllerchange", onChange);
+    });
+  }
+  return reg;
+};
 
 export default function OrderDetails({ phone, password, onBack }: any) {
   const [loading, setLoading] = useState(true);
@@ -42,7 +88,27 @@ export default function OrderDetails({ phone, password, onBack }: any) {
     const [isSending, setIsSending] = useState(false);
     const [isMessagesRefreshing, setIsMessagesRefreshing] = useState(false);
     const [isStateRefreshing, setIsStateRefreshing] = useState(false);
+    const [isSubscribed, setIsSubscribed] = useState(false);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+      const checkSubscription = async () => {
+        if (!('serviceWorker' in navigator)) return;
+        const reg = await navigator.serviceWorker.getRegistration();
+        const sub = await reg?.pushManager.getSubscription();
+        if (!sub) return;
+        try {
+          const res = await fetch('/api/push/status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId: order.id, endpoint: sub.endpoint }),
+          });
+          const data = await res.json();
+          setIsSubscribed(!!data.subscribed);
+        } catch {}
+      };
+      checkSubscription();
+    }, [order.id]);
     useEffect(() => {
       if (!isExpanded || isLoaded) return;
       async function fetchDetailsAndMessages() {
@@ -104,6 +170,54 @@ export default function OrderDetails({ phone, password, onBack }: any) {
         if (manual) setIsMessagesRefreshing(false);
       }
     };
+    const subscribePush = async () => {
+      if (!("serviceWorker" in navigator)) return;
+      const reg = await registerAndActivateSW();
+      let existing = await reg.pushManager.getSubscription();
+      const appKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").trim();
+      if (!appKey) return;
+      const storedKey = localStorage.getItem("vapidKey") || "";
+      const subAppKey = existing ? await getSubAppKeyBase64(reg) : null;
+      const mismatch =
+        !!existing &&
+        (storedKey !== appKey || (subAppKey && subAppKey !== appKey));
+      if (mismatch && existing) {
+        await fetch("/api/push/unsubscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId: order.id, endpoint: existing.endpoint }),
+        });
+        await existing.unsubscribe();
+        existing = null;
+      }
+      const sub =
+        existing ||
+        (await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: base64ToUint8Array(appKey),
+        }));
+      await fetch("/api/push/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: order.id, subscription: sub }),
+      });
+      localStorage.setItem("vapidKey", appKey);
+      setIsSubscribed(true);
+    };
+
+    const unsubscribePush = async () => {
+      if (!("serviceWorker" in navigator)) return;
+      const reg = await navigator.serviceWorker.getRegistration();
+      const sub = await reg?.pushManager.getSubscription();
+      if (sub) {
+        await fetch("/api/push/unsubscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId: order.id, endpoint: sub.endpoint }),
+        });
+      }
+      setIsSubscribed(false);
+    };
     const sendMessage = async () => {
       if (!newMessage.trim() || isSending) return;
       setIsSending(true);
@@ -144,6 +258,21 @@ export default function OrderDetails({ phone, password, onBack }: any) {
             toggle={toggleExpanded}
             onBack={onBack}
           />
+          <div className="flex justify-end mt-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (isSubscribed) {
+                  unsubscribePush();
+                } else {
+                  subscribePush();
+                }
+              }}
+              className="text-xs text-sky-500 underline"
+            >
+              {isSubscribed ? "알림 끄기" : "알림 켜기"}
+            </button>
+          </div>
           <div className="mt-4 border-t sm:px-4 pt-16 sm:pt-12 pb-4">
             <div className="flex justify-center items-center mt-2 mb-6">
               <div className="w-6 h-6 border-2 border-sky-400 border-t-transparent rounded-full animate-spin" />
@@ -160,6 +289,21 @@ export default function OrderDetails({ phone, password, onBack }: any) {
           toggle={toggleExpanded}
           onBack={onBack}
         />
+        <div className="flex justify-end mt-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isSubscribed) {
+                unsubscribePush();
+              } else {
+                subscribePush();
+              }
+            }}
+            className="text-xs text-sky-500 underline"
+          >
+            {isSubscribed ? "알림 끄기" : "알림 켜기"}
+          </button>
+        </div>
         {isExpanded && (
           <div className="mt-4 border-t sm:px-4 pt-16 sm:pt-12 pb-4">
             <OrderProgressBar currentStatus={order.status} />

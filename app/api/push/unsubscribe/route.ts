@@ -4,11 +4,11 @@ import { removeSubscription } from '@/lib/notification';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { endpoint } = body;
+    const { endpoint, orderId } = body;
     if (!endpoint) {
       return NextResponse.json({ error: 'Missing endpoint' }, { status: 400 });
     }
-    await removeSubscription(endpoint);
+    await removeSubscription(endpoint, orderId);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error(err);

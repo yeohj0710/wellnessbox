@@ -421,7 +421,7 @@ export default function OrderComplete() {
   };
 
   const handleUnsubscribe = async () => {
-    if (!subscriptionInfo) return;
+    if (!subscriptionInfo || !order) return;
     if ("serviceWorker" in navigator) {
       const reg = await navigator.serviceWorker.getRegistration();
       const sub = await reg?.pushManager.getSubscription();
@@ -429,12 +429,10 @@ export default function OrderComplete() {
         await fetch("/api/push/unsubscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ endpoint: sub.endpoint }),
+          body: JSON.stringify({ orderId: order.id, endpoint: sub.endpoint }),
         });
-        await sub.unsubscribe();
       }
     }
-    localStorage.removeItem("vapidKey");
     setSubscriptionInfo(null);
   };
 

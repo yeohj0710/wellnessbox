@@ -19,8 +19,17 @@ export async function saveSubscription(orderId: number, sub: any) {
   });
 }
 
-export async function removeSubscription(endpoint: string) {
-  return db.subscription.deleteMany({ where: { endpoint } });
+export async function removeSubscription(endpoint: string, orderId?: number) {
+  return db.subscription.deleteMany({
+    where: { endpoint, ...(orderId ? { orderId } : {}) },
+  });
+}
+
+export async function isSubscribed(orderId: number, endpoint: string) {
+  const sub = await db.subscription.findFirst({
+    where: { orderId, endpoint },
+  });
+  return !!sub;
 }
 
 export async function sendOrderNotification(orderId: number, status: string) {
