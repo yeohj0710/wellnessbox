@@ -11,12 +11,7 @@ export default function TopBar() {
   const router = useRouter();
   const [loginStatus, setLoginStatus] = useState<any>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [useHamburger, setUseHamburger] = useState(false);
-  const topBarRef = useRef<HTMLDivElement>(null);
-  const logoLinkRef = useRef<HTMLAnchorElement>(null);
-  const navRef = useRef<HTMLElement>(null);
-  const rightRef = useRef<HTMLDivElement>(null);
-  const hamburgerRef = useRef<HTMLButtonElement>(null);
+  const logoRef = useRef<HTMLImageElement>(null);
   useEffect(() => {
     const fetchLoginStatus = async () => {
       const fetchgedLoginStatus = await getLoginStatus();
@@ -31,7 +26,6 @@ export default function TopBar() {
     setIsDrawerOpen(false);
     router.push("/?package=7#home-products");
   };
-  const logoRef = useRef<HTMLImageElement>(null);
   useEffect(() => {
     const interval = setInterval(() => {
       if (logoRef.current) {
@@ -46,41 +40,13 @@ export default function TopBar() {
   const menuItemClasses = (additionalClasses = "") => {
     return `relative transition-transform duration-200 ease-in-out hover:scale-[1.02] ${additionalClasses}`;
   };
-
-  const checkFit = () => {
-    if (!topBarRef.current || !navRef.current) return;
-    const menuWrapped =
-      navRef.current.scrollWidth > navRef.current.clientWidth ||
-      navRef.current.scrollHeight > navRef.current.clientHeight;
-    const needsHamburger =
-      topBarRef.current.scrollWidth > topBarRef.current.clientWidth ||
-      menuWrapped;
-    setUseHamburger(needsHamburger);
-  };
-
-  useEffect(() => {
-    checkFit();
-    const handleResize = () => checkFit();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loginStatus]);
-
-  useEffect(() => {
-    checkFit();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [useHamburger]);
   return (
     <>
       <header className="fixed top-0 z-40 w-full bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70">
-        <div
-          ref={topBarRef}
-          className="mx-auto flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-[120rem]"
-        >
+        <div className="mx-auto flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-[120rem]">
           <div className="flex items-center gap-6">
             <Link
               href="/"
-              ref={logoLinkRef}
               className={menuItemClasses(
                 "group text-[17px] font-extrabold tracking-tight flex items-center gap-2"
               )}
@@ -97,17 +63,12 @@ export default function TopBar() {
               </div>
               웰니스박스
             </Link>
-            <nav
-              ref={navRef}
-              className={`${
-                useHamburger ? "invisible absolute" : "flex"
-              } items-center gap-8 text-[15px] font-medium text-slate-500 [&_a]:text-slate-500 [&_a:hover]:text-slate-900`}
-            >
+            <nav className="hidden lg:flex items-center gap-8 text-[15px] font-medium text-slate-500 [&_a]:text-slate-500 [&_a:hover]:text-slate-900">
               <MenuLinks loginStatus={loginStatus} />
             </nav>
           </div>
 
-          <div ref={rightRef} className="flex items-center gap-3 md:gap-5">
+          <div className="flex items-center gap-3 md:gap-5">
             {loginStatus.isTestLoggedIn && (
               <span className="hidden sm:inline-flex rounded-full bg-orange-400 px-3 py-1 text-xs font-bold text-white cursor-default">
                 테스트
@@ -121,15 +82,12 @@ export default function TopBar() {
             </button>
             <Link
               href="/?package=7#home-products"
-              className="inline-flex items-center rounded-full px-4 sm:px-5 py-2 text-sm font-semibold !text-white bg-gradient-to-r from-[#59C1FF] to-[#7B61FF] shadow-[0_10px_30px_rgba(86,115,255,0.35)] hover:shadow-[0_12px_34px_rgba(86,115,255,0.45)] active:translate-y-[1px] transition"
+              className="group relative inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#59C1FF] to-[#7B61FF] shadow-[0_10px_30px_rgba(86,115,255,0.35)] transition-all duration-300 ease-out will-change-transform hover:scale-[1.03] hover:shadow-[0_14px_36px_rgba(86,115,255,0.5)] hover:saturate-150 hover:brightness-110 hover:from-[#6BD1FF] hover:to-[#6E58FF] active:translate-y-[1px] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#6E58FF] after:content-[''] after:absolute after:inset-0 after:rounded-full after:bg-white/20 after:opacity-0 hover:after:opacity-10"
             >
               시작하기
             </Link>
             <button
-              ref={hamburgerRef}
-              className={menuItemClasses(
-                `${useHamburger ? "block" : "hidden"} text-2xl ml-1`
-              )}
+              className={menuItemClasses("text-2xl ml-1 lg:hidden")}
               onClick={() => setIsDrawerOpen(!isDrawerOpen)}
               aria-label="메뉴 열기"
             >
@@ -144,16 +102,6 @@ export default function TopBar() {
           isDrawerOpen ? "translate-x-0" : "translate-x-full"
         } w-[260px]`}
       >
-        <div className="flex items-center justify-between px-4 h-14 border-b">
-          <span className="text-base font-semibold">메뉴</span>
-          <button
-            className="p-2 text-2xl"
-            onClick={closeDrawer}
-            aria-label="메뉴 닫기"
-          >
-            ✕
-          </button>
-        </div>
         <div className="flex flex-col p-6 gap-4 text-[15px] font-medium text-slate-600 [&_a]:text-slate-700 [&_a]:hover:text-slate-900">
           <MenuLinks loginStatus={loginStatus} />
           <div className="mt-2 h-px bg-slate-100" />
@@ -163,7 +111,7 @@ export default function TopBar() {
           <Link
             href="/?package=7#home-products"
             onClick={closeDrawer}
-            className="inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold !text-white bg-gradient-to-r from-[#59C1FF] to-[#7B61FF]"
+            className="group relative inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold !text-white bg-gradient-to-r from-[#59C1FF] to-[#7B61FF] shadow-[0_10px_30px_rgba(86,115,255,0.35)] transition-all duration-300 ease-out will-change-transform hover:scale-[1.03] hover:shadow-[0_14px_36px_rgba(86,115,255,0.5)] hover:saturate-150 hover:brightness-110 hover:from-[#6BD1FF] hover:to-[#6E58FF] active:translate-y-[1px] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#6E58FF] after:content-[''] after:absolute after:inset-0 after:rounded-full after:bg-white/20 after:opacity-0 hover:after:opacity-10"
           >
             시작하기
           </Link>

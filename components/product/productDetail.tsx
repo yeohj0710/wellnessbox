@@ -31,6 +31,7 @@ export default function ProductDetail({
   const [averageRating, setAverageRating] = useState<number>(5.0);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedOption, setSelectedOption] = useState<any>(optionType);
+  const [isImageLoading, setIsImageLoading] = useState(true);
   useEffect(() => {
     async function fetchReviews() {
       if (!product.id) return;
@@ -118,6 +119,9 @@ export default function ProductDetail({
           <div className="relative">
             {product.images && product.images.length > 0 ? (
               <div className="relative w-full h-72 sm:h-80 overflow-hidden">
+                {isImageLoading && (
+                  <div className="absolute inset-0 bg-gray-100 animate-pulse" />
+                )}
                 {product.images.map((image: any, index: any) => (
                   <div
                     key={index}
@@ -132,6 +136,7 @@ export default function ProductDetail({
                       fill
                       sizes="1024px"
                       className="object-contain bg-white"
+                      onLoad={() => index === 0 && setIsImageLoading(false)}
                     />
                   </div>
                 ))}
@@ -412,4 +417,3 @@ export default function ProductDetail({
     </div>
   );
 }
-

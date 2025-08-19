@@ -4,11 +4,13 @@ import FullPageLoader from "@/components/common/fullPageLoader";
 import { createOrder, getOrderByPaymentId } from "@/lib/order";
 import { reducePharmacyProductStock } from "@/lib/product";
 import { getLoginStatus } from "@/lib/useLoginStatus";
-import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ORDER_STATUS } from "@/lib/order/orderStatus";
+import Link from "next/link";
+import OrderCancelledView from "@/components/order/orderCancelledView";
+import OrderNotifyModal from "@/components/order/orderNotifyModal";
+import OrderSummary from "@/components/order/orderSummary";
 
 interface SubscriptionInfo {
   endpoint: string;
@@ -457,173 +459,21 @@ export default function OrderComplete() {
   };
 
   if (loading || (!cancelled && !order)) return <FullPageLoader />;
-  if (cancelled)
-    return (
-      <div className="w-full max-w-[640px] mx-auto">
-        <h1 className="text-2xl font-bold text-center text-gray-800 mb-6 mt-12">
-          결제가 취소되었습니다.
-        </h1>
-        <div className="text-center mt-6">
-          <button
-            onClick={returnToCart}
-            className="bg-sky-400 text-white font-bold py-2 px-6 rounded-lg hover:bg-sky-500 transition mb-12"
-          >
-            장바구니로 돌아가기
-          </button>
-        </div>
-      </div>
-    );
+  if (cancelled) return <OrderCancelledView onReturn={returnToCart} />;
   return (
     <>
       {showNotifyModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
-            <h2 className="text-lg font-bold mb-4">
-              배송 알림을 받으시겠어요?
-            </h2>
-            <p className="text-sm text-gray-600 mb-4">
-              알림을 허용하면 배송 진행 상황을 알려드려요. 브라우저에서 알림을
-              거부했다면 설정에서 다시 허용할 수 있어요.
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setShowNotifyModal(false)}
-                disabled={notifyLoading}
-                className={`flex items-center justify-center px-4 py-2 text-sm text-white rounded ${
-                  notifyLoading
-                    ? "bg-sky-300 cursor-not-allowed"
-                    : "bg-sky-400 hover:bg-sky-500"
-                }`}
-              >
-                나중에
-              </button>
-              <button
-                onClick={handleAllowNotification}
-                className="px-4 py-2 text-sm bg-sky-400 hover:bg-sky-500 text-white rounded"
-              >
-                {notifyLoading ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  "허용"
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
+        <OrderNotifyModal
+          onAllow={handleAllowNotification}
+          onClose={() => setShowNotifyModal(false)}
+          loading={notifyLoading}
+        />
       )}
       <div className="w-full max-w-[640px] mx-auto">
         <h1 className="text-2xl font-bold text-center text-gray-800 mb-6 mt-12">
           결제가 완료되었습니다! 🎉
         </h1>
-        <div className="bg-white shadow rounded-lg px-8 py-8">
-          <h2 className="text-lg font-bold text-gray-700 mb-6">
-            주문 상세 내역
-          </h2>
-          {(() => {
-            const invalid =
-              !!order &&
-              (!Array.isArray(order.orderItems) ||
-                order.orderItems.length === 0 ||
-                order.orderItems.some(
-                  (i: any) =>
-                    !i?.pharmacyProduct?.product || !i?.pharmacyProductId
-                ));
-            if (invalid) {
-              return (
-                <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                  주문 데이터가 올바르지 않습니다. 고객센터로 문의해 주세요.
-                  <div className="mt-3 flex gap-2">
-                    <Link
-                      href="/about/contact"
-                      className="px-3 py-1 rounded bg-red-600 hover:bg-red-700 text-white text-xs"
-                    >
-                      문의하기
-                    </Link>
-                    <button
-                      onClick={() => router.push("/")}
-                      className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs"
-                    >
-                      홈으로 가기
-                    </button>
-                  </div>
-                </div>
-              );
-            }
-            return (
-              <>
-                {order?.orderItems.map((orderItem: any, orderId: number) => {
-                  const { pharmacyProduct } = orderItem;
-                  const { product } = pharmacyProduct;
-                  const productImage =
-                    product.images?.[0] || "/placeholder.png";
-                  const productName = product.name;
-                  const optionType = pharmacyProduct.optionType;
-                  const productCategories = product.categories?.length
-                    ? product.categories.map((c: any) => c.name).join(", ")
-                    : "옵션 없음";
-                  const unitPrice = pharmacyProduct.price.toLocaleString();
-                  const totalPrice = (
-                    pharmacyProduct.price * orderItem.quantity
-                  ).toLocaleString();
-                  return (
-                    <div
-                      key={orderId}
-                      className="flex items-center justify-between mb-6"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="relative w-16 h-16">
-                          <Image
-                            src={productImage}
-                            alt={productName}
-                            fill
-                            sizes="128px"
-                            className="object-cover rounded-lg"
-                          />
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-bold text-gray-800">
-                            {productName} ({optionType})
-                          </h3>
-                          <p className="text-xs text-gray-500">
-                            {productCategories}
-                          </p>
-                          <p className="text-sm font-bold text-sky-400 mt-1">
-                            {unitPrice}원 × {orderItem.quantity}
-                          </p>
-                        </div>
-                      </div>
-                      <p className="text-sm font-bold text-sky-400">
-                        {totalPrice}원
-                      </p>
-                    </div>
-                  );
-                })}
-                <div className="flex justify-end text-sm text-gray-600">
-                  <span>배송비</span>
-                  <span className="font-bold ml-2">3,000원</span>
-                </div>
-                <div className="flex justify-end gap-2 text-base font-bold mt-2">
-                  <span className="text-gray-700">총 결제 금액</span>
-                  <span className="text-sky-400">
-                    {order.totalPrice.toLocaleString()}원
-                  </span>
-                </div>
-              </>
-            );
-          })()}
-          <div className="border-t pt-4 mt-4">
-            <div className="flex items-center mb-2">
-              <span className="w-20 font-bold text-gray-500">수령주소</span>
-              <span className="ml-2 text-gray-800">
-                {order?.roadAddress} {order?.detailAddress}
-              </span>
-            </div>
-            <div className="flex items-center">
-              <span className="w-20 font-bold text-gray-500">전화번호</span>
-              <span className="ml-2 text-gray-800">{order?.phone}</span>
-            </div>
-          </div>
-        </div>
+        <OrderSummary order={order} />
         <div className="text-center py-4 bg-white shadow rounded-lg mt-4">
           <p className="text-sm text-gray-600">
             결제 시 입력한

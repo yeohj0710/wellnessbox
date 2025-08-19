@@ -71,11 +71,11 @@ export default function LandingSection2({
           </p>
 
           <div className="mt-7 sm:mt-9 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4">
-            <button className="h-11 sm:h-12 rounded-full px-5 sm:px-6 bg-white text-[#3B5BFF] ring-1 ring-white shadow-[0_6px_20px_rgba(67,103,230,0.20)]">
+            <button className="h-11 sm:h-12 rounded-full px-5 sm:px-6 bg-white hover:scale-105 transition duration-300 text-[#3B5BFF] ring-1 ring-white shadow-[0_6px_20px_rgba(67,103,230,0.20)]">
               7일 단위 시작으로 부담 없이!
             </button>
             <button
-              className="h-11 sm:h-12 rounded-full px-5 sm:px-6 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]"
+              className="hover:scale-105 transition duration-300 h-11 sm:h-12 rounded-full px-5 sm:px-6 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]"
               onClick={onSelect7Day}
             >
               7일 무료체험
@@ -259,7 +259,7 @@ export default function LandingSection2({
               <div className="mt-6 h-px w-full max-w-md bg-[#E7E5FF]" />
               <div className="mt-6">
                 <button
-                  className="h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]"
+                  className="hover:scale-105 transition duration-300 h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]"
                   onClick={onSelect7Day}
                 >
                   7일 체험하기
@@ -324,7 +324,7 @@ export default function LandingSection2({
               <div className="mt-6 h-px w-full max-w-md bg-[#E7E5FF]" />
               <div className="mt-6">
                 <button
-                  className="h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#6C4DFF] to-[#8A6BFF] shadow-[0_10px_28px_rgba(108,77,255,0.30)]"
+                  className="hover:scale-105 transition duration-300 h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#6C4DFF] to-[#8A6BFF] shadow-[0_10px_28px_rgba(108,77,255,0.30)]"
                   onClick={onSelect7Day}
                 >
                   7일 체험하기
@@ -363,7 +363,7 @@ export default function LandingSection2({
               <div className="mt-6 h-px w-full max-w-md bg-[#E7E5FF]" />
               <div className="mt-6">
                 <button
-                  className="h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]"
+                  className="hover:scale-105 transition duration-300 h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]"
                   onClick={onSelect7Day}
                 >
                   7일 체험하기
@@ -423,7 +423,7 @@ export default function LandingSection2({
               <div className="mt-6 h-px w-full max-w-md bg-[#E7E5FF]" />
               <div className="mt-6">
                 <button
-                  className="h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]"
+                  className="hover:scale-105 transition duration-300 h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]"
                   onClick={onSelect7Day}
                 >
                   7일 체험하기
@@ -578,7 +578,7 @@ export default function LandingSection2({
                 </div>
                 <div className="mt-auto pt-7">
                   <button
-                    className="h-11 sm:h-12 w-full rounded-full bg-white text-[#3B2BFF] text-sm sm:text-base font-semibold shadow-[0_8px_22px_rgba(255,255,255,0.35)]"
+                    className="hover:scale-105 transition duration-300 h-11 sm:h-12 w-full rounded-full bg-white text-[#3B2BFF] text-sm sm:text-base font-semibold shadow-[0_8px_22px_rgba(255,255,255,0.35)]"
                     onClick={onSelect7Day}
                   >
                     구독하기
@@ -685,7 +685,7 @@ export default function LandingSection2({
                 </div>
                 <div className="mt-7">
                   <button
-                    className="h-11 sm:h-12 w-full rounded-full bg-white text-[#0F1222] text-sm sm:text-base ring-1 ring-[#E7E9FF] font-semibold shadow-[0_8px_22px_rgba(20,30,60,0.08)]"
+                    className="hover:scale-105 transition duration-300 h-11 sm:h-12 w-full rounded-full bg-white text-[#0F1222] text-sm sm:text-base ring-1 ring-[#E7E9FF] font-semibold shadow-[0_8px_22px_rgba(20,30,60,0.08)]"
                     onClick={onSubscribe}
                   >
                     구독하기
