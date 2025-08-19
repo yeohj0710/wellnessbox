@@ -6,11 +6,7 @@ import {
   deleteMessage,
   getMessagesByOrder,
 } from "@/lib/message";
-import {
-  ArrowPathIcon,
-  BellIcon,
-  BellSlashIcon,
-} from "@heroicons/react/24/outline";
+import { ArrowPathIcon } from "@heroicons/react/24/outline";
 import {
   getOrderById,
   getOrderStatusById,
@@ -96,6 +92,7 @@ export default function OrderDetails({ phone, password, onBack }: any) {
     const [isMessagesRefreshing, setIsMessagesRefreshing] = useState(false);
     const [isStateRefreshing, setIsStateRefreshing] = useState(false);
     const [isSubscribed, setIsSubscribed] = useState(false);
+    const [isSubscribeLoading, setIsSubscribeLoading] = useState(false);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -179,56 +176,72 @@ export default function OrderDetails({ phone, password, onBack }: any) {
     };
     const subscribePush = async () => {
       if (!("serviceWorker" in navigator)) return;
-      const reg = await registerAndActivateSW();
-      let existing = await reg.pushManager.getSubscription();
-      const appKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").trim();
-      if (!appKey) return;
-      const storedKey = localStorage.getItem("vapidKey") || "";
-      const subAppKey = existing ? await getSubAppKeyBase64(reg) : null;
-      const mismatch =
-        !!existing &&
-        (storedKey !== appKey || (subAppKey && subAppKey !== appKey));
-      if (mismatch && existing) {
-        await fetch("/api/push/unsubscribe", {
+      setIsSubscribeLoading(true);
+      try {
+        const reg = await registerAndActivateSW();
+        let existing = await reg.pushManager.getSubscription();
+        const appKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").trim();
+        if (!appKey) return;
+        const storedKey = localStorage.getItem("vapidKey") || "";
+        const subAppKey = existing ? await getSubAppKeyBase64(reg) : null;
+        const mismatch =
+          !!existing &&
+          (storedKey !== appKey || (subAppKey && subAppKey !== appKey));
+        if (mismatch && existing) {
+          await fetch("/api/push/unsubscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              orderId: order.id,
+              endpoint: existing.endpoint,
+            }),
+          });
+          await existing.unsubscribe();
+          existing = null;
+        }
+        const sub =
+          existing ||
+          (await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: base64ToUint8Array(appKey),
+          }));
+        await fetch("/api/push/subscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            orderId: order.id,
-            endpoint: existing.endpoint,
-          }),
+          body: JSON.stringify({ orderId: order.id, subscription: sub }),
         });
-        await existing.unsubscribe();
-        existing = null;
+        localStorage.setItem("vapidKey", appKey);
+        setIsSubscribed(true);
+      } catch (e) {
+        console.error(e);
+        alert("알림 설정에 실패했습니다.");
+      } finally {
+        setIsSubscribeLoading(false);
       }
-      const sub =
-        existing ||
-        (await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: base64ToUint8Array(appKey),
-        }));
-      await fetch("/api/push/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId: order.id, subscription: sub }),
-      });
-      localStorage.setItem("vapidKey", appKey);
-      setIsSubscribed(true);
     };
 
     const unsubscribePush = async () => {
       if (!("serviceWorker" in navigator)) return;
-      const reg = await navigator.serviceWorker.getRegistration();
-      const sub = await reg?.pushManager.getSubscription();
-      if (sub) {
-        await fetch("/api/push/unsubscribe", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderId: order.id, endpoint: sub.endpoint }),
-        });
-        await sub.unsubscribe();
+      setIsSubscribeLoading(true);
+      try {
+        const reg = await navigator.serviceWorker.getRegistration();
+        const sub = await reg?.pushManager.getSubscription();
+        if (sub) {
+          await fetch("/api/push/unsubscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderId: order.id, endpoint: sub.endpoint }),
+          });
+          await sub.unsubscribe();
+        }
+        localStorage.removeItem("vapidKey");
+        setIsSubscribed(false);
+      } catch (e) {
+        console.error(e);
+        alert("알림 해제에 실패했습니다.");
+      } finally {
+        setIsSubscribeLoading(false);
       }
-      localStorage.removeItem("vapidKey");
-      setIsSubscribed(false);
     };
     const sendMessage = async () => {
       if (!newMessage.trim() || isSending) return;
@@ -269,29 +282,16 @@ export default function OrderDetails({ phone, password, onBack }: any) {
             isExpanded={isExpanded}
             toggle={toggleExpanded}
             onBack={onBack}
+            isSubscribed={isSubscribed}
+            toggleSubscription={() => {
+              if (isSubscribed) {
+                unsubscribePush();
+              } else {
+                subscribePush();
+              }
+            }}
+            subscriptionLoading={isSubscribeLoading}
           />
-          <div className="flex justify-end mt-2">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (isSubscribed) {
-                  unsubscribePush();
-                } else {
-                  subscribePush();
-                }
-              }}
-              className="p-1 text-sky-500"
-            >
-              {isSubscribed ? (
-                <BellSlashIcon className="w-5 h-5" />
-              ) : (
-                <BellIcon className="w-5 h-5" />
-              )}
-              <span className="sr-only">
-                {isSubscribed ? "알림 끄기" : "알림 켜기"}
-              </span>
-            </button>
-          </div>
           <div className="mt-4 border-t sm:px-4 pt-16 sm:pt-12 pb-4">
             <div className="flex justify-center items-center mt-2 mb-6">
               <div className="w-6 h-6 border-2 border-sky-400 border-t-transparent rounded-full animate-spin" />
@@ -307,29 +307,16 @@ export default function OrderDetails({ phone, password, onBack }: any) {
           isExpanded={isExpanded}
           toggle={toggleExpanded}
           onBack={onBack}
+          isSubscribed={isSubscribed}
+          toggleSubscription={() => {
+            if (isSubscribed) {
+              unsubscribePush();
+            } else {
+              subscribePush();
+            }
+          }}
+          subscriptionLoading={isSubscribeLoading}
         />
-        <div className="flex justify-end mt-2">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (isSubscribed) {
-                unsubscribePush();
-              } else {
-                subscribePush();
-              }
-            }}
-            className="p-1 text-sky-500"
-          >
-            {isSubscribed ? (
-              <BellSlashIcon className="w-5 h-5" />
-            ) : (
-              <BellIcon className="w-5 h-5" />
-            )}
-            <span className="sr-only">
-              {isSubscribed ? "알림 끄기" : "알림 켜기"}
-            </span>
-          </button>
-        </div>
         {isExpanded && (
           <div className="mt-4 border-t sm:px-4 pt-16 sm:pt-12 pb-4">
             <OrderProgressBar currentStatus={order.status} />

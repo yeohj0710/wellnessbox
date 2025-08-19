@@ -2,7 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import { generateOrderNumber } from "@/lib/order/orderNumber";
-import { ChevronUpIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
+import {
+  ChevronUpIcon,
+  ChevronDownIcon,
+  BellIcon,
+  BellSlashIcon,
+} from "@heroicons/react/24/outline";
 import StatusLabel from "@/components/common/statusLabel";
 import ReviewModal from "@/components/modal/reviewModal";
 import { ORDER_STATUS, OrderStatus } from "@/lib/order/orderStatus";
@@ -12,6 +17,9 @@ export default function OrderAccordionHeader({
   isExpanded,
   toggle,
   onBack,
+  isSubscribed,
+  toggleSubscription,
+  subscriptionLoading,
 }: any) {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const firstPharmacyProduct = order.orderItems[0].pharmacyProduct;
@@ -27,7 +35,7 @@ export default function OrderAccordionHeader({
   return (
     <>
       <div
-        className="flex justify-between items-center cursor-pointer"
+        className="flex justify-between items-start cursor-pointer"
         onClick={toggle}
       >
         <div className="flex flex-col">
@@ -80,13 +88,38 @@ export default function OrderAccordionHeader({
             )}
           </div>
         </div>
-        <span className="w-6 h-6">
-          {isExpanded ? (
-            <ChevronUpIcon className="text-gray-600" />
-          ) : (
-            <ChevronDownIcon className="text-gray-600" />
+        <div className="flex items-start gap-2">
+          {typeof toggleSubscription === "function" && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleSubscription();
+              }}
+              className={`flex items-center gap-1 px-2 py-1 rounded text-xs sm:text-sm transition-colors ${
+                isSubscribed
+                  ? "bg-sky-50 text-sky-600 hover:bg-sky-100"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              } ${subscriptionLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+              disabled={subscriptionLoading}
+            >
+              {subscriptionLoading ? (
+                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : isSubscribed ? (
+                <BellIcon className="w-4 h-4" />
+              ) : (
+                <BellSlashIcon className="w-4 h-4" />
+              )}
+              <span>{isSubscribed ? "켜짐" : "꺼짐"}</span>
+            </button>
           )}
-        </span>
+          <span className="w-6 h-6 flex items-center justify-center">
+            {isExpanded ? (
+              <ChevronUpIcon className="text-gray-600" />
+            ) : (
+              <ChevronDownIcon className="text-gray-600" />
+            )}
+          </span>
+        </div>
       </div>
       {isReviewModalOpen && (
         <ReviewModal

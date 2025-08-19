@@ -11,6 +11,12 @@ export default function TopBar() {
   const router = useRouter();
   const [loginStatus, setLoginStatus] = useState<any>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [useHamburger, setUseHamburger] = useState(false);
+  const topBarRef = useRef<HTMLDivElement>(null);
+  const logoLinkRef = useRef<HTMLAnchorElement>(null);
+  const navRef = useRef<HTMLElement>(null);
+  const rightRef = useRef<HTMLDivElement>(null);
+  const hamburgerRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     const fetchLoginStatus = async () => {
       const fetchgedLoginStatus = await getLoginStatus();
@@ -40,13 +46,48 @@ export default function TopBar() {
   const menuItemClasses = (additionalClasses = "") => {
     return `relative transition-transform duration-200 ease-in-out hover:scale-[1.02] ${additionalClasses}`;
   };
+
+  const checkFit = () => {
+    if (
+      !topBarRef.current ||
+      !logoLinkRef.current ||
+      !navRef.current ||
+      !rightRef.current
+    )
+      return;
+    const rightWidth =
+      rightRef.current.scrollWidth -
+      (useHamburger && hamburgerRef.current
+        ? hamburgerRef.current.scrollWidth
+        : 0);
+    const totalWidth =
+      logoLinkRef.current.scrollWidth +
+      navRef.current.scrollWidth +
+      rightWidth +
+      24; // gap between logo and nav
+    const titleWrapped =
+      logoLinkRef.current.scrollWidth > logoLinkRef.current.clientWidth;
+    setUseHamburger(totalWidth > topBarRef.current.clientWidth || titleWrapped);
+  };
+
+  useEffect(() => {
+    checkFit();
+    const ro = new ResizeObserver(() => checkFit());
+    if (topBarRef.current) ro.observe(topBarRef.current);
+    return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loginStatus, useHamburger]);
   return (
     <>
       <header className="fixed top-0 z-40 w-full bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70">
-        <div className="mx-auto flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-[120rem]">
+        <div
+          ref={topBarRef}
+          className="mx-auto flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-[120rem]"
+        >
           <div className="flex items-center gap-6">
             <Link
               href="/"
+              ref={logoLinkRef}
               className={menuItemClasses(
                 "group text-[17px] font-extrabold tracking-tight flex items-center gap-2"
               )}
@@ -63,12 +104,17 @@ export default function TopBar() {
               </div>
               웰니스박스
             </Link>
-            <nav className="hidden md:flex items-center gap-8 text-[15px] font-medium text-slate-500 [&_a]:text-slate-500 [&_a:hover]:text-slate-900">
+            <nav
+              ref={navRef}
+              className={`${
+                useHamburger ? "invisible absolute" : "flex"
+              } items-center gap-8 text-[15px] font-medium text-slate-500 [&_a]:text-slate-500 [&_a:hover]:text-slate-900`}
+            >
               <MenuLinks loginStatus={loginStatus} />
             </nav>
           </div>
 
-          <div className="flex items-center gap-3 md:gap-5">
+          <div ref={rightRef} className="flex items-center gap-3 md:gap-5">
             {loginStatus.isTestLoggedIn && (
               <span className="hidden sm:inline-flex rounded-full bg-orange-400 px-3 py-1 text-xs font-bold text-white cursor-default">
                 테스트
@@ -78,16 +124,19 @@ export default function TopBar() {
               onClick={goSevenDays}
               className="hidden sm:block text-[15px] font-semibold text-slate-600"
             >
-              7일 무료 체험
+              7일 무료체험
             </button>
             <Link
               href="/?package=7#home-products"
-              className="inline-flex items-center rounded-full px-4 sm:px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#59C1FF] to-[#7B61FF] shadow-[0_10px_30px_rgba(86,115,255,0.35)] hover:shadow-[0_12px_34px_rgba(86,115,255,0.45)] active:translate-y-[1px] transition"
+              className="inline-flex items-center rounded-full px-4 sm:px-5 py-2 text-sm font-semibold !text-white bg-gradient-to-r from-[#59C1FF] to-[#7B61FF] shadow-[0_10px_30px_rgba(86,115,255,0.35)] hover:shadow-[0_12px_34px_rgba(86,115,255,0.45)] active:translate-y-[1px] transition"
             >
               시작하기
             </Link>
             <button
-              className={menuItemClasses("text-2xl md:hidden ml-1")}
+              ref={hamburgerRef}
+              className={menuItemClasses(
+                `${useHamburger ? "block" : "hidden"} text-2xl ml-1`
+              )}
               onClick={() => setIsDrawerOpen(!isDrawerOpen)}
               aria-label="메뉴 열기"
             >
@@ -98,10 +147,9 @@ export default function TopBar() {
       </header>
 
       <div
-        className={`fixed top-0 right-0 z-30 h-full bg-white shadow-lg transform transition-transform duration-300 ${
+        className={`fixed top-14 right-0 bottom-0 z-40 bg-white shadow-lg transform transition-transform duration-300 ${
           isDrawerOpen ? "translate-x-0" : "translate-x-full"
-        }`}
-        style={{ width: "260px" }}
+        } w-[260px]`}
       >
         <div className="flex items-center justify-between px-4 h-14 border-b">
           <span className="text-base font-semibold">메뉴</span>
@@ -117,12 +165,12 @@ export default function TopBar() {
           <MenuLinks loginStatus={loginStatus} />
           <div className="mt-2 h-px bg-slate-100" />
           <button onClick={goSevenDays} className="text-left text-slate-500">
-            7일 무료 체험
+            7일 무료체험
           </button>
           <Link
             href="/?package=7#home-products"
             onClick={closeDrawer}
-            className="inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#59C1FF] to-[#7B61FF]"
+            className="inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold !text-white bg-gradient-to-r from-[#59C1FF] to-[#7B61FF]"
           >
             시작하기
           </Link>
@@ -130,7 +178,10 @@ export default function TopBar() {
       </div>
 
       {isDrawerOpen && (
-        <div className="fixed inset-0 z-20 bg-black/40" onClick={closeDrawer} />
+        <div
+          className="fixed top-14 inset-x-0 bottom-0 z-30 bg-black/40"
+          onClick={closeDrawer}
+        />
       )}
     </>
   );

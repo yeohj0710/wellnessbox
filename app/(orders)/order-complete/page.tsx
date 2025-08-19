@@ -46,6 +46,7 @@ export default function OrderComplete() {
   const [showNotifyModal, setShowNotifyModal] = useState(false);
   const [subscriptionInfo, setSubscriptionInfo] =
     useState<SubscriptionInfo | null>(null);
+  const [notifyLoading, setNotifyLoading] = useState(false);
   const router = useRouter();
 
   const returnToCart = () => {
@@ -411,25 +412,30 @@ export default function OrderComplete() {
   };
 
   const handleAllowNotification = async () => {
-    const permission = await Notification.requestPermission();
-    if (permission === "granted") {
-      await subscribePush();
-      try {
-        if (order) {
-          await fetch("/api/push/send", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              orderId: order.id,
-              status: ORDER_STATUS.PAYMENT_COMPLETE,
-            }),
-          });
-        }
-      } catch {}
-    } else {
-      alert("브라우저 설정에서 알림을 허용할 수 있어요.");
+    setNotifyLoading(true);
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        await subscribePush();
+        try {
+          if (order) {
+            await fetch("/api/push/send", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                orderId: order.id,
+                status: ORDER_STATUS.PAYMENT_COMPLETE,
+              }),
+            });
+          }
+        } catch {}
+      } else {
+        alert("브라우저 설정에서 알림을 허용할 수 있어요.");
+      }
+      setShowNotifyModal(false);
+    } finally {
+      setNotifyLoading(false);
     }
-    setShowNotifyModal(false);
   };
 
   const handleUnsubscribe = async () => {
@@ -482,15 +488,24 @@ export default function OrderComplete() {
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowNotifyModal(false)}
-                className="px-4 py-2 text-sm bg-gray-200 rounded"
+                disabled={notifyLoading}
+                className={`flex items-center justify-center px-4 py-2 text-sm text-white rounded ${
+                  notifyLoading
+                    ? "bg-sky-300 cursor-not-allowed"
+                    : "bg-sky-400 hover:bg-sky-500"
+                }`}
               >
                 나중에
               </button>
               <button
                 onClick={handleAllowNotification}
-                className="px-4 py-2 text-sm bg-sky-400 text-white rounded"
+                className="px-4 py-2 text-sm bg-sky-400 hover:bg-sky-500 text-white rounded"
               >
-                허용
+                {notifyLoading ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  "허용"
+                )}
               </button>
             </div>
           </div>
@@ -539,7 +554,8 @@ export default function OrderComplete() {
                 {order?.orderItems.map((orderItem: any, orderId: number) => {
                   const { pharmacyProduct } = orderItem;
                   const { product } = pharmacyProduct;
-                  const productImage = product.images?.[0] || "/placeholder.png";
+                  const productImage =
+                    product.images?.[0] || "/placeholder.png";
                   const productName = product.name;
                   const optionType = pharmacyProduct.optionType;
                   const productCategories = product.categories?.length
@@ -604,9 +620,7 @@ export default function OrderComplete() {
             </div>
             <div className="flex items-center">
               <span className="w-20 font-bold text-gray-500">전화번호</span>
-              <span className="ml-2 text-gray-800">
-                {order?.pharmacy?.phone}
-              </span>
+              <span className="ml-2 text-gray-800">{order?.phone}</span>
             </div>
           </div>
         </div>
