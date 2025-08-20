@@ -31,13 +31,15 @@ export default function CartItemsSection({
             return (
               <div
                 key={pharmacyProduct.id}
-                className="flex items-center gap-4 border-b pb-4 cursor-pointer"
-                onClick={() =>
-                  onProductClick(product, pharmacyProduct.optionType)
-                }
+                className="flex items-center gap-4 border-b pb-4"
               >
                 {product.images && product.images.length > 0 ? (
-                  <div className="relative w-16 h-16">
+                  <div
+                    className="relative w-16 h-16 cursor-pointer"
+                    onClick={() =>
+                      onProductClick(product, pharmacyProduct.optionType)
+                    }
+                  >
                     <Image
                       src={product.images[0]}
                       alt={product.name}
@@ -52,7 +54,12 @@ export default function CartItemsSection({
                   </div>
                 )}
                 <div className="flex-1">
-                  <h2 className="font-bold">
+                  <h2
+                    className="font-bold cursor-pointer"
+                    onClick={() =>
+                      onProductClick(product, pharmacyProduct.optionType)
+                    }
+                  >
                     {product.name} ({pharmacyProduct?.optionType || ""})
                   </h2>
                   <p className="mt-1 text-sm text-gray-500">
@@ -80,6 +87,7 @@ export default function CartItemsSection({
                         "cartItems",
                         JSON.stringify(updatedItems)
                       );
+                      window.dispatchEvent(new Event("cartUpdated"));
                     }}
                     className="leading-none w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-lg"
                   >
@@ -104,6 +112,7 @@ export default function CartItemsSection({
                           "cartItems",
                           JSON.stringify(updatedItems)
                         );
+                        window.dispatchEvent(new Event("cartUpdated"));
                       } else {
                         alert(
                           `${selectedPharmacy.name}에서 담을 수 있는 ${product.name} (${pharmacyProduct.optionType})의 최대 개수예요.`
@@ -129,6 +138,7 @@ export default function CartItemsSection({
                         "cartItems",
                         JSON.stringify(updatedItems)
                       );
+                      window.dispatchEvent(new Event("cartUpdated"));
                     }}
                     className="leading-none w-8 h-8 bg-red-100 hover:bg-red-200 rounded-full flex items-center justify-center"
                   >

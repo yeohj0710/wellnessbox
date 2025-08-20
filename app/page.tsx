@@ -27,8 +27,12 @@ export default function Home() {
   const handle7Day = () => router.push("/?package=7#home-products");
   const handleCategory = (id: number) =>
     router.push(`/?category=${id}#home-products`);
-  const handleProduct = (id: number) =>
-    router.push(`/?product=${id}#home-products`);
+  const handleProduct = (id: number) => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("scrollPos", String(window.scrollY));
+    }
+    router.push(`/?product=${id}#home-products`, { scroll: false });
+  };
   const handleSubscribe = () => setIsComingSoonOpen(true);
 
   return (

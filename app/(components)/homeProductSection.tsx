@@ -54,6 +54,8 @@ export default function HomeProductSection() {
       typeof window !== "undefined" &&
       localStorage.getItem("openCart") === "true"
     ) {
+      const stored = sessionStorage.getItem("scrollPos");
+      if (stored) scrollPositionRef.current = parseInt(stored, 10);
       setIsCartVisible(true);
       localStorage.removeItem("openCart");
     }
@@ -68,6 +70,7 @@ export default function HomeProductSection() {
   const scrollPositionRef = useRef(0);
   const reloadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasReloadedRef = useRef(false);
+  const cartContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isLoading && allProducts.length === 0) {
@@ -97,6 +100,28 @@ export default function HomeProductSection() {
     setSelectedProduct(null);
     if (typeof window !== "undefined") {
       window.scrollTo(0, scrollPositionRef.current);
+      const url = new URL(window.location.href);
+      url.searchParams.delete("product");
+      window.history.replaceState({}, "", url.toString());
+      sessionStorage.removeItem("scrollPos");
+    }
+  };
+
+  const openCart = () => {
+    if (typeof window !== "undefined") {
+      scrollPositionRef.current = window.scrollY;
+    }
+    setIsCartVisible(true);
+  };
+
+  const closeCart = () => {
+    setIsCartVisible(false);
+    if (typeof window !== "undefined") {
+      window.scrollTo(0, scrollPositionRef.current);
+      const url = new URL(window.location.href);
+      url.searchParams.delete("cart");
+      window.history.replaceState({}, "", url.toString());
+      sessionStorage.removeItem("scrollPos");
     }
   };
 
@@ -173,12 +198,18 @@ export default function HomeProductSection() {
     if (prod && allProducts.length > 0) {
       const id = parseInt(prod, 10);
       const target = allProducts.find((p) => p.id === id);
-      if (target) setSelectedProduct(target);
+      if (target) {
+        const stored = sessionStorage.getItem("scrollPos");
+        if (stored) scrollPositionRef.current = parseInt(stored, 10);
+        setSelectedProduct(target);
+      }
     }
   }, [searchParams, allProducts]);
   useEffect(() => {
     const cart = searchParams.get("cart");
     if (cart === "open") {
+      const stored = sessionStorage.getItem("scrollPos");
+      if (stored) scrollPositionRef.current = parseInt(stored, 10);
       setIsCartVisible(true);
       const url = new URL(window.location.toString());
       url.searchParams.delete("cart");
@@ -264,6 +295,7 @@ export default function HomeProductSection() {
     if (filteredCartItems.length !== cartItems.length) {
       setCartItems(filteredCartItems);
       localStorage.setItem("cartItems", JSON.stringify(filteredCartItems));
+      window.dispatchEvent(new Event("cartUpdated"));
     }
   }, [selectedPharmacy, allProducts]);
   const isRoadAddressChanged: any = useRef(false);
@@ -293,6 +325,7 @@ export default function HomeProductSection() {
           const updatedCartItems = cartItems.slice(1);
           setCartItems(updatedCartItems);
           localStorage.setItem("cartItems", JSON.stringify(updatedCartItems));
+          window.dispatchEvent(new Event("cartUpdated"));
           return;
         }
         setPharmacies(filteredPharmacies);
@@ -390,14 +423,19 @@ export default function HomeProductSection() {
           item.productId === cartItem.productId &&
           item.optionType === cartItem.optionType
       );
+      let updated;
       if (existingItem) {
-        return prev.map((item) =>
+        updated = prev.map((item) =>
           item.productId === cartItem.productId
             ? { ...item, quantity: item.quantity + cartItem.quantity }
             : item
         );
+      } else {
+        updated = [...prev, cartItem];
       }
-      return [...prev, cartItem];
+      localStorage.setItem("cartItems", JSON.stringify(updated));
+      window.dispatchEvent(new Event("cartUpdated"));
+      return updated;
     });
   };
   const searchCategoryMapping: { [key: string]: string[] } = {
@@ -500,7 +538,7 @@ export default function HomeProductSection() {
       {totalPrice > 0 && selectedPharmacy && (
         <FooterCartBar
           totalPrice={totalPrice}
-          setIsCartVisible={setIsCartVisible}
+          setIsCartVisible={openCart}
         />
       )}
       {selectedProduct && (
@@ -523,7 +561,10 @@ export default function HomeProductSection() {
       )}
       {isCartVisible && (
         <div className="fixed inset-0 flex">
-          <div className="bg-white w-full h-full overflow-y-auto">
+          <div
+            className="bg-white w-full h-full overflow-y-auto"
+            ref={cartContainerRef}
+          >
             <Cart
               cartItems={cartItems}
               totalPrice={totalPrice}
@@ -531,7 +572,9 @@ export default function HomeProductSection() {
               allProducts={allProducts}
               roadAddress={roadAddress}
               setRoadAddress={setRoadAddress}
-              onBack={() => setIsCartVisible(false)}
+              setSelectedPharmacy={setSelectedPharmacy}
+              containerRef={cartContainerRef}
+              onBack={closeCart}
               onUpdateCart={(updatedItems: any) => {
                 setCartItems(updatedItems);
                 const updatedTotalPrice = updatedItems.reduce(
@@ -539,6 +582,7 @@ export default function HomeProductSection() {
                   0
                 );
                 setTotalPrice(updatedTotalPrice);
+                window.dispatchEvent(new Event("cartUpdated"));
               }}
             />
           </div>

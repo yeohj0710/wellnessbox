@@ -21,8 +21,12 @@ export default function ExplorePage() {
   const router = useRouter();
   const handleCategory = (id: number) =>
     router.push(`/explore?category=${id}#home-products`);
-  const handleProduct = (id: number) =>
-    router.push(`/explore?product=${id}#home-products`);
+  const handleProduct = (id: number) => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("scrollPos", String(window.scrollY));
+    }
+    router.push(`/explore?product=${id}#home-products`, { scroll: false });
+  };
   return (
     <>
       <JourneyCtaBridge />

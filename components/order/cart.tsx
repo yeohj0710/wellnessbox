@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { getLoginStatus } from "@/lib/useLoginStatus";
@@ -11,6 +11,7 @@ import AddressSection from "./addressSection";
 import PharmacyInfoSection from "./pharmacyInfoSection";
 import PaymentSection from "./paymentSection";
 import ProductDetail from "../product/productDetail";
+import axios from "axios";
 
 export default function Cart({
   cartItems,
@@ -19,6 +20,8 @@ export default function Cart({
   allProducts,
   roadAddress,
   setRoadAddress,
+  setSelectedPharmacy,
+  containerRef,
   onBack,
   onUpdateCart,
 }: any) {
@@ -42,8 +45,10 @@ export default function Cart({
   );
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [detailProduct, setDetailProduct] = useState<any>(null);
+  const cartScrollRef = useRef(0);
   useEffect(() => {
     localStorage.setItem("cartItems", JSON.stringify(cartItems));
+    window.dispatchEvent(new Event("cartUpdated"));
   }, [cartItems]);
   useEffect(() => {
     localStorage.setItem("products", JSON.stringify(allProducts));
@@ -80,7 +85,6 @@ export default function Cart({
         storedPhonePart3 || phonePart3
       }`
     );
-    window.scrollTo(0, 0);
   }, []);
   useEffect(() => {
     localStorage.setItem("detailAddress", detailAddress);
@@ -104,6 +108,7 @@ export default function Cart({
     localStorage.setItem("selectedPharmacyId", selectedPharmacy?.id);
   }, [selectedPharmacy]);
   useEffect(() => {
+    if (detailProduct) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         onBack();
@@ -124,20 +129,46 @@ export default function Cart({
         window.removeEventListener("popstate", handlePopState);
       }
     };
-  }, [onBack]);
+  }, [onBack, detailProduct]);
   const deliveryFee = 3000;
   const totalPriceWithDelivery = totalPrice + deliveryFee;
 
-  const handleAddressSave = (newRoadAddress: string, detail: string) => {
+  const handleAddressSave = async (newRoadAddress: string, detail: string) => {
     setRoadAddress(newRoadAddress);
     setDetailAddress(detail);
     localStorage.setItem("roadAddress", newRoadAddress);
     localStorage.setItem("detailAddress", detail);
     setIsAddressModalOpen(false);
+    if (cartItems.length > 0) {
+      try {
+        const response = await axios.post("/api/get-sorted-pharmacies", {
+          cartItem: cartItems[0],
+          roadAddress: newRoadAddress,
+        });
+        const sorted = response.data.pharmacies.filter(
+          (pharmacy: any) => pharmacy.registrationNumber !== null
+        );
+        if (sorted.length > 0) {
+          setSelectedPharmacy(sorted[0]);
+        }
+      } catch (error) {
+        console.error("약국 정보를 가져오는 데 실패했습니다:", error);
+      }
+    }
   };
 
   const handleProductClick = (product: any, optionType: string) => {
+    if (containerRef.current) {
+      cartScrollRef.current = containerRef.current.scrollTop;
+    }
     setDetailProduct({ product, optionType });
+  };
+
+  const closeDetailProduct = () => {
+    setDetailProduct(null);
+    if (containerRef.current) {
+      containerRef.current.scrollTop = cartScrollRef.current;
+    }
   };
 
   const handleAddToCart = (cartItem: any) => {
@@ -154,6 +185,7 @@ export default function Cart({
     }
     onUpdateCart(updatedItems);
     localStorage.setItem("cartItems", JSON.stringify(updatedItems));
+    window.dispatchEvent(new Event("cartUpdated"));
   };
 
   const handleRequestPayment = () => {
@@ -212,6 +244,7 @@ export default function Cart({
     });
     onUpdateCart(updatedItems);
     localStorage.setItem("cartItems", JSON.stringify(updatedItems));
+    window.dispatchEvent(new Event("cartUpdated"));
     if (unavailable.length) {
       alert(
         `${unavailable.join(
@@ -372,63 +405,84 @@ export default function Cart({
 
       {showPharmacyDetail && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-40"
+          className="fixed inset-0 z-50 flex items-center justify-center"
           onClick={() => setShowPharmacyDetail(false)}
         >
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
           <div
-            className="relative bg-white rounded-lg shadow-lg w-full sm:w-1/2 max-w-[480px] px-6 py-8 mx-2"
+            className="relative w-full max-w-xl mx-3 max-h-[90vh] overflow-y-auto rounded-2xl transition-all duration-200 ease-out"
             onClick={(e) => e.stopPropagation()}
           >
-            <button
-              className="absolute top-4 right-4 text-gray-600 hover:text-gray-900"
-              onClick={() => setShowPharmacyDetail(false)}
-            >
-              ✕
-            </button>
-            <h3 className="text-lg font-bold text-gray-800 mb-4">
-              사업자 정보
-            </h3>
-            <div className="mt-3">
-              {selectedPharmacy.representativeName && (
-                <div className="flex items-center">
-                  <span className="w-24 text-sm font-medium text-gray-600">
-                    대표자명
-                  </span>
-                  <p className="flex-1 text-sm sm:text-base font-semibold text-gray-800">
-                    {selectedPharmacy.representativeName}
-                  </p>
+            <div className="p-[1px] rounded-2xl bg-[conic-gradient(at_50%_50%,#6C4DFF_0deg,#3B5BFF_140deg,#56CCF2_260deg,#6C4DFF_360deg)] shadow-[0_14px_36px_rgba(0,0,0,0.22)]">
+              <div className="relative rounded-2xl bg-white">
+                <button
+                  className="absolute top-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700 active:scale-95 transition"
+                  onClick={() => setShowPharmacyDetail(false)}
+                  aria-label="닫기"
+                >
+                  ✕
+                </button>
+                <div className="px-4 pt-7 pb-4">
+                  <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-[#4568F5] to-[#6C4DFF] text-white text-lg shadow-[0_6px_16px_rgba(67,103,230,0.28)]">
+                    🏢
+                  </div>
+                  <h3 className="text-center text-lg sm:text-xl font-extrabold text-[#0F1222]">
+                    사업자 정보
+                  </h3>
+                  <div className="mt-4 rounded-lg ring-1 ring-black/5 overflow-hidden">
+                    <div className="divide-y divide-gray-100">
+                      {selectedPharmacy.representativeName && (
+                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 px-4 sm:px-5 py-2">
+                          <div className="sm:col-span-4 text-[13px] sm:text-sm font-medium text-gray-600">
+                            대표자명
+                          </div>
+                          <div className="sm:col-span-8 text-sm sm:text-base font-semibold text-gray-800 leading-5">
+                            {selectedPharmacy.representativeName}
+                          </div>
+                        </div>
+                      )}
+                      {selectedPharmacy.name && (
+                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 px-4 sm:px-5 py-2">
+                          <div className="sm:col-span-4 text-[13px] sm:text-sm font-medium text-gray-600">
+                            상호명
+                          </div>
+                          <div className="sm:col-span-8 text-sm sm:text-base font-semibold text-gray-800 leading-5">
+                            {selectedPharmacy.name}
+                          </div>
+                        </div>
+                      )}
+                      {selectedPharmacy.address && (
+                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 px-4 sm:px-5 py-2">
+                          <div className="sm:col-span-4 text-[13px] sm:text-sm font-medium text-gray-600">
+                            사업자주소
+                          </div>
+                          <div className="sm:col-span-8 text-sm sm:text-base text-gray-800 whitespace-pre-line leading-5">
+                            {selectedPharmacy.address}
+                          </div>
+                        </div>
+                      )}
+                      {selectedPharmacy.registrationNumber && (
+                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 px-4 sm:px-5 py-2">
+                          <div className="sm:col-span-4 text-[13px] sm:text-sm font-medium text-gray-600">
+                            사업자등록번호
+                          </div>
+                          <div className="sm:col-span-8 text-sm sm:text-base font-semibold text-gray-800 tracking-wide tabular-nums leading-5">
+                            {selectedPharmacy.registrationNumber}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="mt-5 flex items-center justify-center">
+                    <button
+                      onClick={() => setShowPharmacyDetail(false)}
+                      className="inline-flex h-10 items-center justify-center rounded-full px-5 text-white text-sm font-medium bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-md hover:from-[#5A78FF] hover:to-[#7A5BFF] active:scale-[0.99] transition"
+                    >
+                      확인
+                    </button>
+                  </div>
                 </div>
-              )}
-              {selectedPharmacy.name && (
-                <div className="flex items-center mt-2">
-                  <span className="w-24 text-sm font-medium text-gray-600">
-                    상호명
-                  </span>
-                  <p className="flex-1 text-sm sm:text-base font-semibold text-gray-800">
-                    {selectedPharmacy.name}
-                  </p>
-                </div>
-              )}
-              {selectedPharmacy.address && (
-                <div className="flex items-start mt-2">
-                  <span className="w-24 text-sm font-medium text-gray-600">
-                    사업자주소
-                  </span>
-                  <p className="flex-1 text-sm sm:text-base text-gray-700">
-                    {selectedPharmacy.address}
-                  </p>
-                </div>
-              )}
-              {selectedPharmacy.registrationNumber && (
-                <div className="flex items-center mt-2">
-                  <span className="w-24 text-sm font-medium text-gray-600">
-                    사업자등록번호
-                  </span>
-                  <p className="flex-1 text-sm sm:text-base text-gray-700">
-                    {selectedPharmacy.registrationNumber}
-                  </p>
-                </div>
-              )}
+              </div>
             </div>
           </div>
         </div>
@@ -467,7 +521,7 @@ export default function Cart({
         <ProductDetail
           product={detailProduct.product}
           optionType={detailProduct.optionType}
-          onClose={() => setDetailProduct(null)}
+          onClose={closeDetailProduct}
           onAddToCart={handleAddToCart}
           pharmacy={selectedPharmacy}
         />

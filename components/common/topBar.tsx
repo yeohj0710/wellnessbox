@@ -11,6 +11,7 @@ import { ShoppingCartIcon } from "@heroicons/react/24/outline";
 export default function TopBar() {
   const router = useRouter();
   const [loginStatus, setLoginStatus] = useState<any>([]);
+  const [cartCount, setCartCount] = useState(0);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const logoRef = useRef<HTMLImageElement>(null);
   useEffect(() => {
@@ -19,6 +20,24 @@ export default function TopBar() {
       setLoginStatus(fetchgedLoginStatus);
     };
     fetchLoginStatus();
+  }, []);
+  useEffect(() => {
+    const updateCartCount = () => {
+      setTimeout(() => {
+        if (typeof window === "undefined") return;
+        try {
+          const cart = JSON.parse(localStorage.getItem("cartItems") || "[]");
+          setCartCount(cart.length);
+        } catch (e) {
+          console.error(e);
+        }
+      }, 0);
+    };
+    updateCartCount();
+    window.addEventListener("cartUpdated", updateCartCount);
+    return () => {
+      window.removeEventListener("cartUpdated", updateCartCount);
+    };
   }, []);
   const closeDrawer = () => {
     setIsDrawerOpen(false);
@@ -77,10 +96,24 @@ export default function TopBar() {
             )}
             <Link
               href="/?cart=open#home-products"
-              className={menuItemClasses("text-slate-600")}
+              scroll={false}
+              className={menuItemClasses("text-slate-600 relative")}
               aria-label="장바구니"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  sessionStorage.setItem(
+                    "scrollPos",
+                    String(window.scrollY)
+                  );
+                }
+              }}
             >
               <ShoppingCartIcon className="w-6 h-6" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[1.25rem] h-5 rounded-full bg-sky-500 text-white text-[11px] flex items-center justify-center px-1">
+                  {cartCount}
+                </span>
+              )}
             </Link>
             <button
               onClick={goSevenDays}
