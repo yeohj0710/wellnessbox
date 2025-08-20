@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { MenuLinks } from "./menuLinks";
 import { getLoginStatus } from "@/lib/useLoginStatus";
 import Image from "next/image";
+import { ShoppingCartIcon } from "@heroicons/react/24/outline";
 
 export default function TopBar() {
   const router = useRouter();
@@ -74,6 +75,13 @@ export default function TopBar() {
                 테스트
               </span>
             )}
+            <Link
+              href="/?cart=open#home-products"
+              className={menuItemClasses("text-slate-600")}
+              aria-label="장바구니"
+            >
+              <ShoppingCartIcon className="w-6 h-6" />
+            </Link>
             <button
               onClick={goSevenDays}
               className="hidden sm:block text-[15px] font-semibold text-slate-600"

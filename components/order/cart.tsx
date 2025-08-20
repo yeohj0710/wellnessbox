@@ -110,7 +110,20 @@ export default function Cart({
       }
     };
     document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+    const handlePopState = () => {
+      onBack();
+    };
+    if (isMobile) {
+      window.history.pushState(null, "", window.location.href);
+      window.addEventListener("popstate", handlePopState);
+    }
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      if (isMobile) {
+        window.removeEventListener("popstate", handlePopState);
+      }
+    };
   }, [onBack]);
   const deliveryFee = 3000;
   const totalPriceWithDelivery = totalPrice + deliveryFee;
@@ -131,7 +144,8 @@ export default function Cart({
     const updatedItems = [...cartItems];
     const existingIndex = updatedItems.findIndex(
       (i: any) =>
-        i.productId === cartItem.productId && i.optionType === cartItem.optionType
+        i.productId === cartItem.productId &&
+        i.optionType === cartItem.optionType
     );
     if (existingIndex !== -1) {
       updatedItems[existingIndex].quantity += cartItem.quantity;
@@ -371,7 +385,9 @@ export default function Cart({
             >
               ✕
             </button>
-            <h3 className="text-lg font-bold text-gray-800 mb-4">사업자 정보</h3>
+            <h3 className="text-lg font-bold text-gray-800 mb-4">
+              사업자 정보
+            </h3>
             <div className="mt-3">
               {selectedPharmacy.representativeName && (
                 <div className="flex items-center">
@@ -385,7 +401,9 @@ export default function Cart({
               )}
               {selectedPharmacy.name && (
                 <div className="flex items-center mt-2">
-                  <span className="w-24 text-sm font-medium text-gray-600">상호명</span>
+                  <span className="w-24 text-sm font-medium text-gray-600">
+                    상호명
+                  </span>
                   <p className="flex-1 text-sm sm:text-base font-semibold text-gray-800">
                     {selectedPharmacy.name}
                   </p>
@@ -393,7 +411,9 @@ export default function Cart({
               )}
               {selectedPharmacy.address && (
                 <div className="flex items-start mt-2">
-                  <span className="w-24 text-sm font-medium text-gray-600">사업자주소</span>
+                  <span className="w-24 text-sm font-medium text-gray-600">
+                    사업자주소
+                  </span>
                   <p className="flex-1 text-sm sm:text-base text-gray-700">
                     {selectedPharmacy.address}
                   </p>
@@ -401,7 +421,9 @@ export default function Cart({
               )}
               {selectedPharmacy.registrationNumber && (
                 <div className="flex items-center mt-2">
-                  <span className="w-24 text-sm font-medium text-gray-600">사업자등록번호</span>
+                  <span className="w-24 text-sm font-medium text-gray-600">
+                    사업자등록번호
+                  </span>
                   <p className="flex-1 text-sm sm:text-base text-gray-700">
                     {selectedPharmacy.registrationNumber}
                   </p>

@@ -177,6 +177,15 @@ export default function HomeProductSection() {
     }
   }, [searchParams, allProducts]);
   useEffect(() => {
+    const cart = searchParams.get("cart");
+    if (cart === "open") {
+      setIsCartVisible(true);
+      const url = new URL(window.location.toString());
+      url.searchParams.delete("cart");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, [searchParams]);
+  useEffect(() => {
     const timestampKey = "cartTimestamp";
     const now = Date.now();
     const storedTimestamp = localStorage.getItem(timestampKey);
@@ -486,12 +495,6 @@ export default function HomeProductSection() {
       {!error && allProducts.length === 0 && !isLoading && (
         <div className="min-h-[30vh] mb-12 flex flex-col items-center justify-center gap-6 py-10">
           <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600 transition"
-          >
-            새로고침
-          </button>
         </div>
       )}
       {totalPrice > 0 && selectedPharmacy && (

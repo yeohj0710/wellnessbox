@@ -73,16 +73,20 @@ export default function ProductDetail({
         onClose();
       }
     };
-    const handlePopState = (event: PopStateEvent) => {
-      onClose();
-      window.history.pushState(null, "", window.location.href);
-    };
-    window.history.pushState(null, "", window.location.href);
     document.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("popstate", handlePopState);
+    const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+    const handlePopState = () => {
+      onClose();
+    };
+    if (isMobile) {
+      window.history.pushState(null, "", window.location.href);
+      window.addEventListener("popstate", handlePopState);
+    }
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("popstate", handlePopState);
+      if (isMobile) {
+        window.removeEventListener("popstate", handlePopState);
+      }
     };
   }, [onClose]);
   useEffect(() => {
@@ -102,7 +106,7 @@ export default function ProductDetail({
     setQuantity(1);
   };
   return (
-    <div className="fixed inset-0 bg-white flex justify-center items-center">
+    <div className="z-20 fixed inset-0 bg-white flex justify-center items-center">
       <div
         className="overflow-y-auto max-h-screen fixed inset-x-0 top-14 bg-white w-full max-w-[640px] mx-auto"
         style={{
@@ -120,7 +124,9 @@ export default function ProductDetail({
             {product.images && product.images.length > 0 ? (
               <div className="relative w-full h-72 sm:h-80 overflow-hidden">
                 {isImageLoading && (
-                  <div className="absolute inset-0 bg-gray-100 animate-pulse" />
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                    <div className="w-8 h-8 border-4 border-sky-400 border-t-transparent rounded-full animate-spin" />
+                  </div>
                 )}
                 {product.images.map((image: any, index: any) => (
                   <div
@@ -136,7 +142,9 @@ export default function ProductDetail({
                       fill
                       sizes="1024px"
                       className="object-contain bg-white"
-                      onLoad={() => index === 0 && setIsImageLoading(false)}
+                      onLoadingComplete={() =>
+                        index === 0 && setIsImageLoading(false)
+                      }
                     />
                   </div>
                 ))}

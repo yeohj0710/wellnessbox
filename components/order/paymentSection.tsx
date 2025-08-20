@@ -16,82 +16,103 @@ export default function PaymentSection({
   return (
     <>
       <h2 className="text-lg font-bold p-4 pb-2 mt-2">결제 수단</h2>
-      <div className="px-4 grid grid-cols-1 sm:grid-cols-2 gap-4 mt-1">
-        <label
-          className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition ${
-            selectedPaymentMethod === "inicis"
-              ? "border-sky-400 bg-sky-50"
-              : "border-gray-200 hover:border-sky-400"
-          }`}
-        >
+      <div className="px-4 space-y-3">
+        <label className="flex items-center gap-3 cursor-pointer">
           <input
             type="radio"
-            name="payment"
+            name="paymentMethod"
             value="inicis"
+            className="w-5 h-5 text-sky-500 border-gray-300"
             checked={selectedPaymentMethod === "inicis"}
             onChange={() => setSelectedPaymentMethod("inicis")}
-            className="hidden"
           />
-          <div className="w-8 h-8 relative">
-            <Image
-              src="/icons/card.svg"
-              alt="카드 결제 아이콘"
-              fill
-              sizes="128px"
-              className="object-contain"
-            />
-          </div>
-          <span className="text-base font-medium text-gray-700">신용/체크카드</span>
+          <span className="text-base font-medium text-gray-700">
+            신용/체크카드
+          </span>
         </label>
         {loginStatus.isTestLoggedIn && (
-          <label
-            className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition ${
-              selectedPaymentMethod === "kakaopay"
-                ? "border-sky-400 bg-sky-50"
-                : "border-gray-200 hover:border-sky-400"
-            }`}
-          >
-            <input
-              type="radio"
-              name="payment"
-              value="kakaopay"
-              checked={selectedPaymentMethod === "kakaopay"}
-              onChange={() => setSelectedPaymentMethod("kakaopay")}
-              className="hidden"
-            />
-            <div className="w-8 h-8 relative">
-              <Image
-                src="/icons/kakaopay.svg"
-                alt="카카오페이 아이콘"
-                fill
-                sizes="128px"
-                className="object-contain"
+          <>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="kpn"
+                className="w-5 h-5 text-sky-500 border-gray-300"
+                checked={selectedPaymentMethod === "kpn"}
+                onChange={() => setSelectedPaymentMethod("kpn")}
               />
-            </div>
-            <span className="text-base font-medium text-gray-700">카카오페이</span>
-            <div className="bg-orange-400 px-2 rounded-full">
-              <span className="text-xs font-bold text-white">테스트 결제</span>
-            </div>
-          </label>
+              <div className="flex flex-row gap-1.5 items-center justify-center">
+                <span className="text-base font-medium text-gray-700">
+                  NHN KCP
+                </span>
+                <div className="bg-orange-400 px-2 rounded-full">
+                  <span className="text-xs font-bold text-white">
+                    테스트 결제
+                  </span>
+                </div>
+              </div>
+            </label>
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="kakao"
+                className="w-5 h-5 text-sky-500 border-gray-300"
+                checked={selectedPaymentMethod === "kakao"}
+                onChange={() => setSelectedPaymentMethod("kakao")}
+              />
+              <div className="flex flex-row gap-1.5 items-center justify-center">
+                <div className="relative w-12 h-6 ml-2.5">
+                  <Image
+                    src="/kakaopay.svg"
+                    alt="카카오페이 아이콘"
+                    fill
+                    sizes="128px"
+                    className="object-contain"
+                  />
+                </div>
+                <span className="text-base font-medium text-gray-700">
+                  카카오페이
+                </span>
+                <div className="bg-orange-400 px-2 rounded-full">
+                  <span className="text-xs font-bold text-white">
+                    테스트 결제
+                  </span>
+                </div>
+              </div>
+            </label>
+          </>
         )}
       </div>
-      <h2 className="text-lg font-bold p-4 mt-2">최종 금액</h2>
-      <div className={`px-4 ${totalPrice <= 0 ? "mb-24 pb-2" : ""}`}>
-        <div className="flex justify-between items-center">
-          <span className="text-sm font-medium text-gray-700">상품 합계</span>
-          <span className="font-bold">{totalPrice.toLocaleString()}원</span>
+      {totalPrice > 0 ? (
+        <>
+          <h2 className="text-lg font-bold p-4 mt-2">최종 금액</h2>
+          <div className={`px-4 ${totalPrice <= 0 ? "mb-24 pb-2" : ""}`}>
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium text-gray-700">
+                상품 합계
+              </span>
+              <span className="font-bold">{totalPrice.toLocaleString()}원</span>
+            </div>
+            <div className="flex justify-between items-center mt-2">
+              <span className="text-sm font-medium text-gray-700">배송비</span>
+              <span className="font-bold">
+                {deliveryFee.toLocaleString()}원
+              </span>
+            </div>
+            <div className="flex justify-between items-center border-t pt-4 mt-4">
+              <span className="text-lg font-bold text-gray-900">최종 금액</span>
+              <span className="text-lg font-bold text-sky-500">
+                {totalPriceWithDelivery.toLocaleString()}원
+              </span>
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="mt-12">
+          <span className="">　</span>
         </div>
-        <div className="flex justify-between items-center mt-2">
-          <span className="text-sm font-medium text-gray-700">배송비</span>
-          <span className="font-bold">{deliveryFee.toLocaleString()}원</span>
-        </div>
-        <div className="flex justify-between items-center border-t pt-4 mt-4">
-          <span className="text-lg font-bold text-gray-900">최종 금액</span>
-          <span className="text-lg font-bold text-sky-500">
-            {totalPriceWithDelivery.toLocaleString()}원
-          </span>
-        </div>
-      </div>
+      )}
       {totalPrice > 0 && (
         <div className="px-4 mt-6">
           {loginStatus.isTestLoggedIn && selectedPaymentMethod === "inicis" && (

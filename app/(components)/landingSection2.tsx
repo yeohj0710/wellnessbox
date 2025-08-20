@@ -51,12 +51,12 @@ export default function LandingSection2({
           </div>
 
           <h1 className="mt-4 sm:mt-6 text-center text-[#0F1222] text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight flex flex-col items-center gap-2 sm:gap-3 md:gap-4">
-            <span className="block sm:hidden leading-[1.4]">
+            <span className="block lg:hidden leading-[1.4]">
               내 몸에 딱 맞는
               <br />
               “AI+약사 설계”
             </span>
-            <span className="hidden sm:block leading-none">
+            <span className="hidden lg:block leading-none">
               내 몸에 딱 맞는 “AI+약사 설계”
             </span>
             <span className="leading-none bg-clip-text text-transparent bg-gradient-to-r from-[#1E40FF] via-[#3B5BFF] to-[#6C4DFF]">
@@ -71,9 +71,9 @@ export default function LandingSection2({
           </p>
 
           <div className="mt-7 sm:mt-9 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4">
-            <button className="h-11 sm:h-12 rounded-full px-5 sm:px-6 bg-white hover:scale-105 transition duration-300 text-[#3B5BFF] ring-1 ring-white shadow-[0_6px_20px_rgba(67,103,230,0.20)]">
+            <div className="h-11 sm:h-12 rounded-full px-5 sm:px-6 bg-white transition duration-300 text-[#3B5BFF] ring-1 ring-white shadow-[0_6px_20px_rgba(67,103,230,0.20)] flex items-center justify-center">
               7일 단위 시작으로 부담 없이!
-            </button>
+            </div>
             <button
               className="hover:scale-105 transition duration-300 h-11 sm:h-12 rounded-full px-5 sm:px-6 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]"
               onClick={onSelect7Day}

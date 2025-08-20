@@ -461,7 +461,7 @@ export default function Pharm() {
                       sendMessage();
                     }
                   }}
-                  className="flex-1 px-3 py-1.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400 resize-none overflow-hidden leading-normal"
+                  className="flex-1 px-3 py-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400 resize-none overflow-hidden leading-normal"
                   placeholder="메시지를 입력하세요..."
                 />
                 <button
