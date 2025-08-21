@@ -13,6 +13,7 @@ export default function MyOrders() {
   const [error, setError] = useState("");
   const [isViewingDetails, setIsViewingDetails] = useState(false);
   const [loading, setLoading] = useState(false);
+
   useEffect(() => {
     window.scrollTo(0, 0);
     setPhonePart1(localStorage.getItem("my-orders-phonePart1") || "010");
@@ -20,9 +21,11 @@ export default function MyOrders() {
     setPhonePart3(localStorage.getItem("my-orders-phonePart3") || "");
     setPassword(localStorage.getItem("my-orders-password") || "");
   }, []);
+
   useEffect(() => {
     setPhone(`${phonePart1}-${phonePart2}-${phonePart3}`);
   }, [phonePart1, phonePart2, phonePart3]);
+
   const handleFetchOrders = async () => {
     if (!phonePart2 || !phonePart3 || !password) {
       setError("전화번호와 비밀번호를 모두 입력해 주세요.");
@@ -46,6 +49,7 @@ export default function MyOrders() {
       setLoading(false);
     }
   };
+
   return (
     <div className="w-full max-w-[640px] mt-8 mb-12">
       {!isViewingDetails ? (
@@ -63,6 +67,7 @@ export default function MyOrders() {
             <span className="text-sky-400 font-bold"> 비밀번호</span>로 주문을
             쉽게 조회할 수 있어요.
           </p>
+
           <div className="mt-6 mb-4">
             <h2 className="text-lg font-bold pb-2 mt-3">연락처 입력</h2>
             <div className="flex gap-2 items-center">
@@ -120,6 +125,7 @@ export default function MyOrders() {
               />
             </div>
           </div>
+
           <div className="mb-4">
             <h2 className="text-lg font-bold pb-2 mt-3">주문 조회 비밀번호</h2>
             <input
@@ -140,6 +146,7 @@ export default function MyOrders() {
               disabled={loading}
             />
           </div>
+
           <button
             type="submit"
             className={`w-full h-10 bg-sky-400 text-white font-bold rounded-lg hover:bg-sky-500 transition ${
@@ -155,6 +162,7 @@ export default function MyOrders() {
               "주문 조회"
             )}
           </button>
+
           {error && <p className="text-red-500 text-sm mt-4">{error}</p>}
         </form>
       ) : (

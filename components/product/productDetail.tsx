@@ -297,7 +297,7 @@ export default function ProductDetail({
           </div>
 
           {isLoadingReviews ? (
-            <div className="mt-10 mb-24">
+            <div className="-mt-10 mb-24">
               <FullPageLoader />
             </div>
           ) : (

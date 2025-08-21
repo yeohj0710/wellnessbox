@@ -451,7 +451,7 @@ export default function OrderDetails({ phone, password, onBack }: any) {
                   ))
                 ) : (
                   <p className="text-center text-gray-500 text-sm my-10">
-                    메시지가 없습니다.
+                    아직 주고받은 메시지가 없어요.
                   </p>
                 )}
               </div>
@@ -512,14 +512,20 @@ export default function OrderDetails({ phone, password, onBack }: any) {
   };
   if (loading) return <FullPageLoader />;
   return (
-    <div className="w-full flex flex-col gap-4">
+    <div className="w-full flex flex-col gap-0 sm:gap-4">
       {orders.map((order: any, index: number) => (
-        <OrderAccordionItem
-          key={order.id}
-          initialOrder={order}
-          isInitiallyExpanded={index === 0}
-          onBack={onBack}
-        />
+        <div key={order.id} className="w-full">
+          <OrderAccordionItem
+            initialOrder={order}
+            isInitiallyExpanded={index === 0}
+            onBack={onBack}
+          />
+          {index < orders.length - 1 && (
+            <div className="hidden max-sm:block px-4">
+              <div className="border-t border-gray-200" />
+            </div>
+          )}
+        </div>
       ))}
     </div>
   );

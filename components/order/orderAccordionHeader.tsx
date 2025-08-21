@@ -10,7 +10,7 @@ import {
 } from "@heroicons/react/24/outline";
 import StatusLabel from "@/components/common/statusLabel";
 import ReviewModal from "@/components/modal/reviewModal";
-import { ORDER_STATUS, OrderStatus } from "@/lib/order/orderStatus";
+import { ORDER_STATUS } from "@/lib/order/orderStatus";
 
 export default function OrderAccordionHeader({
   order,
@@ -25,6 +25,7 @@ export default function OrderAccordionHeader({
   const firstPharmacyProduct = order.orderItems[0].pharmacyProduct;
   const [allReviewsCompleted, setAllReviewsCompleted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
     const isAllReviewsCompleted = order.orderItems.every(
       (item: any) => item.review && item.review.rate
@@ -32,26 +33,58 @@ export default function OrderAccordionHeader({
     setAllReviewsCompleted(isAllReviewsCompleted);
     setIsLoading(false);
   }, [order]);
+
   return (
     <>
-      <div
-        className="flex justify-between items-start cursor-pointer"
-        onClick={toggle}
-      >
-        <div className="flex flex-col">
+      <div className="relative cursor-pointer" onClick={toggle}>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleSubscription && toggleSubscription();
+          }}
+          className={`absolute top-0 right-0 inline-flex items-center gap-1 rounded px-2 py-1 text-xs sm:text-sm whitespace-nowrap ${
+            isSubscribed
+              ? "bg-sky-50 text-sky-600 hover:bg-sky-100"
+              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+          } ${subscriptionLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+          disabled={subscriptionLoading}
+        >
+          {subscriptionLoading ? (
+            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+          ) : isSubscribed ? (
+            <BellIcon className="w-4 h-4" />
+          ) : (
+            <BellSlashIcon className="w-4 h-4" />
+          )}
+          <span className="whitespace-nowrap">
+            {isSubscribed ? "켜짐" : "꺼짐"}
+          </span>
+        </button>
+
+        <span className="absolute right-0 top-[55%] -translate-y-1/2 w-6 h-6 flex items-center justify-center">
+          {isExpanded ? (
+            <ChevronUpIcon className="w-6 h-6 text-gray-600" />
+          ) : (
+            <ChevronDownIcon className="w-6 h-6 text-gray-600" />
+          )}
+        </span>
+
+        <div className="flex flex-col gap-1 pr-8 sm:pr-0">
           <div className="text-sm text-gray-500">
             주문번호 #{generateOrderNumber(order.id)}
           </div>
-          <div className="mt-1 text-sm sm:text-base font-bold text-gray-700">
+
+          <div className="mt-2 text-sm sm:text-base font-bold text-gray-700">
             {firstPharmacyProduct.product.name} (
             {firstPharmacyProduct.optionType})
             {order.orderItems.length > 1 && (
-              <span className="text-gray-500 text-sm">
-                {` 외 ${order.orderItems.length - 1}개`}
-              </span>
+              <span className="text-gray-500 text-sm">{` 외 ${
+                order.orderItems.length - 1
+              }개`}</span>
             )}
           </div>
-          <div className="mt-3 flex flex-row items-center gap-2 sm:gap-6 text-sm text-gray-500">
+
+          <div className="mt-2.5 flex flex-row items-center gap-2 sm:gap-6 text-sm text-gray-500">
             <span>
               주문일시:{" "}
               <span className="text-gray-700">
@@ -66,61 +99,30 @@ export default function OrderAccordionHeader({
             <span className="hidden sm:inline">
               <StatusLabel status={order.status} />
             </span>
-            {!isLoading && onBack && order.status === ORDER_STATUS.DELIVERY_COMPLETE && (
-              <div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (!allReviewsCompleted) {
-                      setIsReviewModalOpen(true);
-                    }
-                  }}
-                  className={`px-3 py-1 ml-2 sm:ml-0 -my-2 rounded ${
-                    allReviewsCompleted
-                      ? "bg-gray-300 text-gray-500 cursor-default"
-                      : "bg-sky-400 text-white hover:bg-sky-500"
-                  }`}
-                  disabled={allReviewsCompleted}
-                >
-                  {allReviewsCompleted ? "리뷰 완료" : "리뷰 작성"}
-                </button>
-              </div>
-            )}
+            {!isLoading &&
+              onBack &&
+              order.status === ORDER_STATUS.DELIVERY_COMPLETE && (
+                <div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!allReviewsCompleted) setIsReviewModalOpen(true);
+                    }}
+                    className={`px-3 py-1 ml-2 sm:ml-0 -my-2 rounded ${
+                      allReviewsCompleted
+                        ? "bg-gray-300 text-gray-500 cursor-default"
+                        : "bg-sky-400 text-white hover:bg-sky-500"
+                    }`}
+                    disabled={allReviewsCompleted}
+                  >
+                    {allReviewsCompleted ? "리뷰 완료" : "리뷰 작성"}
+                  </button>
+                </div>
+              )}
           </div>
         </div>
-        <div className="flex items-start gap-2">
-          {typeof toggleSubscription === "function" && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleSubscription();
-              }}
-              className={`flex items-center gap-1 px-2 py-1 rounded text-xs sm:text-sm transition-colors ${
-                isSubscribed
-                  ? "bg-sky-50 text-sky-600 hover:bg-sky-100"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              } ${subscriptionLoading ? "opacity-50 cursor-not-allowed" : ""}`}
-              disabled={subscriptionLoading}
-            >
-              {subscriptionLoading ? (
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              ) : isSubscribed ? (
-                <BellIcon className="w-4 h-4" />
-              ) : (
-                <BellSlashIcon className="w-4 h-4" />
-              )}
-              <span>{isSubscribed ? "켜짐" : "꺼짐"}</span>
-            </button>
-          )}
-          <span className="w-6 h-6 flex items-center justify-center">
-            {isExpanded ? (
-              <ChevronUpIcon className="text-gray-600" />
-            ) : (
-              <ChevronDownIcon className="text-gray-600" />
-            )}
-          </span>
-        </div>
       </div>
+
       {isReviewModalOpen && (
         <ReviewModal
           initialOrder={order}

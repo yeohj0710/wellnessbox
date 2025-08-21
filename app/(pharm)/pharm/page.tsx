@@ -446,7 +446,7 @@ export default function Pharm() {
                   ))
                 ) : (
                   <p className="text-center text-gray-500 text-sm my-10">
-                    메시지가 없습니다.
+                    아직 주고받은 메시지가 없어요.
                   </p>
                 )}
               </div>
