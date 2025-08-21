@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useState } from "react";
 import { TrashIcon } from "@heroicons/react/16/solid";
 
 export default function CartItemsSection({
@@ -11,6 +12,7 @@ export default function CartItemsSection({
   onProductClick,
   handleBulkChange,
 }: any) {
+  const [confirmType, setConfirmType] = useState<string | null>(null);
   return (
     <>
       <div className="px-4 sm:mt-2">
@@ -156,24 +158,50 @@ export default function CartItemsSection({
       </div>
       <div className="justify-end px-4 mt-3 mb-2 flex gap-2">
         <button
-          onClick={() => handleBulkChange("7일")}
+          onClick={() => setConfirmType("7일")}
           className="px-3 py-1 text-sm bg-sky-400 text-white rounded hover:bg-sky-500"
         >
           전체 7일치
         </button>
         <button
-          onClick={() => handleBulkChange("30일")}
+          onClick={() => setConfirmType("30일")}
           className="px-3 py-1 text-sm bg-sky-400 text-white rounded hover:bg-sky-500"
         >
           전체 30일치
         </button>
         <button
-          onClick={() => handleBulkChange("일반")}
+          onClick={() => setConfirmType("일반")}
           className="px-3 py-1 text-sm bg-sky-400 text-white rounded hover:bg-sky-500"
         >
           전체 통상품
         </button>
       </div>
+      {confirmType && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 text-center">
+            <p className="mb-6 text-sm">
+              장바구니에 담긴 모든 상품들이 {confirmType}로 바뀌어요. 변경할까요?
+            </p>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => {
+                  handleBulkChange(confirmType);
+                  setConfirmType(null);
+                }}
+                className="px-4 py-2 bg-sky-400 text-white rounded hover:bg-sky-500"
+              >
+                변경
+              </button>
+              <button
+                onClick={() => setConfirmType(null)}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

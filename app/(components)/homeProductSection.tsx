@@ -17,6 +17,7 @@ import CategoryFilter from "@/app/(components)/categoryFilter";
 import PackageFilter from "@/app/(components)/packageFilter";
 import ProductGrid from "@/app/(components)/productGrid";
 import FooterCartBar from "@/app/(components)/footerCartBar";
+import FooterCartBarLoading from "@/app/(components)/footerCartBarLoading";
 import SymptomModal from "@/app/(components)/symptomModal";
 import SymptomFilter from "@/app/(components)/symptomFilter";
 
@@ -34,6 +35,7 @@ export default function HomeProductSection() {
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [selectedPackage, setSelectedPackage] = useState<string>("전체");
   const [totalPrice, setTotalPrice] = useState(0);
+  const [isCartBarLoading, setIsCartBarLoading] = useState(false);
   const [roadAddress, setRoadAddress] = useState("");
   const [pharmacies, setPharmacies] = useState<any[]>([]);
   const [selectedPharmacy, setSelectedPharmacy] = useState<any>(null);
@@ -267,6 +269,7 @@ export default function HomeProductSection() {
       return acc;
     }, 0);
     setTotalPrice(total);
+    setIsCartBarLoading(false);
   }, [cartItems, selectedPharmacy, allProducts]);
   useEffect(() => {
     if (selectedSymptoms.length === 0) return;
@@ -417,6 +420,7 @@ export default function HomeProductSection() {
     }
   }, [totalPrice, isCartVisible, hideFooter, showFooter]);
   const handleAddToCart = (cartItem: any) => {
+    setIsCartBarLoading(true);
     setCartItems((prev) => {
       const existingItem = prev.find(
         (item) =>
@@ -535,11 +539,15 @@ export default function HomeProductSection() {
           <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
         </div>
       )}
-      {totalPrice > 0 && selectedPharmacy && (
-        <FooterCartBar
-          totalPrice={totalPrice}
-          setIsCartVisible={openCart}
-        />
+      {selectedPharmacy && (totalPrice > 0 || isCartBarLoading) && (
+        isCartBarLoading ? (
+          <FooterCartBarLoading />
+        ) : (
+          <FooterCartBar
+            totalPrice={totalPrice}
+            setIsCartVisible={openCart}
+          />
+        )
       )}
       {selectedProduct && (
         <ProductDetail

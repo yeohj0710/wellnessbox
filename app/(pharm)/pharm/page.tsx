@@ -21,10 +21,41 @@ import FullPageLoader from "@/components/common/fullPageLoader";
 import { ORDER_STATUS, OrderStatus } from "@/lib/order/orderStatus";
 import Image from "next/image";
 
+function base64ToUint8Array(base64: string) {
+  const padding = "=".repeat((4 - (base64.length % 4)) % 4);
+  const base64Safe = (base64 + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64Safe);
+  const output = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) output[i] = rawData.charCodeAt(i);
+  return output;
+}
+
+const registerAndActivateSW = async () => {
+  const reg =
+    (await navigator.serviceWorker.getRegistration()) ||
+    (await navigator.serviceWorker.register("/sw.js"));
+  await reg.update();
+  if (reg.waiting) {
+    reg.waiting.postMessage({ type: "SKIP_WAITING" });
+    await new Promise<void>((resolve) => {
+      const onChange = () => {
+        if (navigator.serviceWorker.controller) {
+          navigator.serviceWorker.removeEventListener("controllerchange", onChange);
+          resolve();
+        }
+      };
+      navigator.serviceWorker.addEventListener("controllerchange", onChange);
+    });
+  }
+  return reg;
+};
+
 export default function Pharm() {
   const [loading, setLoading] = useState<boolean>(true);
   const [pharm, setPharm] = useState<any | null>(null);
   const [orders, setOrders] = useState<any[]>([]);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isSubscribeLoading, setIsSubscribeLoading] = useState(false);
   const router = useRouter();
   useEffect(() => {
     async function fetchPharmacy() {
@@ -46,6 +77,87 @@ export default function Pharm() {
     }
     fetchOrders();
   }, [pharm]);
+  useEffect(() => {
+    if (!pharm) return;
+    const check = async () => {
+      if (!("serviceWorker" in navigator)) return;
+      const reg = await registerAndActivateSW();
+      const sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        if (localStorage.getItem("pharmNotifyOff") === "true") {
+          setIsSubscribed(false);
+          return;
+        }
+        await subscribePush();
+        return;
+      }
+      try {
+        const res = await fetch("/api/pharm-push/status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pharmacyId: pharm.id, endpoint: sub.endpoint }),
+        });
+        const data = await res.json();
+        setIsSubscribed(!!data.subscribed);
+      } catch {
+        setIsSubscribed(false);
+      }
+    };
+    check();
+  }, [pharm]);
+
+  const subscribePush = async () => {
+    if (!("serviceWorker" in navigator)) return;
+    setIsSubscribeLoading(true);
+    try {
+      const reg = await registerAndActivateSW();
+      let sub = await reg.pushManager.getSubscription();
+      const appKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").trim();
+      if (!appKey) return;
+      if (!sub) {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: base64ToUint8Array(appKey),
+        });
+      }
+      await fetch("/api/pharm-push/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pharmacyId: pharm?.id, subscription: sub }),
+      });
+      localStorage.removeItem("pharmNotifyOff");
+      setIsSubscribed(true);
+    } catch (e) {
+      console.error(e);
+      alert("알림 설정에 실패했습니다.");
+    } finally {
+      setIsSubscribeLoading(false);
+    }
+  };
+
+  const unsubscribePush = async () => {
+    if (!("serviceWorker" in navigator)) return;
+    setIsSubscribeLoading(true);
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      const sub = await reg?.pushManager.getSubscription();
+      if (sub) {
+        await fetch("/api/pharm-push/unsubscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pharmacyId: pharm?.id, endpoint: sub.endpoint }),
+        });
+        await sub.unsubscribe();
+      }
+      localStorage.setItem("pharmNotifyOff", "true");
+      setIsSubscribed(false);
+    } catch (e) {
+      console.error(e);
+      alert("알림 해제에 실패했습니다.");
+    } finally {
+      setIsSubscribeLoading(false);
+    }
+  };
   const OrderAccordionItem = ({
     initialOrder,
     isInitiallyExpanded,
@@ -533,22 +645,33 @@ export default function Pharm() {
     );
   };
   if (loading) return <FullPageLoader />;
-  if (orders.length === 0) {
-    return (
-      <div className="flex justify-center items-center w-full max-w-[640px] mx-auto mt-8 mb-12 py-12 bg-white sm:shadow-md sm:rounded-lg">
-        <p className="text-gray-500">아직 들어온 주문이 없어요.</p>
-      </div>
-    );
-  }
   return (
     <div className="w-full mt-8 mb-12 flex flex-col gap-4">
-      {orders.map((order: any, index: number) => (
-        <OrderAccordionItem
-          key={order.id}
-          initialOrder={order}
-          isInitiallyExpanded={index === 0}
-        />
-      ))}
+      <div className="flex justify-end px-4">
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={isSubscribed}
+            onChange={() => (isSubscribed ? unsubscribePush() : subscribePush())}
+            disabled={isSubscribeLoading}
+            className="accent-sky-400"
+          />
+          신규 주문 알림 받기
+        </label>
+      </div>
+      {orders.length === 0 ? (
+        <div className="flex justify-center items-center w-full max-w-[640px] mx-auto mt-8 mb-12 py-12 bg-white sm:shadow-md sm:rounded-lg">
+          <p className="text-gray-500">아직 들어온 주문이 없어요.</p>
+        </div>
+      ) : (
+        orders.map((order: any, index: number) => (
+          <OrderAccordionItem
+            key={order.id}
+            initialOrder={order}
+            isInitiallyExpanded={index === 0}
+          />
+        ))
+      )}
     </div>
   );
 }

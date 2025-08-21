@@ -99,7 +99,7 @@ export default function Footer() {
                   통신판매업신고번호: 2025-서울서초-0646
                 </span> */}
                 <span className="text-xs text-gray-400">
-                  대표 전화번호: 02-6013-4400
+                  대표 전화번호: 02-6241-5530
                 </span>
                 <span className="text-xs text-gray-400">
                   대표 이메일: smilerobert@naver.com

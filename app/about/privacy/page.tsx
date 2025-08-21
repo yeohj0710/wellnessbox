@@ -144,7 +144,7 @@ export default function Privacy() {
         <ul className="list-disc pl-6 mb-6">
           <li>책임자: 권혁찬</li>
           <li>이메일: smilerobert@naver.com</li>
-          <li>대표 전화번호: 02-6013-4400</li>
+          <li>대표 전화번호: 02-6241-5530</li>
         </ul>
         <p>
           이용자는 개인정보 보호책임자에게 언제든지 개인정보 보호 관련 문의,

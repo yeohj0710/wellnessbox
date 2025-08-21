@@ -2,7 +2,7 @@
 "use server";
 import db from "@/lib/db";
 import { OrderStatus } from "./orderStatus";
-import { sendOrderNotification } from "@/lib/notification";
+import { sendOrderNotification, sendNewOrderNotification } from "@/lib/notification";
 
 export async function updateOrderStatus(orderid: number, newStatus: OrderStatus) {
   const updatedOrder = await db.order.update({
@@ -30,7 +30,7 @@ export async function createOrder(data: {
   orderItems: { pharmacyProductId: number; quantity: number }[];
 }) {
   const { orderItems, ...orderData } = data;
-  return await db.order.create({
+  const created = await db.order.create({
     data: {
       ...orderData,
       orderItems: {
@@ -61,6 +61,8 @@ export async function createOrder(data: {
       },
     },
   });
+  await sendNewOrderNotification(created.id);
+  return created;
 }
 
 export async function updateOrder(

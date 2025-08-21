@@ -35,7 +35,7 @@ export default function OrderSummary({ order }: { order: any }) {
     );
   }
   return (
-    <div className="bg-white shadow rounded-lg px-8 py-8">
+    <div className="bg-white shadow rounded-lg px-8 py-8 mx-2 sm:mx-0">
       <h2 className="text-lg font-bold text-gray-700 mb-6">주문 상세 내역</h2>
       {order?.orderItems.map((orderItem: any, orderId: number) => {
         const { pharmacyProduct } = orderItem;
@@ -72,7 +72,9 @@ export default function OrderSummary({ order }: { order: any }) {
                 </p>
               </div>
             </div>
-            <p className="text-sm font-bold text-sky-400">{totalPrice}원</p>
+            <p className="text-sm font-bold text-sky-400 whitespace-nowrap tabular-nums shrink-0 min-w-[72px] text-right">
+              {totalPrice}원
+            </p>
           </div>
         );
       })}
@@ -82,7 +84,7 @@ export default function OrderSummary({ order }: { order: any }) {
       </div>
       <div className="flex justify-end gap-2 text-base font-bold mt-2">
         <span className="text-gray-700">총 결제 금액</span>
-        <span className="text-sky-400">
+        <span className="text-right whitespace-nowrap tabular-nums min-w-[72px] inline-flex justify-end">
           {order.totalPrice.toLocaleString()}원
         </span>
       </div>

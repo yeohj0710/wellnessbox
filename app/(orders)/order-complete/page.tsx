@@ -473,12 +473,12 @@ export default function OrderComplete() {
           loading={notifyLoading}
         />
       )}
-      <div className="w-full max-w-[640px] mx-auto">
+      <div className="w-full max-w-[640px] mx-2 sm:mx-auto">
         <h1 className="text-2xl font-bold text-center text-gray-800 mb-6 mt-12">
           결제가 완료되었습니다! 🎉
         </h1>
         <OrderSummary order={order} />
-        <div className="text-center py-4 bg-white shadow rounded-lg mt-4">
+        <div className="text-center py-4 bg-white shadow rounded-lg mt-4 mx-2 sm:mx-0">
           <p className="text-sm text-gray-600">
             결제 시 입력한
             <span className="text-sky-400 font-bold"> 전화번호</span>와
