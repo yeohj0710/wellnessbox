@@ -47,12 +47,9 @@ export default function PopularIngredients({
                 onClick={() => onSelectCategory(category.id)}
                 className="group relative overflow-hidden rounded-2xl bg-white ring-1 ring-gray-100 shadow-[0_6px_20px_rgba(67,103,230,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(67,103,230,0.18)] focus:outline-none focus:ring-2 focus:ring-[#6C4DFF]/50"
               >
-                <span className="absolute top-2 left-2 z-10 bg-gradient-to-r from-[#3B82F6] to-[#6C4DFF] text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm">
-                  #{index + 1}
-                </span>
-                <div className="absolute inset-0 bg-gradient-to-br from-[#4568F5]/0 via-[#6C4DFF]/0 to-[#6C4DFF]/0 opacity-0 group-hover:opacity-10 transition-opacity" />
-                {category.image ? (
-                  <div className="relative w-full aspect-[4/3]">
+                <div className="relative w-full aspect-[4/3]">
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#4568F5]/0 via-[#6C4DFF]/0 to-[#6C4DFF]/0 opacity-0 group-hover:opacity-10 transition-opacity" />
+                  {category.image ? (
                     <Image
                       src={category.image}
                       alt={category.name || "Category"}
@@ -60,12 +57,15 @@ export default function PopularIngredients({
                       sizes="512px"
                       className="object-contain p-3 transition-transform duration-300 group-hover:scale-[1.03]"
                     />
-                  </div>
-                ) : (
-                  <div className="w-full aspect-[4/3] bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
-                    이미지 없음
-                  </div>
-                )}
+                  ) : (
+                    <div className="absolute inset-0 bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
+                      이미지 없음
+                    </div>
+                  )}
+                  <span className="absolute top-2 left-2 bg-gradient-to-r from-[#3B82F6] to-[#6C4DFF] text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                    #{index + 1}
+                  </span>
+                </div>
 
                 <div className="px-3 pb-3">
                   <h3 className="text-sm font-semibold text-gray-900 line-clamp-2">
