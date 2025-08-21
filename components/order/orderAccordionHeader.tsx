@@ -40,7 +40,7 @@ export default function OrderAccordionHeader({
         <button
           onClick={(e) => {
             e.stopPropagation();
-            toggleSubscription && toggleSubscription();
+            toggleSubscription?.();
           }}
           className={`absolute top-0 right-0 inline-flex items-center gap-1 rounded px-2 py-1 text-xs sm:text-sm whitespace-nowrap ${
             isSubscribed
