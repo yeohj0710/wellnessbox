@@ -39,50 +39,63 @@ export default function SupplementRanking({
   }, []);
 
   return (
-    <section className="w-full max-w-[640px] mx-auto mt-8 bg-white">
-      <h1 className="text-xl font-bold px-4 mt-4">인기 영양제</h1>
+    <section className="w-full max-w-[640px] mx-auto mt-8">
+      <div className="px-4">
+        <h1 className="text-xl font-extrabold tracking-tight">
+          <span className="bg-gradient-to-r from-[#3B82F6] to-[#6C4DFF] bg-clip-text text-transparent">
+            인기 영양제
+          </span>
+        </h1>
+      </div>
+
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 p-3 sm:p-4">
         {isLoading
           ? Array(6)
               .fill(0)
               .map((_, i) => <Skeleton key={i} />)
           : products.map((product, index) => (
-              <div
+              <button
                 key={product.id}
-                className="relative px-[0.5px] sm:px-1 sm:pb-1 flex flex-col border rounded-md overflow-hidden shadow-sm hover:shadow-lg hover:scale-105 transition-transform duration-300 cursor-pointer bg-white"
                 onClick={() => onProductClick(product.id)}
+                className="group relative flex h-full flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-gray-100 shadow-[0_6px_20px_rgba(67,103,230,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(67,103,230,0.18)] focus:outline-none focus:ring-2 focus:ring-[#6C4DFF]/50"
               >
-                {product.images[0] ? (
-                  <div className="relative h-32 w-full bg-white">
+                <span className="absolute top-2 left-2 z-10 bg-gradient-to-r from-[#3B82F6] to-[#6C4DFF] text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                  #{index + 1}
+                </span>
+
+                {product.images?.[0] ? (
+                  <div className="relative w-full aspect-[4/3]">
                     <Image
                       src={product.images[0]}
                       alt={product.name}
                       fill
                       sizes="512px"
-                      className="object-contain"
+                      className="object-contain p-3 transition-transform duration-300 group-hover:scale-[1.05]"
                     />
                   </div>
                 ) : (
-                  <div className="h-28 bg-gray-200 flex items-center justify-center text-gray-500">
+                  <div className="w-full aspect-[4/3] bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
                     이미지 없음
                   </div>
                 )}
-                <span className="absolute top-1 left-1 bg-sky-500 text-white text-xs font-bold px-1.5 py-0.5 rounded">
-                  {index + 1}
-                </span>
-                <div className="p-2 flex flex-col gap-1 flex-grow">
-                  <p className="text-xs text-gray-500 line-clamp-1">
-                    {product.categories.map((c) => c.name).join(', ') || ''}
+
+                <div className="px-3 pb-3 flex flex-1 flex-col">
+                  <p className="text-[11px] text-gray-500 line-clamp-1">
+                    {product.categories.map((c) => c.name).join(", ") || ""}
                   </p>
-                  <h3 className="text-sm font-bold text-gray-800 line-clamp-2">
+                  <h3 className="mt-1 text-sm font-semibold text-gray-900 leading-snug line-clamp-2 min-h-[2.6rem]">
                     {product.name}
                   </h3>
-                  <div className="flex items-center gap-1 mt-auto">
+                  <div className="mt-auto flex items-center gap-1">
                     <StarRating rating={product.rating} size={16} />
-                    <span className="text-xs text-gray-500 mt-1">({product.reviewCount})</span>
+                    <span className="text-[11px] text-gray-500">
+                      ({product.reviewCount})
+                    </span>
                   </div>
                 </div>
-              </div>
+
+                <div className="pointer-events-none absolute inset-x-0 -bottom-6 h-12 bg-gradient-to-t from-[#6C4DFF]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              </button>
             ))}
       </div>
     </section>

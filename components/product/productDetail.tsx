@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatPriceRange } from "@/lib/utils";
 import { getReviewsByProductId } from "@/lib/review";
 import StarRating from "@/components/common/starRating";
@@ -23,7 +23,6 @@ export default function ProductDetail({
   pharmacy,
 }: any) {
   const [quantity, setQuantity] = useState(1);
-  const [totalPrice, setTotalPrice] = useState(product.price);
   const [isFirstModalOpen, setIsFirstModalOpen] = useState(false);
   const [reviews, setReviews] = useState<any[]>([]);
   const [isLoadingReviews, setIsLoadingReviews] = useState(true);
@@ -32,6 +31,8 @@ export default function ProductDetail({
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedOption, setSelectedOption] = useState<any>(optionType);
   const [isImageLoading, setIsImageLoading] = useState(true);
+  const [currentIdx, setCurrentIdx] = useState(0);
+
   useEffect(() => {
     async function fetchReviews() {
       if (!product.id) return;
@@ -67,282 +68,325 @@ export default function ProductDetail({
     }
     fetchReviews();
   }, [product.id]);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
+      if (event.key === "Escape") onClose();
+      if (event.key === "ArrowLeft") setCurrentIdx((v) => Math.max(0, v - 1));
+      if (event.key === "ArrowRight")
+        setCurrentIdx((v) =>
+          Math.min((product.images?.length || 1) - 1, v + 1)
+        );
     };
     document.addEventListener("keydown", handleKeyDown);
     const isMobile = /Mobi|Android/i.test(navigator.userAgent);
-    const handlePopState = () => {
-      onClose();
-    };
+    const handlePopState = () => onClose();
     if (isMobile) {
       window.history.pushState(null, "", window.location.href);
       window.addEventListener("popstate", handlePopState);
     }
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
-      if (isMobile) {
-        window.removeEventListener("popstate", handlePopState);
-      }
+      if (isMobile) window.removeEventListener("popstate", handlePopState);
     };
-  }, [onClose]);
+  }, [onClose, product.images?.length]);
+
   useEffect(() => {
     if (product.pharmacyProducts.length > 0 && !selectedOption) {
       setSelectedOption(product.pharmacyProducts[0].optionType);
     }
   }, [product.pharmacyProducts, selectedOption]);
-  const handleQuantityChange = (delta: number) => {
-    setQuantity((prev) => {
-      const newQuantity = Math.max(1, prev + delta);
-      setTotalPrice(product.price * newQuantity);
-      return newQuantity;
+
+  const rawOptionTypes = useMemo(() => {
+    const base = pharmacy
+      ? product.pharmacyProducts.filter(
+          (pp: any) => pp.pharmacy?.id === pharmacy.id
+        )
+      : product.pharmacyProducts;
+    return Array.from(
+      new Set(base.map((pp: any) => pp.optionType))
+    ) as string[];
+  }, [product.pharmacyProducts, pharmacy]);
+
+  const sortedOptionTypes = useMemo(() => {
+    const score = (ot: string) => {
+      if (/일반/.test(ot)) return { group: 2, n: Number.POSITIVE_INFINITY };
+      const m = ot.match(/(\d+)\s*(일|정)/);
+      if (m) return { group: 0, n: parseInt(m[1], 10) };
+      return { group: 1, n: Number.POSITIVE_INFINITY - 1 };
+    };
+    return [...rawOptionTypes].sort((a, b) => {
+      const sa = score(a);
+      const sb = score(b);
+      if (sa.group !== sb.group) return sa.group - sb.group;
+      return sa.n - sb.n;
     });
+  }, [rawOptionTypes]);
+
+  const getCapacityOf = (ot: string) => {
+    const relevant = pharmacy
+      ? product.pharmacyProducts.filter(
+          (pp: any) => pp.pharmacy?.id === pharmacy.id
+        )
+      : product.pharmacyProducts;
+    return relevant.find((pp: any) => pp.optionType === ot)?.capacity;
   };
+
+  const handleQuantityChange = (delta: number) => {
+    setQuantity((prev) => Math.max(1, prev + delta));
+  };
+
   const handleOptionChange = (option: string) => {
     setSelectedOption(option);
     setQuantity(1);
   };
+
+  const images = product.images || [];
+
   return (
     <div className="z-20 fixed inset-0 bg-white flex justify-center items-center">
       <div
-        className="overflow-y-auto max-h-screen fixed inset-x-0 top-14 bg-white w-full max-w-[640px] mx-auto"
-        style={{
-          scrollbarWidth: "none",
-          msOverflowStyle: "none",
-        }}
+        className="overflow-y-auto max-h-screen fixed inset-x-0 top-12 bg-white w-full max-w-[640px] mx-auto"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         <style jsx>{`
           div::-webkit-scrollbar {
             display: none;
           }
         `}</style>
+
         <div className="relative">
-          <div className="relative">
-            {product.images && product.images.length > 0 ? (
-              <div className="relative w-full h-72 sm:h-80 overflow-hidden">
-                {isImageLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-                    <div className="w-8 h-8 border-4 border-sky-400 border-t-transparent rounded-full animate-spin" />
-                  </div>
-                )}
-                {product.images.map((image: any, index: any) => (
-                  <div
-                    key={index}
-                    className={`absolute w-full h-72 sm:h-80 transition-transform ${
-                      index === 0 ? "block" : "hidden"
+          {images.length > 0 ? (
+            <div className="relative w-full h-72 sm:h-80 overflow-hidden">
+              {isImageLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+                  <div className="w-8 h-8 border-4 border-sky-400 border-t-transparent rounded-full animate-spin" />
+                </div>
+              )}
+              {images.map((src: string, i: number) => (
+                <div
+                  key={i}
+                  className={`absolute inset-0 transition-opacity duration-300 ${
+                    i === currentIdx
+                      ? "opacity-100"
+                      : "opacity-0 pointer-events-none"
+                  }`}
+                >
+                  <Image
+                    src={src}
+                    alt={`${product.name} 이미지 ${i + 1}`}
+                    fill
+                    sizes="1024px"
+                    className="object-contain bg-white"
+                    onLoadingComplete={() =>
+                      i === 0 && setIsImageLoading(false)
+                    }
+                  />
+                </div>
+              ))}
+
+              <button
+                className="absolute left-2 top-1/2 -translate-y-1/2 grid place-items-center h-9 w-9 rounded-full bg-white/90 shadow ring-1 ring-gray-200 hover:bg-white"
+                onClick={() => setCurrentIdx((v) => Math.max(0, v - 1))}
+                disabled={currentIdx === 0}
+              >
+                <ChevronLeftIcon className="w-5 h-5 text-gray-700" />
+              </button>
+              <button
+                className="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center h-9 w-9 rounded-full bg-white/90 shadow ring-1 ring-gray-200 hover:bg-white"
+                onClick={() =>
+                  setCurrentIdx((v) => Math.min(images.length - 1, v + 1))
+                }
+                disabled={currentIdx === images.length - 1}
+              >
+                <ChevronRightIcon className="w-5 h-5 text-gray-700" />
+              </button>
+
+              <div className="absolute bottom-3 inset-x-0 flex justify-center gap-1.5">
+                {images.map((_: string, i: number) => (
+                  <span
+                    key={i}
+                    onClick={() => setCurrentIdx(i)}
+                    className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                      i === currentIdx ? "w-5 bg-sky-500" : "w-2.5 bg-gray-300"
                     }`}
-                    data-image-index={index}
-                  >
-                    <Image
-                      src={image}
-                      alt={`${product.name} 이미지 ${index + 1}`}
-                      fill
-                      sizes="1024px"
-                      className="object-contain bg-white"
-                      onLoadingComplete={() =>
-                        index === 0 && setIsImageLoading(false)
-                      }
-                    />
-                  </div>
+                  />
                 ))}
-                <button
-                  className="absolute left-2 top-1/2 transform -translate-y-1/2 p-1"
-                  onClick={() => {
-                    const images = document.querySelectorAll(
-                      `[data-image-index]`
-                    ) as NodeListOf<HTMLImageElement>;
-                    const currentIndex = Array.from(images).findIndex(
-                      (img) => img.style.display !== "none"
-                    );
-                    images[currentIndex].style.display = "none";
-                    images[
-                      (currentIndex - 1 + images.length) % images.length
-                    ].style.display = "block";
-                  }}
-                >
-                  <ChevronLeftIcon className="w-6 h-6 text-gray-600 hover:text-gray-800" />
-                </button>
-                <button
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1"
-                  onClick={() => {
-                    const images = document.querySelectorAll(
-                      `[data-image-index]`
-                    ) as NodeListOf<HTMLImageElement>;
-                    const currentIndex = Array.from(images).findIndex(
-                      (img) => img.style.display !== "none"
-                    );
-                    images[currentIndex].style.display = "none";
-                    images[(currentIndex + 1) % images.length].style.display =
-                      "block";
-                  }}
-                >
-                  <ChevronRightIcon className="w-6 h-6 text-gray-600 hover:text-gray-800" />
-                </button>
               </div>
-            ) : (
-              <div className="w-full h-60 bg-gray-300 flex items-center justify-center text-gray-500">
-                이미지 없음
-              </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="w-full h-60 bg-gray-200 flex items-center justify-center text-gray-500">
+              이미지 없음
+            </div>
+          )}
+
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-1 text-gray-600 hover:text-gray-800"
+            className="absolute top-3 right-3 grid place-items-center h-9 w-9 rounded-full bg-white/95 shadow ring-1 ring-gray-200 hover:bg-white"
           >
-            <XMarkIcon className="w-6 h-6" />
+            <XMarkIcon className="w-5 h-5 text-gray-700" />
           </button>
         </div>
-        <div className="p-6 pb-32">
-          <h1 className="text-xl font-bold">{product.name}</h1>
+
+        <div className="p-5 pb-36">
+          <h1 className="text-[18px] sm:text-xl font-bold leading-snug">
+            {product.name}
+          </h1>
+
           <div className="mt-4">
-            <label className="block text-gray-600 text-sm font-medium mb-2">
+            <div className="text-gray-600 text-sm font-medium mb-2">
               옵션 선택
-            </label>
-            <select
-              value={selectedOption || ""}
-              onChange={(e) => handleOptionChange(e.target.value)}
-              className="border rounded-md w-full px-3 py-2 text-gray-700 focus:ring-2 focus:ring-sky-400 focus:outline-none"
-            >
-              {Array.from(
-                new Set(
-                  (pharmacy
-                    ? product.pharmacyProducts.filter(
-                        (pp: any) => pp.pharmacy?.id === pharmacy.id
-                      )
-                    : product.pharmacyProducts
-                  ).map((pp: any) => pp.optionType)
-                ) as Set<string>
-              ).map((optionType, index) => {
-                const relevantProducts = pharmacy
-                  ? product.pharmacyProducts.filter(
-                      (pp: any) => pp.pharmacy?.id === pharmacy.id
-                    )
-                  : product.pharmacyProducts;
-                const capacity = relevantProducts.find(
-                  (pp: any) => pp.optionType === optionType
-                )?.capacity;
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {sortedOptionTypes.map((ot) => {
+                const cap = getCapacityOf(ot);
+                const isActive = selectedOption === ot;
                 return (
-                  <option key={index} value={optionType}>
-                    {optionType}
-                    {capacity ? ` (${capacity})` : ""}
-                  </option>
+                  <button
+                    key={ot}
+                    onClick={() => handleOptionChange(ot)}
+                    className={`px-3 py-1.5 rounded-full text-sm ring-1 transition ${
+                      isActive
+                        ? "bg-sky-50 ring-sky-400 text-sky-700"
+                        : "bg-white ring-gray-200 text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    {ot}
+                    {cap ? ` · ${cap}` : ""}
+                  </button>
                 );
               })}
-            </select>
+            </div>
           </div>
-          <p className="text-lg font-bold mt-4 mb-2 text-sky-500">
-            {formatPriceRange({
-              product,
-              quantity: 1,
-              optionType: selectedOption || undefined,
-              pharmacy,
-            })}
-          </p>
-          <div className="flex flex-col gap-1">
-            <span className="text-xs text-gray-500">
-              * 주소 입력 후 약국이 선택되면 정확한 상품 가격을 알려드려요.
+
+          <div className="mt-5 flex items-center justify-between">
+            <p className="text-2xl font-extrabold bg-gradient-to-r from-[#3B82F6] to-[#6C4DFF] bg-clip-text text-transparent">
+              {formatPriceRange({
+                product,
+                quantity: 1,
+                optionType: selectedOption || undefined,
+                pharmacy,
+              })}
+            </p>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => handleQuantityChange(-1)}
+                className="grid place-items-center h-9 w-9 rounded-full bg-gray-100 ring-1 ring-gray-200 hover:bg-gray-200"
+              >
+                <MinusIcon className="w-4 h-4 text-gray-700" />
+              </button>
+              <span className="min-w-[2ch] text-xl font-bold text-gray-900 text-center">
+                {quantity}
+              </span>
+              <button
+                onClick={() => handleQuantityChange(1)}
+                className="grid place-items-center h-9 w-9 rounded-full bg-gray-100 ring-1 ring-gray-200 hover:bg-gray-200"
+              >
+                <PlusIcon className="w-4 h-4 text-gray-700" />
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-1">
+            <span className="block text-xs text-gray-500">
+              주소 입력 후 약국이 선택되면 정확한 상품 가격을 알려드려요.
             </span>
-            <span className="text-xs text-gray-500">
-              * 상품 주문 후 배송 완료까지 최대 4-5 영업일이 소요돼요.
+            <span className="block text-xs text-gray-500">
+              상품 주문 후 배송 완료까지 최대 4-5 영업일이 소요돼요.
             </span>
           </div>
-          <div className="flex items-center justify-between mt-6">
-            <button
-              onClick={() => handleQuantityChange(-1)}
-              className="p-3 rounded-full bg-gray-100 hover:bg-gray-200"
-            >
-              <MinusIcon className="w-4 h-4 text-gray-700" />
-            </button>
-            <span className="mx-4 text-xl font-bold text-gray-800">
-              {quantity}
-            </span>
-            <button
-              onClick={() => handleQuantityChange(1)}
-              className="p-3 rounded-full bg-gray-100 hover:bg-gray-200"
-            >
-              <PlusIcon className="w-4 h-4 text-gray-700" />
-            </button>
-          </div>
+
           {isLoadingReviews ? (
-            <div className="-mt-12 mb-36">
+            <div className="mt-10 mb-24">
               <FullPageLoader />
             </div>
           ) : (
-            <div className="mt-16 mb-36">
-              <h2 className="text-lg font-bold mb-2">
-                상품 리뷰 ({totalReviewCount}개)
-              </h2>
-              <span className="block text-xs text-gray-400 whitespace-pre-wrap !leading-[1.5]">
-                * 상품 리뷰는 배송 완료 처리된 상품에 한해 <b>내 주문 조회</b>
-                에서 작성할 수 있어요.
-              </span>
-              <div className="flex items-center mb-4 mt-2">
-                <StarRating rating={averageRating} size={24} />
-                <span className="text-gray-700 text-lg ml-2">
-                  {averageRating.toFixed(1)} / 5.0 ({totalReviewCount}개)
-                </span>
+            <div className="mt-10 mb-24">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-bold">
+                  상품 리뷰 ({totalReviewCount}개)
+                </h2>
+                <div className="inline-flex items-center gap-2 rounded-full bg-gray-50 px-3 py-1 ring-1 ring-gray-200">
+                  <StarRating rating={averageRating} size={18} />
+                  <span className="text-sm font-semibold text-gray-800">
+                    {averageRating.toFixed(1)}{" "}
+                    <span className="text-gray-500">/ 5.0</span>
+                  </span>
+                </div>
               </div>
+              <span className="mt-1 block text-xs text-gray-400 whitespace-pre-wrap">
+                상품 리뷰는 배송 완료 처리된 상품에 한해 <b>내 주문 조회</b>에서
+                작성할 수 있어요.
+              </span>
+
               {reviews.length > 0 ? (
-                reviews.map((review, index) => (
-                  <div key={index} className="border-b mb-4">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-gray-500 text-sm">
-                        {review.order.phone}
-                      </span>
-                      <div className="flex items-center">
-                        <StarRating rating={review.rate} size={20} />
-                        <span className="text-gray-600 text-sm ml-2">
-                          {review.rate.toFixed(1)}
+                <div className="mt-4 space-y-5">
+                  {reviews.map((review, index) => (
+                    <div
+                      key={index}
+                      className="rounded-xl ring-1 ring-gray-200 p-4"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-500 text-sm">
+                          {review.order.phone}
+                        </span>
+                        <div className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-2.5 py-1 ring-1 ring-gray-200">
+                          <StarRating rating={review.rate} size={16} />
+                          <span className="text-gray-800 text-sm">
+                            {review.rate.toFixed(1)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="mt-2 text-xs text-gray-500">
+                        {product.name},{" "}
+                        {review.orderItem.pharmacyProduct.optionType} ×{" "}
+                        {review.orderItem.quantity}개 · 판매자{" "}
+                        {review.orderItem.pharmacyProduct.pharmacy.name}
+                      </div>
+
+                      <p className="mt-2 text-sm text-gray-800 leading-6">
+                        {review.content}
+                      </p>
+
+                      {review.images?.length > 0 && (
+                        <div className="flex gap-2 mt-3">
+                          {review.images.map(
+                            (image: string, imgIndex: number) => (
+                              <div
+                                key={imgIndex}
+                                className="relative w-16 h-16"
+                              >
+                                <Image
+                                  src={image.replace(/\/public$/, "/avatar")}
+                                  alt="리뷰 이미지"
+                                  fill
+                                  sizes="256px"
+                                  className="object-cover rounded cursor-pointer"
+                                  onClick={() => setSelectedImage(image)}
+                                />
+                              </div>
+                            )
+                          )}
+                        </div>
+                      )}
+
+                      <div className="mt-3">
+                        <span className="text-gray-400 text-xs">
+                          작성일 {review.formattedCreatedAt}
                         </span>
                       </div>
                     </div>
-                    <div className="gap-1 flex flex-col mb-4 mt-2">
-                      <span className="text-xs text-gray-400">
-                        {product.name},{" "}
-                        {review.orderItem.pharmacyProduct.optionType} ×{" "}
-                        {review.orderItem.quantity}개
-                      </span>
-                      <span className="text-xs text-gray-400">
-                        판매자: {review.orderItem.pharmacyProduct.pharmacy.name}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-700">{review.content}</p>
-                    {review.images?.length > 0 && (
-                      <div className="flex gap-2 mt-4">
-                        {review.images.map(
-                          (image: string, imgIndex: number) => (
-                            <div key={imgIndex} className="relative w-16 h-16">
-                              <Image
-                                src={image.replace(/\/public$/, "/avatar")}
-                                alt="리뷰 이미지"
-                                fill
-                                sizes="256px"
-                                className="object-cover rounded cursor-pointer"
-                                onClick={() => setSelectedImage(image)}
-                              />
-                            </div>
-                          )
-                        )}
-                      </div>
-                    )}
-                    <div className="mt-4 mb-2">
-                      <span className="text-gray-400 text-xs">
-                        작성일 {review.formattedCreatedAt}
-                      </span>
-                    </div>
-                  </div>
-                ))
+                  ))}
+                </div>
               ) : (
-                <p className="text-gray-500 text-sm text-center mt-24 -mb-6">
-                  아직 리뷰가 없어요. 상품을 구매하고 첫 번째 리뷰어가
-                  되어주세요!
+                <p className="text-gray-500 text-sm text-center mt-16">
+                  아직 리뷰가 없어요. 첫 번째 리뷰어가 되어주세요!
                 </p>
               )}
             </div>
           )}
+
           <div className="px-5 fixed bottom-0 left-0 right-0 w-full max-w-[640px] mx-auto bg-sky-400 text-white p-4 flex justify-between items-center text-lg font-bold">
             <span>
               {formatPriceRange({
@@ -385,41 +429,43 @@ export default function ProductDetail({
             >
               담기
             </button>
-            {selectedImage && (
-              <div
-                className="px-2 sm:px-0 fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50"
-                onClick={() => setSelectedImage(null)}
-              >
-                <div className="relative">
-                  <button
-                    className="absolute top-2 right-4 text-gray-500 rounded-full"
-                    onClick={() => setSelectedImage(null)}
-                  >
-                    ✕
-                  </button>
-                  <div className="relative max-w-full max-h-full">
-                    <Image
-                      src={selectedImage}
-                      alt="리뷰 확대 이미지"
-                      fill
-                      sizes="1024px"
-                      className="rounded-lg object-contain"
-                    />
-                  </div>
+          </div>
+
+          {selectedImage && (
+            <div
+              className="px-2 sm:px-0 fixed inset-0 flex items-center justify-center bg-black/70 z-50"
+              onClick={() => setSelectedImage(null)}
+            >
+              <div className="relative w-full h-full max-w-[640px]">
+                <button
+                  className="absolute top-3 right-3 grid place-items-center h-9 w-9 rounded-full bg-white shadow"
+                  onClick={() => setSelectedImage(null)}
+                >
+                  <XMarkIcon className="w-5 h-5 text-gray-700" />
+                </button>
+                <div className="absolute inset-0">
+                  <Image
+                    src={selectedImage}
+                    alt="리뷰 확대 이미지"
+                    fill
+                    sizes="1024px"
+                    className="rounded-lg object-contain"
+                  />
                 </div>
               </div>
-            )}
-            {isFirstModalOpen && (
-              <FirstModal
-                product={product}
-                selectedOption={selectedOption}
-                quantity={quantity}
-                onAddToCart={onAddToCart}
-                onClose={() => setIsFirstModalOpen(false)}
-                onProductDetailClose={onClose}
-              />
-            )}
-          </div>
+            </div>
+          )}
+
+          {isFirstModalOpen && (
+            <FirstModal
+              product={product}
+              selectedOption={selectedOption}
+              quantity={quantity}
+              onAddToCart={onAddToCart}
+              onClose={() => setIsFirstModalOpen(false)}
+              onProductDetailClose={onClose}
+            />
+          )}
         </div>
       </div>
     </div>

@@ -51,10 +51,7 @@ export default function OrderSummary({ order }: { order: any }) {
           pharmacyProduct.price * orderItem.quantity
         ).toLocaleString();
         return (
-          <div
-            key={orderId}
-            className="flex items-center justify-between mb-6"
-          >
+          <div key={orderId} className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
               <div className="relative w-16 h-16">
                 <Image
@@ -85,18 +82,20 @@ export default function OrderSummary({ order }: { order: any }) {
       </div>
       <div className="flex justify-end gap-2 text-base font-bold mt-2">
         <span className="text-gray-700">총 결제 금액</span>
-        <span className="text-sky-400">{order.totalPrice.toLocaleString()}원</span>
+        <span className="text-sky-400">
+          {order.totalPrice.toLocaleString()}원
+        </span>
       </div>
       <div className="border-t pt-4 mt-4">
-        <div className="flex items-center mb-2">
-          <span className="w-20 font-bold text-gray-500">수령주소</span>
-          <span className="ml-2 text-gray-800">
+        <div className="flex items-center gap-x-4 mb-2">
+          <span className="font-bold text-gray-500 shrink-0">수령주소</span>
+          <span className="text-gray-800">
             {order?.roadAddress} {order?.detailAddress}
           </span>
         </div>
-        <div className="flex items-center">
-          <span className="w-20 font-bold text-gray-500">전화번호</span>
-          <span className="ml-2 text-gray-800">{order?.phone}</span>
+        <div className="flex items-center gap-x-4">
+          <span className="font-bold text-gray-500 shrink-0">전화번호</span>
+          <span className="text-gray-800">{order?.phone}</span>
         </div>
       </div>
     </div>

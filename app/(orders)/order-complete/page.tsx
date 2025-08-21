@@ -119,6 +119,8 @@ export default function OrderComplete() {
           localStorage.removeItem("paymentId");
           localStorage.removeItem("paymentMethod");
           localStorage.removeItem("impUid");
+          localStorage.removeItem("cartItems");
+          window.dispatchEvent(new Event("cartUpdated"));
           sessionStorage.removeItem(lockKey);
           return;
         }
@@ -223,6 +225,7 @@ export default function OrderComplete() {
           setOrder(fullOrder);
           setShowNotifyModal(true);
           localStorage.removeItem("cartItems");
+          window.dispatchEvent(new Event("cartUpdated"));
           localStorage.removeItem("paymentId");
           localStorage.removeItem("paymentMethod");
           localStorage.removeItem("impUid");
@@ -319,6 +322,7 @@ export default function OrderComplete() {
           setOrder(fullOrder);
           setShowNotifyModal(true);
           localStorage.removeItem("cartItems");
+          window.dispatchEvent(new Event("cartUpdated"));
           localStorage.removeItem("paymentId");
           localStorage.removeItem("paymentMethod");
           sessionStorage.removeItem(lockKey);
