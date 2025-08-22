@@ -84,7 +84,7 @@ export default function AddressModal({ onClose, onSave }: any) {
             <button
               onClick={handleSearch}
               disabled={isLoading}
-              className="w-14 h-8 text-base font-normal px-3 py-1 bg-sky-400 text-white rounded hover:bg-sky-500 transition duration-200 flex justify-center items-center"
+              className="min-w-[3.5rem] h-8 text-base font-normal px-3 py-1 bg-sky-400 text-white rounded hover:bg-sky-500 transition duration-200 flex justify-center items-center whitespace-nowrap break-keep leading-none"
             >
               {isLoading ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

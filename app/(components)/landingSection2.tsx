@@ -50,16 +50,22 @@ export default function LandingSection2({
             </span>
           </div>
 
-          <h1 className="mt-4 sm:mt-6 text-center text-[#0F1222] text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight flex flex-col items-center gap-2 sm:gap-3 md:gap-4">
-            <span className="block lg:hidden leading-[1.4]">
+          <h1 className="mt-4 sm:mt-6 text-center text-[#0F1222] font-extrabold tracking-tight flex flex-col items-center gap-2 sm:gap-3 md:gap-4">
+            <span className="block sm:hidden leading-[1.4] text-3xl">
               내 몸에 딱 맞는
               <br />
               “AI+약사 설계”
             </span>
-            <span className="hidden lg:block leading-none">
+            <span className="hidden sm:block md:hidden leading-none text-4xl">
               내 몸에 딱 맞는 “AI+약사 설계”
             </span>
-            <span className="leading-none bg-clip-text text-transparent bg-gradient-to-r from-[#1E40FF] via-[#3B5BFF] to-[#6C4DFF]">
+            <span className="hidden md:block lg:hidden leading-none text-5xl">
+              내 몸에 딱 맞는 “AI+약사 설계”
+            </span>
+            <span className="hidden lg:block leading-none text-7xl">
+              내 몸에 딱 맞는 “AI+약사 설계”
+            </span>
+            <span className="leading-none bg-clip-text text-transparent bg-gradient-to-r from-[#1E40FF] via-[#3B5BFF] to-[#6C4DFF] text-3xl sm:text-4xl md:text-5xl lg:text-7xl">
               Premium 건강 솔루션
             </span>
           </h1>

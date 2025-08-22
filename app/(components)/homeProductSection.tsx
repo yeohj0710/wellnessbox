@@ -18,7 +18,6 @@ import PackageFilter from "@/app/(components)/packageFilter";
 import ProductGrid from "@/app/(components)/productGrid";
 import FooterCartBar from "@/app/(components)/footerCartBar";
 import FooterCartBarLoading from "@/app/(components)/footerCartBarLoading";
-import SymptomModal from "@/app/(components)/symptomModal";
 import SymptomFilter from "@/app/(components)/symptomFilter";
 
 export default function HomeProductSection() {
@@ -218,21 +217,61 @@ export default function HomeProductSection() {
       window.history.replaceState({}, "", url.toString());
     }
   }, [searchParams]);
+
   useEffect(() => {
     const timestampKey = "cartTimestamp";
     const now = Date.now();
     const storedTimestamp = localStorage.getItem(timestampKey);
-    if (
-      !storedTimestamp ||
-      now - parseInt(storedTimestamp, 10) > 7 * 24 * 60 * 60 * 1000
-    ) {
-      localStorage.clear();
+
+    const restoring = localStorage.getItem("restoreCartFromBackup") === "1";
+    const inCheckout = localStorage.getItem("checkoutInProgress") === "1";
+    if (restoring || inCheckout) {
       localStorage.setItem(timestampKey, now.toString());
-      setCartItems([]);
-    } else {
-      localStorage.setItem(timestampKey, now.toString());
+      return;
     }
+
+    const STALE = 7 * 24 * 60 * 60 * 1000;
+    if (!storedTimestamp || now - parseInt(storedTimestamp, 10) > STALE) {
+      ["categories", "products", "cacheTimestamp"].forEach((k) =>
+        localStorage.removeItem(k)
+      );
+    }
+    localStorage.setItem(timestampKey, now.toString());
   }, []);
+
+  useEffect(() => {
+    const needRestore = localStorage.getItem("restoreCartFromBackup") === "1";
+    const backup = localStorage.getItem("cartBackup");
+    if (needRestore && backup && backup !== "[]") {
+      try {
+        const parsed = JSON.parse(backup);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setCartItems(parsed);
+          localStorage.setItem("cartItems", backup);
+          window.dispatchEvent(new Event("cartUpdated"));
+        }
+      } catch {}
+    }
+    localStorage.removeItem("restoreCartFromBackup");
+  }, []);
+
+  useEffect(() => {
+    const needRestore = localStorage.getItem("restoreCartFromBackup") === "1";
+    const backup = localStorage.getItem("cartBackup");
+    if (needRestore && backup && backup !== "[]") {
+      try {
+        const parsed = JSON.parse(backup);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setCartItems(parsed);
+          localStorage.setItem("cartItems", backup);
+          window.dispatchEvent(new Event("cartUpdated"));
+        }
+      } catch {}
+    }
+    localStorage.removeItem("restoreCartFromBackup");
+    localStorage.removeItem("checkoutInProgress");
+  }, []);
+
   useEffect(() => {
     const storedRoadAddress = localStorage.getItem("roadAddress") || "";
     setRoadAddress(storedRoadAddress.trim());
@@ -285,22 +324,29 @@ export default function HomeProductSection() {
     );
     setSelectedCategories(matchedCategories.map((cat: any) => cat.id));
   }, [selectedSymptoms, categories]);
+
   useEffect(() => {
     if (!selectedPharmacy) return;
+    if (isLoading || allProducts.length === 0) return;
+
     const filteredCartItems = cartItems.filter((item) => {
       const product = allProducts.find((p) => p.id === item.productId);
-      return product?.pharmacyProducts.some(
+      if (!product) return true;
+      const hasMatch = product.pharmacyProducts?.some(
         (pp: any) =>
-          pp.pharmacy?.id === selectedPharmacy.id &&
+          (pp.pharmacyId ?? pp.pharmacy?.id) === selectedPharmacy.id &&
           pp.optionType === item.optionType
       );
+      return !!hasMatch;
     });
+
     if (filteredCartItems.length !== cartItems.length) {
       setCartItems(filteredCartItems);
       localStorage.setItem("cartItems", JSON.stringify(filteredCartItems));
       window.dispatchEvent(new Event("cartUpdated"));
     }
-  }, [selectedPharmacy, allProducts]);
+  }, [selectedPharmacy, isLoading, allProducts.length, cartItems]);
+
   const isRoadAddressChanged: any = useRef(false);
   useEffect(() => {
     if (cartItems.length === 0) {
@@ -539,16 +585,13 @@ export default function HomeProductSection() {
           <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
         </div>
       )}
-      {selectedPharmacy && (totalPrice > 0 || isCartBarLoading) && (
-        isCartBarLoading ? (
+      {selectedPharmacy &&
+        (totalPrice > 0 || isCartBarLoading) &&
+        (isCartBarLoading ? (
           <FooterCartBarLoading />
         ) : (
-          <FooterCartBar
-            totalPrice={totalPrice}
-            setIsCartVisible={openCart}
-          />
-        )
-      )}
+          <FooterCartBar totalPrice={totalPrice} setIsCartVisible={openCart} />
+        ))}
       {selectedProduct && (
         <ProductDetail
           product={selectedProduct}

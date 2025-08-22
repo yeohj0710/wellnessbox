@@ -8,6 +8,7 @@ import { useState, useRef, useEffect } from "react";
 export default function Footer() {
   const [showBusinessInfo, setShowBusinessInfo] = useState(false);
   const businessInfoRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (showBusinessInfo) {
       setTimeout(() => {
@@ -18,12 +19,16 @@ export default function Footer() {
       }, 300);
     }
   }, [showBusinessInfo]);
+
+  const hoverUnderline =
+    "relative no-underline after:content-[''] after:absolute after:left-0 after:-bottom-0.5 after:h-[1px] after:w-full after:bg-gray-400 after:scale-x-0 after:origin-left after:transition-transform after:duration-200 hover:after:scale-x-100";
+
   return (
     <footer className="w-full mx-auto bg-gray-800 text-gray-300 text-sm">
       <div className="px-6 py-4 flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:justify-between gap-4">
           <div className="flex flex-col items-center sm:items-start w-full sm:w-full">
-            <Link href="/about">
+            <Link href="/about" className="inline-block">
               <div className="relative h-10 w-10 inline-block mb-2">
                 <Image
                   src="/logo.png"
@@ -34,25 +39,43 @@ export default function Footer() {
                 />
               </div>
             </Link>
+
             <div className="flex justify-center sm:justify-start gap-4 mt-2">
-              <Link href="/about/terms" className="text-sm text-gray-400">
+              <Link
+                href="/about/terms"
+                className={`text-sm text-gray-400 ${hoverUnderline}`}
+              >
                 이용약관
               </Link>
-              <Link href="/about/privacy" className="text-sm text-gray-400">
+              <Link
+                href="/about/privacy"
+                className={`text-sm text-gray-400 ${hoverUnderline}`}
+              >
                 개인정보처리방침
               </Link>
-              <Link href="/about/contact" className="text-sm text-gray-400">
+              <Link
+                href="/about/contact"
+                className={`text-sm text-gray-400 ${hoverUnderline}`}
+              >
                 문의하기
               </Link>
             </div>
+
             <div className="flex justify-center sm:justify-start gap-4 mt-1.5">
-              <Link href="/pharm-login" className="text-sm text-gray-400">
+              <Link
+                href="/pharm-login"
+                className={`text-sm text-gray-400 ${hoverUnderline}`}
+              >
                 약국으로 로그인
               </Link>
-              <Link href="/rider-login" className="text-sm text-gray-400">
+              <Link
+                href="/rider-login"
+                className={`text-sm text-gray-400 ${hoverUnderline}`}
+              >
                 라이더로 로그인
               </Link>
             </div>
+
             <span className="text-center text-xs sm:text-left text-gray-400 mt-4">
               © 2025 웰니스박스. All rights reserved.
             </span>
@@ -68,6 +91,7 @@ export default function Footer() {
               </span>
             </span>
           </div>
+
           <div className="mt-auto flex flex-col items-center sm:items-end w-full sm:w-1/2 text-center sm:text-right gap-1">
             <button
               onClick={() => setShowBusinessInfo((prev) => !prev)}
@@ -95,11 +119,8 @@ export default function Footer() {
                 <span className="text-xs text-gray-400">
                   법인등록번호: 110111-0932570
                 </span>
-                {/* <span className="text-xs text-gray-400">
-                  통신판매업신고번호: 2025-서울서초-0646
-                </span> */}
                 <span className="text-xs text-gray-400">
-                  대표 전화번호: 02-6241-5530
+                  대표 전화번호: 02-6013-4400
                 </span>
                 <span className="text-xs text-gray-400">
                   대표 이메일: smilerobert@naver.com

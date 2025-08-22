@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { getLoginStatus } from "@/lib/useLoginStatus";
@@ -37,6 +37,38 @@ export default function Cart({
   const [phonePart1, setPhonePart1] = useState("010");
   const [phonePart2, setPhonePart2] = useState("");
   const [phonePart3, setPhonePart3] = useState("");
+
+  const persistPhone = useCallback((p1: string, p2: string, p3: string) => {
+    localStorage.setItem("phonePart1", p1);
+    localStorage.setItem("phonePart2", p2);
+    localStorage.setItem("phonePart3", p3);
+    localStorage.setItem("phoneParts", JSON.stringify({ p1, p2, p3 }));
+  }, []);
+
+  const setPhonePart1Persist = useCallback(
+    (v: string) => {
+      setPhonePart1(v);
+      persistPhone(v, phonePart2, phonePart3);
+    },
+    [persistPhone, phonePart2, phonePart3]
+  );
+
+  const setPhonePart2Persist = useCallback(
+    (v: string) => {
+      setPhonePart2(v);
+      persistPhone(phonePart1, v, phonePart3);
+    },
+    [persistPhone, phonePart1, phonePart3]
+  );
+
+  const setPhonePart3Persist = useCallback(
+    (v: string) => {
+      setPhonePart3(v);
+      persistPhone(phonePart1, phonePart2, v);
+    },
+    [persistPhone, phonePart1, phonePart2]
+  );
+
   const [userContact, setUserContact] = useState("");
   const [password, setPassword] = useState("");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("inicis");
@@ -46,10 +78,77 @@ export default function Cart({
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [detailProduct, setDetailProduct] = useState<any>(null);
   const cartScrollRef = useRef(0);
+  const phoneHydrated = useRef(false);
+
+  const [hydrated, setHydrated] = useState(false);
+
   useEffect(() => {
+    const needRestore = localStorage.getItem("restoreCartFromBackup") === "1";
+    const backup = localStorage.getItem("cartBackup");
+
+    if (needRestore && backup && backup !== "[]") {
+      try {
+        const parsed = JSON.parse(backup);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          onUpdateCart(parsed);
+          localStorage.setItem("cartItems", backup);
+          window.dispatchEvent(new Event("cartUpdated"));
+          localStorage.removeItem("restoreCartFromBackup");
+          localStorage.removeItem("checkoutInProgress");
+          setHydrated(true);
+          return;
+        }
+      } catch {}
+    }
+
+    try {
+      const saved = localStorage.getItem("cartItems");
+      if (saved && saved !== "[]") {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          onUpdateCart(parsed);
+        }
+      }
+    } catch {}
+
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+
+    const restoring = localStorage.getItem("restoreCartFromBackup") === "1";
+    if (restoring && cartItems.length === 0) return;
+    if (cartItems.length === 0) return;
+
     localStorage.setItem("cartItems", JSON.stringify(cartItems));
     window.dispatchEvent(new Event("cartUpdated"));
-  }, [cartItems]);
+  }, [hydrated, cartItems]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+
+    const restoring = localStorage.getItem("restoreCartFromBackup") === "1";
+    if (!restoring) return;
+    if (cartItems.length > 0) return;
+
+    const backup = localStorage.getItem("cartBackup");
+    if (!backup || backup === "[]") return;
+
+    try {
+      const parsed = JSON.parse(backup);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        onUpdateCart(parsed);
+        localStorage.setItem("cartItems", backup);
+        window.dispatchEvent(new Event("cartUpdated"));
+      }
+    } catch {}
+  }, [hydrated, cartItems.length, onUpdateCart]);
+
+  useEffect(() => {
+    localStorage.setItem("products", JSON.stringify(allProducts));
+  }, [allProducts]);
+
   useEffect(() => {
     localStorage.setItem("products", JSON.stringify(allProducts));
   }, [allProducts]);
@@ -65,27 +164,34 @@ export default function Cart({
     const storedRequestNotes = localStorage.getItem("requestNotes");
     const storedEntrancePassword = localStorage.getItem("entrancePassword");
     const storedDirections = localStorage.getItem("directions");
+    const savedParts = localStorage.getItem("phoneParts");
     const storedPhonePart1 = localStorage.getItem("phonePart1");
     const storedPhonePart2 = localStorage.getItem("phonePart2");
     const storedPhonePart3 = localStorage.getItem("phonePart3");
-    const password = localStorage.getItem("password");
+    const savedPassword = localStorage.getItem("password");
     if (storedDetailAddress) setDetailAddress(storedDetailAddress);
     if (storedRequestNotes) setRequestNotes(storedRequestNotes);
     if (storedEntrancePassword) setEntrancePassword(storedEntrancePassword);
     if (storedDirections) setDirections(storedDirections);
-    if (storedPhonePart1) setPhonePart1(storedPhonePart1);
-    if (storedPhonePart2) setPhonePart2(storedPhonePart2);
-    if (storedPhonePart3) setPhonePart3(storedPhonePart3);
-    if (password) setPassword(password);
+    if (savedParts) {
+      try {
+        const { p1, p2, p3 } = JSON.parse(savedParts);
+        if (p1 !== undefined) setPhonePart1(p1 || "");
+        if (p2 !== undefined) setPhonePart2(p2 || "");
+        if (p3 !== undefined) setPhonePart3(p3 || "");
+      } catch {}
+    } else {
+      if (storedPhonePart1) setPhonePart1(storedPhonePart1);
+      if (storedPhonePart2) setPhonePart2(storedPhonePart2);
+      if (storedPhonePart3) setPhonePart3(storedPhonePart3);
+    }
+    if (savedPassword) setPassword(savedPassword);
     if ((window as any).IMP) {
       setSdkLoaded(true);
     }
-    setUserContact(
-      `${storedPhonePart1 || phonePart1}-${storedPhonePart2 || phonePart2}-${
-        storedPhonePart3 || phonePart3
-      }`
-    );
+    phoneHydrated.current = true;
   }, []);
+
   useEffect(() => {
     localStorage.setItem("detailAddress", detailAddress);
   }, [detailAddress]);
@@ -100,6 +206,11 @@ export default function Cart({
   }, [directions]);
   useEffect(() => {
     setUserContact(`${phonePart1}-${phonePart2}-${phonePart3}`);
+  }, [phonePart1, phonePart2, phonePart3]);
+  useEffect(() => {
+    if (!phoneHydrated.current) return;
+    const has = [phonePart1, phonePart2, phonePart3].some(Boolean);
+    if (!has) return;
   }, [phonePart1, phonePart2, phonePart3]);
   useEffect(() => {
     localStorage.setItem("password", password);
@@ -172,6 +283,10 @@ export default function Cart({
   };
 
   const handleAddToCart = (cartItem: any) => {
+    if (localStorage.getItem("restoreCartFromBackup") === "1") {
+      localStorage.removeItem("restoreCartFromBackup");
+    }
+
     const updatedItems = [...cartItems];
     const existingIndex = updatedItems.findIndex(
       (i: any) =>
@@ -335,6 +450,9 @@ export default function Cart({
     }
   };
   const handlePayment = async () => {
+    localStorage.setItem("cartBackup", JSON.stringify(cartItems));
+    localStorage.setItem("checkoutInProgress", "1");
+
     localStorage.setItem("paymentMethod", selectedPaymentMethod);
     if (selectedPaymentMethod === "inicis") {
       handleKGInicisPayment();
@@ -391,9 +509,9 @@ export default function Cart({
         phonePart1={phonePart1}
         phonePart2={phonePart2}
         phonePart3={phonePart3}
-        setPhonePart1={setPhonePart1}
-        setPhonePart2={setPhonePart2}
-        setPhonePart3={setPhonePart3}
+        setPhonePart1={setPhonePart1Persist}
+        setPhonePart2={setPhonePart2Persist}
+        setPhonePart3={setPhonePart3Persist}
         password={password}
         setPassword={setPassword}
       />

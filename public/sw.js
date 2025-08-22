@@ -17,7 +17,12 @@ self.addEventListener("push", function (event) {
   const title = data.title || "WellnessBox 알림";
   const options = {
     body: data.body || "",
-    icon: "/logo.png",
+    icon: data.icon || "/logo.png",
+    badge: data.badge || "/logo.png",
+    image: data.image || "/logo.png",
+    vibrate: [100, 50, 100],
+    requireInteraction: true,
+    actions: data.actions || [{ action: "open", title: "열기" }],
     data: { url: data.url },
   };
   event.waitUntil(self.registration.showNotification(title, options));

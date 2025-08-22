@@ -100,6 +100,7 @@ export default function Rider() {
       return (
         <div className="w-full max-w-[640px] mx-auto px-6 py-6 bg-white sm:shadow-md sm:rounded-lg">
           <OrderAccordionHeader
+            role="rider"
             order={order}
             isExpanded={isExpanded}
             toggle={toggleExpanded}
@@ -115,6 +116,7 @@ export default function Rider() {
     return (
       <div className="w-full max-w-[640px] mx-auto px-6 py-6 bg-white sm:shadow-md sm:rounded-lg">
         <OrderAccordionHeader
+          role="rider"
           order={order}
           isExpanded={isExpanded}
           toggle={toggleExpanded}

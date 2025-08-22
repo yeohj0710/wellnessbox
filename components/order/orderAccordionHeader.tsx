@@ -12,7 +12,19 @@ import StatusLabel from "@/components/common/statusLabel";
 import ReviewModal from "@/components/modal/reviewModal";
 import { ORDER_STATUS } from "@/lib/order/orderStatus";
 
+interface OrderAccordionHeaderProps {
+  role: "customer" | "pharmacist" | "rider";
+  order: any;
+  isExpanded: boolean;
+  toggle: () => void;
+  onBack?: () => void;
+  isSubscribed?: boolean;
+  toggleSubscription?: () => void;
+  subscriptionLoading?: boolean;
+}
+
 export default function OrderAccordionHeader({
+  role,
   order,
   isExpanded,
   toggle,
@@ -20,7 +32,7 @@ export default function OrderAccordionHeader({
   isSubscribed,
   toggleSubscription,
   subscriptionLoading,
-}: any) {
+}: OrderAccordionHeaderProps) {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const firstPharmacyProduct = order.orderItems[0].pharmacyProduct;
   const [allReviewsCompleted, setAllReviewsCompleted] = useState(false);
@@ -37,29 +49,31 @@ export default function OrderAccordionHeader({
   return (
     <>
       <div className="relative cursor-pointer" onClick={toggle}>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleSubscription?.();
-          }}
-          className={`absolute top-0 right-0 inline-flex items-center gap-1 rounded px-2 py-1 text-xs sm:text-sm whitespace-nowrap ${
-            isSubscribed
-              ? "bg-sky-50 text-sky-600 hover:bg-sky-100"
-              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-          } ${subscriptionLoading ? "opacity-50 cursor-not-allowed" : ""}`}
-          disabled={subscriptionLoading}
-        >
-          {subscriptionLoading ? (
-            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-          ) : isSubscribed ? (
-            <BellIcon className="w-4 h-4" />
-          ) : (
-            <BellSlashIcon className="w-4 h-4" />
-          )}
-          <span className="whitespace-nowrap">
-            {isSubscribed ? "켜짐" : "꺼짐"}
-          </span>
-        </button>
+        {toggleSubscription && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleSubscription();
+            }}
+            className={`absolute top-0 right-0 inline-flex items-center gap-1 rounded px-2 py-1 text-xs sm:text-sm whitespace-nowrap ${
+              isSubscribed
+                ? "bg-sky-50 text-sky-600 hover:bg-sky-100"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            } ${subscriptionLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+            disabled={subscriptionLoading}
+          >
+            {subscriptionLoading ? (
+              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            ) : isSubscribed ? (
+              <BellIcon className="w-4 h-4" />
+            ) : (
+              <BellSlashIcon className="w-4 h-4" />
+            )}
+            <span className="whitespace-nowrap">
+              {isSubscribed ? "켜짐" : "꺼짐"}
+            </span>
+          </button>
+        )}
 
         <span className="absolute right-0 top-[55%] -translate-y-1/2 w-6 h-6 flex items-center justify-center">
           {isExpanded ? (
@@ -100,6 +114,7 @@ export default function OrderAccordionHeader({
               <StatusLabel status={order.status} />
             </span>
             {!isLoading &&
+              role === "customer" &&
               onBack &&
               order.status === ORDER_STATUS.DELIVERY_COMPLETE && (
                 <div>

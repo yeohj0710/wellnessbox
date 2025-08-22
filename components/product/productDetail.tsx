@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { formatPriceRange } from "@/lib/utils";
 import { getReviewsByProductId } from "@/lib/review";
 import StarRating from "@/components/common/starRating";
@@ -30,6 +30,8 @@ export default function ProductDetail({
   const [averageRating, setAverageRating] = useState<number>(5.0);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedOption, setSelectedOption] = useState<any>(optionType);
+  const selectedImageRef = useRef<string | null>(null);
+  const firstModalRef = useRef(false);
   const [isImageLoading, setIsImageLoading] = useState(true);
   const [currentIdx, setCurrentIdx] = useState(0);
 
@@ -71,7 +73,17 @@ export default function ProductDetail({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+        if (selectedImageRef.current) {
+          setSelectedImage(null);
+          return;
+        }
+        if (firstModalRef.current) {
+          setIsFirstModalOpen(false);
+          return;
+        }
+        onClose();
+      }
       if (event.key === "ArrowLeft") setCurrentIdx((v) => Math.max(0, v - 1));
       if (event.key === "ArrowRight")
         setCurrentIdx((v) =>
@@ -80,7 +92,19 @@ export default function ProductDetail({
     };
     document.addEventListener("keydown", handleKeyDown);
     const isMobile = /Mobi|Android/i.test(navigator.userAgent);
-    const handlePopState = () => onClose();
+    const handlePopState = () => {
+      if (selectedImageRef.current) {
+        setSelectedImage(null);
+        window.history.pushState(null, "", window.location.href);
+        return;
+      }
+      if (firstModalRef.current) {
+        setIsFirstModalOpen(false);
+        window.history.pushState(null, "", window.location.href);
+        return;
+      }
+      onClose();
+    };
     if (isMobile) {
       window.history.pushState(null, "", window.location.href);
       window.addEventListener("popstate", handlePopState);
@@ -90,6 +114,14 @@ export default function ProductDetail({
       if (isMobile) window.removeEventListener("popstate", handlePopState);
     };
   }, [onClose, product.images?.length]);
+
+  useEffect(() => {
+    selectedImageRef.current = selectedImage;
+  }, [selectedImage]);
+
+  useEffect(() => {
+    firstModalRef.current = isFirstModalOpen;
+  }, [isFirstModalOpen]);
 
   useEffect(() => {
     if (product.pharmacyProducts.length > 0 && !selectedOption) {
@@ -186,14 +218,14 @@ export default function ProductDetail({
               ))}
 
               <button
-                className="absolute left-2 top-1/2 -translate-y-1/2 grid place-items-center h-9 w-9 rounded-full bg-white/90 shadow ring-1 ring-gray-200 hover:bg-white"
+                className="absolute left-2 top-1/2 -translate-y-1/2 grid place-items-center h-9 w-9 rounded-full bg-white/90 shadow ring-1 ring-gray-200 hover:bg-gray-100 cursor-pointer"
                 onClick={() => setCurrentIdx((v) => Math.max(0, v - 1))}
                 disabled={currentIdx === 0}
               >
                 <ChevronLeftIcon className="w-5 h-5 text-gray-700" />
               </button>
               <button
-                className="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center h-9 w-9 rounded-full bg-white/90 shadow ring-1 ring-gray-200 hover:bg-white"
+                className="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center h-9 w-9 rounded-full bg-white/90 shadow ring-1 ring-gray-200 hover:bg-gray-100 cursor-pointer"
                 onClick={() =>
                   setCurrentIdx((v) => Math.min(images.length - 1, v + 1))
                 }
@@ -222,7 +254,7 @@ export default function ProductDetail({
 
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 grid place-items-center h-9 w-9 rounded-full bg-white/95 shadow ring-1 ring-gray-200 hover:bg-white"
+            className="absolute top-3 right-3 grid place-items-center h-9 w-9 rounded-full bg-white/95 hover:bg-gray-100 shadow ring-1 ring-gray-200"
           >
             <XMarkIcon className="w-5 h-5 text-gray-700" />
           </button>
@@ -399,29 +431,24 @@ export default function ProductDetail({
             <button
               onClick={async () => {
                 if (!selectedOption) return;
-                const storedCart = localStorage.getItem("cartItems");
-                const cart = storedCart ? JSON.parse(storedCart) : [];
-                if (cart.length === 0 && !localStorage.getItem("roadAddress")) {
+
+                const snapshotStr = localStorage.getItem("cartItems");
+                const snapshot = snapshotStr ? JSON.parse(snapshotStr) : [];
+                if (
+                  snapshot.length === 0 &&
+                  !localStorage.getItem("roadAddress")
+                ) {
                   setIsFirstModalOpen(true);
                   return;
                 }
+
                 const cartItem = {
                   productId: product.id,
                   productName: product.name,
                   optionType: selectedOption,
                   quantity,
                 };
-                const existingItemIndex = cart.findIndex(
-                  (item: any) =>
-                    item.productId === cartItem.productId &&
-                    item.optionType === cartItem.optionType
-                );
-                if (existingItemIndex !== -1) {
-                  cart[existingItemIndex].quantity += quantity;
-                } else {
-                  cart.push(cartItem);
-                }
-                localStorage.setItem("cartItems", JSON.stringify(cart));
+
                 onAddToCart(cartItem);
                 onClose();
               }}

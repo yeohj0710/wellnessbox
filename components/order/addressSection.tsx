@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { ExpandableSection } from "@/components/common/expandableSection";
 import PhoneNumberInputs from "./phoneNumberInputs";
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 
 export default function AddressSection({
   roadAddress,
@@ -23,12 +25,15 @@ export default function AddressSection({
   password,
   setPassword,
 }: any) {
+  const [showPw, setShowPw] = useState(true);
   return (
     <>
       <h2 className="text-lg font-bold p-4 pb-2">주소 입력</h2>
       <div className="px-4 space-y-3">
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700">도로명 주소</label>
+          <label className="text-sm font-medium text-gray-700">
+            도로명 주소
+          </label>
           <div className="flex items-center gap-2">
             <p className="text-base text-gray-500 bg-gray-100 px-2.5 py-2 rounded-md border flex-1">
               {roadAddress || "저장된 도로명 주소가 없습니다."}
@@ -42,7 +47,9 @@ export default function AddressSection({
           </div>
         </div>
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700">상세 주소 (선택)</label>
+          <label className="text-sm font-medium text-gray-700">
+            상세 주소 (선택)
+          </label>
           <input
             type="text"
             value={detailAddress}
@@ -105,16 +112,28 @@ export default function AddressSection({
       />
       <h2 className="text-lg font-bold p-4 pb-2 mt-2">주문 조회 비밀번호</h2>
       <div className="px-4 space-y-3">
-        <input
-          type="text"
-          value={password}
-          onChange={(e) => {
-            const newValue = e.target.value.replace(/\D/g, "").slice(0, 8);
-            setPassword(newValue);
-          }}
-          placeholder="내 주문 조회 시 필요한 비밀번호에요."
-          className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-400"
-        />
+        <div className="relative">
+          <input
+            type={showPw ? "text" : "password"}
+            autoComplete="off"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="내 주문 조회 시 필요한 비밀번호에요."
+            className="w-full border rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-sky-400"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPw((v) => !v)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-gray-100"
+            aria-label={showPw ? "비밀번호 숨기기" : "비밀번호 보기"}
+          >
+            {showPw ? (
+              <EyeSlashIcon className="w-5 h-5 text-gray-600" />
+            ) : (
+              <EyeIcon className="w-5 h-5 text-gray-600" />
+            )}
+          </button>
+        </div>
       </div>
     </>
   );

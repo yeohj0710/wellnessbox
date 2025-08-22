@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import OrderDetails from "@/components/order/orderDetails";
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 
 export default function MyOrders() {
   const [phonePart1, setPhonePart1] = useState("010");
@@ -13,6 +14,7 @@ export default function MyOrders() {
   const [error, setError] = useState("");
   const [isViewingDetails, setIsViewingDetails] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showPw, setShowPw] = useState(true);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -128,23 +130,38 @@ export default function MyOrders() {
 
           <div className="mb-4">
             <h2 className="text-lg font-bold pb-2 mt-3">주문 조회 비밀번호</h2>
-            <input
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                localStorage.setItem("my-orders-password", e.target.value);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handleFetchOrders();
-                }
-              }}
-              placeholder="주문 시 입력한 비밀번호"
-              className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-400"
-              disabled={loading}
-            />
+            <div className="relative">
+              <input
+                type={showPw ? "text" : "password"}
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  localStorage.setItem("my-orders-password", e.target.value);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleFetchOrders();
+                  }
+                }}
+                placeholder="주문 시 입력한 비밀번호"
+                className="w-full border rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-sky-400"
+                disabled={loading}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPw((v) => !v)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-gray-100"
+                aria-label={showPw ? "비밀번호 숨기기" : "비밀번호 보기"}
+                tabIndex={-1}
+              >
+                {showPw ? (
+                  <EyeSlashIcon className="w-5 h-5 text-gray-600" />
+                ) : (
+                  <EyeIcon className="w-5 h-5 text-gray-600" />
+                )}
+              </button>
+            </div>
           </div>
 
           <button

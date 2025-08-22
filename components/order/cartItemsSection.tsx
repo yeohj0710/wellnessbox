@@ -177,27 +177,42 @@ export default function CartItemsSection({
         </button>
       </div>
       {confirmType && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 text-center">
-            <p className="mb-6 text-sm">
-              장바구니에 담긴 모든 상품들이 {confirmType}로 바뀌어요. 변경할까요?
-            </p>
-            <div className="flex justify-center gap-4">
-              <button
-                onClick={() => {
-                  handleBulkChange(confirmType);
-                  setConfirmType(null);
-                }}
-                className="px-4 py-2 bg-sky-400 text-white rounded hover:bg-sky-500"
-              >
-                변경
-              </button>
-              <button
-                onClick={() => setConfirmType(null)}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-              >
-                취소
-              </button>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          onClick={() => setConfirmType(null)}
+        >
+          <div
+            className="relative bg-gradient-to-br from-sky-400/90 via-indigo-500/90 to-fuchsia-500/90 rounded-2xl shadow-2xl w-full max-w-sm mx-4 animate-scaleIn"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 bg-white/90 rounded-2xl text-center">
+              <h2 className="text-lg font-bold text-gray-800 mb-3">
+                변경 확인
+              </h2>
+              <p className="mb-6 text-sm text-gray-600">
+                장바구니에 담긴 모든 영양제가{" "}
+                <span className="font-semibold text-sky-500">
+                  {confirmType}
+                </span>{" "}
+                상품으로 변경됩니다.
+              </p>
+              <div className="flex justify-center gap-4">
+                <button
+                  onClick={() => setConfirmType(null)}
+                  className="px-5 py-2 rounded-full bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={() => {
+                    handleBulkChange(confirmType);
+                    setConfirmType(null);
+                  }}
+                  className="px-5 py-2 rounded-full bg-gradient-to-r from-sky-400 to-indigo-500 text-white font-semibold shadow-md hover:scale-105 transition-transform"
+                >
+                  변경
+                </button>
+              </div>
             </div>
           </div>
         </div>

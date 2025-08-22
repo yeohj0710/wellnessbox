@@ -51,8 +51,21 @@ export default function OrderComplete() {
   const [notifyLoading, setNotifyLoading] = useState(false);
   const router = useRouter();
 
+  const clearCart = () => {
+    localStorage.removeItem("cartItems");
+    window.dispatchEvent(new Event("cartUpdated"));
+  };
+
   const returnToCart = () => {
-    if (typeof window !== "undefined") localStorage.setItem("openCart", "true");
+    if (typeof window !== "undefined") {
+      const backup = localStorage.getItem("cartBackup");
+      if (backup && backup !== "[]") {
+        localStorage.setItem("cartItems", backup);
+        window.dispatchEvent(new Event("cartUpdated"));
+      }
+      localStorage.setItem("restoreCartFromBackup", "1");
+      localStorage.setItem("openCart", "true");
+    }
     router.push("/");
   };
 
@@ -80,6 +93,7 @@ export default function OrderComplete() {
       params.get("code")
     ) {
       setCancelled(true);
+      localStorage.setItem("restoreCartFromBackup", "1");
       setLoading(false);
       return;
     }
@@ -119,8 +133,11 @@ export default function OrderComplete() {
           localStorage.removeItem("paymentId");
           localStorage.removeItem("paymentMethod");
           localStorage.removeItem("impUid");
-          localStorage.removeItem("cartItems");
-          window.dispatchEvent(new Event("cartUpdated"));
+
+          if (existingOrder.status === ORDER_STATUS.PAYMENT_COMPLETE) {
+            clearCart();
+          }
+
           sessionStorage.removeItem(lockKey);
           return;
         }
@@ -224,8 +241,12 @@ export default function OrderComplete() {
           const fullOrder = await getOrderByPaymentId(paymentId as string);
           setOrder(fullOrder);
           setShowNotifyModal(true);
-          localStorage.removeItem("cartItems");
-          window.dispatchEvent(new Event("cartUpdated"));
+          clearCart();
+
+          localStorage.removeItem("cartBackup");
+          localStorage.removeItem("restoreCartFromBackup");
+          localStorage.removeItem("checkoutInProgress");
+
           localStorage.removeItem("paymentId");
           localStorage.removeItem("paymentMethod");
           localStorage.removeItem("impUid");
@@ -321,10 +342,15 @@ export default function OrderComplete() {
           const fullOrder = await getOrderByPaymentId(paymentId as string);
           setOrder(fullOrder);
           setShowNotifyModal(true);
-          localStorage.removeItem("cartItems");
-          window.dispatchEvent(new Event("cartUpdated"));
+          clearCart();
+
+          localStorage.removeItem("cartBackup");
+          localStorage.removeItem("restoreCartFromBackup");
+          localStorage.removeItem("checkoutInProgress");
+
           localStorage.removeItem("paymentId");
           localStorage.removeItem("paymentMethod");
+          localStorage.removeItem("impUid");
           sessionStorage.removeItem(lockKey);
         }
       } catch (error: any) {

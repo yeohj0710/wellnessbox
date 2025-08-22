@@ -58,7 +58,7 @@ export default function ProductGrid({
                 className="group relative flex h-full flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-gray-100 shadow-[0_6px_20px_rgba(67,103,230,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(67,103,230,0.18)] focus:outline-none focus:ring-2 focus:ring-[#6C4DFF]/50"
               >
                 {product.images?.[0] ? (
-                  <div className="relative w-full aspect-[4/3] bg-gray-50">
+                  <div className="relative w-full aspect-[4/3] bg-white">
                     <Image
                       src={product.images[0]}
                       alt={product.name}

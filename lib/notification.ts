@@ -81,7 +81,7 @@ export async function sendOrderNotification(orderId: number, status: string) {
   let message = "";
   switch (status) {
     case ORDER_STATUS.PAYMENT_COMPLETE:
-      message = `주문하신 '${productText}' 상품의 결제가 완료되었어요. '내 주문 조회하기'에서 상담을 진행하실 수 있어요.`;
+      message = `'${productText}' 상품의 주문이 완료되었어요. '내 주문 조회하기'에서 상담을 진행하실 수 있어요.`;
       break;
     case ORDER_STATUS.COUNSEL_COMPLETE:
       message = `주문하신 '${productText}'의 조제가 시작되었어요. 안전하게 조제해 드릴게요.`;
@@ -143,7 +143,11 @@ export async function sendNewOrderNotification(orderId: number) {
   const restCount = order.orderItems.length - 1;
   const productText =
     restCount > 0 ? `${firstName} 외 ${restCount}건` : firstName;
-  const message = `새로운 주문이 들어왔어요: ${productText}`;
+  const phone = order.phone ? `\n전화번호: ${order.phone}` : "";
+  const address = order.roadAddress
+    ? `\n주소: ${order.roadAddress} ${order.detailAddress || ""}`
+    : "";
+  const message = `'${productText}'의 주문이 들어왔어요.${phone}${address}`;
   for (const sub of subs) {
     const pushSub = {
       endpoint: sub.endpoint,
@@ -154,6 +158,8 @@ export async function sendNewOrderNotification(orderId: number) {
         title: "웰니스박스",
         body: message,
         url: "/pharm",
+        icon: "/logo.png",
+        actions: [{ action: "open", title: "주문 확인" }],
       });
       await webpush.sendNotification(pushSub, payload);
     } catch (err: any) {
