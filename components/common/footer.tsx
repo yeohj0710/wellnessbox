@@ -87,7 +87,7 @@ export default function Footer() {
             <span className="text-center text-xs sm:text-left text-gray-400 mt-0.5 max-w-full">
               <span className="text-center text-xs sm:text-left text-gray-400 mt-4 max-w-full">
                 모든 거래에 대한 책임과 배송, 환불, 민원 등의 처리는
-                웰니스박스에서 진행합니다. 민원담당자: 권혁찬 02-6013-4400
+                웰니스박스에서 진행합니다. 민원담당자: 권혁찬 02-6241-5530
               </span>
             </span>
           </div>
@@ -120,10 +120,10 @@ export default function Footer() {
                   법인등록번호: 110111-0932570
                 </span>
                 <span className="text-xs text-gray-400">
-                  대표 전화번호: 02-6013-4400
+                  대표 전화번호: 02-6241-5530
                 </span>
                 <span className="text-xs text-gray-400">
-                  대표 이메일: smilerobert@naver.com
+                  대표 이메일: wellnessbox.me@gmail.com
                 </span>
                 <span className="text-xs text-gray-400">
                   주소: 서울특별시 동대문구 경희대로 26, 2층 211호(회기동,

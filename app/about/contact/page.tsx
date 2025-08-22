@@ -12,16 +12,16 @@ export default function Contact() {
       <h2 className="text-lg font-semibold text-gray-800 mb-2">이메일</h2>
       <p className="text-gray-700 leading-relaxed mb-8">
         <a
-          href="mailto:smilerobert@naver.com"
+          href="mailto:wellnessbox.me@gmail.com"
           className="text-sky-500 hover:underline"
         >
-          smilerobert@naver.com
+          wellnessbox.me@gmail.com
         </a>
       </p>
       <h2 className="text-lg font-semibold text-gray-800 mb-2">
         대표 전화번호
       </h2>
-      <p className="text-gray-700 leading-relaxed">02-6013-4400</p>
+      <p className="text-gray-700 leading-relaxed">02-6241-5530</p>
     </div>
   );
 }

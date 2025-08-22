@@ -143,7 +143,7 @@ export default function Privacy() {
         </p>
         <ul className="list-disc pl-6 mb-6">
           <li>책임자: 권혁찬</li>
-          <li>이메일: smilerobert@naver.com</li>
+          <li>이메일: wellnessbox.me@gmail.com</li>
           <li>대표 전화번호: 02-6241-5530</li>
         </ul>
         <p>

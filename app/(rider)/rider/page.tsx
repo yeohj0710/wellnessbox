@@ -6,6 +6,7 @@ import {
   getOrderStatusById,
   getBasicOrdersByRider,
 } from "@/lib/order";
+import { generateOptimizedPageNumbers } from "@/lib/pagination";
 import { updateOrderStatus } from "@/lib/order/mutations";
 import { useRouter } from "next/navigation";
 import OrderProgressBar from "@/components/order/orderProgressBar";
@@ -19,6 +20,9 @@ export default function Rider() {
   const [loading, setLoading] = useState<boolean>(true);
   const [rider, setRider] = useState<any | null>(null);
   const [orders, setOrders] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isPageLoading, setIsPageLoading] = useState(false);
   const router = useRouter();
   useEffect(() => {
     async function fetchRider() {
@@ -33,13 +37,28 @@ export default function Rider() {
   }, [router]);
   useEffect(() => {
     if (!rider) return;
-    async function fetchOrders() {
-      const fetchedOrders = await getBasicOrdersByRider();
+    const load = async () => {
+      setIsPageLoading(true);
+      const { orders: fetchedOrders, totalPages } = await getBasicOrdersByRider(1);
       setOrders(fetchedOrders);
+      setTotalPages(totalPages);
       setLoading(false);
-    }
-    fetchOrders();
+      setIsPageLoading(false);
+    };
+    load();
   }, [rider]);
+
+  const handlePageChange = async (page: number) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+    setIsPageLoading(true);
+    const { orders: fetchedOrders, totalPages: newTotal } = await getBasicOrdersByRider(
+      page
+    );
+    setOrders(fetchedOrders);
+    setTotalPages(newTotal);
+    setIsPageLoading(false);
+  };
   const OrderAccordionItem = ({
     initialOrder,
     isInitiallyExpanded,
@@ -333,13 +352,48 @@ export default function Rider() {
   }
   return (
     <div className="w-full mt-8 mb-12 flex flex-col gap-4">
-      {orders.map((order: any, index: number) => (
-        <OrderAccordionItem
-          key={order.id}
-          initialOrder={order}
-          isInitiallyExpanded={index === 0}
-        />
-      ))}
+      {isPageLoading ? (
+        <div className="flex justify-center py-4">
+          <div className="w-6 h-6 border-2 border-sky-400 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      ) : (
+        orders.map((order: any, index: number) => (
+          <OrderAccordionItem
+            key={order.id}
+            initialOrder={order}
+            isInitiallyExpanded={index === 0}
+          />
+        ))
+      )}
+      <div className="flex justify-center gap-2 mt-4">
+        <button
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="px-3 py-1 text-sm text-sky-600 border border-sky-600 rounded-md disabled:opacity-50"
+        >
+          이전
+        </button>
+        {generateOptimizedPageNumbers(totalPages, currentPage).map((page) => (
+          <button
+            key={page}
+            onClick={() => handlePageChange(page)}
+            className={`px-3 py-1 text-sm rounded-md border ${
+              page === currentPage
+                ? "bg-sky-600 text-white border-sky-600"
+                : "text-sky-600 border-sky-600"
+            }`}
+          >
+            {page}
+          </button>
+        ))}
+        <button
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="px-3 py-1 text-sm text-sky-600 border border-sky-600 rounded-md disabled:opacity-50"
+        >
+          다음
+        </button>
+      </div>
     </div>
   );
 }

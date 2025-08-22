@@ -121,56 +121,81 @@ export async function getOrderStatusById(orderid: number) {
   });
 }
 
-export async function getBasicOrdersByPharmacy(pharmacyId: number) {
-  return await db.order.findMany({
-    where: { pharmacyId },
-    select: {
-      id: true,
-      status: true,
-      createdAt: true,
-      orderItems: {
-        select: {
-          quantity: true,
-          pharmacyProduct: {
-            select: {
-              optionType: true,
-              product: { select: { name: true } },
+export async function getBasicOrdersByPharmacy(
+  pharmacyId: number,
+  page = 1,
+  take = 10
+): Promise<{ orders: any[]; totalPages: number }> {
+  const [totalCount, orders] = await db.$transaction([
+    db.order.count({ where: { pharmacyId } }),
+    db.order.findMany({
+      where: { pharmacyId },
+      select: {
+        id: true,
+        status: true,
+        createdAt: true,
+        orderItems: {
+          select: {
+            quantity: true,
+            pharmacyProduct: {
+              select: {
+                optionType: true,
+                product: { select: { name: true } },
+              },
             },
           },
         },
       },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+      orderBy: { id: "desc" },
+      skip: (page - 1) * take,
+      take,
+    }),
+  ]);
+
+  const totalPages = Math.ceil(totalCount / take);
+  return { orders, totalPages };
 }
 
-export async function getBasicOrdersByRider() {
-  return await db.order.findMany({
-    where: {
-      NOT: [
-        { status: ORDER_STATUS.PAYMENT_COMPLETE },
-        { status: ORDER_STATUS.COUNSEL_COMPLETE },
-        { status: ORDER_STATUS.CANCELED },
-      ],
-    },
-    select: {
-      id: true,
-      status: true,
-      createdAt: true,
-      orderItems: {
-        select: {
-          quantity: true,
-          pharmacyProduct: {
-            select: {
-              optionType: true,
-              product: { select: { name: true } },
+export async function getBasicOrdersByRider(
+  page = 1,
+  take = 10
+): Promise<{ orders: any[]; totalPages: number }> {
+  const where = {
+    NOT: [
+      { status: ORDER_STATUS.PAYMENT_COMPLETE },
+      { status: ORDER_STATUS.COUNSEL_COMPLETE },
+      { status: ORDER_STATUS.CANCELED },
+    ],
+  };
+
+  const [totalCount, orders] = await db.$transaction([
+    db.order.count({ where }),
+    db.order.findMany({
+      where,
+      select: {
+        id: true,
+        status: true,
+        createdAt: true,
+        orderItems: {
+          select: {
+            quantity: true,
+            pharmacyProduct: {
+              select: {
+                optionType: true,
+                product: { select: { name: true } },
+              },
             },
           },
         },
       },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+      orderBy: { id: "desc" },
+      skip: (page - 1) * take,
+      take,
+    }),
+  ]);
+
+  const totalPages = Math.ceil(totalCount / take);
+  return { orders, totalPages };
 }
 
 export async function getOrderByPaymentId(paymentId: string) {
