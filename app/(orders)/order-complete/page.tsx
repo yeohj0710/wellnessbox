@@ -451,12 +451,15 @@ export default function OrderComplete() {
         await subscribePush();
         try {
           if (order) {
+            const image =
+              order.orderItems?.[0]?.pharmacyProduct?.product?.images?.[0];
             await fetch("/api/push/send", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 orderId: order.id,
                 status: ORDER_STATUS.PAYMENT_COMPLETE,
+                image,
               }),
             });
           }

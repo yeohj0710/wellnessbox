@@ -62,7 +62,11 @@ export async function isPharmacySubscribed(
   return !!sub;
 }
 
-export async function sendOrderNotification(orderId: number, status: string) {
+export async function sendOrderNotification(
+  orderId: number,
+  status: string,
+  image?: string
+) {
   const subs = await db.subscription.findMany({ where: { orderId } });
   if (subs.length === 0) return;
   const order = await db.order.findUnique({
@@ -73,11 +77,12 @@ export async function sendOrderNotification(orderId: number, status: string) {
       },
     },
   });
-  const firstName =
-    order?.orderItems[0]?.pharmacyProduct?.product?.name || "상품";
+  const firstItem = order?.orderItems[0]?.pharmacyProduct?.product;
+  const firstName = firstItem?.name || "상품";
   const restCount = (order?.orderItems.length || 1) - 1;
   const productText =
     restCount > 0 ? `${firstName} 외 ${restCount}건` : firstName;
+  const imageUrl = image || firstItem?.images?.[0];
   let message = "";
   switch (status) {
     case ORDER_STATUS.PAYMENT_COMPLETE:
@@ -111,6 +116,7 @@ export async function sendOrderNotification(orderId: number, status: string) {
         title: "웰니스박스",
         body: message,
         url: "/my-orders",
+        image: imageUrl,
       });
       await webpush.sendNotification(pushSub, payload);
     } catch (err: any) {
