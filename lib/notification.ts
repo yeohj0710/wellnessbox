@@ -3,7 +3,7 @@ import db from "@/lib/db";
 import { ORDER_STATUS } from "./order/orderStatus";
 
 webpush.setVapidDetails(
-  "mailto:example@wellnessbox.local",
+  "mailto:wellnessbox.me@gmail.com",
   (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").trim(),
   (process.env.VAPID_PRIVATE_KEY || "").trim()
 );
@@ -147,7 +147,7 @@ export async function sendNewOrderNotification(orderId: number) {
   const address = order.roadAddress
     ? `\n주소: ${order.roadAddress} ${order.detailAddress || ""}`
     : "";
-  const message = `'${productText}'의 주문이 들어왔어요.${phone}${address}`;
+  const message = `'${productText}' 주문이 들어왔어요.${phone}${address}`;
   for (const sub of subs) {
     const pushSub = {
       endpoint: sub.endpoint,

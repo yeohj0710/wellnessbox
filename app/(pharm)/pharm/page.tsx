@@ -658,19 +658,54 @@ export default function Pharm() {
   if (loading) return <FullPageLoader />;
   return (
     <div className="w-full mt-8 mb-12 flex flex-col gap-4">
-      <div className="flex justify-end px-4">
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={isSubscribed}
-            onChange={() =>
-              isSubscribed ? unsubscribePush() : subscribePush()
-            }
-            disabled={isSubscribeLoading}
-            className="accent-sky-400"
-          />
-          신규 주문 알림 받기
-        </label>
+      <div className="px-4">
+        <div className="w-full max-w-[640px] mx-auto rounded-2xl bg-white sm:shadow-md sm:border p-4 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-gray-900">
+              신규 주문 알림
+            </p>
+            <p className="text-xs text-gray-500">
+              새 주문이 접수되거나 상담 메시지가 오면 알림을 보내드려요.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <label
+              className={`relative inline-flex items-center ${
+                isSubscribeLoading
+                  ? "opacity-50 pointer-events-none"
+                  : "cursor-pointer"
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={isSubscribed}
+                onChange={() =>
+                  isSubscribed ? unsubscribePush() : subscribePush()
+                }
+                disabled={isSubscribeLoading}
+                className="sr-only peer"
+                aria-label="신규 주문 알림"
+                aria-checked={isSubscribed}
+                role="switch"
+              />
+              <span className="w-12 h-7 rounded-full bg-gray-200 peer-checked:bg-sky-500 transition-colors duration-200 relative after:absolute after:top-0.5 after:left-0.5 after:h-6 after:w-6 after:rounded-full after:bg-white after:shadow after:transition-transform after:duration-200 peer-checked:after:translate-x-5"></span>
+            </label>
+            {isSubscribeLoading ? (
+              <span
+                className="w-5 h-5 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"
+                aria-hidden="true"
+              ></span>
+            ) : (
+              <span
+                className={`text-xs ${
+                  isSubscribed ? "text-sky-600" : "text-gray-500"
+                }`}
+              >
+                {isSubscribed ? "켜짐" : "꺼짐"}
+              </span>
+            )}
+          </div>
+        </div>
       </div>
       {orders.length === 0 ? (
         <div className="flex justify-center items-center w-full max-w-[640px] mx-auto mt-8 mb-12 py-12 bg-white sm:shadow-md sm:rounded-lg">
