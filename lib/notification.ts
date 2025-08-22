@@ -153,6 +153,8 @@ export async function sendNewOrderNotification(orderId: number) {
   const address = order.roadAddress
     ? `\n주소: ${order.roadAddress} ${order.detailAddress || ""}`
     : "";
+  const imageUrl =
+    order.orderItems[0]?.pharmacyProduct?.product?.images?.[0];
   const message = `'${productText}' 주문이 들어왔어요.${phone}${address}`;
   for (const sub of subs) {
     const pushSub = {
@@ -165,6 +167,7 @@ export async function sendNewOrderNotification(orderId: number) {
         body: message,
         url: "/pharm",
         icon: "/logo.png",
+        image: imageUrl,
         actions: [{ action: "open", title: "주문 확인" }],
       });
       await webpush.sendNotification(pushSub, payload);
