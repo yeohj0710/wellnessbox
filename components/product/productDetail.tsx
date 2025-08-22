@@ -314,7 +314,7 @@ export default function ProductDetail({
                   </span>
                 </div>
               </div>
-              <span className="mt-1 block text-xs text-gray-400 whitespace-pre-wrap">
+              <span className="mt-2.5 block text-xs text-gray-400 whitespace-pre-wrap">
                 상품 리뷰는 배송 완료 처리된 상품에 한해 <b>내 주문 조회</b>에서
                 작성할 수 있어요.
               </span>
@@ -380,7 +380,7 @@ export default function ProductDetail({
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500 text-sm text-center mt-16">
+                <p className="text-gray-500 text-sm text-center mt-24">
                   아직 리뷰가 없어요. 첫 번째 리뷰어가 되어주세요!
                 </p>
               )}

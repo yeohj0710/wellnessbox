@@ -40,7 +40,10 @@ const registerAndActivateSW = async () => {
     await new Promise<void>((resolve) => {
       const onChange = () => {
         if (navigator.serviceWorker.controller) {
-          navigator.serviceWorker.removeEventListener("controllerchange", onChange);
+          navigator.serviceWorker.removeEventListener(
+            "controllerchange",
+            onChange
+          );
           resolve();
         }
       };
@@ -95,7 +98,10 @@ export default function Pharm() {
         const res = await fetch("/api/pharm-push/status", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ pharmacyId: pharm.id, endpoint: sub.endpoint }),
+          body: JSON.stringify({
+            pharmacyId: pharm.id,
+            endpoint: sub.endpoint,
+          }),
         });
         const data = await res.json();
         setIsSubscribed(!!data.subscribed);
@@ -145,7 +151,10 @@ export default function Pharm() {
         await fetch("/api/pharm-push/unsubscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ pharmacyId: pharm?.id, endpoint: sub.endpoint }),
+          body: JSON.stringify({
+            pharmacyId: pharm?.id,
+            endpoint: sub.endpoint,
+          }),
         });
         await sub.unsubscribe();
       }
@@ -652,7 +661,9 @@ export default function Pharm() {
           <input
             type="checkbox"
             checked={isSubscribed}
-            onChange={() => (isSubscribed ? unsubscribePush() : subscribePush())}
+            onChange={() =>
+              isSubscribed ? unsubscribePush() : subscribePush()
+            }
             disabled={isSubscribeLoading}
             className="accent-sky-400"
           />

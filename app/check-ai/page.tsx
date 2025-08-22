@@ -164,13 +164,13 @@ export default function CheckAI() {
               </fieldset>
             ))}
 
-            <div className="sticky bottom-4 sm:bottom-6 mt-8">
+            <div className="flex flex-col items-center sticky bottom-4 sm:bottom-6 mt-8">
               <button
                 type="button"
                 onClick={handleSubmit}
                 disabled={loading}
                 aria-busy={loading}
-                className="w-full rounded-2xl bg-gradient-to-r from-sky-500 to-indigo-500 px-6 py-3 text-base font-extrabold text-white shadow-[0_12px_30px_rgba(56,121,255,0.35)] transition-all hover:from-sky-600 hover:to-indigo-600 active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-sky-300 disabled:opacity-60"
+                className="w-full sm:w-4/5 rounded-2xl bg-gradient-to-r from-sky-500 to-indigo-500 px-6 py-3 text-base font-extrabold text-white shadow-[0_12px_30px_rgba(56,121,255,0.35)] transition-all hover:from-sky-600 hover:to-indigo-600 active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-sky-300 disabled:opacity-60"
               >
                 {loading ? "AI가 분석 중..." : "AI 추천 결과 보기"}
               </button>
@@ -184,9 +184,9 @@ export default function CheckAI() {
 
       {loading && (
         <div className="fixed inset-0 z-40 grid place-items-center bg-black/40 backdrop-blur-sm p-5 sm:p-6">
-          <div className="flex flex-col items-center gap-4 rounded-2xl bg-white px-10 py-10 shadow-2xl">
+          <div className="flex flex-col items-center gap-4">
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-sky-500" />
-            <p className="text-sm text-gray-700">
+            <p className="text-sm text-gray-100">
               AI가 영양제를 추천하고 있어요...
             </p>
           </div>
