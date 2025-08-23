@@ -79,7 +79,11 @@ export default function Rider() {
           body: JSON.stringify({ endpoint: sub.endpoint }),
         });
         const data = await res.json();
-        setIsSubscribed(!!data.subscribed);
+        if (data.subscribed) {
+          setIsSubscribed(true);
+        } else {
+          await subscribePush();
+        }
       } catch {
         setIsSubscribed(false);
       }

@@ -81,7 +81,11 @@ export default function Pharm() {
           }),
         });
         const data = await res.json();
-        setIsSubscribed(!!data.subscribed);
+        if (data.subscribed) {
+          setIsSubscribed(true);
+        } else {
+          await subscribePush();
+        }
       } catch {
         setIsSubscribed(false);
       }

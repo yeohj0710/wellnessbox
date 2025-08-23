@@ -50,12 +50,16 @@ export async function isSubscribed(
 }
 
 export async function savePharmacySubscription(pharmacyId: number, sub: any) {
+  await db.subscription.deleteMany({
+    where: { endpoint: sub.endpoint, pharmacyId, role: "pharm" },
+  });
   return db.subscription.create({
     data: {
       endpoint: sub.endpoint,
       auth: sub.keys?.auth || "",
       p256dh: sub.keys?.p256dh || "",
       pharmacyId,
+      role: "pharm",
     },
   });
 }
@@ -65,7 +69,11 @@ export async function removePharmacySubscription(
   pharmacyId?: number
 ) {
   return db.subscription.deleteMany({
-    where: { endpoint, ...(pharmacyId ? { pharmacyId } : {}) },
+    where: {
+      endpoint,
+      role: "pharm",
+      ...(pharmacyId ? { pharmacyId } : {}),
+    },
   });
 }
 
@@ -74,12 +82,15 @@ export async function isPharmacySubscribed(
   endpoint: string
 ) {
   const sub = await db.subscription.findFirst({
-    where: { pharmacyId, endpoint },
+    where: { pharmacyId, endpoint, role: "pharm" },
   });
   return !!sub;
 }
 
 export async function saveRiderSubscription(sub: any) {
+  await db.subscription.deleteMany({
+    where: { endpoint: sub.endpoint, role: "rider" },
+  });
   return db.subscription.create({
     data: {
       endpoint: sub.endpoint,
