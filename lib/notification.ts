@@ -8,26 +8,43 @@ webpush.setVapidDetails(
   (process.env.VAPID_PRIVATE_KEY || "").trim()
 );
 
-export async function saveSubscription(orderId: number, sub: any) {
+export async function saveSubscription(
+  orderId: number,
+  sub: any,
+  role: string
+) {
   return db.subscription.create({
     data: {
       endpoint: sub.endpoint,
       auth: sub.keys?.auth || "",
       p256dh: sub.keys?.p256dh || "",
       orderId,
+      role,
     },
   });
 }
 
-export async function removeSubscription(endpoint: string, orderId?: number) {
+export async function removeSubscription(
+  endpoint: string,
+  orderId?: number,
+  role?: string
+) {
   return db.subscription.deleteMany({
-    where: { endpoint, ...(orderId ? { orderId } : {}) },
+    where: {
+      endpoint,
+      ...(orderId ? { orderId } : {}),
+      ...(role ? { role } : {}),
+    },
   });
 }
 
-export async function isSubscribed(orderId: number, endpoint: string) {
+export async function isSubscribed(
+  orderId: number,
+  endpoint: string,
+  role: string
+) {
   const sub = await db.subscription.findFirst({
-    where: { orderId, endpoint },
+    where: { orderId, endpoint, role },
   });
   return !!sub;
 }
@@ -67,7 +84,9 @@ export async function sendOrderNotification(
   status: string,
   image?: string
 ) {
-  const subs = await db.subscription.findMany({ where: { orderId } });
+  const subs = await db.subscription.findMany({
+    where: { orderId, role: "customer" },
+  });
   if (subs.length === 0) return;
   const order = await db.order.findUnique({
     where: { id: orderId },

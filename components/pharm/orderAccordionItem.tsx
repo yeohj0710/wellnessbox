@@ -16,6 +16,11 @@ import OrderAccordionHeader from "@/components/order/orderAccordionHeader";
 import { ORDER_STATUS, OrderStatus } from "@/lib/order/orderStatus";
 import Image from "next/image";
 import { ArrowPathIcon } from "@heroicons/react/24/outline";
+import {
+  base64ToUint8Array,
+  getSubAppKeyBase64,
+  registerAndActivateSW,
+} from "@/lib/push";
 
 type OrderAccordionItemProps = {
   initialOrder: any;
@@ -33,10 +38,12 @@ export default function OrderAccordionItem({
     const [isLoaded, setIsLoaded] = useState(false);
     const [messages, setMessages] = useState<any[]>([]);
     const [newMessage, setNewMessage] = useState("");
-    const [isSending, setIsSending] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [isMessagesRefreshing, setIsMessagesRefreshing] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState<number | null>(null);
-    const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isSubscribeLoading, setIsSubscribeLoading] = useState(false);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
       if (!isExpanded || isLoaded) return;
       async function fetchDetailsAndMessages() {
@@ -71,6 +78,30 @@ export default function OrderAccordionItem({
           messagesContainerRef.current.scrollHeight;
       }
     }, [isExpanded, isLoaded, messages]);
+
+    useEffect(() => {
+      const checkSubscription = async () => {
+        if (!("serviceWorker" in navigator)) return;
+        const reg = await registerAndActivateSW();
+        const sub = await reg.pushManager.getSubscription();
+        if (!sub) return;
+        try {
+          const res = await fetch("/api/push/status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              orderId: order.id,
+              endpoint: sub.endpoint,
+              role: "pharmacist",
+            }),
+          });
+          const data = await res.json();
+          setIsSubscribed(!!data.subscribed);
+        } catch {}
+      };
+      checkSubscription();
+    }, [order.id]);
+
     const toggleExpanded = () => {
       setIsExpanded((prev) => !prev);
     };
@@ -85,20 +116,98 @@ export default function OrderAccordionItem({
         console.error(error);
       }
     };
-    const refreshMessages = async (manual: boolean = false) => {
-      if (manual) setIsMessagesRefreshing(true);
-      try {
-        const msgs = await getMessagesByOrder(order.id);
-        setMessages(msgs);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        if (manual) setIsMessagesRefreshing(false);
+  const refreshMessages = async (manual: boolean = false) => {
+    if (manual) setIsMessagesRefreshing(true);
+    try {
+      const msgs = await getMessagesByOrder(order.id);
+      setMessages(msgs);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      if (manual) setIsMessagesRefreshing(false);
+    }
+  };
+  const subscribePush = async () => {
+    if (!("serviceWorker" in navigator)) return;
+    setIsSubscribeLoading(true);
+    try {
+      const reg = await registerAndActivateSW();
+      let existing = await reg.pushManager.getSubscription();
+      const appKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").trim();
+      if (!appKey) return;
+      const storedKey = localStorage.getItem("vapidKey") || "";
+      const subAppKey = existing ? await getSubAppKeyBase64(reg) : null;
+      const mismatch =
+        !!existing &&
+        (storedKey !== appKey || (subAppKey && subAppKey !== appKey));
+      if (mismatch && existing) {
+        await fetch("/api/push/unsubscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderId: order.id,
+            endpoint: existing.endpoint,
+            role: "pharmacist",
+          }),
+        });
+        await existing.unsubscribe();
+        existing = null;
       }
-    };
-    const sendMessage = async () => {
-      if (!newMessage.trim() || isSending) return;
-      if (!pharm) return;
+      const sub =
+        existing ||
+        (await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: base64ToUint8Array(appKey),
+        }));
+      await fetch("/api/push/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: order.id,
+          subscription: sub,
+          role: "pharmacist",
+        }),
+      });
+      localStorage.setItem("vapidKey", appKey);
+      setIsSubscribed(true);
+    } catch (e) {
+      console.error(e);
+      alert("알림 설정에 실패했습니다.");
+    } finally {
+      setIsSubscribeLoading(false);
+    }
+  };
+
+  const unsubscribePush = async () => {
+    if (!("serviceWorker" in navigator)) return;
+    setIsSubscribeLoading(true);
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      const sub = await reg?.pushManager.getSubscription();
+      if (sub) {
+        await fetch("/api/push/unsubscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderId: order.id,
+            endpoint: sub.endpoint,
+            role: "pharmacist",
+          }),
+        });
+        await sub.unsubscribe();
+      }
+      localStorage.removeItem("vapidKey");
+      setIsSubscribed(false);
+    } catch (e) {
+      console.error(e);
+      alert("알림 해제에 실패했습니다.");
+    } finally {
+      setIsSubscribeLoading(false);
+    }
+  };
+  const sendMessage = async () => {
+    if (!newMessage.trim() || isSending) return;
+    if (!pharm) return;
       setIsSending(true);
       const messageData = {
         orderId: order.id,
@@ -170,6 +279,31 @@ export default function OrderAccordionItem({
       }
     };
     if (isExpanded && !isLoaded) {
+        return (
+          <div className="w-full max-w-[640px] mx-auto px-6 py-6 bg-white sm:shadow-md sm:rounded-lg">
+            <OrderAccordionHeader
+              role="pharmacist"
+              order={order}
+              isExpanded={isExpanded}
+              toggle={toggleExpanded}
+              isSubscribed={isSubscribed}
+              toggleSubscription={() => {
+                if (isSubscribed) {
+                  unsubscribePush();
+                } else {
+                  subscribePush();
+                }
+              }}
+              subscriptionLoading={isSubscribeLoading}
+            />
+            <div className="mt-4 border-t sm:px-4 pt-16 sm:pt-12 pb-4">
+              <div className="flex justify-center items-center mt-2 mb-6">
+                <div className="w-6 h-6 border-2 border-sky-400 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            </div>
+          </div>
+        );
+      }
       return (
         <div className="w-full max-w-[640px] mx-auto px-6 py-6 bg-white sm:shadow-md sm:rounded-lg">
           <OrderAccordionHeader
@@ -177,24 +311,17 @@ export default function OrderAccordionItem({
             order={order}
             isExpanded={isExpanded}
             toggle={toggleExpanded}
+            isSubscribed={isSubscribed}
+            toggleSubscription={() => {
+              if (isSubscribed) {
+                unsubscribePush();
+              } else {
+                subscribePush();
+              }
+            }}
+            subscriptionLoading={isSubscribeLoading}
           />
-          <div className="mt-4 border-t sm:px-4 pt-16 sm:pt-12 pb-4">
-            <div className="flex justify-center items-center mt-2 mb-6">
-              <div className="w-6 h-6 border-2 border-sky-400 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-    return (
-      <div className="w-full max-w-[640px] mx-auto px-6 py-6 bg-white sm:shadow-md sm:rounded-lg">
-        <OrderAccordionHeader
-          role="pharmacist"
-          order={order}
-          isExpanded={isExpanded}
-          toggle={toggleExpanded}
-        />
-        {isExpanded && (
+          {isExpanded && (
           <div className="mt-4 border-t sm:px-4 pt-16 sm:pt-12 pb-4">
             <OrderProgressBar currentStatus={order.status} />
             {order.status !== ORDER_STATUS.PICKUP_COMPLETE &&

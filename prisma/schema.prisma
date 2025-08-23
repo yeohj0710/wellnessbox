@@ -151,5 +151,6 @@ model Subscription {
   orderId   Int?
   pharmacy  Pharmacy? @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
   pharmacyId Int?
+  role      String?
   createdAt DateTime @default(now())
 }

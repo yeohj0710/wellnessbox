@@ -4,11 +4,11 @@ import { saveSubscription } from '@/lib/notification';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { orderId, subscription } = body;
-    if (!orderId || !subscription) {
+    const { orderId, subscription, role } = body;
+    if (!orderId || !subscription || !role) {
       return NextResponse.json({ error: 'Missing params' }, { status: 400 });
     }
-    await saveSubscription(orderId, subscription);
+    await saveSubscription(orderId, subscription, role);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error(err);

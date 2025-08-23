@@ -63,7 +63,11 @@ export default function OrderDetails({ phone, password, onBack }: any) {
           const res = await fetch("/api/push/status", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ orderId: order.id, endpoint: sub.endpoint }),
+            body: JSON.stringify({
+              orderId: order.id,
+              endpoint: sub.endpoint,
+              role: "customer",
+            }),
           });
           const data = await res.json();
           setIsSubscribed(!!data.subscribed);
@@ -152,6 +156,7 @@ export default function OrderDetails({ phone, password, onBack }: any) {
             body: JSON.stringify({
               orderId: order.id,
               endpoint: existing.endpoint,
+              role: "customer",
             }),
           });
           await existing.unsubscribe();
@@ -166,7 +171,11 @@ export default function OrderDetails({ phone, password, onBack }: any) {
         await fetch("/api/push/subscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderId: order.id, subscription: sub }),
+          body: JSON.stringify({
+            orderId: order.id,
+            subscription: sub,
+            role: "customer",
+          }),
         });
         localStorage.setItem("vapidKey", appKey);
         setIsSubscribed(true);
@@ -188,7 +197,11 @@ export default function OrderDetails({ phone, password, onBack }: any) {
           await fetch("/api/push/unsubscribe", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ orderId: order.id, endpoint: sub.endpoint }),
+            body: JSON.stringify({
+              orderId: order.id,
+              endpoint: sub.endpoint,
+              role: "customer",
+            }),
           });
           await sub.unsubscribe();
         }

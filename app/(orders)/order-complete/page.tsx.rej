@@ -1,0 +1,128 @@
+diff a/app/(orders)/order-complete/page.tsx b/app/(orders)/order-complete/page.tsx	(rejected hunks)
+@@ -400,111 +400,123 @@ export default function OrderComplete() {
+           }
+         };
+         navigator.serviceWorker.addEventListener("controllerchange", onChange);
+       });
+     }
+     return reg;
+   };
+ 
+   const subscribePush = async () => {
+     try {
+       if (!order) return;
+       if (!("serviceWorker" in navigator)) return;
+       const reg = await registerAndActivateSW();
+       let existing = await reg.pushManager.getSubscription();
+       const appKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").trim();
+       if (!appKey) return;
+       const storedKey = localStorage.getItem("vapidKey") || "";
+       const subAppKey = existing ? await getSubAppKeyBase64(reg) : null;
+       const mismatch =
+         !!existing &&
+         (storedKey !== appKey || (subAppKey && subAppKey !== appKey));
+       if (mismatch && existing) {
+         await fetch("/api/push/unsubscribe", {
+           method: "POST",
+           headers: { "Content-Type": "application/json" },
+-          body: JSON.stringify({ endpoint: existing.endpoint }),
++          body: JSON.stringify({
++            orderId: order.id,
++            endpoint: existing.endpoint,
++            role: "customer",
++          }),
+         });
+         await existing.unsubscribe();
+         existing = null;
+       }
+       const sub =
+         existing ||
+         (await reg.pushManager.subscribe({
+           userVisibleOnly: true,
+           applicationServerKey: base64ToUint8Array(appKey),
+         }));
+       await fetch("/api/push/subscribe", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+-        body: JSON.stringify({ orderId: order.id, subscription: sub }),
++        body: JSON.stringify({
++          orderId: order.id,
++          subscription: sub,
++          role: "customer",
++        }),
+       });
+       localStorage.setItem("vapidKey", appKey);
+       setSubscriptionInfo({ endpoint: sub.endpoint });
+     } catch {}
+   };
+ 
+   const handleAllowNotification = async () => {
+     setNotifyLoading(true);
+     try {
+       const permission = await Notification.requestPermission();
+       if (permission === "granted") {
+         await subscribePush();
+         try {
+           if (order) {
+             const image =
+               order.orderItems?.[0]?.pharmacyProduct?.product?.images?.[0];
+             await fetch("/api/push/send", {
+               method: "POST",
+               headers: { "Content-Type": "application/json" },
+               body: JSON.stringify({
+                 orderId: order.id,
+                 status: ORDER_STATUS.PAYMENT_COMPLETE,
+                 image,
+               }),
+             });
+           }
+         } catch {}
+       } else {
+         alert("브라우저 설정에서 알림을 허용할 수 있어요.");
+       }
+       setShowNotifyModal(false);
+     } finally {
+       setNotifyLoading(false);
+     }
+   };
+ 
+   const handleUnsubscribe = async () => {
+     if (!subscriptionInfo || !order) return;
+     if ("serviceWorker" in navigator) {
+       const reg = await navigator.serviceWorker.getRegistration();
+       const sub = await reg?.pushManager.getSubscription();
+       if (sub) {
+         await fetch("/api/push/unsubscribe", {
+           method: "POST",
+           headers: { "Content-Type": "application/json" },
+-          body: JSON.stringify({ orderId: order.id, endpoint: sub.endpoint }),
++          body: JSON.stringify({
++            orderId: order.id,
++            endpoint: sub.endpoint,
++            role: "customer",
++          }),
+         });
+         await sub.unsubscribe();
+       }
+     }
+     localStorage.removeItem("vapidKey");
+     setSubscriptionInfo(null);
+   };
+ 
+   if (loading || (!cancelled && !order)) return <FullPageLoader />;
+   if (cancelled) return <OrderCancelledView onReturn={returnToCart} />;
+   return (
+     <>
+       {showNotifyModal && (
+         <OrderNotifyModal
+           onAllow={handleAllowNotification}
+           onClose={() => setShowNotifyModal(false)}
+           loading={notifyLoading}
+         />
+       )}
+       <div className="w-full max-w-[640px] mx-2 sm:mx-auto">
+         <h1 className="text-2xl font-bold text-center text-gray-800 mb-6 mt-12">
+           결제가 완료되었습니다! ���
+         </h1>
+         <OrderSummary order={order} />
+         <div className="text-center py-4 bg-white shadow rounded-lg mt-4 mx-2 sm:mx-0">
