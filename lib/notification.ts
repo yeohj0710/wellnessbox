@@ -79,6 +79,30 @@ export async function isPharmacySubscribed(
   return !!sub;
 }
 
+export async function saveRiderSubscription(sub: any) {
+  return db.subscription.create({
+    data: {
+      endpoint: sub.endpoint,
+      auth: sub.keys?.auth || "",
+      p256dh: sub.keys?.p256dh || "",
+      role: "rider",
+    },
+  });
+}
+
+export async function removeRiderSubscription(endpoint: string) {
+  return db.subscription.deleteMany({
+    where: { endpoint, role: "rider" },
+  });
+}
+
+export async function isRiderSubscribed(endpoint: string) {
+  const sub = await db.subscription.findFirst({
+    where: { endpoint, role: "rider" },
+  });
+  return !!sub;
+}
+
 export async function sendOrderNotification(
   orderId: number,
   status: string,
@@ -197,6 +221,57 @@ export async function sendNewOrderNotification(orderId: number) {
         err?.statusCode === 410
       ) {
         await removePharmacySubscription(sub.endpoint);
+      }
+    }
+  }
+}
+
+export async function sendRiderNotification(orderId: number) {
+  const order = await db.order.findUnique({
+    where: { id: orderId },
+    include: {
+      orderItems: {
+        include: { pharmacyProduct: { include: { product: true } } },
+      },
+    },
+  });
+  if (!order) return;
+  const subs = await db.subscription.findMany({ where: { role: "rider" } });
+  if (subs.length === 0) return;
+  const firstName =
+    order.orderItems[0]?.pharmacyProduct?.product?.name || "상품";
+  const restCount = order.orderItems.length - 1;
+  const productText =
+    restCount > 0 ? `${firstName} 외 ${restCount}건` : firstName;
+  const phone = order.phone ? `\n전화번호: ${order.phone}` : "";
+  const address = order.roadAddress
+    ? `\n주소: ${order.roadAddress} ${order.detailAddress || ""}`
+    : "";
+  const imageUrl =
+    order.orderItems[0]?.pharmacyProduct?.product?.images?.[0];
+  const message = `'${productText}' 주문이 픽업 대기 중이에요.${phone}${address}`;
+  for (const sub of subs) {
+    const pushSub = {
+      endpoint: sub.endpoint,
+      keys: { auth: sub.auth, p256dh: sub.p256dh },
+    } as any;
+    try {
+      const payload = JSON.stringify({
+        title: "웰니스박스",
+        body: message,
+        url: "/rider",
+        icon: "/logo.png",
+        image: imageUrl,
+        actions: [{ action: "open", title: "주문 확인" }],
+      });
+      await webpush.sendNotification(pushSub, payload);
+    } catch (err: any) {
+      if (
+        err?.statusCode === 403 ||
+        err?.statusCode === 404 ||
+        err?.statusCode === 410
+      ) {
+        await removeRiderSubscription(sub.endpoint);
       }
     }
   }

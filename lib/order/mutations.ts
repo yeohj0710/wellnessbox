@@ -1,15 +1,25 @@
-// Mutation operations related to orders
 "use server";
-import db from "@/lib/db";
-import { OrderStatus } from "./orderStatus";
-import { sendOrderNotification, sendNewOrderNotification } from "@/lib/notification";
 
-export async function updateOrderStatus(orderid: number, newStatus: OrderStatus) {
+import db from "@/lib/db";
+import { ORDER_STATUS, OrderStatus } from "./orderStatus";
+import {
+  sendOrderNotification,
+  sendNewOrderNotification,
+  sendRiderNotification,
+} from "@/lib/notification";
+
+export async function updateOrderStatus(
+  orderid: number,
+  newStatus: OrderStatus
+) {
   const updatedOrder = await db.order.update({
     where: { id: orderid },
     data: { status: newStatus },
   });
   await sendOrderNotification(orderid, newStatus);
+  if (newStatus === ORDER_STATUS.DISPENSE_COMPLETE) {
+    await sendRiderNotification(orderid);
+  }
   return updatedOrder;
 }
 
