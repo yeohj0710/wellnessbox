@@ -39,7 +39,9 @@ export default function Rider() {
     if (!rider) return;
     const load = async () => {
       setIsPageLoading(true);
-      const { orders: fetchedOrders, totalPages } = await getBasicOrdersByRider(1);
+      const { orders: fetchedOrders, totalPages } = await getBasicOrdersByRider(
+        1
+      );
       setOrders(fetchedOrders);
       setTotalPages(totalPages);
       setLoading(false);
@@ -49,16 +51,19 @@ export default function Rider() {
   }, [rider]);
 
   const handlePageChange = async (page: number) => {
-    if (page < 1 || page > totalPages) return;
+    if (page < 1 || page > totalPages || page === currentPage) return;
     setCurrentPage(page);
     setIsPageLoading(true);
-    const { orders: fetchedOrders, totalPages: newTotal } = await getBasicOrdersByRider(
-      page
-    );
+    const { orders: fetchedOrders, totalPages: newTotal } =
+      await getBasicOrdersByRider(page);
     setOrders(fetchedOrders);
     setTotalPages(newTotal);
     setIsPageLoading(false);
   };
+
+  const canGoPrev = currentPage > 1;
+  const canGoNext = currentPage < totalPages;
+
   const OrderAccordionItem = ({
     initialOrder,
     isInitiallyExpanded,
@@ -365,35 +370,65 @@ export default function Rider() {
           />
         ))
       )}
-      <div className="flex justify-center gap-2 mt-4">
-        <button
-          onClick={() => handlePageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-          className="px-3 py-1 text-sm text-sky-600 border border-sky-600 rounded-md disabled:opacity-50"
-        >
-          이전
-        </button>
-        {generateOptimizedPageNumbers(totalPages, currentPage).map((page) => (
-          <button
-            key={page}
-            onClick={() => handlePageChange(page)}
-            className={`px-3 py-1 text-sm rounded-md border ${
-              page === currentPage
-                ? "bg-sky-600 text-white border-sky-600"
-                : "text-sky-600 border-sky-600"
-            }`}
-          >
-            {page}
-          </button>
-        ))}
-        <button
-          onClick={() => handlePageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-          className="px-3 py-1 text-sm text-sky-600 border border-sky-600 rounded-md disabled:opacity-50"
-        >
-          다음
-        </button>
-      </div>
+      <nav aria-label="페이지네이션" className="mt-6">
+        <div className="mx-auto w-full max-w-[640px] px-4">
+          <div className="flex items-center justify-center gap-2 flex-wrap">
+            <button
+              onClick={() => handlePageChange(1)}
+              disabled={!canGoPrev}
+              aria-label="첫 페이지"
+              className="px-3 py-2 rounded-full text-sm font-medium border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+            >
+              «
+            </button>
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={!canGoPrev}
+              aria-label="이전 페이지"
+              className="px-3 py-2 rounded-full text-sm font-medium border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+            >
+              ←
+            </button>
+            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar px-1">
+              {generateOptimizedPageNumbers(totalPages, currentPage).map(
+                (page) => (
+                  <button
+                    key={page}
+                    onClick={() => handlePageChange(page)}
+                    aria-current={page === currentPage ? "page" : undefined}
+                    className={`h-9 min-w-9 px-3 rounded-full text-sm transition-all border ${
+                      page === currentPage
+                        ? "bg-sky-600 text-white border-sky-600 shadow"
+                        : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                )
+              )}
+            </div>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={!canGoNext}
+              aria-label="다음 페이지"
+              className="px-3 py-2 rounded-full text-sm font-medium border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+            >
+              →
+            </button>
+            <button
+              onClick={() => handlePageChange(totalPages)}
+              disabled={!canGoNext}
+              aria-label="마지막 페이지"
+              className="px-3 py-2 rounded-full text-sm font-medium border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+            >
+              »
+            </button>
+          </div>
+          <div className="mt-2 w-full text-center text-xs text-gray-500">
+            페이지 {currentPage} / {totalPages}
+          </div>
+        </div>
+      </nav>
     </div>
   );
 }
