@@ -59,7 +59,11 @@ export default function OrderDetails({ phone, password, onBack }: any) {
         const reg = await registerAndActivateSW();
         const sub = await reg.pushManager.getSubscription();
         if (!sub) {
-          setIsSubscribed(false);
+          if (localStorage.getItem(`notifyOff:${order.id}`) === "true") {
+            setIsSubscribed(false);
+            return;
+          }
+          await subscribePush();
           return;
         }
         try {
@@ -73,7 +77,13 @@ export default function OrderDetails({ phone, password, onBack }: any) {
             }),
           });
           const data = await res.json();
-          setIsSubscribed(!!data.subscribed);
+          if (data.subscribed) {
+            setIsSubscribed(true);
+          } else if (localStorage.getItem(`notifyOff:${order.id}`) === "true") {
+            setIsSubscribed(false);
+          } else {
+            await subscribePush();
+          }
         } catch {
           setIsSubscribed(null);
         }
@@ -102,7 +112,11 @@ export default function OrderDetails({ phone, password, onBack }: any) {
     }, [isExpanded, isLoaded]);
     useEffect(() => {
       if (!isExpanded) return;
-      const es = new EventSource(`/api/messages/stream/${order.id}`);
+      const es = new EventSource(
+        `/api/messages/stream/${order.id}?role=customer&phone=${encodeURIComponent(
+          phone
+        )}&password=${encodeURIComponent(password)}`
+      );
       es.onmessage = (e) => {
         try {
           const msg = JSON.parse(e.data);
@@ -191,6 +205,7 @@ export default function OrderDetails({ phone, password, onBack }: any) {
           }),
         });
         localStorage.setItem("vapidKey", appKey);
+        localStorage.removeItem(`notifyOff:${order.id}`);
         setIsSubscribed(true);
       } catch (e) {
         console.error(e);
@@ -219,6 +234,7 @@ export default function OrderDetails({ phone, password, onBack }: any) {
           await sub.unsubscribe();
         }
         localStorage.removeItem("vapidKey");
+        localStorage.setItem(`notifyOff:${order.id}`, "true");
         setIsSubscribed(false);
       } catch (e) {
         console.error(e);

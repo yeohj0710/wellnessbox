@@ -182,7 +182,7 @@ export async function sendOrderNotification(
         err?.statusCode === 404 ||
         err?.statusCode === 410
       ) {
-        await removeSubscription(sub.endpoint);
+        await removeSubscription(sub.endpoint, orderId, "customer");
       }
     }
   }
@@ -199,7 +199,9 @@ export async function sendNewOrderNotification(orderId: number) {
   });
   const pharmacyId = order?.pharmacyId;
   if (!order || !pharmacyId) return;
-  const subs = await db.subscription.findMany({ where: { pharmacyId } });
+  const subs = await db.subscription.findMany({
+    where: { pharmacyId, role: "pharm" },
+  });
   if (subs.length === 0) return;
   const firstName =
     order.orderItems[0]?.pharmacyProduct?.product?.name || "상품";
@@ -233,7 +235,7 @@ export async function sendNewOrderNotification(orderId: number) {
         err?.statusCode === 404 ||
         err?.statusCode === 410
       ) {
-        await removePharmacySubscription(sub.endpoint);
+        await removePharmacySubscription(sub.endpoint, pharmacyId);
       }
     }
   }

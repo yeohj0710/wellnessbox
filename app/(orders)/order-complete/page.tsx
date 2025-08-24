@@ -447,6 +447,7 @@ export default function OrderComplete() {
         }),
       });
       localStorage.setItem("vapidKey", appKey);
+      localStorage.removeItem(`notifyOff:${order.id}`);
       setSubscriptionInfo({ endpoint: sub.endpoint });
     } catch {}
   };
@@ -500,6 +501,7 @@ export default function OrderComplete() {
       }
     }
     localStorage.removeItem("vapidKey");
+    if (order) localStorage.setItem(`notifyOff:${order.id}`, "true");
     setSubscriptionInfo(null);
   };
 

@@ -59,7 +59,9 @@ export default function OrderAccordionItem({
     }, [isExpanded, isLoaded]);
     useEffect(() => {
       if (!isExpanded) return;
-      const es = new EventSource(`/api/messages/stream/${order.id}`);
+      const es = new EventSource(
+        `/api/messages/stream/${order.id}?role=pharm`
+      );
       es.onmessage = (e) => {
         try {
           const msg = JSON.parse(e.data);

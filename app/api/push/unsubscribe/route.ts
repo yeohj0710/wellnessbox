@@ -5,8 +5,11 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { endpoint, orderId, role } = body;
-    if (!endpoint) {
-      return NextResponse.json({ error: 'Missing endpoint' }, { status: 400 });
+    if (!endpoint || !orderId || !role) {
+      return NextResponse.json(
+        { error: 'Missing params' },
+        { status: 400 }
+      );
     }
     await removeSubscription(endpoint, orderId, role);
     return NextResponse.json({ ok: true });
