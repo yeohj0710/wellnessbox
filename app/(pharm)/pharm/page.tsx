@@ -162,7 +162,7 @@ export default function Pharm() {
             <p className="text-sm font-semibold text-gray-900">
               신규 주문 알림
             </p>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-500 mt-0.5">
               새 주문이 접수되거나 상담 메시지가 오면 알림을 보내드려요.
             </p>
           </div>

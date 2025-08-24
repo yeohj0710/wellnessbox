@@ -157,7 +157,7 @@ export default function Rider() {
             <p className="text-sm font-semibold text-gray-900">
               픽업 대기 주문 알림
             </p>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-500 mt-0.5">
               조제가 완료되어 픽업이 필요한 주문이 생기면 알려드려요.
             </p>
           </div>

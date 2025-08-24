@@ -75,7 +75,11 @@ export default function OrderAccordionHeader({
           </button>
         )}
 
-        <span className="absolute right-0 top-[55%] -translate-y-1/2 w-6 h-6 flex items-center justify-center">
+        <span
+          className={`absolute right-0 ${
+            toggleSubscription ? "top-[55%]" : "top-1/2"
+          } -translate-y-1/2 w-6 h-6 flex items-center justify-center`}
+        >
           {isExpanded ? (
             <ChevronUpIcon className="w-6 h-6 text-gray-600" />
           ) : (

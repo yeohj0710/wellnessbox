@@ -13,6 +13,9 @@ export async function saveSubscription(
   sub: any,
   role: string
 ) {
+  await db.subscription.deleteMany({
+    where: { endpoint: sub.endpoint, orderId, role },
+  });
   return db.subscription.create({
     data: {
       endpoint: sub.endpoint,

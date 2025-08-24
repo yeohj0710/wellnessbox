@@ -52,11 +52,12 @@ export default function OrderNotifyModal({
                 🔔
               </div>
               <h2 className="text-center text-lg sm:text-xl font-extrabold text-[#0F1222]">
-                배송 알림을 받으시겠어요?
+                배송 알림과 약사님 메시지 알림을 받으시겠어요?
               </h2>
               <p className="mt-3 text-center text-sm leading-5 text-gray-600">
-                알림을 허용하면 배송 진행 상황을 알려드려요. 브라우저에서 알림을
-                거부했다면 설정에서 다시 허용할 수 있어요.
+                알림을 허용하면 배송 진행 상황과 약사님에게 메시지가 왔을 때
+                알려드려요. 브라우저에서 알림을 거부했다면 설정에서 다시 허용할
+                수 있어요.
               </p>
               <div className="mt-6 grid grid-cols-2 gap-2">
                 <button

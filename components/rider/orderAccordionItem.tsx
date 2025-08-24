@@ -7,11 +7,6 @@ import OrderProgressBar from "@/components/order/orderProgressBar";
 import OrderAccordionHeader from "@/components/order/orderAccordionHeader";
 import { ORDER_STATUS, OrderStatus } from "@/lib/order/orderStatus";
 import Image from "next/image";
-import {
-  base64ToUint8Array,
-  getSubAppKeyBase64,
-  registerAndActivateSW,
-} from "@/lib/push";
 
 type OrderAccordionItemProps = {
   initialOrder: any;
@@ -27,8 +22,6 @@ export default function OrderAccordionItem({
   const [isLoaded, setIsLoaded] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState<number | null>(null);
   const [isStateRefreshing, setIsStateRefreshing] = useState(false);
-  const [isSubscribed, setIsSubscribed] = useState(false);
-  const [isSubscribeLoading, setIsSubscribeLoading] = useState(false);
 
   useEffect(() => {
     if (!isExpanded || isLoaded) return;
@@ -48,29 +41,6 @@ export default function OrderAccordionItem({
     return () => clearInterval(intervalId);
   }, [isExpanded, isLoaded]);
 
-  useEffect(() => {
-    const checkSubscription = async () => {
-      if (!("serviceWorker" in navigator)) return;
-      const reg = await registerAndActivateSW();
-      const sub = await reg.pushManager.getSubscription();
-      if (!sub) return;
-      try {
-        const res = await fetch("/api/push/status", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            orderId: order.id,
-            endpoint: sub.endpoint,
-            role: "rider",
-          }),
-        });
-        const data = await res.json();
-        setIsSubscribed(!!data.subscribed);
-      } catch {}
-    };
-    checkSubscription();
-  }, [order.id]);
-
   const toggleExpanded = () => {
     setIsExpanded((prev) => !prev);
   };
@@ -89,84 +59,6 @@ export default function OrderAccordionItem({
     }
   };
 
-  const subscribePush = async () => {
-    if (!("serviceWorker" in navigator)) return;
-    setIsSubscribeLoading(true);
-    try {
-      const reg = await registerAndActivateSW();
-      let existing = await reg.pushManager.getSubscription();
-      const appKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").trim();
-      if (!appKey) return;
-      const storedKey = localStorage.getItem("vapidKey") || "";
-      const subAppKey = existing ? await getSubAppKeyBase64(reg) : null;
-      const mismatch =
-        !!existing &&
-        (storedKey !== appKey || (subAppKey && subAppKey !== appKey));
-      if (mismatch && existing) {
-        await fetch("/api/push/unsubscribe", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            orderId: order.id,
-            endpoint: existing.endpoint,
-            role: "rider",
-          }),
-        });
-        await existing.unsubscribe();
-        existing = null;
-      }
-      const sub =
-        existing ||
-        (await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: base64ToUint8Array(appKey),
-        }));
-      await fetch("/api/push/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          orderId: order.id,
-          subscription: sub,
-          role: "rider",
-        }),
-      });
-      localStorage.setItem("vapidKey", appKey);
-      setIsSubscribed(true);
-    } catch (e) {
-      console.error(e);
-      alert("알림 설정에 실패했습니다.");
-    } finally {
-      setIsSubscribeLoading(false);
-    }
-  };
-
-  const unsubscribePush = async () => {
-    if (!("serviceWorker" in navigator)) return;
-    setIsSubscribeLoading(true);
-    try {
-      const reg = await navigator.serviceWorker.getRegistration();
-      const sub = await reg?.pushManager.getSubscription();
-      if (sub) {
-        await fetch("/api/push/unsubscribe", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            orderId: order.id,
-            endpoint: sub.endpoint,
-            role: "rider",
-          }),
-        });
-        await sub.unsubscribe();
-      }
-      localStorage.removeItem("vapidKey");
-      setIsSubscribed(false);
-    } catch (e) {
-      console.error(e);
-      alert("알림 해제에 실패했습니다.");
-    } finally {
-      setIsSubscribeLoading(false);
-    }
-  };
 
   const handleUpdateOrderStatus = async (
     orderid: number,
@@ -189,15 +81,6 @@ export default function OrderAccordionItem({
             order={order}
             isExpanded={isExpanded}
             toggle={toggleExpanded}
-            isSubscribed={isSubscribed}
-            toggleSubscription={() => {
-              if (isSubscribed) {
-                unsubscribePush();
-              } else {
-                subscribePush();
-              }
-            }}
-            subscriptionLoading={isSubscribeLoading}
           />
           <div className="mt-4 border-t sm:px-4 pt-16 sm:pt-12 pb-4">
             <div className="flex justify-center items-center mt-2 mb-6">
@@ -215,15 +98,6 @@ export default function OrderAccordionItem({
           order={order}
           isExpanded={isExpanded}
           toggle={toggleExpanded}
-          isSubscribed={isSubscribed}
-          toggleSubscription={() => {
-            if (isSubscribed) {
-              unsubscribePush();
-            } else {
-              subscribePush();
-            }
-          }}
-          subscriptionLoading={isSubscribeLoading}
         />
         {isExpanded && (
         <div className="mt-4 border-t sm:px-4 pt-16 sm:pt-12 pb-4">
