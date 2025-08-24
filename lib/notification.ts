@@ -210,8 +210,7 @@ export async function sendNewOrderNotification(orderId: number) {
   const address = order.roadAddress
     ? `\n주소: ${order.roadAddress} ${order.detailAddress || ""}`
     : "";
-  const imageUrl =
-    order.orderItems[0]?.pharmacyProduct?.product?.images?.[0];
+  const imageUrl = order.orderItems[0]?.pharmacyProduct?.product?.images?.[0];
   const message = `'${productText}' 주문이 들어왔어요.${phone}${address}`;
   for (const sub of subs) {
     const pushSub = {
@@ -261,8 +260,7 @@ export async function sendRiderNotification(orderId: number) {
   const address = order.roadAddress
     ? `\n주소: ${order.roadAddress} ${order.detailAddress || ""}`
     : "";
-  const imageUrl =
-    order.orderItems[0]?.pharmacyProduct?.product?.images?.[0];
+  const imageUrl = order.orderItems[0]?.pharmacyProduct?.product?.images?.[0];
   const message = `'${productText}' 주문이 픽업 대기 중이에요.${phone}${address}`;
   for (const sub of subs) {
     const pushSub = {
@@ -286,6 +284,101 @@ export async function sendRiderNotification(orderId: number) {
         err?.statusCode === 410
       ) {
         await removeRiderSubscription(sub.endpoint);
+      }
+    }
+  }
+}
+
+export async function sendPharmacyMessageNotification(
+  orderId: number,
+  content: string
+) {
+  const order = await db.order.findUnique({
+    where: { id: orderId },
+    include: {
+      orderItems: {
+        include: { pharmacyProduct: { include: { product: true } } },
+      },
+    },
+  });
+  const pharmacyId = order?.pharmacyId;
+  if (!order || !pharmacyId) return;
+  const subs = await db.subscription.findMany({
+    where: { pharmacyId, role: "pharm" },
+  });
+  if (subs.length === 0) return;
+  const firstName =
+    order.orderItems[0]?.pharmacyProduct?.product?.name || "상품";
+  const restCount = order.orderItems.length - 1;
+  const productText =
+    restCount > 0 ? `${firstName} 외 ${restCount}건` : firstName;
+  const phoneText = order.phone ? `${order.phone} ` : "";
+  const message = `${phoneText}고객이 '${productText}' 주문에 대해 메시지를 보냈어요: ${content}`;
+  for (const sub of subs) {
+    const pushSub = {
+      endpoint: sub.endpoint,
+      keys: { auth: sub.auth, p256dh: sub.p256dh },
+    } as any;
+    try {
+      const payload = JSON.stringify({
+        title: "웰니스박스",
+        body: message,
+        url: "/pharm",
+        icon: "/logo.png",
+      });
+      await webpush.sendNotification(pushSub, payload);
+    } catch (err: any) {
+      if (
+        err?.statusCode === 403 ||
+        err?.statusCode === 404 ||
+        err?.statusCode === 410
+      ) {
+        await removePharmacySubscription(sub.endpoint, pharmacyId);
+      }
+    }
+  }
+}
+
+export async function sendCustomerMessageNotification(
+  orderId: number,
+  content: string
+) {
+  const order = await db.order.findUnique({
+    where: { id: orderId },
+    include: {
+      pharmacy: true,
+      orderItems: {
+        include: { pharmacyProduct: { include: { product: true } } },
+      },
+    },
+  });
+  if (!order) return;
+  const subs = await db.subscription.findMany({
+    where: { orderId, role: "customer" },
+  });
+  if (subs.length === 0) return;
+  const pharmacyName = order.pharmacy?.name || "약국";
+  const message = `${pharmacyName}에서 약사님이 메시지를 보냈어요: ${content}`;
+  for (const sub of subs) {
+    const pushSub = {
+      endpoint: sub.endpoint,
+      keys: { auth: sub.auth, p256dh: sub.p256dh },
+    } as any;
+    try {
+      const payload = JSON.stringify({
+        title: "웰니스박스",
+        body: message,
+        url: "/my-orders",
+        icon: "/logo.png",
+      });
+      await webpush.sendNotification(pushSub, payload);
+    } catch (err: any) {
+      if (
+        err?.statusCode === 403 ||
+        err?.statusCode === 404 ||
+        err?.statusCode === 410
+      ) {
+        await removeSubscription(sub.endpoint, orderId, "customer");
       }
     }
   }

@@ -16,7 +16,7 @@ export default function Rider() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isPageLoading, setIsPageLoading] = useState(false);
-  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState<boolean | null>(null);
   const [isSubscribeLoading, setIsSubscribeLoading] = useState(false);
   const router = useRouter();
 
@@ -85,7 +85,7 @@ export default function Rider() {
           await subscribePush();
         }
       } catch {
-        setIsSubscribed(false);
+        setIsSubscribed(null);
       }
     };
     check();
@@ -164,26 +164,26 @@ export default function Rider() {
           <div className="flex items-center gap-3">
             <label
               className={`relative inline-flex items-center ${
-                isSubscribeLoading
+                isSubscribeLoading || isSubscribed === null
                   ? "opacity-50 pointer-events-none"
                   : "cursor-pointer"
               }`}
             >
               <input
                 type="checkbox"
-                checked={isSubscribed}
+                checked={!!isSubscribed}
                 onChange={() =>
                   isSubscribed ? unsubscribePush() : subscribePush()
                 }
-                disabled={isSubscribeLoading}
+                disabled={isSubscribeLoading || isSubscribed === null}
                 className="sr-only peer"
                 aria-label="픽업 대기 주문 알림"
-                aria-checked={isSubscribed}
+                aria-checked={!!isSubscribed}
                 role="switch"
               />
               <span className="w-12 h-7 rounded-full bg-gray-200 peer-checked:bg-sky-500 transition-colors duration-200 relative after:absolute after:top-0.5 after:left-0.5 after:h-6 after:w-6 after:rounded-full after:bg-white after:shadow after:transition-transform after:duration-200 peer-checked:after:translate-x-5"></span>
             </label>
-            {isSubscribeLoading ? (
+            {isSubscribeLoading || isSubscribed === null ? (
               <span
                 className="w-5 h-5 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"
                 aria-hidden="true"

@@ -422,7 +422,11 @@ export default function OrderComplete() {
         await fetch("/api/push/unsubscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ endpoint: existing.endpoint }),
+          body: JSON.stringify({
+            endpoint: existing.endpoint,
+            role: "customer",
+            orderId: order.id,
+          }),
         });
         await existing.unsubscribe();
         existing = null;
@@ -436,7 +440,11 @@ export default function OrderComplete() {
       await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId: order.id, subscription: sub }),
+        body: JSON.stringify({
+          orderId: order.id,
+          subscription: sub,
+          role: "customer",
+        }),
       });
       localStorage.setItem("vapidKey", appKey);
       setSubscriptionInfo({ endpoint: sub.endpoint });
@@ -482,7 +490,11 @@ export default function OrderComplete() {
         await fetch("/api/push/unsubscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderId: order.id, endpoint: sub.endpoint }),
+          body: JSON.stringify({
+            orderId: order.id,
+            endpoint: sub.endpoint,
+            role: "customer",
+          }),
         });
         await sub.unsubscribe();
       }

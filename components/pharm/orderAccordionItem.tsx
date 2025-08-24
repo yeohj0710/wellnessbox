@@ -59,11 +59,19 @@ export default function OrderAccordionItem({
     }, [isExpanded, isLoaded]);
     useEffect(() => {
       if (!isExpanded) return;
-      const intervalId = setInterval(() => {
-        refreshMessages();
-      }, 60000);
-      return () => clearInterval(intervalId);
-    }, [isExpanded, isLoaded]);
+      const es = new EventSource(`/api/messages/stream/${order.id}`);
+      es.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data);
+          setMessages((prev) =>
+            prev.some((m: any) => m.id === msg.id) ? prev : [...prev, msg]
+          );
+        } catch {}
+      };
+      return () => {
+        es.close();
+      };
+    }, [isExpanded, order.id]);
     useEffect(() => {
       if (!isExpanded || !isLoaded) return;
       if (messagesContainerRef.current) {

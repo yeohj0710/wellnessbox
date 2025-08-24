@@ -49,7 +49,7 @@ export default function OrderDetails({ phone, password, onBack }: any) {
     const [isSending, setIsSending] = useState(false);
     const [isMessagesRefreshing, setIsMessagesRefreshing] = useState(false);
     const [isStateRefreshing, setIsStateRefreshing] = useState(false);
-    const [isSubscribed, setIsSubscribed] = useState(false);
+    const [isSubscribed, setIsSubscribed] = useState<boolean | null>(null);
     const [isSubscribeLoading, setIsSubscribeLoading] = useState(false);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -58,7 +58,10 @@ export default function OrderDetails({ phone, password, onBack }: any) {
         if (!("serviceWorker" in navigator)) return;
         const reg = await registerAndActivateSW();
         const sub = await reg.pushManager.getSubscription();
-        if (!sub) return;
+        if (!sub) {
+          setIsSubscribed(false);
+          return;
+        }
         try {
           const res = await fetch("/api/push/status", {
             method: "POST",
@@ -71,7 +74,9 @@ export default function OrderDetails({ phone, password, onBack }: any) {
           });
           const data = await res.json();
           setIsSubscribed(!!data.subscribed);
-        } catch {}
+        } catch {
+          setIsSubscribed(null);
+        }
       };
       checkSubscription();
     }, [order.id]);
@@ -97,11 +102,19 @@ export default function OrderDetails({ phone, password, onBack }: any) {
     }, [isExpanded, isLoaded]);
     useEffect(() => {
       if (!isExpanded) return;
-      const intervalId = setInterval(() => {
-        refreshMessages();
-      }, 60000);
-      return () => clearInterval(intervalId);
-    }, [isExpanded, isLoaded]);
+      const es = new EventSource(`/api/messages/stream/${order.id}`);
+      es.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data);
+          setMessages((prev) =>
+            prev.some((m: any) => m.id === msg.id) ? prev : [...prev, msg]
+          );
+        } catch {}
+      };
+      return () => {
+        es.close();
+      };
+    }, [isExpanded, order.id]);
     useEffect(() => {
       if (!isExpanded || !isLoaded) return;
       if (messagesContainerRef.current) {
@@ -254,7 +267,7 @@ export default function OrderDetails({ phone, password, onBack }: any) {
             isExpanded={isExpanded}
             toggle={toggleExpanded}
             onBack={onBack}
-            isSubscribed={isSubscribed}
+            isSubscribed={!!isSubscribed}
             toggleSubscription={() => {
               if (isSubscribed) {
                 unsubscribePush();
@@ -262,7 +275,7 @@ export default function OrderDetails({ phone, password, onBack }: any) {
                 subscribePush();
               }
             }}
-            subscriptionLoading={isSubscribeLoading}
+            subscriptionLoading={isSubscribeLoading || isSubscribed === null}
           />
           <div className="mt-4 border-t sm:px-4 pt-16 sm:pt-12 pb-4">
             <div className="flex justify-center items-center mt-2 mb-6">
@@ -280,7 +293,7 @@ export default function OrderDetails({ phone, password, onBack }: any) {
           isExpanded={isExpanded}
           toggle={toggleExpanded}
           onBack={onBack}
-          isSubscribed={isSubscribed}
+          isSubscribed={!!isSubscribed}
           toggleSubscription={() => {
             if (isSubscribed) {
               unsubscribePush();
@@ -288,7 +301,7 @@ export default function OrderDetails({ phone, password, onBack }: any) {
               subscribePush();
             }
           }}
-          subscriptionLoading={isSubscribeLoading}
+          subscriptionLoading={isSubscribeLoading || isSubscribed === null}
         />
         {isExpanded && (
           <div className="mt-4 border-t sm:px-4 pt-16 sm:pt-12 pb-4">
