@@ -5,7 +5,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { orderId, subscription, role } = body;
-    if (!orderId || !subscription || !role) {
+    if (!orderId || !subscription || role !== "customer") {
       return NextResponse.json({ error: 'Missing params' }, { status: 400 });
     }
     await saveSubscription(orderId, subscription, role);

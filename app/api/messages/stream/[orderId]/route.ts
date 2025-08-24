@@ -1,43 +1,48 @@
 import { messageEvents } from "@/lib/events";
 import db from "@/lib/db";
-import getSession from "@/lib/session";
+import { verify } from "@/lib/jwt";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type Params = Promise<{ orderId: string }>;
-
-export async function GET(req: Request, { params }: { params: Params }) {
-  const { orderId: orderIdStr } = await params;
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ orderId: string }> }
+) {
+  const { orderId: orderIdStr } = await params; // ✅ 반드시 await
   const orderId = Number(orderIdStr);
   if (!orderId) return new Response("Invalid orderId", { status: 400 });
 
   const { searchParams } = new URL(req.url);
-  const role = searchParams.get("role");
-  if (role === "customer") {
-    const phone = searchParams.get("phone");
-    const password = searchParams.get("password");
-    if (!phone || !password)
+  const token = searchParams.get("token");
+  if (!token) return new Response("Unauthorized", { status: 403 });
+
+  try {
+    const payload = verify(token);
+    if (payload.role === "customer") {
+      if (payload.orderId !== orderId)
+        return new Response("Unauthorized", { status: 403 });
+    } else if (payload.role === "pharm") {
+      const order = await db.order.findFirst({
+        where: { id: orderId, pharmacyId: payload.pharmacyId },
+      });
+      if (!order) return new Response("Unauthorized", { status: 403 });
+    } else if (payload.role === "rider") {
+      const order = await db.order.findFirst({
+        where: { id: orderId, riderId: payload.riderId },
+      });
+      if (!order) return new Response("Unauthorized", { status: 403 });
+    } else {
       return new Response("Unauthorized", { status: 403 });
-    const order = await db.order.findFirst({
-      where: { id: orderId, phone, password },
-    });
-    if (!order) return new Response("Unauthorized", { status: 403 });
-  } else if (role === "pharm") {
-    const session = await getSession();
-    const pharmId = session.pharm?.id;
-    if (!pharmId) return new Response("Unauthorized", { status: 403 });
-    const order = await db.order.findFirst({
-      where: { id: orderId, pharmacyId: pharmId },
-    });
-    if (!order) return new Response("Unauthorized", { status: 403 });
-  } else {
+    }
+  } catch {
     return new Response("Unauthorized", { status: 403 });
   }
 
   const encoder = new TextEncoder();
   let onMessage: ((msg: any) => void) | null = null;
   let keepAlive: any;
+
   const stream = new ReadableStream({
     start(controller) {
       onMessage = (msg: any) => {
@@ -54,6 +59,7 @@ export async function GET(req: Request, { params }: { params: Params }) {
       clearInterval(keepAlive);
     },
   });
+
   return new Response(stream, {
     headers: {
       "Content-Type": "text/event-stream",

@@ -13,31 +13,24 @@ export async function saveSubscription(
   sub: any,
   role: string
 ) {
-  await db.subscription.deleteMany({
-    where: { endpoint: sub.endpoint, orderId, role },
-  });
-  return db.subscription.create({
-    data: {
-      endpoint: sub.endpoint,
-      auth: sub.keys?.auth || "",
-      p256dh: sub.keys?.p256dh || "",
-      orderId,
-      role,
+  const auth = sub.keys?.auth || "";
+  const p256dh = sub.keys?.p256dh || "";
+  return db.subscription.upsert({
+    where: {
+      role_orderId_endpoint: { role, orderId, endpoint: sub.endpoint },
     },
+    update: { auth, p256dh },
+    create: { role, orderId, endpoint: sub.endpoint, auth, p256dh },
   });
 }
 
 export async function removeSubscription(
   endpoint: string,
-  orderId?: number,
-  role?: string
+  orderId: number,
+  role: string
 ) {
   return db.subscription.deleteMany({
-    where: {
-      endpoint,
-      ...(orderId ? { orderId } : {}),
-      ...(role ? { role } : {}),
-    },
+    where: { endpoint, orderId, role },
   });
 }
 
@@ -53,30 +46,33 @@ export async function isSubscribed(
 }
 
 export async function savePharmacySubscription(pharmacyId: number, sub: any) {
-  await db.subscription.deleteMany({
-    where: { endpoint: sub.endpoint, pharmacyId, role: "pharm" },
-  });
-  return db.subscription.create({
-    data: {
-      endpoint: sub.endpoint,
-      auth: sub.keys?.auth || "",
-      p256dh: sub.keys?.p256dh || "",
-      pharmacyId,
+  const auth = sub.keys?.auth || "";
+  const p256dh = sub.keys?.p256dh || "";
+  return db.subscription.upsert({
+    where: {
+      role_pharmacyId_endpoint: {
+        role: "pharm",
+        pharmacyId,
+        endpoint: sub.endpoint,
+      },
+    },
+    update: { auth, p256dh },
+    create: {
       role: "pharm",
+      pharmacyId,
+      endpoint: sub.endpoint,
+      auth,
+      p256dh,
     },
   });
 }
 
 export async function removePharmacySubscription(
   endpoint: string,
-  pharmacyId?: number
+  pharmacyId: number
 ) {
   return db.subscription.deleteMany({
-    where: {
-      endpoint,
-      role: "pharm",
-      ...(pharmacyId ? { pharmacyId } : {}),
-    },
+    where: { endpoint, pharmacyId, role: "pharm" },
   });
 }
 
@@ -90,29 +86,37 @@ export async function isPharmacySubscribed(
   return !!sub;
 }
 
-export async function saveRiderSubscription(sub: any) {
-  await db.subscription.deleteMany({
-    where: { endpoint: sub.endpoint, role: "rider" },
-  });
-  return db.subscription.create({
-    data: {
-      endpoint: sub.endpoint,
-      auth: sub.keys?.auth || "",
-      p256dh: sub.keys?.p256dh || "",
+export async function saveRiderSubscription(riderId: number, sub: any) {
+  const auth = sub.keys?.auth || "";
+  const p256dh = sub.keys?.p256dh || "";
+  return db.subscription.upsert({
+    where: {
+      role_riderId_endpoint: {
+        role: "rider",
+        riderId,
+        endpoint: sub.endpoint,
+      },
+    },
+    update: { auth, p256dh },
+    create: {
       role: "rider",
+      riderId,
+      endpoint: sub.endpoint,
+      auth,
+      p256dh,
     },
   });
 }
 
-export async function removeRiderSubscription(endpoint: string) {
+export async function removeRiderSubscription(endpoint: string, riderId: number) {
   return db.subscription.deleteMany({
-    where: { endpoint, role: "rider" },
+    where: { endpoint, riderId, role: "rider" },
   });
 }
 
-export async function isRiderSubscribed(endpoint: string) {
+export async function isRiderSubscribed(riderId: number, endpoint: string) {
   const sub = await db.subscription.findFirst({
-    where: { endpoint, role: "rider" },
+    where: { riderId, endpoint, role: "rider" },
   });
   return !!sub;
 }
@@ -123,7 +127,7 @@ export async function sendOrderNotification(
   image?: string
 ) {
   const subs = await db.subscription.findMany({
-    where: { orderId, role: "customer" },
+    where: { role: "customer", orderId },
   });
   if (subs.length === 0) return;
   const order = await db.order.findUnique({
@@ -250,8 +254,11 @@ export async function sendRiderNotification(orderId: number) {
       },
     },
   });
-  if (!order) return;
-  const subs = await db.subscription.findMany({ where: { role: "rider" } });
+  const riderId = order?.riderId;
+  if (!order || !riderId) return;
+  const subs = await db.subscription.findMany({
+    where: { role: "rider", riderId },
+  });
   if (subs.length === 0) return;
   const firstName =
     order.orderItems[0]?.pharmacyProduct?.product?.name || "상품";
@@ -285,7 +292,7 @@ export async function sendRiderNotification(orderId: number) {
         err?.statusCode === 404 ||
         err?.statusCode === 410
       ) {
-        await removeRiderSubscription(sub.endpoint);
+        await removeRiderSubscription(sub.endpoint, riderId);
       }
     }
   }
@@ -356,7 +363,7 @@ export async function sendCustomerMessageNotification(
   });
   if (!order) return;
   const subs = await db.subscription.findMany({
-    where: { orderId, role: "customer" },
+    where: { role: "customer", orderId },
   });
   if (subs.length === 0) return;
   const pharmacyName = order.pharmacy?.name || "약국";

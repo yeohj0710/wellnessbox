@@ -78,6 +78,7 @@ export default function Pharm() {
           body: JSON.stringify({
             pharmacyId: pharm.id,
             endpoint: sub.endpoint,
+            role: "pharm",
           }),
         });
         const data = await res.json();
@@ -91,6 +92,16 @@ export default function Pharm() {
       }
     };
     check();
+    const onChange = () => {
+      check();
+      navigator.serviceWorker.removeEventListener("controllerchange", onChange);
+    };
+    if ("serviceWorker" in navigator)
+      navigator.serviceWorker.addEventListener("controllerchange", onChange);
+    return () => {
+      if ("serviceWorker" in navigator)
+        navigator.serviceWorker.removeEventListener("controllerchange", onChange);
+    };
   }, [pharm]);
 
   const subscribePush = async () => {
@@ -110,7 +121,11 @@ export default function Pharm() {
       await fetch("/api/pharm-push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pharmacyId: pharm?.id, subscription: sub }),
+        body: JSON.stringify({
+          pharmacyId: pharm?.id,
+          subscription: sub,
+          role: "pharm",
+        }),
       });
       localStorage.removeItem("pharmNotifyOff");
       setIsSubscribed(true);
@@ -135,6 +150,7 @@ export default function Pharm() {
           body: JSON.stringify({
             pharmacyId: pharm?.id,
             endpoint: sub.endpoint,
+            role: "pharm",
           }),
         });
         await sub.unsubscribe();

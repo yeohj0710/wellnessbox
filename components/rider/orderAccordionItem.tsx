@@ -22,6 +22,7 @@ export default function OrderAccordionItem({
   const [isLoaded, setIsLoaded] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState<number | null>(null);
   const [isStateRefreshing, setIsStateRefreshing] = useState(false);
+  const [, setMessages] = useState<any[]>([]);
 
   useEffect(() => {
     if (!isExpanded || isLoaded) return;
@@ -40,6 +41,40 @@ export default function OrderAccordionItem({
     }, 10000);
     return () => clearInterval(intervalId);
   }, [isExpanded, isLoaded]);
+
+  useEffect(() => {
+    if (!isExpanded) return;
+    let es: EventSource | null = null;
+    const connect = async () => {
+      try {
+        const res = await fetch("/api/messages/stream/token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: "rider", orderId: order.id }),
+        });
+        const data = await res.json();
+        if (data.token) {
+          es = new EventSource(
+            `/api/messages/stream/${order.id}?token=${data.token}`
+          );
+          es.onmessage = (e) => {
+            try {
+              const msg = JSON.parse(e.data);
+              setMessages((prev) =>
+                prev.some((m: any) => m.id === msg.id)
+                  ? prev
+                  : [...prev, msg]
+              );
+            } catch {}
+          };
+        }
+      } catch {}
+    };
+    connect();
+    return () => {
+      es?.close();
+    };
+  }, [isExpanded, order.id]);
 
   const toggleExpanded = () => {
     setIsExpanded((prev) => !prev);

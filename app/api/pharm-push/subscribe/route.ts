@@ -4,8 +4,8 @@ import { savePharmacySubscription } from "@/lib/notification";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { pharmacyId, subscription } = body;
-    if (!pharmacyId || !subscription) {
+    const { pharmacyId, subscription, role } = body;
+    if (!pharmacyId || !subscription || role !== "pharm") {
       return NextResponse.json({ error: "Missing params" }, { status: 400 });
     }
     await savePharmacySubscription(pharmacyId, subscription);

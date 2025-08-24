@@ -123,6 +123,7 @@ model Rider {
   userId    String?
   password  String?
   orders    Order[]
+  subscriptions Subscription[]
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 }
@@ -151,6 +152,12 @@ model Subscription {
   orderId   Int?
   pharmacy  Pharmacy? @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
   pharmacyId Int?
-  role      String?
+  rider     Rider?    @relation(fields: [riderId], references: [id], onDelete: Cascade)
+  riderId   Int?
+  role      String
   createdAt DateTime @default(now())
+
+  @@unique([role, orderId, endpoint])
+  @@unique([role, pharmacyId, endpoint])
+  @@unique([role, riderId, endpoint])
 }

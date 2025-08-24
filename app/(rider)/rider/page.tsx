@@ -76,7 +76,11 @@ export default function Rider() {
         const res = await fetch("/api/rider-push/status", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ endpoint: sub.endpoint }),
+          body: JSON.stringify({
+            riderId: rider.id,
+            endpoint: sub.endpoint,
+            role: "rider",
+          }),
         });
         const data = await res.json();
         if (data.subscribed) {
@@ -89,6 +93,16 @@ export default function Rider() {
       }
     };
     check();
+    const onChange = () => {
+      check();
+      navigator.serviceWorker.removeEventListener("controllerchange", onChange);
+    };
+    if ("serviceWorker" in navigator)
+      navigator.serviceWorker.addEventListener("controllerchange", onChange);
+    return () => {
+      if ("serviceWorker" in navigator)
+        navigator.serviceWorker.removeEventListener("controllerchange", onChange);
+    };
   }, [rider]);
 
   const subscribePush = async () => {
@@ -108,7 +122,11 @@ export default function Rider() {
       await fetch("/api/rider-push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subscription: sub }),
+        body: JSON.stringify({
+          riderId: rider?.id,
+          subscription: sub,
+          role: "rider",
+        }),
       });
       localStorage.removeItem("riderNotifyOff");
       setIsSubscribed(true);
@@ -130,7 +148,11 @@ export default function Rider() {
         await fetch("/api/rider-push/unsubscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ endpoint: sub.endpoint }),
+          body: JSON.stringify({
+            riderId: rider?.id,
+            endpoint: sub.endpoint,
+            role: "rider",
+          }),
         });
         await sub.unsubscribe();
       }

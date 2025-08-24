@@ -4,8 +4,8 @@ import { removePharmacySubscription } from "@/lib/notification";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { pharmacyId, endpoint } = body;
-    if (!endpoint) {
+    const { pharmacyId, endpoint, role } = body;
+    if (!endpoint || role !== "pharm" || !pharmacyId) {
       return NextResponse.json({ error: "Missing params" }, { status: 400 });
     }
     await removePharmacySubscription(endpoint, pharmacyId);

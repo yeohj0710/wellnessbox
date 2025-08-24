@@ -3,13 +3,17 @@
 import { useEffect } from "react";
 
 interface OrderNotifyModalProps {
-  onAllow: () => void;
+  orderId: number;
+  onAllow: () => Promise<boolean>;
+  onAllowed: () => void;
   onClose: () => void;
   loading?: boolean;
 }
 
 export default function OrderNotifyModal({
+  orderId,
   onAllow,
+  onAllowed,
   onClose,
   loading = false,
 }: OrderNotifyModalProps) {
@@ -72,7 +76,13 @@ export default function OrderNotifyModal({
                   나중에
                 </button>
                 <button
-                  onClick={onAllow}
+                  onClick={async () => {
+                    const ok = await onAllow();
+                    if (ok) {
+                      localStorage.removeItem(`notifyOff:${orderId}`);
+                      onAllowed();
+                    }
+                  }}
                   disabled={loading}
                   className={`h-10 rounded-full text-sm font-medium text-white transition ${
                     loading

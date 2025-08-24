@@ -59,19 +59,33 @@ export default function OrderAccordionItem({
     }, [isExpanded, isLoaded]);
     useEffect(() => {
       if (!isExpanded) return;
-      const es = new EventSource(
-        `/api/messages/stream/${order.id}?role=pharm`
-      );
-      es.onmessage = (e) => {
+      let es: EventSource | null = null;
+      const connect = async () => {
         try {
-          const msg = JSON.parse(e.data);
-          setMessages((prev) =>
-            prev.some((m: any) => m.id === msg.id) ? prev : [...prev, msg]
-          );
+          const res = await fetch("/api/messages/stream/token", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ role: "pharm", orderId: order.id }),
+          });
+          const data = await res.json();
+          if (data.token) {
+            es = new EventSource(
+              `/api/messages/stream/${order.id}?token=${data.token}`
+            );
+            es.onmessage = (e) => {
+              try {
+                const msg = JSON.parse(e.data);
+                setMessages((prev) =>
+                  prev.some((m: any) => m.id === msg.id) ? prev : [...prev, msg]
+                );
+              } catch {}
+            };
+          }
         } catch {}
       };
+      connect();
       return () => {
-        es.close();
+        es?.close();
       };
     }, [isExpanded, order.id]);
     useEffect(() => {

@@ -5,7 +5,7 @@ import { createOrder, getOrderByPaymentId } from "@/lib/order";
 import { reducePharmacyProductStock } from "@/lib/product";
 import { getLoginStatus } from "@/lib/useLoginStatus";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { ORDER_STATUS } from "@/lib/order/orderStatus";
 import Link from "next/link";
 import OrderCancelledView from "@/components/order/orderCancelledView";
@@ -49,6 +49,7 @@ export default function OrderComplete() {
   const [subscriptionInfo, setSubscriptionInfo] =
     useState<SubscriptionInfo | null>(null);
   const [notifyLoading, setNotifyLoading] = useState(false);
+  const endpointRef = useRef<string | null>(null);
   const router = useRouter();
 
   const clearCart = () => {
@@ -447,9 +448,10 @@ export default function OrderComplete() {
         }),
       });
       localStorage.setItem("vapidKey", appKey);
-      localStorage.removeItem(`notifyOff:${order.id}`);
-      setSubscriptionInfo({ endpoint: sub.endpoint });
-    } catch {}
+      return sub.endpoint as string;
+    } catch {
+      return "";
+    }
   };
 
   const handleAllowNotification = async () => {
@@ -457,7 +459,8 @@ export default function OrderComplete() {
     try {
       const permission = await Notification.requestPermission();
       if (permission === "granted") {
-        await subscribePush();
+        const endpoint = await subscribePush();
+        endpointRef.current = endpoint || null;
         try {
           if (order) {
             const image =
@@ -473,10 +476,13 @@ export default function OrderComplete() {
             });
           }
         } catch {}
+        setShowNotifyModal(false);
+        return true;
       } else {
         alert("브라우저 설정에서 알림을 허용할 수 있어요.");
+        setShowNotifyModal(false);
+        return true;
       }
-      setShowNotifyModal(false);
     } finally {
       setNotifyLoading(false);
     }
@@ -509,9 +515,14 @@ export default function OrderComplete() {
   if (cancelled) return <OrderCancelledView onReturn={returnToCart} />;
   return (
     <>
-      {showNotifyModal && (
+      {showNotifyModal && order && (
         <OrderNotifyModal
+          orderId={order.id}
           onAllow={handleAllowNotification}
+          onAllowed={() => {
+            if (endpointRef.current)
+              setSubscriptionInfo({ endpoint: endpointRef.current });
+          }}
           onClose={() => setShowNotifyModal(false)}
           loading={notifyLoading}
         />
