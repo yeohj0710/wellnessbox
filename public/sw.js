@@ -12,15 +12,25 @@ self.addEventListener("message", function (event) {
   if (event.data && event.data.type === "SKIP_WAITING") self.skipWaiting();
 });
 
+async function toDataURLFromBlob(blob) {
+  const ab = await blob.arrayBuffer();
+  const u8 = new Uint8Array(ab);
+  let s = "";
+  for (let i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]);
+  const b64 = btoa(s);
+  const mime = blob.type || "image/png";
+  return `data:${mime};base64,${b64}`;
+}
+
 self.addEventListener("push", function (event) {
   event.waitUntil(
     (async () => {
       const data = event.data ? event.data.json() : {};
-      let processedImageUrl = null;
       const src = typeof data.image === "string" ? data.image.trim() : "";
+      let imageForNotification = null;
       if (src) {
         try {
-          const resp = await fetch(src);
+          const resp = await fetch(src, { mode: "cors" });
           if (resp.ok) {
             const blob = await resp.blob();
             const bmp = await createImageBitmap(blob);
@@ -38,10 +48,11 @@ self.addEventListener("push", function (event) {
               const dy = (targetH - drawH) / 2;
               ctx.drawImage(bmp, dx, dy, drawW, drawH);
               const outBlob = await canvas.convertToBlob({ type: "image/png" });
-              processedImageUrl = URL.createObjectURL(outBlob);
+              imageForNotification = await toDataURLFromBlob(outBlob);
             }
           }
         } catch {}
+        if (!imageForNotification) imageForNotification = src;
       }
       const title = data.title || "WellnessBox 알림";
       const options = {
@@ -50,10 +61,10 @@ self.addEventListener("push", function (event) {
         requireInteraction: true,
         actions: data.actions || [{ action: "open", title: "열기" }],
         data: { url: data.url },
+        icon: data.icon || "/logo.png",
+        badge: data.badge || "/logo.png",
       };
-      if (processedImageUrl) options.image = processedImageUrl;
-      options.icon = data.icon || "/logo.png";
-      options.badge = data.badge || "/logo.png";
+      if (imageForNotification) options.image = imageForNotification;
       await self.registration.showNotification(title, options);
     })()
   );

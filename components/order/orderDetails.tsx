@@ -117,13 +117,20 @@ export default function OrderDetails({ phone, password, onBack }: any) {
       let cancelled = false;
       const connect = async () => {
         try {
-          const token = await getStreamToken("customer", order.id, { phone, password });
+          const token = await getStreamToken("customer", order.id, {
+            phone,
+            password,
+          });
           if (cancelled) return;
-          esRef.current = new EventSource(`/api/messages/stream/${order.id}?token=${token}`);
+          esRef.current = new EventSource(
+            `/api/messages/stream/${order.id}?token=${token}`
+          );
           esRef.current.onmessage = (e) => {
             try {
               const msg = JSON.parse(e.data);
-              setMessages((prev) => (prev.some((m: any) => m.id === msg.id) ? prev : [...prev, msg]));
+              setMessages((prev) =>
+                prev.some((m: any) => m.id === msg.id) ? prev : [...prev, msg]
+              );
             } catch {}
           };
         } catch {}
@@ -472,7 +479,7 @@ export default function OrderDetails({ phone, password, onBack }: any) {
                       sendMessage();
                     }
                   }}
-                  className="flex-1 px-3 py-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400 resize-none overflow-hidden leading-normal"
+                  className="text-gray-600 flex-1 px-3 py-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400 resize-none overflow-hidden leading-normal"
                   placeholder="메시지를 입력하세요..."
                 />
                 <button
