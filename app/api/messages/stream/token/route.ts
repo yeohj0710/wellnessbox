@@ -3,6 +3,8 @@ import getSession from "@/lib/session";
 import { sign } from "@/lib/jwt";
 import { NextRequest, NextResponse } from "next/server";
 
+export const runtime = "nodejs";
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -14,9 +16,10 @@ export async function POST(req: NextRequest) {
       const order = await db.order.findFirst({
         where: { id: orderId, phone, password },
       });
-      if (!order) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-      const token = sign({ role: "customer", orderId });
-      return NextResponse.json({ token });
+      if (!order)
+        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+      const { token, exp } = sign({ role: "customer", orderId });
+      return NextResponse.json({ token, exp });
     }
     if (role === "pharm") {
       const { orderId } = body;
@@ -27,9 +30,10 @@ export async function POST(req: NextRequest) {
       const order = await db.order.findFirst({
         where: { id: orderId, pharmacyId: pharmId },
       });
-      if (!order) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-      const token = sign({ role: "pharm", pharmacyId: pharmId });
-      return NextResponse.json({ token });
+      if (!order)
+        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+      const { token, exp } = sign({ role: "pharm", pharmacyId: pharmId });
+      return NextResponse.json({ token, exp });
     }
     if (role === "rider") {
       const { orderId } = body;
@@ -40,9 +44,10 @@ export async function POST(req: NextRequest) {
       const order = await db.order.findFirst({
         where: { id: orderId, riderId },
       });
-      if (!order) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-      const token = sign({ role: "rider", riderId });
-      return NextResponse.json({ token });
+      if (!order)
+        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+      const { token, exp } = sign({ role: "rider", riderId });
+      return NextResponse.json({ token, exp });
     }
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   } catch {

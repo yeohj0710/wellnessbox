@@ -7,11 +7,11 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   req: Request,
-  { params }: { params: Promise<{ orderId: string }> }
+  context: { params: { orderId: string } }
 ) {
-  const { orderId: orderIdStr } = await params; // ✅ 반드시 await
-  const orderId = Number(orderIdStr);
-  if (!orderId) return new Response("Invalid orderId", { status: 400 });
+  const { orderId } = context.params;
+  const orderIdNum = Number(orderId);
+  if (!orderIdNum) return new Response("Invalid orderId", { status: 400 });
 
   const { searchParams } = new URL(req.url);
   const token = searchParams.get("token");
@@ -20,16 +20,16 @@ export async function GET(
   try {
     const payload = verify(token);
     if (payload.role === "customer") {
-      if (payload.orderId !== orderId)
+      if (payload.orderId !== orderIdNum)
         return new Response("Unauthorized", { status: 403 });
     } else if (payload.role === "pharm") {
       const order = await db.order.findFirst({
-        where: { id: orderId, pharmacyId: payload.pharmacyId },
+        where: { id: orderIdNum, pharmacyId: payload.pharmacyId },
       });
       if (!order) return new Response("Unauthorized", { status: 403 });
     } else if (payload.role === "rider") {
       const order = await db.order.findFirst({
-        where: { id: orderId, riderId: payload.riderId },
+        where: { id: orderIdNum, riderId: payload.riderId },
       });
       if (!order) return new Response("Unauthorized", { status: 403 });
     } else {
@@ -48,14 +48,14 @@ export async function GET(
       onMessage = (msg: any) => {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(msg)}\n\n`));
       };
-      messageEvents.on(`message:${orderId}`, onMessage);
+      messageEvents.on(`message:${orderIdNum}`, onMessage);
       keepAlive = setInterval(() => {
         controller.enqueue(encoder.encode(":keep-alive\n\n"));
       }, 25000);
       controller.enqueue(encoder.encode(":connected\n\n"));
     },
     cancel() {
-      if (onMessage) messageEvents.off(`message:${orderId}`, onMessage);
+      if (onMessage) messageEvents.off(`message:${orderIdNum}`, onMessage);
       clearInterval(keepAlive);
     },
   });
@@ -63,7 +63,7 @@ export async function GET(
   return new Response(stream, {
     headers: {
       "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
+      "Cache-Control": "no-cache, no-transform",
       Connection: "keep-alive",
     },
   });
