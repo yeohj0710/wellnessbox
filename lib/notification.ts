@@ -108,7 +108,10 @@ export async function saveRiderSubscription(riderId: number, sub: any) {
   });
 }
 
-export async function removeRiderSubscription(endpoint: string, riderId: number) {
+export async function removeRiderSubscription(
+  endpoint: string,
+  riderId: number
+) {
   return db.subscription.deleteMany({
     where: { endpoint, riderId, role: "rider" },
   });
@@ -322,7 +325,7 @@ export async function sendPharmacyMessageNotification(
   const productText =
     restCount > 0 ? `${firstName} 외 ${restCount}건` : firstName;
   const phoneText = order.phone ? `${order.phone} ` : "";
-  const message = `${phoneText}고객이 '${productText}' 주문에 대해 메시지를 보냈어요: ${content}`;
+  const message = `${phoneText}주문자가 '${productText}' 주문에 대해 메시지를 보냈어요: ${content}`;
   for (const sub of subs) {
     const pushSub = {
       endpoint: sub.endpoint,

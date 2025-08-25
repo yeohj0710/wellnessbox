@@ -35,6 +35,8 @@ export default function OrderAccordionItem({
   const [isMessagesRefreshing, setIsMessagesRefreshing] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState<number | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const lastEventIdRef = useRef<number | null>(null);
+  const lastEventTimeRef = useRef<number>(Date.now());
   useEffect(() => {
     if (!isExpanded || isLoaded) return;
     async function fetchDetailsAndMessages() {
@@ -43,7 +45,12 @@ export default function OrderAccordionItem({
         getMessagesByOrder(initialOrder.id),
       ]);
       setOrder((prevOrder: any) => ({ ...prevOrder, ...detailedOrder }));
-      setMessages(msgs);
+      const sorted = [...msgs].sort(
+        (a: any, b: any) =>
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+      setMessages(sorted);
+      lastEventIdRef.current = sorted.at(-1)?.id ?? null;
       setIsLoaded(true);
     }
     fetchDetailsAndMessages();
@@ -59,35 +66,94 @@ export default function OrderAccordionItem({
   useEffect(() => {
     if (!isExpanded) return;
     let cancelled = false;
+    let retryTimeout: ReturnType<typeof setTimeout> | null = null;
+    let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+    let retryDelay = 1000;
+    let connecting = false;
+
+    const cleanupConnection = () => {
+      esRef.current?.close();
+      esRef.current = null;
+      if (retryTimeout) {
+        clearTimeout(retryTimeout);
+        retryTimeout = null;
+      }
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+        heartbeatInterval = null;
+      }
+    };
+
+    const scheduleReconnect = () => {
+      if (cancelled) return;
+      if (retryTimeout) clearTimeout(retryTimeout);
+      retryTimeout = setTimeout(connect, retryDelay);
+      retryDelay = Math.min(retryDelay * 2, 30000);
+    };
+
     const connect = async () => {
+      if (connecting || cancelled) return;
+      connecting = true;
+      cleanupConnection();
       try {
         const token = await getStreamToken("pharm", order.id);
         if (cancelled) return;
-        esRef.current = new EventSource(
-          `/api/messages/stream/${order.id}?token=${token}`
+        const lastId =
+          lastEventIdRef.current !== null
+            ? `&lastId=${lastEventIdRef.current}`
+            : "";
+        const es = new EventSource(
+          `/api/messages/stream/${order.id}?token=${token}${lastId}`
         );
-        esRef.current.onmessage = (e) => {
+        lastEventTimeRef.current = Date.now();
+        es.onmessage = (e) => {
+          lastEventTimeRef.current = Date.now();
           try {
             const msg = JSON.parse(e.data);
-            setMessages((prev) =>
-              prev.some((m: any) => m.id === msg.id) ? prev : [...prev, msg]
-            );
+            setMessages((prev) => {
+              if (prev.some((m: any) => m.id === msg.id)) return prev;
+              const next = [...prev, msg];
+              next.sort(
+                (a, b) =>
+                  new Date(a.createdAt).getTime() -
+                  new Date(b.createdAt).getTime()
+              );
+              return next;
+            });
+            if (msg.id) lastEventIdRef.current = msg.id;
           } catch {}
         };
-      } catch {}
+        es.onerror = () => {
+          cleanupConnection();
+          scheduleReconnect();
+        };
+        esRef.current = es;
+        retryDelay = 1000;
+        heartbeatInterval = setInterval(() => {
+          if (Date.now() - lastEventTimeRef.current > 30000) {
+            connect();
+          }
+        }, 5000);
+      } catch {
+        scheduleReconnect();
+      } finally {
+        connecting = false;
+      }
     };
+
     connect();
+
     return () => {
       cancelled = true;
-      esRef.current?.close();
-      esRef.current = null;
+      cleanupConnection();
     };
   }, [isExpanded, order.id]);
   useEffect(() => {
-    if (!isExpanded || !isLoaded) return;
-    if (messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTop =
-        messagesContainerRef.current.scrollHeight;
+    if (!isExpanded || !isLoaded || !messagesContainerRef.current) return;
+    const el = messagesContainerRef.current;
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    if (nearBottom) {
+      el.scrollTop = el.scrollHeight;
     }
   }, [isExpanded, isLoaded, messages]);
 
@@ -109,7 +175,12 @@ export default function OrderAccordionItem({
     if (manual) setIsMessagesRefreshing(true);
     try {
       const msgs = await getMessagesByOrder(order.id);
-      setMessages(msgs);
+      const sorted = [...msgs].sort(
+        (a: any, b: any) =>
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+      setMessages(sorted);
+      lastEventIdRef.current = sorted.at(-1)?.id ?? lastEventIdRef.current;
     } catch (error) {
       console.error(error);
     } finally {
@@ -127,7 +198,15 @@ export default function OrderAccordionItem({
     };
     try {
       const newMsg = await createMessage(messageData);
-      setMessages((prev) => [...prev, newMsg]);
+      setMessages((prev) => {
+        const next = [...prev, newMsg];
+        next.sort(
+          (a, b) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+        return next;
+      });
+      lastEventIdRef.current = newMsg.id;
       setNewMessage("");
     } catch (error) {
       console.error(error);
