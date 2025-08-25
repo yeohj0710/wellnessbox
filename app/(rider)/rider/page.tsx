@@ -60,16 +60,21 @@ export default function Rider() {
 
   useEffect(() => {
     if (!rider) return;
+    const key = `riderNotifyOff_${rider.id}`;
     const check = async () => {
       if (!("serviceWorker" in navigator)) return;
       const reg = await registerAndActivateSW();
       const sub = await reg.pushManager.getSubscription();
       if (!sub) {
-        if (localStorage.getItem("riderNotifyOff") === "true") {
+        if (localStorage.getItem(key) === "true") {
           setIsSubscribed(false);
           return;
         }
         await subscribePush();
+        return;
+      }
+      if (localStorage.getItem(key) === "true") {
+        setIsSubscribed(false);
         return;
       }
       try {
@@ -128,7 +133,9 @@ export default function Rider() {
           role: "rider",
         }),
       });
-      localStorage.removeItem("riderNotifyOff");
+      if (rider?.id) {
+        localStorage.removeItem(`riderNotifyOff_${rider.id}`);
+      }
       setIsSubscribed(true);
     } catch (e) {
       console.error(e);
@@ -155,7 +162,9 @@ export default function Rider() {
           }),
         });
       }
-      localStorage.setItem("riderNotifyOff", "true");
+      if (rider?.id) {
+        localStorage.setItem(`riderNotifyOff_${rider.id}`, "true");
+      }
       setIsSubscribed(false);
     } catch (e) {
       console.error(e);

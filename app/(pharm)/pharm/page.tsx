@@ -59,16 +59,21 @@ export default function Pharm() {
 
   useEffect(() => {
     if (!pharm) return;
+    const key = `pharmNotifyOff_${pharm.id}`;
     const check = async () => {
       if (!("serviceWorker" in navigator)) return;
       const reg = await registerAndActivateSW();
       const sub = await reg.pushManager.getSubscription();
       if (!sub) {
-        if (localStorage.getItem("pharmNotifyOff") === "true") {
+        if (localStorage.getItem(key) === "true") {
           setIsSubscribed(false);
           return;
         }
         await subscribePush();
+        return;
+      }
+      if (localStorage.getItem(key) === "true") {
+        setIsSubscribed(false);
         return;
       }
       try {
@@ -127,7 +132,9 @@ export default function Pharm() {
           role: "pharm",
         }),
       });
-      localStorage.removeItem("pharmNotifyOff");
+      if (pharm?.id) {
+        localStorage.removeItem(`pharmNotifyOff_${pharm.id}`);
+      }
       setIsSubscribed(true);
     } catch (e) {
       console.error(e);
@@ -154,7 +161,9 @@ export default function Pharm() {
           }),
         });
       }
-      localStorage.setItem("pharmNotifyOff", "true");
+      if (pharm?.id) {
+        localStorage.setItem(`pharmNotifyOff_${pharm.id}`, "true");
+      }
       setIsSubscribed(false);
     } catch (e) {
       console.error(e);
