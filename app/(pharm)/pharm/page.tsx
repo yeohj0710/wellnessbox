@@ -153,7 +153,6 @@ export default function Pharm() {
             role: "pharm",
           }),
         });
-        await sub.unsubscribe();
       }
       localStorage.setItem("pharmNotifyOff", "true");
       setIsSubscribed(false);

@@ -4,9 +4,14 @@ import { verify } from "@/lib/jwt";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request, context: { params: { orderId: string } }) {
-  const orderIdNum = Number(context.params.orderId);
-  if (!orderIdNum || orderIdNum <= 0) return new Response("Invalid orderId", { status: 400 });
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ orderId: string }> }
+) {
+  const { orderId } = await params;
+  const orderIdNum = Number(orderId);
+  if (!orderIdNum || orderIdNum <= 0)
+    return new Response("Invalid orderId", { status: 400 });
 
   const { searchParams } = new URL(req.url);
   const token = searchParams.get("token");
@@ -14,7 +19,8 @@ export async function GET(req: Request, context: { params: { orderId: string } }
 
   try {
     const payload = verify(token);
-    if (payload.orderId !== orderIdNum) return new Response("Unauthorized", { status: 403 });
+    if (payload.orderId !== orderIdNum)
+      return new Response("Unauthorized", { status: 403 });
   } catch {
     return new Response("Unauthorized", { status: 403 });
   }

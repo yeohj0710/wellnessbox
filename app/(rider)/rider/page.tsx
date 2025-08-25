@@ -154,7 +154,6 @@ export default function Rider() {
             role: "rider",
           }),
         });
-        await sub.unsubscribe();
       }
       localStorage.setItem("riderNotifyOff", "true");
       setIsSubscribed(false);

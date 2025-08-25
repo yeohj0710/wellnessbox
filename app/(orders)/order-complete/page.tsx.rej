@@ -1,0 +1,56 @@
+diff a/app/(orders)/order-complete/page.tsx b/app/(orders)/order-complete/page.tsx	(rejected hunks)
+@@ -481,54 +481,52 @@ export default function OrderComplete() {
+       } else {
+         alert("브라우저 설정에서 알림을 허용할 수 있어요.");
+         setShowNotifyModal(false);
+         return true;
+       }
+     } finally {
+       setNotifyLoading(false);
+     }
+   };
+ 
+   const handleUnsubscribe = async () => {
+     if (!subscriptionInfo || !order) return;
+     if ("serviceWorker" in navigator) {
+       const reg = await navigator.serviceWorker.getRegistration();
+       const sub = await reg?.pushManager.getSubscription();
+       if (sub) {
+         await fetch("/api/push/unsubscribe", {
+           method: "POST",
+           headers: { "Content-Type": "application/json" },
+           body: JSON.stringify({
+             orderId: order.id,
+             endpoint: sub.endpoint,
+             role: "customer",
+           }),
+         });
+-        await sub.unsubscribe();
+       }
+     }
+-    localStorage.removeItem("vapidKey");
+     if (order) localStorage.setItem(`notifyOff:${order.id}`, "true");
+     setSubscriptionInfo(null);
+   };
+ 
+   if (loading || (!cancelled && !order)) return <FullPageLoader />;
+   if (cancelled) return <OrderCancelledView onReturn={returnToCart} />;
+   return (
+     <>
+       {showNotifyModal && order && (
+         <OrderNotifyModal
+           orderId={order.id}
+           onAllow={handleAllowNotification}
+           onAllowed={() => {
+             if (endpointRef.current)
+               setSubscriptionInfo({ endpoint: endpointRef.current });
+           }}
+           onClose={() => setShowNotifyModal(false)}
+           loading={notifyLoading}
+         />
+       )}
+       <div className="w-full max-w-[640px] mx-2 sm:mx-auto">
+         <h1 className="text-2xl font-bold text-center text-gray-800 mb-6 mt-12">
+           결제가 완료되었습니다! ���
+         </h1>
+         <OrderSummary order={order} />

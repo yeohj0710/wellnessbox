@@ -237,9 +237,7 @@ export default function OrderDetails({ phone, password, onBack }: any) {
               role: "customer",
             }),
           });
-          await sub.unsubscribe();
         }
-        localStorage.removeItem("vapidKey");
         localStorage.setItem(`notifyOff:${order.id}`, "true");
         setIsSubscribed(false);
       } catch (e) {

@@ -503,10 +503,8 @@ export default function OrderComplete() {
             role: "customer",
           }),
         });
-        await sub.unsubscribe();
       }
     }
-    localStorage.removeItem("vapidKey");
     if (order) localStorage.setItem(`notifyOff:${order.id}`, "true");
     setSubscriptionInfo(null);
   };
