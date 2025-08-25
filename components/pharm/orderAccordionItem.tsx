@@ -35,10 +35,18 @@ export default function OrderAccordionItem({
   const [loadingStatus, setLoadingStatus] = useState<number | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const pollingRef = useRef(false);
+  const lastSeenIdRef = useRef<number>(0);
+  const isNearBottomRef = useRef<boolean>(true);
   const scrollToBottom = () => {
     const el = messagesContainerRef.current;
     if (!el) return;
     el.scrollTop = el.scrollHeight;
+  };
+  const handleScroll = () => {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    const gap = el.scrollHeight - el.scrollTop - el.clientHeight;
+    isNearBottomRef.current = gap < 80;
   };
   useEffect(() => {
     if (!isExpanded || isLoaded) return;
@@ -53,6 +61,8 @@ export default function OrderAccordionItem({
           new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       );
       setMessages(sorted);
+      const lastId = sorted.length ? sorted[sorted.length - 1].id : 0;
+      lastSeenIdRef.current = lastId;
       setIsLoaded(true);
     }
     fetchDetailsAndMessages();
@@ -75,8 +85,15 @@ export default function OrderAccordionItem({
           (a: any, b: any) =>
             new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
         );
+        const newLastId = sorted.length ? sorted[sorted.length - 1].id : 0;
+        const hasNew = newLastId > lastSeenIdRef.current;
         setMessages(sorted);
-        scrollToBottom();
+        if (hasNew && isNearBottomRef.current) {
+          scrollToBottom();
+        }
+        if (hasNew) {
+          lastSeenIdRef.current = newLastId;
+        }
       } finally {
         pollingRef.current = false;
       }
@@ -94,7 +111,11 @@ export default function OrderAccordionItem({
   }, [isExpanded, isLoaded, order.id]);
   useEffect(() => {
     if (!isExpanded || !isLoaded) return;
-    requestAnimationFrame(scrollToBottom);
+    requestAnimationFrame(() => {
+      const lastId = messages.length ? messages[messages.length - 1].id : 0;
+      lastSeenIdRef.current = Math.max(lastSeenIdRef.current, lastId);
+      scrollToBottom();
+    });
   }, [isExpanded, isLoaded, messages.length]);
 
   const toggleExpanded = () => {
@@ -120,6 +141,9 @@ export default function OrderAccordionItem({
           new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       );
       setMessages(sorted);
+      lastSeenIdRef.current = sorted.length
+        ? sorted[sorted.length - 1].id
+        : lastSeenIdRef.current;
       scrollToBottom();
     } catch (error) {
       console.error(error);
@@ -139,13 +163,13 @@ export default function OrderAccordionItem({
     try {
       const newMsg = await createMessage(messageData);
       setMessages((prev) => {
-        const next = [...prev, newMsg];
-        next.sort(
+        const next = [...prev, newMsg].sort(
           (a, b) =>
             new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
         );
         return next;
       });
+      lastSeenIdRef.current = newMsg.id || lastSeenIdRef.current;
       scrollToBottom();
       setNewMessage("");
     } catch (error) {
@@ -410,6 +434,7 @@ export default function OrderAccordionItem({
             <div
               className="mt-3 space-y-3 max-h-96 overflow-y-auto scrollbar-hide py-2"
               ref={messagesContainerRef}
+              onScroll={handleScroll}
             >
               {messages.length > 0 ? (
                 messages.map((message, index) => (
