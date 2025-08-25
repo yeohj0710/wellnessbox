@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { getOrderById, getOrderStatusById } from "@/lib/order";
 import { updateOrderStatus } from "@/lib/order/mutations";
 import OrderProgressBar from "@/components/order/orderProgressBar";
 import OrderAccordionHeader from "@/components/order/orderAccordionHeader";
 import { ORDER_STATUS, OrderStatus } from "@/lib/order/orderStatus";
 import Image from "next/image";
+import { getStreamToken } from "@/lib/streamToken";
 
 type OrderAccordionItemProps = {
   initialOrder: any;
@@ -42,37 +43,28 @@ export default function OrderAccordionItem({
     return () => clearInterval(intervalId);
   }, [isExpanded, isLoaded]);
 
+  const esRef = useRef<EventSource | null>(null);
   useEffect(() => {
     if (!isExpanded) return;
-    let es: EventSource | null = null;
+    let cancelled = false;
     const connect = async () => {
       try {
-        const res = await fetch("/api/messages/stream/token", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ role: "rider", orderId: order.id }),
-        });
-        const data = await res.json();
-        if (data.token) {
-          es = new EventSource(
-            `/api/messages/stream/${order.id}?token=${data.token}`
-          );
-          es.onmessage = (e) => {
-            try {
-              const msg = JSON.parse(e.data);
-              setMessages((prev) =>
-                prev.some((m: any) => m.id === msg.id)
-                  ? prev
-                  : [...prev, msg]
-              );
-            } catch {}
-          };
-        }
+        const token = await getStreamToken("rider", order.id);
+        if (cancelled) return;
+        esRef.current = new EventSource(`/api/messages/stream/${order.id}?token=${token}`);
+        esRef.current.onmessage = (e) => {
+          try {
+            const msg = JSON.parse(e.data);
+            setMessages((prev) => (prev.some((m: any) => m.id === msg.id) ? prev : [...prev, msg]));
+          } catch {}
+        };
       } catch {}
     };
     connect();
     return () => {
-      es?.close();
+      cancelled = true;
+      esRef.current?.close();
+      esRef.current = null;
     };
   }, [isExpanded, order.id]);
 

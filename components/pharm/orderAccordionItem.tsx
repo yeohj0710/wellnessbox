@@ -16,6 +16,7 @@ import OrderAccordionHeader from "@/components/order/orderAccordionHeader";
 import { ORDER_STATUS, OrderStatus } from "@/lib/order/orderStatus";
 import Image from "next/image";
 import { ArrowPathIcon } from "@heroicons/react/24/outline";
+import { getStreamToken } from "@/lib/streamToken";
 
 type OrderAccordionItemProps = {
   initialOrder: any;
@@ -57,35 +58,28 @@ export default function OrderAccordionItem({
       }, 10000);
       return () => clearInterval(intervalId);
     }, [isExpanded, isLoaded]);
+    const esRef = useRef<EventSource | null>(null);
     useEffect(() => {
       if (!isExpanded) return;
-      let es: EventSource | null = null;
+      let cancelled = false;
       const connect = async () => {
         try {
-          const res = await fetch("/api/messages/stream/token", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ role: "pharm", orderId: order.id }),
-          });
-          const data = await res.json();
-          if (data.token) {
-            es = new EventSource(
-              `/api/messages/stream/${order.id}?token=${data.token}`
-            );
-            es.onmessage = (e) => {
-              try {
-                const msg = JSON.parse(e.data);
-                setMessages((prev) =>
-                  prev.some((m: any) => m.id === msg.id) ? prev : [...prev, msg]
-                );
-              } catch {}
-            };
-          }
+          const token = await getStreamToken("pharm", order.id);
+          if (cancelled) return;
+          esRef.current = new EventSource(`/api/messages/stream/${order.id}?token=${token}`);
+          esRef.current.onmessage = (e) => {
+            try {
+              const msg = JSON.parse(e.data);
+              setMessages((prev) => (prev.some((m: any) => m.id === msg.id) ? prev : [...prev, msg]));
+            } catch {}
+          };
         } catch {}
       };
       connect();
       return () => {
-        es?.close();
+        cancelled = true;
+        esRef.current?.close();
+        esRef.current = null;
       };
     }, [isExpanded, order.id]);
     useEffect(() => {

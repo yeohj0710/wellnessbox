@@ -1,17 +1,12 @@
 import { messageEvents } from "@/lib/events";
-import db from "@/lib/db";
 import { verify } from "@/lib/jwt";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(
-  req: Request,
-  context: { params: { orderId: string } }
-) {
-  const { orderId } = context.params;
-  const orderIdNum = Number(orderId);
-  if (!orderIdNum) return new Response("Invalid orderId", { status: 400 });
+export async function GET(req: Request, context: { params: { orderId: string } }) {
+  const orderIdNum = Number(context.params.orderId);
+  if (!orderIdNum || orderIdNum <= 0) return new Response("Invalid orderId", { status: 400 });
 
   const { searchParams } = new URL(req.url);
   const token = searchParams.get("token");
@@ -19,22 +14,7 @@ export async function GET(
 
   try {
     const payload = verify(token);
-    if (payload.role === "customer") {
-      if (payload.orderId !== orderIdNum)
-        return new Response("Unauthorized", { status: 403 });
-    } else if (payload.role === "pharm") {
-      const order = await db.order.findFirst({
-        where: { id: orderIdNum, pharmacyId: payload.pharmacyId },
-      });
-      if (!order) return new Response("Unauthorized", { status: 403 });
-    } else if (payload.role === "rider") {
-      const order = await db.order.findFirst({
-        where: { id: orderIdNum, riderId: payload.riderId },
-      });
-      if (!order) return new Response("Unauthorized", { status: 403 });
-    } else {
-      return new Response("Unauthorized", { status: 403 });
-    }
+    if (payload.orderId !== orderIdNum) return new Response("Unauthorized", { status: 403 });
   } catch {
     return new Response("Unauthorized", { status: 403 });
   }
@@ -63,7 +43,7 @@ export async function GET(
   return new Response(stream, {
     headers: {
       "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache, no-transform",
+      "Cache-Control": "no-store, no-cache, must-revalidate, no-transform",
       Connection: "keep-alive",
     },
   });

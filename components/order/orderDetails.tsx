@@ -21,6 +21,7 @@ import {
   getSubAppKeyBase64,
   registerAndActivateSW,
 } from "@/lib/push";
+import { getStreamToken } from "@/lib/streamToken";
 
 export default function OrderDetails({ phone, password, onBack }: any) {
   const [loading, setLoading] = useState(true);
@@ -110,42 +111,30 @@ export default function OrderDetails({ phone, password, onBack }: any) {
       }, 10000);
       return () => clearInterval(intervalId);
     }, [isExpanded, isLoaded]);
+    const esRef = useRef<EventSource | null>(null);
     useEffect(() => {
       if (!isExpanded) return;
-      let es: EventSource | null = null;
+      let cancelled = false;
       const connect = async () => {
         try {
-          const res = await fetch("/api/messages/stream/token", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              role: "customer",
-              orderId: order.id,
-              phone,
-              password,
-            }),
-          });
-          const data = await res.json();
-          if (data.token) {
-            es = new EventSource(
-              `/api/messages/stream/${order.id}?token=${data.token}`
-            );
-            es.onmessage = (e) => {
-              try {
-                const msg = JSON.parse(e.data);
-                setMessages((prev) =>
-                  prev.some((m: any) => m.id === msg.id) ? prev : [...prev, msg]
-                );
-              } catch {}
-            };
-          }
+          const token = await getStreamToken("customer", order.id, { phone, password });
+          if (cancelled) return;
+          esRef.current = new EventSource(`/api/messages/stream/${order.id}?token=${token}`);
+          esRef.current.onmessage = (e) => {
+            try {
+              const msg = JSON.parse(e.data);
+              setMessages((prev) => (prev.some((m: any) => m.id === msg.id) ? prev : [...prev, msg]));
+            } catch {}
+          };
         } catch {}
       };
       connect();
       return () => {
-        es?.close();
+        cancelled = true;
+        esRef.current?.close();
+        esRef.current = null;
       };
-    }, [isExpanded, order.id]);
+    }, [isExpanded, order.id, phone, password]);
     useEffect(() => {
       if (!isExpanded || !isLoaded) return;
       if (messagesContainerRef.current) {

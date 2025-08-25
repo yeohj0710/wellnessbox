@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
       });
       if (!order)
         return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-      const { token, exp } = sign({ role: "pharm", pharmacyId: pharmId });
+      const { token, exp } = sign({ role: "pharm", pharmacyId: pharmId, orderId });
       return NextResponse.json({ token, exp });
     }
     if (role === "rider") {
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       });
       if (!order)
         return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-      const { token, exp } = sign({ role: "rider", riderId });
+      const { token, exp } = sign({ role: "rider", riderId, orderId });
       return NextResponse.json({ token, exp });
     }
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
