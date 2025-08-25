@@ -21,7 +21,6 @@ import {
   getSubAppKeyBase64,
   registerAndActivateSW,
 } from "@/lib/push";
-import { getStreamToken } from "@/lib/streamToken";
 
 export default function OrderDetails({ phone, password, onBack }: any) {
   const [loading, setLoading] = useState(true);
@@ -53,8 +52,12 @@ export default function OrderDetails({ phone, password, onBack }: any) {
     const [isSubscribed, setIsSubscribed] = useState<boolean | null>(null);
     const [isSubscribeLoading, setIsSubscribeLoading] = useState(false);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
-    const lastEventIdRef = useRef<number | null>(null);
-    const lastEventTimeRef = useRef<number>(Date.now());
+    const pollingRef = useRef(false);
+    const scrollToBottom = () => {
+      const el = messagesContainerRef.current;
+      if (!el) return;
+      el.scrollTop = el.scrollHeight;
+    };
 
     useEffect(() => {
       const checkSubscription = async () => {
@@ -106,7 +109,6 @@ export default function OrderDetails({ phone, password, onBack }: any) {
             new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
         );
         setMessages(sorted);
-        lastEventIdRef.current = sorted.at(-1)?.id ?? null;
         setIsLoaded(true);
       }
       fetchDetailsAndMessages();
@@ -118,104 +120,38 @@ export default function OrderDetails({ phone, password, onBack }: any) {
       }, 10000);
       return () => clearInterval(intervalId);
     }, [isExpanded, isLoaded]);
-    const esRef = useRef<EventSource | null>(null);
     useEffect(() => {
-      if (!isExpanded) return;
-      let cancelled = false;
-      let retryTimeout: ReturnType<typeof setTimeout> | null = null;
-      let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
-      let retryDelay = 1000;
-      let connecting = false;
-
-      const cleanupConnection = () => {
-        esRef.current?.close();
-        esRef.current = null;
-        if (retryTimeout) {
-          clearTimeout(retryTimeout);
-          retryTimeout = null;
-        }
-        if (heartbeatInterval) {
-          clearInterval(heartbeatInterval);
-          heartbeatInterval = null;
-        }
-      };
-
-      const scheduleReconnect = () => {
-        if (cancelled) return;
-        if (retryTimeout) clearTimeout(retryTimeout);
-        retryTimeout = setTimeout(connect, retryDelay);
-        retryDelay = Math.min(retryDelay * 2, 30000);
-      };
-
-      const connect = async () => {
-        if (connecting || cancelled) return;
-        connecting = true;
-        cleanupConnection();
+      if (!isExpanded || !isLoaded) return;
+      const tick = async () => {
+        if (pollingRef.current) return;
+        pollingRef.current = true;
         try {
-          const token = await getStreamToken("customer", order.id, {
-            phone,
-            password,
-          });
-          if (cancelled) return;
-          const lastId =
-            lastEventIdRef.current !== null
-              ? `&lastId=${lastEventIdRef.current}`
-              : "";
-          const es = new EventSource(
-            `/api/messages/stream/${order.id}?token=${token}${lastId}`
+          const msgs = await getMessagesByOrder(order.id);
+          const sorted = [...msgs].sort(
+            (a: any, b: any) =>
+              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
           );
-          lastEventTimeRef.current = Date.now();
-          es.onmessage = (e) => {
-            lastEventTimeRef.current = Date.now();
-            try {
-              const msg = JSON.parse(e.data);
-              setMessages((prev) => {
-                if (prev.some((m: any) => m.id === msg.id)) return prev;
-                const next = [...prev, msg];
-                next.sort(
-                  (a, b) =>
-                    new Date(a.createdAt).getTime() -
-                    new Date(b.createdAt).getTime()
-                );
-                return next;
-              });
-              if (msg.id) lastEventIdRef.current = msg.id;
-            } catch {}
-          };
-          es.onerror = () => {
-            cleanupConnection();
-            scheduleReconnect();
-          };
-          esRef.current = es;
-          retryDelay = 1000;
-          heartbeatInterval = setInterval(() => {
-            if (Date.now() - lastEventTimeRef.current > 30000) {
-              connect();
-            }
-          }, 5000);
-        } catch {
-          scheduleReconnect();
+          setMessages(sorted);
+          scrollToBottom();
         } finally {
-          connecting = false;
+          pollingRef.current = false;
         }
       };
-
-      connect();
-
+      tick();
+      const onFocus = () => tick();
+      window.addEventListener("visibilitychange", onFocus, { passive: true });
+      window.addEventListener("focus", onFocus, { passive: true });
+      const id: ReturnType<typeof setInterval> = setInterval(tick, 10000);
       return () => {
-        cancelled = true;
-        cleanupConnection();
+        clearInterval(id);
+        window.removeEventListener("visibilitychange", onFocus);
+        window.removeEventListener("focus", onFocus);
       };
-    }, [isExpanded, order.id, phone, password]);
+    }, [isExpanded, isLoaded, order.id]);
     useEffect(() => {
-      if (!isExpanded || !isLoaded || !messagesContainerRef.current) return;
-      const el = messagesContainerRef.current;
-      const nearBottom =
-        el.scrollHeight - el.scrollTop - el.clientHeight < 80;
-      if (nearBottom) {
-        el.scrollTop = el.scrollHeight;
-      }
-    }, [isExpanded, isLoaded, messages]);
+      if (!isExpanded || !isLoaded) return;
+      requestAnimationFrame(scrollToBottom);
+    }, [isExpanded, isLoaded, messages.length]);
     const toggleExpanded = () => {
       setIsExpanded((prev: any) => !prev);
     };
@@ -241,7 +177,7 @@ export default function OrderDetails({ phone, password, onBack }: any) {
             new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
         );
         setMessages(sorted);
-        lastEventIdRef.current = sorted.at(-1)?.id ?? lastEventIdRef.current;
+        scrollToBottom();
       } catch (error) {
         console.error(error);
       } finally {
@@ -343,7 +279,7 @@ export default function OrderDetails({ phone, password, onBack }: any) {
           );
           return next;
         });
-        lastEventIdRef.current = newMsg.id;
+        scrollToBottom();
         setNewMessage("");
       } catch (error) {
         console.error(error);
