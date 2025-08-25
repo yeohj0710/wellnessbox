@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { getCategories } from "@/lib/product";
 
 const QUESTIONS = [
   "최근에 쉽게 피로를 느끼고 에너지가 부족하다.",
@@ -33,11 +34,23 @@ export default function CheckAI() {
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [animateBars, setAnimateBars] = useState(false);
+  const [categories, setCategories] = useState<any[]>([]);
 
   const completion = useMemo(() => {
     const answered = answers.filter((v) => v > 0).length;
     return Math.round((answered / QUESTIONS.length) * 100);
   }, [answers]);
+
+  useEffect(() => {
+    getCategories().then((cats) => setCategories(cats)).catch(() => {});
+  }, []);
+
+  const recommendedIds = useMemo(() => {
+    if (!results || categories.length === 0) return [];
+    return results
+      .map((r) => categories.find((c: any) => c.name === r.label)?.id)
+      .filter((id): id is number => typeof id === "number");
+  }, [results, categories]);
 
   useEffect(() => {
     if (modalOpen) {
@@ -249,7 +262,15 @@ export default function CheckAI() {
               ))}
             </ul>
 
-            <Link href="/explore" className="mt-6 block">
+            <Link
+              href={`/explore${
+                recommendedIds.length
+                  ? `?categories=${recommendedIds.join(",")}`
+                  : ""
+              }#home-products`}
+              scroll={false}
+              className="mt-6 block"
+            >
               <button className="w-full rounded-xl bg-sky-500 px-6 py-2 text-white font-bold shadow hover:bg-sky-600 active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-sky-300">
                 구매하러 가기
               </button>

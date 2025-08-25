@@ -187,12 +187,25 @@ export default function HomeProductSection() {
   }, [searchParams]);
 
   useEffect(() => {
-    const cat = searchParams.get("category");
-    if (cat) {
-      const id = parseInt(cat, 10);
+    if (typeof window !== "undefined" && window.location.hash === "#home-products") {
+      document.getElementById("home-products")?.scrollIntoView();
+    }
+  }, []);
+
+  useEffect(() => {
+    const catsParam = searchParams.get("categories");
+    const singleCat = searchParams.get("category");
+    if (catsParam) {
+      const ids = catsParam
+        .split(",")
+        .map((n) => parseInt(n, 10))
+        .filter((n) => !isNaN(n));
+      setSelectedCategories(ids);
+    } else if (singleCat) {
+      const id = parseInt(singleCat, 10);
       if (!isNaN(id)) setSelectedCategories([id]);
     }
-  }, [searchParams, categories]);
+  }, [searchParams]);
 
   useEffect(() => {
     const prod = searchParams.get("product");
