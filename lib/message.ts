@@ -7,6 +7,20 @@ import {
 } from "@/lib/notification";
 import { messageEvents } from "@/lib/events";
 
+export async function normalizeMessage(msg: any) {
+  const created = msg.createdAt || msg.timestamp || new Date();
+  return {
+    id: msg.id,
+    orderId: msg.orderId,
+    pharmacyId: msg.pharmacyId ?? null,
+    content: msg.content ?? "",
+    createdAt: new Date(created).toISOString(),
+    timestamp: msg.timestamp
+      ? new Date(msg.timestamp).getTime()
+      : new Date(created).getTime(),
+  };
+}
+
 export async function createMessage(data: {
   orderId: number;
   content: string;
@@ -32,17 +46,17 @@ export async function createMessage(data: {
   } catch (e) {
     console.error(e);
   }
-  messageEvents.emit(`message:${data.orderId}`, created);
-  return created;
+  const payload = await normalizeMessage(created);
+  messageEvents.emit(`order:${data.orderId}`, payload);
+  return payload;
 }
 
 export async function getMessagesByOrder(orderId: number) {
-  return await db.message.findMany({
+  const msgs = await db.message.findMany({
     where: { orderId },
-    orderBy: {
-      timestamp: "asc",
-    },
+    orderBy: { id: "asc" },
   });
+  return Promise.all(msgs.map(normalizeMessage));
 }
 
 export async function deleteMessage(messageId: number) {
