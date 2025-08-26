@@ -40,19 +40,19 @@ interface Question {
 const sectionA: Question[] = [
   {
     id: "A1",
-    text: "성별",
+    text: "당신의 성별을 선택해 주세요.",
     type: "choice",
     options: [
       { value: "M", label: "남성" },
       { value: "F", label: "여성" },
     ],
   },
-  { id: "A2", text: "나이(만)", type: "number" },
-  { id: "A3", text: "키(cm)", type: "number" },
-  { id: "A4", text: "체중(kg)", type: "number" },
+  { id: "A2", text: "만 나이는 몇 살인가요?", type: "number" },
+  { id: "A3", text: "키는 몇 센티미터인가요?", type: "number" },
+  { id: "A4", text: "현재 체중은 몇 킬로그램인가요?", type: "number" },
   {
     id: "A10",
-    text: "관심 있는 개선 분야를 선택하세요 (1–5개 권장)",
+    text: "관심 있는 건강 개선 분야를 선택해 주세요. (1–5개 권장)",
     type: "multi",
     options: Object.entries(INTEREST_LABELS).map(([value, label]) => ({
       value,
@@ -61,7 +61,7 @@ const sectionA: Question[] = [
   },
   {
     id: "A5",
-    text: "임신/수유",
+    text: "현재 임신 중이거나 수유 중이신가요?",
     type: "choice",
     options: [
       { value: true, label: "예" },
@@ -70,7 +70,7 @@ const sectionA: Question[] = [
   },
   {
     id: "A6",
-    text: "항응고제 복용·출혈장애·수술 예정",
+    text: "항응고제를 복용 중이거나 출혈 장애가 있거나 수술 예정이신가요?",
     type: "choice",
     options: [
       { value: true, label: "예" },
@@ -79,7 +79,7 @@ const sectionA: Question[] = [
   },
   {
     id: "A7",
-    text: "신장결석 병력·만성 신장질환",
+    text: "신장결석 병력이 있거나 만성 신장질환이 있으신가요?",
     type: "choice",
     options: [
       { value: true, label: "예" },
@@ -88,7 +88,7 @@ const sectionA: Question[] = [
   },
   {
     id: "A8",
-    text: "간질환 진단·간수치 이상",
+    text: "간 질환을 진단받았거나 간 수치가 이상한 적이 있으신가요?",
     type: "choice",
     options: [
       { value: true, label: "예" },
@@ -97,7 +97,7 @@ const sectionA: Question[] = [
   },
   {
     id: "A9",
-    text: "철 과잉 진단",
+    text: "철 과잉을 진단받은 적이 있으신가요?",
     type: "choice",
     options: [
       { value: true, label: "예" },
@@ -106,7 +106,7 @@ const sectionA: Question[] = [
   },
   {
     id: "A11",
-    text: "등푸른 생선 섭취(주)",
+    text: "일주일에 등푸른 생선을 얼마나 드시나요?",
     type: "choice",
     options: [
       { value: 0, label: "0" },
@@ -116,7 +116,7 @@ const sectionA: Question[] = [
   },
   {
     id: "A12",
-    text: "평일 햇빛 노출 15분 미만",
+    text: "평일에 하루 15분 미만으로 햇빛을 쬐시나요?",
     type: "choice",
     options: [
       { value: true, label: "예" },
@@ -125,7 +125,7 @@ const sectionA: Question[] = [
   },
   {
     id: "A13",
-    text: "유제품 섭취(주)",
+    text: "일주일에 유제품은 얼마나 섭취하시나요?",
     type: "choice",
     options: [
       { value: "le2", label: "≤2" },
@@ -135,7 +135,7 @@ const sectionA: Question[] = [
   },
   {
     id: "A14",
-    text: "화면 시간(일)",
+    text: "하루에 화면을 보는 시간은 얼마나 되나요?",
     type: "choice",
     options: [
       { value: "<4", label: "<4h" },
@@ -145,7 +145,7 @@ const sectionA: Question[] = [
   },
   {
     id: "A15",
-    text: "배변 상태",
+    text: "평소 배변 상태는 어떠신가요?",
     type: "choice",
     options: [
       { value: "const", label: "변비" },
@@ -158,7 +158,7 @@ const sectionA: Question[] = [
 const sectionB: Question[] = [
   {
     id: "B16",
-    text: "지난 2주 피로감(0–3)",
+    text: "지난 2주 동안 느낀 피로감은 어느 정도였나요? (0–3)",
     type: "choice",
     options: [
       { value: 0, label: "0" },
@@ -169,7 +169,7 @@ const sectionB: Question[] = [
   },
   {
     id: "B17",
-    text: "수면 질 나쁨 또는 쥐 잦음",
+    text: "수면의 질이 좋지 않거나 쥐가 자주 나시나요?",
     type: "choice",
     options: [
       { value: true, label: "예" },
@@ -178,7 +178,7 @@ const sectionB: Question[] = [
   },
   {
     id: "B18",
-    text: "관절 통증 빈도",
+    text: "관절 통증은 얼마나 자주 느끼시나요?",
     type: "choice",
     options: [
       { value: "none", label: "없음" },
@@ -188,7 +188,7 @@ const sectionB: Question[] = [
   },
   {
     id: "B19",
-    text: "피부·모발·손톱 고민(복수 선택)",
+    text: "피부, 모발 또는 손톱과 관련해 고민이 있다면 모두 선택해 주세요.",
     type: "multi",
     options: [
       { value: "elastic", label: "피부 탄력 저하" },
@@ -201,7 +201,7 @@ const sectionB: Question[] = [
   },
   {
     id: "B20",
-    text: "야식·탄수 위주·최근 체중 증가",
+    text: "야식이나 탄수화물 위주의 식사를 자주 하거나 최근 체중이 증가했나요?",
     type: "choice",
     options: [
       { value: true, label: "예" },
@@ -210,7 +210,7 @@ const sectionB: Question[] = [
   },
   {
     id: "B21",
-    text: "음주 빈도",
+    text: "평소 음주 빈도는 어느 정도인가요?",
     type: "choice",
     options: [
       { value: "none", label: "거의 없음" },
@@ -220,7 +220,7 @@ const sectionB: Question[] = [
   },
   {
     id: "B22",
-    text: "여성: 월경 과다 또는 빈혈 의심",
+    text: "여성의 경우, 월경량이 많거나 빈혈이 의심되시나요?",
     type: "choice",
     options: [
       { value: true, label: "예" },
@@ -230,7 +230,7 @@ const sectionB: Question[] = [
   },
   {
     id: "B23",
-    text: "혈중지질 지적 또는 심혈관 가족력",
+    text: "혈중 지질 이상을 지적받았거나 심혈관 질환 가족력이 있으신가요?",
     type: "choice",
     options: [
       { value: true, label: "예" },
@@ -239,7 +239,7 @@ const sectionB: Question[] = [
   },
   {
     id: "B24",
-    text: "집중·기억 저하",
+    text: "집중력이나 기억력이 저하되었다고 느끼시나요?",
     type: "choice",
     options: [
       { value: true, label: "예" },
@@ -248,7 +248,7 @@ const sectionB: Question[] = [
   },
   {
     id: "B25",
-    text: "소화 불편·가스·더부룩",
+    text: "소화가 불편하거나 가스, 더부룩함을 자주 느끼시나요?",
     type: "choice",
     options: [
       { value: true, label: "예" },
@@ -257,7 +257,7 @@ const sectionB: Question[] = [
   },
   {
     id: "B26",
-    text: "잔병치레·감기 잦음",
+    text: "자주 잔병치레를 하거나 감기에 잘 걸리시나요?",
     type: "choice",
     options: [
       { value: true, label: "예" },
@@ -266,7 +266,7 @@ const sectionB: Question[] = [
   },
   {
     id: "B27",
-    text: "운동 수행·지구력 향상 욕구",
+    text: "운동 수행 능력이나 지구력을 높이고 싶으신가요?",
     type: "choice",
     options: [
       { value: true, label: "예" },
@@ -275,7 +275,7 @@ const sectionB: Question[] = [
   },
   {
     id: "B28",
-    text: "수족 냉증·혈류 불량",
+    text: "손발이 차거나 혈액 순환이 잘 되지 않는다고 느끼시나요?",
     type: "choice",
     options: [
       { value: true, label: "예" },
@@ -284,7 +284,7 @@ const sectionB: Question[] = [
   },
   {
     id: "B29",
-    text: "식사 질 저조 또는 끼니 거름",
+    text: "식사의 질이 낮거나 끼니를 자주 거르시나요?",
     type: "choice",
     options: [
       { value: true, label: "예" },
@@ -293,7 +293,7 @@ const sectionB: Question[] = [
   },
   {
     id: "B30",
-    text: "땀 많은 활동 또는 더운 환경 근무",
+    text: "땀을 많이 흘리는 활동을 하거나 더운 환경에서 근무하시나요?",
     type: "choice",
     options: [
       { value: true, label: "예" },
@@ -302,7 +302,7 @@ const sectionB: Question[] = [
   },
   {
     id: "B31",
-    text: "야간운전·저조도 시야 불편",
+    text: "야간 운전 시나 어두운 곳에서 시야가 불편하다고 느끼시나요?",
     type: "choice",
     options: [
       { value: true, label: "예" },
@@ -332,6 +332,8 @@ export default function Assess() {
   );
   const [current, setCurrent] = useState<string>(fixedA[0]);
   const [fixedIdx, setFixedIdx] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [loadingText, setLoadingText] = useState("");
 
   const completion = useMemo(() => {
     const total = section === "A" ? sectionA.length : sectionB.length;
@@ -345,35 +347,54 @@ export default function Assess() {
 
   const currentQuestion = allQuestions.find((q) => q.id === current)!;
 
-  const sectionTitle = section === "A" ? "기본 정보" : "생활 습관";
+  const sectionTitle =
+    section === "A" ? "건강 프로필" : "생활 습관 및 증상";
 
   const handleAnswer = (val: any) => {
     setAnswers((prev) => ({ ...prev, [current]: val }));
 
-    // 고정 질문 순서 처리
+    let message = "다음 질문을 준비하고 있어요...";
+    let action: () => void;
+
     if (section === "A" && fixedIdx < fixedA.length - 1) {
       const nextId = fixedA[fixedIdx + 1];
-      setFixedIdx(fixedIdx + 1);
-      setCurrent(nextId);
-      return;
-    }
-
-    const newRemaining = remaining.filter((id) => id !== current);
-    if (newRemaining.length === 0) {
-      if (section === "A") {
-        setSection("B");
-        setRemaining(sectionB.map((q) => q.id));
-        setCurrent(sectionB[0].id);
-        setFixedIdx(0);
+      action = () => {
+        setFixedIdx(fixedIdx + 1);
+        setCurrent(nextId);
+      };
+    } else {
+      const newRemaining = remaining.filter((id) => id !== current);
+      if (newRemaining.length === 0) {
+        if (section === "A") {
+          message = "이제 생활 습관 및 증상에 대한 질문을 할게요...";
+          action = () => {
+            setSection("B");
+            setRemaining(sectionB.map((q) => q.id));
+            setCurrent(sectionB[0].id);
+            setFixedIdx(0);
+          };
+        } else {
+          message = "결과를 분석하는 중이에요...";
+          action = () => {
+            setSection("DONE");
+          };
+        }
       } else {
-        setSection("DONE");
+        const nextId =
+          newRemaining[hashChoice(current, val) % newRemaining.length];
+        action = () => {
+          setRemaining(newRemaining);
+          setCurrent(nextId);
+        };
       }
-      return;
     }
 
-    const nextId = newRemaining[hashChoice(current, val) % newRemaining.length];
-    setRemaining(newRemaining);
-    setCurrent(nextId);
+    setLoadingText(message);
+    setLoading(true);
+    setTimeout(() => {
+      action();
+      setLoading(false);
+    }, 700);
   };
 
   if (section === "DONE") {
@@ -402,7 +423,32 @@ export default function Assess() {
 
   return (
     <div className="w-full max-w-[760px] mx-auto px-4 pb-28">
-      <div className="relative mt-6 sm:mt-10 overflow-visible sm:overflow-hidden sm:rounded-3xl sm:bg-white/70 sm:ring-1 sm:ring-black/5 sm:shadow-[0_10px_40px_rgba(2,6,23,0.08)] sm:backdrop-blur">
+      <div className="relative mt-6 sm:mt-10 overflow-visible sm:rounded-3xl sm:bg-white/70 sm:ring-1 sm:ring-black/5 sm:shadow-[0_10px_40px_rgba(2,6,23,0.08)] sm:backdrop-blur">
+        {loading && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
+            <svg
+              className="h-6 w-6 animate-spin text-sky-500"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              ></path>
+            </svg>
+            <p className="mt-3 text-gray-700">{loadingText}</p>
+          </div>
+        )}
         <div className="relative p-4 sm:p-10">
           <div className="flex items-start justify-between">
             <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
@@ -431,7 +477,7 @@ export default function Assess() {
               {currentQuestion.options!.map((opt) => (
                 <button
                   key={String(opt.value)}
-                  className="w-full rounded-xl border border-gray-200 p-3 text-left transition hover:bg-gray-50 active:scale-[0.99]"
+                  className="w-full rounded-xl border border-gray-200 bg-white p-3 text-left transition transform hover:bg-gray-50 hover:ring-2 hover:ring-sky-400 hover:scale-105"
                   onClick={() => handleAnswer(opt.value)}
                 >
                   {opt.label}
@@ -442,13 +488,17 @@ export default function Assess() {
 
           {currentQuestion.type === "number" && (
             <div className="mt-4">
-              <NumberInput onSubmit={(v) => handleAnswer(v)} />
+              <NumberInput
+                key={currentQuestion.id}
+                onSubmit={(v) => handleAnswer(v)}
+              />
             </div>
           )}
 
           {currentQuestion.type === "multi" && (
             <div className="mt-4">
               <MultiSelect
+                key={currentQuestion.id}
                 question={currentQuestion}
                 onSubmit={(vals) => handleAnswer(vals)}
               />
