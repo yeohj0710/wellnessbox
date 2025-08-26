@@ -35,6 +35,8 @@ interface Question {
   text: string;
   type: "choice" | "number" | "multi";
   options?: { value: any; label: string }[];
+  min?: number;
+  max?: number;
 }
 
 const sectionA: Question[] = [
@@ -47,9 +49,27 @@ const sectionA: Question[] = [
       { value: "F", label: "여성" },
     ],
   },
-  { id: "A2", text: "만 나이는 몇 살인가요?", type: "number" },
-  { id: "A3", text: "키는 몇 센티미터인가요?", type: "number" },
-  { id: "A4", text: "현재 체중은 몇 킬로그램인가요?", type: "number" },
+  {
+    id: "A2",
+    text: "만 나이는 몇 살인가요?",
+    type: "number",
+    min: 0,
+    max: 120,
+  },
+  {
+    id: "A3",
+    text: "키는 몇 센티미터인가요?",
+    type: "number",
+    min: 50,
+    max: 250,
+  },
+  {
+    id: "A4",
+    text: "현재 체중은 몇 킬로그램인가요?",
+    type: "number",
+    min: 20,
+    max: 250,
+  },
   {
     id: "A10",
     text: "관심 있는 건강 개선 분야를 선택해 주세요. (1–5개 권장)",
@@ -109,8 +129,8 @@ const sectionA: Question[] = [
     text: "일주일에 등푸른 생선을 얼마나 드시나요?",
     type: "choice",
     options: [
-      { value: 0, label: "0" },
-      { value: 1, label: "1" },
+      { value: 0, label: "0회" },
+      { value: 1, label: "1회" },
       { value: 2, label: "2회 이상" },
     ],
   },
@@ -128,9 +148,9 @@ const sectionA: Question[] = [
     text: "일주일에 유제품은 얼마나 섭취하시나요?",
     type: "choice",
     options: [
-      { value: "le2", label: "≤2" },
-      { value: "3-5", label: "3–5" },
-      { value: "6+", label: "6+" },
+      { value: "le2", label: "주 2회 이하" },
+      { value: "3-5", label: "주 3~5회" },
+      { value: "6+", label: "주 6회 이상" },
     ],
   },
   {
@@ -138,9 +158,9 @@ const sectionA: Question[] = [
     text: "하루에 화면을 보는 시간은 얼마나 되나요?",
     type: "choice",
     options: [
-      { value: "<4", label: "<4h" },
-      { value: "4-5", label: "4–5h" },
-      { value: "6+", label: "≥6h" },
+      { value: "<4", label: "하루 4시간 미만" },
+      { value: "4-5", label: "하루 4~5시간" },
+      { value: "6+", label: "하루 6시간 이상" },
     ],
   },
   {
@@ -158,13 +178,13 @@ const sectionA: Question[] = [
 const sectionB: Question[] = [
   {
     id: "B16",
-    text: "지난 2주 동안 느낀 피로감은 어느 정도였나요? (0–3)",
+    text: "지난 2주 동안 느낀 피로감을 0~3 사이에서 선택해 주세요.",
     type: "choice",
     options: [
-      { value: 0, label: "0" },
-      { value: 1, label: "1" },
-      { value: 2, label: "2" },
-      { value: 3, label: "3" },
+      { value: 0, label: "0 (전혀 없음)" },
+      { value: 1, label: "1 (약간)" },
+      { value: 2, label: "2 (보통)" },
+      { value: 3, label: "3 (심함)" },
     ],
   },
   {
@@ -214,8 +234,8 @@ const sectionB: Question[] = [
     type: "choice",
     options: [
       { value: "none", label: "거의 없음" },
-      { value: "1-2", label: "주1–2" },
-      { value: "3+", label: "주3+ 또는 폭음" },
+      { value: "1-2", label: "주 1~2회" },
+      { value: "3+", label: "주 3회 이상 또는 폭음" },
     ],
   },
   {
@@ -335,15 +355,22 @@ export default function Assess() {
   const [loading, setLoading] = useState(false);
   const [loadingText, setLoadingText] = useState("");
 
-  const completion = useMemo(() => {
+  const { completion, answered, total } = useMemo(() => {
     const total = section === "A" ? sectionA.length : sectionB.length;
     const answered = (
       section === "A"
         ? Object.keys(answers).filter((k) => k.startsWith("A"))
         : Object.keys(answers).filter((k) => k.startsWith("B"))
     ).length;
-    return Math.round((answered / total) * 100);
+    const completion = Math.round((answered / total) * 100);
+    return { completion, answered, total };
   }, [answers, section]);
+
+  const progressMsg = useMemo(() => {
+    if (completion < 40) return "조금씩 진행 중이에요.";
+    if (completion < 70) return "벌써 절반을 넘었어요!";
+    return "거의 다 왔어요!";
+  }, [completion]);
 
   const currentQuestion = allQuestions.find((q) => q.id === current)!;
 
@@ -355,18 +382,19 @@ export default function Assess() {
 
     let message = "다음 질문을 준비하고 있어요...";
     let action: () => void;
+    let delay = 700;
 
     if (section === "A" && fixedIdx < fixedA.length - 1) {
       const nextId = fixedA[fixedIdx + 1];
-      action = () => {
-        setFixedIdx(fixedIdx + 1);
-        setCurrent(nextId);
-      };
+      setFixedIdx(fixedIdx + 1);
+      setCurrent(nextId);
+      return;
     } else {
       const newRemaining = remaining.filter((id) => id !== current);
       if (newRemaining.length === 0) {
         if (section === "A") {
           message = "이제 생활 습관 및 증상에 대한 질문을 할게요...";
+          delay = 1500;
           action = () => {
             setSection("B");
             setRemaining(sectionB.map((q) => q.id));
@@ -375,6 +403,7 @@ export default function Assess() {
           };
         } else {
           message = "결과를 분석하는 중이에요...";
+          delay = 1500;
           action = () => {
             setSection("DONE");
           };
@@ -394,7 +423,7 @@ export default function Assess() {
     setTimeout(() => {
       action();
       setLoading(false);
-    }, 700);
+    }, delay);
   };
 
   if (section === "DONE") {
@@ -405,14 +434,22 @@ export default function Assess() {
           <h1 className="text-2xl font-extrabold text-gray-900 mb-4">
             추천 카테고리 Top3
           </h1>
-          <ul className="space-y-2">
+          <p className="text-sm text-gray-600 mb-6">
+            점수는 5점 만점 기준으로 계산된 적합도입니다.
+          </p>
+          <ul className="space-y-4">
             {top.map((c) => (
-              <li
-                key={c.key}
-                className="p-3 rounded-xl bg-gray-50 flex justify-between"
-              >
-                <span>{c.label}</span>
-                <span className="font-bold">{c.score.toFixed(2)}</span>
+              <li key={c.key} className="p-4 rounded-xl bg-gray-50">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">{c.label}</span>
+                  <span className="text-sm text-gray-600">{c.score.toFixed(2)}점</span>
+                </div>
+                <div className="mt-2 h-2 rounded-full bg-gray-200 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-sky-500 to-indigo-500"
+                    style={{ width: `${Math.min(100, (c.score / 5) * 100)}%` }}
+                  />
+                </div>
               </li>
             ))}
           </ul>
@@ -425,28 +462,39 @@ export default function Assess() {
     <div className="w-full max-w-[760px] mx-auto px-4 pb-28">
       <div className="relative mt-6 sm:mt-10 overflow-visible sm:rounded-3xl sm:bg-white/70 sm:ring-1 sm:ring-black/5 sm:shadow-[0_10px_40px_rgba(2,6,23,0.08)] sm:backdrop-blur">
         {loading && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
-            <svg
-              className="h-6 w-6 animate-spin text-sky-500"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              ></circle>
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-              ></path>
-            </svg>
-            <p className="mt-3 text-gray-700">{loadingText}</p>
+          <div className="fixed inset-0 z-20 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
+            {loadingText.includes("생활 습관") ? (
+              <svg
+                className="h-8 w-8 text-indigo-600 animate-bounce"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <path stroke="currentColor" strokeWidth="2" d="M12 4v16m8-8H4" />
+              </svg>
+            ) : (
+              <svg
+                className="h-6 w-6 animate-spin text-sky-500"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                ></path>
+              </svg>
+            )}
+            <p className="mt-3 text-gray-700 text-center px-4">{loadingText}</p>
           </div>
         )}
         <div className="relative p-4 sm:p-10">
@@ -465,6 +513,10 @@ export default function Assess() {
                   style={{ width: `${completion}%` }}
                 />
               </div>
+              <div className="mt-1 text-[10px] text-gray-500">
+                {answered}/{total}문항 완료 · {total - answered}문항 남음
+              </div>
+              <div className="text-[10px] text-sky-600 mt-1">{progressMsg}</div>
             </div>
           </div>
 
@@ -473,11 +525,11 @@ export default function Assess() {
           </h2>
 
           {currentQuestion.type === "choice" && (
-            <div className="mt-4 space-y-2">
+            <div className="mt-4 space-y-2 overflow-visible">
               {currentQuestion.options!.map((opt) => (
                 <button
                   key={String(opt.value)}
-                  className="w-full rounded-xl border border-gray-200 bg-white p-3 text-left transition transform hover:bg-gray-50 hover:ring-2 hover:ring-sky-400 hover:scale-105"
+                  className="w-full rounded-xl border border-gray-200 bg-white p-3 text-left transition transform hover:bg-gray-50 hover:ring-2 hover:ring-sky-400 hover:scale-[1.02]"
                   onClick={() => handleAnswer(opt.value)}
                 >
                   {opt.label}
@@ -490,6 +542,7 @@ export default function Assess() {
             <div className="mt-4">
               <NumberInput
                 key={currentQuestion.id}
+                question={currentQuestion}
                 onSubmit={(v) => handleAnswer(v)}
               />
             </div>
@@ -510,18 +563,45 @@ export default function Assess() {
   );
 }
 
-function NumberInput({ onSubmit }: { onSubmit: (val: number) => void }) {
+function NumberInput({
+  question,
+  onSubmit,
+}: {
+  question: Question;
+  onSubmit: (val: number) => void;
+}) {
   const [val, setVal] = useState("");
+  const [error, setError] = useState("");
+  const submit = () => {
+    const num = Number(val);
+    if (val === "" || Number.isNaN(num)) return;
+    if (question.min !== undefined && num < question.min) {
+      setError(`${question.min} 이상 입력해 주세요.`);
+      return;
+    }
+    if (question.max !== undefined && num > question.max) {
+      setError(`${question.max} 이하로 입력해 주세요.`);
+      return;
+    }
+    setError("");
+    onSubmit(num);
+  };
   return (
     <div className="space-y-3">
       <input
         type="number"
         value={val}
+        min={question.min}
+        max={question.max}
         onChange={(e) => setVal(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") submit();
+        }}
         className="w-full rounded-xl border border-gray-200 p-3"
       />
+      {error && <p className="text-sm text-red-600">{error}</p>}
       <button
-        onClick={() => onSubmit(Number(val))}
+        onClick={submit}
         disabled={val === ""}
         className="w-full rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-2 font-bold text-white shadow disabled:opacity-60 hover:from-sky-600 hover:to-indigo-600 active:scale-[0.99]"
       >
@@ -546,7 +626,7 @@ function MultiSelect({
   };
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-80 overflow-y-auto">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-80 overflow-y-auto overflow-x-visible p-1">
         {question.options!.map((opt) => {
           const active = selected.includes(opt.value);
           return (
