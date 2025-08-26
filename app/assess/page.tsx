@@ -1,7 +1,33 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { CATEGORY_LABELS, evaluate, CategoryKey } from "./algorithm";
+import { evaluate, CategoryKey } from "./algorithm";
+
+// 사용자에게 노출할 관심 분야 라벨
+const INTEREST_LABELS: Record<CategoryKey, string> = {
+  vitaminC: "피부·항산화",
+  omega3: "심혈관·혈액순환",
+  calcium: "뼈·치아 건강",
+  lutein: "눈 건강",
+  vitaminD: "뼈·면역",
+  milkThistle: "간 건강",
+  probiotics: "장·소화",
+  vitaminB: "피로·에너지",
+  magnesium: "긴장·근육",
+  garcinia: "체중 관리",
+  multivitamin: "기초 영양",
+  zinc: "면역·피부",
+  psyllium: "배변·식이섬유",
+  minerals: "미네랄 보충",
+  vitaminA: "눈·피부",
+  iron: "빈혈 예방",
+  phosphatidylserine: "집중·기억",
+  folicAcid: "임신 준비",
+  arginine: "혈류·운동",
+  chondroitin: "관절",
+  coenzymeQ10: "피로·항산화",
+  collagen: "피부·모발",
+};
 
 // question definitions
 interface Question {
@@ -24,6 +50,15 @@ const sectionA: Question[] = [
   { id: "A2", text: "나이(만)", type: "number" },
   { id: "A3", text: "키(cm)", type: "number" },
   { id: "A4", text: "체중(kg)", type: "number" },
+  {
+    id: "A10",
+    text: "관심 있는 개선 분야를 선택하세요 (1–5개 권장)",
+    type: "multi",
+    options: Object.entries(INTEREST_LABELS).map(([value, label]) => ({
+      value,
+      label,
+    })),
+  },
   {
     id: "A5",
     text: "임신/수유",
@@ -68,15 +103,6 @@ const sectionA: Question[] = [
       { value: true, label: "예" },
       { value: false, label: "아니오" },
     ],
-  },
-  {
-    id: "A10",
-    text: "관심 카테고리 선택(1–5개 권장)",
-    type: "multi",
-    options: Object.entries(CATEGORY_LABELS).map(([value, label]) => ({
-      value,
-      label,
-    })),
   },
   {
     id: "A11",
@@ -294,15 +320,18 @@ function hashChoice(qid: string, val: any) {
   return h;
 }
 
+const fixedA = ["A1", "A2", "A3", "A4", "A10"];
+
 export default function Assess() {
   const [section, setSection] = useState<"A" | "B" | "DONE">("A");
   const [answers, setAnswers] = useState<Record<string, any>>({});
 
   const allQuestions = section === "A" ? sectionA : sectionB;
   const [remaining, setRemaining] = useState<string[]>(
-    sectionA.map((q) => q.id)
+    sectionA.map((q) => q.id).filter((id) => !fixedA.includes(id))
   );
-  const [current, setCurrent] = useState<string>(sectionA[0].id);
+  const [current, setCurrent] = useState<string>(fixedA[0]);
+  const [fixedIdx, setFixedIdx] = useState(0);
 
   const completion = useMemo(() => {
     const total = section === "A" ? sectionA.length : sectionB.length;
@@ -316,19 +345,32 @@ export default function Assess() {
 
   const currentQuestion = allQuestions.find((q) => q.id === current)!;
 
+  const sectionTitle = section === "A" ? "기본 정보" : "생활 습관";
+
   const handleAnswer = (val: any) => {
     setAnswers((prev) => ({ ...prev, [current]: val }));
+
+    // 고정 질문 순서 처리
+    if (section === "A" && fixedIdx < fixedA.length - 1) {
+      const nextId = fixedA[fixedIdx + 1];
+      setFixedIdx(fixedIdx + 1);
+      setCurrent(nextId);
+      return;
+    }
+
     const newRemaining = remaining.filter((id) => id !== current);
     if (newRemaining.length === 0) {
       if (section === "A") {
         setSection("B");
         setRemaining(sectionB.map((q) => q.id));
         setCurrent(sectionB[0].id);
+        setFixedIdx(0);
       } else {
         setSection("DONE");
       }
       return;
     }
+
     const nextId = newRemaining[hashChoice(current, val) % newRemaining.length];
     setRemaining(newRemaining);
     setCurrent(nextId);
@@ -337,70 +379,104 @@ export default function Assess() {
   if (section === "DONE") {
     const { top } = evaluate(answers);
     return (
-      <div className="max-w-xl mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-4">추천 카테고리 Top3</h1>
-        <ul className="space-y-2">
-          {top.map((c) => (
-            <li
-              key={c.key}
-              className="p-3 rounded-xl bg-gray-50 flex justify-between"
-            >
-              <span>{c.label}</span>
-              <span className="font-bold">{c.score.toFixed(2)}</span>
-            </li>
-          ))}
-        </ul>
+      <div className="w-full max-w-[760px] mx-auto px-4 pb-28">
+        <div className="relative mt-6 sm:mt-10 overflow-hidden rounded-3xl bg-white/70 p-6 sm:p-10 shadow-[0_10px_40px_rgba(2,6,23,0.08)] ring-1 ring-black/5 backdrop-blur">
+          <h1 className="text-2xl font-extrabold text-gray-900 mb-4">
+            추천 카테고리 Top3
+          </h1>
+          <ul className="space-y-2">
+            {top.map((c) => (
+              <li
+                key={c.key}
+                className="p-3 rounded-xl bg-gray-50 flex justify-between"
+              >
+                <span>{c.label}</span>
+                <span className="font-bold">{c.score.toFixed(2)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-xl mx-auto p-4">
-      <div className="mb-4">
-        <div className="flex justify-between text-sm text-gray-600">
-          <span>진행도</span>
-          <span>{completion}%</span>
-        </div>
-        <div className="w-full h-2 bg-gray-100 rounded-full mt-1">
-          <div
-            className="h-2 bg-sky-500 rounded-full"
-            style={{ width: `${completion}%` }}
-          />
+    <div className="w-full max-w-[760px] mx-auto px-4 pb-28">
+      <div className="relative mt-6 sm:mt-10 overflow-visible sm:overflow-hidden sm:rounded-3xl sm:bg-white/70 sm:ring-1 sm:ring-black/5 sm:shadow-[0_10px_40px_rgba(2,6,23,0.08)] sm:backdrop-blur">
+        <div className="relative p-4 sm:p-10">
+          <div className="flex items-start justify-between">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
+              {sectionTitle}
+            </h1>
+            <div className="min-w-[120px]">
+              <div className="flex items-center justify-between text-xs text-gray-600">
+                <span>진행도</span>
+                <span className="tabular-nums">{completion}%</span>
+              </div>
+              <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 transition-[width] duration-500"
+                  style={{ width: `${completion}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <h2 className="mt-6 text-xl font-bold text-gray-900">
+            {currentQuestion.text}
+          </h2>
+
+          {currentQuestion.type === "choice" && (
+            <div className="mt-4 space-y-2">
+              {currentQuestion.options!.map((opt) => (
+                <button
+                  key={String(opt.value)}
+                  className="w-full rounded-xl border border-gray-200 p-3 text-left transition hover:bg-gray-50 active:scale-[0.99]"
+                  onClick={() => handleAnswer(opt.value)}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {currentQuestion.type === "number" && (
+            <div className="mt-4">
+              <NumberInput onSubmit={(v) => handleAnswer(v)} />
+            </div>
+          )}
+
+          {currentQuestion.type === "multi" && (
+            <div className="mt-4">
+              <MultiSelect
+                question={currentQuestion}
+                onSubmit={(vals) => handleAnswer(vals)}
+              />
+            </div>
+          )}
         </div>
       </div>
+    </div>
+  );
+}
 
-      <h2 className="text-xl font-bold mb-3">{currentQuestion.text}</h2>
-
-      {currentQuestion.type === "choice" && (
-        <div className="space-y-2">
-          {currentQuestion.options!.map((opt) => (
-            <button
-              key={String(opt.value)}
-              className="w-full rounded-xl border p-3 text-left"
-              onClick={() => handleAnswer(opt.value)}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {currentQuestion.type === "number" && (
-        <div className="space-y-2">
-          <input
-            type="number"
-            className="w-full rounded-xl border p-3"
-            onChange={(e) => handleAnswer(Number(e.target.value))}
-          />
-        </div>
-      )}
-
-      {currentQuestion.type === "multi" && (
-        <MultiSelect
-          question={currentQuestion}
-          onSubmit={(vals) => handleAnswer(vals)}
-        />
-      )}
+function NumberInput({ onSubmit }: { onSubmit: (val: number) => void }) {
+  const [val, setVal] = useState("");
+  return (
+    <div className="space-y-3">
+      <input
+        type="number"
+        value={val}
+        onChange={(e) => setVal(e.target.value)}
+        className="w-full rounded-xl border border-gray-200 p-3"
+      />
+      <button
+        onClick={() => onSubmit(Number(val))}
+        disabled={val === ""}
+        className="w-full rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-2 font-bold text-white shadow disabled:opacity-60 hover:from-sky-600 hover:to-indigo-600 active:scale-[0.99]"
+      >
+        다음
+      </button>
     </div>
   );
 }
@@ -419,22 +495,31 @@ function MultiSelect({
     );
   };
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-1 gap-2">
-        {question.options!.map((opt) => (
-          <label key={String(opt.value)} className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={selected.includes(opt.value)}
-              onChange={() => toggle(opt.value)}
-            />
-            <span>{opt.label}</span>
-          </label>
-        ))}
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-80 overflow-y-auto">
+        {question.options!.map((opt) => {
+          const active = selected.includes(opt.value);
+          return (
+            <button
+              type="button"
+              key={String(opt.value)}
+              onClick={() => toggle(opt.value)}
+              className={[
+                "rounded-xl border p-2 text-sm transition whitespace-nowrap",
+                active
+                  ? "bg-sky-50 ring-2 ring-sky-400"
+                  : "border-gray-200 bg-white hover:bg-gray-50",
+              ].join(" ")}
+            >
+              {opt.label}
+            </button>
+          );
+        })}
       </div>
       <button
         onClick={() => onSubmit(selected)}
-        className="mt-2 w-full rounded-xl bg-sky-500 text-white p-2 font-bold"
+        disabled={selected.length === 0}
+        className="w-full rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-2 font-bold text-white shadow disabled:opacity-60 hover:from-sky-600 hover:to-indigo-600 active:scale-[0.99]"
       >
         다음
       </button>
