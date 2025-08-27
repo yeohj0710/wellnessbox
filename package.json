@@ -20,6 +20,7 @@
     "jimp": "^0.16.1",
     "js-cookie": "^3.0.5",
     "next": "15.0.3",
+    "onnxruntime-node": "^1.17.3",
     "onnxruntime-web": "1.16.1",
     "react": "19.0.0-rc-66855b96-20241106",
     "react-dom": "19.0.0-rc-66855b96-20241106",
