@@ -130,7 +130,7 @@ export default function Assess() {
     <div className="w-full max-w-[760px] mx-auto px-4 pb-28">
       <div className="relative mt-6 sm:mt-10 overflow-hidden sm:rounded-3xl sm:bg-white/70 sm:ring-1 sm:ring-black/5 sm:shadow-[0_10px_40px_rgba(2,6,23,0.08)] sm:backdrop-blur">
         {loading && (
-          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm sm:rounded-3xl">
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/90 backdrop-blur-sm sm:rounded-3xl">
             {loadingText.includes("생활 습관") ? (
               <svg
                 className="h-8 w-8 text-indigo-600 animate-bounce"
@@ -162,7 +162,7 @@ export default function Assess() {
                 ></path>
               </svg>
             )}
-            <p className="mt-3 text-gray-700 text-center px-4">{loadingText}</p>
+            <p className="mt-3 px-4 text-center text-indigo-700 font-medium">{loadingText}</p>
         </div>
       )}
       <div className="relative p-4 sm:p-10">
@@ -193,18 +193,31 @@ export default function Assess() {
         </h2>
 
         {currentQuestion.type === "choice" && (
-          <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <div
+            className={[
+              "mt-6 grid gap-2",
+              currentQuestion.options!.length === 1
+                ? "grid-cols-1"
+                : currentQuestion.options!.length === 2
+                ? "grid-cols-2 sm:grid-cols-2"
+                : currentQuestion.options!.length === 3
+                ? "grid-cols-2 sm:grid-cols-3"
+                : currentQuestion.options!.length === 4
+                ? "grid-cols-2 sm:grid-cols-2"
+                : "grid-cols-2 sm:grid-cols-3",
+            ].join(" ")}
+          >
             {currentQuestion.options!.map((opt) => (
-                <button
-                  key={String(opt.value)}
-                  onClick={() => handleAnswer(opt.value)}
-                  className="rounded-xl border border-gray-200 bg-white p-2 text-sm hover:bg-gray-50"
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          )}
+              <button
+                key={String(opt.value)}
+                onClick={() => handleAnswer(opt.value)}
+                className="rounded-xl border border-gray-200 bg-white p-3 text-sm transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 active:scale-[0.98]"
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        )}
 
           {currentQuestion.type === "number" && (
             <div className="mt-4">
