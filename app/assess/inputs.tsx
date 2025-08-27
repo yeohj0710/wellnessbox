@@ -159,9 +159,9 @@ export function MultiSelect({
       </div>
       <div className="mt-4 space-y-4">
         <button
-          onClick={() => onSubmit(selected)}
-          disabled={selected.length === 0}
-          className="w-full rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-2 font-bold text-white shadow transition-colors hover:from-sky-600 hover:to-indigo-600 active:scale-[0.99] disabled:bg-none disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
+          type="button"
+          onClick={() => onSubmit(selected.length === 0 ? undefined : selected)}
+          className="w-full rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-2 font-bold text-white shadow transition-colors hover:from-sky-600 hover:to-indigo-600 active:scale-[0.99]"
         >
           다음
         </button>

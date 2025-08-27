@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { evaluate } from "./algorithm";
 import { sectionA, sectionB, fixedA, hashChoice } from "./questions";
-import { NumberInput, MultiSelect } from "./inputs";
+import { NumberInput, MultiSelect } from "@/app/assess/inputs";
 
 const STORAGE_KEY = "assess-state";
 
@@ -171,40 +171,41 @@ export default function Assess() {
     let action: () => void;
     let delay = 1000;
 
-    if (section === "A" && fixedIdx < fixedA.length - 1) {
-      const nextId = fixedA[fixedIdx + 1];
-      setFixedIdx(fixedIdx + 1);
-      setCurrent(nextId);
-      return;
-    } else {
-      const remaining = computeRemaining(
-        section === "A" ? "A" : "B",
-        newAnswers,
-        newHistory
-      );
-      if (remaining.length === 0) {
-        if (section === "A") {
-          message = "이제 생활 습관과 증상에 대해 알아볼게요.";
-          delay = 3000;
-          action = () => {
-            const remB = computeRemaining("B", newAnswers, newHistory);
-            setSection("B");
-            setCurrent(remB[0]);
-            setFixedIdx(0);
-          };
-        } else {
-          message = "AI가 최종 결과를 계산하고 있어요.";
-          delay = 3000;
-          action = () => {
-            setSection("DONE");
-          };
-        }
-      } else {
-        const nextId = remaining[hashChoice(current, val) % remaining.length];
+    if (section === "A" && fixedA.includes(current)) {
+      const idx = fixedA.indexOf(current);
+      if (idx < fixedA.length - 1) {
+        setFixedIdx(idx + 1);
+        setCurrent(fixedA[idx + 1]);
+        return;
+      }
+    }
+    const remaining = computeRemaining(
+      section === "A" ? "A" : "B",
+      newAnswers,
+      newHistory
+    );
+    if (remaining.length === 0) {
+      if (section === "A") {
+        message = "이제 생활 습관과 증상에 대해 알아볼게요.";
+        delay = 3000;
         action = () => {
-          setCurrent(nextId);
+          const remB = computeRemaining("B", newAnswers, newHistory);
+          setSection("B");
+          setCurrent(remB[0]);
+          setFixedIdx(0);
+        };
+      } else {
+        message = "AI가 최종 결과를 계산하고 있어요.";
+        delay = 3000;
+        action = () => {
+          setSection("DONE");
         };
       }
+    } else {
+      const nextId = remaining[hashChoice(current, val) % remaining.length];
+      action = () => {
+        setCurrent(nextId);
+      };
     }
 
     setLoadingText(message);

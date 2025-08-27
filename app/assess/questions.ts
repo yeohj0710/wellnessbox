@@ -131,7 +131,7 @@ export const sectionA: Question[] = [
   },
   {
     id: "A12",
-    text: "평일에 하루 15분 미만으로만 햇빛을 쬐시나요?",
+    text: "평일에 하루 15분 미만으로 햇빛을 쬐시나요?",
     type: "choice",
     options: [
       { value: true, label: "네" },
