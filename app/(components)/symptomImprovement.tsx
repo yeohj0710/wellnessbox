@@ -22,7 +22,7 @@ export default function SymptomImprovement() {
               몇 가지 질문에 답하면 AI가 나에게 맞는 영양제를 추천해줘요.
             </p>
             <div className="mt-6">
-              <Link href="/check-ai">
+              <Link href="/assess">
                 <button className="w-full rounded-xl bg-gradient-to-r from-[#4568F5] via-[#6C4DFF] to-[#7C5CFF] px-5 py-2.5 text-base font-semibold text-white shadow-md transition-all duration-300 bg-[length:200%_200%] hover:bg-right-bottom">
                   진단하러 가기
                 </button>

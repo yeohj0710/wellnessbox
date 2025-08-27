@@ -31,58 +31,58 @@ export default function PaymentSection({
           </span>
         </label>
         {loginStatus.isTestLoggedIn && (
-          <>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="radio"
-                name="paymentMethod"
-                value="kpn"
-                className="w-5 h-5 text-sky-500 border-gray-300"
-                checked={selectedPaymentMethod === "kpn"}
-                onChange={() => setSelectedPaymentMethod("kpn")}
-              />
-              <div className="flex flex-row gap-1.5 items-center justify-center">
-                <span className="text-base font-medium text-gray-700">
-                  NHN KCP
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="radio"
+              name="paymentMethod"
+              value="kpn"
+              className="w-5 h-5 text-sky-500 border-gray-300"
+              checked={selectedPaymentMethod === "kpn"}
+              onChange={() => setSelectedPaymentMethod("kpn")}
+            />
+            <div className="flex flex-row gap-1.5 items-center justify-center">
+              <span className="text-base font-medium text-gray-700">
+                NHN KCP
+              </span>
+              <div className="bg-orange-400 px-2 rounded-full">
+                <span className="text-xs font-bold text-white">
+                  테스트 결제
                 </span>
-                <div className="bg-orange-400 px-2 rounded-full">
-                  <span className="text-xs font-bold text-white">
-                    테스트 결제
-                  </span>
-                </div>
               </div>
-            </label>
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="radio"
-                name="paymentMethod"
-                value="kakao"
-                className="w-5 h-5 text-sky-500 border-gray-300"
-                checked={selectedPaymentMethod === "kakao"}
-                onChange={() => setSelectedPaymentMethod("kakao")}
-              />
-              <div className="flex flex-row gap-1.5 items-center justify-center">
-                <div className="relative w-12 h-6 ml-2.5">
-                  <Image
-                    src="/kakaopay.svg"
-                    alt="카카오페이 아이콘"
-                    fill
-                    sizes="128px"
-                    className="object-contain"
-                  />
-                </div>
-                <span className="text-base font-medium text-gray-700">
-                  카카오페이
-                </span>
-                <div className="bg-orange-400 px-2 rounded-full">
-                  <span className="text-xs font-bold text-white">
-                    테스트 결제
-                  </span>
-                </div>
-              </div>
-            </label>
-          </>
+            </div>
+          </label>
         )}
+        <label className="flex items-center cursor-pointer">
+          <input
+            type="radio"
+            name="paymentMethod"
+            value="kakao"
+            className="w-5 h-5 text-sky-500 border-gray-300"
+            checked={selectedPaymentMethod === "kakao"}
+            onChange={() => setSelectedPaymentMethod("kakao")}
+          />
+          <div className="flex flex-row gap-1.5 items-center justify-center">
+            <div className="relative w-12 h-6 ml-2.5">
+              <Image
+                src="/kakaopay.svg"
+                alt="카카오페이 아이콘"
+                fill
+                sizes="128px"
+                className="object-contain"
+              />
+            </div>
+            <span className="text-base font-medium text-gray-700">
+              카카오페이
+            </span>
+            {loginStatus.isTestLoggedIn && (
+              <div className="bg-orange-400 px-2 rounded-full">
+                <span className="text-xs font-bold text-white">
+                  테스트 결제
+                </span>
+              </div>
+            )}
+          </div>
+        </label>
       </div>
       {totalPrice > 0 ? (
         <>

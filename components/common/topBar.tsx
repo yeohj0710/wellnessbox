@@ -14,6 +14,7 @@ export default function TopBar() {
   const [cartCount, setCartCount] = useState(0);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const logoRef = useRef<HTMLImageElement>(null);
+
   useEffect(() => {
     const fetchLoginStatus = async () => {
       const fetchgedLoginStatus = await getLoginStatus();
@@ -21,6 +22,7 @@ export default function TopBar() {
     };
     fetchLoginStatus();
   }, []);
+
   useEffect(() => {
     const updateCartCount = () => {
       setTimeout(() => {
@@ -28,9 +30,7 @@ export default function TopBar() {
         try {
           const cart = JSON.parse(localStorage.getItem("cartItems") || "[]");
           setCartCount(cart.length);
-        } catch (e) {
-          console.error(e);
-        }
+        } catch (e) {}
       }, 0);
     };
     updateCartCount();
@@ -39,13 +39,16 @@ export default function TopBar() {
       window.removeEventListener("cartUpdated", updateCartCount);
     };
   }, []);
+
   const closeDrawer = () => {
     setIsDrawerOpen(false);
   };
+
   const goSevenDays = () => {
     setIsDrawerOpen(false);
     router.push("/?package=7#home-products");
   };
+
   useEffect(() => {
     const interval = setInterval(() => {
       if (logoRef.current) {
@@ -57,9 +60,11 @@ export default function TopBar() {
     }, 30000);
     return () => clearInterval(interval);
   }, []);
+
   const menuItemClasses = (additionalClasses = "") => {
     return `relative transition-transform duration-200 ease-in-out hover:scale-[1.02] ${additionalClasses}`;
   };
+
   return (
     <>
       <header className="fixed top-0 z-40 w-full bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70">
@@ -83,6 +88,7 @@ export default function TopBar() {
               </div>
               웰니스박스
             </Link>
+
             <nav className="hidden lg:flex items-center gap-8 text-[15px] font-medium text-slate-500 [&_a]:text-slate-500 [&_a:hover]:text-slate-900">
               <MenuLinks loginStatus={loginStatus} />
             </nav>
@@ -101,10 +107,7 @@ export default function TopBar() {
               aria-label="장바구니"
               onClick={() => {
                 if (typeof window !== "undefined") {
-                  sessionStorage.setItem(
-                    "scrollPos",
-                    String(window.scrollY)
-                  );
+                  sessionStorage.setItem("scrollPos", String(window.scrollY));
                 }
               }}
             >
@@ -144,7 +147,11 @@ export default function TopBar() {
         } w-[260px]`}
       >
         <div className="flex flex-col p-6 gap-4 text-[15px] font-medium text-slate-600 [&_a]:text-slate-700 [&_a]:hover:text-slate-900">
-          <MenuLinks loginStatus={loginStatus} />
+          <MenuLinks
+            loginStatus={loginStatus}
+            onItemClick={closeDrawer}
+            isDrawer
+          />
           <div className="mt-2 h-px bg-slate-100" />
           <button onClick={goSevenDays} className="text-left text-slate-500">
             7일 무료체험

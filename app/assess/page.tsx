@@ -141,6 +141,10 @@ export default function Assess() {
   };
 
   const handleAnswer = (val: any) => {
+    if (typeof document !== "undefined") {
+      const activeEl = document.activeElement as HTMLElement | null;
+      activeEl?.blur();
+    }
     const newAnswers = {
       ...answers,
       [current]: val === undefined ? null : val,
@@ -202,6 +206,17 @@ export default function Assess() {
     return (
       <div className="w-full max-w-[760px] mx-auto px-4 pb-28">
         <div className="relative mt-6 sm:mt-10 overflow-hidden rounded-3xl bg-white/70 p-6 sm:p-10 shadow-[0_10px_40px_rgba(2,6,23,0.08)] ring-1 ring-black/5 backdrop-blur">
+          <div className="flex justify-between text-xs text-gray-500 mb-6">
+            <button onClick={goBack} className="underline hover:text-gray-700">
+              이전
+            </button>
+            <button
+              onClick={confirmReset}
+              className="underline hover:text-gray-700"
+            >
+              처음부터
+            </button>
+          </div>
           <h1 className="text-2xl font-extrabold text-gray-900 mb-4">
             추천 카테고리 Top3
           </h1>
@@ -336,7 +351,7 @@ export default function Assess() {
                     key={String(opt.value)}
                     onClick={() => handleAnswer(opt.value)}
                     className={[
-                      "rounded-xl border p-3 text-sm transition-colors",
+                      "rounded-xl border p-3 text-sm transition-colors text-left whitespace-normal leading-tight min-h-[44px]",
                       active
                         ? "border-sky-300 bg-sky-50 ring-2 ring-sky-400"
                         : "border-gray-200 bg-white hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 active:scale-[0.98]",

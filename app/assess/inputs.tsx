@@ -119,7 +119,7 @@ export function MultiSelect({
               aria-pressed={active}
               data-selected={active ? "true" : "false"}
               className={[
-                "relative flex items-center justify-center gap-2 rounded-xl border p-3 text-sm transition-all whitespace-nowrap focus:outline-none",
+                "relative flex items-start justify-start gap-2 rounded-xl border p-3 text-sm transition-all whitespace-normal text-left focus:outline-none",
                 active
                   ? "border-sky-300 bg-sky-50 ring-2 ring-sky-400"
                   : "border-gray-200 bg-white hover:bg-gray-50 focus:ring-2 focus:ring-sky-500",
@@ -128,14 +128,14 @@ export function MultiSelect({
               {active && (
                 <svg
                   aria-hidden="true"
-                  className="h-4 w-4"
+                  className="h-4 w-4 mt-0.5"
                   viewBox="0 0 20 20"
                   fill="currentColor"
                 >
                   <path d="M16.707 5.293a1 1 0 0 1 0 1.414l-7.25 7.25a1 1 0 0 1-1.414 0l-3-3a1 1 0 1 1 1.414-1.414l2.293 2.293 6.543-6.543a1 1 0 0 1 1.414 0z" />
                 </svg>
               )}
-              <span className="truncate">{opt.label}</span>
+              <span className="leading-tight">{opt.label}</span>
             </button>
           );
         })}

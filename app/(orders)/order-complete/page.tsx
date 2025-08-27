@@ -280,7 +280,10 @@ export default function OrderComplete() {
             transaction?.paymentId ||
             paymentId ||
             "";
-          const totalPrice = paymentInfo?.response?.payment?.amount?.total ?? 0;
+          const totalPrice =
+            transaction?.amount?.total ??
+            paymentInfo?.response?.payment?.amount?.total ??
+            0;
           const status = ORDER_STATUS.PAYMENT_COMPLETE;
           const pharmacyId =
             Number(localStorage.getItem("selectedPharmacyId") || "0") ||
