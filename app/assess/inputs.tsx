@@ -6,11 +6,15 @@ import { Question } from "./questions";
 export function NumberInput({
   question,
   onSubmit,
+  initial,
 }: {
   question: Question;
-  onSubmit: (val: number) => void;
+  onSubmit: (val: number | undefined) => void;
+  initial?: number | null;
 }) {
-  const [val, setVal] = useState("");
+  const [val, setVal] = useState(
+    initial !== undefined && initial !== null ? String(initial) : ""
+  );
   const [error, setError] = useState("");
   const { isValid, msg } = useMemo(() => {
     if (val === "") return { isValid: false, msg: "" };
@@ -30,36 +34,46 @@ export function NumberInput({
     onSubmit(Number(val));
   };
 
+  const skip = () => {
+    setVal("");
+    setError("");
+    onSubmit(undefined);
+  };
+
   return (
-    <div className="space-y-3">
-      <input
-        type="number"
-        value={val}
-        min={question.min}
-        max={question.max}
-        onChange={(e) => {
-          setVal(e.target.value);
-          setError("");
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") submit();
-        }}
-        aria-invalid={!isValid && val !== ""}
-        className={[
-          "w-full rounded-xl border p-3 focus:outline-none focus:ring-2",
-          !isValid && val !== ""
-            ? "border-red-300 focus:ring-red-400"
-            : "border-gray-200 focus:ring-sky-500",
-        ].join(" ")}
-      />
-      {(error || msg) && <p className="text-sm text-red-600">{error || msg}</p>}
-      <button
-        onClick={submit}
-        disabled={!isValid}
-        className="w-full rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-2 font-bold text-white shadow transition-colors hover:from-sky-600 hover:to-indigo-600 active:scale-[0.99] disabled:bg-none disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
-      >
-        다음
-      </button>
+    <div>
+      <div className="space-y-3">
+        <input
+          type="number"
+          value={val}
+          min={question.min}
+          max={question.max}
+          onChange={(e) => {
+            setVal(e.target.value);
+            setError("");
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") submit();
+          }}
+          aria-invalid={!isValid && val !== ""}
+          className={[
+            "w-full rounded-xl border p-3 focus:outline-none focus:ring-2",
+            !isValid && val !== ""
+              ? "border-red-300 focus:ring-red-400"
+              : "border-gray-200 focus:ring-sky-500",
+          ].join(" ")}
+        />
+        {(error || msg) && (
+          <p className="text-sm text-red-600">{error || msg}</p>
+        )}
+        <button
+          onClick={submit}
+          disabled={!isValid}
+          className="w-full rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-2 font-bold text-white shadow transition-colors hover:from-sky-600 hover:to-indigo-600 active:scale-[0.99] disabled:bg-none disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
+        >
+          다음
+        </button>
+      </div>
     </div>
   );
 }
@@ -67,18 +81,20 @@ export function NumberInput({
 export function MultiSelect({
   question,
   onSubmit,
+  initial,
 }: {
   question: Question;
-  onSubmit: (vals: any[]) => void;
+  onSubmit: (vals: any[] | undefined) => void;
+  initial?: any[] | null;
 }) {
-  const [selected, setSelected] = useState<any[]>([]);
+  const [selected, setSelected] = useState<any[]>(initial ?? []);
   const toggle = (v: any) => {
     setSelected((prev) =>
       prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]
     );
   };
   return (
-    <div className="space-y-4">
+    <div>
       <div
         className={[
           "grid gap-2 p-1",
@@ -105,7 +121,7 @@ export function MultiSelect({
               className={[
                 "relative flex items-center justify-center gap-2 rounded-xl border p-3 text-sm transition-all whitespace-nowrap focus:outline-none",
                 active
-                  ? "border-sky-300 bg-sky-50 ring-2 ring-sky-400 ring-offset-1"
+                  ? "border-sky-300 bg-sky-50 ring-2 ring-sky-400"
                   : "border-gray-200 bg-white hover:bg-gray-50 focus:ring-2 focus:ring-sky-500",
               ].join(" ")}
             >
@@ -124,13 +140,15 @@ export function MultiSelect({
           );
         })}
       </div>
-      <button
-        onClick={() => onSubmit(selected)}
-        disabled={selected.length === 0}
-        className="w-full rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-2 font-bold text-white shadow transition-colors hover:from-sky-600 hover:to-indigo-600 active:scale-[0.99] disabled:bg-none disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
-      >
-        다음
-      </button>
+      <div className="mt-4 space-y-4">
+        <button
+          onClick={() => onSubmit(selected)}
+          disabled={selected.length === 0}
+          className="w-full rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-2 font-bold text-white shadow transition-colors hover:from-sky-600 hover:to-indigo-600 active:scale-[0.99] disabled:bg-none disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
+        >
+          다음
+        </button>
+      </div>
     </div>
   );
 }

@@ -37,7 +37,7 @@ export const INTEREST_LABELS: Record<CategoryKey, string> = {
 export const sectionA: Question[] = [
   {
     id: "A1",
-    text: "성별을 알려주세요.",
+    text: "안녕하세요! 먼저 성별을 알려주시겠어요?",
     type: "choice",
     options: [
       { value: "M", label: "남성" },
@@ -67,7 +67,7 @@ export const sectionA: Question[] = [
   },
   {
     id: "A10",
-    text: "관심 있는 건강 개선 분야를 선택해 주세요. 1~5개 정도 고르시면 더 좋아요.",
+    text: "관심 있는 건강 개선 분야를 모두 선택해 주세요. 1~5개 정도 고르는 것을 추천드려요.",
     type: "multi",
     options: Object.entries(INTEREST_LABELS).map(([value, label]) => ({
       value,
@@ -216,7 +216,7 @@ export const sectionB: Question[] = [
   },
   {
     id: "B20",
-    text: "야식이나 탄수화물 위주의 식사를 주 3회 이상 하거나 최근 3개월 내 체중이 3kg 이상 늘었나요?",
+    text: "야식이나 탄수화물 위주의 식사를 주 3회 이상 하시거나, 최근 3개월 내 체중이 3kg 이상 늘었나요?",
     type: "choice",
     options: [
       { value: true, label: "네" },
@@ -235,7 +235,7 @@ export const sectionB: Question[] = [
   },
   {
     id: "B22",
-    text: "여성의 경우, 월경량이 많거나 빈혈이 의심되시나요?",
+    text: "월경량이 많거나 빈혈이 의심되시나요?",
     type: "choice",
     options: [
       { value: true, label: "네" },
