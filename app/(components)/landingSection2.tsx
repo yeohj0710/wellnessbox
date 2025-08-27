@@ -33,7 +33,7 @@ export default function LandingSection2({
   return (
     <>
       <section
-        className={`relative w-full min-h-[86vh] sm:min-h-[90vh] md:min-h-screen overflow-hidden bg-gradient-to-b from-white via-white to-[#DDE7FF] ${pretendard.className}`}
+        className={`relative w-full min-h-[86vh] sm:min-h-[90vh] md:min-h-screen overflow-hidden bg-gradient-to-b from-white via-[#EEF2FF] to-[#C7D2FE] ${pretendard.className}`}
       >
         <div className="pointer-events-none absolute -left-1/3 -top-1/4 h-[18rem] w-[18rem] rounded-full bg-[radial-gradient(closest-side,rgba(99,140,255,0.18),transparent)] sm:h-[24rem] sm:w-[24rem] md:h-[32rem] md:w-[32rem]" />
         <div className="pointer-events-none absolute -right-1/4 bottom-[-15%] h-[22rem] w-[22rem] rounded-full bg-[radial-gradient(closest-side,rgba(142,122,255,0.22),transparent)] sm:h-[30rem] sm:w-[30rem] md:h-[40rem] md:w-[40rem]" />
@@ -88,37 +88,28 @@ export default function LandingSection2({
             </button>
           </div>
 
-          <div className="mt-10 sm:mt-14 grid grid-cols-3 sm:flex sm:flex-wrap items-center justify-center gap-x-6 sm:gap-x-10 gap-y-3 sm:gap-y-4 text-[#B5BCD1] opacity-90">
-            <div className="flex items-center justify-center gap-2 text-xs sm:text-sm">
-              <RocketLaunchIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-              startup
-            </div>
-            <div className="flex items-center justify-center gap-2 text-xs sm:text-sm">
-              <BuildingOfficeIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-              company
-            </div>
-            <div className="flex items-center justify-center gap-2 text-xs sm:text-sm">
-              <BanknotesIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-              venture
-            </div>
-            <div className="flex items-center justify-center gap-2 text-xs sm:text-sm">
-              <BriefcaseIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-              business
-            </div>
-            <div className="flex items-center justify-center gap-2 text-xs sm:text-sm">
-              <BuildingLibraryIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-              institute
-            </div>
-            <div className="flex items-center justify-center gap-2 text-xs sm:text-sm">
-              <BuildingOffice2Icon className="h-4 w-4 sm:h-5 sm:w-5" />
-              agency
-            </div>
+          <div className="mt-10 sm:mt-14">
+            <ul className="flex flex-wrap items-center justify-center gap-x-6 sm:gap-x-8 md:gap-x-10 gap-y-5 sm:gap-y-6">
+              {Array.from({ length: 8 }, (_, i) => (
+                <li key={i} className="shrink-0">
+                  <Image
+                    src={`/landingPage2/logos/${i + 1}.svg`}
+                    alt=""
+                    width={0}
+                    height={0}
+                    sizes="100vw"
+                    unoptimized
+                    className="block h-[20px] sm:h-[22px] md:h-6 lg:h-7 w-auto brightness-0 invert"
+                  />
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </section>
 
       <section
-        className={`relative isolate w-full min-h-[90vh] sm:min-h-[92vh] md:min-h-screen overflow-visible bg-gradient-to-b from-[#DDE7FF] via-[#EAF0FF] to-white ${pretendard.className}`}
+        className={`relative isolate w-full min-h-[90vh] sm:min-h-[92vh] md:min-h-screen overflow-visible bg-gradient-to-b from-[#C7D2FE] via-[#DDE7FF] to-white ${pretendard.className}`}
       >
         <div className="absolute inset-x-0 z-10 -top-4 pointer-events-none overflow-visible">
           <div className="relative mx-auto min-h-[9.5rem] md:min-h-[11rem]">
