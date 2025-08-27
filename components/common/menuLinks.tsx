@@ -74,7 +74,12 @@ export function MenuLinks({
         >
           내 주문 조회
         </Link>
-        <div className="text-slate-400 text-xs mt-2">AI 진단 검사</div>
+        <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
+          <span>AI 진단 검사</span>
+          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600 ring-1 ring-emerald-200">
+            무료
+          </span>
+        </div>
         <Link
           href="/assess"
           className="-mt-2 flex items-center justify-between rounded-lg px-3 py-2 hover:bg-slate-50"
@@ -171,7 +176,12 @@ export function MenuLinks({
           aria-haspopup="menu"
           aria-expanded={aiOpen}
         >
-          AI 진단 검사
+          <span className="inline-flex items-center gap-2">
+            <span>AI 진단 검사</span>
+            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600 ring-1 ring-emerald-200">
+              무료
+            </span>
+          </span>
           <ChevronDownIcon
             className={`w-4 h-4 transition-transform ${
               aiOpen ? "rotate-180" : ""

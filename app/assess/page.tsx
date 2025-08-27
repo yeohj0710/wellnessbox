@@ -447,7 +447,7 @@ export default function Assess() {
 
           <div className="mt-8 flex items-center justify-between gap-2">
             <p className="flex-1 min-w-0 truncate text-xs leading-none text-gray-400">
-              중간에 나갔다 와도 진행 상황은 저장돼요.
+              중간에 나갔다 와도 진행 상황이 저장돼요.
             </p>
             <button
               onClick={() => handleAnswer(undefined)}
