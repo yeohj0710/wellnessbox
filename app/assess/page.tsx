@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { evaluate } from "./algorithm";
 import { sectionA, sectionB, fixedA, hashChoice } from "./questions";
 import { NumberInput, MultiSelect } from "./inputs";
@@ -15,6 +15,18 @@ export default function Assess() {
   const [history, setHistory] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingText, setLoadingText] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const cancelBtnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!confirmOpen) return;
+    cancelBtnRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setConfirmOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [confirmOpen]);
 
   const computeRemaining = (
     sec: "A" | "B",
@@ -102,7 +114,8 @@ export default function Assess() {
 
   const currentQuestion = allQuestions.find((q) => q.id === current)!;
 
-  const sectionTitle = section === "A" ? "건강 프로필" : "생활 습관 및 증상";
+  const sectionTitle =
+    section === "A" ? "기초 건강 데이터" : "생활 습관 및 증상";
 
   const reset = () => {
     setSection("A");
@@ -114,15 +127,16 @@ export default function Assess() {
   };
 
   const confirmReset = () => {
-    if (
-      typeof window !== "undefined" &&
-      window.confirm(
-        "정말 처음부터 다시 시작할까요? 저장된 답변이 모두 사라져요."
-      )
-    ) {
-      reset();
-    }
+    setConfirmOpen(true);
   };
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.body.style.overflow = confirmOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [confirmOpen]);
 
   const goBack = () => {
     if (history.length === 0) {
@@ -153,7 +167,7 @@ export default function Assess() {
     setAnswers(newAnswers);
     setHistory(newHistory);
 
-    let message = "AI가 이전 답변을 분석해서 다음 질문을 고르고 있어요...";
+    let message = "AI가 답변을 분석해서 다음 질문을 고르고 있어요.";
     let action: () => void;
     let delay = 1000;
 
@@ -170,8 +184,8 @@ export default function Assess() {
       );
       if (remaining.length === 0) {
         if (section === "A") {
-          message = "이제 생활 습관과 증상에 대해 더 알아볼게요...";
-          delay = 2000;
+          message = "이제 생활 습관과 증상에 대해 알아볼게요.";
+          delay = 3000;
           action = () => {
             const remB = computeRemaining("B", newAnswers, newHistory);
             setSection("B");
@@ -179,8 +193,8 @@ export default function Assess() {
             setFixedIdx(0);
           };
         } else {
-          message = "AI가 결과를 계산하고 있어요...";
-          delay = 2000;
+          message = "AI가 최종 결과를 계산하고 있어요.";
+          delay = 3000;
           action = () => {
             setSection("DONE");
           };
@@ -242,6 +256,49 @@ export default function Assess() {
             ))}
           </ul>
         </div>
+        {confirmOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reset-title"
+            aria-describedby="reset-desc"
+          >
+            <div
+              className="absolute inset-0 bg-black/40"
+              onClick={() => setConfirmOpen(false)}
+            />
+            <div
+              className="relative mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl ring-1 ring-black/5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 id="reset-title" className="text-lg font-bold text-gray-900">
+                처음부터 다시 시작할까요?
+              </h3>
+              <p id="reset-desc" className="mt-2 text-sm text-gray-600">
+                저장된 답변이 모두 삭제돼요.
+              </p>
+              <div className="mt-6 flex items-center justify-end gap-3">
+                <button
+                  ref={cancelBtnRef}
+                  onClick={() => setConfirmOpen(false)}
+                  className="rounded-full px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={() => {
+                    reset();
+                    setConfirmOpen(false);
+                  }}
+                  className="rounded-full px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-indigo-500 shadow-[0_8px_22px_rgba(67,103,230,0.28)] hover:brightness-110"
+                >
+                  처음부터
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -251,46 +308,48 @@ export default function Assess() {
       <div className="relative mt-6 sm:mt-10 overflow-hidden sm:rounded-3xl sm:bg-white/70 sm:ring-1 sm:ring-black/5 sm:shadow-[0_10px_40px_rgba(2,6,23,0.08)] sm:backdrop-blur">
         {loading && (
           <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/90 backdrop-blur-sm sm:rounded-3xl">
-            {loadingText.includes("생활 습관") ? (
-              <svg
-                className="h-8 w-8 text-indigo-600 animate-bounce"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-            ) : (
-              <svg
-                className="h-6 w-6 animate-spin text-sky-500"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                ></path>
-              </svg>
-            )}
-            <p className="mt-3 px-4 text-center text-indigo-700 font-medium">
+            <div className="flex items-center gap-2">
+              <span
+                className="h-2.5 w-2.5 rounded-full bg-sky-500 opacity-40 dot"
+                style={{ animationDelay: "0ms" }}
+              />
+              <span
+                className="h-2.5 w-2.5 rounded-full bg-sky-500 opacity-40 dot"
+                style={{ animationDelay: "120ms" }}
+              />
+              <span
+                className="h-2.5 w-2.5 rounded-full bg-sky-500 opacity-40 dot"
+                style={{ animationDelay: "240ms" }}
+              />
+            </div>
+            <p className="mt-4 px-4 text-center text-slate-700 font-medium">
               {loadingText}
             </p>
+            <style jsx>{`
+              .dot {
+                animation: dot 1.2s ease-in-out infinite;
+                will-change: opacity, transform;
+              }
+              @keyframes dot {
+                0%,
+                20% {
+                  opacity: 0.35;
+                  transform: scale(0.92);
+                }
+                50% {
+                  opacity: 1;
+                  transform: scale(1);
+                }
+                80%,
+                100% {
+                  opacity: 0.35;
+                  transform: scale(0.92);
+                }
+              }
+            `}</style>
           </div>
         )}
+
         <div className="relative p-4 sm:p-10">
           <div className="flex justify-between text-xs text-gray-500 mb-6">
             <button onClick={goBack} className="underline hover:text-gray-700">
@@ -351,7 +410,7 @@ export default function Assess() {
                     key={String(opt.value)}
                     onClick={() => handleAnswer(opt.value)}
                     className={[
-                      "rounded-xl border p-3 text-sm transition-colors text-left whitespace-normal leading-tight min-h-[44px]",
+                      "rounded-xl border p-3 text-sm transition-colors flex items-center justify-center text-center whitespace-normal leading-tight min-h-[44px]",
                       active
                         ? "border-sky-300 bg-sky-50 ring-2 ring-sky-400"
                         : "border-gray-200 bg-white hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 active:scale-[0.98]",
@@ -400,6 +459,49 @@ export default function Assess() {
           </div>
         </div>
       </div>
+      {confirmOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reset-title"
+          aria-describedby="reset-desc"
+        >
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setConfirmOpen(false)}
+          />
+          <div
+            className="relative mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl ring-1 ring-black/5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="reset-title" className="text-lg font-bold text-gray-900">
+              처음부터 다시 시작할까요?
+            </h3>
+            <p id="reset-desc" className="mt-2 text-sm text-gray-600">
+              저장된 답변이 모두 삭제돼요.
+            </p>
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button
+                ref={cancelBtnRef}
+                onClick={() => setConfirmOpen(false)}
+                className="rounded-full px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={() => {
+                  reset();
+                  setConfirmOpen(false);
+                }}
+                className="rounded-full px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-indigo-500 shadow-[0_8px_22px_rgba(67,103,230,0.28)] hover:brightness-110"
+              >
+                처음부터
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

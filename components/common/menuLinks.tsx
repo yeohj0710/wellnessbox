@@ -31,7 +31,7 @@ export function MenuLinks({
   }, [isDrawer]);
 
   const menuItemClasses = (additionalClasses = "") =>
-    `relative font-semibold transition-transform duration-200 ease-in-out hover:scale-105 hover:text-sky-400 ${additionalClasses}`;
+    `relative font-semibold transition-transform duration-200 ease-in-out hover:scale-105 hover:text-gray-800 ${additionalClasses}`;
 
   const handlePressStart = () => {
     const timer = setTimeout(() => {
@@ -74,23 +74,23 @@ export function MenuLinks({
         >
           내 주문 조회
         </Link>
-        <div className="text-slate-400 text-xs mt-2">AI 추천</div>
+        <div className="text-slate-400 text-xs mt-2">AI 진단 검사</div>
         <Link
           href="/assess"
-          className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-slate-50"
+          className="-mt-2 flex items-center justify-between rounded-lg px-3 py-2 hover:bg-slate-50"
           onClick={onItemClick}
         >
-          <span className="text-slate-800">정교 추천</span>
+          <span className="text-slate-800">정밀 검사</span>
           <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-600">
             BETA
           </span>
         </Link>
         <Link
           href="/check-ai"
-          className="rounded-lg px-3 py-2 hover:bg-slate-50"
+          className="-mt-4 rounded-lg px-3 py-2 hover:bg-slate-50"
           onClick={onItemClick}
         >
-          빠른 추천
+          빠른 검사
         </Link>
         {loginStatus.isPharmLoggedIn && (
           <Link
@@ -167,11 +167,11 @@ export function MenuLinks({
       <div className="relative" ref={aiRef}>
         <button
           onClick={() => setAiOpen((v) => !v)}
-          className="inline-flex items-center gap-1 font-semibold text-slate-600 transition-colors hover:text-sky-400"
+          className="hover:text-gray-800 inline-flex items-center gap-1 font-semibold transition-transform duration-200 ease-in-out hover:scale-105"
           aria-haspopup="menu"
           aria-expanded={aiOpen}
         >
-          AI 추천
+          AI 진단 검사
           <ChevronDownIcon
             className={`w-4 h-4 transition-transform ${
               aiOpen ? "rotate-180" : ""
@@ -188,7 +188,7 @@ export function MenuLinks({
                 if (onItemClick) onItemClick();
               }}
             >
-              <span className="text-slate-800">정교 추천</span>
+              <span className="text-slate-800">정밀 검사</span>
               <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-600">
                 BETA
               </span>
@@ -201,7 +201,7 @@ export function MenuLinks({
                 if (onItemClick) onItemClick();
               }}
             >
-              빠른 추천
+              빠른 검사
             </Link>
           </div>
         )}

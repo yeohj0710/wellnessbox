@@ -85,7 +85,7 @@ export const sectionA: Question[] = [
   },
   {
     id: "A6",
-    text: "항응고제를 복용 중이거나 출혈 장애가 있거나 수술 예정이신가요?",
+    text: "항응고제를 복용 중이거나, 출혈 장애가 있거나, 수술 예정이신가요?",
     type: "choice",
     options: [
       { value: true, label: "네" },
@@ -103,7 +103,7 @@ export const sectionA: Question[] = [
   },
   {
     id: "A8",
-    text: "간 질환을 진단받았거나 간 수치가 이상한 적이 있으신가요?",
+    text: "간 질환을 진단받았거나, 간 수치에 이상이 있었던 적이 있으신가요?",
     type: "choice",
     options: [
       { value: true, label: "네" },
@@ -112,7 +112,7 @@ export const sectionA: Question[] = [
   },
   {
     id: "A9",
-    text: "철 과잉을 진단받은 적이 있으신가요?",
+    text: "철분 과잉을 진단받은 적이 있으신가요?",
     type: "choice",
     options: [
       { value: true, label: "네" },
@@ -196,7 +196,7 @@ export const sectionB: Question[] = [
     text: "관절 통증은 얼마나 자주 느끼시나요?",
     type: "choice",
     options: [
-      { value: "none", label: "관절 통증이 없어요" },
+      { value: "none", label: "관절 통증은 없어요" },
       { value: "some", label: "가끔 있어요" },
       { value: "often", label: "자주 있어요" },
     ],

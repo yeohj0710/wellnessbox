@@ -142,9 +142,9 @@ export default function TopBar() {
       </header>
 
       <div
-        className={`fixed top-14 right-0 bottom-0 z-40 bg-white shadow-lg transform transition-transform duration-300 ${
-          isDrawerOpen ? "translate-x-0" : "translate-x-full"
-        } w-[260px]`}
+        className={`fixed top-14 bottom-0 z-40 bg-white shadow-lg w-[260px] transition-[right] duration-300 ${
+          isDrawerOpen ? "right-0" : "-right-[260px]"
+        }`}
       >
         <div className="flex flex-col p-6 gap-4 text-[15px] font-medium text-slate-600 [&_a]:text-slate-700 [&_a]:hover:text-slate-900">
           <MenuLinks
