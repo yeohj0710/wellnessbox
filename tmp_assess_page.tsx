@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { evaluate } from "./algorithm";
@@ -53,9 +53,7 @@ const CODE_TO_DESC: Record<string, string> = Object.fromEntries(
 const STORAGE_KEY = "assess-state";
 
 export default function Assess() {
-  const [section, setSection] = useState<"INTRO" | "A" | "B" | "C" | "DONE">(
-    "INTRO"
-  );
+  const [section, setSection] = useState<"A" | "B" | "C" | "DONE">("A");
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [current, setCurrent] = useState<string>(fixedA[0]);
   const [fixedIdx, setFixedIdx] = useState(0);
@@ -73,13 +71,8 @@ export default function Assess() {
   useEffect(() => {
     if (!confirmOpen) return;
     cancelBtnRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setConfirmOpen(false);
-      if (e.key === "Enter") {
-        reset();
-        setConfirmOpen(false);
-      }
-    };
+    const onKey = (e: KeyboardEvent) =>
+      e.key === "Escape" && setConfirmOpen(false);
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [confirmOpen]);
@@ -142,8 +135,7 @@ export default function Assess() {
     syncIds();
   }, [cResult]);
 
-  const allQuestions =
-    section === "A" ? sectionA : section === "B" ? sectionB : [];
+  const allQuestions = section === "A" ? sectionA : section === "B" ? sectionB : [];
 
   const { completion, answered, total } = useMemo(() => {
     const applicableIds =
@@ -168,20 +160,15 @@ export default function Assess() {
     };
   }, [answers, section, history]);
 
-  const progressMsg = useMemo(() => {
+    const progressMsg = useMemo(() => {
     if (section !== "A" && section !== "B") return "";
     const ratio = total > 0 ? answered / total : 0;
     return ratio === 0 ? "" : "";
   }, [answered, total, section]);
 
-  const isAB = section === "A" || section === "B";
-  const currentQuestion = isAB
-    ? allQuestions.find((q) => q.id === current)
-    : undefined;
-  const sectionTitle = section === "A" ? "기초 건강 데이터" : "생활 습관·증상";
-
-  const reset = () => {
-    setSection("INTRO");
+  const currentQuestion = allQuestions.find((q) => q.id === current)!;
+  const sectionTitle = section === "A" ? "���� �ǰ� ������" : "��Ȱ ����������";const reset = () => {
+    setSection("A");
     setAnswers({});
     setCurrent(fixedA[0]);
     setFixedIdx(0);
@@ -200,15 +187,6 @@ export default function Assess() {
       document.body.style.overflow = "";
     };
   }, [confirmOpen]);
-
-  useEffect(() => {
-    if (section !== "INTRO") return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Enter") setSection("A");
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [section]);
 
   const goBack = () => {
     if (history.length === 0) {
@@ -237,7 +215,7 @@ export default function Assess() {
     setAnswers(pruned);
     setHistory(newHistory);
 
-    let message = "AI가 답변을 분석해서 다음 질문을 고를게요.";
+    let message = "AI�� �亯�� �м��ؼ� ���� ������ �����Կ�.";
     let action: () => void;
     let delay = 800;
 
@@ -256,8 +234,8 @@ export default function Assess() {
     );
     if (remaining.length === 0) {
       if (section === "A") {
-        message = "이제 생활 습관과 증상들을 알아볼게요.";
-        delay = 2500;
+        message = "���� ��Ȱ ������ ������� �˾ƺ��Կ�.";
+        delay = 1200;
         action = () => {
           const remB = computeRemaining("B", pruned, newHistory);
           setSection("B");
@@ -265,7 +243,7 @@ export default function Assess() {
           setFixedIdx(0);
         };
       } else {
-        message = "이제 세부적인 질문을 할게요.";
+        message = "AI�� �߰� ������ �غ��߾��.";
         delay = 1200;
         action = () => {
           const { top } = evaluate(pruned);
@@ -286,120 +264,18 @@ export default function Assess() {
   };
 
   if (section === "INTRO") {
-    return (
-      <div className="w-full max-w-[880px] mx-auto px-4 pb-28">
-        <div className="relative mt-10 overflow-hidden rounded-3xl bg-white/80 p-6 sm:p-10 shadow-[0_10px_40px_rgba(2,6,23,0.08)] ring-1 ring-black/5 backdrop-blur">
-          <div className="pointer-events-none absolute -top-24 -right-24 h-80 w-80 rounded-full bg-gradient-to-br from-sky-200 to-indigo-200 blur-3xl opacity-60" />
-          <div className="relative grid gap-10 sm:grid-cols-2">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600 ring-1 ring-gray-200">
-                <span>총 3개 섹션</span>
-                <span className="h-1.5 w-1.5 rounded-full bg-sky-500" />
-                <span>예상 5–7분</span>
-                <span className="h-1.5 w-1.5 rounded-full bg-sky-500" />
-                <span>자동 저장</span>
-              </div>
-              <h1 className="mt-4 text-3xl sm:text-4xl font-extrabold tracking-tight text-gray-900">
-                정밀 AI 진단을 시작해요
-              </h1>
-              <p className="mt-3 text-sm sm:text-base leading-6 text-gray-600">
-                설문은 단계별로 진행되고 이전 답변에 따라 문항이 달라져요.
-                중간에 이탈해도 진행 상황이 브라우저에 저장돼요.
-              </p>
-              <div className="mt-6 space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="mt-0.5 h-7 w-7 flex items-center justify-center rounded-full bg-sky-50 text-sky-600 text-xs font-bold">
-                    A
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">
-                      기초 건강 데이터
-                    </p>
-                    <p className="text-xs text-gray-600">
-                      연령, 기본 상태 등 핵심 정보를 확인해요.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="mt-0.5 h-7 w-7 flex items-center justify-center rounded-full bg-indigo-50 text-indigo-600 text-xs font-bold">
-                    B
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">
-                      생활 습관·증상
-                    </p>
-                    <p className="text-xs text-gray-600">
-                      생활 패턴과 증상을 바탕으로 우선순위를 좁혀요.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="mt-0.5 h-7 w-7 flex items-center justify-center rounded-full bg-violet-50 text-violet-600 text-xs font-bold">
-                    C
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">
-                      세부 진단
-                    </p>
-                    <p className="text-xs text-gray-600">
-                      상위 3개 카테고리를 중심으로 짧게 확인하고 결과를
-                      제공해요.
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-8 flex flex-col gap-2">
-                <button
-                  onClick={() => setSection("A")}
-                  className="inline-flex w-full sm:w-auto items-center justify-center rounded-full px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-indigo-500 shadow hover:brightness-110 transition"
-                >
-                  설문 시작하기
-                </button>
-              </div>
-            </div>
-
-            <div className="grid content-start gap-4">
-              <div className="rounded-2xl bg-white p-4 ring-1 ring-gray-200">
-                <p className="text-sm font-semibold text-gray-900">예상 소요</p>
-                <p className="mt-1 text-xs text-gray-600">
-                  보통 5–7분 정도 걸려요. 개인화에 따라 문항 수가 달라질 수
-                  있어요.
-                </p>
-              </div>
-              <div className="rounded-2xl bg-white p-4 ring-1 ring-gray-200">
-                <p className="text-sm font-semibold text-gray-900">진행 방식</p>
-                <ul className="mt-1 space-y-1 text-xs text-gray-600">
-                  <li>이전 답변을 반영해 필요한 질문만 보여줘요.</li>
-                  <li>나갔다가 다시 들어와도 이어서 진행돼요.</li>
-                  <li>결과는 상위 3개 카테고리와 적합도로 제공돼요.</li>
-                </ul>
-              </div>
-              <div className="rounded-2xl bg-gray-50 p-4 ring-1 ring-gray-200">
-                <p className="text-xs text-gray-600">
-                  입력 내용은 브라우저에 임시 저장되고 제출 시에만 서버로
-                  전송돼요.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
   }
-
-  if (section === "C") {
-    return (
       <div className="w-full max-w-[760px] mx-auto px-4 pb-28">
         <div className="relative mt-6 sm:mt-10 overflow-hidden rounded-3xl bg-white/70 p-6 sm:p-10 shadow-[0_10px_40px_rgba(2,6,23,0.08)] ring-1 ring-black/5 backdrop-blur">
           <div className="flex justify-between text-xs text-gray-500 mb-6">
             <button onClick={goBack} className="underline hover:text-gray-700">
-              이전
+              ����
             </button>
             <button
               onClick={confirmReset}
               className="underline hover:text-gray-700"
             >
-              처음부터
+              ó������
             </button>
           </div>
           <CSection
@@ -425,10 +301,10 @@ export default function Assess() {
               onClick={(e) => e.stopPropagation()}
             >
               <h3 className="text-lg font-bold text-gray-900">
-                처음부터 다시 시작할까요?
+                ó������ �ٽ� �����ұ��?
               </h3>
               <p className="mt-2 text-sm text-gray-600">
-                저장된 응답은 모두 삭제돼요.
+                ����� ������ ��� �����ſ�.
               </p>
               <div className="mt-6 flex items-center justify-end gap-3">
                 <button
@@ -436,7 +312,7 @@ export default function Assess() {
                   onClick={() => setConfirmOpen(false)}
                   className="rounded-full px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50"
                 >
-                  취소
+                  ���
                 </button>
                 <button
                   onClick={() => {
@@ -445,7 +321,7 @@ export default function Assess() {
                   }}
                   className="rounded-full px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-indigo-500"
                 >
-                  처음부터
+                  ó������
                 </button>
               </div>
             </div>
@@ -461,20 +337,20 @@ export default function Assess() {
         <div className="relative mt-6 sm:mt-10 overflow-hidden rounded-3xl bg-white/70 p-6 sm:p-10 shadow-[0_10px_40px_rgba(2,6,23,0.08)] ring-1 ring-black/5 backdrop-blur">
           <div className="flex justify-between text-xs text-gray-500 mb-6">
             <button onClick={goBack} className="underline hover:text-gray-700">
-              이전
+              ����
             </button>
             <button
               onClick={confirmReset}
               className="underline hover:text-gray-700"
             >
-              처음부터
+              ó������
             </button>
           </div>
           <h1 className="text-2xl font-extrabold text-gray-900 mb-2">
-            추천 카테고리 Top3
+            ��õ ī�װ��� Top3
           </h1>
           <p className="text-sm text-gray-600 mb-6">
-            카테고리별 적합도 퍼센티지예요. 아래 순서대로 살펴볼게요.
+            ī�װ����� ���յ� �ۼ�Ƽ������. �Ʒ� ������� ���캼�Կ�.
           </p>
           <ul className="space-y-4">
             {cResult.catsOrdered.map((c, i) => (
@@ -506,7 +382,7 @@ export default function Assess() {
               }#home-products`}
               className="rounded-full px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-indigo-500 shadow hover:brightness-110"
             >
-              구매하러 가기
+              �����Ϸ� ����
             </a>
           </div>
         </div>
@@ -525,10 +401,10 @@ export default function Assess() {
               onClick={(e) => e.stopPropagation()}
             >
               <h3 className="text-lg font-bold text-gray-900">
-                처음부터 다시 시작할까요?
+                ó������ �ٽ� �����ұ��?
               </h3>
               <p className="mt-2 text-sm text-gray-600">
-                저장된 응답은 모두 삭제돼요.
+                ����� ������ ��� �����ſ�.
               </p>
               <div className="mt-6 flex items-center justify-end gap-3">
                 <button
@@ -536,7 +412,7 @@ export default function Assess() {
                   onClick={() => setConfirmOpen(false)}
                   className="rounded-full px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50"
                 >
-                  취소
+                  ���
                 </button>
                 <button
                   onClick={() => {
@@ -545,7 +421,7 @@ export default function Assess() {
                   }}
                   className="rounded-full px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-indigo-500"
                 >
-                  처음부터
+                  ó������
                 </button>
               </div>
             </div>
@@ -605,13 +481,13 @@ export default function Assess() {
         <div className="relative p-4 sm:p-10">
           <div className="flex justify-between text-xs text-gray-500 mb-6">
             <button onClick={goBack} className="underline hover:text-gray-700">
-              이전
+              ����
             </button>
             <button
               onClick={confirmReset}
               className="underline hover:text-gray-700"
             >
-              처음부터
+              ó������
             </button>
           </div>
           <div className="flex items-start justify-between">
@@ -620,7 +496,7 @@ export default function Assess() {
             </h1>
             <div className="min-w-[120px]">
               <div className="flex items-center justify-between text-xs text-gray-600">
-                <span>진행률</span>
+                <span>�����</span>
                 <span className="tabular-nums">{completion}%</span>
               </div>
               <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100">
@@ -630,19 +506,17 @@ export default function Assess() {
                 />
               </div>
               <div className="mt-1 text-[10px] text-gray-500">
-                {answered}/{total}문항 완료 · {total - answered}문항 남음
+                {answered}/{total}���� �Ϸ� �� {total - answered}���� ����
               </div>
               <div className="text-[10px] text-sky-600 mt-1">{progressMsg}</div>
             </div>
           </div>
 
-          {isAB && (
-            <h2 className="mt-6 text-xl font-bold text-gray-900">
-              {currentQuestion?.text}
-            </h2>
-          )}
+          <h2 className="mt-6 text-xl font-bold text-gray-900">
+            {currentQuestion.text}
+          </h2>
 
-          {isAB && currentQuestion?.type === "choice" && (
+          {currentQuestion.type === "choice" && (
             <div
               className={[
                 "mt-6 grid gap-2",
@@ -677,7 +551,7 @@ export default function Assess() {
             </div>
           )}
 
-          {isAB && currentQuestion?.type === "number" && (
+          {currentQuestion.type === "number" && (
             <div className="mt-4">
               <NumberInput
                 key={currentQuestion.id}
@@ -688,7 +562,7 @@ export default function Assess() {
             </div>
           )}
 
-          {isAB && currentQuestion?.type === "multi" && (
+          {currentQuestion.type === "multi" && (
             <div className="mt-4">
               <MultiSelect
                 key={currentQuestion.id}
@@ -701,17 +575,15 @@ export default function Assess() {
 
           <div className="mt-8 flex items-center justify-between gap-2">
             <p className="flex-1 min-w-0 truncate text-xs leading-none text-gray-400">
-              중간에 나갔다 와도 진행 상황이 저장돼요.
+              �߰��� ������ �͵� ���� ��Ȳ�� ����ſ�.
             </p>
-            {isAB && currentQuestion && (
-              <button
-                onClick={() => handleAnswer(undefined)}
-                type="button"
-                className="shrink-0 text-xs leading-none text-gray-500 underline hover:text-gray-700"
-              >
-                이 질문은 건너뛸래요
-              </button>
-            )}
+            <button
+              onClick={() => handleAnswer(undefined)}
+              type="button"
+              className="shrink-0 text-xs leading-none text-gray-500 underline hover:text-gray-700"
+            >
+              �� ������ �ǳʶ۷���
+            </button>
           </div>
         </div>
       </div>
@@ -731,10 +603,10 @@ export default function Assess() {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-bold text-gray-900">
-              처음부터 다시 시작할까요?
+              ó������ �ٽ� �����ұ��?
             </h3>
             <p className="mt-2 text-sm text-gray-600">
-              저장된 응답은 모두 삭제돼요.
+              ����� ������ ��� �����ſ�.
             </p>
             <div className="mt-6 flex items-center justify-end gap-3">
               <button
@@ -742,7 +614,7 @@ export default function Assess() {
                 onClick={() => setConfirmOpen(false)}
                 className="rounded-full px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50"
               >
-                취소
+                ���
               </button>
               <button
                 onClick={() => {
@@ -751,7 +623,7 @@ export default function Assess() {
                 }}
                 className="rounded-full px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-indigo-500"
               >
-                처음부터
+                ó������
               </button>
             </div>
           </div>
@@ -760,3 +632,9 @@ export default function Assess() {
     </div>
   );
 }
+
+
+
+
+
+

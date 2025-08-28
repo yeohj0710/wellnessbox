@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Question } from "./questions";
@@ -26,17 +26,17 @@ export function NumberInput({
     if (val === "") return { isValid: false, msg: "" };
     const num = Number(val);
     if (Number.isNaN(num))
-      return { isValid: false, msg: "숫자를 입력해 주세요." };
+      return { isValid: false, msg: "숫자를 입력해주세요" };
     if (question.min !== undefined && num < question.min)
-      return { isValid: false, msg: `${question.min} 이상 입력해 주세요.` };
+      return { isValid: false, msg: `${question.min} 이상 입력해주세요` };
     if (question.max !== undefined && num > question.max)
-      return { isValid: false, msg: `${question.max} 이하로 입력해 주세요.` };
+      return { isValid: false, msg: `${question.max} 이하로 입력해주세요` };
     return { isValid: true, msg: "" };
   }, [val, question.min, question.max]);
 
   const submit = () => {
     if (!isValid) {
-      setError(msg || "정상적인 값을 입력해 주세요.");
+      setError(msg || "유효한 값을 입력해주세요");
       return;
     }
     setError("");
@@ -74,13 +74,15 @@ export function NumberInput({
           ].join(" ")}
         />
         {error && <p className="text-sm text-red-600">{error}</p>}
-        <button
-          onClick={submit}
-          disabled={val === ""}
-          className="w-full rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-2 font-bold text-white shadow transition-colors hover:from-sky-600 hover:to-indigo-600 active:scale-[0.99] disabled:bg-none disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
-        >
-          다음
-        </button>
+        <div className="flex items-center justify-between gap-2">
+          <button
+            onClick={submit}
+            disabled={val === ""}
+            className="w-full rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-2 font-bold text-white shadow transition-colors hover:from-sky-600 hover:to-indigo-600 active:scale-[0.99] disabled:bg-none disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
+          >
+            다음
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -158,13 +160,17 @@ export function MultiSelect({
         })}
       </div>
       <div className="mt-4 space-y-4">
-        <button
-          type="button"
-          onClick={() => onSubmit(selected.length === 0 ? undefined : selected)}
-          className="w-full rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-2 font-bold text-white shadow transition-colors hover:from-sky-600 hover:to-indigo-600 active:scale-[0.99]"
-        >
-          다음
-        </button>
+        <div className="flex items-center justify-end">
+          <button
+            type="button"
+            onClick={() =>
+              onSubmit(selected.length === 0 ? undefined : selected)
+            }
+            className="w-full rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-2 font-bold text-white shadow transition-colors hover:from-sky-600 hover:to-indigo-600 active:scale-[0.99] disabled:bg-none disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
+          >
+            다음
+          </button>
+        </div>
       </div>
     </div>
   );

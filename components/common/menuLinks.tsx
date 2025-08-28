@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -77,7 +77,7 @@ export function MenuLinks({
         <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
           <span>AI 진단 검사</span>
           <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600 ring-1 ring-emerald-200">
-            무료
+            가입없이 바로
           </span>
         </div>
         <Link
@@ -85,7 +85,7 @@ export function MenuLinks({
           className="-mt-2 flex items-center justify-between rounded-lg px-3 py-2 hover:bg-slate-50"
           onClick={onItemClick}
         >
-          <span className="text-slate-800">정밀 검사</span>
+          <span className="">정밀 검사</span>
           <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-600">
             BETA
           </span>
@@ -139,7 +139,7 @@ export function MenuLinks({
             className={menuItemClasses()}
             onClick={onItemClick}
           >
-            데이터 관리
+            사이트 관리
           </Link>
         ) : null}
         {(loginStatus.isPharmLoggedIn ||
@@ -172,14 +172,14 @@ export function MenuLinks({
       <div className="relative" ref={aiRef}>
         <button
           onClick={() => setAiOpen((v) => !v)}
-          className="hover:text-gray-800 inline-flex items-center gap-1 font-semibold transition-transform duration-200 ease-in-out hover:scale-105"
+          className="hover:text-gray-800 inline-flex items-center gap-1 font-semibold transition-transform duration-200 ease-in-out"
           aria-haspopup="menu"
           aria-expanded={aiOpen}
         >
           <span className="inline-flex items-center gap-2">
             <span>AI 진단 검사</span>
             <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600 ring-1 ring-emerald-200">
-              무료
+              가입없이 바로
             </span>
           </span>
           <ChevronDownIcon
@@ -198,7 +198,7 @@ export function MenuLinks({
                 if (onItemClick) onItemClick();
               }}
             >
-              <span className="text-slate-800">정밀 검사</span>
+              <span className="">정밀 검사</span>
               <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-600">
                 BETA
               </span>
@@ -246,7 +246,7 @@ export function MenuLinks({
       )}
       {loginStatus.isAdminLoggedIn ? (
         <Link href="/admin" className={menuItemClasses()} onClick={onItemClick}>
-          데이터 관리
+          사이트 관리
         </Link>
       ) : null}
       {(loginStatus.isPharmLoggedIn ||

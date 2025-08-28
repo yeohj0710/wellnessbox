@@ -1,4 +1,4 @@
-import { CategoryKey } from "./categories";
+﻿import { CATEGORY_LABELS, CategoryKey } from "./categories";
 
 export interface Question {
   id: string;
@@ -37,7 +37,7 @@ export const INTEREST_LABELS: Record<CategoryKey, string> = {
 export const sectionA: Question[] = [
   {
     id: "A1",
-    text: "안녕하세요! 먼저 성별을 알려주시겠어요?",
+    text: "먼저, 성별을 알려주시겠어요?",
     type: "choice",
     options: [
       { value: "M", label: "남성" },
@@ -53,21 +53,21 @@ export const sectionA: Question[] = [
   },
   {
     id: "A3",
-    text: "키를 센티미터(cm) 단위로 입력해 주세요.",
+    text: "현재 키(cm)를 입력해주세요.",
     type: "number",
     min: 50,
     max: 250,
   },
   {
     id: "A4",
-    text: "현재 체중을 킬로그램(kg) 단위로 입력해 주세요.",
+    text: "현재 체중(kg)을 입력해주세요.",
     type: "number",
     min: 20,
     max: 250,
   },
   {
     id: "A10",
-    text: "관심 있는 건강 개선 분야를 모두 선택해 주세요. 1~5개 정도 고르는 것을 추천드려요.",
+    text: "관심 있는 건강 개선 분야를 모두 선택해 주세요. 1~5개 정도 고르면 좋아요.",
     type: "multi",
     options: Object.entries(INTEREST_LABELS).map(([value, label]) => ({
       value,
@@ -85,7 +85,7 @@ export const sectionA: Question[] = [
   },
   {
     id: "A6",
-    text: "항응고제를 복용 중이거나, 출혈 장애가 있거나, 수술 예정이신가요?",
+    text: "항응고제 복용 중이거나, 출혈 장애가 있거나, 수술 예정이신가요?",
     type: "choice",
     options: [
       { value: true, label: "네" },
@@ -112,7 +112,7 @@ export const sectionA: Question[] = [
   },
   {
     id: "A9",
-    text: "철분 과잉을 진단받은 적이 있으신가요?",
+    text: "철분 과잉(혈색소증 등) 진단을 받은 적이 있나요?",
     type: "choice",
     options: [
       { value: true, label: "네" },
@@ -121,7 +121,7 @@ export const sectionA: Question[] = [
   },
   {
     id: "A11",
-    text: "일주일에 등푸른 생선을 얼마나 드시나요?",
+    text: "등푸른 생선(고등어·연어 등)을 얼마나 자주 드시나요?",
     type: "choice",
     options: [
       { value: 0, label: "거의 먹지 않아요" },
@@ -131,7 +131,7 @@ export const sectionA: Question[] = [
   },
   {
     id: "A12",
-    text: "평일에 하루 15분 미만으로 햇빛을 쬐시나요?",
+    text: "햇빛을 쬐는 시간이 부족하다고 느끼나요?",
     type: "choice",
     options: [
       { value: true, label: "네" },
@@ -140,7 +140,7 @@ export const sectionA: Question[] = [
   },
   {
     id: "A13",
-    text: "일주일에 유제품은 얼마나 섭취하시나요?",
+    text: "우유·치즈와 같은 유제품을 일주일에 몇 번 드시나요?",
     type: "choice",
     options: [
       { value: "le2", label: "주 2회 이하예요" },
@@ -150,7 +150,7 @@ export const sectionA: Question[] = [
   },
   {
     id: "A14",
-    text: "하루에 화면을 보는 시간은 얼마나 되나요?",
+    text: "하루 화면(스마트폰/PC) 사용 시간은 어느 정도인가요?",
     type: "choice",
     options: [
       { value: "<4", label: "하루 4시간 미만이에요" },
@@ -165,7 +165,7 @@ export const sectionA: Question[] = [
     options: [
       { value: "const", label: "변비가 있어요" },
       { value: "normal", label: "보통이에요" },
-      { value: "loose", label: "묽거나 배가 더부룩해요" },
+      { value: "loose", label: "묽거나 설사가 잦아요" },
     ],
   },
 ];
@@ -184,7 +184,7 @@ export const sectionB: Question[] = [
   },
   {
     id: "B17",
-    text: "수면의 질이 좋지 않거나 쥐가 자주 나시나요?",
+    text: "수면의 질이 좋지 않거나, 쥐가 자주 나는 편인가요?",
     type: "choice",
     options: [
       { value: true, label: "네" },
@@ -193,7 +193,7 @@ export const sectionB: Question[] = [
   },
   {
     id: "B18",
-    text: "관절 통증은 얼마나 자주 느끼시나요?",
+    text: "무릎·관절의 통증이나 불편이 있나요?",
     type: "choice",
     options: [
       { value: "none", label: "관절 통증은 없어요" },
@@ -216,7 +216,7 @@ export const sectionB: Question[] = [
   },
   {
     id: "B20",
-    text: "야식이나 탄수화물 위주의 식사를 주 3회 이상 하시거나, 최근 3개월 내 체중이 3kg 이상 늘었나요?",
+    text: "야식·당류·음료 섭취가 잦거나, 최근 3개월 내 체중 변화가 컸나요?",
     type: "choice",
     options: [
       { value: true, label: "네" },
@@ -225,7 +225,7 @@ export const sectionB: Question[] = [
   },
   {
     id: "B21",
-    text: "평소 음주 빈도는 어느 정도인가요?",
+    text: "평소 술을 얼마나 자주 마시시나요?",
     type: "choice",
     options: [
       { value: "none", label: "거의 마시지 않아요" },
@@ -263,7 +263,7 @@ export const sectionB: Question[] = [
   },
   {
     id: "B25",
-    text: "주 3회 이상 소화불량, 가스 또는 더부룩함을 경험하시나요?",
+    text: "소화불량이나 속이 더부룩한 증상이 주 3회 이상 있나요?",
     type: "choice",
     options: [
       { value: true, label: "네" },
@@ -272,7 +272,7 @@ export const sectionB: Question[] = [
   },
   {
     id: "B26",
-    text: "연 4회 이상 잔병치레를 하거나 감기에 자주 걸리시나요?",
+    text: "감기 등 잔병치레가 잦은 편인가요?",
     type: "choice",
     options: [
       { value: true, label: "네" },
@@ -281,7 +281,7 @@ export const sectionB: Question[] = [
   },
   {
     id: "B27",
-    text: "주 3회 이상 운동을 하면서 지구력이 부족하다고 느끼시나요?",
+    text: "운동 시 체력이 많이 부족하거나 쉽게 지치나요?",
     type: "choice",
     options: [
       { value: true, label: "네" },
@@ -290,7 +290,7 @@ export const sectionB: Question[] = [
   },
   {
     id: "B28",
-    text: "평소 손발이 자주 차갑거나 혈액순환이 원활하지 않다고 느끼시나요?",
+    text: "손발이 차갑거나 혈액순환이 잘 안 된다고 느끼시나요?",
     type: "choice",
     options: [
       { value: true, label: "네" },
@@ -299,7 +299,7 @@ export const sectionB: Question[] = [
   },
   {
     id: "B29",
-    text: "하루 두 끼 이하로 먹거나 가공식품 위주의 식사를 자주 하시나요?",
+    text: "하루 두 끼 이하로 먹거나, 가공식품 위주의 식사를 자주 하시나요?",
     type: "choice",
     options: [
       { value: true, label: "네" },
@@ -308,7 +308,7 @@ export const sectionB: Question[] = [
   },
   {
     id: "B30",
-    text: "주 3회 이상 땀을 많이 흘리는 활동을 하거나 고온 환경에서 장시간 일하시나요?",
+    text: "땀을 많이 흘리거나, 고온 환경에서 주로 일하시나요?",
     type: "choice",
     options: [
       { value: true, label: "네" },

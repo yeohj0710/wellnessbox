@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import "./globals.css";
 import { SITE_URL } from "@/lib/constants";
 import TopBar from "@/components/common/topBar";
@@ -7,13 +7,13 @@ import { LocalStorageProvider } from "@/components/common/localStorage";
 import { pretendard } from "./fonts";
 
 export const metadata: Metadata = {
-  title: "웰니스박스 | 내 몸에 딱 맞는 프리미엄 건강 솔루션",
-  description: "내 몸에 딱 맞는 프리미엄 건강 솔루션",
+  title: "웰니스박스 | 내 몸에 맞는 프리미엄 건강 솔루션",
+  description: "내 몸에 맞는 프리미엄 건강 솔루션",
   metadataBase: new URL(SITE_URL),
   icons: { icon: "/logo.png" },
   openGraph: {
     title: "웰니스박스",
-    description: "내 몸에 딱 맞는 프리미엄 건강 솔루션",
+    description: "내 몸에 맞는 프리미엄 건강 솔루션",
     url: SITE_URL,
     images: [
       { url: "/kakao-logo.png", width: 800, height: 400, alt: "웰니스박스" },
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "웰니스박스",
-    description: "내 몸에 딱 맞는 프리미엄 건강 솔루션",
+    description: "내 몸에 맞는 프리미엄 건강 솔루션",
     images: ["/logo.png"],
   },
   other: {
@@ -42,10 +42,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body
-        className={`${pretendard.className} overflow-x-hidden flex flex-col bg-white`}
-      >
+    <html lang="ko">
+      <body className={`${pretendard.className} overflow-x-hidden flex flex-col bg-white`}>
         <LocalStorageProvider>
           <FooterProvider>
             <TopBar />
