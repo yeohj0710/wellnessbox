@@ -1,6 +1,7 @@
 ﻿"use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import Link from "next/link";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { evaluate } from "@/app/assess/algorithm";
 import { sectionA, sectionB, fixedA, hashChoice } from "./questions";
 import { NumberInput, MultiSelect } from "@/app/assess/inputs";
@@ -65,7 +66,30 @@ export default function Assess() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [cCats, setCCats] = useState<string[]>([]);
   const [cResult, setCResult] = useState<CSectionResult | null>(null);
-  const [recommendedIds, setRecommendedIds] = useState<number[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+
+  const handleCProgress = useCallback((step: number, total: number) => {
+    setCProgress((prev) => {
+      const pct = total > 0 ? Math.round((step / total) * 100) : 0;
+      if (prev.step === step && prev.total === total && prev.pct === pct)
+        return prev;
+      return { step, total, pct };
+    });
+  }, []);
+
+  const registerPrevCb = useCallback((fn: () => void) => {
+    cPrevRef.current = fn;
+  }, []);
+
+  const recommendedIds = useMemo(() => {
+    if (!cResult || categories.length === 0) return [] as number[];
+    return cResult.catsOrdered
+      .map(
+        (code) =>
+          categories.find((c: any) => c.name === CODE_TO_LABEL[code])?.id
+      )
+      .filter((id): id is number => typeof id === "number");
+  }, [cResult, categories]);
   const cPrevRef = useRef<(() => void) | null>(null);
   const [cProgress, setCProgress] = useState({ step: 0, total: 0, pct: 0 });
   const cancelBtnRef = useRef<HTMLButtonElement>(null);
@@ -125,22 +149,10 @@ export default function Assess() {
   }, [section, answers, current, fixedIdx, history]);
 
   useEffect(() => {
-    async function syncIds() {
-      if (!cResult) {
-        setRecommendedIds([]);
-        return;
-      }
-      try {
-        const cats = await getCategories();
-        const names = cResult.catsOrdered.map((code) => CODE_TO_LABEL[code]);
-        const ids = names
-          .map((n) => cats.find((c: any) => c.name === n)?.id)
-          .filter((v): v is number => typeof v === "number");
-        setRecommendedIds(ids);
-      } catch {}
-    }
-    syncIds();
-  }, [cResult]);
+    getCategories()
+      .then((cats) => setCategories(cats))
+      .catch(() => {});
+  }, []);
 
   const allQuestions =
     section === "A" ? sectionA : section === "B" ? sectionB : [];
@@ -224,6 +236,11 @@ export default function Assess() {
       const idx = fixedA.indexOf(prevId);
       if (idx !== -1) setFixedIdx(idx);
     }
+  };
+
+  const handleCPrev = () => {
+    if (cProgress.step > 0 && cPrevRef.current) cPrevRef.current();
+    else goBack();
   };
 
   const handleAnswer = (val: any) => {
@@ -392,7 +409,10 @@ export default function Assess() {
       <div className="w-full max-w-[760px] mx-auto px-4 pb-28">
         <div className="relative mt-6 sm:mt-10 overflow-hidden rounded-3xl bg-white/70 p-6 sm:p-10 shadow-[0_10px_40px_rgba(2,6,23,0.08)] ring-1 ring-black/5 backdrop-blur">
           <div className="flex justify-between text-xs text-gray-500 mb-6">
-            <button onClick={goBack} className="underline hover:text-gray-700">
+            <button
+              onClick={handleCPrev}
+              className="underline hover:text-gray-700"
+            >
               이전
             </button>
             <button
@@ -402,12 +422,37 @@ export default function Assess() {
               처음부터
             </button>
           </div>
+
+          <div className="flex items-start justify-between">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
+              세부 진단
+            </h1>
+            <div className="min-w-[120px]">
+              <div className="flex items-center justify-between text-xs text-gray-600">
+                <span>진행률</span>
+                <span className="tabular-nums">{cProgress.pct}%</span>
+              </div>
+              <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 transition-[width] duration-500"
+                  style={{ width: `${cProgress.pct}%` }}
+                />
+              </div>
+              <div className="mt-1 text-[10px] text-gray-500">
+                {cProgress.step}/{cProgress.total}문항 완료 ·{" "}
+                {Math.max(cProgress.total - cProgress.step, 0)}문항 남음
+              </div>
+            </div>
+          </div>
+
           <CSection
             cats={cCats}
             onSubmit={(res) => {
               setCResult(res);
               setSection("DONE");
             }}
+            onProgress={handleCProgress}
+            registerPrev={registerPrevCb}
           />
         </div>
         {confirmOpen && (
@@ -471,10 +516,11 @@ export default function Assess() {
             </button>
           </div>
           <h1 className="text-2xl font-extrabold text-gray-900 mb-2">
-            추천 카테고리 Top3
+            맞춤 추천 결과
           </h1>
           <p className="text-sm text-gray-600 mb-6">
-            카테고리별 적합도 퍼센티지예요. 아래 순서대로 살펴볼게요.
+            답변을 바탕으로 아래 세 가지 영양제 카테고리를 우선 추천드려요.
+            퍼센트는 현재 상태와의 적합도를 의미해요.
           </p>
           <ul className="space-y-4">
             {cResult.catsOrdered.map((c, i) => (
@@ -497,8 +543,11 @@ export default function Assess() {
               </li>
             ))}
           </ul>
-          <div className="mt-8 flex items-center gap-3">
-            <a
+          <p className="mt-6 text-sm text-gray-600">
+            아래 버튼을 누르면 추천 카테고리가 적용된 상품 목록으로 이동해요.
+          </p>
+          <div className="mt-4 flex items-center gap-3">
+            <Link
               href={`/explore${
                 recommendedIds.length
                   ? `?categories=${recommendedIds.join(",")}`
@@ -506,8 +555,8 @@ export default function Assess() {
               }#home-products`}
               className="rounded-full px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-indigo-500 shadow hover:brightness-110"
             >
-              구매하러 가기
-            </a>
+              추천 제품 보러 가기
+            </Link>
           </div>
         </div>
         {confirmOpen && (

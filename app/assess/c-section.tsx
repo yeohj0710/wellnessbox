@@ -1,5 +1,5 @@
 ﻿"use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 
 export type CSectionResult = {
   catsOrdered: string[];
@@ -11,7 +11,6 @@ type QType = "yesno" | "likert4" | "freq_wk4";
 
 type Q = { prompt: string; type: QType };
 
-// 5문항씩, 친절한 말투로 구성 (0..3 범위; yesno는 0/1)
 const BANK: Record<string, Q[]> = {
   vitc: [
     { prompt: "감기처럼 잔병치레가 잦은 편이신가요?", type: "likert4" },
@@ -21,14 +20,26 @@ const BANK: Record<string, Q[]> = {
     { prompt: "피로가 오래 가는 편인가요?", type: "likert4" },
   ],
   omega3: [
-    { prompt: "등푸른 생선(고등어·연어 등)을 얼마나 드시나요?", type: "freq_wk4" },
-    { prompt: "혈중 지질/중성지방을 지적받았거나 가족력이 있나요?", type: "yesno" },
+    {
+      prompt: "등푸른 생선(고등어·연어 등)을 얼마나 드시나요?",
+      type: "freq_wk4",
+    },
+    {
+      prompt: "혈중 지질/중성지방을 지적받았거나 가족력이 있나요?",
+      type: "yesno",
+    },
     { prompt: "눈·피부·입이 건조하다고 느끼시나요?", type: "likert4" },
-    { prompt: "건조한 실내/렌즈 착용 등으로 눈이 뻑뻑한가요?", type: "likert4" },
+    {
+      prompt: "건조한 실내/렌즈 착용 등으로 눈이 뻑뻑한가요?",
+      type: "likert4",
+    },
     { prompt: "심혈관 건강 개선이 필요하다고 느끼시나요?", type: "likert4" },
   ],
   ca: [
-    { prompt: "유제품/칼슘 강화 식품 섭취가 부족한 편인가요?", type: "likert4" },
+    {
+      prompt: "유제품/칼슘 강화 식품 섭취가 부족한 편인가요?",
+      type: "likert4",
+    },
     { prompt: "골다공증 가족력 또는 우려가 있나요?", type: "yesno" },
     { prompt: "체중부하 운동(걷기/근력)을 자주 하시나요?", type: "likert4" },
     { prompt: "폐경 이후이거나 50세 이상 여성인가요?", type: "yesno" },
@@ -84,7 +95,10 @@ const BANK: Record<string, Q[]> = {
     { prompt: "운동을 병행하실 의지가 있나요?", type: "likert4" },
   ],
   multivitamin: [
-    { prompt: "끼니를 자주 거르거나 식단 균형이 나쁜 편인가요?", type: "likert4" },
+    {
+      prompt: "끼니를 자주 거르거나 식단 균형이 나쁜 편인가요?",
+      type: "likert4",
+    },
     { prompt: "컨디션 저하/피로가 잦나요?", type: "likert4" },
     { prompt: "채소·과일·통곡물 섭취가 부족한가요?", type: "likert4" },
     { prompt: "수면·운동·식사가 불규칙한 편인가요?", type: "likert4" },
@@ -137,7 +151,10 @@ const BANK: Record<string, Q[]> = {
     { prompt: "빈혈 또는 MCV 증가 소견이 있나요?", type: "yesno" },
     { prompt: "녹황색 채소/강화 곡물 섭취가 적은가요?", type: "freq_wk4" },
     { prompt: "음주 빈도가 잦은 편인가요?", type: "likert4" },
-    { prompt: "엽산 흡수에 영향을 줄 수 있는 약물을 복용 중인가요?", type: "yesno" },
+    {
+      prompt: "엽산 흡수에 영향을 줄 수 있는 약물을 복용 중인가요?",
+      type: "yesno",
+    },
   ],
   arginine: [
     { prompt: "말초혈류 불량/손발저림을 자주 느끼시나요?", type: "likert4" },
@@ -150,7 +167,10 @@ const BANK: Record<string, Q[]> = {
     { prompt: "무릎/손가락 관절 통증이 자주 있나요?", type: "likert4" },
     { prompt: "아침에 관절이 뻣뻣한가요?", type: "likert4" },
     { prompt: "계단 오르내리기가 불편하신가요?", type: "likert4" },
-    { prompt: "글루코사민/콘드로이틴 복용 경험이 있으신가요?", type: "likert4" },
+    {
+      prompt: "글루코사민/콘드로이틴 복용 경험이 있으신가요?",
+      type: "likert4",
+    },
     { prompt: "운동과 체중 관리를 병행할 계획이 있으신가요?", type: "likert4" },
   ],
   coq10: [
@@ -200,17 +220,25 @@ export default function CSection({
   registerPrev?: (fn: () => void) => void;
 }) {
   const total = useMemo(() => cats.length * 5, [cats]);
-  const [step, setStep] = useState(0); // 0..total-1
+  const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number[]>>(
-    () => Object.fromEntries(cats.map((c) => [c, Array(5).fill(0)])) as Record<string, number[]>
+    () =>
+      Object.fromEntries(cats.map((c) => [c, Array(5).fill(-1)])) as Record<
+        string,
+        number[]
+      >
   );
   const [filled, setFilled] = useState<Record<string, boolean[]>>(
-    () => Object.fromEntries(cats.map((c) => [c, Array(5).fill(false)])) as Record<string, boolean[]>
+    () =>
+      Object.fromEntries(cats.map((c) => [c, Array(5).fill(false)])) as Record<
+        string,
+        boolean[]
+      >
   );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const lastProgRef = useRef<{ step: number; total: number } | null>(null);
 
-  // persist
   useEffect(() => {
     if (typeof window === "undefined") return;
     const key = "assess-c-state";
@@ -218,18 +246,20 @@ export default function CSection({
     if (saved) {
       try {
         const s = JSON.parse(saved);
-        if (Array.isArray(s.cats) && s.cats.join(',') === cats.join(',')) {
+        if (Array.isArray(s.cats) && s.cats.join(",") === cats.join(",")) {
           setStep(s.step ?? 0);
           setAnswers(s.answers ?? answers);
           setFilled(s.filled ?? filled);
         }
       } catch {}
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
     if (typeof window === "undefined") return;
-    localStorage.setItem("assess-c-state", JSON.stringify({ cats, step, answers, filled }));
+    localStorage.setItem(
+      "assess-c-state",
+      JSON.stringify({ cats, step, answers, filled })
+    );
   }, [cats, step, answers, filled]);
 
   const catIdx = Math.floor(step / 5);
@@ -237,10 +267,20 @@ export default function CSection({
   const cat = cats[catIdx];
   const bank = BANK[cat] || [];
   const q = bank[qIdx];
-
   const canContinue = filled[cat]?.[qIdx];
-  useEffect(() => { onProgress?.(step, total); }, [step, total, onProgress]);
-  useEffect(() => { registerPrev?.(() => setStep((s) => Math.max(s - 1, 0))); }, [registerPrev]);
+
+  useEffect(() => {
+    if (!onProgress) return;
+    const s = step + (canContinue ? 1 : 0);
+    if (lastProgRef.current?.step === s && lastProgRef.current?.total === total)
+      return;
+    lastProgRef.current = { step: s, total };
+    onProgress(s, total);
+  }, [step, total, canContinue, onProgress]);
+
+  useEffect(() => {
+    registerPrev?.(() => setStep((s) => Math.max(s - 1, 0)));
+  }, [registerPrev]);
 
   const select = (val: number) => {
     setAnswers((prev) => {
@@ -257,60 +297,65 @@ export default function CSection({
     });
   };
 
-  const next = () => setStep((s) => Math.min(s + 1, total - 1));
-  const prev = () => setStep((s) => Math.max(s - 1, 0));
-
   const submit = async () => {
     setSubmitting(true);
     setError("");
     try {
       const payload = { cats, answers: cats.map((c) => answers[c]) };
-      const res = await fetch('/api/c-section-score', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const res = await fetch("/api/c-section-score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || '서버와 통신 중 오류가 발생했어요.');
+        throw new Error(data.error || "서버와 통신 중 오류가 발생했어요.");
       }
       const data = (await res.json()) as CSectionResult;
       onSubmit(data);
     } catch (e: any) {
-      setError(e.message || '네트워크 오류가 발생했어요.');
+      setError(e.message || "네트워크 오류가 발생했어요.");
     } finally {
       setSubmitting(false);
     }
   };
 
-  const progress = Math.round(((step + (canContinue ? 1 : 0)) / total) * 100);
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-gray-600">
-          {catIdx + 1}/{cats.length} 카테고리 · {qIdx + 1}/5 문항
-        </div>
-        <div className="min-w-[140px]">
-          <div className="flex items-center justify-between text-xs text-gray-600">
-            <span>진행률</span>
-            <span className="tabular-nums">{progress}%</span>
-          </div>
-          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100">
-            <div className="h-full rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 transition-[width] duration-300" style={{ width: `${progress}%` }} />
-          </div>
-        </div>
-      </div>
-
-      <h3 className="text-base font-semibold text-gray-900">{q?.prompt}</h3>
-
-      <div className="grid gap-2 mt-4 grid-cols-2 sm:grid-cols-3">
+    <div>
+      <h2 className="mt-6 text-xl font-bold text-gray-900">{q?.prompt}</h2>
+      <div
+        className={[
+          "mt-6 grid gap-2",
+          (OPTIONS[q.type] || []).length === 1
+            ? "grid-cols-1"
+            : (OPTIONS[q.type] || []).length === 2
+            ? "grid-cols-2 sm:grid-cols-2"
+            : (OPTIONS[q.type] || []).length === 3
+            ? "grid-cols-2 sm:grid-cols-3"
+            : (OPTIONS[q.type] || []).length === 4
+            ? "grid-cols-2 sm:grid-cols-2"
+            : "grid-cols-2 sm:grid-cols-3",
+        ].join(" ")}
+      >
         {(OPTIONS[q.type] || []).map((opt) => {
-          const active = answers[cat][qIdx] === opt.value;
+          const active =
+            !!filled[cat]?.[qIdx] && answers[cat][qIdx] === opt.value;
           return (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => { select(opt.value); setTimeout(() => { if (step < total - 1) setStep(step + 1); else submit(); }, 160); }}
-            className={[
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => {
+                select(opt.value);
+                setTimeout(() => {
+                  if (step < total - 1) setStep(step + 1);
+                  else submit();
+                }, 160);
+              }}
+              className={[
                 "rounded-xl border p-3 text-sm transition-colors flex items-center justify-center text-center whitespace-normal leading-tight min-h-[44px]",
-                active ? "border-sky-300 bg-sky-50 ring-2 ring-sky-400" : "border-gray-200 bg-white hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 active:scale-[0.98]",
+                active
+                  ? "border-sky-300 bg-sky-50 ring-2 ring-sky-400"
+                  : "border-gray-200 bg-white hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-sky-500 active:scale-[0.98]",
               ].join(" ")}
             >
               {opt.label}
@@ -318,8 +363,10 @@ export default function CSection({
           );
         })}
       </div>
-
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+      <p className="mt-8 text-xs leading-none text-gray-400">
+        중간에 나가도 진행 상황이 저장돼요.
+      </p>
     </div>
   );
 }
