@@ -2,8 +2,8 @@ import {
   CATEGORY_LABELS,
   CategoryKey,
   allCategories,
-} from './categories';
-import { RULES, Answers } from './rules';
+} from "@/app/assess/categories";
+import { RULES, Answers } from "@/app/assess/rules";
 
 // safety rules
 function applySafety(scores: Record<CategoryKey, number>, a: Answers) {

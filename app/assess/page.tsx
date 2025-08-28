@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { evaluate } from "./algorithm";
+import { evaluate } from "@/app/assess/algorithm";
 import { sectionA, sectionB, fixedA, hashChoice } from "./questions";
 import { NumberInput, MultiSelect } from "@/app/assess/inputs";
 import CSection, { CSectionResult } from "./c-section";
