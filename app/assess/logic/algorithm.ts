@@ -174,16 +174,22 @@ function reconstructPlan(
 ) {
   const cats = state.cats;
   const answers = state.answers;
-  const filled = state.filled;
   const cSeed = state.cSeed;
   const acc: Pair[] = [];
+  const filled: Filled = makeEmptyFilled(cats);
   const first = initialPair(cats, cSeed);
   acc.push(first);
   let cur: Pair | null = first;
   while (cur) {
     const v = answers[cur.cat]?.[cur.qIdx] ?? -1;
     if (v === -1) break;
-    const nxt = nextPairAfterAnswer({ ...state }, getType, cur, v);
+    filled[cur.cat][cur.qIdx] = true;
+    const nxt = nextPairAfterAnswer(
+      { ...state, filled },
+      getType,
+      cur,
+      v
+    );
     if (!nxt) break;
     acc.push(nxt);
     cur = nxt;
@@ -197,7 +203,7 @@ function reconstructPlan(
       return { cat: any, qIdx: getNextQIdx(any, filled) };
     }
     const v = answers[cur.cat]?.[cur.qIdx] ?? -1;
-    return nextPairAfterAnswer({ ...state }, getType, cur, v);
+    return nextPairAfterAnswer({ ...state, filled }, getType, cur, v);
   })();
   if (nxt) acc.push(nxt);
   return acc;

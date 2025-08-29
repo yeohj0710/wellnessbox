@@ -83,7 +83,7 @@ export default function CSection({
   const lastProgRef = useRef<{ step: number; total: number } | null>(null);
   const hydratedRef = useRef(false);
 
-  +useEffect(() => {
+  useEffect(() => {
     setState(initialState());
     const arm = () => {
       hydratedRef.current = true;

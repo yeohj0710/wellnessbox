@@ -332,36 +332,17 @@ export default function Assess() {
         delay = 2500;
         type TopItem = { key: CategoryKey; label: string; score: number };
         action = () => {
-          let resumed = false;
           try {
-            const raw = localStorage.getItem(C_PERSIST_KEY);
-            if (raw) {
-              const obj = JSON.parse(raw);
-              const s = obj?.cState;
-              const hasCats = Array.isArray(s?.cats) && s.cats.length > 0;
-              const hasAnyFilled =
-                s?.filled &&
-                Object.values(s.filled).some(
-                  (arr: any) => Array.isArray(arr) && arr.some(Boolean)
-                );
-              if (hasCats && hasAnyFilled) {
-                setCCats(s.cats as string[]);
-                setSection("C");
-                setCEpoch((n) => n + 1);
-                resumed = true;
-              }
-            }
+            localStorage.removeItem(C_PERSIST_KEY);
           } catch {}
-
-          if (!resumed) {
-            const { top } = evaluate(pruned as any);
-            const nextCats = (top as TopItem[]).map(
-              (c) => KEY_TO_CODE[c.key as CategoryKey]
-            );
-            setCCats(nextCats);
-            setSection("C");
-            setCEpoch((n) => n + 1);
-          }
+          const { top } = evaluate(pruned as any);
+          const nextCats = (top as TopItem[]).map(
+            (c) => KEY_TO_CODE[c.key as CategoryKey]
+          );
+          setCCats(nextCats);
+          setCProgress({ step: 0, total: 0, pct: 0 });
+          setSection("C");
+          setCEpoch((n) => n + 1);
         };
       }
     } else {
@@ -636,7 +617,7 @@ export default function Assess() {
               onClick={confirmReset}
               className="underline hover:text-gray-700 [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
             >
-              처음부터
+              다시하기
             </button>
           </div>
           <h1 className="text-2xl font-extrabold text-gray-900 mb-2">
