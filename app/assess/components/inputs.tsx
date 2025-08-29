@@ -140,7 +140,7 @@ export function MultiSelect({
                 "relative flex items-center justify-center gap-2 rounded-xl border p-3 text-sm transition-all whitespace-normal text-center focus:outline-none min-h-[44px] h-full",
                 active
                   ? "border-transparent bg-sky-50 ring-2 ring-sky-400 ring-offset-1 ring-offset-white focus:ring-0 focus-visible:ring-0"
-                  : "border-gray-200 bg-white hover:bg-sky-50 hover:border-sky-200 active:bg-sky-50 focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-1 focus-visible:ring-offset-white",
+                  : "border-gray-200 bg-white supports-[hover:hover]:hover:bg-sky-50 supports-[hover:hover]:hover:border-sky-200 active:bg-sky-50 focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-1 focus-visible:ring-offset-white",
               ].join(" ")}
             >
               {active && (

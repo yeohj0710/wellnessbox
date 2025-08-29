@@ -416,7 +416,7 @@ export default function CSection({
                   ? "border-gray-200 bg-white opacity-60 pointer-events-none"
                   : isActive(opt.value)
                   ? "border-transparent bg-sky-50 ring-2 ring-sky-400 ring-offset-1 ring-offset-white focus:ring-0 focus-visible:ring-0"
-                  : "border-gray-200 bg-white hover:bg-sky-50 hover:border-sky-200 active:bg-sky-50 focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-1 focus-visible:ring-offset-white",
+                  : "border-gray-200 bg-white supports-[hover:hover]:hover:bg-sky-50 supports-[hover:hover]:hover:border-sky-200 active:bg-sky-50 focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-1 focus-visible:ring-offset-white",
               ].join(" ")}
             >
               {active && (
