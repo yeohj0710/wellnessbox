@@ -1,4 +1,4 @@
-import { CategoryKey } from './categories';
+import { CategoryKey } from "../data/categories";
 
 export type Answers = Record<string, any>;
 
@@ -171,3 +171,4 @@ export const RULES: Rule[] = [
     weights: { lutein: 2, vitaminA: 1 },
   },
 ];
+

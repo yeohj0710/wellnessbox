@@ -1,4 +1,4 @@
-﻿import { CATEGORY_LABELS, CategoryKey } from "./categories";
+import { CATEGORY_LABELS, CategoryKey } from "./categories";
 
 export interface Question {
   id: string;

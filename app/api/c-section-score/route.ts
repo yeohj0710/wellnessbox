@@ -1,57 +1,125 @@
-import { NextResponse } from 'next/server';
-import { getCatOrder, run } from '../../assess/lib/csModel';
+export const dynamic = "force-dynamic";
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+import path from "path";
+import fs from "fs/promises";
 
-export async function POST(req: Request) {
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json(
-      { error: '요청 본문을 JSON으로 읽지 못했어요.' },
-      { status: 400 }
-    );
-  }
-  const cats = (body as any).cats;
-  const answers = (body as any).answers;
-  if (!Array.isArray(cats) || !Array.isArray(answers))
-    return NextResponse.json(
-      { error: '입력 형식이 올바르지 않아요.' },
-      { status: 400 }
-    );
-  if (cats.length !== 3 || answers.length !== 3)
-    return NextResponse.json(
-      { error: '입력 개수가 올바르지 않아요.' },
-      { status: 400 }
-    );
-  const order = await getCatOrder();
-  for (const c of cats)
-    if (typeof c !== 'string' || !order.includes(c))
-      return NextResponse.json(
-        { error: '알 수 없는 카테고리에요.' },
-        { status: 400 }
-      );
-  for (const row of answers) {
-    if (!Array.isArray(row) || row.length !== 5)
-      return NextResponse.json(
-        { error: '답변 형식이 잘못되었어요.' },
-        { status: 400 }
-      );
-    for (const v of row) {
-      if (typeof v !== 'number' || v < 0 || v > 3)
-        return NextResponse.json(
-          { error: '답변 값이 범위를 벗어났어요.' },
-          { status: 400 }
-        );
+type Payload = {
+  cats: string[];
+  answers: number[][];
+};
+
+let sessionPromise: Promise<any> | null = null;
+let catOrderPromise: Promise<string[]> | null = null;
+
+function normAnswers(ans: number[][]): Float32Array {
+  const b = ans.length;
+  const arr = new Float32Array(b * 5);
+  for (let i = 0; i < b; i++) {
+    for (let j = 0; j < 5; j++) {
+      let v = ans[i][j];
+
+      if (v > 1) v = v / 3;
+      arr[i * 5 + j] = v;
     }
   }
-  try {
-    const result = await run(cats, answers as number[][]);
-    return NextResponse.json(result);
-  } catch (e) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
-  }
+  return arr;
 }
 
+async function loadCatOrder(): Promise<string[]> {
+  if (!catOrderPromise) {
+    const p = path.join(
+      process.cwd(),
+      "public",
+      "assess-model",
+      "c-section-scorer-v1.cats.json"
+    );
+    catOrderPromise = fs
+      .readFile(p, "utf-8")
+      .then((d) => JSON.parse(d).cat_order as string[]);
+  }
+  return catOrderPromise;
+}
+
+async function loadSession(): Promise<any> {
+  if (!sessionPromise) {
+    const ort = await import("onnxruntime-web");
+    ort.env.wasm.numThreads = 1;
+    ort.env.wasm.proxy = false;
+    const wasmDir = path.join(process.cwd(), "public", "onnx") + path.sep;
+    ort.env.wasm.wasmPaths = wasmDir;
+    const modelPath = path.join(
+      process.cwd(),
+      "public",
+      "assess-model",
+      "c-section-scorer-v1.onnx"
+    );
+    sessionPromise = ort.InferenceSession.create(modelPath);
+  }
+  return sessionPromise;
+}
+
+export async function POST(req: Request) {
+  try {
+    const body = (await req.json()) as Payload;
+    if (
+      !body ||
+      !Array.isArray(body.cats) ||
+      !Array.isArray(body.answers) ||
+      body.cats.length !== body.answers.length
+    ) {
+      return new Response(JSON.stringify({ error: "Invalid payload" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const cats = body.cats;
+    const ans = body.answers;
+
+    for (const row of ans) {
+      if (!Array.isArray(row) || row.length !== 5) {
+        return new Response(
+          JSON.stringify({ error: "Each category must have 5 answers" }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    const ort = await import("onnxruntime-web");
+    const [order, sess] = await Promise.all([loadCatOrder(), loadSession()]);
+
+    const ids = BigInt64Array.from(cats.map((c) => BigInt(order.indexOf(c))));
+
+    const catTensor = new ort.Tensor("int64", ids, [cats.length]);
+    const ansTensor = new ort.Tensor("float32", normAnswers(ans), [
+      ans.length,
+      5,
+    ]);
+    const output = await sess.run({ cat_ids: catTensor, answers: ansTensor });
+
+    const scores = Array.from(output["score_0_1"].data as Float32Array);
+    const percents = Array.from(output["percent_0_1"].data as Float32Array);
+    const indices = Array.from(
+      output["topk_indices"].data as BigInt64Array,
+      (v) => Number(v)
+    );
+
+    const catsOrdered = indices.map((i) => cats[i]);
+    const scoresOrdered = indices.map((i) => scores[i]);
+    const percentsOrdered = indices.map((i) => percents[i]);
+
+    return new Response(
+      JSON.stringify({
+        catsOrdered,
+        scores: scoresOrdered,
+        percents: percentsOrdered,
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  } catch (e: any) {
+    return new Response(
+      JSON.stringify({ error: e?.message || "Internal error" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+}

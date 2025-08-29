@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { evaluate } from "@/app/assess/algorithm";
-import { sectionA, sectionB, fixedA, hashChoice } from "./questions";
-import { NumberInput, MultiSelect } from "@/app/assess/inputs";
-import CSection, { CSectionResult } from "./c-section";
+import { evaluate } from "@/app/assess/logic/algorithm";
+import { sectionA, sectionB, fixedA, hashChoice } from "./data/questions";
+import { NumberInput, MultiSelect } from "@/app/assess/components/inputs";
+import CSection, { CSectionResult } from "./components/CSection";
 import {
   CATEGORY_LABELS,
   CategoryKey,
   CATEGORY_DESCRIPTIONS,
-} from "./categories";
+} from "./data/categories";
 import { getCategories } from "@/lib/product";
 
 const KEY_TO_CODE: Record<CategoryKey, string> = {
@@ -51,6 +51,11 @@ const CODE_TO_DESC: Record<string, string> = Object.fromEntries(
   ])
 ) as Record<string, string>;
 
+const labelOf = (code: string) =>
+  CODE_TO_LABEL[code as keyof typeof CODE_TO_LABEL] ?? code;
+const descOf = (code: string) =>
+  CODE_TO_DESC[code as keyof typeof CODE_TO_DESC] ?? "";
+
 const STORAGE_KEY = "assess-state";
 
 export default function Assess() {
@@ -84,10 +89,7 @@ export default function Assess() {
   const recommendedIds = useMemo(() => {
     if (!cResult || categories.length === 0) return [] as number[];
     return cResult.catsOrdered
-      .map(
-        (code) =>
-          categories.find((c: any) => c.name === CODE_TO_LABEL[code])?.id
-      )
+      .map((code) => categories.find((c: any) => c.name === labelOf(code))?.id)
       .filter((id): id is number => typeof id === "number");
   }, [cResult, categories]);
   const cPrevRef = useRef<(() => void) | null>(null);
@@ -145,9 +147,13 @@ export default function Assess() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
+    try {
+      const base = (() => {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : {};
+      })();
+      const next = {
+        ...base,
         section,
         answers,
         current,
@@ -155,8 +161,9 @@ export default function Assess() {
         history,
         cCats,
         cResult,
-      })
-    );
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    } catch {}
   }, [section, answers, current, fixedIdx, history, cCats, cResult]);
 
   useEffect(() => {
@@ -256,7 +263,6 @@ export default function Assess() {
 
   const handleAnswer = (val: any) => {
     (document.activeElement as HTMLElement | null)?.blur();
-    // record and prune future answers for better UX when revisiting
     const base = { ...answers, [current]: val === undefined ? null : val };
     const newHistory = [...history, current];
     const pruned: Record<string, any> = {};
@@ -295,9 +301,13 @@ export default function Assess() {
       } else {
         message = "이제 세부적인 질문을 할게요.";
         delay = 1200;
+        type TopItem = { key: CategoryKey; label: string; score: number };
         action = () => {
-          const { top } = evaluate(pruned);
-          setCCats(top.map((c) => KEY_TO_CODE[c.key]));
+          const { top } = evaluate(pruned as any);
+          const nextCats = (top as TopItem[]).map(
+            (c) => KEY_TO_CODE[c.key as CategoryKey]
+          );
+          setCCats(nextCats);
           setSection("C");
         };
       }
@@ -417,6 +427,49 @@ export default function Assess() {
     return (
       <div className="w-full max-w-[760px] mx-auto px-4 pb-28">
         <div className="relative mt-6 sm:mt-10 overflow-hidden rounded-3xl bg-white/70 p-6 sm:p-10 shadow-[0_10px_40px_rgba(2,6,23,0.08)] ring-1 ring-black/5 backdrop-blur">
+          {loading && (
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/90 backdrop-blur-sm sm:rounded-3xl">
+              <div className="flex items-center gap-2">
+                <span
+                  className="h-2.5 w-2.5 rounded-full bg-sky-500 opacity-40 dot"
+                  style={{ animationDelay: "0ms" }}
+                />
+                <span
+                  className="h-2.5 w-2.5 rounded-full bg-sky-500 opacity-40 dot"
+                  style={{ animationDelay: "120ms" }}
+                />
+                <span
+                  className="h-2.5 w-2.5 rounded-full bg-sky-500 opacity-40 dot"
+                  style={{ animationDelay: "240ms" }}
+                />
+              </div>
+              <p className="mt-4 px-4 text-center text-slate-700 font-medium">
+                {loadingText}
+              </p>
+              <style jsx>{`
+                .dot {
+                  animation: dot 1.2s ease-in-out infinite;
+                  will-change: opacity, transform;
+                }
+                @keyframes dot {
+                  0%,
+                  20% {
+                    opacity: 0.35;
+                    transform: scale(0.92);
+                  }
+                  50% {
+                    opacity: 1;
+                    transform: scale(1);
+                  }
+                  80%,
+                  100% {
+                    opacity: 0.35;
+                    transform: scale(0.92);
+                  }
+                }
+              `}</style>
+            </div>
+          )}
           <div className="flex justify-between text-xs text-gray-500 mb-6">
             <button
               onClick={handleCPrev}
@@ -463,6 +516,10 @@ export default function Assess() {
             onProgress={handleCProgress}
             registerPrev={registerPrevCb}
             persistKey={STORAGE_KEY}
+            onLoadingChange={(flag, text) => {
+              setLoadingText(text || "");
+              setLoading(!!flag);
+            }}
           />
         </div>
         {confirmOpen && (
@@ -536,7 +593,7 @@ export default function Assess() {
             {cResult.catsOrdered.map((c, i) => (
               <li key={c} className="p-4 rounded-xl bg-gray-50">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold">{CODE_TO_LABEL[c]}</span>
+                  <span className="font-semibold">{labelOf(c)}</span>
                   <span className="text-sm text-gray-600">
                     {(cResult.percents[i] * 100).toFixed(1)}%
                   </span>
@@ -549,7 +606,7 @@ export default function Assess() {
                     }}
                   />
                 </div>
-                <p className="mt-2 text-sm text-gray-600">{CODE_TO_DESC[c]}</p>
+                <p className="mt-2 text-sm text-gray-600">{descOf(c)}</p>
               </li>
             ))}
           </ul>

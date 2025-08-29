@@ -1,26 +1,37 @@
-import fs from 'fs/promises';
-import path from 'path';
+import fs from "fs/promises";
+import path from "path";
 
 let catOrderPromise: Promise<string[]> | null = null;
 let sessionPromise: Promise<any> | null = null;
 
 async function loadCatOrder(): Promise<string[]> {
   if (!catOrderPromise) {
-    const p = path.join(process.cwd(), 'public', 'assess-model', 'c-section-scorer-v1.cats.json');
-    catOrderPromise = fs.readFile(p, 'utf-8').then((d) => (JSON.parse(d).cat_order as string[]));
+    const p = path.join(
+      process.cwd(),
+      "public",
+      "assess-model",
+      "c-section-scorer-v1.cats.json"
+    );
+    catOrderPromise = fs
+      .readFile(p, "utf-8")
+      .then((d) => JSON.parse(d).cat_order as string[]);
   }
   return catOrderPromise;
 }
 
 async function loadSession() {
   if (!sessionPromise) {
-    const ort = await import('onnxruntime-web');
-    // mirror /api/predict setup
+    const ort = await import("onnxruntime-web");
     ort.env.wasm.numThreads = 1;
     ort.env.wasm.proxy = false;
-    const wasmDir = path.join(process.cwd(), 'public', 'onnx') + path.sep;
+    const wasmDir = path.join(process.cwd(), "public", "onnx") + path.sep;
     ort.env.wasm.wasmPaths = wasmDir;
-    const modelPath = path.join(process.cwd(), 'public', 'assess-model', 'c-section-scorer-v1.onnx');
+    const modelPath = path.join(
+      process.cwd(),
+      "public",
+      "assess-model",
+      "c-section-scorer-v1.onnx"
+    );
     sessionPromise = ort.InferenceSession.create(modelPath);
   }
   return sessionPromise;
@@ -43,6 +54,8 @@ export function normAnswers(ans: number[][]): Float32Array {
     for (let j = 0; j < 5; j++) {
       let v = ans[i][j];
       if (v > 1) v = v / 3;
+      if (v < 0) v = 0;
+      if (v > 1) v = 1;
       arr[i * 5 + j] = v;
     }
   }
@@ -53,14 +66,20 @@ export async function run(
   cats: string[],
   answers: number[][]
 ): Promise<{ catsOrdered: string[]; scores: number[]; percents: number[] }> {
-  const ort = await import('onnxruntime-web');
+  const ort = await import("onnxruntime-web");
   const sess = await loadSession();
-  const catTensor = new ort.Tensor('int64', await mapCats(cats), [cats.length]);
-  const ansTensor = new ort.Tensor('float32', normAnswers(answers), [answers.length, 5]);
+  const catTensor = new ort.Tensor("int64", await mapCats(cats), [cats.length]);
+  const ansTensor = new ort.Tensor("float32", normAnswers(answers), [
+    answers.length,
+    5,
+  ]);
   const output = await sess.run({ cat_ids: catTensor, answers: ansTensor });
-  const scores = Array.from(output['score_0_1'].data as Float32Array);
-  const percents = Array.from(output['percent_0_1'].data as Float32Array);
-  const indices = Array.from(output['topk_indices'].data as BigInt64Array, (v) => Number(v));
+  const scores = Array.from(output["score_0_1"].data as Float32Array);
+  const percents = Array.from(output["percent_0_1"].data as Float32Array);
+  const indices = Array.from(
+    output["topk_indices"].data as BigInt64Array,
+    (v) => Number(v)
+  );
   const catsOrdered = indices.map((i) => cats[i]);
   const scoresOrdered = indices.map((i) => scores[i]);
   const percentsOrdered = indices.map((i) => percents[i]);
