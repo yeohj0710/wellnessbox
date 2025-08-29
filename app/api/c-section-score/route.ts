@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getCatOrder, run } from '../../assess/lib/csModel';
 
 export const runtime = 'nodejs';
@@ -9,24 +9,42 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: '?섎せ???붿껌?낅땲??' }, { status: 400 });
+    return NextResponse.json(
+      { error: '요청 본문을 JSON으로 읽지 못했어요.' },
+      { status: 400 }
+    );
   }
   const cats = (body as any).cats;
   const answers = (body as any).answers;
   if (!Array.isArray(cats) || !Array.isArray(answers))
-    return NextResponse.json({ error: '?뺤떇???щ컮瑜댁? ?딆뒿?덈떎.' }, { status: 400 });
+    return NextResponse.json(
+      { error: '입력 형식이 올바르지 않아요.' },
+      { status: 400 }
+    );
   if (cats.length !== 3 || answers.length !== 3)
-    return NextResponse.json({ error: '?낅젰 媛쒖닔媛 ?щ컮瑜댁? ?딆뒿?덈떎.' }, { status: 400 });
+    return NextResponse.json(
+      { error: '입력 개수가 올바르지 않아요.' },
+      { status: 400 }
+    );
   const order = await getCatOrder();
   for (const c of cats)
     if (typeof c !== 'string' || !order.includes(c))
-      return NextResponse.json({ error: '?????녿뒗 移댄뀒怨좊━?낅땲??' }, { status: 400 });
+      return NextResponse.json(
+        { error: '알 수 없는 카테고리에요.' },
+        { status: 400 }
+      );
   for (const row of answers) {
     if (!Array.isArray(row) || row.length !== 5)
-      return NextResponse.json({ error: '?묐떟 ?뺤떇???섎せ?섏뿀?듬땲??' }, { status: 400 });
+      return NextResponse.json(
+        { error: '답변 형식이 잘못되었어요.' },
+        { status: 400 }
+      );
     for (const v of row) {
       if (typeof v !== 'number' || v < 0 || v > 3)
-        return NextResponse.json({ error: '?묐떟 媛믪씠 踰붿쐞瑜?踰쀬뼱?ъ뒿?덈떎.' }, { status: 400 });
+        return NextResponse.json(
+          { error: '답변 값이 범위를 벗어났어요.' },
+          { status: 400 }
+        );
     }
   }
   try {
@@ -36,5 +54,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }
 }
-
 

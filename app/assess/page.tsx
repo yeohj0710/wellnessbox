@@ -136,6 +136,9 @@ export default function Assess() {
         setCurrent(parsed.current ?? fixedA[0]);
         setFixedIdx(parsed.fixedIdx ?? 0);
         setHistory(parsed.history ?? []);
+        if (Array.isArray(parsed.cCats)) setCCats(parsed.cCats);
+        if (parsed.cResult && parsed.cResult.catsOrdered)
+          setCResult(parsed.cResult);
       } catch {}
     }
   }, []);
@@ -144,9 +147,17 @@ export default function Assess() {
     if (typeof window === "undefined") return;
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ section, answers, current, fixedIdx, history })
+      JSON.stringify({
+        section,
+        answers,
+        current,
+        fixedIdx,
+        history,
+        cCats,
+        cResult,
+      })
     );
-  }, [section, answers, current, fixedIdx, history]);
+  }, [section, answers, current, fixedIdx, history, cCats, cResult]);
 
   useEffect(() => {
     getCategories()
@@ -359,8 +370,7 @@ export default function Assess() {
                       세부 진단
                     </p>
                     <p className="text-xs text-gray-600">
-                      상위 3개 카테고리를 중심으로 짧게 확인하고 결과를
-                      제공해요.
+                      보완이 필요하다고 판단되는 부분을 집중적으로 분석해요.
                     </p>
                   </div>
                 </div>
@@ -393,8 +403,7 @@ export default function Assess() {
               </div>
               <div className="rounded-2xl bg-gray-50 p-4 ring-1 ring-gray-200">
                 <p className="text-xs text-gray-600">
-                  입력 내용은 브라우저에 임시 저장되고 제출 시에만 서버로
-                  전송돼요.
+                  입력 내용은 브라우저에 임시 저장되며 서버로 전송되지 않아요.
                 </p>
               </div>
             </div>
@@ -453,6 +462,7 @@ export default function Assess() {
             }}
             onProgress={handleCProgress}
             registerPrev={registerPrevCb}
+            persistKey={STORAGE_KEY}
           />
         </div>
         {confirmOpen && (
