@@ -91,13 +91,6 @@ export function MenuLinks({
           </span>
         </Link>
         <Link
-          href="/chat"
-          className="-mt-4 rounded-lg px-3 py-2 hover:bg-slate-50"
-          onClick={onItemClick}
-        >
-          챗봇 상담
-        </Link>
-        <Link
           href="/check-ai"
           className="-mt-4 rounded-lg px-3 py-2 hover:bg-slate-50"
           onClick={onItemClick}
@@ -209,16 +202,6 @@ export function MenuLinks({
               <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-600">
                 BETA
               </span>
-            </Link>
-            <Link
-              href="/chat"
-              className="block rounded-lg px-3 py-2 text-slate-800 hover:bg-slate-50"
-              onClick={() => {
-                setAiOpen(false);
-                if (onItemClick) onItemClick();
-              }}
-            >
-              챗봇 상담
             </Link>
             <Link
               href="/check-ai"
