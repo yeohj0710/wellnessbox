@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
@@ -6,6 +6,7 @@ import JourneyCtaBridge from "@/app/(components)/journeyCtaBridge";
 import PopularIngredients from "@/app/(components)/popularIngredients";
 import SymptomImprovement from "@/app/(components)/symptomImprovement";
 import SupplementRanking from "@/app/(components)/supplementRanking";
+import { useLoading } from "@/components/common/loadingContext.client";
 const HomeProductSection = dynamic(
   () => import("@/app/(components)/homeProductSection"),
   {
@@ -19,12 +20,16 @@ const HomeProductSection = dynamic(
 
 export default function ExplorePage() {
   const router = useRouter();
-  const handleCategory = (id: number) =>
+  const { showLoading } = useLoading();
+  const handleCategory = (id: number) => {
+    showLoading();
     router.push(`/explore?category=${id}#home-products`);
+  };
   const handleProduct = (id: number) => {
     if (typeof window !== "undefined") {
       sessionStorage.setItem("scrollPos", String(window.scrollY));
     }
+    showLoading();
     router.push(`/explore?product=${id}#home-products`, { scroll: false });
   };
   return (

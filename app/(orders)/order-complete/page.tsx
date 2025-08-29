@@ -117,7 +117,7 @@ export default function OrderComplete() {
             localStorage.setItem("paymentMethod", paymentMethod);
         }
         if (!paymentId) {
-          alert("결제 정보가 없습니다.");
+          alert("결제 정보가 없어요.");
           localStorage.removeItem("impUid");
           returnToCart();
           return;
@@ -152,14 +152,14 @@ export default function OrderComplete() {
         });
         if (paymentMethod === "inicis") {
           if (!impUid) {
-            alert("결제 정보가 없습니다.");
+            alert("결제 정보가 없어요.");
             returnToCart();
             return;
           }
           const paymentInfo = await response.json();
           const paymentResponse = paymentInfo.response;
           if (!paymentResponse || paymentResponse.status !== "paid") {
-            alert("결제에 실패하였습니다. 다시 시도해 주세요.");
+            alert("결제에 실패하였어요. 다시 시도해 주세요.");
             localStorage.removeItem("paymentId");
             localStorage.removeItem("paymentMethod");
             localStorage.removeItem("impUid");
@@ -198,14 +198,14 @@ export default function OrderComplete() {
             .filter((oi: any) => !!oi.pharmacyProductId);
 
           if (!rawCartItems.length) {
-            alert("장바구니가 비어 있습니다.");
+            alert("장바구니가 비어 있어요.");
             sessionStorage.removeItem(lockKey);
             returnToCart();
             return;
           }
           if (orderItems.length !== rawCartItems.length) {
             alert(
-              "일부 상품의 약국 옵션을 확인할 수 없습니다. 장바구니에서 다시 시도해 주세요."
+              "일부 상품의 약국 옵션을 확인할 수 없어요. 장바구니에서 다시 시도해 주세요."
             );
             sessionStorage.removeItem(lockKey);
             returnToCart();
@@ -213,7 +213,7 @@ export default function OrderComplete() {
           }
 
           if (!orderItems.length) {
-            alert("장바구니가 비어 있습니다.");
+            alert("장바구니가 비어 있어요.");
             sessionStorage.removeItem(lockKey);
             returnToCart();
             return;
@@ -256,7 +256,7 @@ export default function OrderComplete() {
           const paymentInfo = await response.json();
           const transaction = paymentInfo.response.payment.transactions?.[0];
           if (!transaction || transaction.status !== "PAID") {
-            alert("결제에 실패하였습니다. 다시 시도해 주세요.");
+            alert("결제에 실패하였어요. 다시 시도해 주세요.");
             localStorage.removeItem("paymentId");
             localStorage.removeItem("paymentMethod");
             localStorage.removeItem("impUid");
@@ -302,14 +302,14 @@ export default function OrderComplete() {
             .filter((oi: any) => !!oi.pharmacyProductId);
 
           if (!rawCartItems.length) {
-            alert("장바구니가 비어 있습니다.");
+            alert("장바구니가 비어 있어요.");
             sessionStorage.removeItem(lockKey);
             returnToCart();
             return;
           }
           if (orderItems.length !== rawCartItems.length) {
             alert(
-              "일부 상품의 약국 옵션을 확인할 수 없습니다. 장바구니에서 다시 시도해 주세요."
+              "일부 상품의 약국 옵션을 확인할 수 없어요. 장바구니에서 다시 시도해 주세요."
             );
             sessionStorage.removeItem(lockKey);
             returnToCart();
@@ -317,7 +317,7 @@ export default function OrderComplete() {
           }
 
           if (!orderItems.length) {
-            alert("장바구니가 비어 있습니다.");
+            alert("장바구니가 비어 있어요.");
             sessionStorage.removeItem(lockKey);
             returnToCart();
             return;

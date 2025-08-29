@@ -139,8 +139,8 @@ export function MultiSelect({
               className={[
                 "relative flex items-center justify-center gap-2 rounded-xl border p-3 text-sm transition-all whitespace-normal text-center focus:outline-none min-h-[44px] h-full",
                 active
-                  ? "border-sky-300 bg-sky-50 ring-2 ring-sky-400"
-                  : "border-gray-200 bg-white md:hover:bg-gray-50 focus:ring-2 focus:ring-sky-500",
+                  ? "border-transparent bg-sky-50 ring-2 ring-sky-400 ring-offset-1 ring-offset-white focus:ring-0 focus-visible:ring-0"
+                  : "border-gray-200 bg-white hover:bg-sky-50 hover:border-sky-200 active:bg-sky-50 focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-1 focus-visible:ring-offset-white",
               ].join(" ")}
             >
               {active && (
@@ -153,7 +153,6 @@ export function MultiSelect({
                   <path d="M16.707 5.293a1 1 0 0 1 0 1.414l-7.25 7.25a1 1 0 0 1-1.414 0l-3-3a1 1 0 1 1 1.414-1.414l2.293 2.293 6.543-6.543a1 1 0 0 1 1.414 0z" />
                 </svg>
               )}
-
               <span className="leading-tight">{opt.label}</span>
             </button>
           );

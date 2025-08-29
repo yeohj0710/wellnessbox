@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
@@ -12,6 +12,7 @@ import {
   CATEGORY_DESCRIPTIONS,
 } from "./data/categories";
 import { getCategories } from "@/lib/product";
+import { useLoading } from "@/components/common/loadingContext.client";
 
 const KEY_TO_CODE: Record<CategoryKey, string> = {
   vitaminC: "vitc",
@@ -60,6 +61,7 @@ const STORAGE_KEY = "assess-state";
 const C_PERSIST_KEY = `${STORAGE_KEY}::C`;
 
 export default function Assess() {
+  const { showLoading } = useLoading();
   const [section, setSection] = useState<"INTRO" | "A" | "B" | "C" | "DONE">(
     "INTRO"
   );
@@ -94,12 +96,37 @@ export default function Assess() {
 
   const recommendedIds = useMemo(() => {
     if (!cResult || categories.length === 0) return [] as number[];
-    return cResult.catsOrdered
+    const ids = cResult.catsOrdered
       .map((code) => categories.find((c: any) => c.name === labelOf(code))?.id)
       .filter((id): id is number => typeof id === "number");
+    return Array.from(new Set(ids)).slice(0, 3);
   }, [cResult, categories]);
 
   const [cProgress, setCProgress] = useState({ step: 0, total: 0, pct: 0 });
+
+  const cProgressMsg = useMemo(() => {
+    const tot = cProgress.total;
+    const ans = cProgress.step;
+    if (tot <= 0) return "";
+
+    const remain = Math.max(tot - ans, 0);
+    const ratio = ans / tot;
+
+    if (remain === 0) return "";
+    if (remain === 1) return "마지막 문항이에요!";
+    if (remain === 2) return "거의 끝! 2문항만 더 하면 돼요.";
+    if (remain <= 3) return "마무리 단계예요. 조금만 더 힘내요!";
+
+    if (ratio === 0) return "시작해볼까요?";
+    if (ratio < 0.2) return "좋은 출발이에요!";
+    if (ratio < 0.35) return "순조롭게 진행 중이에요.";
+    if (ratio < 0.5) return "잘하고 있어요, 곧 절반이에요.";
+    if (ratio < 0.55) return "절반 넘겼어요! 계속 가볼까요?";
+    if (ratio < 0.7) return "절반을 넘겼어요. 안정적으로 진행 중!";
+    if (ratio < 0.85) return "많이 왔어요! 막바지로 가는 중이에요.";
+    return "거의 다 왔어요! 페이스 그대로 가면 돼요.";
+  }, [cProgress.step, cProgress.total]);
+
   const [hydrated, setHydrated] = useState(false);
   const cancelBtnRef = useRef<HTMLButtonElement>(null);
 
@@ -212,9 +239,25 @@ export default function Assess() {
 
   const progressMsg = useMemo(() => {
     if (section !== "A" && section !== "B") return "";
-    const ratio = total > 0 ? answered / total : 0;
-    return ratio === 0 ? "" : "";
-  }, [answered, total, section]);
+    if (total <= 0) return "";
+
+    const remain = Math.max(total - answered, 0);
+    const ratio = answered / total;
+
+    if (remain === 0) return "";
+    if (remain === 1) return "마지막 문항이에요!";
+    if (remain === 2) return "거의 끝! 2문항만 더 하면 돼요.";
+    if (remain <= 3) return "마무리 단계예요. 조금만 더 힘내요!";
+
+    if (ratio === 0) return "시작해볼까요?";
+    if (ratio < 0.2) return "좋은 출발이에요!";
+    if (ratio < 0.35) return "순조롭게 진행 중이에요.";
+    if (ratio < 0.5) return "잘하고 있어요, 곧 절반이에요.";
+    if (ratio < 0.55) return "절반 넘겼어요! 계속 가볼까요?";
+    if (ratio < 0.7) return "절반을 넘겼어요. 안정적으로 진행 중!";
+    if (ratio < 0.85) return "많이 왔어요! 막바지로 가는 중이에요.";
+    return "거의 다 왔어요! 페이스 그대로 가면 돼요.";
+  }, [section, answered, total]);
 
   const isAB = section === "A" || section === "B";
   const currentQuestion = isAB
@@ -556,6 +599,9 @@ export default function Assess() {
                 {cProgress.step}/{cProgress.total}문항 완료 ·{" "}
                 {Math.max(cProgress.total - cProgress.step, 0)}문항 남음
               </div>
+              <div className="text-[10px] text-sky-600 mt-1">
+                {cProgressMsg}
+              </div>
             </div>
           </div>
 
@@ -642,8 +688,8 @@ export default function Assess() {
             맞춤 추천 결과
           </h1>
           <p className="text-sm text-gray-600 mb-6">
-            답변을 바탕으로 아래 세 가지 영양제 카테고리를 우선 추천드려요.
-            퍼센트는 현재 상태와의 적합도를 의미해요.
+            답변을 AI 분석하여 세 가지 영양제 카테고리를 추천드려요. 퍼센트는
+            현재 상태와의 적합도를 의미해요.
           </p>
           <ul className="space-y-4">
             {cResult.catsOrdered.map((c, i) => (
@@ -677,6 +723,7 @@ export default function Assess() {
                   : ""
               }#home-products`}
               className="w-full sm:w-2/3 text-center rounded-full px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-indigo-500 shadow hover:brightness-110 [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
+              onClick={showLoading}
             >
               추천 제품 보러 가기
             </Link>
@@ -842,8 +889,8 @@ export default function Assess() {
                       "rounded-xl border p-3 text-sm transition-colors flex items-center justify-center text-center whitespace-normal leading-tight min-h-[44px]",
                       "[-webkit-tap-highlight-color:transparent] touch-manipulation select-none active:bg-white",
                       active
-                        ? "border-sky-300 bg-sky-50 ring-2 ring-sky-400"
-                        : "border-gray-200 bg-white supports-[hover:hover]:hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 active:scale-[0.98]",
+                        ? "border-transparent bg-sky-50 ring-2 ring-sky-400 ring-offset-1 ring-offset-white focus:ring-0 focus-visible:ring-0"
+                        : "border-gray-200 bg-white hover:bg-sky-50 hover:border-sky-200 active:bg-sky-50 focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-1 focus-visible:ring-offset-white",
                     ].join(" ")}
                   >
                     {opt.label}

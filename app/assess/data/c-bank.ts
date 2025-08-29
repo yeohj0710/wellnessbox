@@ -145,10 +145,13 @@ export const BANK: CBank = {
     { prompt: "야식이나 간식을 자주 드시나요?", type: "likert4" },
     { prompt: "체중 관리 목표가 뚜렷하신가요?", type: "likert4" },
     {
-      prompt: "쉐이크·캡슐 등 체중 관리 제품을 사용해 본 적이 있나요?",
+      prompt: "쉐이크·캡슐 등 체중 관리 제품을 사용해 보신 적이 있나요?",
       type: "yesno",
     },
-    { prompt: "운동과 함께 관리해 볼 의지가 있으신가요?", type: "likert4" },
+    {
+      prompt: "평소 운동과 함께 체중 관리를 하는 편이신가요?",
+      type: "likert4",
+    },
   ],
 
   multivitamin: [
@@ -156,7 +159,7 @@ export const BANK: CBank = {
     { prompt: "컨디션·에너지 기복이 큰 편인가요?", type: "likert4" },
     { prompt: "채소·과일·통곡물을 충분히 드시지 못하나요?", type: "likert4" },
     { prompt: "수면·운동·식사 시간이 불규칙한가요?", type: "likert4" },
-    { prompt: "영양제를 꾸준히 챙겨 드실 의지가 있으신가요?", type: "likert4" },
+    { prompt: "평소에 영양제를 꾸준히 챙겨 드시나요?", type: "likert4" },
   ],
 
   zn: [
@@ -181,10 +184,10 @@ export const BANK: CBank = {
       type: "likert4",
     },
     {
-      prompt: "식단이 한쪽으로 치우치거나 편식이 있으신가요?",
+      prompt: "식단이 한쪽으로 치우치거나 편식이 있으신 편인가요?",
       type: "likert4",
     },
-    { prompt: "짠맛이나 단맛을 특히 선호하시나요?", type: "likert4" },
+    { prompt: "짠맛이나 단맛을 선호하는 편인가요?", type: "likert4" },
     { prompt: "패스트푸드·인스턴트 섭취가 잦은 편인가요?", type: "likert4" },
     { prompt: "근육 피로를 자주 느끼시나요?", type: "likert4" },
   ],
@@ -206,7 +209,7 @@ export const BANK: CBank = {
   fe: [
     { prompt: "어지럼·창백·두근거림을 가끔 느끼시나요?", type: "likert4" },
     { prompt: "최근 검사에서 빈혈 의심 소견을 들으셨나요?", type: "yesno" },
-    { prompt: "월경량이 많은 편에 해당하시나요?", type: "yesno" },
+    { prompt: "여성이고, 월경량이 많은 편에 해당하시나요?", type: "yesno" },
     {
       prompt: "붉은 고기 등 철 함유 식품을 자주 드시지 못하나요?",
       type: "likert4",
@@ -222,11 +225,17 @@ export const BANK: CBank = {
       prompt: "숙면을 취하지 못해 개운하지 않은 날이 많나요?",
       type: "likert4",
     },
-    { prompt: "최근 기억력이 예전만 못하다고 느끼시나요?", type: "likert4" },
+    {
+      prompt: "최근 기억력이 이전보다 떨어지는 것 같다고 느끼시나요?",
+      type: "likert4",
+    },
   ],
 
   folate: [
-    { prompt: "임신을 계획 중이거나 초기 임신에 해당하시나요?", type: "yesno" },
+    {
+      prompt: "여성이고, 임신을 계획 중이거나 초기 임신에 해당하시나요?",
+      type: "yesno",
+    },
     {
       prompt: "빈혈 또는 특정 혈액 지표 이상을 지적받은 적이 있으신가요?",
       type: "yesno",
@@ -255,7 +264,7 @@ export const BANK: CBank = {
       prompt: "혈압·혈관 관리를 더 신경 쓸 필요가 있다고 느끼시나요?",
       type: "likert4",
     },
-    { prompt: "지구력을 보완하고 싶다고 느끼시나요?", type: "likert4" },
+    { prompt: "지구력을 보완할 필요성이 있다고 느끼시나요?", type: "likert4" },
     {
       prompt: "운동 전후 분말형 제품(아미노산 등)을 먹으면 속이 더부룩한가요?",
       type: "likert4",
@@ -303,12 +312,12 @@ export const BANK: CBank = {
     },
     { prompt: "관절이나 힘줄 부위가 불편할 때가 있나요?", type: "likert4" },
     {
-      prompt: "단백질 식품(육류·달걀·콩류 등)을 충분히 드시지 못하나요?",
+      prompt: "단백질 식품(육류·달걀·콩류 등)을 적게 먹는 편인가요?",
       type: "likert4",
     },
     { prompt: "야외활동이 잦아 자외선 노출이 많은 편인가요?", type: "likert4" },
     {
-      prompt: "과일·채소와 단백질 식품을 함께 챙겨 드실 수 있나요?",
+      prompt: "과일·채소와 단백질 식품을 자주 챙겨드시는 편인가요?",
       type: "likert4",
     },
   ],

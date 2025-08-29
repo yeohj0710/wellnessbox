@@ -14,8 +14,6 @@ import {
   shouldSubmit,
   answeredCount,
   TRANSITION_MS,
-  prev as algPrev,
-  nextPairAfterAnswer,
 } from "../logic/algorithm";
 import { BANK } from "../data/c-bank";
 
@@ -144,28 +142,8 @@ export default function CSection({
     registerPrev(() => {
       const s = stateRef.current;
       if (s.step <= 0) return false;
-
       const targetIdx = s.step - 1;
-      const target = s.plan[targetIdx];
-
-      setState((prev) => {
-        if (!target) return { ...prev, step: targetIdx };
-
-        const answers = {
-          ...prev.answers,
-          [target.cat]: [...prev.answers[target.cat]],
-        };
-        const filled = {
-          ...prev.filled,
-          [target.cat]: [...prev.filled[target.cat]],
-        };
-
-        filled[target.cat][target.qIdx] = false;
-        answers[target.cat][target.qIdx] = -1;
-
-        return { ...prev, step: targetIdx, answers, filled, error: undefined };
-      });
-
+      setState((prev) => ({ ...prev, step: targetIdx, error: undefined }));
       return true;
     });
   }, [registerPrev]);
@@ -199,39 +177,43 @@ export default function CSection({
   const select = (val: number) => {
     if (!q || submitting || transitioning) return;
     setError("");
+
+    const { state: previewState, finished: willFinish } = selectValue(
+      stateRef.current,
+      getType,
+      val
+    );
+    const willSubmit = willFinish || shouldSubmit(previewState);
+
+    if (willSubmit) {
+      const v = validateBeforeSubmit(previewState, getType);
+      if (v.ok) {
+        setState(previewState);
+        submit(previewState);
+      } else {
+        setError("답변 값이 범위를 벗어났어요.");
+        setState(
+          ensureNextQuestion(
+            {
+              ...previewState,
+              plan: [...previewState.plan, v.focus],
+              step: Math.max(0, previewState.step),
+            },
+            getType
+          )
+        );
+      }
+      return;
+    }
+
     setTransitioning(true);
     notify(true, "AI가 답변을 분석해서 다음 질문을 고를게요.");
+
     window.setTimeout(
       () => {
         setTransitioning(false);
         notify(false);
-        const { state: nextState, finished } = selectValue(
-          stateRef.current,
-          getType,
-          val
-        );
-        const canSubmit = finished || shouldSubmit(nextState);
-        if (canSubmit) {
-          const v = validateBeforeSubmit(nextState, getType);
-          if (v.ok) {
-            setState(nextState);
-            submit(nextState);
-          } else {
-            setError("답변 값이 범위를 벗어났어요.");
-            setState(
-              ensureNextQuestion(
-                {
-                  ...nextState,
-                  plan: [...nextState.plan, v.focus],
-                  step: Math.max(0, nextState.step),
-                },
-                getType
-              )
-            );
-          }
-        } else {
-          setState(ensureNextQuestion(nextState, getType));
-        }
+        setState(ensureNextQuestion(previewState, getType));
       },
       typeof TRANSITION_MS === "number" ? TRANSITION_MS : 0
     );
@@ -250,16 +232,24 @@ export default function CSection({
   const submit = async (s: CState) => {
     if (submitting) return;
     setSubmitting(true);
+
+    const MIN_SHOW_MS = 5000;
+    const t0 =
+      typeof performance !== "undefined" && performance.now
+        ? performance.now()
+        : Date.now();
+
     notify(true, "AI가 최종 결과를 추론하고 있어요.");
     setError("");
+
+    let result: CSectionResult | null = null;
+
     try {
       const answersNorm = s.cats.map((c) =>
         s.answers[c].map((v, i) => normalizeByType(getType(c, i), v))
       );
-      const payload = {
-        cats: s.cats,
-        answers: answersNorm,
-      };
+      const payload = { cats: s.cats, answers: answersNorm };
+
       const res = await fetch("/api/c-section-score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -269,7 +259,8 @@ export default function CSection({
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "서버와 통신 중 오류가 발생했어요.");
       }
-      const data = (await res.json()) as CSectionResult;
+
+      result = (await res.json()) as CSectionResult;
 
       if (typeof window !== "undefined" && persistKey) {
         try {
@@ -280,15 +271,38 @@ export default function CSection({
           localStorage.setItem(persistKey, payload);
         } catch {}
       }
-
-      onSubmit(data);
     } catch (e: any) {
       setError(e?.message || "네트워크 오류가 발생했어요.");
     } finally {
+      const elapsed =
+        (typeof performance !== "undefined" && performance.now
+          ? performance.now()
+          : Date.now()) - t0;
+      const wait = Math.max(0, MIN_SHOW_MS - elapsed);
+      await new Promise((r) => setTimeout(r, wait));
+
       setSubmitting(false);
       notify(false);
+
+      if (result) onSubmit(result);
     }
   };
+
+  const hasLong = useMemo(() => {
+    return opts.some((o) => {
+      const t = String(o.label);
+      return t.length >= 9 || t.split(/\s+/).length >= 3;
+    });
+  }, [opts]);
+
+  const gridCols = useMemo(() => {
+    if (hasLong) return "grid-cols-1 sm:grid-cols-2";
+    if (opts.length === 1) return "grid-cols-1";
+    if (opts.length === 2) return "grid-cols-2 sm:grid-cols-2";
+    if (opts.length === 3) return "grid-cols-2 sm:grid-cols-3";
+    if (opts.length === 4) return "grid-cols-2 sm:grid-cols-2";
+    return "grid-cols-2 sm:grid-cols-3";
+  }, [hasLong, opts.length]);
 
   return (
     <div className="relative">
@@ -382,39 +396,43 @@ export default function CSection({
       <h2 className="mt-6 text-xl font-bold text-gray-900">{q?.prompt}</h2>
 
       <div
-        className={[
-          "mt-6 grid gap-2",
-          opts.length === 1
-            ? "grid-cols-1"
-            : opts.length === 2
-            ? "grid-cols-2 sm:grid-cols-2"
-            : opts.length === 3
-            ? "grid-cols-2 sm:grid-cols-3"
-            : opts.length === 4
-            ? "grid-cols-2 sm:grid-cols-2"
-            : "grid-cols-2 sm:grid-cols-3",
-        ].join(" ")}
+        className={["mt-6 grid gap-2 p-1 items-stretch", gridCols].join(" ")}
       >
-        {opts.map((opt) => (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => select(opt.value)}
-            className={[
-              "rounded-xl border p-3 text-sm transition-colors flex items-center justify-center text-center whitespace-normal leading-tight min-h-[44px]",
-              "[-webkit-tap-highlight-color:transparent] touch-manipulation select-none active:bg-white",
-              transitioning || submitting
-                ? "border-gray-200 bg-white opacity-60 pointer-events-none"
-                : isActive(opt.value)
-                ? "border-sky-300 bg-sky-50 ring-2 ring-sky-400"
-                : "border-gray-200 bg-white supports-[hover:hover]:hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 active:scale-[0.98]",
-            ].join(" ")}
-            disabled={transitioning || submitting}
-            aria-disabled={transitioning || submitting}
-          >
-            {opt.label}
-          </button>
-        ))}
+        {opts.map((opt) => {
+          const active = isActive(opt.value);
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => select(opt.value)}
+              aria-pressed={active}
+              data-selected={active ? "true" : "false"}
+              disabled={transitioning || submitting}
+              aria-disabled={transitioning || submitting}
+              className={[
+                "relative flex items-center justify-center gap-2 rounded-xl border p-3 text-sm transition-colors whitespace-normal text-center min-h-[44px] h-full",
+                "[-webkit-tap-highlight-color:transparent] touch-manipulation select-none focus-visible:outline-none",
+                transitioning || submitting
+                  ? "border-gray-200 bg-white opacity-60 pointer-events-none"
+                  : isActive(opt.value)
+                  ? "border-transparent bg-sky-50 ring-2 ring-sky-400 ring-offset-1 ring-offset-white focus:ring-0 focus-visible:ring-0"
+                  : "border-gray-200 bg-white hover:bg-sky-50 hover:border-sky-200 active:bg-sky-50 focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-1 focus-visible:ring-offset-white",
+              ].join(" ")}
+            >
+              {active && (
+                <svg
+                  aria-hidden="true"
+                  className="h-4 w-4 text-sky-600"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path d="M16.707 5.293a1 1 0 0 1 0 1.414l-7.25 7.25a1 1 0 0 1-1.414 0l-3-3a1 1 0 1 1 1.414-1.414l2.293 2.293 6.543-6.543a1 1 0 0 1 1.414 0z" />
+                </svg>
+              )}
+              <span className="leading-tight">{opt.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
@@ -423,7 +441,6 @@ export default function CSection({
         <p className="flex-1 min-w-0 truncate text-xs leading-none text-gray-400">
           중간에 나가도 진행 상황이 저장돼요.
         </p>
-
         <button
           onClick={skipCurrent}
           type="button"

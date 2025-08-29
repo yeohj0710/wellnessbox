@@ -1,7 +1,8 @@
-"use client";
+'use client';
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { getCategories } from "@/lib/product";
+import { useLoading } from "@/components/common/loadingContext.client";
 
 const QUESTIONS = [
   "최근에 쉽게 피로를 느끼고 에너지가 부족하다.",
@@ -27,6 +28,7 @@ const OPTIONS = [
 type Result = { label: string; prob: number };
 
 export default function CheckAI() {
+  const { showLoading } = useLoading();
   const [answers, setAnswers] = useState<number[]>(
     Array(QUESTIONS.length).fill(0)
   );
@@ -47,9 +49,10 @@ export default function CheckAI() {
 
   const recommendedIds = useMemo(() => {
     if (!results || categories.length === 0) return [];
-    return results
+    const ids = results
       .map((r) => categories.find((c: any) => c.name === r.label)?.id)
       .filter((id): id is number => typeof id === "number");
+    return Array.from(new Set(ids)).slice(0, 3);
   }, [results, categories]);
 
   useEffect(() => {
@@ -270,6 +273,7 @@ export default function CheckAI() {
               }#home-products`}
               scroll={false}
               className="mt-6 block"
+              onClick={showLoading}
             >
               <button className="w-full rounded-xl bg-sky-500 px-6 py-2 text-white font-bold shadow hover:bg-sky-600 active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-sky-300">
                 구매하러 가기

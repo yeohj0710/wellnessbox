@@ -1,9 +1,11 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import "./globals.css";
 import { SITE_URL } from "@/lib/constants";
 import TopBar from "@/components/common/topBar";
 import { FooterProvider } from "@/components/common/footerContext";
 import { LocalStorageProvider } from "@/components/common/localStorage";
+import { LoadingProvider } from "@/components/common/loadingContext.client";
+import { ToastProvider } from "@/components/common/toastContext.client";
 import { pretendard } from "./fonts";
 
 export const metadata: Metadata = {
@@ -43,15 +45,22 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
-      <body className={`${pretendard.className} overflow-x-hidden flex flex-col bg-white`}>
+      <body
+        className={`${pretendard.className} overflow-x-hidden flex flex-col bg-white`}
+      >
         <LocalStorageProvider>
           <FooterProvider>
-            <TopBar />
-            <main className="pt-10 min-h-[105vh] flex flex-col items-center">
-              {children}
-            </main>
+            <LoadingProvider>
+              <ToastProvider>
+                <TopBar />
+                <main className="pt-10 min-h-[105vh] flex flex-col items-center">
+                  {children}
+                </main>
+              </ToastProvider>
+            </LoadingProvider>
           </FooterProvider>
         </LocalStorageProvider>
+        <div id="toast-portal" />
       </body>
     </html>
   );

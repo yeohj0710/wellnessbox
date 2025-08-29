@@ -1,4 +1,4 @@
-﻿"use client";
+'use client';
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -7,6 +7,7 @@ import { MenuLinks } from "./menuLinks";
 import { getLoginStatus } from "@/lib/useLoginStatus";
 import Image from "next/image";
 import { ShoppingCartIcon } from "@heroicons/react/24/outline";
+import { useLoading } from "@/components/common/loadingContext.client";
 
 export default function TopBar() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export default function TopBar() {
   const [cartCount, setCartCount] = useState(0);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const logoRef = useRef<HTMLImageElement>(null);
+  const { showLoading } = useLoading();
 
   useEffect(() => {
     const fetchLoginStatus = async () => {
@@ -46,6 +48,7 @@ export default function TopBar() {
 
   const goSevenDays = () => {
     setIsDrawerOpen(false);
+    showLoading();
     router.push("/?package=7#home-products");
   };
 
@@ -106,6 +109,7 @@ export default function TopBar() {
               className={menuItemClasses("text-slate-600 relative")}
               aria-label="장바구니"
               onClick={() => {
+                showLoading();
                 if (typeof window !== "undefined") {
                   sessionStorage.setItem("scrollPos", String(window.scrollY));
                 }
@@ -127,6 +131,7 @@ export default function TopBar() {
             <Link
               href="/?package=7#home-products"
               className="group relative inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#59C1FF] to-[#7B61FF] shadow-[0_10px_30px_rgba(86,115,255,0.35)] transition-all duration-300 ease-out will-change-transform hover:scale-[1.03] hover:shadow-[0_14px_36px_rgba(86,115,255,0.5)] hover:saturate-150 hover:brightness-110 hover:from-[#6BD1FF] hover:to-[#6E58FF] active:translate-y-[1px] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#6E58FF] after:content-[''] after:absolute after:inset-0 after:rounded-full after:bg-white/20 after:opacity-0 hover:after:opacity-10"
+              onClick={showLoading}
             >
               시작하기
             </Link>
@@ -158,7 +163,10 @@ export default function TopBar() {
           </button>
           <Link
             href="/?package=7#home-products"
-            onClick={closeDrawer}
+            onClick={() => {
+              closeDrawer();
+              showLoading();
+            }}
             className="group relative inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold !text-white bg-gradient-to-r from-[#59C1FF] to-[#7B61FF] shadow-[0_10px_30px_rgba(86,115,255,0.35)] transition-all duration-300 ease-out will-change-transform hover:scale-[1.03] hover:shadow-[0_14px_36px_rgba(86,115,255,0.5)] hover:saturate-150 hover:brightness-110 hover:from-[#6BD1FF] hover:to-[#6E58FF] active:translate-y-[1px] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#6E58FF] after:content-[''] after:absolute after:inset-0 after:rounded-full after:bg-white/20 after:opacity-0 hover:after:opacity-10"
           >
             시작하기

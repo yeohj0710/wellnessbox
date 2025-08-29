@@ -10,6 +10,8 @@ import { useFooter } from "@/components/common/footerContext";
 import axios from "axios";
 import { getCategories } from "@/lib/product";
 import { getLowestAverageOptionType } from "@/lib/utils";
+import { useLoading } from "@/components/common/loadingContext.client";
+import { useToast } from "@/components/common/toastContext.client";
 
 import AddressSection from "@/app/(components)/addressSection";
 import PharmacySelector from "@/app/(components)/pharmacySelector";
@@ -50,6 +52,8 @@ export default function HomeProductSection() {
   useEffect(() => {
     setMounted(true);
   }, []);
+  const { hideLoading } = useLoading();
+  const { showToast } = useToast();
   useEffect(() => {
     if (
       typeof window !== "undefined" &&
@@ -187,12 +191,18 @@ export default function HomeProductSection() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && window.location.hash === "#home-products") {
+    if (
+      typeof window !== "undefined" &&
+      window.location.hash === "#home-products"
+    ) {
       document.getElementById("home-products")?.scrollIntoView();
+      if (!isLoading) hideLoading();
     }
-  }, []);
+  }, [isLoading, searchParams, hideLoading]);
 
+  const toastShownRef = useRef(false);
   useEffect(() => {
+    if (toastShownRef.current) return;
     const catsParam = searchParams.get("categories");
     const singleCat = searchParams.get("category");
     if (catsParam) {
@@ -201,11 +211,22 @@ export default function HomeProductSection() {
         .map((n) => parseInt(n, 10))
         .filter((n) => !isNaN(n));
       setSelectedCategories(ids);
+      if (categories.length) {
+        const names = categories
+          .filter((cat: any) => ids.includes(cat.id))
+          .map((cat: any) => cat.name);
+        if (names.length)
+          showToast(
+            `검사 결과로 추천된 ${names.join(", ")} 카테고리의 상품들이에요.`
+          );
+        else showToast(`검사 결과로 추천된 카테고리의 상품들이에요.`);
+        toastShownRef.current = true;
+      }
     } else if (singleCat) {
       const id = parseInt(singleCat, 10);
       if (!isNaN(id)) setSelectedCategories([id]);
     }
-  }, [searchParams]);
+  }, [searchParams, categories, showToast]);
 
   useEffect(() => {
     const prod = searchParams.get("product");

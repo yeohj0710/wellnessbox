@@ -1,8 +1,9 @@
-"use client";
+'use client';
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
+import { useLoading } from "@/components/common/loadingContext.client";
 const HomeProductSection = dynamic(
   () => import("@/app/(components)/homeProductSection"),
   {
@@ -23,14 +24,21 @@ import JourneyCtaBridge from "./(components)/journeyCtaBridge";
 export default function Home() {
   const router = useRouter();
   const [isComingSoonOpen, setIsComingSoonOpen] = useState(false);
+  const { showLoading } = useLoading();
 
-  const handle7Day = () => router.push("/?package=7#home-products");
-  const handleCategory = (id: number) =>
+  const handle7Day = () => {
+    showLoading();
+    router.push("/?package=7#home-products");
+  };
+  const handleCategory = (id: number) => {
+    showLoading();
     router.push(`/?category=${id}#home-products`);
+  };
   const handleProduct = (id: number) => {
     if (typeof window !== "undefined") {
       sessionStorage.setItem("scrollPos", String(window.scrollY));
     }
+    showLoading();
     router.push(`/?product=${id}#home-products`, { scroll: false });
   };
   const handleSubscribe = () => setIsComingSoonOpen(true);
