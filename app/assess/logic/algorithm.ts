@@ -150,16 +150,21 @@ export function nextPairAfterAnswer(
   if (strong) {
     const remInCat = getNextQIdx(cur.cat, markUsed(filled, used));
     if (remInCat !== -1) return { cat: cur.cat, qIdx: remInCat };
-    const remOther = cats.find((c) => getNextQIdx(c, markUsed(filled, used)) !== -1);
+    const remOther = cats.find(
+      (c) => getNextQIdx(c, markUsed(filled, used)) !== -1
+    );
     if (remOther) return { cat: remOther, qIdx: getNextQIdx(remOther, filled) };
   }
   const nextCandidates = unsolvedCats.filter((c) => c !== cur.cat);
-  const nextCat = pickNextCatDeterministic(nextCandidates.length ? nextCandidates : unsolvedCats, {
-    cSeed,
-    cur,
-    ans,
-    doneCnt,
-  });
+  const nextCat = pickNextCatDeterministic(
+    nextCandidates.length ? nextCandidates : unsolvedCats,
+    {
+      cSeed,
+      cur,
+      ans,
+      doneCnt,
+    }
+  );
   if (!nextCat) return null;
   return { cat: nextCat, qIdx: getNextQIdx(nextCat, filled) };
 }
@@ -197,14 +202,16 @@ function reconstructPlan(
   if (nxt) acc.push(nxt);
   return acc;
 }
+
 function markUsed(filled: Filled, used: Filled) {
   const o: Filled = {};
   for (const c in filled) {
     o[c] = [];
-    for (let i = 0; i < 5; i++) o[c][i] = filled[c][i] && !used[c][i];
+    for (let i = 0; i < 5; i++) o[c][i] = filled[c][i] || used[c][i];
   }
   return o;
 }
+
 export function initState(
   cats: string[],
   getType: (c: string, i: number) => QType,
@@ -253,9 +260,11 @@ export function initState(
   }
   return { cats, step, answers, filled, plan, cSeed };
 }
+
 export function currentPair(state: CState) {
   return state.plan[state.step] || null;
 }
+
 export function selectValue(
   state: CState,
   getType: (c: string, i: number) => QType,
@@ -263,7 +272,6 @@ export function selectValue(
 ): { state: CState; finished: boolean } {
   const pair = currentPair(state);
   if (!pair) return { state, finished: false };
-  if (state.filled[pair.cat]?.[pair.qIdx]) return { state, finished: false };
   const t = getType(pair.cat, pair.qIdx);
   const mx = domainMax(t);
   if (typeof val !== "number" || val < 0 || val > mx)
@@ -301,23 +309,13 @@ export function selectValue(
     finished: false,
   };
 }
+
 export function prev(state: CState): CState {
   if (state.step <= 0 || state.plan.length === 0) return { ...state };
-  const prevPair = state.plan[state.step - 1];
-  const answers = {
-    ...state.answers,
-    [prevPair.cat]: [...state.answers[prevPair.cat]],
-  };
-  const filled = {
-    ...state.filled,
-    [prevPair.cat]: [...state.filled[prevPair.cat]],
-  };
-  answers[prevPair.cat][prevPair.qIdx] = -1;
-  filled[prevPair.cat][prevPair.qIdx] = false;
-  const plan = state.plan.slice(0, Math.max(0, state.step - 1));
   const step = Math.max(0, state.step - 1);
-  return { ...state, answers, filled, plan, step };
+  return { ...state, step };
 }
+
 export function ensureNextQuestion(
   state: CState,
   getType: (c: string, i: number) => QType
@@ -341,6 +339,7 @@ export function ensureNextQuestion(
   plan[state.step] = nxt;
   return { ...state, plan };
 }
+
 export function toPersist(base: any, state: CState) {
   const out = base ? { ...base } : {};
   out.cState = {

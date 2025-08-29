@@ -57,6 +57,7 @@ const descOf = (code: string) =>
   CODE_TO_DESC[code as keyof typeof CODE_TO_DESC] ?? "";
 
 const STORAGE_KEY = "assess-state";
+const C_PERSIST_KEY = `${STORAGE_KEY}::C`;
 
 export default function Assess() {
   const [section, setSection] = useState<"INTRO" | "A" | "B" | "C" | "DONE">(
@@ -72,6 +73,7 @@ export default function Assess() {
   const [cCats, setCCats] = useState<string[]>([]);
   const [cResult, setCResult] = useState<CSectionResult | null>(null);
   const [categories, setCategories] = useState<any[]>([]);
+  const [cEpoch, setCEpoch] = useState(0);
 
   const handleCProgress = useCallback((step: number, total: number) => {
     setCProgress((prev) => {
@@ -82,8 +84,12 @@ export default function Assess() {
     });
   }, []);
 
-  const registerPrevCb = useCallback((fn: () => void) => {
+  const cPrevRef = useRef<(() => boolean) | null>(null);
+  const [cChildReady, setCChildReady] = useState(false);
+
+  const registerPrevCb = useCallback((fn: () => boolean) => {
     cPrevRef.current = fn;
+    setCChildReady(true);
   }, []);
 
   const recommendedIds = useMemo(() => {
@@ -92,8 +98,9 @@ export default function Assess() {
       .map((code) => categories.find((c: any) => c.name === labelOf(code))?.id)
       .filter((id): id is number => typeof id === "number");
   }, [cResult, categories]);
-  const cPrevRef = useRef<(() => void) | null>(null);
+
   const [cProgress, setCProgress] = useState({ step: 0, total: 0, pct: 0 });
+  const [hydrated, setHydrated] = useState(false);
   const cancelBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -129,9 +136,9 @@ export default function Assess() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
         const parsed = JSON.parse(saved);
         setSection(parsed.section ?? "INTRO");
         setAnswers(parsed.answers ?? {});
@@ -141,17 +148,22 @@ export default function Assess() {
         if (Array.isArray(parsed.cCats)) setCCats(parsed.cCats);
         if (parsed.cResult && parsed.cResult.catsOrdered)
           setCResult(parsed.cResult);
-      } catch {}
+      }
+    } finally {
+      const arm = () => setHydrated(true);
+      if (typeof requestAnimationFrame === "function") {
+        requestAnimationFrame(() => requestAnimationFrame(arm));
+      } else {
+        setTimeout(arm, 0);
+      }
     }
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !hydrated) return;
     try {
-      const base = (() => {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        return raw ? JSON.parse(raw) : {};
-      })();
+      const baseRaw = localStorage.getItem(STORAGE_KEY);
+      const base = baseRaw ? JSON.parse(baseRaw) : {};
       const next = {
         ...base,
         section,
@@ -164,7 +176,7 @@ export default function Assess() {
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     } catch {}
-  }, [section, answers, current, fixedIdx, history, cCats, cResult]);
+  }, [hydrated, section, answers, current, fixedIdx, history, cCats, cResult]);
 
   useEffect(() => {
     getCategories()
@@ -218,7 +230,10 @@ export default function Assess() {
     setHistory([]);
     setCCats([]);
     setCResult(null);
-    if (typeof window !== "undefined") localStorage.removeItem(STORAGE_KEY);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(C_PERSIST_KEY);
+    }
   };
 
   const confirmReset = () => setConfirmOpen(true);
@@ -241,6 +256,11 @@ export default function Assess() {
   }, [section]);
 
   const goBack = () => {
+    if (section === "DONE") {
+      setSection("C");
+      setCEpoch((n) => n + 1);
+      return;
+    }
     if (history.length === 0) {
       reset();
       return;
@@ -257,8 +277,17 @@ export default function Assess() {
   };
 
   const handleCPrev = () => {
-    if (cProgress.step > 0 && cPrevRef.current) cPrevRef.current();
-    else goBack();
+    if (section !== "C") {
+      goBack();
+      return;
+    }
+
+    if (!cPrevRef.current) return;
+
+    const handled = cPrevRef.current();
+    if (!handled) {
+      goBack();
+    }
   };
 
   const handleAnswer = (val: any) => {
@@ -299,16 +328,40 @@ export default function Assess() {
           setFixedIdx(0);
         };
       } else {
-        message = "이제 세부적인 질문을 할게요.";
-        delay = 1200;
+        message = "마지막으로 세부적인 데이터를 분석할게요.";
+        delay = 2500;
         type TopItem = { key: CategoryKey; label: string; score: number };
         action = () => {
-          const { top } = evaluate(pruned as any);
-          const nextCats = (top as TopItem[]).map(
-            (c) => KEY_TO_CODE[c.key as CategoryKey]
-          );
-          setCCats(nextCats);
-          setSection("C");
+          let resumed = false;
+          try {
+            const raw = localStorage.getItem(C_PERSIST_KEY);
+            if (raw) {
+              const obj = JSON.parse(raw);
+              const s = obj?.cState;
+              const hasCats = Array.isArray(s?.cats) && s.cats.length > 0;
+              const hasAnyFilled =
+                s?.filled &&
+                Object.values(s.filled).some(
+                  (arr: any) => Array.isArray(arr) && arr.some(Boolean)
+                );
+              if (hasCats && hasAnyFilled) {
+                setCCats(s.cats as string[]);
+                setSection("C");
+                setCEpoch((n) => n + 1);
+                resumed = true;
+              }
+            }
+          } catch {}
+
+          if (!resumed) {
+            const { top } = evaluate(pruned as any);
+            const nextCats = (top as TopItem[]).map(
+              (c) => KEY_TO_CODE[c.key as CategoryKey]
+            );
+            setCCats(nextCats);
+            setSection("C");
+            setCEpoch((n) => n + 1);
+          }
         };
       }
     } else {
@@ -388,7 +441,7 @@ export default function Assess() {
               <div className="mt-8 flex flex-col gap-2">
                 <button
                   onClick={() => setSection("A")}
-                  className="inline-flex w-full sm:w-auto items-center justify-center rounded-full px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-indigo-500 shadow hover:brightness-110 transition"
+                  className="inline-flex w-full sm:w-auto items-center justify-center rounded-full px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-indigo-500 shadow hover:brightness-110 transition [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
                 >
                   설문 시작하기
                 </button>
@@ -473,13 +526,13 @@ export default function Assess() {
           <div className="flex justify-between text-xs text-gray-500 mb-6">
             <button
               onClick={handleCPrev}
-              className="underline hover:text-gray-700"
+              className="underline hover:text-gray-700 [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
             >
               이전
             </button>
             <button
               onClick={confirmReset}
-              className="underline hover:text-gray-700"
+              className="underline hover:text-gray-700 [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
             >
               처음부터
             </button>
@@ -508,6 +561,7 @@ export default function Assess() {
           </div>
 
           <CSection
+            key={`${cEpoch}:${cCats.join(",")}`}
             cats={cCats}
             onSubmit={(res) => {
               setCResult(res);
@@ -515,7 +569,7 @@ export default function Assess() {
             }}
             onProgress={handleCProgress}
             registerPrev={registerPrevCb}
-            persistKey={STORAGE_KEY}
+            persistKey={C_PERSIST_KEY}
             onLoadingChange={(flag, text) => {
               setLoadingText(text || "");
               setLoading(!!flag);
@@ -546,7 +600,7 @@ export default function Assess() {
                 <button
                   ref={cancelBtnRef}
                   onClick={() => setConfirmOpen(false)}
-                  className="rounded-full px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50"
+                  className="rounded-full px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50 [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
                 >
                   취소
                 </button>
@@ -555,7 +609,7 @@ export default function Assess() {
                     reset();
                     setConfirmOpen(false);
                   }}
-                  className="rounded-full px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-indigo-500"
+                  className="rounded-full px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-indigo-500 [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
                 >
                   처음부터
                 </button>
@@ -572,12 +626,15 @@ export default function Assess() {
       <div className="w-full max-w-[760px] mx-auto px-4 pb-28">
         <div className="relative mt-6 sm:mt-10 overflow-hidden rounded-3xl bg-white/70 p-6 sm:p-10 shadow-[0_10px_40px_rgba(2,6,23,0.08)] ring-1 ring-black/5 backdrop-blur">
           <div className="flex justify-between text-xs text-gray-500 mb-6">
-            <button onClick={goBack} className="underline hover:text-gray-700">
+            <button
+              onClick={goBack}
+              className="underline hover:text-gray-700 [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
+            >
               이전
             </button>
             <button
               onClick={confirmReset}
-              className="underline hover:text-gray-700"
+              className="underline hover:text-gray-700 [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
             >
               처음부터
             </button>
@@ -610,17 +667,17 @@ export default function Assess() {
               </li>
             ))}
           </ul>
-          <p className="mt-6 text-sm text-gray-600">
+          <p className="text-center mt-6 text-sm text-gray-600">
             아래 버튼을 누르면 추천 카테고리가 적용된 상품 목록으로 이동해요.
           </p>
-          <div className="mt-4 flex items-center gap-3">
+          <div className="mt-4 flex justify-center">
             <Link
               href={`/explore${
                 recommendedIds.length
                   ? `?categories=${recommendedIds.join(",")}`
                   : ""
               }#home-products`}
-              className="rounded-full px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-indigo-500 shadow hover:brightness-110"
+              className="w-full sm:w-2/3 text-center rounded-full px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-indigo-500 shadow hover:brightness-110 [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
             >
               추천 제품 보러 가기
             </Link>
@@ -650,7 +707,7 @@ export default function Assess() {
                 <button
                   ref={cancelBtnRef}
                   onClick={() => setConfirmOpen(false)}
-                  className="rounded-full px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50"
+                  className="rounded-full px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50 [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
                 >
                   취소
                 </button>
@@ -659,7 +716,7 @@ export default function Assess() {
                     reset();
                     setConfirmOpen(false);
                   }}
-                  className="rounded-full px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-indigo-500"
+                  className="rounded-full px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-indigo-500 [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
                 >
                   처음부터
                 </button>
@@ -720,12 +777,15 @@ export default function Assess() {
 
         <div className="relative p-4 sm:p-10">
           <div className="flex justify-between text-xs text-gray-500 mb-6">
-            <button onClick={goBack} className="underline hover:text-gray-700">
+            <button
+              onClick={goBack}
+              className="underline hover:text-gray-700 [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
+            >
               이전
             </button>
             <button
               onClick={confirmReset}
-              className="underline hover:text-gray-700"
+              className="underline hover:text-gray-700 [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
             >
               처음부터
             </button>
@@ -781,9 +841,10 @@ export default function Assess() {
                     onClick={() => handleAnswer(opt.value)}
                     className={[
                       "rounded-xl border p-3 text-sm transition-colors flex items-center justify-center text-center whitespace-normal leading-tight min-h-[44px]",
+                      "[-webkit-tap-highlight-color:transparent] touch-manipulation select-none active:bg-white",
                       active
                         ? "border-sky-300 bg-sky-50 ring-2 ring-sky-400"
-                        : "border-gray-200 bg-white hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 active:scale-[0.98]",
+                        : "border-gray-200 bg-white supports-[hover:hover]:hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 active:scale-[0.98]",
                     ].join(" ")}
                   >
                     {opt.label}
@@ -823,7 +884,7 @@ export default function Assess() {
               <button
                 onClick={() => handleAnswer(undefined)}
                 type="button"
-                className="shrink-0 text-xs leading-none text-gray-500 underline hover:text-gray-700"
+                className="shrink-0 text-xs leading-none text-gray-500 underline hover:text-gray-700 [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
               >
                 이 질문은 건너뛸래요
               </button>
@@ -856,7 +917,7 @@ export default function Assess() {
               <button
                 ref={cancelBtnRef}
                 onClick={() => setConfirmOpen(false)}
-                className="rounded-full px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50"
+                className="rounded-full px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50 [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
               >
                 취소
               </button>
@@ -865,7 +926,7 @@ export default function Assess() {
                   reset();
                   setConfirmOpen(false);
                 }}
-                className="rounded-full px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-indigo-500"
+                className="rounded-full px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-indigo-500 [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
               >
                 처음부터
               </button>

@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   QType,
   CState,
@@ -16,7 +16,6 @@ import {
   TRANSITION_MS,
   prev as algPrev,
 } from "../logic/algorithm";
-
 import { BANK } from "../data/c-bank";
 
 export type CSectionResult = {
@@ -59,33 +58,55 @@ export default function CSection({
   cats: string[];
   onSubmit: (res: CSectionResult) => void;
   onProgress?: (step: number, total: number) => void;
-  registerPrev?: (fn: () => void) => void;
+  registerPrev?: (fn: () => boolean) => void;
   persistKey?: string;
   onLoadingChange?: (loading: boolean, text?: string) => void;
 }) {
-  const [state, setState] = useState<CState>(() => initState(cats, getType));
-  const [submitting, setSubmitting] = useState(false);
-  const [transitioning, setTransitioning] = useState(false);
-  const [error, setError] = useState("");
-  const total = useMemo(() => cats.length * 5, [cats]);
-  const lastProgRef = useRef<{ step: number; total: number } | null>(null);
-
-  useEffect(() => {
+  const initialState = () => {
     let persisted: Partial<CState> | undefined;
     if (typeof window !== "undefined" && persistKey) {
       try {
         const raw = localStorage.getItem(persistKey);
-        persisted = fromPersist(raw ? JSON.parse(raw) : undefined);
-      } catch {
-        persisted = undefined;
-      }
+        if (raw && raw.length < 200000) {
+          persisted = fromPersist(JSON.parse(raw));
+        }
+      } catch {}
     }
-    setState(() => initState(cats, getType, persisted));
+    return initState(cats, getType, persisted);
+  };
+
+  const [state, setState] = useState<CState>(initialState);
+  const [submitting, setSubmitting] = useState(false);
+  const [transitioning, setTransitioning] = useState(false);
+  const [error, setError] = useState("");
+  const total = useMemo(() => cats.length * 5, [cats.join(",")]);
+  const lastProgRef = useRef<{ step: number; total: number } | null>(null);
+  const hydratedRef = useRef(false);
+
+  +useEffect(() => {
+    setState(initialState());
+    const arm = () => {
+      hydratedRef.current = true;
+    };
+    if (typeof queueMicrotask === "function") queueMicrotask(arm);
+    else Promise.resolve().then(arm);
   }, [cats.join(","), persistKey]);
 
   useEffect(() => {
+    if (typeof window === "undefined" || !persistKey) return;
+    if (!hydratedRef.current) return;
+    try {
+      const payload = JSON.stringify(toPersist(undefined, state));
+      if (payload.length < 200000) {
+        localStorage.setItem(persistKey, payload);
+      }
+    } catch {}
+  }, [persistKey, state]);
+
+  useEffect(() => {
     if (!onProgress) return;
-    const done = answeredCount(state.filled);
+    const total = state.cats.length * 5;
+    const done = Math.max(0, Math.min(state.step, total));
     if (
       lastProgRef.current?.step === done &&
       lastProgRef.current?.total === total
@@ -93,31 +114,26 @@ export default function CSection({
       return;
     lastProgRef.current = { step: done, total };
     onProgress(done, total);
-  }, [state.filled, total, onProgress]);
+  }, [state.step, state.cats.length, onProgress]);
 
   useEffect(() => {
     if (!registerPrev) return;
     registerPrev(() => {
-      setState((s) => ensureNextQuestion(algPrev(s), getType));
+      const can = stateRef.current.step > 0;
+      if (can) {
+        setState((s) => ({ ...s, step: Math.max(0, s.step - 1) }));
+        return true;
+      }
+      return false;
     });
   }, [registerPrev]);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || !persistKey) return;
-    try {
-      const base = (() => {
-        const raw = localStorage.getItem(persistKey);
-        return raw ? JSON.parse(raw) : {};
-      })();
-      localStorage.setItem(persistKey, JSON.stringify(toPersist(base, state)));
-    } catch {}
-  }, [persistKey, state]);
 
   const pair = getCurrentPair(state);
   const cat = pair?.cat ?? cats[0];
   const qIdx = pair?.qIdx ?? 0;
   const q = BANK[cat]?.[qIdx];
-  const opts = (q ? OPTIONS[q.type as keyof typeof OPTIONS] : []) as readonly {
+  const t = (q?.type as QType) ?? getType(cat, qIdx);
+  const opts = (q ? OPTIONS[t as keyof typeof OPTIONS] : []) as readonly {
     value: number;
     label: string;
   }[];
@@ -125,48 +141,77 @@ export default function CSection({
   const isActive = (v: number) =>
     !!state.filled[cat]?.[qIdx] && state.answers[cat]?.[qIdx] === v;
 
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  const notify = useCallback(
+    (flag: boolean, text?: string) => {
+      if (!onLoadingChange) return;
+      setTimeout(() => onLoadingChange(flag, text), 0);
+    },
+    [onLoadingChange]
+  );
+
   const select = (val: number) => {
     if (!q || submitting || transitioning) return;
     setError("");
-
-    const { state: nextState, finished } = selectValue(state, getType, val);
-
     setTransitioning(true);
-    if (onLoadingChange)
-      onLoadingChange(true, "AI가 답변을 분석해서 다음 질문을 고를게요.");
-    window.setTimeout(() => {
-      setTransitioning(false);
-      if (onLoadingChange) onLoadingChange(false);
-
-      if (finished || shouldSubmit(nextState)) {
-        const v = validateBeforeSubmit(nextState, getType);
-        if (v.ok) {
-          submit(nextState);
-          return;
+    notify(true, "AI가 답변을 분석해서 다음 질문을 고를게요.");
+    window.setTimeout(
+      () => {
+        setTransitioning(false);
+        notify(false);
+        const { state: nextState, finished } = selectValue(
+          stateRef.current,
+          getType,
+          val
+        );
+        const canSubmit = finished || shouldSubmit(nextState);
+        if (canSubmit) {
+          const v = validateBeforeSubmit(nextState, getType);
+          if (v.ok) {
+            setState(nextState);
+            submit(nextState);
+          } else {
+            setError("답변 값이 범위를 벗어났어요.");
+            setState(
+              ensureNextQuestion(
+                {
+                  ...nextState,
+                  plan: [...nextState.plan, v.focus],
+                  step: Math.max(0, nextState.step),
+                },
+                getType
+              )
+            );
+          }
         } else {
-          setState({
-            ...nextState,
-            plan: [...nextState.plan, v.focus],
-            step: Math.max(0, nextState.step),
-          });
-          setError("답변 값이 범위를 벗어났어요.");
-          return;
+          setState(ensureNextQuestion(nextState, getType));
         }
-      }
-
-      setState(ensureNextQuestion(nextState, getType));
-    }, TRANSITION_MS);
+      },
+      typeof TRANSITION_MS === "number" ? TRANSITION_MS : 0
+    );
   };
+
+  function normalizeByType(t: QType, v: number): number {
+    if (t === "yesno") return v;
+    return v / 3;
+  }
 
   const submit = async (s: CState) => {
     if (submitting) return;
     setSubmitting(true);
-    if (onLoadingChange) onLoadingChange(true, "AI가 분석 중...");
+    notify(true, "AI가 최종 결과를 추론하고 있어요.");
     setError("");
     try {
+      const answersNorm = s.cats.map((c) =>
+        s.answers[c].map((v, i) => normalizeByType(getType(c, i), v))
+      );
       const payload = {
         cats: s.cats,
-        answers: s.cats.map((c) => s.answers[c]),
+        answers: answersNorm,
       };
       const res = await fetch("/api/c-section-score", {
         method: "POST",
@@ -178,12 +223,23 @@ export default function CSection({
         throw new Error(data.error || "서버와 통신 중 오류가 발생했어요.");
       }
       const data = (await res.json()) as CSectionResult;
+
+      if (typeof window !== "undefined" && persistKey) {
+        try {
+          const answered = answeredCount(s.filled);
+          const lastStep = Math.max(0, answered - 1);
+          const bookmarkState = { ...s, step: lastStep };
+          const payload = JSON.stringify(toPersist(undefined, bookmarkState));
+          localStorage.setItem(persistKey, payload);
+        } catch {}
+      }
+
       onSubmit(data);
     } catch (e: any) {
       setError(e?.message || "네트워크 오류가 발생했어요.");
     } finally {
       setSubmitting(false);
-      if (onLoadingChange) onLoadingChange(false);
+      notify(false);
     }
   };
 
@@ -299,11 +355,12 @@ export default function CSection({
             onClick={() => select(opt.value)}
             className={[
               "rounded-xl border p-3 text-sm transition-colors flex items-center justify-center text-center whitespace-normal leading-tight min-h-[44px]",
+              "[-webkit-tap-highlight-color:transparent] touch-manipulation select-none active:bg-white",
               transitioning || submitting
                 ? "border-gray-200 bg-white opacity-60 pointer-events-none"
                 : isActive(opt.value)
                 ? "border-sky-300 bg-sky-50 ring-2 ring-sky-400"
-                : "border-gray-200 bg-white hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 active:scale-[0.98]",
+                : "border-gray-200 bg-white supports-[hover:hover]:hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 active:scale-[0.98]",
             ].join(" ")}
             disabled={transitioning || submitting}
             aria-disabled={transitioning || submitting}

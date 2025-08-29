@@ -17,8 +17,9 @@ function normAnswers(ans: number[][]): Float32Array {
   for (let i = 0; i < b; i++) {
     for (let j = 0; j < 5; j++) {
       let v = ans[i][j];
-
       if (v > 1) v = v / 3;
+      if (v < 0) v = 0;
+      if (v > 1) v = 1;
       arr[i * 5 + j] = v;
     }
   }
