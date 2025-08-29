@@ -46,7 +46,7 @@ export const BANK: CBank = {
       prompt: "우유·치즈 등 칼슘 강화 식품 섭취가 부족하다고 느끼시나요?",
       type: "likert4",
     },
-    { prompt: "골감소·골다공 관련 가족력이 있으신가요?", type: "yesno" },
+    { prompt: "골감소·골다공증 관련 가족력이 있으신가요?", type: "yesno" },
     {
       prompt:
         "지난 1주 동안 걷기·계단·근력처럼 체중부하 운동을 몇 번 하셨나요?",

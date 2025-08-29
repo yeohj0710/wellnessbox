@@ -257,10 +257,28 @@ export default function Assess() {
 
   const goBack = () => {
     if (section === "DONE") {
+      try {
+        const raw = localStorage.getItem(C_PERSIST_KEY);
+        if (raw) {
+          const obj = JSON.parse(raw);
+          const s = obj?.cState;
+          const step = typeof s?.step === "number" ? s.step : 0;
+          const pair = Array.isArray(s?.plan) ? s.plan[step] : null;
+          if (pair && s?.filled?.[pair.cat]?.[pair.qIdx]) {
+            s.filled[pair.cat][pair.qIdx] = false;
+            if (Array.isArray(s?.answers?.[pair.cat])) {
+              s.answers[pair.cat][pair.qIdx] = -1;
+            }
+            obj.cState = s;
+            localStorage.setItem(C_PERSIST_KEY, JSON.stringify(obj));
+          }
+        }
+      } catch {}
       setSection("C");
       setCEpoch((n) => n + 1);
       return;
     }
+
     if (history.length === 0) {
       reset();
       return;

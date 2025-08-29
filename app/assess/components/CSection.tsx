@@ -15,6 +15,7 @@ import {
   answeredCount,
   TRANSITION_MS,
   prev as algPrev,
+  nextPairAfterAnswer,
 } from "../logic/algorithm";
 import { BANK } from "../data/c-bank";
 
@@ -117,14 +118,55 @@ export default function CSection({
   }, [state.step, state.cats.length, onProgress]);
 
   useEffect(() => {
+    const total = stateRef.current.cats.length * 5;
+    if (answeredCount(stateRef.current.filled) >= total) {
+      const cur = getCurrentPair(stateRef.current);
+      if (cur) {
+        setState((prev) => {
+          const answers = {
+            ...prev.answers,
+            [cur.cat]: [...prev.answers[cur.cat]],
+          };
+          const filled = {
+            ...prev.filled,
+            [cur.cat]: [...prev.filled[cur.cat]],
+          };
+          filled[cur.cat][cur.qIdx] = false;
+          answers[cur.cat][cur.qIdx] = -1;
+          return { ...prev, answers, filled };
+        });
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     if (!registerPrev) return;
     registerPrev(() => {
-      const can = stateRef.current.step > 0;
-      if (can) {
-        setState((s) => ({ ...s, step: Math.max(0, s.step - 1) }));
-        return true;
-      }
-      return false;
+      const s = stateRef.current;
+      if (s.step <= 0) return false;
+
+      const targetIdx = s.step - 1;
+      const target = s.plan[targetIdx];
+
+      setState((prev) => {
+        if (!target) return { ...prev, step: targetIdx };
+
+        const answers = {
+          ...prev.answers,
+          [target.cat]: [...prev.answers[target.cat]],
+        };
+        const filled = {
+          ...prev.filled,
+          [target.cat]: [...prev.filled[target.cat]],
+        };
+
+        filled[target.cat][target.qIdx] = false;
+        answers[target.cat][target.qIdx] = -1;
+
+        return { ...prev, step: targetIdx, answers, filled, error: undefined };
+      });
+
+      return true;
     });
   }, [registerPrev]);
 
@@ -193,6 +235,11 @@ export default function CSection({
       },
       typeof TRANSITION_MS === "number" ? TRANSITION_MS : 0
     );
+  };
+
+  const skipCurrent = () => {
+    if (submitting || transitioning) return;
+    select(0);
   };
 
   function normalizeByType(t: QType, v: number): number {
@@ -371,9 +418,21 @@ export default function CSection({
       </div>
 
       {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
-      <p className="mt-8 text-xs leading-none text-gray-400">
-        중간에 나가도 진행 상황이 저장돼요.
-      </p>
+
+      <div className="mt-8 flex items-center justify-between gap-2">
+        <p className="flex-1 min-w-0 truncate text-xs leading-none text-gray-400">
+          중간에 나가도 진행 상황이 저장돼요.
+        </p>
+
+        <button
+          onClick={skipCurrent}
+          type="button"
+          className="shrink-0 text-xs leading-none text-gray-500 underline hover:text-gray-700 [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
+          disabled={submitting || transitioning}
+        >
+          이 질문은 건너뛸래요
+        </button>
+      </div>
     </div>
   );
 }
