@@ -67,25 +67,12 @@ export default function TopBar() {
     return () => clearInterval(interval);
   }, []);
 
-  // Hide TopBar on scroll only when on /chat
+  // Keep TopBar visible on /chat (no hide-on-scroll)
   useEffect(() => {
-    if (!pathname?.startsWith("/chat")) return;
-    const onScroll = () => {
-      const y = window.scrollY || 0;
-      const last = lastYRef.current || 0;
-      const down = y > last + 8;
-      const up = y < last - 8;
-      lastYRef.current = y;
-      if (y < 24) {
-        setHideOnScroll(false);
-      } else if (down) {
-        setHideOnScroll(true);
-      } else if (up) {
-        setHideOnScroll(false);
-      }
-    };
-    window.addEventListener("scroll", onScroll, { passive: true } as any);
-    return () => window.removeEventListener("scroll", onScroll as any);
+    if (pathname?.startsWith("/chat")) {
+      setHideOnScroll(false);
+      return; // do not attach scroll listener on chat
+    }
   }, [pathname]);
 
   const menuItemClasses = (additionalClasses = "") => {

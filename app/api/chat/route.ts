@@ -68,7 +68,6 @@ export async function POST(req: NextRequest) {
     const openaiMessages: Array<{ role: string; content: string }> = [
       { role: "system", content: sysPrompt },
     ];
-    const isInit = mode === "init";
     if (isInit) {
       // Force the first assistant message to follow the requested structure
       const initGuide = `초기 인사 메시지 지침:

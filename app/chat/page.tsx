@@ -81,6 +81,7 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showProfileBanner, setShowProfileBanner] = useState(true);
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [localCheckAi, setLocalCheckAi] = useState<string[]>([]);
@@ -330,15 +331,7 @@ export default function ChatPage() {
     <div className="relative w-full min-h-[calc(100vh-56px)] bg-gradient-to-b from-slate-50 to-white">
       {/* Main (centered) */}
       <main className="flex flex-col">
-        {/* Floating history toggle (below global TopBar) */}
-        <button
-          className="fixed left-3 top-16 z-30 md:left-6 md:top-16 inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white/90 px-3 py-2 text-sm text-slate-700 shadow hover:bg-white"
-          onClick={openDrawer}
-          aria-label="Open chat history"
-        >
-          <ChatBubbleLeftRightIcon className="h-5 w-5" />
-          <span className="hidden sm:inline">History</span>
-        </button>
+        {/* History toggle moved into main container */}
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 md:px-8 py-6 pb-40">
@@ -347,9 +340,29 @@ export default function ChatPage() {
             이 상담은 의료 조언의 대체가 아닙니다.
           </div>
 
+          {/* History button (within main container) */}
+          <div className="mx-auto max-w-3xl mb-2 flex justify-end px-1">
+            <button
+              className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white/90 px-3 py-1.5 text-sm text-slate-700 shadow hover:bg-white"
+              onClick={openDrawer}
+              aria-label="Open chat history"
+            >
+              <ChatBubbleLeftRightIcon className="h-5 w-5" />
+              <span className="hidden sm:inline">History</span>
+            </button>
+          </div>
+
           {/* Profile banner */}
-          <div className="mx-auto max-w-3xl mb-4">
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 flex items-center justify-between gap-3">
+          <div className="mx-auto max-w-3xl mb-4" hidden={!showProfileBanner}>
+            <div className="relative rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 flex items-center justify-between gap-3">
+              <button
+                aria-label="Close profile banner"
+                className="absolute top-2 right-2 rounded-md p-1 text-amber-700 hover:bg-amber-100"
+                onClick={() => setShowProfileBanner(false)}
+                title="Close"
+              >
+                ×
+              </button>
               <div>
                 {profile ? (
                   <span>
@@ -361,7 +374,7 @@ export default function ChatPage() {
                 )}
               </div>
               <button
-                className="flex-none rounded-md border border-amber-300 bg-white/70 px-2 py-1 hover:bg-white whitespace-nowrap"
+                className="flex-none rounded-md border border-amber-300 bg-amber-100 px-2 py-1 text-amber-900 hover:bg-amber-200 whitespace-nowrap"
                 onClick={() => setShowSettings(true)}
               >
                 프로필 설정
@@ -515,10 +528,7 @@ function EmptyState({ onTryExamples }: { onTryExamples: (q: string) => void }) {
           검사를 완료하면 더 정확한 상담이 가능해요. 결과가 없어도 바로 상담할 수 있어요!
         </p>
       </div>
-      <div className="flex items-center justify-center gap-2">
-        <Link href="/check-ai" className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm hover:bg-slate-100">/check-ai</Link>
-        <Link href="/assess" className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm hover:bg-slate-100">/assess</Link>
-      </div>
+      {/* Removed /check-ai and /assess shortcuts */}
       <div className="flex flex-wrap justify-center gap-2">
         {examples.map((ex, i) => (
           <button
