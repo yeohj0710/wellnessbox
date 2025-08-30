@@ -53,7 +53,7 @@ export default function RootLayout({
             <LoadingProvider>
               <ToastProvider>
                 <TopBar />
-                <main className="pt-10 min-h-[105vh] flex flex-col items-center">
+                <main className="pt-14 min-h-[105vh] flex flex-col items-center">
                   {children}
                 </main>
               </ToastProvider>

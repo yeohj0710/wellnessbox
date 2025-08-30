@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { MenuLinks } from "./menuLinks";
 import { getLoginStatus } from "@/lib/useLoginStatus";
 import Image from "next/image";
@@ -11,11 +11,14 @@ import { useLoading } from "@/components/common/loadingContext.client";
 
 export default function TopBar() {
   const router = useRouter();
+  const pathname = usePathname();
   const [loginStatus, setLoginStatus] = useState<any>([]);
   const [cartCount, setCartCount] = useState(0);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const logoRef = useRef<HTMLImageElement>(null);
   const { showLoading } = useLoading();
+  const [hideOnScroll, setHideOnScroll] = useState(false);
+  const lastYRef = useRef(0);
 
   useEffect(() => {
     const fetchLoginStatus = async () => {
@@ -64,13 +67,34 @@ export default function TopBar() {
     return () => clearInterval(interval);
   }, []);
 
+  // Hide TopBar on scroll only when on /chat
+  useEffect(() => {
+    if (!pathname?.startsWith("/chat")) return;
+    const onScroll = () => {
+      const y = window.scrollY || 0;
+      const last = lastYRef.current || 0;
+      const down = y > last + 8;
+      const up = y < last - 8;
+      lastYRef.current = y;
+      if (y < 24) {
+        setHideOnScroll(false);
+      } else if (down) {
+        setHideOnScroll(true);
+      } else if (up) {
+        setHideOnScroll(false);
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true } as any);
+    return () => window.removeEventListener("scroll", onScroll as any);
+  }, [pathname]);
+
   const menuItemClasses = (additionalClasses = "") => {
     return `relative transition-transform duration-200 ease-in-out hover:scale-[1.02] ${additionalClasses}`;
   };
 
   return (
     <>
-      <header className="fixed top-0 z-40 w-full bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70">
+      <header className={`fixed top-0 z-40 w-full bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70 transition-transform duration-300 will-change-transform ${hideOnScroll ? "-translate-y-full" : "translate-y-0"}`}>
         <div className="mx-auto flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-[120rem]">
           <div className="flex items-center gap-6">
             <Link

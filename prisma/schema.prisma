@@ -10,13 +10,13 @@ datasource db {
 }
 
 model Category {
-  id        Int       @id @default(autoincrement())
-  name      String?
-  image     String?
+  id         Int       @id @default(autoincrement())
+  name       String?
+  image      String?
   importance Float?
-  products  Product[] @relation("CategoryProductRelation")
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @default(now()) @updatedAt
+  products   Product[] @relation("CategoryProductRelation")
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @default(now()) @updatedAt
 }
 
 model Product {
@@ -45,7 +45,7 @@ model Pharmacy {
   pharmacyProducts   PharmacyProduct[]
   orders             Order[]
   messages           Message[]
-  subscriptions     Subscription[]
+  subscriptions      Subscription[]
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @default(now()) @updatedAt
 }
@@ -67,7 +67,7 @@ model PharmacyProduct {
 }
 
 model Order {
-  id               Int         @id @default(autoincrement())
+  id               Int            @id @default(autoincrement())
   roadAddress      String?
   detailAddress    String?
   phone            String?
@@ -82,14 +82,14 @@ model Order {
   status           String?
   orderItems       OrderItem[]
   messages         Message[]
-  pharmacy         Pharmacy?   @relation(fields: [pharmacyId], references: [id], onDelete: SetNull)
+  pharmacy         Pharmacy?      @relation(fields: [pharmacyId], references: [id], onDelete: SetNull)
   pharmacyId       Int?
-  rider            Rider?      @relation(fields: [riderId], references: [id], onDelete: SetNull)
+  rider            Rider?         @relation(fields: [riderId], references: [id], onDelete: SetNull)
   riderId          Int?
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @default(now()) @updatedAt
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @default(now()) @updatedAt
   reviews          Review[]
-  subscriptions   Subscription[]
+  subscriptions    Subscription[]
 }
 
 model OrderItem {
@@ -118,14 +118,14 @@ model Message {
 }
 
 model Rider {
-  id        Int      @id @default(autoincrement())
-  phone     String?
-  userId    String?
-  password  String?
-  orders    Order[]
+  id            Int            @id @default(autoincrement())
+  phone         String?
+  userId        String?
+  password      String?
+  orders        Order[]
   subscriptions Subscription[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @default(now()) @updatedAt
 }
 
 model Review {
@@ -144,20 +144,99 @@ model Review {
 }
 
 model Subscription {
-  id        Int      @id @default(autoincrement())
-  endpoint  String
-  auth      String
-  p256dh    String
-  order     Order?   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  orderId   Int?
-  pharmacy  Pharmacy? @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
+  id         Int       @id @default(autoincrement())
+  endpoint   String
+  auth       String
+  p256dh     String
+  order      Order?    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId    Int?
+  pharmacy   Pharmacy? @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
   pharmacyId Int?
-  rider     Rider?    @relation(fields: [riderId], references: [id], onDelete: Cascade)
-  riderId   Int?
-  role      String
-  createdAt DateTime @default(now())
+  rider      Rider?    @relation(fields: [riderId], references: [id], onDelete: Cascade)
+  riderId    Int?
+  role       String
+  createdAt  DateTime  @default(now())
 
   @@unique([role, orderId, endpoint])
   @@unique([role, pharmacyId, endpoint])
   @@unique([role, riderId, endpoint])
+}
+
+/// --- WellnessBox Chat and Assess persistence ---
+
+model Client {
+  // A stable, client-generated identifier (stored in localStorage/cookies)
+  id           String   @id
+  userAgent    String?
+  lastIpHash   String?
+  pushEndpoint String?
+  createdAt    DateTime @default(now())
+  lastSeenAt   DateTime @default(now())
+
+  assessResults  AssessmentResult[]
+  checkAiResults CheckAiResult[]
+  chatSessions   ChatSession[]
+
+  @@index([lastSeenAt])
+}
+
+model AssessmentResult {
+  id              String   @id @default(cuid())
+  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId        String
+  // Original questionnaire answers and computed result objects
+  answers         Json
+  cResult         Json
+  // Client-local timezone offset in minutes (e.g., 540 for KST)
+  tzOffsetMinutes Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  @@index([clientId, createdAt])
+}
+
+model CheckAiResult {
+  id              String   @id @default(cuid())
+  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId        String
+  // Arbitrary JSON result (must include any top labels or scores)
+  result          Json
+  tzOffsetMinutes Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  @@index([clientId, createdAt])
+}
+
+model ChatSession {
+  id        String        @id
+  client    Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId  String
+  title     String
+  status    String        @default("active")
+  meta      Json?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @default(now()) @updatedAt
+  messages  ChatMessage[]
+
+  @@index([clientId, updatedAt])
+}
+
+enum ChatRole {
+  system
+  user
+  assistant
+}
+
+model ChatMessage {
+  id              String      @id
+  session         ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId       String
+  role            ChatRole
+  content         String
+  tokensIn        Int?
+  tokensOut       Int?
+  meta            Json?
+  tzOffsetMinutes Int         @default(0)
+  createdAt       DateTime    @default(now())
+
+  @@index([sessionId, createdAt])
 }

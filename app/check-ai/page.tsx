@@ -27,6 +27,23 @@ const OPTIONS = [
 
 type Result = { label: string; prob: number };
 
+// clientId helpers (duplicated small helper to avoid extra imports)
+const LS_CLIENT_ID_KEY = "wb_client_id_v1";
+function getClientIdLocal(): string {
+  try {
+    const existing = localStorage.getItem(LS_CLIENT_ID_KEY);
+    if (existing) return existing;
+    const id = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    localStorage.setItem(LS_CLIENT_ID_KEY, id);
+    return id;
+  } catch {
+    return Math.random().toString(36).slice(2) + Date.now().toString(36);
+  }
+}
+function getTzOffsetMinutes(): number {
+  try { return -new Date().getTimezoneOffset(); } catch { return 0; }
+}
+
 export default function CheckAI() {
   const { showLoading } = useLoading();
   const [answers, setAnswers] = useState<number[]>(
@@ -88,6 +105,24 @@ export default function CheckAI() {
     const elapsed = Date.now() - start;
     if (elapsed < 900) await new Promise((r) => setTimeout(r, 900 - elapsed));
     setResults(data);
+    try {
+      const top = data.slice(0, 3).map((r) => r.label);
+      if (typeof window !== "undefined") {
+        localStorage.setItem(
+          "wb_check_ai_result_v1",
+          JSON.stringify({ topLabels: top, savedAt: Date.now() })
+        );
+        // Persist to server as the final result
+        try {
+          const cid = getClientIdLocal();
+          fetch("/api/check-ai/save", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ clientId: cid, result: { topLabels: top }, tzOffsetMinutes: getTzOffsetMinutes() }),
+          }).catch(() => {});
+        } catch {}
+      }
+    } catch {}
     setLoading(false);
     setModalOpen(true);
   };

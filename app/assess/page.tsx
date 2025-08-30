@@ -60,6 +60,23 @@ const descOf = (code: string) =>
 const STORAGE_KEY = "assess-state";
 const C_PERSIST_KEY = `${STORAGE_KEY}::C`;
 
+// clientId helpers (local only to avoid extra imports)
+const LS_CLIENT_ID_KEY = "wb_client_id_v1";
+function getClientIdLocal(): string {
+  try {
+    const existing = localStorage.getItem(LS_CLIENT_ID_KEY);
+    if (existing) return existing;
+    const id = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    localStorage.setItem(LS_CLIENT_ID_KEY, id);
+    return id;
+  } catch {
+    return Math.random().toString(36).slice(2) + Date.now().toString(36);
+  }
+}
+function getTzOffsetMinutes(): number {
+  try { return -new Date().getTimezoneOffset(); } catch { return 0; }
+}
+
 export default function Assess() {
   const { showLoading } = useLoading();
   const [section, setSection] = useState<"INTRO" | "A" | "B" | "C" | "DONE">(
@@ -204,6 +221,21 @@ export default function Assess() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     } catch {}
   }, [hydrated, section, answers, current, fixedIdx, history, cCats, cResult]);
+
+  // Persist final results to server when DONE
+  useEffect(() => {
+    if (section !== "DONE" || !cResult) return;
+    try {
+      const cid = getClientIdLocal();
+      const payload = {
+        clientId: cid,
+        answers,
+        cResult,
+        tzOffsetMinutes: getTzOffsetMinutes(),
+      };
+      fetch("/api/assess/save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).catch(() => {});
+    } catch {}
+  }, [section, cResult]);
 
   useEffect(() => {
     getCategories()
