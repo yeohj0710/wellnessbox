@@ -37,6 +37,7 @@ export interface ChatRequestBody {
   // Extended fields used by /api/chat
   clientId?: string;
   mode?: "init" | "chat";
-  // Optional local-only Check-AI top labels to enrich context
+  // Optional local-only results to enrich context
   localCheckAiTopLabels?: string[];
+  localAssessCats?: string[];
 }

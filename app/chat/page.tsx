@@ -85,7 +85,11 @@ export default function ChatPage() {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [localCheckAi, setLocalCheckAi] = useState<string[]>([]);
+  const [localAssessCats, setLocalAssessCats] = useState<string[]>([]);
+
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null);
+  const autoScrollRef = useRef(true);
   const initStartedRef = useRef<Record<string, boolean>>({});
 
   function openDrawer() {
@@ -97,22 +101,9 @@ export default function ChatPage() {
     setTimeout(() => setDrawerVisible(false), 200);
   }
 
-  async function typeText(sessionId: string, msgId: string, text: string) {
-    for (let i = 1; i <= text.length; i++) {
-      const slice = text.slice(0, i);
-      setSessions((prev) =>
-        prev.map((ss) =>
-          ss.id === sessionId
-            ? {
-                ...ss,
-                updatedAt: Date.now(),
-                messages: ss.messages.map((m) => (m.id === msgId ? { ...m, content: slice } : m)),
-              }
-            : ss
-        )
-      );
-      await new Promise((res) => setTimeout(res, 14));
-    }
+  function scrollToBottom() {
+    if (!autoScrollRef.current) return;
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
   }
 
   useEffect(() => {
@@ -133,21 +124,56 @@ export default function ChatPage() {
   }, [profile]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [activeId, sessions, loading]);
+    scrollToBottom();
+  }, [activeId, sessions]);
+
+  useEffect(() => {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+      autoScrollRef.current = atBottom;
+    };
+    el.addEventListener("scroll", onScroll);
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
 
   // Load local Check-AI top labels for personalization
   useEffect(() => {
     try {
-      const raw = typeof localStorage !== "undefined" ? localStorage.getItem("wb_check_ai_result_v1") : null;
+      const raw =
+        typeof localStorage !== "undefined"
+          ? localStorage.getItem("wb_check_ai_result_v1")
+          : null;
       if (!raw) return;
       const parsed = JSON.parse(raw);
-      const arr = Array.isArray(parsed?.topLabels) ? parsed.topLabels.slice(0, 3) : [];
+      const arr = Array.isArray(parsed?.topLabels)
+        ? parsed.topLabels.slice(0, 3)
+        : [];
       if (arr.length) setLocalCheckAi(arr);
     } catch {}
   }, []);
 
-  const active = useMemo(() => sessions.find((s) => s.id === activeId) || null, [sessions, activeId]);
+  // Load local assessment categories if any
+  useEffect(() => {
+    try {
+      const raw =
+        typeof localStorage !== "undefined"
+          ? localStorage.getItem("assess-state")
+          : null;
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      const arr = Array.isArray(parsed?.cResult?.catsOrdered)
+        ? parsed.cResult.catsOrdered.slice(0, 3)
+        : [];
+      if (arr.length) setLocalAssessCats(arr);
+    } catch {}
+  }, []);
+
+  const active = useMemo(
+    () => sessions.find((s) => s.id === activeId) || null,
+    [sessions, activeId]
+  );
 
   function newChat() {
     const id = uid();
@@ -178,12 +204,31 @@ export default function ChatPage() {
     setInput("");
 
     const now = Date.now();
-    const userMsg: ChatMessage = { id: uid(), role: "user", content: text, createdAt: now };
-    const asstMsg: ChatMessage = { id: uid(), role: "assistant", content: "", createdAt: now };
+    const userMsg: ChatMessage = {
+      id: uid(),
+      role: "user",
+      content: text,
+      createdAt: now,
+    };
+    const asstMsg: ChatMessage = {
+      id: uid(),
+      role: "assistant",
+      content: "",
+      createdAt: now,
+    };
 
     setSessions((prev) =>
-      prev.map((s) => (s.id === active.id ? { ...s, updatedAt: Date.now(), messages: [...s.messages, userMsg, asstMsg] } : s))
+      prev.map((s) =>
+        s.id === active.id
+          ? {
+              ...s,
+              updatedAt: Date.now(),
+              messages: [...s.messages, userMsg, asstMsg],
+            }
+          : s
+      )
     );
+    scrollToBottom();
 
     setLoading(true);
     try {
@@ -197,6 +242,7 @@ export default function ChatPage() {
           clientId: cid,
           mode: "chat",
           localCheckAiTopLabels: localCheckAi,
+          localAssessCats,
         }),
       });
       if (!res.ok || !res.body) throw new Error("대화를 이어받지 못했습니다.");
@@ -217,11 +263,14 @@ export default function ChatPage() {
                 ? {
                     ...s,
                     updatedAt: Date.now(),
-                    messages: s.messages.map((m) => (m.id === asstMsg.id ? { ...m, content: textSoFar } : m)),
+                    messages: s.messages.map((m) =>
+                      m.id === asstMsg.id ? { ...m, content: textSoFar } : m
+                    ),
                   }
                 : s
             )
           );
+          scrollToBottom();
         }
       }
 
@@ -234,8 +283,13 @@ export default function ChatPage() {
             body: JSON.stringify({ firstUserMessage: text }),
           });
           const tJson = await tRes.json().catch(() => ({}));
-          const title = typeof tJson?.title === "string" && tJson.title ? tJson.title : "새 상담";
-          setSessions((prev) => prev.map((s) => (s.id === active.id ? { ...s, title } : s)));
+          const title =
+            typeof tJson?.title === "string" && tJson.title
+              ? tJson.title
+              : "새 상담";
+          setSessions((prev) =>
+            prev.map((s) => (s.id === active.id ? { ...s, title } : s))
+          );
         }
       } catch {}
 
@@ -262,7 +316,11 @@ export default function ChatPage() {
             ? {
                 ...s,
                 updatedAt: Date.now(),
-                messages: s.messages.map((m) => (m.id === asstMsg.id ? { ...m, content: `오류: ${errText}` } : m)),
+                messages: s.messages.map((m) =>
+                  m.id === asstMsg.id
+                    ? { ...m, content: `오류: ${errText}` }
+                    : m
+                ),
               }
             : s
         )
@@ -278,17 +336,35 @@ export default function ChatPage() {
     const s = sessions.find((x) => x.id === sessionId);
     if (!s || s.messages.length > 0) return;
     const now = Date.now();
-    const asstMsg: ChatMessage = { id: uid(), role: "assistant", content: "", createdAt: now };
-    setSessions((prev) => prev.map((ss) => (ss.id === sessionId ? { ...ss, messages: [asstMsg] } : ss)));
+    const asstMsg: ChatMessage = {
+      id: uid(),
+      role: "assistant",
+      content: "",
+      createdAt: now,
+    };
+    setSessions((prev) =>
+      prev.map((ss) =>
+        ss.id === sessionId ? { ...ss, messages: [asstMsg] } : ss
+      )
+    );
+    scrollToBottom();
     setLoading(true);
     try {
       const cid = getClientIdLocal();
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [], profile, clientId: cid, mode: "init", localCheckAiTopLabels: localCheckAi }),
+        body: JSON.stringify({
+          messages: [],
+          profile,
+          clientId: cid,
+          mode: "init",
+          localCheckAiTopLabels: localCheckAi,
+          localAssessCats,
+        }),
       });
-      if (!res.ok || !res.body) throw new Error("초기 메시지를 받아오지 못했습니다.");
+      if (!res.ok || !res.body)
+        throw new Error("초기 메시지를 받아오지 못했습니다.");
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let fullText = "";
@@ -296,17 +372,37 @@ export default function ChatPage() {
         const { value, done } = await reader.read();
         if (done) break;
         if (value) {
-          fullText += decoder.decode(value);
+          const chunk = decoder.decode(value);
+          fullText += chunk;
+          const textSoFar = fullText;
+          setSessions((prev) =>
+            prev.map((ss) =>
+              ss.id === sessionId
+                ? {
+                    ...ss,
+                    updatedAt: Date.now(),
+                    messages: ss.messages.map((m) =>
+                      m.id === asstMsg.id ? { ...m, content: textSoFar } : m
+                    ),
+                  }
+                : ss
+            )
+          );
+          scrollToBottom();
         }
       }
-      await typeText(sessionId, asstMsg.id, fullText);
       try {
         const tz = getTzOffsetMinutes();
         const cid2 = getClientIdLocal();
         await fetch("/api/chat/save", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ clientId: cid2, sessionId, messages: [{ ...asstMsg, content: fullText }], tzOffsetMinutes: tz }),
+          body: JSON.stringify({
+            clientId: cid2,
+            sessionId,
+            messages: [{ ...asstMsg, content: fullText }],
+            tzOffsetMinutes: tz,
+          }),
         });
       } catch {}
     } catch (e) {
@@ -317,7 +413,11 @@ export default function ChatPage() {
             ? {
                 ...ss,
                 updatedAt: Date.now(),
-                messages: ss.messages.map((m) => (m.role === "assistant" && m.content === "" ? { ...m, content: `오류: ${errText}` } : m)),
+                messages: ss.messages.map((m) =>
+                  m.role === "assistant" && m.content === ""
+                    ? { ...m, content: `오류: ${errText}` }
+                    : m
+                ),
               }
             : ss
         )
@@ -328,57 +428,60 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="relative w-full min-h-[calc(100vh-56px)] bg-gradient-to-b from-slate-50 to-white">
-      {/* Main (centered) */}
-      <main className="flex flex-col">
-        {/* History toggle moved into main container */}
+    <div className="relative flex flex-col w-full min-h-[calc(100vh-56px)] bg-gradient-to-b from-slate-50 to-white">
+      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/70 backdrop-blur">
+        <div className="mx-auto max-w-3xl flex items-center justify-between px-4 py-2">
+          <button
+            className="inline-flex items-center gap-2 rounded-md px-2 py-1 text-sm text-slate-700 hover:bg-slate-100"
+            onClick={openDrawer}
+            aria-label="Open chat history"
+          >
+            <ChatBubbleLeftRightIcon className="h-5 w-5" />
+            <span className="hidden sm:inline">History</span>
+          </button>
+          <div className="font-semibold text-slate-800">상담</div>
+          <div className="w-10" />
+        </div>
+      </header>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 md:px-8 py-6 pb-40">
-          {/* Disclaimer */}
-          <div className="mx-auto max-w-3xl mb-4 text-xs text-slate-500">
-            이 상담은 의료 조언의 대체가 아닙니다.
-          </div>
-
-          {/* History button (within main container) */}
-          <div className="mx-auto max-w-3xl mb-2 flex justify-end px-1">
-            <button
-              className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white/90 px-3 py-1.5 text-sm text-slate-700 shadow hover:bg-white"
-              onClick={openDrawer}
-              aria-label="Open chat history"
-            >
-              <ChatBubbleLeftRightIcon className="h-5 w-5" />
-              <span className="hidden sm:inline">History</span>
-            </button>
-          </div>
-
-          {/* Profile banner */}
-          <div className="mx-auto max-w-3xl mb-4" hidden={!showProfileBanner}>
-            <div className="relative rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 flex items-center justify-between gap-3">
-              <button
-                aria-label="Close profile banner"
-                className="absolute top-2 right-2 rounded-md p-1 text-amber-700 hover:bg-amber-100"
-                onClick={() => setShowProfileBanner(false)}
-                title="Close"
-              >
-                ×
-              </button>
-              <div>
+      <main className="flex-1 flex flex-col">
+        <div
+          ref={messagesContainerRef}
+          className="flex-1 overflow-y-auto px-4 md:px-8 py-6 pb-40"
+        >
+          <div className="mx-auto max-w-3xl mb-3" hidden={!showProfileBanner}>
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 shadow-sm">
+              <div className="flex-1 leading-tight">
                 {profile ? (
                   <span>
-                    프로필 설정됨 · 나이 {profile.age ?? "?"}, 성별 {profile.sex ?? "?"}
-                    {profile.goals?.length ? ` · 목표 ${profile.goals.join(", ")}` : ""}
+                    프로필 설정됨 · 나이 {profile.age ?? "?"}, 성별{" "}
+                    {profile.sex ?? "?"}
+                    {profile.goals?.length
+                      ? ` · 목표 ${profile.goals.join(", ")}`
+                      : ""}
                   </span>
                 ) : (
-                  <span>개인화 상담을 위해 프로필을 설정해 주세요.</span>
+                  <span>
+                    프로필을 설정하면 나에게 좀 더 개인맞춤화된 상담이 쉬워져요.
+                  </span>
                 )}
               </div>
-              <button
-                className="flex-none rounded-md border border-amber-300 bg-amber-100 px-2 py-1 text-amber-900 hover:bg-amber-200 whitespace-nowrap"
-                onClick={() => setShowSettings(true)}
-              >
-                프로필 설정
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  className="rounded-md border border-amber-300 bg-amber-100 px-2.5 py-1 text-amber-900 hover:bg-amber-200 whitespace-nowrap transition"
+                  onClick={() => setShowSettings(true)}
+                >
+                  프로필 설정
+                </button>
+                <button
+                  aria-label="Close profile banner"
+                  className="h-6 w-6 p-0 text-amber-700 hover:text-amber-900 hover:opacity-80 transition"
+                  onClick={() => setShowProfileBanner(false)}
+                  title="Close"
+                >
+                  ×
+                </button>
+              </div>
             </div>
           </div>
 
@@ -386,13 +489,14 @@ export default function ChatPage() {
             {!active || active.messages.length === 0 ? (
               <EmptyState onTryExamples={(q) => sendMessage(q)} />
             ) : (
-              active.messages.map((m) => <MessageBubble key={m.id} role={m.role} content={m.content} />)
+              active.messages.map((m) => (
+                <MessageBubble key={m.id} role={m.role} content={m.content} />
+              ))
             )}
             <div ref={messagesEndRef} />
           </div>
         </div>
 
-        {/* Input (fixed, centered) */}
         <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-slate-200 bg-white/95 backdrop-blur">
           <div className="mx-auto max-w-3xl">
             <div className="flex items-end gap-2 px-4 py-4">
@@ -402,6 +506,11 @@ export default function ChatPage() {
                 value={input}
                 rows={1}
                 onChange={(e) => setInput(e.target.value)}
+                onInput={(e) => {
+                  const t = e.currentTarget;
+                  t.style.height = "auto";
+                  t.style.height = `${Math.min(t.scrollHeight, 160)}px`;
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
@@ -424,33 +533,55 @@ export default function ChatPage() {
 
       {/* Drawer (overlay for all sizes) */}
       {drawerVisible && (
-        <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" onClick={closeDrawer}>
-          <div className={`absolute inset-0 bg-black/30 transition-opacity duration-200 ${drawerOpen ? "opacity-100" : "opacity-0"}`} />
+        <div
+          className="fixed inset-0 z-50"
+          role="dialog"
+          aria-modal="true"
+          onClick={closeDrawer}
+        >
           <div
-            className={`absolute inset-y-0 left-0 w-80 max-w-[85vw] bg-white shadow-xl border-r border-slate-200 transform transition-transform duration-200 ${drawerOpen ? "translate-x-0" : "-translate-x-full"}`}
+            className={`absolute inset-0 bg-black/30 transition-opacity duration-200 ${
+              drawerOpen ? "opacity-100" : "opacity-0"
+            }`}
+          />
+          <div
+            className={`absolute inset-y-0 left-0 w-80 max-w-[85vw] bg-white shadow-xl border-r border-slate-200 transform transition-transform duration-200 ${
+              drawerOpen ? "translate-x-0" : "-translate-x-full"
+            }`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-slate-200">
               <div className="flex items-center gap-2 text-slate-800 font-semibold">
                 <ChatBubbleLeftRightIcon className="h-6 w-6" /> 대화 기록
               </div>
-              <button className="p-2 rounded-md hover:bg-slate-100" onClick={closeDrawer}>닫기</button>
+              <button
+                className="p-2 rounded-md hover:bg-slate-100"
+                onClick={closeDrawer}
+              >
+                닫기
+              </button>
             </div>
             <div className="flex-1 overflow-y-auto">
               {sessions.length === 0 ? (
-                <div className="p-6 text-sm text-slate-500">아직 대화 기록이 없습니다.</div>
+                <div className="p-6 text-sm text-slate-500">
+                  아직 대화 기록이 없습니다.
+                </div>
               ) : (
                 <ul className="p-2">
                   {sessions.map((s) => (
                     <li
                       key={s.id}
-                      className={`group flex items-center gap-2 rounded-md px-3 py-2 cursor-pointer hover:bg-slate-100 ${activeId === s.id ? "bg-slate-100" : ""}`}
+                      className={`group flex items-center gap-2 rounded-md px-3 py-2 cursor-pointer hover:bg-slate-100 ${
+                        activeId === s.id ? "bg-slate-100" : ""
+                      }`}
                       onClick={() => {
                         setActiveId(s.id);
                         closeDrawer();
                       }}
                     >
-                      <span className="flex-1 truncate text-sm text-slate-800">{s.title || "새 상담"}</span>
+                      <span className="flex-1 truncate text-sm text-slate-800">
+                        {s.title || "새 상담"}
+                      </span>
                       <button
                         className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-slate-500 hover:text-red-600"
                         onClick={(e) => {
@@ -487,16 +618,34 @@ export default function ChatPage() {
         </div>
       )}
 
-      {showSettings && <ProfileModal profile={profile} onClose={() => setShowSettings(false)} onChange={(p) => setProfile(p)} />}
+      {showSettings && (
+        <ProfileModal
+          profile={profile}
+          onClose={() => setShowSettings(false)}
+          onChange={(p) => setProfile(p)}
+        />
+      )}
     </div>
   );
 }
 
-function MessageBubble({ role, content }: { role: ChatMessage["role"]; content: string }) {
+function MessageBubble({
+  role,
+  content,
+}: {
+  role: ChatMessage["role"];
+  content: string;
+}) {
   const isUser = role === "user";
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
-      <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow ${isUser ? "bg-slate-900 text-white" : "bg-white border border-slate-200 text-slate-800"}`}>
+      <div
+        className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow ${
+          isUser
+            ? "bg-slate-900 text-white"
+            : "bg-white border border-slate-200 text-slate-800"
+        }`}
+      >
         {content ? (
           content
         ) : (
@@ -507,7 +656,20 @@ function MessageBubble({ role, content }: { role: ChatMessage["role"]; content: 
         )}
       </div>
       <style jsx global>{`
-        @keyframes wb-breathe { 0% { transform: scale(0.85); opacity: .7; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(0.85); opacity: .7; } }
+        @keyframes wb-breathe {
+          0% {
+            transform: scale(0.85);
+            opacity: 0.7;
+          }
+          50% {
+            transform: scale(1.1);
+            opacity: 1;
+          }
+          100% {
+            transform: scale(0.85);
+            opacity: 0.7;
+          }
+        }
       `}</style>
     </div>
   );
@@ -523,9 +685,12 @@ function EmptyState({ onTryExamples }: { onTryExamples: (q: string) => void }) {
   return (
     <div className="text-center text-slate-700 space-y-4">
       <div>
-        <h2 className="text-xl font-semibold">맞춤형 영양 상담을 시작해 보세요</h2>
+        <h2 className="text-xl font-semibold">
+          맞춤형 영양 상담을 시작해 보세요
+        </h2>
         <p className="text-sm text-slate-500 mt-1">
-          검사를 완료하면 더 정확한 상담이 가능해요. 결과가 없어도 바로 상담할 수 있어요!
+          검사를 완료하면 더 정확한 상담이 가능해요. 결과가 없어도 바로 상담할
+          수 있어요!
         </p>
       </div>
       {/* Removed /check-ai and /assess shortcuts */}
@@ -544,7 +709,15 @@ function EmptyState({ onTryExamples }: { onTryExamples: (q: string) => void }) {
   );
 }
 
-function ProfileModal({ profile, onClose, onChange }: { profile?: UserProfile; onClose: () => void; onChange: (p?: UserProfile) => void }) {
+function ProfileModal({
+  profile,
+  onClose,
+  onChange,
+}: {
+  profile?: UserProfile;
+  onClose: () => void;
+  onChange: (p?: UserProfile) => void;
+}) {
   const [local, setLocal] = useState<UserProfile>({ ...(profile || {}) });
   useEffect(() => {
     setLocal({ ...(profile || {}) });
@@ -553,31 +726,158 @@ function ProfileModal({ profile, onClose, onChange }: { profile?: UserProfile; o
     setLocal((p) => ({ ...(p || {}), [k]: v }));
   }
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
-      <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-2xl rounded-2xl bg-white shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
           <div className="font-semibold text-slate-800">프로필 설정</div>
-          <button className="rounded-md p-2 text-slate-500 hover:bg-slate-100" onClick={onClose}>닫기</button>
+          <button
+            className="rounded-md p-2 text-slate-500 hover:bg-slate-100"
+            onClick={onClose}
+          >
+            닫기
+          </button>
         </div>
         <div className="px-6 py-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <LabeledInput label="이름" placeholder="홍길동" value={local.name || ""} onChange={(v) => set("name", v)} />
-          <LabeledInput label="나이" type="number" placeholder="34" value={local.age?.toString() || ""} onChange={(v) => set("age", v ? Number(v) : undefined)} />
-          <LabeledSelect label="성별" value={local.sex || ""} onChange={(v) => set("sex", v as any)} options={[{ label: "선택 안함", value: "" }, { label: "남성", value: "male" }, { label: "여성", value: "female" }, { label: "기타", value: "other" }]} />
-          <LabeledInput label="키(cm)" type="number" placeholder="170" value={local.heightCm?.toString() || ""} onChange={(v) => set("heightCm", v ? Number(v) : undefined)} />
-          <LabeledInput label="몸무게(kg)" type="number" placeholder="65" value={local.weightKg?.toString() || ""} onChange={(v) => set("weightKg", v ? Number(v) : undefined)} />
-          <LabeledChips label="복용 중인 약" placeholder="ex) 메트포르민" values={local.medications || []} onChange={(vals) => set("medications", vals)} />
-          <LabeledChips label="질환/증상" placeholder="ex) 고혈압" values={local.conditions || []} onChange={(vals) => set("conditions", vals)} />
-          <LabeledChips label="알레르기" placeholder="ex) 갑각류" values={local.allergies || []} onChange={(vals) => set("allergies", vals)} />
-          <LabeledChips label="목표" placeholder="ex) 수면, 스트레스" values={local.goals || []} onChange={(vals) => set("goals", vals)} />
-          <LabeledChips label="식이 제한" placeholder="ex) 비건, 글루텐" values={local.dietaryRestrictions || []} onChange={(vals) => set("dietaryRestrictions", vals)} />
-          <LabeledSelect label="임신/수유" value={local.pregnantOrBreastfeeding ? "yes" : local.pregnantOrBreastfeeding === false ? "no" : ""} onChange={(v) => set("pregnantOrBreastfeeding", v === "yes" ? true : v === "no" ? false : undefined)} options={[{ label: "선택 안함", value: "" }, { label: "예", value: "yes" }, { label: "아니오", value: "no" }]} />
-          <LabeledSelect label="카페인 민감" value={local.caffeineSensitivity ? "yes" : local.caffeineSensitivity === false ? "no" : ""} onChange={(v) => set("caffeineSensitivity", v === "yes" ? true : v === "no" ? false : undefined)} options={[{ label: "선택 안함", value: "" }, { label: "예", value: "yes" }, { label: "아니오", value: "no" }]} />
+          <LabeledInput
+            label="이름"
+            placeholder="홍길동"
+            value={local.name || ""}
+            onChange={(v) => set("name", v)}
+          />
+          <LabeledInput
+            label="나이"
+            type="number"
+            placeholder="34"
+            value={local.age?.toString() || ""}
+            onChange={(v) => set("age", v ? Number(v) : undefined)}
+          />
+          <LabeledSelect
+            label="성별"
+            value={local.sex || ""}
+            onChange={(v) => set("sex", v as any)}
+            options={[
+              { label: "선택 안함", value: "" },
+              { label: "남성", value: "male" },
+              { label: "여성", value: "female" },
+              { label: "기타", value: "other" },
+            ]}
+          />
+          <LabeledInput
+            label="키(cm)"
+            type="number"
+            placeholder="170"
+            value={local.heightCm?.toString() || ""}
+            onChange={(v) => set("heightCm", v ? Number(v) : undefined)}
+          />
+          <LabeledInput
+            label="몸무게(kg)"
+            type="number"
+            placeholder="65"
+            value={local.weightKg?.toString() || ""}
+            onChange={(v) => set("weightKg", v ? Number(v) : undefined)}
+          />
+          <LabeledChips
+            label="복용 중인 약"
+            placeholder="ex) 메트포르민"
+            values={local.medications || []}
+            onChange={(vals) => set("medications", vals)}
+          />
+          <LabeledChips
+            label="질환/증상"
+            placeholder="ex) 고혈압"
+            values={local.conditions || []}
+            onChange={(vals) => set("conditions", vals)}
+          />
+          <LabeledChips
+            label="알레르기"
+            placeholder="ex) 갑각류"
+            values={local.allergies || []}
+            onChange={(vals) => set("allergies", vals)}
+          />
+          <LabeledChips
+            label="목표"
+            placeholder="ex) 수면, 스트레스"
+            values={local.goals || []}
+            onChange={(vals) => set("goals", vals)}
+          />
+          <LabeledChips
+            label="식이 제한"
+            placeholder="ex) 비건, 글루텐"
+            values={local.dietaryRestrictions || []}
+            onChange={(vals) => set("dietaryRestrictions", vals)}
+          />
+          <LabeledSelect
+            label="임신/수유"
+            value={
+              local.pregnantOrBreastfeeding
+                ? "yes"
+                : local.pregnantOrBreastfeeding === false
+                ? "no"
+                : ""
+            }
+            onChange={(v) =>
+              set(
+                "pregnantOrBreastfeeding",
+                v === "yes" ? true : v === "no" ? false : undefined
+              )
+            }
+            options={[
+              { label: "선택 안함", value: "" },
+              { label: "예", value: "yes" },
+              { label: "아니오", value: "no" },
+            ]}
+          />
+          <LabeledSelect
+            label="카페인 민감"
+            value={
+              local.caffeineSensitivity
+                ? "yes"
+                : local.caffeineSensitivity === false
+                ? "no"
+                : ""
+            }
+            onChange={(v) =>
+              set(
+                "caffeineSensitivity",
+                v === "yes" ? true : v === "no" ? false : undefined
+              )
+            }
+            options={[
+              { label: "선택 안함", value: "" },
+              { label: "예", value: "yes" },
+              { label: "아니오", value: "no" },
+            ]}
+          />
         </div>
         <div className="flex items-center justify-between border-t border-slate-200 px-6 py-4">
-          <button className="text-sm text-red-600 hover:text-red-700" onClick={() => onChange(undefined)}>초기화</button>
+          <button
+            className="text-sm text-red-600 hover:text-red-700"
+            onClick={() => onChange(undefined)}
+          >
+            초기화
+          </button>
           <div className="flex items-center gap-2">
-            <button className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100" onClick={onClose}>취소</button>
-            <button className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-800" onClick={() => { onChange(local); onClose(); }}>저장</button>
+            <button
+              className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+              onClick={onClose}
+            >
+              취소
+            </button>
+            <button
+              className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-800"
+              onClick={() => {
+                onChange(local);
+                onClose();
+              }}
+            >
+              저장
+            </button>
           </div>
         </div>
       </div>
@@ -585,7 +885,19 @@ function ProfileModal({ profile, onClose, onChange }: { profile?: UserProfile; o
   );
 }
 
-function LabeledInput({ label, value, onChange, placeholder, type = "text" }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string }) {
+function LabeledInput({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  type?: string;
+}) {
   return (
     <label className="grid gap-1 text-sm">
       <span className="text-slate-600">{label}</span>
@@ -600,7 +912,17 @@ function LabeledInput({ label, value, onChange, placeholder, type = "text" }: { 
   );
 }
 
-function LabeledSelect({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: { label: string; value: string }[] }) {
+function LabeledSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { label: string; value: string }[];
+}) {
   return (
     <label className="grid gap-1 text-sm">
       <span className="text-slate-600">{label}</span>
@@ -610,14 +932,26 @@ function LabeledSelect({ label, value, onChange, options }: { label: string; val
         onChange={(e) => onChange(e.target.value)}
       >
         {options.map((o) => (
-          <option key={o.value} value={o.value}>{o.label}</option>
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
         ))}
       </select>
     </label>
   );
 }
 
-function LabeledChips({ label, values, onChange, placeholder }: { label: string; values: string[]; onChange: (vals: string[]) => void; placeholder?: string }) {
+function LabeledChips({
+  label,
+  values,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  values: string[];
+  onChange: (vals: string[]) => void;
+  placeholder?: string;
+}) {
   const [text, setText] = useState("");
   function addChip() {
     const v = text.trim();
@@ -630,9 +964,17 @@ function LabeledChips({ label, values, onChange, placeholder }: { label: string;
       <div className="text-slate-600 mb-1">{label}</div>
       <div className="flex flex-wrap gap-2 mb-2">
         {(values || []).map((v, i) => (
-          <span key={`${v}-${i}`} className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-slate-700">
+          <span
+            key={`${v}-${i}`}
+            className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-slate-700"
+          >
             {v}
-            <button className="text-slate-500 hover:text-slate-800" onClick={() => onChange(values.filter((_, idx) => idx !== i))}>×</button>
+            <button
+              className="text-slate-500 hover:text-slate-800"
+              onClick={() => onChange(values.filter((_, idx) => idx !== i))}
+            >
+              ×
+            </button>
           </span>
         ))}
       </div>
@@ -649,7 +991,12 @@ function LabeledChips({ label, values, onChange, placeholder }: { label: string;
             }
           }}
         />
-        <button className="rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-700 hover:bg-slate-100" onClick={addChip}>추가</button>
+        <button
+          className="rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-700 hover:bg-slate-100"
+          onClick={addChip}
+        >
+          추가
+        </button>
       </div>
     </div>
   );

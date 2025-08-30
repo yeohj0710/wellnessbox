@@ -17,7 +17,15 @@ export async function POST(req: NextRequest) {
   try {
     const apiKey = ensureEnv("OPENAI_KEY");
     const body = (await req.json()) as ChatRequestBody;
-    const { messages, profile, model, clientId, mode, localCheckAiTopLabels } = body || {};
+    const {
+      messages,
+      profile,
+      model,
+      clientId,
+      mode,
+      localCheckAiTopLabels,
+      localAssessCats,
+    } = body || {};
     const isInit = mode === "init";
 
     // Allow empty messages only for init mode (first assistant greeting)
@@ -42,6 +50,8 @@ export async function POST(req: NextRequest) {
             .map((c, i) => `${c}${pcts[i] != null ? ` (${(pcts[i] * 100).toFixed(1)}%)` : ""}`)
             .join(", ");
           parts.push(`Assessment top categories: ${pctText}`);
+        } else if (Array.isArray(localAssessCats) && localAssessCats.length) {
+          parts.push(`Assessment top categories (local): ${localAssessCats.slice(0, 3).join(", ")}`);
         }
         if ((!latest.assessCats || latest.assessCats.length === 0) && latest.checkAiTopLabels?.length) {
           parts.push(`Check-AI top categories: ${latest.checkAiTopLabels.slice(0, 3).join(", ")}`);
