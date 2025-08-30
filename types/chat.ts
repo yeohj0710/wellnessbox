@@ -34,5 +34,9 @@ export interface ChatRequestBody {
   messages: ChatMessage[];
   profile?: UserProfile;
   model?: string;
+  // Extended fields used by /api/chat
+  clientId?: string;
+  mode?: "init" | "chat";
+  // Optional local-only Check-AI top labels to enrich context
+  localCheckAiTopLabels?: string[];
 }
-

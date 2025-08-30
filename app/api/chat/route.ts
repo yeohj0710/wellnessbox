@@ -16,10 +16,12 @@ function ensureEnv(key: string) {
 export async function POST(req: NextRequest) {
   try {
     const apiKey = ensureEnv("OPENAI_KEY");
-    const body = (await req.json()) as ChatRequestBody & { clientId?: string; mode?: "init" | "chat" };
-    const { messages, profile, model, clientId, mode } = body || {};
+    const body = (await req.json()) as ChatRequestBody;
+    const { messages, profile, model, clientId, mode, localCheckAiTopLabels } = body || {};
+    const isInit = mode === "init";
 
-    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+    // Allow empty messages only for init mode (first assistant greeting)
+    if ((!messages || !Array.isArray(messages) || messages.length === 0) && !isInit) {
       return new Response(JSON.stringify({ error: "Missing messages" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
@@ -44,6 +46,16 @@ export async function POST(req: NextRequest) {
         if ((!latest.assessCats || latest.assessCats.length === 0) && latest.checkAiTopLabels?.length) {
           parts.push(`Check-AI top categories: ${latest.checkAiTopLabels.slice(0, 3).join(", ")}`);
         }
+        // If nothing on server, augment with local Check-AI labels (best-effort)
+        if (
+          parts.length === 0 &&
+          Array.isArray(localCheckAiTopLabels) &&
+          localCheckAiTopLabels.length
+        ) {
+          parts.push(
+            `Check-AI top categories (local): ${localCheckAiTopLabels.slice(0, 3).join(", ")}`
+          );
+        }
         if (parts.length) {
           knownContext = `Known user results (server): ${parts.join("; ")}.`;
         }
@@ -67,6 +79,12 @@ export async function POST(req: NextRequest) {
 - 한국어, 반말 대신 존댓말.
 - 의료 자문 아님을 1문장으로 덧붙임.`;
       openaiMessages.push({ role: "system", content: initGuide });
+      // Extra guidance in plain ASCII to ensure robust behavior when no results exist
+      openaiMessages.push({
+        role: "system",
+        content:
+          "If no known user results are available, greet warmly, suggest /check-ai and /assess as ways to get more precise recommendations, and ask two concise starter questions (main goal, and any conditions/medications/allergies).",
+      });
       openaiMessages.push({ role: "user", content: "초기 인사 메시지를 작성해주세요." });
     } else {
       openaiMessages.push(...messages.map((m) => ({ role: m.role, content: m.content })));
