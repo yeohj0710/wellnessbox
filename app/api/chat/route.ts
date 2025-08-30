@@ -59,7 +59,13 @@ export async function POST(req: NextRequest) {
     const isInit = mode === "init";
     if (isInit) {
       // Force the first assistant message to follow the requested structure
-      const initGuide = `초기 인사 메시지 지침:\n- 먼저 상위 3개 추천 카테고리를 간단히 제시 (예: 비타민C, 콜라겐, 밀크씨슬).\n- 각각이 어떤 영양 성분/기능인지 1-2문장으로 설명.\n- 이어서 자연스럽게 상담을 시작하도록 유도 (질문 1개 제시).\n- 불필요한 장황한 서론 금지.\n- 한국어, 반말 대신 존댓말.\n- 의료 자문 아님을 1문장으로 덧붙임.`;
+      const initGuide = `초기 인사 메시지 지침:
+- 인사 후 추천된 상위 3개 카테고리를 먼저 제시.
+- 각 카테고리가 어떤 영양 성분/기능인지 1-2문장으로 설명.
+- 그 다음 상담을 자연스럽게 이어가며 질문 1개 제시.
+- 불필요한 장황한 서론 금지.
+- 한국어, 반말 대신 존댓말.
+- 의료 자문 아님을 1문장으로 덧붙임.`;
       openaiMessages.push({ role: "system", content: initGuide });
       openaiMessages.push({ role: "user", content: "초기 인사 메시지를 작성해주세요." });
     } else {

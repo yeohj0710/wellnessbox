@@ -79,9 +79,31 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [showDrawer, setShowDrawer] = useState(false);
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const initStartedRef = useRef<Record<string, boolean>>({});
+  function openDrawer() {
+    setDrawerVisible(true);
+    setTimeout(() => setDrawerOpen(true), 0);
+  }
+  function closeDrawer() {
+    setDrawerOpen(false);
+    setTimeout(() => setDrawerVisible(false), 200);
+  }
+  async function typeText(sessionId: string, msgId: string, text: string) {
+    for (let i = 1; i <= text.length; i++) {
+      const slice = text.slice(0, i);
+      setSessions((prev) =>
+        prev.map((ss) =>
+          ss.id === sessionId
+            ? { ...ss, updatedAt: Date.now(), messages: ss.messages.map((m) => (m.id === msgId ? { ...m, content: slice } : m)) }
+            : ss
+        )
+      );
+      await new Promise((res) => setTimeout(res, 20));
+    }
+  }
 
   useEffect(() => {
     const s = loadSessions();
@@ -243,24 +265,15 @@ export default function ChatPage() {
       if (!res.ok || !res.body) throw new Error("초기 메시지를 불러오지 못했습니다.");
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      let done = false;
       let fullText = "";
-      while (!done) {
-        const { value, done: d } = await reader.read();
-        done = d;
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
         if (value) {
-          const chunk = decoder.decode(value);
-          fullText += chunk;
-          const textSoFar = fullText;
-          setSessions((prev) =>
-            prev.map((ss) =>
-              ss.id === sessionId
-                ? { ...ss, updatedAt: Date.now(), messages: ss.messages.map((m) => (m.id === asstMsg.id ? { ...m, content: textSoFar } : m)) }
-                : ss
-            )
-          );
+          fullText += decoder.decode(value);
         }
       }
+      await typeText(sessionId, asstMsg.id, fullText);
       try {
         const tz = getTzOffsetMinutes();
         const cid = getClientIdLocal();
@@ -341,7 +354,7 @@ export default function ChatPage() {
           <div className="flex items-center gap-2 text-slate-800">
             <button
               className="md:hidden rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100"
-              onClick={() => setShowDrawer(true)}
+              onClick={openDrawer}
             >
               대화 목록
             </button>
@@ -383,7 +396,7 @@ export default function ChatPage() {
                   <span>맞춤 상담을 위해 개인 프로필을 설정해주세요.</span>
                 )}
               </div>
-              <button className="rounded-md border border-amber-300 bg-white/70 px-2 py-1 hover:bg-white whitespace-nowrap shrink-0" onClick={() => setShowSettings(true)}>
+              <button className="flex-none rounded-md border border-amber-300 bg-white/70 px-2 py-1 hover:bg-white whitespace-nowrap break-keep" onClick={() => setShowSettings(true)}>
                 설정하기
               </button>
             </div>
@@ -432,18 +445,18 @@ export default function ChatPage() {
       </main>
 
       {/* Drawer (mobile) */}
-      {showDrawer && (
-        <div className="fixed inset-0 z-40" role="dialog" aria-modal="true" onClick={() => setShowDrawer(false)}>
-          <div className="absolute inset-0 bg-black/30" />
-          <div className="absolute inset-y-0 left-0 w-80 max-w-[85vw] bg-white shadow-xl border-r border-slate-200 animate-[wb-slide-in_0.2s_ease-out]" onClick={(e) => e.stopPropagation()}>
+      {drawerVisible && (
+        <div className="fixed inset-0 z-40" role="dialog" aria-modal="true" onClick={closeDrawer}>
+          <div className={`absolute inset-0 bg-black/30 transition-opacity duration-200 ${drawerOpen ? "opacity-100" : "opacity-0"}`} />
+          <div className={`absolute inset-y-0 left-0 w-80 max-w-[85vw] bg-white shadow-xl border-r border-slate-200 transform transition-transform duration-200 ${drawerOpen ? "translate-x-0" : "-translate-x-full"}`} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b border-slate-200">
               <div className="flex items-center gap-2 text-slate-800 font-semibold"><ChatBubbleLeftRightIcon className="h-6 w-6" /> 대화 목록</div>
-              <button className="p-2 rounded-md hover:bg-slate-100" onClick={() => setShowDrawer(false)}>닫기</button>
+              <button className="p-2 rounded-md hover:bg-slate-100" onClick={closeDrawer}>닫기</button>
             </div>
             <div className="flex-1 overflow-y-auto">
               <ul className="p-2">
                 {sessions.map((s) => (
-                  <li key={s.id} className={`group flex items-center gap-2 rounded-md px-3 py-2 cursor-pointer hover:bg-slate-100 ${activeId === s.id ? "bg-slate-100" : ""}`} onClick={() => { setActiveId(s.id); setShowDrawer(false); }}>
+                  <li key={s.id} className={`group flex items-center gap-2 rounded-md px-3 py-2 cursor-pointer hover:bg-slate-100 ${activeId === s.id ? "bg-slate-100" : ""}`} onClick={() => { setActiveId(s.id); closeDrawer(); }}>
                     <span className="flex-1 truncate text-sm text-slate-800">{s.title || "새 대화"}</span>
                     <button className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-slate-500 hover:text-red-600" onClick={(e) => { e.stopPropagation(); deleteChat(s.id); }} title="삭제">
                       <TrashIcon className="h-4 w-4" />
@@ -453,17 +466,12 @@ export default function ChatPage() {
               </ul>
             </div>
             <div className="border-t border-slate-200 p-3">
-              <button className="w-full flex items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100" onClick={() => { newChat(); setShowDrawer(false); }}>
+              <button className="w-full flex items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100" onClick={() => { newChat(); closeDrawer(); }}>
                 <PlusIcon className="h-4 w-4" /> 새 대화
               </button>
             </div>
           </div>
         </div>
-      )}
-      {showDrawer && (
-        <style jsx global>{`
-          @keyframes wb-slide-in { from { transform: translateX(-100%); } to { transform: translateX(0); } }
-        `}</style>
       )}
 
       {showSettings && (
