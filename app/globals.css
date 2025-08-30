@@ -4,8 +4,15 @@
 
 /* Chat typing indicator (single black dot scaling) */
 @keyframes wb-dot-scale {
-  0%, 100% { transform: scale(0.9); opacity: 0.6; }
-  50% { transform: scale(1.2); opacity: 1; }
+  0%,
+  100% {
+    transform: scale(0.9);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
 }
 
 .wb-typing-dot {
@@ -17,7 +24,9 @@
 }
 
 /* Hide spinner and show dot when assistant is pending */
-.wb-msg.wb-msg-assistant.wb-pending svg.animate-spin { display: none; }
+.wb-msg.wb-msg-assistant.wb-pending svg.animate-spin {
+  display: none;
+}
 .wb-msg.wb-msg-assistant.wb-pending::after {
   content: "";
   display: inline-block;

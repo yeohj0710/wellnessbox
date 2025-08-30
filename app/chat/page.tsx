@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useFooter } from "@/components/common/footerContext";
 import {
   ChatBubbleLeftRightIcon,
   PlusIcon,
   Cog6ToothIcon,
   TrashIcon,
   PaperAirplaneIcon,
+  Bars3Icon,
 } from "@heroicons/react/24/outline";
 import type { ChatMessage, ChatSession, UserProfile } from "@/types/chat";
 import MessageBubble from "./components/MessageBubble";
@@ -37,7 +39,7 @@ export default function ChatPage() {
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
-  const autoScrollRef = useRef(true);
+  const autoScrollRef = useRef(false);
   const initStartedRef = useRef<Record<string, boolean>>({});
 
   function openDrawer() {
@@ -72,19 +74,21 @@ export default function ChatPage() {
   }, [profile]);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [activeId, sessions]);
-
-  useEffect(() => {
-    const el = messagesContainerRef.current;
-    if (!el) return;
+    autoScrollRef.current = false;
     const onScroll = () => {
-      const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
-      autoScrollRef.current = atBottom;
+      const doc = document.documentElement;
+      autoScrollRef.current =
+        doc.scrollHeight - (window.innerHeight + window.scrollY) < 40;
     };
-    el.addEventListener("scroll", onScroll);
-    return () => el.removeEventListener("scroll", onScroll);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  const { hideFooter, showFooter } = useFooter();
+  useEffect(() => {
+    hideFooter();
+    return () => showFooter();
+  }, [hideFooter, showFooter]);
 
   // Load local Check-AI top labels for personalization
   useEffect(() => {
@@ -377,27 +381,17 @@ export default function ChatPage() {
 
   return (
     <div className="relative flex flex-col w-full min-h-[calc(100vh-56px)] bg-gradient-to-b from-slate-50 to-white">
-      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/70 backdrop-blur">
-        <div className="mx-auto max-w-3xl flex items-center justify-between px-4 py-2">
-          <button
-            className="inline-flex items-center gap-2 rounded-md px-2 py-1 text-sm text-slate-700 hover:bg-slate-100"
-            onClick={openDrawer}
-            aria-label="Open chat history"
-          >
-            <ChatBubbleLeftRightIcon className="h-5 w-5" />
-            <span className="hidden sm:inline">History</span>
-          </button>
-          <div className="font-semibold text-slate-800">상담</div>
-          <div className="w-10" />
-        </div>
-      </header>
-
       <main className="flex-1 flex flex-col">
-        <div
-          ref={messagesContainerRef}
-          className="flex-1 overflow-y-auto px-4 md:px-8 py-6 pb-40"
+        <button
+          className="fixed top-16 left-4 z-50 p-2 rounded-lg text-slate-700 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 transition"
+          onClick={openDrawer}
+          aria-label="Open menu"
         >
-          <div className="mx-auto max-w-3xl mb-3" hidden={!showProfileBanner}>
+          <Bars3Icon className="h-6 w-6" />
+        </button>
+
+        <div className="mx-auto max-w-3xl w-full px-4 md:px-8 flex-1 pt-8 pb-28">
+          <div className="mx-auto max-w-3xl mb-8" hidden={!showProfileBanner}>
             <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 shadow-sm">
               <div className="px-1 flex-1 leading-tight">
                 {profile ? (
@@ -416,7 +410,7 @@ export default function ChatPage() {
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  className="rounded-md border border-amber-300 bg-amber-100 px-2.5 py-1 text-amber-900 hover:bg-amber-200 whitespace-nowrap transition"
+                  className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-amber-900 hover:bg-amber-100 whitespace-nowrap transition"
                   onClick={() => setShowSettings(true)}
                 >
                   프로필 설정
@@ -445,11 +439,11 @@ export default function ChatPage() {
           </div>
         </div>
 
-        <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-slate-200 bg-white/95 backdrop-blur">
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-full px-4 pointer-events-none">
           <div className="mx-auto max-w-3xl">
-            <div className="flex items-end gap-2 px-4 py-4">
+            <div className="flex items-end gap-2 pointer-events-auto">
               <textarea
-                className="flex-1 resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-300 max-h-40 min-h-[48px]"
+                className="flex-1 resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-800 shadow-lg focus:outline-none focus:ring-2 focus:ring-slate-300 max-h-40 min-h-[48px]"
                 placeholder="궁금한 내용을 입력하고 Enter로 전송"
                 value={input}
                 rows={1}
@@ -479,10 +473,9 @@ export default function ChatPage() {
         </div>
       </main>
 
-      {/* Drawer (overlay for all sizes) */}
       {drawerVisible && (
         <div
-          className="fixed inset-0 z-50"
+          className="fixed left-0 right-0 bottom-0 top-14 z-50"
           role="dialog"
           aria-modal="true"
           onClick={closeDrawer}

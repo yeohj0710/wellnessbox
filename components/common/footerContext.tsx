@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import Footer from "@/components/common/footer";
 
 type FooterContextType = {
@@ -13,12 +14,15 @@ const FooterContext = createContext<FooterContextType | undefined>(undefined);
 
 export function FooterProvider({ children }: { children: ReactNode }) {
   const [isFooterVisible, setFooterVisible] = useState(true);
+  const pathname = usePathname();
+  const forcedHidden = pathname?.startsWith("/chat");
   const showFooter = () => setFooterVisible(true);
   const hideFooter = () => setFooterVisible(false);
+  const shouldRender = !forcedHidden && isFooterVisible;
   return (
     <FooterContext.Provider value={{ isFooterVisible, showFooter, hideFooter }}>
       {children}
-      {isFooterVisible && <Footer />}
+      {shouldRender && <Footer />}
     </FooterContext.Provider>
   );
 }
