@@ -1,0 +1,49 @@
+"use client";
+
+import type { ChatMessage } from "@/types/chat";
+
+export default function MessageBubble({
+  role,
+  content,
+}: {
+  role: ChatMessage["role"];
+  content: string;
+}) {
+  const isUser = role === "user";
+  return (
+    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+      <div
+        className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow ${
+          isUser
+            ? "bg-slate-900 text-white"
+            : "bg-white border border-slate-200 text-slate-800"
+        }`}
+      >
+        {content ? (
+          content
+        ) : (
+          <span className="inline-flex items-center gap-2 text-slate-500">
+            <span className="inline-block h-2.5 w-2.5 rounded-full bg-black animate-[wb-breathe_1.1s_ease-in-out_infinite]" />
+            작성 중..
+          </span>
+        )}
+      </div>
+      <style jsx global>{`
+        @keyframes wb-breathe {
+          0% {
+            transform: scale(0.85);
+            opacity: 0.7;
+          }
+          50% {
+            transform: scale(1.1);
+            opacity: 1;
+          }
+          100% {
+            transform: scale(0.85);
+            opacity: 0.7;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
