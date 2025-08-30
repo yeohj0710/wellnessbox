@@ -2,6 +2,8 @@ import { NextRequest } from "next/server";
 import { buildSystemPrompt } from "@/lib/ai/prompt";
 import { ChatRequestBody } from "@/types/chat";
 import { DEFAULT_MODEL } from "@/lib/ai/models";
+import { getLatestResults } from "@/lib/server/results";
+import { ensureClient } from "@/lib/server/client";
 
 export const runtime = "nodejs";
 
@@ -14,8 +16,8 @@ function ensureEnv(key: string) {
 export async function POST(req: NextRequest) {
   try {
     const apiKey = ensureEnv("OPENAI_KEY");
-    const body = (await req.json()) as ChatRequestBody;
-    const { messages, profile, model } = body || {};
+    const body = (await req.json()) as ChatRequestBody & { clientId?: string; mode?: "init" | "chat" };
+    const { messages, profile, model, clientId, mode } = body || {};
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return new Response(JSON.stringify({ error: "Missing messages" }), {
@@ -24,13 +26,45 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const sysPrompt = buildSystemPrompt(profile);
+    // Gather known context from server for better continuity
+    let knownContext = "";
+    if (clientId && typeof clientId === "string") {
+      await ensureClient(clientId, { userAgent: req.headers.get("user-agent") });
+      try {
+        const latest = await getLatestResults(clientId);
+        const parts: string[] = [];
+        if (latest.assessCats && latest.assessCats.length) {
+          const cats = latest.assessCats.slice(0, 3);
+          const pcts = latest.assessPercents || [];
+          const pctText = cats
+            .map((c, i) => `${c}${pcts[i] != null ? ` (${(pcts[i] * 100).toFixed(1)}%)` : ""}`)
+            .join(", ");
+          parts.push(`Assessment top categories: ${pctText}`);
+        }
+        if ((!latest.assessCats || latest.assessCats.length === 0) && latest.checkAiTopLabels?.length) {
+          parts.push(`Check-AI top categories: ${latest.checkAiTopLabels.slice(0, 3).join(", ")}`);
+        }
+        if (parts.length) {
+          knownContext = `Known user results (server): ${parts.join("; ")}.`;
+        }
+      } catch {}
+    }
+
+    const sysPrompt = buildSystemPrompt(profile) + (knownContext ? `\n\n${knownContext}` : "");
 
     // Convert to OpenAI message format
-    const openaiMessages = [
+    const openaiMessages: Array<{ role: string; content: string }> = [
       { role: "system", content: sysPrompt },
-      ...messages.map((m) => ({ role: m.role, content: m.content })),
     ];
+    const isInit = mode === "init";
+    if (isInit) {
+      // Force the first assistant message to follow the requested structure
+      const initGuide = `초기 인사 메시지 지침:\n- 먼저 상위 3개 추천 카테고리를 간단히 제시 (예: 비타민C, 콜라겐, 밀크씨슬).\n- 각각이 어떤 영양 성분/기능인지 1-2문장으로 설명.\n- 이어서 자연스럽게 상담을 시작하도록 유도 (질문 1개 제시).\n- 불필요한 장황한 서론 금지.\n- 한국어, 반말 대신 존댓말.\n- 의료 자문 아님을 1문장으로 덧붙임.`;
+      openaiMessages.push({ role: "system", content: initGuide });
+      openaiMessages.push({ role: "user", content: "초기 인사 메시지를 작성해주세요." });
+    } else {
+      openaiMessages.push(...messages.map((m) => ({ role: m.role, content: m.content })));
+    }
 
     const controller = new AbortController();
 
@@ -124,4 +158,3 @@ export async function POST(req: NextRequest) {
     });
   }
 }
-

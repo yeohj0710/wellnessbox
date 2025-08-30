@@ -1,19 +1,24 @@
-import { cookies, headers } from "next/headers";
+import { cookies as nextCookies, headers as nextHeaders } from "next/headers";
 import db from "@/lib/db";
 
-export function getClientIdFromRequest(): string | null {
-  const h = headers();
-  const cid = h.get("x-wb-client-id") || h.get("x-client-id");
-  if (cid) return cid;
+export async function getClientIdFromRequest(): Promise<string | null> {
   try {
-    const c = cookies();
+    const h = await nextHeaders();
+    const cid = h.get("x-wb-client-id") || h.get("x-client-id");
+    if (cid) return cid;
+  } catch {}
+  try {
+    const c = await nextCookies();
     const v = c.get("wb_cid")?.value;
     if (v) return v;
   } catch {}
   return null;
 }
 
-export async function ensureClient(clientId: string, init?: { userAgent?: string | null; pushEndpoint?: string | null; ipHash?: string | null }) {
+export async function ensureClient(
+  clientId: string,
+  init?: { userAgent?: string | null; pushEndpoint?: string | null; ipHash?: string | null }
+) {
   const now = new Date();
   const data: any = {
     id: clientId,
@@ -35,4 +40,3 @@ export function toDate(value: any): Date {
   if (typeof value === "string") return new Date(value);
   return new Date();
 }
-
