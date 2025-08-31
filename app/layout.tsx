@@ -7,6 +7,7 @@ import { LocalStorageProvider } from "@/components/common/localStorage";
 import { LoadingProvider } from "@/components/common/loadingContext.client";
 import { ToastProvider } from "@/components/common/toastContext.client";
 import { pretendard } from "./fonts";
+import RouteTransition from "@/components/common/routeTransition";
 
 export const metadata: Metadata = {
   title: "웰니스박스 | 내 몸에 맞는 프리미엄 건강 솔루션",
@@ -56,6 +57,7 @@ export default function RootLayout({
                 <main className="pt-14 min-h-[105vh] flex flex-col items-center">
                   {children}
                 </main>
+                <RouteTransition />
               </ToastProvider>
             </LoadingProvider>
           </FooterProvider>
