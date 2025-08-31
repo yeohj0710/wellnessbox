@@ -1,6 +1,13 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useRef,
+  useEffect,
+} from "react";
 
 interface LoadingContextType {
   showLoading: () => void;
@@ -11,8 +18,33 @@ const LoadingContext = createContext<LoadingContextType | undefined>(undefined);
 
 export function LoadingProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
-  const showLoading = () => setIsLoading(true);
-  const hideLoading = () => setIsLoading(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const showLoading = () => {
+    setIsLoading(true);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      setIsLoading(false);
+      timeoutRef.current = null;
+    }, 1000);
+  };
+
+  const hideLoading = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
     <LoadingContext.Provider value={{ showLoading, hideLoading }}>
       {children}

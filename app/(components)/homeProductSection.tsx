@@ -112,12 +112,13 @@ export default function HomeProductSection() {
     }
   };
 
-  const openCart = () => {
+  const openCart = useCallback(() => {
     if (typeof window !== "undefined") {
       scrollPositionRef.current = window.scrollY;
     }
+    hideLoading();
     setIsCartVisible(true);
-  };
+  }, [hideLoading]);
 
   const closeCart = () => {
     setIsCartVisible(false);
@@ -129,6 +130,12 @@ export default function HomeProductSection() {
       sessionStorage.removeItem("scrollPos");
     }
   };
+
+  useEffect(() => {
+    const handleOpen = () => openCart();
+    window.addEventListener("openCart", handleOpen);
+    return () => window.removeEventListener("openCart", handleOpen);
+  }, [openCart]);
 
   const MAX_RETRIES = 5;
 
@@ -243,6 +250,7 @@ export default function HomeProductSection() {
   useEffect(() => {
     const cart = searchParams.get("cart");
     if (cart === "open") {
+      hideLoading();
       const stored = sessionStorage.getItem("scrollPos");
       if (stored) scrollPositionRef.current = parseInt(stored, 10);
       setIsCartVisible(true);
@@ -250,7 +258,7 @@ export default function HomeProductSection() {
       url.searchParams.delete("cart");
       window.history.replaceState({}, "", url.toString());
     }
-  }, [searchParams]);
+  }, [searchParams, hideLoading]);
 
   useEffect(() => {
     const timestampKey = "cartTimestamp";

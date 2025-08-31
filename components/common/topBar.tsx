@@ -114,25 +114,45 @@ export default function TopBar() {
                 테스트
               </span>
             )}
-            <Link
-              href="/?cart=open#home-products"
-              scroll={false}
-              className={menuItemClasses("text-slate-600 relative")}
-              aria-label="장바구니"
-              onClick={() => {
-                showLoading();
-                if (typeof window !== "undefined") {
-                  sessionStorage.setItem("scrollPos", String(window.scrollY));
-                }
-              }}
-            >
-              <ShoppingCartIcon className="w-6 h-6" />
-              {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[1.25rem] h-5 rounded-full bg-sky-500 text-white text-[11px] flex items-center justify-center px-1">
-                  {cartCount}
-                </span>
-              )}
-            </Link>
+            {pathname === "/" ? (
+              <button
+                className={menuItemClasses("text-slate-600 relative")}
+                aria-label="장바구니"
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    sessionStorage.setItem("scrollPos", String(window.scrollY));
+                    window.dispatchEvent(new Event("openCart"));
+                  }
+                }}
+              >
+                <ShoppingCartIcon className="w-6 h-6" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[1.25rem] h-5 rounded-full bg-sky-500 text-white text-[11px] flex items-center justify-center px-1">
+                    {cartCount}
+                  </span>
+                )}
+              </button>
+            ) : (
+              <Link
+                href="/?cart=open#home-products"
+                scroll={false}
+                className={menuItemClasses("text-slate-600 relative")}
+                aria-label="장바구니"
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    sessionStorage.setItem("scrollPos", String(window.scrollY));
+                  }
+                  showLoading();
+                }}
+              >
+                <ShoppingCartIcon className="w-6 h-6" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[1.25rem] h-5 rounded-full bg-sky-500 text-white text-[11px] flex items-center justify-center px-1">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+            )}
             <button
               onClick={goSevenDays}
               className="hidden sm:block text-[15px] font-semibold text-slate-600"
