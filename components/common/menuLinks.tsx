@@ -104,7 +104,7 @@ export function MenuLinks({
           className={`${menuItemClasses()} flex items-center mt-2`}
           onClick={onItemClick}
         >
-          <span>맞춤 상담</span>
+          <span>AI 맞춤 상담</span>
           <span className="ml-2 flex items-center justify-center rounded-full bg-indigo-100 w-10 h-5 text-[10px] font-bold text-indigo-600">
             BETA
           </span>
@@ -208,7 +208,7 @@ export function MenuLinks({
           )}
           onClick={onItemClick}
         >
-          <span>맞춤 상담</span>
+          <span>AI 맞춤 상담</span>
           <span className="ml-0.5 flex items-center justify-center rounded-full bg-indigo-100 w-10 h-5 text-[10px] font-bold text-indigo-600">
             BETA
           </span>
