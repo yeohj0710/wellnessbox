@@ -1,7 +1,9 @@
 "use client";
 
 import FullPageLoader from "@/components/common/fullPageLoader";
-import { createOrder, getOrderByPaymentId } from "@/lib/order";
+import { createOrder } from "@/lib/order/mutations";
+import { getOrderByPaymentId } from "@/lib/order/queries";
+import { getClientIdLocal } from "@/app/chat/utils";
 import { reducePharmacyProductStock } from "@/lib/product";
 import { getLoginStatus } from "@/lib/useLoginStatus";
 import { useRouter } from "next/navigation";
@@ -218,7 +220,9 @@ export default function OrderComplete() {
             returnToCart();
             return;
           }
+          const endpoint = getClientIdLocal();
           await createOrder({
+            endpoint,
             roadAddress,
             detailAddress,
             phone,
@@ -322,7 +326,9 @@ export default function OrderComplete() {
             returnToCart();
             return;
           }
+          const endpoint = getClientIdLocal();
           await createOrder({
+            endpoint,
             roadAddress,
             detailAddress,
             phone,

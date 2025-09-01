@@ -78,6 +78,7 @@ model Order {
   paymentId        String?
   transactionType  String?
   txId             String?
+  endpoint         String?
   totalPrice       Int?
   status           String?
   orderItems       OrderItem[]

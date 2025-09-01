@@ -223,3 +223,11 @@ export async function getOrderByPaymentId(paymentId: string) {
     },
   });
 }
+
+export async function getOrdersByEndpoint(endpoint: string) {
+  return await db.order.findMany({
+    where: { endpoint },
+    select: { id: true, status: true, totalPrice: true, updatedAt: true },
+    orderBy: { updatedAt: "desc" },
+  });
+}

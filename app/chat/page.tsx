@@ -36,6 +36,9 @@ export default function ChatPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [localCheckAi, setLocalCheckAi] = useState<string[]>([]);
   const [localAssessCats, setLocalAssessCats] = useState<string[]>([]);
+  const [assessResults, setAssessResults] = useState<any[]>([]);
+  const [checkAiResults, setCheckAiResults] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
@@ -120,6 +123,19 @@ export default function ChatPage() {
         : [];
       if (arr.length) setLocalAssessCats(arr);
     } catch {}
+  }, []);
+
+  // Load all assessment and Check-AI results for this client from server
+  useEffect(() => {
+    const cid = getClientIdLocal();
+    fetch(`/api/user/all-results?clientId=${cid}`)
+      .then((r) => r.json())
+      .then((data) => {
+        setAssessResults(Array.isArray(data?.assess) ? data.assess : []);
+        setCheckAiResults(Array.isArray(data?.checkAi) ? data.checkAi : []);
+        setOrders(Array.isArray(data?.orders) ? data.orders : []);
+      })
+      .catch(() => {});
   }, []);
 
   const active = useMemo(
@@ -424,7 +440,55 @@ export default function ChatPage() {
                   ×
                 </button>
               </div>
-            </div>
+          </div>
+        </div>
+
+          <div className="mx-auto max-w-3xl mb-8">
+            {orders.length > 0 && (
+              <div className="mb-4">
+                <h2 className="font-semibold">Orders</h2>
+                {orders.map((o) => (
+                  <div key={o.id} className="text-xs">
+                    <div className="text-gray-500">
+                      {new Date(o.updatedAt).toLocaleString()}
+                    </div>
+                    <div>
+                      주문 #{o.id} - {o.status} - {o.totalPrice}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {assessResults.length > 0 && (
+              <div className="mb-4">
+                <h2 className="font-semibold">Assessment Results</h2>
+                {assessResults.map((r) => (
+                  <div key={r.id} className="text-xs">
+                    <div className="text-gray-500">
+                      {new Date(r.updatedAt).toLocaleString()}
+                    </div>
+                    <pre className="whitespace-pre-wrap">
+                      {JSON.stringify(r.cResult)}
+                    </pre>
+                  </div>
+                ))}
+              </div>
+            )}
+            {checkAiResults.length > 0 && (
+              <div>
+                <h2 className="font-semibold">Check-AI Results</h2>
+                {checkAiResults.map((r) => (
+                  <div key={r.id} className="text-xs">
+                    <div className="text-gray-500">
+                      {new Date(r.updatedAt).toLocaleString()}
+                    </div>
+                    <pre className="whitespace-pre-wrap">
+                      {JSON.stringify(r.result)}
+                    </pre>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="mx-auto max-w-3xl space-y-4">

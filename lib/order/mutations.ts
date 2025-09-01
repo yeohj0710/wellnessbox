@@ -34,15 +34,17 @@ export async function createOrder(data: {
   paymentId?: string;
   transactionType?: string;
   txId?: string;
+  endpoint?: string;
   totalPrice?: number;
   status?: OrderStatus;
   pharmacyId?: number;
   orderItems: { pharmacyProductId: number; quantity: number }[];
 }) {
-  const { orderItems, ...orderData } = data;
+  const { orderItems, endpoint, ...orderData } = data;
   const created = await db.order.create({
     data: {
       ...orderData,
+      endpoint,
       orderItems: {
         create: orderItems.map((item) => ({
           pharmacyProductId: item.pharmacyProductId,
