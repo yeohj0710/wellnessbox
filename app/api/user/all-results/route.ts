@@ -16,17 +16,26 @@ export async function GET(req: NextRequest) {
       });
     }
     await ensureClient(clientId, { userAgent: req.headers.get("user-agent") });
-    const [assess, checkAi] = await Promise.all([
-      db.assessmentResult.findMany({
+    const [assess, checkAi, orders] = await Promise.all([
+      db.assessmentResult.findFirst({
         where: { clientId },
         orderBy: { createdAt: "desc" },
       }),
-      db.checkAiResult.findMany({
+      db.checkAiResult.findFirst({
         where: { clientId },
         orderBy: { createdAt: "desc" },
+      }),
+      db.order.findMany({
+        where: { endpoint: clientId },
+        orderBy: { updatedAt: "desc" },
+        include: {
+          orderItems: {
+            include: { pharmacyProduct: { include: { product: true } } },
+          },
+        },
       }),
     ]);
-    return new Response(JSON.stringify({ clientId, assess, checkAi }), {
+    return new Response(JSON.stringify({ clientId, assess, checkAi, orders }), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (e: any) {

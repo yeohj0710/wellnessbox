@@ -36,8 +36,8 @@ export default function ChatPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [localCheckAi, setLocalCheckAi] = useState<string[]>([]);
   const [localAssessCats, setLocalAssessCats] = useState<string[]>([]);
-  const [assessResults, setAssessResults] = useState<any[]>([]);
-  const [checkAiResults, setCheckAiResults] = useState<any[]>([]);
+  const [assessResult, setAssessResult] = useState<any | null>(null);
+  const [checkAiResult, setCheckAiResult] = useState<any | null>(null);
   const [orders, setOrders] = useState<any[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -131,8 +131,8 @@ export default function ChatPage() {
     fetch(`/api/user/all-results?clientId=${cid}`)
       .then((r) => r.json())
       .then((data) => {
-        setAssessResults(Array.isArray(data?.assess) ? data.assess : []);
-        setCheckAiResults(Array.isArray(data?.checkAi) ? data.checkAi : []);
+        setAssessResult(data?.assess ?? null);
+        setCheckAiResult(data?.checkAi ?? null);
         setOrders(Array.isArray(data?.orders) ? data.orders : []);
       })
       .catch(() => {});
@@ -450,43 +450,64 @@ export default function ChatPage() {
                 {orders.map((o) => (
                   <div key={o.id} className="text-xs">
                     <div className="text-gray-500">
-                      {new Date(o.updatedAt).toLocaleString()}
+                      최근 상태 변경: {new Date(o.updatedAt).toLocaleString()}
                     </div>
                     <div>
-                      주문 #{o.id} - {o.status} - {o.totalPrice}
+                      주문 #{o.id} - {o.status}
                     </div>
+                    {o.orderItems?.length > 0 && (
+                      <ul className="list-disc pl-4 mt-1">
+                        {o.orderItems.map((item: any) => (
+                          <li key={item.id}>
+                            {item.pharmacyProduct?.product?.name || "상품"}
+                            {item.quantity ? ` x${item.quantity}` : ""}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 ))}
               </div>
             )}
-            {assessResults.length > 0 && (
+            {assessResult && (
               <div className="mb-4">
-                <h2 className="font-semibold">Assessment Results</h2>
-                {assessResults.map((r) => (
-                  <div key={r.id} className="text-xs">
-                    <div className="text-gray-500">
-                      {new Date(r.updatedAt).toLocaleString()}
-                    </div>
-                    <pre className="whitespace-pre-wrap">
-                      {JSON.stringify(r.cResult)}
-                    </pre>
+                <h2 className="font-semibold">Assessment Result</h2>
+                <div className="text-xs">
+                  <div className="text-gray-500">
+                    검사일시: {new Date(assessResult.createdAt).toLocaleString()}
                   </div>
-                ))}
+                  {assessResult.answers && (
+                    <pre className="whitespace-pre-wrap mt-1">
+                      {JSON.stringify(assessResult.answers)}
+                    </pre>
+                  )}
+                  <pre className="whitespace-pre-wrap mt-1">
+                    {JSON.stringify(assessResult.cResult)}
+                  </pre>
+                </div>
               </div>
             )}
-            {checkAiResults.length > 0 && (
+            {checkAiResult && (
               <div>
-                <h2 className="font-semibold">Check-AI Results</h2>
-                {checkAiResults.map((r) => (
-                  <div key={r.id} className="text-xs">
-                    <div className="text-gray-500">
-                      {new Date(r.updatedAt).toLocaleString()}
-                    </div>
-                    <pre className="whitespace-pre-wrap">
-                      {JSON.stringify(r.result)}
-                    </pre>
+                <h2 className="font-semibold">Check-AI Result</h2>
+                <div className="text-xs">
+                  <div className="text-gray-500">
+                    검사일시: {new Date(checkAiResult.createdAt).toLocaleString()}
                   </div>
-                ))}
+                  {checkAiResult.answers && (
+                    <pre className="whitespace-pre-wrap mt-1">
+                      {JSON.stringify(checkAiResult.answers)}
+                    </pre>
+                  )}
+                  {checkAiResult.result?.answers && (
+                    <pre className="whitespace-pre-wrap mt-1">
+                      {JSON.stringify(checkAiResult.result.answers)}
+                    </pre>
+                  )}
+                  <pre className="whitespace-pre-wrap mt-1">
+                    {JSON.stringify(checkAiResult.result)}
+                  </pre>
+                </div>
               </div>
             )}
           </div>
