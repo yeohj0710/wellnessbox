@@ -13,7 +13,7 @@ export default function SymptomImprovement() {
           <div className="relative p-7 text-center">
             <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1 text-[11px] font-medium text-gray-700 shadow-sm">
               <SparklesIcon className="h-4 w-4 text-[#6C4DFF]" />
-              2~3분 소요 · 맞춤 추천
+              5~7분 소요 · 맞춤 추천
             </div>
             <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-gray-900">
               AI 증상 자가 진단

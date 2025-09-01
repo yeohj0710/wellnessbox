@@ -28,7 +28,7 @@ export default function Footer() {
       <div className="px-6 py-4 flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:justify-between gap-4">
           <div className="flex flex-col items-center sm:items-start w-full sm:w-full">
-            <Link href="/about" className="inline-block">
+            <Link href="/" className="inline-block">
               <div className="relative h-10 w-10 inline-block mb-2">
                 <Image
                   src="/logo.png"
