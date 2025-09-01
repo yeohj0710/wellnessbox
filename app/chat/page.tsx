@@ -39,6 +39,7 @@ export default function ChatPage() {
   const [assessResult, setAssessResult] = useState<any | null>(null);
   const [checkAiResult, setCheckAiResult] = useState<any | null>(null);
   const [orders, setOrders] = useState<any[]>([]);
+  const [resultsLoaded, setResultsLoaded] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
@@ -64,7 +65,7 @@ export default function ChatPage() {
     setSessions(s);
     setProfile(loadProfile());
     // Always start a new chat on entry
-    setTimeout(() => newChat(), 0);
+    newChat();
   }, []);
 
   useEffect(() => {
@@ -135,13 +136,22 @@ export default function ChatPage() {
         setCheckAiResult(data?.checkAi ?? null);
         setOrders(Array.isArray(data?.orders) ? data.orders : []);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setResultsLoaded(true));
   }, []);
 
   const active = useMemo(
     () => sessions.find((s) => s.id === activeId) || null,
     [sessions, activeId]
   );
+
+  useEffect(() => {
+    if (!resultsLoaded) return;
+    if (!activeId) return;
+    const s = sessions.find((x) => x.id === activeId);
+    if (!s || s.messages.length > 0) return;
+    startInitialAssistantMessage(activeId);
+  }, [resultsLoaded, activeId, sessions]);
 
   function newChat() {
     const id = uid();
@@ -156,7 +166,6 @@ export default function ChatPage() {
     const next = [s, ...sessions];
     setSessions(next);
     setActiveId(id);
-    setTimeout(() => startInitialAssistantMessage(id), 0);
   }
 
   function deleteChat(id: string) {
@@ -211,6 +220,9 @@ export default function ChatPage() {
           mode: "chat",
           localCheckAiTopLabels: localCheckAi,
           localAssessCats,
+          orders,
+          assessResult,
+          checkAiResult,
         }),
       });
       if (!res.ok || !res.body) throw new Error("대화를 이어받지 못했습니다.");
@@ -329,6 +341,9 @@ export default function ChatPage() {
           mode: "init",
           localCheckAiTopLabels: localCheckAi,
           localAssessCats,
+          orders,
+          assessResult,
+          checkAiResult,
         }),
       });
       if (!res.ok || !res.body)

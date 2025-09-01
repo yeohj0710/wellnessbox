@@ -24,7 +24,6 @@ export default function MessageBubble({
         ) : (
           <span className="inline-flex items-center gap-2 text-slate-500">
             <span className="inline-block h-2.5 w-2.5 rounded-full bg-black animate-[wb-breathe_1.1s_ease-in-out_infinite]" />
-            작성 중..
           </span>
         )}
       </div>

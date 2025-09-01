@@ -53,8 +53,10 @@ export default function CSectionWrapper({
           </button>
         </div>
         <div className="flex items-start justify-between">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">세부 진단</h1>
-          <div className="min-w-[120px]">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
+            세부 진단
+          </h1>
+          <div className="w-32 sm:w-40">
             <div className="flex items-center justify-between text-xs text-gray-600">
               <span>진행률</span>
               <span className="tabular-nums">{cProgress.pct}%</span>
@@ -66,7 +68,8 @@ export default function CSectionWrapper({
               />
             </div>
             <div className="mt-1 text-[10px] text-gray-500">
-              {cProgress.step}/{cProgress.total}문항 완료 · {Math.max(cProgress.total - cProgress.step, 0)}문항 남음
+              {cProgress.step}/{cProgress.total}문항 완료 ·{" "}
+              {Math.max(cProgress.total - cProgress.step, 0)}문항 남음
             </div>
             <div className="text-[10px] text-sky-600 mt-1">{cProgressMsg}</div>
           </div>

@@ -40,4 +40,8 @@ export interface ChatRequestBody {
   // Optional local-only results to enrich context
   localCheckAiTopLabels?: string[];
   localAssessCats?: string[];
+  // Additional contextual data
+  orders?: any[];
+  assessResult?: any;
+  checkAiResult?: any;
 }

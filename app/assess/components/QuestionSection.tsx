@@ -55,27 +55,33 @@ export default function QuestionSection({
             </button>
           </div>
           <div className="flex items-start justify-between">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">{sectionTitle}</h1>
-            <div className="min-w-[120px]">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
+              {sectionTitle}
+            </h1>
+            <div className="w-32 sm:w-40">
               <div className="flex items-center justify-between text-xs text-gray-600">
                 <span>진행률</span>
                 <span className="tabular-nums">{completion}%</span>
               </div>
-              <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+              <div className="h-2 w-full max-w-[480px] bg-gray-100 rounded-full overflow-hidden mt-2">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 transition-[width] duration-500"
+                  className="h-full bg-gradient-to-r from-sky-500 to-indigo-500 transition-[width] duration-500"
                   style={{ width: `${completion}%` }}
                 />
               </div>
               <div className="mt-1 text-[10px] text-gray-500">
                 {answered}/{total}문항 완료 · {total - answered}문항 남음
               </div>
-              <div className="text-[10px] text-sky-600 mt-1">{progressMsg}</div>
+              <div className="text-[10px] text-sky-600 mt-1 max-w-[640px]">
+                {progressMsg}
+              </div>
             </div>
           </div>
 
           {currentQuestion && (
-            <h2 className="mt-6 text-xl font-bold text-gray-900">{currentQuestion.text}</h2>
+            <h2 className="mt-6 text-xl font-bold text-gray-900">
+              {currentQuestion.text}
+            </h2>
           )}
 
           {currentQuestion?.type === "choice" && (
