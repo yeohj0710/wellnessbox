@@ -83,6 +83,12 @@ export default function Cart({
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    const onClose = () => onBack();
+    window.addEventListener("closeCart", onClose);
+    return () => window.removeEventListener("closeCart", onClose);
+  }, [onBack]);
+
+  useEffect(() => {
     const needRestore = localStorage.getItem("restoreCartFromBackup") === "1";
     const backup = localStorage.getItem("cartBackup");
 

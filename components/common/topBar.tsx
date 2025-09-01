@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -49,10 +49,34 @@ export default function TopBar() {
     setIsDrawerOpen(false);
   };
 
+  const shouldShowLoading = (url: string) => {
+    const currentPath = pathname?.split("?")[0].split("#")[0];
+    const nextPath = url.split("?")[0].split("#")[0];
+    return currentPath !== nextPath;
+  };
+
   const goSevenDays = () => {
     setIsDrawerOpen(false);
-    showLoading();
-    router.push("/?package=7#home-products");
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("closeCart"));
+    }
+    const url = "/?package=7#home-products";
+    if (shouldShowLoading(url)) {
+      showLoading();
+    }
+    router.push(url);
+  };
+
+  const goHome = () => {
+    setIsDrawerOpen(false);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("closeCart"));
+    }
+    const url = "/";
+    if (shouldShowLoading(url)) {
+      showLoading();
+    }
+    router.push(url);
   };
 
   useEffect(() => {
@@ -67,11 +91,10 @@ export default function TopBar() {
     return () => clearInterval(interval);
   }, []);
 
-  // Keep TopBar visible on /chat (no hide-on-scroll)
   useEffect(() => {
     if (pathname?.startsWith("/chat")) {
       setHideOnScroll(false);
-      return; // do not attach scroll listener on chat
+      return;
     }
   }, [pathname]);
 
@@ -81,14 +104,19 @@ export default function TopBar() {
 
   return (
     <>
-      <header className={`fixed top-0 z-40 w-full bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70 transition-transform duration-300 will-change-transform ${hideOnScroll ? "-translate-y-full" : "translate-y-0"}`}>
+      <header
+        className={`fixed top-0 z-40 w-full bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70 transition-transform duration-300 will-change-transform ${
+          hideOnScroll ? "-translate-y-full" : "translate-y-0"
+        }`}
+      >
         <div className="mx-auto flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-[120rem]">
           <div className="flex items-center gap-6">
-            <Link
-              href="/"
+            <button
+              onClick={goHome}
               className={menuItemClasses(
                 "group text-[17px] font-extrabold tracking-tight flex items-center gap-2"
               )}
+              aria-label="홈으로"
             >
               <div className="relative w-8 h-8">
                 <Image
@@ -100,8 +128,8 @@ export default function TopBar() {
                   className="object-contain group-hover:animate-bounce-custom"
                 />
               </div>
-              웰니스박스
-            </Link>
+              <span>웰니스박스</span>
+            </button>
 
             <nav className="hidden lg:flex items-center gap-8 text-[15px] font-medium text-slate-500 [&_a]:text-slate-500 [&_a:hover]:text-slate-900">
               <MenuLinks loginStatus={loginStatus} />
@@ -159,13 +187,13 @@ export default function TopBar() {
             >
               7일 무료체험
             </button>
-            <Link
-              href="/?package=7#home-products"
+            <button
+              onClick={goSevenDays}
               className="group relative inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#59C1FF] to-[#7B61FF] shadow-[0_10px_30px_rgba(86,115,255,0.35)] transition-all duration-300 ease-out will-change-transform hover:scale-[1.03] hover:shadow-[0_14px_36px_rgba(86,115,255,0.5)] hover:saturate-150 hover:brightness-110 hover:from-[#6BD1FF] hover:to-[#6E58FF] active:translate-y-[1px] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#6E58FF] after:content-[''] after:absolute after:inset-0 after:rounded-full after:bg-white/20 after:opacity-0 hover:after:opacity-10"
-              onClick={showLoading}
             >
               시작하기
-            </Link>
+            </button>
+
             <button
               className={menuItemClasses("text-2xl ml-1 lg:hidden")}
               onClick={() => setIsDrawerOpen(!isDrawerOpen)}
@@ -192,16 +220,12 @@ export default function TopBar() {
           <button onClick={goSevenDays} className="text-left text-slate-500">
             7일 무료체험
           </button>
-          <Link
-            href="/?package=7#home-products"
-            onClick={() => {
-              closeDrawer();
-              showLoading();
-            }}
+          <button
+            onClick={goSevenDays}
             className="group relative inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold !text-white bg-gradient-to-r from-[#59C1FF] to-[#7B61FF] shadow-[0_10px_30px_rgba(86,115,255,0.35)] transition-all duration-300 ease-out will-change-transform hover:scale-[1.03] hover:shadow-[0_14px_36px_rgba(86,115,255,0.5)] hover:saturate-150 hover:brightness-110 hover:from-[#6BD1FF] hover:to-[#6E58FF] active:translate-y-[1px] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#6E58FF] after:content-[''] after:absolute after:inset-0 after:rounded-full after:bg-white/20 after:opacity-0 hover:after:opacity-10"
           >
             시작하기
-          </Link>
+          </button>
         </div>
       </div>
 
