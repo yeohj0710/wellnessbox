@@ -24,6 +24,16 @@ import {
   saveProfile,
 } from "./utils";
 
+const ASSESS_CAT_LABELS: Record<string, string> = {
+  vitc: "비타민C",
+  omega3: "오메가3",
+  collagen: "콜라겐",
+};
+
+function formatAssessCat(code: string) {
+  return ASSESS_CAT_LABELS[code] || code;
+}
+
 export default function ChatPage() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -41,9 +51,7 @@ export default function ChatPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [resultsLoaded, setResultsLoaded] = useState(false);
 
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
-  const autoScrollRef = useRef(false);
   const initStartedRef = useRef<Record<string, boolean>>({});
 
   function openDrawer() {
@@ -56,16 +64,29 @@ export default function ChatPage() {
   }
 
   function scrollToBottom() {
-    if (!autoScrollRef.current) return;
-    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+    const c = messagesContainerRef.current;
+    if (c) c.scrollTop = c.scrollHeight;
   }
 
   useEffect(() => {
     const s = loadSessions();
-    setSessions(s);
+    if (s.length > 0) {
+      setSessions(s);
+      setActiveId(s[0].id);
+    } else {
+      const id = uid();
+      const now = Date.now();
+      const ns: ChatSession = {
+        id,
+        title: "새 상담",
+        createdAt: now,
+        updatedAt: now,
+        messages: [],
+      };
+      setSessions([ns]);
+      setActiveId(id);
+    }
     setProfile(loadProfile());
-    // Always start a new chat on entry
-    newChat();
   }, []);
 
   useEffect(() => {
@@ -77,24 +98,16 @@ export default function ChatPage() {
     saveProfile(profile);
   }, [profile]);
 
-  useEffect(() => {
-    autoScrollRef.current = false;
-    const onScroll = () => {
-      const doc = document.documentElement;
-      autoScrollRef.current =
-        doc.scrollHeight - (window.innerHeight + window.scrollY) < 40;
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
   const { hideFooter, showFooter } = useFooter();
   useEffect(() => {
     hideFooter();
     return () => showFooter();
   }, [hideFooter, showFooter]);
 
-  // Load local Check-AI top labels for personalization
+  useEffect(() => {
+    scrollToBottom();
+  }, [activeId]);
+
   useEffect(() => {
     try {
       const raw =
@@ -132,9 +145,59 @@ export default function ChatPage() {
     fetch(`/api/user/all-results?clientId=${cid}`)
       .then((r) => r.json())
       .then((data) => {
-        setAssessResult(data?.assess ?? null);
-        setCheckAiResult(data?.checkAi ?? null);
-        setOrders(Array.isArray(data?.orders) ? data.orders : []);
+        const assess = data?.assess;
+        if (assess?.cResult?.catsOrdered) {
+          const cats = assess.cResult.catsOrdered;
+          const pcts = assess.cResult.percents || [];
+          const summary = cats.map(
+            (c: string, i: number) =>
+              `${formatAssessCat(c)} ${(pcts[i] * 100).toFixed(1)}%`
+          );
+          const answers = Array.isArray(assess.answersDetailed)
+            ? assess.answersDetailed.map((a: any) => ({
+                question: a.question,
+                answer: a.answerLabel,
+              }))
+            : [];
+          setAssessResult({
+            createdAt: assess.createdAt,
+            summary,
+            answers,
+          });
+        } else {
+          setAssessResult(null);
+        }
+
+        const checkAi = data?.checkAi;
+        if (Array.isArray(checkAi?.result?.topLabels)) {
+          const labels = checkAi.result.topLabels.slice(0, 3);
+          const answers = Array.isArray(checkAi.answersDetailed)
+            ? checkAi.answersDetailed.map((a: any) => ({
+                question: a.question,
+                answer: a.answerLabel,
+              }))
+            : [];
+          setCheckAiResult({
+            createdAt: checkAi.createdAt,
+            labels,
+            answers,
+          });
+        } else {
+          setCheckAiResult(null);
+        }
+
+        const ords = Array.isArray(data?.orders)
+          ? data.orders.map((o: any) => ({
+              id: o.id,
+              status: o.status,
+              updatedAt: o.updatedAt,
+              items: (o.orderItems || []).map((it: any) => ({
+                name: it.pharmacyProduct?.product?.name || "상품",
+                quantity: it.quantity,
+              })),
+            }))
+          : [];
+        setOrders(ords);
       })
       .catch(() => {})
       .finally(() => setResultsLoaded(true));
@@ -220,9 +283,15 @@ export default function ChatPage() {
           mode: "chat",
           localCheckAiTopLabels: localCheckAi,
           localAssessCats,
-          orders,
-          assessResult,
-          checkAiResult,
+          orders: orders.map((o) => ({
+            id: o.id,
+            status: o.status,
+            items: o.items.map(
+              (it: any) => `${it.name}${it.quantity ? ` x${it.quantity}` : ""}`
+            ),
+          })),
+          assessResult: assessResult || null,
+          checkAiResult: checkAiResult || null,
         }),
       });
       if (!res.ok || !res.body) throw new Error("대화를 이어받지 못했습니다.");
@@ -273,7 +342,6 @@ export default function ChatPage() {
         }
       } catch {}
 
-      // Persist conversation chunk
       try {
         const tz = getTzOffsetMinutes();
         await fetch("/api/chat/save", {
@@ -341,9 +409,15 @@ export default function ChatPage() {
           mode: "init",
           localCheckAiTopLabels: localCheckAi,
           localAssessCats,
-          orders,
-          assessResult,
-          checkAiResult,
+          orders: orders.map((o) => ({
+            id: o.id,
+            status: o.status,
+            items: o.items.map(
+              (it: any) => `${it.name}${it.quantity ? ` x${it.quantity}` : ""}`
+            ),
+          })),
+          assessResult: assessResult || null,
+          checkAiResult: checkAiResult || null,
         }),
       });
       if (!res.ok || !res.body)
@@ -421,7 +495,10 @@ export default function ChatPage() {
           <Bars3Icon className="h-6 w-6" />
         </button>
 
-        <div className="mx-auto max-w-3xl w-full px-4 md:px-8 flex-1 pt-8 pb-28">
+        <div
+          className="mx-auto max-w-3xl w-full px-4 md:px-8 flex-1 pt-8 pb-28 overflow-y-auto"
+          ref={messagesContainerRef}
+        >
           <div className="mx-auto max-w-3xl mb-8" hidden={!showProfileBanner}>
             <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 shadow-sm">
               <div className="px-1 flex-1 leading-tight">
@@ -455,78 +532,88 @@ export default function ChatPage() {
                   ×
                 </button>
               </div>
+            </div>
           </div>
-        </div>
 
-          <div className="mx-auto max-w-3xl mb-8">
-            {orders.length > 0 && (
-              <div className="mb-4">
-                <h2 className="font-semibold">Orders</h2>
-                {orders.map((o) => (
-                  <div key={o.id} className="text-xs">
-                    <div className="text-gray-500">
-                      최근 상태 변경: {new Date(o.updatedAt).toLocaleString()}
-                    </div>
+          <div className="mx-auto max-w-3xl mb-8 space-y-4" hidden>
+            {(orders.length > 0 || assessResult || checkAiResult) && (
+              <details className="mb-2">
+                <summary className="cursor-pointer font-semibold">
+                  참고 데이터
+                </summary>
+                <div className="mt-2 text-xs space-y-4">
+                  {orders.length > 0 && (
                     <div>
-                      주문 #{o.id} - {o.status}
+                      <div className="font-semibold mb-1">주문 내역</div>
+                      {orders.map((o) => (
+                        <div key={o.id} className="mb-2">
+                          <div className="text-gray-500">
+                            최근 상태 변경:{" "}
+                            {new Date(o.updatedAt).toLocaleString()}
+                          </div>
+                          <div>
+                            주문 #{o.id} - {o.status}
+                          </div>
+                          {o.items.length > 0 && (
+                            <ul className="list-disc pl-4 mt-1">
+                              {o.items.map((item: any, idx: number) => (
+                                <li key={idx}>
+                                  {item.name}
+                                  {item.quantity ? ` x${item.quantity}` : ""}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                    {o.orderItems?.length > 0 && (
+                  )}
+
+                  {assessResult && (
+                    <div>
+                      <div className="font-semibold mb-1">정밀 AI 검사</div>
+                      <div className="text-gray-500">
+                        검사일시:{" "}
+                        {new Date(assessResult.createdAt).toLocaleString()}
+                      </div>
                       <ul className="list-disc pl-4 mt-1">
-                        {o.orderItems.map((item: any) => (
-                          <li key={item.id}>
-                            {item.pharmacyProduct?.product?.name || "상품"}
-                            {item.quantity ? ` x${item.quantity}` : ""}
-                          </li>
+                        {assessResult.summary.map((s: string, idx: number) => (
+                          <li key={idx}>{s}</li>
                         ))}
                       </ul>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-            {assessResult && (
-              <div className="mb-4">
-                <h2 className="font-semibold">Assessment Result</h2>
-                <div className="text-xs">
-                  <div className="text-gray-500">
-                    검사일시: {new Date(assessResult.createdAt).toLocaleString()}
-                  </div>
-                  {assessResult.answersDetailed && (
-                    <ul className="mt-1 list-disc pl-4">
-                      {assessResult.answersDetailed.map((a: any) => (
-                        <li key={a.id}>
-                          <span className="font-medium">{a.question}</span>: {a.answerLabel}
-                        </li>
-                      ))}
-                    </ul>
+                      {assessResult.answers?.length > 0 && (
+                        <ul className="list-disc pl-4 mt-2">
+                          {assessResult.answers.map((a: any, idx: number) => (
+                            <li key={idx}>
+                              {a.question}: {a.answer}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   )}
-                  <pre className="whitespace-pre-wrap mt-1">
-                    {JSON.stringify(assessResult.cResult)}
-                  </pre>
-                </div>
-              </div>
-            )}
-            {checkAiResult && (
-              <div>
-                <h2 className="font-semibold">Check-AI Result</h2>
-                <div className="text-xs">
-                  <div className="text-gray-500">
-                    검사일시: {new Date(checkAiResult.createdAt).toLocaleString()}
-                  </div>
-                  {checkAiResult.answersDetailed && (
-                    <ul className="mt-1 list-disc pl-4">
-                      {checkAiResult.answersDetailed.map((a: any) => (
-                        <li key={a.index}>
-                          <span className="font-medium">{a.question}</span>: {a.answerLabel}
-                        </li>
-                      ))}
-                    </ul>
+
+                  {checkAiResult && (
+                    <div>
+                      <div className="font-semibold mb-1">빠른 AI 검사</div>
+                      <div className="text-gray-500">
+                        검사일시:{" "}
+                        {new Date(checkAiResult.createdAt).toLocaleString()}
+                      </div>
+                      <div>{checkAiResult.labels.join(", ")}</div>
+                      {checkAiResult.answers?.length > 0 && (
+                        <ul className="list-disc pl-4 mt-1">
+                          {checkAiResult.answers.map((a: any, idx: number) => (
+                            <li key={idx}>
+                              {a.question}: {a.answer}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   )}
-                  <pre className="whitespace-pre-wrap mt-1">
-                    {JSON.stringify(checkAiResult.result)}
-                  </pre>
                 </div>
-              </div>
+              </details>
             )}
           </div>
 
@@ -534,11 +621,95 @@ export default function ChatPage() {
             {!active || active.messages.length === 0 ? (
               <EmptyState onTryExamples={(q) => sendMessage(q)} />
             ) : (
-              active.messages.map((m) => (
-                <MessageBubble key={m.id} role={m.role} content={m.content} />
+              active.messages.map((m, i) => (
+                <div key={m.id}>
+                  <MessageBubble role={m.role} content={m.content} />
+                  {i === 0 &&
+                    (orders.length > 0 || assessResult || checkAiResult) && (
+                      <div className="mt-1 pl-2">
+                        <details className="group text-[11px] text-slate-500">
+                          <summary className="inline-flex items-center gap-1 cursor-pointer hover:text-slate-700">
+                            <span className="inline-block h-1.5 w-1.5 rounded-full bg-slate-300 group-open:bg-slate-400" />
+                            참고 데이터
+                          </summary>
+                          <div className="mt-1 inline-block w-auto max-w-[680px] rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 shadow-sm space-y-2">
+                            {orders.length > 0 && (
+                              <div>
+                                <div className="mb-1 font-medium text-slate-600">
+                                  주문
+                                </div>
+                                <ul className="space-y-1">
+                                  {orders.map((o) => (
+                                    <li key={o.id} className="text-slate-600">
+                                      <div className="flex items-center gap-2"></div>
+                                      <div className="mt-0.5 text-[10px] text-slate-400">
+                                        {new Date(o.updatedAt).toLocaleString()}
+                                      </div>
+                                      {o.items.length > 0 && (
+                                        <ul className="list-disc pl-4 mt-1 space-y-0.5">
+                                          {o.items.map(
+                                            (item: any, idx: number) => (
+                                              <li
+                                                key={idx}
+                                                className="text-slate-600"
+                                              >
+                                                {item.name}
+                                                {item.quantity
+                                                  ? ` x${item.quantity}`
+                                                  : ""}
+                                              </li>
+                                            )
+                                          )}
+                                        </ul>
+                                      )}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            {assessResult && (
+                              <div>
+                                <div className="mb-1 font-medium text-slate-600">
+                                  정밀 AI 검사
+                                </div>
+                                <div className="text-[10px] text-slate-400">
+                                  {new Date(
+                                    assessResult.createdAt
+                                  ).toLocaleString()}
+                                </div>
+                                <ul className="list-disc pl-4 mt-1 space-y-0.5">
+                                  {assessResult.summary.map(
+                                    (s: string, idx: number) => (
+                                      <li key={idx} className="text-slate-600">
+                                        {s}
+                                      </li>
+                                    )
+                                  )}
+                                </ul>
+                              </div>
+                            )}
+                            {checkAiResult && (
+                              <div>
+                                <div className="mb-1 font-medium text-slate-600">
+                                  빠른 AI 검사
+                                </div>
+                                <div className="text-[10px] text-slate-400">
+                                  {new Date(
+                                    checkAiResult.createdAt
+                                  ).toLocaleString()}
+                                </div>
+                                <div className="mt-1 text-slate-600">
+                                  {checkAiResult.labels.join(", ")}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </details>
+                      </div>
+                    )}
+                </div>
               ))
             )}
-            <div ref={messagesEndRef} />
           </div>
         </div>
 

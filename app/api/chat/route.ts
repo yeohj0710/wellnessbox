@@ -1,9 +1,10 @@
 import { NextRequest } from "next/server";
 import { buildSystemPrompt } from "@/lib/ai/prompt";
 import { ChatRequestBody } from "@/types/chat";
-import { DEFAULT_MODEL } from "@/lib/ai/models";
+import { getDefaultModel } from "@/lib/ai/models";
 import { getLatestResults } from "@/lib/server/results";
 import { ensureClient } from "@/lib/server/client";
+import { CATEGORY_LABELS } from "@/app/assess/data/categories";
 
 export const runtime = "nodejs";
 
@@ -11,6 +12,44 @@ function ensureEnv(key: string) {
   const v = process.env[key];
   if (!v) throw new Error(`${key} is not set`);
   return v;
+}
+
+const CAT_ALIAS: Record<string, keyof typeof CATEGORY_LABELS> = {
+  vitc: "vitaminC",
+  vitb: "vitaminB",
+  vitd: "vitaminD",
+  ca: "calcium",
+  mg: "magnesium",
+  milkthistle: "milkThistle",
+  omega3: "omega3",
+  lutein: "lutein",
+  probiotics: "probiotics",
+  garcinia: "garcinia",
+  multivitamin: "multivitamin",
+  zinc: "zinc",
+  collagen: "collagen",
+  coenzymeq10: "coenzymeQ10",
+  chondroitin: "chondroitin",
+  arginine: "arginine",
+  iron: "iron",
+  vitaminA: "vitaminA",
+  vitaminC: "vitaminC",
+  vitaminD: "vitaminD",
+  vitaminB: "vitaminB",
+  psyllium: "psyllium",
+  minerals: "minerals",
+  phosphatidylserine: "phosphatidylserine",
+  folicAcid: "folicAcid",
+};
+
+function labelOf(keyOrCodeOrLabel: string) {
+  const k = (CAT_ALIAS[keyOrCodeOrLabel] ?? keyOrCodeOrLabel) as string;
+  const v = CATEGORY_LABELS[k as keyof typeof CATEGORY_LABELS];
+  if (v) return v;
+  const found = Object.values(CATEGORY_LABELS).find(
+    (x) => x === keyOrCodeOrLabel
+  );
+  return found ?? keyOrCodeOrLabel;
 }
 
 export async function POST(req: NextRequest) {
@@ -41,7 +80,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Gather known context from server for better continuity
     let knownContext = "";
     if (clientId && typeof clientId === "string") {
       await ensureClient(clientId, {
@@ -56,7 +94,7 @@ export async function POST(req: NextRequest) {
           const pctText = cats
             .map(
               (c, i) =>
-                `${c}${
+                `${labelOf(c)}${
                   pcts[i] != null ? ` (${(pcts[i] * 100).toFixed(1)}%)` : ""
                 }`
             )
@@ -66,6 +104,7 @@ export async function POST(req: NextRequest) {
           parts.push(
             `Assessment top categories (local): ${localAssessCats
               .slice(0, 3)
+              .map((c: string) => labelOf(c))
               .join(", ")}`
           );
         }
@@ -99,29 +138,139 @@ export async function POST(req: NextRequest) {
     const sysPrompt =
       buildSystemPrompt(profile) + (knownContext ? `\n\n${knownContext}` : "");
 
-    const userContext = {
-      orders: Array.isArray(orders) ? orders : [],
-      assessmentResult: assessResult ?? null,
-      checkAiResult: checkAiResult ?? null,
+    function buildUserContextV2(
+      orders: any[],
+      assessResult: any,
+      checkAiResult: any
+    ) {
+      const lastOrder =
+        Array.isArray(orders) && orders.length ? orders[0] : null;
+      const assessTop = Array.isArray(assessResult?.summary)
+        ? assessResult.summary
+            .map((s: string, i: number) => {
+              const m = s.match(/^(.+?)\s+([\d.]+)%$/);
+              if (!m) return null;
+              const percent = parseFloat(m[2]);
+              const label = labelOf(m[1]);
+              return { rank: i + 1, label, percent };
+            })
+            .filter(Boolean)
+            .slice(0, 3)
+        : [];
+      const quickTop = Array.isArray(checkAiResult?.labels)
+        ? checkAiResult.labels
+            .slice(0, 3)
+            .map((x: string, i: number) => ({ rank: i + 1, label: labelOf(x) }))
+        : [];
+
+      const assessAnswered = Array.isArray(assessResult?.answers)
+        ? assessResult.answers.length
+        : 0;
+      const quickAnswered = Array.isArray(checkAiResult?.answers)
+        ? checkAiResult.answers.length
+        : 0;
+      const orderItems =
+        lastOrder?.items?.map((it: any) => ({
+          name: it.name,
+          qty: it.quantity ?? null,
+        })) ?? [];
+      const hasData =
+        !!lastOrder || assessTop.length > 0 || quickTop.length > 0;
+
+      const assessBrief = assessTop.length
+        ? assessTop
+            .map(
+              (t: any) =>
+                `${t.rank}) ${t.label}${
+                  t.percent != null ? ` ${t.percent.toFixed(1)}%` : ""
+                }`
+            )
+            .join(", ")
+        : "";
+      const quickBrief = quickTop.length
+        ? quickTop.map((t: any) => `${t.rank}) ${t.label}`).join(", ")
+        : "";
+      const summaryParts: string[] = [];
+      if (assessBrief) summaryParts.push(`정밀검사 상위: ${assessBrief}`);
+      if (quickBrief) summaryParts.push(`빠른검사 상위: ${quickBrief}`);
+      if (lastOrder)
+        summaryParts.push(`최근 주문: #${lastOrder.id} ${lastOrder.status}`);
+      const summary = summaryParts.join(" · ");
+
+      return {
+        hasData,
+        summary,
+        assess: assessTop.length
+          ? {
+              createdAt: assessResult?.createdAt ?? null,
+              top: assessTop,
+              answered: assessAnswered,
+              note: "createdAt은 검사일시, top은 1~3순위 추천이며 percent는 적합도(%)",
+            }
+          : null,
+        quick: quickTop.length
+          ? {
+              createdAt: checkAiResult?.createdAt ?? null,
+              top: quickTop,
+              answered: quickAnswered,
+              note: "createdAt은 검사일시, top은 1~3순위 추천이며 percent는 적합도(%)",
+            }
+          : null,
+        orders: {
+          count: Array.isArray(orders) ? orders.length : 0,
+          last: lastOrder
+            ? {
+                id: lastOrder.id,
+                status: lastOrder.status,
+                createdAt: lastOrder.createdAt ?? null,
+                updatedAt: lastOrder.updatedAt ?? null,
+                items: orderItems,
+              }
+            : null,
+          note: "orders.last.createdAt은 주문일시, orders.last.updatedAt은 가장 최근 조제/배송 상태 갱신 시각",
+        },
+      };
+    }
+
+    const userContextLegacy = {
+      "주문 내역": Array.isArray(orders) ? orders : [],
+      "정밀 AI 검사": assessResult ?? null,
+      "빠른 AI 검사": checkAiResult ?? null,
     };
-    const userContextJson = JSON.stringify(userContext);
+    const userContextJson = JSON.stringify(userContextLegacy);
+    const userContextV2 = buildUserContextV2(
+      Array.isArray(orders) ? orders : [],
+      assessResult ?? null,
+      checkAiResult ?? null
+    );
+    const userContextV2Json = JSON.stringify(userContextV2);
+
+    const contextSemantics = [
+      "USER_CONTEXT_V2 해석 지침:",
+      "- assess.createdAt, quick.createdAt은 검사일시를 뜻한다.",
+      "- assess.top, quick.top은 1~3순위 추천이며 percent가 있으면 적합도(%)를 뜻한다.",
+      "- orders.last.createdAt은 주문일시, orders.last.updatedAt은 가장 최근 조제/배송 상태 갱신 시각을 뜻한다.",
+      "- 퍼센트 표기는 한국어 문장 내에서 소수 첫째 자리까지 표기한다.",
+      "- 답변은 한국어로 작성한다.",
+    ].join("\n");
 
     const openaiMessages: Array<{ role: string; content: string }> = [
       { role: "system", content: sysPrompt },
+      { role: "system", content: contextSemantics },
       { role: "system", content: `USER_CONTEXT_JSON: ${userContextJson}` },
+      { role: "system", content: `USER_CONTEXT_V2: ${userContextV2Json}` },
     ];
+
     if (isInit) {
       const initGuide = `초기 인사 메시지 지침:
-        - 제공된 USER_CONTEXT_JSON에서 주문, AI 진단 검사 결과의 특징을 1-2문장으로 브리핑.
-        - 건강기능식품 상담을 위해 관련된 질문을 1개 이상 제시하여 대화를 이어가기.
-        - USER_CONTEXT_JSON에 유의미한 정보가 없다면 /check-ai와 /assess 사용을 권유하고, 상담 목표와 현재 질환·복용약·알레르기 중 두 가지를 물어볼 것.
-        - 불필요한 장황한 서론 금지.
+        - USER_CONTEXT_V2.summary를 1문장으로 브리핑.
+        - USER_CONTEXT_V2.assess.top과 quick.top을 참고해 우선순위 1개를 뽑아 질문을 1개 이상 제시.
+        - 유의미한 정보가 없으면 /check-ai와 /assess 사용을 권유하고, 상담 목표와 현재 질환·복용약·알레르기 중 두 가지를 물어볼 것.
         - 한국어, ~요로 끝나는 말투.`;
       openaiMessages.push({ role: "system", content: initGuide });
       openaiMessages.push({
         role: "user",
-        content:
-          "USER_CONTEXT_JSON을 참고하여 초기 인사 메시지를 작성해주세요.",
+        content: "USER_CONTEXT_V2를 참고하여 초기 인사 메시지를 작성해주세요.",
       });
     } else {
       openaiMessages.push(
@@ -138,7 +287,7 @@ export async function POST(req: NextRequest) {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: model || DEFAULT_MODEL,
+        model: model || (await getDefaultModel()),
         messages: openaiMessages,
         temperature: 0.3,
         stream: true,
@@ -150,7 +299,10 @@ export async function POST(req: NextRequest) {
       const text = await resp.text().catch(() => "");
       return new Response(
         JSON.stringify({ error: `OpenAI error: ${resp.status} ${text}` }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }
       );
     }
 
@@ -159,11 +311,9 @@ export async function POST(req: NextRequest) {
         const reader = resp.body!.getReader();
         const encoder = new TextEncoder();
         let buffer = "";
-
         function push(text: string) {
           controller.enqueue(encoder.encode(text));
         }
-
         function onLine(line: string) {
           if (!line.trim()) return;
           if (!line.startsWith("data:")) return;
@@ -178,7 +328,6 @@ export async function POST(req: NextRequest) {
             if (delta) push(delta);
           } catch {}
         }
-
         function read() {
           reader
             .read()
@@ -198,7 +347,6 @@ export async function POST(req: NextRequest) {
               controller.error(err);
             });
         }
-
         read();
       },
       cancel() {

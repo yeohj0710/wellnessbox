@@ -5,10 +5,12 @@ import { ChevronUpIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import CategoryManager from "@/components/manager/categoryManager";
 import ProductManager from "@/components/manager/productManager";
 import PharmacyProductManager from "@/components/manager/pharmacyProductManager";
+import ModelManager from "@/components/manager/modelManager";
 
 export default function Admin() {
   return (
     <div className="w-full flex flex-col items-center mt-8 mb-12 gap-6">
+      <AccordionItem title="AI 모델 설정" ContentComponent={ModelManager} />
       <AccordionItem
         title="약국 상품 관리"
         ContentComponent={PharmacyProductManager}

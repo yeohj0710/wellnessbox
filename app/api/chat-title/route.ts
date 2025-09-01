@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { DEFAULT_MODEL } from "@/lib/ai/models";
+import { getDefaultModel } from "@/lib/ai/models";
 
 export const runtime = "nodejs";
 
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: DEFAULT_MODEL,
+        model: await getDefaultModel(),
         messages: [
           { role: "system", content: "짧고 간결한 제목만 출력합니다." },
           { role: "user", content: prompt },

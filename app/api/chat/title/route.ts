@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { getDefaultModel } from "@/lib/ai/models";
 
 export const runtime = "nodejs";
 
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+        model: body?.model || (await getDefaultModel()),
         messages: [
           { role: "system", content: "당신은 한국어 제목을 간결하게 짓는 도우미입니다." },
           { role: "user", content: prompt },
