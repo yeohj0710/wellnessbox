@@ -476,10 +476,14 @@ export default function ChatPage() {
                   <div className="text-gray-500">
                     검사일시: {new Date(assessResult.createdAt).toLocaleString()}
                   </div>
-                  {assessResult.answers && (
-                    <pre className="whitespace-pre-wrap mt-1">
-                      {JSON.stringify(assessResult.answers)}
-                    </pre>
+                  {assessResult.answersDetailed && (
+                    <ul className="mt-1 list-disc pl-4">
+                      {assessResult.answersDetailed.map((a: any) => (
+                        <li key={a.id}>
+                          <span className="font-medium">{a.question}</span>: {a.answerLabel}
+                        </li>
+                      ))}
+                    </ul>
                   )}
                   <pre className="whitespace-pre-wrap mt-1">
                     {JSON.stringify(assessResult.cResult)}
@@ -494,15 +498,14 @@ export default function ChatPage() {
                   <div className="text-gray-500">
                     검사일시: {new Date(checkAiResult.createdAt).toLocaleString()}
                   </div>
-                  {checkAiResult.answers && (
-                    <pre className="whitespace-pre-wrap mt-1">
-                      {JSON.stringify(checkAiResult.answers)}
-                    </pre>
-                  )}
-                  {checkAiResult.result?.answers && (
-                    <pre className="whitespace-pre-wrap mt-1">
-                      {JSON.stringify(checkAiResult.result.answers)}
-                    </pre>
+                  {checkAiResult.answersDetailed && (
+                    <ul className="mt-1 list-disc pl-4">
+                      {checkAiResult.answersDetailed.map((a: any) => (
+                        <li key={a.index}>
+                          <span className="font-medium">{a.question}</span>: {a.answerLabel}
+                        </li>
+                      ))}
+                    </ul>
                   )}
                   <pre className="whitespace-pre-wrap mt-1">
                     {JSON.stringify(checkAiResult.result)}

@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { clientId, result, tzOffsetMinutes } = body || {};
+    const { clientId, result, answers, tzOffsetMinutes } = body || {};
     if (!clientId || typeof clientId !== "string") {
       return new Response(JSON.stringify({ error: "Missing clientId" }), { status: 400, headers: { "Content-Type": "application/json" } });
     }
@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
       data: {
         clientId,
         result,
+        answers,
         tzOffsetMinutes: typeof tzOffsetMinutes === "number" ? tzOffsetMinutes : 0,
       },
     });

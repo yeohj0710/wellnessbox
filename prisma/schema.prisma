@@ -199,6 +199,8 @@ model CheckAiResult {
   id              String   @id @default(cuid())
   client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
   clientId        String
+  // Original questionnaire answers (nullable for legacy entries)
+  answers         Json?
   // Arbitrary JSON result (must include any top labels or scores)
   result          Json
   tzOffsetMinutes Int      @default(0)

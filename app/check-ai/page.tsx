@@ -3,27 +3,10 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { getCategories } from "@/lib/product";
 import { useLoading } from "@/components/common/loadingContext.client";
-
-const QUESTIONS = [
-  "최근에 쉽게 피로를 느끼고 에너지가 부족하다.",
-  "뼈나 관절 건강이 걱정된다.",
-  "스트레스나 불안, 수면 질이 좋지 않다.",
-  "소화가 잘 안 되고, 변비·복통이 자주 있다.",
-  "면역력이 약해 자주 감기에 걸린다.",
-  "피부·모발·손톱 건강이 고민된다.",
-  "눈이 쉽게 피로하고, 시야가 뿌옇다.",
-  "임신 준비 중이거나 임신 중이다.",
-  "심혈관 건강(고지혈·혈압)이 걱정된다.",
-  "항산화·노화 방지가 필요하다.",
-];
-
-const OPTIONS = [
-  { value: 1, label: "매우 그렇지 않다" },
-  { value: 2, label: "그렇지 않다" },
-  { value: 3, label: "보통이다" },
-  { value: 4, label: "그렇다" },
-  { value: 5, label: "매우 그렇다" },
-];
+import {
+  CHECK_AI_QUESTIONS as QUESTIONS,
+  CHECK_AI_OPTIONS as OPTIONS,
+} from "@/lib/checkai";
 
 type Result = { label: string; prob: number };
 
@@ -118,7 +101,12 @@ export default function CheckAI() {
           fetch("/api/check-ai/save", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ clientId: cid, result: { topLabels: top }, tzOffsetMinutes: getTzOffsetMinutes() }),
+            body: JSON.stringify({
+              clientId: cid,
+              result: { topLabels: top },
+              answers: filled,
+              tzOffsetMinutes: getTzOffsetMinutes(),
+            }),
           }).catch(() => {});
         } catch {}
       }
