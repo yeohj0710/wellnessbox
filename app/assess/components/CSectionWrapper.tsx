@@ -12,7 +12,7 @@ interface Props {
   cProgress: { step: number; total: number; pct: number };
   cProgressMsg: string;
   cEpoch: number;
-  onSubmit: (res: CSectionResult) => void;
+  onSubmit: (res: CSectionResult, answers: Record<string, number[]>) => void;
   onProgress: (step: number, total: number) => void;
   registerPrev: (fn: () => boolean) => void;
   persistKey: string;

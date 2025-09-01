@@ -3,6 +3,8 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { evaluate } from "@/app/assess/logic/algorithm";
 import { sectionA, sectionB, fixedA, hashChoice } from "./data/questions";
+import { BANK } from "./data/c-bank";
+import { C_OPTIONS } from "./data/c-options";
 import { getCategories } from "@/lib/product";
 import { useLoading } from "@/components/common/loadingContext.client";
 import IntroSection from "./components/IntroSection";
@@ -38,6 +40,33 @@ function getTzOffsetMinutes(): number {
   }
 }
 
+function composeAnswers(
+  ab: Record<string, any>,
+  cAns: Record<string, number[]>,
+  cats: string[]
+) {
+  const out: Record<string, any> = {};
+  for (const q of [...sectionA, ...sectionB]) {
+    if (ab[q.id] !== undefined) out[q.id] = ab[q.id];
+  }
+  for (const cat of cats) {
+    const arr = cAns[cat] || [];
+    const bankArr = BANK[cat] || [];
+    for (let i = 0; i < Math.min(arr.length, bankArr.length); i++) {
+      const v = arr[i];
+      if (v < 0) continue;
+      const q = bankArr[i];
+      const opts = C_OPTIONS[q.type as keyof typeof C_OPTIONS] as readonly {
+        value: number;
+        label: string;
+      }[];
+      const label = opts.find((o) => o.value === v)?.label ?? v;
+      out[q.prompt] = label;
+    }
+  }
+  return out;
+}
+
 export default function Assess() {
   const { showLoading } = useLoading();
   const [section, setSection] = useState<"INTRO" | "A" | "B" | "C" | "DONE">(
@@ -51,6 +80,7 @@ export default function Assess() {
   const [loadingText, setLoadingText] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [cCats, setCCats] = useState<string[]>([]);
+  const [cAnswers, setCAnswers] = useState<Record<string, number[]>>({});
   const [cResult, setCResult] = useState<CSectionResult | null>(null);
   const [categories, setCategories] = useState<any[]>([]);
   const [cEpoch, setCEpoch] = useState(0);
@@ -150,6 +180,7 @@ export default function Assess() {
         if (Array.isArray(parsed.cCats)) setCCats(parsed.cCats);
         if (parsed.cResult && parsed.cResult.catsOrdered)
           setCResult(parsed.cResult);
+        if (parsed.cAnswers) setCAnswers(parsed.cAnswers);
       }
     } finally {
       const arm = () => setHydrated(true);
@@ -175,29 +206,21 @@ export default function Assess() {
         history,
         cCats,
         cResult,
+        cAnswers,
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     } catch {}
-  }, [hydrated, section, answers, current, fixedIdx, history, cCats, cResult]);
-
-  // Persist final results to server when DONE
-  useEffect(() => {
-    if (section !== "DONE" || !cResult) return;
-    try {
-      const cid = getClientIdLocal();
-      const payload = {
-        clientId: cid,
-        answers,
-        cResult,
-        tzOffsetMinutes: getTzOffsetMinutes(),
-      };
-      fetch("/api/assess/save", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      }).catch(() => {});
-    } catch {}
-  }, [section, cResult]);
+  }, [
+    hydrated,
+    section,
+    answers,
+    current,
+    fixedIdx,
+    history,
+    cCats,
+    cResult,
+    cAnswers,
+  ]);
 
   useEffect(() => {
     getCategories()
@@ -267,6 +290,7 @@ export default function Assess() {
     setHistory([]);
     setCCats([]);
     setCResult(null);
+    setCAnswers({});
     if (typeof window !== "undefined") {
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(C_PERSIST_KEY);
@@ -425,8 +449,20 @@ export default function Assess() {
         cProgress={cProgress}
         cProgressMsg={cProgressMsg}
         cEpoch={cEpoch}
-        onSubmit={(res) => {
+        onSubmit={(res, cAns) => {
+          setCAnswers(cAns);
           setCResult(res);
+          const payload = {
+            clientId: getClientIdLocal(),
+            answers: composeAnswers(answers, cAns, cCats),
+            cResult: res,
+            tzOffsetMinutes: getTzOffsetMinutes(),
+          };
+          fetch("/api/assess/save", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          }).catch(() => {});
           setSection("DONE");
         }}
         onProgress={handleCProgress}
