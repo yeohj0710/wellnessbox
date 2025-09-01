@@ -24,7 +24,10 @@
     "onnxruntime-web": "1.16.1",
     "react": "19.0.0-rc-66855b96-20241106",
     "react-dom": "19.0.0-rc-66855b96-20241106",
+    "react-markdown": "^10.1.0",
     "react-star-ratings": "^2.3.0",
+    "remark-breaks": "^4.0.0",
+    "remark-gfm": "^4.0.1",
     "tailwind-scrollbar-hide": "^2.0.0",
     "web-push": "^3.6.7"
   },

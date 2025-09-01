@@ -16,7 +16,9 @@ export function MenuLinks({
   isDrawer = false,
 }: MenuLinksProps) {
   const [adminVisible, setAdminVisible] = useState(false);
-  const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null);
+  const [pressTimer, setPressTimer] = useState<ReturnType<
+    typeof setTimeout
+  > | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
   const aiRef = useRef<HTMLDivElement>(null);
 
@@ -82,21 +84,32 @@ export function MenuLinks({
         </div>
         <Link
           href="/assess"
-          className="-mt-2 flex items-center justify-between rounded-lg px-3 py-2 hover:bg-slate-50"
+          className="-mt-2 inline-flex items-center gap-1 rounded-lg px-3 py-2 hover:bg-slate-50"
           onClick={onItemClick}
         >
-          <span className="">정밀 검사</span>
-          <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-600">
+          <span>정밀 검사</span>
+          <span className="flex items-center justify-center ml-1 rounded-full bg-indigo-100 w-10 h-5 text-[10px] font-bold text-indigo-600">
             BETA
           </span>
         </Link>
         <Link
           href="/check-ai"
-          className="-mt-4 rounded-lg px-3 py-2 hover:bg-slate-50"
+          className="-mt-4 rounded-lg px-3 py-2 -mb-2 hover:bg-slate-50"
           onClick={onItemClick}
         >
           빠른 검사
         </Link>
+        <Link
+          href="/chat"
+          className={`${menuItemClasses()} flex items-center mt-2`}
+          onClick={onItemClick}
+        >
+          <span>맞춤 상담</span>
+          <span className="ml-2 flex items-center justify-center rounded-full bg-indigo-100 w-10 h-5 text-[10px] font-bold text-indigo-600">
+            BETA
+          </span>
+        </Link>
+
         {loginStatus.isPharmLoggedIn && (
           <Link
             href="/pharm"
@@ -169,7 +182,7 @@ export function MenuLinks({
       >
         내 주문 조회
       </Link>
-      <div className="relative" ref={aiRef}>
+      <div className="relative flex items-center gap-2" ref={aiRef}>
         <button
           onClick={() => setAiOpen((v) => !v)}
           className="hover:text-gray-800 inline-flex items-center gap-1 font-semibold transition-transform duration-200 ease-in-out"
@@ -188,8 +201,20 @@ export function MenuLinks({
             }`}
           />
         </button>
+        <Link
+          href="/chat"
+          className={menuItemClasses(
+            "ml-1.5 inline-flex items-center gap-1 leading-none"
+          )}
+          onClick={onItemClick}
+        >
+          <span>맞춤 상담</span>
+          <span className="ml-0.5 flex items-center justify-center rounded-full bg-indigo-100 w-10 h-5 text-[10px] font-bold text-indigo-600">
+            BETA
+          </span>
+        </Link>
         {aiOpen && (
-          <div className="absolute left-0 mt-2 w-56 rounded-xl border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 p-2">
+          <div className="absolute left-0 top-full mt-2 w-56 rounded-xl border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 p-2">
             <Link
               href="/assess"
               className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-slate-50"
@@ -198,8 +223,8 @@ export function MenuLinks({
                 if (onItemClick) onItemClick();
               }}
             >
-              <span className="">정밀 검사</span>
-              <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-600">
+              <span>정밀 검사</span>
+              <span className="ml-2 flex items-center justify-center rounded-full bg-indigo-100 w-10 h-5 text-[10px] font-bold text-indigo-600">
                 BETA
               </span>
             </Link>

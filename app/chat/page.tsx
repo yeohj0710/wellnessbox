@@ -237,6 +237,10 @@ export default function ChatPage() {
     if (activeId === id) setActiveId(next[0]?.id ?? null);
   }
 
+  function normalizeNewlines(text: string) {
+    return text.replace(/\n{3,}/g, "\n\n\n");
+  }
+
   async function sendMessage(overrideText?: string) {
     if (!active) return;
     const text = (overrideText ?? input).trim();
@@ -247,7 +251,7 @@ export default function ChatPage() {
     const userMsg: ChatMessage = {
       id: uid(),
       role: "user",
-      content: text,
+      content: normalizeNewlines(text),
       createdAt: now,
     };
     const asstMsg: ChatMessage = {
@@ -305,7 +309,7 @@ export default function ChatPage() {
         if (value) {
           const chunk = decoder.decode(value);
           fullText += chunk;
-          const textSoFar = fullText;
+          const textSoFar = normalizeNewlines(fullText);
           setSessions((prev) =>
             prev.map((s) =>
               s.id === active.id
@@ -431,7 +435,7 @@ export default function ChatPage() {
         if (value) {
           const chunk = decoder.decode(value);
           fullText += chunk;
-          const textSoFar = fullText;
+          const textSoFar = normalizeNewlines(fullText);
           setSessions((prev) =>
             prev.map((ss) =>
               ss.id === sessionId

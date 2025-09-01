@@ -254,9 +254,17 @@ export async function POST(req: NextRequest) {
       "- 답변은 한국어로 작성한다.",
     ].join("\n");
 
+    const STYLE_GUIDE = [
+      "- 답변은 한국어로 작성하고 Markdown 형식을 사용한다.",
+      "- 문단 사이에 빈 줄을 두고, 필요 시 불릿 목록(•)을 3~7개 이내로 쓴다.",
+      "- 표가 유익하면 간단한 Markdown 표를 사용한다.",
+      "- 한 번의 답변은 8문장 또는 1200자 이내로 제한한다.",
+    ].join("\n");
+
     const openaiMessages: Array<{ role: string; content: string }> = [
       { role: "system", content: sysPrompt },
       { role: "system", content: contextSemantics },
+      { role: "system", content: STYLE_GUIDE },
       { role: "system", content: `USER_CONTEXT_JSON: ${userContextJson}` },
       { role: "system", content: `USER_CONTEXT_V2: ${userContextV2Json}` },
     ];
