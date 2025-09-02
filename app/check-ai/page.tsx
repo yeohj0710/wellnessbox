@@ -133,7 +133,7 @@ export default function CheckAI() {
   };
 
   return (
-    <div className="w-full max-w-[760px] mx-auto px-4 pb-28">
+    <div className="w-full max-w-[760px] mx-auto px-2 sm:px-4 pb-28">
       <div className="relative mt-6 sm:mt-10 overflow-visible sm:overflow-hidden sm:rounded-3xl sm:bg-white/70 sm:ring-1 sm:ring-black/5 sm:shadow-[0_10px_40px_rgba(2,6,23,0.08)] sm:backdrop-blur">
         <div className="hidden sm:block pointer-events-none absolute -top-24 -right-24 h-80 w-80 rounded-full bg-gradient-to-br from-sky-400/30 via-indigo-400/20 to-fuchsia-300/20 blur-3xl" />
         <div className="hidden sm:block pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-gradient-to-tr from-sky-400/30 via-indigo-400/20 to-fuchsia-300/20 blur-3xl" />
@@ -150,6 +150,9 @@ export default function CheckAI() {
                 <p className="mt-1 text-xs sm:text-sm text-gray-600">
                   웰니스박스의 영양제 추천 AI는 ONNX Runtime 기반 딥러닝 모델로
                   작동합니다.
+                </p>
+                <p className="mt-2 text-[11px] sm:text-xs text-gray-500">
+                  ※ 각 문항은 일부만 해당되어도 체크해주세요.
                 </p>
               </div>
             </div>
@@ -199,7 +202,7 @@ export default function CheckAI() {
                         key={opt.value}
                         title={opt.label}
                         className={[
-                          "relative cursor-pointer select-none rounded-xl px-3 py-1 text-center ring-1 transition",
+                          "relative cursor-pointer select-none rounded-xl px-3 py-0.5 sm:py-1 text-center ring-1 transition",
                           "bg-white ring-gray-200 hover:bg-gray-50",
                           visualActive
                             ? "ring-2 ring-sky-400 bg-sky-50/60"
@@ -230,7 +233,7 @@ export default function CheckAI() {
                 onClick={handleSubmit}
                 disabled={loading}
                 aria-busy={loading}
-                className="w-full sm:w-4/5 rounded-2xl bg-gradient-to-r from-sky-500 to-indigo-500 px-6 py-3 text-base font-extrabold text-white shadow-[0_12px_30px_rgba(56,121,255,0.35)] transition-all hover:from-sky-600 hover:to-indigo-600 active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-sky-300 disabled:opacity-60"
+                className="w-full sm:w-4/5 rounded-2xl bg-gradient-to-r from-sky-500 to-indigo-500 px-6 py-2 sm:py-2.5 text-base font-extrabold text-white shadow-[0_12px_30px_rgba(56,121,255,0.35)] transition-all hover:from-sky-600 hover:to-indigo-600 active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-sky-300 disabled:opacity-60"
               >
                 {loading ? "AI가 분석 중..." : "AI 추천 결과 보기"}
               </button>
