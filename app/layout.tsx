@@ -8,6 +8,7 @@ import { LoadingProvider } from "@/components/common/loadingContext.client";
 import { ToastProvider } from "@/components/common/toastContext.client";
 import { pretendard } from "./fonts";
 import RouteTransition from "@/components/common/routeTransition";
+import KakaoExternalBridge from "@/components/common/kakaoExternalBridge";
 
 export const metadata: Metadata = {
   title: "웰니스박스 | 내 몸에 맞는 프리미엄 건강 솔루션",
@@ -49,6 +50,7 @@ export default function RootLayout({
       <body
         className={`${pretendard.className} overflow-x-hidden flex flex-col bg-white`}
       >
+        <KakaoExternalBridge />
         <LocalStorageProvider>
           <FooterProvider>
             <LoadingProvider>
