@@ -1,4 +1,4 @@
-import { CategoryKey } from "../data/categories";
+import { CategoryKey } from "@/lib/categories";
 
 export type Answers = Record<string, any>;
 

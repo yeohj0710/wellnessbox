@@ -12,8 +12,7 @@ import QuestionSection from "./components/QuestionSection";
 import CSectionWrapper from "./components/CSectionWrapper";
 import DoneSection from "./components/DoneSection";
 import ConfirmResetModal from "./components/ConfirmResetModal";
-import { KEY_TO_CODE, labelOf } from "./lib/categories";
-import type { CategoryKey } from "./data/categories";
+import { KEY_TO_CODE, labelOf, type CategoryKey } from "@/lib/categories";
 import type { CSectionResult } from "./components/CSection";
 
 const STORAGE_KEY = "assess-state";

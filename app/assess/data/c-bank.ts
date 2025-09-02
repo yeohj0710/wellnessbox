@@ -1,9 +1,10 @@
 import type { QType } from "../logic/algorithm";
+import { KEY_TO_CODE } from "@/lib/categories";
 
 export type CBank = Record<string, { prompt: string; type: QType }[]>;
 
 export const BANK: CBank = {
-  vitc: [
+  [KEY_TO_CODE.vitaminC]: [
     { prompt: "환절기마다 코·목이 금방 불편해지나요?", type: "likert4" },
     { prompt: "작은 상처가 생각보다 늦게 아물나요?", type: "likert4" },
     {
@@ -17,7 +18,7 @@ export const BANK: CBank = {
     { prompt: "하루 피로가 오래 가는 편인가요?", type: "likert4" },
   ],
 
-  omega3: [
+  [KEY_TO_CODE.omega3]: [
     {
       prompt:
         "지난 1주 동안 생선이 주 재료인 식사를 몇 번 하셨나요?(회·초밥·구이·통조림 포함)",
@@ -41,7 +42,7 @@ export const BANK: CBank = {
     },
   ],
 
-  ca: [
+  [KEY_TO_CODE.calcium]: [
     {
       prompt: "우유·치즈 등 칼슘 강화 식품 섭취가 부족하다고 느끼시나요?",
       type: "likert4",
@@ -56,7 +57,7 @@ export const BANK: CBank = {
     { prompt: "최근 낙상이나 골절을 겪으셨나요?", type: "yesno" },
   ],
 
-  lutein: [
+  [KEY_TO_CODE.lutein]: [
     {
       prompt: "야간이나 역광 상황에서 시야가 불편하다고 느끼시나요?",
       type: "likert4",
@@ -76,7 +77,7 @@ export const BANK: CBank = {
     },
   ],
 
-  vitd: [
+  [KEY_TO_CODE.vitaminD]: [
     {
       prompt: "최근 한 달간 햇빛을 충분히 쬔다고 느끼기 어렵나요?",
       type: "likert4",
@@ -93,7 +94,7 @@ export const BANK: CBank = {
     { prompt: "하루 대부분을 실내에서 보내시나요?", type: "likert4" },
   ],
 
-  milkthistle: [
+  [KEY_TO_CODE.milkThistle]: [
     { prompt: "음주 빈도나 양을 줄이기 어렵다고 느끼시나요?", type: "likert4" },
     {
       prompt: "검진에서 간 수치와 관련해 지적을 받은 적이 있으신가요?",
@@ -107,7 +108,7 @@ export const BANK: CBank = {
     { prompt: "과로 후 회복이 더딘 편인가요?", type: "likert4" },
   ],
 
-  probiotics: [
+  [KEY_TO_CODE.probiotics]: [
     { prompt: "복부 팽만감이나 더부룩함을 자주 느끼시나요?", type: "likert4" },
     { prompt: "배변 주기나 상태가 들쭉날쭉한 편인가요?", type: "likert4" },
     { prompt: "최근 항생제를 복용하신 적이 있나요?", type: "yesno" },
@@ -121,7 +122,7 @@ export const BANK: CBank = {
     },
   ],
 
-  vitb: [
+  [KEY_TO_CODE.vitaminB]: [
     { prompt: "스트레스나 무기력감을 자주 느끼시나요?", type: "likert4" },
     { prompt: "입안이 잘 헐거나 입술이 자주 갈라지나요?", type: "likert4" },
     { prompt: "과로 후 컨디션 난조가 잦은 편인가요?", type: "likert4" },
@@ -129,7 +130,7 @@ export const BANK: CBank = {
     { prompt: "가공식품·정제곡물 위주로 식사할 때가 많나요?", type: "likert4" },
   ],
 
-  mg: [
+  [KEY_TO_CODE.magnesium]: [
     { prompt: "밤에 근육이 당기거나 쥐가 잘 나나요?", type: "likert4" },
     { prompt: "숙면을 취하기 어렵다고 느끼시나요?", type: "likert4" },
     {
@@ -140,7 +141,7 @@ export const BANK: CBank = {
     { prompt: "카페인 섭취가 많은 편인가요?", type: "likert4" },
   ],
 
-  garcinia: [
+  [KEY_TO_CODE.garcinia]: [
     { prompt: "식욕 조절이 어렵거나 과식을 자주 하시나요?", type: "likert4" },
     { prompt: "야식이나 간식을 자주 드시나요?", type: "likert4" },
     { prompt: "체중 관리 목표가 뚜렷하신가요?", type: "likert4" },
@@ -154,7 +155,7 @@ export const BANK: CBank = {
     },
   ],
 
-  multivitamin: [
+  [KEY_TO_CODE.multivitamin]: [
     { prompt: "끼니를 거르거나 식단 균형이 자주 무너지나요?", type: "likert4" },
     { prompt: "컨디션·에너지 기복이 큰 편인가요?", type: "likert4" },
     { prompt: "채소·과일·통곡물을 충분히 드시지 못하나요?", type: "likert4" },
@@ -162,7 +163,7 @@ export const BANK: CBank = {
     { prompt: "평소에 영양제를 꾸준히 챙겨 드시나요?", type: "likert4" },
   ],
 
-  zn: [
+  [KEY_TO_CODE.zinc]: [
     { prompt: "자잘한 감염이나 잔병치레가 잦은 편인가요?", type: "likert4" },
     { prompt: "상처가 아물기까지 시간이 오래 걸리나요?", type: "likert4" },
     { prompt: "여드름·염증 같은 트러블이 자주 올라오나요?", type: "likert4" },
@@ -170,7 +171,7 @@ export const BANK: CBank = {
     { prompt: "유제품·해산물 섭취가 적은 편인가요?", type: "likert4" },
   ],
 
-  psyllium: [
+  [KEY_TO_CODE.psyllium]: [
     { prompt: "배변이 불규칙하거나 변비로 고생하시나요?", type: "likert4" },
     { prompt: "물과 식이섬유를 충분히 드시지 못하나요?", type: "likert4" },
     { prompt: "하루 활동량이나 운동이 부족한 편인가요?", type: "likert4" },
@@ -178,7 +179,7 @@ export const BANK: CBank = {
     { prompt: "체중 관리를 시도하고 계신가요?", type: "likert4" },
   ],
 
-  minerals: [
+  [KEY_TO_CODE.minerals]: [
     {
       prompt: "땀을 많이 흘리거나 더운 환경에서 일할 때가 많나요?",
       type: "likert4",
@@ -192,7 +193,7 @@ export const BANK: CBank = {
     { prompt: "근육 피로를 자주 느끼시나요?", type: "likert4" },
   ],
 
-  vita: [
+  [KEY_TO_CODE.vitaminA]: [
     {
       prompt: "어두운 곳으로 이동할 때 시야 적응이 더딘 편인가요?",
       type: "likert4",
@@ -206,7 +207,7 @@ export const BANK: CBank = {
     { prompt: "어두운 장소에서 색 대비가 약하게 느껴지나요?", type: "likert4" },
   ],
 
-  fe: [
+  [KEY_TO_CODE.iron]: [
     { prompt: "어지럼·창백·두근거림을 가끔 느끼시나요?", type: "likert4" },
     { prompt: "최근 검사에서 빈혈 의심 소견을 들으셨나요?", type: "yesno" },
     { prompt: "여성이고, 월경량이 많은 편에 해당하시나요?", type: "yesno" },
@@ -217,7 +218,7 @@ export const BANK: CBank = {
     { prompt: "빈속에 캡슐형 제품을 먹으면 속이 불편한가요?", type: "likert4" },
   ],
 
-  ps: [
+  [KEY_TO_CODE.phosphatidylserine]: [
     { prompt: "업무·학습에 집중하기가 어렵다고 느끼시나요?", type: "likert4" },
     { prompt: "감정 기복이 크거나 스트레스가 높은 편인가요?", type: "likert4" },
     { prompt: "낮 시간에 졸리거나 무기력할 때가 많나요?", type: "likert4" },
@@ -231,7 +232,7 @@ export const BANK: CBank = {
     },
   ],
 
-  folate: [
+  [KEY_TO_CODE.folicAcid]: [
     {
       prompt: "여성이고, 임신을 계획 중이거나 초기 임신에 해당하시나요?",
       type: "yesno",
@@ -251,7 +252,7 @@ export const BANK: CBank = {
     },
   ],
 
-  arginine: [
+  [KEY_TO_CODE.arginine]: [
     {
       prompt: "손발 저림이나 말초혈류 불편을 느낄 때가 있나요?",
       type: "likert4",
@@ -271,7 +272,7 @@ export const BANK: CBank = {
     },
   ],
 
-  chondroitin: [
+  [KEY_TO_CODE.chondroitin]: [
     { prompt: "무릎·관절이 자주 아프거나 자극에 민감한가요?", type: "likert4" },
     {
       prompt: "아침에 관절이 뻣뻣해 풀리는 데 시간이 걸리나요?",
@@ -288,7 +289,7 @@ export const BANK: CBank = {
     },
   ],
 
-  coq10: [
+  [KEY_TO_CODE.coenzymeQ10]: [
     {
       prompt: "지질 저하제(예: 스타틴 계열)를 복용 중이신가요?",
       type: "yesno",
@@ -305,7 +306,7 @@ export const BANK: CBank = {
     },
   ],
 
-  collagen: [
+  [KEY_TO_CODE.collagen]: [
     {
       prompt: "피부 탄력 감소나 주름이 눈에 띄어 걱정되시나요?",
       type: "likert4",

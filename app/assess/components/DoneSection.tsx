@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CSectionResult } from "./CSection";
-import { labelOf, descOf } from "../lib/categories";
+import { labelOf, descOf } from "@/lib/categories";
 
 interface Props {
   cResult: CSectionResult;

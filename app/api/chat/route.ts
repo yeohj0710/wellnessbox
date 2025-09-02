@@ -4,7 +4,11 @@ import { ChatRequestBody } from "@/types/chat";
 import { getDefaultModel } from "@/lib/ai/models";
 import { getLatestResults } from "@/lib/server/results";
 import { ensureClient } from "@/lib/server/client";
-import { CATEGORY_LABELS } from "@/app/assess/data/categories";
+import {
+  CATEGORY_LABELS,
+  CategoryKey,
+  KEY_TO_CODE,
+} from "@/lib/categories";
 
 export const runtime = "nodejs";
 
@@ -14,33 +18,17 @@ function ensureEnv(key: string) {
   return v;
 }
 
-const CAT_ALIAS: Record<string, keyof typeof CATEGORY_LABELS> = {
-  vitc: "vitaminC",
-  vitb: "vitaminB",
-  vitd: "vitaminD",
-  ca: "calcium",
-  mg: "magnesium",
-  milkthistle: "milkThistle",
-  omega3: "omega3",
-  lutein: "lutein",
-  probiotics: "probiotics",
-  garcinia: "garcinia",
-  multivitamin: "multivitamin",
-  zinc: "zinc",
-  collagen: "collagen",
-  coenzymeq10: "coenzymeQ10",
-  chondroitin: "chondroitin",
-  arginine: "arginine",
-  iron: "iron",
-  vitaminA: "vitaminA",
-  vitaminC: "vitaminC",
-  vitaminD: "vitaminD",
-  vitaminB: "vitaminB",
-  psyllium: "psyllium",
-  minerals: "minerals",
-  phosphatidylserine: "phosphatidylserine",
-  folicAcid: "folicAcid",
-};
+const CAT_ALIAS: Record<string, CategoryKey> = Object.fromEntries(
+  Object.entries(KEY_TO_CODE).flatMap(([k, code]) => {
+    const key = k as CategoryKey;
+    const label = CATEGORY_LABELS[key];
+    return [
+      [k, key],
+      [code, key],
+      [label, key],
+    ];
+  })
+) as Record<string, CategoryKey>;
 
 function labelOf(keyOrCodeOrLabel: string) {
   const k = (CAT_ALIAS[keyOrCodeOrLabel] ?? keyOrCodeOrLabel) as string;

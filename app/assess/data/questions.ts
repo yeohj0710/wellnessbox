@@ -1,4 +1,4 @@
-import { CATEGORY_LABELS, CategoryKey } from "./categories";
+import { INTEREST_LABELS } from "@/lib/categories";
 
 export interface Question {
   id: string;
@@ -8,31 +8,6 @@ export interface Question {
   min?: number;
   max?: number;
 }
-
-export const INTEREST_LABELS: Record<CategoryKey, string> = {
-  vitaminC: "피부·항산화",
-  omega3: "심혈관·혈액순환",
-  calcium: "뼈·치아 건강",
-  lutein: "눈 건강",
-  vitaminD: "뼈·면역",
-  milkThistle: "간 건강",
-  probiotics: "장·소화",
-  vitaminB: "피로·에너지",
-  magnesium: "긴장·근육",
-  garcinia: "체중 관리",
-  multivitamin: "기초 영양",
-  zinc: "면역·피부",
-  psyllium: "배변·식이섬유",
-  minerals: "미네랄 보충",
-  vitaminA: "눈·피부",
-  iron: "빈혈 예방",
-  phosphatidylserine: "집중·기억",
-  folicAcid: "임신 준비",
-  arginine: "혈류·운동",
-  chondroitin: "관절",
-  coenzymeQ10: "피로·항산화",
-  collagen: "피부·모발",
-};
 
 export const sectionA: Question[] = [
   {

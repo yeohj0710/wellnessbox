@@ -21,6 +21,7 @@ import ProductGrid from "@/app/(components)/productGrid";
 import FooterCartBar from "@/app/(components)/footerCartBar";
 import FooterCartBarLoading from "@/app/(components)/footerCartBarLoading";
 import SymptomFilter from "@/app/(components)/symptomFilter";
+import { CATEGORY_LABELS } from "@/lib/categories";
 
 export default function HomeProductSection() {
   const searchParams = useSearchParams();
@@ -531,16 +532,37 @@ export default function HomeProductSection() {
     });
   };
   const searchCategoryMapping: { [key: string]: string[] } = {
-    피로감: ["비타민B", "코엔자임Q10", "철분"],
-    "눈 건강": ["루테인", "비타민A"],
-    "피부 건강": ["콜라겐", "비타민C", "아연"],
-    체지방: ["가르시니아", "차전자피 식이섬유"],
-    "혈관 & 혈액순환": ["오메가3", "코엔자임Q10"],
-    "간 건강": ["밀크씨슬(실리마린)"],
-    "장 건강": ["프로바이오틱스(유산균)", "차전자피 식이섬유"],
-    "스트레스 & 수면": ["마그네슘", "포스파티딜세린"],
-    "면역 기능": ["비타민D", "아연", "비타민C"],
-    "혈중 콜레스테롤": ["오메가3"],
+    피로감: [
+      CATEGORY_LABELS.vitaminB,
+      CATEGORY_LABELS.coenzymeQ10,
+      CATEGORY_LABELS.iron,
+    ],
+    "눈 건강": [CATEGORY_LABELS.lutein, CATEGORY_LABELS.vitaminA],
+    "피부 건강": [
+      CATEGORY_LABELS.collagen,
+      CATEGORY_LABELS.vitaminC,
+      CATEGORY_LABELS.zinc,
+    ],
+    체지방: [CATEGORY_LABELS.garcinia, CATEGORY_LABELS.psyllium],
+    "혈관 & 혈액순환": [
+      CATEGORY_LABELS.omega3,
+      CATEGORY_LABELS.coenzymeQ10,
+    ],
+    "간 건강": [CATEGORY_LABELS.milkThistle],
+    "장 건강": [
+      CATEGORY_LABELS.probiotics,
+      CATEGORY_LABELS.psyllium,
+    ],
+    "스트레스 & 수면": [
+      CATEGORY_LABELS.magnesium,
+      CATEGORY_LABELS.phosphatidylserine,
+    ],
+    "면역 기능": [
+      CATEGORY_LABELS.vitaminD,
+      CATEGORY_LABELS.zinc,
+      CATEGORY_LABELS.vitaminC,
+    ],
+    "혈중 콜레스테롤": [CATEGORY_LABELS.omega3],
   };
   const handleSearchSelect = (selectedItems: string[]) => {
     setSelectedSymptoms(selectedItems);

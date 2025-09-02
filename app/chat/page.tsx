@@ -20,15 +20,10 @@ import {
   loadProfile,
   saveProfile,
 } from "./utils";
-
-const ASSESS_CAT_LABELS: Record<string, string> = {
-  vitc: "비타민C",
-  omega3: "오메가3",
-  collagen: "콜라겐",
-};
+import { CODE_TO_LABEL } from "@/lib/categories";
 
 function formatAssessCat(code: string) {
-  return ASSESS_CAT_LABELS[code] || code;
+  return CODE_TO_LABEL[code] || code;
 }
 
 export default function ChatPage() {

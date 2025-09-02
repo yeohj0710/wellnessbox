@@ -1,4 +1,4 @@
-import { CATEGORY_LABELS, CategoryKey } from "../data/categories";
+import { CATEGORY_LABELS, CategoryKey } from "@/lib/categories";
 import { RULES, Answers as ABAnswers } from "./rules";
 
 export type ABTopItem = { key: CategoryKey; label: string; score: number };

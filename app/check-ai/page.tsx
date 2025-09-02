@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { getCategories } from "@/lib/product";
@@ -8,9 +8,8 @@ import {
   CHECK_AI_OPTIONS as OPTIONS,
 } from "@/lib/checkai";
 
-type Result = { label: string; prob: number };
+type Result = { code: string; label: string; prob: number };
 
-// clientId helpers (duplicated small helper to avoid extra imports)
 const LS_CLIENT_ID_KEY = "wb_client_id_v1";
 function getClientIdLocal(): string {
   try {
@@ -24,7 +23,11 @@ function getClientIdLocal(): string {
   }
 }
 function getTzOffsetMinutes(): number {
-  try { return -new Date().getTimezoneOffset(); } catch { return 0; }
+  try {
+    return -new Date().getTimezoneOffset();
+  } catch {
+    return 0;
+  }
 }
 
 export default function CheckAI() {
@@ -44,7 +47,9 @@ export default function CheckAI() {
   }, [answers]);
 
   useEffect(() => {
-    getCategories().then((cats) => setCategories(cats)).catch(() => {});
+    getCategories()
+      .then((cats) => setCategories(cats))
+      .catch(() => {});
   }, []);
 
   const recommendedIds = useMemo(() => {
@@ -80,22 +85,34 @@ export default function CheckAI() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ responses: filled }),
     });
-    const data: Result[] = await res.json();
+    const data = await res.json();
     if (!Array.isArray(data)) {
       setLoading(false);
       return;
     }
+
+    const normalized: Result[] = data.map((d: any) => ({
+      code: d.code,
+      label: d.label,
+      prob:
+        typeof d.prob === "number"
+          ? d.prob
+          : typeof d.percent === "number"
+          ? d.percent / 100
+          : 0,
+    }));
+
     const elapsed = Date.now() - start;
     if (elapsed < 900) await new Promise((r) => setTimeout(r, 900 - elapsed));
-    setResults(data);
+    setResults(normalized);
+
     try {
-      const top = data.slice(0, 3).map((r) => r.label);
+      const top = normalized.slice(0, 3).map((r) => r.label);
       if (typeof window !== "undefined") {
         localStorage.setItem(
           "wb_check_ai_result_v1",
           JSON.stringify({ topLabels: top, savedAt: Date.now() })
         );
-        // Persist to server as the final result
         try {
           const cid = getClientIdLocal();
           fetch("/api/check-ai/save", {
@@ -175,6 +192,8 @@ export default function CheckAI() {
                 <div className="mt-3 grid grid-cols-2 sm:grid-cols-5 gap-2">
                   {OPTIONS.map((opt) => {
                     const active = answers[i] === opt.value;
+                    const visualActive =
+                      active || (answers[i] === 0 && opt.value === 3);
                     return (
                       <label
                         key={opt.value}
@@ -182,7 +201,9 @@ export default function CheckAI() {
                         className={[
                           "relative cursor-pointer select-none rounded-xl px-3 py-1 text-center ring-1 transition",
                           "bg-white ring-gray-200 hover:bg-gray-50",
-                          active ? "ring-2 ring-sky-400 bg-sky-50/60" : "",
+                          visualActive
+                            ? "ring-2 ring-sky-400 bg-sky-50/60"
+                            : "",
                         ].join(" ")}
                       >
                         <input
@@ -265,7 +286,7 @@ export default function CheckAI() {
             <ul className="mt-5 space-y-3">
               {results.map((r) => (
                 <li
-                  key={r.label}
+                  key={r.code}
                   className="relative overflow-hidden rounded-xl ring-1 ring-gray-100 bg-gray-50"
                 >
                   <div

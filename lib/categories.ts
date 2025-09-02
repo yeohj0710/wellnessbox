@@ -22,6 +22,33 @@ export type CategoryKey =
   | "coenzymeQ10"
   | "collagen";
 
+export const KEY_TO_CODE: Record<CategoryKey, string> = {
+  vitaminC: "vitc",
+  omega3: "omega3",
+  calcium: "ca",
+  lutein: "lutein",
+  vitaminD: "vitd",
+  milkThistle: "milkthistle",
+  probiotics: "probiotics",
+  vitaminB: "vitb",
+  magnesium: "mg",
+  garcinia: "garcinia",
+  multivitamin: "multivitamin",
+  zinc: "zn",
+  psyllium: "psyllium",
+  minerals: "minerals",
+  vitaminA: "vita",
+  iron: "fe",
+  phosphatidylserine: "ps",
+  folicAcid: "folate",
+  arginine: "arginine",
+  chondroitin: "chondroitin",
+  coenzymeQ10: "coq10",
+  collagen: "collagen",
+};
+
+export const CATEGORY_CODES: string[] = Object.values(KEY_TO_CODE);
+
 export const CATEGORY_LABELS: Record<CategoryKey, string> = {
   vitaminC: "비타민C",
   omega3: "오메가3",
@@ -88,6 +115,50 @@ export const CATEGORY_DESCRIPTIONS: Record<CategoryKey, string> = {
     "강력한 항산화 작용으로 세포 에너지를 만들어주고 노화 방지에도 도움을 줘요.",
   collagen: "피부 탄력과 보습을 지켜주고, 관절·뼈 등 결합조직 건강에도 좋아요.",
 };
+
+export const INTEREST_LABELS: Record<CategoryKey, string> = {
+  vitaminC: "피부·항산화",
+  omega3: "심혈관·혈액순환",
+  calcium: "뼈·치아 건강",
+  lutein: "눈 건강",
+  vitaminD: "뼈·면역",
+  milkThistle: "간 건강",
+  probiotics: "장·소화",
+  vitaminB: "피로·에너지",
+  magnesium: "긴장·근육",
+  garcinia: "체중 관리",
+  multivitamin: "기초 영양",
+  zinc: "면역·피부",
+  psyllium: "배변·식이섬유",
+  minerals: "미네랄 보충",
+  vitaminA: "눈·피부",
+  iron: "빈혈 예방",
+  phosphatidylserine: "집중·기억",
+  folicAcid: "임신 준비",
+  arginine: "혈류·운동",
+  chondroitin: "관절",
+  coenzymeQ10: "피로·항산화",
+  collagen: "피부·모발",
+};
+
+export const CODE_TO_LABEL: Record<string, string> = Object.fromEntries(
+  Object.entries(KEY_TO_CODE).map(([k, code]) => [
+    code,
+    CATEGORY_LABELS[k as CategoryKey],
+  ])
+) as Record<string, string>;
+
+export const CODE_TO_DESC: Record<string, string> = Object.fromEntries(
+  Object.entries(KEY_TO_CODE).map(([k, code]) => [
+    code,
+    CATEGORY_DESCRIPTIONS[k as CategoryKey],
+  ])
+) as Record<string, string>;
+
+export const labelOf = (code: string) =>
+  CODE_TO_LABEL[code as keyof typeof CODE_TO_LABEL] ?? code;
+export const descOf = (code: string) =>
+  CODE_TO_DESC[code as keyof typeof CODE_TO_DESC] ?? "";
 
 export const allCategories: CategoryKey[] = Object.keys(
   CATEGORY_LABELS
