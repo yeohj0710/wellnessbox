@@ -103,7 +103,7 @@ export default function CheckAI() {
     }));
 
     const elapsed = Date.now() - start;
-    if (elapsed < 900) await new Promise((r) => setTimeout(r, 900 - elapsed));
+    if (elapsed < 3000) await new Promise((r) => setTimeout(r, 3000 - elapsed));
     setResults(normalized);
 
     try {
@@ -243,12 +243,27 @@ export default function CheckAI() {
       </div>
 
       {loading && (
-        <div className="fixed inset-0 z-40 grid place-items-center bg-black/40 backdrop-blur-sm p-5 sm:p-6">
-          <div className="flex flex-col items-center gap-4">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-sky-500" />
-            <p className="text-sm text-gray-100">
-              AI가 영양제를 추천하고 있어요...
-            </p>
+        <div className="fixed inset-0 z-40 overflow-hidden">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="absolute inset-0 animate-[pulseGlow_4s_ease-in-out_infinite] bg-[radial-gradient(60%_60%_at_50%_50%,rgba(56,121,255,0.12),transparent_70%)]" />
+          <div className="relative z-10 h-full w-full grid place-items-center p-6">
+            <div className="flex flex-col items-center">
+              <div className="relative h-28 w-28">
+                <div className="absolute inset-0 rounded-full animate-[spin_2.8s_linear_infinite] [background:conic-gradient(from_0deg,theme(colors.sky.400),theme(colors.indigo.500),theme(colors.sky.400))] [mask:radial-gradient(farthest-side,transparent_64%,#000_65%)]" />
+                <div className="absolute inset-3 rounded-2xl bg-white/10 ring-1 ring-inset ring-white/20 backdrop-blur grid place-items-center text-white text-lg font-extrabold">
+                  AI
+                </div>
+                <div className="absolute inset-0 rounded-full ring-2 ring-sky-400/30 animate-[ping_2.2s_cubic-bezier(0,0,0.2,1)_infinite]" />
+              </div>
+              <p className="mt-6 text-sm text-white/90">
+                AI가 영양제를 추천하고 있어요
+              </p>
+              <div className="mt-3 flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-white/90 animate-[dotBounce_1.2s_ease-in-out_infinite]" />
+                <span className="h-2 w-2 rounded-full bg-white/70 animate-[dotBounce_1.2s_ease-in-out_infinite] [animation-delay:.15s]" />
+                <span className="h-2 w-2 rounded-full bg-white/60 animate-[dotBounce_1.2s_ease-in-out_infinite] [animation-delay:.3s]" />
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -328,14 +343,25 @@ export default function CheckAI() {
       )}
 
       <style jsx global>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: scale(0.98) translateY(4px);
+        @keyframes pulseGlow {
+          0%,
+          100% {
+            opacity: 0.7;
           }
-          to {
+          50% {
             opacity: 1;
-            transform: scale(1) translateY(0);
+          }
+        }
+        @keyframes dotBounce {
+          0%,
+          80%,
+          100% {
+            transform: translateY(0);
+            opacity: 0.7;
+          }
+          40% {
+            transform: translateY(-6px);
+            opacity: 1;
           }
         }
       `}</style>
