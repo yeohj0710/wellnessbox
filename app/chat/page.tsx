@@ -2,18 +2,15 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFooter } from "@/components/common/footerContext";
-import {
-  ChatBubbleLeftRightIcon,
-  PlusIcon,
-  Cog6ToothIcon,
-  TrashIcon,
-  PaperAirplaneIcon,
-  Bars3Icon,
-} from "@heroicons/react/24/outline";
+import { Bars3Icon } from "@heroicons/react/24/outline";
 import type { ChatMessage, ChatSession, UserProfile } from "@/types/chat";
 import MessageBubble from "./components/MessageBubble";
 import EmptyState from "./components/EmptyState";
 import ProfileModal from "./components/ProfileModal";
+import ChatDrawer from "./components/ChatDrawer";
+import ChatInput from "./components/ChatInput";
+import ProfileBanner from "./components/ProfileBanner";
+import ReferenceData from "./components/ReferenceData";
 import {
   uid,
   getClientIdLocal,
@@ -503,123 +500,12 @@ export default function ChatPage() {
           className="mx-auto max-w-3xl w-full px-4 md:px-8 flex-1 pt-8 pb-28 overflow-y-auto"
           ref={messagesContainerRef}
         >
-          <div className="mx-auto max-w-3xl mb-8" hidden={!showProfileBanner}>
-            <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 shadow-sm">
-              <div className="px-1 flex-1 leading-tight">
-                {profile ? (
-                  <span>
-                    프로필 설정됨 · 나이 {profile.age ?? "?"}, 성별{" "}
-                    {profile.sex ?? "?"}
-                    {profile.goals?.length
-                      ? ` · 목표 ${profile.goals.join(", ")}`
-                      : ""}
-                  </span>
-                ) : (
-                  <span>
-                    프로필을 설정하면 나에게 좀 더 개인맞춤화된 상담이 쉬워져요.
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-amber-900 hover:bg-amber-100 whitespace-nowrap transition"
-                  onClick={() => setShowSettings(true)}
-                >
-                  프로필 설정
-                </button>
-                <button
-                  aria-label="Close profile banner"
-                  className="h-6 w-6 p-0 text-amber-700 hover:text-amber-900 hover:opacity-80 transition"
-                  onClick={() => setShowProfileBanner(false)}
-                  title="Close"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="mx-auto max-w-3xl mb-8 space-y-4" hidden>
-            {(orders.length > 0 || assessResult || checkAiResult) && (
-              <details className="mb-2">
-                <summary className="cursor-pointer font-semibold">
-                  참고 데이터
-                </summary>
-                <div className="mt-2 text-xs space-y-4">
-                  {orders.length > 0 && (
-                    <div>
-                      <div className="font-semibold mb-1">주문 내역</div>
-                      {orders.map((o) => (
-                        <div key={o.id} className="mb-2">
-                          <div className="text-gray-500">
-                            최근 상태 변경:{" "}
-                            {new Date(o.updatedAt).toLocaleString()}
-                          </div>
-                          <div>
-                            주문 #{o.id} - {o.status}
-                          </div>
-                          {o.items.length > 0 && (
-                            <ul className="list-disc pl-4 mt-1">
-                              {o.items.map((item: any, idx: number) => (
-                                <li key={idx}>
-                                  {item.name}
-                                  {item.quantity ? ` x${item.quantity}` : ""}
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {assessResult && (
-                    <div>
-                      <div className="font-semibold mb-1">정밀 AI 검사</div>
-                      <div className="text-gray-500">
-                        검사일시:{" "}
-                        {new Date(assessResult.createdAt).toLocaleString()}
-                      </div>
-                      <ul className="list-disc pl-4 mt-1">
-                        {assessResult.summary.map((s: string, idx: number) => (
-                          <li key={idx}>{s}</li>
-                        ))}
-                      </ul>
-                      {assessResult.answers?.length > 0 && (
-                        <ul className="list-disc pl-4 mt-2">
-                          {assessResult.answers.map((a: any, idx: number) => (
-                            <li key={idx}>
-                              {a.question}: {a.answer}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  )}
-
-                  {checkAiResult && (
-                    <div>
-                      <div className="font-semibold mb-1">빠른 AI 검사</div>
-                      <div className="text-gray-500">
-                        검사일시:{" "}
-                        {new Date(checkAiResult.createdAt).toLocaleString()}
-                      </div>
-                      <div>{checkAiResult.labels.join(", ")}</div>
-                      {checkAiResult.answers?.length > 0 && (
-                        <ul className="list-disc pl-4 mt-1">
-                          {checkAiResult.answers.map((a: any, idx: number) => (
-                            <li key={idx}>
-                              {a.question}: {a.answer}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </details>
-            )}
-          </div>
+          <ProfileBanner
+            profile={profile}
+            show={showProfileBanner}
+            onEdit={() => setShowSettings(true)}
+            onClose={() => setShowProfileBanner(false)}
+          />
 
           <div className="mx-auto max-w-3xl space-y-4">
             {!active || active.messages.length === 0 ? (
@@ -628,88 +514,12 @@ export default function ChatPage() {
               active.messages.map((m, i) => (
                 <div key={m.id}>
                   <MessageBubble role={m.role} content={m.content} />
-                  {i === 0 &&
-                    (orders.length > 0 || assessResult || checkAiResult) && (
-                      <div className="mt-1 pl-2">
-                        <details className="group text-[11px] text-slate-500">
-                          <summary className="inline-flex items-center gap-1 cursor-pointer hover:text-slate-700">
-                            <span className="inline-block h-1.5 w-1.5 rounded-full bg-slate-300 group-open:bg-slate-400" />
-                            참고 데이터
-                          </summary>
-                          <div className="mt-1 inline-block w-auto max-w-[680px] rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 shadow-sm space-y-2">
-                            {orders.length > 0 && (
-                              <div>
-                                <div className="mb-1 font-medium text-slate-600">
-                                  주문
-                                </div>
-                                <ul className="space-y-1">
-                                  {orders.map((o) => (
-                                    <li key={o.id} className="text-slate-600">
-                                      <div className="flex items-center gap-2"></div>
-                                      <div className="mt-0.5 text-[10px] text-slate-400">
-                                        {new Date(o.updatedAt).toLocaleString()}
-                                      </div>
-                                      {o.items.length > 0 && (
-                                        <ul className="list-disc pl-4 mt-1 space-y-0.5">
-                                          {o.items.map(
-                                            (item: any, idx: number) => (
-                                              <li
-                                                key={idx}
-                                                className="text-slate-600"
-                                              >
-                                                {item.name}
-                                                {item.quantity
-                                                  ? ` x${item.quantity}`
-                                                  : ""}
-                                              </li>
-                                            )
-                                          )}
-                                        </ul>
-                                      )}
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                            {assessResult && (
-                              <div>
-                                <div className="mb-1 font-medium text-slate-600">
-                                  정밀 AI 검사
-                                </div>
-                                <div className="text-[10px] text-slate-400">
-                                  {new Date(
-                                    assessResult.createdAt
-                                  ).toLocaleString()}
-                                </div>
-                                <ul className="list-disc pl-4 mt-1 space-y-0.5">
-                                  {assessResult.summary.map(
-                                    (s: string, idx: number) => (
-                                      <li key={idx} className="text-slate-600">
-                                        {s}
-                                      </li>
-                                    )
-                                  )}
-                                </ul>
-                              </div>
-                            )}
-                            {checkAiResult && (
-                              <div>
-                                <div className="mb-1 font-medium text-slate-600">
-                                  빠른 AI 검사
-                                </div>
-                                <div className="text-[10px] text-slate-400">
-                                  {new Date(
-                                    checkAiResult.createdAt
-                                  ).toLocaleString()}
-                                </div>
-                                <div className="mt-1 text-slate-600">
-                                  {checkAiResult.labels.join(", ")}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </details>
-                      </div>
+                    {i === 0 && (
+                      <ReferenceData
+                        orders={orders}
+                        assessResult={assessResult}
+                        checkAiResult={checkAiResult}
+                      />
                     )}
                 </div>
               ))
@@ -717,125 +527,25 @@ export default function ChatPage() {
           </div>
         </div>
 
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-full px-4 pointer-events-none">
-          <div className="mx-auto max-w-3xl">
-            <div className="flex items-end gap-2 pointer-events-auto">
-              <textarea
-                className="flex-1 resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-800 shadow-lg focus:outline-none focus:ring-2 focus:ring-slate-300 max-h-40 min-h-[48px]"
-                placeholder="궁금한 내용을 입력하고 Enter로 전송"
-                value={input}
-                rows={1}
-                onChange={(e) => setInput(e.target.value)}
-                onInput={(e) => {
-                  const t = e.currentTarget;
-                  t.style.height = "auto";
-                  t.style.height = `${Math.min(t.scrollHeight, 160)}px`;
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
-                  }
-                }}
-              />
-              <button
-                className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-white hover:bg-slate-800 disabled:opacity-50"
-                onClick={() => sendMessage()}
-                disabled={loading || !input.trim()}
-                title="전송"
-              >
-                <PaperAirplaneIcon className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-        </div>
+          <ChatInput
+            input={input}
+            setInput={setInput}
+            sendMessage={() => sendMessage()}
+            loading={loading}
+          />
       </main>
 
-      {drawerVisible && (
-        <div
-          className="fixed left-0 right-0 bottom-0 top-14 z-50"
-          role="dialog"
-          aria-modal="true"
-          onClick={closeDrawer}
-        >
-          <div
-            className={`absolute inset-0 bg-black/30 transition-opacity duration-200 ${
-              drawerOpen ? "opacity-100" : "opacity-0"
-            }`}
-          />
-          <div
-            className={`absolute inset-y-0 left-0 w-80 max-w-[85vw] bg-white shadow-xl border-r border-slate-200 transform transition-transform duration-200 ${
-              drawerOpen ? "translate-x-0" : "-translate-x-full"
-            }`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between p-4 border-b border-slate-200">
-              <div className="flex items-center gap-2 text-slate-800 font-semibold">
-                <ChatBubbleLeftRightIcon className="h-6 w-6" /> 대화 기록
-              </div>
-              <button
-                className="p-2 rounded-md hover:bg-slate-100"
-                onClick={closeDrawer}
-              >
-                닫기
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              {sessions.length === 0 ? (
-                <div className="p-6 text-sm text-slate-500">
-                  아직 대화 기록이 없습니다.
-                </div>
-              ) : (
-                <ul className="p-2">
-                  {sessions.map((s) => (
-                    <li
-                      key={s.id}
-                      className={`group flex items-center gap-2 rounded-md px-3 py-2 cursor-pointer hover:bg-slate-100 ${
-                        activeId === s.id ? "bg-slate-100" : ""
-                      }`}
-                      onClick={() => {
-                        setActiveId(s.id);
-                        closeDrawer();
-                      }}
-                    >
-                      <span className="flex-1 truncate text-sm text-slate-800">
-                        {s.title || "새 상담"}
-                      </span>
-                      <button
-                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-slate-500 hover:text-red-600"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteChat(s.id);
-                        }}
-                        title="삭제"
-                      >
-                        <TrashIcon className="h-4 w-4" />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-            <div className="border-t border-slate-200 p-3 space-y-2">
-              <button
-                className="w-full flex items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
-                onClick={() => {
-                  newChat();
-                  closeDrawer();
-                }}
-              >
-                <PlusIcon className="h-4 w-4" /> 새 상담 시작
-              </button>
-              <button
-                className="w-full flex items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
-                onClick={() => setShowSettings(true)}
-              >
-                <Cog6ToothIcon className="h-5 w-5" /> 프로필 설정
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+        <ChatDrawer
+          sessions={sessions}
+          activeId={activeId}
+          setActiveId={setActiveId}
+          newChat={newChat}
+          deleteChat={deleteChat}
+          setShowSettings={setShowSettings}
+          drawerVisible={drawerVisible}
+          drawerOpen={drawerOpen}
+          closeDrawer={closeDrawer}
+        />
 
       {showSettings && (
         <ProfileModal
