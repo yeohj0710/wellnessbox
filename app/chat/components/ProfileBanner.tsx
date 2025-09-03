@@ -1,6 +1,7 @@
 "use client";
 
 import type { UserProfile } from "@/types/chat";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 
 interface ProfileBannerProps {
   profile?: UserProfile;
@@ -17,37 +18,33 @@ export default function ProfileBanner({
 }: ProfileBannerProps) {
   if (!show) return null;
   return (
-    <div className="mx-auto mb-4 max-w-3xl" hidden={!show}>
-      <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50/90 px-3 py-2 text-xs text-amber-800 shadow-sm backdrop-blur sm:text-sm">
-        <div className="flex-1 px-1 leading-tight">
-          {profile ? (
-            <span>
-              프로필 설정됨 · 나이 {profile.age ?? "?"}, 성별{" "}
-              {profile.sex ?? "?"}
-              {profile.goals?.length
-                ? ` · 목표 ${profile.goals.join(", ")}`
-                : ""}
-            </span>
-          ) : (
-            <span>
-              프로필을 설정하면 나에게 좀 더 개인맞춤화된 상담이 쉬워져요.
-            </span>
-          )}
+    <div className="mx-auto mb-4 max-w-3xl">
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white/90 px-3 py-2 text-xs text-slate-700 shadow-sm backdrop-blur sm:text-sm">
+        <div className="flex items-center gap-2">
+          <div className="h-6 w-6 shrink-0 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600" />
+          <div className="px-1 leading-tight">
+            <div className="font-semibold text-slate-900">
+              맞춤 상담 준비하기
+            </div>
+            <div className="text-slate-600">
+              프로필을 설정하면 더 정확한 추천을 받을 수 있어요.
+            </div>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <button
-            className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-amber-900 transition hover:bg-amber-100 whitespace-nowrap"
+            className="rounded-full bg-slate-900 px-3 py-1.5 text-white text-xs font-semibold hover:opacity-90 active:opacity-95 sm:text-sm"
             onClick={onEdit}
           >
             프로필 설정
           </button>
           <button
-            aria-label="Close profile banner"
-            className="h-6 w-6 p-0 text-amber-700 transition hover:text-amber-900 hover:opacity-80"
+            aria-label="닫기"
+            className="grid h-7 w-7 place-items-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700"
             onClick={onClose}
-            title="Close"
+            title="닫기"
           >
-            ×
+            <XMarkIcon className="h-4 w-4" />
           </button>
         </div>
       </div>

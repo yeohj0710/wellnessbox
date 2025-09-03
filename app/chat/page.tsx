@@ -566,13 +566,14 @@ export default function ChatPage() {
           className="mx-auto max-w-3xl w-full px-5 sm:px-6 md:px-8 flex-1 pt-4 pb-56 overflow-y-auto"
           ref={messagesContainerRef}
         >
-          <ProfileBanner
-            profile={profile}
-            show={showProfileBanner}
-            onEdit={() => setShowSettings(true)}
-            onClose={() => setShowProfileBanner(false)}
-          />
-
+          {!profile && (
+            <ProfileBanner
+              profile={profile}
+              show={showProfileBanner}
+              onEdit={() => setShowSettings(true)}
+              onClose={() => setShowProfileBanner(false)}
+            />
+          )}
           <div className="mx-auto max-w-3xl space-y-4">
             {active &&
               active.messages.length > 0 &&
