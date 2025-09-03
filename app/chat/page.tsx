@@ -276,7 +276,9 @@ export default function ChatPage() {
   }
 
   function normalizeNewlines(text: string) {
-    return text.replace(/\n{3,}/g, "\n\n\n");
+    return text
+      .replace(/\n{3,}/g, "\n\n")
+      .replace(/([^\n])\n([ \t]*([-*+]\s|\d+\.\s))/g, "$1\n\n$2");
   }
 
   async function generateTitle() {
@@ -396,7 +398,7 @@ export default function ChatPage() {
         }),
         signal: controller.signal,
       });
-      if (!res.ok || !res.body) throw new Error("대화를 이어받지 못했습니다.");
+      if (!res.ok || !res.body) throw new Error("대화를 이어받지 못했어요.");
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let done = false;
@@ -446,7 +448,7 @@ export default function ChatPage() {
       } catch {}
     } catch (e) {
       if ((e as any)?.name !== "AbortError") {
-        const errText = (e as Error).message || "문제가 발생했습니다.";
+        const errText = (e as Error).message || "문제가 발생했어요.";
         setSessions((prev) =>
           prev.map((s) =>
             s.id === active.id
@@ -514,7 +516,7 @@ export default function ChatPage() {
         signal: controller.signal,
       });
       if (!res.ok || !res.body)
-        throw new Error("초기 메시지를 받아오지 못했습니다.");
+        throw new Error("초기 메시지를 받아오지 못했어요.");
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let fullText = "";
@@ -558,7 +560,7 @@ export default function ChatPage() {
       } catch {}
     } catch (e) {
       if ((e as any)?.name !== "AbortError") {
-        const errText = (e as Error).message || "문제가 발생했습니다.";
+        const errText = (e as Error).message || "문제가 발생했어요.";
         setSessions((prev) =>
           prev.map((ss) =>
             ss.id === sessionId
