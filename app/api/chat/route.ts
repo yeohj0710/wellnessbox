@@ -36,6 +36,23 @@ function labelOf(keyOrCodeOrLabel: string) {
   return found ?? keyOrCodeOrLabel;
 }
 
+function pickOrderItemNames(items: any[]) {
+  if (!Array.isArray(items)) return [];
+  const names = items
+    .map(
+      (it: any) =>
+        it?.name ??
+        it?.productName ??
+        it?.product?.name ??
+        it?.label ??
+        it?.title ??
+        it?.sku ??
+        null
+    )
+    .filter(Boolean);
+  return Array.from(new Set(names)).slice(0, 5);
+}
+
 function buildUserContextBrief(ctx: any) {
   const parts: string[] = [];
   if (ctx.profile) {
@@ -54,7 +71,6 @@ function buildUserContextBrief(ctx: any) {
       pParts.push(`목표:${p.goals.slice(0, 2).join(",")}`);
     if (pParts.length) parts.push(`프로필: ${pParts.join(" · ")}`);
   }
-  if (ctx.summary) parts.push(ctx.summary);
   if (ctx.latestTest?.top?.length) {
     const tops = ctx.latestTest.top
       .map(
@@ -62,29 +78,20 @@ function buildUserContextBrief(ctx: any) {
           t.label + (t.percent != null ? ` ${t.percent.toFixed(1)}%` : "")
       )
       .join(", ");
-    parts.push(`최근 검사: ${ctx.latestTest.type} · ${tops}`);
+    parts.push(`[검사] ${ctx.latestTest.type} · ${tops}`);
   }
-  if (ctx.orders?.last)
-    parts.push(`최근 주문: #${ctx.orders.last.id} ${ctx.orders.last.status}`);
-  const brief = parts.join(" · ");
+  if (ctx.orders?.last) {
+    const names = Array.isArray(ctx.orderItemNames)
+      ? ctx.orderItemNames.slice(0, 3)
+      : [];
+    parts.push(
+      `[주문] #${ctx.orders.last.id} ${ctx.orders.last.status}${
+        names.length ? ` · ${names.join(", ")}` : ""
+      }`
+    );
+  }
+  const brief = parts.join(" | ");
   return brief.length > 480 ? brief.slice(0, 480) + "…" : brief;
-}
-
-function trimMessagesWindow(
-  messages: Array<{ role: string; content: string }>,
-  maxChars = 8000,
-  maxCount = 16
-) {
-  const win = messages.slice(-maxCount);
-  let total = 0;
-  const out: typeof win = [];
-  for (let i = win.length - 1; i >= 0; i--) {
-    const m = win[i];
-    total += m.content.length;
-    if (total > maxChars) break;
-    out.push(m);
-  }
-  return out.reverse();
 }
 
 export async function POST(req: NextRequest) {
@@ -207,9 +214,17 @@ export async function POST(req: NextRequest) {
       const quickAnswered = quickAnswers.length;
       const orderItems =
         lastOrder?.items?.map((it: any) => ({
-          name: it.name,
-          qty: it.quantity ?? null,
+          name:
+            it?.name ??
+            it?.productName ??
+            it?.product?.name ??
+            it?.label ??
+            it?.title ??
+            it?.sku ??
+            null,
+          qty: it?.quantity ?? it?.qty ?? null,
         })) ?? [];
+      const orderItemNames = pickOrderItemNames(lastOrder?.items ?? []);
       const hasData =
         !!lastOrder || assessTop.length > 0 || quickTop.length > 0;
       const assessBrief = assessTop.length
@@ -262,6 +277,7 @@ export async function POST(req: NextRequest) {
               }
             : null,
         },
+        orderItemNames,
         latestTest: (() => {
           const aDate = assessResult?.createdAt
             ? new Date(assessResult.createdAt).getTime()
@@ -300,19 +316,57 @@ export async function POST(req: NextRequest) {
     const userContextBrief = buildUserContextBrief(userContext);
     const userContextJson = JSON.stringify(userContext, null, 2);
 
+    const schemaGuide = `데이터 스키마 지침:
+- orders.last는 실제 주문 데이터이고 latestTest는 검사 데이터입니다.
+- '주문' 표현은 orders.last가 있을 때만 사용합니다.
+- 검사 항목을 주문으로 단정하지 않습니다.
+- 사실 확인과 용어 사용은 USER_CONTEXT_JSON과 FACT_*_JSON만을 근거로 합니다.
+- 사용자에게 JSON이나 내부 키 이름을 드러내지 않습니다.`;
+
+    const factProfile = userContext.profile
+      ? `FACT_PROFILE_JSON: ${JSON.stringify(
+          { profile: userContext.profile },
+          null,
+          2
+        )}`
+      : null;
+    const factTest = userContext.latestTest
+      ? `FACT_TEST_JSON: ${JSON.stringify(
+          { latestTest: userContext.latestTest },
+          null,
+          2
+        )}`
+      : null;
+    const factOrders = userContext.orders?.last
+      ? `FACT_ORDERS_JSON: ${JSON.stringify(
+          {
+            orders: userContext.orders,
+            orderItemNames: userContext.orderItemNames ?? [],
+          },
+          null,
+          2
+        )}`
+      : null;
+
     const openaiMessages: Array<{ role: string; content: string }> = [
       { role: "system", content: sysPrompt },
+      { role: "system", content: schemaGuide },
       { role: "system", content: `USER_CONTEXT_BRIEF: ${userContextBrief}` },
       { role: "system", content: `USER_CONTEXT_JSON: ${userContextJson}` },
     ];
 
+    if (factProfile)
+      openaiMessages.push({ role: "system", content: factProfile });
+    if (factTest) openaiMessages.push({ role: "system", content: factTest });
+    if (factOrders)
+      openaiMessages.push({ role: "system", content: factOrders });
+
     if (isInit) {
       const initGuide = `초기 인사 메시지 지침:
-        - USER_CONTEXT.orders.last가 있으면 "최근 ~를 주문하셨네요. ~인가요?" 식으로 언급.
-        - USER_CONTEXT.latestTest가 있으면 해당 검사 종류와 상위 추천 항목을 언급하고 answers를 참고해 추천 이유를 간단히 설명.
-        - USER_CONTEXT.latestTest.answers에서 대화를 이어가기 위한 질문을 1개 골라 사용자에게 질문.
-        - 유의미한 정보가 없으면 AI 진단 검사를 먼저 하고 오기를 권장하고, 상담 목표와 현재 질환·복용약·알레르기 중 두 가지를 물어볼 것.
-        - 한국어, ~요로 끝나는 말투.`;
+        - 반드시 한국어, ~요체 사용.
+        - FACT_TEST_JSON이 있으면 검사 결과를 1문장으로 요약하고, answers를 참고해 질문 1개를 이어서 제시.
+        - 검사 결과가 없으면 AI 진단 검사를 먼저 권유하고, 상담 목표와 질환·복용약·알레르기 중 두 가지를 물어볼 것.
+        - 주문(FACT_ORDERS_JSON)은 초기 인사에서 언급하지 않음.`;
       openaiMessages.push({ role: "system", content: initGuide });
       openaiMessages.push({
         role: "user",
@@ -322,13 +376,11 @@ export async function POST(req: NextRequest) {
       openaiMessages.push({
         role: "system",
         content:
-          "규칙: 위 USER_CONTEXT_BRIEF/JSON을 항상 우선 반영해 답변하세요. 건강과 무관한 요청엔 행동을 제한하고 필요한 경우 AI 진단 검사를 추천하세요.",
+          "규칙: 판단과 사실 인용은 USER_CONTEXT_JSON과 FACT_*_JSON만을 근거로 하세요. USER_CONTEXT_BRIEF는 요약 참고용입니다. '주문' 표현은 FACT_ORDERS_JSON이 있고 orderItemNames 중 하나를 문장에 포함할 때만 사용하세요. 검사 관련 내용은 '검사'로만 지칭하고 주문으로 단정하지 마세요. 출력 전 체크리스트를 스스로 점검하세요.",
       });
-
-      const trimmed = trimMessagesWindow(
-        messages.map((m) => ({ role: m.role, content: m.content }))
+      openaiMessages.push(
+        ...messages.map((m) => ({ role: m.role, content: m.content }))
       );
-      openaiMessages.push(...trimmed);
     }
 
     const controller = new AbortController();

@@ -602,7 +602,7 @@ export default function ChatPage() {
       <div className="h-12" />
       <main className="flex-1 flex flex-col">
         <div
-          className="mx-auto max-w-3xl w-full px-5 sm:px-6 md:px-8 flex-1 pt-4 pb-56 overflow-y-auto"
+          className="mx-auto max-w-3xl w-full px-5 sm:px-6 md:px-8 flex-1 pt-4 pb-[50vh] overflow-y-auto"
           ref={messagesContainerRef}
         >
           {profileLoaded && !profile && (
