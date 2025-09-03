@@ -1,14 +1,20 @@
 "use client";
 
 import Image from "next/image";
-import { BeakerIcon, UserCircleIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
-import { pretendard } from "../fonts";
+import {
+  BeakerIcon,
+  UserCircleIcon,
+  MagnifyingGlassIcon,
+} from "@heroicons/react/24/outline";
+import { pretendard } from "@/app/fonts";
 
 interface PharmacistReviewSectionProps {
   onSelect7Day: () => void;
 }
 
-export default function PharmacistReviewSection({ onSelect7Day }: PharmacistReviewSectionProps) {
+export default function PharmacistReviewSection({
+  onSelect7Day,
+}: PharmacistReviewSectionProps) {
   return (
     <section
       className={`relative w-full overflow-x-hidden bg-gradient-to-b from-white via-[#F6F3FF] to-white ${pretendard.className}`}

@@ -6,7 +6,7 @@ import {
   CubeIcon,
   BoltIcon,
 } from "@heroicons/react/24/outline";
-import { pretendard } from "../fonts";
+import { pretendard } from "@/app/fonts";
 
 export default function ProcessSection() {
   return (
@@ -87,8 +87,7 @@ export default function ProcessSection() {
               <p className="text-center text-[13px] sm:text-sm text-[#5B5A74]">
                 전문가
                 <br />
-                상담{" "}
-                <span className="font-semibold text-[#1E2A78]">검토</span>
+                상담 <span className="font-semibold text-[#1E2A78]">검토</span>
               </p>
             </div>
 

@@ -2,13 +2,15 @@
 
 import Image from "next/image";
 import { BoltIcon, ChartBarIcon } from "@heroicons/react/24/outline";
-import { pretendard } from "../fonts";
+import { pretendard } from "@/app/fonts";
 
 interface HealthTrackingSectionProps {
   onSelect7Day: () => void;
 }
 
-export default function HealthTrackingSection({ onSelect7Day }: HealthTrackingSectionProps) {
+export default function HealthTrackingSection({
+  onSelect7Day,
+}: HealthTrackingSectionProps) {
   return (
     <section
       className={`relative w-full overflow-x-hidden bg-gradient-to-b from-[#F6F3FF] via-[#F6F3FF]/50 to-[#F3F6FF] ${pretendard.className}`}

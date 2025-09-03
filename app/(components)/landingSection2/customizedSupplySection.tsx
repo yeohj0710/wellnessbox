@@ -2,13 +2,15 @@
 
 import Image from "next/image";
 import { CubeIcon, ChartBarIcon } from "@heroicons/react/24/outline";
-import { pretendard } from "../fonts";
+import { pretendard } from "@/app/fonts";
 
 interface CustomizedSupplySectionProps {
   onSelect7Day: () => void;
 }
 
-export default function CustomizedSupplySection({ onSelect7Day }: CustomizedSupplySectionProps) {
+export default function CustomizedSupplySection({
+  onSelect7Day,
+}: CustomizedSupplySectionProps) {
   return (
     <section
       className={`relative w-full overflow-x-hidden bg-gradient-to-b from-white via-[#F6F3FF]/60 to-[#F6F3FF] ${pretendard.className}`}
@@ -24,8 +26,8 @@ export default function CustomizedSupplySection({ onSelect7Day }: CustomizedSupp
               맞춤 <span className="text-[#3B5BFF]">소분 패키징</span>
             </h3>
             <p className="mt-3 text-[13px] sm:text-sm md:text-base text-[#6F7690] leading-relaxed">
-              하루 복용량 기준으로 7일치씩 소분 포장해 배송합니다. 사용자는
-              최소 7일부터 부담 없이 시작할 수 있습니다.
+              하루 복용량 기준으로 7일치씩 소분 포장해 배송합니다. 사용자는 최소
+              7일부터 부담 없이 시작할 수 있습니다.
             </p>
             <div className="mt-4 flex gap-3">
               <div className="h-12 w-12 rounded-xl border border-[#E0E6FF] bg-white shadow-[0_8px_22px_rgba(67,103,230,0.15)] grid place-items-center text-[#4F68FF]">
