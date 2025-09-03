@@ -13,10 +13,10 @@ model Category {
   id         Int       @id @default(autoincrement())
   name       String?
   image      String?
-  importance Float?
-  products   Product[] @relation("CategoryProductRelation")
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @default(now()) @updatedAt
+  importance Float?
+  products   Product[] @relation("CategoryProductRelation")
 }
 
 model Product {
@@ -25,12 +25,12 @@ model Product {
   images           String[]
   description      String?
   rating           Float?
-  importance       Float?
-  categories       Category[]        @relation("CategoryProductRelation")
-  pharmacyProducts PharmacyProduct[]
-  reviews          Review[]
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @default(now()) @updatedAt
+  importance       Float?
+  pharmacyProducts PharmacyProduct[]
+  reviews          Review[]
+  categories       Category[]        @relation("CategoryProductRelation")
 }
 
 model Pharmacy {
@@ -40,14 +40,14 @@ model Pharmacy {
   phone              String?
   userId             String?
   password           String?
-  representativeName String?
-  registrationNumber String?
-  pharmacyProducts   PharmacyProduct[]
-  orders             Order[]
-  messages           Message[]
-  subscriptions      Subscription[]
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @default(now()) @updatedAt
+  registrationNumber String?
+  representativeName String?
+  messages           Message[]
+  orders             Order[]
+  pharmacyProducts   PharmacyProduct[]
+  subscriptions      Subscription[]
 }
 
 model PharmacyProduct {
@@ -56,14 +56,14 @@ model PharmacyProduct {
   price      Int?
   stock      Int?
   capacity   String?
-  importance Float?
-  pharmacy   Pharmacy?   @relation(fields: [pharmacyId], references: [id], onDelete: SetNull)
   pharmacyId Int?
-  product    Product?    @relation(fields: [productId], references: [id], onDelete: SetNull)
   productId  Int?
-  orderItems OrderItem[]
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @default(now()) @updatedAt
+  importance Float?
+  orderItems OrderItem[]
+  pharmacy   Pharmacy?   @relation(fields: [pharmacyId], references: [id])
+  product    Product?    @relation(fields: [productId], references: [id])
 }
 
 model Order {
@@ -78,17 +78,17 @@ model Order {
   paymentId        String?
   transactionType  String?
   txId             String?
-  endpoint         String?
   totalPrice       Int?
   status           String?
-  orderItems       OrderItem[]
-  messages         Message[]
-  pharmacy         Pharmacy?      @relation(fields: [pharmacyId], references: [id], onDelete: SetNull)
   pharmacyId       Int?
-  rider            Rider?         @relation(fields: [riderId], references: [id], onDelete: SetNull)
   riderId          Int?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @default(now()) @updatedAt
+  endpoint         String?
+  messages         Message[]
+  pharmacy         Pharmacy?      @relation(fields: [pharmacyId], references: [id])
+  rider            Rider?         @relation(fields: [riderId], references: [id])
+  orderItems       OrderItem[]
   reviews          Review[]
   subscriptions    Subscription[]
 }
@@ -96,14 +96,14 @@ model Order {
 model OrderItem {
   id                Int              @id @default(autoincrement())
   quantity          Int?
-  order             Order?           @relation(fields: [orderId], references: [id], onDelete: SetNull)
   orderId           Int?
-  pharmacyProduct   PharmacyProduct? @relation(fields: [pharmacyProductId], references: [id], onDelete: SetNull)
   pharmacyProductId Int?
-  review            Review?
   reviewId          Int?             @unique
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @default(now()) @updatedAt
+  order             Order?           @relation(fields: [orderId], references: [id])
+  pharmacyProduct   PharmacyProduct? @relation(fields: [pharmacyProductId], references: [id])
+  review            Review?
 }
 
 model Message {
@@ -111,11 +111,11 @@ model Message {
   orderId    Int?
   content    String?
   timestamp  DateTime  @default(now())
-  order      Order?    @relation(fields: [orderId], references: [id], onDelete: SetNull)
-  pharmacy   Pharmacy? @relation(fields: [pharmacyId], references: [id])
   pharmacyId Int?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @default(now()) @updatedAt
+  order      Order?    @relation(fields: [orderId], references: [id])
+  pharmacy   Pharmacy? @relation(fields: [pharmacyId], references: [id])
 }
 
 model Rider {
@@ -123,10 +123,10 @@ model Rider {
   phone         String?
   userId        String?
   password      String?
-  orders        Order[]
-  subscriptions Subscription[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @default(now()) @updatedAt
+  orders        Order[]
+  subscriptions Subscription[]
 }
 
 model Review {
@@ -134,14 +134,14 @@ model Review {
   rate        Float?
   content     String?
   images      String[]
-  order       Order?     @relation(fields: [orderId], references: [id])
   orderId     Int?
-  product     Product?   @relation(fields: [productId], references: [id])
   productId   Int?
-  orderItem   OrderItem? @relation(fields: [orderItemId], references: [id])
   orderItemId Int?       @unique
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @default(now()) @updatedAt
+  order       Order?     @relation(fields: [orderId], references: [id])
+  orderItem   OrderItem? @relation(fields: [orderItemId], references: [id])
+  product     Product?   @relation(fields: [productId], references: [id])
 }
 
 model Subscription {
@@ -149,69 +149,60 @@ model Subscription {
   endpoint   String
   auth       String
   p256dh     String
-  order      Order?    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   orderId    Int?
-  pharmacy   Pharmacy? @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
-  pharmacyId Int?
-  rider      Rider?    @relation(fields: [riderId], references: [id], onDelete: Cascade)
-  riderId    Int?
-  role       String
   createdAt  DateTime  @default(now())
+  pharmacyId Int?
+  role       String
+  riderId    Int?
+  order      Order?    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  pharmacy   Pharmacy? @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
+  rider      Rider?    @relation(fields: [riderId], references: [id], onDelete: Cascade)
 
   @@unique([role, orderId, endpoint])
   @@unique([role, pharmacyId, endpoint])
   @@unique([role, riderId, endpoint])
 }
 
-/// --- WellnessBox Chat and Assess persistence ---
-
 model Client {
-  // A stable, client-generated identifier (stored in localStorage/cookies)
-  id           String   @id
-  userAgent    String?
-  lastIpHash   String?
-  pushEndpoint String?
-  createdAt    DateTime @default(now())
-  lastSeenAt   DateTime @default(now())
-
+  id             String             @id
+  userAgent      String?
+  lastIpHash     String?
+  pushEndpoint   String?
+  createdAt      DateTime           @default(now())
+  lastSeenAt     DateTime           @default(now())
   assessResults  AssessmentResult[]
-  checkAiResults CheckAiResult[]
   chatSessions   ChatSession[]
+  checkAiResults CheckAiResult[]
 
   @@index([lastSeenAt])
 }
 
 model AssessmentResult {
   id              String   @id @default(cuid())
-  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
   clientId        String
-  // Original questionnaire answers and computed result objects
   answers         Json
   cResult         Json
-  // Client-local timezone offset in minutes (e.g., 540 for KST)
   tzOffsetMinutes Int      @default(0)
   createdAt       DateTime @default(now())
+  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@index([clientId, createdAt])
 }
 
 model CheckAiResult {
   id              String   @id @default(cuid())
-  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
   clientId        String
-  // Original questionnaire answers (nullable for legacy entries)
-  answers         Json?
-  // Arbitrary JSON result (must include any top labels or scores)
   result          Json
   tzOffsetMinutes Int      @default(0)
   createdAt       DateTime @default(now())
+  answers         Json?
+  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@index([clientId, createdAt])
 }
 
 model ChatSession {
   id        String        @id
-  client    Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
   clientId  String
   title     String
   status    String        @default("active")
@@ -219,19 +210,13 @@ model ChatSession {
   createdAt DateTime      @default(now())
   updatedAt DateTime      @default(now()) @updatedAt
   messages  ChatMessage[]
+  client    Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@index([clientId, updatedAt])
 }
 
-enum ChatRole {
-  system
-  user
-  assistant
-}
-
 model ChatMessage {
   id              String      @id
-  session         ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   sessionId       String
   role            ChatRole
   content         String
@@ -240,6 +225,7 @@ model ChatMessage {
   meta            Json?
   tzOffsetMinutes Int         @default(0)
   createdAt       DateTime    @default(now())
+  session         ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId, createdAt])
 }
@@ -249,4 +235,10 @@ model Config {
   value     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum ChatRole {
+  system
+  user
+  assistant
 }
