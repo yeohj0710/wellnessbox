@@ -38,6 +38,22 @@ function labelOf(keyOrCodeOrLabel: string) {
 
 function buildUserContextBrief(ctx: any) {
   const parts: string[] = [];
+  if (ctx.profile) {
+    const p = ctx.profile;
+    const pParts: string[] = [];
+    if (p.sex === "male") pParts.push("남성");
+    else if (p.sex === "female") pParts.push("여성");
+    if (typeof p.age === "number") pParts.push(`${p.age}세`);
+    if (Array.isArray(p.conditions) && p.conditions.length)
+      pParts.push(`질환:${p.conditions.slice(0, 2).join(",")}`);
+    if (Array.isArray(p.medications) && p.medications.length)
+      pParts.push(`약:${p.medications.slice(0, 2).join(",")}`);
+    if (Array.isArray(p.allergies) && p.allergies.length)
+      pParts.push(`알레르기:${p.allergies.slice(0, 2).join(",")}`);
+    if (Array.isArray(p.goals) && p.goals.length)
+      pParts.push(`목표:${p.goals.slice(0, 2).join(",")}`);
+    if (pParts.length) parts.push(`프로필: ${pParts.join(" · ")}`);
+  }
   if (ctx.summary) parts.push(ctx.summary);
   if (ctx.latestTest?.top?.length) {
     const tops = ctx.latestTest.top
@@ -278,6 +294,7 @@ export async function POST(req: NextRequest) {
       assessResult ?? null,
       checkAiResult ?? null
     );
+    if (profile) userContext.profile = profile;
     const userContextBrief = buildUserContextBrief(userContext);
     const userContextJson = JSON.stringify(userContext, null, 2);
 

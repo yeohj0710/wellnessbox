@@ -15,9 +15,22 @@ export default function ProfileModal({
 }) {
   const [local, setLocal] = useState<UserProfile>({ ...(profile || {}) });
   const [confirmReset, setConfirmReset] = useState(false);
+
   useEffect(() => {
     setLocal({ ...(profile || {}) });
   }, [profile]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (confirmReset) setConfirmReset(false);
+        else onClose();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [confirmReset, onClose]);
+
   function set<K extends keyof UserProfile>(k: K, v: UserProfile[K]) {
     setLocal((p) => ({ ...(p || {}), [k]: v }));
   }

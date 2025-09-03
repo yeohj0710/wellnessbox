@@ -34,7 +34,8 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [showProfileBanner, setShowProfileBanner] = useState(true);
+  const [showProfileBanner, setShowProfileBanner] = useState(false);
+  const [profileLoaded, setProfileLoaded] = useState(false);
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [localCheckAi, setLocalCheckAi] = useState<string[]>([]);
@@ -56,6 +57,7 @@ export default function ChatPage() {
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const initStartedRef = useRef<Record<string, boolean>>({});
   const abortRef = useRef<AbortController | null>(null);
+  const profileInitRef = useRef(true);
 
   function openDrawer() {
     setDrawerVisible(true);
@@ -88,14 +90,18 @@ export default function ChatPage() {
       setActiveId(id);
     }
     (async () => {
+      let resolved: UserProfile | undefined = undefined;
       const remote = await loadProfileServer();
       if (remote) {
-        setProfile(remote);
+        resolved = remote;
         saveProfileLocal(remote);
       } else {
         const local = loadProfileLocal();
-        if (local) setProfile(local);
+        if (local) resolved = local;
       }
+      setProfile(resolved);
+      setShowProfileBanner(!resolved);
+      setProfileLoaded(true);
     })();
   }, []);
 
@@ -103,11 +109,6 @@ export default function ChatPage() {
     if (!sessions.length) return;
     saveSessions(sessions);
   }, [sessions]);
-
-  useEffect(() => {
-    saveProfileLocal(profile);
-    saveProfileServer(profile);
-  }, [profile]);
 
   const { hideFooter, showFooter } = useFooter();
   useEffect(() => {
@@ -602,7 +603,7 @@ export default function ChatPage() {
           className="mx-auto max-w-3xl w-full px-5 sm:px-6 md:px-8 flex-1 pt-4 pb-56 overflow-y-auto"
           ref={messagesContainerRef}
         >
-          {!profile && (
+          {profileLoaded && !profile && (
             <ProfileBanner
               profile={profile}
               show={showProfileBanner}
@@ -656,7 +657,18 @@ export default function ChatPage() {
         <ProfileModal
           profile={profile}
           onClose={() => setShowSettings(false)}
-          onChange={(p) => setProfile(p)}
+          onChange={(p) => {
+            if (!p) {
+              setProfile(undefined);
+              saveProfileLocal(undefined as any);
+              saveProfileServer(undefined as any);
+              return;
+            }
+            if (typeof p === "object" && Object.keys(p).length === 0) return;
+            setProfile(p);
+            saveProfileLocal(p);
+            saveProfileServer(p);
+          }}
         />
       )}
     </div>
