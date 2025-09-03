@@ -13,15 +13,23 @@ export async function POST(req: NextRequest) {
   try {
     const apiKey = ensureEnv("OPENAI_KEY");
     const body = await req.json();
-    const { firstUserMessage } = body || {};
-    if (!firstUserMessage || typeof firstUserMessage !== "string") {
-      return new Response(JSON.stringify({ error: "Missing firstUserMessage" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+    const { firstUserMessage, firstAssistantMessage } = body || {};
+    if (
+      !firstUserMessage ||
+      typeof firstUserMessage !== "string" ||
+      !firstAssistantMessage ||
+      typeof firstAssistantMessage !== "string"
+    ) {
+      return new Response(
+        JSON.stringify({ error: "Missing firstUserMessage or firstAssistantMessage" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
-    const prompt = `아래 첫 사용자 입력을 보고 대화 제목을 10~18자 이내 한국어로 간결하게 지어주세요.\n- 마케팅 문구 금지\n- 특수문자, 따옴표, 마침표 제외\n- 핵심 주제만 담기\n\n입력:\n"${firstUserMessage.replace(/\n/g, " ").slice(0, 500)}"`;
+    const prompt = `아래 첫 대화 내용을 보고 대화 제목을 10~18자 이내 한국어로 간결하게 지어주세요.\n- 마케팅 문구 금지\n- 특수문자, 따옴표, 마침표 제외\n- 핵심 주제만 담기\n\n사용자: "${firstUserMessage.replace(/\n/g, " ").slice(0, 500)}"\n상담사: "${firstAssistantMessage.replace(/\n/g, " ").slice(0, 500)}"`;
 
     const resp = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",

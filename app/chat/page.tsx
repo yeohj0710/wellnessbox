@@ -2,15 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFooter } from "@/components/common/footerContext";
-import { Bars3Icon } from "@heroicons/react/24/outline";
 import type { ChatMessage, ChatSession, UserProfile } from "@/types/chat";
 import MessageBubble from "./components/MessageBubble";
-import EmptyState from "./components/EmptyState";
 import ProfileModal from "./components/ProfileModal";
 import ChatDrawer from "./components/ChatDrawer";
 import ChatInput from "./components/ChatInput";
 import ProfileBanner from "./components/ProfileBanner";
 import ReferenceData from "./components/ReferenceData";
+import ChatTopBar from "./components/ChatTopBar";
 import {
   uid,
   getClientIdLocal,
@@ -42,6 +41,14 @@ export default function ChatPage() {
   const [checkAiResult, setCheckAiResult] = useState<any | null>(null);
   const [orders, setOrders] = useState<any[]>([]);
   const [resultsLoaded, setResultsLoaded] = useState(false);
+  const [titleHighlightId, setTitleHighlightId] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [titleLoading, setTitleLoading] = useState(false);
+  const [titleError, setTitleError] = useState(false);
+  const [topTitleHighlight, setTopTitleHighlight] = useState(false);
+
+  const firstUserMessageRef = useRef<string>("");
+  const firstAssistantMessageRef = useRef<string>("");
 
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const initStartedRef = useRef<Record<string, boolean>>({});
@@ -61,23 +68,18 @@ export default function ChatPage() {
   }
 
   useEffect(() => {
-    const s = loadSessions();
-    if (s.length > 0) {
-      setSessions(s);
-      setActiveId(s[0].id);
-    } else {
-      const id = uid();
-      const now = Date.now();
-      const ns: ChatSession = {
-        id,
-        title: "새 상담",
-        createdAt: now,
-        updatedAt: now,
-        messages: [],
-      };
-      setSessions([ns]);
-      setActiveId(id);
-    }
+    const existing = loadSessions();
+    const id = uid();
+    const now = Date.now();
+    const ns: ChatSession = {
+      id,
+      title: "새 상담",
+      createdAt: now,
+      updatedAt: now,
+      messages: [],
+    };
+    setSessions([ns, ...existing]);
+    setActiveId(id);
     setProfile(loadProfile());
   }, []);
 
@@ -221,6 +223,11 @@ export default function ChatPage() {
     const next = [s, ...sessions];
     setSessions(next);
     setActiveId(id);
+    setSuggestions([]);
+    firstUserMessageRef.current = "";
+    firstAssistantMessageRef.current = "";
+    setTitleLoading(false);
+    setTitleError(false);
   }
 
   function deleteChat(id: string) {
@@ -233,11 +240,68 @@ export default function ChatPage() {
     return text.replace(/\n{3,}/g, "\n\n\n");
   }
 
+  async function generateTitle() {
+    if (
+      !firstUserMessageRef.current ||
+      !firstAssistantMessageRef.current ||
+      !activeId
+    ) {
+      return;
+    }
+    setTitleLoading(true);
+    setTitleError(false);
+    try {
+      const tRes = await fetch("/api/chat/title", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstUserMessage: firstUserMessageRef.current,
+          firstAssistantMessage: firstAssistantMessageRef.current,
+        }),
+      });
+      const tJson = await tRes.json().catch(() => ({}));
+      const title =
+        typeof tJson?.title === "string" && tJson.title
+          ? tJson.title
+          : "새 상담";
+      setSessions((prev) =>
+        prev.map((s) => (s.id === activeId ? { ...s, title } : s))
+      );
+      setTitleHighlightId(activeId);
+      setTopTitleHighlight(true);
+      setTimeout(() => {
+        setTitleHighlightId(null);
+        setTopTitleHighlight(false);
+      }, 1500);
+    } catch (e) {
+      setTitleError(true);
+    } finally {
+      setTitleLoading(false);
+    }
+  }
+
+  async function fetchSuggestions(firstAssistant: string) {
+    try {
+      const res = await fetch("/api/chat/suggest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: firstAssistant }),
+      });
+      const js = await res.json().catch(() => ({}));
+      if (Array.isArray(js?.suggestions)) setSuggestions(js.suggestions);
+    } catch {}
+  }
+
   async function sendMessage(overrideText?: string) {
     if (!active) return;
     const text = (overrideText ?? input).trim();
     if (!text) return;
+    const isFirst = active.messages.length === 1;
     setInput("");
+    setSuggestions([]);
+    if (isFirst) {
+      firstUserMessageRef.current = text;
+    }
 
     const now = Date.now();
     const userMsg: ChatMessage = {
@@ -319,24 +383,10 @@ export default function ChatPage() {
         }
       }
 
-      // Title from first user message
-      try {
-        if ((active.messages?.length ?? 0) === 0) {
-          const tRes = await fetch("/api/chat/title", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ firstUserMessage: text }),
-          });
-          const tJson = await tRes.json().catch(() => ({}));
-          const title =
-            typeof tJson?.title === "string" && tJson.title
-              ? tJson.title
-              : "새 상담";
-          setSessions((prev) =>
-            prev.map((s) => (s.id === active.id ? { ...s, title } : s))
-          );
-        }
-      } catch {}
+      if (isFirst) {
+        firstAssistantMessageRef.current = fullText;
+        await generateTitle();
+      }
 
       try {
         const tz = getTzOffsetMinutes();
@@ -444,6 +494,7 @@ export default function ChatPage() {
           scrollToBottom();
         }
       }
+      await fetchSuggestions(fullText);
       try {
         const tz = getTzOffsetMinutes();
         const cid2 = getClientIdLocal();
@@ -482,17 +533,19 @@ export default function ChatPage() {
 
   return (
     <div className="relative flex flex-col w-full min-h-[calc(100vh-56px)] bg-gradient-to-b from-slate-50 to-white">
+      <ChatTopBar
+        openDrawer={openDrawer}
+        newChat={newChat}
+        openSettings={() => setShowSettings(true)}
+        title={active?.title || "새 상담"}
+        titleLoading={titleLoading}
+        titleError={titleError}
+        retryTitle={() => generateTitle()}
+        highlight={topTitleHighlight}
+      />
       <main className="flex-1 flex flex-col">
-        <button
-          className="fixed top-16 left-4 z-50 p-2 rounded-lg text-slate-700 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 transition"
-          onClick={openDrawer}
-          aria-label="Open menu"
-        >
-          <Bars3Icon className="h-6 w-6" />
-        </button>
-
         <div
-          className="mx-auto max-w-3xl w-full px-4 md:px-8 flex-1 pt-8 pb-28 overflow-y-auto"
+          className="mx-auto max-w-3xl w-full px-4 md:px-8 flex-1 pt-4 pb-28 overflow-y-auto"
           ref={messagesContainerRef}
         >
           <ProfileBanner
@@ -503,44 +556,44 @@ export default function ChatPage() {
           />
 
           <div className="mx-auto max-w-3xl space-y-4">
-            {!active || active.messages.length === 0 ? (
-              <EmptyState onTryExamples={(q) => sendMessage(q)} />
-            ) : (
+            {active &&
+              active.messages.length > 0 &&
               active.messages.map((m, i) => (
                 <div key={m.id}>
                   <MessageBubble role={m.role} content={m.content} />
-                    {i === 0 && (
-                      <ReferenceData
-                        orders={orders}
-                        assessResult={assessResult}
-                        checkAiResult={checkAiResult}
-                      />
-                    )}
+                  {i === 0 && (
+                    <ReferenceData
+                      orders={orders}
+                      assessResult={assessResult}
+                      checkAiResult={checkAiResult}
+                    />
+                  )}
                 </div>
-              ))
-            )}
+              ))}
           </div>
         </div>
-
-          <ChatInput
-            input={input}
-            setInput={setInput}
-            sendMessage={() => sendMessage()}
-            loading={loading}
-          />
+        <ChatInput
+          input={input}
+          setInput={setInput}
+          sendMessage={() => sendMessage()}
+          loading={loading}
+          suggestions={
+            active && active.messages.length === 1 ? suggestions : []
+          }
+          onSelectSuggestion={(q) => sendMessage(q)}
+        />
       </main>
 
-        <ChatDrawer
-          sessions={sessions}
-          activeId={activeId}
-          setActiveId={setActiveId}
-          newChat={newChat}
-          deleteChat={deleteChat}
-          setShowSettings={setShowSettings}
-          drawerVisible={drawerVisible}
-          drawerOpen={drawerOpen}
-          closeDrawer={closeDrawer}
-        />
+      <ChatDrawer
+        sessions={sessions}
+        activeId={activeId}
+        setActiveId={setActiveId}
+        deleteChat={deleteChat}
+        drawerVisible={drawerVisible}
+        drawerOpen={drawerOpen}
+        closeDrawer={closeDrawer}
+        highlightId={titleHighlightId}
+      />
 
       {showSettings && (
         <ProfileModal

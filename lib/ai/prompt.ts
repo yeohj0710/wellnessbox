@@ -1,6 +1,13 @@
 import { UserProfile } from "@/types/chat";
+import fs from "fs";
+import path from "path";
 
 // Keep this file strictly UTF-8. Prefer ASCII to avoid encoding issues.
+
+const extraGuidelines = fs.readFileSync(
+  path.join(process.cwd(), "lib/ai/assistant-guidelines.md"),
+  "utf8"
+);
 
 export function buildSystemPrompt(profile?: UserProfile) {
   const base = `You are WellnessBox, a friendly, expert counselor for dietary supplements.
@@ -30,7 +37,7 @@ Important rules:
       `Use this profile to tailor recommendations.`
     : "No user profile available. Politely ask for missing key details before suggesting supplements.";
 
-  return `${base}\n\n${profileText}`;
+  return `${base}\n\n${extraGuidelines}\n\n${profileText}`;
 }
 
 export function makeTitleFromFirstUserMessage(text: string) {

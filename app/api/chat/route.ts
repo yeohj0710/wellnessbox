@@ -4,11 +4,7 @@ import { ChatRequestBody } from "@/types/chat";
 import { getDefaultModel } from "@/lib/ai/models";
 import { getLatestResults } from "@/lib/server/results";
 import { ensureClient } from "@/lib/server/client";
-import {
-  CATEGORY_LABELS,
-  CategoryKey,
-  KEY_TO_CODE,
-} from "@/lib/categories";
+import { CATEGORY_LABELS, CategoryKey, KEY_TO_CODE } from "@/lib/categories";
 
 export const runtime = "nodejs";
 
@@ -38,6 +34,41 @@ function labelOf(keyOrCodeOrLabel: string) {
     (x) => x === keyOrCodeOrLabel
   );
   return found ?? keyOrCodeOrLabel;
+}
+
+function buildUserContextBrief(ctx: any) {
+  const parts: string[] = [];
+  if (ctx.summary) parts.push(ctx.summary);
+  if (ctx.latestTest?.top?.length) {
+    const tops = ctx.latestTest.top
+      .map(
+        (t: any) =>
+          t.label + (t.percent != null ? ` ${t.percent.toFixed(1)}%` : "")
+      )
+      .join(", ");
+    parts.push(`최근 검사: ${ctx.latestTest.type} · ${tops}`);
+  }
+  if (ctx.orders?.last)
+    parts.push(`최근 주문: #${ctx.orders.last.id} ${ctx.orders.last.status}`);
+  const brief = parts.join(" · ");
+  return brief.length > 480 ? brief.slice(0, 480) + "…" : brief;
+}
+
+function trimMessagesWindow(
+  messages: Array<{ role: string; content: string }>,
+  maxChars = 8000,
+  maxCount = 16
+) {
+  const win = messages.slice(-maxCount);
+  let total = 0;
+  const out: typeof win = [];
+  for (let i = win.length - 1; i >= 0; i--) {
+    const m = win[i];
+    total += m.content.length;
+    if (total > maxChars) break;
+    out.push(m);
+  }
+  return out.reverse();
 }
 
 export async function POST(req: NextRequest) {
@@ -126,7 +157,7 @@ export async function POST(req: NextRequest) {
     const sysPrompt =
       buildSystemPrompt(profile) + (knownContext ? `\n\n${knownContext}` : "");
 
-    function buildUserContextV2(
+    function buildUserContext(
       orders: any[],
       assessResult: any,
       checkAiResult: any
@@ -150,13 +181,14 @@ export async function POST(req: NextRequest) {
             .slice(0, 3)
             .map((x: string, i: number) => ({ rank: i + 1, label: labelOf(x) }))
         : [];
-
-      const assessAnswered = Array.isArray(assessResult?.answers)
-        ? assessResult.answers.length
-        : 0;
-      const quickAnswered = Array.isArray(checkAiResult?.answers)
-        ? checkAiResult.answers.length
-        : 0;
+      const assessAnswers = Array.isArray(assessResult?.answers)
+        ? assessResult.answers
+        : [];
+      const assessAnswered = assessAnswers.length;
+      const quickAnswers = Array.isArray(checkAiResult?.answers)
+        ? checkAiResult.answers
+        : [];
+      const quickAnswered = quickAnswers.length;
       const orderItems =
         lastOrder?.items?.map((it: any) => ({
           name: it.name,
@@ -164,7 +196,6 @@ export async function POST(req: NextRequest) {
         })) ?? [];
       const hasData =
         !!lastOrder || assessTop.length > 0 || quickTop.length > 0;
-
       const assessBrief = assessTop.length
         ? assessTop
             .map(
@@ -179,12 +210,11 @@ export async function POST(req: NextRequest) {
         ? quickTop.map((t: any) => `${t.rank}) ${t.label}`).join(", ")
         : "";
       const summaryParts: string[] = [];
-      if (assessBrief) summaryParts.push(`정밀검사 상위: ${assessBrief}`);
-      if (quickBrief) summaryParts.push(`빠른검사 상위: ${quickBrief}`);
+      if (assessBrief) summaryParts.push(`정밀 AI 검사 상위: ${assessBrief}`);
+      if (quickBrief) summaryParts.push(`빠른 AI 검사 상위: ${quickBrief}`);
       if (lastOrder)
         summaryParts.push(`최근 주문: #${lastOrder.id} ${lastOrder.status}`);
       const summary = summaryParts.join(" · ");
-
       return {
         hasData,
         summary,
@@ -193,7 +223,7 @@ export async function POST(req: NextRequest) {
               createdAt: assessResult?.createdAt ?? null,
               top: assessTop,
               answered: assessAnswered,
-              note: "createdAt은 검사일시, top은 1~3순위 추천이며 percent는 적합도(%)",
+              answers: assessAnswers,
             }
           : null,
         quick: quickTop.length
@@ -201,7 +231,7 @@ export async function POST(req: NextRequest) {
               createdAt: checkAiResult?.createdAt ?? null,
               top: quickTop,
               answered: quickAnswered,
-              note: "createdAt은 검사일시, top은 1~3순위 추천이며 percent는 적합도(%)",
+              answers: quickAnswers,
             }
           : null,
         orders: {
@@ -215,63 +245,70 @@ export async function POST(req: NextRequest) {
                 items: orderItems,
               }
             : null,
-          note: "orders.last.createdAt은 주문일시, orders.last.updatedAt은 가장 최근 조제/배송 상태 갱신 시각",
         },
+        latestTest: (() => {
+          const aDate = assessResult?.createdAt
+            ? new Date(assessResult.createdAt).getTime()
+            : 0;
+          const qDate = checkAiResult?.createdAt
+            ? new Date(checkAiResult.createdAt).getTime()
+            : 0;
+          if (aDate === 0 && qDate === 0) return null;
+          if (aDate >= qDate && assessTop.length)
+            return {
+              type: "assess",
+              createdAt: assessResult.createdAt,
+              top: assessTop,
+              answers: assessAnswers,
+            };
+          if (qDate > aDate && quickTop.length)
+            return {
+              type: "quick",
+              createdAt: checkAiResult.createdAt,
+              top: quickTop,
+              answers: quickAnswers,
+            };
+          return null;
+        })(),
       };
     }
 
-    const userContextLegacy = {
-      "주문 내역": Array.isArray(orders) ? orders : [],
-      "정밀 AI 검사": assessResult ?? null,
-      "빠른 AI 검사": checkAiResult ?? null,
-    };
-    const userContextJson = JSON.stringify(userContextLegacy);
-    const userContextV2 = buildUserContextV2(
+    const userContext = buildUserContext(
       Array.isArray(orders) ? orders : [],
       assessResult ?? null,
       checkAiResult ?? null
     );
-    const userContextV2Json = JSON.stringify(userContextV2);
-
-    const contextSemantics = [
-      "USER_CONTEXT_V2 해석 지침:",
-      "- assess.createdAt, quick.createdAt은 검사일시를 뜻한다.",
-      "- assess.top, quick.top은 1~3순위 추천이며 percent가 있으면 적합도(%)를 뜻한다.",
-      "- orders.last.createdAt은 주문일시, orders.last.updatedAt은 가장 최근 조제/배송 상태 갱신 시각을 뜻한다.",
-      "- 퍼센트 표기는 한국어 문장 내에서 소수 첫째 자리까지 표기한다.",
-      "- 답변은 한국어로 작성한다.",
-    ].join("\n");
-
-    const STYLE_GUIDE = [
-      "- 답변은 한국어로 작성하고 Markdown 형식을 사용한다.",
-      "- 문단 사이에 빈 줄을 두고, 필요 시 불릿 목록(•)을 3~7개 이내로 쓴다.",
-      "- 표가 유익하면 간단한 Markdown 표를 사용한다.",
-      "- 한 번의 답변은 8문장 또는 1200자 이내로 제한한다.",
-    ].join("\n");
+    const userContextBrief = buildUserContextBrief(userContext);
+    const userContextJson = JSON.stringify(userContext, null, 2);
 
     const openaiMessages: Array<{ role: string; content: string }> = [
       { role: "system", content: sysPrompt },
-      { role: "system", content: contextSemantics },
-      { role: "system", content: STYLE_GUIDE },
+      { role: "system", content: `USER_CONTEXT_BRIEF: ${userContextBrief}` },
       { role: "system", content: `USER_CONTEXT_JSON: ${userContextJson}` },
-      { role: "system", content: `USER_CONTEXT_V2: ${userContextV2Json}` },
     ];
 
     if (isInit) {
       const initGuide = `초기 인사 메시지 지침:
-        - USER_CONTEXT_V2.summary를 1문장으로 브리핑.
-        - USER_CONTEXT_V2.assess.top과 quick.top을 참고해 우선순위 1개를 뽑아 질문을 1개 이상 제시.
-        - 유의미한 정보가 없으면 /check-ai와 /assess 사용을 권유하고, 상담 목표와 현재 질환·복용약·알레르기 중 두 가지를 물어볼 것.
+        - USER_CONTEXT.orders.last가 있으면 최근 주문을 한 문장으로 요약.
+        - USER_CONTEXT.latestTest가 있으면 해당 검사 종류와 상위 추천 항목을 언급하고 answers를 참고해 추천 이유를 간단히 설명.
+        - USER_CONTEXT.latestTest.answers에서 후속 상담을 위한 질문을 1개 골라 사용자에게 질문.
+        - 유의미한 정보가 없으면 AI 진단 검사를 먼저 하고 오기를 권장하고, 상담 목표와 현재 질환·복용약·알레르기 중 두 가지를 물어볼 것.
         - 한국어, ~요로 끝나는 말투.`;
       openaiMessages.push({ role: "system", content: initGuide });
       openaiMessages.push({
         role: "user",
-        content: "USER_CONTEXT_V2를 참고하여 초기 인사 메시지를 작성해주세요.",
+        content: "USER_CONTEXT를 참고하여 초기 인사 메시지를 작성해주세요.",
       });
     } else {
-      openaiMessages.push(
-        ...messages.map((m) => ({ role: m.role, content: m.content }))
+      openaiMessages.push({
+        role: "system",
+        content:
+          "규칙: 위 USER_CONTEXT_BRIEF/JSON을 항상 우선 반영해 답변하라. 건강과 무관한 요청엔 행동을 제한하고 필요한 경우 AI 진단 검사만 권고하라.",
+      });
+      const trimmed = trimMessagesWindow(
+        messages.map((m) => ({ role: m.role, content: m.content }))
       );
+      openaiMessages.push(...trimmed);
     }
 
     const controller = new AbortController();

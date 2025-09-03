@@ -17,13 +17,16 @@ export default function ProfileBanner({
 }: ProfileBannerProps) {
   if (!show) return null;
   return (
-    <div className="mx-auto max-w-3xl mb-8" hidden={!show}>
+    <div className="mx-auto max-w-3xl mb-4" hidden={!show}>
       <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 shadow-sm">
         <div className="px-1 flex-1 leading-tight">
           {profile ? (
             <span>
-              프로필 설정됨 · 나이 {profile.age ?? "?"}, 성별 {profile.sex ?? "?"}
-              {profile.goals?.length ? ` · 목표 ${profile.goals.join(", ")}` : ""}
+              프로필 설정됨 · 나이 {profile.age ?? "?"}, 성별{" "}
+              {profile.sex ?? "?"}
+              {profile.goals?.length
+                ? ` · 목표 ${profile.goals.join(", ")}`
+                : ""}
             </span>
           ) : (
             <span>

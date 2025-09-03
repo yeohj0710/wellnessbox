@@ -2,8 +2,6 @@
 
 import {
   ChatBubbleLeftRightIcon,
-  PlusIcon,
-  Cog6ToothIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
 import type { ChatSession } from "@/types/chat";
@@ -12,24 +10,22 @@ interface ChatDrawerProps {
   sessions: ChatSession[];
   activeId: string | null;
   setActiveId: (id: string) => void;
-  newChat: () => void;
   deleteChat: (id: string) => void;
-  setShowSettings: (v: boolean) => void;
   drawerVisible: boolean;
   drawerOpen: boolean;
   closeDrawer: () => void;
+  highlightId?: string | null;
 }
 
 export default function ChatDrawer({
   sessions,
   activeId,
   setActiveId,
-  newChat,
   deleteChat,
-  setShowSettings,
   drawerVisible,
   drawerOpen,
   closeDrawer,
+  highlightId,
 }: ChatDrawerProps) {
   if (!drawerVisible) return null;
   return (
@@ -74,7 +70,11 @@ export default function ChatDrawer({
                     closeDrawer();
                   }}
                 >
-                  <span className="flex-1 truncate text-sm text-slate-800">
+                  <span
+                    className={`flex-1 truncate text-sm text-slate-800 ${
+                      highlightId === s.id ? "animate-pulse" : ""
+                    }`}
+                  >
                     {s.title || "새 상담"}
                   </span>
                   <button
@@ -91,23 +91,6 @@ export default function ChatDrawer({
               ))}
             </ul>
           )}
-        </div>
-        <div className="border-t border-slate-200 p-3 space-y-2">
-          <button
-            className="w-full flex items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
-            onClick={() => {
-              newChat();
-              closeDrawer();
-            }}
-          >
-            <PlusIcon className="h-4 w-4" /> 새 상담 시작
-          </button>
-          <button
-            className="w-full flex items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
-            onClick={() => setShowSettings(true)}
-          >
-            <Cog6ToothIcon className="h-5 w-5" /> 프로필 설정
-          </button>
         </div>
       </div>
     </div>
