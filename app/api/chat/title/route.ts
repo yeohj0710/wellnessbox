@@ -13,23 +13,34 @@ export async function POST(req: NextRequest) {
   try {
     const apiKey = ensureEnv("OPENAI_KEY");
     const body = await req.json();
-    const { firstUserMessage, firstAssistantMessage } = body || {};
-    if (
-      !firstUserMessage ||
-      typeof firstUserMessage !== "string" ||
-      !firstAssistantMessage ||
-      typeof firstAssistantMessage !== "string"
-    ) {
-      return new Response(
-        JSON.stringify({ error: "Missing firstUserMessage or firstAssistantMessage" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
+    const firstUserMessage =
+      typeof body?.firstUserMessage === "string" ? body.firstUserMessage : "";
+    const firstAssistantMessage =
+      typeof body?.firstAssistantMessage === "string"
+        ? body.firstAssistantMessage
+        : "";
+    const assistantReply =
+      typeof body?.assistantReply === "string" ? body.assistantReply : "";
+
+    if (!firstUserMessage || !firstAssistantMessage || !assistantReply) {
+      return new Response(JSON.stringify({ error: "Missing messages" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
-    const prompt = `아래 첫 대화 내용을 보고 대화 제목을 10~18자 이내 한국어로 간결하게 지어주세요.\n- 마케팅 문구 금지\n- 특수문자, 따옴표, 마침표 제외\n- 핵심 주제만 담기\n\n사용자: "${firstUserMessage.replace(/\n/g, " ").slice(0, 500)}"\n상담사: "${firstAssistantMessage.replace(/\n/g, " ").slice(0, 500)}"`;
+    const prompt = [
+      "아래의 대화 내용을 바탕으로 대화 제목을 10~18자 한국어로 구체적으로 지어주세요.",
+      "특수문자, 따옴표, 마침표 제외",
+      "핵심 증상·관심사·카테고리 중 최소 1개 포함",
+      "보충제 대신 영양제, 건강기능식품이라는 표현 사용",
+      "",
+      `AI 챗봇: "${firstAssistantMessage.replace(/\n/g, " ").slice(0, 500)}"`,
+      `User: "${firstUserMessage.replace(/\n/g, " ").slice(0, 500)}"`,
+      `AI 챗봇: "${assistantReply.replace(/\n/g, " ").slice(0, 500)}"`,
+      "",
+      "제목만 출력",
+    ].join("\n");
 
     const resp = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -40,30 +51,45 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: body?.model || (await getDefaultModel()),
         messages: [
-          { role: "system", content: "당신은 한국어 제목을 간결하게 짓는 도우미입니다." },
+          {
+            role: "system",
+            content: "한국어로 간결하고 구체적인 대화 제목을 지어주세요.",
+          },
           { role: "user", content: prompt },
         ],
-        temperature: 0.2,
+        temperature: 0.5,
+        top_p: 0.9,
       }),
     });
+
     if (!resp.ok) {
       const t = await resp.text().catch(() => "");
-      return new Response(JSON.stringify({ error: `OpenAI error: ${resp.status} ${t}` }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: `OpenAI error: ${resp.status} ${t}` }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
+
     const json = await resp.json();
-    const title: string = json.choices?.[0]?.message?.content?.trim?.() || "새 대화";
-    const cleaned = title.replace(/["'`\-_.]/g, " ").replace(/\s+/g, " ").trim().slice(0, 18);
-    return new Response(JSON.stringify({ title: cleaned || "새 대화" }), {
+    const raw = String(json.choices?.[0]?.message?.content || "").trim();
+    const cleaned = raw
+      .replace(/["'`\-_.]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 18);
+    return new Response(JSON.stringify({ title: cleaned || "새 상담" }), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (e: any) {
-    return new Response(JSON.stringify({ error: e.message || "Unknown error" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ error: e.message || "Unknown error" }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 }
-

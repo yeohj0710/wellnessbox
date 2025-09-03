@@ -51,6 +51,8 @@ export default function ChatPage() {
 
   const firstUserMessageRef = useRef<string>("");
   const firstAssistantMessageRef = useRef<string>("");
+  const firstAssistantReplyRef = useRef<string>("");
+
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const initStartedRef = useRef<Record<string, boolean>>({});
   const abortRef = useRef<AbortController | null>(null);
@@ -64,24 +66,27 @@ export default function ChatPage() {
     setTimeout(() => setDrawerVisible(false), 200);
   }
 
-  function scrollToBottom() {
-    const c = messagesContainerRef.current;
-    if (c) c.scrollTop = c.scrollHeight;
-  }
-
   useEffect(() => {
     const existing = loadSessions();
-    const id = uid();
-    const now = Date.now();
-    const ns: ChatSession = {
-      id,
-      title: "새 상담",
-      createdAt: now,
-      updatedAt: now,
-      messages: [],
-    };
-    setSessions([ns, ...existing]);
-    setActiveId(id);
+    if (existing.length > 0) {
+      const sorted = [...existing].sort(
+        (a, b) => (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt)
+      );
+      setSessions(sorted);
+      setActiveId(sorted[0].id);
+    } else {
+      const id = uid();
+      const now = Date.now();
+      const ns: ChatSession = {
+        id,
+        title: "새 상담",
+        createdAt: now,
+        updatedAt: now,
+        messages: [],
+      };
+      setSessions([ns]);
+      setActiveId(id);
+    }
     (async () => {
       const remote = await loadProfileServer();
       if (remote) {
@@ -109,10 +114,6 @@ export default function ChatPage() {
     hideFooter();
     return () => showFooter();
   }, [hideFooter, showFooter]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [activeId]);
 
   useEffect(() => {
     try {
@@ -213,6 +214,16 @@ export default function ChatPage() {
     () => sessions.find((s) => s.id === activeId) || null,
     [sessions, activeId]
   );
+  const activeMsgCount = active?.messages?.length ?? 0;
+
+  useEffect(() => {
+    if (!active) return;
+    const isNew = activeMsgCount <= 1;
+    requestAnimationFrame(() => {
+      if (isNew) scrollToTop();
+      else scrollToBottom();
+    });
+  }, [activeId, activeMsgCount]);
 
   useEffect(() => {
     if (!resultsLoaded) return;
@@ -221,6 +232,16 @@ export default function ChatPage() {
     if (!s || s.messages.length > 0) return;
     startInitialAssistantMessage(activeId);
   }, [resultsLoaded, activeId, sessions]);
+
+  function scrollToTop() {
+    const c = messagesContainerRef.current;
+    if (c) c.scrollTop = 0;
+  }
+
+  function scrollToBottom() {
+    const c = messagesContainerRef.current;
+    if (c) c.scrollTop = c.scrollHeight;
+  }
 
   function newChat() {
     const id = uid();
@@ -238,6 +259,7 @@ export default function ChatPage() {
     setSuggestions([]);
     firstUserMessageRef.current = "";
     firstAssistantMessageRef.current = "";
+    firstAssistantReplyRef.current = "";
     setTitleLoading(false);
     setTitleError(false);
   }
@@ -260,10 +282,10 @@ export default function ChatPage() {
     if (
       !firstUserMessageRef.current ||
       !firstAssistantMessageRef.current ||
+      !firstAssistantReplyRef.current ||
       !activeId
-    ) {
+    )
       return;
-    }
     setTitleLoading(true);
     setTitleError(false);
     try {
@@ -273,6 +295,7 @@ export default function ChatPage() {
         body: JSON.stringify({
           firstUserMessage: firstUserMessageRef.current,
           firstAssistantMessage: firstAssistantMessageRef.current,
+          assistantReply: firstAssistantReplyRef.current,
         }),
       });
       const tJson = await tRes.json().catch(() => ({}));
@@ -289,7 +312,7 @@ export default function ChatPage() {
         setTitleHighlightId(null);
         setTopTitleHighlight(false);
       }, 1500);
-    } catch (e) {
+    } catch {
       setTitleError(true);
     } finally {
       setTitleLoading(false);
@@ -400,10 +423,12 @@ export default function ChatPage() {
           scrollToBottom();
         }
       }
+
       if (isFirst) {
-        firstAssistantMessageRef.current = fullText;
+        firstAssistantReplyRef.current = fullText;
         await generateTitle();
       }
+
       try {
         const tz = getTzOffsetMinutes();
         await fetch("/api/chat/save", {
@@ -460,7 +485,6 @@ export default function ChatPage() {
         ss.id === sessionId ? { ...ss, messages: [asstMsg] } : ss
       )
     );
-    scrollToBottom();
     setLoading(true);
     const controller = new AbortController();
     abortRef.current = controller;
@@ -513,10 +537,10 @@ export default function ChatPage() {
                 : ss
             )
           );
-          scrollToBottom();
         }
       }
       await fetchSuggestions(fullText);
+      firstAssistantMessageRef.current = fullText;
       try {
         const tz = getTzOffsetMinutes();
         const cid2 = getClientIdLocal();
