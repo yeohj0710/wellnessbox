@@ -89,9 +89,16 @@ export default function LandingSection2({
           </div>
 
           <div className="mt-10 sm:mt-14">
-            <ul className="flex flex-wrap items-center justify-center gap-x-6 sm:gap-x-8 md:gap-x-10 gap-y-5 sm:gap-y-6">
+            <ul className="flex flex-wrap items-center justify-center gap-x-0 gap-y-5 sm:gap-y-6">
               {Array.from({ length: 8 }, (_, i) => (
-                <li key={i} className="shrink-0">
+                <li
+                  key={i}
+                  className={`shrink-0 flex justify-center items-center ${
+                    [2, 3].includes(i)
+                      ? "-mx-2 sm:-mx-1 md:mx-0"
+                      : "mx-4 sm:mx-6 md:mx-8"
+                  }`}
+                >
                   <Image
                     src={`/landingPage2/logos/${i + 1}.svg`}
                     alt=""
@@ -99,7 +106,9 @@ export default function LandingSection2({
                     height={0}
                     sizes="100vw"
                     unoptimized
-                    className="block h-[20px] sm:h-[22px] md:h-6 lg:h-7 w-auto brightness-0 invert"
+                    className={`block h-[20px] sm:h-[22px] md:h-6 lg:h-7 w-auto brightness-0 invert ${
+                      [2, 3].includes(i) ? "scale-75" : "scale-125"
+                    }`}
                   />
                 </li>
               ))}
