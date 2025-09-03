@@ -92,13 +92,13 @@ export default function ReferenceData({
   if (!show) return null;
 
   return (
-    <div className="-mb-5 mt-1 pl-2">
+    <div className="mb-1 pl-2">
       <details className="group text-[11px] text-slate-500">
         <summary className="inline-flex items-center gap-1 cursor-pointer hover:text-slate-700">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-slate-300 group-open:bg-slate-400" />
           참고 데이터
         </summary>
-        <div className="mb-5 mt-1 inline-block w-auto max-w-[720px] rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 shadow-sm space-y-3">
+        <div className="mb-2 mt-1 inline-block w-auto max-w-[720px] rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 shadow-sm space-y-3">
           {hasOrders && lastOrder && (
             <div>
               <div className="mb-1 flex items-center justify-between">

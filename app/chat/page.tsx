@@ -49,9 +49,9 @@ export default function ChatPage() {
 
   const firstUserMessageRef = useRef<string>("");
   const firstAssistantMessageRef = useRef<string>("");
-
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const initStartedRef = useRef<Record<string, boolean>>({});
+  const abortRef = useRef<AbortController | null>(null);
 
   function openDrawer() {
     setDrawerVisible(true);
@@ -236,6 +236,10 @@ export default function ChatPage() {
     if (activeId === id) setActiveId(next[0]?.id ?? null);
   }
 
+  function stopStreaming() {
+    abortRef.current?.abort();
+  }
+
   function normalizeNewlines(text: string) {
     return text.replace(/\n{3,}/g, "\n\n\n");
   }
@@ -293,15 +297,14 @@ export default function ChatPage() {
   }
 
   async function sendMessage(overrideText?: string) {
+    if (loading) return;
     if (!active) return;
     const text = (overrideText ?? input).trim();
     if (!text) return;
     const isFirst = active.messages.length === 1;
     setInput("");
     setSuggestions([]);
-    if (isFirst) {
-      firstUserMessageRef.current = text;
-    }
+    if (isFirst) firstUserMessageRef.current = text;
 
     const now = Date.now();
     const userMsg: ChatMessage = {
@@ -331,6 +334,8 @@ export default function ChatPage() {
     scrollToBottom();
 
     setLoading(true);
+    const controller = new AbortController();
+    abortRef.current = controller;
     try {
       const cid = getClientIdLocal();
       const res = await fetch("/api/chat", {
@@ -353,6 +358,7 @@ export default function ChatPage() {
           assessResult: assessResult || null,
           checkAiResult: checkAiResult || null,
         }),
+        signal: controller.signal,
       });
       if (!res.ok || !res.body) throw new Error("대화를 이어받지 못했습니다.");
       const reader = res.body.getReader();
@@ -382,12 +388,10 @@ export default function ChatPage() {
           scrollToBottom();
         }
       }
-
       if (isFirst) {
         firstAssistantMessageRef.current = fullText;
         await generateTitle();
       }
-
       try {
         const tz = getTzOffsetMinutes();
         await fetch("/api/chat/save", {
@@ -403,24 +407,27 @@ export default function ChatPage() {
         });
       } catch {}
     } catch (e) {
-      const errText = (e as Error).message || "문제가 발생했습니다.";
-      setSessions((prev) =>
-        prev.map((s) =>
-          s.id === active.id
-            ? {
-                ...s,
-                updatedAt: Date.now(),
-                messages: s.messages.map((m) =>
-                  m.id === asstMsg.id
-                    ? { ...m, content: `오류: ${errText}` }
-                    : m
-                ),
-              }
-            : s
-        )
-      );
+      if ((e as any)?.name !== "AbortError") {
+        const errText = (e as Error).message || "문제가 발생했습니다.";
+        setSessions((prev) =>
+          prev.map((s) =>
+            s.id === active.id
+              ? {
+                  ...s,
+                  updatedAt: Date.now(),
+                  messages: s.messages.map((m) =>
+                    m.id === asstMsg.id
+                      ? { ...m, content: `오류: ${errText}` }
+                      : m
+                  ),
+                }
+              : s
+          )
+        );
+      }
     } finally {
       setLoading(false);
+      abortRef.current = null;
     }
   }
 
@@ -443,6 +450,8 @@ export default function ChatPage() {
     );
     scrollToBottom();
     setLoading(true);
+    const controller = new AbortController();
+    abortRef.current = controller;
     try {
       const cid = getClientIdLocal();
       const res = await fetch("/api/chat", {
@@ -465,6 +474,7 @@ export default function ChatPage() {
           assessResult: assessResult || null,
           checkAiResult: checkAiResult || null,
         }),
+        signal: controller.signal,
       });
       if (!res.ok || !res.body)
         throw new Error("초기 메시지를 받아오지 못했습니다.");
@@ -510,42 +520,50 @@ export default function ChatPage() {
         });
       } catch {}
     } catch (e) {
-      const errText = (e as Error).message || "문제가 발생했습니다.";
-      setSessions((prev) =>
-        prev.map((ss) =>
-          ss.id === sessionId
-            ? {
-                ...ss,
-                updatedAt: Date.now(),
-                messages: ss.messages.map((m) =>
-                  m.role === "assistant" && m.content === ""
-                    ? { ...m, content: `오류: ${errText}` }
-                    : m
-                ),
-              }
-            : ss
-        )
-      );
+      if ((e as any)?.name !== "AbortError") {
+        const errText = (e as Error).message || "문제가 발생했습니다.";
+        setSessions((prev) =>
+          prev.map((ss) =>
+            ss.id === sessionId
+              ? {
+                  ...ss,
+                  updatedAt: Date.now(),
+                  messages: ss.messages.map((m) =>
+                    m.role === "assistant" && m.content === ""
+                      ? { ...m, content: `오류: ${errText}` }
+                      : m
+                  ),
+                }
+              : ss
+          )
+        );
+      }
     } finally {
       setLoading(false);
+      abortRef.current = null;
     }
   }
 
   return (
     <div className="relative flex flex-col w-full min-h-[calc(100vh-56px)] bg-gradient-to-b from-slate-50 to-white">
-      <ChatTopBar
-        openDrawer={openDrawer}
-        newChat={newChat}
-        openSettings={() => setShowSettings(true)}
-        title={active?.title || "새 상담"}
-        titleLoading={titleLoading}
-        titleError={titleError}
-        retryTitle={() => generateTitle()}
-        highlight={topTitleHighlight}
-      />
+      <div className="fixed top-14 left-0 right-0 z-10">
+        <div className="mx-auto max-w-3xl w-full">
+          <ChatTopBar
+            openDrawer={openDrawer}
+            newChat={newChat}
+            openSettings={() => setShowSettings(true)}
+            title={active?.title || "새 상담"}
+            titleLoading={titleLoading}
+            titleError={titleError}
+            retryTitle={() => generateTitle()}
+            highlight={topTitleHighlight}
+          />
+        </div>
+      </div>
+      <div className="h-12" />
       <main className="flex-1 flex flex-col">
         <div
-          className="mx-auto max-w-3xl w-full px-4 md:px-8 flex-1 pt-4 pb-28 overflow-y-auto"
+          className="mx-auto max-w-3xl w-full px-5 sm:px-6 md:px-8 flex-1 pt-4 pb-56 overflow-y-auto"
           ref={messagesContainerRef}
         >
           <ProfileBanner
@@ -560,7 +578,6 @@ export default function ChatPage() {
               active.messages.length > 0 &&
               active.messages.map((m, i) => (
                 <div key={m.id}>
-                  <MessageBubble role={m.role} content={m.content} />
                   {i === 0 && (
                     <ReferenceData
                       orders={orders}
@@ -568,6 +585,7 @@ export default function ChatPage() {
                       checkAiResult={checkAiResult}
                     />
                   )}
+                  <MessageBubble role={m.role} content={m.content} />
                 </div>
               ))}
           </div>
@@ -581,6 +599,7 @@ export default function ChatPage() {
             active && active.messages.length === 1 ? suggestions : []
           }
           onSelectSuggestion={(q) => sendMessage(q)}
+          onStop={stopStreaming}
         />
       </main>
 
@@ -589,6 +608,7 @@ export default function ChatPage() {
         activeId={activeId}
         setActiveId={setActiveId}
         deleteChat={deleteChat}
+        newChat={newChat}
         drawerVisible={drawerVisible}
         drawerOpen={drawerOpen}
         closeDrawer={closeDrawer}

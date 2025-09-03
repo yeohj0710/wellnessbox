@@ -293,7 +293,8 @@ export async function POST(req: NextRequest) {
         - USER_CONTEXT.latestTest가 있으면 해당 검사 종류와 상위 추천 항목을 언급하고 answers를 참고해 추천 이유를 간단히 설명.
         - USER_CONTEXT.latestTest.answers에서 후속 상담을 위한 질문을 1개 골라 사용자에게 질문.
         - 유의미한 정보가 없으면 AI 진단 검사를 먼저 하고 오기를 권장하고, 상담 목표와 현재 질환·복용약·알레르기 중 두 가지를 물어볼 것.
-        - 한국어, ~요로 끝나는 말투.`;
+        - 한국어, ~요로 끝나는 말투.
+        - 출력 형식: 문단 사이 빈 줄은 1개만 사용, 연속 개행은 2회 이하, 답변 시작과 끝에는 개행을 넣지 말 것.`;
       openaiMessages.push({ role: "system", content: initGuide });
       openaiMessages.push({
         role: "user",
@@ -303,8 +304,9 @@ export async function POST(req: NextRequest) {
       openaiMessages.push({
         role: "system",
         content:
-          "규칙: 위 USER_CONTEXT_BRIEF/JSON을 항상 우선 반영해 답변하라. 건강과 무관한 요청엔 행동을 제한하고 필요한 경우 AI 진단 검사만 권고하라.",
+          "규칙: 위 USER_CONTEXT_BRIEF/JSON을 항상 우선 반영해 답변하라. 건강과 무관한 요청엔 행동을 제한하고 필요한 경우 AI 진단 검사만 권고하라. 출력 형식: 문단 사이 빈 줄은 1개만, 연속 개행은 2회 이하.",
       });
+
       const trimmed = trimMessagesWindow(
         messages.map((m) => ({ role: m.role, content: m.content }))
       );
@@ -344,6 +346,32 @@ export async function POST(req: NextRequest) {
         const reader = resp.body!.getReader();
         const encoder = new TextEncoder();
         let buffer = "";
+        let started = false;
+        let newlineRun = 0;
+        function normalizeChunk(s: string) {
+          let out = "";
+          for (let i = 0; i < s.length; i++) {
+            const c = s[i];
+            if (c === "\r") continue;
+            if (!started) {
+              if (c === "\n" || c === " " || c === "\t") continue;
+              started = true;
+            }
+            if (c === "\n") {
+              newlineRun++;
+              if (newlineRun <= 1) out += "\n";
+              continue;
+            }
+            if (c === " " || c === "\t") {
+              if (newlineRun > 0) continue;
+              out += c;
+              continue;
+            }
+            newlineRun = 0;
+            out += c;
+          }
+          return out;
+        }
         function push(text: string) {
           controller.enqueue(encoder.encode(text));
         }
@@ -358,7 +386,7 @@ export async function POST(req: NextRequest) {
           try {
             const json = JSON.parse(data);
             const delta = json.choices?.[0]?.delta?.content ?? "";
-            if (delta) push(delta);
+            if (delta) push(normalizeChunk(delta));
           } catch {}
         }
         function read() {

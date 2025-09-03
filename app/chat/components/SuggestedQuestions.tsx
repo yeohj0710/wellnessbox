@@ -8,11 +8,11 @@ export default function SuggestedQuestions({ onSelect }: { onSelect: (q: string)
     "장을 편안하게 돕는 방법은?",
   ];
   return (
-    <div className="flex flex-wrap justify-center gap-2 mb-4">
+    <div className="mb-4 flex flex-wrap justify-center gap-2">
       {examples.map((ex, i) => (
         <button
           key={i}
-          className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm hover:bg-slate-100"
+          className="rounded-full border border-slate-300 bg-white/90 px-3 py-1.5 text-sm backdrop-blur hover:bg-slate-100"
           onClick={() => onSelect(ex)}
         >
           {ex}

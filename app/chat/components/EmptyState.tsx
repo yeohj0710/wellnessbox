@@ -23,7 +23,7 @@ export default function EmptyState({
         {examples.map((ex, i) => (
           <button
             key={i}
-            className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm hover:bg-slate-100"
+            className="rounded-full border border-slate-300 bg-white/90 px-3 py-1.5 text-sm hover:bg-slate-100 backdrop-blur"
             onClick={() => onTryExamples(ex)}
           >
             {ex}

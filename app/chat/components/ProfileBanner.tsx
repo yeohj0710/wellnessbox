@@ -17,9 +17,9 @@ export default function ProfileBanner({
 }: ProfileBannerProps) {
   if (!show) return null;
   return (
-    <div className="mx-auto max-w-3xl mb-4" hidden={!show}>
-      <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 shadow-sm">
-        <div className="px-1 flex-1 leading-tight">
+    <div className="mx-auto mb-4 max-w-3xl" hidden={!show}>
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50/90 px-3 py-2 text-xs text-amber-800 shadow-sm backdrop-blur sm:text-sm">
+        <div className="flex-1 px-1 leading-tight">
           {profile ? (
             <span>
               프로필 설정됨 · 나이 {profile.age ?? "?"}, 성별{" "}
@@ -36,14 +36,14 @@ export default function ProfileBanner({
         </div>
         <div className="flex items-center gap-2">
           <button
-            className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-amber-900 hover:bg-amber-100 whitespace-nowrap transition"
+            className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-amber-900 transition hover:bg-amber-100 whitespace-nowrap"
             onClick={onEdit}
           >
             프로필 설정
           </button>
           <button
             aria-label="Close profile banner"
-            className="h-6 w-6 p-0 text-amber-700 hover:text-amber-900 hover:opacity-80 transition"
+            className="h-6 w-6 p-0 text-amber-700 transition hover:text-amber-900 hover:opacity-80"
             onClick={onClose}
             title="Close"
           >
