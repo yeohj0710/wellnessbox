@@ -173,6 +173,7 @@ model Client {
   assessResults  AssessmentResult[]
   chatSessions   ChatSession[]
   checkAiResults CheckAiResult[]
+  profile        UserProfile?
 
   @@index([lastSeenAt])
 }
@@ -199,6 +200,18 @@ model CheckAiResult {
   client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@index([clientId, createdAt])
+}
+
+model UserProfile {
+  id        String   @id @default(cuid())
+  clientId  String
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId])
+  @@index([clientId, updatedAt])
 }
 
 model ChatSession {

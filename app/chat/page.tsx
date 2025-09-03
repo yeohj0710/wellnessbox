@@ -16,8 +16,10 @@ import {
   getTzOffsetMinutes,
   loadSessions,
   saveSessions,
-  loadProfile,
-  saveProfile,
+  loadProfileLocal,
+  saveProfileLocal,
+  loadProfileServer,
+  saveProfileServer,
 } from "./utils";
 import { CODE_TO_LABEL } from "@/lib/categories";
 
@@ -80,7 +82,16 @@ export default function ChatPage() {
     };
     setSessions([ns, ...existing]);
     setActiveId(id);
-    setProfile(loadProfile());
+    (async () => {
+      const remote = await loadProfileServer();
+      if (remote) {
+        setProfile(remote);
+        saveProfileLocal(remote);
+      } else {
+        const local = loadProfileLocal();
+        if (local) setProfile(local);
+      }
+    })();
   }, []);
 
   useEffect(() => {
@@ -89,7 +100,8 @@ export default function ChatPage() {
   }, [sessions]);
 
   useEffect(() => {
-    saveProfile(profile);
+    saveProfileLocal(profile);
+    saveProfileServer(profile);
   }, [profile]);
 
   const { hideFooter, showFooter } = useFooter();

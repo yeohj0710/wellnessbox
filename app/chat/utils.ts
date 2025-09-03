@@ -44,7 +44,7 @@ export function saveSessions(sessions: ChatSession[]) {
   localStorage.setItem(LS_SESSIONS_KEY, JSON.stringify(sessions));
 }
 
-export function loadProfile(): UserProfile | undefined {
+export function loadProfileLocal(): UserProfile | undefined {
   if (typeof localStorage === "undefined") return undefined;
   try {
     const raw = localStorage.getItem(LS_PROFILE_KEY);
@@ -55,8 +55,31 @@ export function loadProfile(): UserProfile | undefined {
   }
 }
 
-export function saveProfile(p?: UserProfile) {
+export function saveProfileLocal(p?: UserProfile) {
   if (typeof localStorage === "undefined") return;
   if (!p) return localStorage.removeItem(LS_PROFILE_KEY);
   localStorage.setItem(LS_PROFILE_KEY, JSON.stringify(p));
+}
+
+export async function loadProfileServer(): Promise<UserProfile | undefined> {
+  try {
+    const cid = getClientIdLocal();
+    const res = await fetch(`/api/user/profile?clientId=${cid}`);
+    if (!res.ok || res.status === 204) return undefined;
+    const data = await res.json();
+    return data?.profile as UserProfile;
+  } catch {
+    return undefined;
+  }
+}
+
+export async function saveProfileServer(p?: UserProfile) {
+  try {
+    const cid = getClientIdLocal();
+    await fetch(`/api/user/profile`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ clientId: cid, profile: p ?? null }),
+    });
+  } catch {}
 }

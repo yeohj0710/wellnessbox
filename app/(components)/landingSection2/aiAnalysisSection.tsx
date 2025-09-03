@@ -2,13 +2,15 @@
 
 import Image from "next/image";
 import { HeartIcon, CpuChipIcon } from "@heroicons/react/24/outline";
-import { pretendard } from "../fonts";
+import { pretendard } from "@/app/fonts";
 
 interface AiAnalysisSectionProps {
   onSelect7Day: () => void;
 }
 
-export default function AiAnalysisSection({ onSelect7Day }: AiAnalysisSectionProps) {
+export default function AiAnalysisSection({
+  onSelect7Day,
+}: AiAnalysisSectionProps) {
   return (
     <section
       className={`relative w-full overflow-x-hidden bg-gradient-to-b from-white via-[#F3F6FF] to-white ${pretendard.className}`}
@@ -24,8 +26,8 @@ export default function AiAnalysisSection({ onSelect7Day }: AiAnalysisSectionPro
               건강 데이터 <span className="text-[#3B5BFF]">분석</span>
             </h3>
             <p className="mt-3 text-[13px] sm:text-sm md:text-base text-[#6F7690] leading-relaxed">
-              건강검진 결과·복용중인 약·증상 등을 입력하면 AI가 필요한
-              영양소를 추천합니다.
+              건강검진 결과·복용중인 약·증상 등을 입력하면 AI가 필요한 영양소를
+              추천합니다.
             </p>
             <div className="mt-4 flex gap-3">
               <div className="h-12 w-12 rounded-xl border border-[#E0E6FF] bg-white shadow-[0_8px_22px_rgba(67,103,230,0.15)] grid place-items-center text-[#4F68FF]">
