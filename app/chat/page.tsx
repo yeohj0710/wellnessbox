@@ -322,12 +322,19 @@ export default function ChatPage() {
     }
   }
 
-  async function fetchSuggestions(firstAssistant: string) {
+  async function fetchSuggestions(lastAssistantText: string) {
     try {
       const res = await fetch("/api/chat/suggest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: firstAssistant }),
+        body: JSON.stringify({
+          text: lastAssistantText,
+          profile,
+          assessResult,
+          checkAiResult,
+          orders,
+          recentMessages: active?.messages ?? [],
+        }),
       });
       const js = await res.json().catch(() => ({}));
       if (Array.isArray(js?.suggestions)) setSuggestions(js.suggestions);
@@ -431,6 +438,7 @@ export default function ChatPage() {
         firstAssistantReplyRef.current = fullText;
         await generateTitle();
       }
+      await fetchSuggestions(fullText);
 
       try {
         const tz = getTzOffsetMinutes();
@@ -635,9 +643,7 @@ export default function ChatPage() {
           setInput={setInput}
           sendMessage={() => sendMessage()}
           loading={loading}
-          suggestions={
-            active && active.messages.length === 1 ? suggestions : []
-          }
+          suggestions={suggestions}
           onSelectSuggestion={(q) => sendMessage(q)}
           onStop={stopStreaming}
         />
