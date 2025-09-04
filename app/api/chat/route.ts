@@ -317,11 +317,11 @@ export async function POST(req: NextRequest) {
     const userContextJson = JSON.stringify(userContext, null, 2);
 
     const schemaGuide = `데이터 스키마 지침:
-- orders.last는 실제 주문 데이터이고 latestTest는 검사 데이터입니다.
-- '주문' 표현은 orders.last가 있을 때만 사용합니다.
-- 검사 항목을 주문으로 단정하지 않습니다.
-- 사실 확인과 용어 사용은 USER_CONTEXT_JSON과 FACT_*_JSON만을 근거로 합니다.
-- 사용자에게 JSON이나 내부 키 이름을 드러내지 않습니다.`;
+      - orders.last는 실제 주문 데이터이고 latestTest는 검사 데이터입니다.
+      - '주문' 표현은 orders.last가 있을 때만 사용합니다.
+      - 검사 항목을 주문으로 단정하지 않습니다.
+      - 사실 확인과 용어 사용은 USER_CONTEXT_JSON과 FACT_*_JSON만을 근거로 합니다.
+      - 사용자에게 JSON이나 내부 키 이름을 드러내지 않습니다.`;
 
     const factProfile = userContext.profile
       ? `FACT_PROFILE_JSON: ${JSON.stringify(
@@ -348,9 +348,18 @@ export async function POST(req: NextRequest) {
         )}`
       : null;
 
+    const answerStyleGuide = `출력 스타일:
+      - 한국어 ~요체
+      - 스코프 고정: 직전 사용자 요청과 어시스턴트 직전 발화의 주제에만 답변
+      - 다른 검사·주문·프로필 이슈는 직접 관련성이 있을 때만 1문장으로 연결
+      - 확장이 필요하면 "확장 안내: ..." 한 줄로 허락을 먼저 구함
+      - 브리핑 모드(요청되었거나 초기 인사): ①한줄 요약 ②근거 2~3가지 ③복용법(용량·타이밍) ④상호작용/주의 ⑤대안 ⑥다음 단계 1문장
+      - 대화 모드: 질문에 대한 직접 답변→필요시 근거 1~2개→간단한 다음 단계`;
+
     const openaiMessages: Array<{ role: string; content: string }> = [
       { role: "system", content: sysPrompt },
       { role: "system", content: schemaGuide },
+      { role: "system", content: answerStyleGuide },
       { role: "system", content: `USER_CONTEXT_BRIEF: ${userContextBrief}` },
       { role: "system", content: `USER_CONTEXT_JSON: ${userContextJson}` },
     ];
@@ -363,10 +372,11 @@ export async function POST(req: NextRequest) {
 
     if (isInit) {
       const initGuide = `초기 인사 메시지 지침:
-        - 반드시 한국어, ~요체 사용.
-        - FACT_TEST_JSON이 있으면 검사 결과를 1문장으로 요약하고, answers를 참고해 질문 1개를 이어서 제시.
-        - 검사 결과가 없으면 AI 진단 검사를 먼저 권유하고, 상담 목표와 질환·복용약·알레르기 중 두 가지를 물어볼 것.
-        - 주문(FACT_ORDERS_JSON)은 초기 인사에서 언급하지 않음.`;
+        - 반드시 한국어, ~요체 사용
+        - FACT_TEST_JSON이 있으면 브리핑 모드로 작성: 한줄 요약→근거 2~3→복용법 요약→주의/상호작용→대안→다음 단계 1문장→사용자가 답하기 쉬운 질문 1개
+        - 검사 결과가 없으면 AI 진단 검사를 먼저 권유하고, 상담 목표와 질환·복용약·알레르기 중 두 가지를 물을 것
+        - 주문(FACT_ORDERS_JSON)은 초기 인사에서 언급하지 않음
+        - 스코프 고정 규칙을 준수`;
       openaiMessages.push({ role: "system", content: initGuide });
       openaiMessages.push({
         role: "user",
@@ -376,7 +386,7 @@ export async function POST(req: NextRequest) {
       openaiMessages.push({
         role: "system",
         content:
-          "규칙: 판단과 사실 인용은 USER_CONTEXT_JSON과 FACT_*_JSON만을 근거로 하세요. USER_CONTEXT_BRIEF는 요약 참고용입니다. '주문' 표현은 FACT_ORDERS_JSON이 있고 orderItemNames 중 하나를 문장에 포함할 때만 사용하세요. 검사 관련 내용은 '검사'로만 지칭하고 주문으로 단정하지 마세요. 출력 전 체크리스트를 스스로 점검하세요.",
+          "규칙: 판단과 사실 인용은 USER_CONTEXT_JSON과 FACT_*_JSON만을 근거로 하세요. USER_CONTEXT_BRIEF는 요약 참고용입니다. 스코프 고정: 직전 사용자 메시지와 직전 어시스턴트 발화의 주제에만 답변하세요. 다른 주제를 끌어오고 싶다면 '확장 안내:' 한 줄로 먼저 제안하세요. '주문' 표현은 FACT_ORDERS_JSON이 있고 orderItemNames 중 하나를 문장에 포함할 때만 사용하세요. 검사 관련 내용은 '검사'로만 지칭하고 주문으로 단정하지 마세요.",
       });
       openaiMessages.push(
         ...messages.map((m) => ({ role: m.role, content: m.content }))
@@ -395,6 +405,7 @@ export async function POST(req: NextRequest) {
         model: model || (await getDefaultModel()),
         messages: openaiMessages,
         temperature: 0.3,
+        max_tokens: 900,
         stream: true,
       }),
       signal: controller.signal,

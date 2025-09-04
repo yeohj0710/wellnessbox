@@ -21,14 +21,36 @@ export default function RouteTransition() {
       const href = a.getAttribute("href");
       if (!href) return;
       if (a.target && a.target !== "_self") return;
+
+      if (href.startsWith("#")) {
+        e.preventDefault();
+        const id = decodeURIComponent(href.slice(1));
+        const target = id ? document.getElementById(id) : null;
+        if (target)
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+        history.replaceState(null, "", href);
+        return;
+      }
+
       const url = new URL(href, window.location.href);
       if (url.origin !== window.location.origin) return;
-      if (
+
+      const samePathAndSearch =
         url.pathname === window.location.pathname &&
-        url.search === window.location.search &&
-        url.hash === ""
-      )
+        url.search === window.location.search;
+
+      if (samePathAndSearch && url.hash) {
+        e.preventDefault();
+        const id = decodeURIComponent(url.hash.slice(1));
+        const target = id ? document.getElementById(id) : null;
+        if (target)
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+        history.replaceState(null, "", url.hash);
         return;
+      }
+
+      if (samePathAndSearch && !url.hash) return;
+
       e.preventDefault();
       pending.current = url.pathname + url.search + url.hash;
       setShow(true);
@@ -49,6 +71,17 @@ export default function RouteTransition() {
     }, 420);
     return () => clearTimeout(t);
   }, [pathname]);
+
+  useEffect(() => {
+    const onHash = () => {
+      if (show) {
+        setShow(false);
+        pending.current = null;
+      }
+    };
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, [show]);
 
   if (!show) return null;
 

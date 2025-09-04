@@ -227,12 +227,12 @@ export default function ChatPage() {
   }, [activeId, activeMsgCount]);
 
   useEffect(() => {
-    if (!resultsLoaded) return;
+    if (!resultsLoaded || !profileLoaded) return;
     if (!activeId) return;
     const s = sessions.find((x) => x.id === activeId);
     if (!s || s.messages.length > 0) return;
     startInitialAssistantMessage(activeId);
-  }, [resultsLoaded, activeId, sessions]);
+  }, [resultsLoaded, profileLoaded, activeId, sessions]);
 
   function scrollToTop() {
     const c = messagesContainerRef.current;
@@ -322,7 +322,7 @@ export default function ChatPage() {
     }
   }
 
-  async function fetchSuggestions(lastAssistantText: string) {
+  async function fetchSuggestions(lastAssistantText: string, count = 2) {
     try {
       const res = await fetch("/api/chat/suggest", {
         method: "POST",
@@ -334,6 +334,7 @@ export default function ChatPage() {
           checkAiResult,
           orders,
           recentMessages: active?.messages ?? [],
+          count, // ★ 추가: 요청 개수(최초 2개, 이후 1개)
         }),
       });
       const js = await res.json().catch(() => ({}));
@@ -437,8 +438,10 @@ export default function ChatPage() {
       if (isFirst) {
         firstAssistantReplyRef.current = fullText;
         await generateTitle();
+        await fetchSuggestions(fullText, 1);
+      } else {
+        await fetchSuggestions(fullText, 1);
       }
-      await fetchSuggestions(fullText);
 
       try {
         const tz = getTzOffsetMinutes();
@@ -480,6 +483,7 @@ export default function ChatPage() {
   }
 
   async function startInitialAssistantMessage(sessionId: string) {
+    if (!resultsLoaded) return;
     if (initStartedRef.current[sessionId]) return;
     initStartedRef.current[sessionId] = true;
     const s = sessions.find((x) => x.id === sessionId);
@@ -550,8 +554,10 @@ export default function ChatPage() {
           );
         }
       }
-      await fetchSuggestions(fullText);
+
+      fetchSuggestions(fullText, 2).catch(() => {});
       firstAssistantMessageRef.current = fullText;
+
       try {
         const tz = getTzOffsetMinutes();
         const cid2 = getClientIdLocal();

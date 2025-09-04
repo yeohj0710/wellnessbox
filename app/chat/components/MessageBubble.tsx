@@ -72,7 +72,10 @@ export default function MessageBubble({
               `}
             >
               <ReactMarkdown
-                remarkPlugins={[remarkGfm, remarkBreaks]}
+                remarkPlugins={[
+                  [remarkGfm, { singleTilde: false }],
+                  remarkBreaks,
+                ]}
                 rehypePlugins={[
                   rehypeRaw,
                   rehypeSlug,
@@ -203,6 +206,9 @@ export default function MessageBubble({
                   ),
                   strong: ({ node, ...props }) => (
                     <strong className="font-semibold" {...props} />
+                  ),
+                  del: ({ node, ...props }) => (
+                    <span {...props} style={{ textDecoration: "none" }} />
                   ),
                 }}
               >

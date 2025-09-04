@@ -499,6 +499,7 @@ export default function Cart({
         onUpdateCart={onUpdateCart}
         onProductClick={handleProductClick}
         handleBulkChange={handleBulkChange}
+        isLoading={!hydrated}
       />
 
       <AddressSection
