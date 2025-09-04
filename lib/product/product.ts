@@ -153,6 +153,46 @@ export async function getProductsIdName() {
   return products;
 }
 
+export async function getProductSummaries(limit = 30) {
+  const products = await db.product.findMany({
+    where: {
+      pharmacyProducts: {
+        some: {
+          stock: { gt: 0 },
+        },
+      },
+    },
+    select: {
+      name: true,
+      categories: {
+        select: {
+          name: true,
+        },
+      },
+      pharmacyProducts: {
+        select: {
+          price: true,
+          capacity: true,
+        },
+        orderBy: { price: "asc" },
+        take: 1,
+      },
+    },
+    orderBy: [
+      { importance: "desc" },
+      { updatedAt: "desc" },
+    ],
+    take: limit,
+  });
+
+  return products.map((p) => ({
+    name: p.name ?? "",
+    categories: p.categories.map((c) => c.name ?? "").filter(Boolean),
+    capacity: p.pharmacyProducts[0]?.capacity ?? null,
+    price: p.pharmacyProducts[0]?.price ?? null,
+  }));
+}
+
 export async function getProductsForAdmin() {
   const products = await db.product.findMany({
     select: {

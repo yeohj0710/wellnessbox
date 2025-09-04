@@ -5,6 +5,7 @@ import { getDefaultModel } from "@/lib/ai/models";
 import { getLatestResults } from "@/lib/server/results";
 import { ensureClient } from "@/lib/server/client";
 import { CATEGORY_LABELS, CategoryKey, KEY_TO_CODE } from "@/lib/categories";
+import { getProductSummaries } from "@/lib/product/product";
 
 export const runtime = "nodejs";
 
@@ -92,6 +93,45 @@ function buildUserContextBrief(ctx: any) {
   }
   const brief = parts.join(" | ");
   return brief.length > 480 ? brief.slice(0, 480) + "…" : brief;
+}
+
+function buildProductBrief(products: any[]) {
+  const lines: string[] = [];
+  for (const p of products) {
+    const cats =
+      Array.isArray(p.categories) && p.categories.length
+        ? ` [${p.categories.join("/")}]`
+        : "";
+    const cap = p.capacity ? ` ${p.capacity}` : "";
+    const price = p.price != null ? ` ${p.price}원` : "";
+    const line = `${p.name}${cats}${cap}${price}`.trim();
+    const next = lines.concat(line).join("; ");
+    if (next.length > 1500) break;
+    lines.push(line);
+  }
+  return lines.join("; ");
+}
+
+function buildProductsByCategory(products: any[]) {
+  const map: Record<string, string[]> = {};
+  for (const p of products) {
+    const cats = Array.isArray(p.categories) ? p.categories : [];
+    for (const c of cats) {
+      const key = labelOf(c);
+      if (!map[key]) map[key] = [];
+      const item = [
+        p.name,
+        p.capacity ? `(${p.capacity})` : "",
+        p.price != null ? `${p.price}원` : "",
+      ]
+        .filter(Boolean)
+        .join(" ");
+      const next = map[key].concat(item);
+      const flat = next.join("; ");
+      if (flat.length <= 1500) map[key] = next;
+    }
+  }
+  return map;
 }
 
 export async function POST(req: NextRequest) {
@@ -316,10 +356,15 @@ export async function POST(req: NextRequest) {
     const userContextBrief = buildUserContextBrief(userContext);
     const userContextJson = JSON.stringify(userContext, null, 2);
 
+    const products = await getProductSummaries();
+    const productsBrief = buildProductBrief(products);
+    const productsByCategory = buildProductsByCategory(products);
+
     const schemaGuide = `데이터 스키마 지침:
       - orders.last는 실제 주문 데이터이고 latestTest는 검사 데이터입니다.
       - '주문' 표현은 orders.last가 있을 때만 사용합니다.
       - 검사 항목을 주문으로 단정하지 않습니다.
+      - 제품 정보는 PRODUCTS_BRIEF와 FACT_PRODUCTS_JSON을 참고합니다.
       - 사실 확인과 용어 사용은 USER_CONTEXT_JSON과 FACT_*_JSON만을 근거로 합니다.
       - 사용자에게 JSON이나 내부 키 이름을 드러내지 않습니다.`;
 
@@ -347,34 +392,64 @@ export async function POST(req: NextRequest) {
           2
         )}`
       : null;
+    const factProducts = products.length
+      ? `FACT_PRODUCTS_JSON: ${JSON.stringify({ products }, null, 2)}`
+      : null;
 
     const answerStyleGuide = `출력 스타일:
       - 한국어 ~요체
       - 스코프 고정: 직전 사용자 요청과 어시스턴트 직전 발화의 주제에만 답변
       - 다른 검사·주문·프로필 이슈는 직접 관련성이 있을 때만 1문장으로 연결
       - 확장이 필요하면 "확장 안내: ..." 한 줄로 허락을 먼저 구함
-      - 브리핑 모드(요청되었거나 초기 인사): ①한줄 요약 ②근거 2~3가지 ③복용법(용량·타이밍) ④상호작용/주의 ⑤대안 ⑥다음 단계 1문장
-      - 대화 모드: 질문에 대한 직접 답변→필요시 근거 1~2개→간단한 다음 단계`;
+      - 브리핑 모드(요청되었거나 초기 인사): ①한줄 요약 ②근거 2~3가지 ③복용법(용량·타이밍) ④상호작용/주의 ⑤대안 ⑥다음 단계 1문장 ⑦추천 상품 1~3개
+      - 대화 모드: 질문에 대한 직접 답변→필요시 근거 1~2개→간단한 다음 단계→가능하면 추천 상품 1~3개를 제시`;
+
+    const productRecoGuide = `상품 추천 지침:
+      - 가능하면 모든 답변에 '추천 상품' 단락을 포함하며, 건강정보만 묻는 질문이라도 관련성이 있으면 1~3개 제시
+      - 추천 상품 표기는 '제품명 · 용량 · 가격' 순서로 한 줄 요약과 함께 근거 1문장을 덧붙임
+      - 우선순위: 최신 검사 상위 카테고리→프로필 금기·상호작용 확인→최근 주문과의 중복 회피
+      - 상품 명세와 가격·용량은 FACT_PRODUCTS_JSON 기반으로만 인용하며 추정·과장은 금지
+      - 장바구니 유도는 간결하게 1문장으로만 표기`;
 
     const openaiMessages: Array<{ role: string; content: string }> = [
       { role: "system", content: sysPrompt },
       { role: "system", content: schemaGuide },
       { role: "system", content: answerStyleGuide },
+      { role: "system", content: productRecoGuide },
       { role: "system", content: `USER_CONTEXT_BRIEF: ${userContextBrief}` },
       { role: "system", content: `USER_CONTEXT_JSON: ${userContextJson}` },
     ];
+
+    if (productsBrief)
+      openaiMessages.push({
+        role: "system",
+        content: `PRODUCTS_BRIEF: ${productsBrief}`,
+      });
+
+    if (productsByCategory && Object.keys(productsByCategory).length) {
+      openaiMessages.push({
+        role: "system",
+        content: `PRODUCTS_BY_CATEGORY_JSON: ${JSON.stringify(
+          { productsByCategory },
+          null,
+          2
+        )}`,
+      });
+    }
 
     if (factProfile)
       openaiMessages.push({ role: "system", content: factProfile });
     if (factTest) openaiMessages.push({ role: "system", content: factTest });
     if (factOrders)
       openaiMessages.push({ role: "system", content: factOrders });
+    if (factProducts)
+      openaiMessages.push({ role: "system", content: factProducts });
 
     if (isInit) {
       const initGuide = `초기 인사 메시지 지침:
         - 반드시 한국어, ~요체 사용
-        - FACT_TEST_JSON이 있으면 브리핑 모드로 작성: 한줄 요약→근거 2~3→복용법 요약→주의/상호작용→대안→다음 단계 1문장→사용자가 답하기 쉬운 질문 1개
-        - 검사 결과가 없으면 AI 진단 검사를 먼저 권유하고, 상담 목표와 질환·복용약·알레르기 중 두 가지를 물을 것
+        - FACT_TEST_JSON이 있으면 브리핑 모드로 작성: 한줄 요약→근거 2~3→복용법 요약→주의/상호작용→대안→다음 단계 1문장→추천 상품 1~3개(제품명·용량·가격·근거 1문장)→사용자가 답하기 쉬운 질문 1개
+        - 검사 결과가 없으면 AI 진단 검사를 먼저 권유하고, 상담 목표와 질환·복용약·알레르기 중 두 가지를 물은 뒤, 관련성이 높으면 입문용 추천 상품 1~2개를 간단히 제시
         - 주문(FACT_ORDERS_JSON)은 초기 인사에서 언급하지 않음
         - 스코프 고정 규칙을 준수`;
       openaiMessages.push({ role: "system", content: initGuide });
