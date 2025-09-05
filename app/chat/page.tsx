@@ -73,8 +73,8 @@ export default function ChatPage() {
         <div
           className="
             mx-auto max-w-3xl w-full px-5 sm:px-6 md:px-8 flex-1 pt-4
-            pb-[calc(100vh-290px)]     
-            sm:pb-[calc(100vh-250px)] 
+            pb-[calc(100vh-240px)]     
+            sm:pb-[calc(100vh-230px)] 
             overflow-y-auto
           "
           ref={messagesContainerRef}
