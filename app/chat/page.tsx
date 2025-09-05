@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import MessageBubble from "./components/MessageBubble";
 import ProfileModal from "./components/ProfileModal";
 import ChatDrawer from "./components/ChatDrawer";
@@ -47,6 +48,10 @@ export default function ChatPage() {
     handleProfileChange,
   } = useChat();
 
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [active?.messages.length]);
+
   return (
     <div className="relative flex flex-col w-full min-h-[calc(100vh-56px)] bg-gradient-to-b from-slate-50 to-white">
       <div className="fixed top-14 left-0 right-0 z-10">
@@ -66,7 +71,12 @@ export default function ChatPage() {
       <div className="h-12" />
       <main className="flex-1 flex flex-col">
         <div
-          className="mx-auto max-w-3xl w-full px-5 sm:px-6 md:px-8 flex-1 pt-4 pb-[70vh] overflow-y-auto"
+          className="
+            mx-auto max-w-3xl w-full px-5 sm:px-6 md:px-8 flex-1 pt-4
+            pb-[calc(100vh-290px)]     
+            sm:pb-[calc(100vh-250px)] 
+            overflow-y-auto
+          "
           ref={messagesContainerRef}
         >
           {profileLoaded && !profile && (

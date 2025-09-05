@@ -185,7 +185,7 @@ export function MenuLinks({
       <div className="relative flex items-center gap-2" ref={aiRef}>
         <button
           onClick={() => setAiOpen((v) => !v)}
-          className="hover:text-gray-800 inline-flex items-center gap-1 font-semibold transition-transform duration-200 ease-in-out"
+          className="hover:text-gray-800 inline-flex items-center gap-1 font-semibold transition-transform duration-200 ease-in-out hover:scale-105"
           aria-haspopup="menu"
           aria-expanded={aiOpen}
         >
