@@ -39,7 +39,9 @@ export default function ChatPage() {
     stopStreaming,
     newChat,
     deleteChat,
+    renameChat,
     messagesContainerRef,
+    messagesEndRef,
     active,
     generateTitle,
     handleProfileChange,
@@ -64,7 +66,7 @@ export default function ChatPage() {
       <div className="h-12" />
       <main className="flex-1 flex flex-col">
         <div
-          className="mx-auto max-w-3xl w-full px-5 sm:px-6 md:px-8 flex-1 pt-4 pb-[50vh] overflow-y-auto"
+          className="mx-auto max-w-3xl w-full px-5 sm:px-6 md:px-8 flex-1 pt-4 pb-[70vh] overflow-y-auto"
           ref={messagesContainerRef}
         >
           {profileLoaded && !profile && (
@@ -90,6 +92,7 @@ export default function ChatPage() {
                   <MessageBubble role={m.role} content={m.content} />
                 </div>
               ))}
+            <div ref={messagesEndRef} />
           </div>
         </div>
         <ChatInput
@@ -107,6 +110,7 @@ export default function ChatPage() {
         activeId={activeId}
         setActiveId={setActiveId}
         deleteChat={deleteChat}
+        renameChat={renameChat}
         newChat={newChat}
         drawerVisible={drawerVisible}
         drawerOpen={drawerOpen}

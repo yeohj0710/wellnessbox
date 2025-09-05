@@ -44,6 +44,8 @@ export default function useChat() {
   const firstAssistantReplyRef = useRef<string>("");
 
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const stickToBottomRef = useRef(true);
   const initStartedRef = useRef<Record<string, boolean>>({});
   const abortRef = useRef<AbortController | null>(null);
   const profileInitRef = useRef(true);
@@ -212,16 +214,27 @@ export default function useChat() {
     () => sessions.find((s) => s.id === activeId) || null,
     [sessions, activeId]
   );
-  const activeMsgCount = active?.messages?.length ?? 0;
+  const prevActiveIdRef = useRef<string | null>(null);
+  const prevMsgCountRef = useRef(0);
 
   useEffect(() => {
     if (!active) return;
-    const isNew = activeMsgCount <= 1;
-    requestAnimationFrame(() => {
-      if (isNew) scrollToTop();
-      else scrollToBottom();
-    });
-  }, [activeId, activeMsgCount]);
+    const msgLen = active.messages.length;
+    if (prevActiveIdRef.current !== activeId) {
+      requestAnimationFrame(() => {
+        scrollToTop();
+      });
+      prevActiveIdRef.current = activeId;
+      prevMsgCountRef.current = msgLen;
+      return;
+    }
+    if (msgLen > prevMsgCountRef.current) {
+      requestAnimationFrame(() => {
+        if (stickToBottomRef.current) scrollToBottom();
+      });
+      prevMsgCountRef.current = msgLen;
+    }
+  }, [activeId, active?.messages.length]);
 
   useEffect(() => {
     if (!resultsLoaded || !profileLoaded) return;
@@ -231,14 +244,30 @@ export default function useChat() {
     startInitialAssistantMessage(activeId);
   }, [resultsLoaded, profileLoaded, activeId, sessions]);
 
+  useEffect(() => {
+    const c = messagesContainerRef.current;
+    if (!c) return;
+    const onScroll = () => {
+      stickToBottomRef.current = isAtBottom();
+    };
+    c.addEventListener("scroll", onScroll, { passive: true });
+    return () => c.removeEventListener("scroll", onScroll);
+  }, [messagesContainerRef.current]);
+
+  function scrollToBottom() {
+    const c = messagesContainerRef.current;
+    if (c) c.scrollTop = c.scrollHeight;
+  }
+
   function scrollToTop() {
     const c = messagesContainerRef.current;
     if (c) c.scrollTop = 0;
   }
 
-  function scrollToBottom() {
+  function isAtBottom(threshold = 80) {
     const c = messagesContainerRef.current;
-    if (c) c.scrollTop = c.scrollHeight;
+    if (!c) return false;
+    return c.scrollHeight - c.scrollTop - c.clientHeight <= threshold;
   }
 
   function newChat() {
@@ -267,6 +296,12 @@ export default function useChat() {
     const next = sessions.filter((s) => s.id !== id);
     setSessions(next);
     if (activeId === id) setActiveId(next[0]?.id ?? null);
+  }
+
+  function renameChat(id: string, title: string) {
+    setSessions((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, title } : s))
+    );
   }
 
   function stopStreaming() {
@@ -404,7 +439,8 @@ export default function useChat() {
           : s
       )
     );
-    scrollToBottom();
+    stickToBottomRef.current = true;
+    requestAnimationFrame(() => requestAnimationFrame(scrollToBottom));
 
     setLoading(true);
     const controller = new AbortController();
@@ -458,7 +494,6 @@ export default function useChat() {
                 : s
             )
           );
-          scrollToBottom();
         }
       }
 
@@ -658,8 +693,10 @@ export default function useChat() {
     titleError,
     topTitleHighlight,
     messagesContainerRef,
+    messagesEndRef,
     newChat,
     deleteChat,
+    renameChat,
     stopStreaming,
     sendMessage,
     generateTitle,

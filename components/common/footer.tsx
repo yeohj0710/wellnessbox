@@ -125,7 +125,7 @@ export default function Footer() {
                 <span className="text-xs text-gray-400">
                   대표 이메일: wellnessbox.me@gmail.com
                 </span>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-gray-400 sm:whitespace-nowrap">
                   주소: 서울특별시 동대문구 경희대로 26, 2층 211호(회기동,
                   삼의원창업센터)
                 </span>

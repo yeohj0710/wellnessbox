@@ -1,11 +1,7 @@
 "use client";
 
-import {
-  ChatBubbleLeftRightIcon,
-  TrashIcon,
-  PlusIcon,
-  EllipsisHorizontalIcon,
-} from "@heroicons/react/24/outline";
+import { useState } from "react";
+import { TrashIcon, PlusIcon, EllipsisHorizontalIcon } from "@heroicons/react/24/outline";
 import type { ChatSession } from "@/types/chat";
 
 interface ChatDrawerProps {
@@ -13,6 +9,7 @@ interface ChatDrawerProps {
   activeId: string | null;
   setActiveId: (id: string) => void;
   deleteChat: (id: string) => void;
+  renameChat: (id: string, title: string) => void;
   newChat: () => void;
   drawerVisible: boolean;
   drawerOpen: boolean;
@@ -25,19 +22,40 @@ export default function ChatDrawer({
   activeId,
   setActiveId,
   deleteChat,
+  renameChat,
   newChat,
   drawerVisible,
   drawerOpen,
   closeDrawer,
   highlightId,
 }: ChatDrawerProps) {
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
+
+  function commitRename() {
+    if (editingId && editingTitle.trim()) {
+      renameChat(editingId, editingTitle.trim());
+    }
+    setEditingId(null);
+    setEditingTitle("");
+  }
+
+  function cancelRename() {
+    setEditingId(null);
+    setEditingTitle("");
+  }
+
   if (!drawerVisible) return null;
   return (
     <div
       className="fixed inset-x-0 bottom-0 top-14 z-20"
       role="dialog"
       aria-modal="true"
-      onClick={closeDrawer}
+      onClick={() => {
+        setMenuOpenId(null);
+        closeDrawer();
+      }}
     >
       <div
         className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-200 ${
@@ -65,6 +83,7 @@ export default function ChatDrawer({
             className="relative flex w-full items-center justify-center rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50 active:bg-slate-100"
             onClick={() => {
               newChat();
+              setMenuOpenId(null);
               closeDrawer();
             }}
           >
@@ -86,13 +105,23 @@ export default function ChatDrawer({
                 const active = activeId === s.id;
                 return (
                   <li key={s.id} className="relative">
-                    <button
+                    <div
                       className={`group relative flex w-full items-center gap-2 rounded-md px-3 py-2 text-left transition-colors hover:bg-slate-50 ${
                         active ? "bg-slate-50" : ""
                       }`}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => {
+                        setMenuOpenId(null);
                         setActiveId(s.id);
                         closeDrawer();
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          setMenuOpenId(null);
+                          setActiveId(s.id);
+                          closeDrawer();
+                        }
                       }}
                     >
                       <span
@@ -102,51 +131,95 @@ export default function ChatDrawer({
                         }`}
                       />
                       <div className="min-w-0 flex-1">
-                        <span
-                          className={`truncate text-sm ${
-                            active
-                              ? "font-semibold text-slate-900"
-                              : "text-slate-800"
-                          } ${highlightId === s.id ? "animate-pulse" : ""}`}
-                        >
-                          {s.title || "새 상담"}
-                        </span>
+                        {editingId === s.id ? (
+                          <input
+                            className="w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-violet-500 focus:outline-none"
+                            value={editingTitle}
+                            onChange={(e) => setEditingTitle(e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                commitRename();
+                              } else if (e.key === "Escape") {
+                                e.preventDefault();
+                                cancelRename();
+                              }
+                            }}
+                            onBlur={() => commitRename()}
+                            autoFocus
+                          />
+                        ) : (
+                          <span
+                            className={`truncate text-sm ${
+                              active
+                                ? "font-semibold text-slate-900"
+                                : "text-slate-800"
+                            } ${highlightId === s.id ? "animate-pulse" : ""}`}
+                          >
+                            {s.title || "새 상담"}
+                          </span>
+                        )}
                       </div>
-                      <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          aria-label="메뉴"
-                          className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-                          onClick={(e) => e.stopPropagation()}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ")
+                      {editingId !== s.id && (
+                        <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            aria-label="메뉴"
+                            className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                            onClick={(e) => {
                               e.stopPropagation();
-                          }}
-                        >
-                          <EllipsisHorizontalIcon className="h-5 w-5" />
-                        </div>
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          aria-label="삭제"
-                          title="삭제"
-                          className="rounded p-1 text-slate-500 hover:bg-red-50 hover:text-red-600"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteChat(s.id);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
+                              setMenuOpenId(menuOpenId === s.id ? null : s.id);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.stopPropagation();
+                                setMenuOpenId(menuOpenId === s.id ? null : s.id);
+                              }
+                            }}
+                          >
+                            <EllipsisHorizontalIcon className="h-5 w-5" />
+                          </div>
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            aria-label="삭제"
+                            title="삭제"
+                            className="rounded p-1 text-slate-500 hover:bg-red-50 hover:text-red-600"
+                            onClick={(e) => {
                               e.stopPropagation();
+                              setMenuOpenId(null);
                               deleteChat(s.id);
-                            }
-                          }}
-                        >
-                          <TrashIcon className="h-5 w-5" />
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.stopPropagation();
+                                setMenuOpenId(null);
+                                deleteChat(s.id);
+                              }
+                            }}
+                          >
+                            <TrashIcon className="h-5 w-5" />
+                          </div>
                         </div>
-                      </div>
-                    </button>
+                      )}
+                      {menuOpenId === s.id && editingId !== s.id && (
+                        <div className="absolute right-6 top-9 z-10 w-36 rounded-md border border-slate-200 bg-white shadow-md">
+                          <button
+                            className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingId(s.id);
+                              setEditingTitle(s.title || "");
+                              setMenuOpenId(null);
+                            }}
+                          >
+                            대화 제목 수정
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </li>
                 );
               })}
