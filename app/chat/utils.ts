@@ -27,6 +27,7 @@ export function getTzOffsetMinutes(): number {
 }
 
 import type { ChatSession, UserProfile } from "@/types/chat";
+import { CODE_TO_LABEL } from "@/lib/categories";
 
 export function loadSessions(): ChatSession[] {
   if (typeof localStorage === "undefined") return [];
@@ -82,4 +83,8 @@ export async function saveProfileServer(p?: UserProfile) {
       body: JSON.stringify({ clientId: cid, profile: p ?? null }),
     });
   } catch {}
+}
+
+export function formatAssessCat(code: string) {
+  return CODE_TO_LABEL[code] || code;
 }
