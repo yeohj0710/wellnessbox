@@ -79,6 +79,7 @@ export default function HomeProductSection() {
   const cartContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (isCartVisible) return;
     if (isLoading && allProducts.length === 0) {
       reloadTimeoutRef.current = setTimeout(() => {
         if (!hasReloadedRef.current && typeof window !== "undefined") {
@@ -93,7 +94,7 @@ export default function HomeProductSection() {
     return () => {
       if (reloadTimeoutRef.current) clearTimeout(reloadTimeoutRef.current);
     };
-  }, [isLoading, allProducts.length]);
+  }, [isLoading, allProducts.length, isCartVisible]);
 
   const openProductDetail = (product: any) => {
     if (typeof window !== "undefined") {
@@ -116,6 +117,7 @@ export default function HomeProductSection() {
   const openCart = useCallback(() => {
     if (typeof window !== "undefined") {
       scrollPositionRef.current = window.scrollY;
+      localStorage.setItem("openCart", "true");
     }
     hideLoading();
     setIsCartVisible(true);
@@ -124,6 +126,7 @@ export default function HomeProductSection() {
   const closeCart = () => {
     setIsCartVisible(false);
     if (typeof window !== "undefined") {
+      localStorage.removeItem("openCart");
       window.scrollTo(0, scrollPositionRef.current);
       const url = new URL(window.location.href);
       url.searchParams.delete("cart");
@@ -254,6 +257,7 @@ export default function HomeProductSection() {
       hideLoading();
       const stored = sessionStorage.getItem("scrollPos");
       if (stored) scrollPositionRef.current = parseInt(stored, 10);
+      localStorage.setItem("openCart", "true");
       setIsCartVisible(true);
       const url = new URL(window.location.toString());
       url.searchParams.delete("cart");

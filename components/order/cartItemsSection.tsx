@@ -1,12 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { TrashIcon } from "@heroicons/react/16/solid";
 
 export default function CartItemsSection({
   cartItems,
-  allProducts,
+  allProducts = [],
   selectedPharmacy,
   onUpdateCart,
   onProductClick,
@@ -14,12 +14,34 @@ export default function CartItemsSection({
   isLoading = false,
 }: any) {
   const [confirmType, setConfirmType] = useState<string | null>(null);
+  const [products, setProducts] = useState<any[]>(allProducts);
+
+  useEffect(() => {
+    if (Array.isArray(allProducts) && allProducts.length > 0) {
+      setProducts(allProducts);
+      return;
+    }
+    const ids = Array.isArray(cartItems)
+      ? [...new Set(cartItems.map((i: any) => i.productId))]
+      : [];
+    if (ids.length === 0) return;
+    fetch("/api/cart-products", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data.products)) setProducts(data.products);
+      })
+      .catch(() => setProducts([]));
+  }, [allProducts, cartItems]);
 
   const items = useMemo(() => {
-    if (!Array.isArray(cartItems) || !Array.isArray(allProducts)) return [];
+    if (!Array.isArray(cartItems) || !Array.isArray(products)) return [];
     return cartItems
       .map((item: any) => {
-        const product = allProducts.find((p: any) => p.id === item.productId);
+        const product = products.find((p: any) => p.id === item.productId);
         const pharmacyProduct = product?.pharmacyProducts?.find(
           (pp: any) =>
             pp.optionType === item.optionType &&
@@ -30,15 +52,15 @@ export default function CartItemsSection({
           : null;
       })
       .filter(Boolean) as any[];
-  }, [cartItems, allProducts, selectedPharmacy]);
+  }, [cartItems, products, selectedPharmacy]);
 
   const resolving =
     isLoading ||
     (Array.isArray(cartItems) &&
       cartItems.length > 0 &&
       (!selectedPharmacy?.id ||
-        !Array.isArray(allProducts) ||
-        allProducts.length === 0 ||
+        !Array.isArray(products) ||
+        products.length === 0 ||
         items.length === 0));
 
   return (

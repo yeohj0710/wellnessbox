@@ -58,6 +58,8 @@ export default function ChatPage() {
   const initStartedRef = useRef<Record<string, boolean>>({});
   const abortRef = useRef<AbortController | null>(null);
   const profileInitRef = useRef(true);
+  const savedKeysRef = useRef<Set<string>>(new Set());
+  const readyToPersistRef = useRef<Record<string, boolean>>({});
 
   function openDrawer() {
     setDrawerVisible(true);
@@ -76,6 +78,7 @@ export default function ChatPage() {
       );
       setSessions(sorted);
       setActiveId(sorted[0].id);
+      sorted.forEach((s) => (readyToPersistRef.current[s.id] = true));
     } else {
       const id = uid();
       const now = Date.now();
@@ -88,6 +91,7 @@ export default function ChatPage() {
       };
       setSessions([ns]);
       setActiveId(id);
+      readyToPersistRef.current[id] = false;
     }
     (async () => {
       let resolved: UserProfile | undefined = undefined;
@@ -107,7 +111,13 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (!sessions.length) return;
-    saveSessions(sessions);
+    const persistable = sessions.filter((s) => {
+      const first = s.messages[0];
+      if (first && first.role === "assistant")
+        return !!readyToPersistRef.current[s.id];
+      return true;
+    });
+    saveSessions(persistable);
   }, [sessions]);
 
   const { hideFooter, showFooter } = useFooter();
@@ -131,7 +141,6 @@ export default function ChatPage() {
     } catch {}
   }, []);
 
-  // Load local assessment categories if any
   useEffect(() => {
     try {
       const raw =
@@ -147,7 +156,6 @@ export default function ChatPage() {
     } catch {}
   }, []);
 
-  // Load all assessment and Check-AI results for this client from server
   useEffect(() => {
     const cid = getClientIdLocal();
     fetch(`/api/user/all-results?clientId=${cid}`)
@@ -263,6 +271,7 @@ export default function ChatPage() {
     firstAssistantReplyRef.current = "";
     setTitleLoading(false);
     setTitleError(false);
+    readyToPersistRef.current[id] = false;
   }
 
   function deleteChat(id: string) {
@@ -279,6 +288,35 @@ export default function ChatPage() {
     return text
       .replace(/\n{3,}/g, "\n\n")
       .replace(/([^\n])\n([ \t]*([-*+]\s|\d+\.\s))/g, "$1\n\n$2");
+  }
+
+  async function saveChatOnce({
+    clientId,
+    sessionId,
+    title,
+    messages,
+    tzOffsetMinutes,
+  }: {
+    clientId: string;
+    sessionId: string;
+    title?: string;
+    messages: ChatMessage[];
+    tzOffsetMinutes: number;
+  }) {
+    const key = `${sessionId}:${messages.map((m) => m.id).join(",")}`;
+    if (savedKeysRef.current.has(key)) return;
+    savedKeysRef.current.add(key);
+    await fetch("/api/chat/save", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        clientId,
+        sessionId,
+        title,
+        messages,
+        tzOffsetMinutes,
+      }),
+    });
   }
 
   async function generateTitle() {
@@ -445,16 +483,12 @@ export default function ChatPage() {
 
       try {
         const tz = getTzOffsetMinutes();
-        await fetch("/api/chat/save", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            clientId: cid,
-            sessionId: active.id,
-            title: sessions.find((s) => s.id === active.id)?.title || "새 상담",
-            messages: [userMsg, { ...asstMsg, content: fullText }],
-            tzOffsetMinutes: tz,
-          }),
+        await saveChatOnce({
+          clientId: cid,
+          sessionId: active.id,
+          title: sessions.find((s) => s.id === active.id)?.title || "새 상담",
+          messages: [userMsg, { ...asstMsg, content: fullText }],
+          tzOffsetMinutes: tz,
         });
       } catch {}
     } catch (e) {
@@ -561,16 +595,14 @@ export default function ChatPage() {
       try {
         const tz = getTzOffsetMinutes();
         const cid2 = getClientIdLocal();
-        await fetch("/api/chat/save", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            clientId: cid2,
-            sessionId,
-            messages: [{ ...asstMsg, content: fullText }],
-            tzOffsetMinutes: tz,
-          }),
+        await saveChatOnce({
+          clientId: cid2,
+          sessionId,
+          messages: [{ ...asstMsg, content: fullText }],
+          tzOffsetMinutes: tz,
         });
+        readyToPersistRef.current[sessionId] = true;
+        setSessions((prev) => prev.slice());
       } catch {}
     } catch (e) {
       if ((e as any)?.name !== "AbortError") {

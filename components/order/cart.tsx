@@ -152,11 +152,9 @@ export default function Cart({
   }, [hydrated, cartItems.length, onUpdateCart]);
 
   useEffect(() => {
-    localStorage.setItem("products", JSON.stringify(allProducts));
-  }, [allProducts]);
-
-  useEffect(() => {
-    localStorage.setItem("products", JSON.stringify(allProducts));
+    if (Array.isArray(allProducts) && allProducts.length > 0) {
+      localStorage.setItem("products", JSON.stringify(allProducts));
+    }
   }, [allProducts]);
   useEffect(() => {
     const fetchLoginStatus = async () => {
