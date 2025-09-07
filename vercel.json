@@ -1,0 +1,12 @@
+{
+  "functions": {
+    "api/chat.js": {
+      "includeFiles": "data/**",
+      "excludeFiles": "{.next/cache/**,.git/**,public/**}"
+    },
+    "api/rag/*.js": {
+      "includeFiles": "data/**",
+      "excludeFiles": "{.next/cache/**,.git/**,public/**}"
+    }
+  }
+}
