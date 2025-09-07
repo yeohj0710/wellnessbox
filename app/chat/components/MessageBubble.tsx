@@ -129,6 +129,7 @@ export default function MessageBubble({
                   img: ({ node, ...props }) => (
                     <img
                       className="my-2 rounded-lg border border-slate-200"
+                      alt=""
                       {...props}
                     />
                   ),

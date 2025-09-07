@@ -18,20 +18,19 @@ class LocalVectorStore {
     this.vecs.push(...vectors);
   }
   asRetriever({ k }: { k: number }) {
-    const self = this;
     return {
-      async getRelevantDocuments(query: string) {
+      getRelevantDocuments: async (query: string) => {
         const emb = getEmbeddings();
         const q = await emb.embedQuery(query);
-        const pairs = self.vecs.map(
-          (v, i) => [self.docs[i], cos(q, v)] as [Document, number]
+        const pairs = this.vecs.map(
+          (v, i) => [this.docs[i], cos(q, v)] as [Document, number]
         );
         pairs.sort((a, b) => b[1] - a[1]);
         const top = pairs.slice(0, Math.min(20, k * 4));
-        const selected: { doc: Document; score: number; vec: Vec }[] = [];
         const docVecs = await emb.embedDocuments(
           top.map(([d]) => d.pageContent)
         );
+        const selected: { doc: Document; score: number; vec: Vec }[] = [];
         for (let i = 0; i < top.length; i++) {
           const [doc, score] = top[i];
           if (score < 0.2) continue;
@@ -46,7 +45,7 @@ class LocalVectorStore {
           if (selected.length >= Math.min(20, k * 4)) break;
         }
         const out: Document[] = [];
-        const pick: typeof selected = [];
+        const pick: { doc: Document; score: number; vec: Vec }[] = [];
         while (out.length < k && selected.length) {
           let best = 0,
             bestVal = -Infinity;
