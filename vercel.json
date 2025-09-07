@@ -1,10 +1,14 @@
 {
   "functions": {
-    "api/chat.js": {
+    "app/api/chat/route.ts": {
       "includeFiles": "data/**",
       "excludeFiles": "{.next/cache/**,.git/**,public/**}"
     },
-    "api/rag/*.js": {
+    "app/api/rag/reindex/route.ts": {
+      "includeFiles": "data/**",
+      "excludeFiles": "{.next/cache/**,.git/**,public/**}"
+    },
+    "app/api/rag/ingest/route.ts": {
       "includeFiles": "data/**",
       "excludeFiles": "{.next/cache/**,.git/**,public/**}"
     }
