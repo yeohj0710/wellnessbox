@@ -1,13 +1,11 @@
 import { NextRequest } from "next/server";
-import { getDefaultModel } from "@/lib/ai/models";
+import { getDefaultModel } from "@/lib/ai/model";
 import { CATEGORY_LABELS } from "@/lib/categories";
 
 export const runtime = "nodejs";
 
-function ensureEnv(key: string) {
-  const v = process.env[key];
-  if (!v) throw new Error(`${key} is not set`);
-  return v;
+function getOpenAIKey() {
+  return process.env.OPENAI_KEY || "";
 }
 function trimText(s: any, n: number) {
   const t = typeof s === "string" ? s : JSON.stringify(s || "");
@@ -215,7 +213,7 @@ async function callOpenAI(apiKey: string, payload: any, timeoutMs = 10000) {
 
 export async function POST(req: NextRequest) {
   try {
-    const apiKey = ensureEnv("OPENAI_KEY");
+    const apiKey = getOpenAIKey();
     const body = await req.json().catch(() => ({}));
     const text = trimText(body?.text || "", 1600);
     const countRaw = Number(body?.count);
@@ -229,7 +227,7 @@ export async function POST(req: NextRequest) {
       .filter(Boolean)
       .join(" ");
     let topic: string | null = extractTopicFromKnown(topicBase);
-    if (!topic) {
+    if (!topic && apiKey) {
       try {
         topic = await extractTopicByAI(apiKey, topicBase);
       } catch {
@@ -285,10 +283,13 @@ ${hint}아래 조건을 만족하는 문장 ${count}개를 생성하세요. 이 
     };
 
     let suggestions: string[] = [];
-    let resp = await callOpenAI(apiKey, payload);
-    if (!resp.ok) resp = await callOpenAI(apiKey, payload, 14000);
+    let resp: Response | null = null;
+    if (apiKey) {
+      resp = await callOpenAI(apiKey, payload);
+      if (!resp.ok) resp = await callOpenAI(apiKey, payload, 14000);
+    }
 
-    if (resp.ok) {
+    if (resp?.ok) {
       const json = await resp.json().catch(() => null);
       const choices = json?.choices || [];
       const pool: string[] = [];

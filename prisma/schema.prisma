@@ -1,6 +1,9 @@
 generator client {
   provider   = "prisma-client-js"
   engineType = "binary"
+  // Limit binary targets to shrink serverless bundle size while preserving local dev.
+  // "native" resolves to the local platform for development; Vercel uses Debian with OpenSSL 3.
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {

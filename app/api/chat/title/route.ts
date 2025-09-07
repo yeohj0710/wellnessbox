@@ -1,17 +1,15 @@
 import { NextRequest } from "next/server";
-import { getDefaultModel } from "@/lib/ai/models";
+import { getDefaultModel } from "@/lib/ai/model";
 
 export const runtime = "nodejs";
 
-function ensureEnv(key: string) {
-  const v = process.env[key];
-  if (!v) throw new Error(`${key} is not set`);
-  return v;
+function getOpenAIKey() {
+  return process.env.OPENAI_KEY || "";
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const apiKey = ensureEnv("OPENAI_KEY");
+    const apiKey = getOpenAIKey();
     const body = await req.json();
     const firstUserMessage =
       typeof body?.firstUserMessage === "string" ? body.firstUserMessage : "";
@@ -41,6 +39,18 @@ export async function POST(req: NextRequest) {
       "",
       "제목만 출력",
     ].join("\n");
+
+    if (!apiKey) {
+      // Fallback: derive a short title locally when key is missing
+      const text = [firstAssistantMessage, firstUserMessage, assistantReply]
+        .join(" ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 18);
+      return new Response(JSON.stringify({ title: text || "상담" }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
     const resp = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",

@@ -1,14 +1,16 @@
-import { OpenAIEmbeddings } from "@langchain/openai";
-import { PGVectorStore } from "@langchain/community/vectorstores/pgvector";
 import { VectorStore } from "@langchain/core/vectorstores";
 import type { Document } from "@langchain/core/documents";
+import { getEmbeddings } from "@/lib/ai/model";
 
 class InMemoryStore extends VectorStore {
   texts: string[] = [];
   vectors: number[][] = [];
   docs: Document[] = [];
-  constructor(public embeddings: OpenAIEmbeddings) {
+  embeddings: ReturnType<typeof getEmbeddings>;
+  constructor(embeddings: ReturnType<typeof getEmbeddings>) {
+    // @ts-ignore
     super(embeddings, {});
+    this.embeddings = embeddings;
   }
   async addVectors(
     vectors: number[][],
@@ -37,24 +39,25 @@ class InMemoryStore extends VectorStore {
   }
 }
 
-let store: InMemoryStore | PGVectorStore;
-let embeddings: OpenAIEmbeddings;
+let store: any;
+let embeddings: ReturnType<typeof getEmbeddings> | null = null;
 
 async function init() {
-  if (!embeddings)
-    embeddings = new OpenAIEmbeddings({
-      model: "text-embedding-3-small",
-      openAIApiKey: process.env.OPENAI_KEY,
-    });
+  if (!embeddings) embeddings = getEmbeddings();
   if (!store) {
-    if (process.env.RAG_DATABASE_URL)
+    if (process.env.RAG_DATABASE_URL) {
+      const { PGVectorStore } = await import(
+        "@langchain/community/vectorstores/pgvector"
+      );
       store = await PGVectorStore.initialize(embeddings, {
         postgresConnectionOptions: {
-          connectionString: process.env.RAG_DATABASE_URL,
+          connectionString: process.env.RAG_DATABASE_URL as string,
         },
         tableName: "rag_chunks",
       });
-    else store = new InMemoryStore(embeddings);
+    } else {
+      store = new InMemoryStore(embeddings);
+    }
   }
 }
 
@@ -78,13 +81,13 @@ export async function getRelevantDocuments(
 ) {
   await init();
   const fetchK = Math.min(20, k * 4);
-  const q = await embeddings.embedQuery(question);
+  const q = await embeddings!.embedQuery(question);
   const results = await store.similaritySearchVectorWithScore(q, fetchK);
-  const texts = results.map(([d]) => d.pageContent);
-  const vecs = await embeddings.embedDocuments(texts);
+  const texts = results.map(([d]: [Document, number]) => d.pageContent);
+  const vecs = await embeddings!.embedDocuments(texts);
   const picked: { doc: Document; score: number; vec: number[] }[] = [];
   for (let i = 0; i < results.length; i++) {
-    const [doc, score] = results[i];
+    const [doc, score] = results[i] as [Document, number];
     if (score < scoreThreshold) continue;
     const v = vecs[i];
     let dup = false;
@@ -121,7 +124,7 @@ export async function getRelevantDocuments(
 
 export async function upsertDocuments(docs: Document[], ids: string[]) {
   await init();
-  const vectors = await embeddings.embedDocuments(
+  const vectors = await embeddings!.embedDocuments(
     docs.map((d) => d.pageContent)
   );
   await (store as any).addVectors(vectors, docs, { ids });
@@ -129,10 +132,7 @@ export async function upsertDocuments(docs: Document[], ids: string[]) {
 
 export async function resetInMemoryStore() {
   if (process.env.RAG_DATABASE_URL) return false;
-  embeddings = new OpenAIEmbeddings({
-    model: "text-embedding-3-small",
-    openAIApiKey: process.env.OPENAI_KEY,
-  });
+  embeddings = getEmbeddings();
   store = new InMemoryStore(embeddings);
   return true;
 }
