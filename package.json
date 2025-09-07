@@ -16,7 +16,6 @@
     "@langchain/core": "^0.3.75",
     "@langchain/openai": "^0.6.11",
     "@langchain/textsplitters": "^0.1.0",
-    "langchain": "^0.3.33",
     "@portone/browser-sdk": "^0.0.11",
     "@prisma/client": "^6.1.0",
     "axios": "^1.7.9",

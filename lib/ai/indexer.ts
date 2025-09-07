@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
 import { splitMarkdown } from "@/lib/ai/markdownSplitter";
-import { upsertDocuments } from "@/lib/ai/retriever";
+import { initVectorStore } from "@/lib/ai/vector";
 
 type Cache = Record<string, string>;
 const g = globalThis as any;
@@ -25,31 +25,43 @@ async function ingestFile(abs: string, rel: string, force = false) {
     return { docId: rel, updated: false, chunks: 0 };
   const name = path.basename(rel);
   const docs = await splitMarkdown(text, name);
-  const ids = docs.map((d) => `${name}:${hash}:${d.metadata.idx}`);
-  await upsertDocuments(docs, ids);
+  const store = await initVectorStore();
+  await store.addDocuments(docs);
   g.__RAG_INDEX_CACHE[rel] = hash;
   return { docId: rel, updated: true, chunks: docs.length };
 }
 
 async function listMarkdownFiles(dir: string) {
   const abs = path.resolve(process.cwd(), dir);
-  const names = await fs.readdir(abs);
-  const files = [];
-  for (const n of names) {
-    if (n.toLowerCase().endsWith(".md"))
-      files.push({ abs: path.join(abs, n), rel: path.join(dir, n) });
+  try {
+    const names = await fs.readdir(abs);
+    const files = [];
+    for (const n of names)
+      if (n.toLowerCase().endsWith(".md"))
+        files.push({ abs: path.join(abs, n), rel: path.join(dir, n) });
+    return files;
+  } catch {
+    return [];
   }
-  return files;
 }
 
-export async function ensureIndexed(dir = "data") {
-  const files = await listMarkdownFiles(dir);
-  const results = [];
-  for (const f of files) results.push(await ingestFile(f.abs, f.rel));
-  return results;
+const builtFlag = "__RAG_INDEX_BUILT";
+
+export async function ensureIndexed(dir = process.env.RAG_DATA_DIR || "data") {
+  if (!g[builtFlag] || process.env.RAG_FORCE_REINDEX) {
+    const files = await listMarkdownFiles(dir);
+    const results = [];
+    for (const f of files)
+      results.push(
+        await ingestFile(f.abs, f.rel, !!process.env.RAG_FORCE_REINDEX)
+      );
+    g[builtFlag] = true;
+    return results;
+  }
+  return [];
 }
 
-export async function reindexAll(dir = "data") {
+export async function reindexAll(dir = process.env.RAG_DATA_DIR || "data") {
   const files = await listMarkdownFiles(dir);
   const results = [];
   for (const f of files) results.push(await ingestFile(f.abs, f.rel, true));
