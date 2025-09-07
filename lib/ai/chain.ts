@@ -372,7 +372,7 @@ async function buildRagContext(
     [...messages].reverse().find((m) => m.role === "user")?.content || "";
   if (!last.trim()) return { ragText: "", ragSources: [] as any[] };
   try {
-    await ensureIndexed("data");
+    await ensureIndexed();
     const retriever = await getRetriever();
     const docs = await retriever.getRelevantDocuments(last);
     if (!docs || docs.length === 0)

@@ -84,7 +84,7 @@ function cos(a: Vec, b: Vec) {
 let store: LocalVectorStore | any = null;
 let cache: Cache = (globalThis as any).__RAG_INDEX_CACHE || {};
 let indexedOnce: boolean = (globalThis as any).__RAG_INDEX_BUILT || false;
-const DATA_DIR = process.env.RAG_DATA_DIR || "data";
+const DATA_DIR = "data";
 (globalThis as any).__RAG_INDEX_CACHE = cache;
 
 function markIndexed() {
@@ -92,7 +92,7 @@ function markIndexed() {
   indexedOnce = true;
 }
 
-async function initVectorStore() {
+export async function initVectorStore() {
   if (store) return store;
   if (process.env.RAG_DATABASE_URL) {
     const { PGVectorStore } = await import(
@@ -134,10 +134,11 @@ async function listMarkdownFiles(dir: string) {
   }
 }
 
-export async function ensureIndexed(dir = DATA_DIR) {
+export async function ensureIndexed(dir: string = DATA_DIR) {
   if (indexedOnce && !process.env.RAG_FORCE_REINDEX) return [];
   const files = await listMarkdownFiles(dir);
-  const results: any[] = [];
+  const results: Array<{ docId: string; updated: boolean; chunks: number }> =
+    [];
   for (const f of files) results.push(await ingestFile(f.abs, f.rel));
   markIndexed();
   return results;
@@ -149,5 +150,3 @@ export async function getRetriever() {
   if (typeof s.asRetriever === "function") return s.asRetriever({ k });
   return (s as LocalVectorStore).asRetriever({ k });
 }
-
-export { initVectorStore };

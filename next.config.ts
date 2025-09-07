@@ -9,9 +9,6 @@ const nextConfig: NextConfig = {
   webpack(config) {
     return config;
   },
-  outputFileTracingIncludes: {
-    "app/api/chat": ["./data/**"],
-  },
 };
 
 export default nextConfig;
