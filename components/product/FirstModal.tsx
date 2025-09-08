@@ -9,6 +9,7 @@ export default function FirstModal({
   onAddToCart,
   onClose,
   onProductDetailClose,
+  onAddressSaved,
 }: any) {
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -58,6 +59,10 @@ export default function FirstModal({
             localStorage.setItem("roadAddress", roadAddress);
             localStorage.setItem("detailAddress", detailAddress);
 
+            if (typeof onAddressSaved === "function") {
+              onAddressSaved(roadAddress);
+            }
+
             const cartItem = {
               productId: product.id,
               productName: product.name,
@@ -67,9 +72,6 @@ export default function FirstModal({
 
             onAddToCart(cartItem);
 
-            setIsSaving(true);
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-            setIsSaving(false);
             setIsAddressModalOpen(false);
             onClose();
             onProductDetailClose();

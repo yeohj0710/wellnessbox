@@ -324,6 +324,24 @@ export default function HomeProductSection() {
     setRoadAddress(storedRoadAddress.trim());
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    const handleCleared = () => {
+      setRoadAddress("");
+      setPharmacies([]);
+      setSelectedPharmacy(null);
+      setProducts(allProducts);
+      setCartItems([]);
+      setIsCartVisible(false);
+      setTotalPrice(0);
+      localStorage.removeItem("cartItems");
+      localStorage.removeItem("openCart");
+      window.dispatchEvent(new Event("cartUpdated"));
+    };
+    window.addEventListener("addressCleared", handleCleared);
+    return () => window.removeEventListener("addressCleared", handleCleared);
+  }, [allProducts]);
+
   useEffect(() => {
     if (roadAddress) {
       localStorage.setItem("roadAddress", roadAddress);
@@ -394,7 +412,8 @@ export default function HomeProductSection() {
     }
   }, [selectedPharmacy, isLoading, allProducts.length, cartItems]);
 
-  const isRoadAddressChanged: any = useRef(false);
+  const [isPharmacyLoading, setIsPharmacyLoading] = useState(false);
+
   useEffect(() => {
     if (cartItems.length === 0) {
       setProducts(allProducts);
@@ -403,17 +422,24 @@ export default function HomeProductSection() {
       return;
     }
     if (!roadAddress) return;
-    const fetchPharmacies = async () => {
-      setIsLoading(true);
+
+    const controller = new AbortController();
+    let alive = true;
+
+    setIsPharmacyLoading(true);
+    (async () => {
       try {
-        const response = await axios.post("/api/get-sorted-pharmacies", {
-          cartItem: cartItems[0],
-          roadAddress,
-        });
-        const sortedPharmacies = response.data.pharmacies;
+        const response = await axios.post(
+          "/api/get-sorted-pharmacies",
+          { cartItem: cartItems[0], roadAddress },
+          { signal: controller.signal }
+        );
+        const sortedPharmacies = response.data?.pharmacies || [];
         const filteredPharmacies = sortedPharmacies.filter(
           (pharmacy: any) => pharmacy.registrationNumber !== null
         );
+        if (!alive) return;
+
         if (!filteredPharmacies.length) {
           alert(
             "선택하신 상품의 해당량만큼의 재고를 보유한 약국이 존재하지 않아요. 해당 상품을 장바구니에서 제외할게요."
@@ -424,37 +450,28 @@ export default function HomeProductSection() {
           window.dispatchEvent(new Event("cartUpdated"));
           return;
         }
+
         setPharmacies(filteredPharmacies);
         if (
           !selectedPharmacy ||
-          !filteredPharmacies.some(
-            (pharmacy: any) => pharmacy.id === selectedPharmacy.id
-          )
+          !filteredPharmacies.some((p: any) => p.id === selectedPharmacy.id)
         ) {
           setSelectedPharmacy(filteredPharmacies[0]);
         }
-      } catch (error) {
-        console.error("약국 정보를 가져오는 데 실패했습니다:", error);
+      } catch (e: any) {
+        if (e?.name === "CanceledError") return;
+        console.error("약국 정보를 가져오는 데 실패했습니다:", e);
       } finally {
-        setIsLoading(false);
+        if (alive) setIsPharmacyLoading(false);
       }
+    })();
+
+    return () => {
+      alive = false;
+      controller.abort();
     };
-    if (isRoadAddressChanged.current !== roadAddress) {
-      isRoadAddressChanged.current = roadAddress;
-      fetchPharmacies();
-      return;
-    }
-    if (selectedPharmacy) {
-      const isValid = selectedPharmacy?.pharmacyProducts?.some(
-        (pharmacyProduct: any) =>
-          pharmacyProduct.productId === cartItems[0]?.productId &&
-          pharmacyProduct.optionType === cartItems[0]?.optionType &&
-          pharmacyProduct.stock >= cartItems[0]?.quantity
-      );
-      if (isValid) return;
-    }
-    fetchPharmacies();
-  }, [roadAddress, cartItems[0]]);
+  }, [roadAddress, cartItems, selectedPharmacy?.id, allProducts]);
+
   useEffect(() => {
     const filterProducts = async () => {
       let filtered = [...allProducts];
@@ -548,15 +565,9 @@ export default function HomeProductSection() {
       CATEGORY_LABELS.zinc,
     ],
     체지방: [CATEGORY_LABELS.garcinia, CATEGORY_LABELS.psyllium],
-    "혈관 & 혈액순환": [
-      CATEGORY_LABELS.omega3,
-      CATEGORY_LABELS.coenzymeQ10,
-    ],
+    "혈관 & 혈액순환": [CATEGORY_LABELS.omega3, CATEGORY_LABELS.coenzymeQ10],
     "간 건강": [CATEGORY_LABELS.milkThistle],
-    "장 건강": [
-      CATEGORY_LABELS.probiotics,
-      CATEGORY_LABELS.psyllium,
-    ],
+    "장 건강": [CATEGORY_LABELS.probiotics, CATEGORY_LABELS.psyllium],
     "스트레스 & 수면": [
       CATEGORY_LABELS.magnesium,
       CATEGORY_LABELS.phosphatidylserine,
@@ -660,6 +671,7 @@ export default function HomeProductSection() {
         ) : (
           <FooterCartBar totalPrice={totalPrice} setIsCartVisible={openCart} />
         ))}
+
       {selectedProduct && (
         <ProductDetail
           product={selectedProduct}
@@ -676,8 +688,12 @@ export default function HomeProductSection() {
           onAddToCart={(cartItem: any) => {
             handleAddToCart(cartItem);
           }}
+          onAddressSaved={(addr: string) => {
+            setRoadAddress((addr || "").trim());
+          }}
         />
       )}
+
       {isCartVisible && (
         <div className="fixed inset-0 flex">
           <div

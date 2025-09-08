@@ -10,19 +10,28 @@ export async function POST(req: Request) {
   try {
     const pharmacies = await getPharmaciesByProduct(cartItem);
     const userLocation = await getGeocode(roadAddress);
-    const sortedPharmacies = await Promise.all(
+    const enriched = await Promise.all(
       pharmacies.map(async (pharmacy) => {
-        const pharmacyLocation = await getGeocode(pharmacy.address!);
-        const distance = calculateDistance(
-          userLocation.lat,
-          userLocation.lng,
-          pharmacyLocation.lat,
-          pharmacyLocation.lng
-        );
-        return { ...pharmacy, distance };
+        try {
+          const pharmacyLocation = await getGeocode(pharmacy.address || "");
+          const distance = calculateDistance(
+            userLocation.lat,
+            userLocation.lng,
+            pharmacyLocation.lat,
+            pharmacyLocation.lng
+          );
+          return { ...pharmacy, distance };
+        } catch {
+          return null;
+        }
       })
     );
-    const sorted = sortedPharmacies.sort((a, b) => a.distance - b.distance);
+    const sortedPharmacies = enriched
+      .filter(Boolean)
+      .sort((a: any, b: any) => a.distance - b.distance);
+    const sorted = sortedPharmacies.sort(
+      (a: any, b: any) => a.distance - b.distance
+    );
     return NextResponse.json({ pharmacies: sorted }, { status: 200 });
   } catch (error) {
     console.error("Failed to fetch sorted pharmacies:", error);
@@ -33,19 +42,37 @@ export async function POST(req: Request) {
   }
 }
 
+const geocodeCache = new Map<
+  string,
+  { lat: number; lng: number; ts: number }
+>();
+const GEOCODE_TTL = 1000 * 60 * 60 * 24 * 7;
+
 async function getGeocode(address: string) {
+  const key = (address || "").trim();
+  if (!key) throw new Error("Empty address");
+  const now = Date.now();
+  const cached = geocodeCache.get(key);
+  if (cached && now - cached.ts < GEOCODE_TTL) {
+    return { lat: cached.lat, lng: cached.lng };
+  }
   const response = await axios.get(
     "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode",
     {
-      params: { query: address },
+      params: { query: key },
       headers: {
         "X-NCP-APIGW-API-KEY-ID": process.env.NAVER_MAP_ID!,
         "X-NCP-APIGW-API-KEY": process.env.NAVER_MAP_KEY!,
       },
+      timeout: 5000,
     }
   );
-  const location = response.data.addresses[0];
-  return { lat: parseFloat(location.y), lng: parseFloat(location.x) };
+  const first = response.data?.addresses?.[0];
+  if (!first) throw new Error("Geocode not found");
+  const lat = parseFloat(first.y);
+  const lng = parseFloat(first.x);
+  geocodeCache.set(key, { lat, lng, ts: now });
+  return { lat, lng };
 }
 
 function calculateDistance(

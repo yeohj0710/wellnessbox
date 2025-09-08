@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-export default function AddressModal({ onClose, onSave }: any) {
+export default function AddressModal({ onClose, onSave, onDelete }: any) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [selectedAddress, setSelectedAddress] = useState("");
@@ -11,6 +11,14 @@ export default function AddressModal({ onClose, onSave }: any) {
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [canDelete, setCanDelete] = useState(false);
+  useEffect(() => {
+    try {
+      const has =
+        typeof window !== "undefined" && !!localStorage.getItem("roadAddress");
+      setCanDelete(has);
+    } catch {}
+  }, []);
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -164,7 +172,7 @@ export default function AddressModal({ onClose, onSave }: any) {
           <div className="flex justify-end">
             <button
               onClick={onClose}
-              className="text-base font-normal px-3 py-1 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 mr-2  transition duration-200"
+              className="text-base font-normal px-3 py-1 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 mr-2 transition duration-200"
             >
               취소
             </button>

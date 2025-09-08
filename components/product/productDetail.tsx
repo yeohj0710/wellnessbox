@@ -21,6 +21,7 @@ export default function ProductDetail({
   onClose,
   onAddToCart,
   pharmacy,
+  onAddressSaved,
 }: any) {
   const [quantity, setQuantity] = useState(1);
   const [isFirstModalOpen, setIsFirstModalOpen] = useState(false);
@@ -491,6 +492,7 @@ export default function ProductDetail({
               onAddToCart={onAddToCart}
               onClose={() => setIsFirstModalOpen(false)}
               onProductDetailClose={onClose}
+              onAddressSaved={onAddressSaved}
             />
           )}
         </div>
