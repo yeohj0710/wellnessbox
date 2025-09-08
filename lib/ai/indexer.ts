@@ -85,7 +85,7 @@ export async function ensureIndexed(dir = DATA_DIR) {
 
 export async function reindexAll(dir = DATA_DIR) {
   await resetInMemoryStore();
-  if (process.env.RAG_DATABASE_URL) {
+  if (process.env.WELLNESSBOX_PRISMA_URL) {
     try {
       const { getEmbeddings } = await import("@/lib/ai/model");
       const { PGVectorStore } = await import(
@@ -94,7 +94,7 @@ export async function reindexAll(dir = DATA_DIR) {
       const e = getEmbeddings();
       const pg = await PGVectorStore.initialize(e, {
         postgresConnectionOptions: {
-          connectionString: process.env.RAG_DATABASE_URL as string,
+          connectionString: process.env.WELLNESSBOX_PRISMA_URL as string,
         },
         tableName: "rag_chunks",
       });

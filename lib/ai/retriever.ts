@@ -66,7 +66,7 @@ async function init() {
   if (!embeddings)
     embeddings = g.__RAG_EMBEDDINGS || (g.__RAG_EMBEDDINGS = getEmbeddings());
   if (!store) {
-    if (process.env.RAG_DATABASE_URL) {
+    if (process.env.WELLNESSBOX_PRISMA_URL) {
       if (!g.__RAG_STORE) {
         const { PGVectorStore } = await import(
           "@langchain/community/vectorstores/pgvector"
@@ -74,7 +74,7 @@ async function init() {
         const e = embeddings;
         g.__RAG_STORE = await PGVectorStore.initialize(e, {
           postgresConnectionOptions: {
-            connectionString: process.env.RAG_DATABASE_URL as string,
+            connectionString: process.env.WELLNESSBOX_PRISMA_URL as string,
           },
           tableName: "rag_chunks",
         });
@@ -241,7 +241,7 @@ export async function upsertDocuments(docs: Document[], ids: string[]) {
     docs.map((d) => d.pageContent)
   );
 
-  const usePg = !!process.env.RAG_DATABASE_URL;
+  const usePg = !!process.env.WELLNESSBOX_PRISMA_URL;
 
   if (usePg) {
     const sources = Array.from(
@@ -264,7 +264,7 @@ export async function upsertDocuments(docs: Document[], ids: string[]) {
 }
 
 export async function resetInMemoryStore() {
-  if (process.env.RAG_DATABASE_URL) return false;
+  if (process.env.WELLNESSBOX_PRISMA_URL) return false;
   embeddings = g.__RAG_EMBEDDINGS || (g.__RAG_EMBEDDINGS = getEmbeddings());
   g.__RAG_STORE = new InMemoryStore(embeddings);
   if (g.__RAG_INDEX_CACHE) g.__RAG_INDEX_CACHE = {};

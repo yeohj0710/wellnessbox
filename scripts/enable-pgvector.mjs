@@ -3,7 +3,7 @@ import pg from "pg";
 
 const url =
   process.env.WELLNESSBOX_URL_NON_POOLING ||
-  process.env.RAG_DATABASE_URL ||
+  process.env.WELLNESSBOX_PRISMA_URL ||
   process.env.WELLNESSBOX_PRISMA_URL;
 
 if (!url) {

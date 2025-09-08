@@ -94,14 +94,14 @@ function markIndexed() {
 
 export async function initVectorStore() {
   if (store) return store;
-  if (process.env.RAG_DATABASE_URL) {
+  if (process.env.WELLNESSBOX_PRISMA_URL) {
     const { PGVectorStore } = await import(
       "@langchain/community/vectorstores/pgvector"
     );
     const emb = getEmbeddings();
     store = await PGVectorStore.initialize(emb, {
       postgresConnectionOptions: {
-        connectionString: process.env.RAG_DATABASE_URL as string,
+        connectionString: process.env.WELLNESSBOX_PRISMA_URL as string,
       },
       tableName: "rag_chunks",
     });
