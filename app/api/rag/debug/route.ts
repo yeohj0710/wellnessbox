@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getRelevantDocuments } from "@/lib/ai/retriever";
+import {
+  getRelevantDocuments,
+  RAG_TOP_K,
+  RAG_MMR,
+  RAG_SCORE_MIN,
+} from "@/lib/ai/retriever";
 import { ensureIndexed, reindexAll } from "@/lib/ai/indexer";
 import { makeSnippet } from "@/lib/ai/snippet";
 
@@ -11,7 +16,7 @@ export async function GET(req: NextRequest) {
   const force = searchParams.get("force") === "1";
   if (force) await reindexAll("data");
   else await ensureIndexed("data");
-  const docs = await getRelevantDocuments(q, 6, 0.8, -1);
+  const docs = await getRelevantDocuments(q, RAG_TOP_K, RAG_MMR, RAG_SCORE_MIN);
   const out = docs.map((d: any) => ({
     source: d.metadata?.source,
     section: d.metadata?.section ?? "",

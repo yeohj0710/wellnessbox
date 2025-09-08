@@ -72,21 +72,11 @@ async function listMarkdownFiles(dir: string) {
 }
 
 export async function ensureIndexed(dir = DATA_DIR) {
-  const useDb = !!process.env.RAG_DATABASE_URL;
-  const storeEmpty =
-    !useDb &&
-    (!g.__RAG_STORE ||
-      !Array.isArray(g.__RAG_STORE.docs) ||
-      g.__RAG_STORE.docs.length === 0);
-
   const first = !g[builtFlag];
-  if (first || storeEmpty) {
-    await resetInMemoryStore();
-    if (storeEmpty) g.__RAG_INDEX_CACHE = {};
-  }
+  if (first) await resetInMemoryStore();
 
   const files = await listMarkdownFiles(dir);
-  const force = !!process.env.RAG_FORCE_REINDEX || storeEmpty;
+  const force = !!process.env.RAG_FORCE_REINDEX;
   const results: any[] = [];
   for (const f of files) results.push(await ingestFile(f.abs, f.rel, force));
   g[builtFlag] = true;
@@ -95,6 +85,22 @@ export async function ensureIndexed(dir = DATA_DIR) {
 
 export async function reindexAll(dir = DATA_DIR) {
   await resetInMemoryStore();
+  if (process.env.RAG_DATABASE_URL) {
+    try {
+      const { getEmbeddings } = await import("@/lib/ai/model");
+      const { PGVectorStore } = await import(
+        "@langchain/community/vectorstores/pgvector"
+      );
+      const e = getEmbeddings();
+      const pg = await PGVectorStore.initialize(e, {
+        postgresConnectionOptions: {
+          connectionString: process.env.RAG_DATABASE_URL as string,
+        },
+        tableName: "rag_chunks",
+      });
+      await (pg as any).delete({ deleteAll: true });
+    } catch {}
+  }
   const files = await listMarkdownFiles(dir);
   const results: any[] = [];
   for (const f of files) results.push(await ingestFile(f.abs, f.rel, true));

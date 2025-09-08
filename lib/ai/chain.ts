@@ -15,7 +15,12 @@ import { makeSnippet } from "./snippet";
 import { ChatRequestBody } from "@/types/chat";
 import { CATEGORY_LABELS, CategoryKey, KEY_TO_CODE } from "@/lib/categories";
 import { ensureIndexed } from "@/lib/ai/indexer";
-import { getRelevantDocuments } from "@/lib/ai/retriever";
+import {
+  getRelevantDocuments,
+  RAG_TOP_K,
+  RAG_MMR,
+  RAG_SCORE_MIN,
+} from "@/lib/ai/retriever";
 
 const CAT_ALIAS: Record<string, CategoryKey> = Object.fromEntries(
   Object.entries(KEY_TO_CODE).flatMap(([k, code]) => {
@@ -370,7 +375,12 @@ async function buildRagContext(
   if (!last.trim()) return { ragText: "", ragSources: [] as any[] };
   try {
     await ensureIndexed("data");
-    const docs = await getRelevantDocuments(last, 6, 0.8, -1);
+    const docs = await getRelevantDocuments(
+      last,
+      RAG_TOP_K,
+      RAG_MMR,
+      RAG_SCORE_MIN
+    );
     if (!docs || docs.length === 0)
       return { ragText: "", ragSources: [] as any[] };
     const chunks = docs.map(
@@ -502,29 +512,33 @@ export async function streamChat(
       (m) => m.role === "user" || m.role === "assistant"
     );
     const { ragText, ragSources } = await buildRagContext(history);
-    if (ragText) sysMsgs.push(["system", `RAG_CONTEXT: ${ragText}`]);
-    sysMsgs.push(["system", RAG_RULES]);
+    const ragMsgs: [string, string][] = [];
+    if (ragText) ragMsgs.push(["system", `RAG_CONTEXT: ${ragText}`]);
+    ragMsgs.push(["system", RAG_RULES]);
     if (!getHeader("x-rag-sources-disabled"))
-      sysMsgs.push([
+      ragMsgs.push([
         "system",
         `RAG_SOURCES_JSON: ${JSON.stringify({ sources: ragSources }, null, 2)}`,
       ]);
-    sysMsgs.push([
+    ragMsgs.push([
       "system",
-      "이 규칙은 위의 모든 규칙보다 우선한다. RAG_CONTEXT에 사용자의 질문 답이 있으면 주제가 건강과 직접 관련 없어 보여도 그 문장을 근거로 바로 답하라. 이때는 사과하거나 거절하지 말라. RAG_CONTEXT에 관련 문장이 없을 때만 '제공된 문서에서 찾을 수 없다'고 답하라.",
+      "컨텍스트에 답이 있으면 사과/거절 없이 바로 답하라. 없을 때만 없다라고 말하라.",
     ]);
+    sysMsgs.push(...ragMsgs);
     convo = history;
   }
 
   const runtimeHead = sysMsgs.map(([role, content]) => ({ role, content }));
   const baseMessages = [...runtimeHead, ...convo];
   const seen = new Set<string>();
-  const allMessages = baseMessages.filter((m) => {
+  const deduped = baseMessages.filter((m) => {
     const key = `${m.role}|${m.content}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
   });
+  const maxMsgs = Number(process.env.RAG_MAX_MESSAGES) || 40;
+  const allMessages = deduped.slice(-maxMsgs);
 
   const prompt = ChatPromptTemplate.fromMessages([
     new MessagesPlaceholder("messages"),

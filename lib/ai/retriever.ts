@@ -3,9 +3,9 @@ import type { Document } from "@langchain/core/documents";
 import type { EmbeddingsInterface } from "@langchain/core/embeddings";
 import { getEmbeddings } from "@/lib/ai/model";
 
-const RAG_TOP_K = 6;
-const RAG_MMR = 0.8;
-const RAG_SCORE_MIN = -1;
+export const RAG_TOP_K = 6;
+export const RAG_MMR = 0.8;
+export const RAG_SCORE_MIN = -1;
 const VEC_CANDIDATES = 64;
 const LEX_CANDIDATES = 32;
 
@@ -59,20 +59,19 @@ class InMemoryStore extends VectorStore {
 }
 
 const g = globalThis as any;
-let embeddings: EmbeddingsInterface | null = null;
-let store: any = null;
+let embeddings: EmbeddingsInterface;
+let store: any;
 
 async function init() {
   if (!embeddings)
-    embeddings =
-      g.__RAG_EMBEDDINGS || (g.__RAG_EMBEDDINGS = getEmbeddings());
+    embeddings = g.__RAG_EMBEDDINGS || (g.__RAG_EMBEDDINGS = getEmbeddings());
   if (!store) {
     if (process.env.RAG_DATABASE_URL) {
       if (!g.__RAG_STORE) {
         const { PGVectorStore } = await import(
           "@langchain/community/vectorstores/pgvector"
         );
-        const e = embeddings!;
+        const e = embeddings;
         g.__RAG_STORE = await PGVectorStore.initialize(e, {
           postgresConnectionOptions: {
             connectionString: process.env.RAG_DATABASE_URL as string,
@@ -82,7 +81,7 @@ async function init() {
       }
       store = g.__RAG_STORE;
     } else {
-      if (!g.__RAG_STORE) g.__RAG_STORE = new InMemoryStore(embeddings!);
+      if (!g.__RAG_STORE) g.__RAG_STORE = new InMemoryStore(embeddings);
       store = g.__RAG_STORE;
     }
   }
@@ -132,12 +131,14 @@ export async function getRelevantDocuments(
   scoreThreshold = RAG_SCORE_MIN
 ) {
   await init();
-  const qvec = await embeddings!.embedQuery(question);
+  const qvec = await embeddings.embedQuery(question);
   const vecResults: Array<[Document, number]> =
     await store.similaritySearchVectorWithScore(qvec, VEC_CANDIDATES);
 
   const baseTexts = vecResults.map(([d]) => d.pageContent);
-  const baseVecs = baseTexts.length ? await embeddings!.embedDocuments(baseTexts) : [];
+  const baseVecs = baseTexts.length
+    ? await embeddings.embedDocuments(baseTexts)
+    : [];
 
   const picked: {
     doc: Document;
@@ -181,7 +182,7 @@ export async function getRelevantDocuments(
 
     if (addDocs.length) {
       const addTexts = addDocs.map((d) => d.pageContent);
-      const addVecs = await embeddings!.embedDocuments(addTexts);
+      const addVecs = await embeddings.embedDocuments(addTexts);
       for (let i = 0; i < addDocs.length; i++) {
         const doc = addDocs[i];
         const vec = addVecs[i];
@@ -236,17 +237,36 @@ export async function getRelevantDocuments(
 
 export async function upsertDocuments(docs: Document[], ids: string[]) {
   await init();
-  const vectors = await embeddings!.embedDocuments(
+  const vectors = await embeddings.embedDocuments(
     docs.map((d) => d.pageContent)
   );
-  await (store as any).addVectors(vectors, docs, { ids });
+
+  const usePg = !!process.env.RAG_DATABASE_URL;
+
+  if (usePg) {
+    const sources = Array.from(
+      new Set(
+        docs
+          .map((d) => (d as any).metadata?.source)
+          .filter((s: any) => typeof s === "string" && s.length > 0)
+      )
+    );
+    try {
+      for (const src of sources) {
+        await (store as any).delete({ filter: { source: src } });
+      }
+    } catch (_) {}
+
+    await (store as any).addVectors(vectors, docs);
+  } else {
+    await (store as any).addVectors(vectors, docs, { ids });
+  }
 }
 
 export async function resetInMemoryStore() {
   if (process.env.RAG_DATABASE_URL) return false;
-  embeddings =
-    g.__RAG_EMBEDDINGS || (g.__RAG_EMBEDDINGS = getEmbeddings());
-  g.__RAG_STORE = new InMemoryStore(embeddings!);
+  embeddings = g.__RAG_EMBEDDINGS || (g.__RAG_EMBEDDINGS = getEmbeddings());
+  g.__RAG_STORE = new InMemoryStore(embeddings);
   if (g.__RAG_INDEX_CACHE) g.__RAG_INDEX_CACHE = {};
   return true;
 }
