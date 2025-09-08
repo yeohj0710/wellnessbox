@@ -1,9 +1,9 @@
 {
   "functions": {
-    "app/api/chat/route": {
+    "api/**": {
       "excludeFiles": "{.next/**,.git/**,public/**,node_modules/.prisma/**}"
     },
-    "app/api/rag/reindex/route": {
+    "app/api/**/route": {
       "excludeFiles": "{.next/**,.git/**,public/**,node_modules/.prisma/**}"
     }
   }
