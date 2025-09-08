@@ -5,7 +5,13 @@ export type ABTopItem = { key: CategoryKey; label: string; score: number };
 
 export function evaluate(a: ABAnswers): { top: ABTopItem[] } {
   const acc: Record<CategoryKey, number> = {} as any;
+  const cap: Record<CategoryKey, number> = {} as any;
   for (const r of RULES) {
+    for (const k in r.weights) {
+      const key = k as CategoryKey;
+      const w = r.weights[key] ?? 0;
+      cap[key] = (cap[key] ?? 0) + Math.max(0, w);
+    }
     if (!r.eval(a)) continue;
     for (const k in r.weights) {
       const key = k as CategoryKey;
@@ -15,7 +21,12 @@ export function evaluate(a: ABAnswers): { top: ABTopItem[] } {
   }
   const all = Object.keys(CATEGORY_LABELS).map((k) => k as CategoryKey);
   const scored: ABTopItem[] = all
-    .map((k) => ({ key: k, label: CATEGORY_LABELS[k], score: acc[k] ?? 0 }))
+    .map((k) => {
+      const raw = acc[k] ?? 0;
+      const max = cap[k] || 1;
+      const norm = raw / max;
+      return { key: k, label: CATEGORY_LABELS[k], score: norm };
+    })
     .sort((x, y) => y.score - x.score)
     .slice(0, 3);
   return { top: scored };
@@ -184,12 +195,7 @@ function reconstructPlan(
     const v = answers[cur.cat]?.[cur.qIdx] ?? -1;
     if (v === -1) break;
     filled[cur.cat][cur.qIdx] = true;
-    const nxt = nextPairAfterAnswer(
-      { ...state, filled },
-      getType,
-      cur,
-      v
-    );
+    const nxt = nextPairAfterAnswer({ ...state, filled }, getType, cur, v);
     if (!nxt) break;
     acc.push(nxt);
     cur = nxt;
