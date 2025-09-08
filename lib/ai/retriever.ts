@@ -2,12 +2,13 @@ import { VectorStore } from "@langchain/core/vectorstores";
 import type { Document } from "@langchain/core/documents";
 import type { EmbeddingsInterface } from "@langchain/core/embeddings";
 import { getEmbeddings } from "@/lib/ai/model";
+import pg from "pg";
 
 export const RAG_TOP_K = 6;
 export const RAG_MMR = 0.8;
 export const RAG_SCORE_MIN = -1;
-const VEC_CANDIDATES = 64;
-const LEX_CANDIDATES = 32;
+const VEC_CANDIDATES = 128;
+const LEX_CANDIDATES = 64;
 
 class InMemoryStore extends VectorStore {
   texts: string[] = [];
@@ -87,6 +88,33 @@ async function init() {
   }
 }
 
+function isPg() {
+  return !!process.env.WELLNESSBOX_PRISMA_URL;
+}
+
+async function keywordAugmentFromPg(q: string, limit = LEX_CANDIDATES) {
+  const ks = tokens(q);
+  if (!ks.length) return [];
+  const like = ks.map((k) => `%${k}%`);
+  const client = new pg.Client({
+    connectionString: process.env.WELLNESSBOX_PRISMA_URL as string,
+    ssl: { rejectUnauthorized: false },
+  });
+  await client.connect();
+  const sql = `
+    SELECT id, "text" AS "pageContent", metadata
+    FROM rag_chunks
+    WHERE ${like.map((_, i) => `"text" ILIKE $${i + 1}`).join(" OR ")}
+    LIMIT ${limit}
+  `;
+  const res = await client.query(sql, like);
+  await client.end();
+  return res.rows.map((r: any) => ({
+    pageContent: r.pageContent,
+    metadata: r.metadata,
+  }));
+}
+
 function cos(a: number[], b: number[]) {
   let dot = 0,
     na = 0,
@@ -124,6 +152,11 @@ function lexicalScore(q: string, text: string) {
   return score;
 }
 
+function toSimFromPgDistance(d: number) {
+  const clamped = Math.max(0, Math.min(2, d));
+  return 1 - clamped / 2;
+}
+
 export async function getRelevantDocuments(
   question: string,
   k = RAG_TOP_K,
@@ -146,11 +179,13 @@ export async function getRelevantDocuments(
     vec: number[];
     text: string;
   }[] = [];
+
   for (let i = 0; i < vecResults.length; i++) {
-    const [doc, score] = vecResults[i];
-    if (score < scoreThreshold) continue;
+    const [doc, rawScore] = vecResults[i];
+    if (rawScore < scoreThreshold) continue;
     const v = baseVecs[i];
     const l = lexicalScore(question, baseTexts[i]);
+    const sim = isPg() ? toSimFromPgDistance(rawScore) : rawScore;
     let dup = false;
     for (const p of picked)
       if (cos(p.vec, v) > 0.985) {
@@ -158,10 +193,31 @@ export async function getRelevantDocuments(
         break;
       }
     if (!dup)
-      picked.push({ doc, score: score + l, vec: v, text: baseTexts[i] });
+      picked.push({ doc, score: sim + 0.3 * l, vec: v, text: baseTexts[i] });
   }
 
-  if ((store as any).docs && Array.isArray((store as any).docs)) {
+  if (isPg()) {
+    const addDocs = await keywordAugmentFromPg(question, LEX_CANDIDATES);
+    if (addDocs.length) {
+      const addTexts = addDocs.map((d) => d.pageContent);
+      const addVecs = await embeddings.embedDocuments(addTexts);
+      for (let i = 0; i < addDocs.length; i++) {
+        const doc = addDocs[i];
+        const vec = addVecs[i];
+        const l = lexicalScore(question, addTexts[i]);
+        let dup = false;
+        for (const p of picked)
+          if (
+            doc.metadata?.hash === p.doc.metadata?.hash &&
+            doc.metadata?.idx === p.doc.metadata?.idx
+          ) {
+            dup = true;
+            break;
+          }
+        if (!dup) picked.push({ doc, score: 0.3 * l, vec, text: addTexts[i] });
+      }
+    }
+  } else if ((store as any).docs && Array.isArray((store as any).docs)) {
     const allDocs: Document[] = (store as any).docs;
     const scored = allDocs
       .map((d, i) => ({ i, s: lexicalScore(question, d.pageContent) }))
@@ -187,7 +243,7 @@ export async function getRelevantDocuments(
         const doc = addDocs[i];
         const vec = addVecs[i];
         const l = lexicalScore(question, addTexts[i]);
-        picked.push({ doc, score: l, vec, text: addTexts[i] });
+        picked.push({ doc, score: 0.3 * l, vec, text: addTexts[i] });
       }
     }
   }
@@ -215,7 +271,7 @@ export async function getRelevantDocuments(
     selected.push(chosen);
   }
 
-  if (!selected.length && (store as any).docs?.length) {
+  if (!selected.length && !isPg() && (store as any).docs?.length) {
     const allDocs: Document[] = (store as any).docs;
     const best = allDocs
       .map((d) => ({ d, s: lexicalScore(question, d.pageContent) }))
@@ -240,9 +296,7 @@ export async function upsertDocuments(docs: Document[], ids: string[]) {
   const vectors = await embeddings.embedDocuments(
     docs.map((d) => d.pageContent)
   );
-
   const usePg = !!process.env.WELLNESSBOX_PRISMA_URL;
-
   if (usePg) {
     const sources = Array.from(
       new Set(
@@ -256,7 +310,6 @@ export async function upsertDocuments(docs: Document[], ids: string[]) {
         await (store as any).delete({ filter: { source: src } });
       }
     } catch (_) {}
-
     await (store as any).addVectors(vectors, docs);
   } else {
     await (store as any).addVectors(vectors, docs, { ids });

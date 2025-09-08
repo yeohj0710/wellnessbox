@@ -1,6 +1,6 @@
 generator client {
-  provider   = "prisma-client-js"
-  engineType = "binary"
+  provider      = "prisma-client-js"
+  engineType    = "binary"
   // Limit binary targets to shrink serverless bundle size while preserving local dev.
   // "native" resolves to the local platform for development; Vercel uses Debian with OpenSSL 3.
   binaryTargets = ["native", "debian-openssl-3.0.x"]
@@ -257,4 +257,13 @@ enum ChatRole {
   system
   user
   assistant
+}
+
+model RagChunkView {
+  id           String  @id @db.Uuid
+  content      String  @db.Text
+  metadata     Json?
+  embeddingStr String? @map("embedding_str")
+
+  @@map("rag_chunks_view")
 }
