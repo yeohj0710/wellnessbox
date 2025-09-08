@@ -1,19 +1,21 @@
 import { VectorStore } from "@langchain/core/vectorstores";
 import type { Document } from "@langchain/core/documents";
+import type { EmbeddingsInterface } from "@langchain/core/embeddings";
 import { getEmbeddings } from "@/lib/ai/model";
 
-const RAG_TOP_K = 8;
+const RAG_TOP_K = 6;
 const RAG_MMR = 0.8;
 const RAG_SCORE_MIN = -1;
-const LEX_CANDIDATES = 25;
-const FETCH_MULTIPLIER = 10;
+const VEC_CANDIDATES = 64;
+const LEX_CANDIDATES = 32;
 
 class InMemoryStore extends VectorStore {
   texts: string[] = [];
   vectors: number[][] = [];
   docs: Document[] = [];
-  embeddings: ReturnType<typeof getEmbeddings>;
-  constructor(embeddings: ReturnType<typeof getEmbeddings>) {
+  idIndex: Map<string, number> = new Map();
+  embeddings: EmbeddingsInterface;
+  constructor(embeddings: EmbeddingsInterface) {
     // @ts-ignore
     super(embeddings, {});
     this.embeddings = embeddings;
@@ -23,9 +25,20 @@ class InMemoryStore extends VectorStore {
     docs: Document[],
     options?: { ids?: string[] }
   ) {
-    this.vectors.push(...vectors);
-    this.docs.push(...docs);
-    return options?.ids || [];
+    const ids = options?.ids || [];
+    for (let i = 0; i < vectors.length; i++) {
+      const id = ids[i];
+      if (id && this.idIndex.has(id)) {
+        const idx = this.idIndex.get(id)!;
+        this.vectors[idx] = vectors[i];
+        this.docs[idx] = docs[i];
+      } else {
+        this.vectors.push(vectors[i]);
+        this.docs.push(docs[i]);
+        if (id) this.idIndex.set(id, this.vectors.length - 1);
+      }
+    }
+    return ids;
   }
   async similaritySearchVectorWithScore(query: number[], k: number) {
     const scores = this.vectors.map(
@@ -45,24 +58,34 @@ class InMemoryStore extends VectorStore {
   }
 }
 
-let store: any;
-let embeddings: ReturnType<typeof getEmbeddings> | null = null;
+const g = globalThis as any;
+let embeddings: EmbeddingsInterface | null = null;
+let store: any = null;
 
 async function init() {
-  if (!embeddings) embeddings = getEmbeddings();
+  if (!embeddings)
+    embeddings =
+      g.__RAG_EMBEDDINGS ||
+      (g.__RAG_EMBEDDINGS = getEmbeddings() as unknown as EmbeddingsInterface);
   if (!store) {
     if (process.env.RAG_DATABASE_URL) {
-      const { PGVectorStore } = await import(
-        "@langchain/community/vectorstores/pgvector"
-      );
-      store = await PGVectorStore.initialize(embeddings, {
-        postgresConnectionOptions: {
-          connectionString: process.env.RAG_DATABASE_URL as string,
-        },
-        tableName: "rag_chunks",
-      });
+      if (!g.__RAG_STORE) {
+        const { PGVectorStore } = await import(
+          "@langchain/community/vectorstores/pgvector"
+        );
+        const e = embeddings as EmbeddingsInterface;
+        g.__RAG_STORE = await PGVectorStore.initialize(e, {
+          postgresConnectionOptions: {
+            connectionString: process.env.RAG_DATABASE_URL as string,
+          },
+          tableName: "rag_chunks",
+        });
+      }
+      store = g.__RAG_STORE;
     } else {
-      store = new InMemoryStore(embeddings);
+      if (!g.__RAG_STORE)
+        g.__RAG_STORE = new InMemoryStore(embeddings as EmbeddingsInterface);
+      store = g.__RAG_STORE;
     }
   }
 }
@@ -90,40 +113,18 @@ function tokens(s: string) {
     .filter(Boolean);
 }
 
-function phraseScore(q: string, text: string) {
-  const t = norm(text);
-  const hit3 = (
-    t.match(
-      /(?:^|[^\p{L}\p{N}])(1차\s*기능|2차\s*기능|3차\s*기능)(?=$|[^\p{L}\p{N}])/gu
-    ) || []
-  ).length;
+function lexicalScore(q: string, text: string) {
   const nq = norm(q);
-  const exact = nq.length >= 3 && t.includes(nq) ? 1 : 0;
-  const ts = tokens(t);
-  const qs = tokens(q);
+  const t = norm(text);
+  if (!nq) return 0;
+  const qs = tokens(nq);
   if (!qs.length) return 0;
   let hits = 0;
   for (const k of qs) if (t.includes(k)) hits++;
   const frac = hits / qs.length;
-  return hit3 * 4 + exact * 2 + (frac >= 1 ? 2 : frac >= 0.5 ? 1 : 0);
-}
-
-function keywordBoost(q: string, text: string) {
-  const nq = norm(q);
-  const nt = norm(text);
-  const keys = nq
-    .replace(/[^\p{L}\p{N}\s]/gu, " ")
-    .split(/\s+/)
-    .filter(Boolean);
-  if (!keys.length) return 0;
-  let hit = 0;
-  for (const k of keys) if (nt.includes(k)) hit++;
-  if (!hit) return 0;
-  return hit === keys.length
-    ? 0.15
-    : hit >= Math.ceil(keys.length / 2)
-    ? 0.05
-    : 0;
+  let score = frac;
+  if (nq.length >= 3 && t.includes(nq)) score += 1;
+  return score;
 }
 
 export async function getRelevantDocuments(
@@ -133,14 +134,13 @@ export async function getRelevantDocuments(
   scoreThreshold = RAG_SCORE_MIN
 ) {
   await init();
-  const fetchK = Math.min(40, k * FETCH_MULTIPLIER);
-  const qvec = await embeddings!.embedQuery(question);
+  const qvec = await (embeddings as EmbeddingsInterface).embedQuery(question);
   const vecResults: Array<[Document, number]> =
-    await store.similaritySearchVectorWithScore(qvec, fetchK);
+    await store.similaritySearchVectorWithScore(qvec, VEC_CANDIDATES);
 
   const baseTexts = vecResults.map(([d]) => d.pageContent);
   const baseVecs = baseTexts.length
-    ? await embeddings!.embedDocuments(baseTexts)
+    ? await (embeddings as EmbeddingsInterface).embedDocuments(baseTexts)
     : [];
 
   const picked: {
@@ -153,20 +153,21 @@ export async function getRelevantDocuments(
     const [doc, score] = vecResults[i];
     if (score < scoreThreshold) continue;
     const v = baseVecs[i];
+    const l = lexicalScore(question, baseTexts[i]);
     let dup = false;
     for (const p of picked)
       if (cos(p.vec, v) > 0.985) {
         dup = true;
         break;
       }
-    if (!dup) picked.push({ doc, score, vec: v, text: baseTexts[i] });
-    if (picked.length >= fetchK) break;
+    if (!dup)
+      picked.push({ doc, score: score + l, vec: v, text: baseTexts[i] });
   }
 
   if ((store as any).docs && Array.isArray((store as any).docs)) {
     const allDocs: Document[] = (store as any).docs;
     const scored = allDocs
-      .map((d, i) => ({ i, s: phraseScore(question, d.pageContent) }))
+      .map((d, i) => ({ i, s: lexicalScore(question, d.pageContent) }))
       .filter(({ s }) => s > 0)
       .sort((a, b) => b.s - a.s)
       .slice(0, LEX_CANDIDATES);
@@ -184,13 +185,14 @@ export async function getRelevantDocuments(
 
     if (addDocs.length) {
       const addTexts = addDocs.map((d) => d.pageContent);
-      const addVecs = await embeddings!.embedDocuments(addTexts);
+      const addVecs = await (embeddings as EmbeddingsInterface).embedDocuments(
+        addTexts
+      );
       for (let i = 0; i < addDocs.length; i++) {
         const doc = addDocs[i];
         const vec = addVecs[i];
-        const kw = keywordBoost(question, addTexts[i]);
-        const base = 0.35;
-        picked.push({ doc, score: base + kw, vec, text: addTexts[i] });
+        const l = lexicalScore(question, addTexts[i]);
+        picked.push({ doc, score: l, vec, text: addTexts[i] });
       }
     }
   }
@@ -202,14 +204,13 @@ export async function getRelevantDocuments(
     text: string;
   }[] = [];
   while (selected.length < k && picked.length) {
-    let bestIdx = 0,
-      bestVal = -Infinity;
+    let bestIdx = 0;
+    let bestVal = -Infinity;
     for (let i = 0; i < picked.length; i++) {
       const cand = picked[i];
       let sim = 0;
       for (const s of selected) sim = Math.max(sim, cos(cand.vec, s.vec));
-      const kb = keywordBoost(question, cand.text);
-      const val = mmr * (cand.score + kb) - (1 - mmr) * sim;
+      const val = mmr * cand.score - (1 - mmr) * sim;
       if (val > bestVal) {
         bestVal = val;
         bestIdx = i;
@@ -222,13 +223,13 @@ export async function getRelevantDocuments(
   if (!selected.length && (store as any).docs?.length) {
     const allDocs: Document[] = (store as any).docs;
     const best = allDocs
-      .map((d) => ({ d, s: phraseScore(question, d.pageContent) }))
+      .map((d) => ({ d, s: lexicalScore(question, d.pageContent) }))
       .sort((a, b) => b.s - a.s)[0];
     if (best)
       return [
         {
           ...best.d,
-          metadata: { ...(best.d.metadata || {}), score: 0.3, rank: 0 },
+          metadata: { ...(best.d.metadata || {}), score: best.s, rank: 0 },
         },
       ];
   }
@@ -241,7 +242,7 @@ export async function getRelevantDocuments(
 
 export async function upsertDocuments(docs: Document[], ids: string[]) {
   await init();
-  const vectors = await embeddings!.embedDocuments(
+  const vectors = await (embeddings as EmbeddingsInterface).embedDocuments(
     docs.map((d) => d.pageContent)
   );
   await (store as any).addVectors(vectors, docs, { ids });
@@ -249,7 +250,10 @@ export async function upsertDocuments(docs: Document[], ids: string[]) {
 
 export async function resetInMemoryStore() {
   if (process.env.RAG_DATABASE_URL) return false;
-  embeddings = getEmbeddings();
-  store = new InMemoryStore(embeddings);
+  embeddings =
+    g.__RAG_EMBEDDINGS ||
+    (g.__RAG_EMBEDDINGS = getEmbeddings() as unknown as EmbeddingsInterface);
+  g.__RAG_STORE = new InMemoryStore(embeddings as EmbeddingsInterface);
+  if (g.__RAG_INDEX_CACHE) g.__RAG_INDEX_CACHE = {};
   return true;
 }

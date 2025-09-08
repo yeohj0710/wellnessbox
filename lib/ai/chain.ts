@@ -372,30 +372,42 @@ async function buildRagContext(
     const docs = await getRelevantDocuments(last, 6, 0.8, -1);
     if (!docs || docs.length === 0)
       return { ragText: "", ragSources: [] as any[] };
-
-    const makeSnippet = (t: string, q: string, size = 1200) => {
-      const rx = /(1차\s*기능|2차\s*기능|3차\s*기능)/;
-      let idx = t.search(rx);
-      if (idx < 0) {
-        const qi = t.toLowerCase().indexOf(q.toLowerCase());
-        idx = qi >= 0 ? qi : 0;
+    const tokenize = (s: string) =>
+      s
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}\s]/gu, " ")
+        .split(/\s+/)
+        .filter(Boolean);
+    const makeSnippet = (t: string, q: string, size = 1000) => {
+      const lt = t.toLowerCase();
+      const qs = tokenize(q);
+      let idx = 0;
+      for (const tk of qs) {
+        const i = lt.indexOf(tk);
+        if (i >= 0 && (idx === 0 || i < idx)) idx = i;
       }
-      const s = Math.max(0, idx - Math.floor(size / 2));
-      const e = Math.min(t.length, s + size);
-      return (s > 0 ? "…" : "") + t.slice(s, e) + (e < t.length ? "…" : "");
+      const half = Math.floor(size / 2);
+      let s = Math.max(0, idx - half);
+      let e = Math.min(t.length, s + size);
+      const pre = t.lastIndexOf(".", s - 1);
+      if (pre >= 0 && pre < s) s = pre + 1;
+      const post = t.indexOf(".", e);
+      if (post >= 0) e = post + 1;
+      const snippet = t.slice(s, e).trim();
+      return (s > 0 ? "…" : "") + snippet + (e < t.length ? "…" : "");
     };
 
     const chunks = docs.map(
       (d: any, i: number) =>
         `### ${i + 1}. ${d.metadata?.title || d.metadata?.source || "doc"}\n` +
-        makeSnippet(String(d.pageContent || ""), last, 1200)
+        makeSnippet(String(d.pageContent || ""), last, 1000)
     );
 
     const limit = Number(process.env.RAG_CONTEXT_LIMIT) || 6000;
     const ragText = chunks.join("\n\n---\n\n").slice(0, limit);
 
     const ragSources = docs.map((d: any, i: number) => ({
-      file: d.metadata?.file ?? d.metadata?.source ?? "doc",
+      source: d.metadata?.source ?? "doc",
       section: d.metadata?.section ?? "",
       idx: d.metadata?.idx ?? 0,
       score: d.metadata?.score,
@@ -511,28 +523,31 @@ export async function streamChat(
     ];
   } else {
     const { ragText, ragSources } = await buildRagContext(messages || []);
-    if (ragText)
-      sysMsgs.push([
-        "system",
-        `아래 컨텍스트에 근거해 답하고, 컨텍스트 밖 내용은 추측하지 말라.\n컨텍스트 시작\n${ragText}\n컨텍스트 끝`,
-      ]);
+    if (ragText) sysMsgs.push(["system", `RAG_CONTEXT: ${ragText}`]);
     sysMsgs.push(["system", RAG_RULES]);
-    sysMsgs.push([
-      "system",
-      "컨텍스트에 사용자의 질문에 대한 답이 존재하면 그 문장을 근거로 바로 답하라. 존재할 때는 사과하거나 거절하지 말라. 컨텍스트에 전혀 없을 때만 '제공된 문서에서 찾을 수 없다'고 말하라.",
-    ]);
     if (!getHeader("x-rag-sources-disabled"))
       sysMsgs.push([
         "system",
         `RAG_SOURCES_JSON: ${JSON.stringify({ sources: ragSources }, null, 2)}`,
       ]);
+    sysMsgs.push([
+      "system",
+      "컨텍스트에 사용자의 질문에 대한 답이 존재하면 그 문장을 근거로 바로 답하라. 존재할 때는 사과하거나 거절하지 말라. 컨텍스트에 전혀 없을 때만 '제공된 문서에서 찾을 수 없다'고 말하라.",
+    ]);
     convo = messages || [];
   }
 
   const runtimeHead = sysMsgs.map(([role, content]) => ({ role, content }));
-  const allMessages = isInit
+  const baseMessages = isInit
     ? [...runtimeHead, ...convo]
     : [...runtimeHead, ...(messages || [])];
+  const seen = new Set<string>();
+  const allMessages = baseMessages.filter((m) => {
+    const key = `${m.role}|${m.content}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 
   const prompt = ChatPromptTemplate.fromMessages([
     new MessagesPlaceholder("messages"),

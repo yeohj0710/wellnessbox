@@ -32,19 +32,12 @@ async function ingestFile(abs: string, rel: string, force = false) {
 
   const name = path.basename(normRel);
   const rawDocs = await splitMarkdown(text, name);
-  const docs = rawDocs.map((d: any, i: number) => ({
+  const docs = rawDocs.map((d: any) => ({
     ...d,
-    metadata: {
-      ...(d.metadata || {}),
-      source: normRel,
-      title: (d.metadata && d.metadata.title) || name,
-      idx: (d.metadata && d.metadata.idx) ?? i,
-      hash:
-        (d.metadata && d.metadata.hash) || sha256(d.pageContent).slice(0, 12),
-    },
+    metadata: { ...(d.metadata || {}), source: normRel },
   }));
   const ids = docs.map(
-    (d: any) => `${name}:${d.metadata.hash}:${d.metadata.idx}`
+    (d: any) => `${normRel}:${d.metadata.hash}:${d.metadata.idx}`
   );
   await upsertDocuments(docs as any, ids);
 
@@ -53,7 +46,8 @@ async function ingestFile(abs: string, rel: string, force = false) {
 }
 
 async function listMarkdownFiles(dir: string) {
-  const root = path.resolve(process.cwd(), dir);
+  const projectRoot = path.resolve(process.cwd());
+  const root = path.resolve(projectRoot, dir);
   async function walk(
     current: string
   ): Promise<{ abs: string; rel: string }[]> {
@@ -63,7 +57,8 @@ async function listMarkdownFiles(dir: string) {
       const p = path.join(current, e.name);
       if (e.isDirectory()) out.push(...(await walk(p)));
       else if (e.isFile() && e.name.toLowerCase().endsWith(".md")) {
-        const rel = path.relative(process.cwd(), p).replace(/\\/g, "/");
+        const sub = path.relative(root, p).replace(/\\/g, "/");
+        const rel = path.posix.join(dir, sub);
         out.push({ abs: p, rel });
       }
     }
@@ -78,14 +73,22 @@ async function listMarkdownFiles(dir: string) {
 
 export async function ensureIndexed(dir = DATA_DIR) {
   const useDb = !!process.env.RAG_DATABASE_URL;
-  if (useDb && g[builtFlag] && !process.env.RAG_FORCE_REINDEX) return [];
-  await resetInMemoryStore();
+  const storeEmpty =
+    !useDb &&
+    (!g.__RAG_STORE ||
+      !Array.isArray(g.__RAG_STORE.docs) ||
+      g.__RAG_STORE.docs.length === 0);
+
+  const first = !g[builtFlag];
+  if (first || storeEmpty) {
+    await resetInMemoryStore();
+    if (storeEmpty) g.__RAG_INDEX_CACHE = {};
+  }
+
   const files = await listMarkdownFiles(dir);
+  const force = !!process.env.RAG_FORCE_REINDEX || storeEmpty;
   const results: any[] = [];
-  for (const f of files)
-    results.push(
-      await ingestFile(f.abs, f.rel, !!process.env.RAG_FORCE_REINDEX)
-    );
+  for (const f of files) results.push(await ingestFile(f.abs, f.rel, force));
   g[builtFlag] = true;
   return results;
 }

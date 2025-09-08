@@ -7,10 +7,10 @@ const nextConfig: NextConfig = {
     remotePatterns: [{ protocol: "https", hostname: "**" }],
   },
   outputFileTracingIncludes: {
-    "/app/api/rag/**/route": ["./data/**/*"],
+    "/api/rag/**": ["data/**/*"],
   },
   outputFileTracingExcludes: {
-    "*": [".next/cache/**", "public/**", "node_modules/.prisma/**"],
+    "/*": [".next/cache/**"],
   },
   webpack(config) {
     return config;
