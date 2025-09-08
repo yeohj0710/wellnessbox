@@ -1,10 +1,10 @@
 {
   "functions": {
     "api/**": {
-      "excludeFiles": "{.next/**,.git/**,public/**,node_modules/.prisma/**}"
+      "excludeFiles": "{.next/**,public/**,node_modules/.prisma/**}"
     },
     "app/api/**/route": {
-      "excludeFiles": "{.next/**,.git/**,public/**,node_modules/.prisma/**}"
+      "excludeFiles": "{.next/**,public/**,node_modules/.prisma/**}"
     }
   }
 }

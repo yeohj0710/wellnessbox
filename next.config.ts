@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
   },
 
   outputFileTracingExcludes: {
-    "*": [".next/cache/**", ".git/**", "public/**", "node_modules/.prisma/**"],
+    "*": [".next/cache/**", "public/**", "node_modules/.prisma/**"],
   },
 
   webpack(config) {
