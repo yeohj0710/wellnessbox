@@ -10,6 +10,9 @@ export const RAG_SCORE_MIN = -1;
 const VEC_CANDIDATES = 128;
 const LEX_CANDIDATES = 64;
 
+const RAG_DEBUG = !!process.env.RAG_DEBUG;
+const REQUIRE_PG = process.env.RAG_REQUIRE_PG === "1";
+
 class InMemoryStore extends VectorStore {
   texts: string[] = [];
   vectors: number[][] = [];
@@ -17,7 +20,6 @@ class InMemoryStore extends VectorStore {
   idIndex: Map<string, number> = new Map();
   embeddings: EmbeddingsInterface;
   constructor(embeddings: EmbeddingsInterface) {
-    // @ts-ignore
     super(embeddings, {});
     this.embeddings = embeddings;
   }
@@ -67,7 +69,8 @@ async function init() {
   if (!embeddings)
     embeddings = g.__RAG_EMBEDDINGS || (g.__RAG_EMBEDDINGS = getEmbeddings());
   if (!store) {
-    if (process.env.WELLNESSBOX_PRISMA_URL) {
+    const hasPg = !!process.env.WELLNESSBOX_PRISMA_URL;
+    if (hasPg) {
       if (!g.__RAG_STORE) {
         const { PGVectorStore } = await import(
           "@langchain/community/vectorstores/pgvector"
@@ -82,14 +85,25 @@ async function init() {
       }
       store = g.__RAG_STORE;
     } else {
+      if (REQUIRE_PG) {
+        throw new Error(
+          "RAG_REQUIRE_PG=1 but WELLNESSBOX_PRISMA_URL is not set"
+        );
+      }
       if (!g.__RAG_STORE) g.__RAG_STORE = new InMemoryStore(embeddings);
       store = g.__RAG_STORE;
     }
+    if (RAG_DEBUG)
+      console.debug(`[rag:init] store=${hasPg ? "pgvector" : "memory"}`);
   }
 }
 
 function isPg() {
   return !!process.env.WELLNESSBOX_PRISMA_URL;
+}
+
+export function ragStoreKind() {
+  return isPg() ? "pgvector" : "memory";
 }
 
 let pool: pg.Pool | null = null;

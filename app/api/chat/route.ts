@@ -4,13 +4,10 @@ import { streamChat } from "@/lib/ai/chain";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-import { ensureIndexed } from "@/lib/ai/indexer";
-
 export async function POST(req: NextRequest) {
   try {
-    await ensureIndexed("data");
-
     const body = await req.json();
+
     const q = typeof body?.question === "string" ? body.question.trim() : "";
     const msgs = Array.isArray(body?.messages) ? body.messages : [];
     const normalized =
@@ -19,9 +16,12 @@ export async function POST(req: NextRequest) {
     const patchedBody = { ...body, messages: normalized, ragQuery: q };
 
     const headersObj = req.headers;
-    let iterable;
+    let iterable: AsyncIterable<string> | undefined;
     try {
-      iterable = await streamChat(patchedBody, headersObj);
+      iterable = (await streamChat(
+        patchedBody,
+        headersObj
+      )) as AsyncIterable<string>;
     } catch (e: any) {
       const raw = typeof e?.message === "string" ? e.message : String(e ?? "");
       const safe = raw.replace(/[{}]/g, (m: string) => (m === "{" ? "(" : ")"));
@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
         headers: { "Content-Type": "text/plain; charset=utf-8" },
       });
     }
+
     const stream = new ReadableStream<Uint8Array>({
       async start(controller) {
         const encoder = new TextEncoder();
@@ -59,6 +60,7 @@ export async function POST(req: NextRequest) {
         }
       },
     });
+
     return new Response(stream, {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",

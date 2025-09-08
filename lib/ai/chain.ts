@@ -21,6 +21,7 @@ import {
   RAG_MMR,
   RAG_SCORE_MIN,
 } from "@/lib/ai/retriever";
+import { ragStoreKind } from "@/lib/ai/retriever";
 
 const CAT_ALIAS: Record<string, CategoryKey> = Object.fromEntries(
   Object.entries(KEY_TO_CODE).flatMap(([k, code]) => {
@@ -412,11 +413,20 @@ function toPlainText(x: any): string {
   if (x == null) return "";
   if (Array.isArray(x)) return x.map(toPlainText).join(" ");
   if (typeof x === "object") {
-    if (typeof x.text === "string") return x.text;
-    if (typeof x.value === "string") return x.value;
-    if (Array.isArray(x.parts)) return x.parts.map(toPlainText).join(" ");
+    if (typeof (x as any).text === "string") return (x as any).text;
+    if (typeof (x as any).value === "string") return (x as any).value;
+    if (Array.isArray((x as any).parts))
+      return (x as any).parts.map(toPlainText).join(" ");
     if (Array.isArray((x as any).content))
       return (x as any).content.map(toPlainText).join(" ");
+    if (Array.isArray((x as any).children))
+      return (x as any).children.map(toPlainText).join(" ");
+    if (
+      typeof (x as any).type === "string" &&
+      Array.isArray((x as any).children)
+    ) {
+      return (x as any).children.map(toPlainText).join(" ");
+    }
   }
   return "";
 }
@@ -432,15 +442,23 @@ function lastUserText(messages: Array<{ role: string; content: any }>) {
   return "";
 }
 
+const RAG_DEBUG = !!process.env.RAG_DEBUG;
+
 async function buildRagContext(
   messages: Array<{ role: string; content: any }>,
   qOverride?: string
 ) {
-  if (!messages || !messages.length)
+  if (!messages || !messages.length) {
+    if (RAG_DEBUG) console.debug("[rag] skipped: no messages");
     return { ragText: "", ragSources: [] as any[] };
+  }
 
   const last = (qOverride && qOverride.trim()) || lastUserText(messages);
-  if (!last) return { ragText: "", ragSources: [] as any[] };
+  if (!last) {
+    if (RAG_DEBUG)
+      console.debug("[rag] skipped: empty last user text", { qOverride });
+    return { ragText: "", ragSources: [] as any[] };
+  }
 
   try {
     await ensureIndexed("data");
@@ -450,8 +468,10 @@ async function buildRagContext(
       RAG_MMR,
       RAG_SCORE_MIN
     );
-    if (!docs || docs.length === 0)
+    if (!docs || docs.length === 0) {
+      if (RAG_DEBUG) console.debug(`[rag] last="${last}" docs=0 rag=0`);
       return { ragText: "", ragSources: [] as any[] };
+    }
 
     const chunks = docs.map(
       (d: any, i: number) =>
@@ -468,8 +488,14 @@ async function buildRagContext(
       score: d.metadata?.score,
       rank: d.metadata?.rank ?? i,
     }));
+
+    if (RAG_DEBUG)
+      console.debug(
+        `[rag] last="${last}" docs=${docs.length} rag=${ragText.length}`
+      );
     return { ragText, ragSources };
   } catch {
+    if (RAG_DEBUG) console.debug(`[rag] last="${last}" error`);
     return { ragText: "", ragSources: [] as any[] };
   }
 }
@@ -494,7 +520,24 @@ export async function streamChat(
     typeof (headers as any)?.get === "function"
       ? (headers as any).get(k)
       : (headers as any)?.[k] ?? (headers as any)?.[k?.toLowerCase?.()] ?? null;
-  const isInit = mode === "init";
+
+  const hasUserText =
+    Array.isArray(messages) &&
+    messages.some((m) => m?.role === "user" && toPlainText(m?.content).trim());
+  const isInit = mode === "init" && !hasUserText;
+
+  if (RAG_DEBUG) {
+    console.debug("[chat:req]", {
+      mode,
+      isInit,
+      msgCount: Array.isArray(messages) ? messages.length : 0,
+      lastUser: (Array.isArray(messages) ? lastUserText(messages) : "").slice(
+        0,
+        80
+      ),
+      store: ragStoreKind(),
+    });
+  }
   const knownContext = await buildKnownContext(
     clientId,
     headers,
@@ -562,6 +605,13 @@ export async function streamChat(
     ? { ragText: "", ragSources: [] as any[] }
     : await buildRagContext(history, (body as any)?.ragQuery);
 
+  if (RAG_DEBUG)
+    console.debug(
+      `[chat] ragApplied=${ragText ? 1 : 0} docs=${ragSources.length} chars=${
+        ragText.length
+      }`
+    );
+
   const ragSourcesJson = getHeader("x-rag-sources-disabled")
     ? ""
     : JSON.stringify({ sources: ragSources }, null, 2);
@@ -598,7 +648,7 @@ export async function streamChat(
     convo = history;
   }
 
-  const maxMsgs = Number(process.env.RAG_MAX_MESSAGES) || 40;
+  const maxMsgs = Math.max(1, Number(process.env.RAG_MAX_MESSAGES) || 40);
   const roomForConvo = Math.max(0, maxMsgs - 1);
   const keptConvo = convo.slice(-roomForConvo);
   const allMessages = [...runtimeHead, ...keptConvo];

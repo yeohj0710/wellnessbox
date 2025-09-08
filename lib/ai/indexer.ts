@@ -15,6 +15,8 @@ if (!g.__RAG_REINDEX_LOCK) g.__RAG_REINDEX_LOCK = null;
 const DATA_DIR = "data";
 const builtFlag = "__RAG_INDEX_BUILT";
 
+const RAG_DEBUG = !!process.env.RAG_DEBUG;
+
 function sha256(s: string) {
   return crypto.createHash("sha256").update(s).digest("hex");
 }
@@ -77,12 +79,15 @@ export async function ensureIndexed(dir = DATA_DIR) {
   if (g.__RAG_INDEX_LOCK) return g.__RAG_INDEX_LOCK;
   g.__RAG_INDEX_LOCK = (async () => {
     const first = !g[builtFlag];
-    if (first) await resetInMemoryStore();
+    if (first && !process.env.WELLNESSBOX_PRISMA_URL)
+      await resetInMemoryStore();
     const files = await listMarkdownFiles(dir);
     const force = !!process.env.RAG_FORCE_REINDEX;
     const results: any[] = [];
     for (const f of files) results.push(await ingestFile(f.abs, f.rel, force));
     g[builtFlag] = true;
+    if (RAG_DEBUG)
+      console.debug(`[rag:index] ensureIndexed files=${files.length}`);
     return results;
   })();
   try {
