@@ -1,10 +1,7 @@
 import "dotenv/config";
 import pg from "pg";
 
-const url =
-  process.env.WELLNESSBOX_URL_NON_POOLING ||
-  process.env.WELLNESSBOX_PRISMA_URL ||
-  process.env.WELLNESSBOX_PRISMA_URL;
+const url = process.env.WELLNESSBOX_PRISMA_URL;
 
 if (!url) {
   console.error("NO_DB_URL");

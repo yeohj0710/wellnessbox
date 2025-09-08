@@ -3,6 +3,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { splitMarkdown } from "@/lib/ai/markdownSplitter";
 import { upsertDocuments, resetInMemoryStore } from "@/lib/ai/retriever";
+import pg from "pg";
 
 type Cache = Record<string, string>;
 const g = globalThis as any;
@@ -14,6 +15,25 @@ if (!g.__RAG_REINDEX_LOCK) g.__RAG_REINDEX_LOCK = null;
 
 const DATA_DIR = "data";
 const builtFlag = "__RAG_INDEX_BUILT";
+
+async function wipePgTableHard(): Promise<boolean> {
+  const url = process.env.WELLNESSBOX_PRISMA_URL;
+  if (!url) return false;
+  const pool = new pg.Pool({
+    connectionString: url,
+    ssl: { rejectUnauthorized: false },
+  });
+  try {
+    await pool.query(`TRUNCATE TABLE public.rag_chunks;`);
+    if (process.env.RAG_DEBUG) console.debug("[reindex] TRUNCATE rag_chunks");
+    return true;
+  } catch (e) {
+    if (process.env.RAG_DEBUG) console.warn("[reindex] TRUNCATE failed", e);
+    return false;
+  } finally {
+    await pool.end().catch(() => {});
+  }
+}
 
 const RAG_DEBUG = !!process.env.RAG_DEBUG;
 
@@ -102,6 +122,8 @@ export async function reindexAll(dir = DATA_DIR) {
   if (g.__RAG_REINDEX_LOCK) return g.__RAG_REINDEX_LOCK;
   g.__RAG_REINDEX_LOCK = (async () => {
     await resetInMemoryStore();
+
+    let wiped = false;
     if (process.env.WELLNESSBOX_PRISMA_URL) {
       try {
         const { getEmbeddings } = await import("@/lib/ai/model");
@@ -116,8 +138,19 @@ export async function reindexAll(dir = DATA_DIR) {
           tableName: "rag_chunks",
         });
         await (pg as any).delete({ deleteAll: true });
-      } catch {}
+        wiped = true;
+        if (process.env.RAG_DEBUG)
+          console.debug("[reindex] PGVectorStore.delete(all)");
+      } catch (e) {
+        if (process.env.RAG_DEBUG)
+          console.warn("[reindex] PGVectorStore.delete failed", e);
+      }
+
+      if (!wiped) {
+        wiped = await wipePgTableHard();
+      }
     }
+
     const files = await listMarkdownFiles(dir);
     const results: any[] = [];
     for (const f of files) results.push(await ingestFile(f.abs, f.rel, true));

@@ -340,7 +340,7 @@ export async function upsertDocuments(docs: Document[], ids: string[]) {
         await (store as any).delete({ filter: { source: src } });
       }
     } catch {}
-    await (store as any).addVectors(vectors, docs);
+    await (store as any).addVectors(vectors, docs); // ids 전달 X (PG는 uuid)
   } else {
     await (store as any).addVectors(vectors, docs, { ids });
   }
