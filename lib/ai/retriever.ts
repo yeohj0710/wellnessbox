@@ -65,15 +65,14 @@ let store: any = null;
 async function init() {
   if (!embeddings)
     embeddings =
-      g.__RAG_EMBEDDINGS ||
-      (g.__RAG_EMBEDDINGS = getEmbeddings() as unknown as EmbeddingsInterface);
+      g.__RAG_EMBEDDINGS || (g.__RAG_EMBEDDINGS = getEmbeddings());
   if (!store) {
     if (process.env.RAG_DATABASE_URL) {
       if (!g.__RAG_STORE) {
         const { PGVectorStore } = await import(
           "@langchain/community/vectorstores/pgvector"
         );
-        const e = embeddings as EmbeddingsInterface;
+        const e = embeddings!;
         g.__RAG_STORE = await PGVectorStore.initialize(e, {
           postgresConnectionOptions: {
             connectionString: process.env.RAG_DATABASE_URL as string,
@@ -83,8 +82,7 @@ async function init() {
       }
       store = g.__RAG_STORE;
     } else {
-      if (!g.__RAG_STORE)
-        g.__RAG_STORE = new InMemoryStore(embeddings as EmbeddingsInterface);
+      if (!g.__RAG_STORE) g.__RAG_STORE = new InMemoryStore(embeddings!);
       store = g.__RAG_STORE;
     }
   }
@@ -134,14 +132,12 @@ export async function getRelevantDocuments(
   scoreThreshold = RAG_SCORE_MIN
 ) {
   await init();
-  const qvec = await (embeddings as EmbeddingsInterface).embedQuery(question);
+  const qvec = await embeddings!.embedQuery(question);
   const vecResults: Array<[Document, number]> =
     await store.similaritySearchVectorWithScore(qvec, VEC_CANDIDATES);
 
   const baseTexts = vecResults.map(([d]) => d.pageContent);
-  const baseVecs = baseTexts.length
-    ? await (embeddings as EmbeddingsInterface).embedDocuments(baseTexts)
-    : [];
+  const baseVecs = baseTexts.length ? await embeddings!.embedDocuments(baseTexts) : [];
 
   const picked: {
     doc: Document;
@@ -185,9 +181,7 @@ export async function getRelevantDocuments(
 
     if (addDocs.length) {
       const addTexts = addDocs.map((d) => d.pageContent);
-      const addVecs = await (embeddings as EmbeddingsInterface).embedDocuments(
-        addTexts
-      );
+      const addVecs = await embeddings!.embedDocuments(addTexts);
       for (let i = 0; i < addDocs.length; i++) {
         const doc = addDocs[i];
         const vec = addVecs[i];
@@ -242,7 +236,7 @@ export async function getRelevantDocuments(
 
 export async function upsertDocuments(docs: Document[], ids: string[]) {
   await init();
-  const vectors = await (embeddings as EmbeddingsInterface).embedDocuments(
+  const vectors = await embeddings!.embedDocuments(
     docs.map((d) => d.pageContent)
   );
   await (store as any).addVectors(vectors, docs, { ids });
@@ -251,9 +245,8 @@ export async function upsertDocuments(docs: Document[], ids: string[]) {
 export async function resetInMemoryStore() {
   if (process.env.RAG_DATABASE_URL) return false;
   embeddings =
-    g.__RAG_EMBEDDINGS ||
-    (g.__RAG_EMBEDDINGS = getEmbeddings() as unknown as EmbeddingsInterface);
-  g.__RAG_STORE = new InMemoryStore(embeddings as EmbeddingsInterface);
+    g.__RAG_EMBEDDINGS || (g.__RAG_EMBEDDINGS = getEmbeddings());
+  g.__RAG_STORE = new InMemoryStore(embeddings!);
   if (g.__RAG_INDEX_CACHE) g.__RAG_INDEX_CACHE = {};
   return true;
 }

@@ -11,6 +11,7 @@ import {
   INIT_GUIDE,
   RAG_RULES,
 } from "./prompts";
+import { makeSnippet } from "./snippet";
 import { ChatRequestBody } from "@/types/chat";
 import { CATEGORY_LABELS, CategoryKey, KEY_TO_CODE } from "@/lib/categories";
 import { ensureIndexed } from "@/lib/ai/indexer";
@@ -372,31 +373,6 @@ async function buildRagContext(
     const docs = await getRelevantDocuments(last, 6, 0.8, -1);
     if (!docs || docs.length === 0)
       return { ragText: "", ragSources: [] as any[] };
-    const tokenize = (s: string) =>
-      s
-        .toLowerCase()
-        .replace(/[^\p{L}\p{N}\s]/gu, " ")
-        .split(/\s+/)
-        .filter(Boolean);
-    const makeSnippet = (t: string, q: string, size = 1000) => {
-      const lt = t.toLowerCase();
-      const qs = tokenize(q);
-      let idx = 0;
-      for (const tk of qs) {
-        const i = lt.indexOf(tk);
-        if (i >= 0 && (idx === 0 || i < idx)) idx = i;
-      }
-      const half = Math.floor(size / 2);
-      let s = Math.max(0, idx - half);
-      let e = Math.min(t.length, s + size);
-      const pre = t.lastIndexOf(".", s - 1);
-      if (pre >= 0 && pre < s) s = pre + 1;
-      const post = t.indexOf(".", e);
-      if (post >= 0) e = post + 1;
-      const snippet = t.slice(s, e).trim();
-      return (s > 0 ? "…" : "") + snippet + (e < t.length ? "…" : "");
-    };
-
     const chunks = docs.map(
       (d: any, i: number) =>
         `### ${i + 1}. ${d.metadata?.title || d.metadata?.source || "doc"}\n` +
@@ -522,7 +498,10 @@ export async function streamChat(
       },
     ];
   } else {
-    const { ragText, ragSources } = await buildRagContext(messages || []);
+    const history = (messages || []).filter(
+      (m) => m.role === "user" || m.role === "assistant"
+    );
+    const { ragText, ragSources } = await buildRagContext(history);
     if (ragText) sysMsgs.push(["system", `RAG_CONTEXT: ${ragText}`]);
     sysMsgs.push(["system", RAG_RULES]);
     if (!getHeader("x-rag-sources-disabled"))
@@ -532,15 +511,13 @@ export async function streamChat(
       ]);
     sysMsgs.push([
       "system",
-      "컨텍스트에 사용자의 질문에 대한 답이 존재하면 그 문장을 근거로 바로 답하라. 존재할 때는 사과하거나 거절하지 말라. 컨텍스트에 전혀 없을 때만 '제공된 문서에서 찾을 수 없다'고 말하라.",
+      "이 규칙은 위의 모든 규칙보다 우선한다. RAG_CONTEXT에 사용자의 질문 답이 있으면 주제가 건강과 직접 관련 없어 보여도 그 문장을 근거로 바로 답하라. 이때는 사과하거나 거절하지 말라. RAG_CONTEXT에 관련 문장이 없을 때만 '제공된 문서에서 찾을 수 없다'고 답하라.",
     ]);
-    convo = messages || [];
+    convo = history;
   }
 
   const runtimeHead = sysMsgs.map(([role, content]) => ({ role, content }));
-  const baseMessages = isInit
-    ? [...runtimeHead, ...convo]
-    : [...runtimeHead, ...(messages || [])];
+  const baseMessages = [...runtimeHead, ...convo];
   const seen = new Set<string>();
   const allMessages = baseMessages.filter((m) => {
     const key = `${m.role}|${m.content}`;

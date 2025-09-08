@@ -1,4 +1,5 @@
 import { ChatOpenAI, OpenAIEmbeddings } from "@langchain/openai";
+import type { EmbeddingsInterface } from "@langchain/core/embeddings";
 
 function ensureKey() {
   const key = process.env.OPENAI_KEY;
@@ -18,7 +19,7 @@ export function getChatModel(
   });
 }
 
-export function getEmbeddings() {
+export function getEmbeddings(): EmbeddingsInterface {
   const apiKey = ensureKey();
   return new OpenAIEmbeddings({
     model: "text-embedding-3-small",
