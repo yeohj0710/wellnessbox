@@ -1,8 +1,5 @@
 {
   "functions": {
-    "api/**": {
-      "excludeFiles": "{.next/**,public/**,node_modules/.prisma/**}"
-    },
     "app/api/**/route": {
       "excludeFiles": "{.next/**,public/**,node_modules/.prisma/**}"
     }
