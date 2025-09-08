@@ -9,6 +9,8 @@ const g = globalThis as any;
 
 if (!g.__RAG_INDEX_CACHE) g.__RAG_INDEX_CACHE = {} as Cache;
 if (!g.__RAG_INDEX_BUILT) g.__RAG_INDEX_BUILT = false;
+if (!g.__RAG_INDEX_LOCK) g.__RAG_INDEX_LOCK = null;
+if (!g.__RAG_REINDEX_LOCK) g.__RAG_REINDEX_LOCK = null;
 
 const DATA_DIR = "data";
 const builtFlag = "__RAG_INDEX_BUILT";
@@ -72,38 +74,54 @@ async function listMarkdownFiles(dir: string) {
 }
 
 export async function ensureIndexed(dir = DATA_DIR) {
-  const first = !g[builtFlag];
-  if (first) await resetInMemoryStore();
-
-  const files = await listMarkdownFiles(dir);
-  const force = !!process.env.RAG_FORCE_REINDEX;
-  const results: any[] = [];
-  for (const f of files) results.push(await ingestFile(f.abs, f.rel, force));
-  g[builtFlag] = true;
-  return results;
+  if (g.__RAG_INDEX_LOCK) return g.__RAG_INDEX_LOCK;
+  g.__RAG_INDEX_LOCK = (async () => {
+    const first = !g[builtFlag];
+    if (first) await resetInMemoryStore();
+    const files = await listMarkdownFiles(dir);
+    const force = !!process.env.RAG_FORCE_REINDEX;
+    const results: any[] = [];
+    for (const f of files) results.push(await ingestFile(f.abs, f.rel, force));
+    g[builtFlag] = true;
+    return results;
+  })();
+  try {
+    return await g.__RAG_INDEX_LOCK;
+  } finally {
+    g.__RAG_INDEX_LOCK = null;
+  }
 }
 
 export async function reindexAll(dir = DATA_DIR) {
-  await resetInMemoryStore();
-  if (process.env.WELLNESSBOX_PRISMA_URL) {
-    try {
-      const { getEmbeddings } = await import("@/lib/ai/model");
-      const { PGVectorStore } = await import(
-        "@langchain/community/vectorstores/pgvector"
-      );
-      const e = getEmbeddings();
-      const pg = await PGVectorStore.initialize(e, {
-        postgresConnectionOptions: {
-          connectionString: process.env.WELLNESSBOX_PRISMA_URL as string,
-        },
-        tableName: "rag_chunks",
-      });
-      await (pg as any).delete({ deleteAll: true });
-    } catch {}
+  if (g.__RAG_INDEX_LOCK) await g.__RAG_INDEX_LOCK;
+  if (g.__RAG_REINDEX_LOCK) return g.__RAG_REINDEX_LOCK;
+  g.__RAG_REINDEX_LOCK = (async () => {
+    await resetInMemoryStore();
+    if (process.env.WELLNESSBOX_PRISMA_URL) {
+      try {
+        const { getEmbeddings } = await import("@/lib/ai/model");
+        const { PGVectorStore } = await import(
+          "@langchain/community/vectorstores/pgvector"
+        );
+        const e = getEmbeddings();
+        const pg = await PGVectorStore.initialize(e, {
+          postgresConnectionOptions: {
+            connectionString: process.env.WELLNESSBOX_PRISMA_URL as string,
+          },
+          tableName: "rag_chunks",
+        });
+        await (pg as any).delete({ deleteAll: true });
+      } catch {}
+    }
+    const files = await listMarkdownFiles(dir);
+    const results: any[] = [];
+    for (const f of files) results.push(await ingestFile(f.abs, f.rel, true));
+    g[builtFlag] = true;
+    return results;
+  })();
+  try {
+    return await g.__RAG_REINDEX_LOCK;
+  } finally {
+    g.__RAG_REINDEX_LOCK = null;
   }
-  const files = await listMarkdownFiles(dir);
-  const results: any[] = [];
-  for (const f of files) results.push(await ingestFile(f.abs, f.rel, true));
-  g[builtFlag] = true;
-  return results;
 }

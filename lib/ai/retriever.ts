@@ -92,27 +92,43 @@ function isPg() {
   return !!process.env.WELLNESSBOX_PRISMA_URL;
 }
 
+let pool: pg.Pool | null = null;
+function getPgPool() {
+  if (!pool) {
+    pool = new pg.Pool({
+      connectionString: process.env.WELLNESSBOX_PRISMA_URL as string,
+      max: 3,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000,
+      ssl: { rejectUnauthorized: false },
+      allowExitOnIdle: true,
+      keepAlive: true,
+      keepAliveInitialDelayMillis: 10000,
+    });
+    pool.on("error", () => {});
+  }
+  return pool;
+}
+
 async function keywordAugmentFromPg(q: string, limit = LEX_CANDIDATES) {
   const ks = tokens(q);
   if (!ks.length) return [];
   const like = ks.map((k) => `%${k}%`);
-  const client = new pg.Client({
-    connectionString: process.env.WELLNESSBOX_PRISMA_URL as string,
-    ssl: { rejectUnauthorized: false },
-  });
-  await client.connect();
   const sql = `
     SELECT id, "text" AS "pageContent", metadata
     FROM rag_chunks
     WHERE ${like.map((_, i) => `"text" ILIKE $${i + 1}`).join(" OR ")}
     LIMIT ${limit}
   `;
-  const res = await client.query(sql, like);
-  await client.end();
-  return res.rows.map((r: any) => ({
-    pageContent: r.pageContent,
-    metadata: r.metadata,
-  }));
+  try {
+    const { rows } = await getPgPool().query(sql, like);
+    return rows.map((r: any) => ({
+      pageContent: r.pageContent,
+      metadata: r.metadata,
+    }));
+  } catch {
+    return [];
+  }
 }
 
 function cos(a: number[], b: number[]) {
@@ -301,7 +317,7 @@ export async function upsertDocuments(docs: Document[], ids: string[]) {
     const sources = Array.from(
       new Set(
         docs
-          .map((d) => (d as any).metadata?.source)
+          .map((d: any) => d?.metadata?.source)
           .filter((s: any) => typeof s === "string" && s.length > 0)
       )
     );
@@ -309,7 +325,7 @@ export async function upsertDocuments(docs: Document[], ids: string[]) {
       for (const src of sources) {
         await (store as any).delete({ filter: { source: src } });
       }
-    } catch (_) {}
+    } catch {}
     await (store as any).addVectors(vectors, docs);
   } else {
     await (store as any).addVectors(vectors, docs, { ids });

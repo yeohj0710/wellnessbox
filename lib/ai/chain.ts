@@ -34,6 +34,48 @@ const CAT_ALIAS: Record<string, CategoryKey> = Object.fromEntries(
   })
 ) as Record<string, CategoryKey>;
 
+function buildMegaSystem(
+  sysPrompt: string,
+  userContextBrief: string,
+  userContextJson: string,
+  productsBrief: string,
+  productsByCategory: Record<string, string[]>,
+  factProfile: string | null,
+  factTest: string | null,
+  factOrders: string | null,
+  factProducts: string | null,
+  ragText: string,
+  ragSourcesJson: string
+) {
+  const parts: string[] = [];
+  parts.push(sysPrompt);
+  parts.push(SCHEMA_GUIDE);
+  parts.push(ANSWER_STYLE_GUIDE);
+  parts.push(PRODUCT_RECO_GUIDE);
+  parts.push(`USER_CONTEXT_BRIEF: ${userContextBrief}`);
+  parts.push(`USER_CONTEXT_JSON: ${userContextJson}`);
+  if (productsBrief) parts.push(`PRODUCTS_BRIEF: ${productsBrief}`);
+  if (productsByCategory && Object.keys(productsByCategory).length)
+    parts.push(
+      `PRODUCTS_BY_CATEGORY_JSON: ${JSON.stringify(
+        { productsByCategory },
+        null,
+        2
+      )}`
+    );
+  if (factProfile) parts.push(factProfile);
+  if (factTest) parts.push(factTest);
+  if (factOrders) parts.push(factOrders);
+  if (factProducts) parts.push(factProducts);
+  parts.push(RAG_RULES);
+  if (ragText) parts.push(`RAG_CONTEXT:\n${ragText}`);
+  if (ragSourcesJson) parts.push(`RAG_SOURCES_JSON: ${ragSourcesJson}`);
+  parts.push(
+    "컨텍스트에 답이 있으면 사과/거절 없이 바로 답하라. 없을 때만 없다라고 말하라."
+  );
+  return parts.join("\n\n---\n\n");
+}
+
 function labelOf(keyOrCodeOrLabel: string) {
   const k = (CAT_ALIAS[keyOrCodeOrLabel] ?? keyOrCodeOrLabel) as string;
   const v = CATEGORY_LABELS[k as keyof typeof CATEGORY_LABELS];
@@ -365,14 +407,41 @@ function toSystemBlocks(
   return blocks;
 }
 
+function toPlainText(x: any): string {
+  if (typeof x === "string") return x;
+  if (x == null) return "";
+  if (Array.isArray(x)) return x.map(toPlainText).join(" ");
+  if (typeof x === "object") {
+    if (typeof x.text === "string") return x.text;
+    if (typeof x.value === "string") return x.value;
+    if (Array.isArray(x.parts)) return x.parts.map(toPlainText).join(" ");
+    if (Array.isArray((x as any).content))
+      return (x as any).content.map(toPlainText).join(" ");
+  }
+  return "";
+}
+
+function lastUserText(messages: Array<{ role: string; content: any }>) {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i];
+    if (m?.role === "user") {
+      const s = toPlainText(m.content).trim();
+      if (s) return s;
+    }
+  }
+  return "";
+}
+
 async function buildRagContext(
-  messages: Array<{ role: string; content: string }>
+  messages: Array<{ role: string; content: any }>,
+  qOverride?: string
 ) {
   if (!messages || !messages.length)
     return { ragText: "", ragSources: [] as any[] };
-  const last =
-    [...messages].reverse().find((m) => m.role === "user")?.content || "";
-  if (!last.trim()) return { ragText: "", ragSources: [] as any[] };
+
+  const last = (qOverride && qOverride.trim()) || lastUserText(messages);
+  if (!last) return { ragText: "", ragSources: [] as any[] };
+
   try {
     await ensureIndexed("data");
     const docs = await getRelevantDocuments(
@@ -383,13 +452,13 @@ async function buildRagContext(
     );
     if (!docs || docs.length === 0)
       return { ragText: "", ragSources: [] as any[] };
+
     const chunks = docs.map(
       (d: any, i: number) =>
         `### ${i + 1}. ${d.metadata?.title || d.metadata?.source || "doc"}\n` +
         makeSnippet(String(d.pageContent || ""), last, 1000)
     );
-
-    const limit = Number(process.env.RAG_CONTEXT_LIMIT) || 6000;
+    const limit = Math.min(Number(process.env.RAG_CONTEXT_LIMIT) || 4000, 4000);
     const ragText = chunks.join("\n\n---\n\n").slice(0, limit);
 
     const ragSources = docs.map((d: any, i: number) => ({
@@ -485,8 +554,24 @@ export async function streamChat(
   const factProducts = products.length
     ? `FACT_PRODUCTS_JSON: ${JSON.stringify({ products }, null, 2)}`
     : null;
-  const base = toSystemBlocks(
-    sysPrompt,
+
+  const history = (messages || []).filter(
+    (m) => m.role === "user" || m.role === "assistant"
+  );
+  const { ragText, ragSources } = isInit
+    ? { ragText: "", ragSources: [] as any[] }
+    : await buildRagContext(history, (body as any)?.ragQuery);
+
+  const ragSourcesJson = getHeader("x-rag-sources-disabled")
+    ? ""
+    : JSON.stringify({ sources: ragSources }, null, 2);
+
+  const sysForMega = isInit
+    ? `${sysPrompt}\n\n---\n\n${INIT_GUIDE}`
+    : sysPrompt;
+
+  const megaSystem = buildMegaSystem(
+    sysForMega,
     userContextBrief,
     userContextJson,
     productsBrief,
@@ -494,13 +579,15 @@ export async function streamChat(
     factProfile,
     factTest,
     factOrders,
-    factProducts
+    factProducts,
+    ragText,
+    ragSourcesJson
   );
-  const sysMsgs = base.map((b) => [b.role, b.content] as [string, string]);
+
+  const runtimeHead = [{ role: "system", content: megaSystem }];
 
   let convo: Array<{ role: string; content: string }> = [];
   if (isInit) {
-    sysMsgs.push(["system", INIT_GUIDE]);
     convo = [
       {
         role: "user",
@@ -508,37 +595,13 @@ export async function streamChat(
       },
     ];
   } else {
-    const history = (messages || []).filter(
-      (m) => m.role === "user" || m.role === "assistant"
-    );
-    const { ragText, ragSources } = await buildRagContext(history);
-    const ragMsgs: [string, string][] = [];
-    if (ragText) ragMsgs.push(["system", `RAG_CONTEXT: ${ragText}`]);
-    ragMsgs.push(["system", RAG_RULES]);
-    if (!getHeader("x-rag-sources-disabled"))
-      ragMsgs.push([
-        "system",
-        `RAG_SOURCES_JSON: ${JSON.stringify({ sources: ragSources }, null, 2)}`,
-      ]);
-    ragMsgs.push([
-      "system",
-      "컨텍스트에 답이 있으면 사과/거절 없이 바로 답하라. 없을 때만 없다라고 말하라.",
-    ]);
-    sysMsgs.push(...ragMsgs);
     convo = history;
   }
 
-  const runtimeHead = sysMsgs.map(([role, content]) => ({ role, content }));
-  const baseMessages = [...runtimeHead, ...convo];
-  const seen = new Set<string>();
-  const deduped = baseMessages.filter((m) => {
-    const key = `${m.role}|${m.content}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
   const maxMsgs = Number(process.env.RAG_MAX_MESSAGES) || 40;
-  const allMessages = deduped.slice(-maxMsgs);
+  const roomForConvo = Math.max(0, maxMsgs - 1);
+  const keptConvo = convo.slice(-roomForConvo);
+  const allMessages = [...runtimeHead, ...keptConvo];
 
   const prompt = ChatPromptTemplate.fromMessages([
     new MessagesPlaceholder("messages"),
