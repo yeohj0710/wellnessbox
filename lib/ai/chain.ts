@@ -2,9 +2,7 @@ import {
   ChatPromptTemplate,
   MessagesPlaceholder,
 } from "@langchain/core/prompts";
-import { StringOutputParser } from "@langchain/core/output_parsers";
 import { getChatModel } from "./model";
-import { ensureIndexed, getRetriever } from "./vector";
 import {
   buildSystemPrompt,
   SCHEMA_GUIDE,
@@ -15,10 +13,9 @@ import {
 } from "./prompts";
 import { ChatRequestBody } from "@/types/chat";
 import { CATEGORY_LABELS, CategoryKey, KEY_TO_CODE } from "@/lib/categories";
-// Avoid top-level DB-bound imports to reduce bundle size and harden failures.
-// We'll dynamically import server/db utilities only when available.
+import { ensureIndexed } from "@/lib/ai/indexer";
+import { getRelevantDocuments } from "@/lib/ai/retriever";
 
-// --- helper functions copied from previous implementation ---
 const CAT_ALIAS: Record<string, CategoryKey> = Object.fromEntries(
   Object.entries(KEY_TO_CODE).flatMap(([k, code]) => {
     const key = k as CategoryKey;
@@ -65,7 +62,6 @@ async function buildKnownContext(
   localCheckAiTopLabels: string[] | undefined
 ) {
   if (!clientId || typeof clientId !== "string") return "";
-  // Ensure client record when DB is available, but never fail the chat.
   try {
     const { ensureClient } = await import("@/lib/server/client");
     const getHeader = (k: string) =>
@@ -372,22 +368,34 @@ async function buildRagContext(
     [...messages].reverse().find((m) => m.role === "user")?.content || "";
   if (!last.trim()) return { ragText: "", ragSources: [] as any[] };
   try {
-    await ensureIndexed();
-    const retriever = await getRetriever();
-    const docs = await retriever.getRelevantDocuments(last);
+    await ensureIndexed("data");
+    const docs = await getRelevantDocuments(last, 6, 0.8, -1);
     if (!docs || docs.length === 0)
       return { ragText: "", ragSources: [] as any[] };
+
+    const makeSnippet = (t: string, q: string, size = 1200) => {
+      const rx = /(1차\s*기능|2차\s*기능|3차\s*기능)/;
+      let idx = t.search(rx);
+      if (idx < 0) {
+        const qi = t.toLowerCase().indexOf(q.toLowerCase());
+        idx = qi >= 0 ? qi : 0;
+      }
+      const s = Math.max(0, idx - Math.floor(size / 2));
+      const e = Math.min(t.length, s + size);
+      return (s > 0 ? "…" : "") + t.slice(s, e) + (e < t.length ? "…" : "");
+    };
+
     const chunks = docs.map(
-      (d: any) =>
-        `- [${d.metadata?.file ?? "doc"} §${d.metadata?.section ?? ""} #${
-          d.metadata?.idx ?? 0
-        }] ${d.pageContent}`
+      (d: any, i: number) =>
+        `### ${i + 1}. ${d.metadata?.title || d.metadata?.source || "doc"}\n` +
+        makeSnippet(String(d.pageContent || ""), last, 1200)
     );
-    const ragText = chunks
-      .join("\n\n")
-      .slice(0, Number(process.env.RAG_CONTEXT_LIMIT) || 3500);
+
+    const limit = Number(process.env.RAG_CONTEXT_LIMIT) || 6000;
+    const ragText = chunks.join("\n\n---\n\n").slice(0, limit);
+
     const ragSources = docs.map((d: any, i: number) => ({
-      file: d.metadata?.file ?? "doc",
+      file: d.metadata?.file ?? d.metadata?.source ?? "doc",
       section: d.metadata?.section ?? "",
       idx: d.metadata?.idx ?? 0,
       score: d.metadata?.score,
@@ -399,7 +407,6 @@ async function buildRagContext(
   }
 }
 
-// --- main chain builder ---
 export async function streamChat(
   body: ChatRequestBody,
   headers: Headers | Record<string, string | null | undefined>
@@ -443,7 +450,6 @@ export async function streamChat(
     null,
     2
   );
-  // Load product summaries when DB is available; otherwise, continue with empty list.
   let products: Array<{
     name: string;
     categories: string[];
@@ -505,8 +511,16 @@ export async function streamChat(
     ];
   } else {
     const { ragText, ragSources } = await buildRagContext(messages || []);
-    if (ragText) sysMsgs.push(["system", `RAG_CONTEXT:\n${ragText}`]);
+    if (ragText)
+      sysMsgs.push([
+        "system",
+        `아래 컨텍스트에 근거해 답하고, 컨텍스트 밖 내용은 추측하지 말라.\n컨텍스트 시작\n${ragText}\n컨텍스트 끝`,
+      ]);
     sysMsgs.push(["system", RAG_RULES]);
+    sysMsgs.push([
+      "system",
+      "컨텍스트에 사용자의 질문에 대한 답이 존재하면 그 문장을 근거로 바로 답하라. 존재할 때는 사과하거나 거절하지 말라. 컨텍스트에 전혀 없을 때만 '제공된 문서에서 찾을 수 없다'고 말하라.",
+    ]);
     if (!getHeader("x-rag-sources-disabled"))
       sysMsgs.push([
         "system",
@@ -516,11 +530,9 @@ export async function streamChat(
   }
 
   const runtimeHead = sysMsgs.map(([role, content]) => ({ role, content }));
-  const allMessages = [
-    ...runtimeHead,
-    ...(messages || (isInit ? [] : [])),
-    ...convo,
-  ];
+  const allMessages = isInit
+    ? [...runtimeHead, ...convo]
+    : [...runtimeHead, ...(messages || [])];
 
   const prompt = ChatPromptTemplate.fromMessages([
     new MessagesPlaceholder("messages"),

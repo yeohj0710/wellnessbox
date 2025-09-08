@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [{ protocol: "https", hostname: "**" }],
   },
+  outputFileTracingIncludes: {
+    "/app/api/rag/**/route": ["./data/**/*"],
+  },
   outputFileTracingExcludes: {
     "*": [".next/cache/**", "public/**", "node_modules/.prisma/**"],
   },

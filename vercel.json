@@ -1,5 +1,8 @@
 {
   "functions": {
+    "app/api/rag/**/route": {
+      "includeFiles": ["data/**/*"]
+    },
     "app/api/**/route": {
       "excludeFiles": "{.next/**,public/**,node_modules/.prisma/**}"
     }

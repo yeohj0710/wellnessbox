@@ -1,20 +1,21 @@
 import { NextRequest } from "next/server";
 import { streamChat } from "@/lib/ai/chain";
+import { ensureIndexed } from "@/lib/ai/indexer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
+    await ensureIndexed("data");
+
     const body = await req.json();
-    // Pass the real Headers object. Object.fromEntries(req.headers)
-    // would drop the Headers.get() API used downstream.
     const headersObj = req.headers;
     let iterable: AsyncIterable<string> | undefined;
+
     try {
       iterable = (await streamChat(body, headersObj)) as AsyncIterable<string>;
     } catch (e: any) {
-      // Graceful fallback: stream a safe, plain message without braces
       const raw = typeof e?.message === "string" ? e.message : String(e ?? "");
       const safe = raw.replace(/[{}]/g, (m: string) => (m === "{" ? "(" : ")"));
       const msg =
@@ -31,6 +32,7 @@ export async function POST(req: NextRequest) {
         headers: { "Content-Type": "text/plain; charset=utf-8" },
       });
     }
+
     const stream = new ReadableStream<Uint8Array>({
       async start(controller) {
         const encoder = new TextEncoder();
@@ -41,7 +43,7 @@ export async function POST(req: NextRequest) {
             controller.enqueue(encoder.encode(String(token)));
             wrote = true;
           }
-        } catch (err: any) {
+        } catch {
           const msg =
             "[안내] 대화 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.";
           controller.enqueue(encoder.encode(msg));
