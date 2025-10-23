@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: "/logo.png",
-    apple: "/apple-touch-icon.png",
+    // apple: "/apple-touch-icon.png",
   },
   openGraph: {
     title: "웰니스박스 | 내 몸에 맞는 프리미엄 건강 솔루션",
