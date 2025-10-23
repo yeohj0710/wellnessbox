@@ -195,9 +195,9 @@ export default function TopBar() {
               시작하기
             </button>
 
-            {!loginStatus.isUserLoggedIn && (
+            {/* {!loginStatus.isUserLoggedIn && (
               <KakaoLoginButton className="md:hidden" />
-            )}
+            )} */}
 
             <button
               className={menuItemClasses("text-2xl ml-1 lg:hidden")}
@@ -221,9 +221,9 @@ export default function TopBar() {
             onItemClick={closeDrawer}
             isDrawer
           />
-          {!loginStatus.isUserLoggedIn && (
+          {/* {!loginStatus.isUserLoggedIn && (
             <KakaoLoginButton fullWidth />
-          )}
+          )} */}
           <div className="mt-2 h-px bg-slate-100" />
           <button onClick={goSevenDays} className="text-left text-slate-500">
             7일 무료체험

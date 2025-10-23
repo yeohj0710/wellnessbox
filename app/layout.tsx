@@ -29,9 +29,9 @@ export const metadata: Metadata = {
       "max-video-preview": -1,
     },
   },
+  themeColor: "#ffffff",
   icons: {
     icon: "/logo.png",
-    // apple: "/apple-touch-icon.png",
   },
   openGraph: {
     title: "웰니스박스 | 내 몸에 맞는 프리미엄 건강 솔루션",
@@ -61,12 +61,12 @@ export const metadata: Metadata = {
     description: "내 몸에 맞는 프리미엄 건강 솔루션",
     images: [new URL("/logo.png", SITE_URL).toString()],
   },
-  other: {
-    "google-site-verification": [
-      "rxIVuaujGlI5Tc8FtIqiIFwfntmlTl1MSA5EG9E67Rw",
-      "EiOmKkr5y00llK20sdFBlYhBH_QYN7vLobIvNoNiAC4",
-    ],
-    "naver-site-verification": "536a76956d9646a965851d58cf29ab28600a2577",
+  verification: {
+    google: "rxIVuaujGlI5Tc8FtIqiIFwfntmlTl1MSA5EG9E67Rw",
+    other: {
+      google: ["EiOmKkr5y00llK20sdFBlYhBH_QYN7vLobIvNoNiAC4"],
+      naver: ["536a76956d9646a965851d58cf29ab28600a2577"],
+    },
   },
 };
 
@@ -107,11 +107,6 @@ export default function RootLayout({
             name: "웰니스박스",
             url: SITE_URL,
             logo: new URL("/logo.png", SITE_URL).toString(),
-            sameAs: [
-              // 공식 채널 URL
-              // "https://www.instagram.com/~",
-              // "https://www.youtube.com/@~"
-            ],
           })}
         </Script>
 

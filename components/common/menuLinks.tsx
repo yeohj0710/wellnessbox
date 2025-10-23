@@ -271,9 +271,9 @@ export function MenuLinks({
           관리자 로그인
         </Link>
       )}
-      {!loginStatus.isUserLoggedIn && (
+      {/* {!loginStatus.isUserLoggedIn && (
         <KakaoLoginButton />
-      )}
+      )} */}
       {loginStatus.isAdminLoggedIn ? (
         <Link href="/admin" className={menuItemClasses()} onClick={onItemClick}>
           사이트 관리
