@@ -9,27 +9,57 @@ import { ToastProvider } from "@/components/common/toastContext.client";
 import { pretendard } from "./fonts";
 import RouteTransition from "@/components/common/routeTransition";
 import KakaoExternalBridge from "@/components/common/kakaoExternalBridge";
+import Script from "next/script";
 
 export const metadata: Metadata = {
   title: "웰니스박스 | 내 몸에 맞는 프리미엄 건강 솔루션",
   description: "내 몸에 맞는 프리미엄 건강 솔루션",
   metadataBase: new URL(SITE_URL),
-  icons: { icon: "/logo.png" },
+  alternates: {
+    canonical: "/",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  icons: {
+    icon: "/logo.png",
+    apple: "/apple-touch-icon.png",
+  },
   openGraph: {
-    title: "웰니스박스",
+    title: "웰니스박스 | 내 몸에 맞는 프리미엄 건강 솔루션",
     description: "내 몸에 맞는 프리미엄 건강 솔루션",
-    url: SITE_URL,
-    images: [
-      { url: "/kakao-logo.png", width: 800, height: 400, alt: "웰니스박스" },
-      { url: "/logo.png", width: 800, height: 800, alt: "웰니스박스" },
-    ],
+    url: "/",
+    type: "website",
+    locale: "ko_KR",
     siteName: "웰니스박스",
+    images: [
+      {
+        url: new URL("/kakao-logo.png", SITE_URL).toString(),
+        width: 800,
+        height: 400,
+        alt: "웰니스박스",
+      },
+      {
+        url: new URL("/logo.png", SITE_URL).toString(),
+        width: 800,
+        height: 800,
+        alt: "웰니스박스",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "웰니스박스",
+    title: "웰니스박스 | 내 몸에 맞는 프리미엄 건강 솔루션",
     description: "내 몸에 맞는 프리미엄 건강 솔루션",
-    images: ["/logo.png"],
+    images: [new URL("/logo.png", SITE_URL).toString()],
   },
   other: {
     "google-site-verification": [
@@ -65,6 +95,38 @@ export default function RootLayout({
           </FooterProvider>
         </LocalStorageProvider>
         <div id="toast-portal" />
+
+        <Script
+          id="ld-json-org"
+          type="application/ld+json"
+          strategy="afterInteractive"
+        >
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            name: "웰니스박스",
+            url: SITE_URL,
+            logo: new URL("/logo.png", SITE_URL).toString(),
+            sameAs: [
+              // 공식 채널 URL
+              // "https://www.instagram.com/~",
+              // "https://www.youtube.com/@~"
+            ],
+          })}
+        </Script>
+
+        <Script
+          id="ld-json-website"
+          type="application/ld+json"
+          strategy="afterInteractive"
+        >
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            name: "웰니스박스",
+            url: SITE_URL,
+          })}
+        </Script>
       </body>
     </html>
   );

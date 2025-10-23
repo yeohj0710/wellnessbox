@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
+import KakaoLoginButton from "@/components/common/kakaoLoginButton";
 
 interface MenuLinksProps {
   loginStatus: any;
@@ -155,7 +156,8 @@ export function MenuLinks({
             사이트 관리
           </Link>
         ) : null}
-        {(loginStatus.isPharmLoggedIn ||
+        {(loginStatus.isUserLoggedIn ||
+          loginStatus.isPharmLoggedIn ||
           loginStatus.isRiderLoggedIn ||
           loginStatus.isAdminLoggedIn ||
           loginStatus.isTestLoggedIn) && (
@@ -269,12 +271,16 @@ export function MenuLinks({
           관리자 로그인
         </Link>
       )}
+      {!loginStatus.isUserLoggedIn && (
+        <KakaoLoginButton />
+      )}
       {loginStatus.isAdminLoggedIn ? (
         <Link href="/admin" className={menuItemClasses()} onClick={onItemClick}>
           사이트 관리
         </Link>
       ) : null}
-      {(loginStatus.isPharmLoggedIn ||
+      {(loginStatus.isUserLoggedIn ||
+        loginStatus.isPharmLoggedIn ||
         loginStatus.isRiderLoggedIn ||
         loginStatus.isAdminLoggedIn ||
         loginStatus.isTestLoggedIn) && (

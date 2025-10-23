@@ -57,7 +57,7 @@ export default function ProfileModal({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 py-4">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 py-4 isolate [will-change:scroll-position]">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <LabeledInput
               label="이름"
@@ -314,7 +314,7 @@ function LabeledChips({
           추가
         </button>
       </div>
-      <div className="mt-2 rounded-lg border border-slate-200/80 bg-slate-50/40 p-2 min-h-[40px] max-h-28 overflow-y-auto transform-gpu [backface-visibility:hidden] [contain:paint]">
+      <div className="relative z-0 mt-2 rounded-lg border border-slate-200/80 bg-slate-50/40 p-2 min-h-[40px] max-h-28 overflow-y-auto">
         <div className="flex flex-wrap gap-2">
           {(values || []).map((v, i) => (
             <span

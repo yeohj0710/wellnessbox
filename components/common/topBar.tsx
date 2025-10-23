@@ -8,6 +8,7 @@ import { getLoginStatus } from "@/lib/useLoginStatus";
 import Image from "next/image";
 import { ShoppingCartIcon } from "@heroicons/react/24/outline";
 import { useLoading } from "@/components/common/loadingContext.client";
+import KakaoLoginButton from "@/components/common/kakaoLoginButton";
 
 export default function TopBar() {
   const router = useRouter();
@@ -194,6 +195,10 @@ export default function TopBar() {
               시작하기
             </button>
 
+            {!loginStatus.isUserLoggedIn && (
+              <KakaoLoginButton className="md:hidden" />
+            )}
+
             <button
               className={menuItemClasses("text-2xl ml-1 lg:hidden")}
               onClick={() => setIsDrawerOpen(!isDrawerOpen)}
@@ -216,6 +221,9 @@ export default function TopBar() {
             onItemClick={closeDrawer}
             isDrawer
           />
+          {!loginStatus.isUserLoggedIn && (
+            <KakaoLoginButton fullWidth />
+          )}
           <div className="mt-2 h-px bg-slate-100" />
           <button onClick={goSevenDays} className="text-left text-slate-500">
             7일 무료체험

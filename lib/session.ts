@@ -4,6 +4,12 @@ import { getIronSession } from "iron-session";
 import { cookies } from "next/headers";
 
 interface SessionContent {
+  user?: {
+    kakaoId: number;
+    nickname?: string;
+    profileImageUrl?: string;
+    loggedIn: boolean;
+  };
   pharm?: {
     id?: number;
     loggedIn: boolean;
