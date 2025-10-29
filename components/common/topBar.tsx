@@ -132,7 +132,7 @@ export default function TopBar() {
               <span>웰니스박스</span>
             </button>
 
-            <nav className="hidden lg:flex items-center gap-8 text-[15px] font-medium text-slate-500 [&_a]:text-slate-500 [&_a:hover]:text-slate-900">
+            <nav className="hidden min-[1440px]:flex items-center gap-8 text-[15px] font-medium text-slate-500 [&_a]:text-slate-500 [&_a:hover]:text-slate-900">
               <MenuLinks loginStatus={loginStatus} />
             </nav>
           </div>
@@ -200,7 +200,7 @@ export default function TopBar() {
             )} */}
 
             <button
-              className={menuItemClasses("text-2xl ml-1 lg:hidden")}
+              className={menuItemClasses("text-2xl ml-1 min-[1440px]:hidden")}
               onClick={() => setIsDrawerOpen(!isDrawerOpen)}
               aria-label="메뉴 열기"
             >

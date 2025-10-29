@@ -79,8 +79,10 @@ export function MenuLinks({
         </Link>
         <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
           <span>AI 진단 검사</span>
-          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600 ring-1 ring-emerald-200">
-            가입없이 바로
+          <span className="inline-flex rounded-full bg-emerald-50 ring-1 ring-emerald-200 max-w-[220px]">
+            <span className="block w-full px-3 py-1 text-[10px] font-bold text-emerald-600 leading-tight text-center break-words">
+              가입없이 바로
+            </span>
           </span>
         </div>
         <Link
@@ -193,8 +195,10 @@ export function MenuLinks({
         >
           <span className="inline-flex items-center gap-2">
             <span>AI 진단 검사</span>
-            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600 ring-1 ring-emerald-200">
-              가입없이 바로
+            <span className="inline-flex rounded-full bg-emerald-50 ring-1 ring-emerald-200 max-w-[220px]">
+              <span className="block w-full px-3 py-1 text-[10px] font-bold text-emerald-600 leading-tight text-center break-words">
+                가입없이 바로
+              </span>
             </span>
           </span>
           <ChevronDownIcon

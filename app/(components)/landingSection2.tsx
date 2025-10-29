@@ -77,7 +77,7 @@ export default function LandingSection2({
           </p>
 
           <div className="mt-7 sm:mt-9 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4">
-            <div className="h-11 sm:h-12 rounded-full px-5 sm:px-6 bg-white transition duration-300 text-[#3B5BFF] ring-1 ring-white shadow-[0_6px_20px_rgba(67,103,230,0.20)] flex items-center justify-center">
+            <div className="h-11 sm:h-12 rounded-full px-5 sm:px-6 bg-white transition duration-300 text-[#3B5BFF] ring-1 ring-white shadow-[0_6px_20px_rgba(67,103,230,0.20)] flex items-center justify-center text-center leading-tight break-words">
               7일 단위 시작으로 부담 없이!
             </div>
             <button
