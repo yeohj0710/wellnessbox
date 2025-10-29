@@ -71,13 +71,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const headerLocale = headers().get("x-wb-locale");
-  const localeCookie = cookies().get("wb-locale");
+  const headerLocale = (await headers()).get("x-wb-locale");
+  const localeCookie = (await cookies()).get("wb-locale");
   const isEnglish = headerLocale === "en" || localeCookie?.value === "en";
   return (
     <html lang={isEnglish ? "en" : "ko"}>
@@ -151,7 +151,10 @@ export default function RootLayout({
                 `,
               }}
             />
-            <Script id="google-translate-initializer" strategy="afterInteractive">
+            <Script
+              id="google-translate-initializer"
+              strategy="afterInteractive"
+            >
               {`
                 (function () {
                   var LANGUAGE_CODE = 'en';
