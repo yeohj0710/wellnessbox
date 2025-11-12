@@ -1,0 +1,23 @@
+ext {
+    // SDK levels (Capacitor 7 / AGP 8.x 호환)
+    minSdkVersion = 23
+    compileSdkVersion = 35
+    targetSdkVersion = 35
+
+    // AndroidX libs
+    androidxActivityVersion = '1.9.2'
+    androidxAppCompatVersion = '1.7.0'
+    androidxCoordinatorLayoutVersion = '1.2.0'
+    androidxCoreVersion = '1.15.0'
+    androidxFragmentVersion = '1.8.4'
+    androidxWebkitVersion = '1.12.1'
+    coreSplashScreenVersion = '1.0.1'
+
+    // Test
+    junitVersion = '4.13.2'
+    androidxJunitVersion = '1.2.1'
+    androidxEspressoCoreVersion = '3.6.1'
+
+    // Cordova bridge (capacitor-cordova-android-plugins)
+    cordovaAndroidVersion = '10.1.1'
+}

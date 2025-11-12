@@ -11,6 +11,16 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@capacitor/android": "^7.4.4",
+    "@capacitor/app": "^7.1.0",
+    "@capacitor/browser": "^7.0.2",
+    "@capacitor/core": "^7.4.4",
+    "@capacitor/filesystem": "^7.1.4",
+    "@capacitor/ios": "^7.4.4",
+    "@capacitor/preferences": "^7.0.2",
+    "@capacitor/push-notifications": "^7.0.3",
+    "@capacitor/splash-screen": "^7.0.3",
+    "@capacitor/status-bar": "^7.0.3",
     "@heroicons/react": "^2.2.0",
     "@langchain/community": "^0.3.55",
     "@langchain/core": "^0.3.75",
@@ -49,6 +59,7 @@
     "onnxruntime-node": "1.17.3"
   },
   "devDependencies": {
+    "@capacitor/cli": "^7.4.4",
     "@types/js-cookie": "^3.0.6",
     "@types/node": "^20",
     "@types/pg": "^8.15.5",

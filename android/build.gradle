@@ -1,0 +1,41 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.2.2'
+        classpath 'com.google.gms:google-services:4.4.2'
+    }
+}
+
+apply from: "variables.gradle"
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+/* 공통: Kotlin 컴파일러는 jvmTarget=17 유지 (Kotlin 플러그인 구버전에서 21 미지원 이슈 회피) */
+subprojects { proj ->
+    // Android 모듈이면 compileOptions는 각 모듈에서 설정 (app/build.gradle 참조)
+    // Kotlin 태스크만 안전하게 17으로
+    def kotlinCompileClass = null
+    try {
+        kotlinCompileClass = Class.forName("org.jetbrains.kotlin.gradle.tasks.KotlinCompile")
+    } catch (ignored) {}
+
+    if (kotlinCompileClass != null) {
+        tasks.withType(kotlinCompileClass).configureEach {
+            it.kotlinOptions.jvmTarget = "17"
+        }
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
