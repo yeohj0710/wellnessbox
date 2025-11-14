@@ -44,6 +44,18 @@
   font-display: swap;
 }
 
+:root {
+  --wb-safe-area-top: 0px;
+  --wb-safe-area-bottom: 0px;
+}
+
+@supports (padding-top: env(safe-area-inset-top)) {
+  :root {
+    --wb-safe-area-top: env(safe-area-inset-top);
+    --wb-safe-area-bottom: env(safe-area-inset-bottom);
+  }
+}
+
 html,
 body {
   overflow: auto;

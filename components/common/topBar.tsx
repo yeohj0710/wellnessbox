@@ -109,6 +109,7 @@ export default function TopBar() {
         className={`fixed top-0 z-40 w-full bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70 transition-transform duration-300 will-change-transform ${
           hideOnScroll ? "-translate-y-full" : "translate-y-0"
         }`}
+        style={{ paddingTop: "var(--wb-safe-area-top, 0px)" }}
       >
         <div className="mx-auto flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-[120rem]">
           <div className="flex items-center gap-6">

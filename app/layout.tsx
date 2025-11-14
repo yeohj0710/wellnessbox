@@ -90,7 +90,12 @@ export default async function RootLayout({
             <LoadingProvider>
               <ToastProvider>
                 <TopBar />
-                <main className="pt-14 min-h-[105vh] flex flex-col items-center">
+                <main
+                  className="min-h-[105vh] flex flex-col items-center"
+                  style={{
+                    paddingTop: "calc(3.5rem + var(--wb-safe-area-top, 0px))",
+                  }}
+                >
                   {children}
                 </main>
                 <RouteTransition />
