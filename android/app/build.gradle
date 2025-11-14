@@ -17,7 +17,7 @@ android {
         }
     }
 
-    // Capacitor 7 가이드: Java 21
+    // Android 컴파일 옵션은 21로(상위 build.gradle에서도 강제되지만 중복 선언 OK)
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_21
         targetCompatibility JavaVersion.VERSION_21

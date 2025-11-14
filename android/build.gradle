@@ -1,4 +1,4 @@
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
+// Top-level build file.
 
 buildscript {
     repositories {
@@ -20,18 +20,40 @@ allprojects {
     }
 }
 
-/* 공통: Kotlin 컴파일러는 jvmTarget=17 유지 (Kotlin 플러그인 구버전에서 21 미지원 이슈 회피) */
-subprojects { proj ->
-    // Android 모듈이면 compileOptions는 각 모듈에서 설정 (app/build.gradle 참조)
-    // Kotlin 태스크만 안전하게 17으로
-    def kotlinCompileClass = null
-    try {
-        kotlinCompileClass = Class.forName("org.jetbrains.kotlin.gradle.tasks.KotlinCompile")
-    } catch (ignored) {}
+/*
+ * 핵심: 모든 서브모듈이 JDK 21 toolchain으로 컴파일되게 설정.
+ * - Android(java) 컴파일: JDK 21 toolchain + source/target 21
+ * - Kotlin은 jvmTarget=17 유지(플러그인 호환 안정성)
+ */
+subprojects { subproj ->
+    // Android Application/Library 모듈: compileOptions = 21
+    ["com.android.application", "com.android.library"].each { pid ->
+        subproj.pluginManager.withPlugin(pid) {
+            def androidExt = subproj.extensions.findByName("android")
+            if (androidExt != null) {
+                androidExt.compileOptions {
+                    sourceCompatibility JavaVersion.VERSION_21
+                    targetCompatibility JavaVersion.VERSION_21
+                }
+            }
+        }
+    }
 
-    if (kotlinCompileClass != null) {
-        tasks.withType(kotlinCompileClass).configureEach {
-            it.kotlinOptions.jvmTarget = "17"
+    // JavaCompile 태스크에 JDK 21 toolchain 바인딩 + --release 21
+    subproj.tasks.withType(JavaCompile).configureEach { t ->
+        def svc = subproj.extensions.findByType(org.gradle.jvm.toolchain.JavaToolchainService)
+        if (svc != null) {
+            t.javaCompiler = svc.compilerFor { languageVersion = JavaLanguageVersion.of(21) }
+        }
+        t.options.release = 21
+    }
+
+    // Kotlin 태스크는 jvmTarget=17 (안전한 기본값)
+    ["org.jetbrains.kotlin.android", "org.jetbrains.kotlin.jvm"].each { kid ->
+        subproj.pluginManager.withPlugin(kid) {
+            subproj.tasks
+                .matching { it.name.startsWith("compile") && it.hasProperty("kotlinOptions") }
+                .configureEach { it.kotlinOptions.jvmTarget = "17" }
         }
     }
 }
