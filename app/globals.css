@@ -47,12 +47,14 @@
 :root {
   --wb-safe-area-top: 0px;
   --wb-safe-area-bottom: 0px;
+  --wb-top-offset: calc(3.5rem + var(--wb-safe-area-top, 0px));
 }
 
 @supports (padding-top: env(safe-area-inset-top)) {
   :root {
     --wb-safe-area-top: env(safe-area-inset-top);
     --wb-safe-area-bottom: env(safe-area-inset-bottom);
+    --wb-top-offset: calc(3.5rem + env(safe-area-inset-top));
   }
 }
 

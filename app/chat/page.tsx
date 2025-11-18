@@ -10,6 +10,9 @@ import ReferenceData from "./components/ReferenceData";
 import ChatTopBar from "./components/ChatTopBar";
 import useChat from "./hooks/useChat";
 
+const TOP_OFFSET =
+  "var(--wb-top-offset, calc(3.5rem + var(--wb-safe-area-top, 0px)))";
+
 export default function ChatPage() {
   const {
     sessions,
@@ -54,7 +57,10 @@ export default function ChatPage() {
 
   return (
     <div className="relative flex flex-col w-full min-h-[calc(100vh-56px)] bg-gradient-to-b from-slate-50 to-white">
-      <div className="fixed top-14 left-0 right-0 z-10">
+      <div
+        className="fixed top-14 left-0 right-0 z-10"
+        style={{ top: TOP_OFFSET }}
+      >
         <div className="mx-auto max-w-3xl w-full">
           <ChatTopBar
             openDrawer={openDrawer}

@@ -1,6 +1,6 @@
 import { UserProfile } from "@/types/chat";
 
-const EXTRA_GUIDELINES = `# WellnessBox Chat Guidelines
+const EXTRA_GUIDELINES = `# 웰니스박스 Chat Guidelines
 
 - '입니다'체가 아닌, '요'체를 사용합니다.
 - 건강, 웰빙, 영양제와 직접적으로 관련된 질문에만 답변합니다. 단, RAG_CONTEXT에 관련 근거가 있으면 주제가 조금 달라도 답변합니다.

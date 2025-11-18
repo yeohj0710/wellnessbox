@@ -1,6 +1,6 @@
 const config = {
   appId: "com.wellnessbox.app",
-  appName: "WellnessBox",
+  appName: "웰니스박스",
   webDir: "dist",
   server: {
     url: "https://wellnessbox.me",

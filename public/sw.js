@@ -54,7 +54,7 @@ self.addEventListener("push", function (event) {
         } catch {}
         if (!imageForNotification) imageForNotification = src;
       }
-      const title = data.title || "WellnessBox 알림";
+      const title = data.title || "웰니스박스 알림";
       const options = {
         body: data.body || "",
         vibrate: [100, 50, 100],
