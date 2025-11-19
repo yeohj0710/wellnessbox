@@ -8,9 +8,6 @@ import {
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 
-const TOP_OFFSET =
-  "var(--wb-top-offset, calc(3.5rem + var(--wb-safe-area-top, 0px)))";
-
 type Props = {
   openDrawer: () => void;
   newChat: () => void;
@@ -42,10 +39,7 @@ export default function ChatTopBar({
   highlight,
 }: Props) {
   return (
-    <div
-      className="sticky top-14 z-30 h-12 border-b border-slate-200 bg-white/80 backdrop-blur-md"
-      style={{ top: TOP_OFFSET }}
-    >
+    <div className="sticky top-14 z-30 h-12 border-b border-slate-200 bg-white/80 backdrop-blur-md">
       <div className="relative flex h-full items-center px-2 sm:px-4">
         <div className="relative group">
           <button

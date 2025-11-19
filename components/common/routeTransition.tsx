@@ -3,9 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
-const TOP_OFFSET =
-  "var(--wb-top-offset, calc(3.5rem + var(--wb-safe-area-top, 0px)))";
-
 export default function RouteTransition() {
   const router = useRouter();
   const pathname = usePathname();
@@ -90,16 +87,10 @@ export default function RouteTransition() {
 
   return (
     <>
-      <div
-        className="fixed left-0 right-0 top-14 h-[2px] z-[10000] overflow-hidden"
-        style={{ top: TOP_OFFSET }}
-      >
+      <div className="fixed left-0 right-0 top-14 h-[2px] z-[10000] overflow-hidden">
         <div className="h-full w-1/3 bg-gradient-to-r from-sky-400 via-indigo-500 to-sky-400 animate-[route-progress_1s_ease-in-out_infinite]" />
       </div>
-      <div
-        className="fixed left-0 right-0 bottom-0 top-14 z-[9999] flex items-center justify-center bg-white/18 backdrop-blur-[2px]"
-        style={{ top: TOP_OFFSET }}
-      >
+      <div className="fixed left-0 right-0 bottom-0 top-14 z-[9999] flex items-center justify-center bg-white/18 backdrop-blur-[2px]">
         <div className="relative w-16 h-16">
           <div className="absolute -inset-2 rounded-full bg-gradient-to-tr from-sky-400/30 to-indigo-400/30 blur-xl animate-[glow_1.6s_ease-in-out_infinite]" />
           <div className="absolute inset-0 rounded-full bg-white/60 backdrop-blur-md shadow-lg" />

@@ -13,9 +13,6 @@ import PaymentSection from "./paymentSection";
 import ProductDetail from "../product/productDetail";
 import axios from "axios";
 
-const TOP_OFFSET =
-  "var(--wb-top-offset, calc(3.5rem + var(--wb-safe-area-top, 0px)))";
-
 export default function Cart({
   cartItems,
   totalPrice,
@@ -484,10 +481,7 @@ export default function Cart({
         }}
         strategy="afterInteractive"
       />
-      <div
-        className="z-10 fixed top-14 left-0 right-0 w-full max-w-[640px] mx-auto bg-sky-400 h-12 sm:h-14 flex items-center px-4 mb-6 border-b border-gray-200"
-        style={{ top: TOP_OFFSET }}
-      >
+      <div className="z-10 fixed top-14 left-0 right-0 w-full max-w-[640px] mx-auto bg-sky-400 h-12 sm:h-14 flex items-center px-4 mb-6 border-b border-gray-200">
         <button
           onClick={onBack}
           className="text-white text-xl mr-4 font-bold hover:scale-110"

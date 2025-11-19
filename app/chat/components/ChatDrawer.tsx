@@ -4,9 +4,6 @@ import { useState } from "react";
 import { TrashIcon, PlusIcon, EllipsisHorizontalIcon } from "@heroicons/react/24/outline";
 import type { ChatSession } from "@/types/chat";
 
-const TOP_OFFSET =
-  "var(--wb-top-offset, calc(3.5rem + var(--wb-safe-area-top, 0px)))";
-
 interface ChatDrawerProps {
   sessions: ChatSession[];
   activeId: string | null;
@@ -53,7 +50,6 @@ export default function ChatDrawer({
   return (
     <div
       className="fixed inset-x-0 bottom-0 top-14 z-20"
-      style={{ top: TOP_OFFSET }}
       role="dialog"
       aria-modal="true"
       onClick={() => {

@@ -10,9 +10,6 @@ import { ShoppingCartIcon } from "@heroicons/react/24/outline";
 import { useLoading } from "@/components/common/loadingContext.client";
 import KakaoLoginButton from "@/components/common/kakaoLoginButton";
 
-const TOP_OFFSET =
-  "var(--wb-top-offset, calc(3.5rem + var(--wb-safe-area-top, 0px)))";
-
 export default function TopBar() {
   const router = useRouter();
   const pathname = usePathname();
@@ -20,43 +17,9 @@ export default function TopBar() {
   const [cartCount, setCartCount] = useState(0);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const logoRef = useRef<HTMLImageElement>(null);
-  const headerRef = useRef<HTMLElement>(null);
   const { showLoading } = useLoading();
   const [hideOnScroll, setHideOnScroll] = useState(false);
   const lastYRef = useRef(0);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const updateTopOffsetVar = () => {
-      if (!headerRef.current) return;
-      const height = headerRef.current.getBoundingClientRect().height;
-      document.documentElement.style.setProperty(
-        "--wb-top-offset",
-        `${height}px`
-      );
-    };
-
-    updateTopOffsetVar();
-
-    const resizeObserver =
-      typeof ResizeObserver !== "undefined"
-        ? new ResizeObserver(() => updateTopOffsetVar())
-        : null;
-
-    if (resizeObserver && headerRef.current) {
-      resizeObserver.observe(headerRef.current);
-    }
-
-    window.addEventListener("resize", updateTopOffsetVar);
-
-    return () => {
-      window.removeEventListener("resize", updateTopOffsetVar);
-      if (resizeObserver) {
-        resizeObserver.disconnect();
-      }
-    };
-  }, []);
 
   useEffect(() => {
     const fetchLoginStatus = async () => {
@@ -143,7 +106,6 @@ export default function TopBar() {
   return (
     <>
       <header
-        ref={headerRef}
         className={`fixed top-0 z-40 w-full bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70 transition-transform duration-300 will-change-transform ${
           hideOnScroll ? "-translate-y-full" : "translate-y-0"
         }`}
@@ -253,7 +215,6 @@ export default function TopBar() {
         className={`fixed top-14 bottom-0 z-40 bg-white shadow-lg w-[260px] transition-[right] duration-300 ${
           isDrawerOpen ? "right-0" : "-right-[260px]"
         }`}
-        style={{ top: TOP_OFFSET }}
       >
         <div className="flex flex-col p-6 gap-4 text-[15px] font-medium text-slate-600 [&_a]:text-slate-700 [&_a]:hover:text-slate-900">
           <MenuLinks
@@ -280,7 +241,6 @@ export default function TopBar() {
       {isDrawerOpen && (
         <div
           className="fixed top-14 inset-x-0 bottom-0 z-30 bg-black/40"
-          style={{ top: TOP_OFFSET }}
           onClick={closeDrawer}
         />
       )}
