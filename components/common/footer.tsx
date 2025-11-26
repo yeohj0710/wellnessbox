@@ -120,6 +120,9 @@ export default function Footer() {
                   법인등록번호: 110111-0932570
                 </span>
                 <span className="text-xs text-gray-400">
+                  통신판매업신고: 제2025-서울동대문-1562호
+                </span>
+                <span className="text-xs text-gray-400">
                   대표 전화번호: 02-6241-5530
                 </span>
                 <span className="text-xs text-gray-400">
