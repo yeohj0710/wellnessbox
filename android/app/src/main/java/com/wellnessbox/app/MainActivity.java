@@ -23,7 +23,10 @@ public class MainActivity extends BridgeActivity {
 
     private void configureSystemBars() {
         Window window = getWindow();
+
+        // 시스템이 status bar 영역을 제외한 곳에 WebView를 배치하도록 맡김
         WindowCompat.setDecorFitsSystemWindows(window, true);
+
         window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
 
@@ -33,7 +36,8 @@ public class MainActivity extends BridgeActivity {
             window.setNavigationBarColor(systemBarColor);
         }
 
-        WindowInsetsControllerCompat insetsController = WindowCompat.getInsetsController(window, window.getDecorView());
+        WindowInsetsControllerCompat insetsController =
+                WindowCompat.getInsetsController(window, window.getDecorView());
         if (insetsController != null) {
             insetsController.setAppearanceLightStatusBars(true);
             insetsController.setAppearanceLightNavigationBars(true);
@@ -45,10 +49,8 @@ public class MainActivity extends BridgeActivity {
         WebView webView = (this.bridge != null) ? this.bridge.getWebView() : null;
 
         if (webView != null && webView.canGoBack()) {
-            // WebView 히스토리가 있으면 뒤로가기
             webView.goBack();
         } else {
-            // 더 이상 뒤로 갈 데 없으면 종료 확인 다이얼로그
             showExitDialog();
         }
     }
@@ -58,9 +60,7 @@ public class MainActivity extends BridgeActivity {
                 .setTitle("다음에 또 봐요!")
                 .setMessage("앱을 종료할까요?")
                 .setNegativeButton("취소", null)
-                .setPositiveButton("종료", (dialog, which) -> {
-                    finish();
-                })
+                .setPositiveButton("종료", (dialog, which) -> finish())
                 .create()
                 .show();
     }

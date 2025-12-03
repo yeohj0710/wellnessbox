@@ -12,60 +12,6 @@ import KakaoExternalBridge from "@/components/common/kakaoExternalBridge";
 import Script from "next/script";
 import { cookies, headers } from "next/headers";
 
-const WEBVIEW_PADDING_SCRIPT = `
-(function () {
-  try {
-    var cap = window.Capacitor;
-    if (!cap) return;
-    var platform = typeof cap.getPlatform === "function" ? cap.getPlatform() : null;
-    var isNative = typeof cap.isNativePlatform === "function" ? cap.isNativePlatform() : platform && platform !== "web";
-    if (!isNative || platform === "web") return;
-    if (!platform || platform === "web") {
-      var ua = navigator.userAgent || "";
-      platform = /android/i.test(ua) ? "android" : "ios";
-    }
-    var fallback = platform === "ios" ? 20 : 28;
-    var applyOffset = function (offset) {
-      var value = Math.max(Math.round(offset || 0), 0);
-      var docEl = document.documentElement;
-      if (docEl) {
-        docEl.style.setProperty("--wb-webview-top", value + "px");
-        docEl.style.setProperty("--wb-safe-area-top", value + "px");
-      }
-      var addClass = function () {
-        if (document.body && !document.body.classList.contains("app-webview")) {
-          document.body.classList.add("app-webview");
-        }
-      };
-      if (document.body) {
-        addClass();
-      } else {
-        document.addEventListener("DOMContentLoaded", addClass, { once: true });
-      }
-    };
-    applyOffset(fallback);
-    var safeAreaPlugin = cap.Plugins && cap.Plugins.SafeArea;
-    if (safeAreaPlugin && typeof safeAreaPlugin.getStatusBarHeight === "function") {
-      safeAreaPlugin
-        .getStatusBarHeight()
-        .then(function (result) {
-          if (result && typeof result.statusBarHeight === "number" && result.statusBarHeight > 0) {
-            applyOffset(result.statusBarHeight);
-          }
-        })
-        .catch(function () {});
-      return;
-    }
-    var nativeHeight = window.WB_STATUSBAR_HEIGHT;
-    if (typeof nativeHeight === "number" && nativeHeight > 0) {
-      applyOffset(nativeHeight);
-    }
-  } catch (err) {
-    console.warn("WB webview padding init failed", err);
-  }
-})();
-`;
-
 export const metadata: Metadata = {
   title: "웰니스박스 | 내 몸에 맞는 프리미엄 건강 솔루션",
   description: "내 몸에 맞는 프리미엄 건강 솔루션",
@@ -138,11 +84,6 @@ export default async function RootLayout({
       <body
         className={`${pretendard.className} overflow-x-hidden flex flex-col bg-white`}
       >
-        <Script
-          id="wb-webview-padding"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{ __html: WEBVIEW_PADDING_SCRIPT }}
-        />
         <KakaoExternalBridge />
         <LocalStorageProvider>
           <FooterProvider>
@@ -152,7 +93,7 @@ export default async function RootLayout({
                 <main
                   className="min-h-[105vh] flex flex-col items-center"
                   style={{
-                    paddingTop: "calc(3.5rem + var(--wb-safe-area-top, 0px))",
+                    paddingTop: "3.5rem",
                   }}
                 >
                   {children}

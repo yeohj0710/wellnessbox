@@ -109,7 +109,6 @@ export default function TopBar() {
         className={`fixed top-0 z-40 w-full bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70 transition-transform duration-300 will-change-transform ${
           hideOnScroll ? "-translate-y-full" : "translate-y-0"
         }`}
-        style={{ paddingTop: "var(--wb-safe-area-top, 0px)" }}
       >
         <div className="mx-auto flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-[120rem]">
           <div className="flex items-center gap-6">
@@ -212,9 +211,10 @@ export default function TopBar() {
       </header>
 
       <div
-        className={`fixed top-14 bottom-0 z-40 bg-white shadow-lg w-[260px] transition-[right] duration-300 ${
+        className={`fixed bottom-0 z-40 bg-white shadow-lg w-[260px] transition-[right] duration-300 ${
           isDrawerOpen ? "right-0" : "-right-[260px]"
         }`}
+        style={{ top: "3.5rem" }}
       >
         <div className="flex flex-col p-6 gap-4 text-[15px] font-medium text-slate-600 [&_a]:text-slate-700 [&_a]:hover:text-slate-900">
           <MenuLinks
@@ -240,7 +240,8 @@ export default function TopBar() {
 
       {isDrawerOpen && (
         <div
-          className="fixed top-14 inset-x-0 bottom-0 z-30 bg-black/40"
+          className="fixed inset-x-0 bottom-0 z-30 bg-black/40"
+          style={{ top: "3.5rem" }}
           onClick={closeDrawer}
         />
       )}

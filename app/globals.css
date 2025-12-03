@@ -46,20 +46,7 @@
 }
 
 :root {
-  --wb-safe-area-top: 0px;
-  --wb-safe-area-bottom: 0px;
-  --wb-webview-top: 0px;
-}
-
-@supports (padding-top: env(safe-area-inset-top)) {
-  :root {
-    --wb-safe-area-top: env(safe-area-inset-top);
-    --wb-safe-area-bottom: env(safe-area-inset-bottom);
-  }
-}
-
-body.app-webview {
-  padding-top: var(--wb-webview-top, 0px);
+  --wb-topbar-height: 3.5rem;
 }
 
 html,

@@ -12,7 +12,7 @@ const config = {
     webContentsDebuggingEnabled: true,
   },
   ios: {
-    contentInset: "always",
+    contentInset: "automatic",
     limitsNavigationsToAppBoundDomains: false,
   },
   plugins: {
