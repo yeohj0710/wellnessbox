@@ -24,6 +24,7 @@ public class MainActivity extends BridgeActivity {
     private void configureSystemBars() {
         Window window = getWindow();
         WindowCompat.setDecorFitsSystemWindows(window, true);
+        
         window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
 

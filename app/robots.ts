@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
     },
-    sitemap: "https://wellnessbox.vercel.app/sitemap.xml",
+    sitemap: "https://wellnessbox.me/sitemap.xml",
   };
 }
