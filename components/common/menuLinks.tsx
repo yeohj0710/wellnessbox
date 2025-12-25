@@ -51,9 +51,9 @@ export function MenuLinks({
   };
 
   const handleLogout = async () => {
-    await fetch("/api/logout");
+    await fetch("/api/logout", { method: "POST", cache: "no-store" });
     if (onItemClick) onItemClick();
-    window.location.href = "/";
+    window.location.replace("/");
   };
 
   const linkProps = {
@@ -63,6 +63,13 @@ export function MenuLinks({
     onTouchEnd: handlePressEnd,
     onClick: onItemClick,
   };
+
+  const anyLoggedIn =
+    loginStatus.isUserLoggedIn ||
+    loginStatus.isPharmLoggedIn ||
+    loginStatus.isRiderLoggedIn ||
+    loginStatus.isAdminLoggedIn ||
+    loginStatus.isTestLoggedIn;
 
   if (isDrawer) {
     return (
@@ -77,6 +84,7 @@ export function MenuLinks({
         >
           내 주문 조회
         </Link>
+
         <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
           <span>AI 진단 검사</span>
           <span className="inline-flex rounded-full bg-emerald-50 ring-1 ring-emerald-200 max-w-[220px]">
@@ -158,17 +166,19 @@ export function MenuLinks({
             사이트 관리
           </Link>
         ) : null}
-        {(loginStatus.isUserLoggedIn ||
-          loginStatus.isPharmLoggedIn ||
-          loginStatus.isRiderLoggedIn ||
-          loginStatus.isAdminLoggedIn ||
-          loginStatus.isTestLoggedIn) && (
-          <button
-            onClick={handleLogout}
-            className={`${menuItemClasses()} text-left px-0`}
-          >
-            로그아웃
-          </button>
+
+        {anyLoggedIn ? (
+          <>
+            <Link
+              href="/me"
+              className={menuItemClasses()}
+              onClick={onItemClick}
+            >
+              내 정보
+            </Link>
+          </>
+        ) : (
+          <KakaoLoginButton fullWidth />
         )}
       </>
     );
@@ -186,6 +196,7 @@ export function MenuLinks({
       >
         내 주문 조회
       </Link>
+
       <div className="relative flex items-center gap-2" ref={aiRef}>
         <button
           onClick={() => setAiOpen((v) => !v)}
@@ -207,6 +218,7 @@ export function MenuLinks({
             }`}
           />
         </button>
+
         <Link
           href="/chat"
           className={menuItemClasses(
@@ -219,6 +231,7 @@ export function MenuLinks({
             BETA
           </span>
         </Link>
+
         {aiOpen && (
           <div className="absolute left-0 top-full mt-2 w-56 rounded-xl border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 p-2">
             <Link
@@ -247,6 +260,7 @@ export function MenuLinks({
           </div>
         )}
       </div>
+
       {loginStatus.isPharmLoggedIn && (
         <Link href="/pharm" className={menuItemClasses()} onClick={onItemClick}>
           주문 관리
@@ -275,26 +289,22 @@ export function MenuLinks({
           관리자 로그인
         </Link>
       )}
-      {/* {!loginStatus.isUserLoggedIn && (
-        <KakaoLoginButton />
-      )} */}
+
+      {!loginStatus.isUserLoggedIn && <KakaoLoginButton />}
+
       {loginStatus.isAdminLoggedIn ? (
         <Link href="/admin" className={menuItemClasses()} onClick={onItemClick}>
           사이트 관리
         </Link>
       ) : null}
-      {(loginStatus.isUserLoggedIn ||
-        loginStatus.isPharmLoggedIn ||
-        loginStatus.isRiderLoggedIn ||
-        loginStatus.isAdminLoggedIn ||
-        loginStatus.isTestLoggedIn) && (
-        <button
-          onClick={handleLogout}
-          className={`${menuItemClasses()} text-left px-0`}
-        >
-          로그아웃
-        </button>
-      )}
+
+      {anyLoggedIn ? (
+        <>
+          <Link href="/me" className={menuItemClasses()} onClick={onItemClick}>
+            내 정보
+          </Link>
+        </>
+      ) : null}
     </>
   );
 }

@@ -8,6 +8,7 @@ interface SessionContent {
     kakaoId: number;
     nickname?: string;
     profileImageUrl?: string;
+    email?: string;
     loggedIn: boolean;
   };
   pharm?: {
