@@ -20,36 +20,43 @@ function normalizeBaseUrl(url: string) {
 
 function resolveOrigin(h: Headers) {
   const proto = h.get("x-forwarded-proto") || "http";
-  const host = h.get("host") || "localhost:3000";
+  const forwardedHost = h.get("x-forwarded-host");
+  const host = forwardedHost || h.get("host") || "localhost:3000";
   return `${proto}://${host}`;
 }
 
-function resolveRedirectUri(origin: string) {
-  const o = normalizeBaseUrl(origin);
+function canonicalizeHost(origin: string) {
+  const u = new URL(origin);
+  const host = u.host.replace(/^www\./, "");
+  return `${u.protocol}//${host}`;
+}
 
-  if (o.includes("localhost") || o.includes("127.0.0.1")) {
+function resolveRedirectUri(origin: string) {
+  const base = canonicalizeHost(origin);
+
+  if (base.includes("localhost") || base.includes("127.0.0.1")) {
     return "http://localhost:3000/api/auth/kakao/callback";
   }
 
-  if (o.includes("wellnessbox.me")) {
+  if (base.includes("wellnessbox.me")) {
     return "https://wellnessbox.me/api/auth/kakao/callback";
   }
 
-  return `${o}/api/auth/kakao/callback`;
+  return `${normalizeBaseUrl(base)}/api/auth/kakao/callback`;
 }
 
 function resolvePublicOrigin(origin: string) {
-  const o = normalizeBaseUrl(origin);
+  const base = canonicalizeHost(origin);
 
-  if (o.includes("localhost") || o.includes("127.0.0.1")) {
+  if (base.includes("localhost") || base.includes("127.0.0.1")) {
     return "http://localhost:3000";
   }
 
-  if (o.includes("wellnessbox.me")) {
+  if (base.includes("wellnessbox.me")) {
     return "https://wellnessbox.me";
   }
 
-  return o;
+  return normalizeBaseUrl(base);
 }
 
 export async function GET(request: Request) {
