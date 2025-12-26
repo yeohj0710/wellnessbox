@@ -1,9 +1,7 @@
 generator client {
   provider      = "prisma-client-js"
-  engineType    = "binary"
-  // Limit binary targets to shrink serverless bundle size while preserving local dev.
-  // "native" resolves to the local platform for development; Vercel uses Debian with OpenSSL 3.
   binaryTargets = ["native", "debian-openssl-3.0.x"]
+  engineType    = "binary"
 }
 
 datasource db {
@@ -74,7 +72,6 @@ model Order {
   roadAddress      String?
   detailAddress    String?
   phone            String?
-  buyerPhone       String?
   password         String?
   requestNotes     String?
   entrancePassword String?
@@ -86,19 +83,15 @@ model Order {
   status           String?
   pharmacyId       Int?
   riderId          Int?
-  userId           String?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @default(now()) @updatedAt
   endpoint         String?
   messages         Message[]
   pharmacy         Pharmacy?      @relation(fields: [pharmacyId], references: [id])
   rider            Rider?         @relation(fields: [riderId], references: [id])
-  user             User?          @relation(fields: [userId], references: [id])
   orderItems       OrderItem[]
   reviews          Review[]
   subscriptions    Subscription[]
-
-  @@index([buyerPhone])
 }
 
 model OrderItem {
@@ -171,30 +164,6 @@ model Subscription {
   @@unique([role, riderId, endpoint])
 }
 
-model User {
-  id              String     @id
-  phoneNumber     String?
-  phoneVerifiedAt DateTime?
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @default(now()) @updatedAt
-  orders          Order[]
-
-  @@index([phoneNumber])
-}
-
-model PhoneOtp {
-  id        String   @id @default(cuid())
-  phone     String
-  codeHash  String
-  expiresAt DateTime
-  usedAt    DateTime?
-  attempts  Int      @default(0)
-  createdAt DateTime @default(now())
-
-  @@index([phone, createdAt])
-  @@index([expiresAt])
-}
-
 model Client {
   id             String             @id
   userAgent      String?
@@ -236,13 +205,12 @@ model CheckAiResult {
 
 model UserProfile {
   id        String   @id @default(cuid())
-  clientId  String
+  clientId  String   @unique
   data      Json
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
   client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
-  @@unique([clientId])
   @@index([clientId, updatedAt])
 }
 
@@ -282,17 +250,31 @@ model Config {
   updatedAt DateTime @updatedAt
 }
 
+model PhoneOtp {
+  id        String   @id @default(cuid())
+  phone     String
+  codeHash  String
+  expiresAt DateTime
+  usedAt    DateTime?
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([phone, createdAt])
+  @@index([expiresAt])
+}
+
+
+/// DB에 이미 있는 vector 테이블 유지 (drop 위험 방지)
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model rag_chunks {
+  id        String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  text      String?
+  metadata  Json?
+  embedding Unsupported("vector")?
+}
+
 enum ChatRole {
   system
   user
   assistant
-}
-
-model RagChunkView {
-  id           String  @id @db.Uuid
-  content      String  @db.Text
-  metadata     Json?
-  embeddingStr String? @map("embedding_str")
-
-  @@map("rag_chunks_view")
 }

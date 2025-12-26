@@ -12,6 +12,6 @@ export async function sendOtpSms(to: string, code: string) {
   await messageService.send({
     to,
     from: SOLAPI_SENDER,
-    text: `인증번호 [${code}]를 입력해주세요.`,
+    text: `[웰니스박스] 인증번호 [${code}]를 입력해주세요.`,
   });
 }
