@@ -1,7 +1,7 @@
 import Image from "next/image";
 import getSession from "@/lib/session";
 import LogoutButton from "./logoutButton";
-import PhoneLinkSection from "./phoneLinkSection";
+import OrdersSection from "./ordersSection";
 
 export const dynamic = "force-dynamic";
 
@@ -111,10 +111,7 @@ export default async function MePage() {
           </div>
         </div>
 
-        <PhoneLinkSection
-          initialPhone={phone}
-          initialLinkedAt={phoneLinkedAt}
-        />
+        <OrdersSection initialPhone={phone} initialLinkedAt={phoneLinkedAt} />
 
         <div className="mt-8">
           <button

@@ -11,6 +11,7 @@ import {
   getOrderById,
   getOrderStatusById,
   getOrdersWithItemsAndStatus,
+  getOrdersWithItemsByPhone,
 } from "@/lib/order";
 import OrderProgressBar from "./orderProgressBar";
 import OrderAccordionHeader from "./orderAccordionHeader";
@@ -22,20 +23,32 @@ import {
   registerAndActivateSW,
 } from "@/lib/push";
 
-export default function OrderDetails({ phone, password, onBack }: any) {
+type OrderDetailsProps = {
+  phone: string;
+  password?: string;
+  onBack?: () => void;
+  lookupMode?: "phone-password" | "phone-only";
+};
+
+export default function OrderDetails({
+  phone,
+  password = "",
+  onBack,
+  lookupMode = "phone-password",
+}: OrderDetailsProps) {
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<any>([]);
   useEffect(() => {
     const fetchBasicOrderInfo = async () => {
-      const basickOrderInfo = await getOrdersWithItemsAndStatus(
-        phone,
-        password
-      );
+      const basickOrderInfo =
+        lookupMode === "phone-only"
+          ? await getOrdersWithItemsByPhone(phone)
+          : await getOrdersWithItemsAndStatus(phone, password);
       setOrders(basickOrderInfo);
       setLoading(false);
     };
     fetchBasicOrderInfo();
-  }, [phone, password]);
+  }, [lookupMode, password, phone]);
   const OrderAccordionItem = ({
     initialOrder,
     isInitiallyExpanded,

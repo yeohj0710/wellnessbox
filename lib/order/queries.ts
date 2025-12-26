@@ -1,6 +1,7 @@
 // Query operations related to orders
 "use server";
 import db from "@/lib/db";
+import { normalizePhone } from "@/lib/otp";
 import { ORDER_STATUS, OrderStatus } from "./orderStatus";
 
 export async function checkOrderExists(phone: string, password: string) {
@@ -40,6 +41,63 @@ export async function getOrdersWithItemsAndStatus(phone: string, password: strin
   if (orders.length === 0) {
     throw new Error("해당 전화번호와 비밀번호로 조회된 주문이 없습니다.");
   }
+  return orders;
+}
+
+export async function getOrdersWithItemsByPhone(phone: string) {
+  const normalizedPhone = normalizePhone(phone);
+  const digitsOnly = normalizedPhone.replace(/\D/g, "");
+
+  const formattedWithHyphens = (() => {
+    if (digitsOnly.length === 10) {
+      return `${digitsOnly.slice(0, 3)}-${digitsOnly.slice(3, 6)}-${digitsOnly.slice(6)}`;
+    }
+    if (digitsOnly.length === 11) {
+      return `${digitsOnly.slice(0, 3)}-${digitsOnly.slice(3, 7)}-${digitsOnly.slice(7)}`;
+    }
+    return "";
+  })();
+
+  const phoneCandidates = Array.from(
+    new Set(
+      [phone, normalizedPhone, formattedWithHyphens].filter(
+        (value) => value && value.trim().length > 0
+      )
+    )
+  );
+
+  const orders = await db.order.findMany({
+    where: {
+      OR: phoneCandidates.map((candidate) => ({ phone: candidate })),
+    },
+    select: {
+      id: true,
+      status: true,
+      createdAt: true,
+      orderItems: {
+        select: {
+          quantity: true,
+          pharmacyProduct: {
+            select: {
+              optionType: true,
+              product: {
+                select: { name: true },
+              },
+            },
+          },
+          review: {
+            select: { rate: true, content: true },
+          },
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (orders.length === 0) {
+    throw new Error("연동된 전화번호로 조회된 주문이 없습니다.");
+  }
+
   return orders;
 }
 

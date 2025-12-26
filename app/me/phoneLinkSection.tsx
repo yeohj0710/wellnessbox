@@ -16,9 +16,11 @@ type ApiResponse = {
 export default function PhoneLinkSection({
   initialPhone,
   initialLinkedAt,
+  onLinked,
 }: {
   initialPhone?: string;
   initialLinkedAt?: string;
+  onLinked?: (phone: string, linkedAt?: string) => void;
 }) {
   const [phone, setPhone] = useState(initialPhone ?? "");
   const [code, setCode] = useState("");
@@ -97,6 +99,7 @@ export default function PhoneLinkSection({
       }
 
       setLinkState({ phone: data.phone, linkedAt: data.linkedAt });
+      onLinked?.(data.phone, data.linkedAt);
       setCode("");
       setStatusMessage("전화번호 인증 및 연동이 완료됐어요.");
     } catch (error) {
