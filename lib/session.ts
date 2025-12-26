@@ -10,6 +10,8 @@ interface SessionContent {
     profileImageUrl?: string;
     email?: string;
     loggedIn: boolean;
+    phone?: string;
+    phoneLinkedAt?: string;
   };
   pharm?: {
     id?: number;

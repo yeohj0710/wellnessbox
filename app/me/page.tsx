@@ -1,6 +1,7 @@
 import Image from "next/image";
 import getSession from "@/lib/session";
 import LogoutButton from "./logoutButton";
+import PhoneLinkSection from "./phoneLinkSection";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,8 @@ type SessionUser = {
   nickname?: string;
   profileImageUrl?: string;
   email?: string;
+  phone?: string;
+  phoneLinkedAt?: string;
 };
 
 export default async function MePage() {
@@ -47,6 +50,8 @@ export default async function MePage() {
   const nickname = user.nickname ?? "";
   const profileImageUrl = user.profileImageUrl ?? "";
   const email = user.email ?? "";
+  const phone = user.phone ?? "";
+  const phoneLinkedAt = user.phoneLinkedAt;
 
   return (
     <div className="w-full max-w-[640px] mt-8 mb-12">
@@ -99,8 +104,17 @@ export default async function MePage() {
               <span className="font-semibold text-gray-800">로그인 상태</span>:
               로그인됨
             </div>
+            <div>
+              <span className="font-semibold text-gray-800">연동된 전화번호</span>: {" "}
+              {phone || "연동되지 않음"}
+            </div>
           </div>
         </div>
+
+        <PhoneLinkSection
+          initialPhone={phone}
+          initialLinkedAt={phoneLinkedAt}
+        />
 
         <div className="mt-8">
           <button
