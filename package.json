@@ -52,6 +52,7 @@
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
     "remark-parse": "^11.0.0",
+    "solapi": "^5.5.3",
     "tailwind-scrollbar-hide": "^2.0.0",
     "web-push": "^3.6.7"
   },

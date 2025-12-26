@@ -9,7 +9,7 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("WELLNESSBOX_PRISMA_URL")
-  directUrl = env("WELLNESSBOX_PRISMA_URL")
+  directUrl = env("WELLNESSBOX_URL_NON_POOLING")
 }
 
 model Category {
@@ -74,6 +74,7 @@ model Order {
   roadAddress      String?
   detailAddress    String?
   phone            String?
+  buyerPhone       String?
   password         String?
   requestNotes     String?
   entrancePassword String?
@@ -85,15 +86,19 @@ model Order {
   status           String?
   pharmacyId       Int?
   riderId          Int?
+  userId           String?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @default(now()) @updatedAt
   endpoint         String?
   messages         Message[]
   pharmacy         Pharmacy?      @relation(fields: [pharmacyId], references: [id])
   rider            Rider?         @relation(fields: [riderId], references: [id])
+  user             User?          @relation(fields: [userId], references: [id])
   orderItems       OrderItem[]
   reviews          Review[]
   subscriptions    Subscription[]
+
+  @@index([buyerPhone])
 }
 
 model OrderItem {
@@ -164,6 +169,30 @@ model Subscription {
   @@unique([role, orderId, endpoint])
   @@unique([role, pharmacyId, endpoint])
   @@unique([role, riderId, endpoint])
+}
+
+model User {
+  id              String     @id
+  phoneNumber     String?
+  phoneVerifiedAt DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @default(now()) @updatedAt
+  orders          Order[]
+
+  @@index([phoneNumber])
+}
+
+model PhoneOtp {
+  id        String   @id @default(cuid())
+  phone     String
+  codeHash  String
+  expiresAt DateTime
+  usedAt    DateTime?
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([phone, createdAt])
+  @@index([expiresAt])
 }
 
 model Client {
