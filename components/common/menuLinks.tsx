@@ -5,8 +5,16 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import KakaoLoginButton from "@/components/common/kakaoLoginButton";
 
+type LoginStatus = {
+  isUserLoggedIn: boolean;
+  isPharmLoggedIn: boolean;
+  isRiderLoggedIn: boolean;
+  isAdminLoggedIn: boolean;
+  isTestLoggedIn: boolean;
+};
+
 interface MenuLinksProps {
-  loginStatus: any;
+  loginStatus: LoginStatus | null;
   onItemClick?: () => void;
   isDrawer?: boolean;
 }
@@ -58,12 +66,19 @@ export function MenuLinks({
     onClick: onItemClick,
   };
 
+  const kakaoLoggedIn = !!loginStatus?.isUserLoggedIn;
+
   const anyLoggedIn =
-    loginStatus.isUserLoggedIn ||
-    loginStatus.isPharmLoggedIn ||
-    loginStatus.isRiderLoggedIn ||
-    loginStatus.isAdminLoggedIn ||
-    loginStatus.isTestLoggedIn;
+    !!loginStatus &&
+    (loginStatus.isUserLoggedIn ||
+      loginStatus.isPharmLoggedIn ||
+      loginStatus.isRiderLoggedIn ||
+      loginStatus.isAdminLoggedIn ||
+      loginStatus.isTestLoggedIn);
+
+  const isPharmLoggedIn = !!loginStatus?.isPharmLoggedIn;
+  const isRiderLoggedIn = !!loginStatus?.isRiderLoggedIn;
+  const isAdminLoggedIn = !!loginStatus?.isAdminLoggedIn;
 
   if (isDrawer) {
     return (
@@ -119,7 +134,7 @@ export function MenuLinks({
           </span>
         </Link>
 
-        {loginStatus.isPharmLoggedIn && (
+        {isPharmLoggedIn && (
           <Link
             href="/pharm"
             className={menuItemClasses()}
@@ -129,7 +144,7 @@ export function MenuLinks({
           </Link>
         )}
 
-        {loginStatus.isRiderLoggedIn && (
+        {isRiderLoggedIn && (
           <Link
             href="/rider"
             className={menuItemClasses()}
@@ -139,7 +154,7 @@ export function MenuLinks({
           </Link>
         )}
 
-        {loginStatus.isPharmLoggedIn && (
+        {isPharmLoggedIn && (
           <Link
             href="/pharm/manage-products"
             className={menuItemClasses()}
@@ -159,7 +174,7 @@ export function MenuLinks({
           </Link>
         )}
 
-        {loginStatus.isAdminLoggedIn ? (
+        {isAdminLoggedIn ? (
           <Link
             href="/admin"
             className={menuItemClasses()}
@@ -169,7 +184,7 @@ export function MenuLinks({
           </Link>
         ) : null}
 
-        {anyLoggedIn ? (
+        {kakaoLoggedIn ? (
           <Link href="/me" className={menuItemClasses()} onClick={onItemClick}>
             내 정보
           </Link>
@@ -257,19 +272,19 @@ export function MenuLinks({
         )}
       </div>
 
-      {loginStatus.isPharmLoggedIn && (
+      {isPharmLoggedIn && (
         <Link href="/pharm" className={menuItemClasses()} onClick={onItemClick}>
           주문 관리
         </Link>
       )}
 
-      {loginStatus.isRiderLoggedIn && (
+      {isRiderLoggedIn && (
         <Link href="/rider" className={menuItemClasses()} onClick={onItemClick}>
           배송 관리
         </Link>
       )}
 
-      {loginStatus.isPharmLoggedIn && (
+      {isPharmLoggedIn && (
         <Link
           href="/pharm/manage-products"
           className={menuItemClasses()}
@@ -289,19 +304,19 @@ export function MenuLinks({
         </Link>
       )}
 
-      {!isDrawer && !loginStatus.isUserLoggedIn && (
+      {!isDrawer && loginStatus !== null && !kakaoLoggedIn && (
         <div className="hidden md:block">
           <KakaoLoginButton />
         </div>
       )}
 
-      {loginStatus.isAdminLoggedIn ? (
+      {isAdminLoggedIn ? (
         <Link href="/admin" className={menuItemClasses()} onClick={onItemClick}>
           사이트 관리
         </Link>
       ) : null}
 
-      {anyLoggedIn ? (
+      {kakaoLoggedIn ? (
         <Link href="/me" className={menuItemClasses()} onClick={onItemClick}>
           내 정보
         </Link>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { MenuLinks } from "./menuLinks";
@@ -10,10 +10,19 @@ import { ShoppingCartIcon } from "@heroicons/react/24/outline";
 import { useLoading } from "@/components/common/loadingContext.client";
 import KakaoLoginButton from "@/components/common/kakaoLoginButton";
 
+type LoginStatus = {
+  isUserLoggedIn: boolean;
+  isPharmLoggedIn: boolean;
+  isRiderLoggedIn: boolean;
+  isAdminLoggedIn: boolean;
+  isTestLoggedIn: boolean;
+};
+
 export default function TopBar() {
   const router = useRouter();
   const pathname = usePathname();
-  const [loginStatus, setLoginStatus] = useState<any>({});
+
+  const [loginStatus, setLoginStatus] = useState<LoginStatus | null>(null);
   const [cartCount, setCartCount] = useState(0);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const logoRef = useRef<HTMLImageElement>(null);
@@ -21,20 +30,62 @@ export default function TopBar() {
   const [hideOnScroll, setHideOnScroll] = useState(false);
   const lastYRef = useRef(0);
 
+  const refreshLoginStatus = useCallback(async () => {
+    try {
+      const s = await getLoginStatus();
+      setLoginStatus({
+        isUserLoggedIn: !!s?.isUserLoggedIn,
+        isPharmLoggedIn: !!s?.isPharmLoggedIn,
+        isRiderLoggedIn: !!s?.isRiderLoggedIn,
+        isAdminLoggedIn: !!s?.isAdminLoggedIn,
+        isTestLoggedIn: !!s?.isTestLoggedIn,
+      });
+    } catch {
+      setLoginStatus({
+        isUserLoggedIn: false,
+        isPharmLoggedIn: false,
+        isRiderLoggedIn: false,
+        isAdminLoggedIn: false,
+        isTestLoggedIn: false,
+      });
+    }
+  }, []);
+
   const anyLoggedIn =
-    !!loginStatus?.isUserLoggedIn ||
-    !!loginStatus?.isPharmLoggedIn ||
-    !!loginStatus?.isRiderLoggedIn ||
-    !!loginStatus?.isAdminLoggedIn ||
-    !!loginStatus?.isTestLoggedIn;
+    !!loginStatus &&
+    (loginStatus.isUserLoggedIn ||
+      loginStatus.isPharmLoggedIn ||
+      loginStatus.isRiderLoggedIn ||
+      loginStatus.isAdminLoggedIn ||
+      loginStatus.isTestLoggedIn);
 
   useEffect(() => {
-    const fetchLoginStatus = async () => {
-      const fetchgedLoginStatus = await getLoginStatus();
-      setLoginStatus(fetchgedLoginStatus);
+    refreshLoginStatus();
+  }, [refreshLoginStatus]);
+
+  useEffect(() => {
+    refreshLoginStatus();
+  }, [pathname, refreshLoginStatus]);
+
+  useEffect(() => {
+    const onFocus = () => refreshLoginStatus();
+    const onVis = () => {
+      if (!document.hidden) refreshLoginStatus();
     };
-    fetchLoginStatus();
-  }, []);
+
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVis);
+
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [refreshLoginStatus]);
+
+  useEffect(() => {
+    if (!isDrawerOpen) return;
+    refreshLoginStatus();
+  }, [isDrawerOpen, refreshLoginStatus]);
 
   useEffect(() => {
     const updateCartCount = () => {
@@ -43,7 +94,7 @@ export default function TopBar() {
         try {
           const cart = JSON.parse(localStorage.getItem("cartItems") || "[]");
           setCartCount(cart.length);
-        } catch (e) {}
+        } catch {}
       }, 0);
     };
     updateCartCount();
@@ -145,7 +196,7 @@ export default function TopBar() {
           </div>
 
           <div className="flex items-center gap-3 md:gap-5">
-            {loginStatus.isTestLoggedIn && (
+            {loginStatus?.isTestLoggedIn && (
               <span className="hidden sm:inline-flex rounded-full bg-orange-400 px-3 py-1 text-xs font-bold text-white cursor-default">
                 테스트
               </span>
@@ -229,7 +280,9 @@ export default function TopBar() {
             isDrawer
           />
 
-          {!anyLoggedIn && <KakaoLoginButton fullWidth />}
+          {loginStatus !== null && !anyLoggedIn && (
+            <KakaoLoginButton fullWidth />
+          )}
 
           <div className="mt-2 h-px bg-slate-100" />
 
