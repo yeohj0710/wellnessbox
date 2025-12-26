@@ -71,8 +71,8 @@ export default function LandingSection2({
           </h1>
 
           <p className="mt-5 sm:mt-7 mx-auto max-w-xl sm:max-w-2xl text-center text-[13px] sm:text-sm md:text-base text-[#7A8094]">
-            웰니스박스(Wellnessbox)는 개인의 증상·복용약·검진 데이터를 기반으로 필요한
-            <br className="hidden md:block" />
+            웰니스박스(Wellnessbox)는 개인의 증상·복용약·검진 데이터를 기반으로
+            필요한 <br className="hidden md:block" />
             영양성분을 추천해 안전하게 제공하는 서비스입니다.
           </p>
 

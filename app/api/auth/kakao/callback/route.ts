@@ -14,12 +14,42 @@ type KakaoUserMe = {
   };
 };
 
-function baseUrl(h: Headers) {
-  const env = process.env.NEXT_PUBLIC_APP_URL;
-  if (env) return env.replace(/\/$/, "");
+function normalizeBaseUrl(url: string) {
+  return url.replace(/\/$/, "");
+}
+
+function resolveOrigin(h: Headers) {
   const proto = h.get("x-forwarded-proto") || "http";
-  const host = h.get("host");
+  const host = h.get("host") || "localhost:3000";
   return `${proto}://${host}`;
+}
+
+function resolveRedirectUri(origin: string) {
+  const o = normalizeBaseUrl(origin);
+
+  if (o.includes("localhost") || o.includes("127.0.0.1")) {
+    return "http://localhost:3000/api/auth/kakao/callback";
+  }
+
+  if (o.includes("wellnessbox.me")) {
+    return "https://wellnessbox.me/api/auth/kakao/callback";
+  }
+
+  return `${o}/api/auth/kakao/callback`;
+}
+
+function resolvePublicOrigin(origin: string) {
+  const o = normalizeBaseUrl(origin);
+
+  if (o.includes("localhost") || o.includes("127.0.0.1")) {
+    return "http://localhost:3000";
+  }
+
+  if (o.includes("wellnessbox.me")) {
+    return "https://wellnessbox.me";
+  }
+
+  return o;
 }
 
 export async function GET(request: Request) {
@@ -27,13 +57,13 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
 
   const h = await headers();
-  const origin = baseUrl(h);
+  const requestOrigin = resolveOrigin(h);
+  const origin = resolvePublicOrigin(requestOrigin);
+  const redirectUri = resolveRedirectUri(requestOrigin);
 
   if (!code) {
     return NextResponse.redirect(new URL("/?login=missing_code", origin));
   }
-
-  const redirectUri = `${origin}/api/auth/kakao/callback`;
 
   const clientId = process.env.KAKAO_REST_API_KEY;
   if (!clientId) {
@@ -76,7 +106,6 @@ export async function GET(request: Request) {
     }
 
     const me = (await meRes.json()) as KakaoUserMe;
-    console.log("KAKAO_ME", JSON.stringify(me));
 
     const kakaoAccount = me.kakao_account ?? {};
     const profile = kakaoAccount.profile ?? {};
