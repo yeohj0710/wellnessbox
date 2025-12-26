@@ -50,12 +50,6 @@ export function MenuLinks({
     }
   };
 
-  const handleLogout = async () => {
-    await fetch("/api/logout", { method: "POST", cache: "no-store" });
-    if (onItemClick) onItemClick();
-    window.location.replace("/");
-  };
-
   const linkProps = {
     onMouseDown: handlePressStart,
     onMouseUp: handlePressEnd,
@@ -77,6 +71,7 @@ export function MenuLinks({
         <Link href="/explore" className={menuItemClasses()} {...linkProps}>
           상품 둘러보기
         </Link>
+
         <Link
           href="/my-orders"
           className={menuItemClasses()}
@@ -93,6 +88,7 @@ export function MenuLinks({
             </span>
           </span>
         </div>
+
         <Link
           href="/assess"
           className="-mt-2 inline-flex items-center gap-1 rounded-lg px-3 py-2 hover:bg-slate-50"
@@ -103,6 +99,7 @@ export function MenuLinks({
             BETA
           </span>
         </Link>
+
         <Link
           href="/check-ai"
           className="-mt-4 rounded-lg px-3 py-2 -mb-2 hover:bg-slate-50"
@@ -110,6 +107,7 @@ export function MenuLinks({
         >
           빠른 검사
         </Link>
+
         <Link
           href="/chat"
           className={`${menuItemClasses()} flex items-center mt-2`}
@@ -130,6 +128,7 @@ export function MenuLinks({
             주문 관리
           </Link>
         )}
+
         {loginStatus.isRiderLoggedIn && (
           <Link
             href="/rider"
@@ -139,6 +138,7 @@ export function MenuLinks({
             배송 관리
           </Link>
         )}
+
         {loginStatus.isPharmLoggedIn && (
           <Link
             href="/pharm/manage-products"
@@ -148,6 +148,7 @@ export function MenuLinks({
             상품 등록/관리
           </Link>
         )}
+
         {adminVisible && (
           <Link
             href="/admin-login"
@@ -157,6 +158,7 @@ export function MenuLinks({
             관리자 로그인
           </Link>
         )}
+
         {loginStatus.isAdminLoggedIn ? (
           <Link
             href="/admin"
@@ -168,18 +170,10 @@ export function MenuLinks({
         ) : null}
 
         {anyLoggedIn ? (
-          <>
-            <Link
-              href="/me"
-              className={menuItemClasses()}
-              onClick={onItemClick}
-            >
-              내 정보
-            </Link>
-          </>
-        ) : (
-          <KakaoLoginButton fullWidth />
-        )}
+          <Link href="/me" className={menuItemClasses()} onClick={onItemClick}>
+            내 정보
+          </Link>
+        ) : null}
       </>
     );
   }
@@ -189,6 +183,7 @@ export function MenuLinks({
       <Link href="/explore" className={menuItemClasses()} {...linkProps}>
         상품 둘러보기
       </Link>
+
       <Link
         href="/my-orders"
         className={menuItemClasses()}
@@ -247,6 +242,7 @@ export function MenuLinks({
                 BETA
               </span>
             </Link>
+
             <Link
               href="/check-ai"
               className="block rounded-lg px-3 py-2 text-slate-800 hover:bg-slate-50"
@@ -266,11 +262,13 @@ export function MenuLinks({
           주문 관리
         </Link>
       )}
+
       {loginStatus.isRiderLoggedIn && (
         <Link href="/rider" className={menuItemClasses()} onClick={onItemClick}>
           배송 관리
         </Link>
       )}
+
       {loginStatus.isPharmLoggedIn && (
         <Link
           href="/pharm/manage-products"
@@ -280,6 +278,7 @@ export function MenuLinks({
           상품 등록/관리
         </Link>
       )}
+
       {adminVisible && (
         <Link
           href="/admin-login"
@@ -290,7 +289,11 @@ export function MenuLinks({
         </Link>
       )}
 
-      {!loginStatus.isUserLoggedIn && <KakaoLoginButton />}
+      {!isDrawer && !loginStatus.isUserLoggedIn && (
+        <div className="hidden md:block">
+          <KakaoLoginButton />
+        </div>
+      )}
 
       {loginStatus.isAdminLoggedIn ? (
         <Link href="/admin" className={menuItemClasses()} onClick={onItemClick}>
@@ -299,11 +302,9 @@ export function MenuLinks({
       ) : null}
 
       {anyLoggedIn ? (
-        <>
-          <Link href="/me" className={menuItemClasses()} onClick={onItemClick}>
-            내 정보
-          </Link>
-        </>
+        <Link href="/me" className={menuItemClasses()} onClick={onItemClick}>
+          내 정보
+        </Link>
       ) : null}
     </>
   );

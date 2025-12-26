@@ -13,13 +13,20 @@ import KakaoLoginButton from "@/components/common/kakaoLoginButton";
 export default function TopBar() {
   const router = useRouter();
   const pathname = usePathname();
-  const [loginStatus, setLoginStatus] = useState<any>([]);
+  const [loginStatus, setLoginStatus] = useState<any>({});
   const [cartCount, setCartCount] = useState(0);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const logoRef = useRef<HTMLImageElement>(null);
   const { showLoading } = useLoading();
   const [hideOnScroll, setHideOnScroll] = useState(false);
   const lastYRef = useRef(0);
+
+  const anyLoggedIn =
+    !!loginStatus?.isUserLoggedIn ||
+    !!loginStatus?.isPharmLoggedIn ||
+    !!loginStatus?.isRiderLoggedIn ||
+    !!loginStatus?.isAdminLoggedIn ||
+    !!loginStatus?.isTestLoggedIn;
 
   useEffect(() => {
     const fetchLoginStatus = async () => {
@@ -143,6 +150,7 @@ export default function TopBar() {
                 테스트
               </span>
             )}
+
             {pathname === "/" ? (
               <button
                 className={menuItemClasses("text-slate-600 relative")}
@@ -182,22 +190,20 @@ export default function TopBar() {
                 )}
               </Link>
             )}
+
             <button
               onClick={goSevenDays}
               className="hidden sm:block text-[15px] font-semibold text-slate-600"
             >
               7일 무료체험
             </button>
+
             <button
               onClick={goSevenDays}
               className="group relative inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#59C1FF] to-[#7B61FF] shadow-[0_10px_30px_rgba(86,115,255,0.35)] transition-all duration-300 ease-out will-change-transform hover:scale-[1.03] hover:shadow-[0_14px_36px_rgba(86,115,255,0.5)] hover:saturate-150 hover:brightness-110 hover:from-[#6BD1FF] hover:to-[#6E58FF] active:translate-y-[1px] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#6E58FF] after:content-[''] after:absolute after:inset-0 after:rounded-full after:bg-white/20 after:opacity-0 hover:after:opacity-10"
             >
               시작하기
             </button>
-
-            {!loginStatus.isUserLoggedIn && (
-              <KakaoLoginButton className="md:hidden" />
-            )}
 
             <button
               className={menuItemClasses("text-2xl ml-1 min-[1440px]:hidden")}
@@ -222,11 +228,15 @@ export default function TopBar() {
             onItemClick={closeDrawer}
             isDrawer
           />
-          {!loginStatus.isUserLoggedIn && <KakaoLoginButton fullWidth />}
+
+          {!anyLoggedIn && <KakaoLoginButton fullWidth />}
+
           <div className="mt-2 h-px bg-slate-100" />
+
           <button onClick={goSevenDays} className="text-left text-slate-500">
             7일 무료체험
           </button>
+
           <button
             onClick={goSevenDays}
             className="group relative inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold !text-white bg-gradient-to-r from-[#59C1FF] to-[#7B61FF] shadow-[0_10px_30px_rgba(86,115,255,0.35)] transition-all duration-300 ease-out will-change-transform hover:scale-[1.03] hover:shadow-[0_14px_36px_rgba(86,115,255,0.5)] hover:saturate-150 hover:brightness-110 hover:from-[#6BD1FF] hover:to-[#6E58FF] active:translate-y-[1px] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#6E58FF] after:content-[''] after:absolute after:inset-0 after:rounded-full after:bg-white/20 after:opacity-0 hover:after:opacity-10"
