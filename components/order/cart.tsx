@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { getLoginStatus } from "@/lib/useLoginStatus";
@@ -75,6 +75,14 @@ export default function Cart({
   const [customTestAmount, setCustomTestAmount] = useState<number>(
     Number(process.env.NEXT_PUBLIC_TEST_PAYMENT_AMOUNT) || 1
   );
+  const [otpCode, setOtpCode] = useState("");
+  const [otpSendLoading, setOtpSendLoading] = useState(false);
+  const [otpVerifyLoading, setOtpVerifyLoading] = useState(false);
+  const [otpStatusMessage, setOtpStatusMessage] = useState<string | null>(
+    null
+  );
+  const [otpErrorMessage, setOtpErrorMessage] = useState<string | null>(null);
+  const [verifiedPhone, setVerifiedPhone] = useState<string | null>(null);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [detailProduct, setDetailProduct] = useState<any>(null);
   const cartScrollRef = useRef(0);
@@ -197,6 +205,13 @@ export default function Cart({
   }, []);
 
   useEffect(() => {
+    const storedVerifiedPhone = localStorage.getItem("verifiedPhone");
+    if (storedVerifiedPhone) {
+      setVerifiedPhone(storedVerifiedPhone);
+    }
+  }, []);
+
+  useEffect(() => {
     localStorage.setItem("detailAddress", detailAddress);
   }, [detailAddress]);
   useEffect(() => {
@@ -248,6 +263,33 @@ export default function Cart({
   const deliveryFee = 3000;
   const totalPriceWithDelivery = totalPrice + deliveryFee;
 
+  const normalizePhone = useCallback((input: string) => {
+    const digits = input.replace(/\D/g, "");
+    if (!digits) return "";
+    if (digits.startsWith("82")) {
+      return `0${digits.slice(2)}`;
+    }
+    if (digits.startsWith("0")) return digits;
+    return digits;
+  }, []);
+
+  const normalizedContact = useMemo(
+    () => normalizePhone(userContact),
+    [normalizePhone, userContact]
+  );
+
+  const isValidPhone = useMemo(() => {
+    return /^[0-9]{3}-[0-9]{4}-[0-9]{4}$/.test(userContact);
+  }, [userContact]);
+
+  const isPhoneVerified = useMemo(() => {
+    return (
+      Boolean(normalizedContact) &&
+      Boolean(verifiedPhone) &&
+      normalizedContact === verifiedPhone
+    );
+  }, [normalizedContact, verifiedPhone]);
+
   const handleAddressSave = async (newRoadAddress: string, detail: string) => {
     setRoadAddress(newRoadAddress);
     setDetailAddress(detail);
@@ -271,6 +313,108 @@ export default function Cart({
       }
     }
   };
+
+  const handleSendOtp = useCallback(async () => {
+    if (!isValidPhone) {
+      alert("전화번호를 올바른 형식으로 입력해 주세요.");
+      return;
+    }
+
+    setOtpSendLoading(true);
+    setOtpErrorMessage(null);
+    setOtpStatusMessage(null);
+
+    try {
+      const res = await fetch("/api/auth/phone/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: userContact }),
+      });
+
+      const raw = await res.text();
+      let data: any;
+
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        data = { ok: false, error: raw || `HTTP ${res.status}` };
+      }
+
+      if (!res.ok || data.ok === false) {
+        setOtpErrorMessage(data?.error || "인증번호를 발송하지 못했습니다.");
+        return;
+      }
+
+      setOtpStatusMessage("인증번호를 발송했어요. 문자 메시지를 확인해 주세요.");
+    } catch (error) {
+      setOtpErrorMessage((error as Error).message);
+    } finally {
+      setOtpSendLoading(false);
+    }
+  }, [isValidPhone, userContact]);
+
+  const handleVerifyOtp = useCallback(async () => {
+    if (!normalizedContact || !isValidPhone) {
+      alert("전화번호를 올바르게 입력하고 인증을 진행해 주세요.");
+      return;
+    }
+
+    if (!otpCode) {
+      alert("수신한 인증번호를 입력해 주세요.");
+      return;
+    }
+
+    setOtpVerifyLoading(true);
+    setOtpErrorMessage(null);
+    setOtpStatusMessage(null);
+
+    try {
+      const res = await fetch("/api/auth/phone/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: userContact, code: otpCode }),
+      });
+
+      const raw = await res.text();
+      let data: any;
+
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        data = { ok: false, error: raw || `HTTP ${res.status}` };
+      }
+
+      if (!res.ok || data.ok === false) {
+        setVerifiedPhone(null);
+        localStorage.removeItem("verifiedPhone");
+        setOtpErrorMessage(data?.error || "인증번호 확인에 실패했습니다.");
+        return;
+      }
+
+      setVerifiedPhone(normalizedContact);
+      localStorage.setItem("verifiedPhone", normalizedContact);
+      setOtpStatusMessage("전화번호 인증이 완료되었습니다.");
+      setOtpCode("");
+    } catch (error) {
+      setVerifiedPhone(null);
+      localStorage.removeItem("verifiedPhone");
+      setOtpErrorMessage((error as Error).message);
+    } finally {
+      setOtpVerifyLoading(false);
+    }
+  }, [isValidPhone, normalizedContact, otpCode, userContact]);
+
+  useEffect(() => {
+    if (!normalizedContact) return;
+
+    if (isPhoneVerified) {
+      setOtpErrorMessage(null);
+      setOtpStatusMessage("전화번호 인증이 완료되었습니다.");
+    } else if (verifiedPhone && verifiedPhone !== normalizedContact) {
+      setOtpStatusMessage(null);
+      setOtpErrorMessage("입력한 번호로 다시 인증이 필요합니다.");
+    }
+  }, [isPhoneVerified, normalizedContact, verifiedPhone]);
 
   const handleProductClick = (product: any, optionType: string) => {
     if (containerRef.current) {
@@ -317,13 +461,16 @@ export default function Cart({
       );
       return;
     }
-    const isValidPhone = /^[0-9]{3}-[0-9]{4}-[0-9]{4}$/.test(userContact);
     if (!phonePart1 || !phonePart2 || !phonePart3) {
       alert("전화번호를 입력해 주세요.");
       return;
     }
     if (!isValidPhone) {
       alert("전화번호를 올바른 형식으로 입력해 주세요.");
+      return;
+    }
+    if (!isPhoneVerified) {
+      alert("전화번호 인증을 완료해 주세요.");
       return;
     }
     if (!password) {
@@ -519,6 +666,16 @@ export default function Cart({
         setPhonePart3={setPhonePart3Persist}
         password={password}
         setPassword={setPassword}
+        otpCode={otpCode}
+        setOtpCode={setOtpCode}
+        onSendOtp={handleSendOtp}
+        onVerifyOtp={handleVerifyOtp}
+        otpSendLoading={otpSendLoading}
+        otpVerifyLoading={otpVerifyLoading}
+        isPhoneVerified={isPhoneVerified}
+        otpStatusMessage={otpStatusMessage}
+        otpErrorMessage={otpErrorMessage}
+        canRequestOtp={isValidPhone}
       />
 
       <PharmacyInfoSection

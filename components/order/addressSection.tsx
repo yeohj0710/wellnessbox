@@ -24,6 +24,16 @@ export default function AddressSection({
   setPhonePart3,
   password,
   setPassword,
+  otpCode,
+  setOtpCode,
+  onSendOtp,
+  onVerifyOtp,
+  otpSendLoading,
+  otpVerifyLoading,
+  isPhoneVerified,
+  otpStatusMessage,
+  otpErrorMessage,
+  canRequestOtp,
 }: any) {
   const [showPw, setShowPw] = useState(true);
   return (
@@ -110,6 +120,59 @@ export default function AddressSection({
         setPhonePart2={setPhonePart2}
         setPhonePart3={setPhonePart3}
       />
+      <div className="px-4 space-y-2 mt-2">
+        <p className="text-xs text-gray-600">
+          휴대폰 인증을 완료해야 주문을 진행할 수 있어요.
+        </p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+          <input
+            type="text"
+            value={otpCode}
+            onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+            placeholder="수신한 인증번호 6자리를 입력하세요"
+            disabled={isPhoneVerified}
+            className="flex-1 min-w-0 rounded-md border px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:bg-gray-100 disabled:text-gray-500"
+          />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onSendOtp}
+              disabled={otpSendLoading || isPhoneVerified || !canRequestOtp}
+              className="whitespace-nowrap rounded-md bg-sky-500 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:bg-gray-300"
+            >
+              {otpSendLoading ? "발송 중..." : "인증번호 받기"}
+            </button>
+            <button
+              type="button"
+              onClick={onVerifyOtp}
+              disabled={
+                otpVerifyLoading ||
+                !otpCode ||
+                !canRequestOtp ||
+                isPhoneVerified
+              }
+              className="whitespace-nowrap rounded-md bg-emerald-500 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-gray-300"
+            >
+              {otpVerifyLoading ? "확인 중..." : "인증번호 확인"}
+            </button>
+          </div>
+        </div>
+        {otpStatusMessage ? (
+          <p className="text-xs text-emerald-700 font-medium">
+            {otpStatusMessage}
+          </p>
+        ) : null}
+        {otpErrorMessage ? (
+          <p className="text-xs text-rose-600 font-medium">
+            {otpErrorMessage}
+          </p>
+        ) : null}
+        {isPhoneVerified ? (
+          <p className="text-xs text-emerald-700">
+            현재 입력한 번호에 대한 인증이 완료되었습니다.
+          </p>
+        ) : null}
+      </div>
       <h2 className="text-lg font-bold p-4 pb-2 mt-2">주문 조회 비밀번호</h2>
       <div className="px-4 space-y-3">
         <div className="relative">
