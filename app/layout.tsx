@@ -12,6 +12,10 @@ import KakaoExternalBridge from "@/components/common/kakaoExternalBridge";
 import Script from "next/script";
 import { cookies, headers } from "next/headers";
 
+export const viewport = {
+  themeColor: "#ffffff",
+};
+
 export const metadata: Metadata = {
   title: "웰니스박스 | 내 몸에 맞는 프리미엄 건강 솔루션",
   description: "내 몸에 맞는 프리미엄 건강 솔루션",
@@ -30,7 +34,6 @@ export const metadata: Metadata = {
       "max-video-preview": -1,
     },
   },
-  themeColor: "#ffffff",
   icons: {
     icon: "/logo.png",
   },

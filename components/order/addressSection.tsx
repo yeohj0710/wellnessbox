@@ -129,7 +129,7 @@ export default function AddressSection({
             type="text"
             value={otpCode}
             onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
-            placeholder="수신한 인증번호 6자리를 입력하세요"
+            placeholder="문자로 받은 인증번호 6자리를 입력해 주세요."
             disabled={isPhoneVerified}
             className="flex-1 min-w-0 rounded-md border px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:bg-gray-100 disabled:text-gray-500"
           />
@@ -158,18 +158,14 @@ export default function AddressSection({
           </div>
         </div>
         {otpStatusMessage ? (
-          <p className="text-xs text-emerald-700 font-medium">
-            {otpStatusMessage}
-          </p>
+          <p className="text-xs text-emerald-700">{otpStatusMessage}</p>
         ) : null}
         {otpErrorMessage ? (
-          <p className="text-xs text-rose-600 font-medium">
-            {otpErrorMessage}
-          </p>
+          <p className="text-xs text-rose-600">{otpErrorMessage}</p>
         ) : null}
         {isPhoneVerified ? (
           <p className="text-xs text-emerald-700">
-            현재 입력한 번호에 대한 인증이 완료되었습니다.
+            현재 입력한 번호에 대한 인증이 완료되었어요.
           </p>
         ) : null}
       </div>
@@ -181,7 +177,7 @@ export default function AddressSection({
             autoComplete="off"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="내 주문 조회 시 필요한 비밀번호에요."
+            placeholder="내 주문 조회 시 필요한 비밀번호예요."
             className="w-full border rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-sky-400"
           />
           <button

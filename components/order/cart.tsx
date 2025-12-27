@@ -78,9 +78,7 @@ export default function Cart({
   const [otpCode, setOtpCode] = useState("");
   const [otpSendLoading, setOtpSendLoading] = useState(false);
   const [otpVerifyLoading, setOtpVerifyLoading] = useState(false);
-  const [otpStatusMessage, setOtpStatusMessage] = useState<string | null>(
-    null
-  );
+  const [otpStatusMessage, setOtpStatusMessage] = useState<string | null>(null);
   const [otpErrorMessage, setOtpErrorMessage] = useState<string | null>(null);
   const [verifiedPhone, setVerifiedPhone] = useState<string | null>(null);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
@@ -345,7 +343,9 @@ export default function Cart({
         return;
       }
 
-      setOtpStatusMessage("인증번호를 발송했어요. 문자 메시지를 확인해 주세요.");
+      setOtpStatusMessage(
+        "인증번호를 발송했어요. 문자 메시지를 확인해 주세요."
+      );
     } catch (error) {
       setOtpErrorMessage((error as Error).message);
     } finally {
@@ -409,10 +409,10 @@ export default function Cart({
 
     if (isPhoneVerified) {
       setOtpErrorMessage(null);
-      setOtpStatusMessage("전화번호 인증이 완료되었습니다.");
+      setOtpStatusMessage("전화번호 인증이 완료되었어요.");
     } else if (verifiedPhone && verifiedPhone !== normalizedContact) {
       setOtpStatusMessage(null);
-      setOtpErrorMessage("입력한 번호로 다시 인증이 필요합니다.");
+      setOtpErrorMessage("입력한 번호로 인증이 필요해요.");
     }
   }, [isPhoneVerified, normalizedContact, verifiedPhone]);
 
