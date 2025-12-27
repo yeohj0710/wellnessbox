@@ -105,8 +105,10 @@ export default async function MePage() {
               로그인됨
             </div>
             <div>
-              <span className="font-semibold text-gray-800">연동된 전화번호</span>: {" "}
-              {phone || "연동되지 않음"}
+              <span className="font-semibold text-gray-800">
+                연동된 전화번호
+              </span>
+              : {phone || "연동되지 않음"}
             </div>
           </div>
         </div>

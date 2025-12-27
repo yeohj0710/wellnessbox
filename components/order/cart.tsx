@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { getLoginStatus } from "@/lib/useLoginStatus";
@@ -12,6 +12,10 @@ import PharmacyInfoSection from "./pharmacyInfoSection";
 import PaymentSection from "./paymentSection";
 import ProductDetail from "../product/productDetail";
 import axios from "axios";
+import { useCartHydration } from "./hooks/useCartHydration";
+import { usePhoneAndPassword } from "./hooks/usePhoneAndPassword";
+import { useAddressFields } from "./hooks/useAddressFields";
+import PharmacyDetailModal from "./pharmacyDetailModal";
 
 export default function Cart({
   cartItems,
@@ -28,65 +32,49 @@ export default function Cart({
   const router = useRouter();
   const [loginStatus, setLoginStatus] = useState<any>([]);
   const [showPharmacyDetail, setShowPharmacyDetail] = useState(false);
-  const [sdkLoaded, setSdkLoaded] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [detailAddress, setDetailAddress] = useState("");
-  const [requestNotes, setRequestNotes] = useState("");
-  const [entrancePassword, setEntrancePassword] = useState("");
-  const [directions, setDirections] = useState("");
-  const [phonePart1, setPhonePart1] = useState("010");
-  const [phonePart2, setPhonePart2] = useState("");
-  const [phonePart3, setPhonePart3] = useState("");
-
-  const persistPhone = useCallback((p1: string, p2: string, p3: string) => {
-    localStorage.setItem("phonePart1", p1);
-    localStorage.setItem("phonePart2", p2);
-    localStorage.setItem("phonePart3", p3);
-    localStorage.setItem("phoneParts", JSON.stringify({ p1, p2, p3 }));
-  }, []);
-
-  const setPhonePart1Persist = useCallback(
-    (v: string) => {
-      setPhonePart1(v);
-      persistPhone(v, phonePart2, phonePart3);
-    },
-    [persistPhone, phonePart2, phonePart3]
-  );
-
-  const setPhonePart2Persist = useCallback(
-    (v: string) => {
-      setPhonePart2(v);
-      persistPhone(phonePart1, v, phonePart3);
-    },
-    [persistPhone, phonePart1, phonePart3]
-  );
-
-  const setPhonePart3Persist = useCallback(
-    (v: string) => {
-      setPhonePart3(v);
-      persistPhone(phonePart1, phonePart2, v);
-    },
-    [persistPhone, phonePart1, phonePart2]
-  );
-
-  const [userContact, setUserContact] = useState("");
-  const [password, setPassword] = useState("");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("inicis");
   const [customTestAmount, setCustomTestAmount] = useState<number>(
     Number(process.env.NEXT_PUBLIC_TEST_PAYMENT_AMOUNT) || 1
   );
-  const [otpCode, setOtpCode] = useState("");
-  const [otpSendLoading, setOtpSendLoading] = useState(false);
-  const [otpVerifyLoading, setOtpVerifyLoading] = useState(false);
-  const [otpStatusMessage, setOtpStatusMessage] = useState<string | null>(null);
-  const [otpErrorMessage, setOtpErrorMessage] = useState<string | null>(null);
-  const [verifiedPhone, setVerifiedPhone] = useState<string | null>(null);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [detailProduct, setDetailProduct] = useState<any>(null);
   const cartScrollRef = useRef(0);
-  const phoneHydrated = useRef(false);
 
-  const [hydrated, setHydrated] = useState(false);
+  const hydrated = useCartHydration(cartItems, onUpdateCart);
+  const {
+    phonePart1,
+    phonePart2,
+    phonePart3,
+    setPhonePart1Persist,
+    setPhonePart2Persist,
+    setPhonePart3Persist,
+    userContact,
+    password,
+    setPassword,
+    otpCode,
+    setOtpCode,
+    otpSendLoading,
+    otpVerifyLoading,
+    otpStatusMessage,
+    otpErrorMessage,
+    isValidPhone,
+    isPhoneVerified,
+    handleSendOtp,
+    handleVerifyOtp,
+    sdkLoaded,
+    setSdkLoaded,
+  } = usePhoneAndPassword();
+  const {
+    detailAddress,
+    setDetailAddress,
+    requestNotes,
+    setRequestNotes,
+    entrancePassword,
+    setEntrancePassword,
+    directions,
+    setDirections,
+  } = useAddressFields();
 
   useEffect(() => {
     const onClose = () => onBack();
@@ -95,73 +83,11 @@ export default function Cart({
   }, [onBack]);
 
   useEffect(() => {
-    const needRestore = localStorage.getItem("restoreCartFromBackup") === "1";
-    const backup = localStorage.getItem("cartBackup");
-
-    if (needRestore && backup && backup !== "[]") {
-      try {
-        const parsed = JSON.parse(backup);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          onUpdateCart(parsed);
-          localStorage.setItem("cartItems", backup);
-          window.dispatchEvent(new Event("cartUpdated"));
-          localStorage.removeItem("restoreCartFromBackup");
-          localStorage.removeItem("checkoutInProgress");
-          setHydrated(true);
-          return;
-        }
-      } catch {}
-    }
-
-    try {
-      const saved = localStorage.getItem("cartItems");
-      if (saved && saved !== "[]") {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          onUpdateCart(parsed);
-        }
-      }
-    } catch {}
-
-    setHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (!hydrated) return;
-
-    const restoring = localStorage.getItem("restoreCartFromBackup") === "1";
-    if (restoring && cartItems.length === 0) return;
-    if (cartItems.length === 0) return;
-
-    localStorage.setItem("cartItems", JSON.stringify(cartItems));
-    window.dispatchEvent(new Event("cartUpdated"));
-  }, [hydrated, cartItems]);
-
-  useEffect(() => {
-    if (!hydrated) return;
-
-    const restoring = localStorage.getItem("restoreCartFromBackup") === "1";
-    if (!restoring) return;
-    if (cartItems.length > 0) return;
-
-    const backup = localStorage.getItem("cartBackup");
-    if (!backup || backup === "[]") return;
-
-    try {
-      const parsed = JSON.parse(backup);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        onUpdateCart(parsed);
-        localStorage.setItem("cartItems", backup);
-        window.dispatchEvent(new Event("cartUpdated"));
-      }
-    } catch {}
-  }, [hydrated, cartItems.length, onUpdateCart]);
-
-  useEffect(() => {
     if (Array.isArray(allProducts) && allProducts.length > 0) {
       localStorage.setItem("products", JSON.stringify(allProducts));
     }
   }, [allProducts]);
+
   useEffect(() => {
     const fetchLoginStatus = async () => {
       const fetchgedLoginStatus = await getLoginStatus();
@@ -169,72 +95,11 @@ export default function Cart({
     };
     fetchLoginStatus();
   }, []);
-  useEffect(() => {
-    const storedDetailAddress = localStorage.getItem("detailAddress");
-    const storedRequestNotes = localStorage.getItem("requestNotes");
-    const storedEntrancePassword = localStorage.getItem("entrancePassword");
-    const storedDirections = localStorage.getItem("directions");
-    const savedParts = localStorage.getItem("phoneParts");
-    const storedPhonePart1 = localStorage.getItem("phonePart1");
-    const storedPhonePart2 = localStorage.getItem("phonePart2");
-    const storedPhonePart3 = localStorage.getItem("phonePart3");
-    const savedPassword = localStorage.getItem("password");
-    if (storedDetailAddress) setDetailAddress(storedDetailAddress);
-    if (storedRequestNotes) setRequestNotes(storedRequestNotes);
-    if (storedEntrancePassword) setEntrancePassword(storedEntrancePassword);
-    if (storedDirections) setDirections(storedDirections);
-    if (savedParts) {
-      try {
-        const { p1, p2, p3 } = JSON.parse(savedParts);
-        if (p1 !== undefined) setPhonePart1(p1 || "");
-        if (p2 !== undefined) setPhonePart2(p2 || "");
-        if (p3 !== undefined) setPhonePart3(p3 || "");
-      } catch {}
-    } else {
-      if (storedPhonePart1) setPhonePart1(storedPhonePart1);
-      if (storedPhonePart2) setPhonePart2(storedPhonePart2);
-      if (storedPhonePart3) setPhonePart3(storedPhonePart3);
-    }
-    if (savedPassword) setPassword(savedPassword);
-    if ((window as any).IMP) {
-      setSdkLoaded(true);
-    }
-    phoneHydrated.current = true;
-  }, []);
 
-  useEffect(() => {
-    const storedVerifiedPhone = localStorage.getItem("verifiedPhone");
-    if (storedVerifiedPhone) {
-      setVerifiedPhone(storedVerifiedPhone);
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("detailAddress", detailAddress);
-  }, [detailAddress]);
-  useEffect(() => {
-    localStorage.setItem("requestNotes", requestNotes);
-  }, [requestNotes]);
-  useEffect(() => {
-    localStorage.setItem("entrancePassword", entrancePassword);
-  }, [entrancePassword]);
-  useEffect(() => {
-    localStorage.setItem("directions", directions);
-  }, [directions]);
-  useEffect(() => {
-    setUserContact(`${phonePart1}-${phonePart2}-${phonePart3}`);
-  }, [phonePart1, phonePart2, phonePart3]);
-  useEffect(() => {
-    if (!phoneHydrated.current) return;
-    const has = [phonePart1, phonePart2, phonePart3].some(Boolean);
-    if (!has) return;
-  }, [phonePart1, phonePart2, phonePart3]);
-  useEffect(() => {
-    localStorage.setItem("password", password);
-  }, [password]);
   useEffect(() => {
     localStorage.setItem("selectedPharmacyId", selectedPharmacy?.id);
   }, [selectedPharmacy]);
+
   useEffect(() => {
     if (detailProduct) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -261,33 +126,6 @@ export default function Cart({
   const deliveryFee = 3000;
   const totalPriceWithDelivery = totalPrice + deliveryFee;
 
-  const normalizePhone = useCallback((input: string) => {
-    const digits = input.replace(/\D/g, "");
-    if (!digits) return "";
-    if (digits.startsWith("82")) {
-      return `0${digits.slice(2)}`;
-    }
-    if (digits.startsWith("0")) return digits;
-    return digits;
-  }, []);
-
-  const normalizedContact = useMemo(
-    () => normalizePhone(userContact),
-    [normalizePhone, userContact]
-  );
-
-  const isValidPhone = useMemo(() => {
-    return /^[0-9]{3}-[0-9]{4}-[0-9]{4}$/.test(userContact);
-  }, [userContact]);
-
-  const isPhoneVerified = useMemo(() => {
-    return (
-      Boolean(normalizedContact) &&
-      Boolean(verifiedPhone) &&
-      normalizedContact === verifiedPhone
-    );
-  }, [normalizedContact, verifiedPhone]);
-
   const handleAddressSave = async (newRoadAddress: string, detail: string) => {
     setRoadAddress(newRoadAddress);
     setDetailAddress(detail);
@@ -311,110 +149,6 @@ export default function Cart({
       }
     }
   };
-
-  const handleSendOtp = useCallback(async () => {
-    if (!isValidPhone) {
-      alert("전화번호를 올바른 형식으로 입력해 주세요.");
-      return;
-    }
-
-    setOtpSendLoading(true);
-    setOtpErrorMessage(null);
-    setOtpStatusMessage(null);
-
-    try {
-      const res = await fetch("/api/auth/phone/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: userContact }),
-      });
-
-      const raw = await res.text();
-      let data: any;
-
-      try {
-        data = raw ? JSON.parse(raw) : {};
-      } catch {
-        data = { ok: false, error: raw || `HTTP ${res.status}` };
-      }
-
-      if (!res.ok || data.ok === false) {
-        setOtpErrorMessage(data?.error || "인증번호를 발송하지 못했습니다.");
-        return;
-      }
-
-      setOtpStatusMessage(
-        "인증번호를 발송했어요. 문자 메시지를 확인해 주세요."
-      );
-    } catch (error) {
-      setOtpErrorMessage((error as Error).message);
-    } finally {
-      setOtpSendLoading(false);
-    }
-  }, [isValidPhone, userContact]);
-
-  const handleVerifyOtp = useCallback(async () => {
-    if (!normalizedContact || !isValidPhone) {
-      alert("전화번호를 올바르게 입력하고 인증을 진행해 주세요.");
-      return;
-    }
-
-    if (!otpCode) {
-      alert("수신한 인증번호를 입력해 주세요.");
-      return;
-    }
-
-    setOtpVerifyLoading(true);
-    setOtpErrorMessage(null);
-    setOtpStatusMessage(null);
-
-    try {
-      const res = await fetch("/api/auth/phone/verify-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: userContact, code: otpCode }),
-      });
-
-      const raw = await res.text();
-      let data: any;
-
-      try {
-        data = raw ? JSON.parse(raw) : {};
-      } catch {
-        data = { ok: false, error: raw || `HTTP ${res.status}` };
-      }
-
-      if (!res.ok || data.ok === false) {
-        setVerifiedPhone(null);
-        localStorage.removeItem("verifiedPhone");
-        setOtpErrorMessage(data?.error || "인증번호 확인에 실패했습니다.");
-        return;
-      }
-
-      setVerifiedPhone(normalizedContact);
-      localStorage.setItem("verifiedPhone", normalizedContact);
-      setOtpStatusMessage("전화번호 인증이 완료되었습니다.");
-      setOtpCode("");
-    } catch (error) {
-      setVerifiedPhone(null);
-      localStorage.removeItem("verifiedPhone");
-      setOtpErrorMessage((error as Error).message);
-    } finally {
-      setOtpVerifyLoading(false);
-    }
-  }, [isValidPhone, normalizedContact, otpCode, userContact]);
-
-  useEffect(() => {
-    if (!normalizedContact) return;
-
-    if (isPhoneVerified) {
-      setOtpErrorMessage(null);
-      setOtpStatusMessage("전화번호 인증이 완료되었어요.");
-    } else if (verifiedPhone && verifiedPhone !== normalizedContact) {
-      setOtpStatusMessage(null);
-      setOtpErrorMessage("입력한 번호로 인증이 필요해요.");
-    }
-  }, [isPhoneVerified, normalizedContact, verifiedPhone]);
 
   const handleProductClick = (product: any, optionType: string) => {
     if (containerRef.current) {
@@ -684,88 +418,10 @@ export default function Cart({
       />
 
       {showPharmacyDetail && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          onClick={() => setShowPharmacyDetail(false)}
-        >
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-          <div
-            className="relative w-full max-w-xl mx-3 max-h-[90vh] overflow-y-auto rounded-2xl transition-all duration-200 ease-out"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-[1px] rounded-2xl bg-[conic-gradient(at_50%_50%,#6C4DFF_0deg,#3B5BFF_140deg,#56CCF2_260deg,#6C4DFF_360deg)] shadow-[0_14px_36px_rgba(0,0,0,0.22)]">
-              <div className="relative rounded-2xl bg-white">
-                <button
-                  className="absolute top-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700 active:scale-95 transition"
-                  onClick={() => setShowPharmacyDetail(false)}
-                  aria-label="닫기"
-                >
-                  ✕
-                </button>
-                <div className="px-4 pt-7 pb-4">
-                  <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-[#4568F5] to-[#6C4DFF] text-white text-lg shadow-[0_6px_16px_rgba(67,103,230,0.28)]">
-                    🏢
-                  </div>
-                  <h3 className="text-center text-lg sm:text-xl font-extrabold text-[#0F1222]">
-                    사업자 정보
-                  </h3>
-                  <div className="mt-4 rounded-lg ring-1 ring-black/5 overflow-hidden">
-                    <div className="divide-y divide-gray-100">
-                      {selectedPharmacy.representativeName && (
-                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 px-4 sm:px-5 py-2">
-                          <div className="sm:col-span-4 text-[13px] sm:text-sm font-medium text-gray-600">
-                            대표자명
-                          </div>
-                          <div className="sm:col-span-8 text-sm sm:text-base font-semibold text-gray-800 leading-5">
-                            {selectedPharmacy.representativeName}
-                          </div>
-                        </div>
-                      )}
-                      {selectedPharmacy.name && (
-                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 px-4 sm:px-5 py-2">
-                          <div className="sm:col-span-4 text-[13px] sm:text-sm font-medium text-gray-600">
-                            상호명
-                          </div>
-                          <div className="sm:col-span-8 text-sm sm:text-base font-semibold text-gray-800 leading-5">
-                            {selectedPharmacy.name}
-                          </div>
-                        </div>
-                      )}
-                      {selectedPharmacy.address && (
-                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 px-4 sm:px-5 py-2">
-                          <div className="sm:col-span-4 text-[13px] sm:text-sm font-medium text-gray-600">
-                            사업자주소
-                          </div>
-                          <div className="sm:col-span-8 text-sm sm:text-base text-gray-800 whitespace-pre-line leading-5">
-                            {selectedPharmacy.address}
-                          </div>
-                        </div>
-                      )}
-                      {selectedPharmacy.registrationNumber && (
-                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 px-4 sm:px-5 py-2">
-                          <div className="sm:col-span-4 text-[13px] sm:text-sm font-medium text-gray-600">
-                            사업자등록번호
-                          </div>
-                          <div className="sm:col-span-8 text-sm sm:text-base font-semibold text-gray-800 tracking-wide tabular-nums leading-5">
-                            {selectedPharmacy.registrationNumber}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="mt-5 flex items-center justify-center">
-                    <button
-                      onClick={() => setShowPharmacyDetail(false)}
-                      className="inline-flex h-10 items-center justify-center rounded-full px-5 text-white text-sm font-medium bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-md hover:from-[#5A78FF] hover:to-[#7A5BFF] active:scale-[0.99] transition"
-                    >
-                      확인
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <PharmacyDetailModal
+          selectedPharmacy={selectedPharmacy}
+          onClose={() => setShowPharmacyDetail(false)}
+        />
       )}
 
       <PaymentSection
