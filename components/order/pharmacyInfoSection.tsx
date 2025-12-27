@@ -23,14 +23,18 @@ export default function PharmacyInfoSection({
             {selectedPharmacy.name}
           </p>
         </div>
-        <div className="flex items-start mt-2">
-          <span className="w-24 text-sm font-medium text-gray-600">약국 주소</span>
+        <div className="flex items-center mt-2">
+          <span className="w-24 text-sm font-medium text-gray-600">
+            약국 주소
+          </span>
           <p className="flex-1 text-sm sm:text-base text-gray-700">
             {selectedPharmacy.address}
           </p>
         </div>
         <div className="flex items-center mt-2">
-          <span className="w-24 text-sm font-medium text-gray-600">전화번호</span>
+          <span className="w-24 text-sm font-medium text-gray-600">
+            전화번호
+          </span>
           <p className="flex-1 text-sm sm:text-base text-gray-700">
             {selectedPharmacy.phone}
           </p>
