@@ -83,8 +83,17 @@ export default function PhoneLinkSection({
     onBusyChange?.(busy);
   }, [busy, onBusyChange]);
 
+  useEffect(() => {
+    if (busy) return;
+    setPhoneDigits((initialPhone ?? "").replace(/\D/g, "").slice(0, 11));
+    setCode("");
+    setSendError(null);
+    setVerifyError(null);
+    setStatusMessage(null);
+  }, [initialPhone, initialLinkedAt, busy]);
+
   const handleSendOtp = useCallback(async () => {
-    if (!isPhoneValid || sendLoading) return;
+    if (!isPhoneValid || busy) return;
 
     setSendLoading(true);
     setSendError(null);
@@ -114,14 +123,14 @@ export default function PhoneLinkSection({
 
       setStatusMessage("인증번호를 전송했어요. 문자 메시지를 확인해 주세요.");
     } catch (error) {
-      setSendError((error as Error).message);
+      setSendError(error instanceof Error ? error.message : String(error));
     } finally {
       setSendLoading(false);
     }
-  }, [isPhoneValid, normalizedPhone, sendLoading]);
+  }, [isPhoneValid, normalizedPhone, busy]);
 
   const handleVerify = useCallback(async () => {
-    if (!isPhoneValid || code.length === 0 || verifyLoading) return;
+    if (!isPhoneValid || code.length === 0 || busy) return;
 
     setVerifyLoading(true);
     setVerifyError(null);
@@ -153,14 +162,14 @@ export default function PhoneLinkSection({
       setCode("");
       setStatusMessage("인증이 완료됐어요.");
     } catch (error) {
-      setVerifyError((error as Error).message);
+      setVerifyError(error instanceof Error ? error.message : String(error));
     } finally {
       setVerifyLoading(false);
     }
-  }, [code, isPhoneValid, normalizedPhone, onLinked, verifyLoading]);
+  }, [code, isPhoneValid, normalizedPhone, onLinked, busy]);
 
-  const sendDisabled = sendLoading || !isPhoneValid;
-  const verifyDisabled = verifyLoading || !isPhoneValid || code.length === 0;
+  const sendDisabled = busy || !isPhoneValid;
+  const verifyDisabled = busy || !isPhoneValid || code.length === 0;
 
   return (
     <div className="space-y-4">

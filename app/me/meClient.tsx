@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import LogoutButton from "./logoutButton";
 import OrdersSection from "./ordersSection";
 import PhoneVerifyModal from "./phoneVerifyModal";
@@ -37,11 +37,51 @@ export default function MeClient({
   const [linkedAt, setLinkedAt] = useState<string | undefined>(initialLinkedAt);
   const [isVerifyOpen, setIsVerifyOpen] = useState(false);
 
+  const [unlinkLoading, setUnlinkLoading] = useState(false);
+  const [unlinkError, setUnlinkError] = useState<string | null>(null);
+
   const hasPhone = useMemo(() => Boolean(phone), [phone]);
+  const isLinked = useMemo(() => Boolean(phone && linkedAt), [phone, linkedAt]);
+
   const phoneDisplay = useMemo(() => formatPhoneDisplay(phone), [phone]);
 
   const displayNickname = nickname || "닉네임 없음";
   const displayEmail = email || "이메일(세션에 미저장)";
+
+  const onUnlink = useCallback(async () => {
+    if (!isLinked || unlinkLoading) return;
+
+    const ok = window.confirm("전화번호 연결을 해제할까요?");
+    if (!ok) return;
+
+    setUnlinkLoading(true);
+    setUnlinkError(null);
+
+    try {
+      const res = await fetch("/api/me/unlink-phone", { method: "POST" });
+      const raw = await res.text();
+
+      let data: { ok?: boolean; error?: string };
+      try {
+        data = raw ? (JSON.parse(raw) as typeof data) : {};
+      } catch {
+        data = { ok: false, error: raw || `HTTP ${res.status}` };
+      }
+
+      if (!res.ok || data.ok === false) {
+        setUnlinkError(data.error || "전화번호 연결 해제에 실패했어요.");
+        return;
+      }
+
+      setPhone("");
+      setLinkedAt(undefined);
+      setIsVerifyOpen(false);
+    } catch (error) {
+      setUnlinkError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setUnlinkLoading(false);
+    }
+  }, [isLinked, unlinkLoading]);
 
   return (
     <div className="w-full mt-4 sm:mt-8 mb-12 flex justify-center px-4">
@@ -53,9 +93,6 @@ export default function MeClient({
               카카오 로그인으로 연결된 정보를 확인할 수 있어요.
             </p>
           </div>
-          <span className="shrink-0 inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-            로그인됨
-          </span>
         </div>
 
         <section className="mt-7 rounded-2xl bg-gray-50 p-5 sm:p-6">
@@ -114,14 +151,36 @@ export default function MeClient({
                 <div className="min-w-0 text-sm text-gray-700 break-words">
                   {hasPhone ? phoneDisplay : "없음"}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setIsVerifyOpen(true)}
-                  className="inline-flex h-7 min-w-[56px] items-center justify-center whitespace-nowrap rounded-full bg-sky-100 px-3 text-xs font-semibold text-sky-700 hover:bg-sky-200"
-                >
-                  {hasPhone ? "변경" : "추가"}
-                </button>
+
+                <div className="flex items-center justify-end gap-2">
+                  {isLinked ? (
+                    <button
+                      type="button"
+                      onClick={onUnlink}
+                      disabled={unlinkLoading}
+                      aria-busy={unlinkLoading}
+                      className="inline-flex h-7 min-w-[56px] items-center justify-center whitespace-nowrap rounded-full bg-rose-100 px-3 text-xs font-semibold text-rose-700 hover:bg-rose-200 disabled:cursor-not-allowed disabled:bg-rose-50"
+                    >
+                      {unlinkLoading ? "처리중" : "해지"}
+                    </button>
+                  ) : null}
+
+                  <button
+                    type="button"
+                    onClick={() => setIsVerifyOpen(true)}
+                    disabled={unlinkLoading}
+                    className="inline-flex h-7 min-w-[56px] items-center justify-center whitespace-nowrap rounded-full bg-sky-100 px-3 text-xs font-semibold text-sky-700 hover:bg-sky-200 disabled:cursor-not-allowed disabled:bg-sky-50"
+                  >
+                    {hasPhone ? "변경" : "추가"}
+                  </button>
+                </div>
               </div>
+
+              {unlinkError ? (
+                <div className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700 ring-1 ring-rose-100">
+                  {unlinkError}
+                </div>
+              ) : null}
             </div>
           </div>
         </section>
