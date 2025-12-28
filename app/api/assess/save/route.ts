@@ -1,15 +1,16 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
-import { ensureClient } from "@/lib/server/client";
+import { ensureClient, resolveClientIdFromRequest } from "@/lib/server/client";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { clientId, answers, cResult, tzOffsetMinutes } = body || {};
+    const { clientId, cookieToSet } = resolveClientIdFromRequest(req, body?.clientId);
+    const { answers, cResult, tzOffsetMinutes } = body || {};
     if (!clientId || typeof clientId !== "string") {
-      return new Response(JSON.stringify({ error: "Missing clientId" }), { status: 400, headers: { "Content-Type": "application/json" } });
+      return NextResponse.json({ error: "Missing clientId" }, { status: 400 });
     }
     if (!answers || !cResult) {
       return new Response(JSON.stringify({ error: "Missing answers or cResult" }), { status: 400, headers: { "Content-Type": "application/json" } });
@@ -23,9 +24,13 @@ export async function POST(req: NextRequest) {
         tzOffsetMinutes: typeof tzOffsetMinutes === "number" ? tzOffsetMinutes : 0,
       },
     });
-    return new Response(JSON.stringify({ ok: true, id: rec.id }), { headers: { "Content-Type": "application/json" } });
+    const res = NextResponse.json({ ok: true, id: rec.id });
+    if (cookieToSet) {
+      res.cookies.set(cookieToSet.name, cookieToSet.value, cookieToSet.options);
+    }
+    return res;
   } catch (e: any) {
-    return new Response(JSON.stringify({ error: e.message || "Unknown error" }), { status: 500, headers: { "Content-Type": "application/json" } });
+    return NextResponse.json({ error: e.message || "Unknown error" }, { status: 500 });
   }
 }
 

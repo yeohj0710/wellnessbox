@@ -7,6 +7,7 @@ import { BANK } from "./data/c-bank";
 import { C_OPTIONS } from "./data/c-options";
 import { getCategories } from "@/lib/product";
 import { useLoading } from "@/components/common/loadingContext.client";
+import { getOrCreateClientId, refreshClientIdCookieIfNeeded } from "@/lib/client-id";
 import IntroSection from "./components/IntroSection";
 import QuestionSection from "./components/QuestionSection";
 import CSectionWrapper from "./components/CSectionWrapper";
@@ -18,19 +19,6 @@ import type { CSectionResult } from "./components/CSection";
 const STORAGE_KEY = "assess-state";
 const C_PERSIST_KEY = `${STORAGE_KEY}::C`;
 
-// clientId helpers (local only to avoid extra imports)
-const LS_CLIENT_ID_KEY = "wb_client_id_v1";
-function getClientIdLocal(): string {
-  try {
-    const existing = localStorage.getItem(LS_CLIENT_ID_KEY);
-    if (existing) return existing;
-    const id = Math.random().toString(36).slice(2) + Date.now().toString(36);
-    localStorage.setItem(LS_CLIENT_ID_KEY, id);
-    return id;
-  } catch {
-    return Math.random().toString(36).slice(2) + Date.now().toString(36);
-  }
-}
 function getTzOffsetMinutes(): number {
   try {
     return -new Date().getTimezoneOffset();
@@ -133,6 +121,10 @@ export default function Assess() {
 
   const [hydrated, setHydrated] = useState(false);
   const cancelBtnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    refreshClientIdCookieIfNeeded();
+  }, []);
 
   useEffect(() => {
     if (!confirmOpen) return;
@@ -452,7 +444,7 @@ export default function Assess() {
           setCAnswers(cAns);
           setCResult(res);
           const payload = {
-            clientId: getClientIdLocal(),
+            clientId: getOrCreateClientId(),
             answers: composeAnswers(answers, cAns, cCats),
             cResult: res,
             tzOffsetMinutes: getTzOffsetMinutes(),

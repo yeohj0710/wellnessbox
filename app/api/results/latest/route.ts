@@ -1,6 +1,6 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
-import { getClientIdFromRequest, ensureClient } from "@/lib/server/client";
+import { resolveClientIdFromRequest, ensureClient } from "@/lib/server/client";
 import { CHECK_AI_QUESTIONS, CHECK_AI_OPTIONS } from "@/lib/checkai";
 import { sectionA, sectionB } from "@/app/assess/data/questions";
 
@@ -10,13 +10,9 @@ export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
     const qClientId = url.searchParams.get("clientId");
-    const cookieClientId = await getClientIdFromRequest();
-    const clientId = qClientId ?? cookieClientId;
+    const { clientId, cookieToSet } = resolveClientIdFromRequest(req, qClientId, "query");
     if (!clientId) {
-      return new Response(JSON.stringify({ error: "Missing clientId" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+      return NextResponse.json({ error: "Missing clientId" }, { status: 400 });
     }
 
     const userAgent = req.headers.get("user-agent") ?? undefined;
@@ -83,13 +79,12 @@ export async function GET(req: NextRequest) {
         }
       : null;
 
-    return new Response(JSON.stringify({ assess, checkAi }), {
-      headers: { "Content-Type": "application/json" },
-    });
+    const res = NextResponse.json({ assess, checkAi });
+    if (cookieToSet) {
+      res.cookies.set(cookieToSet.name, cookieToSet.value, cookieToSet.options);
+    }
+    return res;
   } catch (e: any) {
-    return new Response(
-      JSON.stringify({ error: e.message || "Unknown error" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    return NextResponse.json({ error: e.message || "Unknown error" }, { status: 500 });
   }
 }

@@ -1,21 +1,16 @@
+import type { ChatSession, UserProfile } from "@/types/chat";
+import { CODE_TO_LABEL } from "@/lib/categories";
+import { getOrCreateClientId } from "@/lib/client-id";
+
 export const LS_SESSIONS_KEY = "wb_chat_sessions_v1";
 export const LS_PROFILE_KEY = "wb_user_profile_v1";
-export const LS_CLIENT_ID_KEY = "wb_client_id_v1";
 
 export function uid() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
 export function getClientIdLocal(): string {
-  try {
-    const existing = localStorage.getItem(LS_CLIENT_ID_KEY);
-    if (existing) return existing;
-    const id = uid();
-    localStorage.setItem(LS_CLIENT_ID_KEY, id);
-    return id;
-  } catch {
-    return uid();
-  }
+  return getOrCreateClientId();
 }
 
 export function getTzOffsetMinutes(): number {
@@ -25,9 +20,6 @@ export function getTzOffsetMinutes(): number {
     return 0;
   }
 }
-
-import type { ChatSession, UserProfile } from "@/types/chat";
-import { CODE_TO_LABEL } from "@/lib/categories";
 
 export function loadSessions(): ChatSession[] {
   if (typeof localStorage === "undefined") return [];

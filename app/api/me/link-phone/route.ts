@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { hashOtp, normalizePhone } from "@/lib/otp";
 import getSession from "@/lib/session";
-import { getClientIdFromRequest } from "@/lib/server/client";
+import { resolveClientIdFromRequest } from "@/lib/server/client";
 
 export const runtime = "nodejs";
 
@@ -20,7 +20,7 @@ function badRequest(message = "Invalid input") {
   );
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const session = await getSession();
   const user = session.user;
 
@@ -97,7 +97,7 @@ export async function POST(req: Request) {
 
     const linkedAt = now.toISOString();
     const linkedAtDate = new Date(linkedAt);
-    const resolvedClientId = await getClientIdFromRequest();
+    const { clientId: resolvedClientId } = resolveClientIdFromRequest(req);
 
     await db.appUser.upsert({
       where: { kakaoId: String(user.kakaoId) },

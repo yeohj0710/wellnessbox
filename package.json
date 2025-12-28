@@ -8,7 +8,8 @@
     "prebuild": "npm run predev",
     "build": "npm run prebuild && next build && node -e \"try{require('fs').rmSync('.next/cache',{recursive:true,force:true})}catch(e){}\"",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "audit:clients": "ts-node scripts/audit-clients.ts"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.4",
@@ -71,6 +72,7 @@
     "@types/react-dom": "^18.3.7",
     "@types/tailwindcss": "^3.1.0",
     "@types/web-push": "^3.6.4",
+    "ts-node": "^10.9.2",
     "eslint": "^8",
     "eslint-config-next": "15.0.3",
     "postcss": "^8",

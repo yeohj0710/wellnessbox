@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import getSession from "@/lib/session";
-import { getClientIdFromRequest } from "@/lib/server/client";
+import { resolveClientIdFromRequest } from "@/lib/server/client";
 import {
   isNicknameAvailable,
   normalizeNickname,
@@ -23,7 +23,7 @@ function badRequest(message = "Invalid input") {
   );
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const session = await getSession();
   const user = session.user;
 
@@ -68,8 +68,7 @@ export async function POST(req: Request) {
   });
 
   const nextKakaoEmail = profile?.kakaoEmail ?? user.kakaoEmail ?? user.email ?? undefined;
-  const resolvedClientId =
-    (await getClientIdFromRequest()) ?? profile?.clientId ?? undefined;
+  const { clientId: resolvedClientId } = resolveClientIdFromRequest(req, profile?.clientId ?? undefined);
 
   await db.appUser.upsert({
     where: { kakaoId: String(user.kakaoId) },

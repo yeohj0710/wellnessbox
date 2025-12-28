@@ -3,25 +3,15 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { getCategories } from "@/lib/product";
 import { useLoading } from "@/components/common/loadingContext.client";
+import { getOrCreateClientId, refreshClientIdCookieIfNeeded } from "@/lib/client-id";
 import {
   CHECK_AI_QUESTIONS as QUESTIONS,
   CHECK_AI_OPTIONS as OPTIONS,
 } from "@/lib/checkai";
 
 type Result = { code: string; label: string; prob: number };
+const getClientIdLocal = getOrCreateClientId;
 
-const LS_CLIENT_ID_KEY = "wb_client_id_v1";
-function getClientIdLocal(): string {
-  try {
-    const existing = localStorage.getItem(LS_CLIENT_ID_KEY);
-    if (existing) return existing;
-    const id = Math.random().toString(36).slice(2) + Date.now().toString(36);
-    localStorage.setItem(LS_CLIENT_ID_KEY, id);
-    return id;
-  } catch {
-    return Math.random().toString(36).slice(2) + Date.now().toString(36);
-  }
-}
 function getTzOffsetMinutes(): number {
   try {
     return -new Date().getTimezoneOffset();
@@ -45,6 +35,10 @@ export default function CheckAI() {
     const answered = answers.filter((v) => v > 0).length;
     return Math.round((answered / QUESTIONS.length) * 100);
   }, [answers]);
+
+  useEffect(() => {
+    refreshClientIdCookieIfNeeded();
+  }, []);
 
   useEffect(() => {
     getCategories()

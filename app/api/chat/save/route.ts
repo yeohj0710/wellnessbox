@@ -1,6 +1,6 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
-import { ensureClient } from "@/lib/server/client";
+import { ensureClient, resolveClientIdFromRequest } from "@/lib/server/client";
 
 export const runtime = "nodejs";
 
@@ -20,12 +20,10 @@ type SaveBody = {
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as SaveBody;
-    const { clientId, sessionId, title, messages, tzOffsetMinutes } = body || {} as SaveBody;
+    const { clientId, cookieToSet } = resolveClientIdFromRequest(req, body?.clientId);
+    const { sessionId, title, messages, tzOffsetMinutes } = body || ({} as SaveBody);
     if (!clientId || !sessionId) {
-      return new Response(JSON.stringify({ error: "Missing clientId or sessionId" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+      return NextResponse.json({ error: "Missing clientId or sessionId" }, { status: 400 });
     }
     await ensureClient(clientId, { userAgent: req.headers.get("user-agent") });
 
@@ -58,14 +56,13 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    return new Response(JSON.stringify({ ok: true }), {
-      headers: { "Content-Type": "application/json" },
-    });
+    const res = NextResponse.json({ ok: true });
+    if (cookieToSet) {
+      res.cookies.set(cookieToSet.name, cookieToSet.value, cookieToSet.options);
+    }
+    return res;
   } catch (e: any) {
-    return new Response(JSON.stringify({ error: e.message || "Unknown error" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    return NextResponse.json({ error: e.message || "Unknown error" }, { status: 500 });
   }
 }
 

@@ -1,6 +1,6 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
-import { ensureClient, getClientIdFromRequest } from "@/lib/server/client";
+import { ensureClient, resolveClientIdFromRequest } from "@/lib/server/client";
 
 export const runtime = "nodejs";
 
@@ -8,68 +8,68 @@ export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
     const qId = url.searchParams.get("clientId");
-    const clientId = qId || (await getClientIdFromRequest());
+    const { clientId, cookieToSet } = resolveClientIdFromRequest(req, qId, "query");
     if (!clientId) {
-      return new Response(JSON.stringify({ error: "Missing clientId" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+      return NextResponse.json({ error: "Missing clientId" }, { status: 400 });
     }
     await ensureClient(clientId, { userAgent: req.headers.get("user-agent") });
     const rec = await db.userProfile.findUnique({ where: { clientId } });
-    if (!rec) return new Response(null, { status: 204 });
-    return new Response(
-      JSON.stringify({
-        clientId: rec.clientId,
-        profile: rec.data,
-        createdAt: rec.createdAt,
-        updatedAt: rec.updatedAt,
-      }),
-      { headers: { "Content-Type": "application/json" } }
-    );
+    if (!rec) {
+      const res = new NextResponse(null, { status: 204 });
+      if (cookieToSet) {
+        res.cookies.set(cookieToSet.name, cookieToSet.value, cookieToSet.options);
+      }
+      return res;
+    }
+    const res = NextResponse.json({
+      clientId: rec.clientId,
+      profile: rec.data,
+      createdAt: rec.createdAt,
+      updatedAt: rec.updatedAt,
+    });
+    if (cookieToSet) {
+      res.cookies.set(cookieToSet.name, cookieToSet.value, cookieToSet.options);
+    }
+    return res;
   } catch (e: any) {
-    return new Response(
-      JSON.stringify({ error: e.message || "Unknown error" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    return NextResponse.json({ error: e.message || "Unknown error" }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const clientId = body?.clientId || (await getClientIdFromRequest());
+    const { clientId, cookieToSet } = resolveClientIdFromRequest(req, body?.clientId);
     if (!clientId) {
-      return new Response(JSON.stringify({ error: "Missing clientId" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+      return NextResponse.json({ error: "Missing clientId" }, { status: 400 });
     }
     await ensureClient(clientId, { userAgent: req.headers.get("user-agent") });
     const profile = body?.profile;
     if (profile == null) {
       await db.userProfile.delete({ where: { clientId } }).catch(() => {});
-      return new Response(null, { status: 204 });
+      const res = new NextResponse(null, { status: 204 });
+      if (cookieToSet) {
+        res.cookies.set(cookieToSet.name, cookieToSet.value, cookieToSet.options);
+      }
+      return res;
     }
     const saved = await db.userProfile.upsert({
       where: { clientId },
       create: { clientId, data: profile },
       update: { data: profile },
     });
-    return new Response(
-      JSON.stringify({
-        clientId: saved.clientId,
-        profile: saved.data,
-        createdAt: saved.createdAt,
-        updatedAt: saved.updatedAt,
-      }),
-      { headers: { "Content-Type": "application/json" } }
-    );
+    const res = NextResponse.json({
+      clientId: saved.clientId,
+      profile: saved.data,
+      createdAt: saved.createdAt,
+      updatedAt: saved.updatedAt,
+    });
+    if (cookieToSet) {
+      res.cookies.set(cookieToSet.name, cookieToSet.value, cookieToSet.options);
+    }
+    return res;
   } catch (e: any) {
-    return new Response(
-      JSON.stringify({ error: e.message || "Unknown error" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    return NextResponse.json({ error: e.message || "Unknown error" }, { status: 500 });
   }
 }
 
