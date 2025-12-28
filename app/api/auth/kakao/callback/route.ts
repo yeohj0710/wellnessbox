@@ -1,9 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import getSession from "@/lib/session";
 import db from "@/lib/db";
 import { ensureClient, getClientIdFromRequest } from "@/lib/server/client";
 import { generateFriendlyNickname, normalizeNickname } from "@/lib/nickname";
+import { attachClientToAppUser, withClientCookie } from "@/lib/server/client-link";
 
 type KakaoUserMe = {
   id: number;
@@ -64,7 +65,7 @@ function resolvePublicOrigin(origin: string) {
   return normalizeBaseUrl(base);
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
 
@@ -165,6 +166,14 @@ export async function GET(request: Request) {
       },
     });
 
+    const attachResult = await attachClientToAppUser({
+      req: request,
+      kakaoId: kakaoIdStr,
+      source: "kakao-login",
+      candidateClientId: requestClientId ?? existingUser?.clientId ?? null,
+      userAgent: request.headers.get("user-agent"),
+    });
+
     const session = await getSession();
     session.user = {
       kakaoId: me.id,
@@ -176,7 +185,12 @@ export async function GET(request: Request) {
     };
     await session.save();
 
-    return NextResponse.redirect(new URL("/", origin));
+    const response = NextResponse.redirect(new URL("/", origin));
+    if (attachResult.cookieToSet) {
+      withClientCookie(response, attachResult.cookieToSet);
+    }
+
+    return response;
   } catch {
     return NextResponse.redirect(new URL("/?login=unexpected_error", origin));
   }

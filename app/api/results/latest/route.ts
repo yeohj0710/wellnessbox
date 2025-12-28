@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
-import { resolveClientIdFromRequest, ensureClient } from "@/lib/server/client";
+import { resolveClientIdForRead } from "@/lib/server/client-link";
 import { CHECK_AI_QUESTIONS, CHECK_AI_OPTIONS } from "@/lib/checkai";
 import { sectionA, sectionB } from "@/app/assess/data/questions";
 
@@ -10,13 +10,14 @@ export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
     const qClientId = url.searchParams.get("clientId");
-    const { clientId, cookieToSet } = resolveClientIdFromRequest(req, qClientId, "query");
+    const { clientId, cookieToSet } = await resolveClientIdForRead(
+      req,
+      qClientId,
+      "query"
+    );
     if (!clientId) {
       return NextResponse.json({ error: "Missing clientId" }, { status: 400 });
     }
-
-    const userAgent = req.headers.get("user-agent") ?? undefined;
-    await ensureClient(clientId, { userAgent });
 
     const [assessRaw, checkAiRaw] = await Promise.all([
       db.assessmentResult.findFirst({

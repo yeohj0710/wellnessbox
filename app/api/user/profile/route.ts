@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
-import { ensureClient, resolveClientIdFromRequest } from "@/lib/server/client";
+import { ensureClient } from "@/lib/server/client";
+import { resolveClientIdForRead, resolveClientIdForWrite } from "@/lib/server/client-link";
 
 export const runtime = "nodejs";
 
@@ -8,11 +9,14 @@ export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
     const qId = url.searchParams.get("clientId");
-    const { clientId, cookieToSet } = resolveClientIdFromRequest(req, qId, "query");
+    const { clientId, cookieToSet } = await resolveClientIdForRead(
+      req,
+      qId,
+      "query"
+    );
     if (!clientId) {
       return NextResponse.json({ error: "Missing clientId" }, { status: 400 });
     }
-    await ensureClient(clientId, { userAgent: req.headers.get("user-agent") });
     const rec = await db.userProfile.findUnique({ where: { clientId } });
     if (!rec) {
       const res = new NextResponse(null, { status: 204 });
@@ -39,7 +43,10 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const { clientId, cookieToSet } = resolveClientIdFromRequest(req, body?.clientId);
+    const { clientId, cookieToSet } = await resolveClientIdForWrite(
+      req,
+      body?.clientId
+    );
     if (!clientId) {
       return NextResponse.json({ error: "Missing clientId" }, { status: 400 });
     }

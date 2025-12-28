@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
-import { ensureClient, resolveClientIdFromRequest } from "@/lib/server/client";
+import { ensureClient } from "@/lib/server/client";
+import { resolveClientIdForWrite } from "@/lib/server/client-link";
 
 export const runtime = "nodejs";
 
@@ -20,7 +21,10 @@ type SaveBody = {
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as SaveBody;
-    const { clientId, cookieToSet } = resolveClientIdFromRequest(req, body?.clientId);
+    const { clientId, cookieToSet } = await resolveClientIdForWrite(
+      req,
+      body?.clientId
+    );
     const { sessionId, title, messages, tzOffsetMinutes } = body || ({} as SaveBody);
     if (!clientId || !sessionId) {
       return NextResponse.json({ error: "Missing clientId or sessionId" }, { status: 400 });

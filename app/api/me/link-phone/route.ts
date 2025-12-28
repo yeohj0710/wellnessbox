@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { hashOtp, normalizePhone } from "@/lib/otp";
 import getSession from "@/lib/session";
-import { resolveClientIdFromRequest } from "@/lib/server/client";
+import { attachClientToAppUser } from "@/lib/server/client-link";
 
 export const runtime = "nodejs";
 
@@ -97,7 +97,13 @@ export async function POST(req: NextRequest) {
 
     const linkedAt = now.toISOString();
     const linkedAtDate = new Date(linkedAt);
-    const { clientId: resolvedClientId } = resolveClientIdFromRequest(req);
+    const attachResult = await attachClientToAppUser({
+      req,
+      kakaoId: String(user.kakaoId),
+      source: "phone-link",
+      userAgent: req.headers.get("user-agent"),
+    });
+    const resolvedClientId = attachResult.clientId ?? undefined;
 
     await db.appUser.upsert({
       where: { kakaoId: String(user.kakaoId) },
@@ -117,10 +123,20 @@ export async function POST(req: NextRequest) {
     session.user = { ...user, phone, phoneLinkedAt: linkedAt };
     await session.save();
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       { ok: true, phone, linkedAt },
       { headers: { "Cache-Control": "no-store" } }
     );
+
+    if (attachResult.cookieToSet) {
+      response.cookies.set(
+        attachResult.cookieToSet.name,
+        attachResult.cookieToSet.value,
+        attachResult.cookieToSet.options
+      );
+    }
+
+    return response;
   } catch (e) {
     console.error("link-phone error", {
       name: (e as any)?.name,
