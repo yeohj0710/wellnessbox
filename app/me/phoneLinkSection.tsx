@@ -225,15 +225,21 @@ export default function PhoneLinkSection({
             className="shrink-0 w-16 h-8 rounded-lg bg-sky-400 text-sm font-semibold text-white hover:bg-sky-500 disabled:cursor-not-allowed disabled:bg-sky-200"
           >
             <span className="grid h-full w-full place-items-center">
-              {sendLoading ? <Spinner className="text-white" /> : otpSent ? "재발송" : "발송"}
+              {sendLoading ? (
+                <Spinner className="text-white" />
+              ) : otpSent ? (
+                "재발송"
+              ) : (
+                "발송"
+              )}
             </span>
           </button>
         </div>
-        {otpSent ? (
+        {/* {otpSent ? (
           <p className="text-xs text-gray-600">
             인증번호를 입력하려면 번호 수정을 잠시 잠가 두었어요. 잘못 입력했다면 "번호 수정"을 눌러 다시 입력해 주세요.
           </p>
-        ) : null}
+        ) : null} */}
       </div>
 
       <div className="space-y-2">
@@ -267,7 +273,9 @@ export default function PhoneLinkSection({
           </button>
         </div>
         {!otpSent ? (
-          <p className="text-xs text-gray-600">먼저 인증번호를 발송하고, 문자로 받은 6자리 번호를 입력해 주세요.</p>
+          <p className="text-xs text-gray-600">
+            먼저 인증번호를 발송하고, 문자로 받은 6자리 번호를 입력해 주세요.
+          </p>
         ) : null}
       </div>
 
