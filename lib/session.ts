@@ -9,6 +9,7 @@ interface SessionContent {
     nickname?: string;
     profileImageUrl?: string;
     email?: string;
+    kakaoEmail?: string;
     loggedIn: boolean;
     phone?: string;
     phoneLinkedAt?: string;

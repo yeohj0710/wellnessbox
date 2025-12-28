@@ -10,6 +10,7 @@ type SessionUser = {
   nickname?: string;
   profileImageUrl?: string;
   email?: string;
+  kakaoEmail?: string;
   phone?: string;
   phoneLinkedAt?: string;
 };
@@ -57,6 +58,10 @@ export default async function MePage() {
 
   let initialPhone = user.phone ?? "";
   let initialLinkedAt = user.phoneLinkedAt;
+  let nickname = user.nickname ?? "";
+  let profileImageUrl = user.profileImageUrl ?? "";
+  let email = user.email ?? "";
+  let kakaoEmail = user.kakaoEmail ?? user.email ?? "";
 
   const profile = await db.userProfile.findUnique({
     where: { clientId },
@@ -68,13 +73,26 @@ export default async function MePage() {
     initialPhone = typeof data.phone === "string" ? data.phone : "";
     initialLinkedAt =
       typeof data.phoneLinkedAt === "string" ? data.phoneLinkedAt : undefined;
+    nickname = typeof data.nickname === "string" && data.nickname
+      ? data.nickname
+      : nickname;
+    profileImageUrl =
+      typeof data.profileImageUrl === "string" && data.profileImageUrl
+        ? data.profileImageUrl
+        : profileImageUrl;
+    email = typeof data.email === "string" && data.email ? data.email : email;
+    kakaoEmail =
+      typeof data.kakaoEmail === "string" && data.kakaoEmail
+        ? data.kakaoEmail
+        : kakaoEmail;
   }
 
   return (
     <MeClient
-      nickname={user.nickname ?? ""}
-      profileImageUrl={user.profileImageUrl ?? ""}
-      email={user.email ?? ""}
+      nickname={nickname}
+      profileImageUrl={profileImageUrl}
+      email={email}
+      kakaoEmail={kakaoEmail}
       initialPhone={initialPhone}
       initialLinkedAt={initialLinkedAt}
     />
