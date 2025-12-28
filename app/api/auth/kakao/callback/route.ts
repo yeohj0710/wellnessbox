@@ -21,7 +21,9 @@ function normalizeBaseUrl(url: string) {
   return url.replace(/\/$/, "");
 }
 
-function resolveOrigin(h: Headers) {
+type HeadersLike = { get(name: string): string | null };
+
+function resolveOrigin(h: HeadersLike) {
   const proto = h.get("x-forwarded-proto") || "http";
   const forwardedHost = h.get("x-forwarded-host");
   const host = forwardedHost || h.get("host") || "localhost:3000";
@@ -123,11 +125,11 @@ export async function GET(request: Request) {
     const kakaoAccount = me.kakao_account ?? {};
     const profile = kakaoAccount.profile ?? {};
 
-    const clientId = String(me.id);
-    await ensureClient(clientId);
+    const clientIdStr = String(me.id);
+    await ensureClient(clientIdStr);
 
     const persistedProfile = await db.userProfile.findUnique({
-      where: { clientId },
+      where: { clientId: clientIdStr },
       select: { data: true },
     });
 
@@ -136,7 +138,9 @@ export async function GET(request: Request) {
       : {};
 
     const storedNickname =
-      typeof currentData.nickname === "string" ? currentData.nickname : undefined;
+      typeof currentData.nickname === "string"
+        ? currentData.nickname
+        : undefined;
     const storedEmail =
       typeof currentData.email === "string" ? currentData.email : undefined;
     const storedProfileImage =
@@ -144,13 +148,18 @@ export async function GET(request: Request) {
         ? currentData.profileImageUrl
         : undefined;
     const storedKakaoEmail =
-      typeof currentData.kakaoEmail === "string" ? currentData.kakaoEmail : undefined;
+      typeof currentData.kakaoEmail === "string"
+        ? currentData.kakaoEmail
+        : undefined;
 
     const kakaoEmail = kakaoAccount.email ?? storedKakaoEmail;
     const nextNickname = storedNickname || profile.nickname || "";
     const nextEmail = storedEmail ?? kakaoEmail ?? "";
     const nextProfileImage =
-      storedProfileImage || profile.profile_image_url || profile.thumbnail_image_url || "";
+      storedProfileImage ||
+      profile.profile_image_url ||
+      profile.thumbnail_image_url ||
+      "";
 
     const nextData = {
       ...currentData,
@@ -162,13 +171,13 @@ export async function GET(request: Request) {
 
     if (persistedProfile) {
       await db.userProfile.update({
-        where: { clientId },
+        where: { clientId: clientIdStr },
         data: { data: nextData as Prisma.InputJsonValue },
       });
     } else {
       await db.userProfile.create({
         data: {
-          clientId,
+          clientId: clientIdStr,
           data: nextData as Prisma.InputJsonValue,
         },
       });
