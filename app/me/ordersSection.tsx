@@ -55,7 +55,7 @@ export default function OrdersSection({
       ) : null}
 
       {isLinked ? (
-        <div className="">
+        <div className="mt-2">
           <OrderDetails phone={phoneNormalized} lookupMode="phone-only" />
         </div>
       ) : null}

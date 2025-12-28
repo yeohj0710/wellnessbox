@@ -127,7 +127,7 @@ export default function AddressSection({
           </div>
 
           <p className="text-xs text-gray-600">
-            결제에 사용한 전화번호를 인증하면 주문 내역을 확인할 수 있어요.
+            결제에 사용한 전화번호로 주문 내역을 확인할 수 있어요.
           </p>
 
           {!isUserLoggedIn ? (
