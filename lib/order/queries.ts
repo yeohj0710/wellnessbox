@@ -1,8 +1,9 @@
-// Query operations related to orders
 "use server";
+
 import db from "@/lib/db";
 import { normalizePhone } from "@/lib/otp";
-import { ORDER_STATUS, OrderStatus } from "./orderStatus";
+import { ORDER_STATUS } from "./orderStatus";
+import type { Prisma } from "@prisma/client";
 
 export async function checkOrderExists(phone: string, password: string) {
   const exists = await db.order.findFirst({
@@ -35,7 +36,7 @@ const basicOrderSelection = {
 };
 
 async function getPaginatedOrders(
-  where: Parameters<typeof db.order.findMany>[0]["where"],
+  where: Prisma.OrderWhereInput,
   page = 1,
   take = 10
 ) {
@@ -88,10 +89,16 @@ export async function getOrdersWithItemsByPhone(phone: string) {
 
   const formattedWithHyphens = (() => {
     if (digitsOnly.length === 10) {
-      return `${digitsOnly.slice(0, 3)}-${digitsOnly.slice(3, 6)}-${digitsOnly.slice(6)}`;
+      return `${digitsOnly.slice(0, 3)}-${digitsOnly.slice(
+        3,
+        6
+      )}-${digitsOnly.slice(6)}`;
     }
     if (digitsOnly.length === 11) {
-      return `${digitsOnly.slice(0, 3)}-${digitsOnly.slice(3, 7)}-${digitsOnly.slice(7)}`;
+      return `${digitsOnly.slice(0, 3)}-${digitsOnly.slice(
+        3,
+        7
+      )}-${digitsOnly.slice(7)}`;
     }
     return "";
   })();
@@ -129,10 +136,16 @@ export async function getOrdersWithItemsByPhonePaginated(
 
   const formattedWithHyphens = (() => {
     if (digitsOnly.length === 10) {
-      return `${digitsOnly.slice(0, 3)}-${digitsOnly.slice(3, 6)}-${digitsOnly.slice(6)}`;
+      return `${digitsOnly.slice(0, 3)}-${digitsOnly.slice(
+        3,
+        6
+      )}-${digitsOnly.slice(6)}`;
     }
     if (digitsOnly.length === 11) {
-      return `${digitsOnly.slice(0, 3)}-${digitsOnly.slice(3, 7)}-${digitsOnly.slice(7)}`;
+      return `${digitsOnly.slice(0, 3)}-${digitsOnly.slice(
+        3,
+        7
+      )}-${digitsOnly.slice(7)}`;
     }
     return "";
   })();
@@ -188,16 +201,12 @@ export async function getOrderById(orderid: number) {
                   name: true,
                   images: true,
                   description: true,
-                  categories: {
-                    select: { name: true },
-                  },
+                  categories: { select: { name: true } },
                 },
               },
             },
           },
-          review: {
-            select: { rate: true, content: true },
-          },
+          review: { select: { rate: true, content: true } },
         },
       },
       pharmacy: {
@@ -215,16 +224,12 @@ export async function getOrderForReview(orderid: number) {
       orderItems: {
         select: {
           id: true,
-          review: {
-            select: { rate: true, content: true },
-          },
+          review: { select: { rate: true, content: true } },
           pharmacyProduct: {
             select: {
               productId: true,
               optionType: true,
-              product: {
-                select: { name: true, images: true },
-              },
+              product: { select: { name: true, images: true } },
             },
           },
         },
@@ -279,7 +284,7 @@ export async function getBasicOrdersByRider(
   page = 1,
   take = 10
 ): Promise<{ orders: any[]; totalPages: number }> {
-  const where = {
+  const where: Prisma.OrderWhereInput = {
     NOT: [
       { status: ORDER_STATUS.PAYMENT_COMPLETE },
       { status: ORDER_STATUS.COUNSEL_COMPLETE },
