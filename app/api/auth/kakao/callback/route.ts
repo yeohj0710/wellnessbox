@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import getSession from "@/lib/session";
 import db from "@/lib/db";
 import { ensureClient, getClientIdFromRequest } from "@/lib/server/client";
+import { generateFriendlyNickname, normalizeNickname } from "@/lib/nickname";
 
 type KakaoUserMe = {
   id: number;
@@ -131,7 +132,12 @@ export async function GET(request: Request) {
       where: { kakaoId: kakaoIdStr },
     });
 
-    const nextNickname = existingUser?.nickname || profile.nickname || "";
+    const normalizedProfileNickname = normalizeNickname(profile.nickname);
+    const nextNickname = existingUser?.nickname
+      ? normalizeNickname(existingUser.nickname)
+      : normalizedProfileNickname && normalizedProfileNickname !== "없음"
+        ? normalizedProfileNickname
+        : await generateFriendlyNickname(kakaoIdStr);
     const nextEmail = existingUser?.email ?? kakaoAccount.email ?? "";
     const nextProfileImage =
       existingUser?.profileImageUrl ||

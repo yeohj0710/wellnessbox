@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import db from "@/lib/db";
 import getSession from "@/lib/session";
 import { getClientIdFromRequest } from "@/lib/server/client";
+import {
+  isNicknameAvailable,
+  normalizeNickname,
+} from "@/lib/nickname";
 
 export const runtime = "nodejs";
 
@@ -17,11 +21,6 @@ function badRequest(message = "Invalid input") {
     { ok: false, error: message },
     { status: 400, headers: { "Cache-Control": "no-store" } }
   );
-}
-
-function normalizeInput(value: unknown, maxLength: number) {
-  if (typeof value !== "string") return "";
-  return value.trim().slice(0, maxLength);
 }
 
 export async function POST(req: Request) {
@@ -40,9 +39,20 @@ export async function POST(req: Request) {
     return badRequest("Invalid JSON");
   }
 
-  const nickname = normalizeInput((body as any)?.nickname, 60);
-  const email = normalizeInput((body as any)?.email, 120);
-  const profileImageUrl = normalizeInput((body as any)?.profileImageUrl, 500);
+  const nickname = normalizeNickname((body as any)?.nickname, 60);
+  const email = normalizeNickname((body as any)?.email, 120);
+  const profileImageUrl = normalizeNickname((body as any)?.profileImageUrl, 500);
+
+  if (nickname) {
+    const available = await isNicknameAvailable(
+      nickname,
+      String(user.kakaoId)
+    );
+
+    if (!available) {
+      return badRequest("이미 사용 중인 닉네임이에요. 다른 이름을 시도해 주세요.");
+    }
+  }
 
   const profile = await db.appUser.findUnique({
     where: { kakaoId: String(user.kakaoId) },

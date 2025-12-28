@@ -7,9 +7,9 @@ import { getUploadUrl } from "@/lib/upload";
 import LogoutButton from "./logoutButton";
 import OrdersSection from "./ordersSection";
 import PhoneVerifyModal from "./phoneVerifyModal";
-import { InlineEditableField } from "./inlineEditableField";
 import { ProfileImageEditor } from "./profileImageEditor";
 import EmailChangeModal from "./emailChangeModal";
+import NicknameChangeModal from "./nicknameChangeModal";
 
 type MeClientProps = {
   nickname: string;
@@ -60,6 +60,7 @@ export default function MeClient({
   const [linkedAt, setLinkedAt] = useState<string | undefined>(initialLinkedAt);
   const [isVerifyOpen, setIsVerifyOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [isNicknameModalOpen, setIsNicknameModalOpen] = useState(false);
 
   const [unlinkLoading, setUnlinkLoading] = useState(false);
   const [unlinkError, setUnlinkError] = useState<string | null>(null);
@@ -296,24 +297,25 @@ export default function MeClient({
             </div>
 
             <div className="min-w-0 flex-1 space-y-2.5">
-              <InlineEditableField
-                label="닉네임"
-                value={profileNickname}
-                placeholder="닉네임 없음"
-                saving={savingField === "nickname"}
-                onSave={async (next) => {
-                  if (next === profileNickname) return;
-                  const previous = profileNickname;
-                  setProfileNickname(next);
-                  try {
-                    await saveProfile({ nickname: next }, "nickname");
-                  } catch {
-                    setProfileNickname(previous);
-                  }
-                }}
-                maxLength={60}
-                error={savingField ? null : saveError}
-              />
+              <div className="grid grid-cols-[60px_1fr_auto] items-center gap-2 sm:grid-cols-[60px_1fr_auto] sm:gap-3">
+                <div className="text-sm font-semibold text-gray-900">닉네임</div>
+                <div className="min-w-0 break-words text-sm text-gray-800">
+                  {profileNickname || "닉네임 없음"}
+                </div>
+                <div className="flex items-center justify-end self-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSaveError(null);
+                      setIsNicknameModalOpen(true);
+                    }}
+                    disabled={savingField === "nickname"}
+                    className="inline-flex h-6 min-w-[64px] items-center justify-center whitespace-nowrap rounded-full bg-sky-100 px-3 text-xs font-semibold text-sky-700 hover:bg-sky-200 disabled:cursor-not-allowed disabled:bg-sky-50"
+                  >
+                    변경
+                  </button>
+                </div>
+              </div>
 
               <div className="grid grid-cols-[60px_1fr_auto] items-center gap-2 sm:grid-cols-[60px_1fr_auto] sm:gap-3">
                 <div className="text-sm font-semibold text-gray-900">이메일</div>
@@ -389,6 +391,31 @@ export default function MeClient({
             setProfileEmail(nextEmail);
             setIsEmailModalOpen(false);
             router.refresh();
+          }}
+        />
+
+        <NicknameChangeModal
+          open={isNicknameModalOpen}
+          onClose={() => {
+            if (savingField === "nickname") return;
+            setIsNicknameModalOpen(false);
+          }}
+          initialNickname={profileNickname}
+          onChanged={(nextNickname) => {
+            setProfileNickname(nextNickname);
+            setIsNicknameModalOpen(false);
+            router.refresh();
+          }}
+          onSaveNickname={async (nextNickname) => {
+            if (nextNickname === profileNickname) return;
+            const previous = profileNickname;
+            setProfileNickname(nextNickname);
+            try {
+              await saveProfile({ nickname: nextNickname }, "nickname");
+            } catch (error) {
+              setProfileNickname(previous);
+              throw error;
+            }
           }}
         />
 
