@@ -24,6 +24,11 @@ export async function GET() {
       isAdminLoggedIn,
       isTestLoggedIn,
     },
-    { headers: { "Cache-Control": "no-store" } }
+    {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+        Pragma: "no-cache",
+      },
+    }
   );
 }
