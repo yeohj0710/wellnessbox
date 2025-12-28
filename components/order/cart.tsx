@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
-import { getLoginStatus } from "@/lib/useLoginStatus";
+import { getLoginStatus, type LoginStatus } from "@/lib/useLoginStatus";
 import CheckoutConfirmModal from "./checkoutConfirmModal";
 import AddressModal from "@/components/modal/addressModal";
 import CartItemsSection from "./cartItemsSection";
@@ -13,9 +13,21 @@ import PaymentSection from "./paymentSection";
 import ProductDetail from "../product/productDetail";
 import axios from "axios";
 import { useCartHydration } from "./hooks/useCartHydration";
-import { usePhoneAndPassword } from "./hooks/usePhoneAndPassword";
 import { useAddressFields } from "./hooks/useAddressFields";
 import PharmacyDetailModal from "./pharmacyDetailModal";
+import PhoneVerifyModal from "@/app/me/phoneVerifyModal";
+
+function formatPhoneDisplay(phone?: string | null) {
+  if (!phone) return "";
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length === 10) {
+    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  if (digits.length === 11) {
+    return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+  }
+  return phone;
+}
 
 export default function Cart({
   cartItems,
@@ -30,7 +42,7 @@ export default function Cart({
   onUpdateCart,
 }: any) {
   const router = useRouter();
-  const [loginStatus, setLoginStatus] = useState<any>([]);
+  const [loginStatus, setLoginStatus] = useState<LoginStatus | null>(null);
   const [showPharmacyDetail, setShowPharmacyDetail] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("inicis");
@@ -42,29 +54,15 @@ export default function Cart({
   const cartScrollRef = useRef(0);
 
   const hydrated = useCartHydration(cartItems, onUpdateCart);
-  const {
-    phonePart1,
-    phonePart2,
-    phonePart3,
-    setPhonePart1Persist,
-    setPhonePart2Persist,
-    setPhonePart3Persist,
-    userContact,
-    password,
-    setPassword,
-    otpCode,
-    setOtpCode,
-    otpSendLoading,
-    otpVerifyLoading,
-    otpStatusMessage,
-    otpErrorMessage,
-    isValidPhone,
-    isPhoneVerified,
-    handleSendOtp,
-    handleVerifyOtp,
-    sdkLoaded,
-    setSdkLoaded,
-  } = usePhoneAndPassword();
+  const [phone, setPhone] = useState("");
+  const [linkedAt, setLinkedAt] = useState<string | undefined>();
+  const [password, setPassword] = useState("");
+  const [sdkLoaded, setSdkLoaded] = useState(false);
+  const [phoneModalOpen, setPhoneModalOpen] = useState(false);
+  const [phoneStatusLoading, setPhoneStatusLoading] = useState(true);
+  const [phoneStatusError, setPhoneStatusError] = useState<string | null>(null);
+  const [unlinkLoading, setUnlinkLoading] = useState(false);
+  const [unlinkError, setUnlinkError] = useState<string | null>(null);
   const {
     detailAddress,
     setDetailAddress,
@@ -76,11 +74,46 @@ export default function Cart({
     setDirections,
   } = useAddressFields();
 
+  const phoneDisplay = useMemo(() => formatPhoneDisplay(phone), [phone]);
+  const isPhoneLinked = useMemo(
+    () => Boolean(phone && linkedAt),
+    [phone, linkedAt]
+  );
+  const userContact = useMemo(
+    () => phoneDisplay || phone,
+    [phone, phoneDisplay]
+  );
+  const safeLoginStatus = useMemo<LoginStatus>(
+    () =>
+      loginStatus ?? {
+        isUserLoggedIn: false,
+        isPharmLoggedIn: false,
+        isRiderLoggedIn: false,
+        isAdminLoggedIn: false,
+        isTestLoggedIn: false,
+      },
+    [loginStatus]
+  );
+
   useEffect(() => {
     const onClose = () => onBack();
     window.addEventListener("closeCart", onClose);
     return () => window.removeEventListener("closeCart", onClose);
   }, [onBack]);
+
+  useEffect(() => {
+    const savedPassword = localStorage.getItem("password");
+    if (savedPassword) {
+      setPassword(savedPassword);
+    }
+    if ((window as any).IMP) {
+      setSdkLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("password", password);
+  }, [password]);
 
   useEffect(() => {
     if (Array.isArray(allProducts) && allProducts.length > 0) {
@@ -90,11 +123,63 @@ export default function Cart({
 
   useEffect(() => {
     const fetchLoginStatus = async () => {
-      const fetchgedLoginStatus = await getLoginStatus();
-      setLoginStatus(fetchgedLoginStatus);
+      const fetchedLoginStatus = await getLoginStatus();
+      setLoginStatus(fetchedLoginStatus);
     };
     fetchLoginStatus();
   }, []);
+
+  const fetchPhoneStatus = useCallback(async () => {
+    setPhoneStatusLoading(true);
+    setPhoneStatusError(null);
+
+    try {
+      const res = await fetch("/api/me/phone-status", {
+        headers: { "Cache-Control": "no-store" },
+      });
+
+      const raw = await res.text();
+      let data: { ok?: boolean; phone?: string; linkedAt?: string } = {};
+
+      try {
+        data = raw ? (JSON.parse(raw) as typeof data) : {};
+      } catch {
+        data = { ok: false };
+      }
+
+      if (!res.ok || data.ok === false) {
+        setPhone("");
+        setLinkedAt(undefined);
+        if (res.status !== 401) {
+          setPhoneStatusError(
+            data?.ok === false
+              ? "전화번호 정보를 불러오지 못했어요."
+              : raw || `HTTP ${res.status}`
+          );
+        }
+        return;
+      }
+
+      setPhone(typeof data.phone === "string" ? data.phone : "");
+      setLinkedAt(typeof data.linkedAt === "string" ? data.linkedAt : undefined);
+    } catch (error) {
+      setPhoneStatusError(error instanceof Error ? error.message : String(error));
+      setPhone("");
+      setLinkedAt(undefined);
+    } finally {
+      setPhoneStatusLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPhoneStatus();
+  }, [fetchPhoneStatus]);
+
+  useEffect(() => {
+    if (safeLoginStatus.isUserLoggedIn) {
+      fetchPhoneStatus();
+    }
+  }, [safeLoginStatus.isUserLoggedIn, fetchPhoneStatus]);
 
   useEffect(() => {
     localStorage.setItem("selectedPharmacyId", selectedPharmacy?.id);
@@ -185,6 +270,41 @@ export default function Cart({
     window.dispatchEvent(new Event("cartUpdated"));
   };
 
+  const handleUnlinkPhone = useCallback(async () => {
+    if (unlinkLoading) return;
+
+    setUnlinkLoading(true);
+    setUnlinkError(null);
+
+    try {
+      const res = await fetch("/api/me/unlink-phone", {
+        method: "POST",
+        headers: { "Cache-Control": "no-store" },
+      });
+      const raw = await res.text();
+      let data: { ok?: boolean; error?: string } = {};
+      try {
+        data = raw ? (JSON.parse(raw) as typeof data) : {};
+      } catch {
+        data = { ok: false, error: raw || `HTTP ${res.status}` };
+      }
+
+      if (!res.ok || data.ok === false) {
+        setUnlinkError(data.error || "전화번호 연결 해제에 실패했어요.");
+        return;
+      }
+
+      setPhone("");
+      setLinkedAt(undefined);
+      setPhoneModalOpen(false);
+      fetchPhoneStatus();
+    } catch (error) {
+      setUnlinkError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setUnlinkLoading(false);
+    }
+  }, [unlinkLoading, fetchPhoneStatus]);
+
   const handleRequestPayment = () => {
     if (
       selectedPaymentMethod === "inicis" &&
@@ -195,16 +315,22 @@ export default function Cart({
       );
       return;
     }
-    if (!phonePart1 || !phonePart2 || !phonePart3) {
-      alert("전화번호를 입력해 주세요.");
+    if (!safeLoginStatus.isUserLoggedIn) {
+      alert("카카오 로그인이 필요해요. 로그인 후 다시 시도해 주세요.");
       return;
     }
-    if (!isValidPhone) {
-      alert("전화번호를 올바른 형식으로 입력해 주세요.");
+    if (phoneStatusLoading) {
+      alert("전화번호 정보를 불러오는 중이에요. 잠시 후 다시 시도해 주세요.");
       return;
     }
-    if (!isPhoneVerified) {
+    if (!phone) {
+      alert("전화번호 인증을 진행해 주세요.");
+      setPhoneModalOpen(true);
+      return;
+    }
+    if (!isPhoneLinked) {
       alert("전화번호 인증을 완료해 주세요.");
+      setPhoneModalOpen(true);
       return;
     }
     if (!password) {
@@ -264,7 +390,7 @@ export default function Cart({
     const redirect = `${window.location.origin}/order-complete?method=inicis`;
     IMP.init(process.env.NEXT_PUBLIC_MERCHANT_ID);
     const paymentAmount =
-      loginStatus.isTestLoggedIn && selectedPaymentMethod === "inicis"
+      safeLoginStatus.isTestLoggedIn && selectedPaymentMethod === "inicis"
         ? customTestAmount
         : totalPriceWithDelivery;
     IMP.request_pay(
@@ -392,24 +518,18 @@ export default function Cart({
         setEntrancePassword={setEntrancePassword}
         directions={directions}
         setDirections={setDirections}
-        phonePart1={phonePart1}
-        phonePart2={phonePart2}
-        phonePart3={phonePart3}
-        setPhonePart1={setPhonePart1Persist}
-        setPhonePart2={setPhonePart2Persist}
-        setPhonePart3={setPhonePart3Persist}
+        phoneDisplay={phoneDisplay}
+        linkedAt={linkedAt}
+        onOpenPhoneModal={() => {
+          setUnlinkError(null);
+          setPhoneModalOpen(true);
+        }}
+        phoneStatusLoading={phoneStatusLoading}
+        phoneStatusError={phoneStatusError}
+        isUserLoggedIn={safeLoginStatus.isUserLoggedIn}
         password={password}
         setPassword={setPassword}
-        otpCode={otpCode}
-        setOtpCode={setOtpCode}
-        onSendOtp={handleSendOtp}
-        onVerifyOtp={handleVerifyOtp}
-        otpSendLoading={otpSendLoading}
-        otpVerifyLoading={otpVerifyLoading}
-        isPhoneVerified={isPhoneVerified}
-        otpStatusMessage={otpStatusMessage}
-        otpErrorMessage={otpErrorMessage}
-        canRequestOtp={isValidPhone}
+        unlinkError={unlinkError}
       />
 
       <PharmacyInfoSection
@@ -427,13 +547,34 @@ export default function Cart({
       <PaymentSection
         selectedPaymentMethod={selectedPaymentMethod}
         setSelectedPaymentMethod={setSelectedPaymentMethod}
-        loginStatus={loginStatus}
+        loginStatus={safeLoginStatus}
         totalPrice={totalPrice}
         deliveryFee={deliveryFee}
         totalPriceWithDelivery={totalPriceWithDelivery}
         customTestAmount={customTestAmount}
         setCustomTestAmount={setCustomTestAmount}
         onRequestPayment={handleRequestPayment}
+      />
+
+      <PhoneVerifyModal
+        open={phoneModalOpen}
+        onClose={() => {
+          if (unlinkLoading) return;
+          setPhoneModalOpen(false);
+        }}
+        initialPhone={phone}
+        initialLinkedAt={linkedAt}
+        allowUnlink={isPhoneLinked}
+        unlinkLoading={unlinkLoading}
+        unlinkError={unlinkError}
+        onUnlink={handleUnlinkPhone}
+        onLinked={(nextPhone, nextLinkedAt) => {
+          setPhone(nextPhone);
+          setLinkedAt(nextLinkedAt);
+          setPhoneModalOpen(false);
+          setUnlinkError(null);
+          fetchPhoneStatus();
+        }}
       />
 
       {isAddressModalOpen && (

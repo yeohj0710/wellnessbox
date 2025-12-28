@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { ExpandableSection } from "@/components/common/expandableSection";
-import PhoneNumberInputs from "./phoneNumberInputs";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 
 export default function AddressSection({
@@ -16,24 +15,15 @@ export default function AddressSection({
   setEntrancePassword,
   directions,
   setDirections,
-  phonePart1,
-  phonePart2,
-  phonePart3,
-  setPhonePart1,
-  setPhonePart2,
-  setPhonePart3,
+  phoneDisplay,
+  linkedAt,
+  onOpenPhoneModal,
+  phoneStatusLoading,
+  phoneStatusError,
+  isUserLoggedIn,
   password,
   setPassword,
-  otpCode,
-  setOtpCode,
-  onSendOtp,
-  onVerifyOtp,
-  otpSendLoading,
-  otpVerifyLoading,
-  isPhoneVerified,
-  otpStatusMessage,
-  otpErrorMessage,
-  canRequestOtp,
+  unlinkError,
 }: any) {
   const [showPw, setShowPw] = useState(true);
   return (
@@ -111,63 +101,60 @@ export default function AddressSection({
           />
         </ExpandableSection>
       </div>
-      <h2 className="text-lg font-bold p-4 pb-2 mt-3">연락처 입력</h2>
-      <PhoneNumberInputs
-        phonePart1={phonePart1}
-        phonePart2={phonePart2}
-        phonePart3={phonePart3}
-        setPhonePart1={setPhonePart1}
-        setPhonePart2={setPhonePart2}
-        setPhonePart3={setPhonePart3}
-      />
-      <div className="px-4 space-y-2 mt-2">
-        <p className="text-xs text-gray-600">
-          휴대폰 인증을 완료해야 주문을 진행할 수 있어요.
-        </p>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-          <input
-            type="text"
-            value={otpCode}
-            onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
-            placeholder="문자로 받은 인증번호 6자리를 입력해 주세요."
-            disabled={isPhoneVerified}
-            className="flex-1 min-w-0 rounded-md border px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:bg-gray-100 disabled:text-gray-500"
-          />
-          <div className="flex gap-2">
+      <h2 className="text-lg font-bold p-4 pb-2 mt-3">연락처</h2>
+      <div className="px-4 space-y-3">
+        <div className="flex flex-col gap-2 rounded-2xl bg-gray-50 px-4 py-3 ring-1 ring-gray-100">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-sm font-semibold text-gray-900">
+                전화번호
+              </div>
+              <div className="text-sm text-gray-700">
+                {phoneStatusLoading
+                  ? "확인 중..."
+                  : phoneDisplay || "연결된 번호 없음"}
+              </div>
+            </div>
+
             <button
               type="button"
-              onClick={onSendOtp}
-              disabled={otpSendLoading || isPhoneVerified || !canRequestOtp}
-              className="whitespace-nowrap rounded-md bg-sky-500 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:bg-gray-300"
+              onClick={onOpenPhoneModal}
+              disabled={!isUserLoggedIn || phoneStatusLoading}
+              className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-full bg-sky-100 px-4 text-xs font-semibold text-sky-700 hover:bg-sky-200 disabled:cursor-not-allowed disabled:bg-sky-50"
             >
-              {otpSendLoading ? "발송 중..." : "인증번호 받기"}
-            </button>
-            <button
-              type="button"
-              onClick={onVerifyOtp}
-              disabled={
-                otpVerifyLoading ||
-                !otpCode ||
-                !canRequestOtp ||
-                isPhoneVerified
-              }
-              className="whitespace-nowrap rounded-md bg-emerald-500 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-gray-300"
-            >
-              {otpVerifyLoading ? "확인 중..." : "인증번호 확인"}
+              {phoneDisplay ? "변경" : "인증"}
             </button>
           </div>
-        </div>
-        {otpStatusMessage ? (
-          <p className="text-xs text-emerald-700">{otpStatusMessage}</p>
-        ) : null}
-        {otpErrorMessage ? (
-          <p className="text-xs text-rose-600">{otpErrorMessage}</p>
-        ) : null}
-        {isPhoneVerified ? (
-          <p className="text-xs text-emerald-700">
-            현재 입력한 번호에 대한 인증이 완료되었어요.
+
+          <p className="text-xs text-gray-600">
+            결제에 사용한 전화번호를 인증하면 주문 내역을 확인할 수 있어요.
           </p>
-        ) : null}
+
+          {!isUserLoggedIn ? (
+            <p className="text-xs text-amber-700 bg-amber-50 px-3 py-2 rounded-lg ring-1 ring-amber-100">
+              카카오 로그인 후 전화번호 인증을 진행해 주세요.
+            </p>
+          ) : null}
+
+          {!linkedAt && phoneDisplay ? (
+            <p className="text-xs text-rose-700 bg-rose-50 px-3 py-2 rounded-lg ring-1 ring-rose-100">
+              전화번호가 확인되지 않았어요. "{phoneDisplay}" 번호로 다시 인증해
+              주세요.
+            </p>
+          ) : null}
+
+          {unlinkError ? (
+            <p className="text-xs text-rose-700 bg-rose-50 px-3 py-2 rounded-lg ring-1 ring-rose-100">
+              {unlinkError}
+            </p>
+          ) : null}
+
+          {phoneStatusError ? (
+            <p className="text-xs text-rose-700 bg-rose-50 px-3 py-2 rounded-lg ring-1 ring-rose-100">
+              {phoneStatusError}
+            </p>
+          ) : null}
+        </div>
       </div>
       <h2 className="text-lg font-bold p-4 pb-2 mt-2">주문 조회 비밀번호</h2>
       <div className="px-4 space-y-3">
