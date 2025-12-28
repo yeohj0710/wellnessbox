@@ -175,6 +175,7 @@ model Client {
   chatSessions   ChatSession[]
   checkAiResults CheckAiResult[]
   profile        UserProfile?
+  appUsers       AppUser[]
 
   @@index([lastSeenAt])
 }
@@ -206,12 +207,31 @@ model CheckAiResult {
 model UserProfile {
   id        String   @id @default(cuid())
   clientId  String   @unique
-  data      Json
+  data      Json     @default("{}")
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
   client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@index([clientId, updatedAt])
+}
+
+model AppUser {
+  id              String    @id @default(cuid())
+  kakaoId         String    @unique
+  clientId        String?
+  nickname        String?
+  email           String?
+  profileImageUrl String?
+  kakaoEmail      String?
+  phone           String?
+  phoneLinkedAt   DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @default(now()) @updatedAt
+  client          Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  @@index([clientId])
+  @@index([email])
+  @@index([phone])
 }
 
 model ChatSession {
@@ -251,18 +271,17 @@ model Config {
 }
 
 model PhoneOtp {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   phone     String
   codeHash  String
   expiresAt DateTime
   usedAt    DateTime?
-  attempts  Int      @default(0)
-  createdAt DateTime @default(now())
+  attempts  Int       @default(0)
+  createdAt DateTime  @default(now())
 
   @@index([phone, createdAt])
   @@index([expiresAt])
 }
-
 
 /// DB에 이미 있는 vector 테이블 유지 (drop 위험 방지)
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.

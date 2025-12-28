@@ -1,13 +1,9 @@
 import { NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
 import db from "@/lib/db";
 import { requireUserId } from "@/lib/auth";
 import getSession from "@/lib/session";
 
 export const runtime = "nodejs";
-
-const isPlainObject = (v: unknown): v is Record<string, unknown> =>
-  !!v && typeof v === "object" && !Array.isArray(v);
 
 async function clearPhoneFromSession() {
   const session = await getSession();
@@ -34,23 +30,10 @@ export async function POST() {
       );
     }
 
-    const profile = await db.userProfile.findUnique({
-      where: { clientId },
-      select: { data: true },
+    await db.appUser.updateMany({
+      where: { kakaoId: clientId },
+      data: { phone: null, phoneLinkedAt: null },
     });
-
-    if (profile) {
-      const current = isPlainObject(profile.data)
-        ? (profile.data as Record<string, unknown>)
-        : {};
-
-      const { phone: _phone, phoneLinkedAt: _phoneLinkedAt, ...rest } = current;
-
-      await db.userProfile.update({
-        where: { clientId },
-        data: { data: rest as Prisma.InputJsonValue },
-      });
-    }
 
     await clearPhoneFromSession();
 

@@ -15,32 +15,6 @@ type SessionUser = {
   phoneLinkedAt?: string;
 };
 
-type ProfileData = {
-  phone?: string;
-  phoneLinkedAt?: string;
-  nickname?: string;
-  profileImageUrl?: string;
-  email?: string;
-  kakaoEmail?: string;
-};
-
-const isPlainObject = (v: unknown): v is Record<string, unknown> =>
-  !!v && typeof v === "object" && !Array.isArray(v);
-
-function parseProfileData(data: unknown): ProfileData {
-  if (!isPlainObject(data)) return {};
-
-  return {
-    phone: typeof data.phone === "string" ? data.phone : undefined,
-    phoneLinkedAt: typeof data.phoneLinkedAt === "string" ? data.phoneLinkedAt : undefined,
-    nickname: typeof data.nickname === "string" ? data.nickname : undefined,
-    profileImageUrl:
-      typeof data.profileImageUrl === "string" ? data.profileImageUrl : undefined,
-    email: typeof data.email === "string" ? data.email : undefined,
-    kakaoEmail: typeof data.kakaoEmail === "string" ? data.kakaoEmail : undefined,
-  } satisfies ProfileData;
-}
-
 export default async function MePage() {
   const session = await getSession();
   const user = session.user as Partial<SessionUser> | undefined;
@@ -86,19 +60,28 @@ export default async function MePage() {
   let email = user.email ?? "";
   let kakaoEmail = user.kakaoEmail ?? user.email ?? "";
 
-  const profile = await db.userProfile.findUnique({
-    where: { clientId },
-    select: { data: true },
+  const profile = await db.appUser.findUnique({
+    where: { kakaoId: clientId },
+    select: {
+      phone: true,
+      phoneLinkedAt: true,
+      nickname: true,
+      profileImageUrl: true,
+      email: true,
+      kakaoEmail: true,
+    },
   });
 
   if (profile) {
-    const data = parseProfileData(profile.data);
-    initialPhone = data.phone ?? initialPhone ?? "";
-    initialLinkedAt = data.phoneLinkedAt ?? initialLinkedAt;
-    nickname = data.nickname ?? nickname;
-    profileImageUrl = data.profileImageUrl ?? profileImageUrl;
-    email = data.email ?? email;
-    kakaoEmail = data.kakaoEmail ?? kakaoEmail;
+    initialPhone = profile.phone ?? initialPhone ?? "";
+    const linkedAtValue = profile.phoneLinkedAt
+      ? profile.phoneLinkedAt.toISOString()
+      : undefined;
+    initialLinkedAt = linkedAtValue ?? initialLinkedAt;
+    nickname = profile.nickname ?? nickname;
+    profileImageUrl = profile.profileImageUrl ?? profileImageUrl;
+    email = profile.email ?? email;
+    kakaoEmail = profile.kakaoEmail ?? kakaoEmail;
   }
 
   return (

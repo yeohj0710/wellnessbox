@@ -2,9 +2,6 @@ import { NextResponse } from "next/server";
 import db from "@/lib/db";
 import getSession from "@/lib/session";
 
-const isPlainObject = (v: unknown): v is Record<string, unknown> =>
-  !!v && typeof v === "object" && !Array.isArray(v);
-
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -29,15 +26,17 @@ export async function GET() {
   let phone = typeof user.phone === "string" ? user.phone : "";
   let linkedAt = typeof user.phoneLinkedAt === "string" ? user.phoneLinkedAt : undefined;
 
-  const profile = await db.userProfile.findUnique({
-    where: { clientId },
-    select: { data: true },
+  const profile = await db.appUser.findUnique({
+    where: { kakaoId: clientId },
+    select: { phone: true, phoneLinkedAt: true },
   });
 
   if (profile) {
-    const data = isPlainObject(profile.data) ? profile.data : {};
-    phone = typeof data.phone === "string" ? data.phone : phone;
-    linkedAt = typeof data.phoneLinkedAt === "string" ? data.phoneLinkedAt : linkedAt;
+    phone = typeof profile.phone === "string" ? profile.phone : phone;
+    const linkedAtIso = profile.phoneLinkedAt
+      ? profile.phoneLinkedAt.toISOString()
+      : undefined;
+    linkedAt = linkedAtIso ?? linkedAt;
   }
 
   return NextResponse.json(

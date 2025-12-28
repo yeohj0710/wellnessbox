@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
 import db from "@/lib/db";
 import { hashOtp, normalizePhone } from "@/lib/otp";
 import getSession from "@/lib/session";
-import { ensureClient } from "@/lib/server/client";
+import { getClientIdFromRequest } from "@/lib/server/client";
 
 export const runtime = "nodejs";
 
@@ -20,9 +19,6 @@ function badRequest(message = "Invalid input") {
     { status: 400, headers: { "Cache-Control": "no-store" } }
   );
 }
-
-const isPlainObject = (v: unknown): v is Record<string, unknown> =>
-  !!v && typeof v === "object" && !Array.isArray(v);
 
 export async function POST(req: Request) {
   const session = await getSession();
@@ -100,38 +96,23 @@ export async function POST(req: Request) {
     });
 
     const linkedAt = now.toISOString();
-    const clientId = String(user.kakaoId);
+    const linkedAtDate = new Date(linkedAt);
+    const resolvedClientId = await getClientIdFromRequest();
 
-    await ensureClient(clientId);
-
-    const profile = await db.userProfile.findUnique({
-      where: { clientId },
-      select: { data: true },
+    await db.appUser.upsert({
+      where: { kakaoId: String(user.kakaoId) },
+      create: {
+        kakaoId: String(user.kakaoId),
+        clientId: resolvedClientId ?? undefined,
+        phone,
+        phoneLinkedAt: linkedAtDate,
+      },
+      update: {
+        clientId: resolvedClientId ?? undefined,
+        phone,
+        phoneLinkedAt: linkedAtDate,
+      },
     });
-
-    const current = isPlainObject(profile?.data)
-      ? (profile!.data as Record<string, unknown>)
-      : {};
-
-    const nextData = {
-      ...current,
-      phone,
-      phoneLinkedAt: linkedAt,
-    };
-
-    if (profile) {
-      await db.userProfile.update({
-        where: { clientId },
-        data: { data: nextData as Prisma.InputJsonValue },
-      });
-    } else {
-      await db.userProfile.create({
-        data: {
-          clientId,
-          data: nextData as Prisma.InputJsonValue,
-        },
-      });
-    }
 
     session.user = { ...user, phone, phoneLinkedAt: linkedAt };
     await session.save();

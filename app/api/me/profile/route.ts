@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
 import db from "@/lib/db";
 import getSession from "@/lib/session";
-import { ensureClient } from "@/lib/server/client";
+import { getClientIdFromRequest } from "@/lib/server/client";
 
 export const runtime = "nodejs";
 
@@ -20,36 +19,9 @@ function badRequest(message = "Invalid input") {
   );
 }
 
-const isPlainObject = (v: unknown): v is Record<string, unknown> =>
-  !!v && typeof v === "object" && !Array.isArray(v);
-
 function normalizeInput(value: unknown, maxLength: number) {
   if (typeof value !== "string") return "";
   return value.trim().slice(0, maxLength);
-}
-
-type ProfileData = {
-  nickname?: string;
-  email?: string;
-  profileImageUrl?: string;
-  kakaoEmail?: string;
-  phone?: string;
-  phoneLinkedAt?: string;
-};
-
-function parseProfileData(data: unknown): ProfileData {
-  if (!isPlainObject(data)) return {};
-
-  return {
-    nickname: typeof data.nickname === "string" ? data.nickname : undefined,
-    email: typeof data.email === "string" ? data.email : undefined,
-    profileImageUrl:
-      typeof data.profileImageUrl === "string" ? data.profileImageUrl : undefined,
-    kakaoEmail: typeof data.kakaoEmail === "string" ? data.kakaoEmail : undefined,
-    phone: typeof data.phone === "string" ? data.phone : undefined,
-    phoneLinkedAt:
-      typeof data.phoneLinkedAt === "string" ? data.phoneLinkedAt : undefined,
-  } satisfies ProfileData;
 }
 
 export async function POST(req: Request) {
@@ -72,40 +44,41 @@ export async function POST(req: Request) {
   const email = normalizeInput((body as any)?.email, 120);
   const profileImageUrl = normalizeInput((body as any)?.profileImageUrl, 500);
 
-  const clientId = String(user.kakaoId);
-  await ensureClient(clientId);
-
-  const profile = await db.userProfile.findUnique({
-    where: { clientId },
-    select: { data: true },
+  const profile = await db.appUser.findUnique({
+    where: { kakaoId: String(user.kakaoId) },
+    select: {
+      id: true,
+      kakaoId: true,
+      nickname: true,
+      email: true,
+      profileImageUrl: true,
+      kakaoEmail: true,
+      clientId: true,
+    },
   });
 
-  const currentData = parseProfileData(profile?.data);
+  const nextKakaoEmail = profile?.kakaoEmail ?? user.kakaoEmail ?? user.email ?? undefined;
+  const resolvedClientId =
+    (await getClientIdFromRequest()) ?? profile?.clientId ?? undefined;
 
-  const nextKakaoEmail =
-    currentData.kakaoEmail ?? user.kakaoEmail ?? user.email ?? undefined;
-
-  const nextData: ProfileData = {
-    ...currentData,
-    nickname: nickname || undefined,
-    email: email || undefined,
-    profileImageUrl: profileImageUrl || undefined,
-    kakaoEmail: nextKakaoEmail,
-  } satisfies ProfileData;
-
-  if (profile) {
-    await db.userProfile.update({
-      where: { clientId },
-      data: { data: nextData as Prisma.InputJsonValue },
-    });
-  } else {
-    await db.userProfile.create({
-      data: {
-        clientId,
-        data: nextData as Prisma.InputJsonValue,
-      },
-    });
-  }
+  await db.appUser.upsert({
+    where: { kakaoId: String(user.kakaoId) },
+    create: {
+      kakaoId: String(user.kakaoId),
+      clientId: resolvedClientId,
+      nickname: nickname || null,
+      email: email || null,
+      profileImageUrl: profileImageUrl || null,
+      kakaoEmail: nextKakaoEmail || null,
+    },
+    update: {
+      clientId: resolvedClientId,
+      nickname: nickname || null,
+      email: email || null,
+      profileImageUrl: profileImageUrl || null,
+      kakaoEmail: nextKakaoEmail || null,
+    },
+  });
 
   session.user = {
     ...user,

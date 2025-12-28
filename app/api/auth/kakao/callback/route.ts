@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import getSession from "@/lib/session";
 import db from "@/lib/db";
-import { Prisma } from "@prisma/client";
-import { ensureClient } from "@/lib/server/client";
+import { ensureClient, getClientIdFromRequest } from "@/lib/server/client";
 
 type KakaoUserMe = {
   id: number;
@@ -64,9 +63,6 @@ function resolvePublicOrigin(origin: string) {
   return normalizeBaseUrl(base);
 }
 
-const isPlainObject = (v: unknown): v is Record<string, unknown> =>
-  !!v && typeof v === "object" && !Array.isArray(v);
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
@@ -125,63 +121,43 @@ export async function GET(request: Request) {
     const kakaoAccount = me.kakao_account ?? {};
     const profile = kakaoAccount.profile ?? {};
 
-    const clientIdStr = String(me.id);
-    await ensureClient(clientIdStr);
+    const requestClientId = (await getClientIdFromRequest()) ?? undefined;
+    if (requestClientId) {
+      await ensureClient(requestClientId);
+    }
 
-    const persistedProfile = await db.userProfile.findUnique({
-      where: { clientId: clientIdStr },
-      select: { data: true },
+    const kakaoIdStr = String(me.id);
+    const existingUser = await db.appUser.findUnique({
+      where: { kakaoId: kakaoIdStr },
     });
 
-    const currentData = isPlainObject(persistedProfile?.data)
-      ? (persistedProfile!.data as Record<string, unknown>)
-      : {};
-
-    const storedNickname =
-      typeof currentData.nickname === "string"
-        ? currentData.nickname
-        : undefined;
-    const storedEmail =
-      typeof currentData.email === "string" ? currentData.email : undefined;
-    const storedProfileImage =
-      typeof currentData.profileImageUrl === "string"
-        ? currentData.profileImageUrl
-        : undefined;
-    const storedKakaoEmail =
-      typeof currentData.kakaoEmail === "string"
-        ? currentData.kakaoEmail
-        : undefined;
-
-    const kakaoEmail = kakaoAccount.email ?? storedKakaoEmail;
-    const nextNickname = storedNickname || profile.nickname || "";
-    const nextEmail = storedEmail ?? kakaoEmail ?? "";
+    const nextNickname = existingUser?.nickname || profile.nickname || "";
+    const nextEmail = existingUser?.email ?? kakaoAccount.email ?? "";
     const nextProfileImage =
-      storedProfileImage ||
+      existingUser?.profileImageUrl ||
       profile.profile_image_url ||
       profile.thumbnail_image_url ||
       "";
+    const kakaoEmail = existingUser?.kakaoEmail ?? kakaoAccount.email ?? undefined;
 
-    const nextData = {
-      ...currentData,
-      nickname: nextNickname,
-      email: nextEmail,
-      profileImageUrl: nextProfileImage,
-      kakaoEmail: kakaoEmail ?? null,
-    } satisfies Record<string, unknown>;
-
-    if (persistedProfile) {
-      await db.userProfile.update({
-        where: { clientId: clientIdStr },
-        data: { data: nextData as Prisma.InputJsonValue },
-      });
-    } else {
-      await db.userProfile.create({
-        data: {
-          clientId: clientIdStr,
-          data: nextData as Prisma.InputJsonValue,
-        },
-      });
-    }
+    await db.appUser.upsert({
+      where: { kakaoId: kakaoIdStr },
+      create: {
+        kakaoId: kakaoIdStr,
+        clientId: requestClientId ?? existingUser?.clientId,
+        nickname: nextNickname || null,
+        email: nextEmail || null,
+        profileImageUrl: nextProfileImage || null,
+        kakaoEmail: kakaoEmail || null,
+      },
+      update: {
+        clientId: requestClientId ?? existingUser?.clientId,
+        nickname: nextNickname || null,
+        email: nextEmail || null,
+        profileImageUrl: nextProfileImage || null,
+        kakaoEmail: kakaoEmail || null,
+      },
+    });
 
     const session = await getSession();
     session.user = {
