@@ -228,6 +228,7 @@ model AppUser {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @default(now()) @updatedAt
   client          Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  emailOtps       EmailOtp[]
 
   @@index([clientId])
   @@index([email])
@@ -281,6 +282,25 @@ model PhoneOtp {
 
   @@index([phone, createdAt])
   @@index([expiresAt])
+}
+
+model EmailOtp {
+  id             String    @id @default(cuid())
+  userId         String
+  email          String
+  codeHash       String
+  createdAt      DateTime  @default(now())
+  expiresAt      DateTime
+  usedAt         DateTime?
+  attemptCount   Int       @default(0)
+  lastAttemptAt  DateTime?
+  sendCount      Int       @default(1)
+  lastSentAt     DateTime  @default(now())
+  user           AppUser   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, email, createdAt])
+  @@index([userId, email, expiresAt])
+  @@index([userId, email, usedAt, expiresAt])
 }
 
 /// DB에 이미 있는 vector 테이블 유지 (drop 위험 방지)

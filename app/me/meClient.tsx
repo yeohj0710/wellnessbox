@@ -9,6 +9,7 @@ import OrdersSection from "./ordersSection";
 import PhoneVerifyModal from "./phoneVerifyModal";
 import { InlineEditableField } from "./inlineEditableField";
 import { ProfileImageEditor } from "./profileImageEditor";
+import EmailChangeModal from "./emailChangeModal";
 
 type MeClientProps = {
   nickname: string;
@@ -58,6 +59,7 @@ export default function MeClient({
   const [phone, setPhone] = useState(initialPhone ?? "");
   const [linkedAt, setLinkedAt] = useState<string | undefined>(initialLinkedAt);
   const [isVerifyOpen, setIsVerifyOpen] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
   const [unlinkLoading, setUnlinkLoading] = useState(false);
   const [unlinkError, setUnlinkError] = useState<string | null>(null);
@@ -313,25 +315,24 @@ export default function MeClient({
                 error={savingField ? null : saveError}
               />
 
-              <InlineEditableField
-                label="이메일"
-                value={profileEmail}
-                placeholder={kakaoAccountEmail || "example@email.com"}
-                saving={savingField === "email"}
-                onSave={async (next) => {
-                  if (next === profileEmail) return;
-                  const previous = profileEmail;
-                  setProfileEmail(next);
-                  try {
-                    await saveProfile({ email: next }, "email");
-                  } catch {
-                    setProfileEmail(previous);
-                  }
-                }}
-                maxLength={120}
-                type="email"
-                error={savingField ? null : saveError}
-              />
+              <div className="grid grid-cols-[60px_1fr_auto] items-center gap-2 sm:grid-cols-[60px_1fr_auto] sm:gap-3">
+                <div className="text-sm font-semibold text-gray-900">이메일</div>
+                <div className="min-w-0 break-words text-sm text-gray-800">
+                  {profileEmail || kakaoAccountEmail || "example@email.com"}
+                </div>
+                <div className="flex items-center justify-end self-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSaveError(null);
+                      setIsEmailModalOpen(true);
+                    }}
+                    className="inline-flex h-6 min-w-[64px] items-center justify-center whitespace-nowrap rounded-full bg-sky-100 px-3 text-xs font-semibold text-sky-700 hover:bg-sky-200 disabled:cursor-not-allowed disabled:bg-sky-50"
+                  >
+                    변경
+                  </button>
+                </div>
+              </div>
 
               <div className="grid grid-cols-[60px_1fr_auto] items-center gap-2 sm:grid-cols-[60px_1fr_auto] sm:gap-3">
                 <div className="text-sm font-semibold text-gray-900">
@@ -376,6 +377,20 @@ export default function MeClient({
         <div className="mt-10 flex justify-end">
           <LogoutButton />
         </div>
+
+        <EmailChangeModal
+          open={isEmailModalOpen}
+          onClose={() => {
+            if (savingField) return;
+            setIsEmailModalOpen(false);
+          }}
+          initialEmail={profileEmail}
+          onChanged={(nextEmail) => {
+            setProfileEmail(nextEmail);
+            setIsEmailModalOpen(false);
+            router.refresh();
+          }}
+        />
 
         <PhoneVerifyModal
           open={isVerifyOpen}

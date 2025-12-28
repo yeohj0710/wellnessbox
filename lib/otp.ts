@@ -42,3 +42,16 @@ export function hashOtp(phone: string, code: string): string {
     .update(`${pepper}:${phone}:${code}`)
     .digest("hex");
 }
+
+export function normalizeEmail(input: string): string {
+  return input.trim().toLowerCase();
+}
+
+export function hashEmailOtp(email: string, code: string): string {
+  const pepper = getOtpPepper();
+  const normalizedEmail = normalizeEmail(email);
+  return crypto
+    .createHash("sha256")
+    .update(`${pepper}:email:${normalizedEmail}:${code}`)
+    .digest("hex");
+}
