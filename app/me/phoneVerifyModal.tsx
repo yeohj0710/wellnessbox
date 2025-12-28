@@ -104,12 +104,6 @@ export default function PhoneVerifyModal({
             결제에 사용한 전화번호를 인증하면 주문 내역을 확인할 수 있어요.
           </div>
 
-          {busy ? (
-            <div className="mt-2 text-xs font-semibold text-gray-500">
-              처리 중에는 닫을 수 없어요.
-            </div>
-          ) : null}
-
           {unlinkError ? (
             <div className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700 ring-1 ring-rose-100">
               {unlinkError}

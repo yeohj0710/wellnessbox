@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import db from "@/lib/db";
 import { hashOtp, normalizePhone } from "@/lib/otp";
 import getSession from "@/lib/session";
+import { ensureClient } from "@/lib/server/client";
 
 export const runtime = "nodejs";
 
@@ -100,6 +101,8 @@ export async function POST(req: Request) {
 
     const linkedAt = now.toISOString();
     const clientId = String(user.kakaoId);
+
+    await ensureClient(clientId);
 
     const profile = await db.userProfile.findUnique({
       where: { clientId },

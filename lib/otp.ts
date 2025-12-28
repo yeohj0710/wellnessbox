@@ -1,6 +1,25 @@
 import crypto from "crypto";
 
-const OTP_PEPPER = process.env.OTP_PEPPER;
+let hasWarnedMissingPepper = false;
+
+function getOtpPepper(): string {
+  const envPepper = process.env.OTP_PEPPER;
+
+  if (envPepper) return envPepper;
+
+  if (process.env.NODE_ENV !== "production") {
+    if (!hasWarnedMissingPepper) {
+      console.warn(
+        "OTP_PEPPER is not set; using a development fallback pepper instead"
+      );
+      hasWarnedMissingPepper = true;
+    }
+
+    return "dev-otp-pepper";
+  }
+
+  throw new Error("OTP_PEPPER is not configured");
+}
 
 export function normalizePhone(input: string): string {
   const digits = input.replace(/\D/g, "");
@@ -17,11 +36,9 @@ export function generateOtp(): string {
 }
 
 export function hashOtp(phone: string, code: string): string {
-  if (!OTP_PEPPER) {
-    throw new Error("OTP_PEPPER is not configured");
-  }
+  const pepper = getOtpPepper();
   return crypto
     .createHash("sha256")
-    .update(`${OTP_PEPPER}:${phone}:${code}`)
+    .update(`${pepper}:${phone}:${code}`)
     .digest("hex");
 }

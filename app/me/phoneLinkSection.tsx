@@ -70,6 +70,8 @@ export default function PhoneLinkSection({
   const [sendError, setSendError] = useState<string | null>(null);
   const [verifyError, setVerifyError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [otpSent, setOtpSent] = useState(false);
+  const [phoneLocked, setPhoneLocked] = useState(Boolean(initialPhone));
 
   const normalizedPhone = phoneDigits;
   const phoneDisplay = useMemo(() => formatPhoneKR(phoneDigits), [phoneDigits]);
@@ -84,13 +86,14 @@ export default function PhoneLinkSection({
   }, [busy, onBusyChange]);
 
   useEffect(() => {
-    if (busy) return;
     setPhoneDigits((initialPhone ?? "").replace(/\D/g, "").slice(0, 11));
     setCode("");
     setSendError(null);
     setVerifyError(null);
     setStatusMessage(null);
-  }, [initialPhone, initialLinkedAt, busy]);
+    setOtpSent(false);
+    setPhoneLocked(Boolean(initialPhone));
+  }, [initialPhone, initialLinkedAt]);
 
   const handleSendOtp = useCallback(async () => {
     if (!isPhoneValid || busy) return;
@@ -121,6 +124,8 @@ export default function PhoneLinkSection({
         return;
       }
 
+      setOtpSent(true);
+      setPhoneLocked(true);
       setStatusMessage("인증번호를 전송했어요. 문자 메시지를 확인해 주세요.");
     } catch (error) {
       setSendError(error instanceof Error ? error.message : String(error));
@@ -168,8 +173,18 @@ export default function PhoneLinkSection({
     }
   }, [code, isPhoneValid, normalizedPhone, onLinked, busy]);
 
+  const handleEditPhone = useCallback(() => {
+    if (busy) return;
+    setPhoneLocked(false);
+    setOtpSent(false);
+    setCode("");
+    setStatusMessage(null);
+    setSendError(null);
+    setVerifyError(null);
+  }, [busy]);
+
   const sendDisabled = busy || !isPhoneValid;
-  const verifyDisabled = busy || !isPhoneValid || code.length === 0;
+  const verifyDisabled = busy || !isPhoneValid || code.length === 0 || !otpSent;
 
   return (
     <div className="space-y-4">
@@ -182,7 +197,7 @@ export default function PhoneLinkSection({
             inputMode="numeric"
             autoComplete="tel"
             value={phoneDisplay}
-            disabled={busy}
+            disabled={busy || phoneLocked}
             onChange={(e) => {
               const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
               setPhoneDigits(digits);
@@ -190,6 +205,17 @@ export default function PhoneLinkSection({
             placeholder="010-1234-5678"
             className="min-w-0 flex-1 h-10 rounded-lg border border-gray-300 px-3 text-gray-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/25 disabled:bg-gray-100 disabled:text-gray-500"
           />
+
+          {phoneLocked ? (
+            <button
+              type="button"
+              onClick={handleEditPhone}
+              disabled={busy}
+              className="shrink-0 w-20 h-8 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:bg-gray-100"
+            >
+              번호 수정
+            </button>
+          ) : null}
 
           <button
             type="button"
@@ -199,10 +225,15 @@ export default function PhoneLinkSection({
             className="shrink-0 w-16 h-8 rounded-lg bg-sky-400 text-sm font-semibold text-white hover:bg-sky-500 disabled:cursor-not-allowed disabled:bg-sky-200"
           >
             <span className="grid h-full w-full place-items-center">
-              {sendLoading ? <Spinner className="text-white" /> : "발송"}
+              {sendLoading ? <Spinner className="text-white" /> : otpSent ? "재발송" : "발송"}
             </span>
           </button>
         </div>
+        {otpSent ? (
+          <p className="text-xs text-gray-600">
+            인증번호를 입력하려면 번호 수정을 잠시 잠가 두었어요. 잘못 입력했다면 "번호 수정"을 눌러 다시 입력해 주세요.
+          </p>
+        ) : null}
       </div>
 
       <div className="space-y-2">
@@ -214,7 +245,7 @@ export default function PhoneLinkSection({
             inputMode="numeric"
             autoComplete="one-time-code"
             value={code}
-            disabled={busy}
+            disabled={busy || !otpSent}
             maxLength={6}
             onChange={(e) =>
               setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
@@ -235,6 +266,9 @@ export default function PhoneLinkSection({
             </span>
           </button>
         </div>
+        {!otpSent ? (
+          <p className="text-xs text-gray-600">먼저 인증번호를 발송하고, 문자로 받은 6자리 번호를 입력해 주세요.</p>
+        ) : null}
       </div>
 
       {statusMessage ? (
