@@ -15,8 +15,31 @@ type SessionUser = {
   phoneLinkedAt?: string;
 };
 
+type ProfileData = {
+  phone?: string;
+  phoneLinkedAt?: string;
+  nickname?: string;
+  profileImageUrl?: string;
+  email?: string;
+  kakaoEmail?: string;
+};
+
 const isPlainObject = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === "object" && !Array.isArray(v);
+
+function parseProfileData(data: unknown): ProfileData {
+  if (!isPlainObject(data)) return {};
+
+  return {
+    phone: typeof data.phone === "string" ? data.phone : undefined,
+    phoneLinkedAt: typeof data.phoneLinkedAt === "string" ? data.phoneLinkedAt : undefined,
+    nickname: typeof data.nickname === "string" ? data.nickname : undefined,
+    profileImageUrl:
+      typeof data.profileImageUrl === "string" ? data.profileImageUrl : undefined,
+    email: typeof data.email === "string" ? data.email : undefined,
+    kakaoEmail: typeof data.kakaoEmail === "string" ? data.kakaoEmail : undefined,
+  } satisfies ProfileData;
+}
 
 export default async function MePage() {
   const session = await getSession();
@@ -69,22 +92,13 @@ export default async function MePage() {
   });
 
   if (profile) {
-    const data = isPlainObject(profile.data) ? profile.data : {};
-    initialPhone = typeof data.phone === "string" ? data.phone : "";
-    initialLinkedAt =
-      typeof data.phoneLinkedAt === "string" ? data.phoneLinkedAt : undefined;
-    nickname = typeof data.nickname === "string" && data.nickname
-      ? data.nickname
-      : nickname;
-    profileImageUrl =
-      typeof data.profileImageUrl === "string" && data.profileImageUrl
-        ? data.profileImageUrl
-        : profileImageUrl;
-    email = typeof data.email === "string" && data.email ? data.email : email;
-    kakaoEmail =
-      typeof data.kakaoEmail === "string" && data.kakaoEmail
-        ? data.kakaoEmail
-        : kakaoEmail;
+    const data = parseProfileData(profile.data);
+    initialPhone = data.phone ?? initialPhone ?? "";
+    initialLinkedAt = data.phoneLinkedAt ?? initialLinkedAt;
+    nickname = data.nickname ?? nickname;
+    profileImageUrl = data.profileImageUrl ?? profileImageUrl;
+    email = data.email ?? email;
+    kakaoEmail = data.kakaoEmail ?? kakaoEmail;
   }
 
   return (

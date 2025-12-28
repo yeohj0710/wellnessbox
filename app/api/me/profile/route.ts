@@ -28,6 +28,30 @@ function normalizeInput(value: unknown, maxLength: number) {
   return value.trim().slice(0, maxLength);
 }
 
+type ProfileData = {
+  nickname?: string;
+  email?: string;
+  profileImageUrl?: string;
+  kakaoEmail?: string;
+  phone?: string;
+  phoneLinkedAt?: string;
+};
+
+function parseProfileData(data: unknown): ProfileData {
+  if (!isPlainObject(data)) return {};
+
+  return {
+    nickname: typeof data.nickname === "string" ? data.nickname : undefined,
+    email: typeof data.email === "string" ? data.email : undefined,
+    profileImageUrl:
+      typeof data.profileImageUrl === "string" ? data.profileImageUrl : undefined,
+    kakaoEmail: typeof data.kakaoEmail === "string" ? data.kakaoEmail : undefined,
+    phone: typeof data.phone === "string" ? data.phone : undefined,
+    phoneLinkedAt:
+      typeof data.phoneLinkedAt === "string" ? data.phoneLinkedAt : undefined,
+  } satisfies ProfileData;
+}
+
 export async function POST(req: Request) {
   const session = await getSession();
   const user = session.user;
@@ -56,21 +80,18 @@ export async function POST(req: Request) {
     select: { data: true },
   });
 
-  const currentData = isPlainObject(profile?.data)
-    ? (profile!.data as Record<string, unknown>)
-    : {};
+  const currentData = parseProfileData(profile?.data);
 
-  const kakaoEmailFromDb =
-    typeof currentData.kakaoEmail === "string" ? currentData.kakaoEmail : undefined;
-  const nextKakaoEmail = kakaoEmailFromDb ?? user.kakaoEmail ?? user.email ?? undefined;
+  const nextKakaoEmail =
+    currentData.kakaoEmail ?? user.kakaoEmail ?? user.email ?? undefined;
 
-  const nextData = {
+  const nextData: ProfileData = {
     ...currentData,
-    nickname,
-    email,
-    profileImageUrl,
-    kakaoEmail: nextKakaoEmail ?? null,
-  } satisfies Record<string, unknown>;
+    nickname: nickname || undefined,
+    email: email || undefined,
+    profileImageUrl: profileImageUrl || undefined,
+    kakaoEmail: nextKakaoEmail,
+  } satisfies ProfileData;
 
   if (profile) {
     await db.userProfile.update({
