@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import db from "@/lib/db";
 import { hashOtp, normalizePhone } from "@/lib/otp";
 import getSession from "@/lib/session";
@@ -6,12 +7,21 @@ import getSession from "@/lib/session";
 export const runtime = "nodejs";
 
 function unauthorized(message = "Unauthorized") {
-  return NextResponse.json({ ok: false, error: message }, { status: 401 });
+  return NextResponse.json(
+    { ok: false, error: message },
+    { status: 401, headers: { "Cache-Control": "no-store" } }
+  );
 }
 
 function badRequest(message = "Invalid input") {
-  return NextResponse.json({ ok: false, error: message }, { status: 400 });
+  return NextResponse.json(
+    { ok: false, error: message },
+    { status: 400, headers: { "Cache-Control": "no-store" } }
+  );
 }
+
+const isPlainObject = (v: unknown): v is Record<string, unknown> =>
+  !!v && typeof v === "object" && !Array.isArray(v);
 
 export async function POST(req: Request) {
   const session = await getSession();
@@ -30,9 +40,13 @@ export async function POST(req: Request) {
   }
 
   const phoneInput =
-    typeof (body as any)?.phone === "string" ? ((body as any).phone as string) : "";
+    typeof (body as any)?.phone === "string"
+      ? ((body as any).phone as string)
+      : "";
   const codeInput =
-    typeof (body as any)?.code === "string" ? ((body as any).code as string) : "";
+    typeof (body as any)?.code === "string"
+      ? ((body as any).code as string)
+      : "";
 
   const phone = normalizePhone(phoneInput);
 
@@ -55,14 +69,14 @@ export async function POST(req: Request) {
     if (!otp) {
       return NextResponse.json(
         { ok: false, error: "OTP not found" },
-        { status: 404 }
+        { status: 404, headers: { "Cache-Control": "no-store" } }
       );
     }
 
     if (otp.attempts >= 5) {
       return NextResponse.json(
         { ok: false, error: "Too many attempts" },
-        { status: 429 }
+        { status: 429, headers: { "Cache-Control": "no-store" } }
       );
     }
 
@@ -75,7 +89,7 @@ export async function POST(req: Request) {
 
       return NextResponse.json(
         { ok: false, error: "Invalid code" },
-        { status: 400 }
+        { status: 400, headers: { "Cache-Control": "no-store" } }
       );
     }
 
@@ -85,11 +99,44 @@ export async function POST(req: Request) {
     });
 
     const linkedAt = now.toISOString();
+    const clientId = String(user.kakaoId);
+
+    const profile = await db.userProfile.findUnique({
+      where: { clientId },
+      select: { data: true },
+    });
+
+    const current = isPlainObject(profile?.data)
+      ? (profile!.data as Record<string, unknown>)
+      : {};
+
+    const nextData = {
+      ...current,
+      phone,
+      phoneLinkedAt: linkedAt,
+    };
+
+    if (profile) {
+      await db.userProfile.update({
+        where: { clientId },
+        data: { data: nextData as Prisma.InputJsonValue },
+      });
+    } else {
+      await db.userProfile.create({
+        data: {
+          clientId,
+          data: nextData as Prisma.InputJsonValue,
+        },
+      });
+    }
 
     session.user = { ...user, phone, phoneLinkedAt: linkedAt };
     await session.save();
 
-    return NextResponse.json({ ok: true, phone, linkedAt });
+    return NextResponse.json(
+      { ok: true, phone, linkedAt },
+      { headers: { "Cache-Control": "no-store" } }
+    );
   } catch (e) {
     console.error("link-phone error", {
       name: (e as any)?.name,
@@ -104,7 +151,7 @@ export async function POST(req: Request) {
         error: "Unexpected error",
         detail: (e as any)?.message ?? String(e),
       },
-      { status: 500 }
+      { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   }
 }

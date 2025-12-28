@@ -1,4 +1,5 @@
 import getSession from "@/lib/session";
+import db from "@/lib/db";
 import MeClient from "./meClient";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +14,9 @@ type SessionUser = {
   phoneLinkedAt?: string;
 };
 
+const isPlainObject = (v: unknown): v is Record<string, unknown> =>
+  !!v && typeof v === "object" && !Array.isArray(v);
+
 export default async function MePage() {
   const session = await getSession();
   const user = session.user as Partial<SessionUser> | undefined;
@@ -22,8 +26,8 @@ export default async function MePage() {
 
   if (!isKakaoLoggedIn) {
     return (
-      <div className="w-full mt-8 mb-12 flex justify-center px-4">
-        <div className="w-full sm:w-[640px] bg-white sm:border sm:border-gray-200 sm:rounded-2xl sm:shadow-lg px-5 sm:px-8 py-7 sm:py-8">
+      <div className="w-full mt-8 mb-12 flex justify-center px-2 sm:px-4">
+        <div className="w-full sm:w-[640px] bg-white sm:border sm:border-gray-200 sm:rounded-2xl sm:shadow-lg px-4 sm:px-8 py-7 sm:py-8">
           <div className="flex items-start justify-between gap-3">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">내 정보</h1>
@@ -49,13 +53,30 @@ export default async function MePage() {
     );
   }
 
+  const clientId = String(user.kakaoId);
+
+  let initialPhone = user.phone ?? "";
+  let initialLinkedAt = user.phoneLinkedAt;
+
+  const profile = await db.userProfile.findUnique({
+    where: { clientId },
+    select: { data: true },
+  });
+
+  if (profile) {
+    const data = isPlainObject(profile.data) ? profile.data : {};
+    initialPhone = typeof data.phone === "string" ? data.phone : "";
+    initialLinkedAt =
+      typeof data.phoneLinkedAt === "string" ? data.phoneLinkedAt : undefined;
+  }
+
   return (
     <MeClient
       nickname={user.nickname ?? ""}
       profileImageUrl={user.profileImageUrl ?? ""}
       email={user.email ?? ""}
-      initialPhone={user.phone ?? ""}
-      initialLinkedAt={user.phoneLinkedAt}
+      initialPhone={initialPhone}
+      initialLinkedAt={initialLinkedAt}
     />
   );
 }

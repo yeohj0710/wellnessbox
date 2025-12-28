@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import KakaoLoginButton from "@/components/common/kakaoLoginButton";
 
@@ -24,6 +25,8 @@ export function MenuLinks({
   onItemClick,
   isDrawer = false,
 }: MenuLinksProps) {
+  const pathname = usePathname();
+
   const [adminVisible, setAdminVisible] = useState(false);
   const [pressTimer, setPressTimer] = useState<ReturnType<
     typeof setTimeout
@@ -66,19 +69,21 @@ export function MenuLinks({
     onClick: onItemClick,
   };
 
-  const kakaoLoggedIn = !!loginStatus?.isUserLoggedIn;
+  const kakaoLoggedIn = loginStatus?.isUserLoggedIn === true;
 
-  const anyLoggedIn =
-    !!loginStatus &&
-    (loginStatus.isUserLoggedIn ||
-      loginStatus.isPharmLoggedIn ||
-      loginStatus.isRiderLoggedIn ||
-      loginStatus.isAdminLoggedIn ||
-      loginStatus.isTestLoggedIn);
+  const isPharmLoggedIn = loginStatus?.isPharmLoggedIn === true;
+  const isRiderLoggedIn = loginStatus?.isRiderLoggedIn === true;
+  const isAdminLoggedIn = loginStatus?.isAdminLoggedIn === true;
 
-  const isPharmLoggedIn = !!loginStatus?.isPharmLoggedIn;
-  const isRiderLoggedIn = !!loginStatus?.isRiderLoggedIn;
-  const isAdminLoggedIn = !!loginStatus?.isAdminLoggedIn;
+  const inPharmArea = (pathname ?? "").startsWith("/pharm");
+  const inRiderArea = (pathname ?? "").startsWith("/rider");
+  const inAdminArea =
+    (pathname ?? "").startsWith("/admin") ||
+    (pathname ?? "").startsWith("/admin-login");
+
+  const showPharmMenus = isPharmLoggedIn && inPharmArea;
+  const showRiderMenus = isRiderLoggedIn && inRiderArea;
+  const showAdminMenus = isAdminLoggedIn && inAdminArea;
 
   if (isDrawer) {
     return (
@@ -134,37 +139,40 @@ export function MenuLinks({
           </span>
         </Link>
 
-        {isPharmLoggedIn && (
-          <Link
-            href="/pharm"
-            className={menuItemClasses()}
-            onClick={onItemClick}
-          >
-            주문 관리
-          </Link>
+        {showPharmMenus && (
+          <>
+            <div className="mt-2 h-px bg-slate-100" />
+            <Link
+              href="/pharm"
+              className={menuItemClasses()}
+              onClick={onItemClick}
+            >
+              주문 관리
+            </Link>
+            <Link
+              href="/pharm/manage-products"
+              className={menuItemClasses()}
+              onClick={onItemClick}
+            >
+              상품 등록/관리
+            </Link>
+          </>
         )}
 
-        {isRiderLoggedIn && (
-          <Link
-            href="/rider"
-            className={menuItemClasses()}
-            onClick={onItemClick}
-          >
-            배송 관리
-          </Link>
+        {showRiderMenus && (
+          <>
+            <div className="mt-2 h-px bg-slate-100" />
+            <Link
+              href="/rider"
+              className={menuItemClasses()}
+              onClick={onItemClick}
+            >
+              배송 관리
+            </Link>
+          </>
         )}
 
-        {isPharmLoggedIn && (
-          <Link
-            href="/pharm/manage-products"
-            className={menuItemClasses()}
-            onClick={onItemClick}
-          >
-            상품 등록/관리
-          </Link>
-        )}
-
-        {adminVisible && (
+        {adminVisible && !isAdminLoggedIn && (
           <Link
             href="/admin-login"
             className={menuItemClasses()}
@@ -174,7 +182,7 @@ export function MenuLinks({
           </Link>
         )}
 
-        {isAdminLoggedIn ? (
+        {showAdminMenus ? (
           <Link
             href="/admin"
             className={menuItemClasses()}
@@ -272,29 +280,32 @@ export function MenuLinks({
         )}
       </div>
 
-      {isPharmLoggedIn && (
-        <Link href="/pharm" className={menuItemClasses()} onClick={onItemClick}>
-          주문 관리
-        </Link>
+      {showPharmMenus && (
+        <>
+          <Link
+            href="/pharm"
+            className={menuItemClasses()}
+            onClick={onItemClick}
+          >
+            주문 관리
+          </Link>
+          <Link
+            href="/pharm/manage-products"
+            className={menuItemClasses()}
+            onClick={onItemClick}
+          >
+            상품 등록/관리
+          </Link>
+        </>
       )}
 
-      {isRiderLoggedIn && (
+      {showRiderMenus && (
         <Link href="/rider" className={menuItemClasses()} onClick={onItemClick}>
           배송 관리
         </Link>
       )}
 
-      {isPharmLoggedIn && (
-        <Link
-          href="/pharm/manage-products"
-          className={menuItemClasses()}
-          onClick={onItemClick}
-        >
-          상품 등록/관리
-        </Link>
-      )}
-
-      {adminVisible && (
+      {adminVisible && !isAdminLoggedIn && (
         <Link
           href="/admin-login"
           className={menuItemClasses()}
@@ -310,7 +321,7 @@ export function MenuLinks({
         </div>
       )}
 
-      {isAdminLoggedIn ? (
+      {showAdminMenus ? (
         <Link href="/admin" className={menuItemClasses()} onClick={onItemClick}>
           사이트 관리
         </Link>

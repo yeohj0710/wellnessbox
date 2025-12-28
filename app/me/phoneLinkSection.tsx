@@ -175,7 +175,8 @@ export default function PhoneLinkSection({
     <div className="space-y-4">
       <div className="space-y-2">
         <div className="text-sm font-semibold text-gray-900">전화번호</div>
-        <div className="flex items-stretch gap-3">
+
+        <div className="flex items-center gap-3">
           <input
             type="tel"
             inputMode="numeric"
@@ -187,27 +188,27 @@ export default function PhoneLinkSection({
               setPhoneDigits(digits);
             }}
             placeholder="010-1234-5678"
-            className="flex-1 h-10 rounded-lg border border-gray-300 px-3 text-gray-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/25 disabled:bg-gray-100 disabled:text-gray-500"
+            className="min-w-0 flex-1 h-10 rounded-lg border border-gray-300 px-3 text-gray-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/25 disabled:bg-gray-100 disabled:text-gray-500"
           />
+
           <button
             type="button"
             onClick={handleSendOtp}
             disabled={sendDisabled}
             aria-busy={sendLoading}
-            className="shrink-0 inline-flex h-10 w-16 items-center justify-center rounded-lg bg-sky-400 text-sm font-semibold leading-none text-white hover:bg-sky-500 disabled:cursor-not-allowed disabled:bg-sky-200"
+            className="shrink-0 w-16 h-8 rounded-lg bg-sky-400 text-sm font-semibold text-white hover:bg-sky-500 disabled:cursor-not-allowed disabled:bg-sky-200"
           >
-            {sendLoading ? (
-              <Spinner className="text-white" />
-            ) : (
-              <span>발송</span>
-            )}
+            <span className="grid h-full w-full place-items-center">
+              {sendLoading ? <Spinner className="text-white" /> : "발송"}
+            </span>
           </button>
         </div>
       </div>
 
       <div className="space-y-2">
         <div className="text-sm font-semibold text-gray-900">인증번호</div>
-        <div className="flex items-stretch gap-3">
+
+        <div className="flex items-center gap-3">
           <input
             type="text"
             inputMode="numeric"
@@ -219,20 +220,19 @@ export default function PhoneLinkSection({
               setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
             }
             placeholder="6자리 번호"
-            className="flex-1 h-10 rounded-lg border border-gray-300 px-3 text-gray-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/25 disabled:bg-gray-100 disabled:text-gray-500"
+            className="min-w-0 flex-1 h-10 rounded-lg border border-gray-300 px-3 text-gray-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/25 disabled:bg-gray-100 disabled:text-gray-500"
           />
+
           <button
             type="button"
             onClick={handleVerify}
             disabled={verifyDisabled}
             aria-busy={verifyLoading}
-            className="shrink-0 inline-flex h-10 w-16 items-center justify-center rounded-lg bg-sky-400 text-sm font-semibold leading-none text-white hover:bg-sky-500 disabled:cursor-not-allowed disabled:bg-sky-200"
+            className="shrink-0 w-16 h-8 rounded-lg bg-sky-400 text-sm font-semibold text-white hover:bg-sky-500 disabled:cursor-not-allowed disabled:bg-sky-200"
           >
-            {verifyLoading ? (
-              <Spinner className="text-white" />
-            ) : (
-              <span>인증</span>
-            )}
+            <span className="grid h-full w-full place-items-center">
+              {verifyLoading ? <Spinner className="text-white" /> : "인증"}
+            </span>
           </button>
         </div>
       </div>

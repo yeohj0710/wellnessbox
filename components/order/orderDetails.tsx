@@ -83,40 +83,32 @@ export default function OrderDetails({
     useEffect(() => {
       const checkSubscription = async () => {
         if (!("serviceWorker" in navigator)) return;
-        const reg = await registerAndActivateSW();
-        const sub = await reg.pushManager.getSubscription();
-        if (!sub) {
-          if (localStorage.getItem(`notifyOff:${order.id}`) === "true") {
-            setIsSubscribed(false);
-            return;
-          }
-          await subscribePush();
+
+        const notifyOff =
+          localStorage.getItem(`notifyOff:${order.id}`) === "true";
+        if (notifyOff) {
+          setIsSubscribed(false);
           return;
         }
+
         try {
-          const res = await fetch("/api/push/status", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              orderId: order.id,
-              endpoint: sub.endpoint,
-              role: "customer",
-            }),
-          });
-          const data = await res.json();
-          if (data.subscribed) {
+          const reg = await registerAndActivateSW();
+          const sub = await reg.pushManager.getSubscription();
+
+          if (sub) {
             setIsSubscribed(true);
-          } else if (localStorage.getItem(`notifyOff:${order.id}`) === "true") {
-            setIsSubscribed(false);
-          } else {
-            await subscribePush();
+            return;
           }
+
+          await subscribePush();
         } catch {
           setIsSubscribed(null);
         }
       };
+
       checkSubscription();
     }, [order.id]);
+
     useEffect(() => {
       if (!isExpanded || isLoaded) return;
       async function fetchDetailsAndMessages() {
@@ -340,7 +332,7 @@ export default function OrderDetails({
     };
     if (isExpanded && !isLoaded) {
       return (
-        <div className="w-full max-w-[640px] mx-auto px-6 py-6 bg-white sm:shadow-md sm:rounded-lg">
+        <div className="w-full max-w-[640px] mx-auto px-0 sm:px-6 py-6 bg-white sm:shadow-md sm:rounded-lg">
           <OrderAccordionHeader
             role="customer"
             order={order}
@@ -366,7 +358,7 @@ export default function OrderDetails({
       );
     }
     return (
-      <div className="w-full max-w-[640px] mx-auto px-6 py-6 bg-white sm:shadow-md sm:rounded-lg">
+      <div className="w-full max-w-[640px] mx-auto px-0 sm:px-6 py-6 bg-white sm:shadow-md sm:rounded-lg">
         <OrderAccordionHeader
           role="customer"
           order={order}

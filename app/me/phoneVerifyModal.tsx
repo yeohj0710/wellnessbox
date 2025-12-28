@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import PhoneLinkSection from "./phoneLinkSection";
+import ConfirmDialog from "./confirmDialog";
 
 type PhoneVerifyModalProps = {
   open: boolean;
@@ -9,6 +10,11 @@ type PhoneVerifyModalProps = {
   initialPhone?: string;
   initialLinkedAt?: string;
   onLinked: (phone: string, linkedAtValue?: string) => void;
+
+  allowUnlink?: boolean;
+  unlinkLoading?: boolean;
+  unlinkError?: string | null;
+  onUnlink?: () => void | Promise<void>;
 };
 
 export default function PhoneVerifyModal({
@@ -17,21 +23,31 @@ export default function PhoneVerifyModal({
   initialPhone,
   initialLinkedAt,
   onLinked,
+  allowUnlink = false,
+  unlinkLoading = false,
+  unlinkError = null,
+  onUnlink,
 }: PhoneVerifyModalProps) {
-  const [isBusy, setIsBusy] = useState(false);
+  const [linkBusy, setLinkBusy] = useState(false);
+  const [unlinkConfirmOpen, setUnlinkConfirmOpen] = useState(false);
+
+  const busy = useMemo(
+    () => linkBusy || unlinkLoading,
+    [linkBusy, unlinkLoading]
+  );
 
   useEffect(() => {
     if (!open) return;
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
-      if (isBusy) return;
+      if (busy) return;
       onClose();
     };
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose, isBusy]);
+  }, [open, onClose, busy]);
 
   if (!open) return null;
 
@@ -55,26 +71,48 @@ export default function PhoneVerifyModal({
           <div className="flex items-center justify-between gap-3">
             <div className="text-xl font-bold text-gray-900">전화번호 인증</div>
 
-            <button
-              type="button"
-              onClick={() => {
-                if (isBusy) return;
-                onClose();
-              }}
-              disabled={isBusy}
-              className="inline-flex min-w-[56px] items-center justify-center whitespace-nowrap rounded-full bg-gray-100 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              닫기
-            </button>
+            <div className="flex items-center gap-2">
+              {allowUnlink ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (busy) return;
+                    setUnlinkConfirmOpen(true);
+                  }}
+                  disabled={busy}
+                  className="inline-flex min-w-[56px] items-center justify-center whitespace-nowrap rounded-full bg-rose-100 px-3 py-1.5 text-sm font-semibold text-rose-700 hover:bg-rose-200 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  해지
+                </button>
+              ) : null}
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (busy) return;
+                  onClose();
+                }}
+                disabled={busy}
+                className="inline-flex min-w-[56px] items-center justify-center whitespace-nowrap rounded-full bg-gray-100 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                닫기
+              </button>
+            </div>
           </div>
 
           <div className="mt-2 text-sm text-gray-600">
             결제에 사용한 전화번호를 인증하면 주문 내역을 확인할 수 있어요.
           </div>
 
-          {isBusy ? (
+          {busy ? (
             <div className="mt-2 text-xs font-semibold text-gray-500">
               처리 중에는 닫을 수 없어요.
+            </div>
+          ) : null}
+
+          {unlinkError ? (
+            <div className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700 ring-1 ring-rose-100">
+              {unlinkError}
             </div>
           ) : null}
         </div>
@@ -83,13 +121,35 @@ export default function PhoneVerifyModal({
           <PhoneLinkSection
             initialPhone={initialPhone ?? ""}
             initialLinkedAt={initialLinkedAt}
-            onBusyChange={setIsBusy}
+            onBusyChange={setLinkBusy}
             onLinked={(phoneValue, linkedAtValue) => {
               onLinked(phoneValue, linkedAtValue);
             }}
           />
         </div>
       </div>
+
+      <ConfirmDialog
+        open={unlinkConfirmOpen}
+        title="전화번호 연결 해제"
+        description="해지하면 주문 조회를 위해 다시 인증해야 해요. 계속할까요?"
+        confirmText="해지"
+        cancelText="취소"
+        tone="danger"
+        confirmLoading={unlinkLoading}
+        closeOnBackdrop={true}
+        onClose={() => {
+          if (!unlinkLoading) setUnlinkConfirmOpen(false);
+        }}
+        onConfirm={async () => {
+          if (unlinkLoading) return;
+          try {
+            await onUnlink?.();
+          } finally {
+            setUnlinkConfirmOpen(false);
+          }
+        }}
+      />
     </div>
   );
 }

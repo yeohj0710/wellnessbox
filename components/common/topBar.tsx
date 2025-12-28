@@ -30,17 +30,34 @@ export default function TopBar() {
   const [hideOnScroll, setHideOnScroll] = useState(false);
   const lastYRef = useRef(0);
 
+  const reqSeqRef = useRef(0);
+  const abortRef = useRef<AbortController | null>(null);
+
   const refreshLoginStatus = useCallback(async () => {
+    reqSeqRef.current += 1;
+    const seq = reqSeqRef.current;
+
+    abortRef.current?.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
+
     try {
-      const s = await getLoginStatus();
+      const s = await getLoginStatus(ac.signal);
+
+      if (ac.signal.aborted) return;
+      if (seq !== reqSeqRef.current) return;
+
       setLoginStatus({
-        isUserLoggedIn: !!s?.isUserLoggedIn,
-        isPharmLoggedIn: !!s?.isPharmLoggedIn,
-        isRiderLoggedIn: !!s?.isRiderLoggedIn,
-        isAdminLoggedIn: !!s?.isAdminLoggedIn,
-        isTestLoggedIn: !!s?.isTestLoggedIn,
+        isUserLoggedIn: s.isUserLoggedIn === true,
+        isPharmLoggedIn: s.isPharmLoggedIn === true,
+        isRiderLoggedIn: s.isRiderLoggedIn === true,
+        isAdminLoggedIn: s.isAdminLoggedIn === true,
+        isTestLoggedIn: s.isTestLoggedIn === true,
       });
-    } catch {
+    } catch (e) {
+      if (ac.signal.aborted) return;
+      if (seq !== reqSeqRef.current) return;
+
       setLoginStatus({
         isUserLoggedIn: false,
         isPharmLoggedIn: false,
@@ -51,20 +68,16 @@ export default function TopBar() {
     }
   }, []);
 
-  const anyLoggedIn =
-    !!loginStatus &&
-    (loginStatus.isUserLoggedIn ||
-      loginStatus.isPharmLoggedIn ||
-      loginStatus.isRiderLoggedIn ||
-      loginStatus.isAdminLoggedIn ||
-      loginStatus.isTestLoggedIn);
-
   useEffect(() => {
     refreshLoginStatus();
+    return () => {
+      abortRef.current?.abort();
+    };
   }, [refreshLoginStatus]);
 
   useEffect(() => {
     refreshLoginStatus();
+    setIsDrawerOpen(false);
   }, [pathname, refreshLoginStatus]);
 
   useEffect(() => {
@@ -97,6 +110,7 @@ export default function TopBar() {
         } catch {}
       }, 0);
     };
+
     updateCartCount();
     window.addEventListener("cartUpdated", updateCartCount);
     return () => {
@@ -196,7 +210,7 @@ export default function TopBar() {
           </div>
 
           <div className="flex items-center gap-3 md:gap-5">
-            {loginStatus?.isTestLoggedIn && (
+            {loginStatus?.isTestLoggedIn === true && (
               <span className="hidden sm:inline-flex rounded-full bg-orange-400 px-3 py-1 text-xs font-bold text-white cursor-default">
                 테스트
               </span>
@@ -258,7 +272,7 @@ export default function TopBar() {
 
             <button
               className={menuItemClasses("text-2xl ml-1 min-[1440px]:hidden")}
-              onClick={() => setIsDrawerOpen(!isDrawerOpen)}
+              onClick={() => setIsDrawerOpen((v) => !v)}
               aria-label="메뉴 열기"
             >
               ☰
@@ -280,7 +294,7 @@ export default function TopBar() {
             isDrawer
           />
 
-          {loginStatus !== null && !anyLoggedIn && (
+          {loginStatus !== null && loginStatus.isUserLoggedIn !== true && (
             <KakaoLoginButton fullWidth />
           )}
 

@@ -2,11 +2,25 @@ import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import db from "@/lib/db";
 import { requireUserId } from "@/lib/auth";
+import getSession from "@/lib/session";
 
 export const runtime = "nodejs";
 
-const isJsonObject = (v: unknown): v is Prisma.JsonObject =>
+const isPlainObject = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === "object" && !Array.isArray(v);
+
+async function clearPhoneFromSession() {
+  const session = await getSession();
+  const u = (session as any)?.user;
+  if (!u) return;
+
+  u.phone = undefined;
+  u.phoneLinkedAt = undefined;
+
+  if (typeof (session as any)?.save === "function") {
+    await (session as any).save();
+  }
+}
 
 export async function POST() {
   try {
@@ -16,7 +30,7 @@ export async function POST() {
     if (!clientId) {
       return NextResponse.json(
         { ok: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401, headers: { "Cache-Control": "no-store" } }
       );
     }
 
@@ -25,24 +39,30 @@ export async function POST() {
       select: { data: true },
     });
 
-    if (!profile) {
-      return NextResponse.json({ ok: true });
+    if (profile) {
+      const current = isPlainObject(profile.data)
+        ? (profile.data as Record<string, unknown>)
+        : {};
+
+      const { phone: _phone, phoneLinkedAt: _phoneLinkedAt, ...rest } = current;
+
+      await db.userProfile.update({
+        where: { clientId },
+        data: { data: rest as Prisma.InputJsonValue },
+      });
     }
 
-    const current = isJsonObject(profile.data) ? profile.data : {};
-    const next: Prisma.JsonObject = { ...current };
+    await clearPhoneFromSession();
 
-    delete next.phone;
-    delete next.phoneLinkedAt;
-
-    await db.userProfile.update({
-      where: { clientId },
-      data: { data: next as Prisma.InputJsonValue },
-    });
-
-    return NextResponse.json({ ok: true });
+    return NextResponse.json(
+      { ok: true },
+      { headers: { "Cache-Control": "no-store" } }
+    );
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    return NextResponse.json({ ok: false, error: msg }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: msg },
+      { status: 500, headers: { "Cache-Control": "no-store" } }
+    );
   }
 }
