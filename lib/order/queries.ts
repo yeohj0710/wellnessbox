@@ -12,36 +12,74 @@ export async function checkOrderExists(phone: string, password: string) {
   return !!exists;
 }
 
-export async function getOrdersWithItemsAndStatus(phone: string, password: string) {
-  const orders = await db.order.findMany({
-    where: { phone, password },
+const basicOrderSelection = {
+  id: true,
+  status: true,
+  createdAt: true,
+  orderItems: {
     select: {
-      id: true,
-      status: true,
-      createdAt: true,
-      orderItems: {
+      quantity: true,
+      pharmacyProduct: {
         select: {
-          quantity: true,
-          pharmacyProduct: {
-            select: {
-              optionType: true,
-              product: {
-                select: { name: true },
-              },
-            },
-          },
-          review: {
-            select: { rate: true, content: true },
+          optionType: true,
+          product: {
+            select: { name: true },
           },
         },
       },
+      review: {
+        select: { rate: true, content: true },
+      },
     },
+  },
+};
+
+async function getPaginatedOrders(
+  where: Parameters<typeof db.order.findMany>[0]["where"],
+  page = 1,
+  take = 10
+) {
+  const [totalCount, orders] = await db.$transaction([
+    db.order.count({ where }),
+    db.order.findMany({
+      where,
+      select: basicOrderSelection,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * take,
+      take,
+    }),
+  ]);
+
+  const totalPages = Math.ceil(totalCount / take);
+  return { orders, totalPages };
+}
+
+export async function getOrdersWithItemsAndStatus(
+  phone: string,
+  password: string
+) {
+  const orders = await db.order.findMany({
+    where: { phone, password },
+    select: basicOrderSelection,
     orderBy: { createdAt: "desc" },
   });
   if (orders.length === 0) {
     throw new Error("해당 전화번호와 비밀번호로 조회된 주문이 없습니다.");
   }
   return orders;
+}
+
+export async function getOrdersWithItemsAndStatusPaginated(
+  phone: string,
+  password: string,
+  page = 1,
+  take = 10
+) {
+  const result = await getPaginatedOrders({ phone, password }, page, take);
+  if (result.totalPages === 0) {
+    throw new Error("해당 전화번호와 비밀번호로 조회된 주문이 없습니다.");
+  }
+  return result;
 }
 
 export async function getOrdersWithItemsByPhone(phone: string) {
@@ -70,27 +108,7 @@ export async function getOrdersWithItemsByPhone(phone: string) {
     where: {
       OR: phoneCandidates.map((candidate) => ({ phone: candidate })),
     },
-    select: {
-      id: true,
-      status: true,
-      createdAt: true,
-      orderItems: {
-        select: {
-          quantity: true,
-          pharmacyProduct: {
-            select: {
-              optionType: true,
-              product: {
-                select: { name: true },
-              },
-            },
-          },
-          review: {
-            select: { rate: true, content: true },
-          },
-        },
-      },
-    },
+    select: basicOrderSelection,
     orderBy: { createdAt: "desc" },
   });
 
@@ -99,6 +117,49 @@ export async function getOrdersWithItemsByPhone(phone: string) {
   }
 
   return orders;
+}
+
+export async function getOrdersWithItemsByPhonePaginated(
+  phone: string,
+  page = 1,
+  take = 10
+) {
+  const normalizedPhone = normalizePhone(phone);
+  const digitsOnly = normalizedPhone.replace(/\D/g, "");
+
+  const formattedWithHyphens = (() => {
+    if (digitsOnly.length === 10) {
+      return `${digitsOnly.slice(0, 3)}-${digitsOnly.slice(3, 6)}-${digitsOnly.slice(6)}`;
+    }
+    if (digitsOnly.length === 11) {
+      return `${digitsOnly.slice(0, 3)}-${digitsOnly.slice(3, 7)}-${digitsOnly.slice(7)}`;
+    }
+    return "";
+  })();
+
+  const phoneCandidates = Array.from(
+    new Set(
+      [phone, normalizedPhone, formattedWithHyphens].filter(
+        (value) => value && value.trim().length > 0
+      )
+    )
+  );
+
+  if (phoneCandidates.length === 0) {
+    throw new Error("연동된 전화번호로 조회된 주문이 없습니다.");
+  }
+
+  const result = await getPaginatedOrders(
+    { OR: phoneCandidates.map((candidate) => ({ phone: candidate })) },
+    page,
+    take
+  );
+
+  if (result.totalPages === 0) {
+    throw new Error("연동된 전화번호로 조회된 주문이 없습니다.");
+  }
+
+  return result;
 }
 
 export async function getOrderById(orderid: number) {

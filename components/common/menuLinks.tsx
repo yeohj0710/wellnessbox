@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import KakaoLoginButton from "@/components/common/kakaoLoginButton";
 
@@ -25,8 +24,6 @@ export function MenuLinks({
   onItemClick,
   isDrawer = false,
 }: MenuLinksProps) {
-  const pathname = usePathname();
-
   const [adminVisible, setAdminVisible] = useState(false);
   const [pressTimer, setPressTimer] = useState<ReturnType<
     typeof setTimeout
@@ -75,15 +72,9 @@ export function MenuLinks({
   const isRiderLoggedIn = loginStatus?.isRiderLoggedIn === true;
   const isAdminLoggedIn = loginStatus?.isAdminLoggedIn === true;
 
-  const inPharmArea = (pathname ?? "").startsWith("/pharm");
-  const inRiderArea = (pathname ?? "").startsWith("/rider");
-  const inAdminArea =
-    (pathname ?? "").startsWith("/admin") ||
-    (pathname ?? "").startsWith("/admin-login");
-
-  const showPharmMenus = isPharmLoggedIn && inPharmArea;
-  const showRiderMenus = isRiderLoggedIn && inRiderArea;
-  const showAdminMenus = isAdminLoggedIn && inAdminArea;
+  const showPharmMenus = isPharmLoggedIn;
+  const showRiderMenus = isRiderLoggedIn;
+  const showAdminMenus = isAdminLoggedIn;
 
   if (isDrawer) {
     return (
