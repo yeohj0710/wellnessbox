@@ -14,7 +14,8 @@ type AttachSource =
   | "kakao-login"
   | "phone-link"
   | "profile-sync"
-  | "session-sync";
+  | "session-sync"
+  | "kakao-app-bridge";
 
 type AttachResult = {
   clientId: string | null;
@@ -160,10 +161,20 @@ export async function attachClientToAppUser(options: {
   const { req, kakaoId, source, candidateClientId, candidateSource } = options;
   const allowMerge = options.allowMerge === true;
   const mergeWithinMs =
-    typeof options.mergeWithinMs === "number" ? options.mergeWithinMs : 15 * 60 * 1000;
-  const trustedCandidate = sanitizeCandidate(true, candidateClientId, candidateSource ?? "candidate");
+    typeof options.mergeWithinMs === "number"
+      ? options.mergeWithinMs
+      : 15 * 60 * 1000;
+  const trustedCandidate = sanitizeCandidate(
+    true,
+    candidateClientId,
+    candidateSource ?? "candidate"
+  );
   const { clientId: resolvedClientId, cookieToSet: baseCookie } = req
-    ? resolveClientIdFromRequest(req, trustedCandidate ?? undefined, candidateSource)
+    ? resolveClientIdFromRequest(
+        req,
+        trustedCandidate ?? undefined,
+        candidateSource
+      )
     : { clientId: trustedCandidate ?? null, cookieToSet: undefined };
 
   let clientId = resolvedClientId ?? null;
@@ -201,26 +212,41 @@ export async function attachClientToAppUser(options: {
     clientId = appUser.clientId ?? null;
   }
 
-  const candidateRow = allowMerge && clientId
-    ? await db.client.findUnique({
-        where: { id: clientId },
-        select: { id: true, lastSeenAt: true, createdAt: true, userAgent: true },
-      })
-    : null;
+  const candidateRow =
+    allowMerge && clientId
+      ? await db.client.findUnique({
+          where: { id: clientId },
+          select: {
+            id: true,
+            lastSeenAt: true,
+            createdAt: true,
+            userAgent: true,
+          },
+        })
+      : null;
 
   const candidateLastSeen = candidateRow?.lastSeenAt ?? candidateRow?.createdAt;
   const candidateRecent =
     allowMerge &&
     !!candidateLastSeen &&
     Date.now() - candidateLastSeen.getTime() <= mergeWithinMs &&
-    (!candidateRow?.userAgent || !options.userAgent || candidateRow.userAgent === options.userAgent);
+    (!candidateRow?.userAgent ||
+      !options.userAgent ||
+      candidateRow.userAgent === options.userAgent);
 
   const candidateForMerge = candidateRecent ? clientId : null;
-  const preferredClientId = await pickPreferredClientId(appUser.clientId, candidateForMerge);
-  const finalClientId = preferredClientId ?? appUser.clientId ?? resolveOrCreateClientId(null);
+  const preferredClientId = await pickPreferredClientId(
+    appUser.clientId,
+    candidateForMerge
+  );
+  const finalClientId =
+    preferredClientId ?? appUser.clientId ?? resolveOrCreateClientId(null);
 
   if (req && (!cookieToSet || cookieToSet.value !== finalClientId)) {
-    cookieToSet = buildClientCookie(finalClientId, req.nextUrl.protocol === "https:");
+    cookieToSet = buildClientCookie(
+      finalClientId,
+      req.nextUrl.protocol === "https:"
+    );
   }
 
   await ensureClient(finalClientId, {
@@ -268,14 +294,24 @@ export async function attachClientToAppUser(options: {
 export async function resolveClientIdForRead(
   req: NextRequest,
   candidate?: string | null,
-  candidateSource: Parameters<typeof resolveClientIdFromRequest>[2] = "candidate"
+  candidateSource: Parameters<
+    typeof resolveClientIdFromRequest
+  >[2] = "candidate"
 ): Promise<ResolveResult> {
   const session = await getSession();
   const user = session.user;
   const loggedIn = !!user?.loggedIn && typeof user.kakaoId === "number";
-  const trustedCandidate = sanitizeCandidate(loggedIn, candidate, candidateSource);
+  const trustedCandidate = sanitizeCandidate(
+    loggedIn,
+    candidate,
+    candidateSource
+  );
 
-  const base = resolveClientIdFromRequest(req, trustedCandidate ?? undefined, candidateSource);
+  const base = resolveClientIdFromRequest(
+    req,
+    trustedCandidate ?? undefined,
+    candidateSource
+  );
   let clientId = base.clientId;
   let cookieToSet = base.cookieToSet;
   let appUserId: string | undefined;
@@ -291,7 +327,10 @@ export async function resolveClientIdForRead(
       clientId = appUser.clientId;
       const cookieVal = req.cookies.get(CLIENT_COOKIE_NAME)?.value;
       if (!cookieToSet && cookieVal !== clientId) {
-        cookieToSet = buildClientCookie(clientId, req.nextUrl.protocol === "https:");
+        cookieToSet = buildClientCookie(
+          clientId,
+          req.nextUrl.protocol === "https:"
+        );
       }
     }
   }
@@ -302,14 +341,24 @@ export async function resolveClientIdForRead(
 export async function resolveClientIdForWrite(
   req: NextRequest,
   candidate?: string | null,
-  candidateSource: Parameters<typeof resolveClientIdFromRequest>[2] = "candidate"
+  candidateSource: Parameters<
+    typeof resolveClientIdFromRequest
+  >[2] = "candidate"
 ): Promise<ResolveResult> {
   const session = await getSession();
   const user = session.user;
   const loggedIn = !!user?.loggedIn && typeof user.kakaoId === "number";
-  const trustedCandidate = sanitizeCandidate(loggedIn, candidate, candidateSource);
+  const trustedCandidate = sanitizeCandidate(
+    loggedIn,
+    candidate,
+    candidateSource
+  );
 
-  const base = resolveClientIdFromRequest(req, trustedCandidate ?? undefined, candidateSource);
+  const base = resolveClientIdFromRequest(
+    req,
+    trustedCandidate ?? undefined,
+    candidateSource
+  );
   let clientId = base.clientId;
   let cookieToSet = base.cookieToSet;
   let appUserId: string | undefined;
@@ -330,7 +379,10 @@ export async function resolveClientIdForWrite(
   if (req) {
     const cookieVal = req.cookies.get(CLIENT_COOKIE_NAME)?.value;
     if (!cookieToSet && cookieVal !== finalClientId) {
-      cookieToSet = buildClientCookie(finalClientId, req.nextUrl.protocol === "https:");
+      cookieToSet = buildClientCookie(
+        finalClientId,
+        req.nextUrl.protocol === "https:"
+      );
     }
   }
 
@@ -340,13 +392,19 @@ export async function resolveClientIdForWrite(
 export async function resolveClientIdForAppUserRequest(
   req: NextRequest,
   candidate?: string | null,
-  candidateSource: Parameters<typeof resolveClientIdFromRequest>[2] = "candidate",
+  candidateSource: Parameters<
+    typeof resolveClientIdFromRequest
+  >[2] = "candidate",
   intent: "read" | "write" = "read"
 ): Promise<ResolveResult> {
   const session = await getSession();
   const user = session.user;
   const loggedIn = !!user?.loggedIn && typeof user.kakaoId === "number";
-  const trustedCandidate = sanitizeCandidate(loggedIn, candidate, candidateSource);
+  const trustedCandidate = sanitizeCandidate(
+    loggedIn,
+    candidate,
+    candidateSource
+  );
 
   if (!loggedIn) {
     return intent === "write"
@@ -366,14 +424,18 @@ export async function resolveClientIdForAppUserRequest(
   const clientId = attachResult.clientId;
   const cookieToSet = attachResult.cookieToSet;
 
-  if (clientId) return { clientId, cookieToSet, appUserId: attachResult.appUserId };
+  if (clientId)
+    return { clientId, cookieToSet, appUserId: attachResult.appUserId };
 
   return intent === "write"
     ? resolveClientIdForWrite(req, trustedCandidate, candidateSource)
     : resolveClientIdForRead(req, trustedCandidate, candidateSource);
 }
 
-export function withClientCookie(response: NextResponse, cookie?: ReturnType<typeof buildClientCookie>) {
+export function withClientCookie(
+  response: NextResponse,
+  cookie?: ReturnType<typeof buildClientCookie>
+) {
   if (!cookie) return response;
   response.cookies.set(cookie.name, cookie.value, cookie.options);
   return response;

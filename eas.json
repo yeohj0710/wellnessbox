@@ -9,21 +9,21 @@
       "distribution": "internal",
       "android": {
         "image": "ubuntu-24.04-jdk-17-ndk-r27b",
-        "buildType": "app-bundle"
+        "buildType": "apk"
       }
     },
     "preview": {
       "distribution": "internal",
       "android": {
         "image": "ubuntu-24.04-jdk-17-ndk-r27b",
-        "buildType": "app-bundle"
+        "buildType": "apk"
       }
     },
     "release": {
       "distribution": "store",
       "android": {
         "image": "ubuntu-24.04-jdk-17-ndk-r27b",
-        "buildType": "app-bundle"
+        "buildType": "apk"
       },
       "autoIncrement": true
     }

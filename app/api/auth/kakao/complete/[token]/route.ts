@@ -2,20 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import getSession from "@/lib/session";
 import db from "@/lib/db";
-import { attachClientToAppUser, withClientCookie } from "@/lib/server/client-link";
+import {
+  attachClientToAppUser,
+  withClientCookie,
+} from "@/lib/server/client-link";
 import { consumeAppTransferToken } from "@/lib/auth/kakao/appBridge";
 import { publicOrigin, resolveRequestOrigin } from "@/lib/server/origin";
 
 export const runtime = "nodejs";
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { token: string } }
-) {
+type RouteContext = {
+  params: Promise<{ token: string }>;
+};
+
+export async function GET(req: NextRequest, ctx: RouteContext) {
   const h = await headers();
   const requestOrigin = resolveRequestOrigin(h, req.url);
   const origin = publicOrigin(requestOrigin);
-  const token = params.token;
+
+  const { token } = await ctx.params;
 
   const payload = await consumeAppTransferToken(token);
 
@@ -38,7 +43,8 @@ export async function GET(
 
   const nextNickname = profile?.nickname ?? payload.nickname ?? undefined;
   const nextEmail = profile?.email ?? payload.email ?? undefined;
-  const nextProfileImage = profile?.profileImageUrl ?? payload.profileImageUrl ?? undefined;
+  const nextProfileImage =
+    profile?.profileImageUrl ?? payload.profileImageUrl ?? undefined;
   const nextKakaoEmail = profile?.kakaoEmail ?? payload.kakaoEmail ?? undefined;
 
   const attachResult = await attachClientToAppUser({
