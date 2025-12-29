@@ -4,11 +4,18 @@ import getSession from "@/lib/session";
 import db from "@/lib/db";
 import { ensureClient, getClientIdFromRequest } from "@/lib/server/client";
 import { generateFriendlyNickname, normalizeNickname } from "@/lib/nickname";
-import { attachClientToAppUser, withClientCookie } from "@/lib/server/client-link";
+import {
+  attachClientToAppUser,
+  withClientCookie,
+} from "@/lib/server/client-link";
 import { KAKAO_STATE_COOKIE } from "@/lib/auth/kakao/constants";
 import { createAppTransferToken } from "@/lib/auth/kakao/appBridge";
 import { verifyLoginState } from "@/lib/auth/kakao/state";
-import { kakaoRedirectUri, publicOrigin, resolveRequestOrigin } from "@/lib/server/origin";
+import {
+  kakaoRedirectUri,
+  publicOrigin,
+  resolveRequestOrigin,
+} from "@/lib/server/origin";
 
 type KakaoUserMe = {
   id: number;
@@ -106,15 +113,18 @@ export async function GET(request: NextRequest) {
     const nextNickname = existingUser?.nickname
       ? normalizeNickname(existingUser.nickname)
       : normalizedProfileNickname && normalizedProfileNickname !== "없음"
-        ? normalizedProfileNickname
-        : await generateFriendlyNickname(kakaoIdStr);
+      ? normalizedProfileNickname
+      : await generateFriendlyNickname(kakaoIdStr);
+
     const nextEmail = existingUser?.email ?? kakaoAccount.email ?? "";
     const nextProfileImage =
       existingUser?.profileImageUrl ||
       profile.profile_image_url ||
       profile.thumbnail_image_url ||
       "";
-    const kakaoEmail = existingUser?.kakaoEmail ?? kakaoAccount.email ?? undefined;
+
+    const kakaoEmail =
+      existingUser?.kakaoEmail ?? kakaoAccount.email ?? undefined;
 
     await db.appUser.upsert({
       where: { kakaoId: kakaoIdStr },
@@ -156,11 +166,12 @@ export async function GET(request: NextRequest) {
     await session.save();
 
     const response = NextResponse.redirect(new URL("/", origin));
+
     if (attachResult.cookieToSet) {
       withClientCookie(response, attachResult.cookieToSet);
     }
 
-    response.cookies.delete(KAKAO_STATE_COOKIE, { path: "/" });
+    response.cookies.delete({ name: KAKAO_STATE_COOKIE, path: "/" });
 
     if (state.platform === "app") {
       const transfer = await createAppTransferToken({
