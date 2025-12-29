@@ -10,6 +10,7 @@ import { pretendard } from "./fonts";
 import RouteTransition from "@/components/common/routeTransition";
 import KakaoExternalBridge from "@/components/common/kakaoExternalBridge";
 import AppDeepLinkHandler from "@/components/common/appDeepLinkHandler";
+import AppBackHandler from "@/components/common/appBackHandler";
 import Script from "next/script";
 import { cookies, headers } from "next/headers";
 
@@ -94,6 +95,7 @@ export default async function RootLayout({
           <FooterProvider>
             <LoadingProvider>
               <ToastProvider>
+                <AppBackHandler />
                 <TopBar />
                 <main
                   className="min-h-[105vh] flex flex-col items-center"

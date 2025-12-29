@@ -5,6 +5,15 @@ import { App, URLOpenListenerEvent } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
 import { Capacitor } from "@capacitor/core";
 import { APP_HOST, APP_SCHEME } from "@/lib/auth/kakao/constants";
+import { buildAbsoluteUrl, resolvePublicBaseUrl } from "@/lib/shared/url";
+
+async function closeBrowserSafely() {
+  try {
+    await Browser.close();
+  } catch {
+    return;
+  }
+}
 
 function handleUrl(url: string) {
   try {
@@ -17,8 +26,12 @@ function handleUrl(url: string) {
 
     if (provider !== "kakao" || !token) return;
 
-    const target = `/api/auth/kakao/complete/${token}`;
-    void Browser.close();
+    const target = buildAbsoluteUrl(
+      `/api/auth/kakao/complete/${encodeURIComponent(token)}`,
+      resolvePublicBaseUrl()
+    );
+
+    void closeBrowserSafely();
     window.location.href = target;
   } catch {
     return;

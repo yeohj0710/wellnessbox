@@ -41,21 +41,41 @@ export async function GET(request: NextRequest) {
   const requestOrigin = resolveRequestOrigin(h, request.url);
   const origin = publicOrigin(requestOrigin);
   const redirectUri = kakaoRedirectUri(requestOrigin);
+  const secure = origin.startsWith("https://");
+
+  const clearStateCookie = (res: NextResponse) => {
+    res.cookies.set({
+      name: KAKAO_STATE_COOKIE,
+      value: "",
+      path: "/",
+      maxAge: 0,
+      expires: new Date(0),
+      httpOnly: true,
+      sameSite: "lax",
+      secure,
+    });
+  };
+
+  const redirectWithStateCleanup = (path: string) => {
+    const response = NextResponse.redirect(new URL(path, origin), 302);
+    clearStateCookie(response);
+    return response;
+  };
 
   const stateCookie = cookieStore.get(KAKAO_STATE_COOKIE)?.value ?? null;
   const state = verifyLoginState(stateParam, stateCookie);
 
   if (!code) {
-    return NextResponse.redirect(new URL("/?login=missing_code", origin));
+    return redirectWithStateCleanup("/?login=missing_code");
   }
 
   if (!state) {
-    return NextResponse.redirect(new URL("/?login=invalid_state", origin));
+    return redirectWithStateCleanup("/?login=invalid_state");
   }
 
   const clientId = process.env.KAKAO_REST_API_KEY;
   if (!clientId) {
-    return NextResponse.redirect(new URL("/?login=missing_client_id", origin));
+    return redirectWithStateCleanup("/?login=missing_client_id");
   }
 
   try {
@@ -74,14 +94,14 @@ export async function GET(request: NextRequest) {
     });
 
     if (!tokenRes.ok) {
-      return NextResponse.redirect(new URL("/?login=token_error", origin));
+      return redirectWithStateCleanup("/?login=token_error");
     }
 
     const tokenJson = (await tokenRes.json()) as { access_token?: string };
     const accessToken = tokenJson.access_token;
 
     if (!accessToken) {
-      return NextResponse.redirect(new URL("/?login=missing_token", origin));
+      return redirectWithStateCleanup("/?login=missing_token");
     }
 
     const meRes = await fetch("https://kapi.kakao.com/v2/user/me", {
@@ -90,7 +110,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!meRes.ok) {
-      return NextResponse.redirect(new URL("/?login=profile_error", origin));
+      return redirectWithStateCleanup("/?login=profile_error");
     }
 
     const me = (await meRes.json()) as KakaoUserMe;
@@ -100,6 +120,7 @@ export async function GET(request: NextRequest) {
 
     const requestClientId =
       state.clientId ?? (await getClientIdFromRequest()) ?? undefined;
+
     if (requestClientId) {
       await ensureClient(requestClientId);
     }
@@ -165,13 +186,7 @@ export async function GET(request: NextRequest) {
     };
     await session.save();
 
-    const response = NextResponse.redirect(new URL("/", origin));
-
-    if (attachResult.cookieToSet) {
-      withClientCookie(response, attachResult.cookieToSet);
-    }
-
-    response.cookies.delete({ name: KAKAO_STATE_COOKIE, path: "/" });
+    let redirectTo: string = new URL("/", origin).toString();
 
     if (state.platform === "app") {
       const transfer = await createAppTransferToken({
@@ -183,11 +198,19 @@ export async function GET(request: NextRequest) {
         clientId: attachResult.clientId ?? requestClientId ?? null,
       });
 
-      response.headers.set("Location", transfer.deepLink);
+      redirectTo = transfer.deepLink;
     }
+
+    const response = NextResponse.redirect(redirectTo, 302);
+
+    if (attachResult.cookieToSet) {
+      withClientCookie(response, attachResult.cookieToSet);
+    }
+
+    clearStateCookie(response);
 
     return response;
   } catch {
-    return NextResponse.redirect(new URL("/?login=unexpected_error", origin));
+    return redirectWithStateCleanup("/?login=unexpected_error");
   }
 }
