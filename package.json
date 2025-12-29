@@ -24,7 +24,8 @@
     "@capacitor/status-bar": "^7.0.3",
     "@heroicons/react": "^2.2.0",
     "@langchain/community": "^0.3.55",
-    "@langchain/core": "^0.3.75",
+    "@langchain/core": "^0.3.80",
+    "@langchain/langgraph": "^1.0.7",
     "@langchain/openai": "^0.6.11",
     "@langchain/textsplitters": "^0.1.0",
     "@portone/browser-sdk": "^0.0.11",
@@ -72,12 +73,12 @@
     "@types/react-dom": "^18.3.7",
     "@types/tailwindcss": "^3.1.0",
     "@types/web-push": "^3.6.4",
-    "ts-node": "^10.9.2",
     "eslint": "^8",
     "eslint-config-next": "15.0.3",
     "postcss": "^8",
     "prisma": "^6.1.0",
     "tailwindcss": "^3.4.1",
+    "ts-node": "^10.9.2",
     "typescript": "^5"
   }
 }
