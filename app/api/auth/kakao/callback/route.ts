@@ -172,6 +172,7 @@ export async function GET(request: NextRequest) {
       source: "kakao-login",
       candidateClientId: requestClientId ?? existingUser?.clientId ?? null,
       userAgent: request.headers.get("user-agent"),
+      allowMerge: true,
     });
 
     const session = await getSession();

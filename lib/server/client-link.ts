@@ -21,6 +21,7 @@ type AttachResult = {
   attached: boolean;
   mergedFrom: string[];
   cookieToSet?: ReturnType<typeof buildClientCookie>;
+  appUserId?: string;
 };
 
 type MergeSummary = {
@@ -51,8 +52,9 @@ async function pickPreferredClientId(
   if (!current) return incoming;
   if (!incoming) return current;
 
+  const ids = [current, incoming].filter(Boolean) as string[];
   const rows = await db.client.findMany({
-    where: { id: { in: [current, incoming] } },
+    where: { id: { in: ids } },
     select: { id: true, lastSeenAt: true, createdAt: true },
   });
 
@@ -100,7 +102,7 @@ async function mergeUserProfiles(
   if (preferFrom) {
     await tx.userProfile.update({
       where: { clientId: toClientId },
-      data: { data: fromProfile.data },
+      data: { data: fromProfile.data as Prisma.InputJsonValue },
     });
   }
 
@@ -152,8 +154,13 @@ export async function attachClientToAppUser(options: {
   candidateClientId?: string | null;
   candidateSource?: Parameters<typeof resolveClientIdFromRequest>[2];
   userAgent?: string | null;
+  allowMerge?: boolean;
+  mergeWithinMs?: number;
 }): Promise<AttachResult> {
   const { req, kakaoId, source, candidateClientId, candidateSource } = options;
+  const allowMerge = options.allowMerge === true;
+  const mergeWithinMs =
+    typeof options.mergeWithinMs === "number" ? options.mergeWithinMs : 15 * 60 * 1000;
   const trustedCandidate = sanitizeCandidate(true, candidateClientId, candidateSource ?? "candidate");
   const { clientId: resolvedClientId, cookieToSet: baseCookie } = req
     ? resolveClientIdFromRequest(req, trustedCandidate ?? undefined, candidateSource)
@@ -194,20 +201,23 @@ export async function attachClientToAppUser(options: {
     clientId = appUser.clientId ?? null;
   }
 
-  const preferredClientId = await pickPreferredClientId(appUser.clientId, clientId);
-  const finalClientId = preferredClientId ?? resolveOrCreateClientId(clientId ?? appUser.clientId ?? undefined);
+  const candidateRow = allowMerge && clientId
+    ? await db.client.findUnique({
+        where: { id: clientId },
+        select: { id: true, lastSeenAt: true, createdAt: true, userAgent: true },
+      })
+    : null;
 
-  if (appUser.clientId === finalClientId && (!clientId || clientId === finalClientId)) {
-    if (req && (!cookieToSet || cookieToSet.value !== finalClientId)) {
-      cookieToSet = buildClientCookie(finalClientId, req.nextUrl.protocol === "https:");
-    }
-    return {
-      clientId: finalClientId,
-      attached: false,
-      mergedFrom: [],
-      cookieToSet,
-    };
-  }
+  const candidateLastSeen = candidateRow?.lastSeenAt ?? candidateRow?.createdAt;
+  const candidateRecent =
+    allowMerge &&
+    !!candidateLastSeen &&
+    Date.now() - candidateLastSeen.getTime() <= mergeWithinMs &&
+    (!candidateRow?.userAgent || !options.userAgent || candidateRow.userAgent === options.userAgent);
+
+  const candidateForMerge = candidateRecent ? clientId : null;
+  const preferredClientId = await pickPreferredClientId(appUser.clientId, candidateForMerge);
+  const finalClientId = preferredClientId ?? appUser.clientId ?? resolveOrCreateClientId(null);
 
   if (req && (!cookieToSet || cookieToSet.value !== finalClientId)) {
     cookieToSet = buildClientCookie(finalClientId, req.nextUrl.protocol === "https:");
@@ -218,19 +228,22 @@ export async function attachClientToAppUser(options: {
   });
 
   const mergedFrom: string[] = [];
-  if (appUser.clientId && appUser.clientId !== finalClientId) {
+  if (allowMerge && appUser.clientId && appUser.clientId !== finalClientId) {
     const summary = await mergeClientData(appUser.clientId, finalClientId);
     mergedFrom.push(...summary.movedFrom);
   }
-  if (clientId && clientId !== finalClientId && clientId !== appUser.clientId) {
-    const summary = await mergeClientData(clientId, finalClientId);
+
+  if (allowMerge && candidateForMerge && candidateForMerge !== finalClientId) {
+    const summary = await mergeClientData(candidateForMerge, finalClientId);
     mergedFrom.push(...summary.movedFrom);
   }
 
-  await db.appUser.update({
-    where: { id: appUser.id },
-    data: { clientId: finalClientId },
-  });
+  if (appUser.clientId !== finalClientId) {
+    await db.appUser.update({
+      where: { id: appUser.id },
+      data: { clientId: finalClientId },
+    });
+  }
 
   console.info("attached client to app user", {
     source,
@@ -239,6 +252,8 @@ export async function attachClientToAppUser(options: {
     mergedFrom,
     phoneLinkedAt: appUser.phoneLinkedAt,
     phone: maskPhone(appUser.phone),
+    merged: allowMerge && mergedFrom.length > 0,
+    mergeWithinMs,
   });
 
   return {
@@ -246,6 +261,7 @@ export async function attachClientToAppUser(options: {
     attached: true,
     mergedFrom,
     cookieToSet,
+    appUserId: appUser.id,
   };
 }
 
@@ -319,6 +335,42 @@ export async function resolveClientIdForWrite(
   }
 
   return { clientId: finalClientId, cookieToSet, appUserId };
+}
+
+export async function resolveClientIdForAppUserRequest(
+  req: NextRequest,
+  candidate?: string | null,
+  candidateSource: Parameters<typeof resolveClientIdFromRequest>[2] = "candidate",
+  intent: "read" | "write" = "read"
+): Promise<ResolveResult> {
+  const session = await getSession();
+  const user = session.user;
+  const loggedIn = !!user?.loggedIn && typeof user.kakaoId === "number";
+  const trustedCandidate = sanitizeCandidate(loggedIn, candidate, candidateSource);
+
+  if (!loggedIn) {
+    return intent === "write"
+      ? resolveClientIdForWrite(req, trustedCandidate, candidateSource)
+      : resolveClientIdForRead(req, trustedCandidate, candidateSource);
+  }
+
+  const attachResult = await attachClientToAppUser({
+    req,
+    kakaoId: String(user.kakaoId),
+    source: "session-sync",
+    candidateClientId: trustedCandidate ?? undefined,
+    candidateSource,
+    userAgent: req.headers.get("user-agent"),
+  });
+
+  const clientId = attachResult.clientId;
+  const cookieToSet = attachResult.cookieToSet;
+
+  if (clientId) return { clientId, cookieToSet, appUserId: attachResult.appUserId };
+
+  return intent === "write"
+    ? resolveClientIdForWrite(req, trustedCandidate, candidateSource)
+    : resolveClientIdForRead(req, trustedCandidate, candidateSource);
 }
 
 export function withClientCookie(response: NextResponse, cookie?: ReturnType<typeof buildClientCookie>) {

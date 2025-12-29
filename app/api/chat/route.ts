@@ -1,5 +1,6 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { streamChat } from "@/lib/ai/chain";
+import { resolveClientIdForAppUserRequest } from "@/lib/server/client-link";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -7,13 +8,24 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    const { clientId, cookieToSet } = await resolveClientIdForAppUserRequest(
+      req,
+      body?.clientId,
+      "body",
+      "read"
+    );
 
     const q = typeof body?.question === "string" ? body.question.trim() : "";
     const msgs = Array.isArray(body?.messages) ? body.messages : [];
     const normalized =
       msgs.length > 0 ? msgs : q ? [{ role: "user", content: q }] : [];
 
-    const patchedBody = { ...body, messages: normalized, ragQuery: q };
+    const patchedBody = {
+      ...body,
+      clientId,
+      messages: normalized,
+      ragQuery: q,
+    };
 
     const headersObj = req.headers;
     let iterable: AsyncIterable<string> | undefined;
@@ -35,9 +47,13 @@ export async function POST(req: NextRequest) {
           controller.close();
         },
       });
-      return new Response(stream, {
+      const res = new NextResponse(stream, {
         headers: { "Content-Type": "text/plain; charset=utf-8" },
       });
+      if (cookieToSet) {
+        res.cookies.set(cookieToSet.name, cookieToSet.value, cookieToSet.options);
+      }
+      return res;
     }
 
     const stream = new ReadableStream<Uint8Array>({
@@ -61,7 +77,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return new Response(stream, {
+    const res = new NextResponse(stream, {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
         "Cache-Control": "no-cache, no-transform",
@@ -69,11 +85,16 @@ export async function POST(req: NextRequest) {
         "X-Accel-Buffering": "no",
       },
     });
+    if (cookieToSet) {
+      res.cookies.set(cookieToSet.name, cookieToSet.value, cookieToSet.options);
+    }
+    return res;
   } catch (e: any) {
     const msg = e?.message || "Unknown error";
-    return new Response(msg, {
+    const res = new NextResponse(msg, {
       status: 500,
       headers: { "Content-Type": "text/plain; charset=utf-8" },
     });
+    return res;
   }
 }

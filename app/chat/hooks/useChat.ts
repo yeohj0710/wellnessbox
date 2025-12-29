@@ -42,6 +42,7 @@ export default function useChat() {
   const firstUserMessageRef = useRef<string>("");
   const firstAssistantMessageRef = useRef<string>("");
   const firstAssistantReplyRef = useRef<string>("");
+  const activeIdRef = useRef<string | null>(null);
 
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -85,6 +86,60 @@ export default function useChat() {
       readyToPersistRef.current[id] = false;
     }
     (async () => {
+      try {
+        const res = await fetch("/api/chat/save", { method: "GET" });
+        if (!res.ok) return;
+        const js = await res.json().catch(() => ({}));
+        if (!Array.isArray(js?.sessions)) return;
+        setSessions((prev) => {
+          const merged = new Map<string, ChatSession>();
+          const ensureReady: Record<string, boolean> = {};
+          for (const s of prev) {
+            merged.set(s.id, s);
+            ensureReady[s.id] = readyToPersistRef.current[s.id] ?? true;
+          }
+          for (const raw of js.sessions as any[]) {
+            if (!raw?.id) continue;
+            const normalized: ChatSession = {
+              id: String(raw.id),
+              title: raw.title || "새 상담",
+              createdAt: raw.createdAt ? Number(raw.createdAt) : Date.now(),
+              updatedAt: raw.updatedAt ? Number(raw.updatedAt) : Date.now(),
+              messages: Array.isArray(raw.messages)
+                ? raw.messages.map((m: any) => ({
+                    id: String(m.id),
+                    role: m.role,
+                    content: m.content ?? "",
+                    createdAt: m.createdAt ? Number(m.createdAt) : Date.now(),
+                  }))
+                : [],
+            };
+            const existing = merged.get(normalized.id);
+            if (!existing || (existing.updatedAt || 0) < (normalized.updatedAt || 0)) {
+              merged.set(normalized.id, normalized);
+            }
+            ensureReady[normalized.id] = true;
+          }
+
+          readyToPersistRef.current = ensureReady;
+          let arr = Array.from(merged.values()).sort(
+            (a, b) => (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt)
+          );
+          if (arr.length > 1) {
+            arr = arr.filter(
+              (s) => s.messages.length > 0 || readyToPersistRef.current[s.id]
+            );
+          }
+          const nextActiveId =
+            (activeIdRef.current && merged.has(activeIdRef.current)
+              ? activeIdRef.current
+              : arr[0]?.id) || null;
+          setActiveId(nextActiveId);
+          return arr;
+        });
+      } catch {}
+    })();
+    (async () => {
       let resolved: UserProfile | undefined = undefined;
       const remote = await loadProfileServer();
       if (remote) {
@@ -99,6 +154,10 @@ export default function useChat() {
       setProfileLoaded(true);
     })();
   }, []);
+
+  useEffect(() => {
+    activeIdRef.current = activeId;
+  }, [activeId]);
 
   useEffect(() => {
     if (!sessions.length) return;

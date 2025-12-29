@@ -102,6 +102,7 @@ export async function POST(req: NextRequest) {
       kakaoId: String(user.kakaoId),
       source: "phone-link",
       userAgent: req.headers.get("user-agent"),
+      allowMerge: true,
     });
     const resolvedClientId = attachResult.clientId ?? undefined;
 

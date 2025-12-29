@@ -40,3 +40,6 @@ ios/DerivedData/
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json
+
+# Docs
+docs/
