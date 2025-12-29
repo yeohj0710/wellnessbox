@@ -9,6 +9,7 @@ import { ToastProvider } from "@/components/common/toastContext.client";
 import { pretendard } from "./fonts";
 import RouteTransition from "@/components/common/routeTransition";
 import KakaoExternalBridge from "@/components/common/kakaoExternalBridge";
+import AppDeepLinkHandler from "@/components/common/appDeepLinkHandler";
 import Script from "next/script";
 import { cookies, headers } from "next/headers";
 
@@ -87,6 +88,7 @@ export default async function RootLayout({
       <body
         className={`${pretendard.className} overflow-x-hidden flex flex-col bg-white`}
       >
+        <AppDeepLinkHandler />
         <KakaoExternalBridge />
         <LocalStorageProvider>
           <FooterProvider>

@@ -1,17 +1,59 @@
 "use client";
 
 import Image from "next/image";
-import React from "react";
+import React, { useCallback } from "react";
+import { Browser } from "@capacitor/browser";
+import { Capacitor } from "@capacitor/core";
+import {
+  KAKAO_APP_LOGIN_PATH,
+  KAKAO_CONTEXT_COOKIE,
+  KAKAO_WEB_LOGIN_PATH,
+} from "@/lib/auth/kakao/constants";
 
 type Props = {
   className?: string;
   fullWidth?: boolean;
 };
 
+function stripTrailingSlash(value: string) {
+  return value.replace(/\/$/, "");
+}
+
+function resolveBaseUrl() {
+  const env = process.env.NEXT_PUBLIC_APP_URL;
+  if (env) return stripTrailingSlash(env);
+  return typeof window !== "undefined" ? window.location.origin : "";
+}
+
+function toAbsoluteUrl(path: string) {
+  const base = resolveBaseUrl();
+  return new URL(path, base).toString();
+}
+
+function markAppContext() {
+  const expires = new Date(Date.now() + 10 * 60 * 1000).toUTCString();
+  document.cookie = `${KAKAO_CONTEXT_COOKIE}=app; Path=/; SameSite=Lax; Expires=${expires}`;
+}
+
 export default function KakaoLoginButton({ className = "", fullWidth }: Props) {
-  const onClick = () => {
-    window.location.href = "/api/auth/kakao/login";
-  };
+  const onClick = useCallback(async () => {
+    const isNative = Capacitor.isNativePlatform();
+
+    if (isNative) {
+      markAppContext();
+
+      const url = toAbsoluteUrl(KAKAO_APP_LOGIN_PATH);
+      try {
+        await Browser.open({ url });
+        return;
+      } catch {
+        window.location.href = url;
+        return;
+      }
+    }
+
+    window.location.href = KAKAO_WEB_LOGIN_PATH;
+  }, []);
 
   return (
     <button

@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import getSession from "@/lib/session";
 import db from "@/lib/db";
 import { ensureClient, getClientIdFromRequest } from "@/lib/server/client";
 import { generateFriendlyNickname, normalizeNickname } from "@/lib/nickname";
 import { attachClientToAppUser, withClientCookie } from "@/lib/server/client-link";
+import { KAKAO_STATE_COOKIE } from "@/lib/auth/kakao/constants";
+import { createAppTransferToken } from "@/lib/auth/kakao/appBridge";
+import { verifyLoginState } from "@/lib/auth/kakao/state";
+import { kakaoRedirectUri, publicOrigin, resolveRequestOrigin } from "@/lib/server/origin";
 
 type KakaoUserMe = {
   id: number;
@@ -18,64 +22,28 @@ type KakaoUserMe = {
   };
 };
 
-function normalizeBaseUrl(url: string) {
-  return url.replace(/\/$/, "");
-}
-
-type HeadersLike = { get(name: string): string | null };
-
-function resolveOrigin(h: HeadersLike) {
-  const proto = h.get("x-forwarded-proto") || "http";
-  const forwardedHost = h.get("x-forwarded-host");
-  const host = forwardedHost || h.get("host") || "localhost:3000";
-  return `${proto}://${host}`;
-}
-
-function canonicalizeHost(origin: string) {
-  const u = new URL(origin);
-  const host = u.host.replace(/^www\./, "");
-  return `${u.protocol}//${host}`;
-}
-
-function resolveRedirectUri(origin: string) {
-  const base = canonicalizeHost(origin);
-
-  if (base.includes("localhost") || base.includes("127.0.0.1")) {
-    return "http://localhost:3000/api/auth/kakao/callback";
-  }
-
-  if (base.includes("wellnessbox.me")) {
-    return "https://wellnessbox.me/api/auth/kakao/callback";
-  }
-
-  return `${normalizeBaseUrl(base)}/api/auth/kakao/callback`;
-}
-
-function resolvePublicOrigin(origin: string) {
-  const base = canonicalizeHost(origin);
-
-  if (base.includes("localhost") || base.includes("127.0.0.1")) {
-    return "http://localhost:3000";
-  }
-
-  if (base.includes("wellnessbox.me")) {
-    return "https://wellnessbox.me";
-  }
-
-  return normalizeBaseUrl(base);
-}
+export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
+  const stateParam = searchParams.get("state");
 
   const h = await headers();
-  const requestOrigin = resolveOrigin(h);
-  const origin = resolvePublicOrigin(requestOrigin);
-  const redirectUri = resolveRedirectUri(requestOrigin);
+  const cookieStore = await cookies();
+  const requestOrigin = resolveRequestOrigin(h, request.url);
+  const origin = publicOrigin(requestOrigin);
+  const redirectUri = kakaoRedirectUri(requestOrigin);
+
+  const stateCookie = cookieStore.get(KAKAO_STATE_COOKIE)?.value ?? null;
+  const state = verifyLoginState(stateParam, stateCookie);
 
   if (!code) {
     return NextResponse.redirect(new URL("/?login=missing_code", origin));
+  }
+
+  if (!state) {
+    return NextResponse.redirect(new URL("/?login=invalid_state", origin));
   }
 
   const clientId = process.env.KAKAO_REST_API_KEY;
@@ -123,7 +91,8 @@ export async function GET(request: NextRequest) {
     const kakaoAccount = me.kakao_account ?? {};
     const profile = kakaoAccount.profile ?? {};
 
-    const requestClientId = (await getClientIdFromRequest()) ?? undefined;
+    const requestClientId =
+      state.clientId ?? (await getClientIdFromRequest()) ?? undefined;
     if (requestClientId) {
       await ensureClient(requestClientId);
     }
@@ -189,6 +158,21 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.redirect(new URL("/", origin));
     if (attachResult.cookieToSet) {
       withClientCookie(response, attachResult.cookieToSet);
+    }
+
+    response.cookies.delete(KAKAO_STATE_COOKIE, { path: "/" });
+
+    if (state.platform === "app") {
+      const transfer = await createAppTransferToken({
+        kakaoId: me.id,
+        nickname: nextNickname || null,
+        profileImageUrl: nextProfileImage || null,
+        email: nextEmail || null,
+        kakaoEmail: kakaoEmail || null,
+        clientId: attachResult.clientId ?? requestClientId ?? null,
+      });
+
+      response.headers.set("Location", transfer.deepLink);
     }
 
     return response;

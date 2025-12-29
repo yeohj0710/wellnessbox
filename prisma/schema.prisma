@@ -303,6 +303,15 @@ model EmailOtp {
   @@index([userId, email, usedAt, expiresAt])
 }
 
+model AppLoginTransferToken {
+  id         String   @id @default(cuid())
+  tokenHash  String   @unique
+  payload    Json
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime @default(now())
+}
+
 /// DB에 이미 있는 vector 테이블 유지 (drop 위험 방지)
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model rag_chunks {

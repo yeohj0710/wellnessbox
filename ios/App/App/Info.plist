@@ -43,7 +43,18 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>UIViewControllerBasedStatusBarAppearance</key>
-	<true/>
+        <key>UIViewControllerBasedStatusBarAppearance</key>
+        <true/>
+        <key>CFBundleURLTypes</key>
+        <array>
+                <dict>
+                        <key>CFBundleURLSchemes</key>
+                        <array>
+                                <string>wellnessbox</string>
+                        </array>
+                        <key>CFBundleURLName</key>
+                        <string>oauth</string>
+                </dict>
+        </array>
 </dict>
 </plist>
