@@ -11,6 +11,8 @@ type TraceSource = "llm" | "agent";
 
 type RunMode = "LLM" | "AGENT" | "BOTH";
 
+type AgentVersion = "v1" | "v2";
+
 const toPreview = (text?: string, max = 120) => {
   if (!text) return "";
   return text.length > max ? `${text.slice(0, max)}...` : text;
@@ -57,6 +59,8 @@ export default function AgentPlaygroundPage() {
   const [agentResult, setAgentResult] = useState<AgentTestResponse | null>(
     null
   );
+  const [agentVersion, setAgentVersion] = useState<AgentVersion>("v1");
+  const [lastAgentVersion, setLastAgentVersion] = useState<AgentVersion>("v1");
   const [loading, setLoading] = useState<RunMode | null>(null);
   const [activeTrace, setActiveTrace] = useState<TraceSource>("agent");
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
@@ -106,10 +110,15 @@ export default function AgentPlaygroundPage() {
     setLoading("AGENT");
     setExpandedCards(new Set());
     try {
-      const data = await callApi<AgentTestResponse>("/api/agent-test/run", {
+      const path =
+        agentVersion === "v1"
+          ? "/api/agent-test/run"
+          : "/api/agent-test/run-v2";
+      const data = await callApi<AgentTestResponse>(path, {
         message,
       });
       setAgentResult(data);
+      setLastAgentVersion(agentVersion);
       setActiveTrace("agent");
     } finally {
       setLoading(null);
@@ -124,10 +133,15 @@ export default function AgentPlaygroundPage() {
         message,
       });
       setLlmResult(llm);
-      const agent = await callApi<AgentTestResponse>("/api/agent-test/run", {
+      const path =
+        agentVersion === "v1"
+          ? "/api/agent-test/run"
+          : "/api/agent-test/run-v2";
+      const agent = await callApi<AgentTestResponse>(path, {
         message,
       });
       setAgentResult(agent);
+      setLastAgentVersion(agentVersion);
       setActiveTrace("agent");
     } finally {
       setLoading(null);
@@ -182,6 +196,18 @@ export default function AgentPlaygroundPage() {
             >
               {loading === "BOTH" ? "둘 다 실행 중..." : "둘 다 실행"}
             </button>
+            <label className="text-xs text-gray-700">
+              Agent 선택: {" "}
+              <select
+                className="border rounded px-2 py-1 text-xs ml-1"
+                value={agentVersion}
+                onChange={(e) => setAgentVersion(e.target.value as AgentVersion)}
+                disabled={!!loading}
+              >
+                <option value="v1">Agent v1 (Graph)</option>
+                <option value="v2">Agent v2 (Tool-loop)</option>
+              </select>
+            </label>
             <div className="text-xs text-gray-600 mt-1">
               클라이언트에서는 OpenAI 직접 호출 없이 API를 사용합니다.
             </div>
@@ -232,18 +258,41 @@ export default function AgentPlaygroundPage() {
           {agentResult?.meta && (
             <div className="mt-3 text-xs text-gray-600 space-y-1">
               <div>
-                계획: {toPreview(String(agentResult.meta.plan || "-"), 80)}
+                실행 버전:{" "}
+                {lastAgentVersion === "v1"
+                  ? "Agent v1 (Graph)"
+                  : "Agent v2 (Tool-loop)"}
               </div>
-              <div>
-                검색 쿼리: {String(agentResult.meta.searchQuery ?? "-")}
-              </div>
-              <div>
-                계산:{" "}
-                {String(
-                  agentResult.meta.calcResult ??
-                    agentResult.meta.calculation ??
-                    "-"
-                )}
+              {lastAgentVersion === "v1" ? (
+                <>
+                  <div>
+                    계획: {toPreview(String(agentResult.meta.plan || "-"), 80)}
+                  </div>
+                  <div>
+                    검색 쿼리: {String(agentResult.meta.searchQuery ?? "-")}
+                  </div>
+                  <div>
+                    계산:{" "}
+                    {String(
+                      agentResult.meta.calcResult ??
+                        agentResult.meta.calculation ??
+                        "-"
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>LLM Steps: {String(agentResult.meta.steps ?? "-")}</div>
+                  <div>
+                    Tool Calls: {String(agentResult.meta.toolCallsCount ?? "-")}
+                  </div>
+                  <div className="break-words">
+                    Last Tool Results: {String(agentResult.meta.lastToolResults ?? "-")}
+                  </div>
+                </>
+              )}
+              <div className="bg-gray-50 p-2 rounded border text-[11px] text-gray-700">
+                {JSON.stringify(agentResult.meta, null, 2)}
               </div>
             </div>
           )}
@@ -279,7 +328,9 @@ export default function AgentPlaygroundPage() {
               onClick={() => setActiveTrace("agent")}
               disabled={!agentResult?.trace?.length}
             >
-              Agent Trace
+              Agent Trace ({
+                lastAgentVersion === "v1" ? "v1 / Graph" : "v2 / Tool-loop"
+              })
             </button>
           </div>
         </div>

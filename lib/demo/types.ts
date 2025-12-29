@@ -1,4 +1,9 @@
-export type TraceEventType = "LLM_CALL" | "NODE_START" | "NODE_END" | "TOOL_CALL";
+export type TraceEventType =
+  | "LLM_CALL"
+  | "NODE_START"
+  | "NODE_END"
+  | "TOOL_CALL"
+  | "ERROR";
 
 export type TraceEvent = {
   type: TraceEventType;
@@ -7,6 +12,7 @@ export type TraceEvent = {
   inputPreview?: string;
   outputPreview?: string;
   decisionReason?: string;
+  errorMessage?: string;
   meta?: Record<string, unknown>;
 };
 
