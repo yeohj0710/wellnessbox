@@ -4,7 +4,7 @@ import { getDefaultModel } from "@/lib/ai/model";
 export const runtime = "nodejs";
 
 function getOpenAIKey() {
-  return process.env.OPENAI_KEY || "";
+  return process.env.OPENAI_API_KEY || "";
 }
 
 export async function POST(req: NextRequest) {

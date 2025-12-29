@@ -2,8 +2,8 @@ import { ChatOpenAI, OpenAIEmbeddings } from "@langchain/openai";
 import type { EmbeddingsInterface } from "@langchain/core/embeddings";
 
 function ensureKey() {
-  const key = process.env.OPENAI_KEY;
-  if (!key) throw new Error("OPENAI_KEY is not set");
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) throw new Error("OPENAI_API_KEY is not set");
   return key;
 }
 

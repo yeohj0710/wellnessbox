@@ -5,7 +5,7 @@ import { CATEGORY_LABELS } from "@/lib/categories";
 export const runtime = "nodejs";
 
 function getOpenAIKey() {
-  return process.env.OPENAI_KEY || "";
+  return process.env.OPENAI_API_KEY || "";
 }
 function trimText(s: any, n: number) {
   const t = typeof s === "string" ? s : JSON.stringify(s || "");
