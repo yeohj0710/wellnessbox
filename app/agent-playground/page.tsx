@@ -1,17 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+
 import type {
-  AgentTestResponse,
-  LlmTestResponse,
+  PlaygroundMode,
+  PlaygroundRunResult,
   TraceEvent,
-} from "@/lib/demo/types";
-
-type TraceSource = "llm" | "agent";
-
-type RunMode = "LLM" | "AGENT" | "BOTH";
-
-type AgentVersion = "v1" | "v2";
+} from "@/lib/agent-playground/types";
 
 const toPreview = (text?: string, max = 120) => {
   if (!text) return "";
@@ -38,9 +33,7 @@ const TraceCard = ({
       <div className="text-xs text-gray-500">{event.ms}ms</div>
     </div>
     <div className="text-sm text-gray-700 mt-1">
-      {event.name && (
-        <span className="mr-2 text-indigo-600">[{event.name}]</span>
-      )}
+      {event.name && <span className="mr-2 text-indigo-600">[{event.name}]</span>}
       {toPreview(event.outputPreview || event.inputPreview)}
     </div>
     {expanded && (
@@ -51,19 +44,56 @@ const TraceCard = ({
   </div>
 );
 
+const ResultPanel = ({
+  title,
+  result,
+  active,
+  onActivate,
+}: {
+  title: string;
+  result: PlaygroundRunResult | null;
+  active: boolean;
+  onActivate: () => void;
+}) => (
+  <div className="border rounded-xl p-4 bg-white shadow-sm">
+    <div className="flex items-center justify-between mb-2">
+      <h2 className="font-semibold text-gray-800">{title}</h2>
+      {result && (
+        <button
+          className={`text-xs px-2 py-1 rounded ${
+            active ? "bg-indigo-600 text-white" : "bg-gray-100"
+          }`}
+          onClick={onActivate}
+        >
+          Trace 보기
+        </button>
+      )}
+    </div>
+    <div className="text-sm text-gray-800 whitespace-pre-wrap min-h-[120px]">
+      {result?.error
+        ? `⚠️ ${result.error}`
+        : result?.answer || "아직 실행하지 않았습니다."}
+    </div>
+    {result?.meta && (
+      <div className="mt-3 text-xs text-gray-600 space-y-1">
+        <div className="bg-gray-50 p-2 rounded border text-[11px] text-gray-700">
+          {JSON.stringify(result.meta, null, 2)}
+        </div>
+      </div>
+    )}
+  </div>
+);
+
 export default function AgentPlaygroundPage() {
   const [message, setMessage] = useState(
     "도구 활용 예시를 보여주세요. 12 * 3 + 5 계산도 포함해 주세요."
   );
-  const [llmResult, setLlmResult] = useState<LlmTestResponse | null>(null);
-  const [agentResult, setAgentResult] = useState<AgentTestResponse | null>(
-    null
-  );
-  const [agentVersion, setAgentVersion] = useState<AgentVersion>("v1");
-  const [lastAgentVersion, setLastAgentVersion] = useState<AgentVersion>("v1");
-  const [loading, setLoading] = useState<RunMode | null>(null);
-  const [activeTrace, setActiveTrace] = useState<TraceSource>("agent");
+  const [llmResult, setLlmResult] = useState<PlaygroundRunResult | null>(null);
+  const [agentResult, setAgentResult] = useState<PlaygroundRunResult | null>(null);
+  const [loading, setLoading] = useState<PlaygroundMode | null>(null);
+  const [activeTrace, setActiveTrace] = useState<"llm" | "agent">("agent");
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
+  const [serverError, setServerError] = useState<string | null>(null);
 
   const toggleCard = (index: number) => {
     setExpandedCards((prev) => {
@@ -77,226 +107,112 @@ export default function AgentPlaygroundPage() {
     });
   };
 
-  const callApi = async <T,>(
-    path: string,
-    payload: { message: string }
-  ): Promise<T> => {
-    const res = await fetch(path, {
+  const callApi = async (mode: PlaygroundMode) => {
+    const res = await fetch("/api/agent-playground/run", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ message, mode }),
     });
+
+    const data = (await res.json()) as {
+      llm?: PlaygroundRunResult;
+      agent?: PlaygroundRunResult;
+      error?: string;
+    };
+
     if (!res.ok) {
-      throw new Error(await res.text());
+      throw new Error(data?.error || res.statusText);
     }
-    return res.json();
+
+    return data;
   };
 
-  const runLlm = async () => {
-    setLoading("LLM");
+  const handleRun = async (mode: PlaygroundMode) => {
+    setLoading(mode);
     setExpandedCards(new Set());
-    try {
-      const data = await callApi<LlmTestResponse>("/api/llm-test/run", {
-        message,
-      });
-      setLlmResult(data);
-      setActiveTrace("llm");
-    } finally {
-      setLoading(null);
-    }
-  };
+    setServerError(null);
 
-  const runAgent = async () => {
-    setLoading("AGENT");
-    setExpandedCards(new Set());
     try {
-      const path =
-        agentVersion === "v1"
-          ? "/api/agent-test/run"
-          : "/api/agent-test/run-v2";
-      const data = await callApi<AgentTestResponse>(path, {
-        message,
-      });
-      setAgentResult(data);
-      setLastAgentVersion(agentVersion);
-      setActiveTrace("agent");
-    } finally {
-      setLoading(null);
-    }
-  };
+      const data = await callApi(mode);
+      setLlmResult(data.llm ?? null);
+      setAgentResult(data.agent ?? null);
 
-  const runBoth = async () => {
-    setLoading("BOTH");
-    setExpandedCards(new Set());
-    try {
-      const llm = await callApi<LlmTestResponse>("/api/llm-test/run", {
-        message,
-      });
-      setLlmResult(llm);
-      const path =
-        agentVersion === "v1"
-          ? "/api/agent-test/run"
-          : "/api/agent-test/run-v2";
-      const agent = await callApi<AgentTestResponse>(path, {
-        message,
-      });
-      setAgentResult(agent);
-      setLastAgentVersion(agentVersion);
-      setActiveTrace("agent");
+      if (mode === "llm") setActiveTrace("llm");
+      if (mode === "agent") setActiveTrace("agent");
+      if (mode === "both") setActiveTrace("agent");
+
+      if (data.error) setServerError(data.error);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "서버 오류";
+      setServerError(message);
     } finally {
       setLoading(null);
     }
   };
 
   const currentTrace = useMemo(() => {
-    if (activeTrace === "agent") return agentResult?.trace ?? [];
-    return llmResult?.trace ?? [];
+    return activeTrace === "llm"
+      ? llmResult?.trace || []
+      : agentResult?.trace || [];
   }, [activeTrace, agentResult?.trace, llmResult?.trace]);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-10 space-y-6">
-      <div className="bg-gradient-to-r from-indigo-100 to-blue-50 border rounded-xl p-4 shadow-sm">
-        <div className="flex items-center justify-between mb-3">
-          <h1 className="text-xl font-semibold text-gray-800">
-            LLM vs Agent Playground
-          </h1>
-          <div className="text-xs text-gray-600">
-            모델: gpt-4o-mini (server only)
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <textarea
-            className="w-full border rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-            rows={4}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="메시지를 입력하세요"
-          />
-          <div className="flex flex-col gap-2">
-            <div className="flex gap-2">
-              <button
-                className="flex-1 bg-indigo-600 text-white py-2 px-3 rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:opacity-60"
-                onClick={runLlm}
-                disabled={!!loading}
-              >
-                {loading === "LLM" ? "LLM 실행 중..." : "LLM 실행"}
-              </button>
-              <button
-                className="flex-1 bg-emerald-600 text-white py-2 px-3 rounded-lg text-sm font-semibold hover:bg-emerald-700 disabled:opacity-60"
-                onClick={runAgent}
-                disabled={!!loading}
-              >
-                {loading === "AGENT" ? "Agent 실행 중..." : "Agent 실행"}
-              </button>
-            </div>
-            <button
-              className="w-full bg-slate-900 text-white py-2 px-3 rounded-lg text-sm font-semibold hover:bg-slate-800 disabled:opacity-60"
-              onClick={runBoth}
-              disabled={!!loading}
-            >
-              {loading === "BOTH" ? "둘 다 실행 중..." : "둘 다 실행"}
-            </button>
-            <label className="text-xs text-gray-700">
-              Agent 선택: {" "}
-              <select
-                className="border rounded px-2 py-1 text-xs ml-1"
-                value={agentVersion}
-                onChange={(e) => setAgentVersion(e.target.value as AgentVersion)}
-                disabled={!!loading}
-              >
-                <option value="v1">Agent v1 (Graph)</option>
-                <option value="v2">Agent v2 (Tool-loop)</option>
-              </select>
-            </label>
-            <div className="text-xs text-gray-600 mt-1">
-              클라이언트에서는 OpenAI 직접 호출 없이 API를 사용합니다.
-            </div>
-          </div>
-        </div>
+    <div className="max-w-5xl mx-auto py-8 px-4 space-y-4">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-1">Agent Playground</h1>
+        <p className="text-gray-600 text-sm">
+          LLM 단독 호출과 tool-calling agent를 한 페이지에서 비교 실행합니다.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="border rounded-xl p-4 bg-white shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="font-semibold text-gray-800">LLM 결과</h2>
-            {llmResult && (
-              <button
-                className={`text-xs px-2 py-1 rounded ${
-                  activeTrace === "llm"
-                    ? "bg-indigo-600 text-white"
-                    : "bg-gray-100"
-                }`}
-                onClick={() => setActiveTrace("llm")}
-              >
-                Trace 보기
-              </button>
-            )}
-          </div>
-          <div className="text-sm text-gray-800 whitespace-pre-wrap min-h-[120px]">
-            {llmResult?.answer || "아직 실행하지 않았습니다."}
-          </div>
+      <div className="border rounded-xl p-4 bg-white shadow-sm space-y-3">
+        <textarea
+          className="w-full border rounded-lg p-3 text-sm min-h-[120px] focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="질문을 입력하세요"
+        />
+        <div className="flex flex-wrap gap-2">
+          <button
+            className="px-3 py-2 rounded bg-indigo-600 text-white text-sm disabled:opacity-50"
+            onClick={() => handleRun("llm")}
+            disabled={loading !== null}
+          >
+            {loading === "llm" ? "LLM 실행 중..." : "LLM 실행"}
+          </button>
+          <button
+            className="px-3 py-2 rounded bg-emerald-600 text-white text-sm disabled:opacity-50"
+            onClick={() => handleRun("agent")}
+            disabled={loading !== null}
+          >
+            {loading === "agent" ? "agent 실행 중..." : "agent 실행"}
+          </button>
+          <button
+            className="px-3 py-2 rounded bg-gray-900 text-white text-sm disabled:opacity-50"
+            onClick={() => handleRun("both")}
+            disabled={loading !== null}
+          >
+            {loading === "both" ? "둘 다 실행 중..." : "둘 다 실행"}
+          </button>
         </div>
-        <div className="border rounded-xl p-4 bg-white shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="font-semibold text-gray-800">Agent 결과</h2>
-            {agentResult && (
-              <button
-                className={`text-xs px-2 py-1 rounded ${
-                  activeTrace === "agent"
-                    ? "bg-emerald-600 text-white"
-                    : "bg-gray-100"
-                }`}
-                onClick={() => setActiveTrace("agent")}
-              >
-                Trace 보기
-              </button>
-            )}
-          </div>
-          <div className="text-sm text-gray-800 whitespace-pre-wrap min-h-[120px]">
-            {agentResult?.answer || "아직 실행하지 않았습니다."}
-          </div>
-          {agentResult?.meta && (
-            <div className="mt-3 text-xs text-gray-600 space-y-1">
-              <div>
-                실행 버전:{" "}
-                {lastAgentVersion === "v1"
-                  ? "Agent v1 (Graph)"
-                  : "Agent v2 (Tool-loop)"}
-              </div>
-              {lastAgentVersion === "v1" ? (
-                <>
-                  <div>
-                    계획: {toPreview(String(agentResult.meta.plan || "-"), 80)}
-                  </div>
-                  <div>
-                    검색 쿼리: {String(agentResult.meta.searchQuery ?? "-")}
-                  </div>
-                  <div>
-                    계산:{" "}
-                    {String(
-                      agentResult.meta.calcResult ??
-                        agentResult.meta.calculation ??
-                        "-"
-                    )}
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div>LLM Steps: {String(agentResult.meta.steps ?? "-")}</div>
-                  <div>
-                    Tool Calls: {String(agentResult.meta.toolCallsCount ?? "-")}
-                  </div>
-                  <div className="break-words">
-                    Last Tool Results: {String(agentResult.meta.lastToolResults ?? "-")}
-                  </div>
-                </>
-              )}
-              <div className="bg-gray-50 p-2 rounded border text-[11px] text-gray-700">
-                {JSON.stringify(agentResult.meta, null, 2)}
-              </div>
-            </div>
-          )}
-        </div>
+        {serverError && (
+          <div className="text-sm text-red-600">서버 오류: {serverError}</div>
+        )}
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <ResultPanel
+          title="LLM 결과"
+          result={llmResult}
+          active={activeTrace === "llm"}
+          onActivate={() => setActiveTrace("llm")}
+        />
+        <ResultPanel
+          title="Agent 결과"
+          result={agentResult}
+          active={activeTrace === "agent"}
+          onActivate={() => setActiveTrace("agent")}
+        />
       </div>
 
       <div className="border rounded-xl p-4 bg-white shadow-sm">
@@ -310,9 +226,7 @@ export default function AgentPlaygroundPage() {
           <div className="flex gap-2">
             <button
               className={`text-xs px-3 py-1 rounded ${
-                activeTrace === "llm"
-                  ? "bg-indigo-600 text-white"
-                  : "bg-gray-100"
+                activeTrace === "llm" ? "bg-indigo-600 text-white" : "bg-gray-100"
               }`}
               onClick={() => setActiveTrace("llm")}
               disabled={!llmResult?.trace?.length}
@@ -328,9 +242,7 @@ export default function AgentPlaygroundPage() {
               onClick={() => setActiveTrace("agent")}
               disabled={!agentResult?.trace?.length}
             >
-              Agent Trace ({
-                lastAgentVersion === "v1" ? "v1 / Graph" : "v2 / Tool-loop"
-              })
+              Agent Trace
             </button>
           </div>
         </div>
