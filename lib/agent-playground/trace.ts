@@ -36,6 +36,7 @@ type PendingRun = {
   start: number;
   name?: string;
   inputPreview?: string;
+  meta?: Record<string, unknown>;
 };
 
 export class TraceCollector extends BaseCallbackHandler {
@@ -62,7 +63,8 @@ export class TraceCollector extends BaseCallbackHandler {
       (extraParams as any)?.invocation_params?.model ?? (extraParams as any)?.name;
     this.llmRuns.set(runId, {
       start: Date.now(),
-      name: modelName,
+      name: (extraParams as any)?.metadata?.nodeName ?? modelName,
+      meta: (extraParams as any)?.metadata,
       inputPreview: preview(joinMessageContent(prompts as BaseMessage[])),
     });
   }
@@ -86,6 +88,7 @@ export class TraceCollector extends BaseCallbackHandler {
       ms: Date.now() - (pending?.start ?? Date.now()),
       inputPreview: pending?.inputPreview,
       outputPreview,
+      meta: pending?.meta,
     });
   }
 
@@ -98,6 +101,7 @@ export class TraceCollector extends BaseCallbackHandler {
       ms: Date.now() - (pending?.start ?? Date.now()),
       inputPreview: pending?.inputPreview,
       errorMessage: error instanceof Error ? error.message : String(error),
+      meta: pending?.meta,
     });
   }
 
@@ -138,6 +142,15 @@ export class TraceCollector extends BaseCallbackHandler {
       ms: Date.now() - (pending?.start ?? Date.now()),
       inputPreview: pending?.inputPreview,
       errorMessage: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  pushStep(name: string, meta?: Record<string, unknown>) {
+    this.events.push({
+      type: "STEP",
+      name,
+      ms: 0,
+      meta,
     });
   }
 
