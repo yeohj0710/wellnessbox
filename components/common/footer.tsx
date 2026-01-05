@@ -4,9 +4,24 @@ import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useMemo, useState, useRef, useEffect, useCallback } from "react";
+import {
+  Suspense,
+  useMemo,
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+} from "react";
 
 export default function Footer() {
+  return (
+    <Suspense fallback={null}>
+      <FooterInner />
+    </Suspense>
+  );
+}
+
+function FooterInner() {
   const [showBusinessInfo, setShowBusinessInfo] = useState(false);
   const businessInfoRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
@@ -26,14 +41,18 @@ export default function Footer() {
   const hoverUnderline =
     "relative no-underline after:content-[''] after:absolute after:left-0 after:-bottom-0.5 after:h-[1px] after:w-full after:bg-gray-400 after:scale-x-0 after:origin-left after:transition-transform after:duration-200 hover:after:scale-x-100";
 
-  const { href: languageToggleHref, label: languageToggleLabel, isEnglish } = useMemo(() => {
+  const {
+    href: languageToggleHref,
+    label: languageToggleLabel,
+    isEnglish,
+  } = useMemo(() => {
     const currentPath = pathname || "/";
     const isEnglish = currentPath.startsWith("/en");
     const basePath = isEnglish
       ? currentPath.replace(/^\/en(\/)?/, "/") || "/"
       : currentPath === "/"
-        ? "/en"
-        : `/en${currentPath}`;
+      ? "/en"
+      : `/en${currentPath}`;
 
     const queryString = searchParams.toString();
     const href = queryString ? `${basePath}?${queryString}` : basePath;
@@ -54,7 +73,7 @@ export default function Footer() {
     }
     try {
       window.dispatchEvent(new Event("wb-locale-change"));
-    } catch (error) {
+    } catch {
       // noop
     }
   }, [isEnglish]);
@@ -122,9 +141,9 @@ export default function Footer() {
               </Link>
             </div>
 
-              <span className="text-center text-xs sm:text-left text-gray-400 mt-4">
-                © 2025 웰니스박스. All rights reserved.
-              </span>
+            <span className="text-center text-xs sm:text-left text-gray-400 mt-4">
+              © 2025 웰니스박스. All rights reserved.
+            </span>
             <span className="text-center text-xs sm:text-left text-gray-400 mt-4 max-w-full">
               본 플랫폼은 통신판매중개자로서, 상품의 판매 당사자가 아닙니다.
               구매 관련 모든 거래는 판매자와 구매자 간에 직접 이루어지며, 당사는
