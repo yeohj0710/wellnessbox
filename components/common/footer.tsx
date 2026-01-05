@@ -3,11 +3,14 @@
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useRef, useEffect } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useMemo, useState, useRef, useEffect, useCallback } from "react";
 
 export default function Footer() {
   const [showBusinessInfo, setShowBusinessInfo] = useState(false);
   const businessInfoRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (showBusinessInfo) {
@@ -22,6 +25,39 @@ export default function Footer() {
 
   const hoverUnderline =
     "relative no-underline after:content-[''] after:absolute after:left-0 after:-bottom-0.5 after:h-[1px] after:w-full after:bg-gray-400 after:scale-x-0 after:origin-left after:transition-transform after:duration-200 hover:after:scale-x-100";
+
+  const { href: languageToggleHref, label: languageToggleLabel, isEnglish } = useMemo(() => {
+    const currentPath = pathname || "/";
+    const isEnglish = currentPath.startsWith("/en");
+    const basePath = isEnglish
+      ? currentPath.replace(/^\/en(\/)?/, "/") || "/"
+      : currentPath === "/"
+        ? "/en"
+        : `/en${currentPath}`;
+
+    const queryString = searchParams.toString();
+    const href = queryString ? `${basePath}?${queryString}` : basePath;
+
+    return {
+      href,
+      label: isEnglish ? "한국어로 보기" : "View in English",
+      isEnglish,
+    };
+  }, [pathname, searchParams]);
+
+  const handleLanguageToggle = useCallback(() => {
+    if (isEnglish) {
+      document.cookie = "wb-locale=; path=/; max-age=0";
+    } else {
+      const maxAge = 60 * 60 * 24 * 30;
+      document.cookie = `wb-locale=en; path=/; max-age=${maxAge}`;
+    }
+    try {
+      window.dispatchEvent(new Event("wb-locale-change"));
+    } catch (error) {
+      // noop
+    }
+  }, [isEnglish]);
 
   return (
     <footer className="w-full mx-auto bg-gray-800 text-gray-300 text-sm">
@@ -76,9 +112,19 @@ export default function Footer() {
               </Link>
             </div>
 
-            <span className="text-center text-xs sm:text-left text-gray-400 mt-4">
-              © 2025 웰니스박스. All rights reserved.
-            </span>
+            <div className="flex justify-center sm:justify-start gap-4 mt-1.5">
+              <Link
+                href={languageToggleHref}
+                onClick={handleLanguageToggle}
+                className={`text-sm text-gray-400 ${hoverUnderline}`}
+              >
+                {languageToggleLabel}
+              </Link>
+            </div>
+
+              <span className="text-center text-xs sm:text-left text-gray-400 mt-4">
+                © 2025 웰니스박스. All rights reserved.
+              </span>
             <span className="text-center text-xs sm:text-left text-gray-400 mt-4 max-w-full">
               본 플랫폼은 통신판매중개자로서, 상품의 판매 당사자가 아닙니다.
               구매 관련 모든 거래는 판매자와 구매자 간에 직접 이루어지며, 당사는

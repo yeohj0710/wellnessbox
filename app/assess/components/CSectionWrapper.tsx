@@ -59,7 +59,9 @@ export default function CSectionWrapper({
           <div className="w-32 sm:w-40">
             <div className="flex items-center justify-between text-xs text-gray-600">
               <span>진행률</span>
-              <span className="tabular-nums">{cProgress.pct}%</span>
+              <span className="tabular-nums notranslate" translate="no">
+                {cProgress.pct}%
+              </span>
             </div>
             <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100">
               <div
@@ -68,8 +70,14 @@ export default function CSectionWrapper({
               />
             </div>
             <div className="mt-1 text-[10px] text-gray-500">
-              {cProgress.step}/{cProgress.total}문항 완료 ·{" "}
-              {Math.max(cProgress.total - cProgress.step, 0)}문항 남음
+              <span className="notranslate" translate="no">
+                {cProgress.step}/{cProgress.total}
+              </span>
+              문항 완료 ·{" "}
+              <span className="notranslate" translate="no">
+                {Math.max(cProgress.total - cProgress.step, 0)}
+              </span>
+              문항 남음
             </div>
             <div className="text-[10px] text-sky-600 mt-1">{cProgressMsg}</div>
           </div>
