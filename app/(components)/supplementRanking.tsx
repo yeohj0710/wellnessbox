@@ -86,10 +86,10 @@ export default function SupplementRanking({
                     {product.name}
                   </h3>
                   <div className="mt-auto flex items-center gap-1">
-                    <StarRating rating={product.rating} size={16} />
+                    {/* <StarRating rating={product.rating} size={16} />
                     <span className="text-[11px] text-gray-500">
                       ({product.reviewCount})
-                    </span>
+                    </span> */}
                   </div>
                 </div>
 

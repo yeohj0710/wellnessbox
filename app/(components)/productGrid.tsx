@@ -106,10 +106,10 @@ export default function ProductGrid({
                   </div>
 
                   <div className="mt-2 flex justify-center items-center gap-1">
-                    <StarRating rating={product.rating} size={18} />
+                    {/* <StarRating rating={product.rating} size={18} />
                     <span className="text-[12px] text-gray-500 mt-0.5">
                       ({product.reviewCount})
-                    </span>
+                    </span> */}
                   </div>
                 </div>
               </button>

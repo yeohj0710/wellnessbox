@@ -62,7 +62,7 @@ export default function PricingSection({
             지금 시작하고,
             <br />
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#1E40FF] via-[#3B5BFF] to-[#6C4DFF]">
-              무료로 7일 체험
+              7일치 복용
             </span>
             을 경험해보세요!
           </h2>
@@ -83,14 +83,14 @@ export default function PricingSection({
               <div className="absolute -top-3 right-4 inline-flex items-center rounded-full bg-[#7C6CFF] px-3 py-1 text-[11px] font-semibold">
                 베스트
               </div>
-              <h3 className="text-base sm:text-lg font-bold">7일 무료 체험</h3>
+              <h3 className="text-base sm:text-lg font-bold">7일치 구매하기</h3>
               <div className="mt-2 text-[34px] sm:text-[38px] md:text-5xl font-extrabold leading-none tracking-tight">
-                0
+                700
                 <span className="text-xl sm:text-2xl md:text-3xl align-top">
                   ₩
                 </span>
                 <span className="ml-1 text-xs sm:text-sm md:text-base font-bold text-white/80">
-                  / 1회
+                  부터
                 </span>
               </div>
               <div className="mt-6 border-t border-white/25 pt-5 space-y-3">
@@ -111,7 +111,7 @@ export default function PricingSection({
                       />
                     </svg>
                   </span>
-                  <span className="text-sm">7일 무료 체험</span>
+                  <span className="text-sm">7일치 구매하기</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/15">
@@ -235,7 +235,7 @@ export default function PricingSection({
                       />
                     </svg>
                   </span>
-                  <span className="text-sm">무료 약사 상담</span>
+                  <span className="text-sm">무료 AI 약사 상담</span>
                 </div>
                 <div className="flex items-center gap-3 text-[#28314A]">
                   <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#EEF3FF] text-[#3B5BFF]">

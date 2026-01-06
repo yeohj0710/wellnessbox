@@ -64,11 +64,10 @@ export default function ComingSoonPopup({
                 리뉴얼 준비 중입니다
               </h2>
               <p className="mt-3 text-center text-sm leading-6 text-gray-600">
-                임시 판매(베타테스트) 기간이 종료되었습니다.
+                해당 서비스는 임시 판매(베타테스트) 기간이 종료되었습니다.
                 <br />
                 보내주신 성원에 진심으로 감사드립니다.
-                <br />
-                8월 중 재판매가 시작됩니다.
+                <br />곧 재오픈이 시작됩니다.
               </p>
               <div className="mt-6 flex items-center justify-center">
                 <button

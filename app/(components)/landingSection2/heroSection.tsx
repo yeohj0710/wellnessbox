@@ -61,7 +61,7 @@ export default function HeroSection({ onSelect7Day }: HeroSectionProps) {
             className="hover:scale-105 transition duration-300 h-11 sm:h-12 rounded-full px-5 sm:px-6 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]"
             onClick={onSelect7Day}
           >
-            7일 무료체험
+            7일치 구매하기
           </button>
         </div>
 

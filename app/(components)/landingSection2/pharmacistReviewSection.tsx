@@ -61,7 +61,7 @@ export default function PharmacistReviewSection({
                 className="hover:scale-105 transition duration-300 h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#6C4DFF] to-[#8A6BFF] shadow-[0_10px_28px_rgba(108,77,255,0.30)]"
                 onClick={onSelect7Day}
               >
-                7일 체험하기
+                7일치 구매하기
               </button>
             </div>
           </div>

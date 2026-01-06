@@ -260,7 +260,7 @@ export default function TopBar() {
               onClick={goSevenDays}
               className="hidden sm:block text-[15px] font-semibold text-slate-600"
             >
-              7일 무료체험
+              7일치 구매하기
             </button>
 
             <button
@@ -301,7 +301,7 @@ export default function TopBar() {
           <div className="mt-2 h-px bg-slate-100" />
 
           <button onClick={goSevenDays} className="text-left text-slate-500">
-            7일 무료체험
+            7일치 구매하기
           </button>
 
           <button

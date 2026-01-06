@@ -329,7 +329,7 @@ export default function ProductDetail({
             </span>
           </div>
 
-          {isLoadingReviews ? (
+          {/* {isLoadingReviews ? (
             <div className="-mt-10 mb-24">
               <FullPageLoader />
             </div>
@@ -418,7 +418,7 @@ export default function ProductDetail({
                 </p>
               )}
             </div>
-          )}
+          )} */}
 
           <div className="px-5 fixed bottom-0 left-0 right-0 w-full max-w-[640px] mx-auto bg-sky-400 text-white p-4 flex justify-between items-center text-lg font-bold">
             <span>

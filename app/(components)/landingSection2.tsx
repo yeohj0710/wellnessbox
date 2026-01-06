@@ -84,7 +84,7 @@ export default function LandingSection2({
               className="hover:scale-105 transition duration-300 h-11 sm:h-12 rounded-full px-5 sm:px-6 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]"
               onClick={onSelect7Day}
             >
-              7일 무료체험
+              7일치 구매하기
             </button>
           </div>
 
@@ -268,7 +268,7 @@ export default function LandingSection2({
                   className="hover:scale-105 transition duration-300 h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]"
                   onClick={onSelect7Day}
                 >
-                  7일 체험하기
+                  7일치 구매하기
                 </button>
               </div>
             </div>
@@ -333,7 +333,7 @@ export default function LandingSection2({
                   className="hover:scale-105 transition duration-300 h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#6C4DFF] to-[#8A6BFF] shadow-[0_10px_28px_rgba(108,77,255,0.30)]"
                   onClick={onSelect7Day}
                 >
-                  7일 체험하기
+                  7일치 구매하기
                 </button>
               </div>
             </div>
@@ -372,7 +372,7 @@ export default function LandingSection2({
                   className="hover:scale-105 transition duration-300 h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]"
                   onClick={onSelect7Day}
                 >
-                  7일 체험하기
+                  7일치 구매하기
                 </button>
               </div>
             </div>
@@ -432,7 +432,7 @@ export default function LandingSection2({
                   className="hover:scale-105 transition duration-300 h-11 sm:h-12 rounded-full px-6 sm:px-7 text-white bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] shadow-[0_10px_28px_rgba(67,103,230,0.30)]"
                   onClick={onSelect7Day}
                 >
-                  7일 체험하기
+                  7일치 구매하기
                 </button>
               </div>
             </div>
@@ -490,7 +490,7 @@ export default function LandingSection2({
               지금 시작하고,
               <br />
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#1E40FF] via-[#3B5BFF] to-[#6C4DFF]">
-                무료로 7일 체험
+                7일치 복용
               </span>
               을 경험해보세요!
             </h2>
@@ -514,13 +514,13 @@ export default function LandingSection2({
                 <h3 className="text-base sm:text-lg font-bold">7일 체험판</h3>
                 <div className="mt-2 flex items-end gap-2">
                   <span className="text-[34px] sm:text-[38px] md:text-5xl font-extrabold leading-none tracking-tight">
-                    0
+                    700
                   </span>
                   <span className="pb-1 text-xl sm:text-2xl md:text-3xl">
                     ₩
                   </span>
                   <span className="pb-[6px] text-xs sm:text-sm text-white/90">
-                    / 7일 후 정기구독 전환
+                    부터
                   </span>
                 </div>
                 <div className="mt-6 border-t border-white/20 pt-5 space-y-3">
@@ -541,7 +541,7 @@ export default function LandingSection2({
                         />
                       </svg>
                     </span>
-                    <span className="text-sm">7일 무료 체험</span>
+                    <span className="text-sm">7일치 구매하기</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/15">
@@ -665,7 +665,7 @@ export default function LandingSection2({
                         />
                       </svg>
                     </span>
-                    <span className="text-sm">무료 약사 상담</span>
+                    <span className="text-sm">무료 AI 약사 상담</span>
                   </div>
                   <div className="flex items-center gap-3 text-[#28314A]">
                     <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#EEF3FF] text-[#3B5BFF]">
