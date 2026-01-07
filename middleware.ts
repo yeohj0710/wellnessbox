@@ -67,6 +67,29 @@ function attachClientCookie(req: NextRequest, res: NextResponse) {
 export function middleware(req: NextRequest) {
   const originalUrl = req.nextUrl.clone();
   const pathname = originalUrl.pathname;
+  const isEnglishCheckAi =
+    pathname === EN_CHECK_AI_PATH ||
+    pathname.startsWith(`${EN_CHECK_AI_PATH}/`);
+
+  if (isEnglishCheckAi) {
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set(EN_LOCALE_HEADER, "en");
+    requestHeaders.set("x-wb-disable-translate", "1");
+
+    const res = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+
+    res.cookies.set(EN_LOCALE_COOKIE, "en", {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30,
+    });
+    res.headers.set(EN_LOCALE_HEADER, "en");
+
+    return attachClientCookie(req, res);
+  }
 
   const accept = req.headers.get("accept") || "";
   const fetchDest = req.headers.get("sec-fetch-dest") || "";
@@ -74,9 +97,6 @@ export function middleware(req: NextRequest) {
     fetchDest === "document" || accept.includes("text/html");
 
   const isEnglishRoute = isEnglishPrefixed(pathname);
-  const isEnglishCheckAi =
-    pathname === EN_CHECK_AI_PATH ||
-    pathname.startsWith(`${EN_CHECK_AI_PATH}/`);
   const hasEnglishCookie = req.cookies.get(EN_LOCALE_COOKIE)?.value === "en";
 
   const referer = req.headers.get("referer");
@@ -99,26 +119,6 @@ export function middleware(req: NextRequest) {
     : false;
   const isEnglishSession =
     isEnglishRoute || (hasEnglishCookie && cameFromEnglish);
-
-  if (isEnglishCheckAi) {
-    const requestHeaders = new Headers(req.headers);
-    requestHeaders.set(EN_LOCALE_HEADER, "en");
-    requestHeaders.set("x-wb-disable-translate", "1");
-
-    const res = NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    });
-
-    res.cookies.set(EN_LOCALE_COOKIE, "en", {
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30,
-    });
-    res.headers.set(EN_LOCALE_HEADER, "en");
-
-    return attachClientCookie(req, res);
-  }
 
   if (!isDocumentNav) {
     const res = NextResponse.next();
