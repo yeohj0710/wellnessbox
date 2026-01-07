@@ -51,6 +51,31 @@ const EN_CATEGORY_LABELS: Record<string, string> = {
   collagen: "Collagen",
 };
 
+const EN_CATEGORY_DESC: Record<string, string> = {
+  vitc: "Supports immune health and helps protect cells from everyday stress.",
+  omega3: "Supports heart, brain, and eye health with healthy fats.",
+  ca: "Helps support strong bones and normal muscle function.",
+  lutein: "Supports eye health and helps protect the retina from strain.",
+  vitd: "Helps your body absorb calcium and supports immune health.",
+  milkthistle: "Traditionally used to support liver health and recovery.",
+  probiotics: "Supports gut balance and comfortable digestion.",
+  vitb: "Helps support energy metabolism and nervous system function.",
+  mg: "Supports muscle relaxation, sleep quality, and stress management.",
+  garcinia: "Often used to support appetite control and weight management.",
+  multivitamin: "Helps fill common nutrient gaps for daily wellness support.",
+  zn: "Supports immune function and helps maintain healthy skin.",
+  psyllium: "A gentle fiber that supports regularity and digestive comfort.",
+  minerals: "Supports key body functions with essential trace minerals.",
+  vita: "Supports vision and healthy skin and immune function.",
+  fe: "Supports red blood cell production and helps reduce tiredness.",
+  ps: "Supports memory, focus, and healthy brain function.",
+  folate: "Supports healthy cell growth and normal blood formation.",
+  arginine: "Supports blood flow and exercise performance.",
+  chondroitin: "Supports joint comfort and healthy cartilage.",
+  coq10: "Supports cellular energy and heart health.",
+  collagen: "Supports skin elasticity and joint comfort.",
+};
+
 const MODEL_URL = "/simple_model.onnx";
 const CAT_ORDER_URL = "/assess-model/c-section-scorer-v1.cats.json";
 
@@ -139,6 +164,13 @@ async function runPrediction(responses: number[]): Promise<Result[]> {
 
 function displayLabel(code: string, fallback: string) {
   return EN_CATEGORY_LABELS[code] ?? fallback;
+}
+
+function displayDesc(code: string) {
+  return (
+    EN_CATEGORY_DESC[code] ??
+    "Supports general wellness based on common health needs."
+  );
 }
 
 function disableGoogleTranslate() {
@@ -478,26 +510,31 @@ export default function EnglishCheckAI() {
 
             <ul className="mt-5 space-y-3">
               {results.map((r) => (
-                <li
-                  key={r.code}
-                  className="relative overflow-hidden rounded-xl ring-1 ring-gray-100 bg-gray-50"
-                >
-                  <div
-                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-sky-200 to-indigo-200 transition-all duration-700 ease-out"
-                    style={{
-                      width: animateBars
-                        ? `${Math.max(8, r.prob * 100)}%`
-                        : "0%",
-                    }}
-                  />
-                  <div className="relative flex items-center justify-between px-4 py-3">
-                    <span className="text-sm font-semibold text-gray-800">
-                      {displayLabel(r.code, r.label)}
-                    </span>
-                    <span className="tabular-nums text-sm font-extrabold text-gray-900">
-                      {(r.prob * 100).toFixed(1)}%
-                    </span>
+                <li key={r.code}>
+                  <div className="relative overflow-hidden rounded-xl ring-1 ring-gray-100 bg-gray-50">
+                    <div
+                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-sky-200 to-indigo-200 transition-all duration-700 ease-out"
+                      style={{
+                        width: animateBars
+                          ? `${Math.max(8, r.prob * 100)}%`
+                          : "0%",
+                      }}
+                    />
+                    <div className="relative px-4 py-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold text-gray-800">
+                          {displayLabel(r.code, r.label)}
+                        </span>
+                        <span className="tabular-nums text-sm font-extrabold text-gray-900">
+                          {(r.prob * 100).toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
                   </div>
+
+                  <p className="mt-2 px-1 text-[12px] leading-snug text-gray-600">
+                    {displayDesc(r.code)}
+                  </p>
                 </li>
               ))}
             </ul>
