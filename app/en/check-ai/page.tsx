@@ -1,9 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { getCategories } from "@/lib/product";
-import { useLoading } from "@/components/common/loadingContext.client";
 import { refreshClientIdCookieIfNeeded } from "@/lib/client-id";
 import { CODE_TO_LABEL } from "@/lib/categories";
 
@@ -95,13 +93,19 @@ async function loadSession() {
 
 function clampAnswer(value: number) {
   const numeric = Number(value);
-  const clamped = Math.max(1, Math.min(5, Number.isFinite(numeric) ? numeric : 3));
+  const clamped = Math.max(
+    1,
+    Math.min(5, Number.isFinite(numeric) ? numeric : 3)
+  );
   return (clamped - 1) / 4;
 }
 
 async function runPrediction(responses: number[]): Promise<Result[]> {
   const ort = await import("onnxruntime-web");
-  const [session, catOrder] = await Promise.all([loadSession(), loadCatOrder()]);
+  const [session, catOrder] = await Promise.all([
+    loadSession(),
+    loadCatOrder(),
+  ]);
   const normalized = responses.map(clampAnswer);
   const input = new ort.Tensor("float32", Float32Array.from(normalized), [
     1,
@@ -154,7 +158,10 @@ function disableGoogleTranslate() {
 
   try {
     document.documentElement.removeAttribute("data-wb-translate-state");
-    document.documentElement.classList.remove("translated-ltr", "translated-rtl");
+    document.documentElement.classList.remove(
+      "translated-ltr",
+      "translated-rtl"
+    );
     document.documentElement.setAttribute("lang", "en");
   } catch {}
 
@@ -190,7 +197,6 @@ function disableGoogleTranslate() {
 }
 
 export default function EnglishCheckAI() {
-  const { showLoading } = useLoading();
   const [answers, setAnswers] = useState<number[]>(
     Array(QUESTIONS.length).fill(0)
   );
@@ -246,6 +252,24 @@ export default function EnglishCheckAI() {
     setAnswers(next);
   };
 
+  const resetCheck = () => {
+    setModalOpen(false);
+    setResults(null);
+    setAnswers(Array(QUESTIONS.length).fill(0));
+    setLoading(false);
+    setAnimateBars(false);
+    try {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("wb_check_ai_result_v1");
+      }
+    } catch {}
+    requestAnimationFrame(() => {
+      try {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } catch {}
+    });
+  };
+
   const handleSubmit = async () => {
     setLoading(true);
     const start = Date.now();
@@ -295,8 +319,8 @@ export default function EnglishCheckAI() {
                   Supplement Recommendation Self-Check
                 </h1>
                 <p className="mt-1 text-xs sm:text-sm text-gray-600">
-                  Wellnessbox&apos;s supplement recommendation AI runs on an ONNX Runtime
-                  deep learning model.
+                  Wellnessbox&apos;s supplement recommendation AI runs on an
+                  ONNX Runtime deep learning model.
                 </p>
                 <p className="mt-2 text-[11px] sm:text-xs text-gray-500">
                   ※ Please check each item even if it only partially applies.
@@ -385,7 +409,8 @@ export default function EnglishCheckAI() {
                 {loading ? "AI is analyzing..." : "View AI recommendations"}
               </button>
               <p className="mt-2 text-center text-[11px] text-gray-500">
-                Unanswered items are normalized to the average value for analysis.
+                Unanswered items are normalized to the average value for
+                analysis.
               </p>
             </div>
           </form>
@@ -440,11 +465,15 @@ export default function EnglishCheckAI() {
             </div>
 
             <p className="mt-3 text-sm text-gray-600">
-              Below are the <span className="font-semibold text-sky-600">recommended categories</span>
+              Below are the{" "}
+              <span className="font-semibold text-sky-600">
+                recommended categories
+              </span>{" "}
               and the expected fit.
             </p>
             <p className="mt-1 text-[11px] text-gray-500">
-              Wellnessbox&apos;s recommendation AI uses an ONNX Runtime deep learning model.
+              Wellnessbox&apos;s recommendation AI uses an ONNX Runtime deep
+              learning model.
             </p>
 
             <ul className="mt-5 space-y-3">
@@ -473,20 +502,13 @@ export default function EnglishCheckAI() {
               ))}
             </ul>
 
-            <Link
-              href={`/explore${
-                recommendedIds.length
-                  ? `?categories=${recommendedIds.join(",")}`
-                  : ""
-              }#home-products`}
-              scroll={false}
-              className="mt-6 block"
-              onClick={showLoading}
+            <button
+              type="button"
+              onClick={resetCheck}
+              className="mt-6 w-full rounded-xl bg-sky-500 px-6 py-2 text-white font-bold shadow hover:bg-sky-600 active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-sky-300"
             >
-              <button className="w-full rounded-xl bg-sky-500 px-6 py-2 text-white font-bold shadow hover:bg-sky-600 active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-sky-300">
-                Shop now
-              </button>
-            </Link>
+              Take the test again
+            </button>
           </div>
         </div>
       )}

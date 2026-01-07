@@ -81,7 +81,8 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const disableTranslate = headers().get("x-wb-disable-translate") === "1";
+  const hdrs = await headers();
+  const disableTranslate = hdrs.get("x-wb-disable-translate") === "1";
 
   return (
     <html lang="ko">
@@ -163,7 +164,10 @@ export default async function RootLayout({
           }}
         />
         {!disableTranslate && (
-          <Script id="google-translate-orchestrator" strategy="afterInteractive">
+          <Script
+            id="google-translate-orchestrator"
+            strategy="afterInteractive"
+          >
             {`
             (function () {
               var LANGUAGE_CODE = 'en';
