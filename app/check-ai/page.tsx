@@ -15,6 +15,13 @@ import {
 type Result = { code: string; label: string; prob: number };
 const getClientIdLocal = getOrCreateClientId;
 
+function getApiUrl(path: string) {
+  if (typeof window === "undefined") {
+    return path;
+  }
+  return new URL(path, window.location.origin).toString();
+}
+
 function getTzOffsetMinutes(): number {
   try {
     return -new Date().getTimezoneOffset();
@@ -77,7 +84,7 @@ export default function CheckAI() {
     setLoading(true);
     const start = Date.now();
     const filled = answers.map((v) => (v > 0 ? v : 3));
-    const res = await fetch("/api/predict", {
+    const res = await fetch(getApiUrl("/api/predict"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ responses: filled }),
@@ -112,7 +119,7 @@ export default function CheckAI() {
         );
         try {
           const cid = getClientIdLocal();
-          fetch("/api/check-ai/save", {
+          fetch(getApiUrl("/api/check-ai/save"), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

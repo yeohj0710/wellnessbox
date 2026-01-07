@@ -468,11 +468,6 @@ export default function GoogleTranslateGate() {
             })();
             `}
       </Script>
-      <Script
-        id="google-translate-script"
-        src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
-        strategy="beforeInteractive"
-      />
     </>
   );
 }
