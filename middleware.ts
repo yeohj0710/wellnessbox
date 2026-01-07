@@ -11,6 +11,7 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const EN_LOCALE_PREFIX = "/en";
 const EN_LOCALE_COOKIE = "wb-locale";
 const EN_LOCALE_HEADER = "x-wb-locale";
+const EN_CHECK_AI_PATH = "/en/check-ai";
 const CLIENT_COOKIE_PATH = "/";
 
 function stripEnglishPrefix(pathname: string) {
@@ -25,12 +26,16 @@ function stripEnglishPrefix(pathname: string) {
 }
 
 function isEnglishPrefixed(pathname: string) {
-  return pathname === EN_LOCALE_PREFIX || pathname.startsWith(`${EN_LOCALE_PREFIX}/`);
+  return (
+    pathname === EN_LOCALE_PREFIX || pathname.startsWith(`${EN_LOCALE_PREFIX}/`)
+  );
 }
 
 function isProtectedPath(pathname: string) {
   const protectedRoots = ["/features", "/admin"];
-  return protectedRoots.some((root) => pathname === root || pathname.startsWith(`${root}/`));
+  return protectedRoots.some(
+    (root) => pathname === root || pathname.startsWith(`${root}/`)
+  );
 }
 
 function shouldSetClientCookie(req: NextRequest) {
@@ -61,8 +66,19 @@ function attachClientCookie(req: NextRequest, res: NextResponse) {
 
 export function middleware(req: NextRequest) {
   const originalUrl = req.nextUrl.clone();
-  const isEnglishRoute = isEnglishPrefixed(originalUrl.pathname);
+  const pathname = originalUrl.pathname;
+
+  const accept = req.headers.get("accept") || "";
+  const fetchDest = req.headers.get("sec-fetch-dest") || "";
+  const isDocumentNav =
+    fetchDest === "document" || accept.includes("text/html");
+
+  const isEnglishRoute = isEnglishPrefixed(pathname);
+  const isEnglishCheckAi =
+    pathname === EN_CHECK_AI_PATH ||
+    pathname.startsWith(`${EN_CHECK_AI_PATH}/`);
   const hasEnglishCookie = req.cookies.get(EN_LOCALE_COOKIE)?.value === "en";
+
   const referer = req.headers.get("referer");
   let refererPathname: string | null = null;
   if (referer) {
@@ -71,18 +87,46 @@ export function middleware(req: NextRequest) {
       if (refererUrl.origin === originalUrl.origin) {
         refererPathname = refererUrl.pathname;
       }
-    } catch (error) {
+    } catch {
       if (referer.startsWith("/")) {
         refererPathname = referer;
       }
     }
   }
+
   const cameFromEnglish = refererPathname
     ? isEnglishPrefixed(refererPathname)
     : false;
-  const isEnglishSession = isEnglishRoute || (hasEnglishCookie && cameFromEnglish);
+  const isEnglishSession =
+    isEnglishRoute || (hasEnglishCookie && cameFromEnglish);
 
-  let response: NextResponse | null = null;
+  if (isEnglishCheckAi) {
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set(EN_LOCALE_HEADER, "en");
+    requestHeaders.set("x-wb-disable-translate", "1");
+
+    const res = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+
+    res.cookies.set(EN_LOCALE_COOKIE, "en", {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30,
+    });
+    res.headers.set(EN_LOCALE_HEADER, "en");
+
+    return attachClientCookie(req, res);
+  }
+
+  if (!isDocumentNav) {
+    const res = NextResponse.next();
+    if (!cameFromEnglish && hasEnglishCookie) {
+      res.cookies.delete(EN_LOCALE_COOKIE);
+    }
+    return attachClientCookie(req, res);
+  }
 
   if (!isEnglishRoute && cameFromEnglish && hasEnglishCookie) {
     const redirectUrl = req.nextUrl.clone();
@@ -90,16 +134,18 @@ export function middleware(req: NextRequest) {
       redirectUrl.pathname === "/"
         ? EN_LOCALE_PREFIX
         : `${EN_LOCALE_PREFIX}${redirectUrl.pathname}`;
-    response = NextResponse.redirect(redirectUrl);
-    response.cookies.set(EN_LOCALE_COOKIE, "en", {
+
+    const res = NextResponse.redirect(redirectUrl);
+    res.cookies.set(EN_LOCALE_COOKIE, "en", {
       path: "/",
       maxAge: 60 * 60 * 24 * 30,
     });
-    response.headers.set(EN_LOCALE_HEADER, "en");
-    return attachClientCookie(req, response);
+    res.headers.set(EN_LOCALE_HEADER, "en");
+
+    return attachClientCookie(req, res);
   }
 
-  const normalizedPathname = stripEnglishPrefix(originalUrl.pathname);
+  const normalizedPathname = stripEnglishPrefix(pathname);
   const cookiePassword = req.cookies.get("admin")?.value;
 
   const shouldProtect = isProtectedPath(normalizedPathname);
@@ -111,7 +157,8 @@ export function middleware(req: NextRequest) {
       redirectUrl.pathname = isEnglishSession
         ? `${EN_LOCALE_PREFIX}/admin-login`
         : "/admin-login";
-      redirectUrl.searchParams.set("redirect", req.nextUrl.pathname);
+      redirectUrl.searchParams.set("redirect", pathname);
+
       const redirectResponse = NextResponse.redirect(redirectUrl);
       if (isEnglishSession) {
         redirectResponse.cookies.set(EN_LOCALE_COOKIE, "en", {
@@ -126,26 +173,30 @@ export function middleware(req: NextRequest) {
   if (isEnglishRoute) {
     const rewriteUrl = req.nextUrl.clone();
     rewriteUrl.pathname = normalizedPathname;
+
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set(EN_LOCALE_HEADER, "en");
-    response = NextResponse.rewrite(rewriteUrl, {
+
+    const res = NextResponse.rewrite(rewriteUrl, {
       request: {
         headers: requestHeaders,
       },
     });
-    response.cookies.set(EN_LOCALE_COOKIE, "en", {
+
+    res.cookies.set(EN_LOCALE_COOKIE, "en", {
       path: "/",
       maxAge: 60 * 60 * 24 * 30,
     });
-    response.headers.set(EN_LOCALE_HEADER, "en");
-    return attachClientCookie(req, response);
+    res.headers.set(EN_LOCALE_HEADER, "en");
+
+    return attachClientCookie(req, res);
   }
 
-  response = NextResponse.next();
+  const res = NextResponse.next();
   if (!cameFromEnglish && hasEnglishCookie) {
-    response.cookies.delete(EN_LOCALE_COOKIE);
+    res.cookies.delete(EN_LOCALE_COOKIE);
   }
-  return attachClientCookie(req, response);
+  return attachClientCookie(req, res);
 }
 
 export const config = {

@@ -12,6 +12,7 @@ import KakaoExternalBridge from "@/components/common/kakaoExternalBridge";
 import AppDeepLinkHandler from "@/components/common/appDeepLinkHandler";
 import AppBackHandler from "@/components/common/appBackHandler";
 import Script from "next/script";
+import { headers } from "next/headers";
 
 export const viewport = {
   themeColor: "#ffffff",
@@ -80,6 +81,8 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const disableTranslate = headers().get("x-wb-disable-translate") === "1";
+
   return (
     <html lang="ko">
       <body
@@ -106,7 +109,9 @@ export default async function RootLayout({
             </LoadingProvider>
           </FooterProvider>
         </LocalStorageProvider>
-        <div id="google_translate_element" style={{ display: "none" }} />
+        {!disableTranslate && (
+          <div id="google_translate_element" style={{ display: "none" }} />
+        )}
         <div id="toast-portal" />
 
         <Script
@@ -157,8 +162,9 @@ export default async function RootLayout({
             `,
           }}
         />
-        <Script id="google-translate-orchestrator" strategy="afterInteractive">
-          {`
+        {!disableTranslate && (
+          <Script id="google-translate-orchestrator" strategy="afterInteractive">
+            {`
             (function () {
               var LANGUAGE_CODE = 'en';
               var LANGUAGE_PAIR = '/ko/' + LANGUAGE_CODE;
@@ -168,6 +174,7 @@ export default async function RootLayout({
               var RETRANSLATE_DELAY = 140;
               var isTranslating = false;
               var lastTranslateAt = 0;
+              var TRANSLATE_DISABLED_PATHS = ['/en/check-ai'];
 
               function setTranslateState(state) {
                 try {
@@ -338,6 +345,17 @@ export default async function RootLayout({
 
               function shouldUseEnglish() {
                 var path = window.location.pathname || '/';
+                if (
+                  TRANSLATE_DISABLED_PATHS.indexOf(path) !== -1 ||
+                  path.indexOf('/en/check-ai/') === 0
+                ) {
+                  return false;
+                }
+                return path === '/en' || path.indexOf('/en/') === 0;
+              }
+
+              function isEnglishPath() {
+                var path = window.location.pathname || '/';
                 return path === '/en' || path.indexOf('/en/') === 0;
               }
 
@@ -466,7 +484,7 @@ export default async function RootLayout({
                 var shouldBeEnglish = shouldUseEnglish();
                 var wasEnglish = Boolean(window.__wbEnglishModeActive);
                 window.__wbEnglishModeActive = shouldBeEnglish;
-                setHtmlLang(shouldBeEnglish);
+                setHtmlLang(isEnglishPath());
                 if (shouldBeEnglish) {
                   markLoading();
                   ensureCookies();
@@ -588,13 +606,16 @@ export default async function RootLayout({
               startObservers();
               syncLocaleMode();
             })();
-          `}
-        </Script>
-        <Script
-          id="google-translate-script"
-          src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
-          strategy="beforeInteractive"
-        />
+            `}
+          </Script>
+        )}
+        {!disableTranslate && (
+          <Script
+            id="google-translate-script"
+            src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+            strategy="beforeInteractive"
+          />
+        )}
       </body>
     </html>
   );
