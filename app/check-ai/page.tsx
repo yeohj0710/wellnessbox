@@ -3,7 +3,10 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { getCategories } from "@/lib/product";
 import { useLoading } from "@/components/common/loadingContext.client";
-import { getOrCreateClientId, refreshClientIdCookieIfNeeded } from "@/lib/client-id";
+import {
+  getOrCreateClientId,
+  refreshClientIdCookieIfNeeded,
+} from "@/lib/client-id";
 import {
   CHECK_AI_QUESTIONS as QUESTIONS,
   CHECK_AI_OPTIONS as OPTIONS,

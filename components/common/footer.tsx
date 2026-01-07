@@ -3,7 +3,7 @@
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Suspense,
   useMemo,
@@ -26,6 +26,7 @@ function FooterInner() {
   const businessInfoRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   useEffect(() => {
     if (showBusinessInfo) {
@@ -46,7 +47,14 @@ function FooterInner() {
     label: languageToggleLabel,
     isEnglish,
   } = useMemo(() => {
-    const currentPath = pathname || "/";
+    const currentPath =
+      typeof window !== "undefined"
+        ? window.location.pathname
+        : pathname || "/";
+    const queryString =
+      typeof window !== "undefined"
+        ? window.location.search.replace(/^\?/, "")
+        : searchParams.toString();
     const isEnglish = currentPath.startsWith("/en");
     const basePath = isEnglish
       ? currentPath.replace(/^\/en(\/)?/, "/") || "/"
@@ -54,7 +62,6 @@ function FooterInner() {
       ? "/en"
       : `/en${currentPath}`;
 
-    const queryString = searchParams.toString();
     const href = queryString ? `${basePath}?${queryString}` : basePath;
 
     return {
@@ -76,7 +83,17 @@ function FooterInner() {
     } catch {
       // noop
     }
-  }, [isEnglish]);
+    if (isEnglish) {
+      window.location.assign(languageToggleHref);
+      return;
+    }
+
+    router.push(languageToggleHref);
+  }, [isEnglish, languageToggleHref, router]);
+
+  const handleForceRefresh = useCallback(() => {
+    window.location.reload();
+  }, []);
 
   return (
     <footer className="w-full mx-auto bg-gray-800 text-gray-300 text-sm">
@@ -132,13 +149,20 @@ function FooterInner() {
             </div>
 
             <div className="flex justify-center sm:justify-start gap-4 mt-1.5">
-              <Link
-                href={languageToggleHref}
+              <button
+                type="button"
                 onClick={handleLanguageToggle}
                 className={`text-sm text-gray-400 ${hoverUnderline}`}
               >
                 {languageToggleLabel}
-              </Link>
+              </button>
+              <button
+                type="button"
+                onClick={handleForceRefresh}
+                className={`text-sm text-gray-400 ${hoverUnderline}`}
+              >
+                강제 새로고침
+              </button>
             </div>
 
             <span className="text-center text-xs sm:text-left text-gray-400 mt-4">

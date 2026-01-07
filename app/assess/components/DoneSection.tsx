@@ -169,7 +169,9 @@ function ResultItem({
     return () => clearTimeout(t);
   }, [play, delayMs]);
 
-  const p = useCountUp(item.percent, 900 + item.rank * 120, ready);
+  // const p = useCountUp(item.percent, 900 + item.rank * 120, ready);
+  const p = item.percent;
+
   const hue =
     item.rank === 1
       ? "from-amber-400 to-yellow-500"

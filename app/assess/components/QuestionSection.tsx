@@ -61,7 +61,7 @@ export default function QuestionSection({
             <div className="w-32 sm:w-40">
               <div className="flex items-center justify-between text-xs text-gray-600">
                 <span>진행률</span>
-                <span className="tabular-nums">{completion}%</span>
+                {/* <span className="tabular-nums">{completion}%</span> */}
               </div>
               <div className="h-2 w-full max-w-[480px] bg-gray-100 rounded-full overflow-hidden mt-2">
                 <div
@@ -69,9 +69,9 @@ export default function QuestionSection({
                   style={{ width: `${completion}%` }}
                 />
               </div>
-              <div className="mt-1 text-[10px] text-gray-500">
+              {/* <div className="mt-1 text-[10px] text-gray-500">
                 {answered}/{total}문항 완료 · {total - answered}문항 남음
-              </div>
+              </div> */}
               <div className="text-[10px] text-sky-600 mt-1 max-w-[640px]">
                 {progressMsg}
               </div>
