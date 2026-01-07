@@ -388,7 +388,7 @@ export default function EnglishCheckAI() {
                           onChange={() => handleChange(i, opt.value)}
                           className="sr-only"
                         />
-                        <span className="block h-9 leading-9 text-xs sm:text-[13px] text-gray-800 whitespace-nowrap overflow-hidden text-ellipsis break-keep">
+                        <span className="flex min-h-9 items-center justify-center text-[11px] sm:text-[13px] text-gray-800 leading-tight sm:leading-9 whitespace-normal sm:whitespace-nowrap">
                           {opt.label}
                         </span>
                       </label>
