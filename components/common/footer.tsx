@@ -3,7 +3,7 @@
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Suspense,
   useMemo,
@@ -25,7 +25,6 @@ function FooterInner() {
   const [showBusinessInfo, setShowBusinessInfo] = useState(false);
   const businessInfoRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const router = useRouter();
 
   useEffect(() => {
@@ -51,25 +50,20 @@ function FooterInner() {
       typeof window !== "undefined"
         ? window.location.pathname
         : pathname || "/";
-    const queryString =
-      typeof window !== "undefined"
-        ? window.location.search.replace(/^\?/, "")
-        : searchParams.toString();
-    const isEnglish = currentPath.startsWith("/en");
+
+    const isEnglish = currentPath === "/en" || currentPath.startsWith("/en/");
     const basePath = isEnglish
       ? currentPath.replace(/^\/en(\/)?/, "/") || "/"
       : currentPath === "/"
       ? "/en"
       : `/en${currentPath}`;
 
-    const href = queryString ? `${basePath}?${queryString}` : basePath;
-
     return {
-      href,
+      href: basePath,
       label: isEnglish ? "한국어로 보기" : "View in English",
       isEnglish,
     };
-  }, [pathname, searchParams]);
+  }, [pathname]);
 
   const handleLanguageToggle = useCallback(() => {
     if (isEnglish) {
@@ -78,11 +72,11 @@ function FooterInner() {
       const maxAge = 60 * 60 * 24 * 30;
       document.cookie = `wb-locale=en; path=/; max-age=${maxAge}`;
     }
+
     try {
       window.dispatchEvent(new Event("wb-locale-change"));
-    } catch {
-      // noop
-    }
+    } catch {}
+
     if (isEnglish) {
       window.location.assign(languageToggleHref);
       return;
