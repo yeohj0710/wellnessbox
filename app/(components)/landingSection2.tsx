@@ -511,7 +511,7 @@ export default function LandingSection2({
                 <div className="absolute -top-3 right-4 inline-flex items-center rounded-full bg-[#7C6CFF] px-3 py-1 text-[11px] font-semibold">
                   베스트
                 </div>
-                <h3 className="text-base sm:text-lg font-bold">7일 체험판</h3>
+                <h3 className="text-base sm:text-lg font-bold">7일치 구매</h3>
                 <div className="mt-2 flex items-end gap-2">
                   <span className="text-[34px] sm:text-[38px] md:text-5xl font-extrabold leading-none tracking-tight">
                     700
@@ -587,7 +587,7 @@ export default function LandingSection2({
                     className="hover:scale-105 transition duration-300 h-11 sm:h-12 w-full rounded-full bg-white text-[#3B2BFF] text-sm sm:text-base font-semibold shadow-[0_8px_22px_rgba(255,255,255,0.35)]"
                     onClick={onSelect7Day}
                   >
-                    구독하기
+                    구매하기
                   </button>
                 </div>
               </div>

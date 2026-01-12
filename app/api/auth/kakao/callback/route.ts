@@ -210,7 +210,18 @@ export async function GET(request: NextRequest) {
     clearStateCookie(response);
 
     return response;
-  } catch {
+  } catch (e) {
+    console.error("[kakao callback] unexpected_error", {
+      url: request.url,
+      requestOrigin,
+      origin,
+      redirectUri,
+      secure,
+      hasStateParam: !!stateParam,
+      hasStateCookie: !!stateCookie,
+    });
+    console.error(e);
+
     return redirectWithStateCleanup("/?login=unexpected_error");
   }
 }
