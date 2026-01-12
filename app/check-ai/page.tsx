@@ -163,7 +163,7 @@ export default function CheckAI() {
             <div className="hidden sm:block min-w-[200px]">
               <div className="flex items-center justify-between text-xs text-gray-600">
                 <span>진행도</span>
-                <span className="tabular-nums">{completion}%</span>
+                {/* <span className="tabular-nums">{completion}%</span> */}
               </div>
               <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100 ring-1 ring-inset ring-black/5">
                 <div
@@ -177,7 +177,7 @@ export default function CheckAI() {
           <div className="mt-4 sm:hidden">
             <div className="flex items-center justify-between text-xs text-gray-600">
               <span>진행도</span>
-              <span className="tabular-nums">{completion}%</span>
+              {/* <span className="tabular-nums">{completion}%</span> */}
             </div>
             <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100 ring-1 ring-inset ring-black/5">
               <div
