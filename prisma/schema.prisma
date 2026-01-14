@@ -185,6 +185,8 @@ model AssessmentResult {
   clientId        String
   answers         Json
   cResult         Json
+  questionSnapshot Json?
+  scoreSnapshot   Json?
   tzOffsetMinutes Int      @default(0)
   createdAt       DateTime @default(now())
   client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
@@ -196,6 +198,8 @@ model CheckAiResult {
   id              String   @id @default(cuid())
   clientId        String
   result          Json
+  questionSnapshot Json?
+  scoreSnapshot   Json?
   tzOffsetMinutes Int      @default(0)
   createdAt       DateTime @default(now())
   answers         Json?

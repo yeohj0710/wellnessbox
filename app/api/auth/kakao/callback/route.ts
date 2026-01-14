@@ -2,12 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers, cookies } from "next/headers";
 import getSession from "@/lib/session";
 import db from "@/lib/db";
-import { ensureClient, getClientIdFromRequest } from "@/lib/server/client";
+import { ensureClient, resolveOrCreateClientId } from "@/lib/server/client";
 import { generateFriendlyNickname, normalizeNickname } from "@/lib/nickname";
-import {
-  attachClientToAppUser,
-  withClientCookie,
-} from "@/lib/server/client-link";
 import { KAKAO_STATE_COOKIE } from "@/lib/auth/kakao/constants";
 import { createAppTransferToken } from "@/lib/auth/kakao/appBridge";
 import { verifyLoginState } from "@/lib/auth/kakao/state";
@@ -118,13 +114,6 @@ export async function GET(request: NextRequest) {
     const kakaoAccount = me.kakao_account ?? {};
     const profile = kakaoAccount.profile ?? {};
 
-    const requestClientId =
-      state.clientId ?? (await getClientIdFromRequest()) ?? undefined;
-
-    if (requestClientId) {
-      await ensureClient(requestClientId);
-    }
-
     const kakaoIdStr = String(me.id);
     const existingUser = await db.appUser.findUnique({
       where: { kakaoId: kakaoIdStr },
@@ -147,32 +136,31 @@ export async function GET(request: NextRequest) {
     const kakaoEmail =
       existingUser?.kakaoEmail ?? kakaoAccount.email ?? undefined;
 
+    const appClientId = existingUser?.clientId ?? resolveOrCreateClientId(null);
+
+    if (!existingUser?.clientId) {
+      await ensureClient(appClientId, {
+        userAgent: request.headers.get("user-agent"),
+      });
+    }
+
     await db.appUser.upsert({
       where: { kakaoId: kakaoIdStr },
       create: {
         kakaoId: kakaoIdStr,
-        clientId: requestClientId ?? existingUser?.clientId,
+        clientId: appClientId,
         nickname: nextNickname || null,
         email: nextEmail || null,
         profileImageUrl: nextProfileImage || null,
         kakaoEmail: kakaoEmail || null,
       },
       update: {
-        clientId: requestClientId ?? existingUser?.clientId,
+        clientId: appClientId,
         nickname: nextNickname || null,
         email: nextEmail || null,
         profileImageUrl: nextProfileImage || null,
         kakaoEmail: kakaoEmail || null,
       },
-    });
-
-    const attachResult = await attachClientToAppUser({
-      req: request,
-      kakaoId: kakaoIdStr,
-      source: "kakao-login",
-      candidateClientId: requestClientId ?? existingUser?.clientId ?? null,
-      userAgent: request.headers.get("user-agent"),
-      allowMerge: true,
     });
 
     const session = await getSession();
@@ -195,17 +183,13 @@ export async function GET(request: NextRequest) {
         profileImageUrl: nextProfileImage || null,
         email: nextEmail || null,
         kakaoEmail: kakaoEmail || null,
-        clientId: attachResult.clientId ?? requestClientId ?? null,
+        clientId: appClientId,
       });
 
       redirectTo = transfer.deepLink;
     }
 
     const response = NextResponse.redirect(redirectTo, 302);
-
-    if (attachResult.cookieToSet) {
-      withClientCookie(response, attachResult.cookieToSet);
-    }
 
     clearStateCookie(response);
 

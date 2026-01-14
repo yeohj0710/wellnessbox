@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import getSession from "@/lib/session";
 import db from "@/lib/db";
-import {
-  attachClientToAppUser,
-  withClientCookie,
-} from "@/lib/server/client-link";
+import { ensureClient, resolveOrCreateClientId } from "@/lib/server/client";
 import { consumeAppTransferToken } from "@/lib/auth/kakao/appBridge";
 import { publicOrigin, resolveRequestOrigin } from "@/lib/server/origin";
 
@@ -47,14 +44,31 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
     profile?.profileImageUrl ?? payload.profileImageUrl ?? undefined;
   const nextKakaoEmail = profile?.kakaoEmail ?? payload.kakaoEmail ?? undefined;
 
-  const attachResult = await attachClientToAppUser({
-    req,
-    kakaoId: kakaoIdStr,
-    source: "kakao-app-bridge",
-    candidateClientId: payload.clientId ?? profile?.clientId ?? null,
-    userAgent: req.headers.get("user-agent"),
-    allowMerge: true,
-  });
+  const appClientId = profile?.clientId ?? resolveOrCreateClientId(null);
+
+  if (!profile) {
+    await ensureClient(appClientId, {
+      userAgent: req.headers.get("user-agent"),
+    });
+    await db.appUser.create({
+      data: {
+        kakaoId: kakaoIdStr,
+        clientId: appClientId,
+        nickname: nextNickname ?? null,
+        email: nextEmail ?? null,
+        profileImageUrl: nextProfileImage ?? null,
+        kakaoEmail: nextKakaoEmail ?? null,
+      },
+    });
+  } else if (!profile.clientId) {
+    await ensureClient(appClientId, {
+      userAgent: req.headers.get("user-agent"),
+    });
+    await db.appUser.update({
+      where: { kakaoId: kakaoIdStr },
+      data: { clientId: appClientId },
+    });
+  }
 
   const session = await getSession();
   session.user = {
@@ -68,10 +82,6 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
   await session.save();
 
   const response = NextResponse.redirect(new URL("/", origin));
-
-  if (attachResult.cookieToSet) {
-    withClientCookie(response, attachResult.cookieToSet);
-  }
 
   return response;
 }

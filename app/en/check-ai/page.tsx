@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { getCategories } from "@/lib/product";
-import { refreshClientIdCookieIfNeeded } from "@/lib/client-id";
+import { getOrCreateClientId, refreshClientIdCookieIfNeeded } from "@/lib/client-id";
 import { CODE_TO_LABEL } from "@/lib/categories";
 
 const QUESTIONS = [
@@ -25,6 +25,8 @@ const OPTIONS = [
   { value: 4, label: "Agree" },
   { value: 5, label: "Strongly agree" },
 ];
+
+const getClientIdLocal = getOrCreateClientId;
 
 const EN_CATEGORY_LABELS: Record<string, string> = {
   vitc: "Vitamin C",
@@ -78,6 +80,14 @@ const EN_CATEGORY_DESC: Record<string, string> = {
 
 const MODEL_URL = "/simple_model.onnx";
 const CAT_ORDER_URL = "/assess-model/c-section-scorer-v1.cats.json";
+
+function getTzOffsetMinutes(): number {
+  try {
+    return -new Date().getTimezoneOffset();
+  } catch {
+    return 0;
+  }
+}
 
 type Result = { code: string; label: string; prob: number };
 
@@ -329,6 +339,20 @@ export default function EnglishCheckAI() {
           JSON.stringify({ topLabels: top, savedAt: Date.now() })
         );
       }
+      try {
+        const cid = getClientIdLocal();
+        fetch("/api/check-ai/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            clientId: cid,
+            result: { topLabels: top, scores: normalized },
+            answers: filled,
+            questionSnapshot: { questions: QUESTIONS, options: OPTIONS },
+            tzOffsetMinutes: getTzOffsetMinutes(),
+          }),
+        }).catch(() => {});
+      } catch {}
     } catch {}
 
     setLoading(false);

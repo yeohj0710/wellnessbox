@@ -124,7 +124,7 @@ export default function CheckAI() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               clientId: cid,
-              result: { topLabels: top },
+              result: { topLabels: top, scores: normalized },
               answers: filled,
               tzOffsetMinutes: getTzOffsetMinutes(),
             }),
