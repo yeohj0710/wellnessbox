@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { streamChat } from "@/lib/ai/chain";
-import { resolveClientIdForAppUserRequest } from "@/lib/server/client-link";
+import { resolveActorForRequest } from "@/lib/server/actor";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -8,12 +8,12 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { clientId, cookieToSet } = await resolveClientIdForAppUserRequest(
-      req,
-      body?.clientId,
-      "body",
-      "read"
-    );
+    const actor = await resolveActorForRequest(req, {
+      intent: "read",
+      candidate: body?.clientId,
+      candidateSource: "body",
+    });
+    const deviceClientId = actor.deviceClientId;
 
     const q = typeof body?.question === "string" ? body.question.trim() : "";
     const msgs = Array.isArray(body?.messages) ? body.messages : [];
@@ -22,7 +22,8 @@ export async function POST(req: NextRequest) {
 
     const patchedBody = {
       ...body,
-      clientId,
+      clientId: deviceClientId ?? undefined,
+      appUserId: actor.appUserId ?? undefined,
       messages: normalized,
       ragQuery: q,
     };
@@ -50,8 +51,12 @@ export async function POST(req: NextRequest) {
       const res = new NextResponse(stream, {
         headers: { "Content-Type": "text/plain; charset=utf-8" },
       });
-      if (cookieToSet) {
-        res.cookies.set(cookieToSet.name, cookieToSet.value, cookieToSet.options);
+      if (actor.cookieToSet) {
+        res.cookies.set(
+          actor.cookieToSet.name,
+          actor.cookieToSet.value,
+          actor.cookieToSet.options
+        );
       }
       return res;
     }
@@ -85,8 +90,12 @@ export async function POST(req: NextRequest) {
         "X-Accel-Buffering": "no",
       },
     });
-    if (cookieToSet) {
-      res.cookies.set(cookieToSet.name, cookieToSet.value, cookieToSet.options);
+    if (actor.cookieToSet) {
+      res.cookies.set(
+        actor.cookieToSet.name,
+        actor.cookieToSet.value,
+        actor.cookieToSet.options
+      );
     }
     return res;
   } catch (e: any) {

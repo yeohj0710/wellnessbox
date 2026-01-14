@@ -1,6 +1,10 @@
 import getSession from "@/lib/session";
 import db from "@/lib/db";
-import { getClientIdFromRequest } from "@/lib/server/client";
+import { resolveActorForServerComponent } from "@/lib/server/actor";
+import {
+  normalizeAssessmentResult,
+  normalizeCheckAiResult,
+} from "@/lib/server/result-normalizer";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +49,8 @@ export default async function MyDataPage() {
   const isKakaoLoggedIn =
     user?.loggedIn === true && typeof user.kakaoId === "number";
 
-  const requestClientId = await getClientIdFromRequest();
+  const actor = await resolveActorForServerComponent();
+  const requestClientId = actor.deviceClientId;
 
   const appUser = isKakaoLoggedIn
     ? await db.appUser.findUnique({
@@ -67,7 +72,7 @@ export default async function MyDataPage() {
     : null;
 
   const resolvedClientId = isKakaoLoggedIn
-    ? appUser?.clientId ?? null
+    ? actor.appUserId ?? null
     : requestClientId ?? null;
 
   if (!resolvedClientId && !isKakaoLoggedIn) {
@@ -87,19 +92,25 @@ export default async function MyDataPage() {
   const [profile, assessResults, checkAiResults, orders, chatSessions] =
     resolvedClientId
       ? await Promise.all([
-          db.userProfile.findUnique({
-            where: { clientId: resolvedClientId },
-          }),
+          requestClientId
+            ? db.userProfile.findUnique({
+                where: { clientId: requestClientId },
+              })
+            : Promise.resolve(null),
           db.assessmentResult.findMany({
-            where: { clientId: resolvedClientId },
+            where: isKakaoLoggedIn
+              ? { appUserId: resolvedClientId }
+              : { clientId: resolvedClientId },
             orderBy: { createdAt: "desc" },
           }),
           db.checkAiResult.findMany({
-            where: { clientId: resolvedClientId },
+            where: isKakaoLoggedIn
+              ? { appUserId: resolvedClientId }
+              : { clientId: resolvedClientId },
             orderBy: { createdAt: "desc" },
           }),
           db.order.findMany({
-            where: { endpoint: resolvedClientId },
+            where: requestClientId ? { endpoint: requestClientId } : { id: -1 },
             orderBy: { createdAt: "desc" },
             include: {
               pharmacy: true,
@@ -112,15 +123,17 @@ export default async function MyDataPage() {
               },
             },
           }),
-          db.chatSession.findMany({
-            where: { clientId: resolvedClientId },
-            orderBy: { updatedAt: "desc" },
-            include: {
-              messages: {
-                orderBy: { createdAt: "asc" },
-              },
-            },
-          }),
+          requestClientId
+            ? db.chatSession.findMany({
+                where: { clientId: requestClientId },
+                orderBy: { updatedAt: "desc" },
+                include: {
+                  messages: {
+                    orderBy: { createdAt: "asc" },
+                  },
+                },
+              })
+            : Promise.resolve([]),
         ])
       : [null, [], [], [], []];
 
@@ -306,11 +319,13 @@ export default async function MyDataPage() {
             <p className="mt-3 text-sm text-gray-500">정밀 검사 결과가 없습니다.</p>
           ) : (
             <div className="mt-4 space-y-4">
-              {assessResults.map((result) => (
-                <div
-                  key={result.id}
-                  className="rounded-2xl border border-gray-100 bg-gray-50 p-4"
-                >
+          {assessResults.map((result) => {
+            const normalized = normalizeAssessmentResult(result);
+            return (
+              <div
+                key={result.id}
+                className="rounded-2xl border border-gray-100 bg-gray-50 p-4"
+              >
                   <div className="text-sm font-semibold text-gray-800">
                     결과 #{result.id}
                   </div>
@@ -322,14 +337,14 @@ export default async function MyDataPage() {
                       {formatJson({
                         answers: result.answers,
                         result: result.cResult,
-                        scoreSnapshot: (result as any).scoreSnapshot ?? null,
-                        questionSnapshot: (result as any).questionSnapshot ?? null,
+                        normalized,
                         tzOffsetMinutes: result.tzOffsetMinutes,
                       })}
                     </pre>
                   </div>
                 </div>
-              ))}
+              );
+            })}
             </div>
           )}
         </section>
@@ -340,11 +355,13 @@ export default async function MyDataPage() {
             <p className="mt-3 text-sm text-gray-500">빠른 검사 결과가 없습니다.</p>
           ) : (
             <div className="mt-4 space-y-4">
-              {checkAiResults.map((result) => (
-                <div
-                  key={result.id}
-                  className="rounded-2xl border border-gray-100 bg-gray-50 p-4"
-                >
+          {checkAiResults.map((result) => {
+            const normalized = normalizeCheckAiResult(result);
+            return (
+              <div
+                key={result.id}
+                className="rounded-2xl border border-gray-100 bg-gray-50 p-4"
+              >
                   <div className="text-sm font-semibold text-gray-800">
                     결과 #{result.id}
                   </div>
@@ -356,14 +373,14 @@ export default async function MyDataPage() {
                       {formatJson({
                         answers: result.answers,
                         result: result.result,
-                        scoreSnapshot: (result as any).scoreSnapshot ?? null,
-                        questionSnapshot: (result as any).questionSnapshot ?? null,
+                        normalized,
                         tzOffsetMinutes: result.tzOffsetMinutes,
                       })}
                     </pre>
                   </div>
                 </div>
-              ))}
+              );
+            })}
             </div>
           )}
         </section>

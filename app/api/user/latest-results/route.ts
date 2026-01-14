@@ -1,26 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureClient, resolveClientIdFromRequest } from "@/lib/server/client";
-import { getLatestResults } from "@/lib/server/results";
+import { ensureClient } from "@/lib/server/client";
+import { resolveActorForRequest } from "@/lib/server/actor";
+import { getLatestResultsByScope } from "@/lib/server/results";
 
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
   try {
-    const url = new URL(req.url);
-    const qId = url.searchParams.get("clientId");
-    const { clientId, cookieToSet } = resolveClientIdFromRequest(req, qId, "query");
-    if (!clientId) {
+    const actor = await resolveActorForRequest(req, { intent: "read" });
+    const scopeAppUserId = actor.loggedIn ? actor.appUserId : null;
+    const scopeClientId = actor.deviceClientId;
+    if (!scopeAppUserId && !scopeClientId) {
       return NextResponse.json({ error: "Missing clientId" }, { status: 400 });
     }
-    await ensureClient(clientId, { userAgent: req.headers.get("user-agent") });
-    const results = await getLatestResults(clientId);
-    const res = NextResponse.json({ clientId, results });
-    if (cookieToSet) {
-      res.cookies.set(cookieToSet.name, cookieToSet.value, cookieToSet.options);
+    if (scopeClientId) {
+      await ensureClient(scopeClientId, {
+        userAgent: req.headers.get("user-agent"),
+      });
+    }
+    const results = await getLatestResultsByScope({
+      appUserId: scopeAppUserId,
+      clientId: scopeClientId,
+    });
+    const res = NextResponse.json({
+      clientId: scopeClientId,
+      results,
+    });
+    if (actor.cookieToSet) {
+      res.cookies.set(
+        actor.cookieToSet.name,
+        actor.cookieToSet.value,
+        actor.cookieToSet.options
+      );
     }
     return res;
   } catch (e: any) {
     return NextResponse.json({ error: e.message || "Unknown error" }, { status: 500 });
   }
 }
-

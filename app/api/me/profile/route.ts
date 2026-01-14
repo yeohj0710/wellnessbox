@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import getSession from "@/lib/session";
-import { attachClientToAppUser } from "@/lib/server/client-link";
 import {
   isNicknameAvailable,
   normalizeNickname,
@@ -68,15 +67,7 @@ export async function POST(req: NextRequest) {
   });
 
   const nextKakaoEmail = profile?.kakaoEmail ?? user.kakaoEmail ?? user.email ?? undefined;
-  const attachResult = await attachClientToAppUser({
-    req,
-    kakaoId: String(user.kakaoId),
-    source: "profile-sync",
-    candidateClientId: profile?.clientId ?? null,
-    userAgent: req.headers.get("user-agent"),
-  });
-  const resolvedClientId = attachResult.clientId ?? profile?.clientId ?? null;
-  const clientIdForUpsert = resolvedClientId ?? undefined;
+  const clientIdForUpsert = profile?.clientId ?? undefined;
 
   await db.appUser.upsert({
     where: { kakaoId: String(user.kakaoId) },
@@ -116,14 +107,6 @@ export async function POST(req: NextRequest) {
     },
     { headers: { "Cache-Control": "no-store" } }
   );
-
-  if (attachResult.cookieToSet) {
-    response.cookies.set(
-      attachResult.cookieToSet.name,
-      attachResult.cookieToSet.value,
-      attachResult.cookieToSet.options
-    );
-  }
 
   return response;
 }

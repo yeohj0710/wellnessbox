@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
-import { resolveClientIdForRead } from "@/lib/server/client-link";
+import { resolveActorForRequest } from "@/lib/server/actor";
 import { CHECK_AI_QUESTIONS, CHECK_AI_OPTIONS } from "@/lib/checkai";
 import { sectionA, sectionB } from "@/app/assess/data/questions";
 
@@ -8,24 +8,24 @@ export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
   try {
-    const url = new URL(req.url);
-    const qClientId = url.searchParams.get("clientId");
-    const { clientId, cookieToSet } = await resolveClientIdForRead(
-      req,
-      qClientId,
-      "query"
-    );
-    if (!clientId) {
+    const actor = await resolveActorForRequest(req, { intent: "read" });
+    const scopeAppUserId = actor.loggedIn ? actor.appUserId : null;
+    const scopeClientId = actor.deviceClientId;
+    if (!scopeAppUserId && !scopeClientId) {
       return NextResponse.json({ error: "Missing clientId" }, { status: 400 });
     }
 
     const [assessRaw, checkAiRaw] = await Promise.all([
       db.assessmentResult.findFirst({
-        where: { clientId },
+        where: scopeAppUserId
+          ? { appUserId: scopeAppUserId }
+          : { clientId: scopeClientId ?? "" },
         orderBy: { createdAt: "desc" },
       }),
       db.checkAiResult.findFirst({
-        where: { clientId },
+        where: scopeAppUserId
+          ? { appUserId: scopeAppUserId }
+          : { clientId: scopeClientId ?? "" },
         orderBy: { createdAt: "desc" },
       }),
     ]);
@@ -81,8 +81,12 @@ export async function GET(req: NextRequest) {
       : null;
 
     const res = NextResponse.json({ assess, checkAi });
-    if (cookieToSet) {
-      res.cookies.set(cookieToSet.name, cookieToSet.value, cookieToSet.options);
+    if (actor.cookieToSet) {
+      res.cookies.set(
+        actor.cookieToSet.name,
+        actor.cookieToSet.value,
+        actor.cookieToSet.options
+      );
     }
     return res;
   } catch (e: any) {

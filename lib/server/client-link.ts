@@ -35,6 +35,13 @@ type ResolveResult = {
   appUserId?: string;
 };
 
+async function findAppUserClient(kakaoId: string) {
+  return db.appUser.findUnique({
+    where: { kakaoId },
+    select: { id: true, clientId: true },
+  });
+}
+
 function sanitizeCandidate(
   loggedIn: boolean,
   candidate: string | null | undefined,
@@ -307,6 +314,14 @@ export async function resolveClientIdForRead(
     candidateSource
   );
 
+  if (loggedIn) {
+    const appUser = await findAppUserClient(String(user.kakaoId));
+    return {
+      clientId: appUser?.clientId ?? null,
+      appUserId: appUser?.id,
+    };
+  }
+
   const base = resolveClientIdFromRequest(
     req,
     trustedCandidate ?? undefined,
@@ -315,25 +330,6 @@ export async function resolveClientIdForRead(
   let clientId = base.clientId;
   let cookieToSet = base.cookieToSet;
   let appUserId: string | undefined;
-
-  if (loggedIn) {
-    const appUser = await db.appUser.findUnique({
-      where: { kakaoId: String(user.kakaoId) },
-      select: { id: true, clientId: true },
-    });
-
-    appUserId = appUser?.id;
-    if (appUser?.clientId) {
-      clientId = appUser.clientId;
-      const cookieVal = req.cookies.get(CLIENT_COOKIE_NAME)?.value;
-      if (!cookieToSet && cookieVal !== clientId) {
-        cookieToSet = buildClientCookie(
-          clientId,
-          req.nextUrl.protocol === "https:"
-        );
-      }
-    }
-  }
 
   return { clientId: clientId ?? null, cookieToSet, appUserId };
 }
@@ -354,6 +350,23 @@ export async function resolveClientIdForWrite(
     candidateSource
   );
 
+  if (loggedIn) {
+    const appUser = await findAppUserClient(String(user.kakaoId));
+    if (!appUser) {
+      return { clientId: null };
+    }
+    if (appUser.clientId) {
+      return { clientId: appUser.clientId, appUserId: appUser.id };
+    }
+    const clientId = resolveOrCreateClientId(null);
+    await ensureClient(clientId, { userAgent: req.headers.get("user-agent") });
+    await db.appUser.update({
+      where: { id: appUser.id },
+      data: { clientId },
+    });
+    return { clientId, appUserId: appUser.id };
+  }
+
   const base = resolveClientIdFromRequest(
     req,
     trustedCandidate ?? undefined,
@@ -361,32 +374,16 @@ export async function resolveClientIdForWrite(
   );
   let clientId = base.clientId;
   let cookieToSet = base.cookieToSet;
-  let appUserId: string | undefined;
-
-  if (loggedIn) {
-    const appUser = await db.appUser.findUnique({
-      where: { kakaoId: String(user.kakaoId) },
-      select: { id: true, clientId: true },
-    });
-
-    appUserId = appUser?.id;
-    if (appUser?.clientId) {
-      clientId = appUser.clientId;
-    }
-  }
-
   const finalClientId = resolveOrCreateClientId(clientId);
-  if (req) {
-    const cookieVal = req.cookies.get(CLIENT_COOKIE_NAME)?.value;
-    if (!cookieToSet && cookieVal !== finalClientId) {
-      cookieToSet = buildClientCookie(
-        finalClientId,
-        req.nextUrl.protocol === "https:"
-      );
-    }
+  const cookieVal = req.cookies.get(CLIENT_COOKIE_NAME)?.value;
+  if (!cookieToSet && cookieVal !== finalClientId) {
+    cookieToSet = buildClientCookie(
+      finalClientId,
+      req.nextUrl.protocol === "https:"
+    );
   }
 
-  return { clientId: finalClientId, cookieToSet, appUserId };
+  return { clientId: finalClientId, cookieToSet };
 }
 
 export async function resolveClientIdForAppUserRequest(
@@ -405,27 +402,6 @@ export async function resolveClientIdForAppUserRequest(
     candidate,
     candidateSource
   );
-
-  if (!loggedIn) {
-    return intent === "write"
-      ? resolveClientIdForWrite(req, trustedCandidate, candidateSource)
-      : resolveClientIdForRead(req, trustedCandidate, candidateSource);
-  }
-
-  const attachResult = await attachClientToAppUser({
-    req,
-    kakaoId: String(user.kakaoId),
-    source: "session-sync",
-    candidateClientId: trustedCandidate ?? undefined,
-    candidateSource,
-    userAgent: req.headers.get("user-agent"),
-  });
-
-  const clientId = attachResult.clientId;
-  const cookieToSet = attachResult.cookieToSet;
-
-  if (clientId)
-    return { clientId, cookieToSet, appUserId: attachResult.appUserId };
 
   return intent === "write"
     ? resolveClientIdForWrite(req, trustedCandidate, candidateSource)

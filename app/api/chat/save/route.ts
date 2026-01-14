@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { ensureClient } from "@/lib/server/client";
-import { resolveClientIdForAppUserRequest } from "@/lib/server/client-link";
+import { resolveActorForRequest } from "@/lib/server/actor";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,12 +22,12 @@ type SaveBody = {
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as SaveBody;
-    const { clientId, cookieToSet } = await resolveClientIdForAppUserRequest(
-      req,
-      body?.clientId,
-      "body",
-      "write"
-    );
+    const actor = await resolveActorForRequest(req, {
+      intent: "write",
+      candidate: body?.clientId,
+      candidateSource: "body",
+    });
+    const clientId = actor.deviceClientId;
     const { sessionId, title, messages, tzOffsetMinutes } = body || ({} as SaveBody);
     if (!clientId || !sessionId) {
       return NextResponse.json({ error: "Missing clientId or sessionId" }, { status: 400 });
@@ -73,8 +73,12 @@ export async function POST(req: NextRequest) {
     }
 
     const res = NextResponse.json({ ok: true });
-    if (cookieToSet) {
-      res.cookies.set(cookieToSet.name, cookieToSet.value, cookieToSet.options);
+    if (actor.cookieToSet) {
+      res.cookies.set(
+        actor.cookieToSet.name,
+        actor.cookieToSet.value,
+        actor.cookieToSet.options
+      );
     }
     return res;
   } catch (e: any) {
@@ -84,12 +88,8 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    const { clientId, cookieToSet } = await resolveClientIdForAppUserRequest(
-      req,
-      null,
-      "query",
-      "read"
-    );
+    const actor = await resolveActorForRequest(req, { intent: "read" });
+    const clientId = actor.deviceClientId;
 
     if (!clientId) {
       return NextResponse.json({ error: "Missing clientId" }, { status: 400 });
@@ -118,12 +118,15 @@ export async function GET(req: NextRequest) {
       { sessions: payload },
       { headers: { "Cache-Control": "no-store" } }
     );
-    if (cookieToSet) {
-      res.cookies.set(cookieToSet.name, cookieToSet.value, cookieToSet.options);
+    if (actor.cookieToSet) {
+      res.cookies.set(
+        actor.cookieToSet.name,
+        actor.cookieToSet.value,
+        actor.cookieToSet.options
+      );
     }
     return res;
   } catch (e: any) {
     return NextResponse.json({ error: e.message || "Unknown error" }, { status: 500 });
   }
 }
-

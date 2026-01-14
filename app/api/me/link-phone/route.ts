@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { hashOtp, normalizePhone } from "@/lib/otp";
 import getSession from "@/lib/session";
-import { attachClientToAppUser } from "@/lib/server/client-link";
 
 export const runtime = "nodejs";
 
@@ -97,14 +96,11 @@ export async function POST(req: NextRequest) {
 
     const linkedAt = now.toISOString();
     const linkedAtDate = new Date(linkedAt);
-    const attachResult = await attachClientToAppUser({
-      req,
-      kakaoId: String(user.kakaoId),
-      source: "phone-link",
-      userAgent: req.headers.get("user-agent"),
-      allowMerge: true,
+    const profile = await db.appUser.findUnique({
+      where: { kakaoId: String(user.kakaoId) },
+      select: { clientId: true },
     });
-    const resolvedClientId = attachResult.clientId ?? undefined;
+    const resolvedClientId = profile?.clientId ?? undefined;
 
     await db.appUser.upsert({
       where: { kakaoId: String(user.kakaoId) },
@@ -128,14 +124,6 @@ export async function POST(req: NextRequest) {
       { ok: true, phone, linkedAt },
       { headers: { "Cache-Control": "no-store" } }
     );
-
-    if (attachResult.cookieToSet) {
-      response.cookies.set(
-        attachResult.cookieToSet.name,
-        attachResult.cookieToSet.value,
-        attachResult.cookieToSet.options
-      );
-    }
 
     return response;
   } catch (e) {

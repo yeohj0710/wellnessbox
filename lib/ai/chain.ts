@@ -105,23 +105,29 @@ function pickOrderItemNames(items: any[]) {
 }
 
 async function buildKnownContext(
-  clientId: string | undefined,
+  scope: { clientId?: string; appUserId?: string },
   headers: Headers | Record<string, string | null | undefined>,
   localAssessCats: string[] | undefined,
   localCheckAiTopLabels: string[] | undefined
 ) {
-  if (!clientId || typeof clientId !== "string") return "";
+  const clientId =
+    typeof scope.clientId === "string" ? scope.clientId : undefined;
+  const appUserId =
+    typeof scope.appUserId === "string" ? scope.appUserId : undefined;
+  if (!clientId && !appUserId) return "";
   try {
     const { ensureClient } = await import("@/lib/server/client");
     const getHeader = (k: string) =>
       typeof (headers as any)?.get === "function"
         ? (headers as any).get(k)
         : (headers as any)?.[k] ?? (headers as any)?.[k.toLowerCase()] ?? null;
-    await ensureClient(clientId, { userAgent: getHeader("user-agent") });
+    if (clientId) {
+      await ensureClient(clientId, { userAgent: getHeader("user-agent") });
+    }
   } catch {}
   try {
-    const { getLatestResults } = await import("@/lib/server/results");
-    const latest = await getLatestResults(clientId);
+    const { getLatestResultsByScope } = await import("@/lib/server/results");
+    const latest = await getLatestResultsByScope({ appUserId, clientId });
     const parts: string[] = [];
     if (latest.assessCats && latest.assessCats.length) {
       const cats = latest.assessCats.slice(0, 3);
@@ -509,6 +515,7 @@ export async function streamChat(
     profile,
     model,
     clientId,
+    appUserId,
     mode,
     localCheckAiTopLabels,
     localAssessCats,
@@ -539,7 +546,7 @@ export async function streamChat(
     });
   }
   const knownContext = await buildKnownContext(
-    clientId,
+    { clientId, appUserId },
     headers,
     localAssessCats,
     localCheckAiTopLabels

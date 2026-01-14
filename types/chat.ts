@@ -36,6 +36,7 @@ export interface ChatRequestBody {
   model?: string;
   // Extended fields used by /api/chat
   clientId?: string;
+  appUserId?: string;
   mode?: "init" | "chat";
   // Optional local-only results to enrich context
   localCheckAiTopLabels?: string[];

@@ -183,6 +183,7 @@ model Client {
 model AssessmentResult {
   id              String   @id @default(cuid())
   clientId        String
+  appUserId       String?
   answers         Json
   cResult         Json
   questionSnapshot Json?
@@ -190,13 +191,16 @@ model AssessmentResult {
   tzOffsetMinutes Int      @default(0)
   createdAt       DateTime @default(now())
   client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  appUser         AppUser? @relation(fields: [appUserId], references: [id], onDelete: SetNull)
 
   @@index([clientId, createdAt])
+  @@index([appUserId, createdAt])
 }
 
 model CheckAiResult {
   id              String   @id @default(cuid())
   clientId        String
+  appUserId       String?
   result          Json
   questionSnapshot Json?
   scoreSnapshot   Json?
@@ -204,8 +208,10 @@ model CheckAiResult {
   createdAt       DateTime @default(now())
   answers         Json?
   client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  appUser         AppUser? @relation(fields: [appUserId], references: [id], onDelete: SetNull)
 
   @@index([clientId, createdAt])
+  @@index([appUserId, createdAt])
 }
 
 model UserProfile {
@@ -232,6 +238,8 @@ model AppUser {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @default(now()) @updatedAt
   client          Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  assessResults   AssessmentResult[]
+  checkAiResults  CheckAiResult[]
   emailOtps       EmailOtp[]
 
   @@index([clientId])

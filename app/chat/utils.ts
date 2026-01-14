@@ -56,8 +56,8 @@ export function saveProfileLocal(p?: UserProfile) {
 
 export async function loadProfileServer(): Promise<UserProfile | undefined> {
   try {
-    const cid = getClientIdLocal();
-    const res = await fetch(`/api/user/profile?clientId=${cid}`);
+    getClientIdLocal();
+    const res = await fetch(`/api/user/profile`);
     if (!res.ok || res.status === 204) return undefined;
     const data = await res.json();
     return data?.profile as UserProfile;
@@ -68,11 +68,11 @@ export async function loadProfileServer(): Promise<UserProfile | undefined> {
 
 export async function saveProfileServer(p?: UserProfile) {
   try {
-    const cid = getClientIdLocal();
+    getClientIdLocal();
     await fetch(`/api/user/profile`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ clientId: cid, profile: p ?? null }),
+      body: JSON.stringify({ profile: p ?? null }),
     });
   } catch {}
 }

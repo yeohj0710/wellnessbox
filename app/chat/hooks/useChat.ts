@@ -207,14 +207,18 @@ export default function useChat() {
   }, []);
 
   useEffect(() => {
-    const cid = getClientIdLocal();
-    fetch(`/api/user/all-results?clientId=${cid}`)
+    fetch(`/api/user/all-results`)
       .then((r) => r.json())
       .then((data) => {
         const assess = data?.assess;
-        if (assess?.cResult?.catsOrdered) {
-          const cats = assess.cResult.catsOrdered;
-          const pcts = assess.cResult.percents || [];
+        const assessNormalized = assess?.normalized;
+        if (Array.isArray(assessNormalized?.topLabels)) {
+          const cats = assessNormalized.topLabels;
+          const pcts = Array.isArray(assessNormalized?.scores)
+            ? assessNormalized.scores.map((score: any) =>
+                typeof score?.value === "number" ? score.value : 0
+              )
+            : [];
           const summary = cats.map(
             (c: string, i: number) =>
               `${formatAssessCat(c)} ${(pcts[i] * 100).toFixed(1)}%`
@@ -235,9 +239,10 @@ export default function useChat() {
         }
 
         const checkAi = data?.checkAi;
-        if (Array.isArray(checkAi?.result?.topLabels)) {
-          const labels = checkAi.result.topLabels.slice(0, 3);
-          const answers = Array.isArray(checkAi.answersDetailed)
+        const checkAiNormalized = checkAi?.normalized;
+        if (Array.isArray(checkAiNormalized?.topLabels)) {
+          const labels = checkAiNormalized.topLabels.slice(0, 3);
+          const answers = Array.isArray(checkAi?.answersDetailed)
             ? checkAi.answersDetailed.map((a: any) => ({
                 question: a.question,
                 answer: a.answerLabel,
