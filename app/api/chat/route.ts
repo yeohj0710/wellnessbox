@@ -18,7 +18,12 @@ export async function POST(req: NextRequest) {
     if (!actor.loggedIn && !deviceClientId) {
       return NextResponse.json({ error: "Missing clientId" }, { status: 400 });
     }
-    if (req.headers.get("x-smoke-test") === "1") {
+    const smokeHeader = req.headers.get("x-smoke-test") === "1";
+    const allowSmoke = smokeHeader && process.env.NODE_ENV !== "production";
+    if (smokeHeader && !allowSmoke) {
+      return NextResponse.json({ error: "Smoke test disabled" }, { status: 403 });
+    }
+    if (allowSmoke) {
       const res = new NextResponse("ok", {
         headers: { "Content-Type": "text/plain; charset=utf-8" },
       });

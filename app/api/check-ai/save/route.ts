@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
       answers === undefined
         ? undefined
         : answers === null
-        ? Prisma.DbNull
+        ? Prisma.JsonNull
         : (answers as unknown as Prisma.InputJsonValue);
 
     const rec = await db.checkAiResult.create({

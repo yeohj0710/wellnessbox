@@ -7,7 +7,11 @@ import { getPharmacy } from "@/lib/pharmacy";
 import { useRouter } from "next/navigation";
 import FullPageLoader from "@/components/common/fullPageLoader";
 import OrderAccordionItem from "@/components/pharm/orderAccordionItem";
-import { base64ToUint8Array, registerAndActivateSW } from "@/lib/push";
+import {
+  ensurePushSubscription,
+  getSubAppKeyBase64,
+  registerAndActivateSW,
+} from "@/lib/push";
 
 export default function Pharm() {
   const [loading, setLoading] = useState<boolean>(true);
@@ -18,6 +22,7 @@ export default function Pharm() {
   const [isPageLoading, setIsPageLoading] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState<boolean | null>(null);
   const [isSubscribeLoading, setIsSubscribeLoading] = useState(false);
+  const isSubscribingRef = React.useRef(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -62,14 +67,52 @@ export default function Pharm() {
     const key = `pharmNotifyOff_${pharm.id}`;
     const check = async () => {
       if (!("serviceWorker" in navigator)) return;
+      if (isSubscribingRef.current) return;
+      if (Notification.permission === "denied") {
+        setIsSubscribed(false);
+        return;
+      }
       const reg = await registerAndActivateSW();
-      const sub = await reg.pushManager.getSubscription();
+      const appKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").trim();
+      if (!appKey) {
+        setIsSubscribed(false);
+        return;
+      }
+      let sub = await reg.pushManager.getSubscription();
+      if (sub && appKey) {
+        const subAppKey = await getSubAppKeyBase64(reg);
+        const storedKey = localStorage.getItem("vapidKey") || "";
+        const mismatch =
+          (storedKey && storedKey !== appKey) ||
+          (subAppKey && subAppKey !== appKey);
+        if (mismatch) {
+          try {
+            await fetch("/api/pharm-push/unsubscribe", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                pharmacyId: pharm.id,
+                endpoint: sub.endpoint,
+                role: "pharm",
+              }),
+            });
+          } catch {}
+          try {
+            await sub.unsubscribe();
+          } catch {}
+          sub = null;
+        }
+      }
       if (!sub) {
         if (localStorage.getItem(key) === "true") {
           setIsSubscribed(false);
           return;
         }
-        await subscribePush();
+        if (Notification.permission === "granted") {
+          await subscribePush({ silent: true });
+        } else {
+          setIsSubscribed(false);
+        }
         return;
       }
       if (localStorage.getItem(key) === "true") {
@@ -86,11 +129,14 @@ export default function Pharm() {
             role: "pharm",
           }),
         });
+        if (!res.ok) {
+          throw new Error("Failed to check subscription");
+        }
         const data = await res.json();
         if (data.subscribed) {
           setIsSubscribed(true);
         } else {
-          await subscribePush();
+          await syncSubscription(sub);
         }
       } catch {
         setIsSubscribed(null);
@@ -109,49 +155,98 @@ export default function Pharm() {
     };
   }, [pharm]);
 
-  const subscribePush = async () => {
+  const syncSubscription = async (sub: PushSubscription) => {
+    const res = await fetch("/api/pharm-push/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pharmacyId: pharm?.id,
+        subscription: sub,
+        role: "pharm",
+      }),
+    });
+    if (!res.ok) {
+      throw new Error("Failed to sync subscription");
+    }
+    if (pharm?.id) {
+      localStorage.removeItem(`pharmNotifyOff_${pharm.id}`);
+    }
+    setIsSubscribed(true);
+  };
+
+  const subscribePush = async ({ silent = false } = {}) => {
     if (!("serviceWorker" in navigator)) return;
+    if (isSubscribingRef.current) return;
+    if (Notification.permission === "denied") {
+      if (!silent) {
+        alert("브라우저 설정에서 알림을 허용할 수 있어요.");
+      }
+      setIsSubscribed(false);
+      return;
+    }
+    if (Notification.permission === "default") {
+      if (silent) {
+        setIsSubscribed(false);
+        return;
+      }
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        alert("브라우저 설정에서 알림을 허용할 수 있어요.");
+        setIsSubscribed(false);
+        return;
+      }
+    }
     setIsSubscribeLoading(true);
+    isSubscribingRef.current = true;
     try {
       const reg = await registerAndActivateSW();
-      let sub = await reg.pushManager.getSubscription();
       const appKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").trim();
-      if (!appKey) return;
-      if (!sub) {
-        sub = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: base64ToUint8Array(appKey),
-        });
+      if (!appKey) {
+        if (!silent) {
+          alert("알림 키 설정을 확인해 주세요.");
+        }
+        setIsSubscribed(false);
+        return;
       }
-      await fetch("/api/pharm-push/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          pharmacyId: pharm?.id,
-          subscription: sub,
-          role: "pharm",
-        }),
+      const sub = await ensurePushSubscription({
+        reg,
+        appKey,
+        lockKey: `push:pharm:${pharm?.id ?? "self"}`,
+        onUnsubscribe: async (subscription) => {
+          await fetch("/api/pharm-push/unsubscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              pharmacyId: pharm?.id,
+              endpoint: subscription.endpoint,
+              role: "pharm",
+            }),
+          });
+        },
       });
-      if (pharm?.id) {
-        localStorage.removeItem(`pharmNotifyOff_${pharm.id}`);
-      }
-      setIsSubscribed(true);
+      await syncSubscription(sub);
+      localStorage.setItem("vapidKey", appKey);
     } catch (e) {
       console.error(e);
-      alert("알림 설정에 실패했습니다.");
+      if (!silent) {
+        alert("알림 설정 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.");
+      }
     } finally {
+      isSubscribingRef.current = false;
       setIsSubscribeLoading(false);
     }
   };
 
   const unsubscribePush = async () => {
     if (!("serviceWorker" in navigator)) return;
+    if (isSubscribingRef.current) return;
     setIsSubscribeLoading(true);
+    isSubscribingRef.current = true;
     try {
       const reg = await navigator.serviceWorker.getRegistration();
       const sub = await reg?.pushManager.getSubscription();
       if (sub) {
-        await fetch("/api/pharm-push/unsubscribe", {
+        const res = await fetch("/api/pharm-push/unsubscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -160,6 +255,10 @@ export default function Pharm() {
             role: "pharm",
           }),
         });
+        if (!res.ok) {
+          throw new Error("Failed to unsubscribe");
+        }
+        await sub.unsubscribe();
       }
       if (pharm?.id) {
         localStorage.setItem(`pharmNotifyOff_${pharm.id}`, "true");
@@ -169,6 +268,7 @@ export default function Pharm() {
       console.error(e);
       alert("알림 해제에 실패했습니다.");
     } finally {
+      isSubscribingRef.current = false;
       setIsSubscribeLoading(false);
     }
   };

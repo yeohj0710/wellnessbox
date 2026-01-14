@@ -98,11 +98,16 @@ async function scenarioFirstVisit() {
       throw new Error(`POST /api/check-ai/save expected 2xx, got ${r6.res.status}`);
     }
   }
+
+  return jar.cookie;
 }
 
-async function scenarioCookieRead() {
+async function scenarioCookieRead(cookie?: string) {
   console.log("Scenario 2: cookie present (device scope)");
-  const jar: CookieJar = { cookie: "wb_cid=aaaaaaaaaaaa" };
+  if (!cookie) {
+    throw new Error("Scenario 2 requires a server-issued clientId cookie");
+  }
+  const jar: CookieJar = { cookie };
   const r1 = await request("/api/results/latest", {}, jar);
   if (!r1.res.ok) {
     if (r1.text.includes("Can't reach database server")) {
@@ -139,9 +144,9 @@ async function scenarioBodySpoof() {
 
 async function main() {
   console.log(`Using BASE_URL=${baseUrl}`);
-  await scenarioFirstVisit();
+  const cookie = await scenarioFirstVisit();
   await delay(200);
-  await scenarioCookieRead();
+  await scenarioCookieRead(cookie);
   await delay(200);
   await scenarioBodySpoof();
   console.log("Smoke tests complete.");

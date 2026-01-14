@@ -17,7 +17,7 @@ import OrderProgressBar from "./orderProgressBar";
 import OrderAccordionHeader from "./orderAccordionHeader";
 import Image from "next/image";
 import {
-  base64ToUint8Array,
+  ensurePushSubscription,
   getSubAppKeyBase64,
   registerAndActivateSW,
 } from "@/lib/push";
@@ -96,6 +96,7 @@ export default function OrderDetails({
     const [isStateRefreshing, setIsStateRefreshing] = useState(false);
     const [isSubscribed, setIsSubscribed] = useState<boolean | null>(null);
     const [isSubscribeLoading, setIsSubscribeLoading] = useState(false);
+    const isSubscribingRef = useRef(false);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const pollingRef = useRef(false);
     const lastSeenIdRef = useRef<number>(0);
@@ -115,6 +116,7 @@ export default function OrderDetails({
     useEffect(() => {
       const checkSubscription = async () => {
         if (!("serviceWorker" in navigator)) return;
+        if (isSubscribingRef.current) return;
 
         const notifyOff =
           localStorage.getItem(`notifyOff:${order.id}`) === "true";
@@ -123,16 +125,76 @@ export default function OrderDetails({
           return;
         }
 
+        if (Notification.permission === "denied") {
+          setIsSubscribed(false);
+          return;
+        }
+
         try {
           const reg = await registerAndActivateSW();
-          const sub = await reg.pushManager.getSubscription();
-
-          if (sub) {
-            setIsSubscribed(true);
+          const appKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").trim();
+          if (!appKey) {
+            setIsSubscribed(false);
             return;
           }
+          let sub = await reg.pushManager.getSubscription();
+          if (sub && appKey) {
+            const subAppKey = await getSubAppKeyBase64(reg);
+            const storedKey = localStorage.getItem("vapidKey") || "";
+            const mismatch =
+              (storedKey && storedKey !== appKey) ||
+              (subAppKey && subAppKey !== appKey);
+            if (mismatch) {
+              try {
+                await fetch("/api/push/unsubscribe", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    orderId: order.id,
+                    endpoint: sub.endpoint,
+                    role: "customer",
+                  }),
+                });
+              } catch {}
+              try {
+                await sub.unsubscribe();
+              } catch {}
+              sub = null;
+            }
+          }
 
-          await subscribePush();
+          if (sub) {
+            try {
+              const statusRes = await fetch("/api/push/status", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  orderId: order.id,
+                  endpoint: sub.endpoint,
+                  role: "customer",
+                }),
+              });
+              if (!statusRes.ok) {
+                throw new Error("Failed to check subscription");
+              }
+              const data = await statusRes.json();
+              if (data.subscribed) {
+                setIsSubscribed(true);
+                return;
+              }
+              await syncSubscription(sub);
+              return;
+            } catch {
+              setIsSubscribed(null);
+              return;
+            }
+          }
+
+          if (Notification.permission === "granted") {
+            await subscribePush({ silent: true });
+          } else {
+            setIsSubscribed(false);
+          }
         } catch {
           setIsSubscribed(null);
         }
@@ -245,66 +307,95 @@ export default function OrderDetails({
         if (manual) setIsMessagesRefreshing(false);
       }
     };
-    const subscribePush = async () => {
+    const syncSubscription = async (sub: PushSubscription) => {
+      const res = await fetch("/api/push/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: order.id,
+          subscription: sub,
+          role: "customer",
+        }),
+      });
+      if (!res.ok) {
+        throw new Error("Failed to sync subscription");
+      }
+      localStorage.removeItem(`notifyOff:${order.id}`);
+      setIsSubscribed(true);
+    };
+    const subscribePush = async ({ silent = false } = {}) => {
       if (!("serviceWorker" in navigator)) return;
+      if (isSubscribingRef.current) return;
+      if (Notification.permission === "denied") {
+        if (!silent) {
+          alert("브라우저 설정에서 알림을 허용할 수 있어요.");
+        }
+        setIsSubscribed(false);
+        return;
+      }
+      if (Notification.permission === "default") {
+        if (silent) {
+          setIsSubscribed(false);
+          return;
+        }
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") {
+          alert("브라우저 설정에서 알림을 허용할 수 있어요.");
+          setIsSubscribed(false);
+          return;
+        }
+      }
       setIsSubscribeLoading(true);
+      isSubscribingRef.current = true;
       try {
         const reg = await registerAndActivateSW();
-        let existing = await reg.pushManager.getSubscription();
         const appKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").trim();
-        if (!appKey) return;
-        const storedKey = localStorage.getItem("vapidKey") || "";
-        const subAppKey = existing ? await getSubAppKeyBase64(reg) : null;
-        const mismatch =
-          !!existing &&
-          (storedKey !== appKey || (subAppKey && subAppKey !== appKey));
-        if (mismatch && existing) {
-          await fetch("/api/push/unsubscribe", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              orderId: order.id,
-              endpoint: existing.endpoint,
-              role: "customer",
-            }),
-          });
-          await existing.unsubscribe();
-          existing = null;
+        if (!appKey) {
+          if (!silent) {
+            alert("알림 키 설정을 확인해 주세요.");
+          }
+          setIsSubscribed(false);
+          return;
         }
-        const sub =
-          existing ||
-          (await reg.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: base64ToUint8Array(appKey),
-          }));
-        await fetch("/api/push/subscribe", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            orderId: order.id,
-            subscription: sub,
-            role: "customer",
-          }),
+        const sub = await ensurePushSubscription({
+          reg,
+          appKey,
+          lockKey: `push:customer:${order.id}`,
+          onUnsubscribe: async (subscription) => {
+            await fetch("/api/push/unsubscribe", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                orderId: order.id,
+                endpoint: subscription.endpoint,
+                role: "customer",
+              }),
+            });
+          },
         });
+        await syncSubscription(sub);
         localStorage.setItem("vapidKey", appKey);
-        localStorage.removeItem(`notifyOff:${order.id}`);
-        setIsSubscribed(true);
       } catch (e) {
         console.error(e);
-        alert("알림 설정에 실패했습니다.");
+        if (!silent) {
+          alert("알림 설정 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.");
+        }
       } finally {
+        isSubscribingRef.current = false;
         setIsSubscribeLoading(false);
       }
     };
 
     const unsubscribePush = async () => {
       if (!("serviceWorker" in navigator)) return;
+      if (isSubscribingRef.current) return;
       setIsSubscribeLoading(true);
+      isSubscribingRef.current = true;
       try {
         const reg = await navigator.serviceWorker.getRegistration();
         const sub = await reg?.pushManager.getSubscription();
         if (sub) {
-          await fetch("/api/push/unsubscribe", {
+          const res = await fetch("/api/push/unsubscribe", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -313,6 +404,10 @@ export default function OrderDetails({
               role: "customer",
             }),
           });
+          if (!res.ok) {
+            throw new Error("Failed to unsubscribe");
+          }
+          await sub.unsubscribe();
         }
         localStorage.setItem(`notifyOff:${order.id}`, "true");
         setIsSubscribed(false);
@@ -320,6 +415,7 @@ export default function OrderDetails({
         console.error(e);
         alert("알림 해제에 실패했습니다.");
       } finally {
+        isSubscribingRef.current = false;
         setIsSubscribeLoading(false);
       }
     };

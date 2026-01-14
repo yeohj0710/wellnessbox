@@ -7,7 +7,11 @@ import { useRouter } from "next/navigation";
 import FullPageLoader from "@/components/common/fullPageLoader";
 import { getRider } from "@/lib/rider";
 import OrderAccordionItem from "@/components/rider/orderAccordionItem";
-import { base64ToUint8Array, registerAndActivateSW } from "@/lib/push";
+import {
+  ensurePushSubscription,
+  getSubAppKeyBase64,
+  registerAndActivateSW,
+} from "@/lib/push";
 
 export default function Rider() {
   const [loading, setLoading] = useState<boolean>(true);
@@ -18,6 +22,7 @@ export default function Rider() {
   const [isPageLoading, setIsPageLoading] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState<boolean | null>(null);
   const [isSubscribeLoading, setIsSubscribeLoading] = useState(false);
+  const isSubscribingRef = React.useRef(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -63,14 +68,52 @@ export default function Rider() {
     const key = `riderNotifyOff_${rider.id}`;
     const check = async () => {
       if (!("serviceWorker" in navigator)) return;
+      if (isSubscribingRef.current) return;
+      if (Notification.permission === "denied") {
+        setIsSubscribed(false);
+        return;
+      }
       const reg = await registerAndActivateSW();
-      const sub = await reg.pushManager.getSubscription();
+      const appKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").trim();
+      if (!appKey) {
+        setIsSubscribed(false);
+        return;
+      }
+      let sub = await reg.pushManager.getSubscription();
+      if (sub && appKey) {
+        const subAppKey = await getSubAppKeyBase64(reg);
+        const storedKey = localStorage.getItem("vapidKey") || "";
+        const mismatch =
+          (storedKey && storedKey !== appKey) ||
+          (subAppKey && subAppKey !== appKey);
+        if (mismatch) {
+          try {
+            await fetch("/api/rider-push/unsubscribe", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                riderId: rider.id,
+                endpoint: sub.endpoint,
+                role: "rider",
+              }),
+            });
+          } catch {}
+          try {
+            await sub.unsubscribe();
+          } catch {}
+          sub = null;
+        }
+      }
       if (!sub) {
         if (localStorage.getItem(key) === "true") {
           setIsSubscribed(false);
           return;
         }
-        await subscribePush();
+        if (Notification.permission === "granted") {
+          await subscribePush({ silent: true });
+        } else {
+          setIsSubscribed(false);
+        }
         return;
       }
       if (localStorage.getItem(key) === "true") {
@@ -87,11 +130,14 @@ export default function Rider() {
             role: "rider",
           }),
         });
+        if (!res.ok) {
+          throw new Error("Failed to check subscription");
+        }
         const data = await res.json();
         if (data.subscribed) {
           setIsSubscribed(true);
         } else {
-          await subscribePush();
+          await syncSubscription(sub);
         }
       } catch {
         setIsSubscribed(null);
@@ -110,49 +156,98 @@ export default function Rider() {
     };
   }, [rider]);
 
-  const subscribePush = async () => {
+  const syncSubscription = async (sub: PushSubscription) => {
+    const res = await fetch("/api/rider-push/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        riderId: rider?.id,
+        subscription: sub,
+        role: "rider",
+      }),
+    });
+    if (!res.ok) {
+      throw new Error("Failed to sync subscription");
+    }
+    if (rider?.id) {
+      localStorage.removeItem(`riderNotifyOff_${rider.id}`);
+    }
+    setIsSubscribed(true);
+  };
+
+  const subscribePush = async ({ silent = false } = {}) => {
     if (!("serviceWorker" in navigator)) return;
+    if (isSubscribingRef.current) return;
+    if (Notification.permission === "denied") {
+      if (!silent) {
+        alert("브라우저 설정에서 알림을 허용할 수 있어요.");
+      }
+      setIsSubscribed(false);
+      return;
+    }
+    if (Notification.permission === "default") {
+      if (silent) {
+        setIsSubscribed(false);
+        return;
+      }
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        alert("브라우저 설정에서 알림을 허용할 수 있어요.");
+        setIsSubscribed(false);
+        return;
+      }
+    }
     setIsSubscribeLoading(true);
+    isSubscribingRef.current = true;
     try {
       const reg = await registerAndActivateSW();
-      let sub = await reg.pushManager.getSubscription();
       const appKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").trim();
-      if (!appKey) return;
-      if (!sub) {
-        sub = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: base64ToUint8Array(appKey),
-        });
+      if (!appKey) {
+        if (!silent) {
+          alert("알림 키 설정을 확인해 주세요.");
+        }
+        setIsSubscribed(false);
+        return;
       }
-      await fetch("/api/rider-push/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          riderId: rider?.id,
-          subscription: sub,
-          role: "rider",
-        }),
+      const sub = await ensurePushSubscription({
+        reg,
+        appKey,
+        lockKey: `push:rider:${rider?.id ?? "self"}`,
+        onUnsubscribe: async (subscription) => {
+          await fetch("/api/rider-push/unsubscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              riderId: rider?.id,
+              endpoint: subscription.endpoint,
+              role: "rider",
+            }),
+          });
+        },
       });
-      if (rider?.id) {
-        localStorage.removeItem(`riderNotifyOff_${rider.id}`);
-      }
-      setIsSubscribed(true);
+      await syncSubscription(sub);
+      localStorage.setItem("vapidKey", appKey);
     } catch (e) {
       console.error(e);
-      alert("알림 설정에 실패했습니다.");
+      if (!silent) {
+        alert("알림 설정 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.");
+      }
     } finally {
+      isSubscribingRef.current = false;
       setIsSubscribeLoading(false);
     }
   };
 
   const unsubscribePush = async () => {
     if (!("serviceWorker" in navigator)) return;
+    if (isSubscribingRef.current) return;
     setIsSubscribeLoading(true);
+    isSubscribingRef.current = true;
     try {
       const reg = await navigator.serviceWorker.getRegistration();
       const sub = await reg?.pushManager.getSubscription();
       if (sub) {
-        await fetch("/api/rider-push/unsubscribe", {
+        const res = await fetch("/api/rider-push/unsubscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -161,6 +256,10 @@ export default function Rider() {
             role: "rider",
           }),
         });
+        if (!res.ok) {
+          throw new Error("Failed to unsubscribe");
+        }
+        await sub.unsubscribe();
       }
       if (rider?.id) {
         localStorage.setItem(`riderNotifyOff_${rider.id}`, "true");
@@ -170,6 +269,7 @@ export default function Rider() {
       console.error(e);
       alert("알림 해제에 실패했습니다.");
     } finally {
+      isSubscribingRef.current = false;
       setIsSubscribeLoading(false);
     }
   };
