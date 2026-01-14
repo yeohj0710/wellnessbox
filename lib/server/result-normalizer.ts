@@ -362,14 +362,25 @@ function normalizeScore(
   if (!label) return null;
   const code = typeof score.code === "string" ? score.code : undefined;
   const value = asNumber(score.prob ?? score.value ?? score.percent) ?? 0;
-  return { code, label, value };
+  if (code) {
+    return { code, label, value };
+  }
+  return { label, value };
 }
 
 export function buildAssessQuestionSnapshot(): QuestionSnapshotV1 {
+  const questions = ASSESS_QUESTIONS.map((question) => ({
+    id: question.id,
+    text: question.text,
+    ...(question.type ? { type: question.type } : {}),
+    ...(question.options ? { options: question.options } : {}),
+    ...(typeof question.min === "number" ? { min: question.min } : {}),
+    ...(typeof question.max === "number" ? { max: question.max } : {}),
+  }));
   return {
     version: ASSESS_SNAPSHOT_VERSION,
     kind: "assess",
-    questions: ASSESS_QUESTIONS,
+    questions,
   };
 }
 
@@ -377,11 +388,19 @@ export function buildCheckAiQuestionSnapshot(
   incoming?: unknown
 ): QuestionSnapshotV1 {
   const normalized = normalizeCheckAiQuestionSnapshot(incoming);
+  const questions = normalized.snapshot.questions.map((question) => ({
+    id: question.id,
+    text: question.text,
+    ...(question.type ? { type: question.type } : {}),
+    ...(question.options ? { options: question.options } : {}),
+    ...(typeof question.min === "number" ? { min: question.min } : {}),
+    ...(typeof question.max === "number" ? { max: question.max } : {}),
+  }));
   return {
     version: CHECK_AI_SNAPSHOT_VERSION,
     kind: "check-ai",
-    questions: normalized.snapshot.questions,
-    options: normalized.snapshot.options,
+    questions,
+    options: normalized.snapshot.options ?? CHECK_AI_OPTIONS_LIST,
   };
 }
 

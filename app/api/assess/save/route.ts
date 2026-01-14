@@ -17,15 +17,13 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const actor = await resolveActorForRequest(req, {
       intent: "write",
-      candidate: body?.clientId,
-      candidateSource: "body",
     });
 
     const { answers, cResult, tzOffsetMinutes } = body || {};
     const deviceClientId = actor.deviceClientId;
 
     if (!deviceClientId) {
-      return NextResponse.json({ error: "Missing clientId" }, { status: 400 });
+      return NextResponse.json({ error: "Missing clientId" }, { status: 500 });
     }
 
     if (!answers || !cResult) {
@@ -58,10 +56,7 @@ export async function POST(req: NextRequest) {
         answers: answers as unknown as Prisma.InputJsonValue,
         cResult: cResultToStore as unknown as Prisma.InputJsonValue,
         questionSnapshot: questionSnapshot as unknown as Prisma.InputJsonValue,
-        scoreSnapshot:
-          scoreSnapshot === null
-            ? Prisma.DbNull
-            : (scoreSnapshot as unknown as Prisma.InputJsonValue),
+        scoreSnapshot: scoreSnapshot as unknown as Prisma.InputJsonValue,
         tzOffsetMinutes:
           typeof tzOffsetMinutes === "number" ? tzOffsetMinutes : 0,
       },

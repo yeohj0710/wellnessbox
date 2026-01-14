@@ -8,22 +8,28 @@ export const runtime = "nodejs";
 export async function GET(req: NextRequest) {
   try {
     const actor = await resolveActorForRequest(req, { intent: "read" });
-    const scopeAppUserId = actor.loggedIn ? actor.appUserId : null;
-    const scopeClientId = actor.deviceClientId;
-    if (!scopeAppUserId && !scopeClientId) {
-      return NextResponse.json({ error: "Missing clientId" }, { status: 400 });
+    let scope: { appUserId: string } | { clientId: string };
+    if (actor.loggedIn) {
+      const appUserId = actor.appUserId;
+      if (!appUserId) {
+        return NextResponse.json({ error: "Missing appUserId" }, { status: 500 });
+      }
+      scope = { appUserId };
+    } else {
+      const clientId = actor.deviceClientId;
+      if (!clientId) {
+        return NextResponse.json({ error: "Missing clientId" }, { status: 400 });
+      }
+      scope = { clientId };
     }
-    if (scopeClientId) {
-      await ensureClient(scopeClientId, {
+    if (actor.deviceClientId) {
+      await ensureClient(actor.deviceClientId, {
         userAgent: req.headers.get("user-agent"),
       });
     }
-    const results = await getLatestResultsByScope({
-      appUserId: scopeAppUserId,
-      clientId: scopeClientId,
-    });
+    const results = await getLatestResultsByScope(scope);
     const res = NextResponse.json({
-      clientId: scopeClientId,
+      clientId: actor.deviceClientId,
       results,
     });
     if (actor.cookieToSet) {

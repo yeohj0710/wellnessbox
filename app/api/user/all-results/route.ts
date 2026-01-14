@@ -11,26 +11,31 @@ export const runtime = "nodejs";
 export async function GET(req: NextRequest) {
   try {
     const actor = await resolveActorForRequest(req, { intent: "read" });
-    const scopeAppUserId = actor.loggedIn ? actor.appUserId : null;
-    const scopeClientId = actor.deviceClientId;
-    if (!scopeAppUserId && !scopeClientId) {
-      return NextResponse.json({ error: "Missing clientId" }, { status: 400 });
+    let scope: { appUserId: string } | { clientId: string };
+    if (actor.loggedIn) {
+      const appUserId = actor.appUserId;
+      if (!appUserId) {
+        return NextResponse.json({ error: "Missing appUserId" }, { status: 500 });
+      }
+      scope = { appUserId };
+    } else {
+      const clientId = actor.deviceClientId;
+      if (!clientId) {
+        return NextResponse.json({ error: "Missing clientId" }, { status: 400 });
+      }
+      scope = { clientId };
     }
     const [assessRaw, checkAiRaw, orders] = await Promise.all([
       db.assessmentResult.findFirst({
-        where: scopeAppUserId
-          ? { appUserId: scopeAppUserId }
-          : { clientId: scopeClientId ?? "" },
+        where: scope,
         orderBy: { createdAt: "desc" },
       }),
       db.checkAiResult.findFirst({
-        where: scopeAppUserId
-          ? { appUserId: scopeAppUserId }
-          : { clientId: scopeClientId ?? "" },
+        where: scope,
         orderBy: { createdAt: "desc" },
       }),
       db.order.findMany({
-        where: scopeClientId ? { endpoint: scopeClientId } : { id: -1 },
+        where: actor.deviceClientId ? { endpoint: actor.deviceClientId } : { id: -1 },
         orderBy: { updatedAt: "desc" },
         include: {
           orderItems: {
@@ -103,7 +108,7 @@ export async function GET(req: NextRequest) {
       : null;
 
     const res = NextResponse.json({
-      clientId: scopeClientId,
+      clientId: actor.deviceClientId,
       assess,
       checkAi,
       orders,

@@ -17,8 +17,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const actor = await resolveActorForRequest(req, {
       intent: "write",
-      candidate: body?.clientId,
-      candidateSource: "body",
     });
 
     const {
@@ -31,7 +29,7 @@ export async function POST(req: NextRequest) {
     const deviceClientId = actor.deviceClientId;
 
     if (!deviceClientId) {
-      return NextResponse.json({ error: "Missing clientId" }, { status: 400 });
+      return NextResponse.json({ error: "Missing clientId" }, { status: 500 });
     }
 
     if (!result) {
@@ -64,12 +62,9 @@ export async function POST(req: NextRequest) {
         clientId: deviceClientId,
         appUserId: actor.appUserId ?? undefined,
         result: resultToStore as unknown as Prisma.InputJsonValue,
-        answers: answersToStore,
+        ...(answersToStore !== undefined ? { answers: answersToStore } : {}),
         questionSnapshot: questionSnapshot as unknown as Prisma.InputJsonValue,
-        scoreSnapshot:
-          scoreSnapshot === null
-            ? Prisma.DbNull
-            : (scoreSnapshot as unknown as Prisma.InputJsonValue),
+        scoreSnapshot: scoreSnapshot as unknown as Prisma.InputJsonValue,
         tzOffsetMinutes:
           typeof tzOffsetMinutes === "number" ? tzOffsetMinutes : 0,
       },

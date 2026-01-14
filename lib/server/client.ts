@@ -34,10 +34,21 @@ export async function getClientIdFromRequest(): Promise<string | null> {
   return null;
 }
 
+export type ClientIdCandidateSource = "header";
+
+export function isRequestHttps(req: NextRequest): boolean {
+  const forwarded = req.headers.get("x-forwarded-proto");
+  if (forwarded) {
+    const proto = forwarded.split(",")[0]?.trim().toLowerCase();
+    if (proto) return proto === "https";
+  }
+  return req.nextUrl.protocol === "https:";
+}
+
 export function resolveClientIdFromRequest(
   req: NextRequest,
   candidate?: string | null,
-  candidateSource: "query" | "body" | "header" | "candidate" = "candidate"
+  candidateSource?: ClientIdCandidateSource
 ): { clientId: string | null; cookieToSet?: ReturnType<typeof buildClientCookie> } {
   const cookieId = req.cookies.get(CLIENT_COOKIE_NAME)?.value;
   const headerId = req.headers.get(CLIENT_ID_HEADER) || req.headers.get(LEGACY_CLIENT_ID_HEADER);
@@ -45,7 +56,15 @@ export function resolveClientIdFromRequest(
   const candidates: Array<{ value: string | null | undefined; source: string; valid: boolean }> = [
     { value: cookieId, source: "cookie", valid: isValidClientIdValue(cookieId) },
     { value: headerId, source: "header", valid: isValidClientIdValue(headerId) },
-    { value: candidate, source: candidateSource, valid: isValidClientIdValue(candidate) },
+    ...(candidateSource === "header"
+      ? [
+          {
+            value: candidate,
+            source: candidateSource,
+            valid: isValidClientIdValue(candidate),
+          },
+        ]
+      : []),
   ];
 
   const firstValid = candidates.find((c) => c.valid) ?? null;
@@ -61,7 +80,7 @@ export function resolveClientIdFromRequest(
   if (shouldSetCookie) {
     return {
       clientId,
-      cookieToSet: buildClientCookie(clientId, req.nextUrl.protocol === "https:"),
+      cookieToSet: buildClientCookie(clientId, isRequestHttps(req)),
     };
   }
 

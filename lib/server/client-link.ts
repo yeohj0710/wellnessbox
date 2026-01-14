@@ -6,8 +6,10 @@ import { CLIENT_COOKIE_NAME } from "../shared/client-id";
 import {
   buildClientCookie,
   ensureClient,
+  isRequestHttps,
   resolveClientIdFromRequest,
   resolveOrCreateClientId,
+  type ClientIdCandidateSource,
 } from "./client";
 
 type AttachSource =
@@ -45,11 +47,11 @@ async function findAppUserClient(kakaoId: string) {
 function sanitizeCandidate(
   loggedIn: boolean,
   candidate: string | null | undefined,
-  source: Parameters<typeof resolveClientIdFromRequest>[2]
+  source: ClientIdCandidateSource | undefined
 ) {
-  if (!loggedIn) return candidate;
-  if (source === "body" || source === "query") return undefined;
-  return candidate;
+  if (loggedIn) return undefined;
+  if (source === "header") return candidate;
+  return undefined;
 }
 
 async function pickPreferredClientId(
@@ -160,7 +162,7 @@ export async function attachClientToAppUser(options: {
   kakaoId: string;
   source: AttachSource;
   candidateClientId?: string | null;
-  candidateSource?: Parameters<typeof resolveClientIdFromRequest>[2];
+  candidateSource?: ClientIdCandidateSource;
   userAgent?: string | null;
   allowMerge?: boolean;
   mergeWithinMs?: number;
@@ -174,7 +176,7 @@ export async function attachClientToAppUser(options: {
   const trustedCandidate = sanitizeCandidate(
     true,
     candidateClientId,
-    candidateSource ?? "candidate"
+    candidateSource
   );
   const { clientId: resolvedClientId, cookieToSet: baseCookie } = req
     ? resolveClientIdFromRequest(
@@ -252,7 +254,7 @@ export async function attachClientToAppUser(options: {
   if (req && (!cookieToSet || cookieToSet.value !== finalClientId)) {
     cookieToSet = buildClientCookie(
       finalClientId,
-      req.nextUrl.protocol === "https:"
+      isRequestHttps(req)
     );
   }
 
@@ -301,9 +303,7 @@ export async function attachClientToAppUser(options: {
 export async function resolveClientIdForRead(
   req: NextRequest,
   candidate?: string | null,
-  candidateSource: Parameters<
-    typeof resolveClientIdFromRequest
-  >[2] = "candidate"
+  candidateSource?: ClientIdCandidateSource
 ): Promise<ResolveResult> {
   const session = await getSession();
   const user = session.user;
@@ -337,9 +337,7 @@ export async function resolveClientIdForRead(
 export async function resolveClientIdForWrite(
   req: NextRequest,
   candidate?: string | null,
-  candidateSource: Parameters<
-    typeof resolveClientIdFromRequest
-  >[2] = "candidate"
+  candidateSource?: ClientIdCandidateSource
 ): Promise<ResolveResult> {
   const session = await getSession();
   const user = session.user;
@@ -379,7 +377,7 @@ export async function resolveClientIdForWrite(
   if (!cookieToSet && cookieVal !== finalClientId) {
     cookieToSet = buildClientCookie(
       finalClientId,
-      req.nextUrl.protocol === "https:"
+      isRequestHttps(req)
     );
   }
 
@@ -389,9 +387,7 @@ export async function resolveClientIdForWrite(
 export async function resolveClientIdForAppUserRequest(
   req: NextRequest,
   candidate?: string | null,
-  candidateSource: Parameters<
-    typeof resolveClientIdFromRequest
-  >[2] = "candidate",
+  candidateSource?: ClientIdCandidateSource,
   intent: "read" | "write" = "read"
 ): Promise<ResolveResult> {
   const session = await getSession();

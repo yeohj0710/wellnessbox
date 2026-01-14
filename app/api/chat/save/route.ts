@@ -24,13 +24,14 @@ export async function POST(req: NextRequest) {
     const body = (await req.json()) as SaveBody;
     const actor = await resolveActorForRequest(req, {
       intent: "write",
-      candidate: body?.clientId,
-      candidateSource: "body",
     });
     const clientId = actor.deviceClientId;
     const { sessionId, title, messages, tzOffsetMinutes } = body || ({} as SaveBody);
-    if (!clientId || !sessionId) {
-      return NextResponse.json({ error: "Missing clientId or sessionId" }, { status: 400 });
+    if (!clientId) {
+      return NextResponse.json({ error: "Missing clientId" }, { status: 500 });
+    }
+    if (!sessionId) {
+      return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
     }
     await ensureClient(clientId, { userAgent: req.headers.get("user-agent") });
 

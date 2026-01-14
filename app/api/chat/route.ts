@@ -9,11 +9,28 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const actor = await resolveActorForRequest(req, {
-      intent: "read",
-      candidate: body?.clientId,
-      candidateSource: "body",
+      intent: "write",
     });
     const deviceClientId = actor.deviceClientId;
+    if (actor.loggedIn && !actor.appUserId) {
+      return NextResponse.json({ error: "Missing appUserId" }, { status: 500 });
+    }
+    if (!actor.loggedIn && !deviceClientId) {
+      return NextResponse.json({ error: "Missing clientId" }, { status: 400 });
+    }
+    if (req.headers.get("x-smoke-test") === "1") {
+      const res = new NextResponse("ok", {
+        headers: { "Content-Type": "text/plain; charset=utf-8" },
+      });
+      if (actor.cookieToSet) {
+        res.cookies.set(
+          actor.cookieToSet.name,
+          actor.cookieToSet.value,
+          actor.cookieToSet.options
+        );
+      }
+      return res;
+    }
 
     const q = typeof body?.question === "string" ? body.question.trim() : "";
     const msgs = Array.isArray(body?.messages) ? body.messages : [];

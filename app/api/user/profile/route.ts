@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
     const actor = await resolveActorForRequest(req, { intent: "read" });
     const deviceClientId = actor.deviceClientId;
     if (!deviceClientId) {
-      return NextResponse.json({ error: "Missing clientId" }, { status: 400 });
+      return new NextResponse(null, { status: 204 });
     }
     const rec = await db.userProfile.findUnique({
       where: { clientId: deviceClientId },
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     const actor = await resolveActorForRequest(req, { intent: "write" });
     const deviceClientId = actor.deviceClientId;
     if (!deviceClientId) {
-      return NextResponse.json({ error: "Missing clientId" }, { status: 400 });
+      return NextResponse.json({ error: "Missing clientId" }, { status: 500 });
     }
     await ensureClient(deviceClientId, {
       userAgent: req.headers.get("user-agent"),
