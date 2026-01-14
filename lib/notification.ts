@@ -19,8 +19,16 @@ export async function saveSubscription(
     where: {
       role_orderId_endpoint: { role, orderId, endpoint: sub.endpoint },
     },
-    update: { auth, p256dh },
-    create: { role, orderId, endpoint: sub.endpoint, auth, p256dh },
+    update: { auth, p256dh, invalidatedAt: null, lastFailureStatus: null },
+    create: {
+      role,
+      orderId,
+      endpoint: sub.endpoint,
+      auth,
+      p256dh,
+      invalidatedAt: null,
+      lastFailureStatus: null,
+    },
   });
 }
 
@@ -41,8 +49,9 @@ export async function isSubscribed(
 ) {
   const sub = await db.subscription.findFirst({
     where: { orderId, endpoint, role },
+    select: { id: true, invalidatedAt: true },
   });
-  return !!sub;
+  return !!sub && !sub.invalidatedAt;
 }
 
 export async function savePharmacySubscription(pharmacyId: number, sub: any) {
@@ -56,13 +65,15 @@ export async function savePharmacySubscription(pharmacyId: number, sub: any) {
         endpoint: sub.endpoint,
       },
     },
-    update: { auth, p256dh },
+    update: { auth, p256dh, invalidatedAt: null, lastFailureStatus: null },
     create: {
       role: "pharm",
       pharmacyId,
       endpoint: sub.endpoint,
       auth,
       p256dh,
+      invalidatedAt: null,
+      lastFailureStatus: null,
     },
   });
 }
@@ -82,8 +93,9 @@ export async function isPharmacySubscribed(
 ) {
   const sub = await db.subscription.findFirst({
     where: { pharmacyId, endpoint, role: "pharm" },
+    select: { id: true, invalidatedAt: true },
   });
-  return !!sub;
+  return !!sub && !sub.invalidatedAt;
 }
 
 export async function saveRiderSubscription(riderId: number, sub: any) {
@@ -97,13 +109,15 @@ export async function saveRiderSubscription(riderId: number, sub: any) {
         endpoint: sub.endpoint,
       },
     },
-    update: { auth, p256dh },
+    update: { auth, p256dh, invalidatedAt: null, lastFailureStatus: null },
     create: {
       role: "rider",
       riderId,
       endpoint: sub.endpoint,
       auth,
       p256dh,
+      invalidatedAt: null,
+      lastFailureStatus: null,
     },
   });
 }
@@ -120,8 +134,53 @@ export async function removeRiderSubscription(
 export async function isRiderSubscribed(riderId: number, endpoint: string) {
   const sub = await db.subscription.findFirst({
     where: { riderId, endpoint, role: "rider" },
+    select: { id: true, invalidatedAt: true },
   });
-  return !!sub;
+  return !!sub && !sub.invalidatedAt;
+}
+
+type PushStatusAction = "sync" | "resubscribe" | "noop";
+
+function resolveStatusAction(sub: { invalidatedAt: Date | null } | null) {
+  if (!sub) return { subscribed: false, action: "sync" as PushStatusAction };
+  if (sub.invalidatedAt) {
+    return { subscribed: false, action: "resubscribe" as PushStatusAction };
+  }
+  return { subscribed: true, action: "noop" as PushStatusAction };
+}
+
+export async function getSubscriptionStatus(
+  orderId: number,
+  endpoint: string,
+  role: string
+) {
+  const sub = await db.subscription.findFirst({
+    where: { orderId, endpoint, role },
+    select: { invalidatedAt: true },
+  });
+  return resolveStatusAction(sub);
+}
+
+export async function getPharmacySubscriptionStatus(
+  pharmacyId: number,
+  endpoint: string
+) {
+  const sub = await db.subscription.findFirst({
+    where: { pharmacyId, endpoint, role: "pharm" },
+    select: { invalidatedAt: true },
+  });
+  return resolveStatusAction(sub);
+}
+
+export async function getRiderSubscriptionStatus(
+  riderId: number,
+  endpoint: string
+) {
+  const sub = await db.subscription.findFirst({
+    where: { riderId, endpoint, role: "rider" },
+    select: { invalidatedAt: true },
+  });
+  return resolveStatusAction(sub);
 }
 
 export async function sendOrderNotification(
@@ -130,7 +189,7 @@ export async function sendOrderNotification(
   image?: string
 ) {
   const subs = await db.subscription.findMany({
-    where: { role: "customer", orderId },
+    where: { role: "customer", orderId, invalidatedAt: null },
   });
   if (subs.length === 0) return;
   const order = await db.order.findUnique({
@@ -189,7 +248,13 @@ export async function sendOrderNotification(
         err?.statusCode === 404 ||
         err?.statusCode === 410
       ) {
-        await removeSubscription(sub.endpoint, orderId, "customer");
+        await db.subscription.updateMany({
+          where: { endpoint: sub.endpoint, orderId, role: "customer" },
+          data: {
+            invalidatedAt: new Date(),
+            lastFailureStatus: err?.statusCode ?? null,
+          },
+        });
       }
     }
   }
@@ -207,7 +272,7 @@ export async function sendNewOrderNotification(orderId: number) {
   const pharmacyId = order?.pharmacyId;
   if (!order || !pharmacyId) return;
   const subs = await db.subscription.findMany({
-    where: { pharmacyId, role: "pharm" },
+    where: { pharmacyId, role: "pharm", invalidatedAt: null },
   });
   if (subs.length === 0) return;
   const firstName =
@@ -242,7 +307,13 @@ export async function sendNewOrderNotification(orderId: number) {
         err?.statusCode === 404 ||
         err?.statusCode === 410
       ) {
-        await removePharmacySubscription(sub.endpoint, pharmacyId);
+        await db.subscription.updateMany({
+          where: { endpoint: sub.endpoint, pharmacyId, role: "pharm" },
+          data: {
+            invalidatedAt: new Date(),
+            lastFailureStatus: err?.statusCode ?? null,
+          },
+        });
       }
     }
   }
@@ -260,7 +331,7 @@ export async function sendRiderNotification(orderId: number) {
   const riderId = order?.riderId;
   if (!order || !riderId) return;
   const subs = await db.subscription.findMany({
-    where: { role: "rider", riderId },
+    where: { role: "rider", riderId, invalidatedAt: null },
   });
   if (subs.length === 0) return;
   const firstName =
@@ -295,7 +366,13 @@ export async function sendRiderNotification(orderId: number) {
         err?.statusCode === 404 ||
         err?.statusCode === 410
       ) {
-        await removeRiderSubscription(sub.endpoint, riderId);
+        await db.subscription.updateMany({
+          where: { endpoint: sub.endpoint, riderId, role: "rider" },
+          data: {
+            invalidatedAt: new Date(),
+            lastFailureStatus: err?.statusCode ?? null,
+          },
+        });
       }
     }
   }
@@ -316,7 +393,7 @@ export async function sendPharmacyMessageNotification(
   const pharmacyId = order?.pharmacyId;
   if (!order || !pharmacyId) return;
   const subs = await db.subscription.findMany({
-    where: { pharmacyId, role: "pharm" },
+    where: { pharmacyId, role: "pharm", invalidatedAt: null },
   });
   if (subs.length === 0) return;
   const firstName =
@@ -345,7 +422,13 @@ export async function sendPharmacyMessageNotification(
         err?.statusCode === 404 ||
         err?.statusCode === 410
       ) {
-        await removePharmacySubscription(sub.endpoint, pharmacyId);
+        await db.subscription.updateMany({
+          where: { endpoint: sub.endpoint, pharmacyId, role: "pharm" },
+          data: {
+            invalidatedAt: new Date(),
+            lastFailureStatus: err?.statusCode ?? null,
+          },
+        });
       }
     }
   }
@@ -366,7 +449,7 @@ export async function sendCustomerMessageNotification(
   });
   if (!order) return;
   const subs = await db.subscription.findMany({
-    where: { role: "customer", orderId },
+    where: { role: "customer", orderId, invalidatedAt: null },
   });
   if (subs.length === 0) return;
   const pharmacyName = order.pharmacy?.name || "약국";
@@ -390,7 +473,13 @@ export async function sendCustomerMessageNotification(
         err?.statusCode === 404 ||
         err?.statusCode === 410
       ) {
-        await removeSubscription(sub.endpoint, orderId, "customer");
+        await db.subscription.updateMany({
+          where: { endpoint: sub.endpoint, orderId, role: "customer" },
+          data: {
+            invalidatedAt: new Date(),
+            lastFailureStatus: err?.statusCode ?? null,
+          },
+        });
       }
     }
   }

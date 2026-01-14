@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isRiderSubscribed } from "@/lib/notification";
+import { getRiderSubscriptionStatus } from "@/lib/notification";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { riderId, endpoint, role } = body;
-    if (!endpoint || role !== "rider" || !riderId) {
+    const riderId = Number(body?.riderId);
+    const endpoint = body?.endpoint;
+    const role = body?.role;
+    if (typeof endpoint !== "string" || role !== "rider" || !Number.isFinite(riderId)) {
       return NextResponse.json({ error: "Missing params" }, { status: 400 });
     }
-    const subscribed = await isRiderSubscribed(riderId, endpoint);
-    return NextResponse.json({ subscribed });
+    const status = await getRiderSubscriptionStatus(riderId, endpoint);
+    return NextResponse.json(status);
   } catch (err) {
     console.error(err);
     return NextResponse.json(

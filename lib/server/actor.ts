@@ -13,6 +13,8 @@ export type RequestActor = {
   deviceClientId: string | null;
   appUserId: string | null;
   loggedIn: boolean;
+  phoneLinked: boolean;
+  phone?: string | null;
   cookieToSet?: ReturnType<typeof buildClientCookie>;
 };
 
@@ -28,12 +30,12 @@ async function ensureAppUserForKakao(
 ) {
   const existing = await db.appUser.findUnique({
     where: { kakaoId },
-    select: { id: true, clientId: true },
+    select: { id: true, clientId: true, phone: true, phoneLinkedAt: true },
   });
   if (!existing) {
     return db.appUser.create({
       data: { kakaoId, clientId: deviceClientId ?? undefined },
-      select: { id: true, clientId: true },
+      select: { id: true, clientId: true, phone: true, phoneLinkedAt: true },
     });
   }
   if (!existing.clientId && deviceClientId) {
@@ -45,7 +47,7 @@ async function ensureAppUserForKakao(
   return existing;
 }
 
-export async function resolveActorForRequest(
+async function resolveActorContextForRequest(
   req: NextRequest,
   options: ResolveActorOptions = {}
 ): Promise<RequestActor> {
@@ -75,31 +77,57 @@ export async function resolveActorForRequest(
     );
   }
 
-  const appUserId = loggedIn
-    ? (await ensureAppUserForKakao(String(user.kakaoId), deviceClientId)).id
+  const appUser = loggedIn
+    ? await ensureAppUserForKakao(String(user.kakaoId), deviceClientId)
     : null;
 
   return {
     deviceClientId: deviceClientId ?? null,
-    appUserId,
+    appUserId: appUser?.id ?? null,
     loggedIn,
+    phoneLinked: !!appUser?.phoneLinkedAt,
+    phone: appUser?.phone ?? null,
     cookieToSet,
   };
 }
 
-export async function resolveActorForServerComponent(): Promise<RequestActor> {
+export async function resolveActorForRequest(
+  req: NextRequest,
+  options: ResolveActorOptions = {}
+): Promise<RequestActor> {
+  return resolveActorContextForRequest(req, options);
+}
+
+async function resolveActorContextForServerComponent(): Promise<RequestActor> {
   const session = await getSession();
   const user = session.user;
   const loggedIn = !!user?.loggedIn && typeof user.kakaoId === "number";
   const { getClientIdFromRequest } = await import("@/lib/server/client");
   const deviceClientId = await getClientIdFromRequest();
-  const appUserId = loggedIn
-    ? (await ensureAppUserForKakao(String(user.kakaoId), deviceClientId)).id
+  const appUser = loggedIn
+    ? await ensureAppUserForKakao(String(user.kakaoId), deviceClientId)
     : null;
 
   return {
     deviceClientId,
-    appUserId,
+    appUserId: appUser?.id ?? null,
     loggedIn,
+    phoneLinked: !!appUser?.phoneLinkedAt,
+    phone: appUser?.phone ?? null,
   };
+}
+
+export async function resolveActorForServerComponent(): Promise<RequestActor> {
+  return resolveActorContextForServerComponent();
+}
+
+export async function getActorContextForRequest(
+  req: NextRequest,
+  options: ResolveActorOptions = {}
+): Promise<RequestActor> {
+  return resolveActorContextForRequest(req, options);
+}
+
+export async function getActorContextForServerComponent(): Promise<RequestActor> {
+  return resolveActorContextForServerComponent();
 }

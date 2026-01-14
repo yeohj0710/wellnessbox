@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { hashOtp, normalizePhone } from "@/lib/otp";
 import getSession from "@/lib/session";
+import { backfillOrdersForAppUser } from "@/lib/server/app-user-sync";
 
 export const runtime = "nodejs";
 
@@ -102,7 +103,7 @@ export async function POST(req: NextRequest) {
     });
     const resolvedClientId = profile?.clientId ?? undefined;
 
-    await db.appUser.upsert({
+    const updatedUser = await db.appUser.upsert({
       where: { kakaoId: String(user.kakaoId) },
       create: {
         kakaoId: String(user.kakaoId),
@@ -116,6 +117,8 @@ export async function POST(req: NextRequest) {
         phoneLinkedAt: linkedAtDate,
       },
     });
+
+    await backfillOrdersForAppUser(updatedUser.id, phone);
 
     session.user = { ...user, phone, phoneLinkedAt: linkedAt };
     await session.save();

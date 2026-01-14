@@ -4,8 +4,10 @@ import { removeSubscription } from "@/lib/notification";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { endpoint, orderId, role } = body;
-    if (!endpoint || !orderId || role !== "customer") {
+    const endpoint = body?.endpoint;
+    const orderId = Number(body?.orderId);
+    const role = body?.role;
+    if (typeof endpoint !== "string" || !Number.isFinite(orderId) || role !== "customer") {
       return NextResponse.json({ error: "Missing params" }, { status: 400 });
     }
     await removeSubscription(endpoint, orderId, role);

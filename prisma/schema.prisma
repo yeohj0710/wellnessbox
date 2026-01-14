@@ -86,12 +86,16 @@ model Order {
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @default(now()) @updatedAt
   endpoint         String?
+  appUserId        String?
   messages         Message[]
   pharmacy         Pharmacy?      @relation(fields: [pharmacyId], references: [id])
   rider            Rider?         @relation(fields: [riderId], references: [id])
   orderItems       OrderItem[]
   reviews          Review[]
   subscriptions    Subscription[]
+  appUser          AppUser?        @relation(fields: [appUserId], references: [id], onDelete: SetNull)
+
+  @@index([appUserId, createdAt])
 }
 
 model OrderItem {
@@ -151,6 +155,8 @@ model Subscription {
   auth       String
   p256dh     String
   orderId    Int?
+  invalidatedAt DateTime?
+  lastFailureStatus Int?
   createdAt  DateTime  @default(now())
   pharmacyId Int?
   role       String
@@ -241,6 +247,8 @@ model AppUser {
   assessResults   AssessmentResult[]
   checkAiResults  CheckAiResult[]
   emailOtps       EmailOtp[]
+  orders          Order[]
+  chatSessions    ChatSession[]
 
   @@index([clientId])
   @@index([email])
@@ -250,6 +258,7 @@ model AppUser {
 model ChatSession {
   id        String        @id
   clientId  String
+  appUserId String?
   title     String
   status    String        @default("active")
   meta      Json?
@@ -257,8 +266,10 @@ model ChatSession {
   updatedAt DateTime      @default(now()) @updatedAt
   messages  ChatMessage[]
   client    Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  appUser   AppUser?      @relation(fields: [appUserId], references: [id], onDelete: SetNull)
 
   @@index([clientId, updatedAt])
+  @@index([appUserId, updatedAt])
 }
 
 model ChatMessage {

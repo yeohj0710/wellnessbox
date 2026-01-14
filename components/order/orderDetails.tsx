@@ -180,9 +180,18 @@ export default function OrderDetails({
               const data = await statusRes.json();
               if (data.subscribed) {
                 setIsSubscribed(true);
+                localStorage.setItem("vapidKey", appKey);
                 return;
               }
-              await syncSubscription(sub);
+              if (data.action === "resubscribe") {
+                await resubscribePush(sub, appKey);
+                return;
+              }
+              try {
+                await syncSubscription(sub, appKey);
+              } catch {
+                await resubscribePush(sub, appKey);
+              }
               return;
             } catch {
               setIsSubscribed(null);
@@ -307,7 +316,10 @@ export default function OrderDetails({
         if (manual) setIsMessagesRefreshing(false);
       }
     };
-    const syncSubscription = async (sub: PushSubscription) => {
+    const syncSubscription = async (
+      sub: PushSubscription,
+      appKey?: string
+    ) => {
       const res = await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -321,7 +333,20 @@ export default function OrderDetails({
         throw new Error("Failed to sync subscription");
       }
       localStorage.removeItem(`notifyOff:${order.id}`);
+      if (appKey) {
+        localStorage.setItem("vapidKey", appKey);
+      }
       setIsSubscribed(true);
+    };
+    const resubscribePush = async (
+      existingSub: PushSubscription | null,
+      appKey: string
+    ) => {
+      try {
+        await existingSub?.unsubscribe();
+      } catch {}
+      await subscribePush({ silent: true });
+      localStorage.setItem("vapidKey", appKey);
     };
     const subscribePush = async ({ silent = false } = {}) => {
       if (!("serviceWorker" in navigator)) return;
@@ -373,8 +398,7 @@ export default function OrderDetails({
             });
           },
         });
-        await syncSubscription(sub);
-        localStorage.setItem("vapidKey", appKey);
+        await syncSubscription(sub, appKey);
       } catch (e) {
         console.error(e);
         if (!silent) {

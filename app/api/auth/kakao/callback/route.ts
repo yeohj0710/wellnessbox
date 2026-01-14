@@ -7,6 +7,7 @@ import { generateFriendlyNickname, normalizeNickname } from "@/lib/nickname";
 import { KAKAO_STATE_COOKIE } from "@/lib/auth/kakao/constants";
 import { createAppTransferToken } from "@/lib/auth/kakao/appBridge";
 import { verifyLoginState } from "@/lib/auth/kakao/state";
+import { attachClientToAppUser } from "@/lib/server/client-link";
 import {
   kakaoRedirectUri,
   publicOrigin,
@@ -163,6 +164,14 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    const attachResult = await attachClientToAppUser({
+      req: request,
+      kakaoId: kakaoIdStr,
+      source: "kakao-login",
+      allowMerge: true,
+      userAgent: request.headers.get("user-agent"),
+    });
+
     const session = await getSession();
     session.user = {
       kakaoId: me.id,
@@ -192,6 +201,13 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.redirect(redirectTo, 302);
 
     clearStateCookie(response);
+    if (attachResult.cookieToSet) {
+      response.cookies.set(
+        attachResult.cookieToSet.name,
+        attachResult.cookieToSet.value,
+        attachResult.cookieToSet.options
+      );
+    }
 
     return response;
   } catch (e) {

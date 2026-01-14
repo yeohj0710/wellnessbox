@@ -135,8 +135,17 @@ export default function Pharm() {
         const data = await res.json();
         if (data.subscribed) {
           setIsSubscribed(true);
+          localStorage.setItem("vapidKey", appKey);
         } else {
-          await syncSubscription(sub);
+          if (data.action === "resubscribe") {
+            await resubscribePush(sub, appKey);
+          } else {
+            try {
+              await syncSubscription(sub, appKey);
+            } catch {
+              await resubscribePush(sub, appKey);
+            }
+          }
         }
       } catch {
         setIsSubscribed(null);
@@ -155,7 +164,7 @@ export default function Pharm() {
     };
   }, [pharm]);
 
-  const syncSubscription = async (sub: PushSubscription) => {
+  const syncSubscription = async (sub: PushSubscription, appKey?: string) => {
     const res = await fetch("/api/pharm-push/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -171,7 +180,20 @@ export default function Pharm() {
     if (pharm?.id) {
       localStorage.removeItem(`pharmNotifyOff_${pharm.id}`);
     }
+    if (appKey) {
+      localStorage.setItem("vapidKey", appKey);
+    }
     setIsSubscribed(true);
+  };
+  const resubscribePush = async (
+    existingSub: PushSubscription | null,
+    appKey: string
+  ) => {
+    try {
+      await existingSub?.unsubscribe();
+    } catch {}
+    await subscribePush({ silent: true });
+    localStorage.setItem("vapidKey", appKey);
   };
 
   const subscribePush = async ({ silent = false } = {}) => {
@@ -224,8 +246,7 @@ export default function Pharm() {
           });
         },
       });
-      await syncSubscription(sub);
-      localStorage.setItem("vapidKey", appKey);
+      await syncSubscription(sub, appKey);
     } catch (e) {
       console.error(e);
       if (!silent) {

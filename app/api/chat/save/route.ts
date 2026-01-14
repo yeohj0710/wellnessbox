@@ -7,7 +7,6 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type SaveBody = {
-  clientId: string;
   sessionId: string;
   title?: string;
   messages: Array<{
@@ -26,9 +25,13 @@ export async function POST(req: NextRequest) {
       intent: "write",
     });
     const clientId = actor.deviceClientId;
+    const appUserId = actor.appUserId;
     const { sessionId, title, messages, tzOffsetMinutes } = body || ({} as SaveBody);
     if (!clientId) {
       return NextResponse.json({ error: "Missing clientId" }, { status: 500 });
+    }
+    if (actor.loggedIn && !appUserId) {
+      return NextResponse.json({ error: "Missing appUserId" }, { status: 500 });
     }
     if (!sessionId) {
       return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
@@ -37,10 +40,14 @@ export async function POST(req: NextRequest) {
 
     const existingSession = await db.chatSession.findUnique({
       where: { id: sessionId },
-      select: { clientId: true },
+      select: { clientId: true, appUserId: true },
     });
 
-    if (existingSession && existingSession.clientId !== clientId) {
+    if (existingSession?.appUserId && existingSession.appUserId !== appUserId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    if (!existingSession?.appUserId && existingSession && existingSession.clientId !== clientId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -50,11 +57,13 @@ export async function POST(req: NextRequest) {
       create: {
         id: sessionId,
         clientId,
+        appUserId: actor.loggedIn ? appUserId ?? undefined : undefined,
         title: title || "새 대화",
         status: "active",
       },
       update: {
         title: title || undefined,
+        appUserId: actor.loggedIn ? appUserId ?? undefined : undefined,
       },
     });
 
@@ -91,13 +100,17 @@ export async function GET(req: NextRequest) {
   try {
     const actor = await resolveActorForRequest(req, { intent: "read" });
     const clientId = actor.deviceClientId;
+    const appUserId = actor.appUserId;
 
-    if (!clientId) {
+    if (!clientId && !appUserId) {
       return NextResponse.json({ error: "Missing clientId" }, { status: 400 });
+    }
+    if (actor.loggedIn && !appUserId) {
+      return NextResponse.json({ error: "Missing appUserId" }, { status: 500 });
     }
 
     const sessions = await db.chatSession.findMany({
-      where: { clientId },
+      where: appUserId ? { appUserId } : { clientId: clientId ?? "" },
       include: { messages: { orderBy: { createdAt: "asc" } } },
       orderBy: { updatedAt: "desc" },
     });

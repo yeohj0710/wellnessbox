@@ -50,7 +50,9 @@ export default async function MyDataPage() {
     user?.loggedIn === true && typeof user.kakaoId === "number";
 
   const actor = await resolveActorForServerComponent();
-  const requestClientId = actor.deviceClientId;
+  const deviceClientId = actor.deviceClientId;
+  const appUserId = actor.appUserId;
+  const phoneLinked = actor.phoneLinked;
 
   const appUser = isKakaoLoggedIn
     ? await db.appUser.findUnique({
@@ -71,11 +73,7 @@ export default async function MyDataPage() {
       })
     : null;
 
-  const resolvedClientId = isKakaoLoggedIn
-    ? actor.appUserId ?? null
-    : requestClientId ?? null;
-
-  if (!resolvedClientId && !isKakaoLoggedIn) {
+  if (!deviceClientId && !isKakaoLoggedIn) {
     return (
       <div className="mx-auto w-full max-w-3xl px-4 py-10">
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -90,27 +88,37 @@ export default async function MyDataPage() {
   }
 
   const [profile, assessResults, checkAiResults, orders, chatSessions] =
-    resolvedClientId
+    deviceClientId || appUserId
       ? await Promise.all([
-          requestClientId
+          deviceClientId
             ? db.userProfile.findUnique({
-                where: { clientId: requestClientId },
+                where: { clientId: deviceClientId },
               })
             : Promise.resolve(null),
           db.assessmentResult.findMany({
             where: isKakaoLoggedIn
-              ? { appUserId: resolvedClientId }
-              : { clientId: resolvedClientId },
+              ? appUserId
+                ? { appUserId }
+                : { id: "missing" }
+              : { clientId: deviceClientId ?? "missing" },
             orderBy: { createdAt: "desc" },
           }),
           db.checkAiResult.findMany({
             where: isKakaoLoggedIn
-              ? { appUserId: resolvedClientId }
-              : { clientId: resolvedClientId },
+              ? appUserId
+                ? { appUserId }
+                : { id: "missing" }
+              : { clientId: deviceClientId ?? "missing" },
             orderBy: { createdAt: "desc" },
           }),
           db.order.findMany({
-            where: requestClientId ? { endpoint: requestClientId } : { id: -1 },
+            where: isKakaoLoggedIn
+              ? phoneLinked && appUserId
+                ? { appUserId }
+                : { id: -1 }
+              : deviceClientId
+              ? { endpoint: deviceClientId }
+              : { id: -1 },
             orderBy: { createdAt: "desc" },
             include: {
               pharmacy: true,
@@ -123,9 +131,19 @@ export default async function MyDataPage() {
               },
             },
           }),
-          requestClientId
+          isKakaoLoggedIn && appUserId
             ? db.chatSession.findMany({
-                where: { clientId: requestClientId },
+                where: { appUserId },
+                orderBy: { updatedAt: "desc" },
+                include: {
+                  messages: {
+                    orderBy: { createdAt: "asc" },
+                  },
+                },
+              })
+            : deviceClientId
+            ? db.chatSession.findMany({
+                where: { clientId: deviceClientId },
                 orderBy: { updatedAt: "desc" },
                 include: {
                   messages: {
@@ -158,11 +176,11 @@ export default async function MyDataPage() {
                 : "세션 기준으로 정보를 표시합니다."}
             </p>
           </div>
-          <div className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
-            clientId: {resolvedClientId ?? "-"}
-          </div>
+        <div className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+          clientId: {deviceClientId ?? "-"} / appUserId: {appUserId ?? "-"}
         </div>
-        {isKakaoLoggedIn && !resolvedClientId && (
+      </div>
+        {isKakaoLoggedIn && !appUserId && (
           <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
             카카오 계정에 연결된 데이터가 아직 없습니다. 이전 세션 데이터는
             카카오 계정과 자동으로 합쳐지지 않습니다.
@@ -243,6 +261,11 @@ export default async function MyDataPage() {
 
         <section className="mt-10">
           <h2 className="text-lg font-bold text-gray-900">주문 내역</h2>
+          {isKakaoLoggedIn && !phoneLinked ? (
+            <p className="mt-3 text-sm text-amber-600">
+              전화번호 인증을 완료해야 계정에 주문이 연결됩니다.
+            </p>
+          ) : null}
           {orders.length === 0 ? (
             <p className="mt-3 text-sm text-gray-500">주문 내역이 없습니다.</p>
           ) : (

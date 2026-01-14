@@ -11,6 +11,7 @@ import {
   resolveOrCreateClientId,
   type ClientIdCandidateSource,
 } from "./client";
+import { backfillLoginDataForAppUser } from "@/lib/server/app-user-sync";
 
 type AttachSource =
   | "kakao-login"
@@ -279,6 +280,11 @@ export async function attachClientToAppUser(options: {
       data: { clientId: finalClientId },
     });
   }
+
+  await backfillLoginDataForAppUser({
+    appUserId: appUser.id,
+    clientId: finalClientId,
+  });
 
   console.info("attached client to app user", {
     source,

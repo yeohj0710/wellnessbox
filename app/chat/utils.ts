@@ -6,6 +6,9 @@ export const LS_SESSIONS_KEY = "wb_chat_sessions_v1";
 export const LS_PROFILE_KEY = "wb_user_profile_v1";
 
 export function uid() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 

@@ -136,8 +136,17 @@ export default function Rider() {
         const data = await res.json();
         if (data.subscribed) {
           setIsSubscribed(true);
+          localStorage.setItem("vapidKey", appKey);
         } else {
-          await syncSubscription(sub);
+          if (data.action === "resubscribe") {
+            await resubscribePush(sub, appKey);
+          } else {
+            try {
+              await syncSubscription(sub, appKey);
+            } catch {
+              await resubscribePush(sub, appKey);
+            }
+          }
         }
       } catch {
         setIsSubscribed(null);
@@ -156,7 +165,7 @@ export default function Rider() {
     };
   }, [rider]);
 
-  const syncSubscription = async (sub: PushSubscription) => {
+  const syncSubscription = async (sub: PushSubscription, appKey?: string) => {
     const res = await fetch("/api/rider-push/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -172,7 +181,20 @@ export default function Rider() {
     if (rider?.id) {
       localStorage.removeItem(`riderNotifyOff_${rider.id}`);
     }
+    if (appKey) {
+      localStorage.setItem("vapidKey", appKey);
+    }
     setIsSubscribed(true);
+  };
+  const resubscribePush = async (
+    existingSub: PushSubscription | null,
+    appKey: string
+  ) => {
+    try {
+      await existingSub?.unsubscribe();
+    } catch {}
+    await subscribePush({ silent: true });
+    localStorage.setItem("vapidKey", appKey);
   };
 
   const subscribePush = async ({ silent = false } = {}) => {
@@ -225,8 +247,7 @@ export default function Rider() {
           });
         },
       });
-      await syncSubscription(sub);
-      localStorage.setItem("vapidKey", appKey);
+      await syncSubscription(sub, appKey);
     } catch (e) {
       console.error(e);
       if (!silent) {

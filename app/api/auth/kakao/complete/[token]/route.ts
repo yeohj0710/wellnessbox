@@ -5,6 +5,7 @@ import db from "@/lib/db";
 import { ensureClient, resolveOrCreateClientId } from "@/lib/server/client";
 import { consumeAppTransferToken } from "@/lib/auth/kakao/appBridge";
 import { publicOrigin, resolveRequestOrigin } from "@/lib/server/origin";
+import { attachClientToAppUser } from "@/lib/server/client-link";
 
 export const runtime = "nodejs";
 
@@ -70,6 +71,14 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
     });
   }
 
+  const attachResult = await attachClientToAppUser({
+    req,
+    kakaoId: kakaoIdStr,
+    source: "kakao-login",
+    allowMerge: true,
+    userAgent: req.headers.get("user-agent"),
+  });
+
   const session = await getSession();
   session.user = {
     kakaoId: payload.kakaoId,
@@ -82,6 +91,13 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
   await session.save();
 
   const response = NextResponse.redirect(new URL("/", origin));
+  if (attachResult.cookieToSet) {
+    response.cookies.set(
+      attachResult.cookieToSet.name,
+      attachResult.cookieToSet.value,
+      attachResult.cookieToSet.options
+    );
+  }
 
   return response;
 }
