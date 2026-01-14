@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
 
     const rec = await db.assessmentResult.create({
       data: {
-        clientId: deviceClientId,
+        client: { connect: { id: deviceClientId } },
 
         ...(actor.appUserId
           ? { appUser: { connect: { id: actor.appUserId } } }

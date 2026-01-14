@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "postinstall": "prisma generate",
     "predev": "prisma generate && node copy_wasm.js",
     "dev": "npm run predev && next dev",
     "prebuild": "npm run predev",
@@ -78,7 +79,7 @@
     "eslint": "^8",
     "eslint-config-next": "15.0.3",
     "postcss": "^8",
-    "prisma": "^6.1.0",
+    "prisma": "6.19.1",
     "tailwindcss": "^3.4.1",
     "ts-node": "^10.9.2",
     "typescript": "^5"
