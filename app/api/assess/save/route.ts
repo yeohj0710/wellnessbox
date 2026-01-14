@@ -24,19 +24,19 @@ export async function POST(req: NextRequest) {
     const { answers, cResult, tzOffsetMinutes } = body || {};
     const deviceClientId = actor.deviceClientId;
 
-    if (!deviceClientId || typeof deviceClientId !== "string") {
+    if (!deviceClientId) {
       return NextResponse.json({ error: "Missing clientId" }, { status: 400 });
     }
 
     if (!answers || !cResult) {
-      return new Response(
-        JSON.stringify({ error: "Missing answers or cResult" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+      return NextResponse.json(
+        { error: "Missing answers or cResult" },
+        { status: 400 }
       );
     }
 
     await ensureClient(deviceClientId, {
-      userAgent: req.headers.get("user-agent"),
+      userAgent: req.headers.get("user-agent") ?? undefined,
     });
 
     const questionSnapshot = buildAssessQuestionSnapshot();
