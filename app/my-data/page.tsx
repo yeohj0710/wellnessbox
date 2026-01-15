@@ -5,6 +5,7 @@ import {
   normalizeAssessmentResult,
   normalizeCheckAiResult,
 } from "@/lib/server/result-normalizer";
+import { ChevronDownIcon } from "@heroicons/react/24/outline";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +40,164 @@ function formatJson(data: unknown) {
 }
 
 function uniqueList(values: Array<string | null | undefined>) {
-  return Array.from(new Set(values.filter((value): value is string => !!value)));
+  return Array.from(
+    new Set(values.filter((value): value is string => !!value))
+  );
+}
+
+function Pill({
+  children,
+  tone = "neutral",
+}: {
+  children: React.ReactNode;
+  tone?: "neutral" | "good" | "warn";
+}) {
+  const cls =
+    tone === "good"
+      ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100"
+      : tone === "warn"
+      ? "bg-amber-50 text-amber-700 ring-1 ring-amber-100"
+      : "bg-gray-100 text-gray-700 ring-1 ring-gray-200";
+
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${cls}`}
+    >
+      {children}
+    </span>
+  );
+}
+
+function MetricCard({
+  label,
+  value,
+  sub,
+}: {
+  label: string;
+  value: React.ReactNode;
+  sub?: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="text-xs font-semibold text-gray-500">{label}</div>
+      <div className="mt-1 text-xl font-extrabold text-gray-900">{value}</div>
+      {sub ? <div className="mt-1 text-xs text-gray-500">{sub}</div> : null}
+    </div>
+  );
+}
+
+function JsonBox({
+  data,
+  maxHeightClass = "max-h-80",
+}: {
+  data: unknown;
+  maxHeightClass?: string;
+}) {
+  return (
+    <div
+      className={`rounded-2xl bg-gray-50 p-4 ring-1 ring-gray-100 shadow-inner overflow-auto ${maxHeightClass}`}
+    >
+      <pre className="whitespace-pre-wrap break-words text-xs text-gray-700">
+        {formatJson(data)}
+      </pre>
+    </div>
+  );
+}
+
+function AccordionCard({
+  title,
+  subtitle,
+  right,
+  defaultOpen = false,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  right?: React.ReactNode;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <details
+      open={defaultOpen}
+      className="group rounded-2xl border border-gray-200 bg-white shadow-sm"
+    >
+      <summary className="flex cursor-pointer list-none items-start justify-between gap-4 px-5 py-4 [&::-webkit-details-marker]:hidden">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <h2 className="truncate text-base font-extrabold text-gray-900">
+              {title}
+            </h2>
+          </div>
+          {subtitle ? (
+            <p className="mt-1 text-sm text-gray-500">{subtitle}</p>
+          ) : null}
+        </div>
+
+        <div className="flex items-center gap-3">
+          {right ? <div className="hidden sm:block">{right}</div> : null}
+          <ChevronDownIcon className="h-5 w-5 text-gray-400 transition-transform group-open:rotate-180" />
+        </div>
+      </summary>
+
+      <div className="border-t border-gray-100 px-5 pb-5 pt-4">{children}</div>
+    </details>
+  );
+}
+
+function MiniAccordion({
+  title,
+  subtitle,
+  right,
+  defaultOpen = false,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  right?: React.ReactNode;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <details
+      open={defaultOpen}
+      className="group rounded-2xl border border-gray-100 bg-gray-50"
+    >
+      <summary className="flex cursor-pointer list-none items-start justify-between gap-4 px-4 py-3 [&::-webkit-details-marker]:hidden">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <div className="truncate text-sm font-extrabold text-gray-900">
+              {title}
+            </div>
+          </div>
+          {subtitle ? (
+            <div className="mt-0.5 text-xs text-gray-500">{subtitle}</div>
+          ) : null}
+        </div>
+
+        <div className="flex items-center gap-2">
+          {right}
+          <ChevronDownIcon className="h-4 w-4 text-gray-400 transition-transform group-open:rotate-180" />
+        </div>
+      </summary>
+      <div className="border-t border-gray-100 px-4 pb-4 pt-3">{children}</div>
+    </details>
+  );
+}
+
+function InfoGrid({ children }: { children: React.ReactNode }) {
+  return <div className="grid gap-3 sm:grid-cols-2">{children}</div>;
+}
+
+function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="rounded-2xl bg-white p-4 ring-1 ring-gray-100">
+      <div className="text-xs font-semibold text-gray-500">{label}</div>
+      <div className="mt-1 break-words text-sm font-semibold text-gray-900">
+        {value}
+      </div>
+    </div>
+  );
 }
 
 export default async function MyDataPage() {
@@ -75,9 +233,11 @@ export default async function MyDataPage() {
 
   if (!deviceClientId && !isKakaoLoggedIn) {
     return (
-      <div className="mx-auto w-full max-w-3xl px-4 py-10">
+      <div className="mx-auto w-full max-w-5xl px-4 py-10">
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h1 className="text-2xl font-bold text-gray-900">내 정보 전체 조회</h1>
+          <h1 className="text-2xl font-extrabold text-gray-900">
+            내 정보 전체 조회
+          </h1>
           <p className="mt-2 text-sm text-gray-600">
             현재 세션을 확인할 수 없어요. 카카오 로그인을 하거나 다시 접속해
             주세요.
@@ -171,307 +331,407 @@ export default async function MyDataPage() {
     ...orders.map((order) => order.phone ?? null),
   ]);
 
+  const lastOrderAt = orders[0]?.createdAt ?? null;
+  const lastAssessAt = assessResults[0]?.createdAt ?? null;
+  const lastCheckAt = checkAiResults[0]?.createdAt ?? null;
+  const lastChatAt = chatSessions[0]?.updatedAt ?? null;
+
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-10">
+    <div className="mx-auto w-full max-w-6xl px-4 py-10">
       <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">내 정보 전체 조회</h1>
+          <div className="min-w-0">
+            <h1 className="text-2xl font-extrabold text-gray-900">
+              내 정보 전체 조회
+            </h1>
             <p className="mt-1 text-sm text-gray-600">
               {isKakaoLoggedIn
                 ? "카카오 계정 정보를 우선으로 표시합니다."
                 : "세션 기준으로 정보를 표시합니다."}
             </p>
-          </div>
-        <div className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
-          clientId: {deviceClientId ?? "-"} / appUserId: {appUserId ?? "-"}
-        </div>
-      </div>
-        {isKakaoLoggedIn && !appUserId && (
-          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-            카카오 계정에 연결된 데이터가 아직 없습니다. 이전 세션 데이터는
-            카카오 계정과 자동으로 합쳐지지 않습니다.
-          </div>
-        )}
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-2">
-          <section className="rounded-2xl border border-gray-100 bg-gray-50 p-5">
-            <h2 className="text-lg font-bold text-gray-900">계정 정보</h2>
-            <dl className="mt-4 space-y-3 text-sm text-gray-700">
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <dt className="font-semibold">로그인 상태</dt>
-                <dd>{isKakaoLoggedIn ? "카카오 로그인" : "세션"}</dd>
+            {isKakaoLoggedIn && !appUserId ? (
+              <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                카카오 계정에 연결된 데이터가 아직 없습니다. 이전 세션 데이터는
+                카카오 계정과 자동으로 합쳐지지 않습니다.
               </div>
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <dt className="font-semibold">닉네임</dt>
-                <dd>{appUser?.nickname ?? user?.nickname ?? "-"}</dd>
+            ) : null}
+          </div>
+
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Pill tone={isKakaoLoggedIn ? "good" : "neutral"}>
+              {isKakaoLoggedIn ? "Kakao" : "Session"}
+            </Pill>
+            <Pill tone={phoneLinked ? "good" : "warn"}>
+              phoneLinked: {phoneLinked ? "yes" : "no"}
+            </Pill>
+            <Pill>
+              clientId: {deviceClientId ?? "-"} / appUserId: {appUserId ?? "-"}
+            </Pill>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <MetricCard
+            label="주문"
+            value={orders.length}
+            sub={`최근: ${formatDate(lastOrderAt)}`}
+          />
+          <MetricCard
+            label="정밀 검사"
+            value={assessResults.length}
+            sub={`최근: ${formatDate(lastAssessAt)}`}
+          />
+          <MetricCard
+            label="빠른 검사"
+            value={checkAiResults.length}
+            sub={`최근: ${formatDate(lastCheckAt)}`}
+          />
+          <MetricCard
+            label="AI 맞춤 상담"
+            value={chatSessions.length}
+            sub={`최근: ${formatDate(lastChatAt)}`}
+          />
+        </div>
+
+        <div className="mt-8 space-y-4">
+          <AccordionCard
+            title="계정 정보"
+            subtitle="기본 정보 및 연결 상태를 요약합니다."
+            defaultOpen
+            right={
+              <div className="flex items-center gap-2">
+                {appUser ? (
+                  <Pill tone="good">appUser</Pill>
+                ) : (
+                  <Pill>no appUser</Pill>
+                )}
               </div>
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <dt className="font-semibold">이메일</dt>
-                <dd>{appUser?.email ?? user?.email ?? "-"}</dd>
-              </div>
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <dt className="font-semibold">카카오 이메일</dt>
-                <dd>{appUser?.kakaoEmail ?? user?.kakaoEmail ?? "-"}</dd>
-              </div>
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <dt className="font-semibold">전화번호</dt>
-                <dd>
-                  {phoneCandidates.length > 0 ? (
-                    <ul className="list-disc space-y-1 pl-5">
+            }
+          >
+            <InfoGrid>
+              <InfoRow
+                label="로그인 상태"
+                value={isKakaoLoggedIn ? "카카오 로그인" : "세션"}
+              />
+              <InfoRow
+                label="닉네임"
+                value={appUser?.nickname ?? user?.nickname ?? "-"}
+              />
+              <InfoRow
+                label="이메일"
+                value={appUser?.email ?? user?.email ?? "-"}
+              />
+              <InfoRow
+                label="카카오 이메일"
+                value={appUser?.kakaoEmail ?? user?.kakaoEmail ?? "-"}
+              />
+              <InfoRow
+                label="전화번호"
+                value={
+                  phoneCandidates.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
                       {phoneCandidates.map((phone) => (
-                        <li key={phone}>{phone}</li>
+                        <Pill key={phone}>{phone}</Pill>
                       ))}
-                    </ul>
+                    </div>
                   ) : (
                     "-"
-                  )}
-                </dd>
-              </div>
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <dt className="font-semibold">전화번호 인증일</dt>
-                <dd>{formatDate(appUser?.phoneLinkedAt ?? user?.phoneLinkedAt)}</dd>
-              </div>
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <dt className="font-semibold">프로필 이미지</dt>
-                <dd className="break-all">
-                  {appUser?.profileImageUrl ?? user?.profileImageUrl ?? "-"}
-                </dd>
-              </div>
-              {appUser && (
+                  )
+                }
+              />
+              <InfoRow
+                label="전화번호 인증일"
+                value={formatDate(
+                  appUser?.phoneLinkedAt ?? user?.phoneLinkedAt
+                )}
+              />
+              <InfoRow
+                label="프로필 이미지"
+                value={
+                  <span className="break-all">
+                    {appUser?.profileImageUrl ?? user?.profileImageUrl ?? "-"}
+                  </span>
+                }
+              />
+
+              {appUser ? (
                 <>
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <dt className="font-semibold">가입일</dt>
-                    <dd>{formatDate(appUser.createdAt)}</dd>
-                  </div>
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <dt className="font-semibold">최근 업데이트</dt>
-                    <dd>{formatDate(appUser.updatedAt)}</dd>
-                  </div>
+                  <InfoRow
+                    label="가입일"
+                    value={formatDate(appUser.createdAt)}
+                  />
+                  <InfoRow
+                    label="최근 업데이트"
+                    value={formatDate(appUser.updatedAt)}
+                  />
                 </>
-              )}
-            </dl>
-          </section>
+              ) : null}
+            </InfoGrid>
+          </AccordionCard>
 
-          <section className="rounded-2xl border border-gray-100 bg-gray-50 p-5">
-            <h2 className="text-lg font-bold text-gray-900">세션 프로필</h2>
-            <p className="mt-2 text-xs text-gray-500">
-              세션/프로필에 저장된 추가 정보가 있으면 표시합니다.
-            </p>
-            <div className="mt-4 rounded-lg bg-white p-4 text-xs text-gray-700 shadow-inner">
-              <pre className="whitespace-pre-wrap break-words">
-                {formatJson(profile?.data)}
-              </pre>
-            </div>
-          </section>
-        </div>
+          <AccordionCard
+            title="세션 프로필"
+            subtitle="세션/프로필에 저장된 추가 정보(JSON)를 확인합니다."
+            right={<Pill>{profile?.data ? "has data" : "empty"}</Pill>}
+          >
+            <JsonBox data={profile?.data} maxHeightClass="max-h-96" />
+          </AccordionCard>
 
-        <section className="mt-10">
-          <h2 className="text-lg font-bold text-gray-900">주문 내역</h2>
-          {isKakaoLoggedIn && !phoneLinked ? (
-            <p className="mt-3 text-sm text-amber-600">
-              전화번호 인증을 완료해야 계정에 주문이 연결됩니다.
-            </p>
-          ) : null}
-          {orders.length === 0 ? (
-            <p className="mt-3 text-sm text-gray-500">주문 내역이 없습니다.</p>
-          ) : (
-            <div className="mt-4 space-y-4">
-              {orders.map((order) => (
-                <div
-                  key={order.id}
-                  className="rounded-2xl border border-gray-100 bg-gray-50 p-4"
+          <AccordionCard
+            title="주문 내역"
+            subtitle={
+              isKakaoLoggedIn && !phoneLinked
+                ? "전화번호 인증을 완료해야 계정에 주문이 연결됩니다."
+                : "주문 1건씩 펼쳐서 상세를 확인하세요."
+            }
+            right={
+              <div className="flex items-center gap-2">
+                <Pill>{orders.length}건</Pill>
+                <Pill
+                  tone={isKakaoLoggedIn && !phoneLinked ? "warn" : "neutral"}
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <div className="text-sm font-semibold text-gray-800">
-                        주문 #{order.id}
+                  최근: {formatDate(lastOrderAt)}
+                </Pill>
+              </div>
+            }
+          >
+            {orders.length === 0 ? (
+              <p className="text-sm text-gray-500">주문 내역이 없습니다.</p>
+            ) : (
+              <div className="space-y-3">
+                {orders.map((order) => {
+                  const itemCount = order.orderItems?.length ?? 0;
+                  return (
+                    <MiniAccordion
+                      key={order.id}
+                      title={`주문 #${order.id}`}
+                      subtitle={`${formatDate(order.createdAt)} · ${
+                        order.pharmacy?.name ?? "약국 미지정"
+                      } · 상품 ${itemCount}개`}
+                      right={<Pill>{order.status ?? "상태 미기록"}</Pill>}
+                    >
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <InfoRow
+                          label="약국"
+                          value={order.pharmacy?.name ?? "-"}
+                        />
+                        <InfoRow label="전화번호" value={order.phone ?? "-"} />
+                        <InfoRow
+                          label="주소"
+                          value={
+                            order.roadAddress
+                              ? `${order.roadAddress} ${
+                                  order.detailAddress ?? ""
+                                }`
+                              : "-"
+                          }
+                        />
+                        <InfoRow
+                          label="요청사항"
+                          value={order.requestNotes ?? "-"}
+                        />
                       </div>
-                      <div className="text-xs text-gray-500">
-                        {formatDate(order.createdAt)}
-                      </div>
-                    </div>
-                    <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700">
-                      {order.status ?? "상태 미기록"}
-                    </span>
-                  </div>
-                  <dl className="mt-3 grid gap-2 text-sm text-gray-700 sm:grid-cols-2">
-                    <div>
-                      <dt className="font-semibold">약국</dt>
-                      <dd>{order.pharmacy?.name ?? "-"}</dd>
-                    </div>
-                    <div>
-                      <dt className="font-semibold">전화번호</dt>
-                      <dd>{order.phone ?? "-"}</dd>
-                    </div>
-                    <div>
-                      <dt className="font-semibold">주소</dt>
-                      <dd>
-                        {order.roadAddress
-                          ? `${order.roadAddress} ${order.detailAddress ?? ""}`
-                          : "-"}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="font-semibold">요청사항</dt>
-                      <dd>{order.requestNotes ?? "-"}</dd>
-                    </div>
-                  </dl>
-                  <div className="mt-3 text-sm text-gray-700">
-                    <div className="font-semibold">주문 상품</div>
-                    {order.orderItems.length === 0 ? (
-                      <p className="mt-1 text-xs text-gray-500">
-                        주문 상품 정보가 없습니다.
-                      </p>
-                    ) : (
-                      <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
-                        {order.orderItems.map((item) => (
-                          <li key={item.id}>
-                            {item.pharmacyProduct?.product?.name ?? "상품"}
-                            {item.quantity ? ` × ${item.quantity}` : ""}
-                            {item.pharmacyProduct?.optionType
-                              ? ` (${item.pharmacyProduct.optionType})`
-                              : ""}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
 
-        <section className="mt-10">
-          <h2 className="text-lg font-bold text-gray-900">정밀 검사 내역</h2>
-          {assessResults.length === 0 ? (
-            <p className="mt-3 text-sm text-gray-500">정밀 검사 결과가 없습니다.</p>
-          ) : (
-            <div className="mt-4 space-y-4">
-          {assessResults.map((result) => {
-            const normalized = normalizeAssessmentResult(result);
-            return (
-              <div
-                key={result.id}
-                className="rounded-2xl border border-gray-100 bg-gray-50 p-4"
-              >
-                  <div className="text-sm font-semibold text-gray-800">
-                    결과 #{result.id}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {formatDate(result.createdAt)}
-                  </div>
-                  <div className="mt-3 rounded-lg bg-white p-3 text-xs text-gray-700 shadow-inner">
-                    <pre className="whitespace-pre-wrap break-words">
-                      {formatJson({
-                        answers: result.answers,
-                        result: result.cResult,
-                        normalized,
-                        tzOffsetMinutes: result.tzOffsetMinutes,
-                      })}
-                    </pre>
-                  </div>
-                </div>
-              );
-            })}
-            </div>
-          )}
-        </section>
-
-        <section className="mt-10">
-          <h2 className="text-lg font-bold text-gray-900">빠른 검사 내역</h2>
-          {checkAiResults.length === 0 ? (
-            <p className="mt-3 text-sm text-gray-500">빠른 검사 결과가 없습니다.</p>
-          ) : (
-            <div className="mt-4 space-y-4">
-          {checkAiResults.map((result) => {
-            const normalized = normalizeCheckAiResult(result);
-            return (
-              <div
-                key={result.id}
-                className="rounded-2xl border border-gray-100 bg-gray-50 p-4"
-              >
-                  <div className="text-sm font-semibold text-gray-800">
-                    결과 #{result.id}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {formatDate(result.createdAt)}
-                  </div>
-                  <div className="mt-3 rounded-lg bg-white p-3 text-xs text-gray-700 shadow-inner">
-                    <pre className="whitespace-pre-wrap break-words">
-                      {formatJson({
-                        answers: result.answers,
-                        result: result.result,
-                        normalized,
-                        tzOffsetMinutes: result.tzOffsetMinutes,
-                      })}
-                    </pre>
-                  </div>
-                </div>
-              );
-            })}
-            </div>
-          )}
-        </section>
-
-        <section className="mt-10">
-          <h2 className="text-lg font-bold text-gray-900">AI 맞춤 상담</h2>
-          {chatSessions.length === 0 ? (
-            <p className="mt-3 text-sm text-gray-500">
-              저장된 상담 내역이 없습니다.
-            </p>
-          ) : (
-            <div className="mt-4 space-y-4">
-              {chatSessions.map((session) => (
-                <div
-                  key={session.id}
-                  className="rounded-2xl border border-gray-100 bg-gray-50 p-4"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <div className="text-sm font-semibold text-gray-800">
-                        {session.title}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {formatDate(session.updatedAt)}
-                      </div>
-                    </div>
-                    <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700">
-                      {session.status}
-                    </span>
-                  </div>
-                  <div className="mt-2">
-                    <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold uppercase text-gray-600">
-                      {session.appUserId ? "account" : "device"}
-                    </span>
-                  </div>
-                  <div className="mt-3 space-y-2 text-sm text-gray-700">
-                    {session.messages.length === 0 ? (
-                      <p className="text-xs text-gray-500">
-                        메시지가 없습니다.
-                      </p>
-                    ) : (
-                      session.messages.map((message) => (
-                        <div
-                          key={message.id}
-                          className="rounded-lg bg-white p-3 shadow-inner"
-                        >
-                          <div className="text-xs font-semibold text-gray-500">
-                            {message.role} · {formatDate(message.createdAt)}
-                          </div>
-                          <p className="mt-1 whitespace-pre-wrap text-sm text-gray-700">
-                            {message.content}
-                          </p>
+                      <div className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-gray-100">
+                        <div className="text-sm font-extrabold text-gray-900">
+                          주문 상품
                         </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
+                        {order.orderItems.length === 0 ? (
+                          <p className="mt-2 text-xs text-gray-500">
+                            주문 상품 정보가 없습니다.
+                          </p>
+                        ) : (
+                          <ul className="mt-2 space-y-2 text-sm text-gray-700">
+                            {order.orderItems.map((item) => (
+                              <li
+                                key={item.id}
+                                className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-gray-50 px-3 py-2"
+                              >
+                                <div className="min-w-0">
+                                  <div className="truncate font-semibold text-gray-900">
+                                    {item.pharmacyProduct?.product?.name ??
+                                      "상품"}
+                                  </div>
+                                  <div className="mt-0.5 text-xs text-gray-500">
+                                    {item.pharmacyProduct?.optionType
+                                      ? `옵션: ${item.pharmacyProduct.optionType}`
+                                      : "옵션 없음"}
+                                  </div>
+                                </div>
+                                <Pill>
+                                  수량: {item.quantity ? item.quantity : 0}
+                                </Pill>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </MiniAccordion>
+                  );
+                })}
+              </div>
+            )}
+          </AccordionCard>
+
+          <AccordionCard
+            title="정밀 검사 내역"
+            subtitle="검사 결과 1건씩 펼쳐서 JSON을 확인하세요."
+            right={
+              <div className="flex items-center gap-2">
+                <Pill>{assessResults.length}건</Pill>
+                <Pill>최근: {formatDate(lastAssessAt)}</Pill>
+              </div>
+            }
+          >
+            {assessResults.length === 0 ? (
+              <p className="text-sm text-gray-500">
+                정밀 검사 결과가 없습니다.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {assessResults.map((result) => {
+                  const normalized = normalizeAssessmentResult(result);
+                  return (
+                    <MiniAccordion
+                      key={result.id}
+                      title={`결과 #${result.id}`}
+                      subtitle={formatDate(result.createdAt)}
+                      right={<Pill>tz: {result.tzOffsetMinutes ?? "-"}</Pill>}
+                    >
+                      <JsonBox
+                        data={{
+                          answers: result.answers,
+                          result: result.cResult,
+                          normalized,
+                          tzOffsetMinutes: result.tzOffsetMinutes,
+                        }}
+                        maxHeightClass="max-h-[520px]"
+                      />
+                    </MiniAccordion>
+                  );
+                })}
+              </div>
+            )}
+          </AccordionCard>
+
+          <AccordionCard
+            title="빠른 검사 내역"
+            subtitle="검사 결과 1건씩 펼쳐서 JSON을 확인하세요."
+            right={
+              <div className="flex items-center gap-2">
+                <Pill>{checkAiResults.length}건</Pill>
+                <Pill>최근: {formatDate(lastCheckAt)}</Pill>
+              </div>
+            }
+          >
+            {checkAiResults.length === 0 ? (
+              <p className="text-sm text-gray-500">
+                빠른 검사 결과가 없습니다.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {checkAiResults.map((result) => {
+                  const normalized = normalizeCheckAiResult(result);
+                  return (
+                    <MiniAccordion
+                      key={result.id}
+                      title={`결과 #${result.id}`}
+                      subtitle={formatDate(result.createdAt)}
+                      right={<Pill>tz: {result.tzOffsetMinutes ?? "-"}</Pill>}
+                    >
+                      <JsonBox
+                        data={{
+                          answers: result.answers,
+                          result: result.result,
+                          normalized,
+                          tzOffsetMinutes: result.tzOffsetMinutes,
+                        }}
+                        maxHeightClass="max-h-[520px]"
+                      />
+                    </MiniAccordion>
+                  );
+                })}
+              </div>
+            )}
+          </AccordionCard>
+
+          <AccordionCard
+            title="AI 맞춤 상담"
+            subtitle="상담 세션 1개씩 펼치고, 메시지는 내부에서 스크롤로 확인합니다."
+            right={
+              <div className="flex items-center gap-2">
+                <Pill>{chatSessions.length}개</Pill>
+                <Pill>최근: {formatDate(lastChatAt)}</Pill>
+              </div>
+            }
+          >
+            {chatSessions.length === 0 ? (
+              <p className="text-sm text-gray-500">
+                저장된 상담 내역이 없습니다.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {chatSessions.map((session) => {
+                  const messageCount = session.messages?.length ?? 0;
+                  const scope = session.appUserId ? "account" : "device";
+
+                  return (
+                    <MiniAccordion
+                      key={session.id}
+                      title={session.title}
+                      subtitle={`${formatDate(
+                        session.updatedAt
+                      )} · 메시지 ${messageCount}개`}
+                      right={
+                        <div className="flex items-center gap-2">
+                          <Pill>{scope}</Pill>
+                          <Pill>{session.status}</Pill>
+                        </div>
+                      }
+                    >
+                      {messageCount === 0 ? (
+                        <p className="text-sm text-gray-500">
+                          메시지가 없습니다.
+                        </p>
+                      ) : (
+                        <div className="rounded-2xl bg-white p-4 ring-1 ring-gray-100">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="text-sm font-extrabold text-gray-900">
+                              메시지
+                            </div>
+                            <Pill>{messageCount}개</Pill>
+                          </div>
+
+                          <div className="mt-3 max-h-[520px] space-y-3 overflow-auto pr-1">
+                            {session.messages.map((message) => (
+                              <div
+                                key={message.id}
+                                className="rounded-2xl bg-gray-50 p-3 ring-1 ring-gray-100"
+                              >
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <div className="text-xs font-extrabold text-gray-700">
+                                    {message.role}
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    {formatDate(message.createdAt)}
+                                  </div>
+                                </div>
+                                <p className="mt-2 whitespace-pre-wrap break-words text-sm text-gray-800">
+                                  {message.content}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </MiniAccordion>
+                  );
+                })}
+              </div>
+            )}
+          </AccordionCard>
+        </div>
       </div>
     </div>
   );

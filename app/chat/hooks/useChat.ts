@@ -402,10 +402,28 @@ export default function useChat() {
     readyToPersistRef.current[id] = false;
   }
 
-  function deleteChat(id: string) {
+  async function deleteChat(id: string) {
+    const prevSessions = sessions;
+    const prevActiveId = activeId;
+    const prevReady = { ...readyToPersistRef.current };
     const next = sessions.filter((s) => s.id !== id);
     setSessions(next);
     if (activeId === id) setActiveId(next[0]?.id ?? null);
+    delete readyToPersistRef.current[id];
+    try {
+      const res = await fetch("/api/chat/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: id }),
+      });
+      if (!res.ok) {
+        throw new Error("Failed to delete chat session");
+      }
+    } catch {
+      readyToPersistRef.current = prevReady;
+      setSessions(prevSessions);
+      setActiveId(prevActiveId);
+    }
   }
 
   function renameChat(id: string, title: string) {

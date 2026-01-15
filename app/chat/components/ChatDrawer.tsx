@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { TrashIcon, PlusIcon, EllipsisHorizontalIcon } from "@heroicons/react/24/outline";
+import { TrashIcon, EllipsisHorizontalIcon } from "@heroicons/react/24/outline";
 import type { ChatSession } from "@/types/chat";
 
 interface ChatDrawerProps {
@@ -32,6 +32,9 @@ export default function ChatDrawer({
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmDeleteTitle, setConfirmDeleteTitle] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   function commitRename() {
     if (editingId && editingTitle.trim()) {
@@ -46,13 +49,40 @@ export default function ChatDrawer({
     setEditingTitle("");
   }
 
+  function startDelete(session: ChatSession) {
+    setMenuOpenId(null);
+    setConfirmDeleteId(session.id);
+    setConfirmDeleteTitle(session.title || "새 상담");
+  }
+
+  function cancelDelete() {
+    if (deleting) return;
+    setConfirmDeleteId(null);
+    setConfirmDeleteTitle("");
+  }
+
+  async function confirmDelete() {
+    if (!confirmDeleteId || deleting) return;
+    setDeleting(true);
+    const id = confirmDeleteId;
+    setConfirmDeleteId(null);
+    setConfirmDeleteTitle("");
+    try {
+      await deleteChat(id);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   if (!drawerVisible) return null;
+
   return (
     <div
       className="fixed inset-x-0 bottom-0 top-14 z-20"
       role="dialog"
       aria-modal="true"
       onClick={() => {
+        if (confirmDeleteId) return;
         setMenuOpenId(null);
         closeDrawer();
       }}
@@ -62,6 +92,7 @@ export default function ChatDrawer({
           drawerOpen ? "opacity-100" : "opacity-0"
         }`}
       />
+
       <aside
         className={`absolute inset-y-0 left-0 w-[280px] max-w-[72vw] transform border-r border-slate-200 bg-white transition-transform duration-200 sm:w-[300px] ${
           drawerOpen ? "translate-x-0" : "-translate-x-full"
@@ -130,6 +161,7 @@ export default function ChatDrawer({
                           active ? "bg-violet-600" : "bg-transparent"
                         }`}
                       />
+
                       <div className="min-w-0 flex-1">
                         {editingId === s.id ? (
                           <input
@@ -166,6 +198,7 @@ export default function ChatDrawer({
                           </div>
                         )}
                       </div>
+
                       {editingId !== s.id && (
                         <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                           <div
@@ -180,12 +213,15 @@ export default function ChatDrawer({
                             onKeyDown={(e) => {
                               if (e.key === "Enter" || e.key === " ") {
                                 e.stopPropagation();
-                                setMenuOpenId(menuOpenId === s.id ? null : s.id);
+                                setMenuOpenId(
+                                  menuOpenId === s.id ? null : s.id
+                                );
                               }
                             }}
                           >
                             <EllipsisHorizontalIcon className="h-5 w-5" />
                           </div>
+
                           <div
                             role="button"
                             tabIndex={0}
@@ -194,14 +230,12 @@ export default function ChatDrawer({
                             className="rounded p-1 text-slate-500 hover:bg-red-50 hover:text-red-600"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setMenuOpenId(null);
-                              deleteChat(s.id);
+                              startDelete(s);
                             }}
                             onKeyDown={(e) => {
                               if (e.key === "Enter" || e.key === " ") {
                                 e.stopPropagation();
-                                setMenuOpenId(null);
-                                deleteChat(s.id);
+                                startDelete(s);
                               }
                             }}
                           >
@@ -209,8 +243,9 @@ export default function ChatDrawer({
                           </div>
                         </div>
                       )}
+
                       {menuOpenId === s.id && editingId !== s.id && (
-                        <div className="absolute right-6 top-9 z-10 w-36 rounded-md border border-slate-200 bg-white shadow-md">
+                        <div className="absolute right-6 top-9 z-10 w-36 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
                           <button
                             className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
                             onClick={(e) => {
@@ -232,6 +267,72 @@ export default function ChatDrawer({
           )}
         </div>
       </aside>
+
+      {confirmDeleteId && (
+        <div
+          className="fixed inset-0 z-30 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={cancelDelete}
+        >
+          <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-sm" />
+
+          <div
+            className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_20px_60px_rgba(2,6,23,0.25)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-5">
+              <div className="flex items-start gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-red-50 to-rose-50 ring-1 ring-red-100">
+                  <TrashIcon className="h-5 w-5 text-red-600" />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-base font-semibold text-slate-900">
+                    대화를 삭제할까요?
+                  </h2>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-600">
+                    <span className="font-semibold text-slate-800">
+                      {confirmDeleteTitle}
+                    </span>
+                    <span> 을(를) 삭제하면 복구할 수 없습니다.</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 border-t border-slate-200/70 bg-slate-50/60 p-3">
+              <button
+                type="button"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 active:scale-[0.99] disabled:opacity-60"
+                onClick={cancelDelete}
+                disabled={deleting}
+              >
+                취소
+              </button>
+
+              <button
+                type="button"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 active:scale-[0.99] disabled:opacity-60"
+                onClick={confirmDelete}
+                disabled={deleting}
+              >
+                {deleting ? (
+                  <>
+                    <span
+                      className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                      aria-hidden
+                    />
+                    <span>삭제</span>
+                  </>
+                ) : (
+                  "삭제"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
