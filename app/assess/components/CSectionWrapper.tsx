@@ -58,7 +58,7 @@ export default function CSectionWrapper({
           </h1>
           <div className="w-32 sm:w-40">
             <div className="flex items-center justify-between text-xs text-gray-600">
-              <span>진행률</span>
+              <span>진행도</span>
               {/* <span className="tabular-nums notranslate" translate="no">
                 {cProgress.pct}%
               </span> */}
