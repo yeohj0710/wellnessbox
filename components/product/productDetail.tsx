@@ -92,6 +92,7 @@ export default function ProductDetail({
         );
     };
     document.addEventListener("keydown", handleKeyDown);
+
     const isMobile = /Mobi|Android/i.test(navigator.userAgent);
     const handlePopState = () => {
       if (selectedImageRef.current) {
@@ -106,10 +107,12 @@ export default function ProductDetail({
       }
       onClose();
     };
+
     if (isMobile) {
       window.history.pushState(null, "", window.location.href);
       window.addEventListener("popstate", handlePopState);
     }
+
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
       if (isMobile) window.removeEventListener("popstate", handlePopState);
@@ -328,97 +331,6 @@ export default function ProductDetail({
               상품 주문 후 배송 완료까지 최대 4-5 영업일이 소요돼요.
             </span>
           </div>
-
-          {/* {isLoadingReviews ? (
-            <div className="-mt-10 mb-24">
-              <FullPageLoader />
-            </div>
-          ) : (
-            <div className="mt-10 mb-24">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold">
-                  상품 리뷰 ({totalReviewCount}개)
-                </h2>
-                <div className="inline-flex items-center gap-2 rounded-full bg-gray-50 px-3 py-1 ring-1 ring-gray-200">
-                  <StarRating rating={averageRating} size={18} />
-                  <span className="text-sm font-semibold text-gray-800">
-                    {averageRating.toFixed(1)}{" "}
-                    <span className="text-gray-500">/ 5.0</span>
-                  </span>
-                </div>
-              </div>
-              <span className="mt-2.5 block text-xs text-gray-400 whitespace-pre-wrap">
-                상품 리뷰는 배송 완료 처리된 상품에 한해 <b>내 주문 조회</b>에서
-                작성할 수 있어요.
-              </span>
-
-              {reviews.length > 0 ? (
-                <div className="mt-4 space-y-5">
-                  {reviews.map((review, index) => (
-                    <div
-                      key={index}
-                      className="rounded-xl ring-1 ring-gray-200 p-4"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-500 text-sm">
-                          {review.order.phone}
-                        </span>
-                        <div className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-2.5 py-1 ring-1 ring-gray-200">
-                          <StarRating rating={review.rate} size={16} />
-                          <span className="text-gray-800 text-sm">
-                            {review.rate.toFixed(1)}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="mt-2 text-xs text-gray-500">
-                        {product.name},{" "}
-                        {review.orderItem.pharmacyProduct.optionType} ×{" "}
-                        {review.orderItem.quantity}개 · 판매자{" "}
-                        {review.orderItem.pharmacyProduct.pharmacy.name}
-                      </div>
-
-                      <p className="mt-2 text-sm text-gray-800 leading-6">
-                        {review.content}
-                      </p>
-
-                      {review.images?.length > 0 && (
-                        <div className="flex gap-2 mt-3">
-                          {review.images.map(
-                            (image: string, imgIndex: number) => (
-                              <div
-                                key={imgIndex}
-                                className="relative w-16 h-16"
-                              >
-                                <Image
-                                  src={image.replace(/\/public$/, "/avatar")}
-                                  alt="리뷰 이미지"
-                                  fill
-                                  sizes="256px"
-                                  className="object-cover rounded cursor-pointer"
-                                  onClick={() => setSelectedImage(image)}
-                                />
-                              </div>
-                            )
-                          )}
-                        </div>
-                      )}
-
-                      <div className="mt-3">
-                        <span className="text-gray-400 text-xs">
-                          작성일 {review.formattedCreatedAt}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 text-sm text-center mt-24">
-                  아직 리뷰가 없어요. 첫 번째 리뷰어가 되어주세요!
-                </p>
-              )}
-            </div>
-          )} */}
 
           <div className="px-5 fixed bottom-0 left-0 right-0 w-full max-w-[640px] mx-auto bg-sky-400 text-white p-4 flex justify-between items-center text-lg font-bold">
             <span>

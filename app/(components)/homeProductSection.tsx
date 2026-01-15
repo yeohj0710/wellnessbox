@@ -49,12 +49,30 @@ export default function HomeProductSection() {
     }
     return [];
   });
+
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
   }, []);
+
   const { hideLoading } = useLoading();
   const { showToast } = useToast();
+
+  const scrollPositionRef = useRef(0);
+  const reloadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasReloadedRef = useRef(false);
+  const cartContainerRef = useRef<HTMLDivElement>(null);
+
+  const restoreScroll = useCallback((y: number) => {
+    const el = document.documentElement;
+    const prev = el.style.scrollBehavior;
+
+    el.style.scrollBehavior = "auto";
+    window.scrollTo(0, y);
+    requestAnimationFrame(() => window.scrollTo(0, y));
+    el.style.scrollBehavior = prev;
+  }, []);
+
   useEffect(() => {
     if (
       typeof window !== "undefined" &&
@@ -66,17 +84,8 @@ export default function HomeProductSection() {
       localStorage.removeItem("openCart");
     }
   }, []);
-  // const [isSymptomModalVisible, setIsSymptomModalVisible] = useState(() => {
-  //   if (typeof window !== "undefined") {
-  //     return localStorage.getItem("visited") ? false : true;
-  //   }
-  //   return true;
-  // });
+
   const [isSymptomModalVisible, setIsSymptomModalVisible] = useState(false);
-  const scrollPositionRef = useRef(0);
-  const reloadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const hasReloadedRef = useRef(false);
-  const cartContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isCartVisible) return;
@@ -98,25 +107,32 @@ export default function HomeProductSection() {
 
   const openProductDetail = (product: any) => {
     if (typeof window !== "undefined") {
-      scrollPositionRef.current = window.scrollY;
+      const y = window.scrollY;
+      scrollPositionRef.current = y;
+      sessionStorage.setItem("scrollPos", String(y));
     }
     setSelectedProduct(product);
   };
 
   const closeProductDetail = () => {
+    const y = scrollPositionRef.current;
+
     setSelectedProduct(null);
     if (typeof window !== "undefined") {
-      window.scrollTo(0, scrollPositionRef.current);
       const url = new URL(window.location.href);
       url.searchParams.delete("product");
       window.history.replaceState({}, "", url.toString());
       sessionStorage.removeItem("scrollPos");
+
+      requestAnimationFrame(() => restoreScroll(y));
     }
   };
 
   const openCart = useCallback(() => {
     if (typeof window !== "undefined") {
-      scrollPositionRef.current = window.scrollY;
+      const y = window.scrollY;
+      scrollPositionRef.current = y;
+      sessionStorage.setItem("scrollPos", String(y));
       localStorage.setItem("openCart", "true");
     }
     hideLoading();
@@ -124,14 +140,18 @@ export default function HomeProductSection() {
   }, [hideLoading]);
 
   const closeCart = () => {
+    const y = scrollPositionRef.current;
+
     setIsCartVisible(false);
     if (typeof window !== "undefined") {
       localStorage.removeItem("openCart");
-      window.scrollTo(0, scrollPositionRef.current);
+
       const url = new URL(window.location.href);
       url.searchParams.delete("cart");
       window.history.replaceState({}, "", url.toString());
       sessionStorage.removeItem("scrollPos");
+
+      requestAnimationFrame(() => restoreScroll(y));
     }
   };
 
@@ -146,10 +166,12 @@ export default function HomeProductSection() {
   const fetchData = useCallback(async (attempt = 0): Promise<void> => {
     if (attempt === 0) setError(null);
     setIsLoading(true);
+
     const cachedCategories = localStorage.getItem("categories");
     const cachedProducts = localStorage.getItem("products");
     const cacheTimestamp = localStorage.getItem("cacheTimestamp");
     const now = Date.now();
+
     if (
       cachedCategories &&
       cachedProducts &&
@@ -163,22 +185,28 @@ export default function HomeProductSection() {
       setIsLoading(false);
       return;
     }
+
     try {
       const [fetchedCategories, fetchedProducts] = await Promise.all([
         getCategories(),
         getProducts(),
       ]);
+
       if (!fetchedProducts.length) {
         throw new Error("no products");
       }
+
       const sortedCategories = sortByImportanceDesc(fetchedCategories);
       const sortedProducts = sortByImportanceDesc(fetchedProducts);
+
       setCategories(sortedCategories);
       setAllProducts(sortedProducts);
       setProducts(sortedProducts);
+
       localStorage.setItem("categories", JSON.stringify(sortedCategories));
       localStorage.setItem("products", JSON.stringify(sortedProducts));
       localStorage.setItem("cacheTimestamp", now.toString());
+
       setIsLoading(false);
     } catch (error) {
       console.error("데이터를 가져오는 데 실패하였습니다:", error);
@@ -201,15 +229,23 @@ export default function HomeProductSection() {
     else if (pkg === "normal") setSelectedPackage("일반 상품");
   }, [searchParams]);
 
+  const didHashScrollRef = useRef(false);
   useEffect(() => {
-    if (
-      typeof window !== "undefined" &&
-      window.location.hash === "#home-products"
-    ) {
-      document.getElementById("home-products")?.scrollIntoView();
-      if (!isLoading) hideLoading();
-    }
-  }, [isLoading, searchParams, hideLoading]);
+    if (didHashScrollRef.current) return;
+    if (typeof window === "undefined") return;
+    if (isLoading) return;
+    if (window.location.hash !== "#home-products") return;
+
+    didHashScrollRef.current = true;
+
+    document.getElementById("home-products")?.scrollIntoView();
+
+    const url = new URL(window.location.href);
+    url.hash = "";
+    window.history.replaceState({}, "", url.toString());
+
+    hideLoading();
+  }, [isLoading, hideLoading]);
 
   const toastShownRef = useRef(false);
   useEffect(() => {
@@ -251,6 +287,7 @@ export default function HomeProductSection() {
       }
     }
   }, [searchParams, allProducts]);
+
   useEffect(() => {
     const cart = searchParams.get("cart");
     if (cart === "open") {
@@ -347,12 +384,14 @@ export default function HomeProductSection() {
       localStorage.setItem("roadAddress", roadAddress);
     }
   }, [roadAddress]);
+
   useEffect(() => {
     if (!isLoading && !error && allProducts.length === 0) {
       const timer = setTimeout(() => fetchData(), 3000);
       return () => clearTimeout(timer);
     }
   }, [isLoading, error, allProducts.length, fetchData]);
+
   useEffect(() => {
     if (!selectedPharmacy) {
       setTotalPrice(0);
@@ -375,6 +414,7 @@ export default function HomeProductSection() {
     setTotalPrice(total);
     setIsCartBarLoading(false);
   }, [cartItems, selectedPharmacy, allProducts]);
+
   useEffect(() => {
     if (selectedSymptoms.length === 0) return;
     const mappedCategoryNames = selectedSymptoms.reduce<string[]>(
@@ -522,6 +562,7 @@ export default function HomeProductSection() {
     };
     filterProducts();
   }, [allProducts, selectedPharmacy, selectedCategories, selectedPackage]);
+
   useEffect(() => {
     if (totalPrice > 0 || isCartVisible) {
       hideFooter();
@@ -529,6 +570,7 @@ export default function HomeProductSection() {
       showFooter();
     }
   }, [totalPrice, isCartVisible, hideFooter, showFooter]);
+
   const handleAddToCart = (cartItem: any) => {
     setIsCartBarLoading(true);
     setCartItems((prev) => {
@@ -552,6 +594,7 @@ export default function HomeProductSection() {
       return updated;
     });
   };
+
   const searchCategoryMapping: { [key: string]: string[] } = {
     피로감: [
       CATEGORY_LABELS.vitaminB,
@@ -579,6 +622,7 @@ export default function HomeProductSection() {
     ],
     "혈중 콜레스테롤": [CATEGORY_LABELS.omega3],
   };
+
   const handleSearchSelect = (selectedItems: string[]) => {
     setSelectedSymptoms(selectedItems);
     setIsSymptomModalVisible(false);
@@ -586,6 +630,7 @@ export default function HomeProductSection() {
       localStorage.setItem("visited", "true");
     }
   };
+
   return (
     <div
       id="home-products"
@@ -593,23 +638,24 @@ export default function HomeProductSection() {
         totalPrice > 0 ? "pb-20" : ""
       }`}
     >
-      {/*
       {mounted &&
         isSymptomModalVisible &&
         cartItems.length === 0 &&
         !isCartVisible && (
-          <SymptomModal
-            onSelect={handleSearchSelect}
-            onClose={() => setIsSymptomModalVisible(false)}
-          />
+          <></>
+          // <SymptomModal
+          //   onSelect={handleSearchSelect}
+          //   onClose={() => setIsSymptomModalVisible(false)}
+          // />
         )}
-      */}
+
       <AddressSection
         roadAddress={roadAddress}
         setRoadAddress={setRoadAddress}
         isAddressModalOpen={isAddressModalOpen}
         setIsAddressModalOpen={setIsAddressModalOpen}
       />
+
       {cartItems.length > 0 && pharmacies.length > 0 && (
         <PharmacySelector
           pharmacies={pharmacies}
@@ -617,10 +663,12 @@ export default function HomeProductSection() {
           setSelectedPharmacy={setSelectedPharmacy}
         />
       )}
+
       <SymptomFilter
         selectedSymptoms={selectedSymptoms}
         setSelectedSymptoms={setSelectedSymptoms}
       />
+
       <CategoryFilter
         categories={categories}
         isLoading={isLoading}
@@ -628,11 +676,13 @@ export default function HomeProductSection() {
         selectedCategories={selectedCategories}
         setSelectedCategories={setSelectedCategories}
       />
+
       <PackageFilter
         selectedPackage={selectedPackage}
         setSelectedPackage={setSelectedPackage}
         setIsLoading={setIsLoading}
       />
+
       {cartItems.length > 0 && selectedPharmacy && (
         <div className="mx-2 sm:mx-0 bg-gray-100 px-3 py-2 mt-1.5 mb-4 rounded-md text-sm text-gray-700">
           선택하신 상품을 보유한 약국 중 주소로부터{" "}
@@ -644,6 +694,7 @@ export default function HomeProductSection() {
           상품들이에요.
         </div>
       )}
+
       <ProductGrid
         isLoading={isLoading}
         products={products}
@@ -651,6 +702,7 @@ export default function HomeProductSection() {
         selectedPharmacy={selectedPharmacy}
         setSelectedProduct={openProductDetail}
       />
+
       {error && !isLoading && (
         <div className="min-h-[30vh] mb-12 flex flex-col items-center justify-center py-10">
           <p className="text-gray-500 text-sm mb-3">{error}</p>
@@ -659,11 +711,13 @@ export default function HomeProductSection() {
           </button>
         </div>
       )}
+
       {!error && allProducts.length === 0 && !isLoading && (
         <div className="min-h-[30vh] mb-12 flex flex-col items-center justify-center gap-6 py-10">
           <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
         </div>
       )}
+
       {selectedPharmacy &&
         (totalPrice > 0 || isCartBarLoading) &&
         (isCartBarLoading ? (
