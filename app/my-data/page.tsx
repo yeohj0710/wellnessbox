@@ -133,7 +133,14 @@ export default async function MyDataPage() {
           }),
           isKakaoLoggedIn && appUserId
             ? db.chatSession.findMany({
-                where: { appUserId },
+                where: {
+                  OR: [
+                    { appUserId },
+                    deviceClientId
+                      ? { clientId: deviceClientId, appUserId: null }
+                      : { id: "missing" },
+                  ],
+                },
                 orderBy: { updatedAt: "desc" },
                 include: {
                   messages: {
@@ -143,7 +150,7 @@ export default async function MyDataPage() {
               })
             : deviceClientId
             ? db.chatSession.findMany({
-                where: { clientId: deviceClientId },
+                where: { clientId: deviceClientId, appUserId: null },
                 orderBy: { updatedAt: "desc" },
                 include: {
                   messages: {
@@ -432,6 +439,11 @@ export default async function MyDataPage() {
                     </div>
                     <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700">
                       {session.status}
+                    </span>
+                  </div>
+                  <div className="mt-2">
+                    <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold uppercase text-gray-600">
+                      {session.appUserId ? "account" : "device"}
                     </span>
                   </div>
                   <div className="mt-3 space-y-2 text-sm text-gray-700">

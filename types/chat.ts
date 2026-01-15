@@ -27,6 +27,7 @@ export interface ChatSession {
   title: string;
   createdAt: number;
   updatedAt: number;
+  appUserId?: string | null;
   messages: ChatMessage[];
 }
 

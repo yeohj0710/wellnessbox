@@ -150,15 +150,20 @@ export default function ChatDrawer({
                             autoFocus
                           />
                         ) : (
-                          <span
-                            className={`truncate text-sm ${
-                              active
-                                ? "font-semibold text-slate-900"
-                                : "text-slate-800"
-                            } ${highlightId === s.id ? "animate-pulse" : ""}`}
-                          >
-                            {s.title || "새 상담"}
-                          </span>
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span
+                              className={`truncate text-sm ${
+                                active
+                                  ? "font-semibold text-slate-900"
+                                  : "text-slate-800"
+                              } ${highlightId === s.id ? "animate-pulse" : ""}`}
+                            >
+                              {s.title || "새 상담"}
+                            </span>
+                            <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-600">
+                              {s.appUserId ? "account" : "device"}
+                            </span>
+                          </div>
                         )}
                       </div>
                       {editingId !== s.id && (

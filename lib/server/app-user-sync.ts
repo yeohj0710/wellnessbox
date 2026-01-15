@@ -107,7 +107,6 @@ export async function backfillLoginDataForAppUser(options: {
 }) {
   const { appUserId, clientId } = options;
   await Promise.all([
-    backfillChatSessionsForAppUser(appUserId, clientId),
     backfillAssessmentResultsForAppUser(appUserId, clientId),
     backfillCheckAiResultsForAppUser(appUserId, clientId),
   ]);

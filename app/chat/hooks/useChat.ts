@@ -13,7 +13,7 @@ import {
   saveProfileLocal,
   loadProfileServer,
   saveProfileServer,
-    formatAssessCat,
+  formatAssessCat,
 } from "../utils";
 
 export default function useChat() {
@@ -52,6 +52,8 @@ export default function useChat() {
   const profileInitRef = useRef(true);
   const savedKeysRef = useRef<Set<string>>(new Set());
   const readyToPersistRef = useRef<Record<string, boolean>>({});
+  const actorAppUserIdRef = useRef<string | null>(null);
+  const actorLoggedInRef = useRef(false);
 
   function openDrawer() {
     setDrawerVisible(true);
@@ -79,6 +81,7 @@ export default function useChat() {
         title: "새 상담",
         createdAt: now,
         updatedAt: now,
+        appUserId: actorLoggedInRef.current ? actorAppUserIdRef.current : null,
         messages: [],
       };
       setSessions([ns]);
@@ -90,6 +93,10 @@ export default function useChat() {
         const res = await fetch("/api/chat/save", { method: "GET" });
         if (!res.ok) return;
         const js = await res.json().catch(() => ({}));
+        if (js?.actor) {
+          actorLoggedInRef.current = !!js.actor.loggedIn;
+          actorAppUserIdRef.current = js.actor.appUserId ?? null;
+        }
         if (!Array.isArray(js?.sessions)) return;
         setSessions((prev) => {
           const merged = new Map<string, ChatSession>();
@@ -105,6 +112,7 @@ export default function useChat() {
               title: raw.title || "새 상담",
               createdAt: raw.createdAt ? Number(raw.createdAt) : Date.now(),
               updatedAt: raw.updatedAt ? Number(raw.updatedAt) : Date.now(),
+              appUserId: raw.appUserId ?? null,
               messages: Array.isArray(raw.messages)
                 ? raw.messages.map((m: any) => ({
                     id: String(m.id),
@@ -115,16 +123,53 @@ export default function useChat() {
                 : [],
             };
             const existing = merged.get(normalized.id);
-            if (!existing || (existing.updatedAt || 0) < (normalized.updatedAt || 0)) {
+            if (
+              !existing ||
+              (existing.updatedAt || 0) < (normalized.updatedAt || 0)
+            ) {
               merged.set(normalized.id, normalized);
             }
             ensureReady[normalized.id] = true;
           }
 
+          if (actorLoggedInRef.current && actorAppUserIdRef.current) {
+            for (const [id, session] of merged.entries()) {
+              if (
+                !session.appUserId &&
+                session.messages.length === 0 &&
+                !readyToPersistRef.current[id]
+              ) {
+                merged.set(id, {
+                  ...session,
+                  appUserId: actorAppUserIdRef.current,
+                });
+              }
+            }
+          }
+
+          if (actorLoggedInRef.current) {
+            const me = actorAppUserIdRef.current;
+            for (const [id, session] of merged.entries()) {
+              if (session.appUserId && session.appUserId !== me) {
+                merged.delete(id);
+                delete ensureReady[id];
+              }
+            }
+          } else {
+            for (const [id, session] of merged.entries()) {
+              if (session.appUserId) {
+                merged.delete(id);
+                delete ensureReady[id];
+              }
+            }
+          }
+
           readyToPersistRef.current = ensureReady;
           let arr = Array.from(merged.values()).sort(
-            (a, b) => (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt)
+            (a, b) =>
+              (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt)
           );
+
           if (arr.length > 1) {
             arr = arr.filter(
               (s) => s.messages.length > 0 || readyToPersistRef.current[s.id]
@@ -342,6 +387,7 @@ export default function useChat() {
       title: "새 상담",
       createdAt: now,
       updatedAt: now,
+      appUserId: actorLoggedInRef.current ? actorAppUserIdRef.current : null,
       messages: [],
     };
     const next = [s, ...sessions];
@@ -363,9 +409,7 @@ export default function useChat() {
   }
 
   function renameChat(id: string, title: string) {
-    setSessions((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, title } : s))
-    );
+    setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, title } : s)));
   }
 
   function stopStreaming() {

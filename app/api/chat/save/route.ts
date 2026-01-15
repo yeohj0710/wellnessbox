@@ -43,12 +43,16 @@ export async function POST(req: NextRequest) {
       select: { clientId: true, appUserId: true },
     });
 
-    if (existingSession?.appUserId && existingSession.appUserId !== appUserId) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (existingSession?.appUserId) {
+      if (!actor.loggedIn || existingSession.appUserId !== appUserId) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
     }
 
-    if (!existingSession?.appUserId && existingSession && existingSession.clientId !== clientId) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (existingSession && !existingSession.appUserId) {
+      if (existingSession.clientId !== clientId) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
     }
 
     // Upsert session
@@ -63,23 +67,30 @@ export async function POST(req: NextRequest) {
       },
       update: {
         title: title || undefined,
-        appUserId: actor.loggedIn ? appUserId ?? undefined : undefined,
       },
     });
 
     if (Array.isArray(messages) && messages.length > 0) {
-      // createMany with skipDuplicates (needs unique id)
-      await db.chatMessage.createMany({
-        data: messages.map((m) => ({
-          id: m.id,
-          sessionId,
-          role: m.role as any,
-          content: m.content,
-          tzOffsetMinutes: typeof tzOffsetMinutes === "number" ? tzOffsetMinutes : 0,
-          createdAt: m.createdAt ? new Date(m.createdAt) : undefined,
-        })),
-        skipDuplicates: true,
-      });
+      await db.$transaction(
+        messages.map((m) =>
+          db.chatMessage.upsert({
+            where: { id: m.id },
+            create: {
+              id: m.id,
+              sessionId,
+              role: m.role as any,
+              content: m.content,
+              tzOffsetMinutes: typeof tzOffsetMinutes === "number" ? tzOffsetMinutes : 0,
+              createdAt: m.createdAt ? new Date(m.createdAt) : undefined,
+            },
+            update: {
+              role: m.role as any,
+              content: m.content,
+              tzOffsetMinutes: typeof tzOffsetMinutes === "number" ? tzOffsetMinutes : 0,
+            },
+          })
+        )
+      );
     }
 
     const res = NextResponse.json({ ok: true });
@@ -110,7 +121,14 @@ export async function GET(req: NextRequest) {
     }
 
     const sessions = await db.chatSession.findMany({
-      where: appUserId ? { appUserId } : { clientId: clientId ?? "" },
+      where: actor.loggedIn
+        ? {
+            OR: [
+              appUserId ? { appUserId } : { id: "missing" },
+              clientId ? { clientId, appUserId: null } : { id: "missing" },
+            ],
+          }
+        : { clientId: clientId ?? "", appUserId: null },
       include: { messages: { orderBy: { createdAt: "asc" } } },
       orderBy: { updatedAt: "desc" },
     });
@@ -120,6 +138,7 @@ export async function GET(req: NextRequest) {
       title: s.title,
       createdAt: s.createdAt.getTime(),
       updatedAt: s.updatedAt.getTime(),
+      appUserId: s.appUserId,
       messages: s.messages.map((m) => ({
         id: m.id,
         role: m.role as any,
@@ -129,7 +148,14 @@ export async function GET(req: NextRequest) {
     }));
 
     const res = NextResponse.json(
-      { sessions: payload },
+      {
+        sessions: payload,
+        actor: {
+          loggedIn: actor.loggedIn,
+          appUserId: actor.appUserId,
+          deviceClientId: actor.deviceClientId,
+        },
+      },
       { headers: { "Cache-Control": "no-store" } }
     );
     if (actor.cookieToSet) {
