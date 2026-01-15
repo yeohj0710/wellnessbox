@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import db from "@/lib/db";
 import { resolveActorForRequest } from "@/lib/server/actor";
+import {
+  buildChatContextPayload,
+  getUserDataForActor,
+} from "@/lib/server/chat-context";
 import {
   normalizeAssessmentResult,
   normalizeCheckAiResult,
@@ -11,39 +14,17 @@ export const runtime = "nodejs";
 export async function GET(req: NextRequest) {
   try {
     const actor = await resolveActorForRequest(req, { intent: "read" });
-    let scope: { appUserId: string } | { clientId: string };
-    if (actor.loggedIn) {
-      const appUserId = actor.appUserId;
-      if (!appUserId) {
-        return NextResponse.json({ error: "Missing appUserId" }, { status: 500 });
-      }
-      scope = { appUserId };
-    } else {
-      const clientId = actor.deviceClientId;
-      if (!clientId) {
-        return NextResponse.json({ error: "Missing clientId" }, { status: 400 });
-      }
-      scope = { clientId };
+    if (actor.loggedIn && !actor.appUserId) {
+      return NextResponse.json({ error: "Missing appUserId" }, { status: 500 });
     }
-    const [assessRaw, checkAiRaw, orders] = await Promise.all([
-      db.assessmentResult.findFirst({
-        where: scope,
-        orderBy: { createdAt: "desc" },
-      }),
-      db.checkAiResult.findFirst({
-        where: scope,
-        orderBy: { createdAt: "desc" },
-      }),
-      db.order.findMany({
-        where: actor.deviceClientId ? { endpoint: actor.deviceClientId } : { id: -1 },
-        orderBy: { updatedAt: "desc" },
-        include: {
-          orderItems: {
-            include: { pharmacyProduct: { include: { product: true } } },
-          },
-        },
-      }),
-    ]);
+    if (!actor.loggedIn && !actor.deviceClientId) {
+      return NextResponse.json({ error: "Missing clientId" }, { status: 400 });
+    }
+
+    const userData = await getUserDataForActor(actor);
+    const chatContext = buildChatContextPayload(userData);
+    const assessRaw = userData.assess;
+    const checkAiRaw = userData.checkAi;
 
     const assess = assessRaw
       ? (() => {
@@ -111,7 +92,7 @@ export async function GET(req: NextRequest) {
       clientId: actor.deviceClientId,
       assess,
       checkAi,
-      orders,
+      orders: chatContext.orders,
     });
     if (actor.cookieToSet) {
       res.cookies.set(
