@@ -119,7 +119,7 @@ export default function AddressSection({
             <button
               type="button"
               onClick={onOpenPhoneModal}
-              disabled={!isUserLoggedIn || phoneStatusLoading}
+              disabled={phoneStatusLoading}
               className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-full bg-sky-100 px-4 text-xs font-semibold text-sky-700 hover:bg-sky-200 disabled:cursor-not-allowed disabled:bg-sky-50"
             >
               {phoneDisplay ? "변경" : "인증"}
@@ -132,7 +132,8 @@ export default function AddressSection({
 
           {!isUserLoggedIn ? (
             <p className="text-xs text-amber-700 bg-amber-50 px-3 py-2 rounded-lg ring-1 ring-amber-100">
-              카카오 로그인 후 전화번호 인증을 진행해 주세요.
+              카카오로 로그인 후 사용하면 더 많은 기능을 편리하게 연동하여
+              사용할 수 있어요.
             </p>
           ) : null}
 
