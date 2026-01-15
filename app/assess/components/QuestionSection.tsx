@@ -60,7 +60,7 @@ export default function QuestionSection({
             </h1>
             <div className="w-32 sm:w-40">
               <div className="flex items-center justify-between text-xs text-gray-600">
-                <span>진행률</span>
+                <span>진행도</span>
                 {/* <span className="tabular-nums">{completion}%</span> */}
               </div>
               <div className="h-2 w-full max-w-[480px] bg-gray-100 rounded-full overflow-hidden mt-2">
