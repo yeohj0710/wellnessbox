@@ -26,101 +26,153 @@ export default function Rider() {
   const router = useRouter();
 
   useEffect(() => {
+    let cancelled = false;
+
     async function fetchRider() {
-      const rider = await getRider();
-      if (!rider) {
-        router.push("/rider-login");
-      } else {
-        setRider(rider);
+      try {
+        const r = await getRider();
+        if (cancelled) return;
+
+        if (!r) {
+          router.replace("/rider-login");
+          return;
+        }
+
+        setRider(r);
+      } catch (e) {
+        console.error(e);
+        if (!cancelled) router.replace("/rider-login");
       }
     }
+
     fetchRider();
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
   useEffect(() => {
     if (!rider) return;
+
+    let cancelled = false;
+
     const load = async () => {
       setIsPageLoading(true);
-      const { orders: fetchedOrders, totalPages } = await getBasicOrdersByRider(
-        1
-      );
-      setOrders(fetchedOrders);
-      setTotalPages(totalPages);
-      setLoading(false);
-      setIsPageLoading(false);
+      try {
+        const { orders: fetchedOrders, totalPages } =
+          await getBasicOrdersByRider(1);
+        if (cancelled) return;
+
+        setOrders(fetchedOrders);
+        setTotalPages(totalPages);
+      } catch (e) {
+        console.error(e);
+        if (cancelled) return;
+
+        setOrders([]);
+        setTotalPages(1);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+          setIsPageLoading(false);
+        }
+      }
     };
+
     load();
+
+    return () => {
+      cancelled = true;
+    };
   }, [rider]);
 
   const handlePageChange = async (page: number) => {
     if (page < 1 || page > totalPages || page === currentPage) return;
+
     setCurrentPage(page);
     setIsPageLoading(true);
-    const { orders: fetchedOrders, totalPages: newTotal } =
-      await getBasicOrdersByRider(page);
-    setOrders(fetchedOrders);
-    setTotalPages(newTotal);
-    setIsPageLoading(false);
+
+    try {
+      const { orders: fetchedOrders, totalPages: newTotal } =
+        await getBasicOrdersByRider(page);
+      setOrders(fetchedOrders);
+      setTotalPages(newTotal);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsPageLoading(false);
+    }
   };
 
   useEffect(() => {
     if (!rider) return;
+
     const key = `riderNotifyOff_${rider.id}`;
+
     const check = async () => {
       if (!("serviceWorker" in navigator)) return;
       if (isSubscribingRef.current) return;
-      if (Notification.permission === "denied") {
-        setIsSubscribed(false);
-        return;
-      }
-      const reg = await registerAndActivateSW();
-      const appKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").trim();
-      if (!appKey) {
-        setIsSubscribed(false);
-        return;
-      }
-      let sub = await reg.pushManager.getSubscription();
-      if (sub && appKey) {
-        const subAppKey = await getSubAppKeyBase64(reg);
-        const storedKey = localStorage.getItem("vapidKey") || "";
-        const mismatch =
-          (storedKey && storedKey !== appKey) ||
-          (subAppKey && subAppKey !== appKey);
-        if (mismatch) {
-          try {
-            await fetch("/api/rider-push/unsubscribe", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                riderId: rider.id,
-                endpoint: sub.endpoint,
-                role: "rider",
-              }),
-            });
-          } catch {}
-          try {
-            await sub.unsubscribe();
-          } catch {}
-          sub = null;
+
+      try {
+        if (Notification.permission === "denied") {
+          setIsSubscribed(false);
+          return;
         }
-      }
-      if (!sub) {
+
+        const reg = await registerAndActivateSW();
+        const appKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").trim();
+
+        if (!appKey) {
+          setIsSubscribed(false);
+          return;
+        }
+
+        let sub = await reg.pushManager.getSubscription();
+
+        if (sub && appKey) {
+          const subAppKey = await getSubAppKeyBase64(reg);
+          const storedKey = localStorage.getItem("vapidKey") || "";
+          const mismatch =
+            (storedKey && storedKey !== appKey) ||
+            (subAppKey && subAppKey !== appKey);
+
+          if (mismatch) {
+            try {
+              await fetch("/api/rider-push/unsubscribe", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  riderId: rider.id,
+                  endpoint: sub.endpoint,
+                  role: "rider",
+                }),
+              });
+            } catch {}
+            try {
+              await sub.unsubscribe();
+            } catch {}
+            sub = null;
+          }
+        }
+
+        if (!sub) {
+          if (localStorage.getItem(key) === "true") {
+            setIsSubscribed(false);
+            return;
+          }
+          if (Notification.permission === "granted") {
+            await subscribePush({ silent: true });
+          } else {
+            setIsSubscribed(false);
+          }
+          return;
+        }
+
         if (localStorage.getItem(key) === "true") {
           setIsSubscribed(false);
           return;
         }
-        if (Notification.permission === "granted") {
-          await subscribePush({ silent: true });
-        } else {
-          setIsSubscribed(false);
-        }
-        return;
-      }
-      if (localStorage.getItem(key) === "true") {
-        setIsSubscribed(false);
-        return;
-      }
-      try {
+
         const res = await fetch("/api/rider-push/status", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -130,38 +182,52 @@ export default function Rider() {
             role: "rider",
           }),
         });
-        if (!res.ok) {
-          throw new Error("Failed to check subscription");
-        }
+
+        if (!res.ok) throw new Error("Failed to check subscription");
+
         const data = await res.json();
+
         if (data.subscribed) {
           setIsSubscribed(true);
           localStorage.setItem("vapidKey", appKey);
-        } else {
-          if (data.action === "resubscribe") {
-            await resubscribePush(sub, appKey);
-          } else {
-            try {
-              await syncSubscription(sub, appKey);
-            } catch {
-              await resubscribePush(sub, appKey);
-            }
-          }
+          return;
         }
-      } catch {
+
+        if (data.action === "resubscribe") {
+          await resubscribePush(sub, appKey);
+          return;
+        }
+
+        if (!sub) throw new Error("Subscription is null");
+        try {
+          await syncSubscription(sub, appKey);
+        } catch {
+          await resubscribePush(sub, appKey);
+        }
+      } catch (e) {
+        console.error(e);
         setIsSubscribed(null);
       }
     };
+
     check();
+
     const onChange = () => {
       check();
       navigator.serviceWorker.removeEventListener("controllerchange", onChange);
     };
-    if ("serviceWorker" in navigator)
+
+    if ("serviceWorker" in navigator) {
       navigator.serviceWorker.addEventListener("controllerchange", onChange);
+    }
+
     return () => {
-      if ("serviceWorker" in navigator)
-        navigator.serviceWorker.removeEventListener("controllerchange", onChange);
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.removeEventListener(
+          "controllerchange",
+          onChange
+        );
+      }
     };
   }, [rider]);
 
@@ -175,9 +241,9 @@ export default function Rider() {
         role: "rider",
       }),
     });
-    if (!res.ok) {
-      throw new Error("Failed to sync subscription");
-    }
+
+    if (!res.ok) throw new Error("Failed to sync subscription");
+
     if (rider?.id) {
       localStorage.removeItem(`riderNotifyOff_${rider.id}`);
     }
@@ -186,6 +252,7 @@ export default function Rider() {
     }
     setIsSubscribed(true);
   };
+
   const resubscribePush = async (
     existingSub: PushSubscription | null,
     appKey: string
@@ -200,13 +267,13 @@ export default function Rider() {
   const subscribePush = async ({ silent = false } = {}) => {
     if (!("serviceWorker" in navigator)) return;
     if (isSubscribingRef.current) return;
+
     if (Notification.permission === "denied") {
-      if (!silent) {
-        alert("브라우저 설정에서 알림을 허용할 수 있어요.");
-      }
+      if (!silent) alert("브라우저 설정에서 알림을 허용할 수 있어요.");
       setIsSubscribed(false);
       return;
     }
+
     if (Notification.permission === "default") {
       if (silent) {
         setIsSubscribed(false);
@@ -219,18 +286,20 @@ export default function Rider() {
         return;
       }
     }
+
     setIsSubscribeLoading(true);
     isSubscribingRef.current = true;
+
     try {
       const reg = await registerAndActivateSW();
       const appKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").trim();
+
       if (!appKey) {
-        if (!silent) {
-          alert("알림 키 설정을 확인해 주세요.");
-        }
+        if (!silent) alert("알림 키 설정을 확인해 주세요.");
         setIsSubscribed(false);
         return;
       }
+
       const sub = await ensurePushSubscription({
         reg,
         appKey,
@@ -247,6 +316,12 @@ export default function Rider() {
           });
         },
       });
+
+      if (!sub) {
+        setIsSubscribed(false);
+        return;
+      }
+
       await syncSubscription(sub, appKey);
     } catch (e) {
       console.error(e);
@@ -262,11 +337,14 @@ export default function Rider() {
   const unsubscribePush = async () => {
     if (!("serviceWorker" in navigator)) return;
     if (isSubscribingRef.current) return;
+
     setIsSubscribeLoading(true);
     isSubscribingRef.current = true;
+
     try {
       const reg = await navigator.serviceWorker.getRegistration();
       const sub = await reg?.pushManager.getSubscription();
+
       if (sub) {
         const res = await fetch("/api/rider-push/unsubscribe", {
           method: "POST",
@@ -277,11 +355,12 @@ export default function Rider() {
             role: "rider",
           }),
         });
-        if (!res.ok) {
-          throw new Error("Failed to unsubscribe");
-        }
+
+        if (!res.ok) throw new Error("Failed to unsubscribe");
+
         await sub.unsubscribe();
       }
+
       if (rider?.id) {
         localStorage.setItem(`riderNotifyOff_${rider.id}`, "true");
       }
@@ -334,6 +413,7 @@ export default function Rider() {
               />
               <span className="w-12 h-7 rounded-full bg-gray-200 peer-checked:bg-sky-500 transition-colors duration-200 relative after:absolute after:top-0.5 after:left-0.5 after:h-6 after:w-6 after:rounded-full after:bg-white after:shadow after:transition-transform after:duration-200 peer-checked:after:translate-x-5"></span>
             </label>
+
             {isSubscribeLoading || isSubscribed === null ? (
               <span
                 className="w-5 h-5 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"
@@ -371,6 +451,7 @@ export default function Rider() {
               />
             ))
           )}
+
           <nav aria-label="페이지네이션" className="mt-6">
             <div className="mx-auto w-full max-w-[640px] px-4">
               <div className="flex items-center justify-center gap-2 flex-wrap">
@@ -390,6 +471,7 @@ export default function Rider() {
                 >
                   ←
                 </button>
+
                 <div className="flex items-center gap-1 overflow-x-auto no-scrollbar px-1">
                   {generateOptimizedPageNumbers(totalPages, currentPage).map(
                     (page) => (
@@ -408,6 +490,7 @@ export default function Rider() {
                     )
                   )}
                 </div>
+
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={!canGoNext}
@@ -425,6 +508,7 @@ export default function Rider() {
                   »
                 </button>
               </div>
+
               <div className="mt-2 w-full text-center text-xs text-gray-500">
                 페이지 {currentPage} / {totalPages}
               </div>

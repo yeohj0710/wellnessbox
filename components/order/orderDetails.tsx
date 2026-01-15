@@ -132,7 +132,9 @@ export default function OrderDetails({
 
         try {
           const reg = await registerAndActivateSW();
-          const appKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").trim();
+          const appKey = (
+            process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || ""
+          ).trim();
           if (!appKey) {
             setIsSubscribed(false);
             return;
@@ -214,23 +216,41 @@ export default function OrderDetails({
 
     useEffect(() => {
       if (!isExpanded || isLoaded) return;
+
+      let cancelled = false;
+
       async function fetchDetailsAndMessages() {
-        const [detailedOrder, msgs] = await Promise.all([
-          getOrderById(initialOrder.id),
-          getMessagesByOrder(initialOrder.id),
-        ]);
-        setOrder((prevOrder: any) => ({ ...prevOrder, ...detailedOrder }));
-        const sorted = [...msgs].sort(
-          (a: any, b: any) =>
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-        );
-        setMessages(sorted);
-        const lastId = sorted.length ? sorted[sorted.length - 1].id : 0;
-        lastSeenIdRef.current = lastId;
-        setIsLoaded(true);
+        try {
+          const [detailedOrder, msgs] = await Promise.all([
+            getOrderById(initialOrder.id),
+            getMessagesByOrder(initialOrder.id),
+          ]);
+          if (cancelled) return;
+
+          setOrder((prevOrder: any) => ({ ...prevOrder, ...detailedOrder }));
+
+          const sorted = [...msgs].sort(
+            (a: any, b: any) =>
+              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+          setMessages(sorted);
+
+          const lastId = sorted.length ? sorted[sorted.length - 1].id : 0;
+          lastSeenIdRef.current = lastId;
+
+          setIsLoaded(true);
+        } catch (e) {
+          console.error(e);
+        }
       }
+
       fetchDetailsAndMessages();
-    }, [isExpanded, isLoaded]);
+
+      return () => {
+        cancelled = true;
+      };
+    }, [isExpanded, isLoaded, initialOrder.id]);
+
     useEffect(() => {
       if (!isExpanded || !isLoaded) return;
       const intervalId = setInterval(() => {
@@ -251,13 +271,17 @@ export default function OrderDetails({
           );
           const newLastId = sorted.length ? sorted[sorted.length - 1].id : 0;
           const hasNew = newLastId > lastSeenIdRef.current;
+
           setMessages(sorted);
+
           if (hasNew && isNearBottomRef.current) {
             scrollToBottom();
           }
           if (hasNew) {
             lastSeenIdRef.current = newLastId;
           }
+        } catch (e) {
+          console.error(e);
         } finally {
           pollingRef.current = false;
         }
@@ -316,10 +340,7 @@ export default function OrderDetails({
         if (manual) setIsMessagesRefreshing(false);
       }
     };
-    const syncSubscription = async (
-      sub: PushSubscription,
-      appKey?: string
-    ) => {
+    const syncSubscription = async (sub: PushSubscription, appKey?: string) => {
       const res = await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -398,6 +419,12 @@ export default function OrderDetails({
             });
           },
         });
+
+        if (!sub) {
+          setIsSubscribed(false);
+          return;
+        }
+
         await syncSubscription(sub, appKey);
       } catch (e) {
         console.error(e);

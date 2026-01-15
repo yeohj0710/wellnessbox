@@ -11,6 +11,7 @@ import RouteTransition from "@/components/common/routeTransition";
 import KakaoExternalBridge from "@/components/common/kakaoExternalBridge";
 import AppDeepLinkHandler from "@/components/common/appDeepLinkHandler";
 import AppBackHandler from "@/components/common/appBackHandler";
+import PullToRefresh from "@/components/common/pullToRefresh";
 import Script from "next/script";
 import GoogleTranslateGate from "@/components/common/GoogleTranslateGate";
 
@@ -88,6 +89,7 @@ export default async function RootLayout({
       >
         <AppDeepLinkHandler />
         <KakaoExternalBridge />
+        <PullToRefresh />
         <LocalStorageProvider>
           <FooterProvider>
             <LoadingProvider>
