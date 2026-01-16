@@ -13,33 +13,10 @@ import Link from "next/link";
 import OrderCancelledView from "@/components/order/orderCancelledView";
 import OrderNotifyModal from "@/components/order/orderNotifyModal";
 import OrderSummary from "@/components/order/orderSummary";
+import { ensureCustomerPushSubscription } from "@/lib/push/customerSubscription";
 
 interface SubscriptionInfo {
   endpoint: string;
-}
-
-function base64ToUint8Array(base64: string) {
-  const padding = "=".repeat((4 - (base64.length % 4)) % 4);
-  const base64Safe = (base64 + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const rawData = window.atob(base64Safe);
-  const output = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) output[i] = rawData.charCodeAt(i);
-  return output;
-}
-
-function uint8ArrayToUrlBase64(u8: Uint8Array) {
-  let s = "";
-  for (let i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]);
-  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
-async function getSubAppKeyBase64(reg: ServiceWorkerRegistration) {
-  const sub = await reg.pushManager.getSubscription();
-  const ab = (sub as any)?.options?.applicationServerKey as
-    | ArrayBuffer
-    | undefined;
-  if (!ab) return null;
-  return uint8ArrayToUrlBase64(new Uint8Array(ab));
 }
 
 export default function OrderComplete() {
@@ -79,6 +56,22 @@ export default function OrderComplete() {
     };
     fetchLoginStatus();
   }, []);
+
+  useEffect(() => {
+    if (!order) return;
+    try {
+      const fallbackPhone = `${localStorage.getItem("phonePart1") || ""}-${
+        localStorage.getItem("phonePart2") || ""
+      }-${localStorage.getItem("phonePart3") || ""}`;
+      const normalizedPhone = String(order.phone || fallbackPhone || "").replace(
+        /\D/g,
+        ""
+      );
+      if (normalizedPhone) {
+        localStorage.setItem("customerAccountKey", normalizedPhone);
+      }
+    } catch {}
+  }, [order]);
 
   useEffect(() => {
     if (cancelled) {
@@ -392,61 +385,13 @@ export default function OrderComplete() {
     return pp?.id;
   };
 
-  const registerAndActivateSW = async () => {
-    const reg =
-      (await navigator.serviceWorker.getRegistration()) ||
-      (await navigator.serviceWorker.register("/sw.js"));
-    await reg.update();
-    if (reg.waiting) {
-      reg.waiting.postMessage({ type: "SKIP_WAITING" });
-      await new Promise<void>((resolve) => {
-        const onChange = () => {
-          if (navigator.serviceWorker.controller) {
-            navigator.serviceWorker.removeEventListener(
-              "controllerchange",
-              onChange
-            );
-            resolve();
-          }
-        };
-        navigator.serviceWorker.addEventListener("controllerchange", onChange);
-      });
-    }
-    return reg;
-  };
-
   const subscribePush = async () => {
     try {
       if (!order) return;
-      if (!("serviceWorker" in navigator)) return;
-      const reg = await registerAndActivateSW();
-      let existing = await reg.pushManager.getSubscription();
       const appKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").trim();
       if (!appKey) return;
-      const storedKey = localStorage.getItem("vapidKey") || "";
-      const subAppKey = existing ? await getSubAppKeyBase64(reg) : null;
-      const mismatch =
-        !!existing &&
-        (storedKey !== appKey || (subAppKey && subAppKey !== appKey));
-      if (mismatch && existing) {
-        await fetch("/api/push/unsubscribe", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            endpoint: existing.endpoint,
-            role: "customer",
-            orderId: order.id,
-          }),
-        });
-        await existing.unsubscribe();
-        existing = null;
-      }
-      const sub =
-        existing ||
-        (await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: base64ToUint8Array(appKey),
-        }));
+      const sub = await ensureCustomerPushSubscription({ silent: true });
+      if (!sub) return "";
       await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

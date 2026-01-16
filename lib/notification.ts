@@ -42,6 +42,15 @@ export async function removeSubscription(
   });
 }
 
+export async function removeSubscriptionsByEndpoint(
+  endpoint: string,
+  role: string
+) {
+  return db.subscription.deleteMany({
+    where: { endpoint, role },
+  });
+}
+
 export async function isSubscribed(
   orderId: number,
   endpoint: string,

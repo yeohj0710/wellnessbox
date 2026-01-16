@@ -17,11 +17,10 @@ import OrderProgressBar from "./orderProgressBar";
 import OrderAccordionHeader from "./orderAccordionHeader";
 import Image from "next/image";
 import {
-  ensurePushSubscription,
   getSubAppKeyBase64,
-  registerAndActivateSW,
 } from "@/lib/push";
 import { generateOptimizedPageNumbers } from "@/lib/pagination";
+import { ensureCustomerPushSubscription } from "@/lib/push/customerSubscription";
 
 type OrderDetailsProps = {
   phone: string;
@@ -42,6 +41,15 @@ export default function OrderDetails({
   const [totalPages, setTotalPages] = useState(1);
   const [isPageLoading, setIsPageLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const normalizedPhone = phone.replace(/\D/g, "");
+      localStorage.setItem("customerAccountKey", normalizedPhone);
+    } catch {}
+    ensureCustomerPushSubscription({ silent: true });
+  }, [phone]);
 
   const fetchOrders = useCallback(
     async (page: number) => {
@@ -131,7 +139,11 @@ export default function OrderDetails({
         }
 
         try {
-          const reg = await registerAndActivateSW();
+          const reg = await navigator.serviceWorker.getRegistration();
+          if (!reg) {
+            setIsSubscribed(false);
+            return;
+          }
           const appKey = (
             process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || ""
           ).trim();
@@ -148,11 +160,10 @@ export default function OrderDetails({
               (subAppKey && subAppKey !== appKey);
             if (mismatch) {
               try {
-                await fetch("/api/push/unsubscribe", {
+                await fetch("/api/push/detach", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
-                    orderId: order.id,
                     endpoint: sub.endpoint,
                     role: "customer",
                   }),
@@ -165,46 +176,41 @@ export default function OrderDetails({
             }
           }
 
-          if (sub) {
-            try {
-              const statusRes = await fetch("/api/push/status", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  orderId: order.id,
-                  endpoint: sub.endpoint,
-                  role: "customer",
-                }),
-              });
-              if (!statusRes.ok) {
-                throw new Error("Failed to check subscription");
-              }
-              const data = await statusRes.json();
-              if (data.subscribed) {
-                setIsSubscribed(true);
-                localStorage.setItem("vapidKey", appKey);
-                return;
-              }
-              if (data.action === "resubscribe") {
-                await resubscribePush(sub, appKey);
-                return;
-              }
-              try {
-                await syncSubscription(sub, appKey);
-              } catch {
-                await resubscribePush(sub, appKey);
-              }
-              return;
-            } catch {
-              setIsSubscribed(null);
-              return;
-            }
+          if (!sub) {
+            setIsSubscribed(false);
+            return;
           }
 
-          if (Notification.permission === "granted") {
-            await subscribePush({ silent: true });
-          } else {
-            setIsSubscribed(false);
+          try {
+            const statusRes = await fetch("/api/push/status", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                orderId: order.id,
+                endpoint: sub.endpoint,
+                role: "customer",
+              }),
+            });
+            if (!statusRes.ok) {
+              throw new Error("Failed to check subscription");
+            }
+            const data = await statusRes.json();
+            if (data.subscribed) {
+              setIsSubscribed(true);
+              localStorage.setItem("vapidKey", appKey);
+              return;
+            }
+            if (data.action === "resubscribe") {
+              await resubscribePush(sub, appKey);
+              return;
+            }
+            try {
+              await syncSubscription(sub, appKey);
+            } catch {
+              await resubscribePush(sub, appKey);
+            }
+          } catch {
+            setIsSubscribed(null);
           }
         } catch {
           setIsSubscribed(null);
@@ -370,7 +376,6 @@ export default function OrderDetails({
       localStorage.setItem("vapidKey", appKey);
     };
     const subscribePush = async ({ silent = false } = {}) => {
-      if (!("serviceWorker" in navigator)) return;
       if (isSubscribingRef.current) return;
       if (Notification.permission === "denied") {
         if (!silent) {
@@ -394,7 +399,6 @@ export default function OrderDetails({
       setIsSubscribeLoading(true);
       isSubscribingRef.current = true;
       try {
-        const reg = await registerAndActivateSW();
         const appKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").trim();
         if (!appKey) {
           if (!silent) {
@@ -403,22 +407,7 @@ export default function OrderDetails({
           setIsSubscribed(false);
           return;
         }
-        const sub = await ensurePushSubscription({
-          reg,
-          appKey,
-          lockKey: `push:customer:${order.id}`,
-          onUnsubscribe: async (subscription) => {
-            await fetch("/api/push/unsubscribe", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                orderId: order.id,
-                endpoint: subscription.endpoint,
-                role: "customer",
-              }),
-            });
-          },
-        });
+        const sub = await ensureCustomerPushSubscription({ silent });
 
         if (!sub) {
           setIsSubscribed(false);
@@ -458,7 +447,6 @@ export default function OrderDetails({
           if (!res.ok) {
             throw new Error("Failed to unsubscribe");
           }
-          await sub.unsubscribe();
         }
         localStorage.setItem(`notifyOff:${order.id}`, "true");
         setIsSubscribed(false);
