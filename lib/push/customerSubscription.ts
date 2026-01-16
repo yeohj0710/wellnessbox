@@ -1,10 +1,9 @@
 import {
-  ensurePushSubscription,
+  ensureGlobalPushSubscription,
   getSubAppKeyBase64,
   registerAndActivateSW,
 } from "@/lib/push";
 
-const GLOBAL_LOCK_KEY = "push:global";
 const ACCOUNT_KEY_STORAGE = "customerAccountKey";
 const ACCOUNT_KEY_LAST_STORAGE = "customerAccountKey:last";
 const VAPID_KEY_STORAGE = "vapidKey";
@@ -27,8 +26,7 @@ const canUsePush = () => {
   );
 };
 
-const getAppKey = () =>
-  (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").trim();
+const getAppKey = () => (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").trim();
 
 const getAccountKey = () => {
   if (typeof window === "undefined") return "";
@@ -67,7 +65,7 @@ async function detachEndpoint(endpoint: string) {
     await fetch("/api/push/detach", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ endpoint, role: "customer" }),
+      body: JSON.stringify({ endpoint }),
     });
   } catch {}
 }
@@ -75,6 +73,17 @@ async function detachEndpoint(endpoint: string) {
 function logDebug(message: string, context: Record<string, unknown>) {
   if (typeof console === "undefined") return;
   console.warn(message, context);
+}
+
+function decodeAppKeyBytes(appKey: string) {
+  try {
+    const padding = "=".repeat((4 - (appKey.length % 4)) % 4);
+    const base64Safe = (appKey + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const raw = typeof window !== "undefined" ? atob(base64Safe) : "";
+    return raw.length;
+  } catch {
+    return -1;
+  }
 }
 
 export async function ensureCustomerPushSubscription({
@@ -85,10 +94,13 @@ export async function ensureCustomerPushSubscription({
   if (!canUsePush()) {
     if (!silent) {
       logDebug("Push unavailable in current context", {
-        secureContext: typeof window !== "undefined" ? window.isSecureContext : null,
+        secureContext:
+          typeof window !== "undefined" ? window.isSecureContext : null,
         isLocalhost: isLocalhost(),
-        hasServiceWorker: typeof navigator !== "undefined" && "serviceWorker" in navigator,
-        hasPushManager: typeof window !== "undefined" && "PushManager" in window,
+        hasServiceWorker:
+          typeof navigator !== "undefined" && "serviceWorker" in navigator,
+        hasPushManager:
+          typeof window !== "undefined" && "PushManager" in window,
       });
     }
     return null;
@@ -96,7 +108,8 @@ export async function ensureCustomerPushSubscription({
 
   const appKey = getAppKey();
   if (!appKey) {
-    logDebug("Missing VAPID public key for push", { appKeyPresent: false });
+    if (!silent)
+      logDebug("Missing VAPID public key for push", { appKeyPresent: false });
     return null;
   }
 
@@ -113,12 +126,15 @@ export async function ensureCustomerPushSubscription({
 
   ensurePromise = (async () => {
     const reg = await registerAndActivateSW();
+
     let sub = await reg.pushManager.getSubscription();
+
     const storedKey =
       typeof window !== "undefined"
         ? localStorage.getItem(VAPID_KEY_STORAGE) || ""
         : "";
     const subAppKey = sub ? await getSubAppKeyBase64(reg) : null;
+
     const mismatch =
       !!sub &&
       ((storedKey && storedKey !== appKey) ||
@@ -140,22 +156,23 @@ export async function ensureCustomerPushSubscription({
 
     if (!sub) {
       try {
-        sub = await ensurePushSubscription({
-          reg,
-          appKey,
-          lockKey: GLOBAL_LOCK_KEY,
-        });
+        sub = await ensureGlobalPushSubscription({ appKey });
       } catch (error) {
         const existing = await reg.pushManager.getSubscription();
         if (existing) {
           sub = existing;
         } else {
-          logDebug("Push subscription failed", {
-            error,
-            permission: Notification.permission,
-            appKeyPresent: Boolean(appKey),
-            swReady: Boolean(navigator.serviceWorker?.controller),
-          });
+          if (!silent) {
+            logDebug("Push subscription failed", {
+              error,
+              permission: Notification.permission,
+              appKeyPresent: Boolean(appKey),
+              appKeyLen: appKey.length,
+              appKeyDecodedBytes: decodeAppKeyBytes(appKey),
+              swReady: Boolean(navigator.serviceWorker?.controller),
+              regScope: reg.scope,
+            });
+          }
           sub = null;
         }
       }
@@ -163,15 +180,13 @@ export async function ensureCustomerPushSubscription({
 
     if (sub) {
       rememberAppKey(appKey);
-      if (accountKey) {
-        rememberAccountKey(accountKey);
-      }
+      if (accountKey) rememberAccountKey(accountKey);
     }
 
     return sub;
   })()
     .catch((error) => {
-      logDebug("Push subscription ensure failed", { error });
+      if (!silent) logDebug("Push subscription ensure failed", { error });
       return null;
     })
     .finally(() => {

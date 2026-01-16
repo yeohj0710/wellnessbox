@@ -51,6 +51,12 @@ export async function removeSubscriptionsByEndpoint(
   });
 }
 
+export async function removeSubscriptionsByEndpointAll(endpoint: string) {
+  return db.subscription.deleteMany({
+    where: { endpoint },
+  });
+}
+
 export async function isSubscribed(
   orderId: number,
   endpoint: string,
@@ -201,6 +207,7 @@ export async function sendOrderNotification(
     where: { role: "customer", orderId, invalidatedAt: null },
   });
   if (subs.length === 0) return;
+
   const order = await db.order.findUnique({
     where: { id: orderId },
     include: {
@@ -209,12 +216,14 @@ export async function sendOrderNotification(
       },
     },
   });
+
   const firstItem = order?.orderItems[0]?.pharmacyProduct?.product;
   const firstName = firstItem?.name || "상품";
   const restCount = (order?.orderItems.length || 1) - 1;
   const productText =
     restCount > 0 ? `${firstName} 외 ${restCount}건` : firstName;
   const imageUrl = image || firstItem?.images?.[0];
+
   let message = "";
   switch (status) {
     case ORDER_STATUS.PAYMENT_COMPLETE:
@@ -238,11 +247,13 @@ export async function sendOrderNotification(
     default:
       message = `주문하신 '${productText}'의 상태가 업데이트되었어요: ${status}`;
   }
+
   for (const sub of subs) {
     const pushSub = {
       endpoint: sub.endpoint,
       keys: { auth: sub.auth, p256dh: sub.p256dh },
     } as any;
+
     try {
       const payload = JSON.stringify({
         title: "웰니스박스",
@@ -278,28 +289,35 @@ export async function sendNewOrderNotification(orderId: number) {
       },
     },
   });
+
   const pharmacyId = order?.pharmacyId;
   if (!order || !pharmacyId) return;
+
   const subs = await db.subscription.findMany({
     where: { pharmacyId, role: "pharm", invalidatedAt: null },
   });
   if (subs.length === 0) return;
+
   const firstName =
     order.orderItems[0]?.pharmacyProduct?.product?.name || "상품";
   const restCount = order.orderItems.length - 1;
   const productText =
     restCount > 0 ? `${firstName} 외 ${restCount}건` : firstName;
+
   const phone = order.phone ? `\n전화번호: ${order.phone}` : "";
   const address = order.roadAddress
     ? `\n주소: ${order.roadAddress} ${order.detailAddress || ""}`
     : "";
+
   const imageUrl = order.orderItems[0]?.pharmacyProduct?.product?.images?.[0];
   const message = `'${productText}' 주문이 들어왔어요.${phone}${address}`;
+
   for (const sub of subs) {
     const pushSub = {
       endpoint: sub.endpoint,
       keys: { auth: sub.auth, p256dh: sub.p256dh },
     } as any;
+
     try {
       const payload = JSON.stringify({
         title: "웰니스박스",
@@ -337,28 +355,35 @@ export async function sendRiderNotification(orderId: number) {
       },
     },
   });
+
   const riderId = order?.riderId;
   if (!order || !riderId) return;
+
   const subs = await db.subscription.findMany({
     where: { role: "rider", riderId, invalidatedAt: null },
   });
   if (subs.length === 0) return;
+
   const firstName =
     order.orderItems[0]?.pharmacyProduct?.product?.name || "상품";
   const restCount = order.orderItems.length - 1;
   const productText =
     restCount > 0 ? `${firstName} 외 ${restCount}건` : firstName;
+
   const phone = order.phone ? `\n전화번호: ${order.phone}` : "";
   const address = order.roadAddress
     ? `\n주소: ${order.roadAddress} ${order.detailAddress || ""}`
     : "";
+
   const imageUrl = order.orderItems[0]?.pharmacyProduct?.product?.images?.[0];
   const message = `'${productText}' 주문이 픽업 대기 중이에요.${phone}${address}`;
+
   for (const sub of subs) {
     const pushSub = {
       endpoint: sub.endpoint,
       keys: { auth: sub.auth, p256dh: sub.p256dh },
     } as any;
+
     try {
       const payload = JSON.stringify({
         title: "웰니스박스",
@@ -399,24 +424,30 @@ export async function sendPharmacyMessageNotification(
       },
     },
   });
+
   const pharmacyId = order?.pharmacyId;
   if (!order || !pharmacyId) return;
+
   const subs = await db.subscription.findMany({
     where: { pharmacyId, role: "pharm", invalidatedAt: null },
   });
   if (subs.length === 0) return;
+
   const firstName =
     order.orderItems[0]?.pharmacyProduct?.product?.name || "상품";
   const restCount = order.orderItems.length - 1;
   const productText =
     restCount > 0 ? `${firstName} 외 ${restCount}건` : firstName;
+
   const phoneText = order.phone ? `${order.phone} ` : "";
   const message = `${phoneText}주문자가 '${productText}' 주문에 대해 메시지를 보냈어요: ${content}`;
+
   for (const sub of subs) {
     const pushSub = {
       endpoint: sub.endpoint,
       keys: { auth: sub.auth, p256dh: sub.p256dh },
     } as any;
+
     try {
       const payload = JSON.stringify({
         title: "웰니스박스",
@@ -456,18 +487,23 @@ export async function sendCustomerMessageNotification(
       },
     },
   });
+
   if (!order) return;
+
   const subs = await db.subscription.findMany({
     where: { role: "customer", orderId, invalidatedAt: null },
   });
   if (subs.length === 0) return;
+
   const pharmacyName = order.pharmacy?.name || "약국";
   const message = `${pharmacyName}에서 약사님이 메시지를 보냈어요: ${content}`;
+
   for (const sub of subs) {
     const pushSub = {
       endpoint: sub.endpoint,
       keys: { auth: sub.auth, p256dh: sub.p256dh },
     } as any;
+
     try {
       const payload = JSON.stringify({
         title: "웰니스박스",

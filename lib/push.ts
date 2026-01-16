@@ -1,7 +1,10 @@
 export function base64ToUint8Array(base64: string) {
   const padding = "=".repeat((4 - (base64.length % 4)) % 4);
   const base64Safe = (base64 + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const rawData = typeof window !== 'undefined' ? window.atob(base64Safe) : Buffer.from(base64Safe, 'base64').toString('binary');
+  const rawData =
+    typeof window !== "undefined"
+      ? window.atob(base64Safe)
+      : Buffer.from(base64Safe, "base64").toString("binary");
   const output = new Uint8Array(rawData.length);
   for (let i = 0; i < rawData.length; ++i) output[i] = rawData.charCodeAt(i);
   return output;
@@ -19,7 +22,9 @@ export function uint8ArrayToUrlBase64(u8: Uint8Array) {
 
 export async function getSubAppKeyBase64(reg: ServiceWorkerRegistration) {
   const sub = await reg.pushManager.getSubscription();
-  const ab = (sub as any)?.options?.applicationServerKey as ArrayBuffer | undefined;
+  const ab = (sub as any)?.options?.applicationServerKey as
+    | ArrayBuffer
+    | undefined;
   if (!ab) return null;
   return uint8ArrayToUrlBase64(new Uint8Array(ab));
 }
@@ -65,6 +70,51 @@ async function withPushLock<T>(lockName: string, task: () => Promise<T>) {
   return task();
 }
 
+export const registerAndActivateSW = async () => {
+  const reg =
+    (await navigator.serviceWorker.getRegistration()) ||
+    (await navigator.serviceWorker.register("/sw.js"));
+
+  await reg.update();
+  await navigator.serviceWorker.ready;
+
+  if (!navigator.serviceWorker.controller) {
+    await Promise.race([
+      new Promise<void>((resolve) => {
+        const onChange = () => {
+          if (navigator.serviceWorker.controller) {
+            navigator.serviceWorker.removeEventListener(
+              "controllerchange",
+              onChange
+            );
+            resolve();
+          }
+        };
+        navigator.serviceWorker.addEventListener("controllerchange", onChange);
+      }),
+      delay(2000),
+    ]);
+  }
+
+  if (reg.waiting) {
+    reg.waiting.postMessage({ type: "SKIP_WAITING" });
+    await new Promise<void>((resolve) => {
+      const onChange = () => {
+        if (navigator.serviceWorker.controller) {
+          navigator.serviceWorker.removeEventListener(
+            "controllerchange",
+            onChange
+          );
+          resolve();
+        }
+      };
+      navigator.serviceWorker.addEventListener("controllerchange", onChange);
+    });
+  }
+
+  return reg;
+};
+
 type EnsurePushSubscriptionOptions = {
   reg: ServiceWorkerRegistration;
   appKey: string;
@@ -72,6 +122,21 @@ type EnsurePushSubscriptionOptions = {
   storedKey?: string;
   lockKey?: string;
 };
+
+async function forceReRegisterSW() {
+  try {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(regs.map((r) => r.unregister()));
+  } catch {}
+  return registerAndActivateSW();
+}
+
+async function subscribeOnce(reg: ServiceWorkerRegistration, appKey: string) {
+  return reg.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: base64ToUint8Array(appKey),
+  });
+}
 
 export async function ensurePushSubscription({
   reg,
@@ -82,18 +147,23 @@ export async function ensurePushSubscription({
 }: EnsurePushSubscriptionOptions) {
   const lockName = lockKey || PUSH_LOCK_NAME;
   const cached = pushInFlight.get(lockName);
-  if (cached) {
-    return cached;
-  }
+  if (cached) return cached;
 
   const task = withPushLock(lockName, async () => {
-    let sub = await reg.pushManager.getSubscription();
-    const subAppKey = sub ? await getSubAppKeyBase64(reg) : null;
+    let liveReg = reg;
+
+    if (!liveReg.active) {
+      liveReg = await registerAndActivateSW();
+    }
+
+    let sub = await liveReg.pushManager.getSubscription();
+    const subAppKey = sub ? await getSubAppKeyBase64(liveReg) : null;
     const localKey =
       storedKey ??
       (typeof window !== "undefined"
         ? localStorage.getItem("vapidKey") || ""
         : "");
+
     const mismatch =
       !!sub &&
       ((localKey && localKey !== appKey) ||
@@ -109,30 +179,17 @@ export async function ensurePushSubscription({
       sub = null;
     }
 
-    if (!sub) {
-      try {
-        sub = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: base64ToUint8Array(appKey),
-        });
-      } catch {
-        const existing = await reg.pushManager.getSubscription();
-        if (existing) {
-          try {
-            await onUnsubscribe?.(existing);
-          } catch {}
-          try {
-            await existing.unsubscribe();
-          } catch {}
-        }
-        sub = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: base64ToUint8Array(appKey),
-        });
-      }
-    }
+    if (sub) return sub;
 
-    return sub;
+    try {
+      return await subscribeOnce(liveReg, appKey);
+    } catch (err: any) {
+      if (err?.name === "AbortError") {
+        const freshReg = await forceReRegisterSW();
+        return await subscribeOnce(freshReg, appKey);
+      }
+      throw err;
+    }
   });
 
   pushInFlight.set(lockName, task);
@@ -142,36 +199,3 @@ export async function ensurePushSubscription({
     pushInFlight.delete(lockName);
   }
 }
-
-export const registerAndActivateSW = async () => {
-  const reg = (await navigator.serviceWorker.getRegistration()) || (await navigator.serviceWorker.register("/sw.js"));
-  await reg.update();
-  await navigator.serviceWorker.ready;
-  if (!navigator.serviceWorker.controller) {
-    await Promise.race([
-      new Promise<void>((resolve) => {
-        const onChange = () => {
-          if (navigator.serviceWorker.controller) {
-            navigator.serviceWorker.removeEventListener("controllerchange", onChange);
-            resolve();
-          }
-        };
-        navigator.serviceWorker.addEventListener("controllerchange", onChange);
-      }),
-      delay(2000),
-    ]);
-  }
-  if (reg.waiting) {
-    reg.waiting.postMessage({ type: "SKIP_WAITING" });
-    await new Promise<void>((resolve) => {
-      const onChange = () => {
-        if (navigator.serviceWorker.controller) {
-          navigator.serviceWorker.removeEventListener("controllerchange", onChange);
-          resolve();
-        }
-      };
-      navigator.serviceWorker.addEventListener("controllerchange", onChange);
-    });
-  }
-  return reg;
-};
