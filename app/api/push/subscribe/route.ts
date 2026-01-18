@@ -1,5 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { saveSubscription } from '@/lib/notification';
+import { NextRequest, NextResponse } from "next/server";
+import {
+  removeSubscriptionsByEndpointExceptRole,
+  saveSubscription,
+} from "@/lib/notification";
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,12 +16,16 @@ export async function POST(req: NextRequest) {
       typeof subscription?.endpoint !== "string" ||
       role !== "customer"
     ) {
-      return NextResponse.json({ error: 'Missing params' }, { status: 400 });
+      return NextResponse.json({ error: "Missing params" }, { status: 400 });
     }
+    await removeSubscriptionsByEndpointExceptRole(subscription.endpoint, role);
     await saveSubscription(orderId, subscription, role);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'Failed to save subscription' }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to save subscription" },
+      { status: 500 }
+    );
   }
 }

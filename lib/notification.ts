@@ -57,6 +57,15 @@ export async function removeSubscriptionsByEndpointAll(endpoint: string) {
   });
 }
 
+export async function removeSubscriptionsByEndpointExceptRole(
+  endpoint: string,
+  role: string
+) {
+  return db.subscription.deleteMany({
+    where: { endpoint, role: { not: role } },
+  });
+}
+
 export async function isSubscribed(
   orderId: number,
   endpoint: string,
@@ -102,6 +111,15 @@ export async function removePharmacySubscription(
   });
 }
 
+export async function removePharmacySubscriptionsByEndpointExcept(
+  endpoint: string,
+  pharmacyId: number
+) {
+  return db.subscription.deleteMany({
+    where: { endpoint, role: "pharm", NOT: { pharmacyId } },
+  });
+}
+
 export async function isPharmacySubscribed(
   pharmacyId: number,
   endpoint: string
@@ -143,6 +161,15 @@ export async function removeRiderSubscription(
 ) {
   return db.subscription.deleteMany({
     where: { endpoint, riderId, role: "rider" },
+  });
+}
+
+export async function removeRiderSubscriptionsByEndpointExcept(
+  endpoint: string,
+  riderId: number
+) {
+  return db.subscription.deleteMany({
+    where: { endpoint, role: "rider", NOT: { riderId } },
   });
 }
 

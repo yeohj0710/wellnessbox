@@ -75,6 +75,18 @@ function logDebug(message: string, context: Record<string, unknown>) {
   console.warn(message, context);
 }
 
+function formatError(err: unknown) {
+  if (!err || typeof err !== "object") {
+    return { errorName: typeof err, errorMessage: String(err) };
+  }
+  const error = err as { name?: string; message?: string; code?: unknown };
+  return {
+    errorName: error.name || "Error",
+    errorMessage: error.message || String(err),
+    errorCode: error.code ?? null,
+  };
+}
+
 function decodeAppKeyBytes(appKey: string) {
   try {
     const padding = "=".repeat((4 - (appKey.length % 4)) % 4);
@@ -142,9 +154,6 @@ export async function ensureCustomerPushSubscription({
 
     if (sub && mismatch) {
       await detachEndpoint(sub.endpoint);
-      try {
-        await sub.unsubscribe();
-      } catch {}
       sub = null;
     }
 
@@ -164,13 +173,17 @@ export async function ensureCustomerPushSubscription({
         } else {
           if (!silent) {
             logDebug("Push subscription failed", {
-              error,
+              ...formatError(error),
               permission: Notification.permission,
               appKeyPresent: Boolean(appKey),
               appKeyLen: appKey.length,
               appKeyDecodedBytes: decodeAppKeyBytes(appKey),
               swReady: Boolean(navigator.serviceWorker?.controller),
               regScope: reg.scope,
+              existingSub: false,
+              endpointSuffix: sub?.endpoint
+                ? sub.endpoint.slice(-12)
+                : null,
             });
           }
           sub = null;
@@ -186,7 +199,8 @@ export async function ensureCustomerPushSubscription({
     return sub;
   })()
     .catch((error) => {
-      if (!silent) logDebug("Push subscription ensure failed", { error });
+      if (!silent)
+        logDebug("Push subscription ensure failed", { ...formatError(error) });
       return null;
     })
     .finally(() => {

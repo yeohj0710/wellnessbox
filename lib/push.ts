@@ -30,6 +30,8 @@ export async function getSubAppKeyBase64(reg: ServiceWorkerRegistration) {
 }
 
 const PUSH_LOCK_NAME = "wb-push-subscribe";
+const SW_READY_TIMEOUT_MS = 2000;
+let swReadyPromise: Promise<ServiceWorkerRegistration> | null = null;
 const PUSH_LOCK_TTL_MS = 8000;
 const PUSH_LOCK_RETRY_MS = 200;
 const pushInFlight = new Map<string, Promise<PushSubscription | null>>();
@@ -70,35 +72,10 @@ async function withPushLock<T>(lockName: string, task: () => Promise<T>) {
   return task();
 }
 
-export const registerAndActivateSW = async () => {
-  const reg =
-    (await navigator.serviceWorker.getRegistration()) ||
-    (await navigator.serviceWorker.register("/sw.js"));
-
-  await reg.update();
-  await navigator.serviceWorker.ready;
-
-  if (!navigator.serviceWorker.controller) {
-    await Promise.race([
-      new Promise<void>((resolve) => {
-        const onChange = () => {
-          if (navigator.serviceWorker.controller) {
-            navigator.serviceWorker.removeEventListener(
-              "controllerchange",
-              onChange
-            );
-            resolve();
-          }
-        };
-        navigator.serviceWorker.addEventListener("controllerchange", onChange);
-      }),
-      delay(2000),
-    ]);
-  }
-
-  if (reg.waiting) {
-    reg.waiting.postMessage({ type: "SKIP_WAITING" });
-    await new Promise<void>((resolve) => {
+const waitForController = async (timeoutMs = SW_READY_TIMEOUT_MS) => {
+  if (navigator.serviceWorker.controller) return;
+  await Promise.race([
+    new Promise<void>((resolve) => {
       const onChange = () => {
         if (navigator.serviceWorker.controller) {
           navigator.serviceWorker.removeEventListener(
@@ -109,10 +86,31 @@ export const registerAndActivateSW = async () => {
         }
       };
       navigator.serviceWorker.addEventListener("controllerchange", onChange);
-    });
-  }
+    }),
+    delay(timeoutMs),
+  ]);
+};
 
-  return reg;
+export const registerAndActivateSW = async () => {
+  if (swReadyPromise) return swReadyPromise;
+
+  swReadyPromise = (async () => {
+    const reg =
+      (await navigator.serviceWorker.getRegistration()) ||
+      (await navigator.serviceWorker.register("/sw.js"));
+
+    await navigator.serviceWorker.ready;
+    await waitForController();
+
+    return reg;
+  })();
+
+  try {
+    return await swReadyPromise;
+  } catch (err) {
+    swReadyPromise = null;
+    throw err;
+  }
 };
 
 type EnsurePushSubscriptionOptions = {
@@ -123,11 +121,18 @@ type EnsurePushSubscriptionOptions = {
   lockKey?: string;
 };
 
+type EnsureGlobalPushSubscriptionOptions = Omit<
+  EnsurePushSubscriptionOptions,
+  "reg"
+>;
+
 async function forceReRegisterSW() {
   try {
     const regs = await navigator.serviceWorker.getRegistrations();
     await Promise.all(regs.map((r) => r.unregister()));
   } catch {}
+  swReadyPromise = null;
+  await delay(250);
   return registerAndActivateSW();
 }
 
@@ -145,8 +150,9 @@ export async function ensurePushSubscription({
   storedKey,
   lockKey,
 }: EnsurePushSubscriptionOptions) {
-  const lockName = lockKey || PUSH_LOCK_NAME;
-  const cached = pushInFlight.get(lockName);
+  const lockName = PUSH_LOCK_NAME;
+  const cacheKey = lockKey || PUSH_LOCK_NAME;
+  const cached = pushInFlight.get(cacheKey);
   if (cached) return cached;
 
   const task = withPushLock(lockName, async () => {
@@ -154,6 +160,10 @@ export async function ensurePushSubscription({
 
     if (!liveReg.active) {
       liveReg = await registerAndActivateSW();
+    }
+
+    if (Notification.permission !== "granted") {
+      return null;
     }
 
     let sub = await liveReg.pushManager.getSubscription();
@@ -185,17 +195,30 @@ export async function ensurePushSubscription({
       return await subscribeOnce(liveReg, appKey);
     } catch (err: any) {
       if (err?.name === "AbortError") {
+        const existing = await liveReg.pushManager.getSubscription();
+        if (existing) return existing;
+        await delay(300);
         const freshReg = await forceReRegisterSW();
+        await navigator.serviceWorker.ready;
+        await waitForController();
         return await subscribeOnce(freshReg, appKey);
       }
       throw err;
     }
   });
 
-  pushInFlight.set(lockName, task);
+  pushInFlight.set(cacheKey, task);
   try {
     return await task;
   } finally {
-    pushInFlight.delete(lockName);
+    pushInFlight.delete(cacheKey);
   }
+}
+
+export async function ensureGlobalPushSubscription({
+  appKey,
+  ...rest
+}: EnsureGlobalPushSubscriptionOptions) {
+  const reg = await registerAndActivateSW();
+  return ensurePushSubscription({ reg, appKey, ...rest });
 }

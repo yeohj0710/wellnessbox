@@ -137,21 +137,18 @@ export default function Pharm() {
             (subAppKey && subAppKey !== appKey);
 
           if (mismatch) {
+            if (isSubscribingRef.current) return;
             try {
-              await fetch("/api/pharm-push/unsubscribe", {
+              await fetch("/api/push/detach", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                  pharmacyId: pharm.id,
                   endpoint: sub.endpoint,
-                  role: "pharm",
                 }),
               });
             } catch {}
-            try {
-              await sub.unsubscribe();
-            } catch {}
-            sub = null;
+            setIsSubscribed(false);
+            return;
           }
         }
 
@@ -303,15 +300,12 @@ export default function Pharm() {
       const sub = await ensurePushSubscription({
         reg,
         appKey,
-        lockKey: `push:pharm:${pharm?.id ?? "self"}`,
         onUnsubscribe: async (subscription) => {
-          await fetch("/api/pharm-push/unsubscribe", {
+          await fetch("/api/push/detach", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              pharmacyId: pharm?.id,
               endpoint: subscription.endpoint,
-              role: "pharm",
             }),
           });
         },
