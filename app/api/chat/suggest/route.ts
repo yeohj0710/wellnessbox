@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
 import { getDefaultModel } from "@/lib/ai/model";
 import { CATEGORY_LABELS } from "@/lib/categories";
+import { resolveActorForRequest } from "@/lib/server/actor";
+import {
+  buildChatContextPayload,
+  getUserDataForActor,
+} from "@/lib/server/chat-context";
 
 export const runtime = "nodejs";
 
@@ -221,8 +226,16 @@ export async function POST(req: NextRequest) {
       ? Math.min(Math.max(countRaw, 1), 2)
       : 2;
 
+    const actor = await resolveActorForRequest(req, { intent: "read" });
+    const userData = await getUserDataForActor(actor).catch(() => null);
+    const serverContext = userData ? buildChatContextPayload(userData) : null;
+    const mergedContext = {
+      ...body,
+      ...serverContext,
+    };
+
     const historyText = buildHistoryText(body?.recentMessages || []);
-    const contextBrief = buildContextBrief(body || {});
+    const contextBrief = buildContextBrief(mergedContext || {});
     const topicBase = [text, historyText, contextBrief]
       .filter(Boolean)
       .join(" ");

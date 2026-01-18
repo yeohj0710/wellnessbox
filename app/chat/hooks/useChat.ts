@@ -307,10 +307,15 @@ export default function useChat() {
               id: o.id,
               status: o.status,
               updatedAt: o.updatedAt,
-              items: (o.orderItems || []).map((it: any) => ({
-                name: it.pharmacyProduct?.product?.name || "상품",
-                quantity: it.quantity,
-              })),
+              items: Array.isArray(o.items)
+                ? o.items.map((it: any) => ({
+                    name: it?.name || "상품",
+                    quantity: it?.quantity ?? null,
+                  }))
+                : (o.orderItems || []).map((it: any) => ({
+                    name: it.pharmacyProduct?.product?.name || "상품",
+                    quantity: it.quantity,
+                  })),
             }))
           : [];
         setOrders(ords);
