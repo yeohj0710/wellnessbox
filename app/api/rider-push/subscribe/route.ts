@@ -4,21 +4,27 @@ import {
   removeSubscriptionsByEndpointExceptRole,
   saveRiderSubscription,
 } from "@/lib/notification";
+import { requireRiderSession } from "@/lib/server/route-auth";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const riderId = Number(body?.riderId);
+    const requestedRiderId = Number(body?.riderId);
     const subscription = body?.subscription;
     const role = body?.role;
     if (
-      !Number.isFinite(riderId) ||
+      !Number.isFinite(requestedRiderId) ||
       !subscription ||
       typeof subscription?.endpoint !== "string" ||
       role !== "rider"
     ) {
       return NextResponse.json({ error: "Missing params" }, { status: 400 });
     }
+
+    const auth = await requireRiderSession(requestedRiderId);
+    if (!auth.ok) return auth.response;
+    const riderId = auth.data.riderId;
+
     await removeSubscriptionsByEndpointExceptRole(subscription.endpoint, role);
     await removeRiderSubscriptionsByEndpointExcept(
       subscription.endpoint,

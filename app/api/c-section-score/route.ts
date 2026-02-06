@@ -89,7 +89,14 @@ export async function POST(req: Request) {
     const ort = await import("onnxruntime-web");
     const [order, sess] = await Promise.all([loadCatOrder(), loadSession()]);
 
-    const ids = BigInt64Array.from(cats.map((c) => BigInt(order.indexOf(c))));
+    const catIndexes = cats.map((c) => order.indexOf(c));
+    if (catIndexes.some((i) => i < 0)) {
+      return new Response(
+        JSON.stringify({ error: "Unknown category in payload" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    const ids = BigInt64Array.from(catIndexes.map((i) => BigInt(i)));
 
     const catTensor = new ort.Tensor("int64", ids, [cats.length]);
     const ansTensor = new ort.Tensor("float32", normAnswers(ans), [

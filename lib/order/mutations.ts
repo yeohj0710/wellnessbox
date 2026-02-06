@@ -7,6 +7,70 @@ import {
   sendNewOrderNotification,
   sendRiderNotification,
 } from "@/lib/notification";
+import getSession from "@/lib/session";
+import { normalizePhone } from "@/lib/otp";
+
+const orderWithItemsInclude = {
+  pharmacy: true,
+  orderItems: {
+    include: {
+      pharmacyProduct: {
+        select: {
+          price: true,
+          optionType: true,
+          product: {
+            select: {
+              name: true,
+              images: true,
+              categories: { select: { name: true } },
+            },
+          },
+        },
+      },
+    },
+  },
+} as const;
+
+function normalizeOrderItems(
+  items: { pharmacyProductId: number; quantity: number }[]
+) {
+  const merged = new Map<number, number>();
+  for (const item of items) {
+    const pharmacyProductId = Number(item?.pharmacyProductId);
+    const quantity = Number(item?.quantity);
+    if (
+      !Number.isInteger(pharmacyProductId) ||
+      pharmacyProductId <= 0 ||
+      !Number.isInteger(quantity) ||
+      quantity <= 0
+    ) {
+      continue;
+    }
+    merged.set(pharmacyProductId, (merged.get(pharmacyProductId) ?? 0) + quantity);
+  }
+  return Array.from(merged.entries()).map(([pharmacyProductId, quantity]) => ({
+    pharmacyProductId,
+    quantity,
+  }));
+}
+
+async function resolveAppUserIdForOrderPhone(orderPhone?: string): Promise<string | undefined> {
+  const session = await getSession();
+  const kakaoId = session.user?.kakaoId;
+  if (!session.user?.loggedIn || typeof kakaoId !== "number") return undefined;
+
+  const appUser = await db.appUser.findUnique({
+    where: { kakaoId: String(kakaoId) },
+    select: { id: true, phone: true },
+  });
+  if (!appUser) return undefined;
+
+  const orderDigits = normalizePhone(orderPhone ?? "").replace(/\D/g, "");
+  const userDigits = normalizePhone(appUser.phone ?? "").replace(/\D/g, "");
+  if (orderDigits && userDigits && orderDigits !== userDigits) return undefined;
+
+  return appUser.id;
+}
 
 export async function updateOrderStatus(
   orderid: number,
@@ -41,40 +105,60 @@ export async function createOrder(data: {
   orderItems: { pharmacyProductId: number; quantity: number }[];
 }) {
   const { orderItems, endpoint, ...orderData } = data;
-  const created = await db.order.create({
-    data: {
-      ...orderData,
-      endpoint,
-      orderItems: {
-        create: orderItems.map((item) => ({
-          pharmacyProductId: item.pharmacyProductId,
-          quantity: item.quantity,
-        })),
-      },
-    },
-    include: {
-      pharmacy: true,
-      orderItems: {
-        include: {
-          pharmacyProduct: {
-            select: {
-              price: true,
-              optionType: true,
-              product: {
-                select: {
-                  name: true,
-                  images: true,
-                  categories: { select: { name: true } },
-                },
-              },
-            },
-          },
+  const normalizedItems = normalizeOrderItems(orderItems);
+  if (!normalizedItems.length) {
+    throw new Error("Order items are required");
+  }
+
+  const appUserId = await resolveAppUserIdForOrderPhone(orderData.phone);
+  const paymentId = orderData.paymentId?.trim();
+
+  const txResult = await db.$transaction(async (tx) => {
+    if (paymentId) {
+      const existing = await tx.order.findFirst({
+        where: { paymentId },
+        include: orderWithItemsInclude,
+      });
+      if (existing) return { order: existing, created: false };
+    }
+
+    for (const item of normalizedItems) {
+      const updated = await tx.pharmacyProduct.updateMany({
+        where: {
+          id: item.pharmacyProductId,
+          stock: { gte: item.quantity },
+        },
+        data: {
+          stock: { decrement: item.quantity },
+        },
+      });
+      if (updated.count !== 1) {
+        throw new Error("Insufficient stock for one or more items");
+      }
+    }
+
+    const createdOrder = await tx.order.create({
+      data: {
+        ...orderData,
+        paymentId: paymentId || undefined,
+        endpoint,
+        appUserId: appUserId ?? undefined,
+        orderItems: {
+          create: normalizedItems.map((item) => ({
+            pharmacyProductId: item.pharmacyProductId,
+            quantity: item.quantity,
+          })),
         },
       },
-    },
+      include: orderWithItemsInclude,
+    });
+    return { order: createdOrder, created: true };
   });
-  await sendNewOrderNotification(created.id);
-  return created;
+
+  if (txResult.created) {
+    await sendNewOrderNotification(txResult.order.id);
+  }
+  return txResult.order;
 }
 
 export async function updateOrder(
@@ -92,7 +176,7 @@ export async function updateOrder(
     transactionType?: string;
     txId?: string;
     status?: OrderStatus;
-    orderItems?: { productId: number; quantity: number }[];
+    orderItems?: { pharmacyProductId: number; quantity: number }[];
     totalPrice?: number;
   }
 ) {
@@ -116,11 +200,15 @@ export async function updateOrder(
     },
   });
   if (orderItems && orderItems.length > 0) {
+    const normalizedItems = normalizeOrderItems(orderItems);
+    if (!normalizedItems.length) {
+      throw new Error("Order items are invalid");
+    }
     await db.orderItem.deleteMany({ where: { orderId: orderid } });
     await db.orderItem.createMany({
-      data: orderItems.map((item) => ({
+      data: normalizedItems.map((item) => ({
         orderId: orderid,
-        productId: item.productId,
+        pharmacyProductId: item.pharmacyProductId,
         quantity: item.quantity,
       })),
     });

@@ -7,10 +7,14 @@ import {
 } from "@/lib/ai/retriever";
 import { ensureIndexed, reindexAll } from "@/lib/ai/indexer";
 import { makeSnippet } from "@/lib/ai/snippet";
+import { requireAdminSession } from "@/lib/server/route-auth";
 
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
+  const auth = await requireAdminSession();
+  if (!auth.ok) return auth.response;
+
   const { searchParams } = new URL(req.url);
   const q = searchParams.get("q") || "";
   const force = searchParams.get("force") === "1";

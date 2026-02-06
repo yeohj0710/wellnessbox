@@ -4,7 +4,6 @@ import FullPageLoader from "@/components/common/fullPageLoader";
 import { createOrder } from "@/lib/order/mutations";
 import { getOrderByPaymentId } from "@/lib/order/queries";
 import { getClientIdLocal } from "@/app/chat/utils";
-import { reducePharmacyProductStock } from "@/lib/product";
 import { getLoginStatus } from "@/lib/useLoginStatus";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
@@ -231,11 +230,6 @@ export default function OrderComplete() {
             pharmacyId,
             orderItems,
           });
-          await Promise.all(
-            orderItems.map((item: any) =>
-              reducePharmacyProductStock(item.pharmacyProductId, item.quantity)
-            )
-          );
           const fullOrder = await getOrderByPaymentId(paymentId as string);
           setOrder(fullOrder);
           setShowNotifyModal(true);
@@ -337,11 +331,6 @@ export default function OrderComplete() {
             pharmacyId,
             orderItems,
           });
-          await Promise.all(
-            orderItems.map((item: any) =>
-              reducePharmacyProductStock(item.pharmacyProductId, item.quantity)
-            )
-          );
           const fullOrder = await getOrderByPaymentId(paymentId as string);
           setOrder(fullOrder);
           setShowNotifyModal(true);

@@ -6,8 +6,8 @@ import {
   generateClientId,
   isLikelyBot,
 } from "./lib/shared/client-id";
+import { isValidAdminCookieToken } from "@/lib/admin-token";
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const EN_LOCALE_PREFIX = "/en";
 const EN_LOCALE_COOKIE = "wb-locale";
 const EN_LOCALE_HEADER = "x-wb-locale";
@@ -64,7 +64,7 @@ function attachClientCookie(req: NextRequest, res: NextResponse) {
   return res;
 }
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const originalUrl = req.nextUrl.clone();
   const pathname = originalUrl.pathname;
   const isEnglishCheckAi =
@@ -146,13 +146,14 @@ export function middleware(req: NextRequest) {
   }
 
   const normalizedPathname = stripEnglishPrefix(pathname);
-  const cookiePassword = req.cookies.get("admin")?.value;
+  const adminToken = req.cookies.get("admin")?.value;
 
   const shouldProtect = isProtectedPath(normalizedPathname);
   const isAdminLogin = normalizedPathname === "/admin-login";
 
   if (shouldProtect && !isAdminLogin) {
-    if (!cookiePassword || cookiePassword !== ADMIN_PASSWORD) {
+    const isAdminAuthorized = await isValidAdminCookieToken(adminToken);
+    if (!isAdminAuthorized) {
       const redirectUrl = req.nextUrl.clone();
       redirectUrl.pathname = isEnglishSession
         ? `${EN_LOCALE_PREFIX}/admin-login`

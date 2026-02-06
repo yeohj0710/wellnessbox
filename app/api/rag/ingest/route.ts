@@ -5,6 +5,7 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import { splitMarkdown } from "@/lib/ai/markdownSplitter";
 import { upsertDocuments, resetInMemoryStore } from "@/lib/ai/retriever";
+import { requireAdminSession } from "@/lib/server/route-auth";
 
 const MAX_TEXT_LEN = Number(process.env.RAG_INGEST_MAX || 2_000_000);
 const ALLOWED_DIRS = ["lib/ai", "data", "public"];
@@ -20,6 +21,9 @@ function resolveSafe(rel: string) {
 }
 
 export async function POST(req: NextRequest) {
+  const auth = await requireAdminSession();
+  if (!auth.ok) return auth.response;
+
   const body = await req.json();
   const replace = !!body.replace;
   const rel = typeof body.path === "string" ? body.path : undefined;

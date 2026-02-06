@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSubscriptionStatus } from "@/lib/notification";
+import { requireCustomerOrderAccess } from "@/lib/server/route-auth";
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,6 +11,10 @@ export async function POST(req: NextRequest) {
     if (!Number.isFinite(orderId) || typeof endpoint !== "string" || role !== "customer") {
       return NextResponse.json({ error: "Missing params" }, { status: 400 });
     }
+
+    const auth = await requireCustomerOrderAccess(orderId);
+    if (!auth.ok) return auth.response;
+
     const status = await getSubscriptionStatus(orderId, endpoint, role);
     return NextResponse.json(status);
   } catch (err) {

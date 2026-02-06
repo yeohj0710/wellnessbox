@@ -3,6 +3,7 @@ import {
   removeSubscriptionsByEndpointExceptRole,
   saveSubscription,
 } from "@/lib/notification";
+import { requireCustomerOrderAccess } from "@/lib/server/route-auth";
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,6 +19,10 @@ export async function POST(req: NextRequest) {
     ) {
       return NextResponse.json({ error: "Missing params" }, { status: 400 });
     }
+
+    const auth = await requireCustomerOrderAccess(orderId);
+    if (!auth.ok) return auth.response;
+
     await removeSubscriptionsByEndpointExceptRole(subscription.endpoint, role);
     await saveSubscription(orderId, subscription, role);
     return NextResponse.json({ ok: true });

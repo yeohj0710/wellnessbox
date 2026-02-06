@@ -11,42 +11,49 @@ export async function POST(req: NextRequest) {
     const { role } = body;
     if (role === "customer") {
       const { orderId, phone, password } = body;
-      if (!orderId || !phone || !password)
+      const parsedOrderId = Number(orderId);
+      if (!Number.isFinite(parsedOrderId) || !phone || !password)
         return NextResponse.json({ error: "Missing params" }, { status: 400 });
       const order = await db.order.findFirst({
-        where: { id: orderId, phone, password },
+        where: { id: parsedOrderId, phone, password },
       });
       if (!order)
         return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-      const { token, exp } = sign({ role: "customer", orderId });
+      const { token, exp } = sign({ role: "customer", orderId: parsedOrderId });
       return NextResponse.json({ token, exp });
     }
     if (role === "pharm") {
       const { orderId } = body;
+      const parsedOrderId = Number(orderId);
       const session = await getSession();
       const pharmId = session.pharm?.id;
-      if (!pharmId || !orderId)
+      if (!pharmId || !Number.isFinite(parsedOrderId))
         return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
       const order = await db.order.findFirst({
-        where: { id: orderId, pharmacyId: pharmId },
+        where: { id: parsedOrderId, pharmacyId: pharmId },
       });
       if (!order)
         return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-      const { token, exp } = sign({ role: "pharm", pharmacyId: pharmId, orderId });
+      const { token, exp } = sign({
+        role: "pharm",
+        pharmacyId: pharmId,
+        orderId: parsedOrderId,
+      });
       return NextResponse.json({ token, exp });
     }
     if (role === "rider") {
       const { orderId } = body;
+      const parsedOrderId = Number(orderId);
       const session = await getSession();
       const riderId = session.rider?.id;
-      if (!riderId || !orderId)
+      if (!riderId || !Number.isFinite(parsedOrderId))
         return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
       const order = await db.order.findFirst({
-        where: { id: orderId, riderId },
+        where: { id: parsedOrderId, riderId },
       });
       if (!order)
         return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-      const { token, exp } = sign({ role: "rider", riderId, orderId });
+      const { token, exp } = sign({ role: "rider", riderId, orderId: parsedOrderId });
       return NextResponse.json({ token, exp });
     }
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });

@@ -1,0 +1,138 @@
+import { NextResponse } from "next/server";
+import db from "@/lib/db";
+import getSession from "@/lib/session";
+import { normalizePhone } from "@/lib/otp";
+
+type GuardSuccess<T> = { ok: true; data: T };
+type GuardFailure = { ok: false; response: NextResponse };
+type GuardResult<T> = GuardSuccess<T> | GuardFailure;
+
+function jsonError(status: number, message: string) {
+  return NextResponse.json(
+    { error: message },
+    {
+      status,
+      headers: { "Cache-Control": "no-store" },
+    }
+  );
+}
+
+function unauthorized(message = "Unauthorized"): GuardFailure {
+  return { ok: false, response: jsonError(401, message) };
+}
+
+function badRequest(message = "Invalid request"): GuardFailure {
+  return { ok: false, response: jsonError(400, message) };
+}
+
+function normalizePhoneLoose(value: string | null | undefined): string {
+  return normalizePhone(value ?? "").replace(/\D/g, "");
+}
+
+async function resolveLoggedInAppUser() {
+  const session = await getSession();
+  if (!session.user?.loggedIn || typeof session.user.kakaoId !== "number") {
+    return { session, appUser: null };
+  }
+  const appUser = await db.appUser.findUnique({
+    where: { kakaoId: String(session.user.kakaoId) },
+    select: { id: true, phone: true },
+  });
+  return { session, appUser };
+}
+
+export async function requireAdminSession(): Promise<GuardResult<null>> {
+  const session = await getSession();
+  if (!session.admin?.loggedIn) return unauthorized();
+  return { ok: true, data: null };
+}
+
+export async function requireAnySession(): Promise<GuardResult<null>> {
+  const session = await getSession();
+  const hasSession =
+    !!session.admin?.loggedIn ||
+    !!session.test?.loggedIn ||
+    !!session.pharm?.loggedIn ||
+    !!session.rider?.loggedIn ||
+    (!!session.user?.loggedIn && typeof session.user.kakaoId === "number");
+  if (!hasSession) return unauthorized();
+  return { ok: true, data: null };
+}
+
+export async function requirePharmSession(
+  expectedPharmacyId?: number
+): Promise<GuardResult<{ pharmacyId: number }>> {
+  const session = await getSession();
+  const pharmacyId = session.pharm?.id;
+  if (!session.pharm?.loggedIn || !Number.isFinite(pharmacyId)) {
+    return unauthorized();
+  }
+  if (
+    Number.isFinite(expectedPharmacyId) &&
+    Number(pharmacyId) !== Number(expectedPharmacyId)
+  ) {
+    return unauthorized();
+  }
+  return { ok: true, data: { pharmacyId: Number(pharmacyId) } };
+}
+
+export async function requireRiderSession(
+  expectedRiderId?: number
+): Promise<GuardResult<{ riderId: number }>> {
+  const session = await getSession();
+  const riderId = session.rider?.id;
+  if (!session.rider?.loggedIn || !Number.isFinite(riderId)) {
+    return unauthorized();
+  }
+  if (
+    Number.isFinite(expectedRiderId) &&
+    Number(riderId) !== Number(expectedRiderId)
+  ) {
+    return unauthorized();
+  }
+  return { ok: true, data: { riderId: Number(riderId) } };
+}
+
+type OrderAccessOrder = {
+  id: number;
+  appUserId: string | null;
+  phone: string | null;
+  pharmacyId: number | null;
+  riderId: number | null;
+};
+
+async function getOrderAccessRow(
+  orderId: number
+): Promise<OrderAccessOrder | null> {
+  return db.order.findUnique({
+    where: { id: orderId },
+    select: {
+      id: true,
+      appUserId: true,
+      phone: true,
+      pharmacyId: true,
+      riderId: true,
+    },
+  });
+}
+
+export async function requireCustomerOrderAccess(
+  orderId: number
+): Promise<GuardResult<{ order: OrderAccessOrder; appUserId: string }>> {
+  if (!Number.isFinite(orderId)) return badRequest("Invalid orderId");
+
+  const { appUser } = await resolveLoggedInAppUser();
+  if (!appUser) return unauthorized();
+
+  const order = await getOrderAccessRow(Number(orderId));
+  if (!order) return { ok: false, response: jsonError(404, "Order not found") };
+
+  const orderPhone = normalizePhoneLoose(order.phone);
+  const userPhone = normalizePhoneLoose(appUser.phone);
+  const ownsById = !!order.appUserId && order.appUserId === appUser.id;
+  const ownsByPhone = !!orderPhone && !!userPhone && orderPhone === userPhone;
+
+  if (!ownsById && !ownsByPhone) return unauthorized();
+
+  return { ok: true, data: { order, appUserId: appUser.id } };
+}

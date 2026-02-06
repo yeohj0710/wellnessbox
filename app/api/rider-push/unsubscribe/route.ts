@@ -1,15 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { removeRiderSubscription } from "@/lib/notification";
+import { requireRiderSession } from "@/lib/server/route-auth";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const riderId = Number(body?.riderId);
+    const requestedRiderId = Number(body?.riderId);
     const endpoint = body?.endpoint;
     const role = body?.role;
-    if (typeof endpoint !== "string" || role !== "rider" || !Number.isFinite(riderId)) {
+    if (typeof endpoint !== "string" || role !== "rider" || !Number.isFinite(requestedRiderId)) {
       return NextResponse.json({ error: "Missing params" }, { status: 400 });
     }
+    const auth = await requireRiderSession(requestedRiderId);
+    if (!auth.ok) return auth.response;
+
+    const riderId = auth.data.riderId;
     await removeRiderSubscription(endpoint, riderId);
     return NextResponse.json({ ok: true });
   } catch (err) {

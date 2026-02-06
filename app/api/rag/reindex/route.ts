@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { reindexAll } from "@/lib/ai/indexer";
+import { requireAdminSession } from "@/lib/server/route-auth";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
+  const auth = await requireAdminSession();
+  if (!auth.ok) return auth.response;
+
   const t0 = Date.now();
 
   const results = await reindexAll("data");
