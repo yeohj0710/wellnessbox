@@ -14,7 +14,8 @@
     "rnd:module02:scaffold": "node scripts/rnd/module02/run-scaffold.cjs",
     "rnd:module02:mvp": "node scripts/rnd/module02/run-mvp-ingest.cjs",
     "rnd:module02:evaluation": "node scripts/rnd/module02/run-evaluation.cjs",
-    "rnd:module03:scaffold": "node scripts/rnd/module03/run-scaffold.cjs"
+    "rnd:module03:scaffold": "node scripts/rnd/module03/run-scaffold.cjs",
+    "rnd:module03:mvp": "node scripts/rnd/module03/run-mvp-validation.cjs"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.4",
