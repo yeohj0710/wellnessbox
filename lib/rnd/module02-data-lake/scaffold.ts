@@ -2,6 +2,7 @@
 
 import {
   assertRndDataLakeRecord,
+  assertRndEvidenceLinkLog,
   createRndDataLakeRecord,
   type RndDataLakeRecord,
   type RndEvidenceLinkLog,
@@ -40,7 +41,14 @@ export function buildEvidenceLinkLog(
       )
     )
   );
-  const sourceKinds = Array.from(new Set(input.records.map((record) => record.sourceKind)));
+  const sourceKinds = Array.from(
+    new Set(
+      input.records.flatMap((record) => [
+        record.sourceKind,
+        ...record.evidence.map((unit) => unit.sourceKind),
+      ])
+    )
+  );
 
   return {
     sampleId: input.sampleId,
@@ -215,12 +223,6 @@ export function assertModule02ScaffoldBundle(
   }
   bundle.records.forEach((record) => assertRndDataLakeRecord(record));
   bundle.evidenceLinkLogs.forEach((log) => {
-    if (!log.sampleId.trim() || !log.queryId.trim()) {
-      throw new Error("evidenceLinkLogs entries must include sampleId and queryId.");
-    }
-    if (log.linkedEvidenceIds.length === 0) {
-      throw new Error("evidenceLinkLogs entries must include linkedEvidenceIds.");
-    }
-    assertIsoDateTime(log.loggedAt, "loggedAt");
+    assertRndEvidenceLinkLog(log);
   });
 }

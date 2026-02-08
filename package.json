@@ -11,7 +11,8 @@
     "start": "next start",
     "lint": "next lint",
     "audit:clients": "ts-node scripts/audit-clients.ts",
-    "rnd:module02:scaffold": "node scripts/rnd/module02/run-scaffold.cjs"
+    "rnd:module02:scaffold": "node scripts/rnd/module02/run-scaffold.cjs",
+    "rnd:module02:mvp": "node scripts/rnd/module02/run-mvp-ingest.cjs"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.4",

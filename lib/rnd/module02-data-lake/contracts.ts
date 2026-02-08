@@ -199,3 +199,27 @@ export function assertRndDataLakeRecord(
     throw new Error("Invalid Module 02 Data Lake record scaffold payload.");
   }
 }
+
+export function isRndEvidenceLinkLog(value: unknown): value is RndEvidenceLinkLog {
+  if (!isObject(value)) return false;
+  if (!isNonEmptyString(value.sampleId)) return false;
+  if (!isNonEmptyString(value.queryId)) return false;
+  if (!Array.isArray(value.linkedEvidenceIds) || value.linkedEvidenceIds.length === 0) {
+    return false;
+  }
+  if (!value.linkedEvidenceIds.every((item) => isNonEmptyString(item))) return false;
+  if (!Array.isArray(value.sourceKinds) || value.sourceKinds.length === 0) return false;
+  if (!value.sourceKinds.every((item) => isRndModule02SourceKind(item))) return false;
+  if (!Array.isArray(value.lineagePath) || value.lineagePath.length === 0) return false;
+  if (!value.lineagePath.every((item) => isNonEmptyString(item))) return false;
+  if (!isIsoDateTime(value.loggedAt)) return false;
+  return true;
+}
+
+export function assertRndEvidenceLinkLog(
+  value: unknown
+): asserts value is RndEvidenceLinkLog {
+  if (!isRndEvidenceLinkLog(value)) {
+    throw new Error("Invalid Module 02 evidence-link log payload.");
+  }
+}
