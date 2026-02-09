@@ -21,6 +21,7 @@
     "rnd:module03:evaluation:adverse": "node scripts/rnd/module03/run-adverse-event-evaluation.cjs",
     "rnd:module03:evaluation:adverse:ops": "node scripts/rnd/module03/run-adverse-event-evaluation-from-source.cjs",
     "rnd:module03:evaluation:adverse:ops:archive": "node scripts/rnd/module03/run-adverse-event-evaluation-archive.cjs",
+    "rnd:module03:evaluation:adverse:ops:scheduler": "node scripts/rnd/module03/run-adverse-event-evaluation-scheduler.cjs",
     "rnd:module04:scaffold": "node scripts/rnd/module04/run-scaffold.cjs",
     "rnd:module04:mvp": "node scripts/rnd/module04/run-mvp-quantification.cjs",
     "rnd:module04:evaluation": "node scripts/rnd/module04/run-evaluation.cjs",
