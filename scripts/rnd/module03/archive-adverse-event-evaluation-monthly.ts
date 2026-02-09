@@ -9,6 +9,7 @@ type CliArgs = {
   schemaMapPath: string | null;
   archiveDir: string;
   windowEnd: string;
+  retentionMonths: number | null;
 };
 
 type Module03Kpi06OpsOutput = {
@@ -50,6 +51,14 @@ type Module03Kpi06ArchiveManifest = {
   generatedAt: string;
   archiveDir: string;
   entries: Module03Kpi06ArchiveEntry[];
+  retentionPolicy?: {
+    retentionMonths: number | null;
+    cutoffMonth: string | null;
+    appliedAt: string;
+    prunedEntryCount: number;
+    prunedReportCount: number;
+    prunedMonths: string[];
+  };
 };
 
 const MODULE_ID = "03_personal_safety_validation_engine";
@@ -100,6 +109,7 @@ function parseArgs(argv: string[]): CliArgs {
   const schemaMapPathValue = getArgValue(argv, "--schema-map");
   const archiveDirValue = getArgValue(argv, "--archive-dir");
   const windowEndValue = getArgValue(argv, "--window-end") ?? new Date().toISOString();
+  const retentionMonthsValue = getArgValue(argv, "--retention-months");
 
   const inputPath = path.resolve(inputPathValue);
   if (!fs.existsSync(inputPath)) {
@@ -111,11 +121,21 @@ function parseArgs(argv: string[]): CliArgs {
     throw new Error(`--schema-map file does not exist: ${schemaMapPath}`);
   }
 
+  let retentionMonths: number | null = null;
+  if (retentionMonthsValue !== null) {
+    const parsed = Number.parseInt(retentionMonthsValue, 10);
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      throw new Error("--retention-months must be a positive integer.");
+    }
+    retentionMonths = parsed;
+  }
+
   return {
     inputPath,
     schemaMapPath,
     archiveDir: archiveDirValue ? path.resolve(archiveDirValue) : DEFAULT_ARCHIVE_DIR,
     windowEnd: normalizeIsoDate(windowEndValue, "--window-end"),
+    retentionMonths,
   };
 }
 
@@ -327,6 +347,100 @@ function toPosixPath(value: string): string {
   return value.split(path.sep).join("/");
 }
 
+function isPathInsideDirectory(filePath: string, directoryPath: string): boolean {
+  const relativePath = path.relative(directoryPath, filePath);
+  return !relativePath.startsWith("..") && !path.isAbsolute(relativePath);
+}
+
+function monthStartUtcMs(isoDateTime: string): number {
+  const parsed = new Date(isoDateTime);
+  return Date.UTC(parsed.getUTCFullYear(), parsed.getUTCMonth(), 1);
+}
+
+function monthTokenFromUtcMonthStart(monthStartMs: number): string {
+  return toMonthToken(new Date(monthStartMs).toISOString());
+}
+
+function applyRetentionPolicy(
+  entries: Module03Kpi06ArchiveEntry[],
+  archiveDir: string,
+  retentionMonths: number | null,
+  appliedAt: string
+): {
+  entries: Module03Kpi06ArchiveEntry[];
+  cutoffMonth: string | null;
+  prunedEntries: Module03Kpi06ArchiveEntry[];
+  prunedReportCount: number;
+  prunedMonths: string[];
+} {
+  if (retentionMonths === null) {
+    return {
+      entries,
+      cutoffMonth: null,
+      prunedEntries: [],
+      prunedReportCount: 0,
+      prunedMonths: [],
+    };
+  }
+
+  const appliedMonthStart = monthStartUtcMs(appliedAt);
+  const appliedDate = new Date(appliedMonthStart);
+  const cutoffMonthStart = Date.UTC(
+    appliedDate.getUTCFullYear(),
+    appliedDate.getUTCMonth() - (retentionMonths - 1),
+    1
+  );
+
+  const keptEntries: Module03Kpi06ArchiveEntry[] = [];
+  const prunedEntries: Module03Kpi06ArchiveEntry[] = [];
+
+  for (const entry of entries) {
+    if (monthStartUtcMs(entry.windowEnd) >= cutoffMonthStart) {
+      keptEntries.push(entry);
+      continue;
+    }
+    prunedEntries.push(entry);
+  }
+
+  let prunedReportCount = 0;
+  const prunedMonthsSet = new Set<string>();
+  for (const entry of prunedEntries) {
+    prunedMonthsSet.add(entry.month);
+    const absoluteReportPath = path.resolve(archiveDir, entry.reportPath);
+    if (!isPathInsideDirectory(absoluteReportPath, archiveDir)) {
+      throw new Error(
+        `Refusing to delete report outside archive directory: ${entry.reportPath}`
+      );
+    }
+    if (fs.existsSync(absoluteReportPath)) {
+      fs.unlinkSync(absoluteReportPath);
+      prunedReportCount += 1;
+    }
+  }
+
+  for (const month of prunedMonthsSet) {
+    const monthDirPath = path.join(archiveDir, month);
+    if (!fs.existsSync(monthDirPath)) {
+      continue;
+    }
+    const monthDirStats = fs.statSync(monthDirPath);
+    if (!monthDirStats.isDirectory()) {
+      continue;
+    }
+    if (fs.readdirSync(monthDirPath).length === 0) {
+      fs.rmdirSync(monthDirPath);
+    }
+  }
+
+  return {
+    entries: keptEntries,
+    cutoffMonth: monthTokenFromUtcMonthStart(cutoffMonthStart),
+    prunedEntries,
+    prunedReportCount,
+    prunedMonths: [...prunedMonthsSet].sort(),
+  };
+}
+
 function upsertArchiveEntry(
   entries: Module03Kpi06ArchiveEntry[],
   nextEntry: Module03Kpi06ArchiveEntry
@@ -417,11 +531,26 @@ function main() {
 
   const manifestPath = path.join(args.archiveDir, MANIFEST_FILE_NAME);
   const manifest = readArchiveManifest(manifestPath, args.archiveDir);
+  const upsertedEntries = upsertArchiveEntry(manifest.entries, entry);
+  const retentionResult = applyRetentionPolicy(
+    upsertedEntries,
+    args.archiveDir,
+    args.retentionMonths,
+    archivedAt
+  );
   const nextManifest: Module03Kpi06ArchiveManifest = {
     ...manifest,
     generatedAt: archivedAt,
     archiveDir: args.archiveDir,
-    entries: upsertArchiveEntry(manifest.entries, entry),
+    entries: retentionResult.entries,
+    retentionPolicy: {
+      retentionMonths: args.retentionMonths,
+      cutoffMonth: retentionResult.cutoffMonth,
+      appliedAt: archivedAt,
+      prunedEntryCount: retentionResult.prunedEntries.length,
+      prunedReportCount: retentionResult.prunedReportCount,
+      prunedMonths: retentionResult.prunedMonths,
+    },
   };
 
   writeJsonFile(manifestPath, nextManifest);
@@ -436,6 +565,11 @@ function main() {
 
   console.log(`Wrote Module 03 KPI #6 monthly archive report: ${reportPath}`);
   console.log(`Updated Module 03 KPI #6 archive manifest: ${manifestPath}`);
+  if (args.retentionMonths !== null) {
+    console.log(
+      `Applied retention policy: ${args.retentionMonths} month(s), pruned entries=${retentionResult.prunedEntries.length}, pruned reports=${retentionResult.prunedReportCount}`
+    );
+  }
 }
 
 main();
