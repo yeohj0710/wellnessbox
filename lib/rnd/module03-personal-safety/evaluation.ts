@@ -7,6 +7,7 @@ import {
 
 export const MODULE03_REFERENCE_ACCURACY_MIN_RULE_COUNT = 100;
 export const MODULE03_REFERENCE_ACCURACY_TARGET_PERCENT = 95;
+export const MODULE03_ADVERSE_EVENT_TARGET_MAX_COUNT_PER_YEAR = 5;
 
 export type Module03ReferenceExpectation = {
   ruleId: string;
@@ -54,8 +55,47 @@ export type Module03ReferenceEvaluationReport = {
   ruleResults: Module03ReferenceRuleResult[];
 };
 
+export type Module03AdverseEventSample = {
+  sampleId: string;
+  eventId: string;
+  caseId: string;
+  reportedAt: string;
+  linkedToEngineRecommendation: boolean;
+};
+
+export type Module03AdverseEventCaseResult = {
+  sampleId: string;
+  eventId: string;
+  caseId: string;
+  reportedAt: string;
+  linkedToEngineRecommendation: boolean;
+  includedInWindow: boolean;
+  counted: boolean;
+};
+
+export type Module03AdverseEventEvaluationReport = {
+  module: "03_personal_safety_validation_engine";
+  phase: "EVALUATION";
+  kpiId: "kpi-06";
+  formula: "AdverseEventCount = count(linked_to_engine = true and reported_at within last 12 months)";
+  evaluatedAt: string;
+  windowStart: string;
+  windowEnd: string;
+  eventCount: number;
+  countedEventCount: number;
+  targetMaxCountPerYear: number;
+  targetSatisfied: boolean;
+  caseResults: Module03AdverseEventCaseResult[];
+};
+
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
+}
+
+function assertIsoDateTime(value: string, fieldName: string): void {
+  if (!Number.isFinite(Date.parse(value))) {
+    throw new Error(`${fieldName} must be a valid ISO datetime string.`);
+  }
 }
 
 function normalizeStringSet(values: readonly string[]): string[] {
@@ -135,6 +175,31 @@ function roundTo2(value: number): number {
   return Number(value.toFixed(2));
 }
 
+function assertAdverseEventSample(
+  sample: Module03AdverseEventSample,
+  index: number
+): void {
+  const location = `samples[${index}]`;
+  if (!isNonEmptyString(sample.sampleId)) {
+    throw new Error(`${location}.sampleId must be a non-empty string.`);
+  }
+  if (!isNonEmptyString(sample.eventId)) {
+    throw new Error(`${location}.eventId must be a non-empty string.`);
+  }
+  if (!isNonEmptyString(sample.caseId)) {
+    throw new Error(`${location}.caseId must be a non-empty string.`);
+  }
+  if (!isNonEmptyString(sample.reportedAt)) {
+    throw new Error(`${location}.reportedAt must be a non-empty string.`);
+  }
+  assertIsoDateTime(sample.reportedAt, `${location}.reportedAt`);
+  if (typeof sample.linkedToEngineRecommendation !== "boolean") {
+    throw new Error(
+      `${location}.linkedToEngineRecommendation must be a boolean.`
+    );
+  }
+}
+
 export function evaluateModule03ReferenceAccuracy(
   samples: Module03ReferenceRuleSample[],
   evaluatedAt = new Date().toISOString()
@@ -186,5 +251,61 @@ export function evaluateModule03ReferenceAccuracy(
     targetSatisfied,
     minRuleCountSatisfied,
     ruleResults,
+  };
+}
+
+export function evaluateModule03AdverseEventCount(
+  samples: Module03AdverseEventSample[],
+  evaluatedAt = new Date().toISOString()
+): Module03AdverseEventEvaluationReport {
+  if (!Array.isArray(samples) || samples.length === 0) {
+    throw new Error("Module 03 adverse-event evaluation requires at least one sample.");
+  }
+  assertIsoDateTime(evaluatedAt, "evaluatedAt");
+
+  const windowEndDate = new Date(evaluatedAt);
+  const windowStartDate = new Date(windowEndDate);
+  windowStartDate.setUTCFullYear(windowStartDate.getUTCFullYear() - 1);
+  const windowStart = windowStartDate.toISOString();
+  const windowEnd = windowEndDate.toISOString();
+  const windowStartMs = windowStartDate.valueOf();
+  const windowEndMs = windowEndDate.valueOf();
+
+  const caseResults = samples.map((sample, index) => {
+    assertAdverseEventSample(sample, index);
+    const reportedAtMs = Date.parse(sample.reportedAt);
+    const includedInWindow =
+      reportedAtMs >= windowStartMs && reportedAtMs <= windowEndMs;
+    const counted = sample.linkedToEngineRecommendation && includedInWindow;
+
+    return {
+      sampleId: sample.sampleId,
+      eventId: sample.eventId,
+      caseId: sample.caseId,
+      reportedAt: sample.reportedAt,
+      linkedToEngineRecommendation: sample.linkedToEngineRecommendation,
+      includedInWindow,
+      counted,
+    };
+  });
+
+  const countedEventCount = caseResults.filter((result) => result.counted).length;
+  const targetSatisfied =
+    countedEventCount <= MODULE03_ADVERSE_EVENT_TARGET_MAX_COUNT_PER_YEAR;
+
+  return {
+    module: "03_personal_safety_validation_engine",
+    phase: "EVALUATION",
+    kpiId: "kpi-06",
+    formula:
+      "AdverseEventCount = count(linked_to_engine = true and reported_at within last 12 months)",
+    evaluatedAt: windowEnd,
+    windowStart,
+    windowEnd,
+    eventCount: caseResults.length,
+    countedEventCount,
+    targetMaxCountPerYear: MODULE03_ADVERSE_EVENT_TARGET_MAX_COUNT_PER_YEAR,
+    targetSatisfied,
+    caseResults,
   };
 }

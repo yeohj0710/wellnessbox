@@ -54,6 +54,15 @@ type Module03EvaluationOutput = {
     targetSatisfied: boolean;
     minRuleCountSatisfied: boolean;
   };
+  kpi06Report: {
+    evaluatedAt: string;
+    windowStart: string;
+    windowEnd: string;
+    eventCount: number;
+    countedEventCount: number;
+    targetMaxCountPerYear: number;
+    targetSatisfied: boolean;
+  };
 };
 
 type Module04EvaluationOutput = {
@@ -137,9 +146,16 @@ type Module07EvaluationOutput = {
 };
 
 type KpiMeasurement = {
-  kpiId: "kpi-01" | "kpi-02" | "kpi-03" | "kpi-04" | "kpi-05" | "kpi-07";
+  kpiId:
+    | "kpi-01"
+    | "kpi-02"
+    | "kpi-03"
+    | "kpi-04"
+    | "kpi-05"
+    | "kpi-06"
+    | "kpi-07";
   metric: string;
-  unit: "%" | "pp";
+  unit: "%" | "pp" | "count/year";
   measuredValue: number;
   targetValue: number;
   targetSatisfied: boolean;
@@ -418,8 +434,25 @@ function main() {
       (result) => result.minRuleCountSatisfied
     ),
   };
+  const kpi06: KpiMeasurement = {
+    kpiId: "kpi-06",
+    metric: "Adverse event annual report count",
+    unit: "count/year",
+    measuredValue: module03.kpi06Report.countedEventCount,
+    targetValue: module03.kpi06Report.targetMaxCountPerYear,
+    targetSatisfied: module03.kpi06Report.targetSatisfied,
+    dataRequirementSatisfied: module03.kpi06Report.eventCount > 0,
+  };
 
-  const measuredKpis: KpiMeasurement[] = [kpi01, kpi02, kpi03, kpi04, kpi05, kpi07];
+  const measuredKpis: KpiMeasurement[] = [
+    kpi01,
+    kpi02,
+    kpi03,
+    kpi04,
+    kpi05,
+    kpi06,
+    kpi07,
+  ];
   const targetSatisfiedCount = measuredKpis.filter((kpi) => kpi.targetSatisfied).length;
   const dataRequirementSatisfiedCount = measuredKpis.filter(
     (kpi) => kpi.dataRequirementSatisfied
@@ -452,11 +485,10 @@ function main() {
         moduleBreakdown: kpi05Breakdown,
       },
       kpi06: {
-        kpiId: "kpi-06",
-        metric: "Adverse event annual report count",
-        status: "not_included_in_scripted_rollup",
-        reason:
-          "KPI #6 requires operational 12-month pharmacovigilance data and is not produced by module 02~07 simulation scripts.",
+        ...kpi06,
+        evaluatedAt: module03.kpi06Report.evaluatedAt,
+        windowStart: module03.kpi06Report.windowStart,
+        windowEnd: module03.kpi06Report.windowEnd,
       },
       kpi07,
     },
