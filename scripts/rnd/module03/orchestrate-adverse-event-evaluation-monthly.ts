@@ -14,6 +14,10 @@ type CliArgs = {
   exportOutPath: string | null;
   windowEnd: string;
   retentionMonths: number | null;
+  requiredEnvKeys: string[];
+  failureAlertDir: string;
+  failureWebhookUrl: string | null;
+  failureWebhookTimeoutMs: number;
 };
 
 type Module03ArchiveLatestEntry = {
@@ -38,6 +42,42 @@ type Module03ArchiveLatest = {
   artifact: "monthly_archive_latest";
   generatedAt: string;
   entry: Module03ArchiveLatestEntry;
+};
+
+type Module03SchedulerFailureWebhookResult = {
+  attempted: boolean;
+  delivered: boolean;
+  target: string | null;
+  timeoutMs: number;
+  statusCode: number | null;
+  responsePreview: string | null;
+  errorMessage: string | null;
+};
+
+type Module03SchedulerFailureAlert = {
+  module: "03_personal_safety_validation_engine";
+  phase: "EVALUATION";
+  kpiId: "kpi-06";
+  artifact: "scheduler_failure_alert";
+  generatedAt: string;
+  windowEnd: string | null;
+  commandArgs: string[];
+  scheduler: {
+    exportSource: "provided_input" | "scheduled_export" | "unknown";
+    inputPath: string | null;
+    archiveDir: string | null;
+    handoffDir: string | null;
+    requiredEnvKeys: string[];
+    missingRequiredEnvKeys: string[];
+    failureWebhookConfigured: boolean;
+    failureAlertDir: string;
+  };
+  error: {
+    name: string;
+    message: string;
+    stack: string | null;
+  };
+  webhook: Module03SchedulerFailureWebhookResult;
 };
 
 const MODULE_ID = "03_personal_safety_validation_engine";
@@ -70,6 +110,13 @@ const DEFAULT_HANDOFF_DIR = path.resolve(
   "kpi06-warehouse-handoff"
 );
 const DEFAULT_EXPORT_DIR = path.resolve("tmp", "rnd", "module03", "kpi06-warehouse-export");
+const DEFAULT_FAILURE_ALERT_DIR = path.resolve(
+  "tmp",
+  "rnd",
+  "module03",
+  "kpi06-scheduler-failure-alerts"
+);
+const DEFAULT_FAILURE_WEBHOOK_TIMEOUT_MS = 5_000;
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -128,6 +175,21 @@ function parsePositiveIntegerOrNull(value: string | null, fieldName: string): nu
   return parsed;
 }
 
+function parsePositiveIntegerWithDefault(
+  value: string | null,
+  fieldName: string,
+  defaultValue: number
+): number {
+  if (value === null) {
+    return defaultValue;
+  }
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error(`${fieldName} must be a positive integer.`);
+  }
+  return parsed;
+}
+
 function readJsonFile(filePath: string): unknown {
   const raw = fs.readFileSync(filePath, "utf8").replace(/^\uFEFF/, "");
   try {
@@ -166,6 +228,92 @@ function toWorkspacePath(value: string): string {
   return toPosixPath(value);
 }
 
+function parseRequiredEnvKeys(value: string | null, fieldName: string): string[] {
+  if (value === null) {
+    return [];
+  }
+
+  const keys = [...new Set(value.split(",").map((token) => token.trim()).filter(Boolean))];
+  if (keys.length === 0) {
+    throw new Error(`${fieldName} must include at least one environment variable name.`);
+  }
+
+  for (const key of keys) {
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) {
+      throw new Error(
+        `${fieldName} contains an invalid environment variable name: "${key}".`
+      );
+    }
+  }
+
+  return keys;
+}
+
+function normalizeOptionalHttpUrl(value: string | null, fieldName: string): string | null {
+  if (value === null) {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (trimmed.length === 0) {
+    return null;
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    throw new Error(`${fieldName} must be a valid URL.`);
+  }
+
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+    throw new Error(`${fieldName} must use http:// or https://.`);
+  }
+
+  return parsed.toString();
+}
+
+function getMissingRequiredEnvKeys(requiredEnvKeys: string[]): string[] {
+  return requiredEnvKeys.filter((key) => {
+    const value = process.env[key];
+    return typeof value !== "string" || value.trim().length === 0;
+  });
+}
+
+function assertRequiredEnvironment(requiredEnvKeys: string[]): void {
+  const missing = getMissingRequiredEnvKeys(requiredEnvKeys);
+  if (missing.length > 0) {
+    throw new Error(
+      `Missing required environment variable(s): ${missing.join(", ")}`
+    );
+  }
+}
+
+function normalizeError(error: unknown): { name: string; message: string; stack: string | null } {
+  if (error instanceof Error) {
+    return {
+      name: error.name || "Error",
+      message: error.message || "Unknown error.",
+      stack: typeof error.stack === "string" ? error.stack : null,
+    };
+  }
+
+  return {
+    name: "Error",
+    message: String(error),
+    stack: null,
+  };
+}
+
+function summarizeWebhookTarget(url: string | null): string | null {
+  if (!url) {
+    return null;
+  }
+
+  const parsed = new URL(url);
+  return `${parsed.protocol}//${parsed.host}${parsed.pathname}`;
+}
+
 function parseArgs(argv: string[]): CliArgs {
   const inputPathValue = getArgValue(argv, "--input");
   const exportCommandValue = getArgValue(argv, "--export-command");
@@ -182,6 +330,16 @@ function parseArgs(argv: string[]): CliArgs {
   const exportOutPathValue = getArgValue(argv, "--export-out");
   const windowEndValue = getArgValue(argv, "--window-end") ?? new Date().toISOString();
   const retentionMonthsValue = getArgValue(argv, "--retention-months");
+  const requiredEnvKeysValue = getArgValue(argv, "--require-env");
+  const failureAlertDirValue = getArgValue(argv, "--failure-alert-dir");
+  const failureWebhookUrlValue =
+    getArgValue(argv, "--failure-webhook-url") ??
+    process.env.RND_MODULE03_FAILURE_WEBHOOK_URL ??
+    null;
+  const failureWebhookTimeoutValue =
+    getArgValue(argv, "--failure-webhook-timeout-ms") ??
+    process.env.RND_MODULE03_FAILURE_WEBHOOK_TIMEOUT_MS ??
+    null;
 
   const inputPath = inputPathValue ? path.resolve(inputPathValue) : null;
   if (inputPath && !fs.existsSync(inputPath)) {
@@ -208,6 +366,19 @@ function parseArgs(argv: string[]): CliArgs {
     exportOutPath: exportOutPathValue ? path.resolve(exportOutPathValue) : null,
     windowEnd: normalizeIsoDate(windowEndValue, "--window-end"),
     retentionMonths: parsePositiveIntegerOrNull(retentionMonthsValue, "--retention-months"),
+    requiredEnvKeys: parseRequiredEnvKeys(requiredEnvKeysValue, "--require-env"),
+    failureAlertDir: failureAlertDirValue
+      ? path.resolve(failureAlertDirValue)
+      : DEFAULT_FAILURE_ALERT_DIR,
+    failureWebhookUrl: normalizeOptionalHttpUrl(
+      failureWebhookUrlValue,
+      "--failure-webhook-url or RND_MODULE03_FAILURE_WEBHOOK_URL"
+    ),
+    failureWebhookTimeoutMs: parsePositiveIntegerWithDefault(
+      failureWebhookTimeoutValue,
+      "--failure-webhook-timeout-ms or RND_MODULE03_FAILURE_WEBHOOK_TIMEOUT_MS",
+      DEFAULT_FAILURE_WEBHOOK_TIMEOUT_MS
+    ),
   };
 }
 
@@ -472,13 +643,142 @@ function resolveExportInput(
   };
 }
 
-function main() {
-  const args = parseArgs(process.argv.slice(2));
+async function deliverFailureWebhook(
+  webhookUrl: string | null,
+  timeoutMs: number,
+  payload: Module03SchedulerFailureAlert
+): Promise<Module03SchedulerFailureWebhookResult> {
+  if (!webhookUrl) {
+    return {
+      attempted: false,
+      delivered: false,
+      target: null,
+      timeoutMs,
+      statusCode: null,
+      responsePreview: null,
+      errorMessage: null,
+    };
+  }
+
+  const target = summarizeWebhookTarget(webhookUrl);
+  const abortController = new AbortController();
+  const timeoutHandle = setTimeout(() => abortController.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(payload),
+      signal: abortController.signal,
+    });
+    const responseText = await response.text();
+    return {
+      attempted: true,
+      delivered: response.ok,
+      target,
+      timeoutMs,
+      statusCode: response.status,
+      responsePreview: responseText.slice(0, 500),
+      errorMessage: response.ok ? null : `Webhook returned HTTP ${response.status}.`,
+    };
+  } catch (error: unknown) {
+    return {
+      attempted: true,
+      delivered: false,
+      target,
+      timeoutMs,
+      statusCode: null,
+      responsePreview: null,
+      errorMessage: normalizeError(error).message,
+    };
+  } finally {
+    clearTimeout(timeoutHandle);
+  }
+}
+
+async function emitFailureAlert(
+  args: CliArgs | null,
+  rawArgv: string[],
+  error: unknown
+): Promise<string> {
+  const generatedAt = new Date().toISOString();
+  const missingRequiredEnvKeys = getMissingRequiredEnvKeys(args?.requiredEnvKeys ?? []);
+  const basePayload: Module03SchedulerFailureAlert = {
+    module: MODULE_ID,
+    phase: "EVALUATION",
+    kpiId: KPI_ID,
+    artifact: "scheduler_failure_alert",
+    generatedAt,
+    windowEnd: args?.windowEnd ?? null,
+    commandArgs: rawArgv,
+    scheduler: {
+      exportSource: args
+        ? args.inputPath
+          ? "provided_input"
+          : args.exportCommand
+            ? "scheduled_export"
+            : "unknown"
+        : "unknown",
+      inputPath: args?.inputPath ? toWorkspacePath(args.inputPath) : null,
+      archiveDir: args?.archiveDir ? toWorkspacePath(args.archiveDir) : null,
+      handoffDir: args?.handoffDir ? toWorkspacePath(args.handoffDir) : null,
+      requiredEnvKeys: args?.requiredEnvKeys ?? [],
+      missingRequiredEnvKeys,
+      failureWebhookConfigured: Boolean(args?.failureWebhookUrl),
+      failureAlertDir: toWorkspacePath(args?.failureAlertDir ?? DEFAULT_FAILURE_ALERT_DIR),
+    },
+    error: normalizeError(error),
+    webhook: {
+      attempted: false,
+      delivered: false,
+      target: summarizeWebhookTarget(args?.failureWebhookUrl ?? null),
+      timeoutMs: args?.failureWebhookTimeoutMs ?? DEFAULT_FAILURE_WEBHOOK_TIMEOUT_MS,
+      statusCode: null,
+      responsePreview: null,
+      errorMessage: null,
+    },
+  };
+
+  const webhookResult = await deliverFailureWebhook(
+    args?.failureWebhookUrl ?? null,
+    args?.failureWebhookTimeoutMs ?? DEFAULT_FAILURE_WEBHOOK_TIMEOUT_MS,
+    basePayload
+  );
+  const payload: Module03SchedulerFailureAlert = {
+    ...basePayload,
+    webhook: webhookResult,
+  };
+
+  const alertDir = args?.failureAlertDir ?? DEFAULT_FAILURE_ALERT_DIR;
+  const alertMonth = toMonthToken(generatedAt);
+  const alertPath = path.join(
+    alertDir,
+    alertMonth,
+    `kpi06-scheduler-failure-${toPathSafeTimestamp(generatedAt)}.json`
+  );
+  writeJsonFile(alertPath, payload);
+  writeJsonFile(path.join(alertDir, "latest.json"), {
+    module: MODULE_ID,
+    phase: "EVALUATION",
+    kpiId: KPI_ID,
+    artifact: "scheduler_failure_alert_latest",
+    generatedAt,
+    alertPath: toPosixPath(path.relative(alertDir, alertPath)),
+  });
+
+  return alertPath;
+}
+
+function runScheduler(args: CliArgs): void {
   if (args.inputPath && args.exportCommand) {
     console.warn(
       "Both --input and --export-command were provided; --input takes precedence and export command is skipped."
     );
   }
+
+  assertRequiredEnvironment(args.requiredEnvKeys);
 
   const exportResult = resolveExportInput(args);
   const exportRows = readExportRows(exportResult.exportInputPath);
@@ -508,6 +808,8 @@ function main() {
     scheduler: {
       exportSource: exportResult.exportSource,
       retentionMonths: args.retentionMonths,
+      requiredEnvKeys: args.requiredEnvKeys,
+      missingRequiredEnvKeys: [],
       exportCommandTemplate: args.exportCommand,
       resolvedExportCommand: exportResult.resolvedExportCommand,
       sqlTemplatePath: toWorkspacePath(args.sqlTemplatePath),
@@ -543,4 +845,31 @@ function main() {
   console.log(`Wrote Module 03 KPI #6 handoff artifact: ${toWorkspacePath(handoffPath)}`);
 }
 
-main();
+async function main() {
+  const rawArgv = process.argv.slice(2);
+  let args: CliArgs | null = null;
+
+  try {
+    args = parseArgs(rawArgv);
+    runScheduler(args);
+  } catch (error: unknown) {
+    try {
+      const alertPath = await emitFailureAlert(args, rawArgv, error);
+      console.error(
+        `Wrote Module 03 KPI #6 scheduler failure alert: ${toWorkspacePath(alertPath)}`
+      );
+    } catch (alertError: unknown) {
+      const normalizedAlertError = normalizeError(alertError);
+      console.error(
+        `Failed to write Module 03 KPI #6 scheduler failure alert: ${normalizedAlertError.message}`
+      );
+    }
+    throw error;
+  }
+}
+
+main().catch((error: unknown) => {
+  const normalizedError = normalizeError(error);
+  console.error(normalizedError.message);
+  process.exit(1);
+});
