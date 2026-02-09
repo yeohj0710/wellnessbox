@@ -1,0 +1,17 @@
+{
+  "module": "03_personal_safety_validation_engine",
+  "kpiId": "kpi-06",
+  "source": {
+    "system": "pharmacovigilance_warehouse",
+    "table": "pharmacovigilance.adverse_events",
+    "timezone": "UTC",
+    "lookbackMonths": 12
+  },
+  "fieldMap": {
+    "eventId": "event_id",
+    "caseId": "case_id",
+    "reportedAt": "reported_at",
+    "linkedToEngineRecommendation": "linked_to_engine_recommendation"
+  },
+  "truthyValues": ["true", "t", "1", "yes", "y", "linked"]
+}
