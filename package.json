@@ -25,6 +25,7 @@
     "rnd:module03:evaluation:adverse:ops:scheduler:bundle": "node scripts/rnd/module03/run-generate-scheduler-deployment-bundle.cjs",
     "rnd:module03:evaluation:adverse:ops:scheduler:bind": "node scripts/rnd/module03/run-generate-scheduler-infra-binding.cjs",
     "rnd:module03:evaluation:adverse:ops:scheduler:dry-run": "node scripts/rnd/module03/run-scheduler-dry-run-window.cjs",
+    "rnd:module03:evaluation:adverse:ops:scheduler:handoff-validate": "node scripts/rnd/module03/run-scheduler-handoff-validation.cjs",
     "rnd:module04:scaffold": "node scripts/rnd/module04/run-scaffold.cjs",
     "rnd:module04:mvp": "node scripts/rnd/module04/run-mvp-quantification.cjs",
     "rnd:module04:evaluation": "node scripts/rnd/module04/run-evaluation.cjs",
