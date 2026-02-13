@@ -1,11 +1,17 @@
 # AGENTS.md
 
+## 이 사이트에 대한 설명
+
+- 약국 기반 건강기능식품 소분 판매 플랫폼입니다. 건강기능식품 복용 최적화와 안전 검증을 위한 건강기능식품 특화 Closed-loop AI 알고리즘 개발 및 솔루션 구축도 이 사이트에서 같이 진행하고 있습니다. (다음 행동을 스스로 판단, 수정, 보완하는 자기적응형 AI를 중심으로 전체적 시스템이 관리되며 나만의 담당 약사로 작동합니다. 건강기능식품을 여러 통 살 필요 없이 소분 조제로 개인화하며, 복용 후 바이오센서 등으로 효과를 측정, 배합을 조정하는 AI를 개발하고 있습니다.)
+
 ## Project Overview (for Codex)
+
 - Stack: Next.js 15 (App Router), TypeScript, Prisma, PostgreSQL, Capacitor.
 - Core domains: checkout/orders, pharmacy/rider ops, push notifications, Kakao auth, assessment AI, chat/RAG.
 - Server data flow is mainly in `lib/*` server modules and `app/api/*` route handlers.
 
 ## Project Map (Read This First)
+
 - `app/`: App Router pages, layouts, and route groups for user/admin/pharm/rider UX.
 - `app/api/`: server route handlers (`route.ts`) for auth, payment, push, chat, RAG, and profile flows.
 - `app/(orders)/`: checkout completion and order lookup UI; calls `createOrder` and push customer APIs.
@@ -17,6 +23,7 @@
 - `middleware.ts`: locale rewrite/cookie logic plus admin route protection and client-id cookie issuance.
 
 Source of truth modules and invariants:
+
 - `lib/order/mutations.ts`
   - `createOrder` normalizes/merges items and runs in `db.$transaction`.
   - stock decrement is done inside transaction via `tx.pharmacyProduct.updateMany(... stock: { gte })`.
@@ -35,6 +42,7 @@ Source of truth modules and invariants:
   - protected path roots are currently `"/features"` and `"/admin"` in `isProtectedPath`.
 
 Mini flow sketches:
+
 - Order flow (checkout complete path):
   - `app/(orders)/order-complete/page.tsx`
   - -> `/api/get-payment-info` (payment verification)
@@ -53,6 +61,7 @@ Mini flow sketches:
   - -> admin APIs (for example `/api/admin/model`) also require `requireAdminSession`
 
 Where to make changes:
+
 - Order creation/integrity rules: `lib/order/mutations.ts` (and `lib/order/orderStatus.ts` for status constants).
 - API auth or ownership policy: `lib/server/route-auth.ts` first, then apply in `app/api/**/route.ts`.
 - Admin gate behavior: `middleware.ts` (`isProtectedPath`) and `app/api/verify-password/route.ts`.
@@ -61,6 +70,7 @@ Where to make changes:
 - Request validation for a route: inside that route’s `app/api/.../route.ts` before domain calls.
 
 ## Non-Negotiable Guardrails
+
 - Do not expose operational routes without auth.
   - Admin-only routes: `app/api/admin/model`, `app/api/agent-playground/run`, `app/api/rag/*`
   - Use `requireAdminSession` from `lib/server/route-auth.ts`.
@@ -78,6 +88,7 @@ Where to make changes:
 - Keep Prisma singleton pattern in `lib/db.ts`.
 
 ## Recommended Work Order
+
 1. Scope impact first with `rg`.
 2. Check auth and access paths first (`route-auth`, `middleware`, session usage).
 3. Apply bug fix with explicit input validation and type safety.
@@ -85,12 +96,14 @@ Where to make changes:
 5. For order/push/auth changes, do a manual flow check (login, checkout complete, push subscribe status).
 
 ## Priority Areas (Performance and Stability)
+
 - P1: auth/access regressions and operational endpoint exposure.
 - P2: order integrity (duplicate order, stock underflow, partial failures).
 - P3: runtime stability (Prisma connection pressure, repeated network calls).
 - P4: dev/build loop efficiency (avoid duplicate pre scripts).
 
 ## Common Commands
+
 - Install: `npm install`
 - Dev: `npm run dev`
 - Lint: `npm run lint`
@@ -100,6 +113,7 @@ Where to make changes:
 - Client audit helper: `npm run audit:clients`
 
 ## Common Mistakes to Avoid
+
 - Adding DB write routes in `app/api/*` without role/ownership checks.
 - Trusting `orderId`, `pharmacyId`, `riderId` from request body alone.
 - Splitting order creation and stock decrement between server and client.
