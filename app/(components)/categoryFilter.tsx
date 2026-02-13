@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronRightIcon } from "@heroicons/react/24/outline";
 import Image from "next/image";
 
@@ -13,17 +13,17 @@ interface Category {
 interface CategoryFilterProps {
   categories: Category[];
   isLoading: boolean;
-  setIsLoading: (loading: boolean) => void;
   selectedCategories: number[];
-  setSelectedCategories: React.Dispatch<React.SetStateAction<number[]>>;
+  onToggleCategory: (categoryId: number) => void;
+  onResetCategories: () => void;
 }
 
 export default function CategoryFilter({
   categories,
   selectedCategories,
-  setSelectedCategories,
   isLoading,
-  setIsLoading,
+  onToggleCategory,
+  onResetCategories,
 }: CategoryFilterProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showChevron, setShowChevron] = useState(false);
@@ -57,11 +57,7 @@ export default function CategoryFilter({
         >
           <div className="mx-3 flex flex-nowrap items-start gap-2 w-full max-w-[640px]">
             <button
-              onClick={() => {
-                setIsLoading(true);
-                setSelectedCategories([]);
-                setIsLoading(false);
-              }}
+              onClick={onResetCategories}
               className={`flex flex-col items-center justify-center h-12 shrink-0 px-4 border rounded-full ${
                 selectedCategories.length === 0
                   ? "bg-gray-200 font-bold"
@@ -83,15 +79,7 @@ export default function CategoryFilter({
               : categories.map((category) => (
                   <button
                     key={category.id}
-                    onClick={async () => {
-                      setIsLoading(true);
-                      setSelectedCategories((prev: number[]) =>
-                        prev.includes(category.id)
-                          ? prev.filter((id: number) => id !== category.id)
-                          : [...prev, category.id]
-                      );
-                      setIsLoading(false);
-                    }}
+                    onClick={() => onToggleCategory(category.id)}
                     className={`gap-0.5 flex flex-col items-center justify-center h-12 min-w-24 shrink-0 px-4 border rounded-full ${
                       selectedCategories.includes(category.id)
                         ? "bg-sky-100 border-sky-400 font-bold"

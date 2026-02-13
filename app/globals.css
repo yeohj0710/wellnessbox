@@ -47,27 +47,42 @@
 
 :root {
   --wb-topbar-height: 3.5rem;
+  --wb-scrollbar-track: #f3f4f6;
+  --wb-scrollbar-thumb: #c4c7cf;
+  --wb-scrollbar-thumb-hover: #9ca3af;
 }
 
 html,
 body {
   overflow: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-html::-webkit-scrollbar,
-body::-webkit-scrollbar {
-  display: none;
+  scrollbar-width: thin;
+  scrollbar-color: var(--wb-scrollbar-thumb) var(--wb-scrollbar-track);
 }
 
 * {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: thin;
+  scrollbar-color: var(--wb-scrollbar-thumb) var(--wb-scrollbar-track);
 }
 
 *::-webkit-scrollbar {
-  display: none;
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--wb-scrollbar-track);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--wb-scrollbar-thumb);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--wb-scrollbar-thumb-hover);
+  background-clip: content-box;
 }
 
 .status-update {

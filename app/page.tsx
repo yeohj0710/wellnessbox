@@ -1,63 +1,64 @@
-'use client';
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
-import { useLoading } from "@/components/common/loadingContext.client";
-const HomeProductSection = dynamic(
-  () => import("@/app/(components)/homeProductSection"),
-  {
-    loading: () => (
-      <div className="w-full max-w-[640px] mx-auto mt-2 mb-4 bg-white p-6 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    ),
-  }
-);
-import PopularIngredients from "@/app/(components)/popularIngredients";
+import { Suspense } from "react";
+import HomeLanding from "@/app/(components)/homeLanding.client";
+import JourneyCtaBridge from "@/app/(components)/journeyCtaBridge";
 import SymptomImprovement from "@/app/(components)/symptomImprovement";
-import SupplementRanking from "@/app/(components)/supplementRanking";
-import ComingSoonPopup from "@/components/modal/comingSoonPopup";
-import LandingSection2 from "./(components)/landingSection2";
-import JourneyCtaBridge from "./(components)/journeyCtaBridge";
+import PopularIngredientsNav from "@/app/(components)/popularIngredientsNav.client";
+import SupplementRankingNav from "@/app/(components)/supplementRankingNav.client";
+import HomeProductSectionServer from "@/app/(components)/homeProductSection.server";
+import { getHomePageData } from "@/lib/product/home-data";
 
-export default function Home() {
-  const router = useRouter();
-  const [isComingSoonOpen, setIsComingSoonOpen] = useState(false);
-  const { showLoading } = useLoading();
+export const revalidate = 60;
 
-  const handle7Day = () => {
-    showLoading();
-    router.push("/?package=7#home-products");
-  };
-  const handleCategory = (id: number) => {
-    showLoading();
-    router.push(`/?category=${id}#home-products`);
-  };
-  const handleProduct = (id: number) => {
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem("scrollPos", String(window.scrollY));
-    }
-    showLoading();
-    router.push(`/?product=${id}#home-products`, { scroll: false });
-  };
-  const handleSubscribe = () => setIsComingSoonOpen(true);
+function CardSectionFallback() {
+  return (
+    <section className="w-full max-w-[640px] mx-auto mt-8 px-3 sm:px-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div
+            key={index}
+            className="h-44 rounded-2xl bg-gray-100 animate-pulse ring-1 ring-gray-200"
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
 
+function HomeProductsFallback() {
+  return (
+    <div className="w-full max-w-[640px] mx-auto mt-2 mb-4 bg-white p-6 flex items-center justify-center">
+      <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
+
+async function PopularIngredientsSection() {
+  const { categories } = await getHomePageData();
+  return <PopularIngredientsNav basePath="/" initialCategories={categories} />;
+}
+
+async function SupplementRankingSection() {
+  const { rankingProducts } = await getHomePageData();
+  return (
+    <SupplementRankingNav basePath="/" initialProducts={rankingProducts} />
+  );
+}
+
+export default function HomePage() {
   return (
     <>
-      <ComingSoonPopup
-        open={isComingSoonOpen}
-        onClose={() => setIsComingSoonOpen(false)}
-      />
-      <LandingSection2
-        onSelect7Day={handle7Day}
-        onSubscribe={handleSubscribe}
-      />
+      <HomeLanding />
       <JourneyCtaBridge />
-      <PopularIngredients onSelectCategory={handleCategory} />
+      <Suspense fallback={<CardSectionFallback />}>
+        <PopularIngredientsSection />
+      </Suspense>
       <SymptomImprovement />
-      <SupplementRanking onProductClick={handleProduct} />
-      <HomeProductSection />
+      <Suspense fallback={<CardSectionFallback />}>
+        <SupplementRankingSection />
+      </Suspense>
+      <Suspense fallback={<HomeProductsFallback />}>
+        <HomeProductSectionServer />
+      </Suspense>
     </>
   );
 }

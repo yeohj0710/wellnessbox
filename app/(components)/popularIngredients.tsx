@@ -8,15 +8,24 @@ import { sortByImportanceDesc } from "@/lib/utils";
 
 interface PopularIngredientsProps {
   onSelectCategory: (id: number) => void;
+  initialCategories?: any[];
 }
 
 export default function PopularIngredients({
   onSelectCategory,
+  initialCategories = [],
 }: PopularIngredientsProps) {
-  const [categories, setCategories] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [categories, setCategories] = useState<any[]>(() =>
+    sortByImportanceDesc(initialCategories)
+  );
+  const [isLoading, setIsLoading] = useState(initialCategories.length === 0);
 
   useEffect(() => {
+    if (initialCategories.length > 0) {
+      setCategories(sortByImportanceDesc(initialCategories));
+      setIsLoading(false);
+      return;
+    }
     const fetchData = async () => {
       setIsLoading(true);
       const fetched = await getCategoriesByUpdatedAt();
@@ -24,7 +33,7 @@ export default function PopularIngredients({
       setIsLoading(false);
     };
     fetchData();
-  }, []);
+  }, [initialCategories]);
 
   return (
     <section className="w-full max-w-[640px] mx-auto mt-8">

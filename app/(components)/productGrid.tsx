@@ -1,6 +1,5 @@
 "use client";
 
-import StarRating from "@/components/common/starRating";
 import { formatPriceRange, getLowestAverageOptionType } from "@/lib/utils";
 import Skeleton from "./skeleton";
 import Image from "next/image";
@@ -21,6 +20,7 @@ interface ProductGridProps {
   selectedPackage: string;
   selectedPharmacy: any;
   setSelectedProduct: (product: Product | null) => void;
+  isUpdating?: boolean;
 }
 
 export default function ProductGrid({
@@ -29,11 +29,12 @@ export default function ProductGrid({
   selectedPackage,
   selectedPharmacy,
   setSelectedProduct,
+  isUpdating = false,
 }: ProductGridProps) {
   const showSkeleton = isLoading && products.length === 0;
 
   return (
-    <section className="mb-4 grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 p-3 sm:p-4">
+    <section className="relative mb-4 grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 p-3 sm:p-4">
       {showSkeleton
         ? Array(12)
             .fill(0)
@@ -115,6 +116,11 @@ export default function ProductGrid({
               </button>
             );
           })}
+      {isUpdating && !showSkeleton && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/55 backdrop-blur-[1px]">
+          <div className="h-8 w-8 rounded-full border-4 border-sky-500 border-t-transparent animate-spin" />
+        </div>
+      )}
     </section>
   );
 }

@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { getProductsByUpdatedAt } from "@/lib/product/product";
-import StarRating from "@/components/common/starRating";
 import Skeleton from "./skeleton";
 import { sortByImportanceDesc } from "@/lib/utils";
 
@@ -20,15 +19,24 @@ interface Product {
 
 interface SupplementRankingProps {
   onProductClick: (id: number) => void;
+  initialProducts?: Product[];
 }
 
 export default function SupplementRanking({
   onProductClick,
+  initialProducts = [],
 }: SupplementRankingProps) {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>(() =>
+    sortByImportanceDesc(initialProducts)
+  );
+  const [isLoading, setIsLoading] = useState(initialProducts.length === 0);
 
   useEffect(() => {
+    if (initialProducts.length > 0) {
+      setProducts(sortByImportanceDesc(initialProducts));
+      setIsLoading(false);
+      return;
+    }
     const fetchData = async () => {
       setIsLoading(true);
       const fetched: any = await getProductsByUpdatedAt();
@@ -36,7 +44,7 @@ export default function SupplementRanking({
       setIsLoading(false);
     };
     fetchData();
-  }, []);
+  }, [initialProducts]);
 
   return (
     <section className="w-full max-w-[640px] mx-auto mt-8">

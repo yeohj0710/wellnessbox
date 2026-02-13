@@ -1,5 +1,3 @@
-"use client";
-
 import { pretendard } from "../fonts";
 
 export default function JourneyCtaBridge() {

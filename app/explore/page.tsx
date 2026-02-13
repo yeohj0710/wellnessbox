@@ -1,44 +1,67 @@
-'use client';
-
-import { useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
+import { Suspense } from "react";
 import JourneyCtaBridge from "@/app/(components)/journeyCtaBridge";
-import PopularIngredients from "@/app/(components)/popularIngredients";
 import SymptomImprovement from "@/app/(components)/symptomImprovement";
-import SupplementRanking from "@/app/(components)/supplementRanking";
-import { useLoading } from "@/components/common/loadingContext.client";
-const HomeProductSection = dynamic(
-  () => import("@/app/(components)/homeProductSection"),
-  {
-    loading: () => (
-      <div className="w-full max-w-[640px] mx-auto mt-2 mb-4 bg-white p-6 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+import PopularIngredientsNav from "@/app/(components)/popularIngredientsNav.client";
+import SupplementRankingNav from "@/app/(components)/supplementRankingNav.client";
+import HomeProductSectionServer from "@/app/(components)/homeProductSection.server";
+import { getHomePageData } from "@/lib/product/home-data";
+
+export const revalidate = 60;
+
+function CardSectionFallback() {
+  return (
+    <section className="w-full max-w-[640px] mx-auto mt-8 px-3 sm:px-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div
+            key={index}
+            className="h-44 rounded-2xl bg-gray-100 animate-pulse ring-1 ring-gray-200"
+          />
+        ))}
       </div>
-    ),
-  }
-);
+    </section>
+  );
+}
+
+function HomeProductsFallback() {
+  return (
+    <div className="w-full max-w-[640px] mx-auto mt-2 mb-4 bg-white p-6 flex items-center justify-center">
+      <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
+
+async function ExplorePopularIngredientsSection() {
+  const { categories } = await getHomePageData();
+  return (
+    <PopularIngredientsNav basePath="/explore" initialCategories={categories} />
+  );
+}
+
+async function ExploreSupplementRankingSection() {
+  const { rankingProducts } = await getHomePageData();
+  return (
+    <SupplementRankingNav
+      basePath="/explore"
+      initialProducts={rankingProducts}
+    />
+  );
+}
 
 export default function ExplorePage() {
-  const router = useRouter();
-  const { showLoading } = useLoading();
-  const handleCategory = (id: number) => {
-    showLoading();
-    router.push(`/explore?category=${id}#home-products`);
-  };
-  const handleProduct = (id: number) => {
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem("scrollPos", String(window.scrollY));
-    }
-    showLoading();
-    router.push(`/explore?product=${id}#home-products`, { scroll: false });
-  };
   return (
     <>
       <JourneyCtaBridge />
-      <PopularIngredients onSelectCategory={handleCategory} />
+      <Suspense fallback={<CardSectionFallback />}>
+        <ExplorePopularIngredientsSection />
+      </Suspense>
       <SymptomImprovement />
-      <SupplementRanking onProductClick={handleProduct} />
-      <HomeProductSection />
+      <Suspense fallback={<CardSectionFallback />}>
+        <ExploreSupplementRankingSection />
+      </Suspense>
+      <Suspense fallback={<HomeProductsFallback />}>
+        <HomeProductSectionServer />
+      </Suspense>
     </>
   );
 }

@@ -3,7 +3,6 @@
 interface PackageFilterProps {
   selectedPackage: string;
   setSelectedPackage: (pkg: string) => void;
-  setIsLoading: (loading: boolean) => void;
 }
 
 const packages = ["전체", "7일 패키지", "30일 패키지", "일반 상품"];
@@ -11,7 +10,6 @@ const packages = ["전체", "7일 패키지", "30일 패키지", "일반 상품"
 export default function PackageFilter({
   selectedPackage,
   setSelectedPackage,
-  setIsLoading,
 }: PackageFilterProps) {
   return (
     <section className="px-4 py-2 bg-gray-100 overflow-x-auto scrollbar-hide">
@@ -24,11 +22,7 @@ export default function PackageFilter({
                 ? "bg-gray-200 font-bold shadow-sm"
                 : "bg-white md:hover:bg-gray-100"
             }`}
-            onClick={() => {
-              setIsLoading(true);
-              setSelectedPackage(pkg);
-              setIsLoading(false);
-            }}
+            onClick={() => setSelectedPackage(pkg)}
           >
             {pkg}
           </button>

@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  useDeferredValue,
+  useMemo,
+} from "react";
 import { useSearchParams } from "next/navigation";
 import ProductDetail from "@/components/product/productDetail";
 import Cart from "@/components/order/cart";
@@ -23,19 +30,35 @@ import FooterCartBarLoading from "@/app/(components)/footerCartBarLoading";
 import SymptomFilter from "@/app/(components)/symptomFilter";
 import { CATEGORY_LABELS } from "@/lib/categories";
 
-export default function HomeProductSection() {
+interface HomeProductSectionProps {
+  initialCategories?: any[];
+  initialProducts?: any[];
+}
+
+export default function HomeProductSection({
+  initialCategories = [],
+  initialProducts = [],
+}: HomeProductSectionProps) {
   const searchParams = useSearchParams();
   const { hideFooter, showFooter } = useFooter();
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [isCartVisible, setIsCartVisible] = useState(false);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [categories, setCategories] = useState<any[]>(() =>
+    sortByImportanceDesc(initialCategories)
+  );
+  const [products, setProducts] = useState<any[]>(() =>
+    sortByImportanceDesc(initialProducts)
+  );
+  const [isLoading, setIsLoading] = useState(initialProducts.length === 0);
   const [error, setError] = useState<string | null>(null);
-  const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [allProducts, setAllProducts] = useState<any[]>(() =>
+    sortByImportanceDesc(initialProducts)
+  );
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [selectedPackage, setSelectedPackage] = useState<string>("전체");
+  const deferredSelectedCategories = useDeferredValue(selectedCategories);
+  const deferredSelectedPackage = useDeferredValue(selectedPackage);
   const [totalPrice, setTotalPrice] = useState(0);
   const [isCartBarLoading, setIsCartBarLoading] = useState(false);
   const [roadAddress, setRoadAddress] = useState("");
@@ -51,6 +74,7 @@ export default function HomeProductSection() {
   });
 
   const [mounted, setMounted] = useState(false);
+  const filterInteractionStartedRef = useRef<number | null>(null);
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -62,6 +86,49 @@ export default function HomeProductSection() {
   const reloadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasReloadedRef = useRef(false);
   const cartContainerRef = useRef<HTMLDivElement>(null);
+  const isFilterUpdating = useMemo(() => {
+    if (isLoading) return true;
+    if (deferredSelectedPackage !== selectedPackage) return true;
+    if (deferredSelectedCategories.length !== selectedCategories.length) {
+      return true;
+    }
+    return deferredSelectedCategories.some(
+      (categoryId, index) => categoryId !== selectedCategories[index]
+    );
+  }, [
+    deferredSelectedCategories,
+    deferredSelectedPackage,
+    isLoading,
+    selectedCategories,
+    selectedPackage,
+  ]);
+
+  const handleCategoryToggle = useCallback((categoryId: number) => {
+    filterInteractionStartedRef.current = performance.now();
+    setSelectedCategories((prev) =>
+      prev.includes(categoryId)
+        ? prev.filter((id: number) => id !== categoryId)
+        : [...prev, categoryId]
+    );
+  }, []);
+
+  const handleCategoryReset = useCallback(() => {
+    filterInteractionStartedRef.current = performance.now();
+    setSelectedCategories([]);
+  }, []);
+
+  const handlePackageSelect = useCallback((pkg: string) => {
+    filterInteractionStartedRef.current = performance.now();
+    setSelectedPackage(pkg);
+  }, []);
+
+  useEffect(() => {
+    if (isFilterUpdating) return;
+    if (filterInteractionStartedRef.current === null) return;
+    const elapsedMs = performance.now() - filterInteractionStartedRef.current;
+    console.info(`[perf] home:filter-visible ${elapsedMs.toFixed(1)}ms`);
+    filterInteractionStartedRef.current = null;
+  }, [isFilterUpdating]);
 
   const restoreScroll = useCallback((y: number) => {
     const el = document.documentElement;
@@ -337,37 +404,33 @@ export default function HomeProductSection() {
       } catch {}
     }
     localStorage.removeItem("restoreCartFromBackup");
-  }, []);
-
-  useEffect(() => {
-    const needRestore = localStorage.getItem("restoreCartFromBackup") === "1";
-    const backup = localStorage.getItem("cartBackup");
-    if (needRestore && backup && backup !== "[]") {
-      try {
-        const parsed = JSON.parse(backup);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setCartItems(parsed);
-          localStorage.setItem("cartItems", backup);
-          window.dispatchEvent(new Event("cartUpdated"));
-        }
-      } catch {}
-    }
-    localStorage.removeItem("restoreCartFromBackup");
     localStorage.removeItem("checkoutInProgress");
   }, []);
 
   useEffect(() => {
     const storedRoadAddress = localStorage.getItem("roadAddress") || "";
     setRoadAddress(storedRoadAddress.trim());
+    if (initialCategories.length > 0 && initialProducts.length > 0) {
+      const sortedCategories = sortByImportanceDesc(initialCategories);
+      const sortedProducts = sortByImportanceDesc(initialProducts);
+      const now = Date.now().toString();
+      setCategories(sortedCategories);
+      setAllProducts(sortedProducts);
+      setProducts(sortedProducts);
+      setIsLoading(false);
+      localStorage.setItem("categories", JSON.stringify(sortedCategories));
+      localStorage.setItem("products", JSON.stringify(sortedProducts));
+      localStorage.setItem("cacheTimestamp", now);
+      return;
+    }
     fetchData();
-  }, [fetchData]);
+  }, [fetchData, initialCategories, initialProducts]);
 
   useEffect(() => {
     const handleCleared = () => {
       setRoadAddress("");
       setPharmacies([]);
       setSelectedPharmacy(null);
-      setProducts(allProducts);
       setCartItems([]);
       setIsCartVisible(false);
       setTotalPrice(0);
@@ -456,7 +519,6 @@ export default function HomeProductSection() {
 
   useEffect(() => {
     if (cartItems.length === 0) {
-      setProducts(allProducts);
       setPharmacies([]);
       setSelectedPharmacy(null);
       return;
@@ -513,55 +575,57 @@ export default function HomeProductSection() {
   }, [roadAddress, cartItems, selectedPharmacy?.id, allProducts]);
 
   useEffect(() => {
-    const filterProducts = async () => {
-      let filtered = [...allProducts];
-      if (selectedPharmacy && selectedPackage !== "전체") {
-        filtered = filtered.filter((product) =>
-          product.pharmacyProducts.some(
-            (pharmacyProduct: any) =>
-              pharmacyProduct.pharmacy.id === selectedPharmacy.id &&
-              pharmacyProduct.optionType === selectedPackage
-          )
-        );
-      }
-      if (selectedPharmacy) {
-        filtered = filtered.filter((product) =>
-          product.pharmacyProducts.some(
-            (pharmacyProduct: any) =>
-              pharmacyProduct.pharmacy.id === selectedPharmacy.id
-          )
-        );
-      }
-      if (selectedCategories.length > 0) {
-        filtered = filtered.filter((product) =>
-          product.categories.some((category: any) =>
-            selectedCategories.includes(category.id)
-          )
-        );
-      }
-      if (selectedPackage === "7일 패키지") {
-        filtered = filtered.filter((product: any) =>
-          product.pharmacyProducts.some((pharmacyProduct: any) =>
-            pharmacyProduct.optionType?.includes("7일")
-          )
-        );
-      } else if (selectedPackage === "30일 패키지") {
-        filtered = filtered.filter((product: any) =>
-          product.pharmacyProducts.some((pharmacyProduct: any) =>
-            pharmacyProduct.optionType?.includes("30일")
-          )
-        );
-      } else if (selectedPackage === "일반 상품") {
-        filtered = filtered.filter((product: any) =>
-          product.pharmacyProducts.some(
-            (pharmacyProduct: any) => pharmacyProduct.optionType === "일반 상품"
-          )
-        );
-      }
-      setProducts(filtered);
-    };
-    filterProducts();
-  }, [allProducts, selectedPharmacy, selectedCategories, selectedPackage]);
+    let filtered = [...allProducts];
+    if (selectedPharmacy && deferredSelectedPackage !== "전체") {
+      filtered = filtered.filter((product) =>
+        product.pharmacyProducts.some(
+          (pharmacyProduct: any) =>
+            pharmacyProduct.pharmacy.id === selectedPharmacy.id &&
+            pharmacyProduct.optionType === deferredSelectedPackage
+        )
+      );
+    }
+    if (selectedPharmacy) {
+      filtered = filtered.filter((product) =>
+        product.pharmacyProducts.some(
+          (pharmacyProduct: any) =>
+            pharmacyProduct.pharmacy.id === selectedPharmacy.id
+        )
+      );
+    }
+    if (deferredSelectedCategories.length > 0) {
+      filtered = filtered.filter((product) =>
+        product.categories.some((category: any) =>
+          deferredSelectedCategories.includes(category.id)
+        )
+      );
+    }
+    if (deferredSelectedPackage === "7일 패키지") {
+      filtered = filtered.filter((product: any) =>
+        product.pharmacyProducts.some((pharmacyProduct: any) =>
+          pharmacyProduct.optionType?.includes("7일")
+        )
+      );
+    } else if (deferredSelectedPackage === "30일 패키지") {
+      filtered = filtered.filter((product: any) =>
+        product.pharmacyProducts.some((pharmacyProduct: any) =>
+          pharmacyProduct.optionType?.includes("30일")
+        )
+      );
+    } else if (deferredSelectedPackage === "일반 상품") {
+      filtered = filtered.filter((product: any) =>
+        product.pharmacyProducts.some(
+          (pharmacyProduct: any) => pharmacyProduct.optionType === "일반 상품"
+        )
+      );
+    }
+    setProducts(filtered);
+  }, [
+    allProducts,
+    deferredSelectedCategories,
+    deferredSelectedPackage,
+    selectedPharmacy,
+  ]);
 
   useEffect(() => {
     if (totalPrice > 0 || isCartVisible) {
@@ -634,6 +698,7 @@ export default function HomeProductSection() {
   return (
     <div
       id="home-products"
+      data-filter-updating={isFilterUpdating ? "true" : "false"}
       className={`w-full max-w-[640px] mx-auto mt-2 bg-white ${
         totalPrice > 0 ? "pb-20" : ""
       }`}
@@ -672,15 +737,14 @@ export default function HomeProductSection() {
       <CategoryFilter
         categories={categories}
         isLoading={isLoading}
-        setIsLoading={setIsLoading}
         selectedCategories={selectedCategories}
-        setSelectedCategories={setSelectedCategories}
+        onToggleCategory={handleCategoryToggle}
+        onResetCategories={handleCategoryReset}
       />
 
       <PackageFilter
         selectedPackage={selectedPackage}
-        setSelectedPackage={setSelectedPackage}
-        setIsLoading={setIsLoading}
+        setSelectedPackage={handlePackageSelect}
       />
 
       {cartItems.length > 0 && selectedPharmacy && (
@@ -696,9 +760,10 @@ export default function HomeProductSection() {
       )}
 
       <ProductGrid
-        isLoading={isLoading}
+        isLoading={isLoading && allProducts.length === 0}
+        isUpdating={isFilterUpdating}
         products={products}
-        selectedPackage={selectedPackage}
+        selectedPackage={deferredSelectedPackage}
         selectedPharmacy={selectedPharmacy}
         setSelectedProduct={openProductDetail}
       />
