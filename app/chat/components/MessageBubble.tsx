@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { ChatMessage } from "@/types/chat";
@@ -126,13 +127,43 @@ export default function MessageBubble({
                       {...props}
                     />
                   ),
-                  img: ({ node, ...props }) => (
-                    <img
-                      className="my-2 rounded-lg border border-slate-200"
-                      alt=""
-                      {...props}
-                    />
-                  ),
+                  img: ({ node, ...props }) => {
+                    const src =
+                      typeof props.src === "string" ? props.src : "";
+                    const alt =
+                      typeof props.alt === "string" ? props.alt : "";
+                    const width =
+                      typeof props.width === "number"
+                        ? props.width
+                        : Number(props.width) || 1200;
+                    const height =
+                      typeof props.height === "number"
+                        ? props.height
+                        : Number(props.height) || 800;
+                    const canUseNextImage =
+                      src.startsWith("/") || src.startsWith("https://");
+
+                    if (!src || !canUseNextImage) {
+                      return (
+                        <img
+                          className="my-2 rounded-lg border border-slate-200"
+                          alt={alt}
+                          {...props}
+                        />
+                      );
+                    }
+
+                    return (
+                      <Image
+                        src={src}
+                        alt={alt}
+                        width={width}
+                        height={height}
+                        sizes="(max-width: 768px) 100vw, 640px"
+                        className="my-2 h-auto w-full rounded-lg border border-slate-200"
+                      />
+                    );
+                  },
                   blockquote: ({ node, ...props }) => (
                     <blockquote
                       className="my-2 border-slate-200 border-l-4 ps-3 italic text-slate-600"

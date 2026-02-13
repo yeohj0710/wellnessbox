@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 
 const IOS_KEY = "wb_ios_ext_consent_v1";
@@ -180,10 +181,13 @@ export default function KakaoExternalBridge() {
             <div className="p-5">
               <div className="flex items-start gap-3">
                 <div className="h-12 flex items-center">
-                  <img
+                  <Image
                     src="/logo.png"
                     alt="logo"
-                    className="h-12 w-auto object-contain"
+                    width={48}
+                    height={48}
+                    sizes="48px"
+                    className="h-12 w-12 object-contain"
                   />
                 </div>
                 <div className="min-w-0">

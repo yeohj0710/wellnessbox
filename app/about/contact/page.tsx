@@ -1,5 +1,3 @@
-"use client";
-
 export default function Contact() {
   return (
     <div className="mt-8 mb-12 w-full max-w-[640px] px-8 py-10 bg-white sm:shadow-md sm:rounded-lg">

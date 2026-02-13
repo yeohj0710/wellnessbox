@@ -23,7 +23,7 @@ export default function GoogleTranslateGate() {
   return (
     <>
       <div id="google_translate_element" style={{ display: "none" }} />
-      <Script id="google-translate-orchestrator" strategy="afterInteractive">
+      <Script id="google-translate-orchestrator" strategy="lazyOnload">
         {`
             (function () {
               var LANGUAGE_CODE = 'en';

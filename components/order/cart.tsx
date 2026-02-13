@@ -1,21 +1,17 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import dynamic from "next/dynamic";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { getLoginStatus, type LoginStatus } from "@/lib/useLoginStatus";
-import CheckoutConfirmModal from "./checkoutConfirmModal";
-import AddressModal from "@/components/modal/addressModal";
 import CartItemsSection from "./cartItemsSection";
 import AddressSection from "./addressSection";
 import PharmacyInfoSection from "./pharmacyInfoSection";
 import PaymentSection from "./paymentSection";
-import ProductDetail from "../product/productDetail";
 import axios from "axios";
 import { useCartHydration } from "./hooks/useCartHydration";
 import { useAddressFields } from "./hooks/useAddressFields";
-import PharmacyDetailModal from "./pharmacyDetailModal";
-import PhoneVerifyModal from "@/app/me/phoneVerifyModal";
 
 function formatPhoneDisplay(phone?: string | null) {
   if (!phone) return "";
@@ -28,6 +24,22 @@ function formatPhoneDisplay(phone?: string | null) {
   }
   return phone;
 }
+
+const CheckoutConfirmModal = dynamic(() => import("./checkoutConfirmModal"), {
+  ssr: false,
+});
+const AddressModal = dynamic(() => import("@/components/modal/addressModal"), {
+  ssr: false,
+});
+const ProductDetail = dynamic(() => import("../product/productDetail"), {
+  ssr: false,
+});
+const PharmacyDetailModal = dynamic(() => import("./pharmacyDetailModal"), {
+  ssr: false,
+});
+const PhoneVerifyModal = dynamic(() => import("@/app/me/phoneVerifyModal"), {
+  ssr: false,
+});
 
 export default function Cart({
   cartItems,
@@ -172,14 +184,9 @@ export default function Cart({
   }, []);
 
   useEffect(() => {
+    if (loginStatus === null) return;
     fetchPhoneStatus();
-  }, [fetchPhoneStatus]);
-
-  useEffect(() => {
-    if (safeLoginStatus.isUserLoggedIn) {
-      fetchPhoneStatus();
-    }
-  }, [safeLoginStatus.isUserLoggedIn, fetchPhoneStatus]);
+  }, [loginStatus, fetchPhoneStatus]);
 
   useEffect(() => {
     localStorage.setItem("selectedPharmacyId", selectedPharmacy?.id);

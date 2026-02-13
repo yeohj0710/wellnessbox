@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -97,9 +98,12 @@ export default function RouteTransition() {
           <div className="absolute inset-0 animate-spin">
             <div className="absolute left-1/2 -translate-x-1/2 -top-1 w-2 h-2 rounded-full bg-sky-500 shadow" />
           </div>
-          <img
+          <Image
             src="/logo.png"
             alt=""
+            width={28}
+            height={28}
+            sizes="28px"
             className="absolute inset-0 m-auto h-7 w-7 animate-pulse"
           />
         </div>

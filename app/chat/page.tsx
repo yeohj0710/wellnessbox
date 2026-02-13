@@ -1,14 +1,24 @@
 "use client";
 
 import { useEffect } from "react";
-import MessageBubble from "./components/MessageBubble";
-import ProfileModal from "./components/ProfileModal";
-import ChatDrawer from "./components/ChatDrawer";
+import dynamic from "next/dynamic";
 import ChatInput from "./components/ChatInput";
 import ProfileBanner from "./components/ProfileBanner";
-import ReferenceData from "./components/ReferenceData";
 import ChatTopBar from "./components/ChatTopBar";
 import useChat from "./hooks/useChat";
+
+const MessageBubble = dynamic(() => import("./components/MessageBubble"), {
+  ssr: false,
+});
+const ProfileModal = dynamic(() => import("./components/ProfileModal"), {
+  ssr: false,
+});
+const ChatDrawer = dynamic(() => import("./components/ChatDrawer"), {
+  ssr: false,
+});
+const ReferenceData = dynamic(() => import("./components/ReferenceData"), {
+  ssr: false,
+});
 
 export default function ChatPage() {
   const {
