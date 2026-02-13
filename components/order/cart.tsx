@@ -64,6 +64,7 @@ export default function Cart({
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [detailProduct, setDetailProduct] = useState<any>(null);
   const cartScrollRef = useRef(0);
+  const phoneStatusRequestRef = useRef<Promise<void> | null>(null);
 
   const hydrated = useCartHydration(cartItems, onUpdateCart);
   const [phone, setPhone] = useState("");
@@ -142,6 +143,12 @@ export default function Cart({
   }, []);
 
   const fetchPhoneStatus = useCallback(async () => {
+    if (phoneStatusRequestRef.current) {
+      await phoneStatusRequestRef.current;
+      return;
+    }
+
+    phoneStatusRequestRef.current = (async () => {
     setPhoneStatusLoading(true);
     setPhoneStatusError(null);
 
@@ -180,6 +187,13 @@ export default function Cart({
       setLinkedAt(undefined);
     } finally {
       setPhoneStatusLoading(false);
+    }
+    })();
+
+    try {
+      await phoneStatusRequestRef.current;
+    } finally {
+      phoneStatusRequestRef.current = null;
     }
   }, []);
 

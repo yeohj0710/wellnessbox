@@ -135,19 +135,43 @@ export default function MessageBubble({
                     const width =
                       typeof props.width === "number"
                         ? props.width
-                        : Number(props.width) || 1200;
+                        : Number(props.width);
                     const height =
                       typeof props.height === "number"
                         ? props.height
-                        : Number(props.height) || 800;
+                        : Number(props.height);
+                    const hasDimensions =
+                      Number.isFinite(width) &&
+                      width > 0 &&
+                      Number.isFinite(height) &&
+                      height > 0;
+                    const remoteHost = (() => {
+                      if (!src.startsWith("https://")) return "";
+                      try {
+                        return new URL(src).hostname;
+                      } catch {
+                        return "";
+                      }
+                    })();
                     const canUseNextImage =
-                      src.startsWith("/") || src.startsWith("https://");
+                      hasDimensions &&
+                      (src.startsWith("/") || remoteHost === "imagedelivery.net");
 
                     if (!src || !canUseNextImage) {
+                      const fallbackClassName = [
+                        "my-2 rounded-lg border border-slate-200",
+                        typeof props.className === "string"
+                          ? props.className
+                          : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ");
                       return (
                         <img
-                          className="my-2 rounded-lg border border-slate-200"
+                          src={src}
+                          className={fallbackClassName}
                           alt={alt}
+                          loading="lazy"
                           {...props}
                         />
                       );

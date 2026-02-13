@@ -7,9 +7,7 @@ import ProfileBanner from "./components/ProfileBanner";
 import ChatTopBar from "./components/ChatTopBar";
 import useChat from "./hooks/useChat";
 
-const MessageBubble = dynamic(() => import("./components/MessageBubble"), {
-  ssr: false,
-});
+const MessageBubble = dynamic(() => import("./components/MessageBubble"));
 const ProfileModal = dynamic(() => import("./components/ProfileModal"), {
   ssr: false,
 });
