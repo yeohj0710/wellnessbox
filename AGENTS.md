@@ -1,16 +1,63 @@
-# AGENTS.md
+# Project Overview (for Codex)
 
+<<<<<<< HEAD
 ## 이 사이트에 대한 설명
 
 - 약국 기반 건강기능식품 소분 판매 플랫폼입니다. 건강기능식품 복용 최적화와 안전 검증을 위한 건강기능식품 특화 Closed-loop AI 알고리즘 개발 및 솔루션 구축도 이 사이트에서 같이 진행하고 있습니다. (다음 행동을 스스로 판단, 수정, 보완하는 자기적응형 AI를 중심으로 전체적 시스템이 관리되며 나만의 담당 약사로 작동합니다. 건강기능식품을 여러 통 살 필요 없이 소분 조제로 개인화하며, 복용 후 바이오센서 등으로 효과를 측정, 배합을 조정하는 AI를 개발하고 있습니다.)
 
 ## Project Overview (for Codex)
 
+=======
+>>>>>>> 9b8db1c8f0f29b96de94b31bc56384e34ea05534
 - Stack: Next.js 15 (App Router), TypeScript, Prisma, PostgreSQL, Capacitor.
 - Core domains: checkout/orders, pharmacy/rider ops, push notifications, Kakao auth, assessment AI, chat/RAG.
 - Server data flow is mainly in `lib/*` server modules and `app/api/*` route handlers.
 
+<<<<<<< HEAD
 ## Project Map (Read This First)
+=======
+# R&D Docs (TIPS Extension) - Read Rules for Codex
+
+This repo already contains a production platform. New TIPS R&D features must be added without breaking existing invariants.
+To minimize context/tokens and maintain objectivity, R&D docs are split into two layers:
+
+## Doc layers
+
+- `docs/rnd/*` (REQUIREMENTS / objective spec)
+  - Objective, scope, expected outputs, and MOST IMPORTANTLY: performance metrics + evaluation method + evaluation environment.
+  - Treat these as "must satisfy" requirements.
+- `docs/rnd_impl/*` (IMPLEMENTATION NOTES / optional)
+  - Non-binding hints, patterns, candidate schemas, operational notes.
+  - Use ONLY when you need help designing. If it conflicts with `docs/rnd/*`, ignore it.
+
+## Priority / conflict resolution
+
+1. `Non-Negotiable Guardrails` in this file (security, auth, order integrity, admin token rules)
+2. `docs/rnd/*` (objective requirements / KPI / evaluation)
+3. `docs/rnd_impl/*` (optional guidance)
+
+## Context-minimizing rule (token budget)
+
+For any single R&D task, read only:
+
+- `AGENTS.md` (always)
+- `docs/rnd/01_kpi_and_evaluation.md` (always for R&D work)
+- exactly ONE module spec: `docs/rnd/02~07_*.md` (the module you are implementing now)
+- optional: the matching `docs/rnd_impl/02~07_*_impl_notes.md` (only if needed)
+
+Do NOT load all R&D docs at once unless explicitly required.
+
+## How to start an R&D task
+
+1. Choose the module (02~07) you are working on.
+2. Identify which KPIs/evaluations from `docs/rnd/01_kpi_and_evaluation.md` this module must satisfy.
+3. Implement freely as long as:
+   - existing platform guardrails are not violated, and
+   - the module’s KPI/evaluation requirements are satisfied.
+4. Leave reproducible evaluation artifacts (scripts/configs/queries) so results can be re-checked.
+
+# Project Map (Read This First)
+>>>>>>> 9b8db1c8f0f29b96de94b31bc56384e34ea05534
 
 - `app/`: App Router pages, layouts, and route groups for user/admin/pharm/rider UX.
 - `app/api/`: server route handlers (`route.ts`) for auth, payment, push, chat, RAG, and profile flows.
@@ -69,7 +116,11 @@ Where to make changes:
 - Payment verification logic: `app/api/get-payment-info/route.ts`.
 - Request validation for a route: inside that route’s `app/api/.../route.ts` before domain calls.
 
+<<<<<<< HEAD
 ## Non-Negotiable Guardrails
+=======
+# Non-Negotiable Guardrails
+>>>>>>> 9b8db1c8f0f29b96de94b31bc56384e34ea05534
 
 - Do not expose operational routes without auth.
   - Admin-only routes: `app/api/admin/model`, `app/api/agent-playground/run`, `app/api/rag/*`
@@ -87,22 +138,38 @@ Where to make changes:
   - Do not re-introduce client-side stock decrement after order creation.
 - Keep Prisma singleton pattern in `lib/db.ts`.
 
+<<<<<<< HEAD
 ## Recommended Work Order
 
+=======
+# Recommended Work Order
+
+0. (R&D only) Load minimal docs:
+   - Read `docs/rnd/01_kpi_and_evaluation.md` and ONLY the current module spec (`docs/rnd/02~07_*.md`).
+   - Optionally read the matching `docs/rnd_impl/*_impl_notes.md` if you need guidance.
+>>>>>>> 9b8db1c8f0f29b96de94b31bc56384e34ea05534
 1. Scope impact first with `rg`.
 2. Check auth and access paths first (`route-auth`, `middleware`, session usage).
 3. Apply bug fix with explicit input validation and type safety.
 4. Run validation in order: `npm run lint` -> `npm run build`.
 5. For order/push/auth changes, do a manual flow check (login, checkout complete, push subscribe status).
 
+<<<<<<< HEAD
 ## Priority Areas (Performance and Stability)
+=======
+# Priority Areas (Performance and Stability)
+>>>>>>> 9b8db1c8f0f29b96de94b31bc56384e34ea05534
 
 - P1: auth/access regressions and operational endpoint exposure.
 - P2: order integrity (duplicate order, stock underflow, partial failures).
 - P3: runtime stability (Prisma connection pressure, repeated network calls).
 - P4: dev/build loop efficiency (avoid duplicate pre scripts).
 
+<<<<<<< HEAD
 ## Common Commands
+=======
+# Common Commands
+>>>>>>> 9b8db1c8f0f29b96de94b31bc56384e34ea05534
 
 - Install: `npm install`
 - Dev: `npm run dev`
@@ -112,7 +179,11 @@ Where to make changes:
 - Prisma generate: `npm run predev` or `npx prisma generate`
 - Client audit helper: `npm run audit:clients`
 
+<<<<<<< HEAD
 ## Common Mistakes to Avoid
+=======
+# Common Mistakes to Avoid
+>>>>>>> 9b8db1c8f0f29b96de94b31bc56384e34ea05534
 
 - Adding DB write routes in `app/api/*` without role/ownership checks.
 - Trusting `orderId`, `pharmacyId`, `riderId` from request body alone.
