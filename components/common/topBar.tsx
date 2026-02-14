@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { MenuLinks } from "./menuLinks";
@@ -9,6 +9,7 @@ import Image from "next/image";
 import { ShoppingCartIcon } from "@heroicons/react/24/outline";
 import { useLoading } from "@/components/common/loadingContext.client";
 import KakaoLoginButton from "@/components/common/kakaoLoginButton";
+import { usePrefetchOnIntent } from "@/components/common/usePrefetchOnIntent";
 
 type LoginStatus = {
   isUserLoggedIn: boolean;
@@ -21,6 +22,7 @@ type LoginStatus = {
 export default function TopBar() {
   const router = useRouter();
   const pathname = usePathname();
+  const [, startTransition] = useTransition();
 
   const [loginStatus, setLoginStatus] = useState<LoginStatus | null>(null);
   const [cartCount, setCartCount] = useState(0);
@@ -128,16 +130,25 @@ export default function TopBar() {
     return currentPath !== nextPath;
   };
 
+  const sevenDayHref = "/?package=7#home-products";
+  const homeIntentHandlers = usePrefetchOnIntent({ href: "/", router });
+  const sevenDayIntentHandlers = usePrefetchOnIntent({
+    href: sevenDayHref,
+    router,
+  });
+
   const goSevenDays = () => {
     setIsDrawerOpen(false);
     if (typeof window !== "undefined") {
       window.dispatchEvent(new Event("closeCart"));
     }
-    const url = "/?package=7#home-products";
+    const url = sevenDayHref;
     if (shouldShowLoading(url)) {
       showLoading();
     }
-    router.push(url);
+    startTransition(() => {
+      router.push(url);
+    });
   };
 
   const goHome = () => {
@@ -149,7 +160,9 @@ export default function TopBar() {
     if (shouldShowLoading(url)) {
       showLoading();
     }
-    router.push(url);
+    startTransition(() => {
+      router.push(url);
+    });
   };
 
   useEffect(() => {
@@ -185,6 +198,7 @@ export default function TopBar() {
         <div className="mx-auto flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-[120rem]">
           <div className="flex items-center gap-6">
             <button
+              {...homeIntentHandlers}
               onClick={goHome}
               className={menuItemClasses(
                 "group text-[17px] font-extrabold tracking-tight flex items-center gap-2"
@@ -257,6 +271,7 @@ export default function TopBar() {
             )}
 
             <button
+              {...sevenDayIntentHandlers}
               onClick={goSevenDays}
               className="hidden sm:block text-[15px] font-semibold text-slate-600"
             >
@@ -264,6 +279,7 @@ export default function TopBar() {
             </button>
 
             <button
+              {...sevenDayIntentHandlers}
               onClick={goSevenDays}
               className="group relative inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#59C1FF] to-[#7B61FF] shadow-[0_10px_30px_rgba(86,115,255,0.35)] transition-all duration-300 ease-out will-change-transform hover:scale-[1.03] hover:shadow-[0_14px_36px_rgba(86,115,255,0.5)] hover:saturate-150 hover:brightness-110 hover:from-[#6BD1FF] hover:to-[#6E58FF] active:translate-y-[1px] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#6E58FF] after:content-[''] after:absolute after:inset-0 after:rounded-full after:bg-white/20 after:opacity-0 hover:after:opacity-10"
             >
@@ -300,11 +316,16 @@ export default function TopBar() {
 
           <div className="mt-2 h-px bg-slate-100" />
 
-          <button onClick={goSevenDays} className="text-left text-slate-500">
+          <button
+            {...sevenDayIntentHandlers}
+            onClick={goSevenDays}
+            className="text-left text-slate-500"
+          >
             7일치 구매하기
           </button>
 
           <button
+            {...sevenDayIntentHandlers}
             onClick={goSevenDays}
             className="group relative inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold !text-white bg-gradient-to-r from-[#59C1FF] to-[#7B61FF] shadow-[0_10px_30px_rgba(86,115,255,0.35)] transition-all duration-300 ease-out will-change-transform hover:scale-[1.03] hover:shadow-[0_14px_36px_rgba(86,115,255,0.5)] hover:saturate-150 hover:brightness-110 hover:from-[#6BD1FF] hover:to-[#6E58FF] active:translate-y-[1px] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#6E58FF] after:content-[''] after:absolute after:inset-0 after:rounded-full after:bg-white/20 after:opacity-0 hover:after:opacity-10"
           >

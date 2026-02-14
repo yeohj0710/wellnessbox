@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import KakaoLoginButton from "@/components/common/kakaoLoginButton";
+import IntentPrefetchLink from "@/components/common/intentPrefetchLink";
 
 type LoginStatus = {
   isUserLoggedIn: boolean;
@@ -79,17 +80,21 @@ export function MenuLinks({
   if (isDrawer) {
     return (
       <>
-        <Link href="/explore" className={menuItemClasses()} {...linkProps}>
+        <IntentPrefetchLink
+          href="/explore"
+          className={menuItemClasses()}
+          {...linkProps}
+        >
           상품 둘러보기
-        </Link>
+        </IntentPrefetchLink>
 
-        <Link
+        <IntentPrefetchLink
           href="/my-orders"
           className={menuItemClasses()}
           onClick={onItemClick}
         >
           내 주문 조회
-        </Link>
+        </IntentPrefetchLink>
 
         <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
           <span>AI 진단 검사</span>
@@ -100,7 +105,7 @@ export function MenuLinks({
           </span>
         </div>
 
-        <Link
+        <IntentPrefetchLink
           href="/assess"
           className="-mt-2 inline-flex items-center gap-1 rounded-lg px-3 py-2 hover:bg-slate-50"
           onClick={onItemClick}
@@ -109,17 +114,17 @@ export function MenuLinks({
           <span className="flex items-center justify-center ml-1 rounded-full bg-indigo-100 w-10 h-5 text-[10px] font-bold text-indigo-600">
             BETA
           </span>
-        </Link>
+        </IntentPrefetchLink>
 
-        <Link
+        <IntentPrefetchLink
           href="/check-ai"
           className="-mt-4 rounded-lg px-3 py-2 -mb-2 hover:bg-slate-50"
           onClick={onItemClick}
         >
           빠른 검사
-        </Link>
+        </IntentPrefetchLink>
 
-        <Link
+        <IntentPrefetchLink
           href="/chat"
           className={`${menuItemClasses()} flex items-center mt-2`}
           onClick={onItemClick}
@@ -128,7 +133,7 @@ export function MenuLinks({
           <span className="ml-2 flex items-center justify-center rounded-full bg-indigo-100 w-10 h-5 text-[10px] font-bold text-indigo-600">
             BETA
           </span>
-        </Link>
+        </IntentPrefetchLink>
 
         {showPharmMenus && (
           <>
@@ -194,17 +199,21 @@ export function MenuLinks({
 
   return (
     <>
-      <Link href="/explore" className={menuItemClasses()} {...linkProps}>
+      <IntentPrefetchLink
+        href="/explore"
+        className={menuItemClasses()}
+        {...linkProps}
+      >
         상품 둘러보기
-      </Link>
+      </IntentPrefetchLink>
 
-      <Link
+      <IntentPrefetchLink
         href="/my-orders"
         className={menuItemClasses()}
         onClick={onItemClick}
       >
         내 주문 조회
-      </Link>
+      </IntentPrefetchLink>
 
       <div className="relative flex items-center gap-2" ref={aiRef}>
         <button
@@ -228,7 +237,7 @@ export function MenuLinks({
           />
         </button>
 
-        <Link
+        <IntentPrefetchLink
           href="/chat"
           className={menuItemClasses(
             "ml-1.5 inline-flex items-center gap-1 leading-none"
@@ -239,11 +248,11 @@ export function MenuLinks({
           <span className="ml-0.5 flex items-center justify-center rounded-full bg-indigo-100 w-10 h-5 text-[10px] font-bold text-indigo-600">
             BETA
           </span>
-        </Link>
+        </IntentPrefetchLink>
 
         {aiOpen && (
           <div className="absolute left-0 top-full mt-2 w-56 rounded-xl border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 p-2">
-            <Link
+            <IntentPrefetchLink
               href="/assess"
               className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-slate-50"
               onClick={() => {
@@ -255,9 +264,9 @@ export function MenuLinks({
               <span className="ml-2 flex items-center justify-center rounded-full bg-indigo-100 w-10 h-5 text-[10px] font-bold text-indigo-600">
                 BETA
               </span>
-            </Link>
+            </IntentPrefetchLink>
 
-            <Link
+            <IntentPrefetchLink
               href="/check-ai"
               className="block rounded-lg px-3 py-2 text-slate-800 hover:bg-slate-50"
               onClick={() => {
@@ -266,7 +275,7 @@ export function MenuLinks({
               }}
             >
               빠른 검사
-            </Link>
+            </IntentPrefetchLink>
           </div>
         )}
       </div>

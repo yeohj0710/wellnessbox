@@ -6,6 +6,7 @@ import PopularIngredientsNav from "@/app/(components)/popularIngredientsNav.clie
 import SupplementRankingNav from "@/app/(components)/supplementRankingNav.client";
 import HomeProductSectionServer from "@/app/(components)/homeProductSection.server";
 import { getHomePageData } from "@/lib/product/home-data";
+import HomeRouteWarmup from "@/components/common/homeRouteWarmup";
 
 export const revalidate = 60;
 
@@ -47,6 +48,7 @@ async function SupplementRankingSection() {
 export default function HomePage() {
   return (
     <>
+      <HomeRouteWarmup />
       <HomeLanding />
       <JourneyCtaBridge />
       <Suspense fallback={<CardSectionFallback />}>

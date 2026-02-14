@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Skeleton from "./skeleton";
 import { getCategoriesByUpdatedAt } from "@/lib/product";
@@ -8,17 +8,38 @@ import { sortByImportanceDesc } from "@/lib/utils";
 
 interface PopularIngredientsProps {
   onSelectCategory: (id: number) => void;
+  onCategoryIntent?: (id: number) => void;
   initialCategories?: any[];
 }
 
 export default function PopularIngredients({
   onSelectCategory,
+  onCategoryIntent,
   initialCategories = [],
 }: PopularIngredientsProps) {
   const [categories, setCategories] = useState<any[]>(() =>
     sortByImportanceDesc(initialCategories)
   );
   const [isLoading, setIsLoading] = useState(initialCategories.length === 0);
+  const [pressedCategoryId, setPressedCategoryId] = useState<number | null>(
+    null
+  );
+  const intentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearIntentTimer = () => {
+    if (!intentTimerRef.current) return;
+    clearTimeout(intentTimerRef.current);
+    intentTimerRef.current = null;
+  };
+
+  const scheduleCategoryIntent = (id: number) => {
+    if (!onCategoryIntent) return;
+    clearIntentTimer();
+    intentTimerRef.current = setTimeout(() => {
+      onCategoryIntent(id);
+      intentTimerRef.current = null;
+    }, 90);
+  };
 
   useEffect(() => {
     if (initialCategories.length > 0) {
@@ -34,6 +55,8 @@ export default function PopularIngredients({
     };
     fetchData();
   }, [initialCategories]);
+
+  useEffect(() => clearIntentTimer, []);
 
   return (
     <section className="w-full max-w-[640px] mx-auto mt-8">
@@ -53,8 +76,22 @@ export default function PopularIngredients({
           : categories.map((category, index) => (
               <button
                 key={category.id}
-                onClick={() => onSelectCategory(category.id)}
-                className="group relative overflow-hidden rounded-2xl bg-white ring-1 ring-gray-100 shadow-[0_6px_20px_rgba(67,103,230,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(67,103,230,0.18)] focus:outline-none focus:ring-2 focus:ring-[#6C4DFF]/50"
+                onPointerEnter={() => scheduleCategoryIntent(category.id)}
+                onMouseEnter={() => scheduleCategoryIntent(category.id)}
+                onFocus={() => onCategoryIntent?.(category.id)}
+                onPointerLeave={clearIntentTimer}
+                onMouseLeave={clearIntentTimer}
+                onBlur={clearIntentTimer}
+                onClick={() => {
+                  clearIntentTimer();
+                  setPressedCategoryId(category.id);
+                  onSelectCategory(category.id);
+                }}
+                className={`group relative overflow-hidden rounded-2xl bg-white ring-1 ring-gray-100 shadow-[0_6px_20px_rgba(67,103,230,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(67,103,230,0.18)] focus:outline-none focus:ring-2 focus:ring-[#6C4DFF]/50 ${
+                  pressedCategoryId === category.id
+                    ? "scale-[0.99] ring-[#6C4DFF]/60"
+                    : ""
+                }`}
               >
                 <div className="relative w-full aspect-[4/3]">
                   <div className="absolute inset-0 bg-gradient-to-br from-[#4568F5]/0 via-[#6C4DFF]/0 to-[#6C4DFF]/0 opacity-0 group-hover:opacity-10 transition-opacity" />

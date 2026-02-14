@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { getProductsByUpdatedAt } from "@/lib/product/product";
 import Skeleton from "./skeleton";
@@ -19,17 +19,36 @@ interface Product {
 
 interface SupplementRankingProps {
   onProductClick: (id: number) => void;
+  onProductIntent?: (id: number) => void;
   initialProducts?: Product[];
 }
 
 export default function SupplementRanking({
   onProductClick,
+  onProductIntent,
   initialProducts = [],
 }: SupplementRankingProps) {
   const [products, setProducts] = useState<Product[]>(() =>
     sortByImportanceDesc(initialProducts)
   );
   const [isLoading, setIsLoading] = useState(initialProducts.length === 0);
+  const [pressedProductId, setPressedProductId] = useState<number | null>(null);
+  const intentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearIntentTimer = () => {
+    if (!intentTimerRef.current) return;
+    clearTimeout(intentTimerRef.current);
+    intentTimerRef.current = null;
+  };
+
+  const scheduleProductIntent = (id: number) => {
+    if (!onProductIntent) return;
+    clearIntentTimer();
+    intentTimerRef.current = setTimeout(() => {
+      onProductIntent(id);
+      intentTimerRef.current = null;
+    }, 90);
+  };
 
   useEffect(() => {
     if (initialProducts.length > 0) {
@@ -45,6 +64,8 @@ export default function SupplementRanking({
     };
     fetchData();
   }, [initialProducts]);
+
+  useEffect(() => clearIntentTimer, []);
 
   return (
     <section className="w-full max-w-[640px] mx-auto mt-8">
@@ -64,8 +85,22 @@ export default function SupplementRanking({
           : products.map((product, index) => (
               <button
                 key={product.id}
-                onClick={() => onProductClick(product.id)}
-                className="group relative flex h-full flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-gray-100 shadow-[0_6px_20px_rgba(67,103,230,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(67,103,230,0.18)] focus:outline-none focus:ring-2 focus:ring-[#6C4DFF]/50"
+                onPointerEnter={() => scheduleProductIntent(product.id)}
+                onMouseEnter={() => scheduleProductIntent(product.id)}
+                onFocus={() => onProductIntent?.(product.id)}
+                onPointerLeave={clearIntentTimer}
+                onMouseLeave={clearIntentTimer}
+                onBlur={clearIntentTimer}
+                onClick={() => {
+                  clearIntentTimer();
+                  setPressedProductId(product.id);
+                  onProductClick(product.id);
+                }}
+                className={`group relative flex h-full flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-gray-100 shadow-[0_6px_20px_rgba(67,103,230,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(67,103,230,0.18)] focus:outline-none focus:ring-2 focus:ring-[#6C4DFF]/50 ${
+                  pressedProductId === product.id
+                    ? "scale-[0.99] ring-[#6C4DFF]/60"
+                    : ""
+                }`}
               >
                 <div className="relative w-full aspect-[4/3]">
                   {product.images?.[0] ? (
