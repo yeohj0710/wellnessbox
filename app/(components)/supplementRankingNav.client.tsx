@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useTransition } from "react";
+import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import SupplementRanking from "@/app/(components)/supplementRanking";
 import { useLoading } from "@/components/common/loadingContext.client";
@@ -17,27 +17,32 @@ export default function SupplementRankingNav({
 }: SupplementRankingNavProps) {
   const router = useRouter();
   const { showLoading } = useLoading();
-  const [, startTransition] = useTransition();
   const buildProductHref = useCallback(
     (id: number) => `${basePath}?product=${id}#home-products`,
     [basePath]
   );
 
   const handleProductClick = (id: number) => {
+    const href = buildProductHref(id);
     if (typeof window !== "undefined") {
       sessionStorage.setItem("scrollPos", String(window.scrollY));
     }
     showLoading();
-    startTransition(() => {
-      router.push(buildProductHref(id), { scroll: false });
-    });
+    router.push(href, { scroll: false });
   };
 
   const handleProductIntent = useCallback(
     (id: number) => {
-      enqueueRoutePrefetch(router, buildProductHref(id));
+      const href = buildProductHref(id);
+      if (typeof window !== "undefined") {
+        const currentPath = window.location.pathname || "/";
+        if (currentPath === basePath) {
+          return;
+        }
+      }
+      enqueueRoutePrefetch(router, href);
     },
-    [buildProductHref, router]
+    [basePath, buildProductHref, router]
   );
 
   return (

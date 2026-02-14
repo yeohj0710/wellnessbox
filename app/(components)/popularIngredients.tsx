@@ -38,7 +38,7 @@ export default function PopularIngredients({
     intentTimerRef.current = setTimeout(() => {
       onCategoryIntent(id);
       intentTimerRef.current = null;
-    }, 90);
+    }, 150);
   };
 
   useEffect(() => {

@@ -41,7 +41,7 @@ export default function HomeRouteWarmup() {
             }, 300 * index)
           );
         });
-      }, 1200)
+      }, 2200)
     );
 
     return () => {

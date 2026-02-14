@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useTransition } from "react";
+import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import PopularIngredients from "@/app/(components)/popularIngredients";
 import { useLoading } from "@/components/common/loadingContext.client";
@@ -17,24 +17,29 @@ export default function PopularIngredientsNav({
 }: PopularIngredientsNavProps) {
   const router = useRouter();
   const { showLoading } = useLoading();
-  const [, startTransition] = useTransition();
   const buildCategoryHref = useCallback(
     (id: number) => `${basePath}?category=${id}#home-products`,
     [basePath]
   );
 
   const handleSelectCategory = (id: number) => {
+    const href = buildCategoryHref(id);
     showLoading();
-    startTransition(() => {
-      router.push(buildCategoryHref(id));
-    });
+    router.push(href);
   };
 
   const handleCategoryIntent = useCallback(
     (id: number) => {
-      enqueueRoutePrefetch(router, buildCategoryHref(id));
+      const href = buildCategoryHref(id);
+      if (typeof window !== "undefined") {
+        const currentPath = window.location.pathname || "/";
+        if (currentPath === basePath) {
+          return;
+        }
+      }
+      enqueueRoutePrefetch(router, href);
     },
-    [buildCategoryHref, router]
+    [basePath, buildCategoryHref, router]
   );
 
   return (

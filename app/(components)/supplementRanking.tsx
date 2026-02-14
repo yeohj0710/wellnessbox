@@ -47,7 +47,7 @@ export default function SupplementRanking({
     intentTimerRef.current = setTimeout(() => {
       onProductIntent(id);
       intentTimerRef.current = null;
-    }, 90);
+    }, 150);
   };
 
   useEffect(() => {
