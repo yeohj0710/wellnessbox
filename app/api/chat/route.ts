@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { streamChat } from "@/lib/ai/chain";
 import { resolveActorForRequest } from "@/lib/server/actor";
+import {
+  buildChatContextPayload,
+  getUserDataForActor,
+} from "@/lib/server/chat-context";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -42,8 +46,12 @@ export async function POST(req: NextRequest) {
     const normalized =
       msgs.length > 0 ? msgs : q ? [{ role: "user", content: q }] : [];
 
+    const userData = await getUserDataForActor(actor);
+    const chatContext = buildChatContextPayload(userData);
+
     const patchedBody = {
       ...body,
+      ...chatContext,
       clientId: deviceClientId ?? undefined,
       appUserId: actor.appUserId ?? undefined,
       messages: normalized,
