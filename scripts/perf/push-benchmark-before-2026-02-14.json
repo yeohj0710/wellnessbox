@@ -1,0 +1,76 @@
+{
+  "mode": "before_refactor",
+  "runsPerCase": 7,
+  "simulatedPushDelayMs": 15,
+  "cases": [
+    {
+      "label": "customer_sendOrderNotification",
+      "runs": 7,
+      "p50Ms": 1505.5,
+      "p95Ms": 3289.6,
+      "avgMs": 1760.7,
+      "sendAttempts": 138,
+      "sendSuccess": 126,
+      "sendFailure": 12,
+      "failureByType": {
+        "auth_or_forbidden": 2,
+        "dead_endpoint": 3,
+        "timeout": 7
+      },
+      "dbOpsAvgPerRun": 2.7,
+      "dbWritesAvgPerRun": 0.7,
+      "slowestDbOp": {
+        "op": "order.findUnique",
+        "ms": 747.4
+      }
+    },
+    {
+      "label": "pharm_sendNewOrderNotification",
+      "runs": 7,
+      "p50Ms": 1461.1,
+      "p95Ms": 3449.5,
+      "avgMs": 1738.4,
+      "sendAttempts": 138,
+      "sendSuccess": 126,
+      "sendFailure": 12,
+      "failureByType": {
+        "auth_or_forbidden": 2,
+        "dead_endpoint": 3,
+        "timeout": 7
+      },
+      "dbOpsAvgPerRun": 2.7,
+      "dbWritesAvgPerRun": 0.7,
+      "slowestDbOp": {
+        "op": "order.findUnique",
+        "ms": 739.1
+      }
+    },
+    {
+      "label": "rider_sendRiderNotification",
+      "runs": 7,
+      "p50Ms": 1493.2,
+      "p95Ms": 3388.8,
+      "avgMs": 1771.8,
+      "sendAttempts": 138,
+      "sendSuccess": 126,
+      "sendFailure": 12,
+      "failureByType": {
+        "auth_or_forbidden": 2,
+        "dead_endpoint": 3,
+        "timeout": 7
+      },
+      "dbOpsAvgPerRun": 2.7,
+      "dbWritesAvgPerRun": 0.7,
+      "slowestDbOp": {
+        "op": "order.findUnique",
+        "ms": 746.1
+      }
+    }
+  ],
+  "duplicateProbe": {
+    "firstCallAttempts": 19,
+    "secondCallAttempts": 19,
+    "duplicateSendObserved": true
+  },
+  "measuredAt": "2026-02-14T05:04:20.326Z"
+}

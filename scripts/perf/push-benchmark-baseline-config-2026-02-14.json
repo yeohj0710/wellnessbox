@@ -1,0 +1,82 @@
+{
+  "mode": "baseline_config",
+  "config": {
+    "dedupeEnabled": false,
+    "deadCleanupEnabled": false,
+    "sendConcurrency": 1,
+    "sendRetries": 0
+  },
+  "runsPerCase": 7,
+  "simulatedPushDelayMs": 15,
+  "cases": [
+    {
+      "label": "customer_sendOrderNotification",
+      "runs": 7,
+      "p50Ms": 1024.4,
+      "p95Ms": 1407.6,
+      "avgMs": 1045.6,
+      "sendAttempts": 168,
+      "sendSuccess": 126,
+      "sendFailure": 42,
+      "failureByType": {
+        "auth_or_forbidden": 14,
+        "dead_endpoint": 21,
+        "timeout": 7
+      },
+      "dbQueryAvgPerRun": 8.3,
+      "dbWriteAvgPerRun": 0,
+      "slowestQuery": {
+        "durationMs": 205,
+        "query": "SELECT \"public\".\"Subscription\".\"id\", \"public\".\"Subscription\".\"endpoint\", \"public\".\"Subscription\".\"auth\", \"public\".\"Subscription\".\"p256dh\" FROM \"public\".\"Subscription\" WHERE (\"public\".\"Subscription\".\"role\" = $1 AND \"public\".\"Subscription\".\"orderId\" = $2 AND \"public\".\"Subscription\".\"invalidatedAt\" IS NULL) OFFSET $3"
+      }
+    },
+    {
+      "label": "pharm_sendNewOrderNotification",
+      "runs": 7,
+      "p50Ms": 1252.2,
+      "p95Ms": 1309.7,
+      "avgMs": 1247.3,
+      "sendAttempts": 168,
+      "sendSuccess": 126,
+      "sendFailure": 42,
+      "failureByType": {
+        "auth_or_forbidden": 14,
+        "dead_endpoint": 21,
+        "timeout": 7
+      },
+      "dbQueryAvgPerRun": 8.1,
+      "dbWriteAvgPerRun": 0,
+      "slowestQuery": {
+        "durationMs": 205,
+        "query": "SELECT \"public\".\"Subscription\".\"id\", \"public\".\"Subscription\".\"endpoint\", \"public\".\"Subscription\".\"auth\", \"public\".\"Subscription\".\"p256dh\" FROM \"public\".\"Subscription\" WHERE (\"public\".\"Subscription\".\"pharmacyId\" = $1 AND \"public\".\"Subscription\".\"role\" = $2 AND \"public\".\"Subscription\".\"invalidatedAt\" IS NULL) OFFSET $3"
+      }
+    },
+    {
+      "label": "rider_sendRiderNotification",
+      "runs": 7,
+      "p50Ms": 1253.7,
+      "p95Ms": 1320.9,
+      "avgMs": 1234,
+      "sendAttempts": 168,
+      "sendSuccess": 126,
+      "sendFailure": 42,
+      "failureByType": {
+        "auth_or_forbidden": 14,
+        "dead_endpoint": 21,
+        "timeout": 7
+      },
+      "dbQueryAvgPerRun": 8,
+      "dbWriteAvgPerRun": 0,
+      "slowestQuery": {
+        "durationMs": 204,
+        "query": "SELECT \"public\".\"Subscription\".\"id\", \"public\".\"Subscription\".\"endpoint\", \"public\".\"Subscription\".\"auth\", \"public\".\"Subscription\".\"p256dh\" FROM \"public\".\"Subscription\" WHERE (\"public\".\"Subscription\".\"role\" = $1 AND \"public\".\"Subscription\".\"riderId\" = $2 AND \"public\".\"Subscription\".\"invalidatedAt\" IS NULL) OFFSET $3"
+      }
+    }
+  ],
+  "duplicateProbe": {
+    "firstCallAttempts": 24,
+    "secondCallAttempts": 24,
+    "duplicateSendBlocked": false
+  },
+  "measuredAt": "2026-02-14T05:52:01.744Z"
+}

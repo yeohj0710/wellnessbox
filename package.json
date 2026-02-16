@@ -10,6 +10,7 @@
     "build": "next build && node -e \"try{require('fs').rmSync('.next/cache',{recursive:true,force:true})}catch(e){}\"",
     "start": "next start",
     "lint": "next lint",
+    "perf:push-benchmark": "node scripts/perf/push-notification-benchmark.cjs",
     "audit:clients": "ts-node scripts/audit-clients.ts",
     "rnd:module02:scaffold": "node scripts/rnd/module02/run-scaffold.cjs",
     "rnd:module02:mvp": "node scripts/rnd/module02/run-mvp-ingest.cjs",

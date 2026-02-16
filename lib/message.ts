@@ -38,10 +38,21 @@ export async function createMessage(data: {
     },
   });
   try {
+    const messageEventKey = data.pharmacyId
+      ? `order:${data.orderId}:customer_message:${created.id}`
+      : `order:${data.orderId}:pharm_message:${created.id}`;
     if (data.pharmacyId) {
-      await sendCustomerMessageNotification(data.orderId, data.content);
+      await sendCustomerMessageNotification(
+        data.orderId,
+        data.content,
+        messageEventKey
+      );
     } else {
-      await sendPharmacyMessageNotification(data.orderId, data.content);
+      await sendPharmacyMessageNotification(
+        data.orderId,
+        data.content,
+        messageEventKey
+      );
     }
   } catch (e) {
     console.error(e);

@@ -170,6 +170,28 @@ model Subscription {
   @@unique([role, riderId, endpoint])
 }
 
+model PushDelivery {
+  id              Int       @id @default(autoincrement())
+  eventKey        String
+  role            String
+  endpoint        String
+  status          String    @default("pending")
+  orderId         Int?
+  pharmacyId      Int?
+  riderId         Int?
+  errorType       String?
+  errorStatusCode Int?
+  deliveredAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @default(now()) @updatedAt
+
+  @@unique([eventKey, role, endpoint])
+  @@index([role, createdAt])
+  @@index([orderId, createdAt])
+  @@index([pharmacyId, createdAt])
+  @@index([riderId, createdAt])
+}
+
 model Client {
   id             String             @id
   userAgent      String?
