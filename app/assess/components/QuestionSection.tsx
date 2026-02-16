@@ -103,11 +103,14 @@ export default function QuestionSection({
                 const active = answers[current] === opt.value;
                 return (
                   <button
-                    key={String(opt.value)}
-                    onClick={() => handleAnswer(opt.value)}
+                    key={`${currentQuestion.id}:${String(opt.value)}`}
+                    onClick={(e) => {
+                      e.currentTarget.blur();
+                      handleAnswer(opt.value);
+                    }}
                     className={[
                       "rounded-xl border p-3 text-sm transition-colors flex items-center justify-center text-center whitespace-normal leading-tight min-h-[44px]",
-                      "[-webkit-tap-highlight-color:transparent] touch-manipulation select-none active:bg-white",
+                      "[-webkit-tap-highlight-color:transparent] touch-manipulation select-none active:bg-white focus:outline-none focus-visible:outline-none",
                       active
                         ? "border-transparent bg-sky-50 ring-2 ring-sky-400 ring-offset-1 ring-offset-white focus:ring-0 focus-visible:ring-0"
                         : "border-gray-200 bg-white supports-[hover:hover]:hover:bg-sky-50 supports-[hover:hover]:hover:border-sky-200 active:bg-sky-50 focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-1 focus-visible:ring-offset-white",

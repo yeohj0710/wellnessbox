@@ -5,7 +5,6 @@ import { evaluate } from "@/app/assess/logic/algorithm";
 import { sectionA, sectionB, fixedA, hashChoice } from "./data/questions";
 import { BANK } from "./data/c-bank";
 import { C_OPTIONS } from "./data/c-options";
-import { getCategories } from "@/lib/product";
 import { useLoading } from "@/components/common/loadingContext.client";
 import { getOrCreateClientId, refreshClientIdCookieIfNeeded } from "@/lib/client-id";
 import IntroSection from "./components/IntroSection";
@@ -15,6 +14,7 @@ import DoneSection from "./components/DoneSection";
 import ConfirmResetModal from "./components/ConfirmResetModal";
 import { KEY_TO_CODE, labelOf, type CategoryKey } from "@/lib/categories";
 import type { CSectionResult } from "./components/CSection";
+import { fetchCategories, type CategoryLite } from "@/lib/client/categories";
 
 const STORAGE_KEY = "assess-state";
 const C_PERSIST_KEY = `${STORAGE_KEY}::C`;
@@ -69,7 +69,7 @@ export default function Assess() {
   const [cCats, setCCats] = useState<string[]>([]);
   const [cAnswers, setCAnswers] = useState<Record<string, number[]>>({});
   const [cResult, setCResult] = useState<CSectionResult | null>(null);
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<CategoryLite[]>([]);
   const [cEpoch, setCEpoch] = useState(0);
 
   const handleCProgress = useCallback((step: number, total: number) => {
@@ -89,7 +89,7 @@ export default function Assess() {
   const recommendedIds = useMemo(() => {
     if (!cResult || categories.length === 0) return [] as number[];
     const ids = cResult.catsOrdered
-      .map((code) => categories.find((c: any) => c.name === labelOf(code))?.id)
+      .map((code) => categories.find((c) => c.name === labelOf(code))?.id)
       .filter((id): id is number => typeof id === "number");
     return Array.from(new Set(ids)).slice(0, 3);
   }, [cResult, categories]);
@@ -214,9 +214,11 @@ export default function Assess() {
   ]);
 
   useEffect(() => {
-    getCategories()
+    const controller = new AbortController();
+    fetchCategories(controller.signal)
       .then((cats) => setCategories(cats))
-      .catch(() => {});
+      .catch(() => setCategories([]));
+    return () => controller.abort();
   }, []);
 
   const allQuestions =

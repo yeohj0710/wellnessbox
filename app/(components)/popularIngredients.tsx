@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Skeleton from "./skeleton";
-import { getCategoriesByUpdatedAt } from "@/lib/product";
 import { sortByImportanceDesc } from "@/lib/utils";
+import { fetchCategories } from "@/lib/client/categories";
 
 interface PopularIngredientsProps {
   onSelectCategory: (id: number) => void;
@@ -47,13 +47,24 @@ export default function PopularIngredients({
       setIsLoading(false);
       return;
     }
+
+    const controller = new AbortController();
+
     const fetchData = async () => {
       setIsLoading(true);
-      const fetched = await getCategoriesByUpdatedAt();
-      setCategories(sortByImportanceDesc(fetched));
-      setIsLoading(false);
+      try {
+        const fetched = await fetchCategories(controller.signal);
+        if (controller.signal.aborted) return;
+        setCategories(sortByImportanceDesc(fetched));
+      } catch {
+        if (controller.signal.aborted) return;
+        setCategories([]);
+      } finally {
+        if (!controller.signal.aborted) setIsLoading(false);
+      }
     };
     fetchData();
+    return () => controller.abort();
   }, [initialCategories]);
 
   useEffect(() => clearIntentTimer, []);

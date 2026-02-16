@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { getCategories } from "@/lib/product";
 import { getOrCreateClientId, refreshClientIdCookieIfNeeded } from "@/lib/client-id";
 import { CODE_TO_LABEL } from "@/lib/categories";
+import { fetchCategories, type CategoryLite } from "@/lib/client/categories";
 
 const QUESTIONS = [
   "I feel tired even after waking up and get exhausted easily during the day. (I feel foggy in the afternoon and have trouble focusing.)",
@@ -246,7 +246,7 @@ export default function EnglishCheckAI() {
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [animateBars, setAnimateBars] = useState(false);
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<CategoryLite[]>([]);
 
   const completion = useMemo(() => {
     const answered = answers.filter((v) => v > 0).length;
@@ -265,15 +265,17 @@ export default function EnglishCheckAI() {
   }, []);
 
   useEffect(() => {
-    getCategories()
+    const controller = new AbortController();
+    fetchCategories(controller.signal)
       .then((cats) => setCategories(cats))
-      .catch(() => {});
+      .catch(() => setCategories([]));
+    return () => controller.abort();
   }, []);
 
   const recommendedIds = useMemo(() => {
     if (!results || categories.length === 0) return [];
     const ids = results
-      .map((r) => categories.find((c: any) => c.name === r.label)?.id)
+      .map((r) => categories.find((c) => c.name === r.label)?.id)
       .filter((id): id is number => typeof id === "number");
     return Array.from(new Set(ids)).slice(0, 3);
   }, [results, categories]);

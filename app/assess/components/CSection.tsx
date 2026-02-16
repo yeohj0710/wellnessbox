@@ -24,6 +24,51 @@ export type CSectionResult = {
   percents: number[];
 };
 
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function normalizeResultPayload(value: unknown): CSectionResult | null {
+  if (!value || typeof value !== "object") return null;
+
+  const record = value as Record<string, unknown>;
+  const catsOrderedRaw = Array.isArray(record.catsOrdered)
+    ? record.catsOrdered
+    : [];
+  const scoresRaw = Array.isArray(record.scores) ? record.scores : [];
+  const percentsRaw = Array.isArray(record.percents) ? record.percents : [];
+
+  const catsOrdered = catsOrderedRaw.filter(
+    (item): item is string => typeof item === "string" && item.length > 0
+  );
+  const scores = scoresRaw.map((item) => (isFiniteNumber(item) ? item : 0));
+  const percents = percentsRaw.map((item) => (isFiniteNumber(item) ? item : 0));
+
+  if (!catsOrdered.length) return null;
+
+  const normalizedPercents = percents.length
+    ? percents
+    : scores.map((score) => (score > 1 ? score / 100 : score));
+  if (!normalizedPercents.length) return null;
+
+  const length = Math.min(catsOrdered.length, normalizedPercents.length);
+  if (length <= 0) return null;
+
+  const normalizedScores = scores.length
+    ? scores
+    : normalizedPercents.map((value) => Math.round(value * 1000) / 1000);
+
+  return {
+    catsOrdered: catsOrdered.slice(0, length),
+    scores: normalizedScores.slice(0, length),
+    percents: normalizedPercents.slice(0, length).map((value) => {
+      if (value < 0) return 0;
+      if (value > 1) return 1;
+      return value;
+    }),
+  };
+}
+
 function getType(cat: string, idx: number): QType {
   return (BANK[cat]?.[idx]?.type as QType) ?? "likert4";
 }
@@ -158,6 +203,8 @@ export default function CSection({
 
   const select = (val: number) => {
     if (!q || submitting || transitioning) return;
+    const activeElement = document.activeElement;
+    if (activeElement instanceof HTMLElement) activeElement.blur();
     setError("");
 
     const { state: previewState, finished: willFinish } = selectValue(
@@ -242,7 +289,12 @@ export default function CSection({
         throw new Error(data.error || "서버와 통신 중 오류가 발생했어요.");
       }
 
-      result = (await res.json()) as CSectionResult;
+      const resultPayload = await res.json().catch(() => null);
+      const normalized = normalizeResultPayload(resultPayload);
+      if (!normalized) {
+        throw new Error("결과 형식이 올바르지 않아요.");
+      }
+      result = normalized;
 
       if (typeof window !== "undefined" && persistKey) {
         try {
@@ -384,7 +436,7 @@ export default function CSection({
           const active = isActive(opt.value);
           return (
             <button
-              key={opt.value}
+              key={`${cat}:${qIdx}:${opt.value}`}
               type="button"
               onClick={() => select(opt.value)}
               aria-pressed={active}
@@ -393,7 +445,7 @@ export default function CSection({
               aria-disabled={transitioning || submitting}
               className={[
                 "relative flex items-center justify-center gap-2 rounded-xl border p-3 text-sm transition-colors whitespace-normal text-center min-h-[44px] h-full",
-                "[-webkit-tap-highlight-color:transparent] touch-manipulation select-none focus-visible:outline-none",
+                "[-webkit-tap-highlight-color:transparent] touch-manipulation select-none focus:outline-none focus-visible:outline-none",
                 transitioning || submitting
                   ? "border-gray-200 bg-white opacity-60 pointer-events-none"
                   : isActive(opt.value)

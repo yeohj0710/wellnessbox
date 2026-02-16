@@ -1,12 +1,12 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { getCategories } from "@/lib/product";
 import { useLoading } from "@/components/common/loadingContext.client";
 import {
   getOrCreateClientId,
   refreshClientIdCookieIfNeeded,
 } from "@/lib/client-id";
+import { fetchCategories, type CategoryLite } from "@/lib/client/categories";
 import {
   CHECK_AI_QUESTIONS as QUESTIONS,
   CHECK_AI_OPTIONS as OPTIONS,
@@ -39,7 +39,7 @@ export default function CheckAI() {
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [animateBars, setAnimateBars] = useState(false);
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<CategoryLite[]>([]);
 
   const completion = useMemo(() => {
     const answered = answers.filter((v) => v > 0).length;
@@ -51,15 +51,17 @@ export default function CheckAI() {
   }, []);
 
   useEffect(() => {
-    getCategories()
+    const controller = new AbortController();
+    fetchCategories(controller.signal)
       .then((cats) => setCategories(cats))
-      .catch(() => {});
+      .catch(() => setCategories([]));
+    return () => controller.abort();
   }, []);
 
   const recommendedIds = useMemo(() => {
     if (!results || categories.length === 0) return [];
     const ids = results
-      .map((r) => categories.find((c: any) => c.name === r.label)?.id)
+      .map((r) => categories.find((c) => c.name === r.label)?.id)
       .filter((id): id is number => typeof id === "number");
     return Array.from(new Set(ids)).slice(0, 3);
   }, [results, categories]);
@@ -88,20 +90,24 @@ export default function CheckAI() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ responses: filled }),
-    });
-    const data = await res.json();
+    }).catch(() => null);
+    if (!res?.ok) {
+      setLoading(false);
+      return;
+    }
+    const data = await res.json().catch(() => null);
     if (!Array.isArray(data)) {
       setLoading(false);
       return;
     }
 
     const normalized: Result[] = data.map((d: any) => ({
-      code: d.code,
-      label: d.label,
+      code: typeof d?.code === "string" ? d.code : "",
+      label: typeof d?.label === "string" ? d.label : "",
       prob:
-        typeof d.prob === "number"
+        typeof d?.prob === "number"
           ? d.prob
-          : typeof d.percent === "number"
+          : typeof d?.percent === "number"
           ? d.percent / 100
           : 0,
     }));

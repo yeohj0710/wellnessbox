@@ -11,11 +11,9 @@ import {
 import { useSearchParams } from "next/navigation";
 import ProductDetail from "@/components/product/productDetail";
 import Cart from "@/components/order/cart";
-import { getProducts } from "@/lib/product";
 import { sortByImportanceDesc } from "@/lib/utils";
 import { useFooter } from "@/components/common/footerContext";
 import axios from "axios";
-import { getCategories } from "@/lib/product";
 import { getLowestAverageOptionType } from "@/lib/utils";
 import { useLoading } from "@/components/common/loadingContext.client";
 import { useToast } from "@/components/common/toastContext.client";
@@ -33,6 +31,16 @@ import { CATEGORY_LABELS } from "@/lib/categories";
 interface HomeProductSectionProps {
   initialCategories?: any[];
   initialProducts?: any[];
+}
+
+function parseCachedArray<T = any>(raw: string | null): T[] | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as T[]) : null;
+  } catch {
+    return null;
+  }
 }
 
 export default function HomeProductSection({
@@ -245,19 +253,40 @@ export default function HomeProductSection({
       cacheTimestamp &&
       now - parseInt(cacheTimestamp, 10) < 60 * 1000
     ) {
-      setCategories(sortByImportanceDesc(JSON.parse(cachedCategories)));
-      const sortedProducts = sortByImportanceDesc(JSON.parse(cachedProducts));
-      setAllProducts(sortedProducts);
-      setProducts(sortedProducts);
-      setIsLoading(false);
-      return;
+      const parsedCategories = parseCachedArray(cachedCategories);
+      const parsedProducts = parseCachedArray(cachedProducts);
+      if (parsedCategories && parsedProducts) {
+        setCategories(sortByImportanceDesc(parsedCategories));
+        const sortedProducts = sortByImportanceDesc(parsedProducts);
+        setAllProducts(sortedProducts);
+        setProducts(sortedProducts);
+        setIsLoading(false);
+        return;
+      }
     }
 
     try {
-      const [fetchedCategories, fetchedProducts] = await Promise.all([
-        getCategories(),
-        getProducts(),
-      ]);
+      const response = await fetch("/api/home-data", {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      }).catch(() => null);
+
+      const payload = response
+        ? await response.json().catch(() => null)
+        : null;
+
+      const fetchedCategoriesRaw =
+        payload && Array.isArray(payload.categories) ? payload.categories : [];
+      const fetchedProductsRaw =
+        payload && Array.isArray(payload.products) ? payload.products : [];
+
+      const fetchedCategories = Array.isArray(fetchedCategoriesRaw)
+        ? fetchedCategoriesRaw
+        : [];
+      const fetchedProducts = Array.isArray(fetchedProductsRaw)
+        ? fetchedProductsRaw
+        : [];
 
       if (!fetchedProducts.length) {
         throw new Error("no products");
