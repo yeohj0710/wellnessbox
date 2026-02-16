@@ -15,6 +15,10 @@ import {
   saveProfileServer,
   formatAssessCat,
 } from "../utils";
+import {
+  buildDataDrivenSuggestions,
+  buildUserContextSummary,
+} from "@/lib/chat/context";
 
 export default function useChat() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -306,6 +310,7 @@ export default function useChat() {
           ? data.orders.map((o: any) => ({
               id: o.id,
               status: o.status,
+              createdAt: o.createdAt,
               updatedAt: o.updatedAt,
               items: (o.orderItems || []).map((it: any) => ({
                 name: it.pharmacyProduct?.product?.name || "상품",
@@ -323,6 +328,73 @@ export default function useChat() {
     () => sessions.find((s) => s.id === activeId) || null,
     [sessions, activeId]
   );
+  const userContextSummary = useMemo(
+    () =>
+      buildUserContextSummary({
+        profile: profile ?? null,
+        orders,
+        assessResult: assessResult || null,
+        checkAiResult: checkAiResult || null,
+        chatSessions: sessions,
+        currentSessionId: activeId,
+        localAssessCats,
+        localCheckAiTopLabels: localCheckAi,
+      }),
+    [
+      profile,
+      orders,
+      assessResult,
+      checkAiResult,
+      sessions,
+      activeId,
+      localAssessCats,
+      localCheckAi,
+    ]
+  );
+
+  const buildContextSessionPayload = (currentSessionId: string | null) => {
+    return sessions
+      .filter((session) => !currentSessionId || session.id !== currentSessionId)
+      .sort(
+        (left, right) =>
+          (right.updatedAt || right.createdAt) -
+          (left.updatedAt || left.createdAt)
+      )
+      .slice(0, 5)
+      .map((session) => ({
+        id: session.id,
+        title: session.title,
+        updatedAt: session.updatedAt || session.createdAt,
+        messages: session.messages.slice(-4).map((message) => ({
+          role: message.role,
+          content: message.content,
+        })),
+      }));
+  };
+
+  const buildContextPayload = (currentSessionId: string | null) => ({
+    profile,
+    localCheckAiTopLabels: localCheckAi,
+    localAssessCats,
+    orders: orders.map((order) => ({
+      id: order.id,
+      status: order.status,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      items: Array.isArray(order.items)
+        ? order.items.map((item: any) => ({
+            name: item?.name || "상품",
+            quantity:
+              typeof item?.quantity === "number" ? item.quantity : undefined,
+          }))
+        : [],
+    })),
+    assessResult: assessResult || null,
+    checkAiResult: checkAiResult || null,
+    sessionId: currentSessionId || undefined,
+    chatSessions: buildContextSessionPayload(currentSessionId),
+  });
+
   const prevActiveIdRef = useRef<string | null>(null);
   const prevMsgCountRef = useRef(0);
 
@@ -510,24 +582,29 @@ export default function useChat() {
     }
   }
 
-  async function fetchSuggestions(lastAssistantText: string, count = 2) {
+  async function fetchSuggestions(lastAssistantText: string, count = 4) {
+    const safeCount = Math.max(3, Math.min(count, 6));
+    const fallback = buildDataDrivenSuggestions(userContextSummary, safeCount);
     try {
       const res = await fetch("/api/chat/suggest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text: lastAssistantText,
-          profile,
-          assessResult,
-          checkAiResult,
-          orders,
+          ...buildContextPayload(active?.id ?? null),
           recentMessages: active?.messages ?? [],
-          count, // ★ 추가: 요청 개수(최초 2개, 이후 1개)
+          count: safeCount,
         }),
       });
       const js = await res.json().catch(() => ({}));
-      if (Array.isArray(js?.suggestions)) setSuggestions(js.suggestions);
-    } catch {}
+      if (Array.isArray(js?.suggestions) && js.suggestions.length > 0) {
+        setSuggestions(js.suggestions);
+      } else {
+        setSuggestions(fallback);
+      }
+    } catch {
+      setSuggestions(fallback);
+    }
   }
 
   async function sendMessage(overrideText?: string) {
@@ -573,25 +650,15 @@ export default function useChat() {
     abortRef.current = controller;
     try {
       const cid = getClientIdLocal();
+      const contextPayload = buildContextPayload(active.id);
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: (active.messages || []).concat(userMsg),
-          profile,
           clientId: cid,
           mode: "chat",
-          localCheckAiTopLabels: localCheckAi,
-          localAssessCats,
-          orders: orders.map((o) => ({
-            id: o.id,
-            status: o.status,
-            items: o.items.map(
-              (it: any) => `${it.name}${it.quantity ? ` x${it.quantity}` : ""}`
-            ),
-          })),
-          assessResult: assessResult || null,
-          checkAiResult: checkAiResult || null,
+          ...contextPayload,
         }),
         signal: controller.signal,
       });
@@ -626,9 +693,9 @@ export default function useChat() {
       if (isFirst) {
         firstAssistantReplyRef.current = fullText;
         await generateTitle();
-        await fetchSuggestions(fullText, 1);
+        await fetchSuggestions(fullText, 3);
       } else {
-        await fetchSuggestions(fullText, 1);
+        await fetchSuggestions(fullText, 3);
       }
 
       try {
@@ -689,25 +756,15 @@ export default function useChat() {
     abortRef.current = controller;
     try {
       const cid = getClientIdLocal();
+      const contextPayload = buildContextPayload(sessionId);
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: [],
-          profile,
           clientId: cid,
           mode: "init",
-          localCheckAiTopLabels: localCheckAi,
-          localAssessCats,
-          orders: orders.map((o) => ({
-            id: o.id,
-            status: o.status,
-            items: o.items.map(
-              (it: any) => `${it.name}${it.quantity ? ` x${it.quantity}` : ""}`
-            ),
-          })),
-          assessResult: assessResult || null,
-          checkAiResult: checkAiResult || null,
+          ...contextPayload,
         }),
         signal: controller.signal,
       });
@@ -739,7 +796,7 @@ export default function useChat() {
         }
       }
 
-      fetchSuggestions(fullText, 2).catch(() => {});
+      fetchSuggestions(fullText, 4).catch(() => {});
       firstAssistantMessageRef.current = fullText;
 
       try {
@@ -813,6 +870,7 @@ export default function useChat() {
     assessResult,
     checkAiResult,
     orders,
+    userContextSummary,
     titleHighlightId,
     suggestions,
     titleLoading,

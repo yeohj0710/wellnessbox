@@ -39,6 +39,7 @@ export interface ChatRequestBody {
   clientId?: string;
   appUserId?: string;
   mode?: "init" | "chat";
+  sessionId?: string;
   // Optional local-only results to enrich context
   localCheckAiTopLabels?: string[];
   localAssessCats?: string[];
@@ -46,4 +47,5 @@ export interface ChatRequestBody {
   orders?: any[];
   assessResult?: any;
   checkAiResult?: any;
+  chatSessions?: any[];
 }
