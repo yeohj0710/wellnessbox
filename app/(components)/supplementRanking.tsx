@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { getProductsByUpdatedAt } from "@/lib/product/product";
 import Skeleton from "./skeleton";
 import { sortByImportanceDesc } from "@/lib/utils";
+import { fetchJsonWithTimeout } from "@/lib/client/fetch-utils";
 
 interface Product {
   id: number;
@@ -56,13 +56,41 @@ export default function SupplementRanking({
       setIsLoading(false);
       return;
     }
+
+    const controller = new AbortController();
+    let alive = true;
+
     const fetchData = async () => {
       setIsLoading(true);
-      const fetched: any = await getProductsByUpdatedAt();
-      setProducts(sortByImportanceDesc(fetched));
-      setIsLoading(false);
+      try {
+        const { payload } = await fetchJsonWithTimeout<{ products?: Product[] }>(
+          "/api/home-data",
+          {
+            method: "GET",
+            headers: { Accept: "application/json" },
+            cache: "no-store",
+          },
+          { timeoutMs: 7000, signal: controller.signal }
+        );
+        if (!alive) return;
+
+        const fetchedProducts = Array.isArray(payload?.products)
+          ? payload.products
+          : [];
+        setProducts(sortByImportanceDesc(fetchedProducts).slice(0, 6));
+      } catch {
+        if (!alive) return;
+        setProducts([]);
+      } finally {
+        if (alive) setIsLoading(false);
+      }
     };
-    fetchData();
+    void fetchData();
+
+    return () => {
+      alive = false;
+      controller.abort();
+    };
   }, [initialProducts]);
 
   useEffect(() => clearIntentTimer, []);

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState, useMemo, useEffect } from "react";
 import { TrashIcon } from "@heroicons/react/16/solid";
+import { fetchJsonWithTimeout, FetchTimeoutError } from "@/lib/client/fetch-utils";
 
 export default function CartItemsSection({
   cartItems,
@@ -12,30 +13,68 @@ export default function CartItemsSection({
   onProductClick,
   handleBulkChange,
   isLoading = false,
+  isPharmacyLoading = false,
+  pharmacyError = null,
+  onRetryResolve,
 }: any) {
   const [confirmType, setConfirmType] = useState<string | null>(null);
   const [products, setProducts] = useState<any[]>(allProducts);
+  const [cartProductsError, setCartProductsError] = useState<string | null>(null);
+  const [productsResolveToken, setProductsResolveToken] = useState(0);
 
   useEffect(() => {
     if (Array.isArray(allProducts) && allProducts.length > 0) {
       setProducts(allProducts);
+      setCartProductsError(null);
       return;
     }
     const ids = Array.isArray(cartItems)
       ? [...new Set(cartItems.map((i: any) => i.productId))]
       : [];
-    if (ids.length === 0) return;
-    fetch("/api/cart-products", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ids }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data.products)) setProducts(data.products);
-      })
-      .catch(() => setProducts([]));
-  }, [allProducts, cartItems]);
+    if (ids.length === 0) {
+      setProducts([]);
+      setCartProductsError(null);
+      return;
+    }
+
+    const controller = new AbortController();
+    let alive = true;
+    setCartProductsError(null);
+
+    (async () => {
+      try {
+        const { payload } = await fetchJsonWithTimeout<{ products?: any[] }>(
+          "/api/cart-products",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ids }),
+          },
+          { timeoutMs: 7000, signal: controller.signal }
+        );
+        if (!alive) return;
+        if (Array.isArray(payload?.products)) {
+          setProducts(payload.products);
+          return;
+        }
+        setProducts([]);
+        setCartProductsError("장바구니 상품 정보를 불러오지 못했습니다.");
+      } catch (error) {
+        if (!alive) return;
+        setProducts([]);
+        if (error instanceof FetchTimeoutError) {
+          setCartProductsError("장바구니 상품 조회 시간이 초과되었습니다.");
+        } else {
+          setCartProductsError("장바구니 상품 정보를 불러오지 못했습니다.");
+        }
+      }
+    })();
+
+    return () => {
+      alive = false;
+      controller.abort();
+    };
+  }, [allProducts, cartItems, productsResolveToken]);
 
   const items = useMemo(() => {
     if (!Array.isArray(cartItems) || !Array.isArray(products)) return [];
@@ -54,14 +93,18 @@ export default function CartItemsSection({
       .filter(Boolean) as any[];
   }, [cartItems, products, selectedPharmacy]);
 
-  const resolving =
-    isLoading ||
-    (Array.isArray(cartItems) &&
-      cartItems.length > 0 &&
-      (!selectedPharmacy?.id ||
-        !Array.isArray(products) ||
-        products.length === 0 ||
-        items.length === 0));
+  const hasCartItems = Array.isArray(cartItems) && cartItems.length > 0;
+  const waitingForProducts =
+    hasCartItems &&
+    !cartProductsError &&
+    (!Array.isArray(products) || products.length === 0);
+  const waitingForPharmacy =
+    hasCartItems && !selectedPharmacy?.id && isPharmacyLoading;
+  const resolving = isLoading || waitingForProducts || waitingForPharmacy;
+  const missingPharmacy =
+    hasCartItems && !selectedPharmacy?.id && !isPharmacyLoading;
+  const unresolvedItems =
+    hasCartItems && !!selectedPharmacy?.id && !resolving && items.length === 0;
 
   return (
     <>
@@ -90,6 +133,45 @@ export default function CartItemsSection({
               </div>
             </div>
           ))
+        ) : cartProductsError ? (
+          <div className="flex h-28 flex-col items-center justify-center gap-2 text-center">
+            <p className="text-sm text-gray-600">{cartProductsError}</p>
+            <button
+              type="button"
+              onClick={() => setProductsResolveToken((prev) => prev + 1)}
+              className="rounded-md bg-sky-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-sky-600"
+            >
+              다시 시도
+            </button>
+          </div>
+        ) : missingPharmacy ? (
+          <div className="flex h-28 flex-col items-center justify-center gap-2 text-center">
+            <p className="text-sm text-gray-600">
+              {typeof pharmacyError === "string" && pharmacyError
+                ? pharmacyError
+                : "약국 정보를 불러오지 못했습니다."}
+            </p>
+            <button
+              type="button"
+              onClick={() => onRetryResolve?.()}
+              className="rounded-md bg-sky-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-sky-600"
+            >
+              다시 시도
+            </button>
+          </div>
+        ) : unresolvedItems ? (
+          <div className="flex h-28 flex-col items-center justify-center gap-2 text-center">
+            <p className="text-sm text-gray-600">
+              장바구니 품목과 약국 재고를 다시 확인해 주세요.
+            </p>
+            <button
+              type="button"
+              onClick={() => onRetryResolve?.()}
+              className="rounded-md bg-sky-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-sky-600"
+            >
+              새로 확인
+            </button>
+          </div>
         ) : items.length > 0 ? (
           items.map(({ key, item, product, pharmacyProduct }: any) => (
             <div key={key} className="flex items-center gap-4 border-b pb-4">
@@ -211,7 +293,7 @@ export default function CartItemsSection({
         )}
       </div>
 
-      {!resolving && (
+      {!resolving && items.length > 0 && (
         <div className="justify-end px-4 mt-3 mb-2 flex gap-2">
           <button
             onClick={() => setConfirmType("7일")}

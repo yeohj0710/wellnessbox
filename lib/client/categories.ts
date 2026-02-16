@@ -1,3 +1,5 @@
+import { fetchJsonWithTimeout } from "@/lib/client/fetch-utils";
+
 export type CategoryLite = {
   id: number;
   name: string;
@@ -44,13 +46,14 @@ function normalizeCategoryList(payload: unknown): CategoryLite[] {
 export async function fetchCategories(
   signal?: AbortSignal
 ): Promise<CategoryLite[]> {
-  const res = await fetch("/api/categories", {
-    method: "GET",
-    headers: { Accept: "application/json" },
-    cache: "no-store",
-    signal,
-  });
-
-  const payload = await res.json().catch(() => null);
+  const { payload } = await fetchJsonWithTimeout<unknown>(
+    "/api/categories",
+    {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    },
+    { timeoutMs: 7000, signal }
+  );
   return normalizeCategoryList(payload);
 }

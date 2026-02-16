@@ -46,6 +46,9 @@ export default function Cart({
   totalPrice,
   selectedPharmacy,
   allProducts,
+  isPharmacyLoading,
+  pharmacyError,
+  onRetryPharmacyResolve,
   roadAddress,
   setRoadAddress,
   setSelectedPharmacy,
@@ -526,6 +529,9 @@ export default function Cart({
         onProductClick={handleProductClick}
         handleBulkChange={handleBulkChange}
         isLoading={!hydrated}
+        isPharmacyLoading={isPharmacyLoading}
+        pharmacyError={pharmacyError}
+        onRetryResolve={onRetryPharmacyResolve}
       />
 
       <AddressSection

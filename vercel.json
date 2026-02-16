@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/internal/warmup",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}

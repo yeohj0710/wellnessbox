@@ -1,8 +1,14 @@
 import HomeProductSectionHydrated from "@/app/(components)/homeProductSectionHydrated.client";
-import { getHomePageData } from "@/lib/product/home-data";
+import { getHomePageData, type HomePageData } from "@/lib/product/home-data";
 
-export default async function HomeProductSectionServer() {
-  const { categories, products } = await getHomePageData();
+interface HomeProductSectionServerProps {
+  homeDataPromise?: Promise<HomePageData>;
+}
+
+export default async function HomeProductSectionServer({
+  homeDataPromise,
+}: HomeProductSectionServerProps) {
+  const { categories, products } = await (homeDataPromise ?? getHomePageData());
 
   return (
     <HomeProductSectionHydrated

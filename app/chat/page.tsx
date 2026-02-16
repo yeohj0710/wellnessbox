@@ -17,6 +17,10 @@ const ChatDrawer = dynamic(() => import("./components/ChatDrawer"), {
 const ReferenceData = dynamic(() => import("./components/ReferenceData"), {
   ssr: false,
 });
+const RecommendedProductActions = dynamic(
+  () => import("./components/RecommendedProductActions"),
+  { ssr: false }
+);
 
 export default function ChatPage() {
   const {
@@ -108,6 +112,9 @@ export default function ChatPage() {
                     />
                   )}
                   <MessageBubble role={m.role} content={m.content} />
+                  {m.role === "assistant" && (
+                    <RecommendedProductActions content={m.content} />
+                  )}
                 </div>
               ))}
             <div ref={messagesEndRef} />

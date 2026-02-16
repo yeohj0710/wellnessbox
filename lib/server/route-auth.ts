@@ -47,6 +47,26 @@ export async function requireAdminSession(): Promise<GuardResult<null>> {
   return { ok: true, data: null };
 }
 
+export async function requireCronSecret(
+  req: Request
+): Promise<GuardResult<null>> {
+  const expectedSecret = process.env.CRON_SECRET;
+  if (!expectedSecret) {
+    return {
+      ok: false,
+      response: jsonError(500, "CRON_SECRET is not configured"),
+    };
+  }
+
+  const authHeader = req.headers.get("authorization");
+  const expectedHeader = `Bearer ${expectedSecret}`;
+  if (authHeader !== expectedHeader) {
+    return unauthorized("Unauthorized cron request");
+  }
+
+  return { ok: true, data: null };
+}
+
 export async function requireAnySession(): Promise<GuardResult<null>> {
   const session = await getSession();
   const hasSession =

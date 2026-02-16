@@ -40,36 +40,17 @@ export async function getProducts() {
           },
         },
       },
-      reviews: {
-        select: {
-          rate: true,
-        },
-      },
     },
     orderBy: [
       { importance: "desc" },
       { updatedAt: "desc" },
     ],
   });
-  return products.map((product) => {
-    const reviewCount = product.reviews.length;
-    const averageRating =
-      reviewCount > 0
-        ? parseFloat(
-            (
-              product.reviews.reduce(
-                (sum, review) => sum + (review.rate || 0),
-                0
-              ) / reviewCount
-            ).toFixed(1)
-          )
-        : 0.0;
-    return {
-      ...product,
-      rating: averageRating,
-      reviewCount,
-    };
-  });
+  return products.map((product) => ({
+    ...product,
+    rating: 0,
+    reviewCount: 0,
+  }));
 }
 
 export async function getProductsByUpdatedAt() {
@@ -110,36 +91,17 @@ export async function getProductsByUpdatedAt() {
           },
         },
       },
-      reviews: {
-        select: {
-          rate: true,
-        },
-      },
     },
     orderBy: [
       { importance: "desc" },
       { updatedAt: "desc" },
     ],
   });
-  return products.map((product) => {
-    const reviewCount = product.reviews.length;
-    const averageRating =
-      reviewCount > 0
-        ? parseFloat(
-            (
-              product.reviews.reduce(
-                (sum, review) => sum + (review.rate || 0),
-                0
-              ) / reviewCount
-            ).toFixed(1)
-          )
-        : 0.0;
-    return {
-      ...product,
-      rating: averageRating,
-      reviewCount,
-    };
-  });
+  return products.map((product) => ({
+    ...product,
+    rating: 0,
+    reviewCount: 0,
+  }));
 }
 
 export async function getProductsIdName() {

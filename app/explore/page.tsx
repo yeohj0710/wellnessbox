@@ -4,7 +4,7 @@ import SymptomImprovement from "@/app/(components)/symptomImprovement";
 import PopularIngredientsNav from "@/app/(components)/popularIngredientsNav.client";
 import SupplementRankingNav from "@/app/(components)/supplementRankingNav.client";
 import HomeProductSectionServer from "@/app/(components)/homeProductSection.server";
-import { getHomePageData } from "@/lib/product/home-data";
+import { getHomePageData, type HomePageData } from "@/lib/product/home-data";
 
 export const revalidate = 60;
 
@@ -31,15 +31,23 @@ function HomeProductsFallback() {
   );
 }
 
-async function ExplorePopularIngredientsSection() {
-  const { categories } = await getHomePageData();
+async function ExplorePopularIngredientsSection({
+  homeDataPromise,
+}: {
+  homeDataPromise: Promise<HomePageData>;
+}) {
+  const { categories } = await homeDataPromise;
   return (
     <PopularIngredientsNav basePath="/explore" initialCategories={categories} />
   );
 }
 
-async function ExploreSupplementRankingSection() {
-  const { rankingProducts } = await getHomePageData();
+async function ExploreSupplementRankingSection({
+  homeDataPromise,
+}: {
+  homeDataPromise: Promise<HomePageData>;
+}) {
+  const { rankingProducts } = await homeDataPromise;
   return (
     <SupplementRankingNav
       basePath="/explore"
@@ -49,18 +57,20 @@ async function ExploreSupplementRankingSection() {
 }
 
 export default function ExplorePage() {
+  const homeDataPromise = getHomePageData();
+
   return (
     <>
       <JourneyCtaBridge />
       <Suspense fallback={<CardSectionFallback />}>
-        <ExplorePopularIngredientsSection />
+        <ExplorePopularIngredientsSection homeDataPromise={homeDataPromise} />
       </Suspense>
       <SymptomImprovement />
       <Suspense fallback={<CardSectionFallback />}>
-        <ExploreSupplementRankingSection />
+        <ExploreSupplementRankingSection homeDataPromise={homeDataPromise} />
       </Suspense>
       <Suspense fallback={<HomeProductsFallback />}>
-        <HomeProductSectionServer />
+        <HomeProductSectionServer homeDataPromise={homeDataPromise} />
       </Suspense>
     </>
   );

@@ -27,6 +27,11 @@ import FooterCartBar from "@/app/(components)/footerCartBar";
 import FooterCartBarLoading from "@/app/(components)/footerCartBarLoading";
 import SymptomFilter from "@/app/(components)/symptomFilter";
 import { CATEGORY_LABELS } from "@/lib/categories";
+import {
+  fetchJsonWithTimeout,
+  FetchTimeoutError,
+  runWithRetry,
+} from "@/lib/client/fetch-utils";
 
 interface HomeProductSectionProps {
   initialCategories?: any[];
@@ -41,6 +46,42 @@ function parseCachedArray<T = any>(raw: string | null): T[] | null {
   } catch {
     return null;
   }
+}
+
+const HOME_CACHE_TTL_MS = 60 * 1000;
+const HOME_STALE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const HOME_FETCH_TIMEOUT_MS = 8000;
+const HOME_FETCH_RETRIES = 3;
+
+type HomeDataResponse = {
+  categories?: any[];
+  products?: any[];
+};
+
+function readCachedHomeData(maxAgeMs: number) {
+  const cachedCategories = localStorage.getItem("categories");
+  const cachedProducts = localStorage.getItem("products");
+  const cacheTimestampRaw = localStorage.getItem("cacheTimestamp");
+  const cacheTimestamp = Number.parseInt(cacheTimestampRaw || "", 10);
+
+  if (!cachedCategories || !cachedProducts || !Number.isFinite(cacheTimestamp)) {
+    return null;
+  }
+
+  const ageMs = Date.now() - cacheTimestamp;
+  if (ageMs < 0 || ageMs > maxAgeMs) return null;
+
+  const parsedCategories = parseCachedArray(cachedCategories);
+  const parsedProducts = parseCachedArray(cachedProducts);
+  if (!parsedCategories || !parsedProducts || parsedProducts.length === 0) {
+    return null;
+  }
+
+  return {
+    categories: parsedCategories,
+    products: parsedProducts,
+    cacheTimestamp,
+  };
 }
 
 export default function HomeProductSection({
@@ -72,6 +113,8 @@ export default function HomeProductSection({
   const [roadAddress, setRoadAddress] = useState("");
   const [pharmacies, setPharmacies] = useState<any[]>([]);
   const [selectedPharmacy, setSelectedPharmacy] = useState<any>(null);
+  const [pharmacyError, setPharmacyError] = useState<string | null>(null);
+  const [pharmacyResolveToken, setPharmacyResolveToken] = useState(0);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [cartItems, setCartItems] = useState<any[]>(() => {
     if (typeof window !== "undefined") {
@@ -82,17 +125,132 @@ export default function HomeProductSection({
   });
 
   const [mounted, setMounted] = useState(false);
+  const [isRecovering, setIsRecovering] = useState(false);
   const filterInteractionStartedRef = useRef<number | null>(null);
+  const homeFetchSeqRef = useRef(0);
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const applyHomeData = useCallback(
+    (nextCategories: any[], nextProducts: any[], cacheTimestamp = Date.now()) => {
+      const sortedCategories = sortByImportanceDesc(nextCategories);
+      const sortedProducts = sortByImportanceDesc(nextProducts);
+      setCategories(sortedCategories);
+      setAllProducts(sortedProducts);
+      setProducts(sortedProducts);
+      localStorage.setItem("categories", JSON.stringify(sortedCategories));
+      localStorage.setItem("products", JSON.stringify(sortedProducts));
+      localStorage.setItem("cacheTimestamp", cacheTimestamp.toString());
+    },
+    []
+  );
+
+  const fetchData = useCallback(
+    async (reason: "initial" | "recovery" = "initial"): Promise<void> => {
+      const requestSeq = ++homeFetchSeqRef.current;
+      setIsLoading(true);
+      setError(null);
+      if (reason === "recovery") setIsRecovering(true);
+
+      const freshCache =
+        typeof window === "undefined" ? null : readCachedHomeData(HOME_CACHE_TTL_MS);
+      if (reason === "initial" && freshCache) {
+        if (requestSeq === homeFetchSeqRef.current) {
+          applyHomeData(
+            freshCache.categories,
+            freshCache.products,
+            freshCache.cacheTimestamp
+          );
+          setIsLoading(false);
+          setIsRecovering(false);
+        }
+        return;
+      }
+
+      const staleCache =
+        typeof window === "undefined"
+          ? null
+          : readCachedHomeData(HOME_STALE_CACHE_TTL_MS);
+
+      try {
+        const result = await runWithRetry(
+          async () => {
+            const { response, payload } =
+              await fetchJsonWithTimeout<HomeDataResponse>(
+                "/api/home-data",
+                {
+                  method: "GET",
+                  headers: { Accept: "application/json" },
+                  cache: "no-store",
+                },
+                { timeoutMs: HOME_FETCH_TIMEOUT_MS }
+              );
+
+            const fetchedCategories = Array.isArray(payload?.categories)
+              ? payload.categories
+              : [];
+            const fetchedProducts = Array.isArray(payload?.products)
+              ? payload.products
+              : [];
+
+            if (!response.ok) {
+              throw new Error(`home-data status ${response.status}`);
+            }
+            if (fetchedProducts.length === 0) {
+              throw new Error("home-data empty products");
+            }
+
+            return { fetchedCategories, fetchedProducts };
+          },
+          {
+            retries: HOME_FETCH_RETRIES,
+            baseDelayMs: 800,
+            maxDelayMs: 5000,
+            shouldRetry: (error) => {
+              return !(
+                error instanceof DOMException && error.name === "AbortError"
+              );
+            },
+          }
+        );
+
+        if (requestSeq !== homeFetchSeqRef.current) return;
+        applyHomeData(result.fetchedCategories, result.fetchedProducts);
+        setIsRecovering(false);
+      } catch (error) {
+        if (requestSeq !== homeFetchSeqRef.current) return;
+        console.error("Failed to load home data", error);
+
+        if (staleCache) {
+          applyHomeData(
+            staleCache.categories,
+            staleCache.products,
+            staleCache.cacheTimestamp
+          );
+          setError("Connection is slow. Showing cached products.");
+          setIsRecovering(true);
+          return;
+        }
+
+        if (error instanceof FetchTimeoutError) {
+          setError("Loading products timed out. Please try again.");
+        } else {
+          setError("Failed to load products. Please retry.");
+        }
+      } finally {
+        if (requestSeq === homeFetchSeqRef.current) {
+          setIsLoading(false);
+        }
+      }
+    },
+    [applyHomeData]
+  );
 
   const { hideLoading } = useLoading();
   const { showToast } = useToast();
 
   const scrollPositionRef = useRef(0);
-  const reloadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const hasReloadedRef = useRef(false);
   const cartContainerRef = useRef<HTMLDivElement>(null);
   const isFilterUpdating = useMemo(() => {
     if (isLoading) return true;
@@ -129,7 +287,6 @@ export default function HomeProductSection({
     filterInteractionStartedRef.current = performance.now();
     setSelectedPackage(pkg);
   }, []);
-
   useEffect(() => {
     if (isFilterUpdating) return;
     if (filterInteractionStartedRef.current === null) return;
@@ -161,24 +318,6 @@ export default function HomeProductSection({
   }, []);
 
   const [isSymptomModalVisible, setIsSymptomModalVisible] = useState(false);
-
-  useEffect(() => {
-    if (isCartVisible) return;
-    if (isLoading && allProducts.length === 0) {
-      reloadTimeoutRef.current = setTimeout(() => {
-        if (!hasReloadedRef.current && typeof window !== "undefined") {
-          hasReloadedRef.current = true;
-          window.location.reload();
-        }
-      }, 10000);
-    } else if (reloadTimeoutRef.current) {
-      clearTimeout(reloadTimeoutRef.current);
-      reloadTimeoutRef.current = null;
-    }
-    return () => {
-      if (reloadTimeoutRef.current) clearTimeout(reloadTimeoutRef.current);
-    };
-  }, [isLoading, allProducts.length, isCartVisible]);
 
   const openProductDetail = (product: any) => {
     if (typeof window !== "undefined") {
@@ -235,88 +374,6 @@ export default function HomeProductSection({
     window.addEventListener("openCart", handleOpen);
     return () => window.removeEventListener("openCart", handleOpen);
   }, [openCart]);
-
-  const MAX_RETRIES = 5;
-
-  const fetchData = useCallback(async (attempt = 0): Promise<void> => {
-    if (attempt === 0) setError(null);
-    setIsLoading(true);
-
-    const cachedCategories = localStorage.getItem("categories");
-    const cachedProducts = localStorage.getItem("products");
-    const cacheTimestamp = localStorage.getItem("cacheTimestamp");
-    const now = Date.now();
-
-    if (
-      cachedCategories &&
-      cachedProducts &&
-      cacheTimestamp &&
-      now - parseInt(cacheTimestamp, 10) < 60 * 1000
-    ) {
-      const parsedCategories = parseCachedArray(cachedCategories);
-      const parsedProducts = parseCachedArray(cachedProducts);
-      if (parsedCategories && parsedProducts) {
-        setCategories(sortByImportanceDesc(parsedCategories));
-        const sortedProducts = sortByImportanceDesc(parsedProducts);
-        setAllProducts(sortedProducts);
-        setProducts(sortedProducts);
-        setIsLoading(false);
-        return;
-      }
-    }
-
-    try {
-      const response = await fetch("/api/home-data", {
-        method: "GET",
-        headers: { Accept: "application/json" },
-        cache: "no-store",
-      }).catch(() => null);
-
-      const payload = response
-        ? await response.json().catch(() => null)
-        : null;
-
-      const fetchedCategoriesRaw =
-        payload && Array.isArray(payload.categories) ? payload.categories : [];
-      const fetchedProductsRaw =
-        payload && Array.isArray(payload.products) ? payload.products : [];
-
-      const fetchedCategories = Array.isArray(fetchedCategoriesRaw)
-        ? fetchedCategoriesRaw
-        : [];
-      const fetchedProducts = Array.isArray(fetchedProductsRaw)
-        ? fetchedProductsRaw
-        : [];
-
-      if (!fetchedProducts.length) {
-        throw new Error("no products");
-      }
-
-      const sortedCategories = sortByImportanceDesc(fetchedCategories);
-      const sortedProducts = sortByImportanceDesc(fetchedProducts);
-
-      setCategories(sortedCategories);
-      setAllProducts(sortedProducts);
-      setProducts(sortedProducts);
-
-      localStorage.setItem("categories", JSON.stringify(sortedCategories));
-      localStorage.setItem("products", JSON.stringify(sortedProducts));
-      localStorage.setItem("cacheTimestamp", now.toString());
-
-      setIsLoading(false);
-    } catch (error) {
-      console.error("데이터를 가져오는 데 실패하였습니다:", error);
-      if (attempt < MAX_RETRIES) {
-        const delay = Math.pow(2, attempt) * 1000;
-        setTimeout(() => fetchData(attempt + 1), delay);
-      } else {
-        setError(
-          "상품을 불러오는 데 실패했습니다. 새로고침 후 다시 시도해 주세요."
-        );
-        setIsLoading(false);
-      }
-    }
-  }, []);
 
   useEffect(() => {
     const pkg = searchParams.get("package");
@@ -447,12 +504,13 @@ export default function HomeProductSection({
       setAllProducts(sortedProducts);
       setProducts(sortedProducts);
       setIsLoading(false);
+      setIsRecovering(false);
       localStorage.setItem("categories", JSON.stringify(sortedCategories));
       localStorage.setItem("products", JSON.stringify(sortedProducts));
       localStorage.setItem("cacheTimestamp", now);
       return;
     }
-    fetchData();
+    void fetchData("initial");
   }, [fetchData, initialCategories, initialProducts]);
 
   useEffect(() => {
@@ -460,6 +518,7 @@ export default function HomeProductSection({
       setRoadAddress("");
       setPharmacies([]);
       setSelectedPharmacy(null);
+      setPharmacyError(null);
       setCartItems([]);
       setIsCartVisible(false);
       setTotalPrice(0);
@@ -478,11 +537,27 @@ export default function HomeProductSection({
   }, [roadAddress]);
 
   useEffect(() => {
-    if (!isLoading && !error && allProducts.length === 0) {
-      const timer = setTimeout(() => fetchData(), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [isLoading, error, allProducts.length, fetchData]);
+    if (isLoading) return;
+    if (allProducts.length > 0 && !isRecovering) return;
+
+    const timer = setTimeout(() => {
+      void fetchData("recovery");
+    }, 3500);
+    return () => clearTimeout(timer);
+  }, [allProducts.length, fetchData, isLoading, isRecovering]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) return;
+      if (isLoading) return;
+      if (allProducts.length > 0 && !isRecovering) return;
+      void fetchData("recovery");
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [allProducts.length, fetchData, isLoading, isRecovering]);
 
   useEffect(() => {
     if (!selectedPharmacy) {
@@ -511,7 +586,13 @@ export default function HomeProductSection({
     if (selectedSymptoms.length === 0) return;
     const mappedCategoryNames = selectedSymptoms.reduce<string[]>(
       (acc, item) => {
-        const cats = searchCategoryMapping[item] || [];
+        const cats = symptomCategoryPairs.reduce<string[]>(
+          (bucket, entry) => {
+            if (entry.symptom !== item) return bucket;
+            return [...bucket, ...entry.categories];
+          },
+          []
+        );
         return [...acc, ...cats];
       },
       []
@@ -545,25 +626,35 @@ export default function HomeProductSection({
   }, [selectedPharmacy, isLoading, allProducts.length, cartItems]);
 
   const [isPharmacyLoading, setIsPharmacyLoading] = useState(false);
+  const retryPharmacyResolve = useCallback(() => {
+    setPharmacyResolveToken((prev) => prev + 1);
+  }, []);
 
   useEffect(() => {
     if (cartItems.length === 0) {
       setPharmacies([]);
       setSelectedPharmacy(null);
+      setPharmacyError(null);
+      setIsPharmacyLoading(false);
       return;
     }
-    if (!roadAddress) return;
+    if (!roadAddress) {
+      setPharmacyError("Set your address to find nearby pharmacies.");
+      setIsPharmacyLoading(false);
+      return;
+    }
 
     const controller = new AbortController();
     let alive = true;
 
     setIsPharmacyLoading(true);
+    setPharmacyError(null);
     (async () => {
       try {
         const response = await axios.post(
           "/api/get-sorted-pharmacies",
           { cartItem: cartItems[0], roadAddress },
-          { signal: controller.signal }
+          { signal: controller.signal, timeout: 9000 }
         );
         const sortedPharmacies = response.data?.pharmacies || [];
         const filteredPharmacies = sortedPharmacies.filter(
@@ -575,6 +666,7 @@ export default function HomeProductSection({
           alert(
             "선택하신 상품의 해당량만큼의 재고를 보유한 약국이 존재하지 않아요. 해당 상품을 장바구니에서 제외할게요."
           );
+          setPharmacyError("No nearby pharmacy has stock for this item.");
           const updatedCartItems = cartItems.slice(1);
           setCartItems(updatedCartItems);
           localStorage.setItem("cartItems", JSON.stringify(updatedCartItems));
@@ -591,6 +683,9 @@ export default function HomeProductSection({
         }
       } catch (e: any) {
         if (e?.name === "CanceledError") return;
+        if (alive) {
+          setPharmacyError("Failed to load nearby pharmacies. Retry.");
+        }
         console.error("약국 정보를 가져오는 데 실패했습니다:", e);
       } finally {
         if (alive) setIsPharmacyLoading(false);
@@ -601,7 +696,7 @@ export default function HomeProductSection({
       alive = false;
       controller.abort();
     };
-  }, [roadAddress, cartItems, selectedPharmacy?.id, allProducts]);
+  }, [roadAddress, cartItems, selectedPharmacy?.id, pharmacyResolveToken]);
 
   useEffect(() => {
     let filtered = [...allProducts];
@@ -632,13 +727,13 @@ export default function HomeProductSection({
     if (deferredSelectedPackage === "7일 패키지") {
       filtered = filtered.filter((product: any) =>
         product.pharmacyProducts.some((pharmacyProduct: any) =>
-          pharmacyProduct.optionType?.includes("7일")
+          pharmacyProduct.optionType?.includes("7")
         )
       );
     } else if (deferredSelectedPackage === "30일 패키지") {
       filtered = filtered.filter((product: any) =>
         product.pharmacyProducts.some((pharmacyProduct: any) =>
-          pharmacyProduct.optionType?.includes("30일")
+          pharmacyProduct.optionType?.includes("30")
         )
       );
     } else if (deferredSelectedPackage === "일반 상품") {
@@ -688,33 +783,64 @@ export default function HomeProductSection({
     });
   };
 
-  const searchCategoryMapping: { [key: string]: string[] } = {
-    피로감: [
-      CATEGORY_LABELS.vitaminB,
-      CATEGORY_LABELS.coenzymeQ10,
-      CATEGORY_LABELS.iron,
-    ],
-    "눈 건강": [CATEGORY_LABELS.lutein, CATEGORY_LABELS.vitaminA],
-    "피부 건강": [
-      CATEGORY_LABELS.collagen,
-      CATEGORY_LABELS.vitaminC,
-      CATEGORY_LABELS.zinc,
-    ],
-    체지방: [CATEGORY_LABELS.garcinia, CATEGORY_LABELS.psyllium],
-    "혈관 & 혈액순환": [CATEGORY_LABELS.omega3, CATEGORY_LABELS.coenzymeQ10],
-    "간 건강": [CATEGORY_LABELS.milkThistle],
-    "장 건강": [CATEGORY_LABELS.probiotics, CATEGORY_LABELS.psyllium],
-    "스트레스 & 수면": [
-      CATEGORY_LABELS.magnesium,
-      CATEGORY_LABELS.phosphatidylserine,
-    ],
-    "면역 기능": [
-      CATEGORY_LABELS.vitaminD,
-      CATEGORY_LABELS.zinc,
-      CATEGORY_LABELS.vitaminC,
-    ],
-    "혈중 콜레스테롤": [CATEGORY_LABELS.omega3],
-  };
+  const symptomCategoryPairs: Array<{ symptom: string; categories: string[] }> =
+    [
+      {
+        symptom: "?쇰줈媛?",
+        categories: [
+          CATEGORY_LABELS.vitaminB,
+          CATEGORY_LABELS.coenzymeQ10,
+          CATEGORY_LABELS.iron,
+        ],
+      },
+      {
+        symptom: "??嫄닿컯",
+        categories: [CATEGORY_LABELS.lutein, CATEGORY_LABELS.vitaminA],
+      },
+      {
+        symptom: "?쇰? 嫄닿컯",
+        categories: [
+          CATEGORY_LABELS.collagen,
+          CATEGORY_LABELS.vitaminC,
+          CATEGORY_LABELS.zinc,
+        ],
+      },
+      {
+        symptom: "泥댁?諛?",
+        categories: [CATEGORY_LABELS.garcinia, CATEGORY_LABELS.psyllium],
+      },
+      {
+        symptom: "?덇? & ?덉븸?쒗솚",
+        categories: [CATEGORY_LABELS.omega3, CATEGORY_LABELS.coenzymeQ10],
+      },
+      {
+        symptom: "媛?嫄닿컯",
+        categories: [CATEGORY_LABELS.milkThistle],
+      },
+      {
+        symptom: "??嫄닿컯",
+        categories: [CATEGORY_LABELS.probiotics, CATEGORY_LABELS.psyllium],
+      },
+      {
+        symptom: "?ㅽ듃?덉뒪 & ?섎㈃",
+        categories: [
+          CATEGORY_LABELS.magnesium,
+          CATEGORY_LABELS.phosphatidylserine,
+        ],
+      },
+      {
+        symptom: "硫댁뿭 湲곕뒫",
+        categories: [
+          CATEGORY_LABELS.vitaminD,
+          CATEGORY_LABELS.zinc,
+          CATEGORY_LABELS.vitaminC,
+        ],
+      },
+      {
+        symptom: "?덉쨷 肄쒕젅?ㅽ뀒濡?",
+        categories: [CATEGORY_LABELS.omega3],
+      },
+    ];
 
   const handleSearchSelect = (selectedItems: string[]) => {
     setSelectedSymptoms(selectedItems);
@@ -778,13 +904,11 @@ export default function HomeProductSection({
 
       {cartItems.length > 0 && selectedPharmacy && (
         <div className="mx-2 sm:mx-0 bg-gray-100 px-3 py-2 mt-1.5 mb-4 rounded-md text-sm text-gray-700">
-          선택하신 상품을 보유한 약국 중 주소로부터{" "}
+          Selected pharmacy near your address:{" "}
           <strong className="text-sky-500">
             {selectedPharmacy.distance?.toFixed(1)}km
           </strong>{" "}
-          거리에 위치한{" "}
-          <strong className="text-sky-500">{selectedPharmacy.name}</strong>의
-          상품들이에요.
+          away, <strong className="text-sky-500">{selectedPharmacy.name}</strong>.
         </div>
       )}
 
@@ -799,16 +923,30 @@ export default function HomeProductSection({
 
       {error && !isLoading && (
         <div className="min-h-[30vh] mb-12 flex flex-col items-center justify-center py-10">
-          <p className="text-gray-500 text-sm mb-3">{error}</p>
-          <button className="text-sky-500 text-sm" onClick={() => fetchData()}>
-            다시 시도
+          <p className="text-gray-500 text-sm mb-2">{error}</p>
+          {isRecovering && (
+            <p className="text-xs text-gray-400 mb-3">
+              Auto-retrying in the background.
+            </p>
+          )}
+          <button
+            className="text-sky-500 text-sm"
+            onClick={() => void fetchData("recovery")}
+          >
+            Retry
           </button>
         </div>
       )}
 
       {!error && allProducts.length === 0 && !isLoading && (
         <div className="min-h-[30vh] mb-12 flex flex-col items-center justify-center gap-6 py-10">
-          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-gray-500">Products are taking longer than expected.</p>
+          <button
+            className="text-sky-500 text-sm"
+            onClick={() => void fetchData("recovery")}
+          >
+            Retry now
+          </button>
         </div>
       )}
 
@@ -853,6 +991,9 @@ export default function HomeProductSection({
               totalPrice={totalPrice}
               selectedPharmacy={selectedPharmacy}
               allProducts={allProducts}
+              isPharmacyLoading={isPharmacyLoading}
+              pharmacyError={pharmacyError}
+              onRetryPharmacyResolve={retryPharmacyResolve}
               roadAddress={roadAddress}
               setRoadAddress={setRoadAddress}
               setSelectedPharmacy={setSelectedPharmacy}
