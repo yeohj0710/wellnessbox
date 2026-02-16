@@ -48,4 +48,8 @@ export interface ChatRequestBody {
   assessResult?: any;
   checkAiResult?: any;
   chatSessions?: any[];
+  actorContext?: {
+    loggedIn?: boolean;
+    phoneLinked?: boolean;
+  };
 }

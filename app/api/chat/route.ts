@@ -46,6 +46,10 @@ export async function POST(req: NextRequest) {
       ...body,
       clientId: deviceClientId ?? undefined,
       appUserId: actor.appUserId ?? undefined,
+      actorContext: {
+        loggedIn: actor.loggedIn,
+        phoneLinked: actor.phoneLinked,
+      },
       messages: normalized,
       ragQuery: q,
     };

@@ -19,8 +19,6 @@ const GENERIC_FALLBACK_PATTERNS: RegExp[] = [
   /어떤\s*건강기능식품/i,
 ];
 
-const PLACEHOLDER_EVIDENCE = /^(?:\.\.\.|없음|-|\?)$/;
-
 function cleanText(text: string) {
   return text.replace(/\r/g, "").trim();
 }
@@ -29,14 +27,6 @@ function clip(text: string, max = 80) {
   const normalized = text.replace(/\s+/g, " ").trim();
   if (normalized.length <= max) return normalized;
   return `${normalized.slice(0, max - 1)}…`;
-}
-
-function buildEvidenceLine(summary: UserContextSummary) {
-  const labels = summary.evidenceLabels.slice(0, 3);
-  if (labels.length > 0) return labels.join(", ");
-  const missing = summary.missingData.slice(0, 2);
-  if (missing.length > 0) return missing.join(", ");
-  return "추가 정보 필요";
 }
 
 function getEvidenceTokens(summary: UserContextSummary) {
@@ -90,46 +80,7 @@ function getEvidenceTokens(summary: UserContextSummary) {
 }
 
 function hasEvidenceMention(text: string, summary: UserContextSummary) {
-  const body = text.replace(/근거\s*:[^\n\r]*/g, "");
-  return getEvidenceTokens(summary).some((token) => token && body.includes(token));
-}
-
-function extractEvidenceLine(text: string) {
-  const match = text.match(/근거\s*:\s*([^\n\r]+)/);
-  const value = match?.[1]?.trim() ?? "";
-  return {
-    exists: Boolean(match),
-    value,
-  };
-}
-
-function ensureEvidenceLine(text: string, summary: UserContextSummary) {
-  const evidence = extractEvidenceLine(text);
-  const target = buildEvidenceLine(summary);
-
-  if (!evidence.exists) {
-    return `${text.trim()}\n\n근거: ${target}`;
-  }
-
-  if (!evidence.value || PLACEHOLDER_EVIDENCE.test(evidence.value)) {
-    return text.replace(/근거\s*:\s*([^\n\r]*)/, `근거: ${target}`);
-  }
-
-  const currentParts = evidence.value
-    .split(/[,/|]/)
-    .map((value) => value.trim())
-    .filter(Boolean);
-  const targetParts = target
-    .split(/[,/|]/)
-    .map((value) => value.trim())
-    .filter(Boolean);
-  const merged = Array.from(new Set([...currentParts, ...targetParts]));
-
-  if (merged.length > 0) {
-    return text.replace(/근거\s*:\s*([^\n\r]*)/, `근거: ${merged.join(", ")}`);
-  }
-
-  return text;
+  return getEvidenceTokens(summary).some((token) => token && text.includes(token));
 }
 
 function buildDataSnippet(summary: UserContextSummary) {
@@ -270,7 +221,6 @@ function buildPersonalizedFallback(
     });
   }
 
-  lines.push(`근거: ${buildEvidenceLine(summary)}`);
   return lines.join("\n\n");
 }
 
@@ -286,7 +236,6 @@ function buildNoDataFallback(summary: UserContextSummary) {
     `1. ${questions[0]}`,
     `2. ${questions[1]}`,
     `3. ${questions[2]}`,
-    `근거: ${buildEvidenceLine(summary)}`,
   ].join("\n\n");
 }
 
@@ -321,7 +270,7 @@ export function enforcePersonalizedResponse(
 
   if (!summary.hasAnyData) {
     if (!raw) return buildNoDataFallback(summary);
-    return ensureEvidenceLine(raw, summary);
+    return raw;
   }
 
   if (!raw) {
@@ -338,13 +287,9 @@ export function enforcePersonalizedResponse(
     ? buildPersonalizedFallback(summary, input.userText)
     : raw;
 
-  result = ensureEvidenceLine(result, summary);
-
   if (!hasEvidenceMention(result, summary)) {
     const snippet = buildDataSnippet(summary);
-    if (snippet) {
-      result = `${result}\n\n참고 데이터: ${snippet}`;
-    }
+    if (snippet) return `${result}\n\n${snippet}`;
   }
 
   return result;

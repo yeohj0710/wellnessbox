@@ -53,11 +53,12 @@ export default function useChat() {
   const stickToBottomRef = useRef(true);
   const initStartedRef = useRef<Record<string, boolean>>({});
   const abortRef = useRef<AbortController | null>(null);
-  const profileInitRef = useRef(true);
   const savedKeysRef = useRef<Set<string>>(new Set());
   const readyToPersistRef = useRef<Record<string, boolean>>({});
   const actorAppUserIdRef = useRef<string | null>(null);
   const actorLoggedInRef = useRef(false);
+  const actorPhoneLinkedRef = useRef(false);
+  const suggestionHistoryRef = useRef<Record<string, string[]>>({});
 
   function openDrawer() {
     setDrawerVisible(true);
@@ -100,6 +101,7 @@ export default function useChat() {
         if (js?.actor) {
           actorLoggedInRef.current = !!js.actor.loggedIn;
           actorAppUserIdRef.current = js.actor.appUserId ?? null;
+          actorPhoneLinkedRef.current = !!js.actor.phoneLinked;
         }
         if (!Array.isArray(js?.sessions)) return;
         setSessions((prev) => {
@@ -209,6 +211,10 @@ export default function useChat() {
   }, [activeId]);
 
   useEffect(() => {
+    setSuggestions([]);
+  }, [activeId]);
+
+  useEffect(() => {
     if (!sessions.length) return;
     const persistable = sessions.filter((s) => {
       const first = s.messages[0];
@@ -259,19 +265,17 @@ export default function useChat() {
     fetch(`/api/user/all-results`)
       .then((r) => r.json())
       .then((data) => {
+        if (data?.actor) {
+          actorLoggedInRef.current = !!data.actor.loggedIn;
+          actorAppUserIdRef.current = data.actor.appUserId ?? null;
+          actorPhoneLinkedRef.current = !!data.actor.phoneLinked;
+        }
+
         const assess = data?.assess;
         const assessNormalized = assess?.normalized;
         if (Array.isArray(assessNormalized?.topLabels)) {
           const cats = assessNormalized.topLabels;
-          const pcts = Array.isArray(assessNormalized?.scores)
-            ? assessNormalized.scores.map((score: any) =>
-                typeof score?.value === "number" ? score.value : 0
-              )
-            : [];
-          const summary = cats.map(
-            (c: string, i: number) =>
-              `${formatAssessCat(c)} ${(pcts[i] * 100).toFixed(1)}%`
-          );
+          const summary = cats.map((c: string) => formatAssessCat(c));
           const answers = Array.isArray(assess.answersDetailed)
             ? assess.answersDetailed.map((a: any) => ({
                 question: a.question,
@@ -339,6 +343,10 @@ export default function useChat() {
         currentSessionId: activeId,
         localAssessCats,
         localCheckAiTopLabels: localCheckAi,
+        actorContext: {
+          loggedIn: actorLoggedInRef.current,
+          phoneLinked: actorPhoneLinkedRef.current,
+        },
       }),
     [
       profile,
@@ -376,6 +384,10 @@ export default function useChat() {
     profile,
     localCheckAiTopLabels: localCheckAi,
     localAssessCats,
+    actorContext: {
+      loggedIn: actorLoggedInRef.current,
+      phoneLinked: actorPhoneLinkedRef.current,
+    },
     orders: orders.map((order) => ({
       id: order.id,
       status: order.status,
@@ -472,6 +484,7 @@ export default function useChat() {
     setTitleLoading(false);
     setTitleError(false);
     readyToPersistRef.current[id] = false;
+    suggestionHistoryRef.current[id] = [];
   }
 
   async function deleteChat(id: string) {
@@ -482,6 +495,7 @@ export default function useChat() {
     setSessions(next);
     if (activeId === id) setActiveId(next[0]?.id ?? null);
     delete readyToPersistRef.current[id];
+    delete suggestionHistoryRef.current[id];
     try {
       const res = await fetch("/api/chat/delete", {
         method: "POST",
@@ -510,6 +524,61 @@ export default function useChat() {
     return text
       .replace(/\n{3,}/g, "\n\n")
       .replace(/([^\n])\n([ \t]*([-*+]\s|\d+\.\s))/g, "$1\n\n$2");
+  }
+
+  function sanitizeAssistantText(text: string, finalize = false) {
+    const cleaned = normalizeNewlines(text)
+      .replace(/\n?\s*근거\s*:[^\n\r]*/g, "")
+      .replace(/내 데이터 요약/g, "참고 데이터")
+      .replace(/추천 제품\s*\(7일\s*예상가\)/g, "추천 제품(7일 기준 가격)")
+      .replace(
+        /(전문의|전문가|병원)\s*(와|과)?\s*상담(을|이|은|는)?\s*(권장|추천|해주세요|해\s*주세요)?/g,
+        ""
+      );
+    return finalize ? cleaned.trim() : cleaned.replace(/^\n+/, "");
+  }
+
+  function normalizeSuggestionKey(value: string) {
+    return value
+      .toLowerCase()
+      .replace(/[^a-z0-9가-힣]+/g, "")
+      .trim();
+  }
+
+  function getSuggestionHistory(sessionId: string) {
+    return suggestionHistoryRef.current[sessionId] || [];
+  }
+
+  function rememberSuggestions(sessionId: string, nextSuggestions: string[]) {
+    const prev = getSuggestionHistory(sessionId);
+    const merged = [...prev];
+    const seen = new Set(prev.map(normalizeSuggestionKey).filter(Boolean));
+
+    for (const suggestion of nextSuggestions) {
+      const key = normalizeSuggestionKey(suggestion);
+      if (!key || seen.has(key)) continue;
+      merged.push(suggestion);
+      seen.add(key);
+    }
+
+    suggestionHistoryRef.current[sessionId] = merged.slice(-20);
+  }
+
+  function buildSummaryForSession(sessionId: string | null) {
+    return buildUserContextSummary({
+      profile: profile ?? null,
+      orders,
+      assessResult: assessResult || null,
+      checkAiResult: checkAiResult || null,
+      chatSessions: sessions,
+      currentSessionId: sessionId,
+      localAssessCats,
+      localCheckAiTopLabels: localCheckAi,
+      actorContext: {
+        loggedIn: actorLoggedInRef.current,
+        phoneLinked: actorPhoneLinkedRef.current,
+      },
+    });
   }
 
   async function saveChatOnce({
@@ -582,28 +651,90 @@ export default function useChat() {
     }
   }
 
-  async function fetchSuggestions(lastAssistantText: string, count = 4) {
-    const safeCount = Math.max(3, Math.min(count, 6));
-    const fallback = buildDataDrivenSuggestions(userContextSummary, safeCount);
+  async function fetchSuggestions(
+    lastAssistantText: string,
+    sessionIdOverride?: string
+  ) {
+    const targetSessionId = sessionIdOverride ?? active?.id ?? null;
+    if (!targetSessionId) {
+      setSuggestions([]);
+      return;
+    }
+
+    const safeCount = 2;
+    const recentSuggestionHistory = getSuggestionHistory(targetSessionId).slice(-8);
+    const summaryForSession = buildSummaryForSession(targetSessionId);
+    const fallback = buildDataDrivenSuggestions(
+      summaryForSession,
+      safeCount,
+      recentSuggestionHistory
+    );
+
+    const pickFresh = (pool: string[]) => {
+      const selected: string[] = [];
+      const selectedKeys = new Set<string>();
+      const excludedKeys = new Set(
+        recentSuggestionHistory.map(normalizeSuggestionKey).filter(Boolean)
+      );
+      for (const item of pool) {
+        const key = normalizeSuggestionKey(item);
+        if (!key || excludedKeys.has(key) || selectedKeys.has(key)) continue;
+        selected.push(item.trim());
+        selectedKeys.add(key);
+        if (selected.length >= safeCount) break;
+      }
+      return selected;
+    };
+
     try {
       const res = await fetch("/api/chat/suggest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text: lastAssistantText,
-          ...buildContextPayload(active?.id ?? null),
-          recentMessages: active?.messages ?? [],
+          ...buildContextPayload(targetSessionId),
+          recentMessages:
+            sessions.find((session) => session.id === targetSessionId)?.messages ??
+            [],
+          excludeSuggestions: recentSuggestionHistory,
           count: safeCount,
         }),
       });
       const js = await res.json().catch(() => ({}));
-      if (Array.isArray(js?.suggestions) && js.suggestions.length > 0) {
-        setSuggestions(js.suggestions);
-      } else {
-        setSuggestions(fallback);
-      }
+      const fromApi = Array.isArray(js?.suggestions)
+        ? js.suggestions
+            .map((item: unknown) => (typeof item === "string" ? item.trim() : ""))
+            .filter(Boolean)
+        : [];
+      const pickedFromApi = pickFresh(fromApi);
+      const remainder = Math.max(0, safeCount - pickedFromApi.length);
+      const pickedFallback =
+        remainder > 0
+          ? pickFresh(
+              fallback.filter((item) => {
+                const key = normalizeSuggestionKey(item);
+                return !pickedFromApi.some(
+                  (selected) => normalizeSuggestionKey(selected) === key
+                );
+              })
+            ).slice(0, remainder)
+          : [];
+      const picked = pickedFromApi.concat(pickedFallback).slice(0, safeCount);
+      const safeFallback = pickFresh(fallback).slice(0, safeCount);
+      const finalSuggestions =
+        picked.length > 0
+          ? picked
+          : safeFallback.length > 0
+          ? safeFallback
+          : fallback.slice(0, safeCount);
+      setSuggestions(finalSuggestions);
+      rememberSuggestions(targetSessionId, finalSuggestions);
     } catch {
-      setSuggestions(fallback);
+      const safeFallback = pickFresh(fallback).slice(0, safeCount);
+      const finalSuggestions =
+        safeFallback.length > 0 ? safeFallback : fallback.slice(0, safeCount);
+      setSuggestions(finalSuggestions);
+      rememberSuggestions(targetSessionId, finalSuggestions);
     }
   }
 
@@ -671,9 +802,9 @@ export default function useChat() {
         const { value, done: d } = await reader.read();
         done = d;
         if (value) {
-          const chunk = decoder.decode(value);
+          const chunk = decoder.decode(value, { stream: !d });
           fullText += chunk;
-          const textSoFar = normalizeNewlines(fullText);
+          const textSoFar = sanitizeAssistantText(fullText);
           setSessions((prev) =>
             prev.map((s) =>
               s.id === active.id
@@ -689,13 +820,31 @@ export default function useChat() {
           );
         }
       }
+      fullText += decoder.decode();
+      const finalizedText = sanitizeAssistantText(fullText, true);
+      if (finalizedText !== fullText) {
+        fullText = finalizedText;
+      }
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.id === active.id
+            ? {
+                ...s,
+                updatedAt: Date.now(),
+                messages: s.messages.map((m) =>
+                  m.id === asstMsg.id ? { ...m, content: fullText } : m
+                ),
+              }
+            : s
+        )
+      );
 
       if (isFirst) {
         firstAssistantReplyRef.current = fullText;
         await generateTitle();
-        await fetchSuggestions(fullText, 3);
+        await fetchSuggestions(fullText, active.id);
       } else {
-        await fetchSuggestions(fullText, 3);
+        await fetchSuggestions(fullText, active.id);
       }
 
       try {
@@ -777,9 +926,9 @@ export default function useChat() {
         const { value, done } = await reader.read();
         if (done) break;
         if (value) {
-          const chunk = decoder.decode(value);
+          const chunk = decoder.decode(value, { stream: true });
           fullText += chunk;
-          const textSoFar = normalizeNewlines(fullText);
+          const textSoFar = sanitizeAssistantText(fullText);
           setSessions((prev) =>
             prev.map((ss) =>
               ss.id === sessionId
@@ -795,8 +944,26 @@ export default function useChat() {
           );
         }
       }
+      fullText += decoder.decode();
+      const finalizedText = sanitizeAssistantText(fullText, true);
+      if (finalizedText !== fullText) {
+        fullText = finalizedText;
+      }
+      setSessions((prev) =>
+        prev.map((ss) =>
+          ss.id === sessionId
+            ? {
+                ...ss,
+                updatedAt: Date.now(),
+                messages: ss.messages.map((m) =>
+                  m.id === asstMsg.id ? { ...m, content: fullText } : m
+                ),
+              }
+            : ss
+        )
+      );
 
-      fetchSuggestions(fullText, 4).catch(() => {});
+      fetchSuggestions(fullText, sessionId).catch(() => {});
       firstAssistantMessageRef.current = fullText;
 
       try {

@@ -19,13 +19,16 @@ function getOpenAIKey() {
   return process.env.OPENAI_API_KEY || "";
 }
 
-function clamp(value: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, value));
-}
-
 function trimText(value: unknown, maxLength: number) {
   const text = typeof value === "string" ? value : JSON.stringify(value || "");
   return text.length > maxLength ? text.slice(0, maxLength) : text;
+}
+
+function normalizeSuggestionKey(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9가-힣]+/g, "")
+    .trim();
 }
 
 function normalizeForSearch(text: string) {
@@ -77,11 +80,11 @@ function buildTopicSourceText(
 
 function isAssistantDirected(text: string) {
   const noGo =
-    /(어떤|어떻게|무엇을).*(하시나요|하고 계신가요)|있으신가요|하셨나요|느끼시나요|드시나요|드세요\?|하시겠어요\?|계신가요/;
+    /(어떤|어떻게|무엇을).*(하시나요|하고 계신가요)|있으신가요|하셨나요|느끼시나요|드시나요|드세요\?|하시겠어요\?|계신가요|말씀해 주세요/;
   if (noGo.test(text)) return false;
 
   const useful =
-    /(추천|설명|알려|정리|비교|조합|설계|우선순위|용량|타이밍|복용법|상호작용|부작용|대안|브랜드|제품|가이드|표로|정리해|체크|스케줄|휴지기|제형|라벨|관리|모니터링|루틴)/;
+    /(추천|설명|알려|정리|비교|조합|설계|우선순위|타이밍|복용법|상호작용|부작용|대안|브랜드|제품|가이드|표로|정리해|체크|스케줄|휴지기|제형|라벨|관리|모니터링|루틴|점검|체크리스트)/;
 
   return useful.test(text);
 }
@@ -139,8 +142,15 @@ async function extractTopicByAI(apiKey: string, sourceText: string) {
   return null;
 }
 
-function parseSuggestionsFromChoices(choices: Array<any>, count: number) {
+function parseSuggestionsFromChoices(
+  choices: Array<any>,
+  count: number,
+  excludeSuggestions: string[] = []
+) {
   const pool: string[] = [];
+  const excludeKeys = new Set(
+    excludeSuggestions.map(normalizeSuggestionKey).filter(Boolean)
+  );
 
   for (const choice of choices) {
     const content = choice?.message?.content || "";
@@ -159,7 +169,16 @@ function parseSuggestionsFromChoices(choices: Array<any>, count: number) {
     }
   }
 
-  return Array.from(new Set(pool))
+  const deduped: string[] = [];
+  const seen = new Set<string>();
+  for (const suggestion of pool) {
+    const key = normalizeSuggestionKey(suggestion);
+    if (!key || excludeKeys.has(key) || seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(suggestion);
+  }
+
+  return deduped
     .filter(
       (suggestion) =>
         suggestion.length >= 12 &&
@@ -175,8 +194,12 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
 
     const text = trimText(body?.text || "", 1600);
-    const countRaw = Number(body?.count);
-    const count = Number.isFinite(countRaw) ? clamp(countRaw, 3, 6) : 4;
+    const count = 2;
+    const excludeSuggestions: string[] = Array.isArray(body?.excludeSuggestions)
+      ? body.excludeSuggestions
+          .map((item: unknown) => (typeof item === "string" ? item.trim() : ""))
+          .filter(Boolean)
+      : [];
 
     const contextSummary = buildUserContextSummary({
       profile: body?.profile ?? null,
@@ -192,9 +215,17 @@ export async function POST(req: NextRequest) {
       localCheckAiTopLabels: Array.isArray(body?.localCheckAiTopLabels)
         ? body.localCheckAiTopLabels
         : [],
+      actorContext:
+        body?.actorContext && typeof body.actorContext === "object"
+          ? body.actorContext
+          : null,
     });
 
-    const fallbackSuggestions = buildDataDrivenSuggestions(contextSummary, count);
+    const fallbackSuggestions = buildDataDrivenSuggestions(
+      contextSummary,
+      count,
+      excludeSuggestions
+    );
     if (!text) {
       return new Response(JSON.stringify({ suggestions: fallbackSuggestions }), {
         headers: { "Content-Type": "application/json" },
@@ -231,6 +262,7 @@ export async function POST(req: NextRequest) {
           recentMessages,
           count,
           topicHint: topic,
+          excludeSuggestions,
         }),
         temperature: 0.7,
         max_tokens: 240,
@@ -246,14 +278,23 @@ export async function POST(req: NextRequest) {
       if (response.ok) {
         const json = await response.json().catch(() => ({}));
         const choices = Array.isArray(json?.choices) ? json.choices : [];
-        suggestions = parseSuggestionsFromChoices(choices, count);
+        suggestions = parseSuggestionsFromChoices(
+          choices,
+          count,
+          excludeSuggestions
+        );
       }
     }
 
+    const suggestionKeys = new Set(
+      suggestions.map(normalizeSuggestionKey).filter(Boolean)
+    );
     if (suggestions.length < count) {
       for (const fallback of fallbackSuggestions) {
-        if (suggestions.includes(fallback)) continue;
+        const key = normalizeSuggestionKey(fallback);
+        if (!key || suggestionKeys.has(key)) continue;
         suggestions.push(fallback);
+        suggestionKeys.add(key);
         if (suggestions.length >= count) break;
       }
     }
@@ -261,12 +302,17 @@ export async function POST(req: NextRequest) {
     if (suggestions.length < count) {
       const generic = [
         "현재 복용 중인 제품 기준으로 우선 조정할 항목을 정리해 주세요.",
-        "지금 상황에서 가장 안전하게 시작할 복용 루틴을 제안해 주세요.",
+        "추천 영양소 기준으로 2주 복용 루틴을 아침/저녁으로 짜주세요.",
         "2주 후 점검해야 할 지표를 항목별로 정리해 주세요.",
       ];
       for (const item of generic) {
-        if (suggestions.includes(item)) continue;
+        const key = normalizeSuggestionKey(item);
+        if (!key || suggestionKeys.has(key)) continue;
+        if (excludeSuggestions.some((excluded) => normalizeSuggestionKey(excluded) === key)) {
+          continue;
+        }
         suggestions.push(item);
+        suggestionKeys.add(key);
         if (suggestions.length >= count) break;
       }
     }
@@ -278,7 +324,7 @@ export async function POST(req: NextRequest) {
   } catch {
     const fallback = buildDataDrivenSuggestions(
       buildUserContextSummary({}),
-      4
+      2
     );
     return new Response(JSON.stringify({ suggestions: fallback }), {
       status: 200,

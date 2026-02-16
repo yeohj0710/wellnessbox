@@ -17,12 +17,6 @@ const ChatDrawer = dynamic(() => import("./components/ChatDrawer"), {
 const ReferenceData = dynamic(() => import("./components/ReferenceData"), {
   ssr: false,
 });
-const UserContextSummaryCard = dynamic(
-  () => import("./components/UserContextSummaryCard"),
-  {
-    ssr: false,
-  }
-);
 
 export default function ChatPage() {
   const {
@@ -42,7 +36,6 @@ export default function ChatPage() {
     assessResult,
     checkAiResult,
     orders,
-    userContextSummary,
     titleHighlightId,
     suggestions,
     titleLoading,
@@ -102,9 +95,6 @@ export default function ChatPage() {
               onClose={() => setShowProfileBanner(false)}
             />
           )}
-          <div className="sticky top-0 z-[5] pt-1 pb-2 backdrop-blur-[1px]">
-            <UserContextSummaryCard summary={userContextSummary} />
-          </div>
           <div className="mx-auto max-w-3xl space-y-4">
             {active &&
               active.messages.length > 0 &&

@@ -16,7 +16,6 @@ import {
 } from "@/lib/ai/retriever";
 import { buildUserContextSummary, toPlainText } from "@/lib/chat/context";
 import { buildMessages as buildChatMessages } from "@/lib/chat/prompts";
-import { enforcePersonalizedResponse } from "@/lib/chat/response-guard";
 
 const CAT_ALIAS: Record<string, CategoryKey> = Object.fromEntries(
   Object.entries(KEY_TO_CODE).flatMap(([key, code]) => {
@@ -31,6 +30,13 @@ const CAT_ALIAS: Record<string, CategoryKey> = Object.fromEntries(
 ) as Record<string, CategoryKey>;
 
 const RAG_DEBUG = Boolean(process.env.RAG_DEBUG);
+const CATEGORY_SYNONYMS: Record<string, string> = {
+  멀티비타민: "종합비타민",
+  프로바이오틱스: "프로바이오틱스(유산균)",
+  유산균: "프로바이오틱스(유산균)",
+  밀크씨슬: "밀크씨슬(실리마린)",
+  밀크시슬: "밀크씨슬(실리마린)",
+};
 
 function labelOf(keyOrCodeOrLabel: string) {
   const alias = (CAT_ALIAS[keyOrCodeOrLabel] ?? keyOrCodeOrLabel) as string;
@@ -70,7 +76,8 @@ async function buildKnownContext(
   scope: { clientId?: string; appUserId?: string },
   headers: Headers | Record<string, string | null | undefined>,
   localAssessCats: string[] | undefined,
-  localCheckAiTopLabels: string[] | undefined
+  localCheckAiTopLabels: string[] | undefined,
+  actorContext?: { loggedIn?: boolean; phoneLinked?: boolean }
 ) {
   const clientId =
     typeof scope.clientId === "string" ? scope.clientId : undefined;
@@ -97,16 +104,20 @@ async function buildKnownContext(
     const latest = await getLatestResultsByScope({ appUserId, clientId });
     const parts: string[] = [];
 
+    if (actorContext && typeof actorContext.loggedIn === "boolean") {
+      if (!actorContext.loggedIn) {
+        parts.push("데이터 범위: 비로그인 기기(clientId) 기반");
+      } else if (actorContext.phoneLinked) {
+        parts.push("데이터 범위: 로그인 계정 기반(주문 포함)");
+      } else {
+        parts.push("데이터 범위: 로그인 계정 기반(주문은 전화번호 연결 시 확장)");
+      }
+    }
+
     if (latest.assessCats?.length) {
       const cats = latest.assessCats.slice(0, 3);
-      const pcts = latest.assessPercents || [];
       const summary = cats
-        .map((cat, index) => {
-          const pct = pcts[index];
-          const percent =
-            typeof pct === "number" ? ` ${(pct * 100).toFixed(1)}%` : "";
-          return `${labelOf(cat)}${percent}`;
-        })
+        .map((cat) => labelOf(cat))
         .join(", ");
       parts.push(`정밀검사 상위 ${summary}`);
     } else if (Array.isArray(localAssessCats) && localAssessCats.length) {
@@ -137,36 +148,197 @@ async function buildKnownContext(
   }
 }
 
-function buildProductBrief(products: Array<Record<string, any>>) {
+function normalizeCategoryName(text: string) {
+  return text
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/\(.*?\)/g, "");
+}
+
+function parseDaysFromCapacity(capacity: unknown) {
+  const text = typeof capacity === "string" ? capacity : "";
+  if (!text) return 30;
+  const numbers = (text.match(/\d+(?:\.\d+)?/g) || [])
+    .map((token) => Number.parseFloat(token))
+    .filter((value) => Number.isFinite(value) && value > 0);
+  const likelyDays = numbers.find((value) => value >= 7 && value <= 180);
+  if (likelyDays) return likelyDays;
+  return 30;
+}
+
+function formatKrw(value: number) {
+  return `${Math.round(value).toLocaleString()}원`;
+}
+
+function mapCategoryLabel(raw: string) {
+  const aliased = CATEGORY_SYNONYMS[raw.trim()] || raw.trim();
+  const source = normalizeCategoryName(aliased);
+  if (!source) return "";
+  for (const label of Object.values(CATEGORY_LABELS)) {
+    const normalizedLabel = normalizeCategoryName(label);
+    if (!normalizedLabel) continue;
+    if (source.includes(normalizedLabel) || normalizedLabel.includes(source)) {
+      return label;
+    }
+  }
+  return aliased;
+}
+
+type ChatCatalogLike = Array<{
+  category?: string;
+  products?: Array<{
+    name?: string;
+    optionType?: string | null;
+    capacity?: string | null;
+    sevenDayPrice?: number;
+    priceMode?: "exact7d" | "converted" | string;
+    basePrice?: number;
+  }>;
+}>;
+
+function buildProductBriefFromCatalog(catalog: ChatCatalogLike) {
+  const productsByCategory = new Map<
+    string,
+    Array<{
+      name: string;
+      optionType: string;
+      capacity: string;
+      price: number;
+      sevenDayPrice: number;
+      priceMode: "exact7d" | "converted";
+    }>
+  >();
+
+  for (const item of catalog) {
+    const rawCategory = typeof item.category === "string" ? item.category : "";
+    const label = mapCategoryLabel(rawCategory);
+    if (!label) continue;
+    const products = Array.isArray(item.products) ? item.products : [];
+    if (products.length === 0) continue;
+
+    for (const product of products) {
+      const name = typeof product.name === "string" ? product.name.trim() : "";
+      if (!name) continue;
+      const sevenDayPrice = typeof product.sevenDayPrice === "number" ? product.sevenDayPrice : NaN;
+      const basePrice = typeof product.basePrice === "number" ? product.basePrice : NaN;
+      if (!Number.isFinite(sevenDayPrice) || sevenDayPrice <= 0) continue;
+      if (!Number.isFinite(basePrice) || basePrice <= 0) continue;
+
+      const capacity = typeof product.capacity === "string" ? product.capacity.trim() : "";
+      const optionType = typeof product.optionType === "string" ? product.optionType.trim() : "";
+      const priceMode = product.priceMode === "exact7d" ? "exact7d" : "converted";
+      const bucket = productsByCategory.get(label) || [];
+      bucket.push({
+        name,
+        optionType,
+        capacity,
+        price: basePrice,
+        sevenDayPrice,
+        priceMode,
+      });
+      productsByCategory.set(label, bucket);
+    }
+  }
+
   const lines: string[] = [];
+  const entries = Array.from(productsByCategory.entries()).sort((left, right) =>
+    left[0].localeCompare(right[0], "ko")
+  );
+
+  for (const [label, items] of entries) {
+    const uniqueByName = new Map<string, (typeof items)[number]>();
+    for (const item of [...items].sort((left, right) => left.sevenDayPrice - right.sevenDayPrice)) {
+      const current = uniqueByName.get(item.name);
+      if (!current || item.sevenDayPrice < current.sevenDayPrice) {
+        uniqueByName.set(item.name, item);
+      }
+    }
+
+    const briefItems = Array.from(uniqueByName.values())
+      .sort((left, right) => left.sevenDayPrice - right.sevenDayPrice)
+      .slice(0, 3);
+    if (!briefItems.length) continue;
+
+    const line = `${label}: ${briefItems
+      .map((item) => {
+        const capacityText = item.capacity ? `, ${item.capacity}` : "";
+        const optionText = item.optionType ? `, ${item.optionType}` : "";
+        const modeText = item.priceMode === "converted" ? ", 7일 환산" : "";
+        return `${item.name}(${formatKrw(item.sevenDayPrice)} / 7일 기준 가격${modeText}, 패키지 ${formatKrw(item.price)}${optionText}${capacityText})`;
+      })
+      .join(" | ")}`;
+
+    if (lines.concat(line).join("\n").length > 8000) break;
+    lines.push(line);
+  }
+
+  if (lines.length === 0) return "";
+  return lines.join("\n");
+}
+
+function buildProductBriefFromSummaries(products: Array<Record<string, any>>) {
+  const normalizedCatalog: ChatCatalogLike = [];
 
   for (const product of products) {
     const name = typeof product.name === "string" ? product.name : "";
     if (!name) continue;
-    const cap = product.capacity ? ` ${String(product.capacity)}` : "";
-    const price =
-      typeof product.price === "number" || typeof product.price === "string"
-        ? ` ${product.price}원`
-        : "";
+    const priceValue =
+      typeof product.price === "number"
+        ? product.price
+        : typeof product.price === "string"
+        ? Number.parseFloat(product.price)
+        : NaN;
+    if (!Number.isFinite(priceValue) || priceValue <= 0) continue;
 
-    const line = `${name}${cap}${price}`.trim();
-    if (!line) continue;
+    const capacity =
+      typeof product.capacity === "string" ? product.capacity.trim() : "";
+    const optionType =
+      typeof product.optionType === "string" ? product.optionType.trim() : "";
+    const baseDays = parseDaysFromCapacity(optionType || capacity || "");
+    const sevenDayPrice = Math.max(1, Math.round((priceValue / baseDays) * 7));
 
-    const joined = lines.concat(line).join("; ");
-    if (joined.length > 1200) break;
-    lines.push(line);
+    const rawCategories = Array.isArray(product.categories)
+      ? product.categories
+      : [];
+    const categories = rawCategories
+      .map((category) => (typeof category === "string" ? category : ""))
+      .filter(Boolean);
+
+    for (const category of categories) {
+      normalizedCatalog.push({
+        category,
+        products: [
+          {
+            name,
+            optionType,
+            capacity,
+            sevenDayPrice,
+            priceMode: baseDays === 7 ? "exact7d" : "converted",
+            basePrice: priceValue,
+          },
+        ],
+      });
+    }
   }
 
-  return lines.join("; ");
+  return buildProductBriefFromCatalog(normalizedCatalog);
 }
 
 async function loadProductBrief() {
   try {
     const mod = await import("@/lib/product/product");
+    if (typeof mod.getChatProductCatalog === "function") {
+      const catalog = await mod.getChatProductCatalog();
+      if (Array.isArray(catalog) && catalog.length > 0) {
+        const brief = buildProductBriefFromCatalog(catalog as ChatCatalogLike);
+        if (brief) return brief;
+      }
+    }
+
     if (typeof mod.getProductSummaries !== "function") return "";
-    const products = await mod.getProductSummaries();
+    const products = await mod.getProductSummaries(500);
     if (!Array.isArray(products) || products.length === 0) return "";
-    return buildProductBrief(products as Array<Record<string, any>>);
+    return buildProductBriefFromSummaries(products as Array<Record<string, any>>);
   } catch {
     return "";
   }
@@ -261,6 +433,7 @@ export async function streamChat(
     orders,
     assessResult,
     checkAiResult,
+    actorContext,
   } = body || {};
 
   const getHeader = (key: string) =>
@@ -286,7 +459,8 @@ export async function streamChat(
     { clientId, appUserId },
     headers,
     localAssessCats,
-    localCheckAiTopLabels
+    localCheckAiTopLabels,
+    actorContext
   );
 
   const contextSummary = buildUserContextSummary({
@@ -303,6 +477,13 @@ export async function streamChat(
         : null,
     localAssessCats,
     localCheckAiTopLabels,
+    actorContext:
+      actorContext && typeof actorContext === "object"
+        ? {
+            loggedIn: !!actorContext.loggedIn,
+            phoneLinked: !!actorContext.phoneLinked,
+          }
+        : null,
   });
 
   const productBrief = await loadProductBrief();
@@ -345,21 +526,20 @@ export async function streamChat(
   const eventStream = await llm.stream(formatted);
 
   async function* charStream() {
-    let fullText = "";
+    let wrote = false;
     for await (const chunk of eventStream as any) {
       const delta = typeof chunk?.content === "string" ? chunk.content : "";
       if (!delta) continue;
-      fullText += delta;
+      wrote = true;
+      yield delta;
     }
 
-    const guarded = enforcePersonalizedResponse({
-      rawText: fullText,
-      summary: contextSummary,
-      userText: lastUserText(history),
-    });
-
-    for (const char of guarded) {
-      yield char;
+    if (!wrote && isInit) {
+      if (contextSummary.hasAnyData) {
+        yield "안녕하세요. 현재 데이터 기준으로 맞춤 브리핑을 바로 시작해 볼게요.";
+      } else {
+        yield "안녕하세요. 맞춤 상담을 위해 핵심 정보부터 간단히 확인해 볼게요.";
+      }
     }
   }
 

@@ -36,6 +36,7 @@ export default function ChatInput({
 
   const canSend = !!input.trim() && !loading;
   const align = isMultiline ? "self-end mb-1" : "self-center";
+  const visibleSuggestions = suggestions.slice(0, 2);
 
   useEffect(() => {
     const t = taRef.current;
@@ -85,9 +86,9 @@ export default function ChatInput({
       style={{ paddingBottom: `calc(6px + env(safe-area-inset-bottom))` }}
     >
       <div className="pointer-events-auto mx-auto w-full max-w-[720px] sm:max-w-[740px] md:max-w-[760px] space-y-2">
-        {suggestions.length > 0 && (
+        {visibleSuggestions.length > 0 && (
           <div className="mx-auto flex max-w-[720px] flex-wrap justify-center gap-2 px-1">
-            {suggestions.map((q, i) => (
+            {visibleSuggestions.map((q, i) => (
               <button
                 key={i}
                 className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs sm:text-sm hover:bg-slate-50"

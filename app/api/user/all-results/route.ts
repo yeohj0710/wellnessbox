@@ -11,20 +11,30 @@ export const runtime = "nodejs";
 export async function GET(req: NextRequest) {
   try {
     const actor = await resolveActorForRequest(req, { intent: "read" });
+    const appUserId = actor.appUserId;
+    const clientId = actor.deviceClientId;
+
     let scope: { appUserId: string } | { clientId: string };
     if (actor.loggedIn) {
-      const appUserId = actor.appUserId;
       if (!appUserId) {
         return NextResponse.json({ error: "Missing appUserId" }, { status: 500 });
       }
       scope = { appUserId };
     } else {
-      const clientId = actor.deviceClientId;
       if (!clientId) {
         return NextResponse.json({ error: "Missing clientId" }, { status: 400 });
       }
       scope = { clientId };
     }
+
+    const orderWhere = actor.loggedIn
+      ? actor.phoneLinked && appUserId
+        ? { appUserId }
+        : { id: -1 }
+      : clientId
+      ? { endpoint: clientId }
+      : { id: -1 };
+
     const [assessRaw, checkAiRaw, orders] = await Promise.all([
       db.assessmentResult.findFirst({
         where: scope,
@@ -35,7 +45,7 @@ export async function GET(req: NextRequest) {
         orderBy: { createdAt: "desc" },
       }),
       db.order.findMany({
-        where: actor.deviceClientId ? { endpoint: actor.deviceClientId } : { id: -1 },
+        where: orderWhere,
         orderBy: { updatedAt: "desc" },
         include: {
           orderItems: {
@@ -108,10 +118,24 @@ export async function GET(req: NextRequest) {
       : null;
 
     const res = NextResponse.json({
-      clientId: actor.deviceClientId,
+      clientId,
       assess,
       checkAi,
       orders,
+      actor: {
+        loggedIn: actor.loggedIn,
+        appUserId,
+        deviceClientId: clientId,
+        phoneLinked: actor.phoneLinked,
+      },
+      scope: {
+        result: actor.loggedIn ? "account" : "device",
+        order: actor.loggedIn
+          ? actor.phoneLinked
+            ? "account"
+            : "none"
+          : "device",
+      },
     });
     if (actor.cookieToSet) {
       res.cookies.set(

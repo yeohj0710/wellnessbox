@@ -154,6 +154,7 @@ export async function GET(req: NextRequest) {
           loggedIn: actor.loggedIn,
           appUserId: actor.appUserId,
           deviceClientId: actor.deviceClientId,
+          phoneLinked: actor.phoneLinked,
         },
       },
       { headers: { "Cache-Control": "no-store" } }
