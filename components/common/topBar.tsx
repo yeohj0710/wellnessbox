@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { MenuLinks } from "./menuLinks";
 import { getLoginStatus } from "@/lib/useLoginStatus";
 import Image from "next/image";
@@ -10,6 +10,12 @@ import { ShoppingCartIcon } from "@heroicons/react/24/outline";
 import { useLoading } from "@/components/common/loadingContext.client";
 import KakaoLoginButton from "@/components/common/kakaoLoginButton";
 import { usePrefetchOnIntent } from "@/components/common/usePrefetchOnIntent";
+import { readClientCartItems } from "@/lib/client/cart-storage";
+import {
+  captureCartReturnStateFromWindow,
+  consumeCartScrollRestoreForPath,
+  isCartHostPath,
+} from "@/lib/client/cart-navigation";
 
 type LoginStatus = {
   isUserLoggedIn: boolean;
@@ -22,6 +28,7 @@ type LoginStatus = {
 export default function TopBar() {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
 
   const [loginStatus, setLoginStatus] = useState<LoginStatus | null>(null);
@@ -107,8 +114,7 @@ export default function TopBar() {
       setTimeout(() => {
         if (typeof window === "undefined") return;
         try {
-          const cart = JSON.parse(localStorage.getItem("cartItems") || "[]");
-          setCartCount(cart.length);
+          setCartCount(readClientCartItems().length);
         } catch {}
       }, 0);
     };
@@ -184,6 +190,22 @@ export default function TopBar() {
     }
   }, [pathname]);
 
+  const searchParamsString = searchParams?.toString() ?? "";
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const pathWithSearch = `${pathname || "/"}${
+      searchParamsString ? `?${searchParamsString}` : ""
+    }`;
+    const restoreY = consumeCartScrollRestoreForPath(pathWithSearch);
+    if (typeof restoreY !== "number") return;
+
+    const restore = () => {
+      window.scrollTo(0, restoreY);
+      requestAnimationFrame(() => window.scrollTo(0, restoreY));
+    };
+    requestAnimationFrame(restore);
+  }, [pathname, searchParamsString]);
+
   const menuItemClasses = (additionalClasses = "") => {
     return `relative transition-transform duration-200 ease-in-out hover:scale-[1.02] ${additionalClasses}`;
   };
@@ -230,7 +252,7 @@ export default function TopBar() {
               </span>
             )}
 
-            {pathname === "/" ? (
+            {isCartHostPath(pathname) ? (
               <button
                 className={menuItemClasses("text-slate-600 relative")}
                 aria-label="장바구니"
@@ -256,6 +278,7 @@ export default function TopBar() {
                 aria-label="장바구니"
                 onClick={() => {
                   if (typeof window !== "undefined") {
+                    captureCartReturnStateFromWindow();
                     sessionStorage.setItem("scrollPos", String(window.scrollY));
                   }
                   showLoading();

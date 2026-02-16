@@ -8,7 +8,7 @@ import {
   useDeferredValue,
   useMemo,
 } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ProductDetail from "@/components/product/productDetail";
 import Cart from "@/components/order/cart";
 import { sortByImportanceDesc } from "@/lib/utils";
@@ -32,6 +32,18 @@ import {
   FetchTimeoutError,
   runWithRetry,
 } from "@/lib/client/fetch-utils";
+import {
+  mergeClientCartItems,
+  parseClientCartItems,
+  readClientCartItems,
+  writeClientCartItems,
+} from "@/lib/client/cart-storage";
+import {
+  clearCartReturnState,
+  consumeCartReturnState,
+  getCurrentPathWithSearchFromWindow,
+  queueCartScrollRestore,
+} from "@/lib/client/cart-navigation";
 
 interface HomeProductSectionProps {
   initialCategories?: any[];
@@ -64,7 +76,11 @@ function readCachedHomeData(maxAgeMs: number) {
   const cacheTimestampRaw = localStorage.getItem("cacheTimestamp");
   const cacheTimestamp = Number.parseInt(cacheTimestampRaw || "", 10);
 
-  if (!cachedCategories || !cachedProducts || !Number.isFinite(cacheTimestamp)) {
+  if (
+    !cachedCategories ||
+    !cachedProducts ||
+    !Number.isFinite(cacheTimestamp)
+  ) {
     return null;
   }
 
@@ -88,6 +104,7 @@ export default function HomeProductSection({
   initialCategories = [],
   initialProducts = [],
 }: HomeProductSectionProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { hideFooter, showFooter } = useFooter();
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
@@ -116,24 +133,25 @@ export default function HomeProductSection({
   const [pharmacyError, setPharmacyError] = useState<string | null>(null);
   const [pharmacyResolveToken, setPharmacyResolveToken] = useState(0);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
-  const [cartItems, setCartItems] = useState<any[]>(() => {
-    if (typeof window !== "undefined") {
-      const storedCart = localStorage.getItem("cartItems");
-      return storedCart ? JSON.parse(storedCart) : [];
-    }
-    return [];
-  });
+  const [cartItems, setCartItems] = useState<any[]>(() =>
+    typeof window !== "undefined" ? readClientCartItems() : []
+  );
 
   const [mounted, setMounted] = useState(false);
   const [isRecovering, setIsRecovering] = useState(false);
   const filterInteractionStartedRef = useRef<number | null>(null);
+  const missingAddressPromptedRef = useRef(false);
   const homeFetchSeqRef = useRef(0);
   useEffect(() => {
     setMounted(true);
   }, []);
 
   const applyHomeData = useCallback(
-    (nextCategories: any[], nextProducts: any[], cacheTimestamp = Date.now()) => {
+    (
+      nextCategories: any[],
+      nextProducts: any[],
+      cacheTimestamp = Date.now()
+    ) => {
       const sortedCategories = sortByImportanceDesc(nextCategories);
       const sortedProducts = sortByImportanceDesc(nextProducts);
       setCategories(sortedCategories);
@@ -154,7 +172,9 @@ export default function HomeProductSection({
       if (reason === "recovery") setIsRecovering(true);
 
       const freshCache =
-        typeof window === "undefined" ? null : readCachedHomeData(HOME_CACHE_TTL_MS);
+        typeof window === "undefined"
+          ? null
+          : readCachedHomeData(HOME_CACHE_TTL_MS);
       if (reason === "initial" && freshCache) {
         if (requestSeq === homeFetchSeqRef.current) {
           applyHomeData(
@@ -310,6 +330,7 @@ export default function HomeProductSection({
       typeof window !== "undefined" &&
       localStorage.getItem("openCart") === "true"
     ) {
+      clearCartReturnState();
       const stored = sessionStorage.getItem("scrollPos");
       if (stored) scrollPositionRef.current = parseInt(stored, 10);
       setIsCartVisible(true);
@@ -344,6 +365,7 @@ export default function HomeProductSection({
 
   const openCart = useCallback(() => {
     if (typeof window !== "undefined") {
+      clearCartReturnState();
       const y = window.scrollY;
       scrollPositionRef.current = y;
       sessionStorage.setItem("scrollPos", String(y));
@@ -353,21 +375,33 @@ export default function HomeProductSection({
     setIsCartVisible(true);
   }, [hideLoading]);
 
-  const closeCart = () => {
+  const closeCart = useCallback(() => {
     const y = scrollPositionRef.current;
-
     setIsCartVisible(false);
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("openCart");
+    if (typeof window === "undefined") return;
 
-      const url = new URL(window.location.href);
-      url.searchParams.delete("cart");
-      window.history.replaceState({}, "", url.toString());
-      sessionStorage.removeItem("scrollPos");
+    localStorage.removeItem("openCart");
 
-      requestAnimationFrame(() => restoreScroll(y));
+    const currentPathWithSearch = getCurrentPathWithSearchFromWindow();
+    const returnState = consumeCartReturnState();
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete("cart");
+    window.history.replaceState({}, "", url.toString());
+    sessionStorage.removeItem("scrollPos");
+
+    if (
+      returnState &&
+      returnState.pathWithSearch &&
+      returnState.pathWithSearch !== currentPathWithSearch
+    ) {
+      queueCartScrollRestore(returnState.pathWithSearch, returnState.scrollY);
+      router.replace(returnState.pathWithSearch, { scroll: false });
+      return;
     }
-  };
+
+    requestAnimationFrame(() => restoreScroll(y));
+  }, [restoreScroll, router]);
 
   useEffect(() => {
     const handleOpen = () => openCart();
@@ -481,10 +515,10 @@ export default function HomeProductSection({
     const backup = localStorage.getItem("cartBackup");
     if (needRestore && backup && backup !== "[]") {
       try {
-        const parsed = JSON.parse(backup);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        const parsed = parseClientCartItems(JSON.parse(backup));
+        if (parsed.length > 0) {
           setCartItems(parsed);
-          localStorage.setItem("cartItems", backup);
+          writeClientCartItems(parsed);
           window.dispatchEvent(new Event("cartUpdated"));
         }
       } catch {}
@@ -529,6 +563,18 @@ export default function HomeProductSection({
     window.addEventListener("addressCleared", handleCleared);
     return () => window.removeEventListener("addressCleared", handleCleared);
   }, [allProducts]);
+
+  useEffect(() => {
+    if (roadAddress.trim() || cartItems.length === 0) {
+      missingAddressPromptedRef.current = false;
+      return;
+    }
+    if (!isCartVisible) return;
+    if (missingAddressPromptedRef.current) return;
+
+    missingAddressPromptedRef.current = true;
+    setIsAddressModalOpen(true);
+  }, [cartItems.length, isCartVisible, roadAddress]);
 
   useEffect(() => {
     if (roadAddress) {
@@ -586,13 +632,10 @@ export default function HomeProductSection({
     if (selectedSymptoms.length === 0) return;
     const mappedCategoryNames = selectedSymptoms.reduce<string[]>(
       (acc, item) => {
-        const cats = symptomCategoryPairs.reduce<string[]>(
-          (bucket, entry) => {
-            if (entry.symptom !== item) return bucket;
-            return [...bucket, ...entry.categories];
-          },
-          []
-        );
+        const cats = symptomCategoryPairs.reduce<string[]>((bucket, entry) => {
+          if (entry.symptom !== item) return bucket;
+          return [...bucket, ...entry.categories];
+        }, []);
         return [...acc, ...cats];
       },
       []
@@ -609,7 +652,7 @@ export default function HomeProductSection({
 
     const filteredCartItems = cartItems.filter((item) => {
       const product = allProducts.find((p) => p.id === item.productId);
-      if (!product) return true;
+      if (!product) return false;
       const hasMatch = product.pharmacyProducts?.some(
         (pp: any) =>
           (pp.pharmacyId ?? pp.pharmacy?.id) === selectedPharmacy.id &&
@@ -619,8 +662,8 @@ export default function HomeProductSection({
     });
 
     if (filteredCartItems.length !== cartItems.length) {
-      setCartItems(filteredCartItems);
-      localStorage.setItem("cartItems", JSON.stringify(filteredCartItems));
+      const normalized = writeClientCartItems(filteredCartItems);
+      setCartItems(normalized);
       window.dispatchEvent(new Event("cartUpdated"));
     }
   }, [selectedPharmacy, isLoading, allProducts.length, cartItems]);
@@ -639,7 +682,11 @@ export default function HomeProductSection({
       return;
     }
     if (!roadAddress) {
-      setPharmacyError("Set your address to find nearby pharmacies.");
+      setPharmacies([]);
+      setSelectedPharmacy(null);
+      setPharmacyError(
+        "주소를 설정해 주세요! 해당 상품을 주문할 수 있는 약국을 보여드릴게요."
+      );
       setIsPharmacyLoading(false);
       return;
     }
@@ -667,9 +714,8 @@ export default function HomeProductSection({
             "선택하신 상품의 해당량만큼의 재고를 보유한 약국이 존재하지 않아요. 해당 상품을 장바구니에서 제외할게요."
           );
           setPharmacyError("No nearby pharmacy has stock for this item.");
-          const updatedCartItems = cartItems.slice(1);
+          const updatedCartItems = writeClientCartItems(cartItems.slice(1));
           setCartItems(updatedCartItems);
-          localStorage.setItem("cartItems", JSON.stringify(updatedCartItems));
           window.dispatchEvent(new Event("cartUpdated"));
           return;
         }
@@ -762,22 +808,8 @@ export default function HomeProductSection({
   const handleAddToCart = (cartItem: any) => {
     setIsCartBarLoading(true);
     setCartItems((prev) => {
-      const existingItem = prev.find(
-        (item) =>
-          item.productId === cartItem.productId &&
-          item.optionType === cartItem.optionType
-      );
-      let updated;
-      if (existingItem) {
-        updated = prev.map((item) =>
-          item.productId === cartItem.productId
-            ? { ...item, quantity: item.quantity + cartItem.quantity }
-            : item
-        );
-      } else {
-        updated = [...prev, cartItem];
-      }
-      localStorage.setItem("cartItems", JSON.stringify(updated));
+      const updated = mergeClientCartItems(prev, [cartItem]);
+      writeClientCartItems(updated);
       window.dispatchEvent(new Event("cartUpdated"));
       return updated;
     });
@@ -908,7 +940,8 @@ export default function HomeProductSection({
           <strong className="text-sky-500">
             {selectedPharmacy.distance?.toFixed(1)}km
           </strong>{" "}
-          away, <strong className="text-sky-500">{selectedPharmacy.name}</strong>.
+          away,{" "}
+          <strong className="text-sky-500">{selectedPharmacy.name}</strong>.
         </div>
       )}
 
@@ -940,7 +973,9 @@ export default function HomeProductSection({
 
       {!error && allProducts.length === 0 && !isLoading && (
         <div className="min-h-[30vh] mb-12 flex flex-col items-center justify-center gap-6 py-10">
-          <p className="text-sm text-gray-500">Products are taking longer than expected.</p>
+          <p className="text-sm text-gray-500">
+            Products are taking longer than expected.
+          </p>
           <button
             className="text-sky-500 text-sm"
             onClick={() => void fetchData("recovery")}
@@ -1000,9 +1035,11 @@ export default function HomeProductSection({
               containerRef={cartContainerRef}
               onBack={closeCart}
               onUpdateCart={(updatedItems: any) => {
-                setCartItems(updatedItems);
-                const updatedTotalPrice = updatedItems.reduce(
-                  (acc: number, item: any) => acc + item.price * item.quantity,
+                const normalized = writeClientCartItems(updatedItems);
+                setCartItems(normalized);
+                const updatedTotalPrice = normalized.reduce(
+                  (acc: number, item: any) =>
+                    acc + (Number(item.price) || 0) * item.quantity,
                   0
                 );
                 setTotalPrice(updatedTotalPrice);

@@ -12,6 +12,10 @@ import PaymentSection from "./paymentSection";
 import axios from "axios";
 import { useCartHydration } from "./hooks/useCartHydration";
 import { useAddressFields } from "./hooks/useAddressFields";
+import {
+  mergeClientCartItems,
+  writeClientCartItems,
+} from "@/lib/client/cart-storage";
 
 function formatPhoneDisplay(phone?: string | null) {
   if (!phone) return "";
@@ -278,19 +282,9 @@ export default function Cart({
       localStorage.removeItem("restoreCartFromBackup");
     }
 
-    const updatedItems = [...cartItems];
-    const existingIndex = updatedItems.findIndex(
-      (i: any) =>
-        i.productId === cartItem.productId &&
-        i.optionType === cartItem.optionType
-    );
-    if (existingIndex !== -1) {
-      updatedItems[existingIndex].quantity += cartItem.quantity;
-    } else {
-      updatedItems.push(cartItem);
-    }
+    const updatedItems = mergeClientCartItems(cartItems, [cartItem]);
     onUpdateCart(updatedItems);
-    localStorage.setItem("cartItems", JSON.stringify(updatedItems));
+    writeClientCartItems(updatedItems);
     window.dispatchEvent(new Event("cartUpdated"));
   };
 
@@ -393,7 +387,7 @@ export default function Cart({
       };
     });
     onUpdateCart(updatedItems);
-    localStorage.setItem("cartItems", JSON.stringify(updatedItems));
+    writeClientCartItems(updatedItems);
     window.dispatchEvent(new Event("cartUpdated"));
     if (unavailable.length) {
       alert(
@@ -532,6 +526,8 @@ export default function Cart({
         isPharmacyLoading={isPharmacyLoading}
         pharmacyError={pharmacyError}
         onRetryResolve={onRetryPharmacyResolve}
+        isAddressMissing={!roadAddress?.trim()}
+        onOpenAddressModal={() => setIsAddressModalOpen(true)}
       />
 
       <AddressSection

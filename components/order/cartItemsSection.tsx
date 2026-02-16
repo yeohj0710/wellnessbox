@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { TrashIcon } from "@heroicons/react/16/solid";
 import { fetchJsonWithTimeout, FetchTimeoutError } from "@/lib/client/fetch-utils";
+import { writeClientCartItems } from "@/lib/client/cart-storage";
 
 export default function CartItemsSection({
   cartItems,
@@ -16,34 +17,54 @@ export default function CartItemsSection({
   isPharmacyLoading = false,
   pharmacyError = null,
   onRetryResolve,
+  isAddressMissing = false,
+  onOpenAddressModal,
 }: any) {
   const [confirmType, setConfirmType] = useState<string | null>(null);
   const [products, setProducts] = useState<any[]>(allProducts);
   const [cartProductsError, setCartProductsError] = useState<string | null>(null);
   const [productsResolveToken, setProductsResolveToken] = useState(0);
+  const [isResolvingProducts, setIsResolvingProducts] = useState(false);
+  const onUpdateCartRef = useRef(onUpdateCart);
+
+  useEffect(() => {
+    onUpdateCartRef.current = onUpdateCart;
+  }, [onUpdateCart]);
 
   useEffect(() => {
     if (Array.isArray(allProducts) && allProducts.length > 0) {
       setProducts(allProducts);
       setCartProductsError(null);
+      setIsResolvingProducts(false);
       return;
     }
+
     const ids = Array.isArray(cartItems)
-      ? [...new Set(cartItems.map((i: any) => i.productId))]
+      ? Array.from(
+          new Set(
+            cartItems
+              .map((i: any) => Number(i?.productId))
+              .filter((id) => Number.isFinite(id) && id > 0)
+          )
+        )
       : [];
     if (ids.length === 0) {
       setProducts([]);
       setCartProductsError(null);
+      setIsResolvingProducts(false);
       return;
     }
 
     const controller = new AbortController();
     let alive = true;
     setCartProductsError(null);
+    setIsResolvingProducts(true);
 
     (async () => {
       try {
-        const { payload } = await fetchJsonWithTimeout<{ products?: any[] }>(
+        const { response, payload } = await fetchJsonWithTimeout<{
+          products?: any[];
+        }>(
           "/api/cart-products",
           {
             method: "POST",
@@ -53,12 +74,30 @@ export default function CartItemsSection({
           { timeoutMs: 7000, signal: controller.signal }
         );
         if (!alive) return;
-        if (Array.isArray(payload?.products)) {
-          setProducts(payload.products);
+
+        if (!response.ok || !Array.isArray(payload?.products)) {
+          setProducts([]);
+          setCartProductsError("장바구니 상품 정보를 불러오지 못했습니다.");
           return;
         }
-        setProducts([]);
-        setCartProductsError("장바구니 상품 정보를 불러오지 못했습니다.");
+
+        setProducts(payload.products);
+
+        const resolvedProductIds = new Set<number>(
+          payload.products
+            .map((product: any) => Number(product?.id))
+            .filter((id: number) => Number.isFinite(id) && id > 0)
+        );
+        if (resolvedProductIds.size === ids.length) return;
+
+        const cleanedItems = cartItems.filter((item: any) =>
+          resolvedProductIds.has(Number(item?.productId))
+        );
+        if (cleanedItems.length === cartItems.length) return;
+
+        const normalized = writeClientCartItems(cleanedItems);
+        onUpdateCartRef.current(normalized);
+        window.dispatchEvent(new Event("cartUpdated"));
       } catch (error) {
         if (!alive) return;
         setProducts([]);
@@ -67,6 +106,8 @@ export default function CartItemsSection({
         } else {
           setCartProductsError("장바구니 상품 정보를 불러오지 못했습니다.");
         }
+      } finally {
+        if (alive) setIsResolvingProducts(false);
       }
     })();
 
@@ -94,10 +135,7 @@ export default function CartItemsSection({
   }, [cartItems, products, selectedPharmacy]);
 
   const hasCartItems = Array.isArray(cartItems) && cartItems.length > 0;
-  const waitingForProducts =
-    hasCartItems &&
-    !cartProductsError &&
-    (!Array.isArray(products) || products.length === 0);
+  const waitingForProducts = hasCartItems && isResolvingProducts;
   const waitingForPharmacy =
     hasCartItems && !selectedPharmacy?.id && isPharmacyLoading;
   const resolving = isLoading || waitingForProducts || waitingForPharmacy;
@@ -153,10 +191,18 @@ export default function CartItemsSection({
             </p>
             <button
               type="button"
-              onClick={() => onRetryResolve?.()}
+              onClick={() => {
+                if (isAddressMissing) {
+                  if (typeof onOpenAddressModal === "function") {
+                    onOpenAddressModal();
+                    return;
+                  }
+                }
+                onRetryResolve?.();
+              }}
               className="rounded-md bg-sky-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-sky-600"
             >
-              다시 시도
+              {isAddressMissing ? "주소 설정" : "다시 시도"}
             </button>
           </div>
         ) : unresolvedItems ? (
@@ -224,7 +270,7 @@ export default function CartItemsSection({
                         : i
                     );
                     onUpdateCart(updated);
-                    localStorage.setItem("cartItems", JSON.stringify(updated));
+                    writeClientCartItems(updated);
                     window.dispatchEvent(new Event("cartUpdated"));
                   }}
                   className="leading-none w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-lg"
@@ -246,10 +292,7 @@ export default function CartItemsSection({
                           : i
                       );
                       onUpdateCart(updated);
-                      localStorage.setItem(
-                        "cartItems",
-                        JSON.stringify(updated)
-                      );
+                      writeClientCartItems(updated);
                       window.dispatchEvent(new Event("cartUpdated"));
                     } else {
                       alert(
@@ -276,7 +319,7 @@ export default function CartItemsSection({
                         )
                     );
                     onUpdateCart(updated);
-                    localStorage.setItem("cartItems", JSON.stringify(updated));
+                    writeClientCartItems(updated);
                     window.dispatchEvent(new Event("cartUpdated"));
                   }}
                   className="leading-none w-8 h-8 bg-red-100 hover:bg-red-200 rounded-full flex items-center justify-center"

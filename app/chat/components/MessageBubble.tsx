@@ -5,7 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { ChatMessage } from "@/types/chat";
 import { DocumentDuplicateIcon, CheckIcon } from "@heroicons/react/24/outline";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import rehypeRaw from "rehype-raw";
 import remarkBreaks from "remark-breaks";
 import rehypeHighlight from "rehype-highlight";
@@ -22,6 +22,15 @@ export default function MessageBubble({
 }) {
   const isUser = role === "user";
   const [copied, setCopied] = useState(false);
+  const [loadingHintIndex, setLoadingHintIndex] = useState(0);
+  const loadingHints = useMemo(
+    () => [
+      "맞춤 영양 분석을 정리하고 있어요.",
+      "복용 패턴과 주의 포인트를 교차 확인 중이에요.",
+      "가까운 실구매 옵션까지 함께 계산하고 있어요.",
+    ],
+    []
+  );
 
   const normalizeNewlines = (text: string) =>
     (text || "")
@@ -31,6 +40,15 @@ export default function MessageBubble({
       .replace(/([^\n])\n([ \t]*([-*+]\s|\d+\.\s))/g, "$1\n\n$2");
   const text = useMemo(() => normalizeNewlines(content || ""), [content]);
   const multiline = text.includes("\n");
+
+  useEffect(() => {
+    if (isUser || text) return;
+    setLoadingHintIndex(0);
+    const timer = window.setInterval(() => {
+      setLoadingHintIndex((prev) => (prev + 1) % loadingHints.length);
+    }, 1700);
+    return () => window.clearInterval(timer);
+  }, [isUser, loadingHints.length, text]);
 
   async function handleCopy() {
     try {
@@ -58,7 +76,7 @@ export default function MessageBubble({
           <div className="whitespace-pre-wrap break-all">{text}</div>
         </div>
       ) : (
-        <div className="antialiased tracking-[-0.005em]">
+        <div className="relative antialiased tracking-[-0.005em]">
           {text ? (
             <div
               className={`
@@ -272,9 +290,24 @@ export default function MessageBubble({
               </ReactMarkdown>
             </div>
           ) : (
-            <span className="inline-flex items-center gap-2 text-slate-500">
-              <span className="inline-block h-2.5 w-2.5 rounded-full bg-black animate-[wb-breathe_1.1s_ease-in-out_infinite]" />
-            </span>
+            <div className="w-full max-w-[86%] sm:max-w-[74%] md:max-w-[70%] rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-sky-50 px-3.5 py-3 shadow-sm">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-300 opacity-75" />
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-sky-500" />
+                </span>
+                <p className="text-[12px] font-semibold text-slate-700">
+                  {loadingHints[loadingHintIndex]}
+                </p>
+              </div>
+              <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-slate-200">
+                <div className="h-full w-1/3 rounded-full bg-gradient-to-r from-sky-400 to-slate-500 animate-[wb-loading-sweep_1.2s_ease-in-out_infinite]" />
+              </div>
+              <div className="mt-3 space-y-1.5">
+                <div className="h-2.5 w-11/12 animate-pulse rounded bg-slate-200" />
+                <div className="h-2.5 w-4/5 animate-pulse rounded bg-slate-200" />
+              </div>
+            </div>
           )}
           {text && (
             <div className="relative">
@@ -311,6 +344,14 @@ export default function MessageBubble({
           100% {
             transform: scale(0.85);
             opacity: 0.7;
+          }
+        }
+        @keyframes wb-loading-sweep {
+          0% {
+            transform: translateX(-130%);
+          }
+          100% {
+            transform: translateX(320%);
           }
         }
       `}</style>

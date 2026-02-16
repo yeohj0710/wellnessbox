@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import {
+  parseClientCartItems,
+  writeClientCartItems,
+} from "@/lib/client/cart-storage";
 
 export function useCartHydration(
   cartItems: any[],
@@ -20,10 +24,10 @@ export function useCartHydration(
 
     if (needRestore && backup && backup !== "[]") {
       try {
-        const parsed = JSON.parse(backup);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        const parsed = parseClientCartItems(JSON.parse(backup));
+        if (parsed.length > 0) {
           onUpdateCartRef.current(parsed);
-          localStorage.setItem("cartItems", backup);
+          writeClientCartItems(parsed);
           window.dispatchEvent(new Event("cartUpdated"));
           localStorage.removeItem("restoreCartFromBackup");
           localStorage.removeItem("checkoutInProgress");
@@ -36,8 +40,8 @@ export function useCartHydration(
     try {
       const saved = localStorage.getItem("cartItems");
       if (saved && saved !== "[]") {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        const parsed = parseClientCartItems(JSON.parse(saved));
+        if (parsed.length > 0) {
           onUpdateCartRef.current(parsed);
         }
       }
@@ -53,7 +57,7 @@ export function useCartHydration(
     if (restoring && cartItems.length === 0) return;
     if (cartItems.length === 0) return;
 
-    localStorage.setItem("cartItems", JSON.stringify(cartItems));
+    writeClientCartItems(cartItems);
     window.dispatchEvent(new Event("cartUpdated"));
   }, [hydrated, cartItems]);
 
@@ -68,10 +72,10 @@ export function useCartHydration(
     if (!backup || backup === "[]") return;
 
     try {
-      const parsed = JSON.parse(backup);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      const parsed = parseClientCartItems(JSON.parse(backup));
+      if (parsed.length > 0) {
         onUpdateCartRef.current(parsed);
-        localStorage.setItem("cartItems", backup);
+        writeClientCartItems(parsed);
         window.dispatchEvent(new Event("cartUpdated"));
       }
     } catch {}
