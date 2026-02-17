@@ -60,6 +60,22 @@ interface HomeProductSectionProps {
   initialProducts?: any[];
 }
 
+function toCartSignature(items: any[]) {
+  if (!Array.isArray(items) || items.length === 0) return "";
+  return items
+    .map((item) => {
+      const productId = Number(item?.productId);
+      const optionType =
+        typeof item?.optionType === "string" ? item.optionType.trim() : "";
+      const quantity = Number(item?.quantity);
+      return `${Number.isFinite(productId) ? productId : 0}:${optionType}:${
+        Number.isFinite(quantity) ? quantity : 0
+      }`;
+    })
+    .sort()
+    .join("|");
+}
+
 export default function HomeProductSection({
   initialCategories = [],
   initialProducts = [],
@@ -96,6 +112,12 @@ export default function HomeProductSection({
   const [cartItems, setCartItems] = useState<any[]>(() =>
     typeof window !== "undefined" ? readClientCartItems() : []
   );
+  const syncCartItemsFromStorage = useCallback(() => {
+    const next = readClientCartItems();
+    setCartItems((prev) =>
+      toCartSignature(prev) === toCartSignature(next) ? prev : next
+    );
+  }, []);
 
   const [mounted, setMounted] = useState(false);
   const [isRecovering, setIsRecovering] = useState(false);
@@ -286,16 +308,37 @@ export default function HomeProductSection({
   }, []);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const sync = () => {
+      syncCartItemsFromStorage();
+      setIsCartBarLoading(false);
+    };
+    const onStorage = (event: StorageEvent) => {
+      if (event.key && event.key !== "cartItems") return;
+      sync();
+    };
+
+    sync();
+    window.addEventListener("cartUpdated", sync);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("cartUpdated", sync);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [syncCartItemsFromStorage]);
+
+  useEffect(() => {
     if (
       typeof window !== "undefined" &&
       localStorage.getItem("openCart") === "true"
     ) {
       const stored = sessionStorage.getItem("scrollPos");
       if (stored) scrollPositionRef.current = parseInt(stored, 10);
+      syncCartItemsFromStorage();
       setIsCartVisible(true);
       localStorage.removeItem("openCart");
     }
-  }, []);
+  }, [syncCartItemsFromStorage]);
 
   const [isSymptomModalVisible, setIsSymptomModalVisible] = useState(false);
 
@@ -330,9 +373,10 @@ export default function HomeProductSection({
       sessionStorage.setItem("scrollPos", String(y));
       localStorage.setItem("openCart", "true");
     }
+    syncCartItemsFromStorage();
     hideLoading();
     setIsCartVisible(true);
-  }, [hideLoading]);
+  }, [hideLoading, syncCartItemsFromStorage]);
 
   const closeCart = useCallback(() => {
     const y = scrollPositionRef.current;
@@ -441,12 +485,13 @@ export default function HomeProductSection({
       const stored = sessionStorage.getItem("scrollPos");
       if (stored) scrollPositionRef.current = parseInt(stored, 10);
       localStorage.setItem("openCart", "true");
+      syncCartItemsFromStorage();
       setIsCartVisible(true);
       const url = new URL(window.location.toString());
       url.searchParams.delete("cart");
       window.history.replaceState({}, "", url.toString());
     }
-  }, [searchParams, hideLoading]);
+  }, [searchParams, hideLoading, syncCartItemsFromStorage]);
 
   useEffect(() => {
     const timestampKey = "cartTimestamp";

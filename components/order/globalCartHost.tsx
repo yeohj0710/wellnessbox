@@ -83,6 +83,11 @@ export default function GlobalCartHost() {
 
   const openGlobalCart = useCallback(() => {
     if (!canRenderGlobalCart || typeof window === "undefined") return;
+    const activeElement = document.activeElement;
+    if (activeElement instanceof HTMLElement) {
+      activeElement.blur();
+    }
+    window.dispatchEvent(new Event("wb:chat-close-dock"));
     clearCartReturnState();
     openScrollYRef.current = window.scrollY;
     openedPathRef.current = pathname || window.location.pathname;
@@ -349,7 +354,7 @@ export default function GlobalCartHost() {
   if (!isVisible || !canRenderGlobalCart) return null;
 
   return (
-    <div className="fixed inset-0 z-[90] flex">
+    <div className="fixed inset-x-0 bottom-0 top-14 z-[90] flex">
       <div className="h-full w-full overflow-y-auto bg-white" ref={containerRef}>
         <Cart
           cartItems={cartItems}

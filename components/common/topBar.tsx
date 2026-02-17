@@ -205,6 +205,11 @@ function TopBarInner() {
 
   const openCartFromOutside = useCallback(() => {
     if (typeof window !== "undefined") {
+      const activeElement = document.activeElement;
+      if (activeElement instanceof HTMLElement) {
+        activeElement.blur();
+      }
+      window.dispatchEvent(new Event("wb:chat-close-dock"));
       clearCartReturnState();
       sessionStorage.setItem("scrollPos", String(window.scrollY));
       sessionStorage.setItem("wbGlobalCartOpen", "1");

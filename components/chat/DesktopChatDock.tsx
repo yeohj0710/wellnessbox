@@ -120,6 +120,17 @@ function shouldPreventScrollChain(scrollable: HTMLElement, deltaY: number) {
   return remaining <= SCROLL_EPSILON;
 }
 
+function blurFocusedDescendant(container: HTMLElement | null) {
+  if (!container) return;
+  const activeElement = document.activeElement;
+  if (
+    activeElement instanceof HTMLElement &&
+    container.contains(activeElement)
+  ) {
+    activeElement.blur();
+  }
+}
+
 type DockPanelProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -309,6 +320,7 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
       panel.removeAttribute("inert");
       return;
     }
+    blurFocusedDescendant(panel);
     panel.setAttribute("inert", "");
   }, [isOpen]);
 
@@ -319,6 +331,7 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
       layer.removeAttribute("inert");
       return;
     }
+    blurFocusedDescendant(layer);
     layer.setAttribute("inert", "");
   }, [sessionsOpen]);
 
@@ -489,26 +502,14 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
   };
 
   const closeSessionsPanel = () => {
-    const activeElement = document.activeElement;
-    if (
-      activeElement instanceof HTMLElement &&
-      panelRef.current?.contains(activeElement)
-    ) {
-      activeElement.blur();
-    }
+    blurFocusedDescendant(panelRef.current);
     setSessionsOpen(false);
   };
 
   const toggleSessionsPanel = () => {
     setSessionsOpen((prev) => {
       if (!prev) return true;
-      const activeElement = document.activeElement;
-      if (
-        activeElement instanceof HTMLElement &&
-        panelRef.current?.contains(activeElement)
-      ) {
-        activeElement.blur();
-      }
+      blurFocusedDescendant(panelRef.current);
       return false;
     });
   };
