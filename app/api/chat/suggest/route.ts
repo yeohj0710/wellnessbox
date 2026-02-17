@@ -89,6 +89,42 @@ function isAssistantDirected(text: string) {
   return useful.test(text);
 }
 
+function isRetrospectiveUserCheck(text: string) {
+  const normalized = text.replace(/\s+/g, "");
+  const retrospective = [
+    /\ubcf5\uc6a9(\ud55c|\ud6c4|\ub4a4|\ud558\uace0)/,
+    /\uc12d\ucde8(\ud55c|\ud6c4|\ub4a4)/,
+    /\uba39(\uc740|\uace0\ub09c|\uace0)/,
+    /\ubcc0\ud654\uac00\uc788\uc5c8\ub294\uc9c0/,
+    /\uc5b4\ub560\ub294\uc9c0/,
+    /\ub290\ub080\ub294\uc9c0/,
+    /\ud574\ubcf4\uc168/,
+    /\ubcf4\uc2dc\uaca0\uc5b4\uc694\??$/,
+  ];
+  if (!retrospective.some((pattern) => pattern.test(normalized))) return false;
+  return /(\ubcc0\ud654|\ubc18\uc751|\ud6a8\uacfc|\uccb4\uac10|\uc5b4\ub560|\ub290\ub080|\uc788\uc5c8)/.test(
+    normalized
+  );
+}
+
+function isExecutableAssistantRequest(text: string) {
+  const normalized = text.replace(/\s+/g, "");
+  const actionVerb =
+    /(\uc815\ub9ac|\ucd94\ucc9c|\ube44\uad50|\ubd84\uc11d|\uc124\uacc4|\uacc4\ud68d|\ub8e8\ud2f4|\uac00\uc774\ub4dc|\uccb4\ud06c\ub9ac\uc2a4\ud2b8|\uc810\uac80\ud45c|\uc6b0\uc120\uc21c\uc704|\uacc4\uc0b0|\uc870\uc815|\uc81c\uc548|\uc124\uba85|\uc54c\ub824|\uc9dc)/;
+  const requestTone =
+    /(\ud574\uc918|\ud574\uc904\ub798|\ud574\uc8fc\uc138\uc694|\ud574\s*\uc8fc\uc138\uc694|\uc8fc\uc138\uc694|\ubd80\ud0c1|\uc815\ub9ac\ud574|\ucd94\ucc9c\ud574|\ube44\uad50\ud574|\ubd84\uc11d\ud574|\uc124\uacc4\ud574|\uc124\uba85\ud574|\uc54c\ub824\uc918|\uc9dc\uc918)/;
+  return actionVerb.test(normalized) && requestTone.test(normalized);
+}
+
+function isValidSuggestionText(text: string) {
+  const trimmed = text.trim();
+  if (trimmed.length < 12 || trimmed.length > 80) return false;
+  if (!isAssistantDirected(trimmed)) return false;
+  if (isRetrospectiveUserCheck(trimmed)) return false;
+  if (!isExecutableAssistantRequest(trimmed)) return false;
+  return true;
+}
+
 async function callOpenAI(apiKey: string, payload: unknown, timeoutMs = 10000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -179,12 +215,7 @@ function parseSuggestionsFromChoices(
   }
 
   return deduped
-    .filter(
-      (suggestion) =>
-        suggestion.length >= 12 &&
-        suggestion.length <= 80 &&
-        isAssistantDirected(suggestion)
-    )
+    .filter((suggestion) => isValidSuggestionText(suggestion))
     .slice(0, count);
 }
 
@@ -227,9 +258,20 @@ export async function POST(req: NextRequest) {
       excludeSuggestions
     );
     if (!text) {
-      return new Response(JSON.stringify({ suggestions: fallbackSuggestions }), {
-        headers: { "Content-Type": "application/json" },
-      });
+      const safeFallback = fallbackSuggestions
+        .filter((suggestion) => isValidSuggestionText(suggestion))
+        .slice(0, count);
+      return new Response(
+        JSON.stringify({
+          suggestions:
+            safeFallback.length > 0
+              ? safeFallback
+              : fallbackSuggestions.slice(0, count),
+        }),
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     const recentMessages = Array.isArray(body?.recentMessages)
@@ -289,12 +331,26 @@ export async function POST(req: NextRequest) {
     const suggestionKeys = new Set(
       suggestions.map(normalizeSuggestionKey).filter(Boolean)
     );
+    const addSuggestion = (candidate: string) => {
+      const text = typeof candidate === "string" ? candidate.trim() : "";
+      if (!text || !isValidSuggestionText(text)) return false;
+      const key = normalizeSuggestionKey(text);
+      if (!key || suggestionKeys.has(key)) return false;
+      if (
+        excludeSuggestions.some(
+          (excluded) => normalizeSuggestionKey(excluded) === key
+        )
+      ) {
+        return false;
+      }
+      suggestions.push(text);
+      suggestionKeys.add(key);
+      return true;
+    };
+
     if (suggestions.length < count) {
       for (const fallback of fallbackSuggestions) {
-        const key = normalizeSuggestionKey(fallback);
-        if (!key || suggestionKeys.has(key)) continue;
-        suggestions.push(fallback);
-        suggestionKeys.add(key);
+        addSuggestion(fallback);
         if (suggestions.length >= count) break;
       }
     }
@@ -306,13 +362,7 @@ export async function POST(req: NextRequest) {
         "2주 후 점검해야 할 지표를 항목별로 정리해 주세요.",
       ];
       for (const item of generic) {
-        const key = normalizeSuggestionKey(item);
-        if (!key || suggestionKeys.has(key)) continue;
-        if (excludeSuggestions.some((excluded) => normalizeSuggestionKey(excluded) === key)) {
-          continue;
-        }
-        suggestions.push(item);
-        suggestionKeys.add(key);
+        addSuggestion(item);
         if (suggestions.length >= count) break;
       }
     }

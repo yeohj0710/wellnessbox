@@ -296,13 +296,20 @@ export function buildSuggestionMessages(
     .filter(Boolean)
     .join("\n");
 
+  const qualityGuard = [
+    "[Quality Gate]",
+    "- Do not ask the user to report past intake effects or body changes.",
+    '- Bad example: "복용한 후 변화가 있었는지 점검해 보시겠어요?"',
+    "- Write every suggestion as an immediate assistant-executable request.",
+  ].join("\n");
+
   return [
     {
       role: "system",
       content:
         "당신은 상담 후속 질문 생성기입니다. user_context_summary를 기반으로 실용적이고 중복 없는 후속 질문만 생성합니다.",
     },
-    { role: "user", content: prompt },
+    { role: "user", content: `${prompt}\n\n${qualityGuard}` },
   ];
 }
 

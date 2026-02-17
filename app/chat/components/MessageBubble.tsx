@@ -310,8 +310,8 @@ export default function MessageBubble({
             </div>
           )}
           {text && (
-            <div className="relative">
-              <div className="-mt-1 -ms-2.5 -me-1 flex flex-wrap items-center gap-y-1 p-1 select-none pointer-events-none opacity-0 [mask-image:linear-gradient(to_right,black_33%,transparent_66%)] [mask-size:300%_100%] [mask-position:100%_0%] motion-safe:transition-[mask-position,opacity] duration-300 group-hover/message:pointer-events-auto group-hover/message:opacity-100 group-hover/message:[mask-position:0_0] absolute w-full">
+            <div className="h-0 overflow-hidden opacity-0 transition-[height,opacity,margin] duration-200 group-hover/message:mt-0.5 group-hover/message:h-10 group-hover/message:opacity-100">
+              <div className="-ms-2.5 -me-1 flex flex-wrap items-center gap-y-1 p-1 select-none pointer-events-none group-hover/message:pointer-events-auto">
                 <button
                   onClick={handleCopy}
                   className="text-slate-500 hover:bg-slate-100 rounded-lg"
