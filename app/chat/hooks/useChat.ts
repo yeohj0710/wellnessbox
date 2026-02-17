@@ -1,24 +1,35 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFooter } from "@/components/common/footerContext";
+import { buildDataDrivenSuggestions, buildUserContextSummary } from "@/lib/chat/context";
 import type { ChatMessage, ChatSession, UserProfile } from "@/types/chat";
 import {
-  uid,
   getClientIdLocal,
   getTzOffsetMinutes,
-  loadSessions,
-  saveSessions,
   loadProfileLocal,
-  saveProfileLocal,
   loadProfileServer,
+  loadSessions,
+  saveProfileLocal,
   saveProfileServer,
-  formatAssessCat,
+  saveSessions,
+  uid,
 } from "../utils";
+import { buildChatContextPayload, buildUserContextInput } from "./useChat.context";
 import {
-  buildDataDrivenSuggestions,
-  buildUserContextSummary,
-} from "@/lib/chat/context";
+  normalizeAllResultsPayload,
+  readLocalAssessCats,
+  readLocalCheckAiTopLabels,
+} from "./useChat.results";
+import { createDraftSession, DEFAULT_CHAT_TITLE, mergeServerSessions } from "./useChat.session";
+import {
+  getSuggestionHistory,
+  normalizeSuggestionKey,
+  pickFreshSuggestions,
+  rememberSuggestions,
+} from "./useChat.suggestions";
+import { readStreamingText } from "./useChat.stream";
+import { normalizeNewlines, sanitizeAssistantText } from "./useChat.text";
 
 export default function useChat() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -64,6 +75,7 @@ export default function useChat() {
     setDrawerVisible(true);
     setTimeout(() => setDrawerOpen(true), 0);
   }
+
   function closeDrawer() {
     setDrawerOpen(false);
     setTimeout(() => setDrawerVisible(false), 200);
@@ -77,119 +89,59 @@ export default function useChat() {
       );
       setSessions(sorted);
       setActiveId(sorted[0].id);
-      sorted.forEach((s) => (readyToPersistRef.current[s.id] = true));
+      sorted.forEach((session) => {
+        readyToPersistRef.current[session.id] = true;
+      });
     } else {
       const id = uid();
       const now = Date.now();
-      const ns: ChatSession = {
-        id,
-        title: "새 상담",
-        createdAt: now,
-        updatedAt: now,
-        appUserId: actorLoggedInRef.current ? actorAppUserIdRef.current : null,
-        messages: [],
-      };
-      setSessions([ns]);
+      setSessions([
+        createDraftSession({
+          id,
+          now,
+          actor: {
+            loggedIn: actorLoggedInRef.current,
+            appUserId: actorAppUserIdRef.current,
+          },
+        }),
+      ]);
       setActiveId(id);
       readyToPersistRef.current[id] = false;
     }
+
     (async () => {
       try {
-        const res = await fetch("/api/chat/save", { method: "GET" });
-        if (!res.ok) return;
-        const js = await res.json().catch(() => ({}));
-        if (js?.actor) {
-          actorLoggedInRef.current = !!js.actor.loggedIn;
-          actorAppUserIdRef.current = js.actor.appUserId ?? null;
-          actorPhoneLinkedRef.current = !!js.actor.phoneLinked;
+        const response = await fetch("/api/chat/save", { method: "GET" });
+        if (!response.ok) return;
+
+        const json = await response.json().catch(() => ({}));
+        if (json?.actor) {
+          actorLoggedInRef.current = !!json.actor.loggedIn;
+          actorAppUserIdRef.current = json.actor.appUserId ?? null;
+          actorPhoneLinkedRef.current = !!json.actor.phoneLinked;
         }
-        if (!Array.isArray(js?.sessions)) return;
+
+        if (!Array.isArray(json?.sessions)) return;
+
         setSessions((prev) => {
-          const merged = new Map<string, ChatSession>();
-          const ensureReady: Record<string, boolean> = {};
-          for (const s of prev) {
-            merged.set(s.id, s);
-            ensureReady[s.id] = readyToPersistRef.current[s.id] ?? true;
-          }
-          for (const raw of js.sessions as any[]) {
-            if (!raw?.id) continue;
-            const normalized: ChatSession = {
-              id: String(raw.id),
-              title: raw.title || "새 상담",
-              createdAt: raw.createdAt ? Number(raw.createdAt) : Date.now(),
-              updatedAt: raw.updatedAt ? Number(raw.updatedAt) : Date.now(),
-              appUserId: raw.appUserId ?? null,
-              messages: Array.isArray(raw.messages)
-                ? raw.messages.map((m: any) => ({
-                    id: String(m.id),
-                    role: m.role,
-                    content: m.content ?? "",
-                    createdAt: m.createdAt ? Number(m.createdAt) : Date.now(),
-                  }))
-                : [],
-            };
-            const existing = merged.get(normalized.id);
-            if (
-              !existing ||
-              (existing.updatedAt || 0) < (normalized.updatedAt || 0)
-            ) {
-              merged.set(normalized.id, normalized);
-            }
-            ensureReady[normalized.id] = true;
-          }
+          const merged = mergeServerSessions({
+            prevSessions: prev,
+            incomingSessions: json.sessions,
+            currentReadyMap: readyToPersistRef.current,
+            actor: {
+              loggedIn: actorLoggedInRef.current,
+              appUserId: actorAppUserIdRef.current,
+            },
+            currentActiveId: activeIdRef.current,
+          });
 
-          if (actorLoggedInRef.current && actorAppUserIdRef.current) {
-            for (const [id, session] of merged.entries()) {
-              if (
-                !session.appUserId &&
-                session.messages.length === 0 &&
-                !readyToPersistRef.current[id]
-              ) {
-                merged.set(id, {
-                  ...session,
-                  appUserId: actorAppUserIdRef.current,
-                });
-              }
-            }
-          }
-
-          if (actorLoggedInRef.current) {
-            const me = actorAppUserIdRef.current;
-            for (const [id, session] of merged.entries()) {
-              if (session.appUserId && session.appUserId !== me) {
-                merged.delete(id);
-                delete ensureReady[id];
-              }
-            }
-          } else {
-            for (const [id, session] of merged.entries()) {
-              if (session.appUserId) {
-                merged.delete(id);
-                delete ensureReady[id];
-              }
-            }
-          }
-
-          readyToPersistRef.current = ensureReady;
-          let arr = Array.from(merged.values()).sort(
-            (a, b) =>
-              (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt)
-          );
-
-          if (arr.length > 1) {
-            arr = arr.filter(
-              (s) => s.messages.length > 0 || readyToPersistRef.current[s.id]
-            );
-          }
-          const nextActiveId =
-            (activeIdRef.current && merged.has(activeIdRef.current)
-              ? activeIdRef.current
-              : arr[0]?.id) || null;
-          setActiveId(nextActiveId);
-          return arr;
+          readyToPersistRef.current = merged.nextReadyMap;
+          setActiveId(merged.nextActiveId);
+          return merged.sessions;
         });
       } catch {}
     })();
+
     (async () => {
       let resolved: UserProfile | undefined = undefined;
       const remote = await loadProfileServer();
@@ -200,6 +152,7 @@ export default function useChat() {
         const local = loadProfileLocal();
         if (local) resolved = local;
       }
+
       setProfile(resolved);
       setShowProfileBanner(!resolved);
       setProfileLoaded(true);
@@ -216,12 +169,15 @@ export default function useChat() {
 
   useEffect(() => {
     if (!sessions.length) return;
-    const persistable = sessions.filter((s) => {
-      const first = s.messages[0];
-      if (first && first.role === "assistant")
-        return !!readyToPersistRef.current[s.id];
+
+    const persistable = sessions.filter((session) => {
+      const first = session.messages[0];
+      if (first && first.role === "assistant") {
+        return !!readyToPersistRef.current[session.id];
+      }
       return true;
     });
+
     saveSessions(persistable);
   }, [sessions]);
 
@@ -232,122 +188,61 @@ export default function useChat() {
   }, [hideFooter, showFooter]);
 
   useEffect(() => {
-    try {
-      const raw =
-        typeof localStorage !== "undefined"
-          ? localStorage.getItem("wb_check_ai_result_v1")
-          : null;
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      const arr = Array.isArray(parsed?.topLabels)
-        ? parsed.topLabels.slice(0, 3)
-        : [];
-      if (arr.length) setLocalCheckAi(arr);
-    } catch {}
+    const labels = readLocalCheckAiTopLabels();
+    if (labels.length) setLocalCheckAi(labels);
   }, []);
 
   useEffect(() => {
-    try {
-      const raw =
-        typeof localStorage !== "undefined"
-          ? localStorage.getItem("assess-state")
-          : null;
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      const arr = Array.isArray(parsed?.cResult?.catsOrdered)
-        ? parsed.cResult.catsOrdered.slice(0, 3)
-        : [];
-      if (arr.length) setLocalAssessCats(arr);
-    } catch {}
+    const cats = readLocalAssessCats();
+    if (cats.length) setLocalAssessCats(cats);
   }, []);
 
   useEffect(() => {
     fetch(`/api/user/all-results`)
-      .then((r) => r.json())
+      .then((response) => response.json())
       .then((data) => {
-        if (data?.actor) {
-          actorLoggedInRef.current = !!data.actor.loggedIn;
-          actorAppUserIdRef.current = data.actor.appUserId ?? null;
-          actorPhoneLinkedRef.current = !!data.actor.phoneLinked;
+        const normalized = normalizeAllResultsPayload(data);
+
+        if (normalized.actor) {
+          actorLoggedInRef.current = normalized.actor.loggedIn;
+          actorAppUserIdRef.current = normalized.actor.appUserId;
+          actorPhoneLinkedRef.current = normalized.actor.phoneLinked;
         }
 
-        const assess = data?.assess;
-        const assessNormalized = assess?.normalized;
-        if (Array.isArray(assessNormalized?.topLabels)) {
-          const cats = assessNormalized.topLabels;
-          const summary = cats.map((c: string) => formatAssessCat(c));
-          const answers = Array.isArray(assess.answersDetailed)
-            ? assess.answersDetailed.map((a: any) => ({
-                question: a.question,
-                answer: a.answerLabel,
-              }))
-            : [];
-          setAssessResult({
-            createdAt: assess.createdAt,
-            summary,
-            answers,
-          });
-        } else {
-          setAssessResult(null);
-        }
-
-        const checkAi = data?.checkAi;
-        const checkAiNormalized = checkAi?.normalized;
-        if (Array.isArray(checkAiNormalized?.topLabels)) {
-          const labels = checkAiNormalized.topLabels.slice(0, 3);
-          const answers = Array.isArray(checkAi?.answersDetailed)
-            ? checkAi.answersDetailed.map((a: any) => ({
-                question: a.question,
-                answer: a.answerLabel,
-              }))
-            : [];
-          setCheckAiResult({
-            createdAt: checkAi.createdAt,
-            labels,
-            answers,
-          });
-        } else {
-          setCheckAiResult(null);
-        }
-
-        const ords = Array.isArray(data?.orders)
-          ? data.orders.map((o: any) => ({
-              id: o.id,
-              status: o.status,
-              createdAt: o.createdAt,
-              updatedAt: o.updatedAt,
-              items: (o.orderItems || []).map((it: any) => ({
-                name: it.pharmacyProduct?.product?.name || "상품",
-                quantity: it.quantity,
-              })),
-            }))
-          : [];
-        setOrders(ords);
+        setAssessResult(normalized.assessResult);
+        setCheckAiResult(normalized.checkAiResult);
+        setOrders(normalized.orders);
       })
       .catch(() => {})
       .finally(() => setResultsLoaded(true));
   }, []);
 
   const active = useMemo(
-    () => sessions.find((s) => s.id === activeId) || null,
+    () => sessions.find((session) => session.id === activeId) || null,
     [sessions, activeId]
   );
-  const userContextSummary = useMemo(
-    () =>
-      buildUserContextSummary({
-        profile: profile ?? null,
+
+  const buildSummaryForSession = (sessionId: string | null) => {
+    return buildUserContextSummary(
+      buildUserContextInput({
+        profile,
         orders,
-        assessResult: assessResult || null,
-        checkAiResult: checkAiResult || null,
-        chatSessions: sessions,
-        currentSessionId: activeId,
+        assessResult,
+        checkAiResult,
+        sessions,
+        currentSessionId: sessionId,
         localAssessCats,
-        localCheckAiTopLabels: localCheckAi,
+        localCheckAi,
         actorContext: {
           loggedIn: actorLoggedInRef.current,
           phoneLinked: actorPhoneLinkedRef.current,
         },
-      }),
+      })
+    );
+  };
+
+  const userContextSummary = useMemo(
+    () => buildSummaryForSession(activeId),
     [
       profile,
       orders,
@@ -360,122 +255,102 @@ export default function useChat() {
     ]
   );
 
-  const buildContextSessionPayload = (currentSessionId: string | null) => {
-    return sessions
-      .filter((session) => !currentSessionId || session.id !== currentSessionId)
-      .sort(
-        (left, right) =>
-          (right.updatedAt || right.createdAt) -
-          (left.updatedAt || left.createdAt)
-      )
-      .slice(0, 5)
-      .map((session) => ({
-        id: session.id,
-        title: session.title,
-        updatedAt: session.updatedAt || session.createdAt,
-        messages: session.messages.slice(-4).map((message) => ({
-          role: message.role,
-          content: message.content,
-        })),
-      }));
+  const buildContextPayload = (currentSessionId: string | null) => {
+    return buildChatContextPayload({
+      profile,
+      orders,
+      assessResult,
+      checkAiResult,
+      sessions,
+      currentSessionId,
+      localAssessCats,
+      localCheckAi,
+      actorContext: {
+        loggedIn: actorLoggedInRef.current,
+        phoneLinked: actorPhoneLinkedRef.current,
+      },
+    });
   };
-
-  const buildContextPayload = (currentSessionId: string | null) => ({
-    profile,
-    localCheckAiTopLabels: localCheckAi,
-    localAssessCats,
-    actorContext: {
-      loggedIn: actorLoggedInRef.current,
-      phoneLinked: actorPhoneLinkedRef.current,
-    },
-    orders: orders.map((order) => ({
-      id: order.id,
-      status: order.status,
-      createdAt: order.createdAt,
-      updatedAt: order.updatedAt,
-      items: Array.isArray(order.items)
-        ? order.items.map((item: any) => ({
-            name: item?.name || "상품",
-            quantity:
-              typeof item?.quantity === "number" ? item.quantity : undefined,
-          }))
-        : [],
-    })),
-    assessResult: assessResult || null,
-    checkAiResult: checkAiResult || null,
-    sessionId: currentSessionId || undefined,
-    chatSessions: buildContextSessionPayload(currentSessionId),
-  });
 
   const prevActiveIdRef = useRef<string | null>(null);
   const prevMsgCountRef = useRef(0);
 
   useEffect(() => {
     if (!active) return;
-    const msgLen = active.messages.length;
+
+    const msgLength = active.messages.length;
     if (prevActiveIdRef.current !== activeId) {
       requestAnimationFrame(() => {
         scrollToTop();
       });
       prevActiveIdRef.current = activeId;
-      prevMsgCountRef.current = msgLen;
+      prevMsgCountRef.current = msgLength;
       return;
     }
-    if (msgLen > prevMsgCountRef.current) {
+
+    if (msgLength > prevMsgCountRef.current) {
       requestAnimationFrame(() => {
         if (stickToBottomRef.current) scrollToBottom();
       });
-      prevMsgCountRef.current = msgLen;
+      prevMsgCountRef.current = msgLength;
     }
   }, [activeId, active?.messages.length]);
 
   useEffect(() => {
     if (!resultsLoaded || !profileLoaded) return;
     if (!activeId) return;
-    const s = sessions.find((x) => x.id === activeId);
-    if (!s || s.messages.length > 0) return;
+
+    const session = sessions.find((item) => item.id === activeId);
+    if (!session || session.messages.length > 0) return;
+
     startInitialAssistantMessage(activeId);
   }, [resultsLoaded, profileLoaded, activeId, sessions]);
 
   useEffect(() => {
-    const c = messagesContainerRef.current;
-    if (!c) return;
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
     const onScroll = () => {
       stickToBottomRef.current = isAtBottom();
     };
-    c.addEventListener("scroll", onScroll, { passive: true });
-    return () => c.removeEventListener("scroll", onScroll);
+
+    container.addEventListener("scroll", onScroll, { passive: true });
+    return () => container.removeEventListener("scroll", onScroll);
   }, [messagesContainerRef.current]);
 
   function scrollToBottom() {
-    const c = messagesContainerRef.current;
-    if (c) c.scrollTop = c.scrollHeight;
+    const container = messagesContainerRef.current;
+    if (container) container.scrollTop = container.scrollHeight;
   }
 
   function scrollToTop() {
-    const c = messagesContainerRef.current;
-    if (c) c.scrollTop = 0;
+    const container = messagesContainerRef.current;
+    if (container) container.scrollTop = 0;
   }
 
   function isAtBottom(threshold = 80) {
-    const c = messagesContainerRef.current;
-    if (!c) return false;
-    return c.scrollHeight - c.scrollTop - c.clientHeight <= threshold;
+    const container = messagesContainerRef.current;
+    if (!container) return false;
+    return (
+      container.scrollHeight - container.scrollTop - container.clientHeight <=
+      threshold
+    );
   }
 
   function newChat() {
     const id = uid();
     const now = Date.now();
-    const s: ChatSession = {
+
+    const session = createDraftSession({
       id,
-      title: "새 상담",
-      createdAt: now,
-      updatedAt: now,
-      appUserId: actorLoggedInRef.current ? actorAppUserIdRef.current : null,
-      messages: [],
-    };
-    const next = [s, ...sessions];
-    setSessions(next);
+      now,
+      actor: {
+        loggedIn: actorLoggedInRef.current,
+        appUserId: actorAppUserIdRef.current,
+      },
+    });
+
+    setSessions([session, ...sessions]);
     setActiveId(id);
     setSuggestions([]);
     firstUserMessageRef.current = "";
@@ -491,18 +366,22 @@ export default function useChat() {
     const prevSessions = sessions;
     const prevActiveId = activeId;
     const prevReady = { ...readyToPersistRef.current };
-    const next = sessions.filter((s) => s.id !== id);
+
+    const next = sessions.filter((session) => session.id !== id);
     setSessions(next);
     if (activeId === id) setActiveId(next[0]?.id ?? null);
+
     delete readyToPersistRef.current[id];
     delete suggestionHistoryRef.current[id];
+
     try {
-      const res = await fetch("/api/chat/delete", {
+      const response = await fetch("/api/chat/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId: id }),
       });
-      if (!res.ok) {
+
+      if (!response.ok) {
         throw new Error("Failed to delete chat session");
       }
     } catch {
@@ -513,72 +392,68 @@ export default function useChat() {
   }
 
   function renameChat(id: string, title: string) {
-    setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, title } : s)));
+    setSessions((prev) =>
+      prev.map((session) => (session.id === id ? { ...session, title } : session))
+    );
   }
 
   function stopStreaming() {
     abortRef.current?.abort();
   }
 
-  function normalizeNewlines(text: string) {
-    return text
-      .replace(/\n{3,}/g, "\n\n")
-      .replace(/([^\n])\n([ \t]*([-*+]\s|\d+\.\s))/g, "$1\n\n$2");
+  function updateAssistantMessage(sessionId: string, messageId: string, content: string) {
+    setSessions((prev) =>
+      prev.map((session) =>
+        session.id === sessionId
+          ? {
+              ...session,
+              updatedAt: Date.now(),
+              messages: session.messages.map((message) =>
+                message.id === messageId ? { ...message, content } : message
+              ),
+            }
+          : session
+      )
+    );
   }
 
-  function sanitizeAssistantText(text: string, finalize = false) {
-    const cleaned = normalizeNewlines(text)
-      .replace(/\n?\s*근거\s*:[^\n\r]*/g, "")
-      .replace(/내 데이터 요약/g, "참고 데이터")
-      .replace(/추천 제품\s*\(7일\s*예상가\)/g, "추천 제품(7일 기준 가격)")
-      .replace(
-        /(전문의|전문가|병원)\s*(와|과)?\s*상담(을|이|은|는)?\s*(권장|추천|해주세요|해\s*주세요)?/g,
-        ""
-      );
-    return finalize ? cleaned.trim() : cleaned.replace(/^\n+/, "");
-  }
-
-  function normalizeSuggestionKey(value: string) {
-    return value
-      .toLowerCase()
-      .replace(/[^a-z0-9가-힣]+/g, "")
-      .trim();
-  }
-
-  function getSuggestionHistory(sessionId: string) {
-    return suggestionHistoryRef.current[sessionId] || [];
-  }
-
-  function rememberSuggestions(sessionId: string, nextSuggestions: string[]) {
-    const prev = getSuggestionHistory(sessionId);
-    const merged = [...prev];
-    const seen = new Set(prev.map(normalizeSuggestionKey).filter(Boolean));
-
-    for (const suggestion of nextSuggestions) {
-      const key = normalizeSuggestionKey(suggestion);
-      if (!key || seen.has(key)) continue;
-      merged.push(suggestion);
-      seen.add(key);
-    }
-
-    suggestionHistoryRef.current[sessionId] = merged.slice(-20);
-  }
-
-  function buildSummaryForSession(sessionId: string | null) {
-    return buildUserContextSummary({
-      profile: profile ?? null,
-      orders,
-      assessResult: assessResult || null,
-      checkAiResult: checkAiResult || null,
-      chatSessions: sessions,
-      currentSessionId: sessionId,
-      localAssessCats,
-      localCheckAiTopLabels: localCheckAi,
-      actorContext: {
-        loggedIn: actorLoggedInRef.current,
-        phoneLinked: actorPhoneLinkedRef.current,
-      },
+  function buildFinalSuggestions(input: {
+    fromApi: string[];
+    fallback: string[];
+    recentSuggestionHistory: string[];
+    safeCount: number;
+  }) {
+    const pickedFromApi = pickFreshSuggestions({
+      pool: input.fromApi,
+      recentSuggestionHistory: input.recentSuggestionHistory,
+      count: input.safeCount,
     });
+
+    const remainder = Math.max(0, input.safeCount - pickedFromApi.length);
+    const pickedFallback =
+      remainder > 0
+        ? pickFreshSuggestions({
+            pool: input.fallback.filter((item) => {
+              const key = normalizeSuggestionKey(item);
+              return !pickedFromApi.some(
+                (selected) => normalizeSuggestionKey(selected) === key
+              );
+            }),
+            recentSuggestionHistory: input.recentSuggestionHistory,
+            count: remainder,
+          })
+        : [];
+
+    const picked = pickedFromApi.concat(pickedFallback).slice(0, input.safeCount);
+    const safeFallback = pickFreshSuggestions({
+      pool: input.fallback,
+      recentSuggestionHistory: input.recentSuggestionHistory,
+      count: input.safeCount,
+    });
+
+    if (picked.length > 0) return picked;
+    if (safeFallback.length > 0) return safeFallback;
+    return input.fallback.slice(0, input.safeCount);
   }
 
   async function saveChatOnce({
@@ -594,8 +469,9 @@ export default function useChat() {
     messages: ChatMessage[];
     tzOffsetMinutes: number;
   }) {
-    const key = `${sessionId}:${messages.map((m) => m.id).join(",")}`;
+    const key = `${sessionId}:${messages.map((message) => message.id).join(",")}`;
     if (savedKeysRef.current.has(key)) return;
+
     savedKeysRef.current.add(key);
     await fetch("/api/chat/save", {
       method: "POST",
@@ -616,12 +492,15 @@ export default function useChat() {
       !firstAssistantMessageRef.current ||
       !firstAssistantReplyRef.current ||
       !activeId
-    )
+    ) {
       return;
+    }
+
     setTitleLoading(true);
     setTitleError(false);
+
     try {
-      const tRes = await fetch("/api/chat/title", {
+      const response = await fetch("/api/chat/title", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -630,13 +509,17 @@ export default function useChat() {
           assistantReply: firstAssistantReplyRef.current,
         }),
       });
-      const tJson = await tRes.json().catch(() => ({}));
+
+      const json = await response.json().catch(() => ({}));
       const title =
-        typeof tJson?.title === "string" && tJson.title
-          ? tJson.title
-          : "새 상담";
+        typeof json?.title === "string" && json.title
+          ? json.title
+          : DEFAULT_CHAT_TITLE;
+
       setSessions((prev) =>
-        prev.map((s) => (s.id === activeId ? { ...s, title } : s))
+        prev.map((session) =>
+          session.id === activeId ? { ...session, title } : session
+        )
       );
       setTitleHighlightId(activeId);
       setTopTitleHighlight(true);
@@ -662,7 +545,10 @@ export default function useChat() {
     }
 
     const safeCount = 2;
-    const recentSuggestionHistory = getSuggestionHistory(targetSessionId).slice(-8);
+    const recentSuggestionHistory = getSuggestionHistory(
+      suggestionHistoryRef.current,
+      targetSessionId
+    ).slice(-8);
     const summaryForSession = buildSummaryForSession(targetSessionId);
     const fallback = buildDataDrivenSuggestions(
       summaryForSession,
@@ -670,24 +556,8 @@ export default function useChat() {
       recentSuggestionHistory
     );
 
-    const pickFresh = (pool: string[]) => {
-      const selected: string[] = [];
-      const selectedKeys = new Set<string>();
-      const excludedKeys = new Set(
-        recentSuggestionHistory.map(normalizeSuggestionKey).filter(Boolean)
-      );
-      for (const item of pool) {
-        const key = normalizeSuggestionKey(item);
-        if (!key || excludedKeys.has(key) || selectedKeys.has(key)) continue;
-        selected.push(item.trim());
-        selectedKeys.add(key);
-        if (selected.length >= safeCount) break;
-      }
-      return selected;
-    };
-
     try {
-      const res = await fetch("/api/chat/suggest", {
+      const response = await fetch("/api/chat/suggest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -700,62 +570,64 @@ export default function useChat() {
           count: safeCount,
         }),
       });
-      const js = await res.json().catch(() => ({}));
-      const fromApi = Array.isArray(js?.suggestions)
-        ? js.suggestions
+
+      const json = await response.json().catch(() => ({}));
+      const fromApi = Array.isArray(json?.suggestions)
+        ? json.suggestions
             .map((item: unknown) => (typeof item === "string" ? item.trim() : ""))
             .filter(Boolean)
         : [];
-      const pickedFromApi = pickFresh(fromApi);
-      const remainder = Math.max(0, safeCount - pickedFromApi.length);
-      const pickedFallback =
-        remainder > 0
-          ? pickFresh(
-              fallback.filter((item) => {
-                const key = normalizeSuggestionKey(item);
-                return !pickedFromApi.some(
-                  (selected) => normalizeSuggestionKey(selected) === key
-                );
-              })
-            ).slice(0, remainder)
-          : [];
-      const picked = pickedFromApi.concat(pickedFallback).slice(0, safeCount);
-      const safeFallback = pickFresh(fallback).slice(0, safeCount);
-      const finalSuggestions =
-        picked.length > 0
-          ? picked
-          : safeFallback.length > 0
-          ? safeFallback
-          : fallback.slice(0, safeCount);
+
+      const finalSuggestions = buildFinalSuggestions({
+        fromApi,
+        fallback,
+        recentSuggestionHistory,
+        safeCount,
+      });
+
       setSuggestions(finalSuggestions);
-      rememberSuggestions(targetSessionId, finalSuggestions);
+      rememberSuggestions(
+        suggestionHistoryRef.current,
+        targetSessionId,
+        finalSuggestions
+      );
     } catch {
-      const safeFallback = pickFresh(fallback).slice(0, safeCount);
-      const finalSuggestions =
-        safeFallback.length > 0 ? safeFallback : fallback.slice(0, safeCount);
+      const finalSuggestions = buildFinalSuggestions({
+        fromApi: [],
+        fallback,
+        recentSuggestionHistory,
+        safeCount,
+      });
+
       setSuggestions(finalSuggestions);
-      rememberSuggestions(targetSessionId, finalSuggestions);
+      rememberSuggestions(
+        suggestionHistoryRef.current,
+        targetSessionId,
+        finalSuggestions
+      );
     }
   }
 
   async function sendMessage(overrideText?: string) {
     if (loading) return;
     if (!active) return;
+
     const text = (overrideText ?? input).trim();
     if (!text) return;
+
     const isFirst = active.messages.length === 1;
     setInput("");
     setSuggestions([]);
     if (isFirst) firstUserMessageRef.current = text;
 
     const now = Date.now();
-    const userMsg: ChatMessage = {
+    const userMessage: ChatMessage = {
       id: uid(),
       role: "user",
       content: normalizeNewlines(text),
       createdAt: now,
     };
-    const asstMsg: ChatMessage = {
+    const assistantMessage: ChatMessage = {
       id: uid(),
       role: "assistant",
       content: "",
@@ -763,118 +635,80 @@ export default function useChat() {
     };
 
     setSessions((prev) =>
-      prev.map((s) =>
-        s.id === active.id
+      prev.map((session) =>
+        session.id === active.id
           ? {
-              ...s,
+              ...session,
               updatedAt: Date.now(),
-              messages: [...s.messages, userMsg, asstMsg],
+              messages: [...session.messages, userMessage, assistantMessage],
             }
-          : s
+          : session
       )
     );
+
     stickToBottomRef.current = true;
     requestAnimationFrame(() => requestAnimationFrame(scrollToBottom));
 
     setLoading(true);
     const controller = new AbortController();
     abortRef.current = controller;
+
     try {
-      const cid = getClientIdLocal();
+      const clientId = getClientIdLocal();
       const contextPayload = buildContextPayload(active.id);
-      const res = await fetch("/api/chat", {
+      const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: (active.messages || []).concat(userMsg),
-          clientId: cid,
+          messages: (active.messages || []).concat(userMessage),
+          clientId,
           mode: "chat",
           ...contextPayload,
         }),
         signal: controller.signal,
       });
-      if (!res.ok || !res.body) throw new Error("대화를 이어받지 못했어요.");
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let done = false;
-      let fullText = "";
-      while (!done) {
-        const { value, done: d } = await reader.read();
-        done = d;
-        if (value) {
-          const chunk = decoder.decode(value, { stream: !d });
-          fullText += chunk;
-          const textSoFar = sanitizeAssistantText(fullText);
-          setSessions((prev) =>
-            prev.map((s) =>
-              s.id === active.id
-                ? {
-                    ...s,
-                    updatedAt: Date.now(),
-                    messages: s.messages.map((m) =>
-                      m.id === asstMsg.id ? { ...m, content: textSoFar } : m
-                    ),
-                  }
-                : s
-            )
-          );
-        }
+
+      if (!response.ok || !response.body) {
+        throw new Error("대화를 이어받지 못했어요.");
       }
-      fullText += decoder.decode();
+
+      let fullText = await readStreamingText(response, (textSoFar) => {
+        updateAssistantMessage(
+          active.id,
+          assistantMessage.id,
+          sanitizeAssistantText(textSoFar)
+        );
+      });
+
       const finalizedText = sanitizeAssistantText(fullText, true);
       if (finalizedText !== fullText) {
         fullText = finalizedText;
       }
-      setSessions((prev) =>
-        prev.map((s) =>
-          s.id === active.id
-            ? {
-                ...s,
-                updatedAt: Date.now(),
-                messages: s.messages.map((m) =>
-                  m.id === asstMsg.id ? { ...m, content: fullText } : m
-                ),
-              }
-            : s
-        )
-      );
+
+      updateAssistantMessage(active.id, assistantMessage.id, fullText);
 
       if (isFirst) {
         firstAssistantReplyRef.current = fullText;
         await generateTitle();
-        await fetchSuggestions(fullText, active.id);
-      } else {
-        await fetchSuggestions(fullText, active.id);
       }
+      await fetchSuggestions(fullText, active.id);
 
       try {
-        const tz = getTzOffsetMinutes();
+        const tzOffsetMinutes = getTzOffsetMinutes();
         await saveChatOnce({
-          clientId: cid,
+          clientId,
           sessionId: active.id,
-          title: sessions.find((s) => s.id === active.id)?.title || "새 상담",
-          messages: [userMsg, { ...asstMsg, content: fullText }],
-          tzOffsetMinutes: tz,
+          title:
+            sessions.find((session) => session.id === active.id)?.title ||
+            DEFAULT_CHAT_TITLE,
+          messages: [userMessage, { ...assistantMessage, content: fullText }],
+          tzOffsetMinutes,
         });
       } catch {}
-    } catch (e) {
-      if ((e as any)?.name !== "AbortError") {
-        const errText = (e as Error).message || "문제가 발생했어요.";
-        setSessions((prev) =>
-          prev.map((s) =>
-            s.id === active.id
-              ? {
-                  ...s,
-                  updatedAt: Date.now(),
-                  messages: s.messages.map((m) =>
-                    m.id === asstMsg.id
-                      ? { ...m, content: `오류: ${errText}` }
-                      : m
-                  ),
-                }
-              : s
-          )
-        );
+    } catch (error) {
+      if ((error as any)?.name !== "AbortError") {
+        const errText = (error as Error).message || "문제가 발생했어요.";
+        updateAssistantMessage(active.id, assistantMessage.id, `오류: ${errText}`);
       }
     } finally {
       setLoading(false);
@@ -885,115 +719,93 @@ export default function useChat() {
   async function startInitialAssistantMessage(sessionId: string) {
     if (!resultsLoaded) return;
     if (initStartedRef.current[sessionId]) return;
+
     initStartedRef.current[sessionId] = true;
-    const s = sessions.find((x) => x.id === sessionId);
-    if (!s || s.messages.length > 0) return;
+    const session = sessions.find((item) => item.id === sessionId);
+    if (!session || session.messages.length > 0) return;
+
     const now = Date.now();
-    const asstMsg: ChatMessage = {
+    const assistantMessage: ChatMessage = {
       id: uid(),
       role: "assistant",
       content: "",
       createdAt: now,
     };
+
     setSessions((prev) =>
-      prev.map((ss) =>
-        ss.id === sessionId ? { ...ss, messages: [asstMsg] } : ss
+      prev.map((item) =>
+        item.id === sessionId ? { ...item, messages: [assistantMessage] } : item
       )
     );
+
     setLoading(true);
     const controller = new AbortController();
     abortRef.current = controller;
+
     try {
-      const cid = getClientIdLocal();
+      const clientId = getClientIdLocal();
       const contextPayload = buildContextPayload(sessionId);
-      const res = await fetch("/api/chat", {
+      const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: [],
-          clientId: cid,
+          clientId,
           mode: "init",
           ...contextPayload,
         }),
         signal: controller.signal,
       });
-      if (!res.ok || !res.body)
+
+      if (!response.ok || !response.body) {
         throw new Error("초기 메시지를 받아오지 못했어요.");
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let fullText = "";
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        if (value) {
-          const chunk = decoder.decode(value, { stream: true });
-          fullText += chunk;
-          const textSoFar = sanitizeAssistantText(fullText);
-          setSessions((prev) =>
-            prev.map((ss) =>
-              ss.id === sessionId
-                ? {
-                    ...ss,
-                    updatedAt: Date.now(),
-                    messages: ss.messages.map((m) =>
-                      m.id === asstMsg.id ? { ...m, content: textSoFar } : m
-                    ),
-                  }
-                : ss
-            )
-          );
-        }
       }
-      fullText += decoder.decode();
+
+      let fullText = await readStreamingText(response, (textSoFar) => {
+        updateAssistantMessage(
+          sessionId,
+          assistantMessage.id,
+          sanitizeAssistantText(textSoFar)
+        );
+      });
+
       const finalizedText = sanitizeAssistantText(fullText, true);
       if (finalizedText !== fullText) {
         fullText = finalizedText;
       }
-      setSessions((prev) =>
-        prev.map((ss) =>
-          ss.id === sessionId
-            ? {
-                ...ss,
-                updatedAt: Date.now(),
-                messages: ss.messages.map((m) =>
-                  m.id === asstMsg.id ? { ...m, content: fullText } : m
-                ),
-              }
-            : ss
-        )
-      );
 
+      updateAssistantMessage(sessionId, assistantMessage.id, fullText);
       fetchSuggestions(fullText, sessionId).catch(() => {});
       firstAssistantMessageRef.current = fullText;
 
       try {
-        const tz = getTzOffsetMinutes();
-        const cid2 = getClientIdLocal();
+        const tzOffsetMinutes = getTzOffsetMinutes();
+        const clientId2 = getClientIdLocal();
         await saveChatOnce({
-          clientId: cid2,
+          clientId: clientId2,
           sessionId,
-          messages: [{ ...asstMsg, content: fullText }],
-          tzOffsetMinutes: tz,
+          messages: [{ ...assistantMessage, content: fullText }],
+          tzOffsetMinutes,
         });
         readyToPersistRef.current[sessionId] = true;
         setSessions((prev) => prev.slice());
       } catch {}
-    } catch (e) {
-      if ((e as any)?.name !== "AbortError") {
-        const errText = (e as Error).message || "문제가 발생했어요.";
+    } catch (error) {
+      if ((error as any)?.name !== "AbortError") {
+        const errText = (error as Error).message || "문제가 발생했어요.";
         setSessions((prev) =>
-          prev.map((ss) =>
-            ss.id === sessionId
+          prev.map((item) =>
+            item.id === sessionId
               ? {
-                  ...ss,
+                  ...item,
                   updatedAt: Date.now(),
-                  messages: ss.messages.map((m) =>
-                    m.role === "assistant" && m.content === ""
-                      ? { ...m, content: `오류: ${errText}` }
-                      : m
+                  messages: item.messages.map((message) =>
+                    message.role === "assistant" && message.content === ""
+                      ? { ...message, content: `오류: ${errText}` }
+                      : message
                   ),
                 }
-              : ss
+              : item
           )
         );
       }
@@ -1003,17 +815,21 @@ export default function useChat() {
     }
   }
 
-  function handleProfileChange(p?: UserProfile) {
-    if (!p) {
+  function handleProfileChange(nextProfile?: UserProfile) {
+    if (!nextProfile) {
       setProfile(undefined);
       saveProfileLocal(undefined as any);
       saveProfileServer(undefined as any);
       return;
     }
-    if (typeof p === "object" && Object.keys(p).length === 0) return;
-    setProfile(p);
-    saveProfileLocal(p);
-    saveProfileServer(p);
+
+    if (typeof nextProfile === "object" && Object.keys(nextProfile).length === 0) {
+      return;
+    }
+
+    setProfile(nextProfile);
+    saveProfileLocal(nextProfile);
+    saveProfileServer(nextProfile);
   }
 
   return {
