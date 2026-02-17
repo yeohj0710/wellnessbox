@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   ArrowPathIcon,
@@ -23,6 +23,77 @@ import RecommendedProductActions from "@/app/chat/components/RecommendedProductA
 
 const VERTICAL_SCROLLABLE_OVERFLOW = new Set(["auto", "scroll", "overlay"]);
 const SCROLL_EPSILON = 1;
+const DOCK_SIZE_STORAGE_KEY = "wb_chat_dock_size_v1";
+const DOCK_MIN_WIDTH = 320;
+const DOCK_MIN_HEIGHT = 420;
+const DOCK_VIEWPORT_GAP_X = 24;
+const DOCK_VIEWPORT_GAP_Y = 32;
+
+type DockPanelSize = {
+  width: number;
+  height: number;
+};
+
+type DockResizeEdge = "left" | "top" | "corner";
+
+type DockResizeState = {
+  edge: DockResizeEdge;
+  startX: number;
+  startY: number;
+  startWidth: number;
+  startHeight: number;
+};
+
+function clampDockSize(size: DockPanelSize): DockPanelSize {
+  if (typeof window === "undefined") {
+    return size;
+  }
+
+  const maxWidth = Math.max(280, window.innerWidth - DOCK_VIEWPORT_GAP_X);
+  const maxHeight = Math.max(320, window.innerHeight - DOCK_VIEWPORT_GAP_Y);
+  const minWidth = Math.min(DOCK_MIN_WIDTH, maxWidth);
+  const minHeight = Math.min(DOCK_MIN_HEIGHT, maxHeight);
+
+  return {
+    width: Math.round(Math.min(maxWidth, Math.max(minWidth, size.width))),
+    height: Math.round(Math.min(maxHeight, Math.max(minHeight, size.height))),
+  };
+}
+
+function getDefaultDockSize(): DockPanelSize {
+  if (typeof window === "undefined") {
+    return { width: 420, height: 640 };
+  }
+
+  const preferredWidth = window.innerWidth >= 1280 ? 460 : 420;
+  const preferredHeight = Math.min(Math.round(window.innerHeight * 0.82), 760);
+  return clampDockSize({ width: preferredWidth, height: preferredHeight });
+}
+
+function loadDockSize(): DockPanelSize | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(DOCK_SIZE_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<DockPanelSize> | null;
+    if (!parsed) return null;
+    const width = Number(parsed.width);
+    const height = Number(parsed.height);
+    if (!Number.isFinite(width) || !Number.isFinite(height)) return null;
+    return { width, height };
+  } catch {
+    return null;
+  }
+}
+
+function saveDockSize(size: DockPanelSize) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(DOCK_SIZE_STORAGE_KEY, JSON.stringify(size));
+  } catch {
+    // ignore storage failures
+  }
+}
 
 function isScrollableY(node: HTMLElement) {
   const { overflowY } = window.getComputedStyle(node);
@@ -67,6 +138,39 @@ export default function DesktopChatDock() {
   };
 
   useEffect(() => {
+    if (hasBooted) return;
+    if (typeof window === "undefined") return;
+
+    let cancelled = false;
+    const boot = () => {
+      if (cancelled) return;
+      setHasBooted(true);
+    };
+
+    const requestIdle = (window as any).requestIdleCallback as
+      | ((callback: () => void, options?: { timeout?: number }) => number)
+      | undefined;
+    if (typeof requestIdle === "function") {
+      const id = requestIdle(boot, { timeout: 1200 });
+      return () => {
+        cancelled = true;
+        const cancelIdle = (window as any).cancelIdleCallback as
+          | ((handle: number) => void)
+          | undefined;
+        if (typeof cancelIdle === "function") {
+          cancelIdle(id);
+        }
+      };
+    }
+
+    const timer = window.setTimeout(boot, 700);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [hasBooted]);
+
+  useEffect(() => {
     if (!isOpen) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -78,17 +182,18 @@ export default function DesktopChatDock() {
   }, [isOpen]);
 
   return (
-    <div className="fixed bottom-[max(24px,env(safe-area-inset-bottom))] right-3 z-[45] sm:bottom-7 sm:right-5">
+    <div className="fixed bottom-[max(24px,env(safe-area-inset-bottom))] right-3 z-[58] sm:bottom-7 sm:right-5">
       <button
         type="button"
+        onPointerDown={openDock}
         onClick={openDock}
-        className={`group relative z-30 flex h-14 w-14 cursor-pointer items-center justify-center rounded-full border border-slate-200/90 bg-white shadow-[0_10px_28px_rgba(15,23,42,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(15,23,42,0.22)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 sm:h-16 sm:w-auto sm:gap-2.5 sm:px-5 sm:pr-6 lg:gap-3 lg:px-6 ${
+        className={`group relative z-20 flex h-14 w-14 cursor-pointer items-center justify-center rounded-full border border-slate-200/90 bg-white shadow-[0_10px_28px_rgba(15,23,42,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(15,23,42,0.22)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 sm:h-16 sm:w-auto sm:gap-2.5 sm:px-5 sm:pr-6 lg:gap-3 lg:px-6 ${
           isOpen
             ? "translate-y-2 scale-95 opacity-0 pointer-events-none"
             : "translate-y-0 scale-100 opacity-100 pointer-events-auto"
         }`}
-        aria-label="AI 맞춤 상담 열기"
-        title="AI 맞춤 상담 열기"
+        aria-label="AI 에이전트 열기"
+        title="AI 에이전트 열기"
       >
         <span className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-sky-500 via-cyan-500 to-indigo-500 text-white shadow-sm">
           <ChatBubbleLeftRightIcon className="h-5 w-5" />
@@ -97,7 +202,7 @@ export default function DesktopChatDock() {
           AI
         </span>
         <span className="hidden whitespace-nowrap text-[15px] font-semibold text-slate-800 sm:inline">
-          AI 맞춤 상담
+          AI 에이전트
         </span>
         <span className="hidden h-2.5 w-2.5 rounded-full bg-emerald-500 sm:inline-block" />
       </button>
@@ -116,6 +221,12 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
   const router = useRouter();
   const panelRef = useRef<HTMLElement | null>(null);
   const [sessionsOpen, setSessionsOpen] = useState(false);
+  const [panelSize, setPanelSize] = useState<DockPanelSize>(() =>
+    clampDockSize(loadDockSize() ?? getDefaultDockSize())
+  );
+  const panelSizeRef = useRef(panelSize);
+  const resizeStateRef = useRef<DockResizeState | null>(null);
+  const [isResizing, setIsResizing] = useState(false);
   const {
     sessions,
     activeId,
@@ -145,7 +256,107 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
     titleLoading,
     titleError,
     generateTitle,
-  } = useChat({ manageFooter: false, remoteBootstrap: false });
+  } = useChat({
+    manageFooter: false,
+    remoteBootstrap: false,
+    enableAutoInit: isOpen,
+  });
+
+  useEffect(() => {
+    panelSizeRef.current = panelSize;
+  }, [panelSize]);
+
+  useEffect(() => {
+    const restored = clampDockSize(loadDockSize() ?? getDefaultDockSize());
+    setPanelSize(restored);
+    panelSizeRef.current = restored;
+  }, []);
+
+  useEffect(() => {
+    const onResize = () => {
+      setPanelSize((prev) => {
+        const clamped = clampDockSize(prev);
+        panelSizeRef.current = clamped;
+        return clamped;
+      });
+    };
+
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+    };
+  }, []);
+
+  useEffect(() => {
+    const onPointerMove = (event: PointerEvent) => {
+      const state = resizeStateRef.current;
+      if (!state) return;
+
+      let nextWidth = state.startWidth;
+      let nextHeight = state.startHeight;
+
+      if (state.edge === "left" || state.edge === "corner") {
+        nextWidth = state.startWidth + (state.startX - event.clientX);
+      }
+      if (state.edge === "top" || state.edge === "corner") {
+        nextHeight = state.startHeight + (state.startY - event.clientY);
+      }
+
+      setPanelSize(() => {
+        const clamped = clampDockSize({ width: nextWidth, height: nextHeight });
+        panelSizeRef.current = clamped;
+        return clamped;
+      });
+    };
+
+    const stopResize = () => {
+      if (!resizeStateRef.current) return;
+      resizeStateRef.current = null;
+      setIsResizing(false);
+      document.body.style.removeProperty("user-select");
+      document.body.style.removeProperty("cursor");
+      saveDockSize(panelSizeRef.current);
+    };
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", stopResize);
+    window.addEventListener("pointercancel", stopResize);
+
+    return () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", stopResize);
+      window.removeEventListener("pointercancel", stopResize);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) return;
+    resizeStateRef.current = null;
+    setIsResizing(false);
+    document.body.style.removeProperty("user-select");
+    document.body.style.removeProperty("cursor");
+  }, [isOpen]);
+
+  const startResize = (
+    event: ReactPointerEvent<HTMLElement>,
+    edge: DockResizeEdge
+  ) => {
+    if (!isOpen) return;
+    event.preventDefault();
+    event.stopPropagation();
+
+    resizeStateRef.current = {
+      edge,
+      startX: event.clientX,
+      startY: event.clientY,
+      startWidth: panelSizeRef.current.width,
+      startHeight: panelSizeRef.current.height,
+    };
+    setIsResizing(true);
+    document.body.style.userSelect = "none";
+    document.body.style.cursor =
+      edge === "left" ? "ew-resize" : edge === "top" ? "ns-resize" : "nwse-resize";
+  };
 
   useEffect(() => {
     if (!isOpen) {
@@ -199,14 +410,33 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
   return (
     <aside
       ref={panelRef}
-      className={`absolute bottom-0 right-0 z-10 flex h-[min(82vh,760px)] w-[min(calc(100vw-24px),430px)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.24)] transition-all duration-200 sm:w-[420px] xl:w-[460px] ${
+      className={`absolute bottom-0 right-0 z-10 isolate flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.24)] transition-all duration-200 ${
         isOpen
           ? "visible pointer-events-auto translate-y-0 scale-100 opacity-100"
           : "invisible translate-y-3 scale-95 opacity-0 pointer-events-none"
-      }`}
-      style={{ display: isOpen ? "flex" : "none" }}
+      } ${isResizing ? "select-none" : ""}`}
+      style={{
+        display: isOpen ? "flex" : "none",
+        width: `${panelSize.width}px`,
+        height: `${panelSize.height}px`,
+      }}
       aria-hidden={!isOpen}
     >
+      <div
+        aria-hidden
+        onPointerDown={(event) => startResize(event, "left")}
+        className="absolute -left-1 top-0 z-40 h-full w-3 cursor-ew-resize touch-none"
+      />
+      <div
+        aria-hidden
+        onPointerDown={(event) => startResize(event, "top")}
+        className="absolute left-0 -top-1 z-40 h-3 w-full cursor-ns-resize touch-none"
+      />
+      <div
+        aria-hidden
+        onPointerDown={(event) => startResize(event, "corner")}
+        className="absolute -left-1 -top-1 z-50 h-4 w-4 cursor-nwse-resize touch-none"
+      />
       <header className="flex items-center justify-between border-b border-slate-200 bg-white px-3 py-2.5">
         <div className="flex min-w-0 items-center gap-2">
           <button
@@ -227,9 +457,11 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
           </div>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-slate-900">
-              {active?.title || "AI 맞춤 상담"}
+              {active?.title || "AI 에이전트"}
             </p>
-            <p className="text-[11px] text-slate-500">복용 맥락 기반 상담 도우미</p>
+            <p className="text-[11px] text-slate-500">
+              건강·구매 흐름 통합 실행 어시스턴트
+            </p>
           </div>
         </div>
 
@@ -289,147 +521,154 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
         </div>
       </header>
 
-      <div className="relative flex-1 overflow-hidden bg-[radial-gradient(circle_at_top,_#f8fafc_0%,_#f8fafc_38%,_#ffffff_100%)]">
-        <div
-          className={`absolute inset-y-0 left-0 z-20 w-[min(78%,260px)] border-r border-slate-200 bg-white transition-transform duration-200 ${
-            sessionsOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
-        >
-          <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2">
-            <p className="text-sm font-semibold text-slate-900">대화 목록</p>
-            <button
-              type="button"
-              onClick={() => setSessionsOpen(false)}
-              className="rounded-md p-1 text-slate-500 hover:bg-slate-100"
-              aria-label="목록 닫기"
-            >
-              <XMarkIcon className="h-4 w-4" />
-            </button>
-          </div>
-          <div className="border-b border-slate-200 p-2">
-            <button
-              type="button"
-              onClick={() => {
-                newChat();
-                setSessionsOpen(false);
-              }}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-left text-xs font-semibold text-slate-800 hover:bg-slate-50"
-            >
-              + 새 상담 시작
-            </button>
-          </div>
-          <ul className="max-h-[calc(100%-92px)] overflow-y-auto overscroll-contain p-2">
-            {sessions.map((session) => (
-              <li key={session.id} className="mb-1">
-                <div
-                  className={`flex items-center gap-1 rounded-md border px-1 py-1 ${
-                    activeId === session.id
-                      ? "border-slate-200 bg-slate-100"
-                      : "border-transparent hover:border-slate-200 hover:bg-slate-50"
-                  }`}
-                >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveId(session.id);
-                      setSessionsOpen(false);
-                    }}
-                    className="min-w-0 flex-1 cursor-pointer rounded-md px-1.5 py-1 text-left"
-                  >
-                    <span className="block truncate text-xs font-medium text-slate-800">
-                      {session.title || "새 상담"}
-                    </span>
-                  </button>
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <div className="relative flex-1 overflow-hidden bg-[radial-gradient(circle_at_top,_#f8fafc_0%,_#f8fafc_38%,_#ffffff_100%)]">
+          <div
+            className="h-full overflow-y-auto overscroll-contain px-3 pb-4 pt-3"
+            ref={messagesContainerRef}
+          >
+            {profileLoaded && !profile && (
+              <ProfileBanner
+                profile={profile}
+                show={showProfileBanner}
+                onEdit={() => setShowSettings(true)}
+                onClose={() => setShowProfileBanner(false)}
+              />
+            )}
 
-                  {activeId === session.id && (
-                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-sky-500" />
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleRename(session.id, session.title || "새 상담")
-                    }
-                    className="shrink-0 rounded p-1 text-slate-500 hover:bg-slate-100"
-                    title="이름 변경"
-                    aria-label="이름 변경"
-                  >
-                    <PencilSquareIcon className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      void handleDelete(session.id, session.title || "새 상담")
-                    }
-                    className="shrink-0 rounded p-1 text-rose-500 hover:bg-rose-50"
-                    title="삭제"
-                    aria-label="삭제"
-                  >
-                    <TrashIcon className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
+            <div className="space-y-3">
+              {active &&
+                active.messages.length > 0 &&
+                active.messages.map((message, index) => (
+                  <div key={message.id}>
+                    {index === 0 && (
+                      <ReferenceData
+                        orders={orders}
+                        assessResult={assessResult}
+                        checkAiResult={checkAiResult}
+                      />
+                    )}
+                    <MessageBubble role={message.role} content={message.content} />
+                    {message.role === "assistant" && (
+                      <RecommendedProductActions content={message.content} />
+                    )}
+                  </div>
+                ))}
+              <div ref={messagesEndRef} />
+            </div>
+          </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setSessionsOpen(false)}
-          className={`absolute inset-0 z-10 bg-slate-900/20 transition-opacity duration-200 ${
+        <ChatInput
+          mode="embedded"
+          input={input}
+          setInput={setInput}
+          sendMessage={() => sendMessage()}
+          loading={loading}
+          suggestions={suggestions}
+          onSelectSuggestion={(question) => sendMessage(question)}
+          onStop={stopStreaming}
+        />
+
+        <div
+          className={`absolute inset-0 z-[60] transition-opacity duration-200 ${
             sessionsOpen
               ? "pointer-events-auto opacity-100"
               : "pointer-events-none opacity-0"
           }`}
-          aria-label="대화 목록 닫기"
-        />
-
-        <div
-          className="h-full overflow-y-auto overscroll-contain px-3 pb-4 pt-3"
-          ref={messagesContainerRef}
+          aria-hidden={!sessionsOpen}
         >
-          {profileLoaded && !profile && (
-            <ProfileBanner
-              profile={profile}
-              show={showProfileBanner}
-              onEdit={() => setShowSettings(true)}
-              onClose={() => setShowProfileBanner(false)}
-            />
-          )}
+          <button
+            type="button"
+            onClick={() => setSessionsOpen(false)}
+            className="absolute inset-0 z-10 bg-slate-900/20"
+            aria-label="대화목록 닫기"
+          />
 
-          <div className="space-y-3">
-            {active &&
-              active.messages.length > 0 &&
-              active.messages.map((message, index) => (
-                <div key={message.id}>
-                  {index === 0 && (
-                    <ReferenceData
-                      orders={orders}
-                      assessResult={assessResult}
-                      checkAiResult={checkAiResult}
-                    />
-                  )}
-                  <MessageBubble role={message.role} content={message.content} />
-                  {message.role === "assistant" && (
-                    <RecommendedProductActions content={message.content} />
-                  )}
-                </div>
+          <div
+            className={`absolute inset-y-0 left-0 z-20 w-[min(78%,260px)] border-r border-slate-200 bg-white transition-transform duration-200 ${
+              sessionsOpen ? "translate-x-0" : "-translate-x-full"
+            }`}
+          >
+            <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2">
+              <p className="text-sm font-semibold text-slate-900">대화 목록</p>
+              <button
+                type="button"
+                onClick={() => setSessionsOpen(false)}
+                className="rounded-md p-1 text-slate-500 hover:bg-slate-100"
+                aria-label="목록 닫기"
+              >
+                <XMarkIcon className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="border-b border-slate-200 p-2">
+              <button
+                type="button"
+                onClick={() => {
+                  newChat();
+                  setSessionsOpen(false);
+                }}
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-left text-xs font-semibold text-slate-800 hover:bg-slate-50"
+              >
+                + 새 상담 시작
+              </button>
+            </div>
+            <ul className="max-h-[calc(100%-92px)] overflow-y-auto overscroll-contain p-2">
+              {sessions.map((session) => (
+                <li key={session.id} className="mb-1">
+                  <div
+                    className={`flex items-center gap-1 rounded-md border px-1 py-1 ${
+                      activeId === session.id
+                        ? "border-slate-200 bg-slate-100"
+                        : "border-transparent hover:border-slate-200 hover:bg-slate-50"
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveId(session.id);
+                        setSessionsOpen(false);
+                      }}
+                      className="min-w-0 flex-1 cursor-pointer rounded-md px-1.5 py-1 text-left"
+                    >
+                      <span className="block truncate text-xs font-medium text-slate-800">
+                        {session.title || "새 상담"}
+                      </span>
+                    </button>
+
+                    {activeId === session.id && (
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-sky-500" />
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleRename(session.id, session.title || "새 상담")
+                      }
+                      className="shrink-0 rounded p-1 text-slate-500 hover:bg-slate-100"
+                      title="이름 변경"
+                      aria-label="이름 변경"
+                    >
+                      <PencilSquareIcon className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        void handleDelete(session.id, session.title || "새 상담")
+                      }
+                      className="shrink-0 rounded p-1 text-rose-500 hover:bg-rose-50"
+                      title="삭제"
+                      aria-label="삭제"
+                    >
+                      <TrashIcon className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </li>
               ))}
-            <div ref={messagesEndRef} />
+            </ul>
           </div>
         </div>
       </div>
-
-      <ChatInput
-        mode="embedded"
-        input={input}
-        setInput={setInput}
-        sendMessage={() => sendMessage()}
-        loading={loading}
-        suggestions={suggestions}
-        onSelectSuggestion={(question) => sendMessage(question)}
-        onStop={stopStreaming}
-      />
 
       {showSettings && (
         <ProfileModal

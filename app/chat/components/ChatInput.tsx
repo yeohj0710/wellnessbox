@@ -87,7 +87,7 @@ export default function ChatInput({
     <div
       className={
         isEmbedded
-          ? "w-full border-t border-slate-200 bg-white px-2 py-2"
+          ? "w-full px-2 py-2"
           : "mb-2 sm:mb-3 pointer-events-none fixed inset-x-0 bottom-0 z-10 px-3 sm:px-4"
       }
       style={
@@ -104,19 +104,11 @@ export default function ChatInput({
         }`}
       >
         {visibleSuggestions.length > 0 && (
-          <div
-            className={
-              isEmbedded
-                ? "flex flex-wrap gap-1.5 px-1"
-                : "mx-auto flex max-w-[720px] flex-wrap justify-center gap-2 px-1"
-            }
-          >
+          <div className="mx-auto flex max-w-[760px] flex-wrap justify-center gap-2 px-1">
             {visibleSuggestions.map((q, i) => (
               <button
                 key={i}
-                className={`rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs hover:bg-slate-50 ${
-                  isEmbedded ? "" : "sm:text-sm"
-                }`}
+                className="rounded-full border border-slate-300 bg-white/95 px-3 py-1.5 text-xs text-slate-800 shadow-[0_1px_0_rgba(15,23,42,0.03)] hover:bg-slate-50 sm:text-sm"
                 onClick={() => onSelectSuggestion && onSelectSuggestion(q)}
               >
                 {q}

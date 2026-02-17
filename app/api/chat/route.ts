@@ -55,51 +55,31 @@ export async function POST(req: NextRequest) {
     };
 
     const headersObj = req.headers;
-    let iterable: AsyncIterable<string> | undefined;
-    try {
-      iterable = (await streamChat(
-        patchedBody,
-        headersObj
-      )) as AsyncIterable<string>;
-    } catch (e: any) {
-      const raw = typeof e?.message === "string" ? e.message : String(e ?? "");
-      const safe = raw.replace(/[{}]/g, (m: string) => (m === "{" ? "(" : ")"));
-      const msg =
-        "[안내] " +
-        (safe || "초기화 중 문제가 발생했어요. 설정을 확인해 주세요.");
-      const stream = new ReadableStream<Uint8Array>({
-        start(controller) {
-          const encoder = new TextEncoder();
-          controller.enqueue(encoder.encode(msg));
-          controller.close();
-        },
-      });
-      const res = new NextResponse(stream, {
-        headers: { "Content-Type": "text/plain; charset=utf-8" },
-      });
-      if (actor.cookieToSet) {
-        res.cookies.set(
-          actor.cookieToSet.name,
-          actor.cookieToSet.value,
-          actor.cookieToSet.options
-        );
-      }
-      return res;
-    }
 
     const stream = new ReadableStream<Uint8Array>({
       async start(controller) {
         const encoder = new TextEncoder();
         let wrote = false;
+
         try {
-          for await (const token of iterable as AsyncIterable<string>) {
+          // Flush stream headers quickly while upstream context/model bootstraps.
+          controller.enqueue(encoder.encode("\u200b"));
+
+          const iterable = (await streamChat(
+            patchedBody,
+            headersObj
+          )) as AsyncIterable<string>;
+
+          for await (const token of iterable) {
             if (token == null) continue;
             controller.enqueue(encoder.encode(String(token)));
             wrote = true;
           }
-        } catch {
+        } catch (e: any) {
+          const raw = typeof e?.message === "string" ? e.message : String(e ?? "");
+          const safe = raw.replace(/[{}]/g, (m: string) => (m === "{" ? "(" : ")"));
           const msg =
-            "[안내] 대화 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.";
+            safe || "응답을 준비하는 중 일시적인 문제가 발생했어요. 잠시 후 다시 시도해 주세요.";
           controller.enqueue(encoder.encode(msg));
         } finally {
           if (!wrote) controller.enqueue(encoder.encode(" "));

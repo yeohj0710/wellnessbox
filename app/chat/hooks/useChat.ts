@@ -40,6 +40,7 @@ import { dispatchChatCartActionRequest } from "@/lib/chat/cart-action-events";
 type UseChatOptions = {
   manageFooter?: boolean;
   remoteBootstrap?: boolean;
+  enableAutoInit?: boolean;
 };
 
 const OFFLINE_INIT_MESSAGE =
@@ -54,6 +55,7 @@ function isBrowserOnline() {
 export default function useChat(options: UseChatOptions = {}) {
   const manageFooter = options.manageFooter ?? true;
   const remoteBootstrap = options.remoteBootstrap ?? true;
+  const enableAutoInit = options.enableAutoInit ?? true;
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [profile, setProfile] = useState<UserProfile | undefined>(undefined);
@@ -345,6 +347,7 @@ export default function useChat(options: UseChatOptions = {}) {
   }, [activeId, active?.messages.length]);
 
   useEffect(() => {
+    if (!enableAutoInit) return;
     if (!resultsLoaded || !profileLoaded) return;
     if (!activeId) return;
 
@@ -352,7 +355,7 @@ export default function useChat(options: UseChatOptions = {}) {
     if (!session || session.messages.length > 0) return;
 
     startInitialAssistantMessage(activeId);
-  }, [resultsLoaded, profileLoaded, activeId, sessions]);
+  }, [enableAutoInit, resultsLoaded, profileLoaded, activeId, sessions]);
 
   useEffect(() => {
     const container = messagesContainerRef.current;
@@ -801,7 +804,7 @@ export default function useChat(options: UseChatOptions = {}) {
         updateAssistantMessage(
           active.id,
           assistantMessage.id,
-          sanitizeAssistantText(textSoFar)
+          textSoFar
         );
       });
 
@@ -895,7 +898,7 @@ export default function useChat(options: UseChatOptions = {}) {
         updateAssistantMessage(
           sessionId,
           assistantMessage.id,
-          sanitizeAssistantText(textSoFar)
+          textSoFar
         );
       });
 

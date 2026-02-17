@@ -14,6 +14,7 @@ import {
   isValidSuggestionText,
   normalizeSuggestionKey,
   parseSuggestionsFromChoices,
+  sanitizeSuggestionText,
   trimText,
 } from "./suggest-utils";
 
@@ -134,7 +135,7 @@ export async function POST(req: NextRequest) {
     );
     const addSuggestion = (candidate: string) => {
       const suggestionText =
-        typeof candidate === "string" ? candidate.trim() : "";
+        typeof candidate === "string" ? sanitizeSuggestionText(candidate) : "";
       if (!suggestionText || !isValidSuggestionText(suggestionText)) return false;
       const key = normalizeSuggestionKey(suggestionText);
       if (!key || suggestionKeys.has(key)) return false;
@@ -159,9 +160,9 @@ export async function POST(req: NextRequest) {
 
     if (suggestions.length < count) {
       const generic = [
-        "현재 복용 중인 제품 기준으로 우선 조정할 항목을 정리해 주세요.",
-        "추천 영양소 기준으로 2주 복용 루틴을 아침/저녁으로 짜주세요.",
-        "2주 후 점검해야 할 지표를 항목별로 정리해 주세요.",
+        "제 복용 제품 기준으로 지금 우선 조정할 항목을 정리해 주세요.",
+        "제 추천 영양소 기준으로 2주 복용 루틴을 아침/저녁으로 짜주세요.",
+        "제 상태 기준으로 2주 후 점검할 지표를 항목별로 정리해 주세요.",
       ];
       for (const item of generic) {
         addSuggestion(item);

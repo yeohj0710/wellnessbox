@@ -28,6 +28,16 @@ function normalizeForSearch(text: string) {
     .replace(/ⓒ/g, "c");
 }
 
+export function sanitizeSuggestionText(text: string) {
+  const compact = text
+    .replace(/\s+/g, " ")
+    .replace(/^[\-*•\d.)\s]+/, "")
+    .trim();
+  if (!compact) return "";
+  if (/[.?!]$/.test(compact)) return compact;
+  return `${compact}.`;
+}
+
 export function extractTopicFromKnown(text: string): string | null {
   const normalizedText = normalizeForSearch(text);
   let best: { label: string; position: number } | null = null;
@@ -68,15 +78,11 @@ export function buildTopicSourceText(
   return [text, contextSummaryText, history].filter(Boolean).join("\n\n");
 }
 
-function isAssistantDirected(text: string) {
-  const noGo =
-    /(어떤|어떻게|무엇을).*(하시나요|하고 계신가요)|있으신가요|하셨나요|느끼시나요|드시나요|드세요\?|하시겠어요\?|계신가요|말씀해 주세요/;
-  if (noGo.test(text)) return false;
-
-  const useful =
-    /(추천|설명|알려|정리|비교|조합|설계|우선순위|타이밍|복용법|상호작용|부작용|대안|브랜드|제품|가이드|표로|정리해|체크|스케줄|휴지기|제형|라벨|관리|모니터링|루틴|점검|체크리스트)/;
-
-  return useful.test(text);
+function isChatbotAskingUser(text: string) {
+  const normalized = text.replace(/\s+/g, "");
+  return /(하시나요|하셨나요|계신가요|느끼시나요|드시나요|있으신가요|어떠세요|해보시겠어요|보시겠어요|해보실래요|해볼까요|입력해주세요|말씀해주세요|보여드릴게요|도와드릴게요)/.test(
+    normalized
+  );
 }
 
 function isRetrospectiveUserCheck(text: string) {
@@ -97,21 +103,29 @@ function isRetrospectiveUserCheck(text: string) {
   );
 }
 
-function isExecutableAssistantRequest(text: string) {
+function isAssistantExecutableIntent(text: string) {
   const normalized = text.replace(/\s+/g, "");
   const actionVerb =
-    /(\uc815\ub9ac|\ucd94\ucc9c|\ube44\uad50|\ubd84\uc11d|\uc124\uacc4|\uacc4\ud68d|\ub8e8\ud2f4|\uac00\uc774\ub4dc|\uccb4\ud06c\ub9ac\uc2a4\ud2b8|\uc810\uac80\ud45c|\uc6b0\uc120\uc21c\uc704|\uacc4\uc0b0|\uc870\uc815|\uc81c\uc548|\uc124\uba85|\uc54c\ub824|\uc9dc)/;
+    /(정리|추천|비교|분석|설계|계획|루틴|가이드|체크리스트|점검표|우선순위|계산|조정|제안|설명|알려|짜)/;
   const requestTone =
-    /(\ud574\uc918|\ud574\uc904\ub798|\ud574\uc8fc\uc138\uc694|\ud574\s*\uc8fc\uc138\uc694|\uc8fc\uc138\uc694|\ubd80\ud0c1|\uc815\ub9ac\ud574|\ucd94\ucc9c\ud574|\ube44\uad50\ud574|\ubd84\uc11d\ud574|\uc124\uacc4\ud574|\uc124\uba85\ud574|\uc54c\ub824\uc918|\uc9dc\uc918)/;
+    /(해줘|해줄래|해주세요|해 주세요|주실래요|부탁해|부탁드려요|정리해줘|추천해줘|비교해줘|분석해줘|설계해줘|설명해줘|알려줘|짜줘)/;
   return actionVerb.test(normalized) && requestTone.test(normalized);
 }
 
+function isUserPerspectiveRequest(text: string) {
+  const normalized = text.replace(/\s+/g, "");
+  const hasFirstPerson = /(제|내|제가|저의|저를)/.test(normalized);
+  if (!hasFirstPerson) return false;
+  return /(해주세요|해줘|해줄래|주실래요|부탁)/.test(normalized);
+}
+
 export function isValidSuggestionText(text: string) {
-  const trimmed = text.trim();
+  const trimmed = sanitizeSuggestionText(text);
   if (trimmed.length < 12 || trimmed.length > 80) return false;
-  if (!isAssistantDirected(trimmed)) return false;
+  if (isChatbotAskingUser(trimmed)) return false;
   if (isRetrospectiveUserCheck(trimmed)) return false;
-  if (!isExecutableAssistantRequest(trimmed)) return false;
+  if (!isAssistantExecutableIntent(trimmed)) return false;
+  if (!isUserPerspectiveRequest(trimmed)) return false;
   return true;
 }
 
@@ -191,7 +205,8 @@ export function parseSuggestionsFromChoices(
         : [];
       for (const suggestion of suggestions) {
         if (typeof suggestion === "string") {
-          pool.push(suggestion.trim());
+          const sanitized = sanitizeSuggestionText(suggestion);
+          if (sanitized) pool.push(sanitized);
         }
       }
     } catch {

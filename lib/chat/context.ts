@@ -754,9 +754,9 @@ export function buildUserContextSummary(
 
 function buildDataCollectionQuestions() {
   return [
-    "현재 복용 중인 영양제·약 기준으로 중복 성분부터 점검해 주세요.",
-    "지금 가장 중요한 목표 1개 기준으로 2주 복용 루틴을 짜주세요.",
-    "최근 불편 증상 기준으로 이번 주 체크리스트를 정리해 주세요.",
+    "제 복용 영양제·약 기준으로 중복 성분부터 점검해 주세요.",
+    "제 목표 1개 기준으로 2주 복용 루틴을 짜주세요.",
+    "제 최근 불편 증상 기준으로 이번 주 체크리스트를 정리해 주세요.",
   ];
 }
 
@@ -825,15 +825,19 @@ export function buildDataDrivenSuggestions(
 
   if (summary.recommendedNutrients.length > 0) {
     for (const nutrient of summary.recommendedNutrients.slice(0, 2)) {
-      candidates.push(`${nutrient} 기준으로 아침/저녁 복용 순서를 2주 계획으로 짜주세요.`);
-      candidates.push(`${nutrient} 관련해 지금 줄이거나 추가할 성분을 구분해 주세요.`);
+      candidates.push(
+        `제 상태에서 ${nutrient} 기준으로 아침/저녁 복용 순서를 2주 계획으로 짜주세요.`
+      );
+      candidates.push(
+        `제 기준에서 ${nutrient} 관련해 지금 줄이거나 추가할 성분을 구분해 주세요.`
+      );
     }
   }
 
   if (summary.notableResponses.length) {
     for (const response of summary.notableResponses.slice(0, 1)) {
       candidates.push(
-        `응답하신 "${response.question}"(${response.answer})을 반영해 이번 주 점검표를 만들어 주세요.`
+        `제가 답한 "${response.question}"(${response.answer})을 반영해 이번 주 점검표를 만들어 주세요.`
       );
     }
   }
@@ -842,24 +846,34 @@ export function buildDataDrivenSuggestions(
     const firstOrder = summary.recentOrders[0];
     const firstItem = firstOrder.items[0];
     if (firstItem) {
-      candidates.push(`최근 주문한 ${firstItem} 기준으로 중복·과다 가능성만 먼저 점검해 주세요.`);
-      candidates.push(`최근 주문 제품을 유지하면서 부족한 영양소만 보완하는 조합을 짜주세요.`);
+      candidates.push(
+        `제 최근 주문 제품(${firstItem}) 기준으로 중복·과다 가능성만 먼저 점검해 주세요.`
+      );
+      candidates.push(
+        "제 최근 주문 제품을 유지하면서 부족한 영양소만 보완하는 조합을 짜주세요."
+      );
     }
   }
 
   if (summary.profile?.goals.length) {
     const goal = summary.profile.goals[0];
-    candidates.push(`${goal} 목표를 14일 안에 점검할 수 있는 복용·생활 루틴을 정리해 주세요.`);
+    candidates.push(
+      `제 ${goal} 목표를 14일 안에 점검할 수 있는 복용·생활 루틴을 정리해 주세요.`
+    );
   }
 
   if (summary.profile?.constraints.length) {
     const constraint = summary.profile.constraints[0];
-    candidates.push(`${constraint} 조건에서 피해야 할 성분과 대체 성분을 표로 정리해 주세요.`);
+    candidates.push(
+      `제 ${constraint} 조건에서 피해야 할 성분과 대체 성분을 표로 정리해 주세요.`
+    );
   }
 
   if (summary.previousConsultations.length) {
     const recent = summary.previousConsultations[0];
-    candidates.push(`지난 상담(${recent.title}) 이후 지금 가장 먼저 조정할 2가지를 뽑아 주세요.`);
+    candidates.push(
+      `제 지난 상담(${recent.title}) 이후 지금 가장 먼저 조정할 2가지를 뽑아 주세요.`
+    );
   }
 
   if (candidates.length === 0) {

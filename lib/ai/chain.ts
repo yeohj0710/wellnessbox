@@ -30,6 +30,22 @@ const CAT_ALIAS: Record<string, CategoryKey> = Object.fromEntries(
 ) as Record<string, CategoryKey>;
 
 const RAG_DEBUG = Boolean(process.env.RAG_DEBUG);
+const DEFAULT_KNOWN_CONTEXT_TIMEOUT_MS = 220;
+const DEFAULT_PRODUCT_BRIEF_TIMEOUT_MS = 120;
+const DEFAULT_RAG_TIMEOUT_MS = 700;
+const DEFAULT_PRODUCT_BRIEF_CACHE_TTL_MS = 5 * 60 * 1000;
+
+type ProductBriefCacheState = {
+  value: string;
+  loadedAt: number;
+  inFlight: Promise<string> | null;
+};
+
+const productBriefCache: ProductBriefCacheState = {
+  value: "",
+  loadedAt: 0,
+  inFlight: null,
+};
 const CATEGORY_SYNONYMS: Record<string, string> = {
   멀티비타민: "종합비타민",
   프로바이오틱스: "프로바이오틱스(유산균)",
@@ -46,6 +62,39 @@ function labelOf(keyOrCodeOrLabel: string) {
     (item) => item === keyOrCodeOrLabel
   );
   return found ?? keyOrCodeOrLabel;
+}
+
+function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  fallback: T
+): Promise<T> {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    return promise.catch(() => fallback);
+  }
+
+  return new Promise<T>((resolve) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      resolve(fallback);
+    }, timeoutMs);
+
+    promise
+      .then((value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(value);
+      })
+      .catch(() => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(fallback);
+      });
+  });
 }
 
 function normalizeHistory(messages: unknown) {
@@ -344,6 +393,50 @@ async function loadProductBrief() {
   }
 }
 
+function refreshProductBriefCache() {
+  if (productBriefCache.inFlight) return productBriefCache.inFlight;
+
+  const pending = loadProductBrief()
+    .then((value) => {
+      productBriefCache.value = value || "";
+      productBriefCache.loadedAt = Date.now();
+      return productBriefCache.value;
+    })
+    .catch(() => productBriefCache.value || "")
+    .finally(() => {
+      productBriefCache.inFlight = null;
+    });
+
+  productBriefCache.inFlight = pending;
+  return pending;
+}
+
+function getProductBriefCacheTtlMs() {
+  const raw = Number.parseInt(
+    process.env.CHAT_PRODUCT_BRIEF_CACHE_TTL_MS || "",
+    10
+  );
+  if (!Number.isFinite(raw) || raw <= 0) return DEFAULT_PRODUCT_BRIEF_CACHE_TTL_MS;
+  return raw;
+}
+
+async function loadProductBriefCached() {
+  const now = Date.now();
+  const ttlMs = getProductBriefCacheTtlMs();
+  if (productBriefCache.value && now - productBriefCache.loadedAt < ttlMs) {
+    return productBriefCache.value;
+  }
+
+  // Use stale value immediately and refresh in background to reduce
+  // first-token latency for chat streaming.
+  if (productBriefCache.value) {
+    void refreshProductBriefCache();
+    return productBriefCache.value;
+  }
+
+  return refreshProductBriefCache();
+}
+
 async function buildRagContext(
   messages: Array<{ role: string; content: string }>,
   qOverride?: string
@@ -455,14 +548,6 @@ export async function streamChat(
     });
   }
 
-  const knownContext = await buildKnownContext(
-    { clientId, appUserId },
-    headers,
-    localAssessCats,
-    localCheckAiTopLabels,
-    actorContext
-  );
-
   const contextSummary = buildUserContextSummary({
     profile: profile ?? null,
     orders: Array.isArray(orders) ? (orders as any[]) : [],
@@ -486,11 +571,50 @@ export async function streamChat(
         : null,
   });
 
-  const productBrief = await loadProductBrief();
+  const knownContextTimeoutMs = Number.parseInt(
+    process.env.CHAT_KNOWN_CONTEXT_TIMEOUT_MS || "",
+    10
+  );
+  const productBriefTimeoutMs = Number.parseInt(
+    process.env.CHAT_PRODUCT_BRIEF_TIMEOUT_MS || "",
+    10
+  );
+  const ragTimeoutMs = Number.parseInt(process.env.CHAT_RAG_TIMEOUT_MS || "", 10);
 
-  const { ragText, ragSources } = isInit
-    ? { ragText: "", ragSources: [] as any[] }
-    : await buildRagContext(history, (body as any)?.ragQuery);
+  const knownContextPromise = withTimeout(
+    buildKnownContext(
+      { clientId, appUserId },
+      headers,
+      localAssessCats,
+      localCheckAiTopLabels,
+      actorContext
+    ),
+    Number.isFinite(knownContextTimeoutMs) && knownContextTimeoutMs > 0
+      ? knownContextTimeoutMs
+      : DEFAULT_KNOWN_CONTEXT_TIMEOUT_MS,
+    ""
+  );
+
+  const productBriefPromise = withTimeout(
+    loadProductBriefCached(),
+    Number.isFinite(productBriefTimeoutMs) && productBriefTimeoutMs > 0
+      ? productBriefTimeoutMs
+      : DEFAULT_PRODUCT_BRIEF_TIMEOUT_MS,
+    ""
+  );
+
+  const ragPromise = isInit
+    ? Promise.resolve({ ragText: "", ragSources: [] as any[] })
+    : withTimeout(
+        buildRagContext(history, (body as any)?.ragQuery),
+        Number.isFinite(ragTimeoutMs) && ragTimeoutMs > 0
+          ? ragTimeoutMs
+          : DEFAULT_RAG_TIMEOUT_MS,
+        { ragText: "", ragSources: [] as any[] }
+      );
+
+  const [knownContext, productBrief, { ragText, ragSources }] =
+    await Promise.all([knownContextPromise, productBriefPromise, ragPromise]);
 
   if (RAG_DEBUG) {
     console.debug(

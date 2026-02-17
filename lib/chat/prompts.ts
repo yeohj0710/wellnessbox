@@ -321,6 +321,8 @@ export function buildSuggestionMessages(
     "[생성 규칙]",
     `- 질문 개수: ${count}개`,
     "- 자연스러운 한국어 대화체 존댓말, 각 문장 18~60자",
+    '- 문장은 반드시 "제/내" 같은 1인칭 표현을 포함한 사용자 요청형으로 작성',
+    "- AI가 사용자에게 묻거나 권유하는 어투는 금지",
     "- 데이터 기반으로 이어지는 질문을 만들 것",
     "- 서로 다른 목적(예: 루틴/안전/점검/제품)으로 구성할 것",
     "- 사용자의 상태를 캐묻는 표현(~하시나요?)을 반복하지 말 것",
@@ -335,6 +337,8 @@ export function buildSuggestionMessages(
     "[Quality Gate]",
     "- Do not ask the user to report past intake effects or body changes.",
     '- Bad example: "복용한 후 변화가 있었는지 점검해 보시겠어요?"',
+    '- Bad example: "이 항목을 점검해 보시겠어요?"',
+    '- Good example: "제 상태 기준으로 이번 주 점검 항목을 표로 정리해 주세요."',
     "- Write every suggestion as an immediate assistant-executable request.",
   ].join("\n");
 
