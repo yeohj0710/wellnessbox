@@ -12,22 +12,12 @@ import PaymentSection from "./paymentSection";
 import axios from "axios";
 import { useCartHydration } from "./hooks/useCartHydration";
 import { useAddressFields } from "./hooks/useAddressFields";
+import { useCartPayment } from "./hooks/useCartPayment";
+import { usePhoneStatus } from "./hooks/usePhoneStatus";
 import {
   mergeClientCartItems,
   writeClientCartItems,
 } from "@/lib/client/cart-storage";
-
-function formatPhoneDisplay(phone?: string | null) {
-  if (!phone) return "";
-  const digits = phone.replace(/\D/g, "");
-  if (digits.length === 10) {
-    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
-  }
-  if (digits.length === 11) {
-    return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
-  }
-  return phone;
-}
 
 const CheckoutConfirmModal = dynamic(() => import("./checkoutConfirmModal"), {
   ssr: false,
@@ -71,18 +61,11 @@ export default function Cart({
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [detailProduct, setDetailProduct] = useState<any>(null);
   const cartScrollRef = useRef(0);
-  const phoneStatusRequestRef = useRef<Promise<void> | null>(null);
 
   const hydrated = useCartHydration(cartItems, onUpdateCart);
-  const [phone, setPhone] = useState("");
-  const [linkedAt, setLinkedAt] = useState<string | undefined>();
   const [password, setPassword] = useState("");
   const [sdkLoaded, setSdkLoaded] = useState(false);
   const [phoneModalOpen, setPhoneModalOpen] = useState(false);
-  const [phoneStatusLoading, setPhoneStatusLoading] = useState(true);
-  const [phoneStatusError, setPhoneStatusError] = useState<string | null>(null);
-  const [unlinkLoading, setUnlinkLoading] = useState(false);
-  const [unlinkError, setUnlinkError] = useState<string | null>(null);
   const {
     detailAddress,
     setDetailAddress,
@@ -93,12 +76,21 @@ export default function Cart({
     directions,
     setDirections,
   } = useAddressFields();
-
-  const phoneDisplay = useMemo(() => formatPhoneDisplay(phone), [phone]);
-  const isPhoneLinked = useMemo(
-    () => Boolean(phone && linkedAt),
-    [phone, linkedAt]
-  );
+  const {
+    phone,
+    setPhone,
+    linkedAt,
+    setLinkedAt,
+    phoneDisplay,
+    isPhoneLinked,
+    phoneStatusLoading,
+    phoneStatusError,
+    unlinkLoading,
+    unlinkError,
+    setUnlinkError,
+    fetchPhoneStatus,
+    unlinkPhone,
+  } = usePhoneStatus(loginStatus);
   const userContact = useMemo(
     () => phoneDisplay || phone,
     [phone, phoneDisplay]
@@ -148,66 +140,6 @@ export default function Cart({
     };
     fetchLoginStatus();
   }, []);
-
-  const fetchPhoneStatus = useCallback(async () => {
-    if (phoneStatusRequestRef.current) {
-      await phoneStatusRequestRef.current;
-      return;
-    }
-
-    phoneStatusRequestRef.current = (async () => {
-    setPhoneStatusLoading(true);
-    setPhoneStatusError(null);
-
-    try {
-      const res = await fetch("/api/me/phone-status", {
-        headers: { "Cache-Control": "no-store" },
-      });
-
-      const raw = await res.text();
-      let data: { ok?: boolean; phone?: string; linkedAt?: string } = {};
-
-      try {
-        data = raw ? (JSON.parse(raw) as typeof data) : {};
-      } catch {
-        data = { ok: false };
-      }
-
-      if (!res.ok || data.ok === false) {
-        setPhone("");
-        setLinkedAt(undefined);
-        if (res.status !== 401) {
-          setPhoneStatusError(
-            data?.ok === false
-              ? "전화번호 정보를 불러오지 못했어요."
-              : raw || `HTTP ${res.status}`
-          );
-        }
-        return;
-      }
-
-      setPhone(typeof data.phone === "string" ? data.phone : "");
-      setLinkedAt(typeof data.linkedAt === "string" ? data.linkedAt : undefined);
-    } catch (error) {
-      setPhoneStatusError(error instanceof Error ? error.message : String(error));
-      setPhone("");
-      setLinkedAt(undefined);
-    } finally {
-      setPhoneStatusLoading(false);
-    }
-    })();
-
-    try {
-      await phoneStatusRequestRef.current;
-    } finally {
-      phoneStatusRequestRef.current = null;
-    }
-  }, []);
-
-  useEffect(() => {
-    if (loginStatus === null) return;
-    fetchPhoneStatus();
-  }, [loginStatus, fetchPhoneStatus]);
 
   useEffect(() => {
     localStorage.setItem("selectedPharmacyId", selectedPharmacy?.id);
@@ -289,82 +221,11 @@ export default function Cart({
   };
 
   const handleUnlinkPhone = useCallback(async () => {
-    if (unlinkLoading) return;
-
-    setUnlinkLoading(true);
-    setUnlinkError(null);
-
-    try {
-      const res = await fetch("/api/me/unlink-phone", {
-        method: "POST",
-        headers: { "Cache-Control": "no-store" },
-      });
-      const raw = await res.text();
-      let data: { ok?: boolean; error?: string } = {};
-      try {
-        data = raw ? (JSON.parse(raw) as typeof data) : {};
-      } catch {
-        data = { ok: false, error: raw || `HTTP ${res.status}` };
-      }
-
-      if (!res.ok || data.ok === false) {
-        setUnlinkError(data.error || "전화번호 연결 해제에 실패했어요.");
-        return;
-      }
-
-      setPhone("");
-      setLinkedAt(undefined);
+    const unlinked = await unlinkPhone();
+    if (unlinked) {
       setPhoneModalOpen(false);
-      fetchPhoneStatus();
-    } catch (error) {
-      setUnlinkError(error instanceof Error ? error.message : String(error));
-    } finally {
-      setUnlinkLoading(false);
     }
-  }, [unlinkLoading, fetchPhoneStatus]);
-
-  const handleRequestPayment = () => {
-    if (
-      selectedPaymentMethod === "inicis" &&
-      (!sdkLoaded || !(window as any).IMP)
-    ) {
-      alert(
-        "결제 모듈을 불러오는 데 실패하였습니다. 페이지를 새로고침해 주세요."
-      );
-      return;
-    }
-    if (!safeLoginStatus.isUserLoggedIn) {
-      alert("카카오 로그인이 필요해요. 로그인 후 다시 시도해 주세요.");
-      return;
-    }
-    if (phoneStatusLoading) {
-      alert("전화번호 정보를 불러오는 중이에요. 잠시 후 다시 시도해 주세요.");
-      return;
-    }
-    if (!phone) {
-      alert("전화번호 인증을 진행해 주세요.");
-      setPhoneModalOpen(true);
-      return;
-    }
-    if (!isPhoneLinked) {
-      alert("전화번호 인증을 완료해 주세요.");
-      setPhoneModalOpen(true);
-      return;
-    }
-    if (!password) {
-      alert("주문 조회 비밀번호를 입력해 주세요.");
-      return;
-    }
-    if (password.length < 4) {
-      alert("비밀번호는 최소한 4자리 이상으로 입력해 주세요.");
-      return;
-    }
-    if (!selectedPaymentMethod) {
-      alert("결제 수단을 선택해 주세요.");
-      return;
-    }
-    setShowModal(true);
-  };
+  }, [unlinkPhone]);
 
   const handleBulkChange = (target: string) => {
     const unavailable: string[] = [];
@@ -397,106 +258,29 @@ export default function Cart({
       );
     }
   };
-  const handleKGInicisPayment = () => {
-    const IMP = (window as any).IMP;
-    if (!IMP) {
-      alert("결제 모듈을 불러오는 데 실패하였습니다.");
-      return;
-    }
-    const paymentId = `payment${Date.now()}`;
-    localStorage.setItem("paymentId", paymentId);
-    const redirect = `${window.location.origin}/order-complete?method=inicis`;
-    IMP.init(process.env.NEXT_PUBLIC_MERCHANT_ID);
-    const paymentAmount =
-      safeLoginStatus.isTestLoggedIn && selectedPaymentMethod === "inicis"
-        ? customTestAmount
-        : totalPriceWithDelivery;
-    IMP.request_pay(
-      {
-        pg: "html5_inicis",
-        pay_method: "card",
-        merchant_uid: paymentId,
-        name: "웰니스박스 건강기능식품",
-        amount: paymentAmount,
-        buyer_email: "buyer@example.com",
-        buyer_name: userContact,
-        buyer_tel: userContact,
-        buyer_addr: `${roadAddress} ${detailAddress}`,
-        m_redirect_url: redirect,
-      },
-      function (rsp: any) {
-        if (rsp.success) {
-          // imp_uid는 결제 검증에 사용되므로 저장해둔다.
-          localStorage.setItem("impUid", rsp.imp_uid);
-          router.push(
-            `/order-complete?paymentId=${paymentId}&imp_uid=${rsp.imp_uid}&method=inicis`
-          );
-        } else {
-          localStorage.removeItem("paymentId");
-          localStorage.removeItem("paymentMethod");
-          localStorage.removeItem("impUid");
-          router.push("/order-complete?cancelled=true");
-        }
-      }
-    );
-  };
-  const handleKpnAndKakaoPayment = async (
-    payMethod: string,
-    channelKey: string
-  ) => {
-    const PortOne: any = await import("@portone/browser-sdk/v2");
-    try {
-      const paymentId = `payment${Date.now()}`;
-      localStorage.setItem("paymentId", paymentId);
-      const response = await PortOne.requestPayment({
-        storeId: process.env.NEXT_PUBLIC_PORTONE_STORE_ID!,
-        paymentId,
-        orderName: "웰니스박스 건강기능식품",
-        totalAmount: totalPriceWithDelivery,
-        currency: "KRW",
-        channelKey,
-        payMethod,
-        customer: {
-          customerId: "user",
-          fullName: "user",
-          email: "user@example.com",
-          phoneNumber: userContact,
-        },
-        redirectUrl: `${window.location.origin}/order-complete?paymentId=${paymentId}&method=${selectedPaymentMethod}`,
-      });
-      if (!response.code) {
-        router.push(
-          `/order-complete?paymentId=${paymentId}&method=${selectedPaymentMethod}`
-        );
-      } else {
-        localStorage.removeItem("paymentId");
-        localStorage.removeItem("paymentMethod");
-        router.push("/order-complete?cancelled=true");
-      }
-    } catch (error) {
-      console.error("결제 요청 중 오류 발생:", error);
-      alert(`결제 요청 중 오류가 발생했습니다: ${JSON.stringify(error)}`);
-    }
-  };
-  const handlePayment = async () => {
-    localStorage.setItem("cartBackup", JSON.stringify(cartItems));
-    localStorage.setItem("checkoutInProgress", "1");
-
-    localStorage.setItem("paymentMethod", selectedPaymentMethod);
-    if (selectedPaymentMethod === "inicis") {
-      handleKGInicisPayment();
-    } else if (selectedPaymentMethod === "kpn") {
-      await handleKpnAndKakaoPayment(
-        "CARD",
-        process.env.NEXT_PUBLIC_PORTONE_CARD_CHANNEL_KEY!
-      );
-    } else if (selectedPaymentMethod === "kakao") {
-      await handleKpnAndKakaoPayment(
-        "EASY_PAY",
-        process.env.NEXT_PUBLIC_PORTONE_KAKAO_CHANNEL_KEY!
-      );
-    }
-  };
+  const { handleRequestPayment, handlePayment } = useCartPayment({
+    router,
+    selectedPaymentMethod,
+    customTestAmount,
+    totalPriceWithDelivery,
+    safeLoginStatus,
+    sdkLoaded,
+    phoneStatusLoading,
+    phone,
+    isPhoneLinked,
+    password,
+    userContact,
+    roadAddress,
+    detailAddress,
+    cartItems,
+    onOpenPhoneModal: () => {
+      setUnlinkError(null);
+      setPhoneModalOpen(true);
+    },
+    onOpenConfirmModal: () => {
+      setShowModal(true);
+    },
+  });
   return (
     <div className="w-full mt-32 mb-8 max-w-[640px] mx-auto bg-white min-h-[100vh]">
       <Script

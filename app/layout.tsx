@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import { SITE_URL } from "@/lib/constants";
 import TopBar from "@/components/common/topBar";
@@ -13,6 +14,7 @@ import AppDeepLinkHandler from "@/components/common/appDeepLinkHandler";
 import AppBackHandler from "@/components/common/appBackHandler";
 import PullToRefresh from "@/components/common/pullToRefresh";
 import GlobalCartHost from "@/components/order/globalCartHost";
+import DesktopChatDock from "@/components/chat/DesktopChatDock";
 import Script from "next/script";
 import GoogleTranslateGate from "@/components/common/GoogleTranslateGate";
 
@@ -96,7 +98,9 @@ export default async function RootLayout({
             <LoadingProvider>
               <ToastProvider>
                 <AppBackHandler />
-                <TopBar />
+                <Suspense fallback={null}>
+                  <TopBar />
+                </Suspense>
                 <main
                   className="min-h-[105vh] flex flex-col items-center"
                   style={{
@@ -106,6 +110,7 @@ export default async function RootLayout({
                   {children}
                 </main>
                 <GlobalCartHost />
+                <DesktopChatDock />
                 <RouteTransition />
               </ToastProvider>
             </LoadingProvider>

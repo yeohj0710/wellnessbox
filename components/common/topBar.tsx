@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { MenuLinks } from "./menuLinks";
 import { getLoginStatus } from "@/lib/useLoginStatus";
@@ -24,6 +31,26 @@ type LoginStatus = {
 };
 
 export default function TopBar() {
+  return (
+    <Suspense fallback={<TopBarFallback />}>
+      <TopBarInner />
+    </Suspense>
+  );
+}
+
+function TopBarFallback() {
+  return (
+    <header className="fixed top-0 z-40 w-full bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70">
+      <div className="mx-auto flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-[120rem]">
+        <div className="text-[17px] font-extrabold tracking-tight text-slate-900">
+          웰니스박스
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function TopBarInner() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

@@ -31,7 +31,12 @@ import {
 import { readStreamingText } from "./useChat.stream";
 import { normalizeNewlines, sanitizeAssistantText } from "./useChat.text";
 
-export default function useChat() {
+type UseChatOptions = {
+  manageFooter?: boolean;
+};
+
+export default function useChat(options: UseChatOptions = {}) {
+  const manageFooter = options.manageFooter ?? true;
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [profile, setProfile] = useState<UserProfile | undefined>(undefined);
@@ -183,9 +188,10 @@ export default function useChat() {
 
   const { hideFooter, showFooter } = useFooter();
   useEffect(() => {
+    if (!manageFooter) return;
     hideFooter();
     return () => showFooter();
-  }, [hideFooter, showFooter]);
+  }, [hideFooter, manageFooter, showFooter]);
 
   useEffect(() => {
     const labels = readLocalCheckAiTopLabels();

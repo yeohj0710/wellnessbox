@@ -11,6 +11,7 @@ interface ChatInputProps {
   suggestions?: string[];
   onSelectSuggestion?: (q: string) => void;
   onStop?: () => void;
+  mode?: "fixed" | "embedded";
 }
 
 export default function ChatInput({
@@ -21,6 +22,7 @@ export default function ChatInput({
   suggestions = [],
   onSelectSuggestion,
   onStop,
+  mode = "fixed",
 }: ChatInputProps) {
   const taRef = useRef<HTMLTextAreaElement | null>(null);
   const [isMultiline, setIsMultiline] = useState(false);
@@ -37,6 +39,7 @@ export default function ChatInput({
   const canSend = !!input.trim() && !loading;
   const align = isMultiline ? "self-end mb-1" : "self-center";
   const visibleSuggestions = suggestions.slice(0, 2);
+  const isEmbedded = mode === "embedded";
 
   useEffect(() => {
     const t = taRef.current;
@@ -82,16 +85,38 @@ export default function ChatInput({
 
   return (
     <div
-      className="mb-2 sm:mb-3 pointer-events-none fixed inset-x-0 bottom-0 z-10 px-3 sm:px-4"
-      style={{ paddingBottom: `calc(6px + env(safe-area-inset-bottom))` }}
+      className={
+        isEmbedded
+          ? "w-full border-t border-slate-200 bg-white px-2 py-2"
+          : "mb-2 sm:mb-3 pointer-events-none fixed inset-x-0 bottom-0 z-10 px-3 sm:px-4"
+      }
+      style={
+        isEmbedded
+          ? undefined
+          : { paddingBottom: `calc(6px + env(safe-area-inset-bottom))` }
+      }
     >
-      <div className="pointer-events-auto mx-auto w-full max-w-[720px] sm:max-w-[740px] md:max-w-[760px] space-y-2">
+      <div
+        className={`pointer-events-auto w-full space-y-2 ${
+          isEmbedded
+            ? ""
+            : "mx-auto max-w-[720px] sm:max-w-[740px] md:max-w-[760px]"
+        }`}
+      >
         {visibleSuggestions.length > 0 && (
-          <div className="mx-auto flex max-w-[720px] flex-wrap justify-center gap-2 px-1">
+          <div
+            className={
+              isEmbedded
+                ? "flex flex-wrap gap-1.5 px-1"
+                : "mx-auto flex max-w-[720px] flex-wrap justify-center gap-2 px-1"
+            }
+          >
             {visibleSuggestions.map((q, i) => (
               <button
                 key={i}
-                className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs sm:text-sm hover:bg-slate-50"
+                className={`rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs hover:bg-slate-50 ${
+                  isEmbedded ? "" : "sm:text-sm"
+                }`}
                 onClick={() => onSelectSuggestion && onSelectSuggestion(q)}
               >
                 {q}
@@ -100,7 +125,11 @@ export default function ChatInput({
           </div>
         )}
 
-        <div className="mb-3 rounded-[24px] border border-slate-300 bg-white shadow-sm focus-within:border-slate-400">
+        <div
+          className={`rounded-[24px] border border-slate-300 bg-white shadow-sm focus-within:border-slate-400 ${
+            isEmbedded ? "" : "mb-3"
+          }`}
+        >
           <div className="grid grid-cols-[auto_1fr_auto] items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1">
             <button
               type="button"

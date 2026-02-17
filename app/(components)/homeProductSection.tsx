@@ -44,60 +44,20 @@ import {
   getCurrentPathWithSearchFromWindow,
   queueCartScrollRestore,
 } from "@/lib/client/cart-navigation";
+import {
+  calculateCartTotalForPharmacy,
+  filterHomeProducts,
+  HOME_CACHE_TTL_MS,
+  HOME_FETCH_RETRIES,
+  HOME_FETCH_TIMEOUT_MS,
+  HOME_STALE_CACHE_TTL_MS,
+  type HomeDataResponse,
+  readCachedHomeData,
+} from "./homeProductSection.helpers";
 
 interface HomeProductSectionProps {
   initialCategories?: any[];
   initialProducts?: any[];
-}
-
-function parseCachedArray<T = any>(raw: string | null): T[] | null {
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as T[]) : null;
-  } catch {
-    return null;
-  }
-}
-
-const HOME_CACHE_TTL_MS = 60 * 1000;
-const HOME_STALE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
-const HOME_FETCH_TIMEOUT_MS = 8000;
-const HOME_FETCH_RETRIES = 3;
-
-type HomeDataResponse = {
-  categories?: any[];
-  products?: any[];
-};
-
-function readCachedHomeData(maxAgeMs: number) {
-  const cachedCategories = localStorage.getItem("categories");
-  const cachedProducts = localStorage.getItem("products");
-  const cacheTimestampRaw = localStorage.getItem("cacheTimestamp");
-  const cacheTimestamp = Number.parseInt(cacheTimestampRaw || "", 10);
-
-  if (
-    !cachedCategories ||
-    !cachedProducts ||
-    !Number.isFinite(cacheTimestamp)
-  ) {
-    return null;
-  }
-
-  const ageMs = Date.now() - cacheTimestamp;
-  if (ageMs < 0 || ageMs > maxAgeMs) return null;
-
-  const parsedCategories = parseCachedArray(cachedCategories);
-  const parsedProducts = parseCachedArray(cachedProducts);
-  if (!parsedCategories || !parsedProducts || parsedProducts.length === 0) {
-    return null;
-  }
-
-  return {
-    categories: parsedCategories,
-    products: parsedProducts,
-    cacheTimestamp,
-  };
 }
 
 export default function HomeProductSection({
@@ -609,20 +569,11 @@ export default function HomeProductSection({
       setTotalPrice(0);
       return;
     }
-    const total = cartItems.reduce((acc, item) => {
-      const matchingProduct = allProducts.find(
-        (product) => product.id === item.productId
-      );
-      const matchingPharmacyProduct = matchingProduct?.pharmacyProducts.find(
-        (pharmacyProduct: any) =>
-          pharmacyProduct.pharmacy.id === selectedPharmacy.id &&
-          pharmacyProduct.optionType === item.optionType
-      );
-      if (matchingPharmacyProduct) {
-        return acc + matchingPharmacyProduct.price * item.quantity;
-      }
-      return acc;
-    }, 0);
+    const total = calculateCartTotalForPharmacy({
+      cartItems,
+      allProducts,
+      selectedPharmacy,
+    });
     setTotalPrice(total);
     setIsCartBarLoading(false);
   }, [cartItems, selectedPharmacy, allProducts]);
@@ -744,50 +695,12 @@ export default function HomeProductSection({
   }, [roadAddress, cartItems, selectedPharmacy?.id, pharmacyResolveToken]);
 
   useEffect(() => {
-    let filtered = [...allProducts];
-    if (selectedPharmacy && deferredSelectedPackage !== "전체") {
-      filtered = filtered.filter((product) =>
-        product.pharmacyProducts.some(
-          (pharmacyProduct: any) =>
-            pharmacyProduct.pharmacy.id === selectedPharmacy.id &&
-            pharmacyProduct.optionType === deferredSelectedPackage
-        )
-      );
-    }
-    if (selectedPharmacy) {
-      filtered = filtered.filter((product) =>
-        product.pharmacyProducts.some(
-          (pharmacyProduct: any) =>
-            pharmacyProduct.pharmacy.id === selectedPharmacy.id
-        )
-      );
-    }
-    if (deferredSelectedCategories.length > 0) {
-      filtered = filtered.filter((product) =>
-        product.categories.some((category: any) =>
-          deferredSelectedCategories.includes(category.id)
-        )
-      );
-    }
-    if (deferredSelectedPackage === "7일 패키지") {
-      filtered = filtered.filter((product: any) =>
-        product.pharmacyProducts.some((pharmacyProduct: any) =>
-          pharmacyProduct.optionType?.includes("7")
-        )
-      );
-    } else if (deferredSelectedPackage === "30일 패키지") {
-      filtered = filtered.filter((product: any) =>
-        product.pharmacyProducts.some((pharmacyProduct: any) =>
-          pharmacyProduct.optionType?.includes("30")
-        )
-      );
-    } else if (deferredSelectedPackage === "일반 상품") {
-      filtered = filtered.filter((product: any) =>
-        product.pharmacyProducts.some(
-          (pharmacyProduct: any) => pharmacyProduct.optionType === "일반 상품"
-        )
-      );
-    }
+    const filtered = filterHomeProducts({
+      allProducts,
+      selectedPharmacy,
+      selectedPackage: deferredSelectedPackage,
+      selectedCategoryIds: deferredSelectedCategories,
+    });
     setProducts(filtered);
   }, [
     allProducts,
