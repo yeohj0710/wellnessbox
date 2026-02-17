@@ -6,6 +6,22 @@ import {
   writeClientCartItems,
 } from "@/lib/client/cart-storage";
 
+function toCartSignature(items: any[]) {
+  if (!Array.isArray(items) || items.length === 0) return "";
+  return items
+    .map((item) => {
+      const productId = Number(item?.productId);
+      const optionType =
+        typeof item?.optionType === "string" ? item.optionType.trim() : "";
+      const quantity = Number(item?.quantity);
+      return `${Number.isFinite(productId) ? productId : 0}:${optionType}:${
+        Number.isFinite(quantity) ? quantity : 0
+      }`;
+    })
+    .sort()
+    .join("|");
+}
+
 export function useCartHydration(
   cartItems: any[],
   onUpdateCart: (items: any[]) => void
@@ -13,6 +29,7 @@ export function useCartHydration(
   const [hydrated, setHydrated] = useState(false);
 
   const onUpdateCartRef = useRef(onUpdateCart);
+  const persistedSignatureRef = useRef("");
 
   useEffect(() => {
     onUpdateCartRef.current = onUpdateCart;
@@ -55,7 +72,14 @@ export function useCartHydration(
 
     const restoring = localStorage.getItem("restoreCartFromBackup") === "1";
     if (restoring && cartItems.length === 0) return;
-    if (cartItems.length === 0) return;
+    if (cartItems.length === 0) {
+      persistedSignatureRef.current = "";
+      return;
+    }
+
+    const nextSignature = toCartSignature(cartItems);
+    if (nextSignature === persistedSignatureRef.current) return;
+    persistedSignatureRef.current = nextSignature;
 
     writeClientCartItems(cartItems);
     window.dispatchEvent(new Event("cartUpdated"));

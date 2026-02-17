@@ -330,7 +330,6 @@ export default function HomeProductSection({
       typeof window !== "undefined" &&
       localStorage.getItem("openCart") === "true"
     ) {
-      clearCartReturnState();
       const stored = sessionStorage.getItem("scrollPos");
       if (stored) scrollPositionRef.current = parseInt(stored, 10);
       setIsCartVisible(true);

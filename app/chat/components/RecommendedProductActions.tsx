@@ -1,14 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import AddressModal from "@/components/modal/addressModal";
 import {
   mergeClientCartItems,
   readClientCartItems,
   writeClientCartItems,
 } from "@/lib/client/cart-storage";
-import { captureCartReturnStateFromWindow } from "@/lib/client/cart-navigation";
 
 type RecommendationLine = {
   category: string;
@@ -369,7 +367,6 @@ function hasSavedRoadAddress() {
 }
 
 export default function RecommendedProductActions({ content }: { content: string }) {
-  const router = useRouter();
   const parsed = useMemo(() => parseRecommendationLines(content || ""), [content]);
   const [items, setItems] = useState<ActionableRecommendation[]>([]);
   const [loading, setLoading] = useState(false);
@@ -439,8 +436,11 @@ export default function RecommendedProductActions({ content }: { content: string
 
     updateCartItems(targets);
     if (openCartAfterSave) {
-      captureCartReturnStateFromWindow();
-      router.push("/?cart=open#home-products");
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("wbGlobalCartOpen", "1");
+        localStorage.setItem("openCart", "true");
+        window.dispatchEvent(new Event("openCart"));
+      }
       return;
     }
 
@@ -682,8 +682,9 @@ export default function RecommendedProductActions({ content }: { content: string
 
             updateCartItems(pending.items);
             if (pending.openCartAfterSave) {
-              captureCartReturnStateFromWindow();
-              router.push("/?cart=open#home-products");
+              sessionStorage.setItem("wbGlobalCartOpen", "1");
+              localStorage.setItem("openCart", "true");
+              window.dispatchEvent(new Event("openCart"));
               return;
             }
 

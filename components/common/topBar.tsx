@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { MenuLinks } from "./menuLinks";
 import { getLoginStatus } from "@/lib/useLoginStatus";
@@ -12,9 +11,8 @@ import KakaoLoginButton from "@/components/common/kakaoLoginButton";
 import { usePrefetchOnIntent } from "@/components/common/usePrefetchOnIntent";
 import { readClientCartItems } from "@/lib/client/cart-storage";
 import {
-  captureCartReturnStateFromWindow,
+  clearCartReturnState,
   consumeCartScrollRestoreForPath,
-  isCartHostPath,
 } from "@/lib/client/cart-navigation";
 
 type LoginStatus = {
@@ -126,9 +124,21 @@ export default function TopBar() {
     };
   }, []);
 
+  const closeCartOverlay = useCallback(() => {
+    if (typeof window === "undefined") return;
+    sessionStorage.removeItem("wbGlobalCartOpen");
+    localStorage.removeItem("openCart");
+    window.dispatchEvent(new Event("closeCart"));
+  }, []);
+
   const closeDrawer = () => {
     setIsDrawerOpen(false);
   };
+
+  const handleMenuItemClick = useCallback(() => {
+    setIsDrawerOpen(false);
+    closeCartOverlay();
+  }, [closeCartOverlay]);
 
   const shouldShowLoading = (url: string) => {
     const currentPath = pathname?.split("?")[0].split("#")[0];
@@ -145,9 +155,7 @@ export default function TopBar() {
 
   const goSevenDays = () => {
     setIsDrawerOpen(false);
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new Event("closeCart"));
-    }
+    closeCartOverlay();
     const url = sevenDayHref;
     if (shouldShowLoading(url)) {
       showLoading();
@@ -159,9 +167,7 @@ export default function TopBar() {
 
   const goHome = () => {
     setIsDrawerOpen(false);
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new Event("closeCart"));
-    }
+    closeCartOverlay();
     const url = "/";
     if (shouldShowLoading(url)) {
       showLoading();
@@ -170,6 +176,16 @@ export default function TopBar() {
       router.push(url);
     });
   };
+
+  const openCartFromOutside = useCallback(() => {
+    if (typeof window !== "undefined") {
+      clearCartReturnState();
+      sessionStorage.setItem("scrollPos", String(window.scrollY));
+      sessionStorage.setItem("wbGlobalCartOpen", "1");
+      localStorage.setItem("openCart", "true");
+      window.dispatchEvent(new Event("openCart"));
+    }
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -241,7 +257,10 @@ export default function TopBar() {
             </button>
 
             <nav className="hidden min-[1440px]:flex items-center gap-8 text-[15px] font-medium text-slate-500 [&_a]:text-slate-500 [&_a:hover]:text-slate-900">
-              <MenuLinks loginStatus={loginStatus} />
+              <MenuLinks
+                loginStatus={loginStatus}
+                onItemClick={handleMenuItemClick}
+              />
             </nav>
           </div>
 
@@ -252,46 +271,18 @@ export default function TopBar() {
               </span>
             )}
 
-            {isCartHostPath(pathname) ? (
-              <button
-                className={menuItemClasses("text-slate-600 relative")}
-                aria-label="장바구니"
-                onClick={() => {
-                  if (typeof window !== "undefined") {
-                    sessionStorage.setItem("scrollPos", String(window.scrollY));
-                    window.dispatchEvent(new Event("openCart"));
-                  }
-                }}
-              >
-                <ShoppingCartIcon className="w-6 h-6" />
-                {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[1.25rem] h-5 rounded-full bg-sky-500 text-white text-[11px] flex items-center justify-center px-1">
-                    {cartCount}
-                  </span>
-                )}
-              </button>
-            ) : (
-              <Link
-                href="/?cart=open#home-products"
-                scroll={false}
-                className={menuItemClasses("text-slate-600 relative")}
-                aria-label="장바구니"
-                onClick={() => {
-                  if (typeof window !== "undefined") {
-                    captureCartReturnStateFromWindow();
-                    sessionStorage.setItem("scrollPos", String(window.scrollY));
-                  }
-                  showLoading();
-                }}
-              >
-                <ShoppingCartIcon className="w-6 h-6" />
-                {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[1.25rem] h-5 rounded-full bg-sky-500 text-white text-[11px] flex items-center justify-center px-1">
-                    {cartCount}
-                  </span>
-                )}
-              </Link>
-            )}
+            <button
+              className={menuItemClasses("text-slate-600 relative")}
+              aria-label="장바구니"
+              onClick={openCartFromOutside}
+            >
+              <ShoppingCartIcon className="w-6 h-6" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[1.25rem] h-5 rounded-full bg-sky-500 text-white text-[11px] flex items-center justify-center px-1">
+                  {cartCount}
+                </span>
+              )}
+            </button>
 
             <button
               {...sevenDayIntentHandlers}
@@ -329,7 +320,7 @@ export default function TopBar() {
         <div className="flex flex-col p-6 gap-4 text-[15px] font-medium text-slate-600 [&_a]:text-slate-700 [&_a]:hover:text-slate-900">
           <MenuLinks
             loginStatus={loginStatus}
-            onItemClick={closeDrawer}
+            onItemClick={handleMenuItemClick}
             isDrawer
           />
 
