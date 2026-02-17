@@ -31,7 +31,7 @@ const CAT_ALIAS: Record<string, CategoryKey> = Object.fromEntries(
 
 const RAG_DEBUG = Boolean(process.env.RAG_DEBUG);
 const DEFAULT_KNOWN_CONTEXT_TIMEOUT_MS = 220;
-const DEFAULT_PRODUCT_BRIEF_TIMEOUT_MS = 120;
+const DEFAULT_PRODUCT_BRIEF_TIMEOUT_MS = 1200;
 const DEFAULT_RAG_TIMEOUT_MS = 700;
 const DEFAULT_PRODUCT_BRIEF_CACHE_TTL_MS = 5 * 60 * 1000;
 
@@ -436,6 +436,9 @@ async function loadProductBriefCached() {
 
   return refreshProductBriefCache();
 }
+
+// Warm the product brief cache early so init chats are less likely to miss real catalog prices.
+void refreshProductBriefCache();
 
 async function buildRagContext(
   messages: Array<{ role: string; content: string }>,

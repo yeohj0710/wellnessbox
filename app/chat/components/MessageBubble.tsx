@@ -28,7 +28,7 @@ function buildLoadingHints(contextText: string, userTurnCountBefore: number) {
     return [
       "상담을 시작할 준비를 하고 있어요.",
       "프로필과 기본 정보를 확인하고 있어요.",
-      "곧 첫 안내를 보여드릴게요.",
+      "곧 상담을 이어서 진행할게요.",
     ];
   }
 
@@ -225,10 +225,8 @@ export default function MessageBubble({
                     />
                   ),
                   img: ({ node, ...props }) => {
-                    const src =
-                      typeof props.src === "string" ? props.src : "";
-                    const alt =
-                      typeof props.alt === "string" ? props.alt : "";
+                    const src = typeof props.src === "string" ? props.src : "";
+                    const alt = typeof props.alt === "string" ? props.alt : "";
                     const width =
                       typeof props.width === "number"
                         ? props.width
@@ -251,7 +249,8 @@ export default function MessageBubble({
                       }
                     })();
                     const isRemoteImage = Boolean(remoteHost);
-                    const isSupportedRemote = remoteHost === "imagedelivery.net";
+                    const isSupportedRemote =
+                      remoteHost === "imagedelivery.net";
                     const canUseNextImage =
                       hasDimensions && src.startsWith("/");
 

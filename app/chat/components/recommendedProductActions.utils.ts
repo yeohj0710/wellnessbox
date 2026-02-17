@@ -13,6 +13,7 @@ type RecommendationLine = {
 type ProductNameItem = {
   id: number;
   name: string;
+  categories: string[];
 };
 
 type CartProductItem = {
@@ -44,6 +45,28 @@ const recommendationResolveCache = new Map<
   string,
   Promise<ActionableRecommendation[]>
 >();
+const PLACEHOLDER_PRODUCT_NAME_SET = new Set([
+  "제품명",
+  "상품명",
+  "제품",
+  "상품",
+  "추천제품",
+  "추천상품",
+  "영양제",
+]);
+const GENERIC_CATEGORY_SET = new Set(["추천", "제품", "상품", "기타"]);
+const CATEGORY_FALLBACK_ALIASES: Record<string, string[]> = {
+  간건강: ["밀크씨슬", "실리마린"],
+  체중관리: ["가르시니아", "차전자피"],
+  뼈건강: ["칼슘", "비타민d", "마그네슘", "콘드로이친"],
+  관절건강: ["콘드로이친", "칼슘", "마그네슘"],
+  장건강: ["프로바이오틱스", "유산균", "차전자피"],
+  면역건강: ["비타민c", "아연", "종합비타민", "프로바이오틱스"],
+  심혈관건강: ["오메가3", "코엔자임q10", "아르기닌"],
+  눈건강: ["루테인", "비타민a"],
+  피로관리: ["비타민b", "코엔자임q10", "종합비타민"],
+  피부건강: ["콜라겐", "비타민c", "아연"],
+};
 
 export function normalizeKey(text: string) {
   return text
@@ -145,14 +168,20 @@ export function parseRecommendationLines(content: string): RecommendationLine[] 
       break;
     }
 
-    const sourcePrice = toPrice(cleaned);
-    if (sourcePrice == null) continue;
-
     const hasStructuredSeparator = /[:\-|]/.test(cleaned);
+    const sourcePrice = toPrice(cleaned);
+    const looksLikeProductLine = /[가-힣A-Za-z]{2,}/.test(cleaned);
     const looksLikeProductPriceLine =
       /[가-힣A-Za-z].*(\d{1,3}(?:,\d{3})+|\d+)\s*원/.test(cleaned);
     const looksLikeSummaryLine =
       /(합계|총액|배송|할인|쿠폰|결제|주문번호|주문일)/.test(cleaned);
+
+    if (
+      sourcePrice == null &&
+      (!hasRecommendationHeading || !hasStructuredSeparator || !looksLikeProductLine)
+    ) {
+      continue;
+    }
 
     if (!hasRecommendationHeading && !hasStructuredSeparator && !looksLikeProductPriceLine) {
       continue;
@@ -217,6 +246,17 @@ async function fetchProductNameCatalog() {
             .map((item: any) => ({
               id: Number(item?.id),
               name: typeof item?.name === "string" ? item.name.trim() : "",
+              categories: Array.isArray(item?.categories)
+                ? item.categories
+                    .map((category: any) =>
+                      typeof category === "string"
+                        ? category.trim()
+                        : typeof category?.name === "string"
+                          ? category.name.trim()
+                          : ""
+                    )
+                    .filter(Boolean)
+                : [],
             }))
             .filter((item: ProductNameItem) => Number.isFinite(item.id) && item.name)
         : []
@@ -250,6 +290,76 @@ function scoreNameMatch(targetNorm: string, candidateNorm: string) {
   return score;
 }
 
+function isPlaceholderProductName(value: string) {
+  const normalized = normalizeKey(value);
+  if (!normalized) return true;
+  return PLACEHOLDER_PRODUCT_NAME_SET.has(normalized);
+}
+
+function isGenericCategory(value: string) {
+  const normalized = normalizeKey(value);
+  if (!normalized) return true;
+  return GENERIC_CATEGORY_SET.has(normalized);
+}
+
+function buildCategoryAliases(rawCategory: string) {
+  const aliases = new Set<string>();
+  const normalized = normalizeKey(rawCategory);
+  if (normalized) aliases.add(normalized);
+
+  const compact = normalized
+    .replace(/건강|관리|기능|제품|추천/g, "")
+    .trim();
+  if (compact) aliases.add(compact);
+
+  const rawTokens = rawCategory
+    .split(/[^\p{L}\p{N}]+/u)
+    .map((token) => normalizeKey(token))
+    .filter(Boolean);
+  for (const token of rawTokens) {
+    aliases.add(token);
+  }
+
+  const aliasSeed = Array.from(aliases);
+  for (const key of aliasSeed) {
+    const extras = CATEGORY_FALLBACK_ALIASES[key] || [];
+    for (const extra of extras) {
+      const normalizedExtra = normalizeKey(extra);
+      if (normalizedExtra) aliases.add(normalizedExtra);
+    }
+  }
+
+  return Array.from(aliases).filter(Boolean);
+}
+
+function scoreCategoryMatch(category: string, item: ProductNameItem) {
+  if (isGenericCategory(category)) return -1;
+  const targetAliases = buildCategoryAliases(category);
+  if (targetAliases.length === 0) return -1;
+
+  const categoryAliases = item.categories
+    .map((entry) => normalizeKey(entry))
+    .filter(Boolean);
+  if (categoryAliases.length === 0) return -1;
+
+  let best = -1;
+  for (const target of targetAliases) {
+    for (const categoryAlias of categoryAliases) {
+      if (target === categoryAlias) {
+        best = Math.max(best, 10_000);
+        continue;
+      }
+      if (target.length >= 2 && categoryAlias.includes(target)) {
+        best = Math.max(best, 8_000 - Math.abs(categoryAlias.length - target.length));
+      }
+      if (categoryAlias.length >= 2 && target.includes(categoryAlias)) {
+        best = Math.max(best, 7_000 - Math.abs(categoryAlias.length - target.length));
+      }
+    }
+  }
+  return best;
+}
+
 function findBestProductIdByName(
   productName: string,
   catalog: ProductNameItem[]
@@ -265,6 +375,25 @@ function findBestProductIdByName(
       best = { id: item.id, score };
     }
   }
+  if (!best || best.score < 1_000) return null;
+  return best.id;
+}
+
+function findBestProductIdByCategory(
+  category: string,
+  catalog: ProductNameItem[]
+) {
+  if (isGenericCategory(category)) return null;
+
+  let best: { id: number; score: number } | null = null;
+  for (const item of catalog) {
+    const score = scoreCategoryMatch(category, item);
+    if (score < 0) continue;
+    if (!best || score > best.score) {
+      best = { id: item.id, score };
+    }
+  }
+
   if (!best || best.score < 1_000) return null;
   return best.id;
 }
@@ -339,17 +468,16 @@ export async function resolveRecommendations(lines: RecommendationLine[]) {
     const catalog = await fetchProductNameCatalog();
     if (!catalog.length) return [];
 
-    const lineMatches = lines
-      .map((line) => ({
-        line,
-        productId: findBestProductIdByName(line.productName, catalog),
-      }))
-      .filter(
-        (
-          item
-        ): item is { line: RecommendationLine; productId: number } =>
-          typeof item.productId === "number"
-      );
+    const lineMatches: Array<{ line: RecommendationLine; productId: number }> = [];
+    for (const line of lines) {
+      const productIdByName = isPlaceholderProductName(line.productName)
+        ? null
+        : findBestProductIdByName(line.productName, catalog);
+      const productIdByCategory = findBestProductIdByCategory(line.category, catalog);
+      const productId = productIdByName ?? productIdByCategory;
+      if (typeof productId !== "number") continue;
+      lineMatches.push({ line, productId });
+    }
 
     if (!lineMatches.length) return [];
 

@@ -245,9 +245,7 @@ export default function RecommendedProductActions({ content }: { content: string
                     {item.productName}
                   </p>
                   <p className="mt-0.5 text-[11px] text-slate-600">
-                    {typeof item.sourcePrice === "number"
-                      ? `7일 기준 ${toKrw(item.sourcePrice)}`
-                      : `7일 기준 ${toKrw(item.sevenDayPrice)}`}
+                    {`7일 기준 ${toKrw(item.sevenDayPrice)}`}
                     {` · 패키지 ${toKrw(item.packagePrice)}`}
                   </p>
                   <p className="mt-0.5 text-[11px] text-slate-500">
