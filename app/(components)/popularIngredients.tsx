@@ -5,6 +5,7 @@ import Image from "next/image";
 import Skeleton from "./skeleton";
 import { sortByImportanceDesc } from "@/lib/utils";
 import { fetchCategories } from "@/lib/client/categories";
+import { shouldBypassNextImageOptimizer } from "@/lib/shared/image";
 
 interface PopularIngredientsProps {
   onSelectCategory: (id: number) => void;
@@ -112,6 +113,9 @@ export default function PopularIngredients({
                       alt={category.name || "Category"}
                       fill
                       sizes="512px"
+                      unoptimized={shouldBypassNextImageOptimizer(
+                        category.image
+                      )}
                       className="object-contain p-3 transition-transform duration-300 group-hover:scale-[1.03]"
                     />
                   ) : (

@@ -96,6 +96,9 @@ model Order {
   appUser          AppUser?        @relation(fields: [appUserId], references: [id], onDelete: SetNull)
 
   @@index([appUserId, createdAt])
+  @@index([phone, createdAt])
+  @@index([phone, password, createdAt])
+  @@index([paymentId])
 }
 
 model OrderItem {
@@ -121,6 +124,8 @@ model Message {
   updatedAt  DateTime  @default(now()) @updatedAt
   order      Order?    @relation(fields: [orderId], references: [id])
   pharmacy   Pharmacy? @relation(fields: [pharmacyId], references: [id])
+
+  @@index([orderId, id])
 }
 
 model Rider {

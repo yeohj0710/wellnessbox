@@ -337,7 +337,7 @@ function TopBarInner() {
       </header>
 
       <div
-        className={`fixed bottom-0 z-40 bg-white shadow-lg w-[260px] transition-[right] duration-300 ${
+        className={`fixed bottom-0 z-[70] bg-white shadow-lg w-[260px] transition-[right] duration-300 ${
           isDrawerOpen ? "right-0" : "-right-[260px]"
         }`}
         style={{ top: "3.5rem" }}
@@ -375,7 +375,7 @@ function TopBarInner() {
 
       {isDrawerOpen && (
         <div
-          className="fixed inset-x-0 bottom-0 z-30 bg-black/40"
+          className="fixed inset-x-0 bottom-0 z-[69] bg-black/40"
           style={{ top: "3.5rem" }}
           onClick={closeDrawer}
         />

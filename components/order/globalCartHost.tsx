@@ -349,7 +349,7 @@ export default function GlobalCartHost() {
   if (!isVisible || !canRenderGlobalCart) return null;
 
   return (
-    <div className="fixed inset-0 z-30 flex">
+    <div className="fixed inset-0 z-[90] flex">
       <div className="h-full w-full overflow-y-auto bg-white" ref={containerRef}>
         <Cart
           cartItems={cartItems}

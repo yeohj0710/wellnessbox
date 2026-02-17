@@ -42,6 +42,9 @@ export default function ChatPage() {
     orders,
     titleHighlightId,
     suggestions,
+    interactiveActions,
+    actionLoading,
+    bootstrapPending,
     titleLoading,
     titleError,
     topTitleHighlight,
@@ -53,6 +56,7 @@ export default function ChatPage() {
     newChat,
     deleteChat,
     renameChat,
+    handleInteractiveAction,
     messagesContainerRef,
     messagesEndRef,
     active,
@@ -100,6 +104,21 @@ export default function ChatPage() {
             />
           )}
           <div className="mx-auto max-w-3xl space-y-4">
+            {bootstrapPending &&
+              (!active || active.messages.length === 0) && (
+                <div className="mx-2 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-sky-500" />
+                    <p className="text-sm font-medium text-slate-700">
+                      AI 상담을 준비 중이에요...
+                    </p>
+                  </div>
+                  <div className="mt-3 space-y-2">
+                    <div className="h-2.5 w-11/12 animate-pulse rounded bg-slate-200" />
+                    <div className="h-2.5 w-4/5 animate-pulse rounded bg-slate-200" />
+                  </div>
+                </div>
+              )}
             {active &&
               active.messages.length > 0 &&
               active.messages.map((m, i) => (
@@ -125,8 +144,12 @@ export default function ChatPage() {
           setInput={setInput}
           sendMessage={() => sendMessage()}
           loading={loading}
+          disabled={bootstrapPending}
+          quickActionLoading={actionLoading}
           suggestions={suggestions}
           onSelectSuggestion={(q) => sendMessage(q)}
+          quickActions={interactiveActions}
+          onSelectQuickAction={handleInteractiveAction}
           onStop={stopStreaming}
         />
       </main>

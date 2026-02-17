@@ -127,17 +127,18 @@ type DockPanelProps = {
 
 export default function DesktopChatDock() {
   const pathname = usePathname();
+  const isChatRoute = pathname?.startsWith("/chat") ?? false;
   const [isOpen, setIsOpen] = useState(false);
   const [hasBooted, setHasBooted] = useState(false);
 
-  if (pathname?.startsWith("/chat")) return null;
-
   const openDock = () => {
+    if (isChatRoute) return;
     setHasBooted(true);
     setIsOpen(true);
   };
 
   useEffect(() => {
+    if (isChatRoute) return;
     if (hasBooted) return;
     if (typeof window === "undefined") return;
 
@@ -168,9 +169,10 @@ export default function DesktopChatDock() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [hasBooted]);
+  }, [hasBooted, isChatRoute]);
 
   useEffect(() => {
+    if (isChatRoute) return;
     if (!isOpen) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -179,15 +181,34 @@ export default function DesktopChatDock() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [isOpen]);
+  }, [isOpen, isChatRoute]);
+
+  useEffect(() => {
+    if (!isChatRoute) return;
+    setIsOpen(false);
+  }, [isChatRoute]);
+
+  useEffect(() => {
+    const handleCloseDock = () => setIsOpen(false);
+    window.addEventListener("wb:chat-close-dock", handleCloseDock);
+    window.addEventListener("openCart", handleCloseDock);
+    return () => {
+      window.removeEventListener("wb:chat-close-dock", handleCloseDock);
+      window.removeEventListener("openCart", handleCloseDock);
+    };
+  }, []);
+
+  if (isChatRoute) {
+    return null;
+  }
 
   return (
-    <div className="fixed bottom-[max(24px,env(safe-area-inset-bottom))] right-3 z-[58] sm:bottom-7 sm:right-5">
+    <div className="fixed bottom-[max(24px,env(safe-area-inset-bottom))] left-0 right-0 z-[58] flex justify-end px-3 sm:bottom-7 sm:left-auto sm:right-5 sm:px-0">
       <button
         type="button"
         onPointerDown={openDock}
         onClick={openDock}
-        className={`group relative z-20 flex h-14 w-14 cursor-pointer items-center justify-center rounded-full border border-slate-200/90 bg-white shadow-[0_10px_28px_rgba(15,23,42,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(15,23,42,0.22)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 sm:h-16 sm:w-auto sm:gap-2.5 sm:px-5 sm:pr-6 lg:gap-3 lg:px-6 ${
+        className={`group relative z-20 ml-auto flex h-14 w-14 cursor-pointer items-center justify-center rounded-full border border-slate-200/90 bg-white shadow-[0_10px_28px_rgba(15,23,42,0.18)] transition-[transform,opacity,box-shadow] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(15,23,42,0.22)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 sm:h-16 sm:w-auto sm:gap-2.5 sm:px-5 sm:pr-6 lg:gap-3 lg:px-6 ${
           isOpen
             ? "translate-y-2 scale-95 opacity-0 pointer-events-none"
             : "translate-y-0 scale-100 opacity-100 pointer-events-auto"
@@ -220,12 +241,15 @@ export default function DesktopChatDock() {
 function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
   const router = useRouter();
   const panelRef = useRef<HTMLElement | null>(null);
+  const sessionsLayerRef = useRef<HTMLDivElement | null>(null);
   const [sessionsOpen, setSessionsOpen] = useState(false);
   const [panelSize, setPanelSize] = useState<DockPanelSize>(() =>
     clampDockSize(loadDockSize() ?? getDefaultDockSize())
   );
   const panelSizeRef = useRef(panelSize);
   const resizeStateRef = useRef<DockResizeState | null>(null);
+  const resizeRafRef = useRef<number | null>(null);
+  const pendingResizeSizeRef = useRef<DockPanelSize | null>(null);
   const [isResizing, setIsResizing] = useState(false);
   const {
     sessions,
@@ -241,6 +265,9 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
     checkAiResult,
     orders,
     suggestions,
+    interactiveActions,
+    actionLoading,
+    bootstrapPending,
     input,
     setInput,
     loading,
@@ -249,6 +276,7 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
     newChat,
     deleteChat,
     renameChat,
+    handleInteractiveAction,
     messagesContainerRef,
     messagesEndRef,
     active,
@@ -262,14 +290,43 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
     enableAutoInit: isOpen,
   });
 
+  const applyPanelSizeToDom = (size: DockPanelSize) => {
+    const panel = panelRef.current;
+    if (!panel) return;
+    panel.style.width = `${size.width}px`;
+    panel.style.height = `${size.height}px`;
+  };
+
   useEffect(() => {
     panelSizeRef.current = panelSize;
+    applyPanelSizeToDom(panelSize);
   }, [panelSize]);
+
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (!panel) return;
+    if (isOpen) {
+      panel.removeAttribute("inert");
+      return;
+    }
+    panel.setAttribute("inert", "");
+  }, [isOpen]);
+
+  useEffect(() => {
+    const layer = sessionsLayerRef.current;
+    if (!layer) return;
+    if (sessionsOpen) {
+      layer.removeAttribute("inert");
+      return;
+    }
+    layer.setAttribute("inert", "");
+  }, [sessionsOpen]);
 
   useEffect(() => {
     const restored = clampDockSize(loadDockSize() ?? getDefaultDockSize());
     setPanelSize(restored);
     panelSizeRef.current = restored;
+    applyPanelSizeToDom(restored);
   }, []);
 
   useEffect(() => {
@@ -302,20 +359,34 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
         nextHeight = state.startHeight + (state.startY - event.clientY);
       }
 
-      setPanelSize(() => {
-        const clamped = clampDockSize({ width: nextWidth, height: nextHeight });
-        panelSizeRef.current = clamped;
-        return clamped;
+      const clamped = clampDockSize({ width: nextWidth, height: nextHeight });
+      panelSizeRef.current = clamped;
+      pendingResizeSizeRef.current = clamped;
+
+      if (resizeRafRef.current !== null) return;
+      resizeRafRef.current = window.requestAnimationFrame(() => {
+        resizeRafRef.current = null;
+        const nextSize = pendingResizeSizeRef.current;
+        if (!nextSize) return;
+        applyPanelSizeToDom(nextSize);
       });
     };
 
     const stopResize = () => {
       if (!resizeStateRef.current) return;
       resizeStateRef.current = null;
+      if (resizeRafRef.current !== null) {
+        window.cancelAnimationFrame(resizeRafRef.current);
+        resizeRafRef.current = null;
+      }
+      pendingResizeSizeRef.current = null;
       setIsResizing(false);
       document.body.style.removeProperty("user-select");
       document.body.style.removeProperty("cursor");
-      saveDockSize(panelSizeRef.current);
+      const committedSize = panelSizeRef.current;
+      applyPanelSizeToDom(committedSize);
+      setPanelSize(committedSize);
+      saveDockSize(committedSize);
     };
 
     window.addEventListener("pointermove", onPointerMove);
@@ -326,12 +397,22 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", stopResize);
       window.removeEventListener("pointercancel", stopResize);
+      if (resizeRafRef.current !== null) {
+        window.cancelAnimationFrame(resizeRafRef.current);
+        resizeRafRef.current = null;
+      }
+      pendingResizeSizeRef.current = null;
     };
   }, []);
 
   useEffect(() => {
     if (isOpen) return;
     resizeStateRef.current = null;
+    if (resizeRafRef.current !== null) {
+      window.cancelAnimationFrame(resizeRafRef.current);
+      resizeRafRef.current = null;
+    }
+    pendingResizeSizeRef.current = null;
     setIsResizing(false);
     document.body.style.removeProperty("user-select");
     document.body.style.removeProperty("cursor");
@@ -407,41 +488,69 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
     await deleteChat(sessionId);
   };
 
+  const closeSessionsPanel = () => {
+    const activeElement = document.activeElement;
+    if (
+      activeElement instanceof HTMLElement &&
+      panelRef.current?.contains(activeElement)
+    ) {
+      activeElement.blur();
+    }
+    setSessionsOpen(false);
+  };
+
+  const toggleSessionsPanel = () => {
+    setSessionsOpen((prev) => {
+      if (!prev) return true;
+      const activeElement = document.activeElement;
+      if (
+        activeElement instanceof HTMLElement &&
+        panelRef.current?.contains(activeElement)
+      ) {
+        activeElement.blur();
+      }
+      return false;
+    });
+  };
+
+  const handleCloseDock = () => {
+    closeSessionsPanel();
+    onClose();
+  };
+
   return (
     <aside
       ref={panelRef}
-      className={`absolute bottom-0 right-0 z-10 isolate flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.24)] transition-all duration-200 ${
+      className={`absolute bottom-0 left-1/2 z-10 isolate flex -translate-x-1/2 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.24)] will-change-[transform,opacity] transition-[opacity,transform,visibility] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none sm:left-auto sm:right-0 sm:translate-x-0 ${
         isOpen
           ? "visible pointer-events-auto translate-y-0 scale-100 opacity-100"
-          : "invisible translate-y-3 scale-95 opacity-0 pointer-events-none"
-      } ${isResizing ? "select-none" : ""}`}
+          : "invisible translate-y-4 scale-95 opacity-0 pointer-events-none"
+      } ${isResizing ? "select-none transition-none" : ""}`}
       style={{
-        display: isOpen ? "flex" : "none",
-        width: `${panelSize.width}px`,
-        height: `${panelSize.height}px`,
+        width: `${(isResizing ? panelSizeRef.current : panelSize).width}px`,
+        height: `${(isResizing ? panelSizeRef.current : panelSize).height}px`,
       }}
-      aria-hidden={!isOpen}
     >
       <div
         aria-hidden
         onPointerDown={(event) => startResize(event, "left")}
-        className="absolute -left-1 top-0 z-40 h-full w-3 cursor-ew-resize touch-none"
+        className="absolute -left-1 top-0 z-40 hidden h-full w-3 cursor-ew-resize touch-none sm:block"
       />
       <div
         aria-hidden
         onPointerDown={(event) => startResize(event, "top")}
-        className="absolute left-0 -top-1 z-40 h-3 w-full cursor-ns-resize touch-none"
+        className="absolute left-0 -top-1 z-40 hidden h-3 w-full cursor-ns-resize touch-none sm:block"
       />
       <div
         aria-hidden
         onPointerDown={(event) => startResize(event, "corner")}
-        className="absolute -left-1 -top-1 z-50 h-4 w-4 cursor-nwse-resize touch-none"
+        className="absolute -left-1 -top-1 z-50 hidden h-4 w-4 cursor-nwse-resize touch-none sm:block"
       />
       <header className="flex items-center justify-between border-b border-slate-200 bg-white px-3 py-2.5">
         <div className="flex min-w-0 items-center gap-2">
           <button
             type="button"
-            onClick={() => setSessionsOpen((prev) => !prev)}
+            onClick={toggleSessionsPanel}
             className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100"
             aria-label="대화 목록"
             title="대화 목록"
@@ -511,7 +620,7 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
           </button>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleCloseDock}
             className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100"
             aria-label="채팅 닫기"
             title="닫기"
@@ -537,6 +646,21 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
             )}
 
             <div className="space-y-3">
+              {bootstrapPending &&
+                (!active || active.messages.length === 0) && (
+                  <div className="rounded-2xl border border-slate-200 bg-white px-3.5 py-3 shadow-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-sky-500" />
+                      <p className="text-xs font-medium text-slate-700">
+                        AI 상담 준비 중...
+                      </p>
+                    </div>
+                    <div className="mt-2 space-y-1.5">
+                      <div className="h-2 w-11/12 animate-pulse rounded bg-slate-200" />
+                      <div className="h-2 w-4/5 animate-pulse rounded bg-slate-200" />
+                    </div>
+                  </div>
+                )}
               {active &&
                 active.messages.length > 0 &&
                 active.messages.map((message, index) => (
@@ -565,28 +689,32 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
           setInput={setInput}
           sendMessage={() => sendMessage()}
           loading={loading}
+          disabled={bootstrapPending}
+          quickActionLoading={actionLoading}
           suggestions={suggestions}
           onSelectSuggestion={(question) => sendMessage(question)}
+          quickActions={interactiveActions}
+          onSelectQuickAction={handleInteractiveAction}
           onStop={stopStreaming}
         />
 
         <div
-          className={`absolute inset-0 z-[60] transition-opacity duration-200 ${
+          ref={sessionsLayerRef}
+          className={`absolute inset-0 z-[80] transition-opacity duration-200 ${
             sessionsOpen
               ? "pointer-events-auto opacity-100"
               : "pointer-events-none opacity-0"
           }`}
-          aria-hidden={!sessionsOpen}
         >
           <button
             type="button"
-            onClick={() => setSessionsOpen(false)}
-            className="absolute inset-0 z-10 bg-slate-900/20"
+            onClick={closeSessionsPanel}
+            className="absolute inset-0 z-[81] bg-slate-900/20"
             aria-label="대화목록 닫기"
           />
 
           <div
-            className={`absolute inset-y-0 left-0 z-20 w-[min(78%,260px)] border-r border-slate-200 bg-white transition-transform duration-200 ${
+            className={`absolute inset-y-0 left-0 z-[82] w-[min(78%,260px)] border-r border-slate-200 bg-white transition-transform duration-200 ${
               sessionsOpen ? "translate-x-0" : "-translate-x-full"
             }`}
           >
@@ -594,7 +722,7 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
               <p className="text-sm font-semibold text-slate-900">대화 목록</p>
               <button
                 type="button"
-                onClick={() => setSessionsOpen(false)}
+                onClick={closeSessionsPanel}
                 className="rounded-md p-1 text-slate-500 hover:bg-slate-100"
                 aria-label="목록 닫기"
               >
@@ -606,7 +734,7 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
                 type="button"
                 onClick={() => {
                   newChat();
-                  setSessionsOpen(false);
+                  closeSessionsPanel();
                 }}
                 className="w-full rounded-md border border-slate-300 px-3 py-2 text-left text-xs font-semibold text-slate-800 hover:bg-slate-50"
               >
@@ -627,7 +755,7 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
                       type="button"
                       onClick={() => {
                         setActiveId(session.id);
-                        setSessionsOpen(false);
+                        closeSessionsPanel();
                       }}
                       className="min-w-0 flex-1 cursor-pointer rounded-md px-1.5 py-1 text-left"
                     >

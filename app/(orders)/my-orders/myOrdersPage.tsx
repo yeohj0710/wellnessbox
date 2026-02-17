@@ -42,7 +42,7 @@ export default function MyOrdersPage() {
   }
 
   return (
-    <div className="w-full mt-8 mb-12 flex justify-center px-2 sm:px-4">
+    <div className="w-full mt-8 mb-12 flex justify-center px-3 sm:px-4">
       <div className="w-full sm:w-[640px]">
         <div className="w-full px-6 py-8 bg-white sm:shadow-md sm:rounded-2xl border border-gray-100">
           <div className="flex items-start justify-between gap-3">

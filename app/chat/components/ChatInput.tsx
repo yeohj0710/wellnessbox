@@ -2,16 +2,27 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUpIcon, PlusIcon, StopIcon } from "@heroicons/react/24/outline";
+import type { ChatActionType } from "@/lib/chat/agent-actions";
+
+type ChatQuickAction = {
+  type: ChatActionType;
+  label: string;
+  reason?: string;
+};
 
 interface ChatInputProps {
   input: string;
   setInput: (v: string) => void;
   sendMessage: () => void;
   loading: boolean;
+  disabled?: boolean;
+  quickActionLoading?: boolean;
   suggestions?: string[];
   onSelectSuggestion?: (q: string) => void;
   onStop?: () => void;
   mode?: "fixed" | "embedded";
+  quickActions?: ChatQuickAction[];
+  onSelectQuickAction?: (type: ChatActionType) => void;
 }
 
 export default function ChatInput({
@@ -19,10 +30,14 @@ export default function ChatInput({
   setInput,
   sendMessage,
   loading,
+  disabled = false,
+  quickActionLoading = false,
   suggestions = [],
   onSelectSuggestion,
   onStop,
   mode = "fixed",
+  quickActions = [],
+  onSelectQuickAction,
 }: ChatInputProps) {
   const taRef = useRef<HTMLTextAreaElement | null>(null);
   const [isMultiline, setIsMultiline] = useState(false);
@@ -36,10 +51,12 @@ export default function ChatInput({
     [lineH, maxLines, padY]
   );
 
-  const canSend = !!input.trim() && !loading;
+  const canSend = !!input.trim() && !loading && !disabled;
   const align = isMultiline ? "self-end mb-1" : "self-center";
   const visibleSuggestions = suggestions.slice(0, 2);
+  const visibleQuickActions = quickActions.slice(0, 4);
   const isEmbedded = mode === "embedded";
+  const quickActionDisabled = loading || disabled || quickActionLoading;
 
   useEffect(() => {
     const t = taRef.current;
@@ -108,12 +125,48 @@ export default function ChatInput({
             {visibleSuggestions.map((q, i) => (
               <button
                 key={i}
-                className="rounded-full border border-slate-300 bg-white/95 px-3 py-1.5 text-xs text-slate-800 shadow-[0_1px_0_rgba(15,23,42,0.03)] hover:bg-slate-50 sm:text-sm"
-                onClick={() => onSelectSuggestion && onSelectSuggestion(q)}
+                className={`rounded-full border border-slate-300 bg-white/95 px-3 py-1.5 text-xs text-slate-800 shadow-[0_1px_0_rgba(15,23,42,0.03)] sm:text-sm ${
+                  quickActionDisabled
+                    ? "cursor-not-allowed opacity-60"
+                    : "hover:bg-slate-50"
+                }`}
+                onClick={() =>
+                  !quickActionDisabled &&
+                  onSelectSuggestion &&
+                  onSelectSuggestion(q)
+                }
+                disabled={quickActionDisabled}
               >
                 {q}
               </button>
             ))}
+          </div>
+        )}
+
+        {visibleQuickActions.length > 0 && (
+          <div className="mx-auto flex max-w-[760px] flex-wrap justify-center gap-2 px-1">
+            {visibleQuickActions.map((action) => (
+              <button
+                key={action.type}
+                className={`rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-medium text-sky-700 sm:text-sm ${
+                  quickActionDisabled
+                    ? "cursor-not-allowed opacity-60"
+                    : "hover:bg-sky-100"
+                }`}
+                onClick={() =>
+                  !quickActionDisabled && onSelectQuickAction?.(action.type)
+                }
+                title={action.reason || action.label}
+                disabled={quickActionDisabled}
+              >
+                {action.label}
+              </button>
+            ))}
+          </div>
+        )}
+        {quickActionLoading && (
+          <div className="mx-auto max-w-[760px] px-2 text-center text-[11px] font-medium text-slate-500">
+            요청 동작을 실행 중이에요...
           </div>
         )}
 
@@ -137,6 +190,7 @@ export default function ChatInput({
               placeholder="무엇이든 물어보세요"
               value={input}
               rows={1}
+              disabled={disabled}
               onChange={(e) => setInput(e.target.value)}
               onInput={resizeToContent}
               onKeyDown={(e) => {

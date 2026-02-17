@@ -5,6 +5,7 @@ import Image from "next/image";
 import Skeleton from "./skeleton";
 import { sortByImportanceDesc } from "@/lib/utils";
 import { fetchJsonWithTimeout } from "@/lib/client/fetch-utils";
+import { shouldBypassNextImageOptimizer } from "@/lib/shared/image";
 
 interface Product {
   id: number;
@@ -137,6 +138,9 @@ export default function SupplementRanking({
                       alt={product.name}
                       fill
                       sizes="512px"
+                      unoptimized={shouldBypassNextImageOptimizer(
+                        product.images[0]
+                      )}
                       className="object-contain p-3 transition-transform duration-300 group-hover:scale-[1.05]"
                     />
                   ) : (

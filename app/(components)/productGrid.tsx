@@ -3,6 +3,7 @@
 import { formatPriceRange, getLowestAverageOptionType } from "@/lib/utils";
 import Skeleton from "./skeleton";
 import Image from "next/image";
+import { shouldBypassNextImageOptimizer } from "@/lib/shared/image";
 
 interface Product {
   id: number;
@@ -50,6 +51,7 @@ export default function ProductGrid({
             const capacity = product.pharmacyProducts.find(
               (p: any) => p.optionType === optionType
             )?.capacity;
+            const imageSrc = product.images?.[0] ?? null;
 
             return (
               <button
@@ -58,14 +60,14 @@ export default function ProductGrid({
                 onClick={() => setSelectedProduct(product)}
                 className="group relative flex h-full flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-gray-100 shadow-[0_6px_20px_rgba(67,103,230,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(67,103,230,0.18)] focus:outline-none focus:ring-2 focus:ring-[#6C4DFF]/50"
               >
-                {product.images?.[0] ? (
+                {imageSrc ? (
                   <div className="relative w-full aspect-[4/3] bg-white">
                     <Image
-                      src={product.images[0]}
+                      src={imageSrc}
                       alt={product.name}
                       fill
                       sizes="512px"
-                      priority={index === 0}
+                      unoptimized={shouldBypassNextImageOptimizer(imageSrc)}
                       className="object-contain p-3 transition-transform duration-300 group-hover:scale-[1.03]"
                     />
                   </div>

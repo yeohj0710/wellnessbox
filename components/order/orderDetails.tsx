@@ -48,7 +48,34 @@ export default function OrderDetails({
       const normalizedPhone = phone.replace(/\D/g, "");
       localStorage.setItem("customerAccountKey", normalizedPhone);
     } catch {}
-    ensureCustomerPushSubscription({ silent: true });
+
+    const warmupPush = () => {
+      void ensureCustomerPushSubscription({ silent: true });
+    };
+
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    const requestIdleCallbackRef = (window as any).requestIdleCallback as
+      | ((cb: () => void) => number)
+      | undefined;
+    const cancelIdleCallbackRef = (window as any).cancelIdleCallback as
+      | ((id: number) => void)
+      | undefined;
+
+    let idleId: number | null = null;
+    if (requestIdleCallbackRef) {
+      idleId = requestIdleCallbackRef(() => warmupPush());
+    } else {
+      timeoutId = setTimeout(warmupPush, 300);
+    }
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      if (idleId !== null && cancelIdleCallbackRef) {
+        cancelIdleCallbackRef(idleId);
+      }
+    };
   }, [phone]);
 
   const fetchOrders = useCallback(
@@ -122,6 +149,8 @@ export default function OrderDetails({
     };
 
     useEffect(() => {
+      if (!isExpanded) return;
+
       const checkSubscription = async () => {
         if (!("serviceWorker" in navigator)) return;
         if (isSubscribingRef.current) return;
@@ -218,7 +247,7 @@ export default function OrderDetails({
       };
 
       checkSubscription();
-    }, [order.id]);
+    }, [isExpanded, order.id]);
 
     useEffect(() => {
       if (!isExpanded || isLoaded) return;
@@ -499,7 +528,7 @@ export default function OrderDetails({
     };
     if (isExpanded && !isLoaded) {
       return (
-        <div className="w-full max-w-[640px] mx-auto px-0 sm:px-6 py-6 bg-white sm:shadow-md sm:rounded-lg">
+        <div className="w-full max-w-[640px] mx-auto px-3 sm:px-6 py-6 bg-white sm:shadow-md sm:rounded-lg">
           <OrderAccordionHeader
             role="customer"
             order={order}
@@ -525,7 +554,7 @@ export default function OrderDetails({
       );
     }
     return (
-      <div className="w-full max-w-[640px] mx-auto px-0 sm:px-6 py-6 bg-white sm:shadow-md sm:rounded-lg">
+      <div className="w-full max-w-[640px] mx-auto px-3 sm:px-6 py-6 bg-white sm:shadow-md sm:rounded-lg">
         <OrderAccordionHeader
           role="customer"
           order={order}
@@ -750,7 +779,7 @@ export default function OrderDetails({
 
   if (error) {
     return (
-      <div className="w-full flex justify-center px-2 sm:px-4">
+      <div className="w-full flex justify-center px-3 sm:px-4">
         <div className="w-full sm:w-[640px] bg-white border border-gray-100 sm:shadow-md rounded-2xl p-6 text-center">
           <p className="text-base font-semibold text-gray-900">
             주문을 불러오지 못했어요.
@@ -780,7 +809,7 @@ export default function OrderDetails({
           <div key={order.id} className="w-full">
             <OrderAccordionItem
               initialOrder={order}
-              isInitiallyExpanded={index === 0}
+              isInitiallyExpanded={false}
               onBack={onBack}
             />
             {index < orders.length - 1 && (

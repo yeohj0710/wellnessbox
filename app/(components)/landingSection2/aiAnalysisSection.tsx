@@ -53,7 +53,6 @@ export default function AiAnalysisSection({
                 src="/landingPage2/ai-analysis-hero.png"
                 alt="AI 건강 데이터 분석"
                 fill
-                priority
                 sizes="(min-width:1280px) 560px, (min-width:1024px) 520px, 80vw"
                 className="object-contain"
               />

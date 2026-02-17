@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronRightIcon } from "@heroicons/react/24/outline";
 import Image from "next/image";
+import { shouldBypassNextImageOptimizer } from "@/lib/shared/image";
 
 interface Category {
   id: number;
@@ -88,13 +89,22 @@ export default function CategoryFilter({
                   >
                     {category.image ? (
                       <div className="relative w-6 h-6">
+                        {(() => {
+                          const imageSrc = category.image.replace(
+                            "/public",
+                            "/avatar"
+                          );
+                          return (
                         <Image
-                          src={category.image.replace("/public", "/avatar")}
+                          src={imageSrc}
                           alt={category.name || "Category"}
                           fill
                           sizes="128px"
+                          unoptimized={shouldBypassNextImageOptimizer(imageSrc)}
                           className="rounded-full object-cover"
                         />
+                          );
+                        })()}
                       </div>
                     ) : (
                       <div className="w-6 h-6 rounded-full bg-gray-300"></div>

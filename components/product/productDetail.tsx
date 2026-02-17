@@ -14,6 +14,7 @@ import {
   PlusIcon,
 } from "@heroicons/react/24/outline";
 import Image from "next/image";
+import { shouldBypassNextImageOptimizer } from "@/lib/shared/image";
 
 export default function ProductDetail({
   product,
@@ -213,8 +214,9 @@ export default function ProductDetail({
                     alt={`${product.name} 이미지 ${i + 1}`}
                     fill
                     sizes="1024px"
+                    unoptimized={shouldBypassNextImageOptimizer(src)}
                     className="object-contain bg-white"
-                    onLoadingComplete={() =>
+                    onLoad={() =>
                       i === 0 && setIsImageLoading(false)
                     }
                   />
@@ -389,6 +391,7 @@ export default function ProductDetail({
                     alt="리뷰 확대 이미지"
                     fill
                     sizes="1024px"
+                    unoptimized={shouldBypassNextImageOptimizer(selectedImage)}
                     className="rounded-lg object-contain"
                   />
                 </div>

@@ -1,6 +1,5 @@
 "use client";
 
-import axios from "axios";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
 import { formatPhoneDisplay } from "../utils/formatPhoneDisplay";
@@ -23,7 +22,7 @@ export function useManualLookupForm({ onLookupSuccess }: UseManualLookupFormPara
   const [phonePart3, setPhonePart3] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const loading = false;
   const [showPw, setShowPw] = useState(false);
 
   useEffect(() => {
@@ -67,7 +66,7 @@ export function useManualLookupForm({ onLookupSuccess }: UseManualLookupFormPara
     setError("");
   }, []);
 
-  const handleManualLookup = useCallback(async () => {
+  const handleManualLookup = useCallback(() => {
     if (loading) return;
 
     if (!phonePart2 || !phonePart3 || !password) {
@@ -75,28 +74,18 @@ export function useManualLookupForm({ onLookupSuccess }: UseManualLookupFormPara
       return;
     }
 
-    setLoading(true);
-    setError("");
-    try {
-      const response = await axios.post("/api/orders-by-phone", {
-        phone: manualPhone,
-        password,
-      });
-
-      if (response.data.isOrderExists) {
-        onLookupSuccess({
-          phone: manualPhone,
-          password,
-          mode: "phone-password",
-        });
-      } else {
-        setError("해당 전화번호와 비밀번호로 조회된 주문이 없습니다.");
-      }
-    } catch (err: any) {
-      setError(err.response?.data?.message || "주문 조회에 실패했습니다.");
-    } finally {
-      setLoading(false);
+    if (password.trim().length < 4) {
+      setError("주문 조회 비밀번호는 4자 이상 입력해 주세요.");
+      return;
     }
+
+    setError("");
+
+    onLookupSuccess({
+      phone: manualPhone,
+      password: password.trim(),
+      mode: "phone-password",
+    });
   }, [loading, manualPhone, onLookupSuccess, password, phonePart2, phonePart3]);
 
   const onSubmitManual = useCallback(

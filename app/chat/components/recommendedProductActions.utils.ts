@@ -48,7 +48,7 @@ const recommendationResolveCache = new Map<
 export function normalizeKey(text: string) {
   return text
     .toLowerCase()
-    .replace(/[^a-z0-9가-힣]+/g, "")
+    .replace(/[^\p{L}\p{N}]+/gu, "")
     .trim();
 }
 
@@ -58,23 +58,31 @@ export function toKrw(value: number) {
 
 function extractDayCount(value: string | null | undefined) {
   if (!value) return null;
-  const direct = value.match(/(\d+(?:\.\d+)?)\s*일/);
-  if (direct) {
-    const parsed = Number.parseFloat(direct[1]);
+  const normalized = value.replace(/\s+/g, " ").trim();
+
+  const dayMatch = normalized.match(/(\d+(?:\.\d+)?)\s*(?:\uC77C|day|days)/i);
+  if (dayMatch) {
+    const parsed = Number.parseFloat(dayMatch[1]);
     if (Number.isFinite(parsed) && parsed > 0) return parsed;
   }
-  const packageLike = value.match(/(\d+(?:\.\d+)?)\s*(정|캡슐|포|회|개)/);
+
+  const packageLike = normalized.match(
+    /(\d+(?:\.\d+)?)\s*(?:capsules?|caps?|tablets?|tabs?|\uCEA1\uC290|\uC815|\uD3EC|\uAC1C)/i
+  );
   if (packageLike) {
     const parsed = Number.parseFloat(packageLike[1]);
     if (Number.isFinite(parsed) && parsed > 0 && parsed <= 365) return parsed;
   }
+
   return null;
 }
 
 function isExact7DayOption(optionType: string | null, capacity: string | null) {
   const option = optionType || "";
   const cap = capacity || "";
-  if (/7\s*일/.test(option) || /7\s*일/.test(cap)) return true;
+  if (/7\s*(?:\uC77C|day|days)/i.test(option) || /7\s*(?:\uC77C|day|days)/i.test(cap)) {
+    return true;
+  }
   if (extractDayCount(option) === 7) return true;
   if (extractDayCount(cap) === 7) return true;
   return false;
@@ -93,41 +101,70 @@ function toSevenDayPrice(option: {
 
 export function parseRecommendationLines(content: string): RecommendationLine[] {
   if (!content) return [];
-  const start = content.search(/추천 제품\s*\(7일 기준 가격\)/i);
-  if (start < 0) return [];
 
-  const section = content.slice(start).split(/\r?\n/).slice(1);
+  const hasRecommendationHeading = /(추천\s*(제품|상품)|recommended\s*products?)/i.test(
+    content
+  );
+
+  const lines = content
+    .split(/\r?\n/)
+    .map((raw) =>
+      raw
+        .replace(/^\s*(?:[-*]|\d+\.)\s*/, "")
+        .replace(/\*\*/g, "")
+        .replace(/`/g, "")
+        .trim()
+    )
+    .filter(Boolean);
+
   const out: RecommendationLine[] = [];
 
-  for (const rawLine of section) {
-    const cleaned = rawLine
-      .replace(/^\s*[-*]\s*/, "")
-      .replace(/\*\*/g, "")
-      .trim();
-    if (!cleaned) continue;
+  const toPrice = (line: string) => {
+    const match = line.match(/(\d{1,3}(?:,\d{3})+|\d+)\s*원/);
+    if (!match) return null;
+    const parsed = Number.parseInt(match[1].replace(/,/g, ""), 10);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
 
+  const cleanupProductName = (line: string) =>
+    line
+      .replace(/\([^)]*?(\d{1,3}(?:,\d{3})+|\d+)\s*원[^)]*\)/gi, "")
+      .replace(/\b7\s*일\s*기준\b/gi, "")
+      .replace(/[-|]\s*(\d{1,3}(?:,\d{3})+|\d+)\s*원.*$/i, "")
+      .replace(/(\d{1,3}(?:,\d{3})+|\d+)\s*원.*$/i, "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+
+  for (const cleaned of lines) {
     if (
       out.length > 0 &&
-      /^(이렇게|추가 질문|추가로|원하시면|궁금한 점|참고|다음)/.test(cleaned)
+      /^(추가|원하시면|필요하면|다음|참고|안내|장바구니를|프로필)/.test(cleaned)
     ) {
       break;
     }
 
-    const row = cleaned.match(/^([^:：]{1,40})\s*[:：]\s*(.+)$/);
-    if (!row) continue;
+    const sourcePrice = toPrice(cleaned);
+    if (sourcePrice == null) continue;
 
-    const category = row[1].trim();
-    const detail = row[2].trim();
-    const sourcePriceMatch = detail.match(/([\d,]+)\s*원/);
-    const sourcePrice = sourcePriceMatch
-      ? Number.parseInt(sourcePriceMatch[1].replace(/,/g, ""), 10)
-      : null;
+    if (!hasRecommendationHeading && !/[:\-|]/.test(cleaned)) {
+      continue;
+    }
 
-    const productName = detail
-      .replace(/\([\d,\s]*원[^)]*\)\s*$/g, "")
-      .trim()
-      .replace(/\s{2,}/g, " ");
+    let category = "추천";
+    let detail = cleaned;
 
+    const colon = cleaned.match(/^([^:：]{1,40})\s*[:：]\s*(.+)$/);
+    if (colon) {
+      category = colon[1].trim();
+      detail = colon[2].trim();
+    } else {
+      const dash = cleaned.match(/^(.+?)\s*[-|]\s*(.+)$/);
+      if (dash) {
+        detail = dash[1].trim();
+      }
+    }
+
+    const productName = cleanupProductName(detail);
     if (!productName) continue;
     out.push({ category, productName, sourcePrice });
   }
@@ -363,3 +400,4 @@ export function hasSavedRoadAddress() {
   const saved = localStorage.getItem("roadAddress");
   return typeof saved === "string" && saved.trim().length > 0;
 }
+

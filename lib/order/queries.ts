@@ -29,7 +29,7 @@ const basicOrderSelection = {
         },
       },
       review: {
-        select: { rate: true, content: true },
+        select: { rate: true },
       },
     },
   },
@@ -40,13 +40,38 @@ async function getPaginatedOrders(
   page = 1,
   take = 10
 ) {
+  const skip = (page - 1) * take;
+
+  if (page === 1) {
+    const rows = await db.order.findMany({
+      where,
+      select: basicOrderSelection,
+      orderBy: { createdAt: "desc" },
+      skip: 0,
+      take: take + 1,
+    });
+
+    const hasNextPage = rows.length > take;
+    const orders = hasNextPage ? rows.slice(0, take) : rows;
+
+    if (!hasNextPage) {
+      return { orders, totalPages: orders.length > 0 ? 1 : 0 };
+    }
+
+    const totalCount = await db.order.count({ where });
+    return {
+      orders,
+      totalPages: Math.ceil(totalCount / take),
+    };
+  }
+
   const [totalCount, orders] = await db.$transaction([
     db.order.count({ where }),
     db.order.findMany({
       where,
       select: basicOrderSelection,
       orderBy: { createdAt: "desc" },
-      skip: (page - 1) * take,
+      skip,
       take,
     }),
   ]);

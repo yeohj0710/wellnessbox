@@ -36,6 +36,18 @@ import {
   parseCartCommandFromMessages,
 } from "./useChat.cart-command";
 import { dispatchChatCartActionRequest } from "@/lib/chat/cart-action-events";
+import {
+  CHAT_ACTION_LABELS,
+  type ChatActionType,
+  type ChatAgentExecuteDecision,
+  type ChatAgentSuggestedAction,
+} from "@/lib/chat/agent-actions";
+import {
+  buildSyntheticCartCommand,
+  hasRecommendationSection,
+  isLikelyActionIntentText,
+  normalizeActionTypeList,
+} from "./useChat.agentActions";
 
 type UseChatOptions = {
   manageFooter?: boolean;
@@ -74,6 +86,10 @@ export default function useChat(options: UseChatOptions = {}) {
   const [resultsLoaded, setResultsLoaded] = useState(false);
   const [titleHighlightId, setTitleHighlightId] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [interactiveActions, setInteractiveActions] = useState<
+    ChatAgentSuggestedAction[]
+  >([]);
+  const [actionLoading, setActionLoading] = useState(false);
   const [titleLoading, setTitleLoading] = useState(false);
   const [titleError, setTitleError] = useState(false);
   const [topTitleHighlight, setTopTitleHighlight] = useState(false);
@@ -94,6 +110,10 @@ export default function useChat(options: UseChatOptions = {}) {
   const actorLoggedInRef = useRef(false);
   const actorPhoneLinkedRef = useRef(false);
   const suggestionHistoryRef = useRef<Record<string, string[]>>({});
+  const lastInteractiveActionRef = useRef<{
+    type: ChatActionType;
+    at: number;
+  } | null>(null);
 
   function openDrawer() {
     setDrawerVisible(true);
@@ -103,6 +123,11 @@ export default function useChat(options: UseChatOptions = {}) {
   function closeDrawer() {
     setDrawerOpen(false);
     setTimeout(() => setDrawerVisible(false), 200);
+  }
+
+  function requestCloseDock() {
+    if (typeof window === "undefined") return;
+    window.dispatchEvent(new Event("wb:chat-close-dock"));
   }
 
   useEffect(() => {
@@ -190,6 +215,7 @@ export default function useChat(options: UseChatOptions = {}) {
 
   useEffect(() => {
     setSuggestions([]);
+    setInteractiveActions([]);
   }, [activeId]);
 
   useEffect(() => {
@@ -404,6 +430,7 @@ export default function useChat(options: UseChatOptions = {}) {
     setSessions([session, ...sessions]);
     setActiveId(id);
     setSuggestions([]);
+    setInteractiveActions([]);
     firstUserMessageRef.current = "";
     firstAssistantMessageRef.current = "";
     firstAssistantReplyRef.current = "";
@@ -659,22 +686,135 @@ export default function useChat(options: UseChatOptions = {}) {
     }
   }
 
-  async function tryHandleCartCommand(params: {
-    text: string;
-    sessionId: string;
+  function normalizeExecuteDecision(raw: unknown): ChatAgentExecuteDecision {
+    const data = raw && typeof raw === "object" ? (raw as any) : {};
+    const cartIntentRaw =
+      data.cartIntent && typeof data.cartIntent === "object"
+        ? (data.cartIntent as any)
+        : {};
+    const cartIntentMode =
+      cartIntentRaw.mode === "add_all" ||
+      cartIntentRaw.mode === "buy_all" ||
+      cartIntentRaw.mode === "add_named" ||
+      cartIntentRaw.mode === "buy_named"
+        ? cartIntentRaw.mode
+        : "none";
+
+    return {
+      handled: data.handled === true,
+      assistantReply:
+        typeof data.assistantReply === "string"
+          ? data.assistantReply.trim().slice(0, 240)
+          : "",
+      actions: normalizeActionTypeList(data.actions),
+      cartIntent: {
+        mode: cartIntentMode,
+        targetProductName:
+          typeof cartIntentRaw.targetProductName === "string"
+            ? cartIntentRaw.targetProductName.trim().slice(0, 80)
+            : undefined,
+        quantity:
+          typeof cartIntentRaw.quantity === "number"
+            ? Math.max(1, Math.min(20, Math.floor(cartIntentRaw.quantity)))
+            : 1,
+      },
+      confidence:
+        typeof data.confidence === "number"
+          ? Math.max(0, Math.min(1, data.confidence))
+          : 0,
+      reason:
+        typeof data.reason === "string"
+          ? data.reason.trim().slice(0, 180)
+          : undefined,
+    };
+  }
+
+  function buildFallbackInteractiveActions(lastAssistantText: string) {
+    const hasRecommendation = hasRecommendationSection(lastAssistantText);
+    const base: ChatActionType[] = hasRecommendation
+      ? ["add_recommended_all", "buy_recommended_all", "open_cart", "open_profile"]
+      : ["open_profile", "open_my_orders", "open_cart"];
+
+    return base.map((type) => ({
+      type,
+      label: CHAT_ACTION_LABELS[type],
+    }));
+  }
+
+  async function fetchInteractiveActions(
+    lastAssistantText: string,
+    sessionIdOverride?: string
+  ) {
+    const targetSessionId = sessionIdOverride ?? active?.id ?? null;
+    if (!targetSessionId) {
+      setInteractiveActions([]);
+      return;
+    }
+
+    const recentMessages =
+      sessions.find((session) => session.id === targetSessionId)?.messages ?? [];
+    const contextSummaryText = buildSummaryForSession(targetSessionId).promptSummaryText;
+
+    try {
+      const response = await fetch("/api/chat/actions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "suggest",
+          assistantText: lastAssistantText,
+          recentMessages,
+          contextSummaryText,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const json = await response.json().catch(() => ({}));
+      const rows = Array.isArray(json?.uiActions) ? json.uiActions : [];
+      const mapped = normalizeActionTypeList(
+        rows.map((item: any) => item?.type)
+      ).map((type) => {
+        const row = rows.find((item: any) => item?.type === type);
+        return {
+          type,
+          label:
+            typeof row?.label === "string" && row.label.trim()
+              ? row.label.trim().slice(0, 40)
+              : CHAT_ACTION_LABELS[type],
+          reason:
+            typeof row?.reason === "string"
+              ? row.reason.trim().slice(0, 120)
+              : undefined,
+          confidence:
+            typeof row?.confidence === "number"
+              ? Math.max(0, Math.min(1, row.confidence))
+              : undefined,
+        } satisfies ChatAgentSuggestedAction;
+      });
+
+      if ((activeIdRef.current || "") !== targetSessionId) return;
+      setInteractiveActions(
+        mapped.length > 0
+          ? mapped.slice(0, 4)
+          : buildFallbackInteractiveActions(lastAssistantText).slice(0, 4)
+      );
+    } catch {
+      if ((activeIdRef.current || "") !== targetSessionId) return;
+      setInteractiveActions(buildFallbackInteractiveActions(lastAssistantText).slice(0, 4));
+    }
+  }
+
+  async function executeCartCommandText(params: {
+    commandText: string;
     sessionMessages: ChatMessage[];
-    userMessage: ChatMessage;
-    assistantMessage: ChatMessage;
-    isFirst: boolean;
   }) {
     const parsed = await parseCartCommandFromMessages({
-      text: params.text,
+      text: params.commandText,
       messages: params.sessionMessages,
     });
-    if (!parsed) return false;
-
-    const summary = formatCartCommandSummary(parsed.items);
-    const hasAddress = hasRoadAddressInLocalStorage();
+    if (!parsed) {
+      return { executed: false, summary: "", hasAddress: hasRoadAddressInLocalStorage() };
+    }
 
     dispatchChatCartActionRequest({
       source: "chat-command",
@@ -687,11 +827,145 @@ export default function useChat(options: UseChatOptions = {}) {
       })),
     });
 
-    const fullText = hasAddress
-      ? parsed.openCartAfterSave
-        ? `요청한 제품을 장바구니에 담고 바로 구매를 진행할 수 있게 열어둘게요. ${summary}`
-        : `요청한 제품을 장바구니에 담았어요. ${summary}`
-      : `요청한 제품을 담을 수 있도록 주소 입력 창을 열었어요. 주소를 입력하면 자동으로 담아둘게요. ${summary}`;
+    return {
+      executed: true,
+      summary: formatCartCommandSummary(parsed.items),
+      hasAddress: hasRoadAddressInLocalStorage(),
+      openCartAfterSave: parsed.openCartAfterSave,
+    };
+  }
+
+  async function runSingleInteractiveAction(
+    action: ChatActionType,
+    sessionMessages: ChatMessage[]
+  ) {
+    if (action === "add_recommended_all" || action === "buy_recommended_all") {
+      const result = await executeCartCommandText({
+        commandText:
+          action === "buy_recommended_all"
+            ? "추천 상품 전체 바로 구매"
+            : "추천 상품 전체 담아줘",
+        sessionMessages,
+      });
+      return {
+        executed: result.executed,
+        message: result.executed
+          ? result.hasAddress
+            ? action === "buy_recommended_all"
+              ? "추천 제품을 주문할 수 있도록 바로 열어둘게요."
+              : "추천 제품을 장바구니에 담아둘게요."
+            : "주소 입력이 필요해서 주소 입력 창부터 열어둘게요."
+          : "",
+        summary: result.summary,
+        hasAddress: result.hasAddress,
+      };
+    }
+
+    if (action === "open_cart") {
+      if (typeof window !== "undefined") {
+        requestCloseDock();
+        localStorage.setItem("openCart", "true");
+        window.dispatchEvent(new Event("openCart"));
+      }
+      return { executed: true, message: "장바구니를 열어둘게요.", summary: "" };
+    }
+
+    if (action === "open_profile") {
+      setShowSettings(true);
+      return { executed: true, message: "프로필 설정을 열어둘게요.", summary: "" };
+    }
+
+    if (action === "open_my_orders") {
+      if (typeof window !== "undefined") {
+        requestCloseDock();
+        window.location.assign("/my-orders");
+      }
+      return { executed: true, message: "내 주문 조회 화면으로 이동할게요.", summary: "" };
+    }
+
+    if (action === "open_me") {
+      if (typeof window !== "undefined") {
+        requestCloseDock();
+        window.location.assign("/me");
+      }
+      return { executed: true, message: "내 정보 화면으로 이동할게요.", summary: "" };
+    }
+
+    return { executed: false, message: "", summary: "" };
+  }
+
+  async function runAgentDecision(params: {
+    decision: ChatAgentExecuteDecision;
+    sessionMessages: ChatMessage[];
+  }) {
+    let executed = false;
+    let summary = "";
+    const messages: string[] = [];
+
+    const syntheticCommand = buildSyntheticCartCommand({
+      actions: params.decision.actions,
+      cartIntent: params.decision.cartIntent,
+    });
+    if (syntheticCommand) {
+      const cartResult = await executeCartCommandText({
+        commandText: syntheticCommand,
+        sessionMessages: params.sessionMessages,
+      });
+      if (cartResult.executed) {
+        executed = true;
+        summary = cartResult.summary;
+        messages.push(
+          cartResult.hasAddress
+            ? cartResult.openCartAfterSave
+              ? "요청한 추천 제품으로 바로 구매를 진행할 수 있게 열어둘게요."
+              : "요청한 추천 제품을 장바구니에 담아둘게요."
+            : "주소 입력이 필요해서 주소 입력 창부터 열어둘게요."
+        );
+      }
+    }
+
+    const nonCartActions = params.decision.actions.filter(
+      (action) =>
+        action !== "add_recommended_all" && action !== "buy_recommended_all"
+    );
+
+    for (const action of nonCartActions) {
+      const result = await runSingleInteractiveAction(action, params.sessionMessages);
+      if (!result.executed) continue;
+      executed = true;
+      if (result.summary) summary = result.summary;
+      if (result.message) messages.push(result.message);
+    }
+
+    return {
+      executed,
+      summary,
+      message:
+        params.decision.assistantReply ||
+        messages.find(Boolean) ||
+        "요청하신 동작을 실행해둘게요.",
+    };
+  }
+
+  async function tryHandleCartCommand(params: {
+    text: string;
+    sessionId: string;
+    sessionMessages: ChatMessage[];
+    userMessage: ChatMessage;
+    assistantMessage: ChatMessage;
+    isFirst: boolean;
+  }) {
+    const result = await executeCartCommandText({
+      commandText: params.text,
+      sessionMessages: params.sessionMessages,
+    });
+    if (!result.executed) return false;
+
+    const fullText = result.hasAddress
+      ? result.openCartAfterSave
+        ? `요청한 제품을 장바구니에 담고 바로 구매를 진행할 수 있게 열어둘게요. ${result.summary}`
+        : `요청한 제품을 장바구니에 담았어요. ${result.summary}`
+      : `요청한 제품을 담을 수 있도록 주소 입력 창을 열었어요. 주소를 입력하면 자동으로 담아둘게요. ${result.summary}`;
 
     updateAssistantMessage(params.sessionId, params.assistantMessage.id, fullText);
 
@@ -699,7 +973,10 @@ export default function useChat(options: UseChatOptions = {}) {
       firstAssistantReplyRef.current = fullText;
       await generateTitle();
     }
-    await fetchSuggestions(fullText, params.sessionId);
+    await Promise.all([
+      fetchSuggestions(fullText, params.sessionId),
+      fetchInteractiveActions(fullText, params.sessionId),
+    ]);
 
     try {
       const clientId = getClientIdLocal();
@@ -721,6 +998,154 @@ export default function useChat(options: UseChatOptions = {}) {
     return true;
   }
 
+  async function tryHandleAgentActionDecision(params: {
+    text: string;
+    sessionId: string;
+    sessionMessages: ChatMessage[];
+    userMessage: ChatMessage;
+    assistantMessage: ChatMessage;
+    isFirst: boolean;
+  }) {
+    if (!isLikelyActionIntentText(params.text, params.sessionMessages)) {
+      return false;
+    }
+
+    let decision: ChatAgentExecuteDecision = {
+      handled: false,
+      assistantReply: "",
+      actions: [],
+      cartIntent: { mode: "none" },
+      confidence: 0,
+    };
+
+    try {
+      const response = await fetch("/api/chat/actions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "execute",
+          text: params.text,
+          recentMessages: params.sessionMessages.slice(-10),
+          contextSummaryText: buildSummaryForSession(params.sessionId).promptSummaryText,
+        }),
+      });
+      const json = await response.json().catch(() => ({}));
+      decision = normalizeExecuteDecision(json);
+    } catch {
+      return false;
+    }
+
+    if (
+      !decision.handled &&
+      decision.actions.length === 0 &&
+      decision.cartIntent.mode === "none"
+    ) {
+      return false;
+    }
+
+    const result = await runAgentDecision({
+      decision,
+      sessionMessages: params.sessionMessages,
+    });
+    if (!result.executed) return false;
+
+    const fullText = result.summary
+      ? `${result.message} ${result.summary}`.trim()
+      : result.message;
+
+    updateAssistantMessage(params.sessionId, params.assistantMessage.id, fullText);
+
+    if (params.isFirst) {
+      firstAssistantReplyRef.current = fullText;
+      await generateTitle();
+    }
+    await Promise.all([
+      fetchSuggestions(fullText, params.sessionId),
+      fetchInteractiveActions(fullText, params.sessionId),
+    ]);
+
+    try {
+      const clientId = getClientIdLocal();
+      const tzOffsetMinutes = getTzOffsetMinutes();
+      await saveChatOnce({
+        clientId,
+        sessionId: params.sessionId,
+        title:
+          sessions.find((session) => session.id === params.sessionId)?.title ||
+          DEFAULT_CHAT_TITLE,
+        messages: [
+          params.userMessage,
+          { ...params.assistantMessage, content: fullText },
+        ],
+        tzOffsetMinutes,
+      });
+    } catch {}
+
+    return true;
+  }
+
+  async function handleInteractiveAction(actionType: ChatActionType) {
+    if (!active || loading || actionLoading) return;
+
+    const now = Date.now();
+    const recent = lastInteractiveActionRef.current;
+    if (recent && recent.type === actionType && now - recent.at < 900) {
+      return;
+    }
+    lastInteractiveActionRef.current = { type: actionType, at: now };
+
+    setActionLoading(true);
+    try {
+      const result = await runSingleInteractiveAction(
+        actionType,
+        active.messages || []
+      );
+      if (!result.executed) return;
+
+      const assistantMessage: ChatMessage = {
+        id: uid(),
+        role: "assistant",
+        content: result.summary
+          ? `${result.message} ${result.summary}`.trim()
+          : result.message,
+        createdAt: now,
+      };
+
+      setSessions((prev) =>
+        prev.map((session) =>
+          session.id === active.id
+            ? {
+                ...session,
+                updatedAt: Date.now(),
+                messages: [...session.messages, assistantMessage],
+              }
+            : session
+        )
+      );
+
+      await Promise.all([
+        fetchSuggestions(assistantMessage.content, active.id),
+        fetchInteractiveActions(assistantMessage.content, active.id),
+      ]);
+
+      try {
+        const clientId = getClientIdLocal();
+        const tzOffsetMinutes = getTzOffsetMinutes();
+        await saveChatOnce({
+          clientId,
+          sessionId: active.id,
+          title:
+            sessions.find((session) => session.id === active.id)?.title ||
+            DEFAULT_CHAT_TITLE,
+          messages: [assistantMessage],
+          tzOffsetMinutes,
+        });
+      } catch {}
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   async function sendMessage(overrideText?: string) {
     if (loading) return;
     if (!active) return;
@@ -731,6 +1156,7 @@ export default function useChat(options: UseChatOptions = {}) {
     const isFirst = active.messages.length === 1;
     setInput("");
     setSuggestions([]);
+    setInteractiveActions([]);
     if (isFirst) firstUserMessageRef.current = text;
 
     const now = Date.now();
@@ -780,6 +1206,16 @@ export default function useChat(options: UseChatOptions = {}) {
       });
       if (handledByCommand) return;
 
+      const handledByAgentAction = await tryHandleAgentActionDecision({
+        text,
+        sessionId: active.id,
+        sessionMessages: active.messages || [],
+        userMessage,
+        assistantMessage,
+        isFirst,
+      });
+      if (handledByAgentAction) return;
+
       const controller = new AbortController();
       abortRef.current = controller;
       const clientId = getClientIdLocal();
@@ -819,7 +1255,10 @@ export default function useChat(options: UseChatOptions = {}) {
         firstAssistantReplyRef.current = fullText;
         await generateTitle();
       }
-      await fetchSuggestions(fullText, active.id);
+      await Promise.all([
+        fetchSuggestions(fullText, active.id),
+        fetchInteractiveActions(fullText, active.id),
+      ]);
 
       try {
         const tzOffsetMinutes = getTzOffsetMinutes();
@@ -909,6 +1348,7 @@ export default function useChat(options: UseChatOptions = {}) {
 
       updateAssistantMessage(sessionId, assistantMessage.id, fullText);
       fetchSuggestions(fullText, sessionId).catch(() => {});
+      fetchInteractiveActions(fullText, sessionId).catch(() => {});
       firstAssistantMessageRef.current = fullText;
 
       try {
@@ -965,6 +1405,16 @@ export default function useChat(options: UseChatOptions = {}) {
     saveProfileServer(nextProfile);
   }
 
+  const bootstrapPending =
+    !profileLoaded ||
+    !resultsLoaded ||
+    !active ||
+    (enableAutoInit &&
+      !!activeId &&
+      !!active &&
+      active.messages.length === 0 &&
+      initStartedRef.current[active.id] !== true);
+
   return {
     sessions,
     activeId,
@@ -989,6 +1439,9 @@ export default function useChat(options: UseChatOptions = {}) {
     userContextSummary,
     titleHighlightId,
     suggestions,
+    interactiveActions,
+    actionLoading,
+    bootstrapPending,
     titleLoading,
     titleError,
     topTitleHighlight,
@@ -999,6 +1452,7 @@ export default function useChat(options: UseChatOptions = {}) {
     renameChat,
     stopStreaming,
     sendMessage,
+    handleInteractiveAction,
     generateTitle,
     active,
     handleProfileChange,

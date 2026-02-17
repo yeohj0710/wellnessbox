@@ -234,7 +234,6 @@ export default function TestimonialsSection() {
                       src={t.img}
                       alt={t.name}
                       fill
-                      priority={i < ITEMS.length}
                       sizes="(min-width:1024px) 420px, 70vw"
                       className="object-cover"
                     />
