@@ -1,0 +1,21 @@
+{
+  "module": "03_personal_safety_validation_engine",
+  "phase": "EVALUATION",
+  "kpiId": "kpi-06",
+  "artifact": "monthly_archive_latest",
+  "generatedAt": "2026-02-17T10:13:27.296Z",
+  "entry": {
+    "month": "2026-02",
+    "archivedAt": "2026-02-17T10:13:27.296Z",
+    "evaluatedAt": "2026-02-17T10:13:24.675Z",
+    "windowStart": "2025-02-17T10:13:24.675Z",
+    "windowEnd": "2026-02-17T10:13:24.675Z",
+    "sourceRowCount": 3,
+    "countedEventCount": 2,
+    "targetMaxCountPerYear": 5,
+    "targetSatisfied": true,
+    "inputPath": "C:\\dev\\wellnessbox\\tmp\\rnd\\module03\\manual-production-window.json",
+    "schemaMapPath": "C:\\dev\\wellnessbox\\scripts\\rnd\\module03\\schema\\kpi06_pharmacovigilance_schema_map.json",
+    "reportPath": "2026-02/kpi06-ops-evaluation-2026-02-17T10-13-24-675Z.json"
+  }
+}

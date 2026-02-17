@@ -8,6 +8,7 @@ type CliArgs = {
   outDir: string;
   windowEnd: string;
   inputPath: string | null;
+  requireProvidedInput: boolean;
   requiredEnvKeysCsv: string | null;
   schedulerName: string | null;
   environment: string;
@@ -49,6 +50,7 @@ type Module03SchedulerProductionGateArtifact = {
     outDir: string;
     windowEnd: string;
     inputPath: string | null;
+    requireProvidedInput: boolean;
   };
   artifacts: {
     handoffSummaryPath: string;
@@ -326,6 +328,12 @@ function parseArgs(argv: string[]): CliArgs {
   if (inputPath && !fs.existsSync(inputPath)) {
     throw new Error(`--input file does not exist: ${inputPath}`);
   }
+  const requireProvidedInput = hasFlag(argv, "--require-provided-input");
+  if (requireProvidedInput && !inputPath) {
+    throw new Error(
+      "--require-provided-input was set but --input is missing. Provide an exported production window JSON file."
+    );
+  }
 
   const requiredEnvRaw = getArgValue(argv, "--require-env");
   const requiredEnvKeysCsv = requiredEnvRaw ? parseRequiredEnvKeysCsv(requiredEnvRaw) : null;
@@ -363,6 +371,7 @@ function parseArgs(argv: string[]): CliArgs {
     outDir,
     windowEnd,
     inputPath,
+    requireProvidedInput,
     requiredEnvKeysCsv,
     schedulerName,
     environment,
@@ -431,6 +440,9 @@ function main(): void {
   if (args.allowRndDefaultSecretRefs) {
     readinessArgs.push("--allow-rnd-default-secret-ref");
   }
+  if (args.requireProvidedInput) {
+    readinessArgs.push("--require-provided-input");
+  }
 
   const readinessResult = runNodeScript(READINESS_RUNNER_PATH, readinessArgs);
   const readinessReport = fs.existsSync(readinessReportPath)
@@ -450,6 +462,7 @@ function main(): void {
       outDir: toWorkspacePath(args.outDir),
       windowEnd: args.windowEnd,
       inputPath: args.inputPath ? toWorkspacePath(args.inputPath) : null,
+      requireProvidedInput: args.requireProvidedInput,
     },
     artifacts: {
       handoffSummaryPath: toWorkspacePath(handoffSummaryPath),

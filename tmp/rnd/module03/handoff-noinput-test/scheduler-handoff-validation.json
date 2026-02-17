@@ -1,0 +1,68 @@
+{
+  "module": "03_personal_safety_validation_engine",
+  "phase": "EVALUATION",
+  "kpiId": "kpi-06",
+  "artifact": "scheduler_handoff_validation",
+  "generatedAt": "2026-02-17T10:16:51.913Z",
+  "windowEnd": "2026-02-17T10:16:50.268Z",
+  "strictEnv": true,
+  "scheduler": {
+    "name": "module03-kpi06-adverse-event-monthly",
+    "environment": "production-like"
+  },
+  "input": {
+    "source": "generated_representative_window",
+    "path": "tmp/rnd/module03/handoff-noinput-test/representative-export-window.json",
+    "rowCount": 12
+  },
+  "secrets": {
+    "requiredEnvKeys": [
+      "RND_MODULE03_FAILURE_WEBHOOK_TIMEOUT_MS",
+      "RND_MODULE03_FAILURE_WEBHOOK_URL",
+      "RND_MODULE03_WAREHOUSE_EXPORT_TOKEN"
+    ],
+    "boundSecretRefs": [
+      {
+        "envKey": "RND_MODULE03_FAILURE_WEBHOOK_TIMEOUT_MS",
+        "secretRef": "secret://rnd/module03/kpi06/rnd_module03_failure_webhook_timeout_ms"
+      },
+      {
+        "envKey": "RND_MODULE03_FAILURE_WEBHOOK_URL",
+        "secretRef": "secret://rnd/module03/kpi06/rnd_module03_failure_webhook_url"
+      },
+      {
+        "envKey": "RND_MODULE03_WAREHOUSE_EXPORT_TOKEN",
+        "secretRef": "secret://rnd/module03/kpi06/rnd_module03_warehouse_export_token"
+      }
+    ],
+    "runtimeEnvKeysInjected": [
+      "RND_MODULE03_FAILURE_WEBHOOK_TIMEOUT_MS",
+      "RND_MODULE03_FAILURE_WEBHOOK_URL",
+      "RND_MODULE03_WAREHOUSE_EXPORT_TOKEN"
+    ]
+  },
+  "artifacts": {
+    "outDir": "tmp/rnd/module03/handoff-noinput-test",
+    "deploymentBundlePath": "tmp/rnd/module03/handoff-noinput-test/scheduler-deployment-bundle.json",
+    "infraBindingPath": "tmp/rnd/module03/handoff-noinput-test/scheduler-infra-binding.json",
+    "dryRunReportPath": "tmp/rnd/module03/handoff-noinput-test/scheduler-dry-run-report.json"
+  },
+  "verification": {
+    "expectedOutputs": [
+      {
+        "path": "tmp/rnd/module03/handoff-noinput-test/archive/latest.json",
+        "exists": true
+      },
+      {
+        "path": "tmp/rnd/module03/handoff-noinput-test/archive/archive-manifest.json",
+        "exists": true
+      },
+      {
+        "path": "tmp/rnd/module03/handoff-noinput-test/handoff/latest.json",
+        "exists": true
+      }
+    ],
+    "allExpectedOutputsPresent": true,
+    "missingRequiredEnvKeys": []
+  }
+}

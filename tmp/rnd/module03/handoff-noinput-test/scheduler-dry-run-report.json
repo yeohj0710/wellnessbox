@@ -1,0 +1,64 @@
+{
+  "module": "03_personal_safety_validation_engine",
+  "phase": "EVALUATION",
+  "kpiId": "kpi-06",
+  "artifact": "scheduler_dry_run_report",
+  "generatedAt": "2026-02-17T10:16:51.903Z",
+  "sourceInfraBindingPath": "tmp/rnd/module03/handoff-noinput-test/scheduler-infra-binding.json",
+  "dryRun": {
+    "inputPath": "tmp/rnd/module03/handoff-noinput-test/representative-export-window.json",
+    "windowEnd": "2026-02-17T10:16:50.268Z",
+    "strictEnv": true,
+    "requiredEnvKeys": [
+      "RND_MODULE03_FAILURE_WEBHOOK_TIMEOUT_MS",
+      "RND_MODULE03_FAILURE_WEBHOOK_URL",
+      "RND_MODULE03_WAREHOUSE_EXPORT_TOKEN"
+    ],
+    "missingRequiredEnvKeys": [],
+    "appliedRetentionMonths": 18
+  },
+  "scheduler": {
+    "runnerPath": "scripts/rnd/module03/run-adverse-event-evaluation-scheduler.cjs",
+    "args": [
+      "--input",
+      "C:\\dev\\wellnessbox\\tmp\\rnd\\module03\\handoff-noinput-test\\representative-export-window.json",
+      "--schema-map",
+      "C:\\dev\\wellnessbox\\scripts\\rnd\\module03\\schema\\kpi06_pharmacovigilance_schema_map.json",
+      "--archive-dir",
+      "C:\\dev\\wellnessbox\\tmp\\rnd\\module03\\handoff-noinput-test\\archive",
+      "--handoff-dir",
+      "C:\\dev\\wellnessbox\\tmp\\rnd\\module03\\handoff-noinput-test\\handoff",
+      "--failure-alert-dir",
+      "C:\\dev\\wellnessbox\\tmp\\rnd\\module03\\handoff-noinput-test\\failure-alerts",
+      "--window-end",
+      "2026-02-17T10:16:50.268Z",
+      "--retention-months",
+      "18",
+      "--require-env",
+      "RND_MODULE03_FAILURE_WEBHOOK_TIMEOUT_MS,RND_MODULE03_FAILURE_WEBHOOK_URL,RND_MODULE03_WAREHOUSE_EXPORT_TOKEN",
+      "--failure-webhook-url",
+      "https://example.com/rnd/module03/kpi06/failure-webhook",
+      "--failure-webhook-timeout-ms",
+      "3000"
+    ],
+    "stdout": "Prepared Module 03 KPI #6 warehouse export input: tmp/rnd/module03/handoff-noinput-test/representative-export-window.json (rows=12)\nUpdated Module 03 KPI #6 archive: tmp/rnd/module03/handoff-noinput-test/archive/latest.json\nWrote Module 03 KPI #6 handoff artifact: tmp/rnd/module03/handoff-noinput-test/handoff/2026-02/kpi06-warehouse-handoff-2026-02-17T10-16-51-891Z.json",
+    "stderr": ""
+  },
+  "verification": {
+    "expectedOutputs": [
+      {
+        "path": "tmp/rnd/module03/handoff-noinput-test/archive/latest.json",
+        "exists": true
+      },
+      {
+        "path": "tmp/rnd/module03/handoff-noinput-test/archive/archive-manifest.json",
+        "exists": true
+      },
+      {
+        "path": "tmp/rnd/module03/handoff-noinput-test/handoff/latest.json",
+        "exists": true
+      }
+    ],
+    "allExpectedOutputsPresent": true
+  }
+}

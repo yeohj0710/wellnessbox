@@ -7,13 +7,23 @@ function ensureKey() {
   return key;
 }
 
+const DEFAULT_CHAT_TEMPERATURE = 0.45;
+const MIN_CHAT_TEMPERATURE = 0;
+const MAX_CHAT_TEMPERATURE = 1;
+
+function resolveChatTemperature() {
+  const raw = Number.parseFloat(process.env.OPENAI_CHAT_TEMPERATURE || "");
+  if (!Number.isFinite(raw)) return DEFAULT_CHAT_TEMPERATURE;
+  return Math.min(MAX_CHAT_TEMPERATURE, Math.max(MIN_CHAT_TEMPERATURE, raw));
+}
+
 export function getChatModel(
   modelName = process.env.OPENAI_MODEL || "gpt-4o-mini"
 ) {
   const apiKey = ensureKey();
   return new ChatOpenAI({
     model: modelName,
-    temperature: 0.3,
+    temperature: resolveChatTemperature(),
     apiKey,
     streaming: true,
   });

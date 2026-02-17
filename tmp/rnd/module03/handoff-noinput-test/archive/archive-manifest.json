@@ -1,0 +1,32 @@
+{
+  "module": "03_personal_safety_validation_engine",
+  "phase": "EVALUATION",
+  "kpiId": "kpi-06",
+  "artifact": "monthly_archive",
+  "generatedAt": "2026-02-17T10:16:51.880Z",
+  "archiveDir": "C:\\dev\\wellnessbox\\tmp\\rnd\\module03\\handoff-noinput-test\\archive",
+  "entries": [
+    {
+      "month": "2026-02",
+      "archivedAt": "2026-02-17T10:16:51.880Z",
+      "evaluatedAt": "2026-02-17T10:16:50.268Z",
+      "windowStart": "2025-02-17T10:16:50.268Z",
+      "windowEnd": "2026-02-17T10:16:50.268Z",
+      "sourceRowCount": 12,
+      "countedEventCount": 4,
+      "targetMaxCountPerYear": 5,
+      "targetSatisfied": true,
+      "inputPath": "C:\\dev\\wellnessbox\\tmp\\rnd\\module03\\handoff-noinput-test\\representative-export-window.json",
+      "schemaMapPath": "C:\\dev\\wellnessbox\\scripts\\rnd\\module03\\schema\\kpi06_pharmacovigilance_schema_map.json",
+      "reportPath": "2026-02/kpi06-ops-evaluation-2026-02-17T10-16-50-268Z.json"
+    }
+  ],
+  "retentionPolicy": {
+    "retentionMonths": 18,
+    "cutoffMonth": "2024-09",
+    "appliedAt": "2026-02-17T10:16:51.880Z",
+    "prunedEntryCount": 0,
+    "prunedReportCount": 0,
+    "prunedMonths": []
+  }
+}

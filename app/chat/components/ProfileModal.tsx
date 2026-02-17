@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import type { UserProfile } from "@/types/chat";
 
@@ -15,10 +16,15 @@ export default function ProfileModal({
 }) {
   const [local, setLocal] = useState<UserProfile>({ ...(profile || {}) });
   const [confirmReset, setConfirmReset] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setLocal({ ...(profile || {}) });
   }, [profile]);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -31,19 +37,29 @@ export default function ProfileModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [confirmReset, onClose]);
 
+  useEffect(() => {
+    if (!isMounted) return;
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isMounted]);
+
   function set<K extends keyof UserProfile>(k: K, v: UserProfile[K]) {
     setLocal((p) => ({ ...(p || {}), [k]: v }));
   }
-  return (
+  const modal = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 p-3 sm:p-4"
       onClick={onClose}
     >
       <div
-        className="w-[min(100vw-32px,700px)] max-h-[88dvh] bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col"
+        className="flex max-h-[min(92dvh,860px)] w-[min(100vw-24px,620px)] flex-col overflow-hidden rounded-2xl bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 sm:px-6 py-5">
+        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4 sm:px-6 sm:py-5">
           <div className="text-lg font-semibold text-slate-900">
             프로필 설정
           </div>
@@ -57,7 +73,7 @@ export default function ProfileModal({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 py-4 isolate [will-change:scroll-position]">
+        <div className="isolate flex-1 overflow-y-auto overscroll-contain px-4 py-4 [scrollbar-gutter:stable] [will-change:scroll-position] sm:px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <LabeledInput
               label="이름"
@@ -174,8 +190,8 @@ export default function ProfileModal({
           </div>
         </div>
 
-        <div className="border-t border-slate-200 bg-white px-5 sm:px-6 py-4">
-          <div className="flex items-center justify-between gap-3">
+        <div className="border-t border-slate-200 bg-white px-4 py-4 sm:px-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <button
               className="text-sm text-rose-600 hover:text-rose-700"
               onClick={() => setConfirmReset(true)}
@@ -240,6 +256,8 @@ export default function ProfileModal({
       )}
     </div>
   );
+
+  return isMounted ? createPortal(modal, document.body) : null;
 }
 
 function LabeledInput({

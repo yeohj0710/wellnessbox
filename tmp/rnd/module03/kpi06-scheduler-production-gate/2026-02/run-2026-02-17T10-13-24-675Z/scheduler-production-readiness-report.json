@@ -1,0 +1,98 @@
+{
+  "module": "03_personal_safety_validation_engine",
+  "phase": "EVALUATION",
+  "kpiId": "kpi-06",
+  "artifact": "scheduler_production_readiness_report",
+  "generatedAt": "2026-02-17T10:13:27.687Z",
+  "result": "pass",
+  "expectedEnvironment": "production-like",
+  "source": {
+    "summaryPath": "tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation/scheduler-handoff-validation.json",
+    "infraBindingPath": "tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation/scheduler-infra-binding.json"
+  },
+  "input": {
+    "source": "provided_input",
+    "path": "tmp/rnd/module03/manual-production-window.json",
+    "rowCount": 3,
+    "requireProvidedInput": true
+  },
+  "scheduler": {
+    "name": "module03-kpi06-adverse-event-monthly",
+    "summaryEnvironment": "production-like",
+    "infraEnvironment": "production-like",
+    "commandTemplate": "npm run rnd:module03:evaluation:adverse:ops:scheduler -- \"--export-command\" \"warehouse-cli export --window-end \\\"{{window_end_utc}}\\\" --sql-file \\\"{{sql_template_path}}\\\" --out \\\"{{export_output_path}}\\\"\" \"--schema-map\" \"scripts/rnd/module03/schema/kpi06_pharmacovigilance_schema_map.json\" \"--sql-template\" \"scripts/rnd/module03/sql/kpi06_adverse_events_last_12_months.sql\" \"--archive-dir\" \"tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation/archive\" \"--handoff-dir\" \"tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation/handoff\" \"--failure-alert-dir\" \"tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation/failure-alerts\" \"--retention-months\" \"18\" \"--window-end\" \"{{scheduler_run_iso_utc}}\" \"--failure-webhook-url\" \"${RND_MODULE03_FAILURE_WEBHOOK_URL}\" \"--failure-webhook-timeout-ms\" \"${RND_MODULE03_FAILURE_WEBHOOK_TIMEOUT_MS}\" \"--require-env\" \"RND_MODULE03_WAREHOUSE_EXPORT_TOKEN\""
+  },
+  "checks": [
+    {
+      "id": "strict-env-enabled",
+      "passed": true,
+      "detail": "Handoff validation used strict environment checks."
+    },
+    {
+      "id": "dry-run-expected-outputs",
+      "passed": true,
+      "detail": "Dry-run verification confirms all expected outputs are present."
+    },
+    {
+      "id": "dry-run-required-env-complete",
+      "passed": true,
+      "detail": "Dry-run verification reports no missing required env keys."
+    },
+    {
+      "id": "provided-input-required",
+      "passed": true,
+      "detail": "Handoff validation consumed a provided input window as required."
+    },
+    {
+      "id": "summary-environment-match",
+      "passed": true,
+      "detail": "Handoff summary environment matches expected \"production-like\"."
+    },
+    {
+      "id": "infra-environment-match",
+      "passed": true,
+      "detail": "Infra binding environment matches expected \"production-like\"."
+    },
+    {
+      "id": "required-env-keyset-match",
+      "passed": true,
+      "detail": "Summary and infra binding contain the same required env key set."
+    },
+    {
+      "id": "infra-missing-env-keys",
+      "passed": true,
+      "detail": "Infra binding reports no missing env keys."
+    },
+    {
+      "id": "summary-secret-binding-coverage",
+      "passed": true,
+      "detail": "Handoff summary has secret bindings for all required env keys."
+    },
+    {
+      "id": "infra-secret-binding-coverage",
+      "passed": true,
+      "detail": "Infra binding has secret bindings for all required env keys."
+    },
+    {
+      "id": "summary-infra-binding-consistency",
+      "passed": true,
+      "detail": "Summary and infra binding secret refs are consistent."
+    },
+    {
+      "id": "no-placeholder-secret-refs",
+      "passed": true,
+      "detail": "Infra binding secret refs are non-placeholder values."
+    },
+    {
+      "id": "no-rnd-default-secret-refs",
+      "passed": true,
+      "detail": "Default RND secret refs allowed by flag (--allow-rnd-default-secret-ref)."
+    },
+    {
+      "id": "scheduler-command-template-present",
+      "passed": true,
+      "detail": "Infra binding carries the expected scheduler command template."
+    }
+  ],
+  "failures": []
+}

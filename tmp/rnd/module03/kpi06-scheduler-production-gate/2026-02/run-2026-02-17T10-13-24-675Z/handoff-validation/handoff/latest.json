@@ -1,0 +1,8 @@
+{
+  "module": "03_personal_safety_validation_engine",
+  "phase": "EVALUATION",
+  "kpiId": "kpi-06",
+  "artifact": "warehouse_export_handoff_latest",
+  "generatedAt": "2026-02-17T10:13:27.308Z",
+  "handoffPath": "2026-02/kpi06-warehouse-handoff-2026-02-17T10-13-27-308Z.json"
+}

@@ -39,6 +39,7 @@ export type ActionableRecommendation = {
 };
 
 let productNameCatalogPromise: Promise<ProductNameItem[]> | null = null;
+let productNameCatalogRetryAt = 0;
 const recommendationResolveCache = new Map<
   string,
   Promise<ActionableRecommendation[]>
@@ -144,12 +145,24 @@ export function parseRecommendationLines(content: string): RecommendationLine[] 
 }
 
 async function fetchProductNameCatalog() {
+  const now = Date.now();
+  if (now < productNameCatalogRetryAt) return [];
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    productNameCatalogRetryAt = now + 4_000;
+    return [];
+  }
+
   if (productNameCatalogPromise) return productNameCatalogPromise;
   productNameCatalogPromise = fetch("/api/product/names", {
     method: "GET",
     cache: "no-store",
   })
-    .then((response) => response.json().catch(() => ({})))
+    .then(async (response) => {
+      if (!response.ok) {
+        throw new Error(`product names status ${response.status}`);
+      }
+      return response.json().catch(() => ({}));
+    })
     .then((json) =>
       Array.isArray(json?.products)
         ? json.products
@@ -160,7 +173,11 @@ async function fetchProductNameCatalog() {
             .filter((item: ProductNameItem) => Number.isFinite(item.id) && item.name)
         : []
     )
-    .catch(() => []);
+    .catch(() => {
+      productNameCatalogRetryAt = Date.now() + 4_000;
+      productNameCatalogPromise = null;
+      return [];
+    });
   return productNameCatalogPromise;
 }
 

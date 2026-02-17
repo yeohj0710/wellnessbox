@@ -1,0 +1,74 @@
+[
+  {
+    "event_id": "pv-event-0001",
+    "case_id": "pv-case-0001",
+    "reported_at": "2026-02-12T10:16:50.268Z",
+    "linked_to_engine_recommendation": "yes"
+  },
+  {
+    "event_id": "pv-event-0002",
+    "case_id": "pv-case-0002",
+    "reported_at": "2026-01-23T10:16:50.268Z",
+    "linked_to_engine_recommendation": "yes"
+  },
+  {
+    "event_id": "pv-event-0003",
+    "case_id": "pv-case-0003",
+    "reported_at": "2026-01-03T10:16:50.268Z",
+    "linked_to_engine_recommendation": "yes"
+  },
+  {
+    "event_id": "pv-event-0004",
+    "case_id": "pv-case-0004",
+    "reported_at": "2025-12-14T10:16:50.268Z",
+    "linked_to_engine_recommendation": "yes"
+  },
+  {
+    "event_id": "pv-event-0005",
+    "case_id": "pv-case-0005",
+    "reported_at": "2025-11-24T10:16:50.268Z",
+    "linked_to_engine_recommendation": "no"
+  },
+  {
+    "event_id": "pv-event-0006",
+    "case_id": "pv-case-0006",
+    "reported_at": "2025-11-04T10:16:50.268Z",
+    "linked_to_engine_recommendation": "no"
+  },
+  {
+    "event_id": "pv-event-0007",
+    "case_id": "pv-case-0007",
+    "reported_at": "2025-10-15T10:16:50.268Z",
+    "linked_to_engine_recommendation": "no"
+  },
+  {
+    "event_id": "pv-event-0008",
+    "case_id": "pv-case-0008",
+    "reported_at": "2025-09-25T10:16:50.268Z",
+    "linked_to_engine_recommendation": "no"
+  },
+  {
+    "event_id": "pv-event-0009",
+    "case_id": "pv-case-0009",
+    "reported_at": "2025-09-05T10:16:50.268Z",
+    "linked_to_engine_recommendation": "no"
+  },
+  {
+    "event_id": "pv-event-0010",
+    "case_id": "pv-case-0010",
+    "reported_at": "2025-08-16T10:16:50.268Z",
+    "linked_to_engine_recommendation": "no"
+  },
+  {
+    "event_id": "pv-event-0011",
+    "case_id": "pv-case-0011",
+    "reported_at": "2025-07-27T10:16:50.268Z",
+    "linked_to_engine_recommendation": "no"
+  },
+  {
+    "event_id": "pv-event-0012",
+    "case_id": "pv-case-0012",
+    "reported_at": "2025-07-07T10:16:50.268Z",
+    "linked_to_engine_recommendation": "no"
+  }
+]

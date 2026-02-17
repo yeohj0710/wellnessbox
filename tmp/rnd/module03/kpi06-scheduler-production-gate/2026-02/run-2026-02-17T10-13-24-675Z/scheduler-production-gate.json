@@ -1,0 +1,36 @@
+{
+  "module": "03_personal_safety_validation_engine",
+  "phase": "EVALUATION",
+  "kpiId": "kpi-06",
+  "artifact": "scheduler_production_gate",
+  "generatedAt": "2026-02-17T10:13:27.699Z",
+  "result": "pass",
+  "expectedEnvironment": "production-like",
+  "environment": "production-like",
+  "inputs": {
+    "outDir": "tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z",
+    "windowEnd": "2026-02-17T10:13:24.675Z",
+    "inputPath": "tmp/rnd/module03/manual-production-window.json",
+    "requireProvidedInput": true
+  },
+  "artifacts": {
+    "handoffSummaryPath": "tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation/scheduler-handoff-validation.json",
+    "readinessReportPath": "tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/scheduler-production-readiness-report.json"
+  },
+  "commands": {
+    "handoffValidation": {
+      "command": "node scripts/rnd/module03/run-scheduler-handoff-validation.cjs --out-dir C:\\dev\\wellnessbox\\tmp\\rnd\\module03\\kpi06-scheduler-production-gate\\2026-02\\run-2026-02-17T10-13-24-675Z\\handoff-validation --window-end 2026-02-17T10:13:24.675Z --environment production-like --input C:\\dev\\wellnessbox\\tmp\\rnd\\module03\\manual-production-window.json",
+      "exitCode": 0,
+      "succeeded": true
+    },
+    "readinessValidation": {
+      "command": "node scripts/rnd/module03/run-validate-scheduler-production-readiness.cjs --summary C:\\dev\\wellnessbox\\tmp\\rnd\\module03\\kpi06-scheduler-production-gate\\2026-02\\run-2026-02-17T10-13-24-675Z\\handoff-validation\\scheduler-handoff-validation.json --out C:\\dev\\wellnessbox\\tmp\\rnd\\module03\\kpi06-scheduler-production-gate\\2026-02\\run-2026-02-17T10-13-24-675Z\\scheduler-production-readiness-report.json --expected-environment production-like --allow-rnd-default-secret-ref --require-provided-input",
+      "exitCode": 0,
+      "succeeded": true
+    }
+  },
+  "readiness": {
+    "reportResult": "pass",
+    "failures": []
+  }
+}

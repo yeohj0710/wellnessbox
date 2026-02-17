@@ -1,0 +1,151 @@
+{
+  "module": "02_data_lake",
+  "phase": "EVALUATION",
+  "artifact": "kpi_rollup",
+  "generatedAt": "2026-02-17T09:06:31.214Z",
+  "evaluatedAt": "2026-02-17T09:06:31.214Z",
+  "environment": {
+    "nodeVersion": "v20.19.6",
+    "platform": "win32",
+    "arch": "x64",
+    "cpuCount": 24
+  },
+  "commands": [
+    "node scripts/rnd/module02/run-evaluation.cjs --out C:\\dev\\wellnessbox\\tmp\\rnd\\kpi-rollup\\2026-02-17T09-06-31-214Z\\module-evaluations\\module02-evaluation.json --generated-at 2026-02-17T09:06:31.214Z --evaluated-at 2026-02-17T09:06:31.214Z",
+    "node scripts/rnd/module03/run-evaluation.cjs --out C:\\dev\\wellnessbox\\tmp\\rnd\\kpi-rollup\\2026-02-17T09-06-31-214Z\\module-evaluations\\module03-evaluation.json --generated-at 2026-02-17T09:06:31.214Z --evaluated-at 2026-02-17T09:06:31.214Z",
+    "node scripts/rnd/module04/run-evaluation.cjs --out C:\\dev\\wellnessbox\\tmp\\rnd\\kpi-rollup\\2026-02-17T09-06-31-214Z\\module-evaluations\\module04-evaluation.json --generated-at 2026-02-17T09:06:31.214Z --evaluated-at 2026-02-17T09:06:31.214Z",
+    "node scripts/rnd/module05/run-evaluation.cjs --out C:\\dev\\wellnessbox\\tmp\\rnd\\kpi-rollup\\2026-02-17T09-06-31-214Z\\module-evaluations\\module05-evaluation.json --generated-at 2026-02-17T09:06:31.214Z --evaluated-at 2026-02-17T09:06:31.214Z",
+    "node scripts/rnd/module06/run-evaluation.cjs --out C:\\dev\\wellnessbox\\tmp\\rnd\\kpi-rollup\\2026-02-17T09-06-31-214Z\\module-evaluations\\module06-evaluation.json --generated-at 2026-02-17T09:06:31.214Z --evaluated-at 2026-02-17T09:06:31.214Z",
+    "node scripts/rnd/module07/run-evaluation.cjs --out C:\\dev\\wellnessbox\\tmp\\rnd\\kpi-rollup\\2026-02-17T09-06-31-214Z\\module-evaluations\\module07-evaluation.json --generated-at 2026-02-17T09:06:31.214Z --evaluated-at 2026-02-17T09:06:31.214Z"
+  ],
+  "moduleArtifacts": [
+    {
+      "moduleId": "02_data_lake",
+      "outputPath": "module-evaluations\\module02-evaluation.json"
+    },
+    {
+      "moduleId": "03_personal_safety_validation_engine",
+      "outputPath": "module-evaluations\\module03-evaluation.json"
+    },
+    {
+      "moduleId": "04_efficacy_quantification_model",
+      "outputPath": "module-evaluations\\module04-evaluation.json"
+    },
+    {
+      "moduleId": "05_optimization_engine",
+      "outputPath": "module-evaluations\\module05-evaluation.json"
+    },
+    {
+      "moduleId": "06_closed_loop_ai",
+      "outputPath": "module-evaluations\\module06-evaluation.json"
+    },
+    {
+      "moduleId": "07_biosensor_and_genetic_data_integration",
+      "outputPath": "module-evaluations\\module07-evaluation.json"
+    }
+  ],
+  "kpiRollup": {
+    "kpi01": {
+      "kpiId": "kpi-01",
+      "metric": "Recommendation accuracy",
+      "unit": "%",
+      "measuredValue": 100,
+      "targetValue": 80,
+      "targetSatisfied": true,
+      "dataRequirementSatisfied": true
+    },
+    "kpi02": {
+      "kpiId": "kpi-02",
+      "metric": "Measured efficacy improvement (SCGI)",
+      "unit": "pp",
+      "measuredValue": 51.0285,
+      "targetValue": 0,
+      "targetSatisfied": true,
+      "dataRequirementSatisfied": true
+    },
+    "kpi03": {
+      "kpiId": "kpi-03",
+      "metric": "Closed-loop action execution accuracy",
+      "unit": "%",
+      "measuredValue": 100,
+      "targetValue": 80,
+      "targetSatisfied": true,
+      "dataRequirementSatisfied": true
+    },
+    "kpi04": {
+      "kpiId": "kpi-04",
+      "metric": "Closed-loop consultation response accuracy",
+      "unit": "%",
+      "measuredValue": 100,
+      "targetValue": 91,
+      "targetSatisfied": true,
+      "dataRequirementSatisfied": true
+    },
+    "kpi05": {
+      "kpiId": "kpi-05",
+      "metric": "Safety/data-lake reference accuracy",
+      "unit": "%",
+      "measuredValue": 100,
+      "targetValue": 95,
+      "targetSatisfied": true,
+      "dataRequirementSatisfied": true,
+      "moduleBreakdown": [
+        {
+          "moduleId": "02_data_lake",
+          "accuracyPercent": 100,
+          "targetPercent": 95,
+          "targetSatisfied": true,
+          "ruleCount": 100,
+          "minRuleCount": 100,
+          "minRuleCountSatisfied": true
+        },
+        {
+          "moduleId": "03_personal_safety_validation_engine",
+          "accuracyPercent": 100,
+          "targetPercent": 95,
+          "targetSatisfied": true,
+          "ruleCount": 100,
+          "minRuleCount": 100,
+          "minRuleCountSatisfied": true
+        },
+        {
+          "moduleId": "07_biosensor_and_genetic_data_integration",
+          "accuracyPercent": 100,
+          "targetPercent": 95,
+          "targetSatisfied": true,
+          "ruleCount": 100,
+          "minRuleCount": 100,
+          "minRuleCountSatisfied": true
+        }
+      ]
+    },
+    "kpi06": {
+      "kpiId": "kpi-06",
+      "metric": "Adverse event annual report count",
+      "unit": "count/year",
+      "measuredValue": 4,
+      "targetValue": 5,
+      "targetSatisfied": true,
+      "dataRequirementSatisfied": true,
+      "evaluatedAt": "2026-02-17T09:06:31.214Z",
+      "windowStart": "2025-02-17T09:06:31.214Z",
+      "windowEnd": "2026-02-17T09:06:31.214Z"
+    },
+    "kpi07": {
+      "kpiId": "kpi-07",
+      "metric": "Biosensor and genetic integration rate",
+      "unit": "%",
+      "measuredValue": 100,
+      "targetValue": 90,
+      "targetSatisfied": true,
+      "dataRequirementSatisfied": true
+    }
+  },
+  "summary": {
+    "measuredKpiCount": 7,
+    "targetSatisfiedCount": 7,
+    "dataRequirementSatisfiedCount": 7,
+    "allTargetsSatisfied": true,
+    "allDataRequirementsSatisfied": true
+  }
+}

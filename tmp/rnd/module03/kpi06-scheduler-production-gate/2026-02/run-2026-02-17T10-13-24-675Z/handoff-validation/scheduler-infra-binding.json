@@ -1,0 +1,92 @@
+{
+  "module": "03_personal_safety_validation_engine",
+  "phase": "EVALUATION",
+  "kpiId": "kpi-06",
+  "artifact": "scheduler_infra_binding",
+  "generatedAt": "2026-02-17T10:13:25.706Z",
+  "environment": "production-like",
+  "sourceBundlePath": "tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation/scheduler-deployment-bundle.json",
+  "scheduler": {
+    "name": "module03-kpi06-adverse-event-monthly",
+    "cadenceCron": "0 3 1 * *",
+    "timezone": "UTC",
+    "npmScript": "rnd:module03:evaluation:adverse:ops:scheduler",
+    "commandTemplate": "npm run rnd:module03:evaluation:adverse:ops:scheduler -- \"--export-command\" \"warehouse-cli export --window-end \\\"{{window_end_utc}}\\\" --sql-file \\\"{{sql_template_path}}\\\" --out \\\"{{export_output_path}}\\\"\" \"--schema-map\" \"scripts/rnd/module03/schema/kpi06_pharmacovigilance_schema_map.json\" \"--sql-template\" \"scripts/rnd/module03/sql/kpi06_adverse_events_last_12_months.sql\" \"--archive-dir\" \"tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation/archive\" \"--handoff-dir\" \"tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation/handoff\" \"--failure-alert-dir\" \"tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation/failure-alerts\" \"--retention-months\" \"18\" \"--window-end\" \"{{scheduler_run_iso_utc}}\" \"--failure-webhook-url\" \"${RND_MODULE03_FAILURE_WEBHOOK_URL}\" \"--failure-webhook-timeout-ms\" \"${RND_MODULE03_FAILURE_WEBHOOK_TIMEOUT_MS}\" \"--require-env\" \"RND_MODULE03_WAREHOUSE_EXPORT_TOKEN\"",
+    "commandArgs": [
+      "--export-command",
+      "warehouse-cli export --window-end \"{{window_end_utc}}\" --sql-file \"{{sql_template_path}}\" --out \"{{export_output_path}}\"",
+      "--schema-map",
+      "scripts/rnd/module03/schema/kpi06_pharmacovigilance_schema_map.json",
+      "--sql-template",
+      "scripts/rnd/module03/sql/kpi06_adverse_events_last_12_months.sql",
+      "--archive-dir",
+      "tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation/archive",
+      "--handoff-dir",
+      "tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation/handoff",
+      "--failure-alert-dir",
+      "tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation/failure-alerts",
+      "--retention-months",
+      "18",
+      "--window-end",
+      "{{scheduler_run_iso_utc}}",
+      "--failure-webhook-url",
+      "${RND_MODULE03_FAILURE_WEBHOOK_URL}",
+      "--failure-webhook-timeout-ms",
+      "${RND_MODULE03_FAILURE_WEBHOOK_TIMEOUT_MS}",
+      "--require-env",
+      "RND_MODULE03_WAREHOUSE_EXPORT_TOKEN"
+    ]
+  },
+  "secrets": {
+    "requiredEnvKeys": [
+      "RND_MODULE03_FAILURE_WEBHOOK_TIMEOUT_MS",
+      "RND_MODULE03_FAILURE_WEBHOOK_URL",
+      "RND_MODULE03_WAREHOUSE_EXPORT_TOKEN"
+    ],
+    "boundEnvKeys": [
+      "RND_MODULE03_FAILURE_WEBHOOK_TIMEOUT_MS",
+      "RND_MODULE03_FAILURE_WEBHOOK_URL",
+      "RND_MODULE03_WAREHOUSE_EXPORT_TOKEN"
+    ],
+    "missingEnvKeys": [],
+    "failureWebhookEnvKey": "RND_MODULE03_FAILURE_WEBHOOK_URL",
+    "failureWebhookTimeoutEnvKey": "RND_MODULE03_FAILURE_WEBHOOK_TIMEOUT_MS",
+    "bindings": [
+      {
+        "envKey": "RND_MODULE03_FAILURE_WEBHOOK_TIMEOUT_MS",
+        "secretRef": "secret://rnd/module03/kpi06/rnd_module03_failure_webhook_timeout_ms"
+      },
+      {
+        "envKey": "RND_MODULE03_FAILURE_WEBHOOK_URL",
+        "secretRef": "secret://rnd/module03/kpi06/rnd_module03_failure_webhook_url"
+      },
+      {
+        "envKey": "RND_MODULE03_WAREHOUSE_EXPORT_TOKEN",
+        "secretRef": "secret://rnd/module03/kpi06/rnd_module03_warehouse_export_token"
+      }
+    ]
+  },
+  "warehouse": {
+    "exportCommandTemplate": "warehouse-cli export --window-end \"{{window_end_utc}}\" --sql-file \"{{sql_template_path}}\" --out \"{{export_output_path}}\"",
+    "sqlTemplatePath": "scripts/rnd/module03/sql/kpi06_adverse_events_last_12_months.sql",
+    "schemaMapPath": "scripts/rnd/module03/schema/kpi06_pharmacovigilance_schema_map.json",
+    "placeholders": [
+      "{{window_end_utc}}",
+      "{{sql_template_path}}",
+      "{{export_output_path}}"
+    ]
+  },
+  "artifacts": {
+    "archiveDir": "tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation/archive",
+    "handoffDir": "tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation/handoff",
+    "failureAlertDir": "tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation/failure-alerts"
+  },
+  "verification": {
+    "dryRunCommandWithInput": "npm run rnd:module03:evaluation:adverse:ops:scheduler -- --input \"tmp/rnd/module03/sample-export.json\" --schema-map \"scripts/rnd/module03/schema/kpi06_pharmacovigilance_schema_map.json\" --archive-dir \"tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation/archive\" --handoff-dir \"tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation/handoff\" --failure-alert-dir \"tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation/failure-alerts\" --retention-months 18 --window-end \"{{scheduler_run_iso_utc}}\"",
+    "expectedOutputs": [
+      "tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation/archive/latest.json",
+      "tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation/archive/archive-manifest.json",
+      "tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation/handoff/latest.json"
+    ]
+  }
+}

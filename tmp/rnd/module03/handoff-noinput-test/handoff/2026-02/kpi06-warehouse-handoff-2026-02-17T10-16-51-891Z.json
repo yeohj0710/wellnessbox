@@ -1,0 +1,46 @@
+{
+  "module": "03_personal_safety_validation_engine",
+  "phase": "EVALUATION",
+  "kpiId": "kpi-06",
+  "artifact": "warehouse_export_handoff",
+  "generatedAt": "2026-02-17T10:16:51.891Z",
+  "windowEnd": "2026-02-17T10:16:50.268Z",
+  "scheduler": {
+    "exportSource": "provided_input",
+    "retentionMonths": 18,
+    "requiredEnvKeys": [
+      "RND_MODULE03_FAILURE_WEBHOOK_TIMEOUT_MS",
+      "RND_MODULE03_FAILURE_WEBHOOK_URL",
+      "RND_MODULE03_WAREHOUSE_EXPORT_TOKEN"
+    ],
+    "missingRequiredEnvKeys": [],
+    "exportCommandTemplate": null,
+    "resolvedExportCommand": null,
+    "sqlTemplatePath": "scripts/rnd/module03/sql/kpi06_adverse_events_last_12_months.sql"
+  },
+  "warehouseExport": {
+    "inputPath": "tmp/rnd/module03/handoff-noinput-test/representative-export-window.json",
+    "rowCount": 12
+  },
+  "archive": {
+    "archiveDir": "tmp/rnd/module03/handoff-noinput-test/archive",
+    "latestPath": "tmp/rnd/module03/handoff-noinput-test/archive/latest.json",
+    "manifestPath": "tmp/rnd/module03/handoff-noinput-test/archive/archive-manifest.json",
+    "manifestEntryCount": 1,
+    "reportPath": "tmp/rnd/module03/handoff-noinput-test/archive/2026-02/kpi06-ops-evaluation-2026-02-17T10-16-50-268Z.json",
+    "latestEntry": {
+      "month": "2026-02",
+      "archivedAt": "2026-02-17T10:16:51.880Z",
+      "evaluatedAt": "2026-02-17T10:16:50.268Z",
+      "windowStart": "2025-02-17T10:16:50.268Z",
+      "windowEnd": "2026-02-17T10:16:50.268Z",
+      "sourceRowCount": 12,
+      "countedEventCount": 4,
+      "targetMaxCountPerYear": 5,
+      "targetSatisfied": true,
+      "inputPath": "C:\\dev\\wellnessbox\\tmp\\rnd\\module03\\handoff-noinput-test\\representative-export-window.json",
+      "schemaMapPath": "C:\\dev\\wellnessbox\\scripts\\rnd\\module03\\schema\\kpi06_pharmacovigilance_schema_map.json",
+      "reportPath": "2026-02/kpi06-ops-evaluation-2026-02-17T10-16-50-268Z.json"
+    }
+  }
+}

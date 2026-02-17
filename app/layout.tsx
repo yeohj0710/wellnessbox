@@ -15,6 +15,7 @@ import AppBackHandler from "@/components/common/appBackHandler";
 import PullToRefresh from "@/components/common/pullToRefresh";
 import GlobalCartHost from "@/components/order/globalCartHost";
 import DesktopChatDock from "@/components/chat/DesktopChatDock";
+import ChatCartActionHost from "@/components/chat/ChatCartActionHost";
 import Script from "next/script";
 import GoogleTranslateGate from "@/components/common/GoogleTranslateGate";
 
@@ -110,6 +111,7 @@ export default async function RootLayout({
                   {children}
                 </main>
                 <GlobalCartHost />
+                <ChatCartActionHost />
                 <DesktopChatDock />
                 <RouteTransition />
               </ToastProvider>

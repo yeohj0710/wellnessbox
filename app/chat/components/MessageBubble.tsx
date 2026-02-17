@@ -23,6 +23,9 @@ export default function MessageBubble({
   const isUser = role === "user";
   const [copied, setCopied] = useState(false);
   const [loadingHintIndex, setLoadingHintIndex] = useState(0);
+  const [isOnline, setIsOnline] = useState(
+    typeof navigator === "undefined" ? true : navigator.onLine !== false
+  );
   const loadingHints = useMemo(
     () => [
       "맞춤 영양 분석을 정리하고 있어요.",
@@ -49,6 +52,18 @@ export default function MessageBubble({
     }, 1700);
     return () => window.clearInterval(timer);
   }, [isUser, loadingHints.length, text]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onOnline = () => setIsOnline(true);
+    const onOffline = () => setIsOnline(false);
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+    return () => {
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
+    };
+  }, []);
 
   async function handleCopy() {
     try {
@@ -171,11 +186,16 @@ export default function MessageBubble({
                         return "";
                       }
                     })();
+                    const isRemoteImage = Boolean(remoteHost);
+                    const isSupportedRemote = remoteHost === "imagedelivery.net";
                     const canUseNextImage =
-                      hasDimensions &&
-                      (src.startsWith("/") || remoteHost === "imagedelivery.net");
+                      hasDimensions && src.startsWith("/");
 
-                    if (!src || !canUseNextImage) {
+                    if (
+                      !src ||
+                      !canUseNextImage ||
+                      (isRemoteImage && !isSupportedRemote)
+                    ) {
                       const fallbackClassName = [
                         "my-2 rounded-lg border border-slate-200",
                         typeof props.className === "string"
@@ -184,9 +204,12 @@ export default function MessageBubble({
                       ]
                         .filter(Boolean)
                         .join(" ");
+
+                      const fallbackSrc =
+                        !isOnline && isRemoteImage ? "/placeholder.png" : src;
                       return (
                         <img
-                          src={src}
+                          src={fallbackSrc}
                           className={fallbackClassName}
                           alt={alt}
                           loading="lazy"

@@ -7,6 +7,7 @@ type CliArgs = {
   summaryPath: string;
   outPath: string;
   expectedEnvironment: string;
+  requireProvidedInput: boolean;
   allowRndDefaultSecretRefs: boolean;
 };
 
@@ -21,6 +22,11 @@ type SchedulerHandoffValidationSummary = {
   kpiId: "kpi-06";
   artifact: "scheduler_handoff_validation";
   strictEnv: boolean;
+  input: {
+    source: "provided_input" | "generated_representative_window";
+    path: string;
+    rowCount: number;
+  };
   scheduler: {
     name: string;
     environment: string;
@@ -73,6 +79,12 @@ type SchedulerProductionReadinessReport = {
     summaryPath: string;
     infraBindingPath: string;
   };
+  input: {
+    source: "provided_input" | "generated_representative_window";
+    path: string;
+    rowCount: number;
+    requireProvidedInput: boolean;
+  };
   scheduler: {
     name: string;
     summaryEnvironment: string;
@@ -117,6 +129,25 @@ function assertEnvironmentVariableName(value: string, fieldName: string): string
     throw new Error(`${fieldName} must be a valid environment variable name.`);
   }
   return value;
+}
+
+function assertPositiveInteger(value: unknown, fieldName: string): number {
+  if (typeof value !== "number" || !Number.isInteger(value) || value <= 0) {
+    throw new Error(`${fieldName} must be a positive integer.`);
+  }
+  return value;
+}
+
+function parseInputSource(
+  value: unknown,
+  fieldName: string
+): "provided_input" | "generated_representative_window" {
+  if (value === "provided_input" || value === "generated_representative_window") {
+    return value;
+  }
+  throw new Error(
+    `${fieldName} must be "provided_input" or "generated_representative_window".`
+  );
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -216,6 +247,9 @@ function parseHandoffSummary(
   if (!isPlainObject(raw.artifacts)) {
     throw new Error(`handoffSummary.artifacts must be an object: ${sourcePath}`);
   }
+  if (!isPlainObject(raw.input)) {
+    throw new Error(`handoffSummary.input must be an object: ${sourcePath}`);
+  }
   if (!isPlainObject(raw.verification)) {
     throw new Error(`handoffSummary.verification must be an object: ${sourcePath}`);
   }
@@ -234,6 +268,14 @@ function parseHandoffSummary(
     kpiId: KPI_ID,
     artifact: "scheduler_handoff_validation",
     strictEnv: raw.strictEnv,
+    input: {
+      source: parseInputSource(
+        raw.input.source,
+        `handoffSummary.input.source (${sourcePath})`
+      ),
+      path: assertNonEmptyString(raw.input.path, "handoffSummary.input.path"),
+      rowCount: assertPositiveInteger(raw.input.rowCount, "handoffSummary.input.rowCount"),
+    },
     scheduler: {
       name: assertNonEmptyString(raw.scheduler.name, "handoffSummary.scheduler.name"),
       environment: assertNonEmptyString(
@@ -364,6 +406,7 @@ function parseArgs(argv: string[]): CliArgs {
     summaryPath,
     outPath,
     expectedEnvironment,
+    requireProvidedInput: hasFlag(argv, "--require-provided-input"),
     allowRndDefaultSecretRefs: hasFlag(argv, "--allow-rnd-default-secret-ref"),
   };
 }
@@ -458,6 +501,24 @@ function buildChecks(
     "Dry-run verification reports no missing required env keys.",
     `Dry-run verification missing required env key(s): ${summary.verification.missingRequiredEnvKeys.join(", ")}.`
   );
+
+  if (args.requireProvidedInput) {
+    addCheck(
+      checks,
+      "provided-input-required",
+      summary.input.source === "provided_input",
+      "Handoff validation consumed a provided input window as required.",
+      `Handoff validation input source is "${summary.input.source}" but --require-provided-input requires "provided_input".`
+    );
+  } else {
+    addCheck(
+      checks,
+      "provided-input-required",
+      true,
+      "Provided input enforcement is not required for this run.",
+      ""
+    );
+  }
 
   addCheck(
     checks,
@@ -599,6 +660,12 @@ function main(): void {
     source: {
       summaryPath: toWorkspacePath(args.summaryPath),
       infraBindingPath: toWorkspacePath(resolvedInfraBindingPath),
+    },
+    input: {
+      source: summary.input.source,
+      path: summary.input.path,
+      rowCount: summary.input.rowCount,
+      requireProvidedInput: args.requireProvidedInput,
     },
     scheduler: {
       name: summary.scheduler.name,

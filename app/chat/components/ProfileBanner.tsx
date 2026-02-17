@@ -33,7 +33,7 @@ export default function ProfileBanner({
         </div>
         <div className="flex items-center gap-2">
           <button
-            className="rounded-full bg-slate-900 px-3 py-1.5 text-white text-xs font-semibold hover:opacity-90 active:opacity-95 sm:text-sm"
+            className="shrink-0 rounded-full bg-slate-900 px-3 py-1.5 text-center text-white text-xs font-semibold leading-tight whitespace-normal break-keep hover:opacity-90 active:opacity-95 sm:text-sm"
             onClick={onEdit}
           >
             프로필 설정

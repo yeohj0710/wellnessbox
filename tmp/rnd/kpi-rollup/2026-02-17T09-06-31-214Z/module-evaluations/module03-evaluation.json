@@ -1,0 +1,3037 @@
+{
+  "module": "03_personal_safety_validation_engine",
+  "phase": "EVALUATION",
+  "generatedAt": "2026-02-17T09:06:31.214Z",
+  "evaluatedAt": "2026-02-17T09:06:31.214Z",
+  "sampleRuleCount": 100,
+  "sampleAdverseEventCount": 12,
+  "mvpAppliedResultCount": 2,
+  "mvpTraceLogCount": 2,
+  "report": {
+    "module": "03_personal_safety_validation_engine",
+    "phase": "EVALUATION",
+    "kpiId": "kpi-05",
+    "formula": "Accuracy = 100 * (1/R) * sum(I(l_r == l_ref and f_r == f_ref))",
+    "evaluatedAt": "2026-02-17T09:06:31.214Z",
+    "ruleCount": 100,
+    "passedRuleCount": 100,
+    "accuracyPercent": 100,
+    "targetPercent": 95,
+    "minRuleCount": 100,
+    "targetSatisfied": true,
+    "minRuleCountSatisfied": true,
+    "ruleResults": [
+      {
+        "sampleId": "m03-result-0001-001",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-002",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-003",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-004",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-005",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-006",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-007",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-008",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-009",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-010",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-011",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-012",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-013",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-014",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-015",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-016",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-017",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-018",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-019",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-020",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-021",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-022",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-023",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-024",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-025",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-026",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-027",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-028",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-029",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-030",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-031",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-032",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-033",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-034",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-035",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-036",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-037",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-038",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-039",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-040",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-041",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-042",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-043",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-044",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-045",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-046",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-047",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-048",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-049",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-050",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-051",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-052",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-053",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-054",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-055",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-056",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-057",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-058",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-059",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-060",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-061",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-062",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-063",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-064",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-065",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-066",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-067",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-068",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-069",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-070",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-071",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-072",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-073",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-074",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-075",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-076",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-077",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-078",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-079",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-080",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-081",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-082",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-083",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-084",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-085",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-086",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-087",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-088",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-089",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-090",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-091",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-092",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-093",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-094",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-095",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-096",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-097",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-098",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0001-099",
+        "ruleId": "m03-rule-vitk-warfarin",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      },
+      {
+        "sampleId": "m03-result-0002-100",
+        "ruleId": "m03-rule-magnesium-max",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "passed": true
+      }
+    ]
+  },
+  "kpi06Report": {
+    "module": "03_personal_safety_validation_engine",
+    "phase": "EVALUATION",
+    "kpiId": "kpi-06",
+    "formula": "AdverseEventCount = count(linked_to_engine = true and reported_at within last 12 months)",
+    "evaluatedAt": "2026-02-17T09:06:31.214Z",
+    "windowStart": "2025-02-17T09:06:31.214Z",
+    "windowEnd": "2026-02-17T09:06:31.214Z",
+    "eventCount": 12,
+    "countedEventCount": 4,
+    "targetMaxCountPerYear": 5,
+    "targetSatisfied": true,
+    "caseResults": [
+      {
+        "sampleId": "m03-kpi06-sample-001",
+        "eventId": "m03-kpi06-event-001",
+        "caseId": "rnd03-case-warfarin-001",
+        "reportedAt": "2026-01-20T09:06:31.214Z",
+        "linkedToEngineRecommendation": true,
+        "includedInWindow": true,
+        "counted": true
+      },
+      {
+        "sampleId": "m03-kpi06-sample-002",
+        "eventId": "m03-kpi06-event-002",
+        "caseId": "rnd03-case-warfarin-001",
+        "reportedAt": "2025-12-23T09:06:31.214Z",
+        "linkedToEngineRecommendation": true,
+        "includedInWindow": true,
+        "counted": true
+      },
+      {
+        "sampleId": "m03-kpi06-sample-003",
+        "eventId": "m03-kpi06-event-003",
+        "caseId": "rnd03-case-warfarin-001",
+        "reportedAt": "2025-11-25T09:06:31.214Z",
+        "linkedToEngineRecommendation": true,
+        "includedInWindow": true,
+        "counted": true
+      },
+      {
+        "sampleId": "m03-kpi06-sample-004",
+        "eventId": "m03-kpi06-event-004",
+        "caseId": "rnd03-case-warfarin-001",
+        "reportedAt": "2025-10-28T09:06:31.214Z",
+        "linkedToEngineRecommendation": true,
+        "includedInWindow": true,
+        "counted": true
+      },
+      {
+        "sampleId": "m03-kpi06-sample-005",
+        "eventId": "m03-kpi06-event-005",
+        "caseId": "rnd03-case-warfarin-001",
+        "reportedAt": "2025-09-30T09:06:31.214Z",
+        "linkedToEngineRecommendation": false,
+        "includedInWindow": true,
+        "counted": false
+      },
+      {
+        "sampleId": "m03-kpi06-sample-006",
+        "eventId": "m03-kpi06-event-006",
+        "caseId": "rnd03-case-warfarin-001",
+        "reportedAt": "2025-09-02T09:06:31.214Z",
+        "linkedToEngineRecommendation": false,
+        "includedInWindow": true,
+        "counted": false
+      },
+      {
+        "sampleId": "m03-kpi06-sample-007",
+        "eventId": "m03-kpi06-event-007",
+        "caseId": "rnd03-case-warfarin-001",
+        "reportedAt": "2025-08-05T09:06:31.214Z",
+        "linkedToEngineRecommendation": false,
+        "includedInWindow": true,
+        "counted": false
+      },
+      {
+        "sampleId": "m03-kpi06-sample-008",
+        "eventId": "m03-kpi06-event-008",
+        "caseId": "rnd03-case-warfarin-001",
+        "reportedAt": "2025-07-08T09:06:31.214Z",
+        "linkedToEngineRecommendation": false,
+        "includedInWindow": true,
+        "counted": false
+      },
+      {
+        "sampleId": "m03-kpi06-sample-009",
+        "eventId": "m03-kpi06-event-009",
+        "caseId": "rnd03-case-warfarin-001",
+        "reportedAt": "2025-01-24T09:06:31.214Z",
+        "linkedToEngineRecommendation": false,
+        "includedInWindow": false,
+        "counted": false
+      },
+      {
+        "sampleId": "m03-kpi06-sample-010",
+        "eventId": "m03-kpi06-event-010",
+        "caseId": "rnd03-case-warfarin-001",
+        "reportedAt": "2025-01-23T09:06:31.214Z",
+        "linkedToEngineRecommendation": false,
+        "includedInWindow": false,
+        "counted": false
+      },
+      {
+        "sampleId": "m03-kpi06-sample-011",
+        "eventId": "m03-kpi06-event-011",
+        "caseId": "rnd03-case-warfarin-001",
+        "reportedAt": "2025-01-22T09:06:31.214Z",
+        "linkedToEngineRecommendation": false,
+        "includedInWindow": false,
+        "counted": false
+      },
+      {
+        "sampleId": "m03-kpi06-sample-012",
+        "eventId": "m03-kpi06-event-012",
+        "caseId": "rnd03-case-warfarin-001",
+        "reportedAt": "2025-01-21T09:06:31.214Z",
+        "linkedToEngineRecommendation": false,
+        "includedInWindow": false,
+        "counted": false
+      }
+    ]
+  },
+  "samples": [
+    {
+      "sampleId": "m03-result-0001-001",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-002",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-003",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-004",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-005",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-006",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-007",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-008",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-009",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-010",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-011",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-012",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-013",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-014",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-015",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-016",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-017",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-018",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-019",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-020",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-021",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-022",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-023",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-024",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-025",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-026",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-027",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-028",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-029",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-030",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-031",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-032",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-033",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-034",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-035",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-036",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-037",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-038",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-039",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-040",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-041",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-042",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-043",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-044",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-045",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-046",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-047",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-048",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-049",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-050",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-051",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-052",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-053",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-054",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-055",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-056",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-057",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-058",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-059",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-060",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-061",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-062",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-063",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-064",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-065",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-066",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-067",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-068",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-069",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-070",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-071",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-072",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-073",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-074",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-075",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-076",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-077",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-078",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-079",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-080",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-081",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-082",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-083",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-084",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-085",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-086",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-087",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-088",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-089",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-090",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-091",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-092",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-093",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-094",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-095",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-096",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-097",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-098",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0001-099",
+      "expected": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-vitk-warfarin",
+        "ingredientCode": "vitamin_k",
+        "decision": "block",
+        "violation": true,
+        "referenceIds": [
+          "ref-warfarin-vitk-001"
+        ]
+      }
+    },
+    {
+      "sampleId": "m03-result-0002-100",
+      "expected": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      },
+      "observed": {
+        "ruleId": "m03-rule-magnesium-max",
+        "ingredientCode": "magnesium",
+        "decision": "limit",
+        "violation": true,
+        "referenceIds": [
+          "ref-magnesium-ul-001"
+        ]
+      }
+    }
+  ],
+  "adverseEventSamples": [
+    {
+      "sampleId": "m03-kpi06-sample-001",
+      "eventId": "m03-kpi06-event-001",
+      "caseId": "rnd03-case-warfarin-001",
+      "reportedAt": "2026-01-20T09:06:31.214Z",
+      "linkedToEngineRecommendation": true
+    },
+    {
+      "sampleId": "m03-kpi06-sample-002",
+      "eventId": "m03-kpi06-event-002",
+      "caseId": "rnd03-case-warfarin-001",
+      "reportedAt": "2025-12-23T09:06:31.214Z",
+      "linkedToEngineRecommendation": true
+    },
+    {
+      "sampleId": "m03-kpi06-sample-003",
+      "eventId": "m03-kpi06-event-003",
+      "caseId": "rnd03-case-warfarin-001",
+      "reportedAt": "2025-11-25T09:06:31.214Z",
+      "linkedToEngineRecommendation": true
+    },
+    {
+      "sampleId": "m03-kpi06-sample-004",
+      "eventId": "m03-kpi06-event-004",
+      "caseId": "rnd03-case-warfarin-001",
+      "reportedAt": "2025-10-28T09:06:31.214Z",
+      "linkedToEngineRecommendation": true
+    },
+    {
+      "sampleId": "m03-kpi06-sample-005",
+      "eventId": "m03-kpi06-event-005",
+      "caseId": "rnd03-case-warfarin-001",
+      "reportedAt": "2025-09-30T09:06:31.214Z",
+      "linkedToEngineRecommendation": false
+    },
+    {
+      "sampleId": "m03-kpi06-sample-006",
+      "eventId": "m03-kpi06-event-006",
+      "caseId": "rnd03-case-warfarin-001",
+      "reportedAt": "2025-09-02T09:06:31.214Z",
+      "linkedToEngineRecommendation": false
+    },
+    {
+      "sampleId": "m03-kpi06-sample-007",
+      "eventId": "m03-kpi06-event-007",
+      "caseId": "rnd03-case-warfarin-001",
+      "reportedAt": "2025-08-05T09:06:31.214Z",
+      "linkedToEngineRecommendation": false
+    },
+    {
+      "sampleId": "m03-kpi06-sample-008",
+      "eventId": "m03-kpi06-event-008",
+      "caseId": "rnd03-case-warfarin-001",
+      "reportedAt": "2025-07-08T09:06:31.214Z",
+      "linkedToEngineRecommendation": false
+    },
+    {
+      "sampleId": "m03-kpi06-sample-009",
+      "eventId": "m03-kpi06-event-009",
+      "caseId": "rnd03-case-warfarin-001",
+      "reportedAt": "2025-01-24T09:06:31.214Z",
+      "linkedToEngineRecommendation": false
+    },
+    {
+      "sampleId": "m03-kpi06-sample-010",
+      "eventId": "m03-kpi06-event-010",
+      "caseId": "rnd03-case-warfarin-001",
+      "reportedAt": "2025-01-23T09:06:31.214Z",
+      "linkedToEngineRecommendation": false
+    },
+    {
+      "sampleId": "m03-kpi06-sample-011",
+      "eventId": "m03-kpi06-event-011",
+      "caseId": "rnd03-case-warfarin-001",
+      "reportedAt": "2025-01-22T09:06:31.214Z",
+      "linkedToEngineRecommendation": false
+    },
+    {
+      "sampleId": "m03-kpi06-sample-012",
+      "eventId": "m03-kpi06-event-012",
+      "caseId": "rnd03-case-warfarin-001",
+      "reportedAt": "2025-01-21T09:06:31.214Z",
+      "linkedToEngineRecommendation": false
+    }
+  ]
+}

@@ -275,7 +275,7 @@ export default function LandingSection2({
             <div className="relative order-1 md:order-2 md:col-span-5 md:col-start-7">
               <div className="relative w-full aspect-[613/511] rounded-[28px] overflow-hidden">
                 <Image
-                  src="/landingPage2/ai-analysis-hero.png"
+                  src="/landingPage2/ai-analysis-hero.png?v=20260217"
                   alt="AI 건강 데이터 분석"
                   fill
                   priority
@@ -297,7 +297,7 @@ export default function LandingSection2({
             <div className="relative order-1 md:col-span-5 md:col-start-2">
               <div className="relative w-full aspect-[613/511] rounded-[28px] overflow-hidden">
                 <Image
-                  src="/landingPage2/pharmacist-review-hero.png"
+                  src="/landingPage2/pharmacist-review-hero.png?v=20260217"
                   alt="전문가 상담 검토"
                   fill
                   sizes="(min-width:1280px) 560px, (min-width:1024px) 520px, 80vw"
@@ -379,7 +379,7 @@ export default function LandingSection2({
             <div className="relative order-1 md:order-2 md:col-span-5 md:col-start-7">
               <div className="relative w-full aspect-[613/511] rounded-[28px] overflow-hidden">
                 <Image
-                  src="/landingPage2/customized-supply-hero.png"
+                  src="/landingPage2/customized-supply-hero.png?v=20260217"
                   alt="맞춤 소분 패키징"
                   fill
                   sizes="(min-width:1280px) 560px, (min-width:1024px) 520px, 80vw"
@@ -399,7 +399,7 @@ export default function LandingSection2({
             <div className="relative order-1 md:col-span-5 md:col-start-1">
               <div className="relative w-full aspect-[613/511] rounded-[28px] overflow-hidden">
                 <Image
-                  src="/landingPage2/health-tracking-hero.png"
+                  src="/landingPage2/health-tracking-hero.png?v=20260217"
                   alt="건강 모니터링 이미지"
                   fill
                   sizes="(min-width:1280px) 560px, (min-width:1024px) 520px, 80vw"

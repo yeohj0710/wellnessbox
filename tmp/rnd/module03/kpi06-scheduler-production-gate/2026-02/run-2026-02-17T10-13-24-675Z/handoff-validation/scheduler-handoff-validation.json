@@ -1,0 +1,68 @@
+{
+  "module": "03_personal_safety_validation_engine",
+  "phase": "EVALUATION",
+  "kpiId": "kpi-06",
+  "artifact": "scheduler_handoff_validation",
+  "generatedAt": "2026-02-17T10:13:27.330Z",
+  "windowEnd": "2026-02-17T10:13:24.675Z",
+  "strictEnv": true,
+  "scheduler": {
+    "name": "module03-kpi06-adverse-event-monthly",
+    "environment": "production-like"
+  },
+  "input": {
+    "source": "provided_input",
+    "path": "tmp/rnd/module03/manual-production-window.json",
+    "rowCount": 3
+  },
+  "secrets": {
+    "requiredEnvKeys": [
+      "RND_MODULE03_FAILURE_WEBHOOK_TIMEOUT_MS",
+      "RND_MODULE03_FAILURE_WEBHOOK_URL",
+      "RND_MODULE03_WAREHOUSE_EXPORT_TOKEN"
+    ],
+    "boundSecretRefs": [
+      {
+        "envKey": "RND_MODULE03_FAILURE_WEBHOOK_TIMEOUT_MS",
+        "secretRef": "secret://rnd/module03/kpi06/rnd_module03_failure_webhook_timeout_ms"
+      },
+      {
+        "envKey": "RND_MODULE03_FAILURE_WEBHOOK_URL",
+        "secretRef": "secret://rnd/module03/kpi06/rnd_module03_failure_webhook_url"
+      },
+      {
+        "envKey": "RND_MODULE03_WAREHOUSE_EXPORT_TOKEN",
+        "secretRef": "secret://rnd/module03/kpi06/rnd_module03_warehouse_export_token"
+      }
+    ],
+    "runtimeEnvKeysInjected": [
+      "RND_MODULE03_FAILURE_WEBHOOK_TIMEOUT_MS",
+      "RND_MODULE03_FAILURE_WEBHOOK_URL",
+      "RND_MODULE03_WAREHOUSE_EXPORT_TOKEN"
+    ]
+  },
+  "artifacts": {
+    "outDir": "tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation",
+    "deploymentBundlePath": "tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation/scheduler-deployment-bundle.json",
+    "infraBindingPath": "tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation/scheduler-infra-binding.json",
+    "dryRunReportPath": "tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation/scheduler-dry-run-report.json"
+  },
+  "verification": {
+    "expectedOutputs": [
+      {
+        "path": "tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation/archive/latest.json",
+        "exists": true
+      },
+      {
+        "path": "tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation/archive/archive-manifest.json",
+        "exists": true
+      },
+      {
+        "path": "tmp/rnd/module03/kpi06-scheduler-production-gate/2026-02/run-2026-02-17T10-13-24-675Z/handoff-validation/handoff/latest.json",
+        "exists": true
+      }
+    ],
+    "allExpectedOutputsPresent": true,
+    "missingRequiredEnvKeys": []
+  }
+}

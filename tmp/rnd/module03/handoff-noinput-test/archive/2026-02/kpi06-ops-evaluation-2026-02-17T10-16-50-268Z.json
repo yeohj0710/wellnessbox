@@ -1,0 +1,231 @@
+{
+  "module": "03_personal_safety_validation_engine",
+  "phase": "EVALUATION",
+  "generatedAt": "2026-02-17T10:16:51.864Z",
+  "evaluatedAt": "2026-02-17T10:16:50.268Z",
+  "kpiId": "kpi-06",
+  "adapter": {
+    "schemaMapPath": "C:\\dev\\wellnessbox\\scripts\\rnd\\module03\\schema\\kpi06_pharmacovigilance_schema_map.json",
+    "sqlTemplatePath": "C:\\dev\\wellnessbox\\scripts\\rnd\\module03\\sql\\kpi06_adverse_events_last_12_months.sql",
+    "sourceSystem": "pharmacovigilance_warehouse",
+    "sourceTable": "pharmacovigilance.adverse_events",
+    "sourceTimezone": "UTC",
+    "sourceLookbackMonths": 12,
+    "mappedFields": {
+      "eventId": "event_id",
+      "caseId": "case_id",
+      "reportedAt": "reported_at",
+      "linkedToEngineRecommendation": "linked_to_engine_recommendation"
+    }
+  },
+  "sourceRowCount": 12,
+  "report": {
+    "module": "03_personal_safety_validation_engine",
+    "phase": "EVALUATION",
+    "kpiId": "kpi-06",
+    "formula": "AdverseEventCount = count(linked_to_engine = true and reported_at within last 12 months)",
+    "evaluatedAt": "2026-02-17T10:16:50.268Z",
+    "windowStart": "2025-02-17T10:16:50.268Z",
+    "windowEnd": "2026-02-17T10:16:50.268Z",
+    "eventCount": 12,
+    "countedEventCount": 4,
+    "targetMaxCountPerYear": 5,
+    "targetSatisfied": true,
+    "caseResults": [
+      {
+        "sampleId": "m03-kpi06-ops-00001",
+        "eventId": "pv-event-0001",
+        "caseId": "pv-case-0001",
+        "reportedAt": "2026-02-12T10:16:50.268Z",
+        "linkedToEngineRecommendation": true,
+        "includedInWindow": true,
+        "counted": true
+      },
+      {
+        "sampleId": "m03-kpi06-ops-00002",
+        "eventId": "pv-event-0002",
+        "caseId": "pv-case-0002",
+        "reportedAt": "2026-01-23T10:16:50.268Z",
+        "linkedToEngineRecommendation": true,
+        "includedInWindow": true,
+        "counted": true
+      },
+      {
+        "sampleId": "m03-kpi06-ops-00003",
+        "eventId": "pv-event-0003",
+        "caseId": "pv-case-0003",
+        "reportedAt": "2026-01-03T10:16:50.268Z",
+        "linkedToEngineRecommendation": true,
+        "includedInWindow": true,
+        "counted": true
+      },
+      {
+        "sampleId": "m03-kpi06-ops-00004",
+        "eventId": "pv-event-0004",
+        "caseId": "pv-case-0004",
+        "reportedAt": "2025-12-14T10:16:50.268Z",
+        "linkedToEngineRecommendation": true,
+        "includedInWindow": true,
+        "counted": true
+      },
+      {
+        "sampleId": "m03-kpi06-ops-00005",
+        "eventId": "pv-event-0005",
+        "caseId": "pv-case-0005",
+        "reportedAt": "2025-11-24T10:16:50.268Z",
+        "linkedToEngineRecommendation": false,
+        "includedInWindow": true,
+        "counted": false
+      },
+      {
+        "sampleId": "m03-kpi06-ops-00006",
+        "eventId": "pv-event-0006",
+        "caseId": "pv-case-0006",
+        "reportedAt": "2025-11-04T10:16:50.268Z",
+        "linkedToEngineRecommendation": false,
+        "includedInWindow": true,
+        "counted": false
+      },
+      {
+        "sampleId": "m03-kpi06-ops-00007",
+        "eventId": "pv-event-0007",
+        "caseId": "pv-case-0007",
+        "reportedAt": "2025-10-15T10:16:50.268Z",
+        "linkedToEngineRecommendation": false,
+        "includedInWindow": true,
+        "counted": false
+      },
+      {
+        "sampleId": "m03-kpi06-ops-00008",
+        "eventId": "pv-event-0008",
+        "caseId": "pv-case-0008",
+        "reportedAt": "2025-09-25T10:16:50.268Z",
+        "linkedToEngineRecommendation": false,
+        "includedInWindow": true,
+        "counted": false
+      },
+      {
+        "sampleId": "m03-kpi06-ops-00009",
+        "eventId": "pv-event-0009",
+        "caseId": "pv-case-0009",
+        "reportedAt": "2025-09-05T10:16:50.268Z",
+        "linkedToEngineRecommendation": false,
+        "includedInWindow": true,
+        "counted": false
+      },
+      {
+        "sampleId": "m03-kpi06-ops-00010",
+        "eventId": "pv-event-0010",
+        "caseId": "pv-case-0010",
+        "reportedAt": "2025-08-16T10:16:50.268Z",
+        "linkedToEngineRecommendation": false,
+        "includedInWindow": true,
+        "counted": false
+      },
+      {
+        "sampleId": "m03-kpi06-ops-00011",
+        "eventId": "pv-event-0011",
+        "caseId": "pv-case-0011",
+        "reportedAt": "2025-07-27T10:16:50.268Z",
+        "linkedToEngineRecommendation": false,
+        "includedInWindow": true,
+        "counted": false
+      },
+      {
+        "sampleId": "m03-kpi06-ops-00012",
+        "eventId": "pv-event-0012",
+        "caseId": "pv-case-0012",
+        "reportedAt": "2025-07-07T10:16:50.268Z",
+        "linkedToEngineRecommendation": false,
+        "includedInWindow": true,
+        "counted": false
+      }
+    ]
+  },
+  "adverseEventSamples": [
+    {
+      "sampleId": "m03-kpi06-ops-00001",
+      "eventId": "pv-event-0001",
+      "caseId": "pv-case-0001",
+      "reportedAt": "2026-02-12T10:16:50.268Z",
+      "linkedToEngineRecommendation": true
+    },
+    {
+      "sampleId": "m03-kpi06-ops-00002",
+      "eventId": "pv-event-0002",
+      "caseId": "pv-case-0002",
+      "reportedAt": "2026-01-23T10:16:50.268Z",
+      "linkedToEngineRecommendation": true
+    },
+    {
+      "sampleId": "m03-kpi06-ops-00003",
+      "eventId": "pv-event-0003",
+      "caseId": "pv-case-0003",
+      "reportedAt": "2026-01-03T10:16:50.268Z",
+      "linkedToEngineRecommendation": true
+    },
+    {
+      "sampleId": "m03-kpi06-ops-00004",
+      "eventId": "pv-event-0004",
+      "caseId": "pv-case-0004",
+      "reportedAt": "2025-12-14T10:16:50.268Z",
+      "linkedToEngineRecommendation": true
+    },
+    {
+      "sampleId": "m03-kpi06-ops-00005",
+      "eventId": "pv-event-0005",
+      "caseId": "pv-case-0005",
+      "reportedAt": "2025-11-24T10:16:50.268Z",
+      "linkedToEngineRecommendation": false
+    },
+    {
+      "sampleId": "m03-kpi06-ops-00006",
+      "eventId": "pv-event-0006",
+      "caseId": "pv-case-0006",
+      "reportedAt": "2025-11-04T10:16:50.268Z",
+      "linkedToEngineRecommendation": false
+    },
+    {
+      "sampleId": "m03-kpi06-ops-00007",
+      "eventId": "pv-event-0007",
+      "caseId": "pv-case-0007",
+      "reportedAt": "2025-10-15T10:16:50.268Z",
+      "linkedToEngineRecommendation": false
+    },
+    {
+      "sampleId": "m03-kpi06-ops-00008",
+      "eventId": "pv-event-0008",
+      "caseId": "pv-case-0008",
+      "reportedAt": "2025-09-25T10:16:50.268Z",
+      "linkedToEngineRecommendation": false
+    },
+    {
+      "sampleId": "m03-kpi06-ops-00009",
+      "eventId": "pv-event-0009",
+      "caseId": "pv-case-0009",
+      "reportedAt": "2025-09-05T10:16:50.268Z",
+      "linkedToEngineRecommendation": false
+    },
+    {
+      "sampleId": "m03-kpi06-ops-00010",
+      "eventId": "pv-event-0010",
+      "caseId": "pv-case-0010",
+      "reportedAt": "2025-08-16T10:16:50.268Z",
+      "linkedToEngineRecommendation": false
+    },
+    {
+      "sampleId": "m03-kpi06-ops-00011",
+      "eventId": "pv-event-0011",
+      "caseId": "pv-case-0011",
+      "reportedAt": "2025-07-27T10:16:50.268Z",
+      "linkedToEngineRecommendation": false
+    },
+    {
+      "sampleId": "m03-kpi06-ops-00012",
+      "eventId": "pv-event-0012",
+      "caseId": "pv-case-0012",
+      "reportedAt": "2025-07-07T10:16:50.268Z",
+      "linkedToEngineRecommendation": false
+    }
+  ]
+}

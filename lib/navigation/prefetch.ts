@@ -127,6 +127,7 @@ export function normalizePrefetchHref(rawHref: string) {
     const url = new URL(rawHref, window.location.origin);
     if (url.origin !== window.location.origin) return null;
     if (isProtectedPath(url.pathname)) return null;
+    if (url.pathname === window.location.pathname) return null;
     return `${url.pathname}${url.search}${url.hash}`;
   } catch {
     return null;

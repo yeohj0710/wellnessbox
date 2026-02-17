@@ -1,0 +1,5726 @@
+{
+  "module": "02_data_lake",
+  "phase": "EVALUATION",
+  "generatedAt": "2026-02-17T09:06:31.214Z",
+  "recordCount": 4,
+  "evidenceLinkLogCount": 1,
+  "sampleRuleCount": 100,
+  "samples": [
+    {
+      "ruleId": "rule-001",
+      "sampleId": "sample-rule-001-001",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-002",
+      "sampleId": "sample-rule-001-002",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-003",
+      "sampleId": "sample-rule-001-003",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-004",
+      "sampleId": "sample-rule-001-004",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-005",
+      "sampleId": "sample-rule-001-005",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-006",
+      "sampleId": "sample-rule-001-006",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-007",
+      "sampleId": "sample-rule-001-007",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-008",
+      "sampleId": "sample-rule-001-008",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-009",
+      "sampleId": "sample-rule-001-009",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-010",
+      "sampleId": "sample-rule-001-010",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-011",
+      "sampleId": "sample-rule-001-011",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-012",
+      "sampleId": "sample-rule-001-012",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-013",
+      "sampleId": "sample-rule-001-013",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-014",
+      "sampleId": "sample-rule-001-014",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-015",
+      "sampleId": "sample-rule-001-015",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-016",
+      "sampleId": "sample-rule-001-016",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-017",
+      "sampleId": "sample-rule-001-017",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-018",
+      "sampleId": "sample-rule-001-018",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-019",
+      "sampleId": "sample-rule-001-019",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-020",
+      "sampleId": "sample-rule-001-020",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-021",
+      "sampleId": "sample-rule-001-021",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-022",
+      "sampleId": "sample-rule-001-022",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-023",
+      "sampleId": "sample-rule-001-023",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-024",
+      "sampleId": "sample-rule-001-024",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-025",
+      "sampleId": "sample-rule-001-025",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-026",
+      "sampleId": "sample-rule-001-026",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-027",
+      "sampleId": "sample-rule-001-027",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-028",
+      "sampleId": "sample-rule-001-028",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-029",
+      "sampleId": "sample-rule-001-029",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-030",
+      "sampleId": "sample-rule-001-030",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-031",
+      "sampleId": "sample-rule-001-031",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-032",
+      "sampleId": "sample-rule-001-032",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-033",
+      "sampleId": "sample-rule-001-033",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-034",
+      "sampleId": "sample-rule-001-034",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-035",
+      "sampleId": "sample-rule-001-035",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-036",
+      "sampleId": "sample-rule-001-036",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-037",
+      "sampleId": "sample-rule-001-037",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-038",
+      "sampleId": "sample-rule-001-038",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-039",
+      "sampleId": "sample-rule-001-039",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-040",
+      "sampleId": "sample-rule-001-040",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-041",
+      "sampleId": "sample-rule-001-041",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-042",
+      "sampleId": "sample-rule-001-042",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-043",
+      "sampleId": "sample-rule-001-043",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-044",
+      "sampleId": "sample-rule-001-044",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-045",
+      "sampleId": "sample-rule-001-045",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-046",
+      "sampleId": "sample-rule-001-046",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-047",
+      "sampleId": "sample-rule-001-047",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-048",
+      "sampleId": "sample-rule-001-048",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-049",
+      "sampleId": "sample-rule-001-049",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-050",
+      "sampleId": "sample-rule-001-050",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-051",
+      "sampleId": "sample-rule-001-051",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-052",
+      "sampleId": "sample-rule-001-052",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-053",
+      "sampleId": "sample-rule-001-053",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-054",
+      "sampleId": "sample-rule-001-054",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-055",
+      "sampleId": "sample-rule-001-055",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-056",
+      "sampleId": "sample-rule-001-056",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-057",
+      "sampleId": "sample-rule-001-057",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-058",
+      "sampleId": "sample-rule-001-058",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-059",
+      "sampleId": "sample-rule-001-059",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-060",
+      "sampleId": "sample-rule-001-060",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-061",
+      "sampleId": "sample-rule-001-061",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-062",
+      "sampleId": "sample-rule-001-062",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-063",
+      "sampleId": "sample-rule-001-063",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-064",
+      "sampleId": "sample-rule-001-064",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-065",
+      "sampleId": "sample-rule-001-065",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-066",
+      "sampleId": "sample-rule-001-066",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-067",
+      "sampleId": "sample-rule-001-067",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-068",
+      "sampleId": "sample-rule-001-068",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-069",
+      "sampleId": "sample-rule-001-069",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-070",
+      "sampleId": "sample-rule-001-070",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-071",
+      "sampleId": "sample-rule-001-071",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-072",
+      "sampleId": "sample-rule-001-072",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-073",
+      "sampleId": "sample-rule-001-073",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-074",
+      "sampleId": "sample-rule-001-074",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-075",
+      "sampleId": "sample-rule-001-075",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-076",
+      "sampleId": "sample-rule-001-076",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-077",
+      "sampleId": "sample-rule-001-077",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-078",
+      "sampleId": "sample-rule-001-078",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-079",
+      "sampleId": "sample-rule-001-079",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-080",
+      "sampleId": "sample-rule-001-080",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-081",
+      "sampleId": "sample-rule-001-081",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-082",
+      "sampleId": "sample-rule-001-082",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-083",
+      "sampleId": "sample-rule-001-083",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-084",
+      "sampleId": "sample-rule-001-084",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-085",
+      "sampleId": "sample-rule-001-085",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-086",
+      "sampleId": "sample-rule-001-086",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-087",
+      "sampleId": "sample-rule-001-087",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-088",
+      "sampleId": "sample-rule-001-088",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-089",
+      "sampleId": "sample-rule-001-089",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-090",
+      "sampleId": "sample-rule-001-090",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-091",
+      "sampleId": "sample-rule-001-091",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-092",
+      "sampleId": "sample-rule-001-092",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-093",
+      "sampleId": "sample-rule-001-093",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-094",
+      "sampleId": "sample-rule-001-094",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-095",
+      "sampleId": "sample-rule-001-095",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-096",
+      "sampleId": "sample-rule-001-096",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-097",
+      "sampleId": "sample-rule-001-097",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-098",
+      "sampleId": "sample-rule-001-098",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-099",
+      "sampleId": "sample-rule-001-099",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    },
+    {
+      "ruleId": "rule-100",
+      "sampleId": "sample-rule-001-100",
+      "expected": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      },
+      "observed": {
+        "logicId": "flag_interaction_risk",
+        "reference": {
+          "evidenceIds": [
+            "evi-meddb-vitk-warfarin-p12",
+            "evi-profile-app-user-a1",
+            "evi-chat-session-1001-q1"
+          ],
+          "sourceKinds": [
+            "internal_compute_result",
+            "medical_database",
+            "internal_profile",
+            "internal_interaction"
+          ],
+          "lineagePath": [
+            "internal_interaction:rnd02-chat-session-1001",
+            "internal_profile:rnd02-profile-userhash-a1",
+            "medical_database:rnd02-meddb-vitk-warfarin-v1",
+            "internal_compute_result:rnd02-decision-chat-1001-v1"
+          ]
+        }
+      }
+    }
+  ],
+  "report": {
+    "module": "02_data_lake",
+    "phase": "EVALUATION",
+    "kpiId": "kpi-05",
+    "formula": "Accuracy = 100 * (1/R) * sum(I(l_r == l_ref and f_r == f_ref))",
+    "evaluatedAt": "2026-02-17T09:06:31.487Z",
+    "ruleCount": 100,
+    "passedRuleCount": 100,
+    "accuracyPercent": 100,
+    "targetPercent": 95,
+    "minRuleCount": 100,
+    "targetSatisfied": true,
+    "minRuleCountSatisfied": true,
+    "ruleResults": [
+      {
+        "ruleId": "rule-001",
+        "sampleId": "sample-rule-001-001",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-002",
+        "sampleId": "sample-rule-001-002",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-003",
+        "sampleId": "sample-rule-001-003",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-004",
+        "sampleId": "sample-rule-001-004",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-005",
+        "sampleId": "sample-rule-001-005",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-006",
+        "sampleId": "sample-rule-001-006",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-007",
+        "sampleId": "sample-rule-001-007",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-008",
+        "sampleId": "sample-rule-001-008",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-009",
+        "sampleId": "sample-rule-001-009",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-010",
+        "sampleId": "sample-rule-001-010",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-011",
+        "sampleId": "sample-rule-001-011",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-012",
+        "sampleId": "sample-rule-001-012",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-013",
+        "sampleId": "sample-rule-001-013",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-014",
+        "sampleId": "sample-rule-001-014",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-015",
+        "sampleId": "sample-rule-001-015",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-016",
+        "sampleId": "sample-rule-001-016",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-017",
+        "sampleId": "sample-rule-001-017",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-018",
+        "sampleId": "sample-rule-001-018",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-019",
+        "sampleId": "sample-rule-001-019",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-020",
+        "sampleId": "sample-rule-001-020",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-021",
+        "sampleId": "sample-rule-001-021",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-022",
+        "sampleId": "sample-rule-001-022",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-023",
+        "sampleId": "sample-rule-001-023",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-024",
+        "sampleId": "sample-rule-001-024",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-025",
+        "sampleId": "sample-rule-001-025",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-026",
+        "sampleId": "sample-rule-001-026",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-027",
+        "sampleId": "sample-rule-001-027",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-028",
+        "sampleId": "sample-rule-001-028",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-029",
+        "sampleId": "sample-rule-001-029",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-030",
+        "sampleId": "sample-rule-001-030",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-031",
+        "sampleId": "sample-rule-001-031",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-032",
+        "sampleId": "sample-rule-001-032",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-033",
+        "sampleId": "sample-rule-001-033",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-034",
+        "sampleId": "sample-rule-001-034",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-035",
+        "sampleId": "sample-rule-001-035",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-036",
+        "sampleId": "sample-rule-001-036",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-037",
+        "sampleId": "sample-rule-001-037",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-038",
+        "sampleId": "sample-rule-001-038",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-039",
+        "sampleId": "sample-rule-001-039",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-040",
+        "sampleId": "sample-rule-001-040",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-041",
+        "sampleId": "sample-rule-001-041",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-042",
+        "sampleId": "sample-rule-001-042",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-043",
+        "sampleId": "sample-rule-001-043",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-044",
+        "sampleId": "sample-rule-001-044",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-045",
+        "sampleId": "sample-rule-001-045",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-046",
+        "sampleId": "sample-rule-001-046",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-047",
+        "sampleId": "sample-rule-001-047",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-048",
+        "sampleId": "sample-rule-001-048",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-049",
+        "sampleId": "sample-rule-001-049",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-050",
+        "sampleId": "sample-rule-001-050",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-051",
+        "sampleId": "sample-rule-001-051",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-052",
+        "sampleId": "sample-rule-001-052",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-053",
+        "sampleId": "sample-rule-001-053",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-054",
+        "sampleId": "sample-rule-001-054",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-055",
+        "sampleId": "sample-rule-001-055",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-056",
+        "sampleId": "sample-rule-001-056",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-057",
+        "sampleId": "sample-rule-001-057",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-058",
+        "sampleId": "sample-rule-001-058",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-059",
+        "sampleId": "sample-rule-001-059",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-060",
+        "sampleId": "sample-rule-001-060",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-061",
+        "sampleId": "sample-rule-001-061",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-062",
+        "sampleId": "sample-rule-001-062",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-063",
+        "sampleId": "sample-rule-001-063",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-064",
+        "sampleId": "sample-rule-001-064",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-065",
+        "sampleId": "sample-rule-001-065",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-066",
+        "sampleId": "sample-rule-001-066",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-067",
+        "sampleId": "sample-rule-001-067",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-068",
+        "sampleId": "sample-rule-001-068",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-069",
+        "sampleId": "sample-rule-001-069",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-070",
+        "sampleId": "sample-rule-001-070",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-071",
+        "sampleId": "sample-rule-001-071",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-072",
+        "sampleId": "sample-rule-001-072",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-073",
+        "sampleId": "sample-rule-001-073",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-074",
+        "sampleId": "sample-rule-001-074",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-075",
+        "sampleId": "sample-rule-001-075",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-076",
+        "sampleId": "sample-rule-001-076",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-077",
+        "sampleId": "sample-rule-001-077",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-078",
+        "sampleId": "sample-rule-001-078",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-079",
+        "sampleId": "sample-rule-001-079",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-080",
+        "sampleId": "sample-rule-001-080",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-081",
+        "sampleId": "sample-rule-001-081",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-082",
+        "sampleId": "sample-rule-001-082",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-083",
+        "sampleId": "sample-rule-001-083",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-084",
+        "sampleId": "sample-rule-001-084",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-085",
+        "sampleId": "sample-rule-001-085",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-086",
+        "sampleId": "sample-rule-001-086",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-087",
+        "sampleId": "sample-rule-001-087",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-088",
+        "sampleId": "sample-rule-001-088",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-089",
+        "sampleId": "sample-rule-001-089",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-090",
+        "sampleId": "sample-rule-001-090",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-091",
+        "sampleId": "sample-rule-001-091",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-092",
+        "sampleId": "sample-rule-001-092",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-093",
+        "sampleId": "sample-rule-001-093",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-094",
+        "sampleId": "sample-rule-001-094",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-095",
+        "sampleId": "sample-rule-001-095",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-096",
+        "sampleId": "sample-rule-001-096",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-097",
+        "sampleId": "sample-rule-001-097",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-098",
+        "sampleId": "sample-rule-001-098",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-099",
+        "sampleId": "sample-rule-001-099",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      },
+      {
+        "ruleId": "rule-100",
+        "sampleId": "sample-rule-001-100",
+        "logicMatched": true,
+        "referenceMatched": true,
+        "sourceKindsMatched": true,
+        "lineageMatched": true,
+        "passed": true
+      }
+    ]
+  }
+}

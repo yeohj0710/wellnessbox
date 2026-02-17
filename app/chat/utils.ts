@@ -58,6 +58,9 @@ export function saveProfileLocal(p?: UserProfile) {
 }
 
 export async function loadProfileServer(): Promise<UserProfile | undefined> {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    return undefined;
+  }
   try {
     getClientIdLocal();
     const res = await fetch(`/api/user/profile`);
@@ -70,6 +73,9 @@ export async function loadProfileServer(): Promise<UserProfile | undefined> {
 }
 
 export async function saveProfileServer(p?: UserProfile) {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    return;
+  }
   try {
     getClientIdLocal();
     await fetch(`/api/user/profile`, {

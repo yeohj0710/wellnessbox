@@ -1,0 +1,51 @@
+{
+  "module": "04_efficacy_quantification_model",
+  "phase": "EVALUATION",
+  "generatedAt": "2026-02-17T09:06:31.214Z",
+  "evaluatedAt": "2026-02-17T09:06:31.214Z",
+  "mvpEvaluationRunId": "rnd04-mvp-run-20260217090631",
+  "includedUserCount": 1,
+  "excludedUserCount": 1,
+  "runtimeLogCount": 4,
+  "report": {
+    "module": "04_efficacy_quantification_model",
+    "phase": "EVALUATION",
+    "kpiId": "kpi-02",
+    "formula": "p_i = 100 * (Phi(z_post_i) - Phi(z_pre_i)); SCGI = (1/N) * sum(p_i)",
+    "evaluatedAt": "2026-02-17T09:06:31.214Z",
+    "caseCount": 1,
+    "scgiPp": 51.0285,
+    "meanDeltaZScore": 1.7001,
+    "targetPpThreshold": 0,
+    "targetSatisfied": true,
+    "caseResults": [
+      {
+        "sampleId": "rnd04-result-0001",
+        "evaluationId": "rnd04-eval-user-a1",
+        "appUserIdHash": "sha256:8aeb9fa4e1c4d311",
+        "preZScore": -0.1917,
+        "postZScore": 1.5084,
+        "deltaZScore": 1.7001,
+        "improvementPp": 51.0285
+      }
+    ]
+  },
+  "samples": [
+    {
+      "sampleId": "rnd04-result-0001",
+      "evaluationId": "rnd04-eval-user-a1",
+      "appUserIdHash": "sha256:8aeb9fa4e1c4d311",
+      "preZScore": -0.1917,
+      "postZScore": 1.5084
+    }
+  ],
+  "excludedCases": [
+    {
+      "evaluationId": "rnd04-eval-user-b2",
+      "appUserIdHash": "sha256:12f4d08be90cc6fd",
+      "reason": "low_adherence",
+      "detail": "Adherence rate 0.42 is below threshold 0.7.",
+      "recordedAt": "2026-02-17T09:06:31.214Z"
+    }
+  ]
+}

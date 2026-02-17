@@ -30,13 +30,30 @@ import {
 } from "./useChat.suggestions";
 import { readStreamingText } from "./useChat.stream";
 import { normalizeNewlines, sanitizeAssistantText } from "./useChat.text";
+import {
+  formatCartCommandSummary,
+  hasRoadAddressInLocalStorage,
+  parseCartCommandFromMessages,
+} from "./useChat.cart-command";
+import { dispatchChatCartActionRequest } from "@/lib/chat/cart-action-events";
 
 type UseChatOptions = {
   manageFooter?: boolean;
+  remoteBootstrap?: boolean;
 };
+
+const OFFLINE_INIT_MESSAGE =
+  "지금 네트워크 연결이 불안정해서 초기 상담 내용을 불러오지 못했어요. 연결이 복구되면 새로고침 없이 다시 이어서 도와드릴게요.";
+const OFFLINE_CHAT_MESSAGE =
+  "지금 네트워크 연결이 불안정해서 답변을 불러오지 못했어요. 연결이 안정되면 같은 질문을 다시 보내 주세요.";
+
+function isBrowserOnline() {
+  return typeof navigator === "undefined" || navigator.onLine !== false;
+}
 
 export default function useChat(options: UseChatOptions = {}) {
   const manageFooter = options.manageFooter ?? true;
+  const remoteBootstrap = options.remoteBootstrap ?? true;
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [profile, setProfile] = useState<UserProfile | undefined>(undefined);
@@ -115,6 +132,7 @@ export default function useChat(options: UseChatOptions = {}) {
     }
 
     (async () => {
+      if (!remoteBootstrap || !isBrowserOnline()) return;
       try {
         const response = await fetch("/api/chat/save", { method: "GET" });
         if (!response.ok) return;
@@ -149,7 +167,7 @@ export default function useChat(options: UseChatOptions = {}) {
 
     (async () => {
       let resolved: UserProfile | undefined = undefined;
-      const remote = await loadProfileServer();
+      const remote = remoteBootstrap ? await loadProfileServer() : undefined;
       if (remote) {
         resolved = remote;
         saveProfileLocal(remote);
@@ -162,7 +180,7 @@ export default function useChat(options: UseChatOptions = {}) {
       setShowProfileBanner(!resolved);
       setProfileLoaded(true);
     })();
-  }, []);
+  }, [remoteBootstrap]);
 
   useEffect(() => {
     activeIdRef.current = activeId;
@@ -204,9 +222,25 @@ export default function useChat(options: UseChatOptions = {}) {
   }, []);
 
   useEffect(() => {
-    fetch(`/api/user/all-results`)
-      .then((response) => response.json())
+    if (!remoteBootstrap) {
+      setResultsLoaded(true);
+      return;
+    }
+    if (!isBrowserOnline()) {
+      setResultsLoaded(true);
+      return;
+    }
+
+    const controller = new AbortController();
+    let alive = true;
+
+    fetch(`/api/user/all-results`, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) return {};
+        return response.json();
+      })
       .then((data) => {
+        if (!alive) return;
         const normalized = normalizeAllResultsPayload(data);
 
         if (normalized.actor) {
@@ -220,8 +254,16 @@ export default function useChat(options: UseChatOptions = {}) {
         setOrders(normalized.orders);
       })
       .catch(() => {})
-      .finally(() => setResultsLoaded(true));
-  }, []);
+      .finally(() => {
+        if (!alive) return;
+        setResultsLoaded(true);
+      });
+
+    return () => {
+      alive = false;
+      controller.abort();
+    };
+  }, [remoteBootstrap]);
 
   const active = useMemo(
     () => sessions.find((session) => session.id === activeId) || null,
@@ -614,6 +656,68 @@ export default function useChat(options: UseChatOptions = {}) {
     }
   }
 
+  async function tryHandleCartCommand(params: {
+    text: string;
+    sessionId: string;
+    sessionMessages: ChatMessage[];
+    userMessage: ChatMessage;
+    assistantMessage: ChatMessage;
+    isFirst: boolean;
+  }) {
+    const parsed = await parseCartCommandFromMessages({
+      text: params.text,
+      messages: params.sessionMessages,
+    });
+    if (!parsed) return false;
+
+    const summary = formatCartCommandSummary(parsed.items);
+    const hasAddress = hasRoadAddressInLocalStorage();
+
+    dispatchChatCartActionRequest({
+      source: "chat-command",
+      openCartAfterSave: parsed.openCartAfterSave,
+      items: parsed.items.map((entry) => ({
+        productId: entry.recommendation.productId,
+        productName: entry.recommendation.productName,
+        optionType: entry.recommendation.optionType,
+        quantity: entry.quantity,
+      })),
+    });
+
+    const fullText = hasAddress
+      ? parsed.openCartAfterSave
+        ? `요청한 제품을 장바구니에 담고 바로 구매를 진행할 수 있게 열어둘게요. ${summary}`
+        : `요청한 제품을 장바구니에 담았어요. ${summary}`
+      : `요청한 제품을 담을 수 있도록 주소 입력 창을 열었어요. 주소를 입력하면 자동으로 담아둘게요. ${summary}`;
+
+    updateAssistantMessage(params.sessionId, params.assistantMessage.id, fullText);
+
+    if (params.isFirst) {
+      firstAssistantReplyRef.current = fullText;
+      await generateTitle();
+    }
+    await fetchSuggestions(fullText, params.sessionId);
+
+    try {
+      const clientId = getClientIdLocal();
+      const tzOffsetMinutes = getTzOffsetMinutes();
+      await saveChatOnce({
+        clientId,
+        sessionId: params.sessionId,
+        title:
+          sessions.find((session) => session.id === params.sessionId)?.title ||
+          DEFAULT_CHAT_TITLE,
+        messages: [
+          params.userMessage,
+          { ...params.assistantMessage, content: fullText },
+        ],
+        tzOffsetMinutes,
+      });
+    } catch {}
+
+    return true;
+  }
+
   async function sendMessage(overrideText?: string) {
     if (loading) return;
     if (!active) return;
@@ -655,11 +759,26 @@ export default function useChat(options: UseChatOptions = {}) {
     stickToBottomRef.current = true;
     requestAnimationFrame(() => requestAnimationFrame(scrollToBottom));
 
+    if (!isBrowserOnline()) {
+      updateAssistantMessage(active.id, assistantMessage.id, OFFLINE_CHAT_MESSAGE);
+      return;
+    }
+
     setLoading(true);
-    const controller = new AbortController();
-    abortRef.current = controller;
 
     try {
+      const handledByCommand = await tryHandleCartCommand({
+        text,
+        sessionId: active.id,
+        sessionMessages: active.messages || [],
+        userMessage,
+        assistantMessage,
+        isFirst,
+      });
+      if (handledByCommand) return;
+
+      const controller = new AbortController();
+      abortRef.current = controller;
       const clientId = getClientIdLocal();
       const contextPayload = buildContextPayload(active.id);
       const response = await fetch("/api/chat", {
@@ -743,6 +862,11 @@ export default function useChat(options: UseChatOptions = {}) {
         item.id === sessionId ? { ...item, messages: [assistantMessage] } : item
       )
     );
+
+    if (!isBrowserOnline()) {
+      updateAssistantMessage(sessionId, assistantMessage.id, OFFLINE_INIT_MESSAGE);
+      return;
+    }
 
     setLoading(true);
     const controller = new AbortController();

@@ -1,0 +1,3529 @@
+{
+  "module": "05_optimization_engine",
+  "phase": "EVALUATION",
+  "generatedAt": "2026-02-17T09:06:31.214Z",
+  "evaluatedAt": "2026-02-17T09:06:31.214Z",
+  "mvpRecommendationCount": 2,
+  "mvpTraceLogCount": 5,
+  "mvpRuntimeLogCount": 5,
+  "sampleCaseCount": 100,
+  "report": {
+    "module": "05_optimization_engine",
+    "phase": "EVALUATION",
+    "kpiId": "kpi-01",
+    "formula": "s_i = 100 * |R_i ∩ Γ_i| / |R_i|; Score = (1/N) * sum(s_i)",
+    "evaluatedAt": "2026-02-17T09:06:31.214Z",
+    "caseCount": 100,
+    "meanScorePercent": 100,
+    "targetPercent": 80,
+    "minCaseCount": 100,
+    "targetSatisfied": true,
+    "minCaseCountSatisfied": true,
+    "interventionLinkReadyCaseCount": 100,
+    "interventionLinkReadinessPercent": 100,
+    "caseResults": [
+      {
+        "sampleId": "m05-eval-sample-001",
+        "caseId": "rnd05-case-metabolic-001-001",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-002",
+        "caseId": "rnd05-case-metabolic-001-002",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-003",
+        "caseId": "rnd05-case-metabolic-001-003",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-004",
+        "caseId": "rnd05-case-metabolic-001-004",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-005",
+        "caseId": "rnd05-case-metabolic-001-005",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-006",
+        "caseId": "rnd05-case-metabolic-001-006",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-007",
+        "caseId": "rnd05-case-metabolic-001-007",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-008",
+        "caseId": "rnd05-case-metabolic-001-008",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-009",
+        "caseId": "rnd05-case-metabolic-001-009",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-010",
+        "caseId": "rnd05-case-metabolic-001-010",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-011",
+        "caseId": "rnd05-case-metabolic-001-011",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-012",
+        "caseId": "rnd05-case-metabolic-001-012",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-013",
+        "caseId": "rnd05-case-metabolic-001-013",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-014",
+        "caseId": "rnd05-case-metabolic-001-014",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-015",
+        "caseId": "rnd05-case-metabolic-001-015",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-016",
+        "caseId": "rnd05-case-metabolic-001-016",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-017",
+        "caseId": "rnd05-case-metabolic-001-017",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-018",
+        "caseId": "rnd05-case-metabolic-001-018",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-019",
+        "caseId": "rnd05-case-metabolic-001-019",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-020",
+        "caseId": "rnd05-case-metabolic-001-020",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-021",
+        "caseId": "rnd05-case-metabolic-001-021",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-022",
+        "caseId": "rnd05-case-metabolic-001-022",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-023",
+        "caseId": "rnd05-case-metabolic-001-023",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-024",
+        "caseId": "rnd05-case-metabolic-001-024",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-025",
+        "caseId": "rnd05-case-metabolic-001-025",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-026",
+        "caseId": "rnd05-case-metabolic-001-026",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-027",
+        "caseId": "rnd05-case-metabolic-001-027",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-028",
+        "caseId": "rnd05-case-metabolic-001-028",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-029",
+        "caseId": "rnd05-case-metabolic-001-029",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-030",
+        "caseId": "rnd05-case-metabolic-001-030",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-031",
+        "caseId": "rnd05-case-metabolic-001-031",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-032",
+        "caseId": "rnd05-case-metabolic-001-032",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-033",
+        "caseId": "rnd05-case-metabolic-001-033",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-034",
+        "caseId": "rnd05-case-metabolic-001-034",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-035",
+        "caseId": "rnd05-case-metabolic-001-035",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-036",
+        "caseId": "rnd05-case-metabolic-001-036",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-037",
+        "caseId": "rnd05-case-metabolic-001-037",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-038",
+        "caseId": "rnd05-case-metabolic-001-038",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-039",
+        "caseId": "rnd05-case-metabolic-001-039",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-040",
+        "caseId": "rnd05-case-metabolic-001-040",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-041",
+        "caseId": "rnd05-case-metabolic-001-041",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-042",
+        "caseId": "rnd05-case-metabolic-001-042",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-043",
+        "caseId": "rnd05-case-metabolic-001-043",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-044",
+        "caseId": "rnd05-case-metabolic-001-044",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-045",
+        "caseId": "rnd05-case-metabolic-001-045",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-046",
+        "caseId": "rnd05-case-metabolic-001-046",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-047",
+        "caseId": "rnd05-case-metabolic-001-047",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-048",
+        "caseId": "rnd05-case-metabolic-001-048",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-049",
+        "caseId": "rnd05-case-metabolic-001-049",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-050",
+        "caseId": "rnd05-case-metabolic-001-050",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-051",
+        "caseId": "rnd05-case-metabolic-001-051",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-052",
+        "caseId": "rnd05-case-metabolic-001-052",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-053",
+        "caseId": "rnd05-case-metabolic-001-053",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-054",
+        "caseId": "rnd05-case-metabolic-001-054",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-055",
+        "caseId": "rnd05-case-metabolic-001-055",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-056",
+        "caseId": "rnd05-case-metabolic-001-056",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-057",
+        "caseId": "rnd05-case-metabolic-001-057",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-058",
+        "caseId": "rnd05-case-metabolic-001-058",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-059",
+        "caseId": "rnd05-case-metabolic-001-059",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-060",
+        "caseId": "rnd05-case-metabolic-001-060",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-061",
+        "caseId": "rnd05-case-metabolic-001-061",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-062",
+        "caseId": "rnd05-case-metabolic-001-062",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-063",
+        "caseId": "rnd05-case-metabolic-001-063",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-064",
+        "caseId": "rnd05-case-metabolic-001-064",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-065",
+        "caseId": "rnd05-case-metabolic-001-065",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-066",
+        "caseId": "rnd05-case-metabolic-001-066",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-067",
+        "caseId": "rnd05-case-metabolic-001-067",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-068",
+        "caseId": "rnd05-case-metabolic-001-068",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-069",
+        "caseId": "rnd05-case-metabolic-001-069",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-070",
+        "caseId": "rnd05-case-metabolic-001-070",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-071",
+        "caseId": "rnd05-case-metabolic-001-071",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-072",
+        "caseId": "rnd05-case-metabolic-001-072",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-073",
+        "caseId": "rnd05-case-metabolic-001-073",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-074",
+        "caseId": "rnd05-case-metabolic-001-074",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-075",
+        "caseId": "rnd05-case-metabolic-001-075",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-076",
+        "caseId": "rnd05-case-metabolic-001-076",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-077",
+        "caseId": "rnd05-case-metabolic-001-077",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-078",
+        "caseId": "rnd05-case-metabolic-001-078",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-079",
+        "caseId": "rnd05-case-metabolic-001-079",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-080",
+        "caseId": "rnd05-case-metabolic-001-080",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-081",
+        "caseId": "rnd05-case-metabolic-001-081",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-082",
+        "caseId": "rnd05-case-metabolic-001-082",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-083",
+        "caseId": "rnd05-case-metabolic-001-083",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-084",
+        "caseId": "rnd05-case-metabolic-001-084",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-085",
+        "caseId": "rnd05-case-metabolic-001-085",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-086",
+        "caseId": "rnd05-case-metabolic-001-086",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-087",
+        "caseId": "rnd05-case-metabolic-001-087",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-088",
+        "caseId": "rnd05-case-metabolic-001-088",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-089",
+        "caseId": "rnd05-case-metabolic-001-089",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-090",
+        "caseId": "rnd05-case-metabolic-001-090",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-091",
+        "caseId": "rnd05-case-metabolic-001-091",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-092",
+        "caseId": "rnd05-case-metabolic-001-092",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-093",
+        "caseId": "rnd05-case-metabolic-001-093",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-094",
+        "caseId": "rnd05-case-metabolic-001-094",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-095",
+        "caseId": "rnd05-case-metabolic-001-095",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-096",
+        "caseId": "rnd05-case-metabolic-001-096",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-097",
+        "caseId": "rnd05-case-metabolic-001-097",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-098",
+        "caseId": "rnd05-case-metabolic-001-098",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-099",
+        "caseId": "rnd05-case-metabolic-001-099",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      },
+      {
+        "sampleId": "m05-eval-sample-100",
+        "caseId": "rnd05-case-metabolic-001-100",
+        "expectedIngredientCount": 4,
+        "observedIngredientCount": 4,
+        "overlapIngredientCount": 4,
+        "scorePercent": 100,
+        "missingIngredientCodes": [],
+        "extraIngredientCodes": [],
+        "topRecommendationComboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "interventionLinkReady": true
+      }
+    ]
+  },
+  "samples": [
+    {
+      "sampleId": "m05-eval-sample-001",
+      "caseId": "rnd05-case-metabolic-001-001",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-002",
+      "caseId": "rnd05-case-metabolic-001-002",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-003",
+      "caseId": "rnd05-case-metabolic-001-003",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-004",
+      "caseId": "rnd05-case-metabolic-001-004",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-005",
+      "caseId": "rnd05-case-metabolic-001-005",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-006",
+      "caseId": "rnd05-case-metabolic-001-006",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-007",
+      "caseId": "rnd05-case-metabolic-001-007",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-008",
+      "caseId": "rnd05-case-metabolic-001-008",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-009",
+      "caseId": "rnd05-case-metabolic-001-009",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-010",
+      "caseId": "rnd05-case-metabolic-001-010",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-011",
+      "caseId": "rnd05-case-metabolic-001-011",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-012",
+      "caseId": "rnd05-case-metabolic-001-012",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-013",
+      "caseId": "rnd05-case-metabolic-001-013",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-014",
+      "caseId": "rnd05-case-metabolic-001-014",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-015",
+      "caseId": "rnd05-case-metabolic-001-015",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-016",
+      "caseId": "rnd05-case-metabolic-001-016",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-017",
+      "caseId": "rnd05-case-metabolic-001-017",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-018",
+      "caseId": "rnd05-case-metabolic-001-018",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-019",
+      "caseId": "rnd05-case-metabolic-001-019",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-020",
+      "caseId": "rnd05-case-metabolic-001-020",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-021",
+      "caseId": "rnd05-case-metabolic-001-021",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-022",
+      "caseId": "rnd05-case-metabolic-001-022",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-023",
+      "caseId": "rnd05-case-metabolic-001-023",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-024",
+      "caseId": "rnd05-case-metabolic-001-024",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-025",
+      "caseId": "rnd05-case-metabolic-001-025",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-026",
+      "caseId": "rnd05-case-metabolic-001-026",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-027",
+      "caseId": "rnd05-case-metabolic-001-027",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-028",
+      "caseId": "rnd05-case-metabolic-001-028",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-029",
+      "caseId": "rnd05-case-metabolic-001-029",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-030",
+      "caseId": "rnd05-case-metabolic-001-030",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-031",
+      "caseId": "rnd05-case-metabolic-001-031",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-032",
+      "caseId": "rnd05-case-metabolic-001-032",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-033",
+      "caseId": "rnd05-case-metabolic-001-033",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-034",
+      "caseId": "rnd05-case-metabolic-001-034",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-035",
+      "caseId": "rnd05-case-metabolic-001-035",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-036",
+      "caseId": "rnd05-case-metabolic-001-036",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-037",
+      "caseId": "rnd05-case-metabolic-001-037",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-038",
+      "caseId": "rnd05-case-metabolic-001-038",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-039",
+      "caseId": "rnd05-case-metabolic-001-039",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-040",
+      "caseId": "rnd05-case-metabolic-001-040",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-041",
+      "caseId": "rnd05-case-metabolic-001-041",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-042",
+      "caseId": "rnd05-case-metabolic-001-042",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-043",
+      "caseId": "rnd05-case-metabolic-001-043",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-044",
+      "caseId": "rnd05-case-metabolic-001-044",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-045",
+      "caseId": "rnd05-case-metabolic-001-045",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-046",
+      "caseId": "rnd05-case-metabolic-001-046",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-047",
+      "caseId": "rnd05-case-metabolic-001-047",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-048",
+      "caseId": "rnd05-case-metabolic-001-048",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-049",
+      "caseId": "rnd05-case-metabolic-001-049",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-050",
+      "caseId": "rnd05-case-metabolic-001-050",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-051",
+      "caseId": "rnd05-case-metabolic-001-051",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-052",
+      "caseId": "rnd05-case-metabolic-001-052",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-053",
+      "caseId": "rnd05-case-metabolic-001-053",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-054",
+      "caseId": "rnd05-case-metabolic-001-054",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-055",
+      "caseId": "rnd05-case-metabolic-001-055",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-056",
+      "caseId": "rnd05-case-metabolic-001-056",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-057",
+      "caseId": "rnd05-case-metabolic-001-057",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-058",
+      "caseId": "rnd05-case-metabolic-001-058",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-059",
+      "caseId": "rnd05-case-metabolic-001-059",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-060",
+      "caseId": "rnd05-case-metabolic-001-060",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-061",
+      "caseId": "rnd05-case-metabolic-001-061",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-062",
+      "caseId": "rnd05-case-metabolic-001-062",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-063",
+      "caseId": "rnd05-case-metabolic-001-063",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-064",
+      "caseId": "rnd05-case-metabolic-001-064",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-065",
+      "caseId": "rnd05-case-metabolic-001-065",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-066",
+      "caseId": "rnd05-case-metabolic-001-066",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-067",
+      "caseId": "rnd05-case-metabolic-001-067",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-068",
+      "caseId": "rnd05-case-metabolic-001-068",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-069",
+      "caseId": "rnd05-case-metabolic-001-069",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-070",
+      "caseId": "rnd05-case-metabolic-001-070",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-071",
+      "caseId": "rnd05-case-metabolic-001-071",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-072",
+      "caseId": "rnd05-case-metabolic-001-072",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-073",
+      "caseId": "rnd05-case-metabolic-001-073",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-074",
+      "caseId": "rnd05-case-metabolic-001-074",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-075",
+      "caseId": "rnd05-case-metabolic-001-075",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-076",
+      "caseId": "rnd05-case-metabolic-001-076",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-077",
+      "caseId": "rnd05-case-metabolic-001-077",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-078",
+      "caseId": "rnd05-case-metabolic-001-078",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-079",
+      "caseId": "rnd05-case-metabolic-001-079",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-080",
+      "caseId": "rnd05-case-metabolic-001-080",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-081",
+      "caseId": "rnd05-case-metabolic-001-081",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-082",
+      "caseId": "rnd05-case-metabolic-001-082",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-083",
+      "caseId": "rnd05-case-metabolic-001-083",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-084",
+      "caseId": "rnd05-case-metabolic-001-084",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-085",
+      "caseId": "rnd05-case-metabolic-001-085",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-086",
+      "caseId": "rnd05-case-metabolic-001-086",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-087",
+      "caseId": "rnd05-case-metabolic-001-087",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-088",
+      "caseId": "rnd05-case-metabolic-001-088",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-089",
+      "caseId": "rnd05-case-metabolic-001-089",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-090",
+      "caseId": "rnd05-case-metabolic-001-090",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-091",
+      "caseId": "rnd05-case-metabolic-001-091",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-092",
+      "caseId": "rnd05-case-metabolic-001-092",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-093",
+      "caseId": "rnd05-case-metabolic-001-093",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-094",
+      "caseId": "rnd05-case-metabolic-001-094",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-095",
+      "caseId": "rnd05-case-metabolic-001-095",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-096",
+      "caseId": "rnd05-case-metabolic-001-096",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-097",
+      "caseId": "rnd05-case-metabolic-001-097",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-098",
+      "caseId": "rnd05-case-metabolic-001-098",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-099",
+      "caseId": "rnd05-case-metabolic-001-099",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    },
+    {
+      "sampleId": "m05-eval-sample-100",
+      "caseId": "rnd05-case-metabolic-001-100",
+      "expectedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "observedIngredientCodes": [
+        "magnesium",
+        "omega3",
+        "probiotic",
+        "vitamin_d"
+      ],
+      "topRecommendation": {
+        "comboId": "m05-mvp-combo-m05-item-magnesium-m05-item-omega3-d",
+        "itemIds": [
+          "m05-item-magnesium",
+          "m05-item-omega3-d"
+        ]
+      }
+    }
+  ]
+}

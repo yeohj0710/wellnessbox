@@ -1,0 +1,87 @@
+{
+  "module": "03_personal_safety_validation_engine",
+  "phase": "EVALUATION",
+  "generatedAt": "2026-02-17T10:13:27.279Z",
+  "evaluatedAt": "2026-02-17T10:13:24.675Z",
+  "kpiId": "kpi-06",
+  "adapter": {
+    "schemaMapPath": "C:\\dev\\wellnessbox\\scripts\\rnd\\module03\\schema\\kpi06_pharmacovigilance_schema_map.json",
+    "sqlTemplatePath": "C:\\dev\\wellnessbox\\scripts\\rnd\\module03\\sql\\kpi06_adverse_events_last_12_months.sql",
+    "sourceSystem": "pharmacovigilance_warehouse",
+    "sourceTable": "pharmacovigilance.adverse_events",
+    "sourceTimezone": "UTC",
+    "sourceLookbackMonths": 12,
+    "mappedFields": {
+      "eventId": "event_id",
+      "caseId": "case_id",
+      "reportedAt": "reported_at",
+      "linkedToEngineRecommendation": "linked_to_engine_recommendation"
+    }
+  },
+  "sourceRowCount": 3,
+  "report": {
+    "module": "03_personal_safety_validation_engine",
+    "phase": "EVALUATION",
+    "kpiId": "kpi-06",
+    "formula": "AdverseEventCount = count(linked_to_engine = true and reported_at within last 12 months)",
+    "evaluatedAt": "2026-02-17T10:13:24.675Z",
+    "windowStart": "2025-02-17T10:13:24.675Z",
+    "windowEnd": "2026-02-17T10:13:24.675Z",
+    "eventCount": 3,
+    "countedEventCount": 2,
+    "targetMaxCountPerYear": 5,
+    "targetSatisfied": true,
+    "caseResults": [
+      {
+        "sampleId": "m03-kpi06-ops-00001",
+        "eventId": "pv-event-0001",
+        "caseId": "pv-case-0001",
+        "reportedAt": "2026-02-01T00:00:00.000Z",
+        "linkedToEngineRecommendation": true,
+        "includedInWindow": true,
+        "counted": true
+      },
+      {
+        "sampleId": "m03-kpi06-ops-00002",
+        "eventId": "pv-event-0002",
+        "caseId": "pv-case-0002",
+        "reportedAt": "2025-12-15T00:00:00.000Z",
+        "linkedToEngineRecommendation": false,
+        "includedInWindow": true,
+        "counted": false
+      },
+      {
+        "sampleId": "m03-kpi06-ops-00003",
+        "eventId": "pv-event-0003",
+        "caseId": "pv-case-0003",
+        "reportedAt": "2025-08-21T00:00:00.000Z",
+        "linkedToEngineRecommendation": true,
+        "includedInWindow": true,
+        "counted": true
+      }
+    ]
+  },
+  "adverseEventSamples": [
+    {
+      "sampleId": "m03-kpi06-ops-00001",
+      "eventId": "pv-event-0001",
+      "caseId": "pv-case-0001",
+      "reportedAt": "2026-02-01T00:00:00.000Z",
+      "linkedToEngineRecommendation": true
+    },
+    {
+      "sampleId": "m03-kpi06-ops-00002",
+      "eventId": "pv-event-0002",
+      "caseId": "pv-case-0002",
+      "reportedAt": "2025-12-15T00:00:00.000Z",
+      "linkedToEngineRecommendation": false
+    },
+    {
+      "sampleId": "m03-kpi06-ops-00003",
+      "eventId": "pv-event-0003",
+      "caseId": "pv-case-0003",
+      "reportedAt": "2025-08-21T00:00:00.000Z",
+      "linkedToEngineRecommendation": true
+    }
+  ]
+}

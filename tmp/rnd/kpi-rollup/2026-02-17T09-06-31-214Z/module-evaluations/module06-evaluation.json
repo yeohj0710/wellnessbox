@@ -1,0 +1,2854 @@
+{
+  "module": "06_closed_loop_ai",
+  "phase": "EVALUATION",
+  "generatedAt": "2026-02-17T09:06:31.214Z",
+  "evaluatedAt": "2026-02-17T09:06:31.214Z",
+  "mvpRunId": "rnd06-mvp-run-20260217090631214",
+  "mvpActionEvaluationCount": 2,
+  "mvpLlmEvaluationCount": 2,
+  "mvpTraceLogCount": 6,
+  "mvpRuntimeLogCount": 8,
+  "sampleCaseCount": 100,
+  "samplePromptCount": 100,
+  "report": {
+    "module": "06_closed_loop_ai",
+    "phase": "EVALUATION",
+    "evaluatedAt": "2026-02-17T09:06:31.214Z",
+    "actionAccuracyReport": {
+      "module": "06_closed_loop_ai",
+      "phase": "EVALUATION",
+      "kpiId": "kpi-03",
+      "formula": "Accuracy = 100 * sum(I(a_s == a_s* and e_s = 1)) / |S|",
+      "evaluatedAt": "2026-02-17T09:06:31.214Z",
+      "caseCount": 100,
+      "passedCaseCount": 100,
+      "accuracyPercent": 100,
+      "targetPercent": 80,
+      "minCaseCount": 100,
+      "targetSatisfied": true,
+      "minCaseCountSatisfied": true,
+      "caseResults": [
+        {
+          "sampleId": "m06-kpi03-sample-001",
+          "caseId": "rnd06-case-a1-001",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-002",
+          "caseId": "rnd06-case-b2-002",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-003",
+          "caseId": "rnd06-case-a1-003",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-004",
+          "caseId": "rnd06-case-b2-004",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-005",
+          "caseId": "rnd06-case-a1-005",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-006",
+          "caseId": "rnd06-case-b2-006",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-007",
+          "caseId": "rnd06-case-a1-007",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-008",
+          "caseId": "rnd06-case-b2-008",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-009",
+          "caseId": "rnd06-case-a1-009",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-010",
+          "caseId": "rnd06-case-b2-010",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-011",
+          "caseId": "rnd06-case-a1-011",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-012",
+          "caseId": "rnd06-case-b2-012",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-013",
+          "caseId": "rnd06-case-a1-013",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-014",
+          "caseId": "rnd06-case-b2-014",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-015",
+          "caseId": "rnd06-case-a1-015",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-016",
+          "caseId": "rnd06-case-b2-016",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-017",
+          "caseId": "rnd06-case-a1-017",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-018",
+          "caseId": "rnd06-case-b2-018",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-019",
+          "caseId": "rnd06-case-a1-019",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-020",
+          "caseId": "rnd06-case-b2-020",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-021",
+          "caseId": "rnd06-case-a1-021",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-022",
+          "caseId": "rnd06-case-b2-022",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-023",
+          "caseId": "rnd06-case-a1-023",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-024",
+          "caseId": "rnd06-case-b2-024",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-025",
+          "caseId": "rnd06-case-a1-025",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-026",
+          "caseId": "rnd06-case-b2-026",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-027",
+          "caseId": "rnd06-case-a1-027",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-028",
+          "caseId": "rnd06-case-b2-028",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-029",
+          "caseId": "rnd06-case-a1-029",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-030",
+          "caseId": "rnd06-case-b2-030",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-031",
+          "caseId": "rnd06-case-a1-031",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-032",
+          "caseId": "rnd06-case-b2-032",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-033",
+          "caseId": "rnd06-case-a1-033",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-034",
+          "caseId": "rnd06-case-b2-034",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-035",
+          "caseId": "rnd06-case-a1-035",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-036",
+          "caseId": "rnd06-case-b2-036",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-037",
+          "caseId": "rnd06-case-a1-037",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-038",
+          "caseId": "rnd06-case-b2-038",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-039",
+          "caseId": "rnd06-case-a1-039",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-040",
+          "caseId": "rnd06-case-b2-040",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-041",
+          "caseId": "rnd06-case-a1-041",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-042",
+          "caseId": "rnd06-case-b2-042",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-043",
+          "caseId": "rnd06-case-a1-043",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-044",
+          "caseId": "rnd06-case-b2-044",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-045",
+          "caseId": "rnd06-case-a1-045",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-046",
+          "caseId": "rnd06-case-b2-046",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-047",
+          "caseId": "rnd06-case-a1-047",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-048",
+          "caseId": "rnd06-case-b2-048",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-049",
+          "caseId": "rnd06-case-a1-049",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-050",
+          "caseId": "rnd06-case-b2-050",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-051",
+          "caseId": "rnd06-case-a1-051",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-052",
+          "caseId": "rnd06-case-b2-052",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-053",
+          "caseId": "rnd06-case-a1-053",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-054",
+          "caseId": "rnd06-case-b2-054",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-055",
+          "caseId": "rnd06-case-a1-055",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-056",
+          "caseId": "rnd06-case-b2-056",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-057",
+          "caseId": "rnd06-case-a1-057",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-058",
+          "caseId": "rnd06-case-b2-058",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-059",
+          "caseId": "rnd06-case-a1-059",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-060",
+          "caseId": "rnd06-case-b2-060",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-061",
+          "caseId": "rnd06-case-a1-061",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-062",
+          "caseId": "rnd06-case-b2-062",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-063",
+          "caseId": "rnd06-case-a1-063",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-064",
+          "caseId": "rnd06-case-b2-064",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-065",
+          "caseId": "rnd06-case-a1-065",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-066",
+          "caseId": "rnd06-case-b2-066",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-067",
+          "caseId": "rnd06-case-a1-067",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-068",
+          "caseId": "rnd06-case-b2-068",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-069",
+          "caseId": "rnd06-case-a1-069",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-070",
+          "caseId": "rnd06-case-b2-070",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-071",
+          "caseId": "rnd06-case-a1-071",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-072",
+          "caseId": "rnd06-case-b2-072",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-073",
+          "caseId": "rnd06-case-a1-073",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-074",
+          "caseId": "rnd06-case-b2-074",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-075",
+          "caseId": "rnd06-case-a1-075",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-076",
+          "caseId": "rnd06-case-b2-076",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-077",
+          "caseId": "rnd06-case-a1-077",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-078",
+          "caseId": "rnd06-case-b2-078",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-079",
+          "caseId": "rnd06-case-a1-079",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-080",
+          "caseId": "rnd06-case-b2-080",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-081",
+          "caseId": "rnd06-case-a1-081",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-082",
+          "caseId": "rnd06-case-b2-082",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-083",
+          "caseId": "rnd06-case-a1-083",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-084",
+          "caseId": "rnd06-case-b2-084",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-085",
+          "caseId": "rnd06-case-a1-085",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-086",
+          "caseId": "rnd06-case-b2-086",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-087",
+          "caseId": "rnd06-case-a1-087",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-088",
+          "caseId": "rnd06-case-b2-088",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-089",
+          "caseId": "rnd06-case-a1-089",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-090",
+          "caseId": "rnd06-case-b2-090",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-091",
+          "caseId": "rnd06-case-a1-091",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-092",
+          "caseId": "rnd06-case-b2-092",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-093",
+          "caseId": "rnd06-case-a1-093",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-094",
+          "caseId": "rnd06-case-b2-094",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-095",
+          "caseId": "rnd06-case-a1-095",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-096",
+          "caseId": "rnd06-case-b2-096",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-097",
+          "caseId": "rnd06-case-a1-097",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-098",
+          "caseId": "rnd06-case-b2-098",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-099",
+          "caseId": "rnd06-case-a1-099",
+          "expectedActionType": "maintain",
+          "decidedActionType": "maintain",
+          "executionSuccess": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi03-sample-100",
+          "caseId": "rnd06-case-b2-100",
+          "expectedActionType": "stop",
+          "decidedActionType": "stop",
+          "executionSuccess": true,
+          "passed": true
+        }
+      ]
+    },
+    "llmAccuracyReport": {
+      "module": "06_closed_loop_ai",
+      "phase": "EVALUATION",
+      "kpiId": "kpi-04",
+      "formula": "Accuracy = 100 * sum(g(answer_q)) / |Q|",
+      "evaluatedAt": "2026-02-17T09:06:31.214Z",
+      "promptCount": 100,
+      "passedPromptCount": 100,
+      "accuracyPercent": 100,
+      "targetPercent": 91,
+      "minPromptCount": 100,
+      "targetSatisfied": true,
+      "minPromptCountSatisfied": true,
+      "caseResults": [
+        {
+          "sampleId": "m06-kpi04-sample-001",
+          "promptId": "rnd06-prompt-a1-001",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-002",
+          "promptId": "rnd06-prompt-b2-002",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-003",
+          "promptId": "rnd06-prompt-a1-003",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-004",
+          "promptId": "rnd06-prompt-b2-004",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-005",
+          "promptId": "rnd06-prompt-a1-005",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-006",
+          "promptId": "rnd06-prompt-b2-006",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-007",
+          "promptId": "rnd06-prompt-a1-007",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-008",
+          "promptId": "rnd06-prompt-b2-008",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-009",
+          "promptId": "rnd06-prompt-a1-009",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-010",
+          "promptId": "rnd06-prompt-b2-010",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-011",
+          "promptId": "rnd06-prompt-a1-011",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-012",
+          "promptId": "rnd06-prompt-b2-012",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-013",
+          "promptId": "rnd06-prompt-a1-013",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-014",
+          "promptId": "rnd06-prompt-b2-014",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-015",
+          "promptId": "rnd06-prompt-a1-015",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-016",
+          "promptId": "rnd06-prompt-b2-016",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-017",
+          "promptId": "rnd06-prompt-a1-017",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-018",
+          "promptId": "rnd06-prompt-b2-018",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-019",
+          "promptId": "rnd06-prompt-a1-019",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-020",
+          "promptId": "rnd06-prompt-b2-020",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-021",
+          "promptId": "rnd06-prompt-a1-021",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-022",
+          "promptId": "rnd06-prompt-b2-022",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-023",
+          "promptId": "rnd06-prompt-a1-023",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-024",
+          "promptId": "rnd06-prompt-b2-024",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-025",
+          "promptId": "rnd06-prompt-a1-025",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-026",
+          "promptId": "rnd06-prompt-b2-026",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-027",
+          "promptId": "rnd06-prompt-a1-027",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-028",
+          "promptId": "rnd06-prompt-b2-028",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-029",
+          "promptId": "rnd06-prompt-a1-029",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-030",
+          "promptId": "rnd06-prompt-b2-030",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-031",
+          "promptId": "rnd06-prompt-a1-031",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-032",
+          "promptId": "rnd06-prompt-b2-032",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-033",
+          "promptId": "rnd06-prompt-a1-033",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-034",
+          "promptId": "rnd06-prompt-b2-034",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-035",
+          "promptId": "rnd06-prompt-a1-035",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-036",
+          "promptId": "rnd06-prompt-b2-036",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-037",
+          "promptId": "rnd06-prompt-a1-037",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-038",
+          "promptId": "rnd06-prompt-b2-038",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-039",
+          "promptId": "rnd06-prompt-a1-039",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-040",
+          "promptId": "rnd06-prompt-b2-040",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-041",
+          "promptId": "rnd06-prompt-a1-041",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-042",
+          "promptId": "rnd06-prompt-b2-042",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-043",
+          "promptId": "rnd06-prompt-a1-043",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-044",
+          "promptId": "rnd06-prompt-b2-044",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-045",
+          "promptId": "rnd06-prompt-a1-045",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-046",
+          "promptId": "rnd06-prompt-b2-046",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-047",
+          "promptId": "rnd06-prompt-a1-047",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-048",
+          "promptId": "rnd06-prompt-b2-048",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-049",
+          "promptId": "rnd06-prompt-a1-049",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-050",
+          "promptId": "rnd06-prompt-b2-050",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-051",
+          "promptId": "rnd06-prompt-a1-051",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-052",
+          "promptId": "rnd06-prompt-b2-052",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-053",
+          "promptId": "rnd06-prompt-a1-053",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-054",
+          "promptId": "rnd06-prompt-b2-054",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-055",
+          "promptId": "rnd06-prompt-a1-055",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-056",
+          "promptId": "rnd06-prompt-b2-056",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-057",
+          "promptId": "rnd06-prompt-a1-057",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-058",
+          "promptId": "rnd06-prompt-b2-058",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-059",
+          "promptId": "rnd06-prompt-a1-059",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-060",
+          "promptId": "rnd06-prompt-b2-060",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-061",
+          "promptId": "rnd06-prompt-a1-061",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-062",
+          "promptId": "rnd06-prompt-b2-062",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-063",
+          "promptId": "rnd06-prompt-a1-063",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-064",
+          "promptId": "rnd06-prompt-b2-064",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-065",
+          "promptId": "rnd06-prompt-a1-065",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-066",
+          "promptId": "rnd06-prompt-b2-066",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-067",
+          "promptId": "rnd06-prompt-a1-067",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-068",
+          "promptId": "rnd06-prompt-b2-068",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-069",
+          "promptId": "rnd06-prompt-a1-069",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-070",
+          "promptId": "rnd06-prompt-b2-070",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-071",
+          "promptId": "rnd06-prompt-a1-071",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-072",
+          "promptId": "rnd06-prompt-b2-072",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-073",
+          "promptId": "rnd06-prompt-a1-073",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-074",
+          "promptId": "rnd06-prompt-b2-074",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-075",
+          "promptId": "rnd06-prompt-a1-075",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-076",
+          "promptId": "rnd06-prompt-b2-076",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-077",
+          "promptId": "rnd06-prompt-a1-077",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-078",
+          "promptId": "rnd06-prompt-b2-078",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-079",
+          "promptId": "rnd06-prompt-a1-079",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-080",
+          "promptId": "rnd06-prompt-b2-080",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-081",
+          "promptId": "rnd06-prompt-a1-081",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-082",
+          "promptId": "rnd06-prompt-b2-082",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-083",
+          "promptId": "rnd06-prompt-a1-083",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-084",
+          "promptId": "rnd06-prompt-b2-084",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-085",
+          "promptId": "rnd06-prompt-a1-085",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-086",
+          "promptId": "rnd06-prompt-b2-086",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-087",
+          "promptId": "rnd06-prompt-a1-087",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-088",
+          "promptId": "rnd06-prompt-b2-088",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-089",
+          "promptId": "rnd06-prompt-a1-089",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-090",
+          "promptId": "rnd06-prompt-b2-090",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-091",
+          "promptId": "rnd06-prompt-a1-091",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-092",
+          "promptId": "rnd06-prompt-b2-092",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-093",
+          "promptId": "rnd06-prompt-a1-093",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-094",
+          "promptId": "rnd06-prompt-b2-094",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-095",
+          "promptId": "rnd06-prompt-a1-095",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-096",
+          "promptId": "rnd06-prompt-b2-096",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-097",
+          "promptId": "rnd06-prompt-a1-097",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-098",
+          "promptId": "rnd06-prompt-b2-098",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-099",
+          "promptId": "rnd06-prompt-a1-099",
+          "expectedAnswerKey": "maintain_plan_and_monitor",
+          "responseAccepted": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m06-kpi04-sample-100",
+          "promptId": "rnd06-prompt-b2-100",
+          "expectedAnswerKey": "stop_and_escalate",
+          "responseAccepted": true,
+          "passed": true
+        }
+      ]
+    }
+  },
+  "actionSamples": [
+    {
+      "sampleId": "m06-kpi03-sample-001",
+      "caseId": "rnd06-case-a1-001",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-002",
+      "caseId": "rnd06-case-b2-002",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-003",
+      "caseId": "rnd06-case-a1-003",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-004",
+      "caseId": "rnd06-case-b2-004",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-005",
+      "caseId": "rnd06-case-a1-005",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-006",
+      "caseId": "rnd06-case-b2-006",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-007",
+      "caseId": "rnd06-case-a1-007",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-008",
+      "caseId": "rnd06-case-b2-008",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-009",
+      "caseId": "rnd06-case-a1-009",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-010",
+      "caseId": "rnd06-case-b2-010",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-011",
+      "caseId": "rnd06-case-a1-011",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-012",
+      "caseId": "rnd06-case-b2-012",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-013",
+      "caseId": "rnd06-case-a1-013",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-014",
+      "caseId": "rnd06-case-b2-014",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-015",
+      "caseId": "rnd06-case-a1-015",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-016",
+      "caseId": "rnd06-case-b2-016",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-017",
+      "caseId": "rnd06-case-a1-017",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-018",
+      "caseId": "rnd06-case-b2-018",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-019",
+      "caseId": "rnd06-case-a1-019",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-020",
+      "caseId": "rnd06-case-b2-020",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-021",
+      "caseId": "rnd06-case-a1-021",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-022",
+      "caseId": "rnd06-case-b2-022",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-023",
+      "caseId": "rnd06-case-a1-023",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-024",
+      "caseId": "rnd06-case-b2-024",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-025",
+      "caseId": "rnd06-case-a1-025",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-026",
+      "caseId": "rnd06-case-b2-026",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-027",
+      "caseId": "rnd06-case-a1-027",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-028",
+      "caseId": "rnd06-case-b2-028",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-029",
+      "caseId": "rnd06-case-a1-029",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-030",
+      "caseId": "rnd06-case-b2-030",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-031",
+      "caseId": "rnd06-case-a1-031",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-032",
+      "caseId": "rnd06-case-b2-032",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-033",
+      "caseId": "rnd06-case-a1-033",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-034",
+      "caseId": "rnd06-case-b2-034",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-035",
+      "caseId": "rnd06-case-a1-035",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-036",
+      "caseId": "rnd06-case-b2-036",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-037",
+      "caseId": "rnd06-case-a1-037",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-038",
+      "caseId": "rnd06-case-b2-038",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-039",
+      "caseId": "rnd06-case-a1-039",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-040",
+      "caseId": "rnd06-case-b2-040",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-041",
+      "caseId": "rnd06-case-a1-041",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-042",
+      "caseId": "rnd06-case-b2-042",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-043",
+      "caseId": "rnd06-case-a1-043",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-044",
+      "caseId": "rnd06-case-b2-044",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-045",
+      "caseId": "rnd06-case-a1-045",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-046",
+      "caseId": "rnd06-case-b2-046",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-047",
+      "caseId": "rnd06-case-a1-047",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-048",
+      "caseId": "rnd06-case-b2-048",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-049",
+      "caseId": "rnd06-case-a1-049",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-050",
+      "caseId": "rnd06-case-b2-050",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-051",
+      "caseId": "rnd06-case-a1-051",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-052",
+      "caseId": "rnd06-case-b2-052",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-053",
+      "caseId": "rnd06-case-a1-053",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-054",
+      "caseId": "rnd06-case-b2-054",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-055",
+      "caseId": "rnd06-case-a1-055",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-056",
+      "caseId": "rnd06-case-b2-056",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-057",
+      "caseId": "rnd06-case-a1-057",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-058",
+      "caseId": "rnd06-case-b2-058",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-059",
+      "caseId": "rnd06-case-a1-059",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-060",
+      "caseId": "rnd06-case-b2-060",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-061",
+      "caseId": "rnd06-case-a1-061",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-062",
+      "caseId": "rnd06-case-b2-062",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-063",
+      "caseId": "rnd06-case-a1-063",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-064",
+      "caseId": "rnd06-case-b2-064",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-065",
+      "caseId": "rnd06-case-a1-065",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-066",
+      "caseId": "rnd06-case-b2-066",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-067",
+      "caseId": "rnd06-case-a1-067",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-068",
+      "caseId": "rnd06-case-b2-068",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-069",
+      "caseId": "rnd06-case-a1-069",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-070",
+      "caseId": "rnd06-case-b2-070",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-071",
+      "caseId": "rnd06-case-a1-071",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-072",
+      "caseId": "rnd06-case-b2-072",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-073",
+      "caseId": "rnd06-case-a1-073",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-074",
+      "caseId": "rnd06-case-b2-074",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-075",
+      "caseId": "rnd06-case-a1-075",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-076",
+      "caseId": "rnd06-case-b2-076",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-077",
+      "caseId": "rnd06-case-a1-077",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-078",
+      "caseId": "rnd06-case-b2-078",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-079",
+      "caseId": "rnd06-case-a1-079",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-080",
+      "caseId": "rnd06-case-b2-080",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-081",
+      "caseId": "rnd06-case-a1-081",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-082",
+      "caseId": "rnd06-case-b2-082",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-083",
+      "caseId": "rnd06-case-a1-083",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-084",
+      "caseId": "rnd06-case-b2-084",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-085",
+      "caseId": "rnd06-case-a1-085",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-086",
+      "caseId": "rnd06-case-b2-086",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-087",
+      "caseId": "rnd06-case-a1-087",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-088",
+      "caseId": "rnd06-case-b2-088",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-089",
+      "caseId": "rnd06-case-a1-089",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-090",
+      "caseId": "rnd06-case-b2-090",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-091",
+      "caseId": "rnd06-case-a1-091",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-092",
+      "caseId": "rnd06-case-b2-092",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-093",
+      "caseId": "rnd06-case-a1-093",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-094",
+      "caseId": "rnd06-case-b2-094",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-095",
+      "caseId": "rnd06-case-a1-095",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-096",
+      "caseId": "rnd06-case-b2-096",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-097",
+      "caseId": "rnd06-case-a1-097",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-098",
+      "caseId": "rnd06-case-b2-098",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-099",
+      "caseId": "rnd06-case-a1-099",
+      "expectedActionType": "maintain",
+      "decidedActionType": "maintain",
+      "executionSuccess": true
+    },
+    {
+      "sampleId": "m06-kpi03-sample-100",
+      "caseId": "rnd06-case-b2-100",
+      "expectedActionType": "stop",
+      "decidedActionType": "stop",
+      "executionSuccess": true
+    }
+  ],
+  "llmSamples": [
+    {
+      "sampleId": "m06-kpi04-sample-001",
+      "promptId": "rnd06-prompt-a1-001",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-002",
+      "promptId": "rnd06-prompt-b2-002",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-003",
+      "promptId": "rnd06-prompt-a1-003",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-004",
+      "promptId": "rnd06-prompt-b2-004",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-005",
+      "promptId": "rnd06-prompt-a1-005",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-006",
+      "promptId": "rnd06-prompt-b2-006",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-007",
+      "promptId": "rnd06-prompt-a1-007",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-008",
+      "promptId": "rnd06-prompt-b2-008",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-009",
+      "promptId": "rnd06-prompt-a1-009",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-010",
+      "promptId": "rnd06-prompt-b2-010",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-011",
+      "promptId": "rnd06-prompt-a1-011",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-012",
+      "promptId": "rnd06-prompt-b2-012",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-013",
+      "promptId": "rnd06-prompt-a1-013",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-014",
+      "promptId": "rnd06-prompt-b2-014",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-015",
+      "promptId": "rnd06-prompt-a1-015",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-016",
+      "promptId": "rnd06-prompt-b2-016",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-017",
+      "promptId": "rnd06-prompt-a1-017",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-018",
+      "promptId": "rnd06-prompt-b2-018",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-019",
+      "promptId": "rnd06-prompt-a1-019",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-020",
+      "promptId": "rnd06-prompt-b2-020",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-021",
+      "promptId": "rnd06-prompt-a1-021",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-022",
+      "promptId": "rnd06-prompt-b2-022",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-023",
+      "promptId": "rnd06-prompt-a1-023",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-024",
+      "promptId": "rnd06-prompt-b2-024",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-025",
+      "promptId": "rnd06-prompt-a1-025",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-026",
+      "promptId": "rnd06-prompt-b2-026",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-027",
+      "promptId": "rnd06-prompt-a1-027",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-028",
+      "promptId": "rnd06-prompt-b2-028",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-029",
+      "promptId": "rnd06-prompt-a1-029",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-030",
+      "promptId": "rnd06-prompt-b2-030",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-031",
+      "promptId": "rnd06-prompt-a1-031",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-032",
+      "promptId": "rnd06-prompt-b2-032",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-033",
+      "promptId": "rnd06-prompt-a1-033",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-034",
+      "promptId": "rnd06-prompt-b2-034",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-035",
+      "promptId": "rnd06-prompt-a1-035",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-036",
+      "promptId": "rnd06-prompt-b2-036",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-037",
+      "promptId": "rnd06-prompt-a1-037",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-038",
+      "promptId": "rnd06-prompt-b2-038",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-039",
+      "promptId": "rnd06-prompt-a1-039",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-040",
+      "promptId": "rnd06-prompt-b2-040",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-041",
+      "promptId": "rnd06-prompt-a1-041",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-042",
+      "promptId": "rnd06-prompt-b2-042",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-043",
+      "promptId": "rnd06-prompt-a1-043",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-044",
+      "promptId": "rnd06-prompt-b2-044",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-045",
+      "promptId": "rnd06-prompt-a1-045",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-046",
+      "promptId": "rnd06-prompt-b2-046",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-047",
+      "promptId": "rnd06-prompt-a1-047",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-048",
+      "promptId": "rnd06-prompt-b2-048",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-049",
+      "promptId": "rnd06-prompt-a1-049",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-050",
+      "promptId": "rnd06-prompt-b2-050",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-051",
+      "promptId": "rnd06-prompt-a1-051",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-052",
+      "promptId": "rnd06-prompt-b2-052",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-053",
+      "promptId": "rnd06-prompt-a1-053",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-054",
+      "promptId": "rnd06-prompt-b2-054",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-055",
+      "promptId": "rnd06-prompt-a1-055",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-056",
+      "promptId": "rnd06-prompt-b2-056",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-057",
+      "promptId": "rnd06-prompt-a1-057",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-058",
+      "promptId": "rnd06-prompt-b2-058",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-059",
+      "promptId": "rnd06-prompt-a1-059",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-060",
+      "promptId": "rnd06-prompt-b2-060",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-061",
+      "promptId": "rnd06-prompt-a1-061",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-062",
+      "promptId": "rnd06-prompt-b2-062",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-063",
+      "promptId": "rnd06-prompt-a1-063",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-064",
+      "promptId": "rnd06-prompt-b2-064",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-065",
+      "promptId": "rnd06-prompt-a1-065",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-066",
+      "promptId": "rnd06-prompt-b2-066",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-067",
+      "promptId": "rnd06-prompt-a1-067",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-068",
+      "promptId": "rnd06-prompt-b2-068",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-069",
+      "promptId": "rnd06-prompt-a1-069",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-070",
+      "promptId": "rnd06-prompt-b2-070",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-071",
+      "promptId": "rnd06-prompt-a1-071",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-072",
+      "promptId": "rnd06-prompt-b2-072",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-073",
+      "promptId": "rnd06-prompt-a1-073",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-074",
+      "promptId": "rnd06-prompt-b2-074",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-075",
+      "promptId": "rnd06-prompt-a1-075",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-076",
+      "promptId": "rnd06-prompt-b2-076",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-077",
+      "promptId": "rnd06-prompt-a1-077",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-078",
+      "promptId": "rnd06-prompt-b2-078",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-079",
+      "promptId": "rnd06-prompt-a1-079",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-080",
+      "promptId": "rnd06-prompt-b2-080",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-081",
+      "promptId": "rnd06-prompt-a1-081",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-082",
+      "promptId": "rnd06-prompt-b2-082",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-083",
+      "promptId": "rnd06-prompt-a1-083",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-084",
+      "promptId": "rnd06-prompt-b2-084",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-085",
+      "promptId": "rnd06-prompt-a1-085",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-086",
+      "promptId": "rnd06-prompt-b2-086",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-087",
+      "promptId": "rnd06-prompt-a1-087",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-088",
+      "promptId": "rnd06-prompt-b2-088",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-089",
+      "promptId": "rnd06-prompt-a1-089",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-090",
+      "promptId": "rnd06-prompt-b2-090",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-091",
+      "promptId": "rnd06-prompt-a1-091",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-092",
+      "promptId": "rnd06-prompt-b2-092",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-093",
+      "promptId": "rnd06-prompt-a1-093",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-094",
+      "promptId": "rnd06-prompt-b2-094",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-095",
+      "promptId": "rnd06-prompt-a1-095",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-096",
+      "promptId": "rnd06-prompt-b2-096",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-097",
+      "promptId": "rnd06-prompt-a1-097",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-098",
+      "promptId": "rnd06-prompt-b2-098",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-099",
+      "promptId": "rnd06-prompt-a1-099",
+      "expectedAnswerKey": "maintain_plan_and_monitor",
+      "responseAccepted": true
+    },
+    {
+      "sampleId": "m06-kpi04-sample-100",
+      "promptId": "rnd06-prompt-b2-100",
+      "expectedAnswerKey": "stop_and_escalate",
+      "responseAccepted": true
+    }
+  ]
+}

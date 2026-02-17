@@ -174,7 +174,6 @@ function TopBarInner() {
   };
 
   const sevenDayHref = "/?package=7#home-products";
-  const homeIntentHandlers = usePrefetchOnIntent({ href: "/", router });
   const sevenDayIntentHandlers = usePrefetchOnIntent({
     href: sevenDayHref,
     router,
@@ -263,7 +262,6 @@ function TopBarInner() {
         <div className="mx-auto flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-[120rem]">
           <div className="flex items-center gap-6">
             <button
-              {...homeIntentHandlers}
               onClick={goHome}
               className={menuItemClasses(
                 "group text-[17px] font-extrabold tracking-tight flex items-center gap-2"

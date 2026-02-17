@@ -1,0 +1,3385 @@
+{
+  "module": "07_biosensor_and_genetic_data_integration",
+  "phase": "EVALUATION",
+  "generatedAt": "2026-02-17T09:06:31.214Z",
+  "evaluatedAt": "2026-02-17T09:06:31.214Z",
+  "mvpRunId": "rnd07-mvp-run-20260217090631214",
+  "mvpSessionCount": 3,
+  "mvpWiringLogCount": 3,
+  "mvpRuntimeLogCount": 8,
+  "sampleSessionCount": 100,
+  "sampleRuleCount": 100,
+  "report": {
+    "module": "07_biosensor_and_genetic_data_integration",
+    "phase": "EVALUATION",
+    "evaluatedAt": "2026-02-17T09:06:31.214Z",
+    "integrationRateReport": {
+      "module": "07_biosensor_and_genetic_data_integration",
+      "phase": "EVALUATION",
+      "kpiId": "kpi-07",
+      "formula": "r_s = 100 * successful_s / total_s; R = (r_W + r_C + r_G) / 3",
+      "evaluatedAt": "2026-02-17T09:06:31.214Z",
+      "sampleCount": 100,
+      "minSampleCount": 100,
+      "sampleCountSatisfied": true,
+      "minSourceSampleCount": 10,
+      "sourceCoverageSatisfied": true,
+      "perSourceMinSampleCountSatisfied": true,
+      "overallIntegrationRatePercent": 100,
+      "targetPercent": 90,
+      "targetSatisfied": true,
+      "sourceResults": [
+        {
+          "source": "wearable",
+          "totalSampleCount": 33,
+          "successfulSampleCount": 33,
+          "integrationRatePercent": 100,
+          "targetPercent": 90,
+          "targetSatisfied": true,
+          "minSourceSampleCount": 10,
+          "minSourceSampleCountSatisfied": true
+        },
+        {
+          "source": "continuous_glucose",
+          "totalSampleCount": 34,
+          "successfulSampleCount": 34,
+          "integrationRatePercent": 100,
+          "targetPercent": 90,
+          "targetSatisfied": true,
+          "minSourceSampleCount": 10,
+          "minSourceSampleCountSatisfied": true
+        },
+        {
+          "source": "genetic_test",
+          "totalSampleCount": 33,
+          "successfulSampleCount": 33,
+          "integrationRatePercent": 100,
+          "targetPercent": 90,
+          "targetSatisfied": true,
+          "minSourceSampleCount": 10,
+          "minSourceSampleCountSatisfied": true
+        }
+      ]
+    },
+    "interfaceWiringReport": {
+      "module": "07_biosensor_and_genetic_data_integration",
+      "phase": "EVALUATION",
+      "kpiId": "kpi-05",
+      "formula": "Accuracy = 100 * (1/R) * sum(I(l_r == l_ref and f_r == f_ref))",
+      "evaluatedAt": "2026-02-17T09:06:31.214Z",
+      "ruleCount": 100,
+      "passedRuleCount": 100,
+      "accuracyPercent": 100,
+      "targetPercent": 95,
+      "minRuleCount": 100,
+      "targetSatisfied": true,
+      "minRuleCountSatisfied": true,
+      "ruleResults": [
+        {
+          "sampleId": "m07-kpi05-sample-001",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-002",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-003",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-004",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-005",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-006",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-007",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-008",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-009",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-010",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-011",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-012",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-013",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-014",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-015",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-016",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-017",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-018",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-019",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-020",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-021",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-022",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-023",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-024",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-025",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-026",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-027",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-028",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-029",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-030",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-031",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-032",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-033",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-034",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-035",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-036",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-037",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-038",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-039",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-040",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-041",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-042",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-043",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-044",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-045",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-046",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-047",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-048",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-049",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-050",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-051",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-052",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-053",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-054",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-055",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-056",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-057",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-058",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-059",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-060",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-061",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-062",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-063",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-064",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-065",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-066",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-067",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-068",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-069",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-070",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-071",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-072",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-073",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-074",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-075",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-076",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-077",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-078",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-079",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-080",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-081",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-082",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-083",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-084",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-085",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-086",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-087",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-088",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-089",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-090",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-091",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-092",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-093",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-094",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-095",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-096",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-097",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-098",
+          "sessionId": "rnd07-session-g-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-099",
+          "sessionId": "rnd07-session-w-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        },
+        {
+          "sampleId": "m07-kpi05-sample-100",
+          "sessionId": "rnd07-session-c-001",
+          "logicMatched": true,
+          "interfaceMatched": true,
+          "recordLinkMatched": true,
+          "passed": true
+        }
+      ]
+    }
+  },
+  "integrationSamples": [
+    {
+      "sampleId": "m07-kpi07-sample-001",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-002",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-003",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-004",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-005",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-006",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-007",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-008",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-009",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-010",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-011",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-012",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-013",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-014",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-015",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-016",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-017",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-018",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-019",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-020",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-021",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-022",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-023",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-024",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-025",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-026",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-027",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-028",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-029",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-030",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-031",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-032",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-033",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-034",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-035",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-036",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-037",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-038",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-039",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-040",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-041",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-042",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-043",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-044",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-045",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-046",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-047",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-048",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-049",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-050",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-051",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-052",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-053",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-054",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-055",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-056",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-057",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-058",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-059",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-060",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-061",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-062",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-063",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-064",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-065",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-066",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-067",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-068",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-069",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-070",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-071",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-072",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-073",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-074",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-075",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-076",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-077",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-078",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-079",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-080",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-081",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-082",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-083",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-084",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-085",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-086",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-087",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-088",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-089",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-090",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-091",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-092",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-093",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-094",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-095",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-096",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-097",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-098",
+      "source": "genetic_test",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-099",
+      "source": "wearable",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    },
+    {
+      "sampleId": "m07-kpi07-sample-100",
+      "source": "continuous_glucose",
+      "sessionSuccess": true,
+      "dataLakeLinked": true
+    }
+  ],
+  "interfaceSamples": [
+    {
+      "sampleId": "m07-kpi05-sample-001",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-002",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-003",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-004",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-005",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-006",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-007",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-008",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-009",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-010",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-011",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-012",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-013",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-014",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-015",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-016",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-017",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-018",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-019",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-020",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-021",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-022",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-023",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-024",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-025",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-026",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-027",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-028",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-029",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-030",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-031",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-032",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-033",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-034",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-035",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-036",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-037",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-038",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-039",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-040",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-041",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-042",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-043",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-044",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-045",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-046",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-047",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-048",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-049",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-050",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-051",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-052",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-053",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-054",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-055",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-056",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-057",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-058",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-059",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-060",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-061",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-062",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-063",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-064",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-065",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-066",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-067",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-068",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-069",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-070",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-071",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-072",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-073",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-074",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-075",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-076",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-077",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-078",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-079",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-080",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-081",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-082",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-083",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-084",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-085",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-086",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-087",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-088",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-089",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-090",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-091",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-092",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-093",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-094",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-095",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-096",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-097",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-098",
+      "expected": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-g-001",
+        "source": "genetic_test",
+        "sourceKind": "internal_profile",
+        "sensitivity": "sensitive",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-genetic-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-099",
+      "expected": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-w-001",
+        "source": "wearable",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-wearable-001"
+      }
+    },
+    {
+      "sampleId": "m07-kpi05-sample-100",
+      "expected": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      },
+      "observed": {
+        "sessionId": "rnd07-session-c-001",
+        "source": "continuous_glucose",
+        "sourceKind": "internal_behavior",
+        "sensitivity": "internal",
+        "linked": true,
+        "dataLakeRecordId": "rnd02-r07-cgm-001"
+      }
+    }
+  ]
+}
