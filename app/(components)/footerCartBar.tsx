@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { useFooterCartDockAvoidance } from "@/app/(components)/footerCartDockAvoidance";
 
 interface FooterCartBarProps {
   totalPrice: number;
@@ -12,9 +13,15 @@ export default function FooterCartBar({
   setIsCartVisible,
 }: FooterCartBarProps) {
   const btnRef = useRef<HTMLButtonElement>(null);
+  const { style, shouldHideForMobile } = useFooterCartDockAvoidance();
 
   return (
-    <div className="px-5 fixed bottom-0 left-0 right-0 w-full max-w-[640px] mx-auto bg-sky-400 text-white p-4 flex justify-between items-center text-lg font-bold">
+    <div
+      className={`px-5 fixed bottom-0 left-0 right-0 z-[46] w-full max-w-[640px] mx-auto bg-sky-400 text-white p-4 flex justify-between items-center text-lg font-bold ${
+        shouldHideForMobile ? "pointer-events-none" : "pointer-events-auto"
+      }`}
+      style={style}
+    >
       <span>{totalPrice.toLocaleString()}원</span>
       <button
         ref={btnRef}

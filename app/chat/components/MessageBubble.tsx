@@ -13,12 +13,80 @@ import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeExternalLinks from "rehype-external-links";
 
+function buildLoadingHints(contextText: string, userTurnCountBefore: number) {
+  const source = contextText || "";
+  const sourceLower = source.toLowerCase();
+
+  const isActionIntent =
+    /(장바구니|주문|구매|결제|열어|열기|이동|프로필)/.test(source) ||
+    /(cart|order|buy|checkout|open|move|profile)/.test(sourceLower);
+  const isRecommendationIntent =
+    /(추천|영양|분석|진단|성분|제품)/.test(source) ||
+    /(recommend|nutrition|analysis|supplement|product)/.test(sourceLower);
+
+  if (userTurnCountBefore <= 0) {
+    return [
+      "상담을 시작할 준비를 하고 있어요.",
+      "프로필과 기본 정보를 확인하고 있어요.",
+      "곧 첫 안내를 보여드릴게요.",
+    ];
+  }
+
+  if (userTurnCountBefore === 1) {
+    if (isActionIntent) {
+      return [
+        "첫 요청 동작을 준비하고 있어요.",
+        "현재 화면 상태를 확인하고 있어요.",
+        "곧 실행 결과를 보여드릴게요.",
+      ];
+    }
+    if (isRecommendationIntent) {
+      return [
+        "첫 맞춤 답변을 준비하고 있어요.",
+        "추천 근거를 빠르게 정리하고 있어요.",
+        "곧 추천 결과를 보여드릴게요.",
+      ];
+    }
+    return [
+      "첫 답변을 준비하고 있어요.",
+      "입력한 내용을 기준으로 정리 중이에요.",
+      "곧 답변을 보여드릴게요.",
+    ];
+  }
+
+  if (isActionIntent) {
+    return [
+      "요청한 동작을 실행할 준비를 하고 있어요.",
+      "현재 화면 상태를 확인한 뒤 바로 진행할게요.",
+      "실행 결과를 정리해서 곧 보여드릴게요.",
+    ];
+  }
+
+  if (isRecommendationIntent) {
+    return [
+      "맞춤 추천 근거를 확인하고 있어요.",
+      "섭취 패턴과 주의 포인트를 함께 계산 중이에요.",
+      "추천 결과를 보기 쉽게 정리하고 있어요.",
+    ];
+  }
+
+  return [
+    "질문 내용을 이해하고 있어요.",
+    "필요한 정보를 모아서 답변을 만들고 있어요.",
+    "곧 답변을 보여드릴게요.",
+  ];
+}
+
 export default function MessageBubble({
   role,
   content,
+  loadingContextText = "",
+  loadingUserTurnCount = 0,
 }: {
   role: ChatMessage["role"];
   content: string;
+  loadingContextText?: string;
+  loadingUserTurnCount?: number;
 }) {
   const isUser = role === "user";
   const [copied, setCopied] = useState(false);
@@ -27,12 +95,8 @@ export default function MessageBubble({
     typeof navigator === "undefined" ? true : navigator.onLine !== false
   );
   const loadingHints = useMemo(
-    () => [
-      "맞춤 영양 분석을 정리하고 있어요.",
-      "복용 패턴과 주의 포인트를 교차 확인 중이에요.",
-      "가까운 실구매 옵션까지 함께 계산하고 있어요.",
-    ],
-    []
+    () => buildLoadingHints(loadingContextText, loadingUserTurnCount),
+    [loadingContextText, loadingUserTurnCount]
   );
 
   const normalizeNewlines = (text: string) =>
@@ -278,7 +342,7 @@ export default function MessageBubble({
                     if (inline) {
                       return (
                         <code
-                          className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 text-[0.92em]"
+                          className="rounded bg-slate-100 px-1.5 py-0.5 text-[0.92em] text-slate-800"
                           {...props}
                         >
                           {children}
@@ -286,7 +350,7 @@ export default function MessageBubble({
                       );
                     }
                     return (
-                      <pre className="my-2 rounded-lg bg-slate-900 text-slate-100 overflow-x-auto p-3">
+                      <pre className="my-2 overflow-x-auto rounded-lg bg-slate-900 p-3 text-slate-100">
                         <code
                           className={`hljs ${
                             className || (lang ? `language-${lang}` : "")
@@ -313,22 +377,26 @@ export default function MessageBubble({
               </ReactMarkdown>
             </div>
           ) : (
-            <div className="w-full max-w-[86%] sm:max-w-[74%] md:max-w-[70%] rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-sky-50 px-3.5 py-3 shadow-sm">
+            <div
+              role="status"
+              aria-live="polite"
+              className="w-full max-w-[86%] rounded-2xl border border-slate-200 bg-white px-3.5 py-3 shadow-sm sm:max-w-[74%] md:max-w-[70%]"
+            >
               <div className="flex items-center gap-2">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-300 opacity-75" />
-                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-sky-500" />
-                </span>
-                <p className="text-[12px] font-semibold text-slate-700">
+                <div className="inline-flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 animate-[wb-dot_1.2s_ease-in-out_infinite] rounded-full bg-sky-500" />
+                  <span
+                    className="h-1.5 w-1.5 animate-[wb-dot_1.2s_ease-in-out_infinite] rounded-full bg-sky-500"
+                    style={{ animationDelay: "0.18s" }}
+                  />
+                  <span
+                    className="h-1.5 w-1.5 animate-[wb-dot_1.2s_ease-in-out_infinite] rounded-full bg-sky-500"
+                    style={{ animationDelay: "0.36s" }}
+                  />
+                </div>
+                <p className="text-[12px] font-medium text-slate-700">
                   {loadingHints[loadingHintIndex]}
                 </p>
-              </div>
-              <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-slate-200">
-                <div className="h-full w-1/3 rounded-full bg-gradient-to-r from-sky-400 to-slate-500 animate-[wb-loading-sweep_1.2s_ease-in-out_infinite]" />
-              </div>
-              <div className="mt-3 space-y-1.5">
-                <div className="h-2.5 w-11/12 animate-pulse rounded bg-slate-200" />
-                <div className="h-2.5 w-4/5 animate-pulse rounded bg-slate-200" />
               </div>
             </div>
           )}
@@ -337,10 +405,10 @@ export default function MessageBubble({
               <div className="-ms-2.5 -me-1 flex flex-wrap items-center gap-y-1 p-1 select-none pointer-events-none group-hover/message:pointer-events-auto">
                 <button
                   onClick={handleCopy}
-                  className="text-slate-500 hover:bg-slate-100 rounded-lg"
+                  className="rounded-lg text-slate-500 hover:bg-slate-100"
                   aria-label="복사"
                 >
-                  <span className="flex items-center justify-center h-8 w-8">
+                  <span className="flex h-8 w-8 items-center justify-center">
                     {copied ? (
                       <CheckIcon className="h-5 w-5" />
                     ) : (
@@ -355,26 +423,16 @@ export default function MessageBubble({
       )}
 
       <style jsx global>{`
-        @keyframes wb-breathe {
-          0% {
-            transform: scale(0.85);
-            opacity: 0.7;
+        @keyframes wb-dot {
+          0%,
+          80%,
+          100% {
+            transform: translateY(0);
+            opacity: 0.45;
           }
-          50% {
-            transform: scale(1.1);
+          40% {
+            transform: translateY(-2px);
             opacity: 1;
-          }
-          100% {
-            transform: scale(0.85);
-            opacity: 0.7;
-          }
-        }
-        @keyframes wb-loading-sweep {
-          0% {
-            transform: translateX(-130%);
-          }
-          100% {
-            transform: translateX(320%);
           }
         }
       `}</style>

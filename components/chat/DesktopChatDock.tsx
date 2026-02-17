@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   ArrowPathIcon,
@@ -28,6 +35,9 @@ const DOCK_MIN_WIDTH = 320;
 const DOCK_MIN_HEIGHT = 420;
 const DOCK_VIEWPORT_GAP_X = 24;
 const DOCK_VIEWPORT_GAP_Y = 32;
+const DOCK_RESIZE_HINT_DISMISS_KEY = "wb_chat_dock_resize_hint_dismissed_v1";
+const DOCK_RESIZE_HINT_WIDTH = 420;
+const CHAT_DOCK_LAYOUT_EVENT = "wb:chat-dock-layout";
 
 type DockPanelSize = {
   width: number;
@@ -43,6 +53,19 @@ type DockResizeState = {
   startWidth: number;
   startHeight: number;
 };
+
+type ChatDockLayoutDetail = {
+  open: boolean;
+  left: number;
+  right: number;
+  width: number;
+  height: number;
+};
+
+function emitChatDockLayout(detail: ChatDockLayoutDetail) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(CHAT_DOCK_LAYOUT_EVENT, { detail }));
+}
 
 function clampDockSize(size: DockPanelSize): DockPanelSize {
   if (typeof window === "undefined") {
@@ -141,12 +164,27 @@ export default function DesktopChatDock() {
   const isChatRoute = pathname?.startsWith("/chat") ?? false;
   const [isOpen, setIsOpen] = useState(false);
   const [hasBooted, setHasBooted] = useState(false);
+  const [pendingOpen, setPendingOpen] = useState(false);
 
-  const openDock = () => {
+  const requestOpenDock = useCallback(() => {
     if (isChatRoute) return;
+    if (hasBooted) {
+      setPendingOpen(false);
+      setIsOpen(true);
+      return;
+    }
+    // Keep intent first, then open immediately when lazy boot completes.
+    setPendingOpen(true);
     setHasBooted(true);
+  }, [hasBooted, isChatRoute]);
+
+  useEffect(() => {
+    if (!pendingOpen) return;
+    if (!hasBooted) return;
+    if (isChatRoute) return;
     setIsOpen(true);
-  };
+    setPendingOpen(false);
+  }, [hasBooted, isChatRoute, pendingOpen]);
 
   useEffect(() => {
     if (isChatRoute) return;
@@ -196,18 +234,39 @@ export default function DesktopChatDock() {
 
   useEffect(() => {
     if (!isChatRoute) return;
+    setPendingOpen(false);
     setIsOpen(false);
+    emitChatDockLayout({
+      open: false,
+      left: 0,
+      right: 0,
+      width: 0,
+      height: 0,
+    });
   }, [isChatRoute]);
 
   useEffect(() => {
-    const handleCloseDock = () => setIsOpen(false);
+    const handleCloseDock = () => {
+      setPendingOpen(false);
+      setIsOpen(false);
+      emitChatDockLayout({
+        open: false,
+        left: 0,
+        right: 0,
+        width: 0,
+        height: 0,
+      });
+    };
+    const handleOpenDock = () => requestOpenDock();
     window.addEventListener("wb:chat-close-dock", handleCloseDock);
+    window.addEventListener("wb:chat-open-dock", handleOpenDock);
     window.addEventListener("openCart", handleCloseDock);
     return () => {
       window.removeEventListener("wb:chat-close-dock", handleCloseDock);
+      window.removeEventListener("wb:chat-open-dock", handleOpenDock);
       window.removeEventListener("openCart", handleCloseDock);
     };
-  }, []);
+  }, [requestOpenDock]);
 
   if (isChatRoute) {
     return null;
@@ -217,18 +276,25 @@ export default function DesktopChatDock() {
     <div className="fixed bottom-[max(24px,env(safe-area-inset-bottom))] left-0 right-0 z-[58] flex justify-end px-3 sm:bottom-7 sm:left-auto sm:right-5 sm:px-0">
       <button
         type="button"
-        onPointerDown={openDock}
-        onClick={openDock}
+        onPointerDown={requestOpenDock}
+        onClick={requestOpenDock}
         className={`group relative z-20 ml-auto flex h-14 w-14 cursor-pointer items-center justify-center rounded-full border border-slate-200/90 bg-white shadow-[0_10px_28px_rgba(15,23,42,0.18)] transition-[transform,opacity,box-shadow] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(15,23,42,0.22)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 sm:h-16 sm:w-auto sm:gap-2.5 sm:px-5 sm:pr-6 lg:gap-3 lg:px-6 ${
           isOpen
             ? "translate-y-2 scale-95 opacity-0 pointer-events-none"
-            : "translate-y-0 scale-100 opacity-100 pointer-events-auto"
+            : pendingOpen
+              ? "translate-y-0 scale-100 opacity-80 pointer-events-none"
+              : "translate-y-0 scale-100 opacity-100 pointer-events-auto"
         }`}
         aria-label="AI 에이전트 열기"
         title="AI 에이전트 열기"
+        aria-busy={pendingOpen}
       >
         <span className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-sky-500 via-cyan-500 to-indigo-500 text-white shadow-sm">
-          <ChatBubbleLeftRightIcon className="h-5 w-5" />
+          {pendingOpen ? (
+            <ArrowPathIcon className="h-5 w-5 animate-spin" />
+          ) : (
+            <ChatBubbleLeftRightIcon className="h-5 w-5" />
+          )}
         </span>
         <span className="absolute -left-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-slate-900 px-1 text-[10px] font-bold text-white sm:hidden">
           AI
@@ -262,6 +328,8 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
   const resizeRafRef = useRef<number | null>(null);
   const pendingResizeSizeRef = useRef<DockPanelSize | null>(null);
   const [isResizing, setIsResizing] = useState(false);
+  const [showResizeHint, setShowResizeHint] = useState(false);
+  const [resizeHintDismissed, setResizeHintDismissed] = useState(false);
   const {
     sessions,
     activeId,
@@ -277,6 +345,8 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
     orders,
     suggestions,
     interactiveActions,
+    showAgentGuide,
+    agentGuideExamples,
     actionLoading,
     bootstrapPending,
     input,
@@ -301,6 +371,44 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
     enableAutoInit: isOpen,
   });
 
+  const assistantLoadingMetaByIndex = useMemo(() => {
+    const meta = new Map<number, { contextText: string; userTurnCountBefore: number }>();
+    if (!active) return meta;
+
+    let userTurnCount = 0;
+    for (let index = 0; index < active.messages.length; index += 1) {
+      const message = active.messages[index];
+      if (message.role === "assistant") {
+        let contextText = "";
+        for (let cursor = index - 1; cursor >= 0; cursor -= 1) {
+          const prev = active.messages[cursor];
+          if (prev.role !== "user") continue;
+          if (typeof prev.content !== "string") continue;
+          const text = prev.content.trim();
+          if (!text) continue;
+          contextText = text;
+          break;
+        }
+        meta.set(index, {
+          contextText,
+          userTurnCountBefore: userTurnCount,
+        });
+      }
+      if (message.role === "user") {
+        userTurnCount += 1;
+      }
+    }
+    return meta;
+  }, [active]);
+
+  const dismissResizeHint = () => {
+    setShowResizeHint(false);
+    setResizeHintDismissed(true);
+    try {
+      window.localStorage.setItem(DOCK_RESIZE_HINT_DISMISS_KEY, "1");
+    } catch {}
+  };
+
   const applyPanelSizeToDom = (size: DockPanelSize) => {
     const panel = panelRef.current;
     if (!panel) return;
@@ -312,6 +420,50 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
     panelSizeRef.current = panelSize;
     applyPanelSizeToDom(panelSize);
   }, [panelSize]);
+
+  useEffect(() => {
+    const emitClosed = () =>
+      emitChatDockLayout({
+        open: false,
+        left: 0,
+        right: 0,
+        width: 0,
+        height: 0,
+      });
+
+    const emitOpen = () => {
+      const panel = panelRef.current;
+      if (!panel) {
+        emitClosed();
+        return;
+      }
+      const rect = panel.getBoundingClientRect();
+      emitChatDockLayout({
+        open: true,
+        left: rect.left,
+        right: rect.right,
+        width: rect.width,
+        height: rect.height,
+      });
+    };
+
+    if (!isOpen) {
+      emitClosed();
+      return;
+    }
+
+    const rafId = window.requestAnimationFrame(emitOpen);
+    const onResize = () => emitOpen();
+    window.addEventListener("resize", onResize);
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      window.removeEventListener("resize", onResize);
+      if (!isOpen) {
+        emitClosed();
+      }
+    };
+  }, [isOpen, panelSize.width, panelSize.height, isResizing]);
 
   useEffect(() => {
     const panel = panelRef.current;
@@ -340,6 +492,15 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
     setPanelSize(restored);
     panelSizeRef.current = restored;
     applyPanelSizeToDom(restored);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      setResizeHintDismissed(
+        window.localStorage.getItem(DOCK_RESIZE_HINT_DISMISS_KEY) === "1"
+      );
+    } catch {}
   }, []);
 
   useEffect(() => {
@@ -431,11 +592,27 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
     document.body.style.removeProperty("cursor");
   }, [isOpen]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!isOpen || resizeHintDismissed || isResizing) {
+      setShowResizeHint(false);
+      return;
+    }
+    if (panelSize.width > DOCK_RESIZE_HINT_WIDTH) {
+      setShowResizeHint(false);
+      return;
+    }
+    setShowResizeHint(true);
+    const timer = window.setTimeout(() => setShowResizeHint(false), 9000);
+    return () => window.clearTimeout(timer);
+  }, [isOpen, isResizing, panelSize.width, resizeHintDismissed]);
+
   const startResize = (
     event: ReactPointerEvent<HTMLElement>,
     edge: DockResizeEdge
   ) => {
     if (!isOpen) return;
+    setShowResizeHint(false);
     event.preventDefault();
     event.stopPropagation();
 
@@ -532,6 +709,28 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
         height: `${(isResizing ? panelSizeRef.current : panelSize).height}px`,
       }}
     >
+      {showResizeHint && (
+        <div className="pointer-events-none absolute left-3 top-14 z-[65] hidden sm:block">
+          <div className="pointer-events-auto relative max-w-[250px] rounded-xl border border-sky-200 bg-white px-3 py-2 shadow-[0_14px_32px_rgba(15,23,42,0.16)]">
+            <p className="text-[12px] font-semibold text-slate-800">
+              채팅창이 좁으면 늘려서 사용해보세요!
+            </p>
+            <p className="mt-1 text-[11px] leading-4 text-slate-600">
+              왼쪽 위 모서리를 드래그하면 대화와 추천 목록이 더 잘 보여요.
+            </p>
+            <div className="mt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={dismissResizeHint}
+                className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-200"
+              >
+                확인
+              </button>
+            </div>
+            <span className="absolute -left-1 top-5 h-2.5 w-2.5 rotate-45 border-b border-l border-sky-200 bg-white" />
+          </div>
+        </div>
+      )}
       <div
         aria-hidden
         onPointerDown={(event) => startResize(event, "left")}
@@ -673,7 +872,20 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
                         checkAiResult={checkAiResult}
                       />
                     )}
-                    <MessageBubble role={message.role} content={message.content} />
+                    <MessageBubble
+                      role={message.role}
+                      content={message.content}
+                      loadingContextText={
+                        message.role === "assistant"
+                          ? assistantLoadingMetaByIndex.get(index)?.contextText || ""
+                          : ""
+                      }
+                      loadingUserTurnCount={
+                        message.role === "assistant"
+                          ? assistantLoadingMetaByIndex.get(index)?.userTurnCountBefore ?? 0
+                          : 0
+                      }
+                    />
                     {message.role === "assistant" && (
                       <RecommendedProductActions content={message.content} />
                     )}
@@ -694,6 +906,9 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
           quickActionLoading={actionLoading}
           suggestions={suggestions}
           onSelectSuggestion={(question) => sendMessage(question)}
+          showAgentGuide={showAgentGuide}
+          agentExamples={agentGuideExamples}
+          onSelectAgentExample={(prompt) => sendMessage(prompt)}
           quickActions={interactiveActions}
           onSelectQuickAction={handleInteractiveAction}
           onStop={stopStreaming}

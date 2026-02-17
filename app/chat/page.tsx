@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import ChatInput from "./components/ChatInput";
 import ProfileBanner from "./components/ProfileBanner";
@@ -43,6 +43,8 @@ export default function ChatPage() {
     titleHighlightId,
     suggestions,
     interactiveActions,
+    showAgentGuide,
+    agentGuideExamples,
     actionLoading,
     bootstrapPending,
     titleLoading,
@@ -67,6 +69,36 @@ export default function ChatPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [active?.messages.length]);
+
+  const assistantLoadingMetaByIndex = useMemo(() => {
+    const meta = new Map<number, { contextText: string; userTurnCountBefore: number }>();
+    if (!active) return meta;
+
+    let userTurnCount = 0;
+    for (let index = 0; index < active.messages.length; index += 1) {
+      const message = active.messages[index];
+      if (message.role === "assistant") {
+        let contextText = "";
+        for (let cursor = index - 1; cursor >= 0; cursor -= 1) {
+          const prev = active.messages[cursor];
+          if (prev.role !== "user") continue;
+          if (typeof prev.content !== "string") continue;
+          const text = prev.content.trim();
+          if (!text) continue;
+          contextText = text;
+          break;
+        }
+        meta.set(index, {
+          contextText,
+          userTurnCountBefore: userTurnCount,
+        });
+      }
+      if (message.role === "user") {
+        userTurnCount += 1;
+      }
+    }
+    return meta;
+  }, [active]);
 
   return (
     <div className="relative flex flex-col w-full min-h-[calc(100vh-56px)] bg-gradient-to-b from-slate-50 to-white">
@@ -130,7 +162,20 @@ export default function ChatPage() {
                       checkAiResult={checkAiResult}
                     />
                   )}
-                  <MessageBubble role={m.role} content={m.content} />
+                  <MessageBubble
+                    role={m.role}
+                    content={m.content}
+                    loadingContextText={
+                      m.role === "assistant"
+                        ? assistantLoadingMetaByIndex.get(i)?.contextText || ""
+                        : ""
+                    }
+                    loadingUserTurnCount={
+                      m.role === "assistant"
+                        ? assistantLoadingMetaByIndex.get(i)?.userTurnCountBefore ?? 0
+                        : 0
+                    }
+                  />
                   {m.role === "assistant" && (
                     <RecommendedProductActions content={m.content} />
                   )}
@@ -148,6 +193,9 @@ export default function ChatPage() {
           quickActionLoading={actionLoading}
           suggestions={suggestions}
           onSelectSuggestion={(q) => sendMessage(q)}
+          showAgentGuide={showAgentGuide}
+          agentExamples={agentGuideExamples}
+          onSelectAgentExample={(prompt) => sendMessage(prompt)}
           quickActions={interactiveActions}
           onSelectQuickAction={handleInteractiveAction}
           onStop={stopStreaming}

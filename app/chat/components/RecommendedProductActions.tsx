@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import AddressModal from "@/components/modal/addressModal";
@@ -29,8 +29,16 @@ type ConfirmDialogState = {
 
 export default function RecommendedProductActions({ content }: { content: string }) {
   const parsed = useMemo(() => parseRecommendationLines(content || ""), [content]);
+  const parsedKey = useMemo(
+    () =>
+      parsed
+        .map((row) => `${normalizeKey(row.category)}:${normalizeKey(row.productName)}`)
+        .join("|"),
+    [parsed]
+  );
   const [items, setItems] = useState<ActionableRecommendation[]>([]);
   const [loading, setLoading] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [feedback, setFeedback] = useState<string>("");
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [showAddressGuideModal, setShowAddressGuideModal] = useState(false);
@@ -43,6 +51,10 @@ export default function RecommendedProductActions({ content }: { content: string
     const timer = window.setTimeout(() => setFeedback(""), 1800);
     return () => window.clearTimeout(timer);
   }, [feedback]);
+
+  useEffect(() => {
+    setExpanded(false);
+  }, [parsedKey]);
 
   useEffect(() => {
     let alive = true;
@@ -133,107 +145,135 @@ export default function RecommendedProductActions({ content }: { content: string
 
   const buyNow = (targets: ActionableRecommendation[]) => {
     if (!targets.length) return;
-    runCartAction(targets, {
-      openCartAfterSave: true,
-    });
+    runCartAction(targets, { openCartAfterSave: true });
   };
 
+  const preview = items.slice(0, 2);
+
   return (
-    <div className="mt-3 ms-2 w-full max-w-[86%] sm:max-w-[74%] md:max-w-[70%] rounded-2xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[12px] font-semibold text-slate-700">
-          추천 제품 빠른 실행
-        </p>
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={addAll}
-            disabled={loading || items.length === 0}
-            className="rounded-full border border-slate-300 px-2.5 py-1 text-[11px] text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-          >
-            전체 담기
-          </button>
-          <button
-            type="button"
-            onClick={() => buyNow(items)}
-            disabled={loading || items.length === 0}
-            className="rounded-full bg-sky-500 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-sky-600 disabled:opacity-50"
-          >
-            전체 바로 구매
-          </button>
+    <div className="mt-3 ms-2 w-full max-w-[86%] rounded-2xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm sm:max-w-[74%] md:max-w-[70%]">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[12px] font-semibold text-slate-700">
+            추천 제품 빠른 실행
+          </p>
+          <p className="mt-0.5 text-[11px] text-slate-500">
+            {loading
+              ? "추천 제품 정보를 확인 중이에요."
+              : `${items.length}개 제품을 바로 담거나 구매할 수 있어요.`}
+          </p>
         </div>
+        {!loading && items.length > 0 && (
+          <button
+            type="button"
+            className="shrink-0 rounded-full border border-slate-300 px-2.5 py-1 text-[11px] text-slate-700 hover:bg-slate-50"
+            onClick={() => setExpanded((prev) => !prev)}
+          >
+            {expanded ? "접기" : "목록 보기"}
+          </button>
+        )}
+      </div>
+
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        <button
+          type="button"
+          onClick={addAll}
+          disabled={loading || items.length === 0}
+          className="rounded-full border border-slate-300 px-2.5 py-1 text-[11px] text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+        >
+          전체 담기
+        </button>
+        <button
+          type="button"
+          onClick={() => buyNow(items)}
+          disabled={loading || items.length === 0}
+          className="rounded-full bg-sky-500 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-sky-600 disabled:opacity-50"
+        >
+          전체 바로 구매
+        </button>
       </div>
 
       {feedback ? (
         <p className="mt-1 text-[11px] text-emerald-600">{feedback}</p>
       ) : null}
 
-      <div className="mt-2 space-y-1.5">
-        {loading
-          ? parsed.map((item, index) => (
-              <div
-                key={`${normalizeKey(item.category)}-${normalizeKey(
-                  item.productName
-                )}-${index}`}
-                className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-2"
-              >
-                <p className="text-[11px] font-medium text-slate-500">
-                  {item.category}
-                </p>
-                <p className="line-clamp-1 text-[12px] font-semibold text-slate-900">
-                  {item.productName}
-                </p>
-                <p className="mt-0.5 text-[11px] text-slate-600">
-                  {typeof item.sourcePrice === "number"
-                    ? `7일 기준 ${toKrw(item.sourcePrice)}`
-                    : "7일 기준 가격 확인"}
-                </p>
-                <div className="mt-1.5 h-6 w-28 animate-pulse rounded-full bg-slate-200" />
-              </div>
-            ))
-          : items.map((item, index) => (
-              <div
-                key={`${normalizeKey(item.category)}-${normalizeKey(
-                  item.productName
-                )}-${index}`}
-                className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-2"
-              >
-                <p className="text-[11px] font-medium text-slate-500">
-                  {item.category}
-                </p>
-                <p className="line-clamp-1 text-[12px] font-semibold text-slate-900">
-                  {item.productName}
-                </p>
-                <p className="mt-0.5 text-[11px] text-slate-600">
-                  {typeof item.sourcePrice === "number"
-                    ? `7일 기준 ${toKrw(item.sourcePrice)}`
-                    : `7일 기준 ${toKrw(item.sevenDayPrice)}`}
-                  {` · 패키지 ${toKrw(item.packagePrice)}`}
-                </p>
-                <p className="mt-0.5 text-[11px] text-slate-500">
-                  옵션: {item.optionType}
-                  {item.capacity ? ` (${item.capacity})` : ""}
-                </p>
+      {!expanded && !loading && preview.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {preview.map((item, index) => (
+            <span
+              key={`${normalizeKey(item.category)}-${normalizeKey(item.productName)}-${index}`}
+              className="max-w-[13rem] truncate rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] text-slate-600"
+              title={item.productName}
+            >
+              {item.productName}
+            </span>
+          ))}
+          {items.length > preview.length && (
+            <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-500">
+              +{items.length - preview.length}개
+            </span>
+          )}
+        </div>
+      )}
 
-                <div className="mt-1.5 flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => addSingle(item)}
-                    className="rounded-full border border-slate-300 px-2.5 py-1 text-[11px] text-slate-700 hover:bg-white"
-                  >
-                    확인 후 담기
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => buyNow([item])}
-                    className="rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-black"
-                  >
-                    바로 구매
-                  </button>
+      {expanded && (
+        <div className="mt-2 space-y-1.5">
+          {loading
+            ? parsed.map((item, index) => (
+                <div
+                  key={`${normalizeKey(item.category)}-${normalizeKey(item.productName)}-${index}`}
+                  className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-2"
+                >
+                  <p className="text-[11px] font-medium text-slate-500">
+                    {item.category}
+                  </p>
+                  <p className="line-clamp-1 text-[12px] font-semibold text-slate-900">
+                    {item.productName}
+                  </p>
+                  <div className="mt-1.5 h-6 w-28 animate-pulse rounded-full bg-slate-200" />
                 </div>
-              </div>
-            ))}
-      </div>
+              ))
+            : items.map((item, index) => (
+                <div
+                  key={`${normalizeKey(item.category)}-${normalizeKey(item.productName)}-${index}`}
+                  className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-2"
+                >
+                  <p className="text-[11px] font-medium text-slate-500">
+                    {item.category}
+                  </p>
+                  <p className="line-clamp-1 text-[12px] font-semibold text-slate-900">
+                    {item.productName}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-slate-600">
+                    {typeof item.sourcePrice === "number"
+                      ? `7일 기준 ${toKrw(item.sourcePrice)}`
+                      : `7일 기준 ${toKrw(item.sevenDayPrice)}`}
+                    {` · 패키지 ${toKrw(item.packagePrice)}`}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-slate-500">
+                    옵션: {item.optionType}
+                    {item.capacity ? ` (${item.capacity})` : ""}
+                  </p>
+                  <div className="mt-1.5 flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => addSingle(item)}
+                      className="rounded-full border border-slate-300 px-2.5 py-1 text-[11px] text-slate-700 hover:bg-white"
+                    >
+                      확인 후 담기
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => buyNow([item])}
+                      className="rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-black"
+                    >
+                      바로 구매
+                    </button>
+                  </div>
+                </div>
+              ))}
+        </div>
+      )}
 
       {showAddressGuideModal && (
         <div

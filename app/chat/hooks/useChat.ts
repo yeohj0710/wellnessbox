@@ -47,12 +47,19 @@ import {
   hasRecommendationSection,
   isLikelyActionIntentText,
   normalizeActionTypeList,
+  pickLatestAssistantText,
 } from "./useChat.agentActions";
 
 type UseChatOptions = {
   manageFooter?: boolean;
   remoteBootstrap?: boolean;
   enableAutoInit?: boolean;
+};
+
+type AgentGuideExample = {
+  id: string;
+  label: string;
+  prompt: string;
 };
 
 const OFFLINE_INIT_MESSAGE =
@@ -297,6 +304,61 @@ export default function useChat(options: UseChatOptions = {}) {
     () => sessions.find((session) => session.id === activeId) || null,
     [sessions, activeId]
   );
+
+  const latestAssistantTextInActive = useMemo(
+    () => pickLatestAssistantText(active?.messages || []),
+    [active?.messages]
+  );
+
+  const agentGuideExamples = useMemo<AgentGuideExample[]>(() => {
+    if (hasRecommendationSection(latestAssistantTextInActive)) {
+      return [
+        {
+          id: "agent-buy-all",
+          label: "추천 제품 바로 구매",
+          prompt: "추천 상품 전체 바로 구매 진행해줘",
+        },
+        {
+          id: "agent-add-all",
+          label: "추천 제품 장바구니 담기",
+          prompt: "추천 상품 전체 장바구니에 담아줘",
+        },
+        {
+          id: "agent-open-cart",
+          label: "장바구니 열기",
+          prompt: "장바구니 열어줘",
+        },
+      ];
+    }
+
+    return [
+      {
+        id: "agent-personal-reco",
+        label: "맞춤 추천 요청",
+        prompt: "내 상황에 맞는 영양소와 제품을 추천해줘",
+      },
+      {
+        id: "agent-open-profile",
+        label: "프로필 설정 열기",
+        prompt: "프로필 설정 열어줘",
+      },
+      {
+        id: "agent-open-orders",
+        label: "내 주문 조회 열기",
+        prompt: "내 주문 조회 화면으로 이동해줘",
+      },
+    ];
+  }, [latestAssistantTextInActive]);
+
+  const showAgentGuide = useMemo(() => {
+    if (!active) return false;
+    const userMessageCount = active.messages.filter(
+      (message) => message.role === "user"
+    ).length;
+
+    if (userMessageCount <= 2) return true;
+    return userMessageCount <= 4 && interactiveActions.length === 0;
+  }, [active, interactiveActions.length]);
 
   const buildSummaryForSession = (sessionId: string | null) => {
     return buildUserContextSummary(
@@ -1440,6 +1502,8 @@ export default function useChat(options: UseChatOptions = {}) {
     titleHighlightId,
     suggestions,
     interactiveActions,
+    showAgentGuide,
+    agentGuideExamples,
     actionLoading,
     bootstrapPending,
     titleLoading,

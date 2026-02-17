@@ -110,6 +110,8 @@ export function parseRecommendationLines(content: string): RecommendationLine[] 
     .split(/\r?\n/)
     .map((raw) =>
       raw
+        .replace(/^\s*#+\s*/, "")
+        .replace(/^\s*[•·▪◦]\s*/, "")
         .replace(/^\s*(?:[-*]|\d+\.)\s*/, "")
         .replace(/\*\*/g, "")
         .replace(/`/g, "")
@@ -146,7 +148,16 @@ export function parseRecommendationLines(content: string): RecommendationLine[] 
     const sourcePrice = toPrice(cleaned);
     if (sourcePrice == null) continue;
 
-    if (!hasRecommendationHeading && !/[:\-|]/.test(cleaned)) {
+    const hasStructuredSeparator = /[:\-|]/.test(cleaned);
+    const looksLikeProductPriceLine =
+      /[가-힣A-Za-z].*(\d{1,3}(?:,\d{3})+|\d+)\s*원/.test(cleaned);
+    const looksLikeSummaryLine =
+      /(합계|총액|배송|할인|쿠폰|결제|주문번호|주문일)/.test(cleaned);
+
+    if (!hasRecommendationHeading && !hasStructuredSeparator && !looksLikeProductPriceLine) {
+      continue;
+    }
+    if (looksLikeSummaryLine && !hasStructuredSeparator) {
       continue;
     }
 
