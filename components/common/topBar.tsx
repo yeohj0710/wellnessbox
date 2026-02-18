@@ -29,6 +29,16 @@ type LoginStatus = {
   isAdminLoggedIn: boolean;
   isTestLoggedIn: boolean;
 };
+const GLOBAL_CART_OPEN_KEY = "wbGlobalCartOpen";
+const GLOBAL_CART_VISIBILITY_EVENT = "wb:global-cart-visibility";
+
+function isGlobalCartOpenFromStorage() {
+  if (typeof window === "undefined") return false;
+  return (
+    sessionStorage.getItem(GLOBAL_CART_OPEN_KEY) === "1" ||
+    localStorage.getItem("openCart") === "true"
+  );
+}
 
 export default function TopBar() {
   return (
@@ -40,7 +50,7 @@ export default function TopBar() {
 
 function TopBarFallback() {
   return (
-    <header className="fixed top-0 z-40 w-full bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70">
+    <header className="fixed top-0 z-40 w-full border-b border-slate-200/80 bg-white">
       <div className="mx-auto flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-[120rem]">
         <div className="text-[17px] font-extrabold tracking-tight text-slate-900">
           웰니스박스
@@ -62,6 +72,9 @@ function TopBarInner() {
   const logoRef = useRef<HTMLImageElement>(null);
   const { showLoading } = useLoading();
   const [hideOnScroll, setHideOnScroll] = useState(false);
+  const [isGlobalCartVisible, setIsGlobalCartVisible] = useState(() =>
+    isGlobalCartOpenFromStorage()
+  );
   const lastYRef = useRef(0);
 
   const reqSeqRef = useRef(0);
@@ -151,6 +164,57 @@ function TopBarInner() {
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const syncFromStorage = () => {
+      const opened = isGlobalCartOpenFromStorage();
+      setIsGlobalCartVisible(opened);
+      if (opened) {
+        setHideOnScroll(false);
+      }
+    };
+
+    const onOpenCart = () => {
+      setIsGlobalCartVisible(true);
+      setHideOnScroll(false);
+    };
+
+    const onCloseCart = () => {
+      setIsGlobalCartVisible(false);
+      setHideOnScroll(false);
+    };
+
+    const onCartVisibility = (event: Event) => {
+      const detail = (event as CustomEvent<{ visible?: boolean }>).detail;
+      const visible =
+        typeof detail?.visible === "boolean"
+          ? detail.visible
+          : isGlobalCartOpenFromStorage();
+      setIsGlobalCartVisible(visible);
+      if (visible) {
+        setHideOnScroll(false);
+      }
+    };
+
+    syncFromStorage();
+    window.addEventListener("openCart", onOpenCart);
+    window.addEventListener("closeCart", onCloseCart);
+    window.addEventListener(
+      GLOBAL_CART_VISIBILITY_EVENT,
+      onCartVisibility as EventListener
+    );
+
+    return () => {
+      window.removeEventListener("openCart", onOpenCart);
+      window.removeEventListener("closeCart", onCloseCart);
+      window.removeEventListener(
+        GLOBAL_CART_VISIBILITY_EVENT,
+        onCartVisibility as EventListener
+      );
+    };
+  }, []);
+
   const closeCartOverlay = useCallback(() => {
     if (typeof window === "undefined") return;
     sessionStorage.removeItem("wbGlobalCartOpen");
@@ -236,7 +300,7 @@ function TopBarInner() {
   }, []);
 
   useEffect(() => {
-    if (pathname?.startsWith("/chat")) {
+    if (pathname?.startsWith("/chat") || isGlobalCartVisible) {
       setHideOnScroll(false);
       return;
     }
@@ -263,7 +327,7 @@ function TopBarInner() {
     return () => {
       window.removeEventListener("scroll", onScroll);
     };
-  }, [pathname]);
+  }, [pathname, isGlobalCartVisible]);
 
   const searchParamsString = searchParams?.toString() ?? "";
   useEffect(() => {
@@ -288,8 +352,10 @@ function TopBarInner() {
   return (
     <>
       <header
-        className={`fixed top-0 z-40 w-full bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70 transition-transform duration-300 will-change-transform ${
-          hideOnScroll ? "-translate-y-full" : "translate-y-0"
+        className={`fixed top-0 z-40 w-full border-b border-slate-200/80 bg-white transition-transform duration-300 will-change-transform ${
+          hideOnScroll && !isGlobalCartVisible
+            ? "-translate-y-full"
+            : "translate-y-0"
         }`}
       >
         <div className="mx-auto flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-[120rem]">

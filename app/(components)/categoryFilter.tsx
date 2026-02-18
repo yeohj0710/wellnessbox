@@ -48,15 +48,26 @@ export default function CategoryFilter({
     };
   }, []);
 
+  const handleChevronClick = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const step = Math.max(160, Math.round(el.clientWidth * 0.72));
+    el.scrollBy({ left: step, behavior: "smooth" });
+  };
+
   return (
     <section className="py-2 bg-white">
       <div className="relative">
         <div
           ref={scrollRef}
-          className="overflow-x-auto scrollbar-hide"
-          style={{ WebkitOverflowScrolling: "touch" }}
+          data-horizontal-scroll-area="true"
+          className="overflow-x-auto scrollbar-hide touch-pan-x"
+          style={{
+            WebkitOverflowScrolling: "touch",
+            touchAction: "pan-x",
+          }}
         >
-          <div className="mx-3 flex flex-nowrap items-start gap-2 w-full max-w-[640px]">
+          <div className="mx-3 flex flex-nowrap items-start gap-2 w-max min-w-full">
             <button
               onClick={onResetCategories}
               className={`flex flex-col items-center justify-center h-12 shrink-0 px-4 border rounded-full ${
@@ -119,8 +130,15 @@ export default function CategoryFilter({
           </div>
         </div>
         {showChevron && (
-          <div className="absolute right-0 top-1/2 transform -translate-y-1/2 pointer-events-none">
-            <ChevronRightIcon className="w-6 h-6 text-gray-400" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center">
+            <button
+              type="button"
+              onClick={handleChevronClick}
+              aria-label="Scroll categories"
+              className="pointer-events-auto h-full px-1 bg-gradient-to-l from-white via-white/80 to-transparent"
+            >
+              <ChevronRightIcon className="w-6 h-6 text-gray-400" />
+            </button>
           </div>
         )}
       </div>

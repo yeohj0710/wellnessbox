@@ -4,6 +4,9 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
+const ROUTE_TRANSITION_HIDE_DELAY_MS = 420;
+const ROUTE_TRANSITION_FAILSAFE_MS = 700;
+
 export default function RouteTransition() {
   const router = useRouter();
   const pathname = usePathname();
@@ -69,9 +72,18 @@ export default function RouteTransition() {
     const t = setTimeout(() => {
       setShow(false);
       pending.current = null;
-    }, 420);
+    }, ROUTE_TRANSITION_HIDE_DELAY_MS);
     return () => clearTimeout(t);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!show) return;
+    const failSafe = setTimeout(() => {
+      setShow(false);
+      pending.current = null;
+    }, ROUTE_TRANSITION_FAILSAFE_MS);
+    return () => clearTimeout(failSafe);
+  }, [show]);
 
   useEffect(() => {
     const onHash = () => {
@@ -88,10 +100,10 @@ export default function RouteTransition() {
 
   return (
     <>
-      <div className="fixed left-0 right-0 top-14 h-[2px] z-[10000] overflow-hidden">
+      <div className="pointer-events-none fixed left-0 right-0 top-14 h-[2px] z-[10000] overflow-hidden">
         <div className="h-full w-1/3 bg-gradient-to-r from-sky-400 via-indigo-500 to-sky-400 animate-[route-progress_1s_ease-in-out_infinite]" />
       </div>
-      <div className="fixed left-0 right-0 bottom-0 top-14 z-[9999] flex items-center justify-center bg-white/18 backdrop-blur-[2px]">
+      <div className="pointer-events-none fixed left-0 right-0 bottom-0 top-14 z-[9999] flex items-center justify-center bg-white/18 backdrop-blur-[2px]">
         <div className="relative w-16 h-16">
           <div className="absolute -inset-2 rounded-full bg-gradient-to-tr from-sky-400/30 to-indigo-400/30 blur-xl animate-[glow_1.6s_ease-in-out_infinite]" />
           <div className="absolute inset-0 rounded-full bg-white/60 backdrop-blur-md shadow-lg" />

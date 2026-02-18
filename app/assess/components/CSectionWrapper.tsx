@@ -56,7 +56,7 @@ export default function CSectionWrapper({
           <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
             세부 진단
           </h1>
-          <div className="w-32 sm:w-40">
+          <div className="min-w-[120px]">
             <div className="flex items-center justify-between text-xs text-gray-600">
               <span>진행도</span>
               {/* <span className="tabular-nums notranslate" translate="no">

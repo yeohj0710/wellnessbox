@@ -1,6 +1,11 @@
 "use client";
 
 import { CATEGORY_LABELS } from "@/lib/categories";
+import {
+  normalizeKey,
+  parseRecommendationLines,
+  resolveRecommendations,
+} from "../components/recommendedProductActions.utils";
 
 type HomeCategoryLike = {
   name?: string | null;
@@ -38,7 +43,8 @@ const CATALOG_CACHE_TTL_MS = 5 * 60 * 1000;
 const MISSING_PRICE_REGEX =
   /\(\s*(가격\s*미정|가격\s*확인\s*중|가격\s*정보\s*없음|가격\s*데이터\s*확인\s*중)\s*\)/;
 const RECOMMENDATION_SECTION_REGEX = /추천 제품\s*\(7일\s*기준\s*가격\)/;
-const CATEGORY_LINE_REGEX = /^(\s*[-*]?\s*)([^:\n]{1,48})\s*:\s*(.+)$/;
+const HAS_PRICE_LINE_REGEX = /(\d{1,3}(?:,\d{3})+|\d+)\s*원/;
+const CATEGORY_LINE_REGEX = /^(\s*(?:[-*•·▪◦]\s*)?)([^:\n]{1,48})\s*[:：]\s*(.+)$/;
 
 const CATEGORY_SYNONYMS: Record<string, string> = {
   멀티비타민: "종합비타민",
@@ -263,32 +269,89 @@ async function loadCatalogByCategory() {
 export async function hydrateRecommendationPrices(text: string) {
   if (!text) return text;
   if (!RECOMMENDATION_SECTION_REGEX.test(text)) return text;
-  if (!MISSING_PRICE_REGEX.test(text)) return text;
-
-  const byCategory = await loadCatalogByCategory();
-  if (!byCategory || byCategory.size === 0) return text;
+  const hasMissingPrice = MISSING_PRICE_REGEX.test(text);
+  const hasPriceLine = HAS_PRICE_LINE_REGEX.test(text);
+  if (!hasMissingPrice && !hasPriceLine) return text;
 
   const lines = text.split("\n");
   const usedNames = new Set<string>();
+  const resolvedBySourceKey = new Map<
+    string,
+    { productName: string; sevenDayPrice: number }
+  >();
   let changed = false;
 
-  const nextLines = lines.map((line) => {
-    if (!MISSING_PRICE_REGEX.test(line)) return line;
+  if (hasPriceLine) {
+    const parsed = parseRecommendationLines(text);
+    if (parsed.length > 0) {
+      try {
+        const resolved = await resolveRecommendations(parsed, {
+          dedupeByProductOption: false,
+        });
+        for (const item of resolved) {
+          const key = `${normalizeKey(item.sourceCategory)}:${normalizeKey(
+            item.sourceProductName
+          )}`;
+          if (!key || resolvedBySourceKey.has(key)) continue;
+          resolvedBySourceKey.set(key, {
+            productName: item.productName,
+            sevenDayPrice: item.sevenDayPrice,
+          });
+        }
+      } catch {
+        // fall through to missing-price-only fallback
+      }
+    }
+  }
 
+  let nextLines = lines.map((line) => {
+    if (!HAS_PRICE_LINE_REGEX.test(line)) return line;
     const match = line.match(CATEGORY_LINE_REGEX);
     if (!match) return line;
-
     const [, prefix, rawCategory] = match;
-    const canonical = canonicalizeCategoryLabel(rawCategory);
-    if (!canonical) return line;
-    const candidates = byCategory.get(canonical) || [];
-    const picked = candidates.find((candidate) => !usedNames.has(candidate.name)) || candidates[0];
-    if (!picked) return line;
-    usedNames.add(picked.name);
 
+    const parsedLine = parseRecommendationLines(line);
+    if (parsedLine.length !== 1) return line;
+    const key = `${normalizeKey(parsedLine[0].category)}:${normalizeKey(
+      parsedLine[0].productName
+    )}`;
+    const picked = resolvedBySourceKey.get(key);
+    if (!picked) return line;
+
+    usedNames.add(picked.productName);
     changed = true;
-    return `${prefix}${rawCategory.trim()}: ${picked.name} (${formatKrw(picked.sevenDayPrice)})`;
+    return `${prefix}${rawCategory.trim()}: ${picked.productName} (${formatKrw(
+      picked.sevenDayPrice
+    )})`;
   });
+
+  if (hasMissingPrice) {
+    const byCategory = await loadCatalogByCategory();
+    if (!byCategory || byCategory.size === 0) {
+      return changed ? nextLines.join("\n") : text;
+    }
+
+    nextLines = nextLines.map((line) => {
+      if (!MISSING_PRICE_REGEX.test(line)) return line;
+
+      const match = line.match(CATEGORY_LINE_REGEX);
+      if (!match) return line;
+
+      const [, prefix, rawCategory] = match;
+      const canonical = canonicalizeCategoryLabel(rawCategory);
+      if (!canonical) return line;
+      const candidates = byCategory.get(canonical) || [];
+      const picked =
+        candidates.find((candidate) => !usedNames.has(candidate.name)) || candidates[0];
+      if (!picked) return line;
+      usedNames.add(picked.name);
+
+      changed = true;
+      return `${prefix}${rawCategory.trim()}: ${picked.name} (${formatKrw(
+        picked.sevenDayPrice
+      )})`;
+    });
+  }
 
   return changed ? nextLines.join("\n") : text;
 }

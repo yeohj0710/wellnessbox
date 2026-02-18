@@ -16,6 +16,7 @@ import {
 const MISSING_ADDRESS_ERROR =
   "주소를 설정해 주세요. 해당 상품을 주문할 수 있는 약국을 보여드릴게요.";
 const GLOBAL_CART_OPEN_KEY = "wbGlobalCartOpen";
+const GLOBAL_CART_VISIBILITY_EVENT = "wb:global-cart-visibility";
 
 function toCartSignature(items: any[]) {
   if (!Array.isArray(items) || items.length === 0) return "";
@@ -36,6 +37,15 @@ function toCartSignature(items: any[]) {
 function readRoadAddress() {
   if (typeof window === "undefined") return "";
   return (localStorage.getItem("roadAddress") || "").trim();
+}
+
+function notifyGlobalCartVisibility(visible: boolean) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent(GLOBAL_CART_VISIBILITY_EVENT, {
+      detail: { visible },
+    })
+  );
 }
 
 export default function GlobalCartHost() {
@@ -95,6 +105,7 @@ export default function GlobalCartHost() {
     sessionStorage.setItem(GLOBAL_CART_OPEN_KEY, "1");
     localStorage.setItem("openCart", "true");
     setIsVisible(true);
+    notifyGlobalCartVisibility(true);
   }, [canRenderGlobalCart, pathname]);
 
   const closeGlobalCart = useCallback(() => {
@@ -103,6 +114,7 @@ export default function GlobalCartHost() {
     if (typeof window === "undefined") return;
     sessionStorage.removeItem(GLOBAL_CART_OPEN_KEY);
     localStorage.removeItem("openCart");
+    notifyGlobalCartVisibility(false);
     const y = openScrollYRef.current;
     requestAnimationFrame(() => {
       window.scrollTo(0, y);
@@ -146,6 +158,7 @@ export default function GlobalCartHost() {
     if (!canRenderGlobalCart) {
       openedPathRef.current = null;
       setIsVisible(false);
+      notifyGlobalCartVisibility(false);
       return;
     }
     if (typeof window === "undefined") return;
@@ -162,6 +175,7 @@ export default function GlobalCartHost() {
     if (typeof window !== "undefined") {
       sessionStorage.removeItem(GLOBAL_CART_OPEN_KEY);
       localStorage.removeItem("openCart");
+      notifyGlobalCartVisibility(false);
     }
   }, [isVisible, pathname]);
 

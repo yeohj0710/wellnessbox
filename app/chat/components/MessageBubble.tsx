@@ -379,9 +379,9 @@ export default function MessageBubble({
             <div
               role="status"
               aria-live="polite"
-              className="w-full max-w-[86%] rounded-2xl border border-slate-200 bg-white px-3.5 py-3 shadow-sm sm:max-w-[74%] md:max-w-[70%]"
+              className="inline-flex max-w-[95%] rounded-2xl border border-slate-200 bg-white px-3.5 py-3 shadow-sm sm:max-w-[86%] md:max-w-[74%]"
             >
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 items-center gap-2">
                 <div className="inline-flex items-center gap-1.5">
                   <span className="h-1.5 w-1.5 animate-[wb-dot_1.2s_ease-in-out_infinite] rounded-full bg-sky-500" />
                   <span
@@ -393,7 +393,7 @@ export default function MessageBubble({
                     style={{ animationDelay: "0.36s" }}
                   />
                 </div>
-                <p className="text-[12px] font-medium text-slate-700">
+                <p className="min-w-0 break-keep text-[12px] font-medium leading-5 text-slate-700">
                   {loadingHints[loadingHintIndex]}
                 </p>
               </div>

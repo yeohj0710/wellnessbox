@@ -282,7 +282,7 @@ export default function Cart({
     },
   });
   return (
-    <div className="w-full mt-32 mb-8 max-w-[640px] mx-auto bg-white min-h-[100vh]">
+    <div className="w-full pt-12 sm:pt-14 mb-8 max-w-[640px] mx-auto bg-white min-h-[100vh]">
       <Script
         src="https://cdn.iamport.kr/js/iamport.payment-1.2.0.js"
         onLoad={() => {

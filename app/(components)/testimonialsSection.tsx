@@ -72,9 +72,19 @@ export default function TestimonialsSection() {
   const halfRef = useRef(0);
   const rafRef = useRef<number | null>(null);
   const idleRef = useRef<number | null>(null);
+  const progressCommitTsRef = useRef(0);
   const [progress, setProgress] = useState(0);
 
   const ITEMS_LOCAL = [...ITEMS, ...ITEMS];
+
+  const measureHalf = () => {
+    const el = trackRef.current;
+    if (!el) return false;
+    const half = el.scrollWidth / 2;
+    if (!Number.isFinite(half) || half <= 1) return false;
+    halfRef.current = half;
+    return true;
+  };
 
   const applyTransform = () => {
     const el = trackRef.current;
@@ -88,28 +98,95 @@ export default function TestimonialsSection() {
     while (posRef.current >= 0) posRef.current -= h;
   };
 
-  const updateProgress = () => {
+  const updateProgress = (force = false) => {
     const h = halfRef.current || 1;
     const p = ((-posRef.current % h) + h) % h;
-    setProgress(p / h);
+    const now = performance.now();
+    if (!force && now - progressCommitTsRef.current < 80) {
+      return;
+    }
+    progressCommitTsRef.current = now;
+    const next = p / h;
+    setProgress((prev) => (Math.abs(prev - next) < 0.001 ? prev : next));
   };
 
   useLayoutEffect(() => {
     const el = trackRef.current;
     if (!el) return;
-    const measure = () => {
-      halfRef.current = el.scrollWidth / 2;
-    };
-    measure();
-    applyTransform();
-    const ro = new ResizeObserver(() => {
-      measure();
+
+    let retryRaf: number | null = null;
+    let destroyed = false;
+
+    const sync = () => {
+      const measured = measureHalf();
       normalize();
       applyTransform();
-      updateProgress();
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
+      updateProgress(true);
+      return measured;
+    };
+
+    const retryMeasure = (attempt = 0) => {
+      if (destroyed) return;
+      if (attempt >= 24) return;
+      if (sync()) return;
+      retryRaf = requestAnimationFrame(() => retryMeasure(attempt + 1));
+    };
+
+    const onResize = () => {
+      sync();
+    };
+
+    const onVisibilityChange = () => {
+      if (!document.hidden) {
+        sync();
+      }
+    };
+
+    const onLoad = () => {
+      sync();
+    };
+
+    sync();
+    if (halfRef.current <= 1) {
+      retryMeasure();
+    }
+
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(() => {
+        sync();
+      });
+      ro.observe(el);
+    } else {
+      window.addEventListener("resize", onResize);
+    }
+
+    if ("fonts" in document) {
+      (document as Document & { fonts?: { ready?: Promise<unknown> } }).fonts?.ready?.then(
+        () => {
+          if (!destroyed) sync();
+        }
+      );
+    }
+
+    window.addEventListener("load", onLoad);
+    window.addEventListener("pageshow", onLoad);
+    window.addEventListener("orientationchange", onResize);
+    window.addEventListener("resize", onResize);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    applyTransform();
+
+    return () => {
+      destroyed = true;
+      if (retryRaf) cancelAnimationFrame(retryRaf);
+      ro?.disconnect();
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
+      window.removeEventListener("load", onLoad);
+      window.removeEventListener("pageshow", onLoad);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }, []);
 
   useEffect(() => {
@@ -118,6 +195,9 @@ export default function TestimonialsSection() {
     const step = (t: number) => {
       const dt = Math.min(32, t - last);
       last = t;
+      if (halfRef.current <= 1) {
+        measureHalf();
+      }
       if (!pauseRef.current && halfRef.current > 0) {
         posRef.current -= speed * (dt / 16);
         normalize();
@@ -144,11 +224,14 @@ export default function TestimonialsSection() {
       );
     };
     const onPointerDown = (e: PointerEvent) => {
+      if (e.button !== 0) return;
       pauseRef.current = true;
       dragRef.current = true;
       startXRef.current = e.clientX;
       startPosRef.current = posRef.current;
-      el.setPointerCapture(e.pointerId);
+      try {
+        el.setPointerCapture(e.pointerId);
+      } catch {}
       el.style.cursor = "grabbing";
     };
     const onPointerMove = (e: PointerEvent) => {
@@ -162,7 +245,11 @@ export default function TestimonialsSection() {
     const onPointerUp = (e: PointerEvent) => {
       if (!dragRef.current) return;
       dragRef.current = false;
-      el.releasePointerCapture(e.pointerId);
+      try {
+        if (el.hasPointerCapture?.(e.pointerId)) {
+          el.releasePointerCapture(e.pointerId);
+        }
+      } catch {}
       el.style.cursor = "";
       resumeSoon();
     };
@@ -187,6 +274,10 @@ export default function TestimonialsSection() {
       el.removeEventListener("pointerup", onPointerUp);
       el.removeEventListener("pointercancel", onPointerUp);
       el.removeEventListener("wheel", onWheel);
+      if (idleRef.current) {
+        clearTimeout(idleRef.current);
+        idleRef.current = null;
+      }
     };
   }, []);
 
@@ -221,8 +312,8 @@ export default function TestimonialsSection() {
           <div className="relative overflow-hidden px-2 sm:px-0 select-none bg-[#EAF1FF]">
             <div
               ref={trackRef}
-              className="will-change-transform flex gap-5 md:gap-6"
-              style={{ transform: "translate3d(0,0,0)", touchAction: "pan-y" }}
+              className="will-change-transform flex gap-5 md:gap-6 cursor-grab"
+              style={{ touchAction: "pan-y" }}
             >
               {ITEMS_LOCAL.map((t, i) => (
                 <article

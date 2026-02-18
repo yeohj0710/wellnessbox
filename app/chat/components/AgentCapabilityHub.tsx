@@ -101,7 +101,7 @@ export default function AgentCapabilityHub(props: {
 
   if (dismissed) {
     return (
-      <div className="mx-2 flex justify-end">
+      <div className="mx-2 mt-1 flex justify-center">
         <button
           type="button"
           onClick={() => {
@@ -110,7 +110,7 @@ export default function AgentCapabilityHub(props: {
               window.localStorage.removeItem(DISMISS_KEY);
             } catch {}
           }}
-          className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-medium text-slate-600 hover:bg-slate-50"
+          className="w-full max-w-[17rem] rounded-xl border border-slate-200 bg-white px-3 py-2 text-[12px] font-medium text-slate-600 shadow-sm hover:bg-slate-50"
         >
           에이전트 기능 다시 보기
         </button>

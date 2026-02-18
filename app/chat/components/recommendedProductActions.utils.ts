@@ -30,6 +30,8 @@ type CartProductItem = {
 
 export type ActionableRecommendation = {
   category: string;
+  sourceCategory: string;
+  sourceProductName: string;
   productId: number;
   productName: string;
   optionType: string;
@@ -39,11 +41,14 @@ export type ActionableRecommendation = {
   sourcePrice: number | null;
 };
 
+const PRODUCT_NAME_CATALOG_TTL_MS = 5 * 60 * 1000;
+const RECOMMENDATION_RESOLVE_CACHE_TTL_MS = 60 * 1000;
 let productNameCatalogPromise: Promise<ProductNameItem[]> | null = null;
+let productNameCatalogLoadedAt = 0;
 let productNameCatalogRetryAt = 0;
 const recommendationResolveCache = new Map<
   string,
-  Promise<ActionableRecommendation[]>
+  { createdAt: number; promise: Promise<ActionableRecommendation[]> }
 >();
 const PLACEHOLDER_PRODUCT_NAME_SET = new Set([
   "제품명",
@@ -66,6 +71,35 @@ const CATEGORY_FALLBACK_ALIASES: Record<string, string[]> = {
   눈건강: ["루테인", "비타민a"],
   피로관리: ["비타민b", "코엔자임q10", "종합비타민"],
   피부건강: ["콜라겐", "비타민c", "아연"],
+};
+const CATEGORY_KEYWORD_SET = new Set(
+  [
+    ...Object.keys(CATEGORY_FALLBACK_ALIASES),
+    ...Object.values(CATEGORY_FALLBACK_ALIASES).flat(),
+    "종합비타민",
+    "멀티비타민",
+    "비타민c",
+    "비타민d",
+    "비타민b",
+    "비타민a",
+    "오메가3",
+    "프로바이오틱스",
+    "유산균",
+    "루테인",
+    "밀크씨슬",
+    "마그네슘",
+    "아연",
+    "칼슘",
+    "콜라겐",
+    "코엔자임q10",
+    "차전자피",
+  ].map((entry) => normalizeKey(entry)).filter(Boolean)
+);
+
+type ProductIdScore = {
+  id: number;
+  score: number;
+  source: "name" | "category";
 };
 
 export function normalizeKey(text: string) {
@@ -224,12 +258,17 @@ export function parseRecommendationLines(content: string): RecommendationLine[] 
 async function fetchProductNameCatalog() {
   const now = Date.now();
   if (now < productNameCatalogRetryAt) return [];
+  if (
+    productNameCatalogPromise &&
+    now - productNameCatalogLoadedAt < PRODUCT_NAME_CATALOG_TTL_MS
+  ) {
+    return productNameCatalogPromise;
+  }
   if (typeof navigator !== "undefined" && navigator.onLine === false) {
     productNameCatalogRetryAt = now + 4_000;
     return [];
   }
 
-  if (productNameCatalogPromise) return productNameCatalogPromise;
   productNameCatalogPromise = fetch("/api/product/names", {
     method: "GET",
     cache: "no-store",
@@ -261,17 +300,47 @@ async function fetchProductNameCatalog() {
             .filter((item: ProductNameItem) => Number.isFinite(item.id) && item.name)
         : []
     )
+    .then((items) => {
+      productNameCatalogLoadedAt = Date.now();
+      return items;
+    })
     .catch(() => {
       productNameCatalogRetryAt = Date.now() + 4_000;
       productNameCatalogPromise = null;
+      productNameCatalogLoadedAt = 0;
       return [];
     });
   return productNameCatalogPromise;
 }
 
-function scoreNameMatch(targetNorm: string, candidateNorm: string) {
+function scoreNameMatch(targetRaw: string, candidateRaw: string) {
+  const targetNorm = normalizeKey(targetRaw);
+  const candidateNorm = normalizeKey(candidateRaw);
   if (!targetNorm || !candidateNorm) return -1;
   if (targetNorm === candidateNorm) return 10_000;
+
+  const splitTokens = (value: string) =>
+    value
+      .split(/[^\p{L}\p{N}]+/u)
+      .map((token) => normalizeKey(token))
+      .filter(Boolean);
+  const scoreTokenOverlap = (targetValue: string, candidateValue: string) => {
+    const targetTokens = splitTokens(targetValue);
+    const candidateTokens = splitTokens(candidateValue);
+    if (targetTokens.length === 0 || candidateTokens.length === 0) return 0;
+
+    const targetTokenSet = new Set(targetTokens);
+    const candidateTokenSet = new Set(candidateTokens);
+    let overlap = 0;
+    for (const token of targetTokenSet) {
+      if (candidateTokenSet.has(token)) overlap += 1;
+    }
+    if (overlap === 0) return 0;
+
+    const coverage =
+      overlap / Math.max(1, Math.max(targetTokenSet.size, candidateTokenSet.size));
+    return overlap * 700 + Math.round(coverage * 400);
+  };
 
   let score = 0;
   if (candidateNorm.includes(targetNorm)) {
@@ -280,6 +349,7 @@ function scoreNameMatch(targetNorm: string, candidateNorm: string) {
   if (targetNorm.includes(candidateNorm)) {
     score += 4_000 - Math.abs(candidateNorm.length - targetNorm.length);
   }
+  score += scoreTokenOverlap(targetRaw, candidateRaw);
 
   const maxPrefix = Math.min(targetNorm.length, candidateNorm.length, 12);
   let prefix = 0;
@@ -300,6 +370,25 @@ function isGenericCategory(value: string) {
   const normalized = normalizeKey(value);
   if (!normalized) return true;
   return GENERIC_CATEGORY_SET.has(normalized);
+}
+
+function isCategoryLikeProductName(productName: string, category: string) {
+  const normalizedName = normalizeKey(productName);
+  if (!normalizedName) return true;
+  if (CATEGORY_KEYWORD_SET.has(normalizedName)) return true;
+
+  const normalizedCategory = normalizeKey(category);
+  if (normalizedCategory && normalizedName === normalizedCategory) return true;
+  if (
+    normalizedCategory &&
+    normalizedName.length >= 2 &&
+    (normalizedName.includes(normalizedCategory) ||
+      normalizedCategory.includes(normalizedName))
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 function buildCategoryAliases(rawCategory: string) {
@@ -360,26 +449,27 @@ function scoreCategoryMatch(category: string, item: ProductNameItem) {
   return best;
 }
 
-function findBestProductIdByName(
+function findProductCandidatesByName(
   productName: string,
-  catalog: ProductNameItem[]
+  catalog: ProductNameItem[],
+  take = 4
 ) {
-  const targetNorm = normalizeKey(productName);
-  if (!targetNorm) return null;
+  if (!normalizeKey(productName)) return null;
 
-  let best: { id: number; score: number } | null = null;
+  const candidates: ProductIdScore[] = [];
   for (const item of catalog) {
-    const score = scoreNameMatch(targetNorm, normalizeKey(item.name));
+    const score = scoreNameMatch(productName, item.name);
     if (score < 0) continue;
-    if (!best || score > best.score) {
-      best = { id: item.id, score };
-    }
+    candidates.push({ id: item.id, score, source: "name" });
   }
-  if (!best || best.score < 1_000) return null;
-  return best.id;
+  const out = candidates
+    .filter((candidate) => candidate.score >= 1_000)
+    .sort((left, right) => right.score - left.score)
+    .slice(0, take);
+  return out.length > 0 ? out : null;
 }
 
-function findBestProductIdByCategory(
+function findBestProductCandidateByCategory(
   category: string,
   catalog: ProductNameItem[]
 ) {
@@ -395,7 +485,11 @@ function findBestProductIdByCategory(
   }
 
   if (!best || best.score < 1_000) return null;
-  return best.id;
+  return {
+    id: best.id,
+    score: best.score,
+    source: "category" as const,
+  };
 }
 
 async function fetchCartProducts(ids: number[]) {
@@ -453,55 +547,138 @@ function pickBestCartOption(product: CartProductItem) {
   };
 }
 
-export async function resolveRecommendations(lines: RecommendationLine[]) {
-  if (!lines.length) return [];
-
-  const key = lines
-    .map((item) => `${normalizeKey(item.category)}:${normalizeKey(item.productName)}`)
+function buildResolveCacheKey(
+  lines: RecommendationLine[],
+  dedupeByProductOption: boolean
+) {
+  const lineKey = lines
+    .map(
+      (item) =>
+        `${normalizeKey(item.category)}:${normalizeKey(item.productName)}:${
+          item.sourcePrice ?? ""
+        }`
+    )
     .join("|");
+  return `${dedupeByProductOption ? "dedupe" : "keep"}:${lineKey}`;
+}
+
+function scorePriceSimilarity(sourcePrice: number | null, targetPrice: number) {
+  if (sourcePrice == null || sourcePrice <= 0) return 0;
+  if (!Number.isFinite(targetPrice) || targetPrice <= 0) return -1_500;
+
+  const diffRatio = Math.abs(sourcePrice - targetPrice) / sourcePrice;
+  return Math.max(-2_200, 1_500 - Math.round(diffRatio * 2_400));
+}
+
+export async function resolveRecommendations(
+  lines: RecommendationLine[],
+  options?: {
+    dedupeByProductOption?: boolean;
+  }
+) {
+  if (!lines.length) return [];
+  const dedupeByProductOption = options?.dedupeByProductOption !== false;
+
+  const key = buildResolveCacheKey(lines, dedupeByProductOption);
   if (!key) return [];
 
+  const now = Date.now();
+  for (const [cacheKey, entry] of recommendationResolveCache.entries()) {
+    if (now - entry.createdAt > RECOMMENDATION_RESOLVE_CACHE_TTL_MS) {
+      recommendationResolveCache.delete(cacheKey);
+    }
+  }
+
   const cached = recommendationResolveCache.get(key);
-  if (cached) return cached;
+  if (cached && now - cached.createdAt <= RECOMMENDATION_RESOLVE_CACHE_TTL_MS) {
+    return cached.promise;
+  }
 
   const pending = (async () => {
     const catalog = await fetchProductNameCatalog();
     if (!catalog.length) return [];
 
-    const lineMatches: Array<{ line: RecommendationLine; productId: number }> = [];
+    const lineMatches: Array<{
+      line: RecommendationLine;
+      candidates: ProductIdScore[];
+    }> = [];
     for (const line of lines) {
-      const productIdByName = isPlaceholderProductName(line.productName)
-        ? null
-        : findBestProductIdByName(line.productName, catalog);
-      const productIdByCategory = findBestProductIdByCategory(line.category, catalog);
-      const productId = productIdByName ?? productIdByCategory;
-      if (typeof productId !== "number") continue;
-      lineMatches.push({ line, productId });
+      const allowCategoryFallback =
+        isPlaceholderProductName(line.productName) ||
+        isCategoryLikeProductName(line.productName, line.category);
+
+      const nameCandidates = allowCategoryFallback
+        ? []
+        : findProductCandidatesByName(line.productName, catalog) || [];
+      const categoryCandidate = allowCategoryFallback
+        ? findBestProductCandidateByCategory(line.category, catalog)
+        : null;
+
+      const seen = new Set<number>();
+      const candidates: ProductIdScore[] = [];
+      for (const candidate of nameCandidates) {
+        if (seen.has(candidate.id)) continue;
+        seen.add(candidate.id);
+        candidates.push(candidate);
+      }
+      if (categoryCandidate && !seen.has(categoryCandidate.id)) {
+        candidates.push(categoryCandidate);
+      }
+      if (!candidates.length) continue;
+      lineMatches.push({ line, candidates });
     }
 
     if (!lineMatches.length) return [];
 
-    const ids = Array.from(new Set(lineMatches.map((item) => item.productId)));
+    const ids = Array.from(
+      new Set(
+        lineMatches.flatMap((item) => item.candidates.map((candidate) => candidate.id))
+      )
+    );
     const products = await fetchCartProducts(ids);
     const productById = new Map(products.map((item) => [item.id, item]));
 
     const out: ActionableRecommendation[] = [];
-    for (const { line, productId } of lineMatches) {
-      const product = productById.get(productId);
-      if (!product || !product.name) continue;
-      const option = pickBestCartOption(product);
-      if (!option) continue;
+    for (const { line, candidates } of lineMatches) {
+      let picked:
+        | {
+            candidate: ProductIdScore;
+            product: CartProductItem;
+            option: NonNullable<ReturnType<typeof pickBestCartOption>>;
+            score: number;
+          }
+        | null = null;
+
+      for (const candidate of candidates) {
+        const product = productById.get(candidate.id);
+        if (!product || !product.name) continue;
+        const option = pickBestCartOption(product);
+        if (!option) continue;
+
+        const score =
+          candidate.score + scorePriceSimilarity(line.sourcePrice, option.sevenDayPrice);
+        if (!picked || score > picked.score) {
+          picked = { candidate, product, option, score };
+        }
+      }
+      if (!picked) continue;
 
       out.push({
         category: line.category,
-        productId: product.id,
-        productName: product.name,
-        optionType: option.optionType,
-        capacity: option.capacity,
-        packagePrice: option.packagePrice,
-        sevenDayPrice: option.sevenDayPrice,
+        sourceCategory: line.category,
+        sourceProductName: line.productName,
+        productId: picked.product.id,
+        productName: picked.product.name,
+        optionType: picked.option.optionType,
+        capacity: picked.option.capacity,
+        packagePrice: picked.option.packagePrice,
+        sevenDayPrice: picked.option.sevenDayPrice,
         sourcePrice: line.sourcePrice,
       });
+    }
+
+    if (!dedupeByProductOption) {
+      return out.slice(0, 6);
     }
 
     const deduped: ActionableRecommendation[] = [];
@@ -516,7 +693,7 @@ export async function resolveRecommendations(lines: RecommendationLine[]) {
     return deduped.slice(0, 6);
   })();
 
-  recommendationResolveCache.set(key, pending);
+  recommendationResolveCache.set(key, { createdAt: Date.now(), promise: pending });
   return pending;
 }
 
@@ -539,4 +716,3 @@ export function hasSavedRoadAddress() {
   const saved = localStorage.getItem("roadAddress");
   return typeof saved === "string" && saved.trim().length > 0;
 }
-

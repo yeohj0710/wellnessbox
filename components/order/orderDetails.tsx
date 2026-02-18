@@ -48,34 +48,6 @@ export default function OrderDetails({
       const normalizedPhone = phone.replace(/\D/g, "");
       localStorage.setItem("customerAccountKey", normalizedPhone);
     } catch {}
-
-    const warmupPush = () => {
-      void ensureCustomerPushSubscription({ silent: true });
-    };
-
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-    const requestIdleCallbackRef = (window as any).requestIdleCallback as
-      | ((cb: () => void) => number)
-      | undefined;
-    const cancelIdleCallbackRef = (window as any).cancelIdleCallback as
-      | ((id: number) => void)
-      | undefined;
-
-    let idleId: number | null = null;
-    if (requestIdleCallbackRef) {
-      idleId = requestIdleCallbackRef(() => warmupPush());
-    } else {
-      timeoutId = setTimeout(warmupPush, 300);
-    }
-
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-      if (idleId !== null && cancelIdleCallbackRef) {
-        cancelIdleCallbackRef(idleId);
-      }
-    };
   }, [phone]);
 
   const fetchOrders = useCallback(
@@ -129,9 +101,12 @@ export default function OrderDetails({
     const [isSending, setIsSending] = useState(false);
     const [isMessagesRefreshing, setIsMessagesRefreshing] = useState(false);
     const [isStateRefreshing, setIsStateRefreshing] = useState(false);
-    const [isSubscribed, setIsSubscribed] = useState<boolean | null>(null);
+    const [isSubscribed, setIsSubscribed] = useState(false);
+    const [isSubscriptionStatusLoading, setIsSubscriptionStatusLoading] =
+      useState(true);
     const [isSubscribeLoading, setIsSubscribeLoading] = useState(false);
     const isSubscribingRef = useRef(false);
+    const isCheckingSubscriptionRef = useRef(false);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const pollingRef = useRef(false);
     const lastSeenIdRef = useRef<number>(0);
@@ -148,13 +123,21 @@ export default function OrderDetails({
       isNearBottomRef.current = gap < 80;
     };
 
-    useEffect(() => {
-      if (!isExpanded) return;
+    const checkSubscriptionStatus = useCallback(async () => {
+      if (typeof window === "undefined") return;
+      if (!("serviceWorker" in navigator)) {
+        setIsSubscribed(false);
+        setIsSubscriptionStatusLoading(false);
+        return;
+      }
+      if (isSubscribingRef.current || isCheckingSubscriptionRef.current) {
+        return;
+      }
 
-      const checkSubscription = async () => {
-        if (!("serviceWorker" in navigator)) return;
-        if (isSubscribingRef.current) return;
+      isCheckingSubscriptionRef.current = true;
+      setIsSubscriptionStatusLoading(true);
 
+      try {
         const notifyOff =
           localStorage.getItem(`notifyOff:${order.id}`) === "true";
         if (notifyOff) {
@@ -162,92 +145,82 @@ export default function OrderDetails({
           return;
         }
 
-        if (Notification.permission === "denied") {
+        if (Notification.permission !== "granted") {
           setIsSubscribed(false);
           return;
         }
 
-        try {
-          const reg = await navigator.serviceWorker.getRegistration();
-          if (!reg) {
-            setIsSubscribed(false);
-            return;
-          }
-          const appKey = (
-            process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || ""
-          ).trim();
-          if (!appKey) {
-            setIsSubscribed(false);
-            return;
-          }
-          let sub = await reg.pushManager.getSubscription();
-          if (sub && appKey) {
-            const subAppKey = await getSubAppKeyBase64(reg);
-            const storedKey = localStorage.getItem("vapidKey") || "";
-            const mismatch =
-              (storedKey && storedKey !== appKey) ||
-              (subAppKey && subAppKey !== appKey);
-            if (mismatch) {
-              try {
-                await fetch("/api/push/detach", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    endpoint: sub.endpoint,
-                    role: "customer",
-                  }),
-                });
-              } catch {}
-              try {
-                await sub.unsubscribe();
-              } catch {}
-              sub = null;
-            }
-          }
-
-          if (!sub) {
-            setIsSubscribed(false);
-            return;
-          }
-
-          try {
-            const statusRes = await fetch("/api/push/status", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                orderId: order.id,
-                endpoint: sub.endpoint,
-                role: "customer",
-              }),
-            });
-            if (!statusRes.ok) {
-              throw new Error("Failed to check subscription");
-            }
-            const data = await statusRes.json();
-            if (data.subscribed) {
-              setIsSubscribed(true);
-              localStorage.setItem("vapidKey", appKey);
-              return;
-            }
-            if (data.action === "resubscribe") {
-              await resubscribePush(sub, appKey);
-              return;
-            }
-            try {
-              await syncSubscription(sub, appKey);
-            } catch {
-              await resubscribePush(sub, appKey);
-            }
-          } catch {
-            setIsSubscribed(null);
-          }
-        } catch {
-          setIsSubscribed(null);
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (!reg) {
+          setIsSubscribed(false);
+          return;
         }
-      };
+        const appKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "").trim();
+        if (!appKey) {
+          setIsSubscribed(false);
+          return;
+        }
+        let sub = await reg.pushManager.getSubscription();
+        if (sub) {
+          const subAppKey = await getSubAppKeyBase64(reg);
+          const storedKey = localStorage.getItem("vapidKey") || "";
+          const mismatch =
+            (storedKey && storedKey !== appKey) ||
+            (subAppKey && subAppKey !== appKey);
+          if (mismatch) {
+            try {
+              await fetch("/api/push/detach", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  endpoint: sub.endpoint,
+                  role: "customer",
+                }),
+              });
+            } catch {}
+            try {
+              await sub.unsubscribe();
+            } catch {}
+            sub = null;
+          }
+        }
 
-      checkSubscription();
-    }, [isExpanded, order.id]);
+        if (!sub) {
+          setIsSubscribed(false);
+          return;
+        }
+
+        const statusRes = await fetch("/api/push/status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderId: order.id,
+            endpoint: sub.endpoint,
+            role: "customer",
+          }),
+        });
+        if (!statusRes.ok) {
+          setIsSubscribed(false);
+          return;
+        }
+
+        const data = await statusRes.json();
+        const subscribed = data?.subscribed === true;
+        setIsSubscribed(subscribed);
+        if (subscribed) {
+          localStorage.setItem("vapidKey", appKey);
+        }
+      } catch {
+        setIsSubscribed(false);
+      } finally {
+        isCheckingSubscriptionRef.current = false;
+        setIsSubscriptionStatusLoading(false);
+      }
+    }, [order.id]);
+
+    useEffect(() => {
+      void checkSubscriptionStatus();
+    }, [checkSubscriptionStatus]);
 
     useEffect(() => {
       if (!isExpanded || isLoaded) return;
@@ -394,16 +367,6 @@ export default function OrderDetails({
       }
       setIsSubscribed(true);
     };
-    const resubscribePush = async (
-      existingSub: PushSubscription | null,
-      appKey: string
-    ) => {
-      try {
-        await existingSub?.unsubscribe();
-      } catch {}
-      await subscribePush({ silent: true });
-      localStorage.setItem("vapidKey", appKey);
-    };
     const subscribePush = async ({ silent = false } = {}) => {
       if (isSubscribingRef.current) return;
       if (Notification.permission === "denied") {
@@ -543,7 +506,9 @@ export default function OrderDetails({
                 subscribePush();
               }
             }}
-            subscriptionLoading={isSubscribeLoading || isSubscribed === null}
+            subscriptionLoading={
+              isSubscribeLoading || isSubscriptionStatusLoading
+            }
           />
           <div className="mt-4 border-t sm:px-4 pt-16 sm:pt-12 pb-4">
             <div className="flex justify-center items-center mt-2 mb-6">
@@ -569,7 +534,9 @@ export default function OrderDetails({
               subscribePush();
             }
           }}
-          subscriptionLoading={isSubscribeLoading || isSubscribed === null}
+          subscriptionLoading={
+            isSubscribeLoading || isSubscriptionStatusLoading
+          }
         />
         {isExpanded && (
           <div className="mt-4 border-t sm:px-4 pt-16 sm:pt-12 pb-4">

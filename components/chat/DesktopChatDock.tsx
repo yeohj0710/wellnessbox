@@ -42,6 +42,9 @@ const DOCK_POSITION_MARGIN = 12;
 const DOCK_RESIZE_HINT_DISMISS_KEY = "wb_chat_dock_resize_hint_dismissed_v1";
 const DOCK_RESIZE_HINT_WIDTH = 420;
 const CHAT_DOCK_LAYOUT_EVENT = "wb:chat-dock-layout";
+const FOOTER_CART_BAR_LAYOUT_EVENT = "wb:footer-cart-bar-layout";
+const MOBILE_TRIGGER_BREAKPOINT = 640;
+const MOBILE_TRIGGER_EXTRA_GAP = 12;
 const PENDING_DOCK_PROMPT_KEY = "wb_chat_dock_pending_prompt_v1";
 const DOCK_NUDGE_DISMISS_KEY_PREFIX = "wb_chat_dock_nudge_dismissed_v2:";
 const DOCK_POSITION_STORAGE_KEY = "wb_chat_dock_position_v1";
@@ -112,9 +115,22 @@ type ChatDockLayoutDetail = {
   height: number;
 };
 
+type FooterCartBarLayoutDetail = {
+  visible: boolean;
+  height: number;
+};
+
 function emitChatDockLayout(detail: ChatDockLayoutDetail) {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent(CHAT_DOCK_LAYOUT_EVENT, { detail }));
+}
+
+function isFooterCartBarLayoutDetail(
+  value: unknown
+): value is FooterCartBarLayoutDetail {
+  if (!value || typeof value !== "object") return false;
+  const row = value as Record<string, unknown>;
+  return typeof row.visible === "boolean" && typeof row.height === "number";
 }
 
 function queueDockPrompt(prompt: string) {
@@ -368,6 +384,10 @@ export default function DesktopChatDock() {
   const [isOpen, setIsOpen] = useState(false);
   const [hasBooted, setHasBooted] = useState(false);
   const [pendingOpen, setPendingOpen] = useState(false);
+  const [viewportWidth, setViewportWidth] = useState(() =>
+    typeof window === "undefined" ? 0 : window.innerWidth
+  );
+  const [mobileFooterCartBarHeight, setMobileFooterCartBarHeight] = useState(0);
   const [showRouteNudge, setShowRouteNudge] = useState(false);
   const routeKey = pageAgentContext?.routeKey || "generic";
   const localizedRouteTitle = localizeDockNudgeText(
@@ -442,6 +462,37 @@ export default function DesktopChatDock() {
   }, [hasBooted, isChatRoute]);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onResize = () => setViewportWidth(window.innerWidth);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onFooterLayout = (event: Event) => {
+      const detail = (event as CustomEvent<unknown>).detail;
+      if (!isFooterCartBarLayoutDetail(detail)) return;
+      const nextHeight =
+        detail.visible && Number.isFinite(detail.height)
+          ? Math.max(0, Math.round(detail.height))
+          : 0;
+      setMobileFooterCartBarHeight(nextHeight);
+    };
+    window.addEventListener(
+      FOOTER_CART_BAR_LAYOUT_EVENT,
+      onFooterLayout as EventListener
+    );
+    return () => {
+      window.removeEventListener(
+        FOOTER_CART_BAR_LAYOUT_EVENT,
+        onFooterLayout as EventListener
+      );
+    };
+  }, []);
+
+  useEffect(() => {
     if (isChatRoute) return;
     if (!isOpen) return;
     const onKeyDown = (event: KeyboardEvent) => {
@@ -507,8 +558,24 @@ export default function DesktopChatDock() {
     return null;
   }
 
+  const isMobileViewport = viewportWidth > 0 && viewportWidth < MOBILE_TRIGGER_BREAKPOINT;
+  const mobileTriggerOffset = isMobileViewport
+    ? mobileFooterCartBarHeight +
+      (mobileFooterCartBarHeight > 0 ? MOBILE_TRIGGER_EXTRA_GAP : 0)
+    : 0;
+  const triggerBottomStyle = isMobileViewport
+    ? `calc(max(24px, env(safe-area-inset-bottom)) + ${mobileTriggerOffset}px)`
+    : undefined;
+
   return (
-    <div className="fixed bottom-[max(24px,env(safe-area-inset-bottom))] left-0 right-0 z-[58] flex justify-end px-3 sm:bottom-7 sm:left-auto sm:right-5 sm:px-0">
+    <div
+      className="fixed bottom-[max(24px,env(safe-area-inset-bottom))] left-0 right-0 z-[58] flex justify-end px-3 sm:bottom-7 sm:left-auto sm:right-5 sm:px-0"
+      style={
+        triggerBottomStyle
+          ? { bottom: triggerBottomStyle }
+          : undefined
+      }
+    >
       {showRouteNudge && (
         <div className="pointer-events-auto absolute bottom-[calc(100%+10px)] right-0 w-[min(88vw,330px)] rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-[0_16px_34px_rgba(15,23,42,0.18)] backdrop-blur">
           <div className="flex items-start justify-between gap-2">

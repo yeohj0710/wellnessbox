@@ -12,7 +12,14 @@ export default function PackageFilter({
   setSelectedPackage,
 }: PackageFilterProps) {
   return (
-    <section className="px-4 py-2 bg-gray-100 overflow-x-auto scrollbar-hide">
+    <section
+      data-horizontal-scroll-area="true"
+      className="px-4 py-2 bg-gray-100 overflow-x-auto scrollbar-hide touch-pan-x"
+      style={{
+        WebkitOverflowScrolling: "touch",
+        touchAction: "pan-x",
+      }}
+    >
       <div className="flex flex-nowrap items-center gap-2 w-max">
         {packages.map((pkg) => (
           <button

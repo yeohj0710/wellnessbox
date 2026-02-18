@@ -78,9 +78,25 @@ export default function SymptomFilter({
       window.removeEventListener("resize", checkScroll);
     };
   }, []);
+
+  const handleChevronClick = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const step = Math.max(160, Math.round(el.clientWidth * 0.72));
+    el.scrollBy({ left: step, behavior: "smooth" });
+  };
+
   return (
     <section className="relative py-2 bg-gray-100">
-      <div ref={scrollRef} className="overflow-x-auto scrollbar-hide">
+      <div
+        ref={scrollRef}
+        data-horizontal-scroll-area="true"
+        className="overflow-x-auto scrollbar-hide touch-pan-x"
+        style={{
+          WebkitOverflowScrolling: "touch",
+          touchAction: "pan-x",
+        }}
+      >
         <div className="mx-3 flex flex-nowrap items-center gap-2">
           <button
             onClick={clearSelection}
@@ -116,8 +132,15 @@ export default function SymptomFilter({
         </div>
       </div>
       {showChevron && (
-        <div className="absolute right-0 top-1/2 transform -translate-y-1/2 pointer-events-none">
-          <ChevronRightIcon className="w-6 h-6 text-gray-400" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center">
+          <button
+            type="button"
+            onClick={handleChevronClick}
+            aria-label="Scroll symptoms"
+            className="pointer-events-auto h-full px-1 bg-gradient-to-l from-gray-100 via-gray-100/80 to-transparent"
+          >
+            <ChevronRightIcon className="w-6 h-6 text-gray-400" />
+          </button>
         </div>
       )}
     </section>
