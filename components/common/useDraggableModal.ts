@@ -16,10 +16,12 @@ type DragOffset = {
 };
 
 type DragState = {
+  pointerId: number;
   startX: number;
   startY: number;
   startOffsetX: number;
   startOffsetY: number;
+  handleElement: HTMLElement | null;
 };
 
 type UseDraggableModalOptions = {
@@ -48,8 +50,14 @@ function clampDragOffset(
 
   const availableX = Math.max(0, window.innerWidth - margin * 2 - panelWidth);
   const availableY = Math.max(0, window.innerHeight - margin * 2 - panelHeight);
-  const boundX = availableX / 2;
-  const boundY = availableY / 2;
+  // Keep drag useful for wide/tall dialogs by allowing partial overflow while
+  // preserving a visible grab area.
+  const visibleGrabAreaX = 120;
+  const visibleGrabAreaY = 88;
+  const overflowSlackX = Math.max(0, panelWidth / 2 - visibleGrabAreaX);
+  const overflowSlackY = Math.max(0, panelHeight / 2 - visibleGrabAreaY);
+  const boundX = availableX / 2 + overflowSlackX;
+  const boundY = availableY / 2 + overflowSlackY;
 
   return {
     x: Math.min(boundX, Math.max(-boundX, raw.x)),
@@ -115,7 +123,18 @@ export function useDraggableModal(
   }, []);
 
   const stopDragging = useCallback(() => {
-    if (!dragStateRef.current && !isDragging) return;
+    const dragState = dragStateRef.current;
+    if (!dragState && !isDragging) return;
+    if (
+      dragState?.handleElement &&
+      dragState.handleElement.hasPointerCapture?.(dragState.pointerId)
+    ) {
+      try {
+        dragState.handleElement.releasePointerCapture(dragState.pointerId);
+      } catch {
+        // Ignore browser-specific release errors.
+      }
+    }
     dragStateRef.current = null;
     setIsDragging(false);
     clearDraggingBodyState();
@@ -137,6 +156,7 @@ export function useDraggableModal(
     const onPointerMove = (event: PointerEvent) => {
       const dragState = dragStateRef.current;
       if (!dragState) return;
+      if (event.pointerId !== dragState.pointerId) return;
       event.preventDefault();
 
       const panel = panelRef.current;
@@ -154,11 +174,14 @@ export function useDraggableModal(
       setOffset(nextOffset);
     };
 
-    const onPointerUp = () => {
+    const onPointerUp = (event: PointerEvent) => {
+      const dragState = dragStateRef.current;
+      if (!dragState) return;
+      if (event.pointerId !== dragState.pointerId) return;
       stopDragging();
     };
 
-    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointermove", onPointerMove, { passive: false });
     window.addEventListener("pointerup", onPointerUp);
     window.addEventListener("pointercancel", onPointerUp);
 
@@ -174,7 +197,8 @@ export function useDraggableModal(
   const handleDragPointerDown = useCallback(
     (event: ReactPointerEvent<HTMLElement>) => {
       if (!open) return;
-      if (event.button !== 0) return;
+      if (!event.isPrimary) return;
+      if (event.pointerType === "mouse" && event.button !== 0) return;
 
       const target = event.target;
       if (
@@ -189,11 +213,20 @@ export function useDraggableModal(
       event.preventDefault();
       event.stopPropagation();
 
+      const handleElement = event.currentTarget;
+      try {
+        handleElement.setPointerCapture(event.pointerId);
+      } catch {
+        // Some browsers may reject capture for detached/disabled elements.
+      }
+
       dragStateRef.current = {
+        pointerId: event.pointerId,
         startX: event.clientX,
         startY: event.clientY,
         startOffsetX: offsetRef.current.x,
         startOffsetY: offsetRef.current.y,
+        handleElement,
       };
       setIsDragging(true);
       applyDraggingBodyState("grabbing");

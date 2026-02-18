@@ -35,7 +35,7 @@ export default function CSectionWrapper({
   onLoadingChange,
 }: Props) {
   return (
-    <div className="w-full max-w-[760px] mx-auto px-4 pb-28">
+    <div className="w-full sm:w-[640px] lg:w-[760px] mx-auto px-4 pb-28">
       <div className="relative mt-6 sm:mt-10 overflow-hidden rounded-3xl bg-white/70 p-6 sm:p-10 shadow-[0_10px_40px_rgba(2,6,23,0.08)] ring-1 ring-black/5 backdrop-blur">
         {loading && <LoadingOverlay text={loadingText} />}
         <div className="flex justify-between text-xs text-gray-500 mb-6">

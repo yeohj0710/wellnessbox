@@ -54,12 +54,6 @@ function normalizeActionKey(text: string) {
   return text.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-function trimChipLabel(label: string) {
-  const text = label.trim();
-  if (text.length <= 18) return text;
-  return `${text.slice(0, 18)}...`;
-}
-
 export default function ChatInput({
   input,
   setInput,
@@ -130,7 +124,7 @@ export default function ChatInput({
     suggestions.slice(0, 2).forEach((suggestion, index) => {
       pushUnique({
         id: `suggest-${index}-${suggestion}`,
-        label: trimChipLabel(suggestion),
+        label: suggestion,
         title: suggestion,
         kind: "suggestion",
         run: () => onSelectSuggestion?.(suggestion),
@@ -325,12 +319,12 @@ export default function ChatInput({
                 <ChevronUpIcon className="h-3.5 w-3.5" />
               </button>
             </div>
-            <div className="mt-2 flex flex-wrap gap-2">
+            <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
               {unifiedActions.map((action) => (
                 <button
                   key={action.id}
                   type="button"
-                  className={`max-w-[11rem] truncate rounded-full border px-3 py-1.5 text-xs font-medium sm:text-sm ${
+                  className={`w-full rounded-2xl border px-3 py-2 text-left text-[11px] font-medium leading-5 whitespace-normal break-words sm:text-xs ${
                     action.kind === "quick"
                       ? "border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100"
                       : action.kind === "agent"

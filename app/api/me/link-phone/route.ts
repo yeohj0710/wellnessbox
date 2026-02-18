@@ -6,25 +6,35 @@ import { backfillOrdersForAppUser } from "@/lib/server/app-user-sync";
 
 export const runtime = "nodejs";
 
-function unauthorized(message = "Unauthorized") {
+function unauthorized(message = "로그인 정보가 확인되지 않아요. 다시 로그인해 주세요.") {
   return NextResponse.json(
     { ok: false, error: message },
     { status: 401, headers: { "Cache-Control": "no-store" } }
   );
 }
 
-function badRequest(message = "Invalid input") {
+function badRequest(message = "입력값을 다시 확인해 주세요.") {
   return NextResponse.json(
     { ok: false, error: message },
     { status: 400, headers: { "Cache-Control": "no-store" } }
   );
 }
 
+function resolveSessionKakaoId(raw: unknown) {
+  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
+  if (typeof raw === "string" && /^\d+$/.test(raw.trim())) {
+    const parsed = Number(raw.trim());
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return null;
+}
+
 export async function POST(req: NextRequest) {
   const session = await getSession();
   const user = session.user;
+  const kakaoId = resolveSessionKakaoId(user?.kakaoId);
 
-  if (!user?.loggedIn || typeof user.kakaoId !== "number") {
+  if (!user?.loggedIn || !Number.isFinite(kakaoId)) {
     return unauthorized();
   }
 
@@ -33,7 +43,7 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return badRequest("Invalid JSON");
+    return badRequest("요청 형식이 올바르지 않아요.");
   }
 
   const phoneInput =
@@ -65,14 +75,14 @@ export async function POST(req: NextRequest) {
 
     if (!otp) {
       return NextResponse.json(
-        { ok: false, error: "OTP not found" },
+        { ok: false, error: "인증번호를 찾을 수 없어요. 다시 요청해 주세요." },
         { status: 404, headers: { "Cache-Control": "no-store" } }
       );
     }
 
     if (otp.attempts >= 5) {
       return NextResponse.json(
-        { ok: false, error: "Too many attempts" },
+        { ok: false, error: "인증번호 입력 횟수를 초과했어요. 다시 요청해 주세요." },
         { status: 429, headers: { "Cache-Control": "no-store" } }
       );
     }
@@ -85,7 +95,7 @@ export async function POST(req: NextRequest) {
       });
 
       return NextResponse.json(
-        { ok: false, error: "Invalid code" },
+        { ok: false, error: "인증번호가 일치하지 않아요." },
         { status: 400, headers: { "Cache-Control": "no-store" } }
       );
     }
@@ -98,15 +108,15 @@ export async function POST(req: NextRequest) {
     const linkedAt = now.toISOString();
     const linkedAtDate = new Date(linkedAt);
     const profile = await db.appUser.findUnique({
-      where: { kakaoId: String(user.kakaoId) },
+      where: { kakaoId: String(kakaoId) },
       select: { clientId: true },
     });
     const resolvedClientId = profile?.clientId ?? undefined;
 
     const updatedUser = await db.appUser.upsert({
-      where: { kakaoId: String(user.kakaoId) },
+      where: { kakaoId: String(kakaoId) },
       create: {
-        kakaoId: String(user.kakaoId),
+        kakaoId: String(kakaoId),
         clientId: resolvedClientId ?? undefined,
         phone,
         phoneLinkedAt: linkedAtDate,
@@ -140,7 +150,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         ok: false,
-        error: "Unexpected error",
+        error: "전화번호 인증 처리 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.",
         detail: (e as any)?.message ?? String(e),
       },
       { status: 500, headers: { "Cache-Control": "no-store" } }

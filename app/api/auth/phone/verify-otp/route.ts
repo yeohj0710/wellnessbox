@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     body = await req.json();
   } catch {
     return NextResponse.json(
-      { ok: false, error: "Invalid JSON" },
+      { ok: false, error: "요청 형식이 올바르지 않아요." },
       { status: 400 }
     );
   }
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
   const phone = normalizePhone(phoneInput);
   if (phone.length < 9 || phone.length > 11 || codeInput.length === 0) {
     return NextResponse.json(
-      { ok: false, error: "Invalid input" },
+      { ok: false, error: "입력값을 다시 확인해 주세요." },
       { status: 400 }
     );
   }
@@ -47,14 +47,14 @@ export async function POST(req: Request) {
 
     if (!otp) {
       return NextResponse.json(
-        { ok: false, error: "OTP not found" },
+        { ok: false, error: "인증번호를 찾을 수 없어요. 다시 요청해 주세요." },
         { status: 404 }
       );
     }
 
     if (otp.attempts >= 5) {
       return NextResponse.json(
-        { ok: false, error: "Too many attempts" },
+        { ok: false, error: "인증번호 입력 횟수를 초과했어요. 다시 요청해 주세요." },
         { status: 429 }
       );
     }
@@ -66,7 +66,7 @@ export async function POST(req: Request) {
         data: { attempts: { increment: 1 } },
       });
       return NextResponse.json(
-        { ok: false, error: "Invalid code" },
+        { ok: false, error: "인증번호가 일치하지 않아요." },
         { status: 400 }
       );
     }
@@ -89,7 +89,8 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           ok: false,
-          error: "DB table missing",
+          error:
+            "서버 설정 문제로 인증을 처리할 수 없어요. 잠시 후 다시 시도해 주세요.",
           detail: (e as any)?.message,
           meta: (e as any)?.meta,
         },
@@ -100,7 +101,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         ok: false,
-        error: "Unexpected error",
+        error: "인증 처리 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.",
         detail: (e as any)?.message ?? String(e),
       },
       { status: 500 }

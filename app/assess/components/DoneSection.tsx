@@ -67,7 +67,7 @@ export default function DoneSection({
   );
 
   return (
-    <div className="w-full max-w-[760px] mx-auto px-3 sm:px-4 pb-24 sm:pb-28">
+    <div className="w-full sm:w-[640px] lg:w-[760px] mx-auto px-4 pb-24 sm:pb-28">
       <div
         ref={containerRef}
         className="relative mt-4 sm:mt-10 overflow-hidden rounded-2xl sm:rounded-3xl bg-white/80 p-4 sm:p-10 shadow-none sm:shadow-[0_10px_40px_rgba(2,6,23,0.08)] ring-0 sm:ring-1 sm:ring-black/5 backdrop-blur-0 sm:backdrop-blur"

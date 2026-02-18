@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { resolvePhoneOtpError } from "@/lib/client/phone-otp-error";
 
 export function usePhoneAndPassword() {
   const [phonePart1, setPhonePart1] = useState("010");
@@ -145,7 +146,7 @@ export function usePhoneAndPassword() {
       });
 
       const raw = await res.text();
-      let data: any;
+      let data: { ok?: boolean; error?: string; retryAfterSec?: number };
 
       try {
         data = raw ? JSON.parse(raw) : {};
@@ -154,15 +155,20 @@ export function usePhoneAndPassword() {
       }
 
       if (!res.ok || data.ok === false) {
-        setOtpErrorMessage(data?.error || "인증번호를 발송하지 못했습니다.");
+        setOtpErrorMessage(
+          resolvePhoneOtpError({
+            status: res.status,
+            error: data?.error,
+            retryAfterSec: data?.retryAfterSec,
+            fallback: "인증번호를 발송하지 못했어요.",
+          })
+        );
         return;
       }
 
-      setOtpStatusMessage(
-        "인증번호를 발송했어요. 문자 메시지를 확인해 주세요."
-      );
-    } catch (error) {
-      setOtpErrorMessage((error as Error).message);
+      setOtpStatusMessage("인증번호를 전송했어요. 문자 메시지를 확인해 주세요.");
+    } catch {
+      setOtpErrorMessage("네트워크 오류로 인증번호를 보내지 못했어요. 다시 시도해 주세요.");
     } finally {
       setOtpSendLoading(false);
     }
@@ -191,7 +197,7 @@ export function usePhoneAndPassword() {
       });
 
       const raw = await res.text();
-      let data: any;
+      let data: { ok?: boolean; error?: string; retryAfterSec?: number };
 
       try {
         data = raw ? JSON.parse(raw) : {};
@@ -202,18 +208,25 @@ export function usePhoneAndPassword() {
       if (!res.ok || data.ok === false) {
         setVerifiedPhone(null);
         localStorage.removeItem("verifiedPhone");
-        setOtpErrorMessage(data?.error || "인증번호 확인에 실패했습니다.");
+        setOtpErrorMessage(
+          resolvePhoneOtpError({
+            status: res.status,
+            error: data?.error,
+            retryAfterSec: data?.retryAfterSec,
+            fallback: "인증번호 확인에 실패했어요.",
+          })
+        );
         return;
       }
 
       setVerifiedPhone(normalizedContact);
       localStorage.setItem("verifiedPhone", normalizedContact);
-      setOtpStatusMessage("전화번호 인증이 완료되었습니다.");
+      setOtpStatusMessage("전화번호 인증이 완료됐어요.");
       setOtpCode("");
-    } catch (error) {
+    } catch {
       setVerifiedPhone(null);
       localStorage.removeItem("verifiedPhone");
-      setOtpErrorMessage((error as Error).message);
+      setOtpErrorMessage("네트워크 오류로 인증을 완료하지 못했어요. 다시 시도해 주세요.");
     } finally {
       setOtpVerifyLoading(false);
     }
@@ -224,10 +237,10 @@ export function usePhoneAndPassword() {
 
     if (isPhoneVerified) {
       setOtpErrorMessage(null);
-      setOtpStatusMessage("전화번호 인증이 완료되었어요.");
+      setOtpStatusMessage("전화번호 인증이 완료됐어요.");
     } else if (verifiedPhone && verifiedPhone !== normalizedContact) {
       setOtpStatusMessage(null);
-      setOtpErrorMessage("입력한 번호로 인증이 필요해요.");
+      setOtpErrorMessage("입력한 번호로 다시 인증이 필요해요.");
     }
   }, [isPhoneVerified, normalizedContact, verifiedPhone]);
 
@@ -256,4 +269,3 @@ export function usePhoneAndPassword() {
     setSdkLoaded,
   };
 }
-

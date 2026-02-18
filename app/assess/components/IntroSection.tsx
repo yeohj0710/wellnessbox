@@ -6,7 +6,7 @@ interface Props {
 
 export default function IntroSection({ onStart }: Props) {
   return (
-    <div className="w-full max-w-[880px] mx-auto px-4 pb-28">
+    <div className="w-full sm:w-[640px] lg:w-[760px] mx-auto px-4 pb-28">
       <div className="relative mt-10 overflow-hidden rounded-3xl bg-white/80 p-6 sm:p-10 shadow-[0_10px_40px_rgba(2,6,23,0.08)] ring-1 ring-black/5 backdrop-blur">
         <div className="pointer-events-none absolute -top-24 -right-24 h-80 w-80 rounded-full bg-gradient-to-br from-sky-200 to-indigo-200 blur-3xl opacity-60" />
         <div className="relative grid gap-10 sm:grid-cols-2">

@@ -32,6 +32,24 @@ interface SessionContent {
   };
 }
 
+function normalizeSessionContent(session: SessionContent) {
+  const user = session.user as Record<string, unknown> | undefined;
+  if (!user) return;
+
+  const kakaoIdRaw = user.kakaoId;
+  if (typeof kakaoIdRaw === "string" && /^\d+$/.test(kakaoIdRaw.trim())) {
+    const parsed = Number(kakaoIdRaw.trim());
+    if (Number.isFinite(parsed)) {
+      user.kakaoId = parsed as unknown;
+    }
+  }
+
+  const loggedInRaw = user.loggedIn;
+  if (typeof loggedInRaw === "string") {
+    user.loggedIn = loggedInRaw === "true";
+  }
+}
+
 export default async function getSession() {
   const sessionCookies = await cookies();
   if (!process.env.COOKIE_PASSWORD) {
@@ -41,5 +59,6 @@ export default async function getSession() {
     cookieName: "cookie",
     password: process.env.COOKIE_PASSWORD,
   });
+  normalizeSessionContent(session);
   return session;
 }

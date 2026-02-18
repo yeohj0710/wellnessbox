@@ -36,7 +36,7 @@ export default function QuestionSection({
   handleAnswer,
 }: Props) {
   return (
-    <div className="w-full max-w-[760px] mx-auto px-4 pb-28">
+    <div className="w-full sm:w-[640px] lg:w-[760px] mx-auto px-4 pb-28">
       <div className="relative mt-6 sm:mt-10 overflow-hidden sm:rounded-3xl sm:bg-white/70 sm:ring-1 sm:ring-black/5 sm:shadow-[0_10px_40px_rgba(2,6,23,0.08)] sm:backdrop-blur">
         {loading && <LoadingOverlay text={loadingText} />}
         <div className="relative p-4 sm:p-10">

@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { resolvePhoneOtpError } from "@/lib/client/phone-otp-error";
 
 type ApiResponse = {
   ok?: boolean;
   error?: string;
   message?: string;
+  retryAfterSec?: number;
 };
 
 function Spinner({ className = "" }: { className?: string }) {
@@ -120,15 +122,22 @@ export default function PhoneLinkSection({
       }
 
       if (!res.ok || data.ok === false) {
-        setSendError(data?.error || "인증번호 발송에 실패했어요.");
+        setSendError(
+          resolvePhoneOtpError({
+            status: res.status,
+            error: data?.error,
+            retryAfterSec: data?.retryAfterSec,
+            fallback: "인증번호 발송에 실패했어요.",
+          })
+        );
         return;
       }
 
       setOtpSent(true);
       setPhoneLocked(true);
       setStatusMessage("인증번호를 전송했어요. 문자 메시지를 확인해 주세요.");
-    } catch (error) {
-      setSendError(error instanceof Error ? error.message : String(error));
+    } catch {
+      setSendError("네트워크 오류로 인증번호를 보내지 못했어요. 다시 시도해 주세요.");
     } finally {
       setSendLoading(false);
     }
@@ -159,15 +168,22 @@ export default function PhoneLinkSection({
       }
 
       if (!res.ok || data.ok === false || !data.phone) {
-        setVerifyError(data?.error || "전화번호 인증에 실패했어요.");
+        setVerifyError(
+          resolvePhoneOtpError({
+            status: res.status,
+            error: data?.error,
+            retryAfterSec: data?.retryAfterSec,
+            fallback: "전화번호 인증에 실패했어요.",
+          })
+        );
         return;
       }
 
       onLinked?.(data.phone, data.linkedAt);
       setCode("");
-      setStatusMessage("인증이 완료됐어요.");
-    } catch (error) {
-      setVerifyError(error instanceof Error ? error.message : String(error));
+      setStatusMessage("전화번호 인증이 완료됐어요.");
+    } catch {
+      setVerifyError("네트워크 오류로 인증을 완료하지 못했어요. 다시 시도해 주세요.");
     } finally {
       setVerifyLoading(false);
     }
@@ -235,11 +251,6 @@ export default function PhoneLinkSection({
             </span>
           </button>
         </div>
-        {/* {otpSent ? (
-          <p className="text-xs text-gray-600">
-            인증번호를 입력하려면 번호 수정을 잠시 잠가 두었어요. 잘못 입력했다면 "번호 수정"을 눌러 다시 입력해 주세요.
-          </p>
-        ) : null} */}
       </div>
 
       <div className="space-y-2">
