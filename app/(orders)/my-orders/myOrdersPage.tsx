@@ -1,7 +1,11 @@
 "use client";
 
 import PhoneVerifyModal from "@/app/me/phoneVerifyModal";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
+import {
+  CHAT_PAGE_ACTION_EVENT,
+  type ChatPageActionDetail,
+} from "@/lib/chat/page-action-events";
 
 import { ManualLookupSection } from "./components/manualLookupSection";
 import { LinkedPhoneLookupSection } from "./components/linkedPhoneLookupSection";
@@ -19,6 +23,32 @@ export default function MyOrdersPage() {
   const scrollToManual = useCallback(() => {
     document.getElementById("manual-form")?.scrollIntoView({ behavior: "smooth" });
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const onPageAction = (event: Event) => {
+      const detail = (event as CustomEvent<ChatPageActionDetail>).detail;
+      if (!detail) return;
+
+      if (detail.action === "focus_manual_order_lookup") {
+        scrollToManual();
+        return;
+      }
+
+      if (detail.action === "focus_linked_order_lookup") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    };
+
+    window.addEventListener(CHAT_PAGE_ACTION_EVENT, onPageAction as EventListener);
+    return () => {
+      window.removeEventListener(
+        CHAT_PAGE_ACTION_EVENT,
+        onPageAction as EventListener
+      );
+    };
+  }, [scrollToManual]);
 
   if (viewConfig) {
     return (

@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
 
     const text = trimText(body?.text || "", 1600);
+    const runtimeContextText = trimText(body?.runtimeContextText || "", 400);
     const count = 2;
     const excludeSuggestions: string[] = Array.isArray(body?.excludeSuggestions)
       ? body.excludeSuggestions
@@ -83,7 +84,9 @@ export async function POST(req: NextRequest) {
     const topicSource = buildTopicSourceText(
       text,
       recentMessages,
-      contextSummary.promptSummaryText
+      [contextSummary.promptSummaryText, runtimeContextText]
+        .filter(Boolean)
+        .join("\n\n")
     );
 
     let topic = extractTopicFromKnown(topicSource);

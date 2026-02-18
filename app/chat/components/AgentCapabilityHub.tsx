@@ -13,6 +13,7 @@ type CapabilityCategory =
   | "assessment"
   | "account"
   | "navigation"
+  | "page"
   | "support"
   | "operations";
 
@@ -33,6 +34,7 @@ const CATEGORY_LABELS: Record<CapabilityCategory | "all", string> = {
   assessment: "검사",
   account: "내 정보",
   navigation: "이동",
+  page: "현재 페이지",
   support: "문의/정책",
   operations: "운영",
 };

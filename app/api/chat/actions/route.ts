@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+﻿import { NextRequest } from "next/server";
 import { getDefaultModel } from "@/lib/ai/model";
 import {
   CHAT_ACTION_LABELS,
@@ -20,6 +20,7 @@ type ExecuteBody = {
   text?: string;
   recentMessages?: InputMessage[];
   contextSummaryText?: string;
+  runtimeContextText?: string;
 };
 
 type SuggestBody = {
@@ -27,56 +28,68 @@ type SuggestBody = {
   assistantText?: string;
   recentMessages?: InputMessage[];
   contextSummaryText?: string;
+  runtimeContextText?: string;
 };
 
 const CHAT_ACTION_TYPE_SET = new Set<string>(CHAT_ACTION_TYPES);
 
-const ADD_REGEX = /(담아|담기|추가|넣어|담아줘|담아줄래|장바구니에?\s*(담|넣|추가)|카트에?\s*(담|넣|추가))/i;
+const ADD_REGEX =
+  /(장바구니|카트|담아|담기|추가|넣어|넣기|add\s*(to)?\s*cart|put\s*in\s*cart)/i;
 const BUY_REGEX =
-  /(바로\s*구매|구매(해|할래|진행|해줘)?|결제|주문(?!\s*(내역|조회|번호))(해|할래|진행|해줘)?)/i;
-const OPEN_CART_REGEX = /(장바구니.*(열|보여)|카트.*(열|보여)|결제창.*(열|보여))/i;
+  /(바로\s*구매|구매\s*(해줘|진행|할래|하고\s*싶어)?|결제|주문(?!\s*(내역|조회|번호))\s*(해줘|진행|할래)?|checkout|pay\s*now|buy\s*now)/i;
+const OPEN_CART_REGEX =
+  /((장바구니|카트).*(열어|보여|보기|확인)|결제창.*(열어|보여)|open\s*cart|show\s*cart)/i;
 const CLEAR_CART_REGEX =
-  /(장바구니|카트).*(비워|비우|초기화|전부\s*삭제|모두\s*삭제|싹\s*지워|clear)/i;
-const PROFILE_REGEX = /(프로필\s*설정|프로필|설정)/i;
-const MY_ORDERS_REGEX = /(내\s*주문|주문\s*(내역|조회)|배송\s*조회)/i;
-const OPEN_ME_REGEX = /(내\s*정보|마이\s*페이지|내\s*프로필)/i;
-const MY_DATA_REGEX = /(내\s*데이터|마이\s*데이터|전체\s*조회|my-data)/i;
+  /((장바구니|카트).*(비워|초기화|모두\s*삭제|삭제해|clear)|clear\s*cart)/i;
+const MANUAL_ORDER_LOOKUP_REGEX = /(manual|수동|다른\s*번호|직접\s*입력)/i;
+const LINKED_ORDER_LOOKUP_REGEX = /(연결된?\s*번호|인증된?\s*번호|linked\s*phone)/i;
+const HOME_SECTION_FOCUS_REGEX =
+  /(상품\s*섹션|상품\s*목록|제품\s*목록|home\s*products|home-products)/i;
+const PROFILE_REGEX = /(프로필\s*설정|프로필|내\s*프로필|profile)/i;
+const MY_ORDERS_REGEX =
+  /(내\s*주문|주문\s*(내역|조회)|배송\s*조회|my-orders|order\s*lookup)/i;
+const OPEN_ME_REGEX =
+  /(내\s*정보|마이\s*페이지|내\s*프로필|\/me\b|my\s*profile)/i;
+const MY_DATA_REGEX =
+  /(내\s*데이터|마이\s*데이터|통합\s*데이터|my-data|data\s*dashboard)/i;
 const QUICK_CHECK_REGEX =
-  /(빠른\s*검사|간단\s*검사|간편\s*검사|체크\s*ai|check\s*ai|자가\s*진단)/i;
-const DEEP_ASSESS_REGEX = /(정밀\s*검사|심층\s*검사|상세\s*검사|assess)/i;
+  /(빠른\s*검사|간단\s*검사|퀵\s*체크|check\s*ai|quick\s*check)/i;
+const DEEP_ASSESS_REGEX =
+  /(정밀\s*검사|상세\s*검사|심층\s*검사|deep\s*assess|deep\s*assessment)/i;
 const GENERIC_ASSESS_REGEX =
-  /(진단\s*검사|건강\s*검사|검사\s*진행|검사\s*페이지|검사하러|검사\s*시작)/i;
+  /(진단|건강\s*검사|검사\s*진행|검사\s*시작|검사\s*페이지)/i;
 const EXPLORE_REGEX =
-  /(상품\s*(목록|보기|보러|탐색|둘러)|제품\s*(목록|보기|보러|탐색)|둘러보|탐색\s*페이지|구매\s*페이지)/i;
-const HOME_REGEX = /(홈(으로)?\s*(가|이동)|메인(으로)?\s*(가|이동)|첫\s*페이지)/i;
+  /(상품\s*(목록|보기|둘러|탐색)|제품\s*(목록|보기|탐색)|둘러보기|탐색\s*페이지|구매\s*페이지|explore)/i;
+const HOME_REGEX =
+  /(홈(으로)?\s*(가|이동)|메인(으로)?\s*(가|이동)|첫\s*페이지|landing|home)/i;
 const HOME_PRODUCTS_REGEX =
-  /(홈\s*상품|상품\s*섹션|home-products|상품\s*리스트|제품\s*섹션)/i;
-const START_7DAY_REGEX = /(7일치\s*구매|7일\s*패키지|7일치\s*시작)/i;
+  /(홈\s*상품|상품\s*섹션|상품\s*리스트|제품\s*섹션|home-products|home\s*products)/i;
+const START_7DAY_REGEX = /(7일치\s*구매|7일\s*패키지|7일치\s*시작|7-day|7day)/i;
 const CHAT_PAGE_REGEX =
-  /(채팅\s*페이지|상담\s*페이지|챗봇\s*페이지|AI\s*맞춤\s*상담|전체\s*화면\s*채팅)/i;
+  /(채팅\s*페이지|상담\s*페이지|ai\s*맞춤\s*상담|전체\s*화면\s*채팅|full\s*chat)/i;
 const ABOUT_REGEX = /(회사\s*소개|브랜드\s*소개|about)/i;
-const CONTACT_REGEX = /(문의(하기)?|고객센터|contact|연락처)/i;
-const TERMS_REGEX = /(이용약관|약관|terms)/i;
+const CONTACT_REGEX = /(문의(하기)?|고객\s*센터|contact|연락처)/i;
+const TERMS_REGEX = /(이용\s*약관|약관|terms)/i;
 const PRIVACY_REGEX = /(개인정보(처리방침)?|프라이버시|privacy)/i;
 const REFUND_REGEX = /(환불|취소\s*규정|refund)/i;
-const PHONE_AUTH_REGEX = /(휴대폰\s*인증|전화\s*인증|otp|인증번호)/i;
+const PHONE_AUTH_REGEX = /(번호\s*인증|전화\s*인증|otp|인증번호|phone\s*auth)/i;
 const SUPPORT_EMAIL_REGEX =
-  /(문의\s*메일|이메일\s*문의|support\s*email|wellnessbox\.me@gmail\.com)/i;
+  /(문의\s*이메일|이메일\s*문의|support\s*email|wellnessbox\.me@gmail\.com)/i;
 const SUPPORT_CALL_REGEX =
-  /(전화\s*연결|전화\s*문의|고객센터\s*전화|대표\s*전화|02-?6241-?5530)/i;
+  /(전화\s*연결|전화\s*문의|고객\s*센터\s*전화|대표\s*전화|02-?6241-?5530|support\s*call)/i;
 const PHARM_PRODUCTS_REGEX =
-  /(약국\s*상품\s*(등록|관리)|상품\s*등록\/?관리|약국\s*관리\s*상품)/i;
+  /(약국\s*상품\s*(등록|관리)|약국\s*상품\s*등록\/?관리|pharm\s*manage\s*products)/i;
 const PHARM_DASHBOARD_REGEX = /(약국\s*(주문\s*)?관리|pharm)/i;
-const RIDER_DASHBOARD_REGEX = /(라이더|배송\s*관리|rider)/i;
+const RIDER_DASHBOARD_REGEX = /(라이더\s*배송\s*관리|rider)/i;
 const ADMIN_LOGIN_REGEX = /(관리자\s*로그인|admin\s*login)/i;
 const ADMIN_DASHBOARD_REGEX = /(사이트\s*관리|관리자\s*대시보드|admin\s*dashboard)/i;
 const PURCHASE_PAGE_REGEX =
-  /(구매\s*페이지|구매\s*화면|상품\s*페이지|쇼핑\s*페이지|7일치\s*구매|7일\s*패키지)/i;
+  /(구매\s*페이지|구매\s*화면|상품\s*페이지|쇼핑\s*페이지|7일치\s*구매|7일\s*패키지|checkout)/i;
 const CHAT_MODE_REGEX =
   /(대화로|채팅으로|여기서|페이지\s*이동\s*(말고|없이)|문항.*(물어|질문)|질문.*(해줘|해주세요)|같이\s*검사)/i;
 const NAVIGATION_INTENT_REGEX = /(페이지|이동|들어가|가줘|열어|오픈|navigate|open)/i;
 const AFFIRM_REGEX =
-  /^(응|네|예|좋아|그래|ㅇㅇ|오케이|ok|콜|해줘|진행해|부탁해|맞아)\s*[!.?]*$/i;
+  /^(응|응응|좋아|그래|네|넵|오케이|ok|콜|진행해|맞아|좋습니다)\s*[!.?]*$/i;
 const RECOMMENDATION_SECTION_REGEX =
   /추천\s*제품\s*\(7일\s*기준\s*가격\)/i;
 
@@ -294,6 +307,21 @@ function buildTranscript(messages: InputMessage[] | undefined, max = 8) {
     .join("\n");
 }
 
+function buildRuntimeContextFlags(runtimeContextText: string) {
+  const text = runtimeContextText.toLowerCase();
+  return {
+    inMyOrders:
+      text.includes("/my-orders") ||
+      text.includes("my-orders") ||
+      text.includes("order lookup"),
+    inHomeProducts:
+      text.includes("home-products") ||
+      text.includes("/explore") ||
+      text.includes("home product") ||
+      text.includes("product browsing"),
+  };
+}
+
 function getLatestAssistantText(messages: InputMessage[] | undefined) {
   if (!Array.isArray(messages)) return "";
   for (let index = messages.length - 1; index >= 0; index -= 1) {
@@ -309,6 +337,8 @@ function getLatestAssistantText(messages: InputMessage[] | undefined) {
 function buildFallbackExecuteDecision(body: ExecuteBody): ChatAgentExecuteDecision {
   const text = toText(body.text, 240);
   if (!text) return DEFAULT_EXECUTE_DECISION;
+  const runtimeContextText = toText(body.runtimeContextText, 320);
+  const runtimeFlags = buildRuntimeContextFlags(runtimeContextText);
   const latestAssistant = getLatestAssistantText(body.recentMessages);
   const hasRecommendationContext = RECOMMENDATION_SECTION_REGEX.test(
     latestAssistant
@@ -318,6 +348,20 @@ function buildFallbackExecuteDecision(body: ExecuteBody): ChatAgentExecuteDecisi
     if (!actions.includes(action)) actions.push(action);
   };
   const prefersChatMode = CHAT_MODE_REGEX.test(text) && !NAVIGATION_INTENT_REGEX.test(text);
+
+  if (runtimeFlags.inMyOrders && MANUAL_ORDER_LOOKUP_REGEX.test(text)) {
+    pushAction("focus_manual_order_lookup");
+  } else if (runtimeFlags.inMyOrders && LINKED_ORDER_LOOKUP_REGEX.test(text)) {
+    pushAction("focus_linked_order_lookup");
+  }
+
+  if (
+    runtimeFlags.inHomeProducts &&
+    HOME_SECTION_FOCUS_REGEX.test(text) &&
+    !NAVIGATION_INTENT_REGEX.test(text)
+  ) {
+    pushAction("focus_home_products");
+  }
 
   let navigationAction: ChatActionType | null = null;
   if (QUICK_CHECK_REGEX.test(text) && !prefersChatMode) {
@@ -334,7 +378,9 @@ function buildFallbackExecuteDecision(body: ExecuteBody): ChatAgentExecuteDecisi
   } else if (START_7DAY_REGEX.test(text)) {
     navigationAction = "open_7day_purchase";
   } else if (HOME_PRODUCTS_REGEX.test(text)) {
-    navigationAction = "open_home_products";
+    navigationAction = runtimeFlags.inHomeProducts
+      ? "focus_home_products"
+      : "open_home_products";
   } else if (EXPLORE_REGEX.test(text)) {
     navigationAction = "open_explore";
   } else if (HOME_REGEX.test(text)) {
@@ -418,78 +464,90 @@ function buildFallbackExecuteDecision(body: ExecuteBody): ChatAgentExecuteDecisi
   if (cartMode !== "none") {
     assistantParts.push(
       cartMode === "buy_all"
-        ? "추천 제품을 주문 흐름에 맞게 바로 처리할게요."
-        : "추천 제품을 장바구니에 담아둘게요."
+        ? "異붿쿇 ?쒗뭹??二쇰Ц ?먮쫫??留욊쾶 諛붾줈 泥섎━?좉쾶??"
+        : "異붿쿇 ?쒗뭹???λ컮援щ땲???댁븘?섍쾶??"
     );
   }
 
   if (navigationAction === "open_check_ai") {
-    assistantParts.push("빠른검사 페이지로 바로 이동할게요.");
+    assistantParts.push("鍮좊Ⅸ寃???섏씠吏濡?諛붾줈 ?대룞?좉쾶??");
   } else if (navigationAction === "open_assess") {
-    assistantParts.push("정밀검사 페이지로 바로 이동할게요.");
+    assistantParts.push("?뺣?寃???섏씠吏濡?諛붾줈 ?대룞?좉쾶??");
   } else if (navigationAction === "open_my_orders") {
-    assistantParts.push("내 주문 조회 화면으로 이동할게요.");
+    assistantParts.push("??二쇰Ц 議고쉶 ?붾㈃?쇰줈 ?대룞?좉쾶??");
   } else if (navigationAction === "open_my_data") {
-    assistantParts.push("내 데이터 페이지로 이동할게요.");
+    assistantParts.push("???곗씠???섏씠吏濡??대룞?좉쾶??");
   } else if (navigationAction === "open_7day_purchase") {
-    assistantParts.push("7일치 구매 섹션으로 이동할게요.");
+    assistantParts.push("7?쇱튂 援щℓ ?뱀뀡?쇰줈 ?대룞?좉쾶??");
   } else if (navigationAction === "open_home_products") {
-    assistantParts.push("홈 상품 섹션으로 이동할게요.");
+    assistantParts.push("???곹뭹 ?뱀뀡?쇰줈 ?대룞?좉쾶??");
   } else if (navigationAction === "open_explore") {
-    assistantParts.push("상품 탐색 화면으로 이동할게요.");
+    assistantParts.push("?곹뭹 ?먯깋 ?붾㈃?쇰줈 ?대룞?좉쾶??");
   } else if (navigationAction === "open_home") {
-    assistantParts.push("홈 화면으로 이동할게요.");
+    assistantParts.push("???붾㈃?쇰줈 ?대룞?좉쾶??");
   } else if (navigationAction === "open_chat_page") {
-    assistantParts.push("AI 맞춤 상담 전체 화면으로 이동할게요.");
+    assistantParts.push("AI 留욎땄 ?곷떞 ?꾩껜 ?붾㈃?쇰줈 ?대룞?좉쾶??");
   } else if (navigationAction === "open_me") {
-    assistantParts.push("내 정보 화면으로 이동할게요.");
+    assistantParts.push("???뺣낫 ?붾㈃?쇰줈 ?대룞?좉쾶??");
   } else if (navigationAction === "open_auth_phone") {
-    assistantParts.push("전화 인증 페이지로 이동할게요.");
+    assistantParts.push("?꾪솕 ?몄쬆 ?섏씠吏濡??대룞?좉쾶??");
   } else if (navigationAction === "open_contact") {
-    assistantParts.push("문의하기 페이지로 이동할게요.");
+    assistantParts.push("臾몄쓽?섍린 ?섏씠吏濡??대룞?좉쾶??");
   } else if (navigationAction === "open_terms") {
-    assistantParts.push("이용약관 페이지를 열게요.");
+    assistantParts.push("?댁슜?쎄? ?섏씠吏瑜??닿쾶??");
   } else if (navigationAction === "open_privacy") {
-    assistantParts.push("개인정보처리방침 페이지를 열게요.");
+    assistantParts.push("媛쒖씤?뺣낫泥섎━諛⑹묠 ?섏씠吏瑜??닿쾶??");
   } else if (navigationAction === "open_refund_policy") {
-    assistantParts.push("환불 규정 페이지를 열게요.");
+    assistantParts.push("?섎텋 洹쒖젙 ?섏씠吏瑜??닿쾶??");
   } else if (navigationAction === "open_about") {
-    assistantParts.push("회사 소개 페이지로 이동할게요.");
+    assistantParts.push("?뚯궗 ?뚭컻 ?섏씠吏濡??대룞?좉쾶??");
   } else if (navigationAction === "open_support_email") {
-    assistantParts.push("문의 이메일 작성 창을 열게요.");
+    assistantParts.push("臾몄쓽 ?대찓???묒꽦 李쎌쓣 ?닿쾶??");
   } else if (navigationAction === "open_support_call") {
-    assistantParts.push("고객센터 전화 연결을 시도할게요.");
+    assistantParts.push("怨좉컼?쇳꽣 ?꾪솕 ?곌껐???쒕룄?좉쾶??");
   } else if (navigationAction === "open_pharm_dashboard") {
-    assistantParts.push("약국 주문 관리 페이지로 이동할게요.");
+    assistantParts.push("?쎄뎅 二쇰Ц 愿由??섏씠吏濡??대룞?좉쾶??");
   } else if (navigationAction === "open_pharm_manage_products") {
-    assistantParts.push("약국 상품 등록/관리 페이지로 이동할게요.");
+    assistantParts.push("?쎄뎅 ?곹뭹 ?깅줉/愿由??섏씠吏濡??대룞?좉쾶??");
   } else if (navigationAction === "open_rider_dashboard") {
-    assistantParts.push("라이더 배송 관리 페이지로 이동할게요.");
+    assistantParts.push("?쇱씠??諛곗넚 愿由??섏씠吏濡??대룞?좉쾶??");
   } else if (navigationAction === "open_admin_login") {
-    assistantParts.push("관리자 로그인 페이지로 이동할게요.");
+    assistantParts.push("愿由ъ옄 濡쒓렇???섏씠吏濡??대룞?좉쾶??");
   } else if (navigationAction === "open_admin_dashboard") {
-    assistantParts.push("사이트 관리 페이지로 이동할게요.");
+    assistantParts.push("?ъ씠??愿由??섏씠吏濡??대룞?좉쾶??");
   }
 
   if (!navigationAction && actions.includes("open_profile")) {
-    assistantParts.push("프로필 설정 화면을 바로 열게요.");
+    assistantParts.push("?꾨줈???ㅼ젙 ?붾㈃??諛붾줈 ?닿쾶??");
+  }
+  if (actions.includes("focus_home_products")) {
+    assistantParts.push("I focused the home product section in this page.");
+  }
+  if (actions.includes("focus_manual_order_lookup")) {
+    assistantParts.push("I focused the manual order lookup form.");
+  }
+  if (actions.includes("focus_linked_order_lookup")) {
+    assistantParts.push("I focused the linked-phone lookup area.");
   }
   if (!navigationAction && actions.includes("open_cart")) {
-    assistantParts.push("장바구니를 열어 확인할 수 있게 할게요.");
+    assistantParts.push("?λ컮援щ땲瑜??댁뼱 ?뺤씤?????덇쾶 ?좉쾶??");
   }
   if (actions.includes("clear_cart")) {
-    assistantParts.push("장바구니를 비워둘게요.");
+    assistantParts.push("?λ컮援щ땲瑜?鍮꾩썙?섍쾶??");
   }
   if (actions.includes("start_chat_quick_check")) {
-    assistantParts.push("페이지 이동 없이 대화형 빠른검사를 시작할게요.");
+    assistantParts.push("?섏씠吏 ?대룞 ?놁씠 ??뷀삎 鍮좊Ⅸ寃?щ? ?쒖옉?좉쾶??");
   }
   if (actions.includes("start_chat_assess")) {
-    assistantParts.push("페이지 이동 없이 대화형 정밀검사를 시작할게요.");
+    assistantParts.push("?섏씠吏 ?대룞 ?놁씠 ??뷀삎 ?뺣?寃?щ? ?쒖옉?좉쾶??");
   }
 
   const reasons: string[] = [];
   if (cartMode !== "none") reasons.push("cart");
   if (navigationAction) reasons.push(`nav:${navigationAction}`);
+  if (actions.includes("focus_home_products")) reasons.push("focus:home-products");
+  if (actions.includes("focus_manual_order_lookup")) reasons.push("focus:manual-order");
+  if (actions.includes("focus_linked_order_lookup")) reasons.push("focus:linked-order");
   if (!navigationAction && actions.includes("open_profile")) reasons.push("profile");
   if (!navigationAction && actions.includes("open_cart")) reasons.push("cart-open");
   if (actions.includes("clear_cart")) reasons.push("cart-clear");
@@ -498,7 +556,7 @@ function buildFallbackExecuteDecision(body: ExecuteBody): ChatAgentExecuteDecisi
 
   return {
     handled: true,
-    assistantReply: assistantParts.join(" ").trim() || "요청하신 동작을 실행할게요.",
+    assistantReply: assistantParts.join(" ").trim() || "?붿껌?섏떊 ?숈옉???ㅽ뻾?좉쾶??",
     actions,
     cartIntent: {
       mode: cartMode,
@@ -512,6 +570,8 @@ function buildFallbackSuggestedActions(
   body: SuggestBody
 ): ChatAgentSuggestedAction[] {
   const assistantText = toText(body.assistantText, 1400);
+  const runtimeContextText = toText(body.runtimeContextText, 320);
+  const runtimeFlags = buildRuntimeContextFlags(runtimeContextText);
   const hasRecommendation = RECOMMENDATION_SECTION_REGEX.test(assistantText);
   const hasAssessmentContext =
     QUICK_CHECK_REGEX.test(assistantText) ||
@@ -523,19 +583,34 @@ function buildFallbackSuggestedActions(
     PRIVACY_REGEX.test(assistantText) ||
     REFUND_REGEX.test(assistantText) ||
     ABOUT_REGEX.test(assistantText);
-  const hasChatAssessmentContext = /(대화형\s*(빠른|정밀)?검사|문항|질문)/.test(
-    assistantText
-  );
+  const hasChatAssessmentContext =
+    /(대화형\s*(빠른|정밀)?\s*검사|문항|질문|chat\s*assessment)/i.test(
+      assistantText
+    );
 
-  const actions: ChatActionType[] = hasRecommendation
-    ? ["add_recommended_all", "buy_recommended_all", "open_cart", "clear_cart"]
-    : hasSupportContext
-      ? ["open_contact", "open_terms", "open_privacy", "open_refund_policy"]
-    : hasChatAssessmentContext
-      ? ["start_chat_quick_check", "start_chat_assess", "open_check_ai", "open_assess"]
-    : hasAssessmentContext
-      ? ["start_chat_quick_check", "start_chat_assess", "open_check_ai", "open_assess"]
-      : ["open_explore", "open_my_orders", "open_contact", "open_terms"];
+  const actions: ChatActionType[] = runtimeFlags.inMyOrders
+    ? [
+        "focus_linked_order_lookup",
+        "focus_manual_order_lookup",
+        "open_contact",
+        "open_me",
+      ]
+    : runtimeFlags.inHomeProducts
+      ? ["focus_home_products", "open_cart", "open_7day_purchase", "open_check_ai"]
+      : hasRecommendation
+        ? ["add_recommended_all", "buy_recommended_all", "open_cart", "clear_cart"]
+        : hasSupportContext
+          ? ["open_contact", "open_terms", "open_privacy", "open_refund_policy"]
+          : hasChatAssessmentContext
+            ? ["start_chat_quick_check", "start_chat_assess", "open_check_ai", "open_assess"]
+            : hasAssessmentContext
+              ? [
+                  "start_chat_quick_check",
+                  "start_chat_assess",
+                  "open_check_ai",
+                  "open_assess",
+                ]
+              : ["open_explore", "open_my_orders", "open_contact", "open_terms"];
 
   return actions.slice(0, 4).map((type) => ({
     type,
@@ -571,6 +646,7 @@ async function decideExecuteByModel(body: ExecuteBody) {
 
   const transcript = buildTranscript(body.recentMessages, 8);
   const context = toText(body.contextSummaryText, 600);
+  const runtimeContextText = toText(body.runtimeContextText, 320);
 
   const systemPrompt = [
     "You are a chat UI action planner for a Korean supplement commerce assistant.",
@@ -579,13 +655,15 @@ async function decideExecuteByModel(body: ExecuteBody) {
     CHAT_ACTION_TYPES.join(", "),
     "Never invent a new action type outside the allowed list.",
     "If there is no explicit actionable intent, return handled=false.",
-    "If user gives short confirmation (e.g. 응/네/좋아) after recommendation context, map to add_all or buy_all intent.",
+    "If user gives short confirmation (e.g. ????醫뗭븘) after recommendation context, map to add_all or buy_all intent.",
     "If a message has mixed intents, keep cartIntent and include at most one navigation action.",
     "Map quick-check intent to open_check_ai and deep/general diagnosis intent to open_assess.",
-    "Map policy/support intents (문의, 약관, 개인정보, 환불, 이메일, 전화) to matching open_* support actions.",
-    "Map account/menu intents (내 데이터, 내 정보, 주문 조회, 홈/탐색/7일치 구매) to matching navigation actions.",
+    "Map policy/support intents (臾몄쓽, ?쎄?, 媛쒖씤?뺣낫, ?섎텋, ?대찓?? ?꾪솕) to matching open_* support actions.",
+    "Map account/menu intents (???곗씠?? ???뺣낫, 二쇰Ц 議고쉶, ???먯깋/7?쇱튂 援щℓ) to matching navigation actions.",
+    "If runtime context indicates my-orders page, prioritize focus_linked_order_lookup or focus_manual_order_lookup.",
+    "If runtime context indicates home/explore product browsing, prioritize focus_home_products for in-page request.",
     "Do not drop diagnosis/navigation intent even when cart intent also exists.",
-    "If user asks to run diagnosis in chat (대화로/채팅으로/여기서), use start_chat_quick_check or start_chat_assess instead of navigation.",
+    "If user asks to run diagnosis in chat (??붾줈/梨꾪똿?쇰줈/?ш린??, use start_chat_quick_check or start_chat_assess instead of navigation.",
     "If user asks to clear cart, use clear_cart action.",
     "Return JSON object only.",
   ].join("\n");
@@ -599,6 +677,9 @@ async function decideExecuteByModel(body: ExecuteBody) {
     "",
     "[Context Summary]",
     context || "(empty)",
+    "",
+    "[Runtime Context]",
+    runtimeContextText || "(empty)",
     "",
     "[JSON Schema]",
     `{
@@ -648,6 +729,7 @@ async function suggestActionsByModel(body: SuggestBody) {
   if (!assistantText) return null;
   const transcript = buildTranscript(body.recentMessages, 8);
   const context = toText(body.contextSummaryText, 500);
+  const runtimeContextText = toText(body.runtimeContextText, 320);
 
   const payload = {
     model: await getDefaultModel(),
@@ -665,6 +747,8 @@ async function suggestActionsByModel(body: SuggestBody) {
           "Prioritize actions that help complete recommendation -> cart -> order flow.",
           "When conversation asks diagnosis/test flow, prioritize open_check_ai and open_assess.",
           "For chat-based diagnosis flow, prioritize start_chat_quick_check or start_chat_assess.",
+          "If runtime context is my-orders, prioritize focus_linked_order_lookup and focus_manual_order_lookup.",
+          "If runtime context is home product browsing, prioritize focus_home_products before route navigation.",
           "When no recommendation context exists, include at least one navigation or support action when relevant.",
           "Return JSON object only.",
         ].join("\n"),
@@ -680,6 +764,9 @@ async function suggestActionsByModel(body: SuggestBody) {
           "",
           "[Context Summary]",
           context || "(empty)",
+          "",
+          "[Runtime Context]",
+          runtimeContextText || "(empty)",
           "",
           '[Return Format] {"uiActions":[{"type":"...", "reason":"...", "confidence":0.0}]}',
         ].join("\n"),

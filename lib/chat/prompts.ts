@@ -23,6 +23,7 @@ export type BuildMessagesInput = {
   ragText?: string;
   ragSourcesJson?: string;
   productBrief?: string;
+  runtimeContextText?: string;
   maxHistoryMessages?: number;
 };
 
@@ -64,7 +65,12 @@ function formatHistory(
   return normalized.join("\n");
 }
 
-function toContextPayload(summary: UserContextSummary, knownContext?: string, productBrief?: string) {
+function toContextPayload(
+  summary: UserContextSummary,
+  knownContext?: string,
+  productBrief?: string,
+  runtimeContextText?: string
+) {
   return {
     version: summary.version,
     evidence_labels: summary.evidenceLabels,
@@ -80,6 +86,7 @@ function toContextPayload(summary: UserContextSummary, knownContext?: string, pr
     notable_responses: summary.notableResponses,
     known_context: knownContext || undefined,
     product_catalog_brief: productBrief || undefined,
+    runtime_context: runtimeContextText || undefined,
   };
 }
 
@@ -214,7 +221,8 @@ export function buildMessages(input: BuildMessagesInput): PromptMessage[] {
   const contextPayload = toContextPayload(
     input.contextSummary,
     input.knownContext,
-    input.productBrief
+    input.productBrief,
+    input.runtimeContextText
   );
 
   const messages: PromptMessage[] = [

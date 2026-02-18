@@ -73,11 +73,13 @@ import {
   normalizeExecuteDecision,
   runAgentDecision as runAgentDecisionFlow,
 } from "./useChat.agentDecision";
+import type { ChatPageAgentContext } from "@/lib/chat/page-agent-context";
 
 type UseChatOptions = {
   manageFooter?: boolean;
   remoteBootstrap?: boolean;
   enableAutoInit?: boolean;
+  pageContext?: ChatPageAgentContext | null;
 };
 
 type AgentGuideExample = {
@@ -103,6 +105,7 @@ export default function useChat(options: UseChatOptions = {}) {
   const manageFooter = options.manageFooter ?? true;
   const remoteBootstrap = options.remoteBootstrap ?? true;
   const enableAutoInit = options.enableAutoInit ?? true;
+  const pageContext = options.pageContext ?? null;
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [profile, setProfile] = useState<UserProfile | undefined>(undefined);
@@ -361,6 +364,14 @@ export default function useChat(options: UseChatOptions = {}) {
     () => pickLatestAssistantText(active?.messages || []),
     [active?.messages]
   );
+  const runtimeContextText = useMemo(
+    () => (typeof pageContext?.runtimeContextText === "string" ? pageContext.runtimeContextText.trim() : ""),
+    [pageContext]
+  );
+  const pageContextActionSet = useMemo(
+    () => new Set<ChatActionType>(pageContext?.preferredActions || []),
+    [pageContext]
+  );
 
   const agentCapabilityActions = useMemo<AgentCapabilityItem[]>(() => {
     const inAssessmentMode = inChatAssessment?.mode;
@@ -389,6 +400,9 @@ export default function useChat(options: UseChatOptions = {}) {
       if (item.type === "open_contact" || item.type === "open_support_call") {
         priority += 5;
       }
+      if (pageContextActionSet.has(item.type)) {
+        priority += 35;
+      }
 
       return {
         ...item,
@@ -401,7 +415,7 @@ export default function useChat(options: UseChatOptions = {}) {
     );
 
     return scored.map(({ priority: _priority, ...item }) => item);
-  }, [inChatAssessment?.mode, latestAssistantTextInActive]);
+  }, [inChatAssessment?.mode, latestAssistantTextInActive, pageContextActionSet]);
 
   const agentGuideExamples = useMemo<AgentGuideExample[]>(() => {
     if (hasRecommendationSection(latestAssistantTextInActive)) {
@@ -429,12 +443,20 @@ export default function useChat(options: UseChatOptions = {}) {
       ];
     }
 
+    if (Array.isArray(pageContext?.suggestedPrompts) && pageContext.suggestedPrompts.length > 0) {
+      return pageContext.suggestedPrompts.slice(0, 4).map((prompt, index) => ({
+        id: `ctx-${index}-${prompt}`,
+        label: prompt.length > 18 ? `${prompt.slice(0, 18)}...` : prompt,
+        prompt,
+      }));
+    }
+
     return agentCapabilityActions.slice(0, 4).map((item) => ({
       id: item.id,
       label: item.label,
       prompt: item.prompt,
     }));
-  }, [agentCapabilityActions, latestAssistantTextInActive]);
+  }, [agentCapabilityActions, latestAssistantTextInActive, pageContext]);
 
   const showAgentGuide = useMemo(() => {
     if (!active) return false;
@@ -474,6 +496,10 @@ export default function useChat(options: UseChatOptions = {}) {
       })
     );
   };
+  const buildActionContextText = (sessionId: string | null) => {
+    const summaryText = buildSummaryForSession(sessionId).promptSummaryText;
+    return [summaryText, runtimeContextText].filter(Boolean).join("\n\n");
+  };
 
   const userContextSummary = useMemo(
     () => buildSummaryForSession(activeId),
@@ -486,6 +512,7 @@ export default function useChat(options: UseChatOptions = {}) {
       activeId,
       localAssessCats,
       localCheckAi,
+      runtimeContextText,
     ]
   );
 
@@ -803,6 +830,7 @@ export default function useChat(options: UseChatOptions = {}) {
         body: JSON.stringify({
           text: lastAssistantText,
           ...buildContextPayload(targetSessionId),
+          runtimeContextText,
           recentMessages:
             sessions.find((session) => session.id === targetSessionId)?.messages ??
             [],
@@ -864,7 +892,7 @@ export default function useChat(options: UseChatOptions = {}) {
 
     const recentMessages =
       sessions.find((session) => session.id === targetSessionId)?.messages ?? [];
-    const contextSummaryText = buildSummaryForSession(targetSessionId).promptSummaryText;
+    const contextSummaryText = buildActionContextText(targetSessionId);
 
     try {
       const response = await fetch("/api/chat/actions", {
@@ -875,6 +903,7 @@ export default function useChat(options: UseChatOptions = {}) {
           assistantText: lastAssistantText,
           recentMessages,
           contextSummaryText,
+          runtimeContextText,
         }),
       });
       if (!response.ok) {
@@ -1373,7 +1402,8 @@ export default function useChat(options: UseChatOptions = {}) {
           mode: "execute",
           text: params.text,
           recentMessages: params.sessionMessages.slice(-10),
-          contextSummaryText: buildSummaryForSession(params.sessionId).promptSummaryText,
+          contextSummaryText: buildActionContextText(params.sessionId),
+          runtimeContextText,
         }),
       });
       const json = await response.json().catch(() => ({}));
@@ -1583,6 +1613,16 @@ export default function useChat(options: UseChatOptions = {}) {
           messages: (active.messages || []).concat(userMessage),
           clientId,
           mode: "chat",
+          runtimeContext: pageContext
+            ? {
+                routeKey: pageContext.routeKey,
+                routePath: pageContext.routePath,
+                pageTitle: pageContext.title,
+                pageSummary: pageContext.summary,
+                suggestedPrompts: pageContext.suggestedPrompts,
+                runtimeContextText,
+              }
+            : undefined,
           ...contextPayload,
         }),
         signal: controller.signal,
@@ -1680,6 +1720,16 @@ export default function useChat(options: UseChatOptions = {}) {
           messages: [],
           clientId,
           mode: "init",
+          runtimeContext: pageContext
+            ? {
+                routeKey: pageContext.routeKey,
+                routePath: pageContext.routePath,
+                pageTitle: pageContext.title,
+                pageSummary: pageContext.summary,
+                suggestedPrompts: pageContext.suggestedPrompts,
+                runtimeContextText,
+              }
+            : undefined,
           ...contextPayload,
         }),
         signal: controller.signal,

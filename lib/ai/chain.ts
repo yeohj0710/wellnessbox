@@ -530,6 +530,7 @@ export async function streamChat(
     assessResult,
     checkAiResult,
     actorContext,
+    runtimeContext,
   } = body || {};
 
   const getHeader = (key: string) =>
@@ -638,6 +639,12 @@ export async function streamChat(
     ragText,
     ragSourcesJson,
     productBrief,
+    runtimeContextText:
+      typeof runtimeContext?.runtimeContextText === "string"
+        ? runtimeContext.runtimeContextText
+        : [runtimeContext?.routePath, runtimeContext?.pageTitle, runtimeContext?.pageSummary]
+            .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+            .join(" | "),
     maxHistoryMessages: Number(process.env.RAG_MAX_MESSAGES) || 40,
   });
 

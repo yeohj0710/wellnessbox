@@ -54,6 +54,10 @@ import {
   type HomeDataResponse,
   readCachedHomeData,
 } from "./homeProductSection.helpers";
+import {
+  CHAT_PAGE_ACTION_EVENT,
+  type ChatPageActionDetail,
+} from "@/lib/chat/page-action-events";
 
 interface HomeProductSectionProps {
   initialCategories?: any[];
@@ -339,6 +343,29 @@ export default function HomeProductSection({
       localStorage.removeItem("openCart");
     }
   }, [syncCartItemsFromStorage]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const onPageAction = (event: Event) => {
+      const detail = (event as CustomEvent<ChatPageActionDetail>).detail;
+      if (!detail) return;
+      if (detail.action !== "focus_home_products") return;
+
+      const target = document.getElementById("home-products");
+      if (!target) return;
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      showToast("Moved to product section.");
+    };
+
+    window.addEventListener(CHAT_PAGE_ACTION_EVENT, onPageAction as EventListener);
+    return () => {
+      window.removeEventListener(
+        CHAT_PAGE_ACTION_EVENT,
+        onPageAction as EventListener
+      );
+    };
+  }, [showToast]);
 
   const [isSymptomModalVisible, setIsSymptomModalVisible] = useState(false);
 

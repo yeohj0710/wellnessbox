@@ -52,4 +52,12 @@ export interface ChatRequestBody {
     loggedIn?: boolean;
     phoneLinked?: boolean;
   };
+  runtimeContext?: {
+    routeKey?: string;
+    routePath?: string;
+    pageTitle?: string;
+    pageSummary?: string;
+    suggestedPrompts?: string[];
+    runtimeContextText?: string;
+  };
 }

@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
+import { usePathname, useSearchParams } from "next/navigation";
 import ChatInput from "./components/ChatInput";
 import ProfileBanner from "./components/ProfileBanner";
 import ChatTopBar from "./components/ChatTopBar";
 import useChat from "./hooks/useChat";
+import { buildPageAgentContext } from "@/lib/chat/page-agent-context";
 
 const MessageBubble = dynamic(() => import("./components/MessageBubble"));
 const ProfileModal = dynamic(() => import("./components/ProfileModal"), {
@@ -31,6 +33,17 @@ const AgentCapabilityHub = dynamic(
 );
 
 export default function ChatPage() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const fromPath = searchParams.get("from") || pathname || "/chat";
+  const pageContext = useMemo(
+    () =>
+      buildPageAgentContext({
+        pathname: fromPath,
+        searchParams,
+      }),
+    [fromPath, searchParams]
+  );
   const {
     sessions,
     activeId,
@@ -77,7 +90,9 @@ export default function ChatPage() {
     active,
     generateTitle,
     handleProfileChange,
-  } = useChat();
+  } = useChat({
+    pageContext,
+  });
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

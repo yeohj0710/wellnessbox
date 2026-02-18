@@ -8,7 +8,7 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowPathIcon,
   ArrowTopRightOnSquareIcon,
@@ -29,6 +29,7 @@ import ReferenceData from "@/app/chat/components/ReferenceData";
 import RecommendedProductActions from "@/app/chat/components/RecommendedProductActions";
 import AssessmentActionCard from "@/app/chat/components/AssessmentActionCard";
 import AgentCapabilityHub from "@/app/chat/components/AgentCapabilityHub";
+import { buildPageAgentContext } from "@/lib/chat/page-agent-context";
 
 const VERTICAL_SCROLLABLE_OVERFLOW = new Set(["auto", "scroll", "overlay"]);
 const SCROLL_EPSILON = 1;
@@ -159,11 +160,21 @@ function blurFocusedDescendant(container: HTMLElement | null) {
 type DockPanelProps = {
   isOpen: boolean;
   onClose: () => void;
+  pageAgentContext: ReturnType<typeof buildPageAgentContext>;
 };
 
 export default function DesktopChatDock() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const isChatRoute = pathname?.startsWith("/chat") ?? false;
+  const pageAgentContext = useMemo(
+    () =>
+      buildPageAgentContext({
+        pathname: pathname || "/",
+        searchParams,
+      }),
+    [pathname, searchParams]
+  );
   const [isOpen, setIsOpen] = useState(false);
   const [hasBooted, setHasBooted] = useState(false);
   const [pendingOpen, setPendingOpen] = useState(false);
@@ -311,13 +322,18 @@ export default function DesktopChatDock() {
         <DesktopChatDockPanel
           isOpen={isOpen}
           onClose={() => setIsOpen(false)}
+          pageAgentContext={pageAgentContext}
         />
       )}
     </div>
   );
 }
 
-function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
+function DesktopChatDockPanel({
+  isOpen,
+  onClose,
+  pageAgentContext,
+}: DockPanelProps) {
   const router = useRouter();
   const panelRef = useRef<HTMLElement | null>(null);
   const sessionsLayerRef = useRef<HTMLDivElement | null>(null);
@@ -376,6 +392,7 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
     manageFooter: false,
     remoteBootstrap: false,
     enableAutoInit: isOpen,
+    pageContext: pageAgentContext,
   });
 
   const assistantLoadingMetaByIndex = useMemo(() => {
@@ -818,7 +835,13 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
           </button>
           <button
             type="button"
-            onClick={() => router.push("/chat")}
+            onClick={() =>
+              router.push(
+                `/chat?from=${encodeURIComponent(
+                  pageAgentContext?.routePath || "dock"
+                )}`
+              )
+            }
             className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100"
             aria-label="채팅 전체 화면"
             title="전체 화면 열기"

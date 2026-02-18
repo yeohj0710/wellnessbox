@@ -1,4 +1,9 @@
 import type { ChatActionType } from "@/lib/chat/agent-actions";
+import {
+  canHandlePageActionInPath,
+  dispatchChatPageAction,
+  type ChatPageActionDetail,
+} from "@/lib/chat/page-action-events";
 import type { ChatMessage } from "@/types/chat";
 import type { InChatAssessmentMode } from "./useChat.assessment";
 
@@ -41,92 +46,119 @@ type NavigationActionConfig = {
 const NAVIGATION_ACTIONS: Partial<Record<ChatActionType, NavigationActionConfig>> = {
   open_my_orders: {
     path: "/my-orders",
-    message: "내 주문 조회 화면으로 이동할게요.",
+    message: "I will move to the order lookup page.",
   },
   open_me: {
     path: "/me",
-    message: "내 정보 화면으로 이동할게요.",
+    message: "I will move to your profile page.",
   },
   open_my_data: {
     path: "/my-data",
-    message: "내 데이터 페이지로 이동할게요.",
+    message: "I will open your unified data page.",
   },
   open_check_ai: {
     path: "/check-ai",
-    message: "빠른검사 페이지로 이동할게요.",
+    message: "I will move to the quick-check page.",
   },
   open_assess: {
     path: "/assess",
-    message: "정밀검사 페이지로 이동할게요.",
+    message: "I will move to the deep assessment page.",
   },
   open_explore: {
     path: "/explore#home-products",
-    message: "상품 탐색 화면으로 이동할게요.",
+    message: "I will move to product explore.",
   },
   open_home: {
     path: "/",
-    message: "홈 화면으로 이동할게요.",
+    message: "I will move to the home page.",
   },
   open_home_products: {
     path: "/#home-products",
-    message: "홈 상품 섹션으로 이동할게요.",
+    message: "I will move to the home products section.",
   },
   open_7day_purchase: {
     path: "/?package=7#home-products",
-    message: "7일치 구매 시작 위치로 이동할게요.",
+    message: "I will move to the 7-day purchase section.",
   },
   open_chat_page: {
     path: "/chat",
-    message: "AI 맞춤 상담 전체 화면으로 이동할게요.",
+    message: "I will open the full AI chat page.",
   },
   open_about: {
     path: "/about",
-    message: "회사 소개 페이지로 이동할게요.",
+    message: "I will open the about page.",
   },
   open_contact: {
     path: "/about/contact",
-    message: "문의하기 페이지로 이동할게요.",
+    message: "I will open the contact page.",
   },
   open_terms: {
     path: "/about/terms",
-    message: "이용약관 페이지를 열게요.",
+    message: "I will open the terms page.",
   },
   open_privacy: {
     path: "/about/privacy",
-    message: "개인정보처리방침 페이지를 열게요.",
+    message: "I will open the privacy page.",
   },
   open_refund_policy: {
     path: "/about/refund-policy",
-    message: "환불 규정 페이지를 열게요.",
+    message: "I will open the refund policy page.",
   },
   open_auth_phone: {
     path: "/auth/phone",
-    message: "전화 인증 페이지로 이동할게요.",
+    message: "I will open the phone verification page.",
   },
   open_pharm_dashboard: {
     path: "/pharm",
-    message: "약국 주문 관리 페이지로 이동할게요.",
+    message: "I will open the pharmacy dashboard.",
   },
   open_pharm_manage_products: {
     path: "/pharm/manage-products",
-    message: "약국 상품 등록/관리 페이지로 이동할게요.",
+    message: "I will open pharmacy product management.",
   },
   open_rider_dashboard: {
     path: "/rider",
-    message: "라이더 배송 관리 페이지로 이동할게요.",
+    message: "I will open the rider dashboard.",
   },
   open_admin_login: {
     path: "/admin-login",
-    message: "관리자 로그인 페이지로 이동할게요.",
+    message: "I will open the admin login page.",
   },
   open_admin_dashboard: {
     path: "/admin",
-    message: "사이트 관리 페이지로 이동할게요.",
+    message: "I will open the admin dashboard.",
   },
 };
 
 function buildNoopResult(): InteractiveActionResult {
   return { executed: false, message: "", summary: "" };
+}
+
+function runPageActionOrFallback(
+  detail: ChatPageActionDetail,
+  fallbackPath: string,
+  fallbackMessage: string,
+  navigateTo: (path: string) => boolean
+): InteractiveActionResult {
+  const pathname =
+    typeof window !== "undefined" ? window.location.pathname || "/" : "/";
+
+  if (canHandlePageActionInPath(detail, pathname)) {
+    dispatchChatPageAction(detail);
+    return {
+      executed: true,
+      message: "I applied that action directly in the current page.",
+      summary: "",
+    };
+  }
+
+  const moved = navigateTo(fallbackPath);
+  return {
+    executed: moved,
+    navigated: moved,
+    message: fallbackMessage,
+    summary: "",
+  };
 }
 
 export async function runSingleInteractiveAction(
@@ -158,9 +190,9 @@ export async function runSingleInteractiveAction(
       message: result.executed
         ? result.hasAddress
           ? action === "buy_recommended_all"
-            ? "추천 제품을 주문할 수 있도록 바로 열어둘게요."
-            : "추천 제품을 장바구니에 담아둘게요."
-          : "주소 입력이 필요해서 주소 입력 창부터 열어둘게요."
+            ? "I will open checkout with all recommended items."
+            : "I added all recommended items to cart."
+          : "Address is required first, so I will open address input."
         : "",
       summary: result.summary,
       hasAddress: result.hasAddress,
@@ -169,17 +201,44 @@ export async function runSingleInteractiveAction(
 
   if (action === "open_cart") {
     openCart();
-    return { executed: true, message: "장바구니를 열어둘게요.", summary: "" };
+    return { executed: true, message: "I opened the cart.", summary: "" };
   }
 
   if (action === "clear_cart") {
     clearCart();
-    return { executed: true, message: "장바구니를 비웠어요.", summary: "" };
+    return { executed: true, message: "I cleared the cart.", summary: "" };
   }
 
   if (action === "open_profile") {
     openProfileSettings();
-    return { executed: true, message: "프로필 설정을 열어둘게요.", summary: "" };
+    return { executed: true, message: "I opened profile settings.", summary: "" };
+  }
+
+  if (action === "focus_home_products") {
+    return runPageActionOrFallback(
+      { action: "focus_home_products" },
+      "/#home-products",
+      "I moved to the home product section.",
+      navigateTo
+    );
+  }
+
+  if (action === "focus_manual_order_lookup") {
+    return runPageActionOrFallback(
+      { action: "focus_manual_order_lookup" },
+      "/my-orders#manual-form",
+      "I moved to the manual order lookup form.",
+      navigateTo
+    );
+  }
+
+  if (action === "focus_linked_order_lookup") {
+    return runPageActionOrFallback(
+      { action: "focus_linked_order_lookup" },
+      "/my-orders",
+      "I moved to the linked-phone order lookup section.",
+      navigateTo
+    );
   }
 
   if (action === "open_support_email") {
@@ -188,7 +247,7 @@ export async function runSingleInteractiveAction(
     return {
       executed: opened,
       navigated: opened,
-      message: "문의 이메일 작성 창을 열게요.",
+      message: "I opened the support email composer.",
       summary: "",
     };
   }
@@ -199,13 +258,14 @@ export async function runSingleInteractiveAction(
     return {
       executed: opened,
       navigated: opened,
-      message: "고객센터 전화 연결을 시도할게요.",
+      message: "I attempted to open support phone call.",
       summary: "",
     };
   }
 
   if (action === "start_chat_quick_check" || action === "start_chat_assess") {
-    const mode: InChatAssessmentMode = action === "start_chat_quick_check" ? "quick" : "deep";
+    const mode: InChatAssessmentMode =
+      action === "start_chat_quick_check" ? "quick" : "deep";
     const initializedText = startInChatAssessment(mode);
     if (!initializedText) return buildNoopResult();
     return { executed: true, message: initializedText, summary: "" };

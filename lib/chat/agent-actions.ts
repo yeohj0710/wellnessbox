@@ -14,6 +14,9 @@
   "open_explore",
   "open_home",
   "open_home_products",
+  "focus_home_products",
+  "focus_manual_order_lookup",
+  "focus_linked_order_lookup",
   "open_7day_purchase",
   "open_chat_page",
   "open_about",
@@ -38,6 +41,7 @@ export type ChatActionCategory =
   | "assessment"
   | "account"
   | "navigation"
+  | "page"
   | "support"
   | "operations";
 
@@ -154,6 +158,27 @@ export const CHAT_CAPABILITY_ACTIONS: ChatCapabilityAction[] = [
     prompt: "홈 상품 섹션으로 이동해줘",
     category: "navigation",
     description: "홈의 상품 목록 앵커로 이동",
+  },
+  {
+    type: "focus_home_products",
+    label: "상품 섹션 포커스",
+    prompt: "현재 페이지에서 상품 섹션으로 바로 이동해줘",
+    category: "page",
+    description: "홈/탐색 페이지라면 이동 없이 상품 섹션으로 스크롤",
+  },
+  {
+    type: "focus_linked_order_lookup",
+    label: "연결 번호 주문조회",
+    prompt: "현재 페이지에서 연결된 번호 주문 조회 영역으로 이동해줘",
+    category: "page",
+    description: "내 주문 페이지의 연결 번호 조회 영역으로 포커스",
+  },
+  {
+    type: "focus_manual_order_lookup",
+    label: "수동 주문조회 폼",
+    prompt: "현재 페이지에서 수동 주문 조회 폼으로 이동해줘",
+    category: "page",
+    description: "내 주문 페이지의 수동 조회 입력 폼으로 포커스",
   },
   {
     type: "open_7day_purchase",
