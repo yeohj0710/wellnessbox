@@ -38,9 +38,23 @@ const DOCK_MIN_WIDTH = 320;
 const DOCK_MIN_HEIGHT = 420;
 const DOCK_VIEWPORT_GAP_X = 24;
 const DOCK_VIEWPORT_GAP_Y = 32;
+const DOCK_POSITION_MARGIN = 12;
 const DOCK_RESIZE_HINT_DISMISS_KEY = "wb_chat_dock_resize_hint_dismissed_v1";
 const DOCK_RESIZE_HINT_WIDTH = 420;
 const CHAT_DOCK_LAYOUT_EVENT = "wb:chat-dock-layout";
+const PENDING_DOCK_PROMPT_KEY = "wb_chat_dock_pending_prompt_v1";
+const DOCK_NUDGE_DISMISS_KEY_PREFIX = "wb_chat_dock_nudge_dismissed_v2:";
+const DOCK_POSITION_STORAGE_KEY = "wb_chat_dock_position_v1";
+const DOCK_NUDGE_TEXT_MAP: Record<string, string> = {
+  "agent assist": "에이전트 도움",
+  "home product browsing": "홈 상품 탐색",
+  "show me products for a 7-day package.": "7일 패키지 상품 보여줘.",
+  "show me products for a 7-day package": "7일 패키지 상품 보여줘.",
+  "scroll to the home product section.": "홈 상품 섹션으로 이동해줘.",
+  "scroll to the home product section": "홈 상품 섹션으로 이동해줘.",
+  "open cart and continue checkout.": "장바구니 열고 결제 계속 진행해줘.",
+  "open cart and continue checkout": "장바구니 열고 결제 계속 진행해줘.",
+};
 
 type DockPanelSize = {
   width: number;
@@ -55,6 +69,20 @@ type DockResizeState = {
   startY: number;
   startWidth: number;
   startHeight: number;
+  startLeft: number;
+  startTop: number;
+};
+
+type DockPanelPosition = {
+  left: number;
+  top: number;
+};
+
+type DockDragState = {
+  startX: number;
+  startY: number;
+  startLeft: number;
+  startTop: number;
 };
 
 type ChatDockLayoutDetail = {
@@ -68,6 +96,55 @@ type ChatDockLayoutDetail = {
 function emitChatDockLayout(detail: ChatDockLayoutDetail) {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent(CHAT_DOCK_LAYOUT_EVENT, { detail }));
+}
+
+function queueDockPrompt(prompt: string) {
+  if (typeof window === "undefined") return;
+  const text = prompt.trim();
+  if (!text) return;
+  try {
+    window.sessionStorage.setItem(PENDING_DOCK_PROMPT_KEY, text);
+  } catch {
+    // ignore storage failures
+  }
+}
+
+function consumeDockPrompt() {
+  if (typeof window === "undefined") return "";
+  try {
+    const text = (window.sessionStorage.getItem(PENDING_DOCK_PROMPT_KEY) || "").trim();
+    if (!text) return "";
+    window.sessionStorage.removeItem(PENDING_DOCK_PROMPT_KEY);
+    return text;
+  } catch {
+    return "";
+  }
+}
+
+function isDockNudgeDismissed(routeKey: string) {
+  if (typeof window === "undefined") return false;
+  const key = `${DOCK_NUDGE_DISMISS_KEY_PREFIX}${routeKey || "generic"}`;
+  try {
+    return window.localStorage.getItem(key) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function dismissDockNudge(routeKey: string) {
+  if (typeof window === "undefined") return;
+  const key = `${DOCK_NUDGE_DISMISS_KEY_PREFIX}${routeKey || "generic"}`;
+  try {
+    window.localStorage.setItem(key, "1");
+  } catch {
+    // ignore storage failures
+  }
+}
+
+function localizeDockNudgeText(text: string) {
+  const trimmed = text.trim();
+  if (!trimmed) return trimmed;
+  return DOCK_NUDGE_TEXT_MAP[trimmed.toLowerCase()] || trimmed;
 }
 
 function clampDockSize(size: DockPanelSize): DockPanelSize {
@@ -116,6 +193,75 @@ function saveDockSize(size: DockPanelSize) {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(DOCK_SIZE_STORAGE_KEY, JSON.stringify(size));
+  } catch {
+    // ignore storage failures
+  }
+}
+
+function clampDockPosition(
+  position: DockPanelPosition,
+  size: DockPanelSize
+): DockPanelPosition {
+  if (typeof window === "undefined") {
+    return position;
+  }
+
+  const maxLeft = Math.max(
+    DOCK_POSITION_MARGIN,
+    window.innerWidth - size.width - DOCK_POSITION_MARGIN
+  );
+  const maxTop = Math.max(
+    DOCK_POSITION_MARGIN,
+    window.innerHeight - size.height - DOCK_POSITION_MARGIN
+  );
+
+  return {
+    left: Math.round(
+      Math.min(maxLeft, Math.max(DOCK_POSITION_MARGIN, position.left))
+    ),
+    top: Math.round(
+      Math.min(maxTop, Math.max(DOCK_POSITION_MARGIN, position.top))
+    ),
+  };
+}
+
+function getDefaultDockPosition(size: DockPanelSize): DockPanelPosition {
+  if (typeof window === "undefined") {
+    return { left: DOCK_POSITION_MARGIN, top: DOCK_POSITION_MARGIN };
+  }
+
+  return clampDockPosition(
+    {
+      left: window.innerWidth - size.width - 20,
+      top: window.innerHeight - size.height - 24,
+    },
+    size
+  );
+}
+
+function loadDockPosition(): DockPanelPosition | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(DOCK_POSITION_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<DockPanelPosition> | null;
+    if (!parsed) return null;
+    const left = Number(parsed.left);
+    const top = Number(parsed.top);
+    if (!Number.isFinite(left) || !Number.isFinite(top)) return null;
+    return { left, top };
+  } catch {
+    return null;
+  }
+}
+
+function saveDockPosition(position: DockPanelPosition) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(
+      DOCK_POSITION_STORAGE_KEY,
+      JSON.stringify(position)
+    );
   } catch {
     // ignore storage failures
   }
@@ -178,6 +324,16 @@ export default function DesktopChatDock() {
   const [isOpen, setIsOpen] = useState(false);
   const [hasBooted, setHasBooted] = useState(false);
   const [pendingOpen, setPendingOpen] = useState(false);
+  const [showRouteNudge, setShowRouteNudge] = useState(false);
+  const routeKey = pageAgentContext?.routeKey || "generic";
+  const localizedRouteTitle = localizeDockNudgeText(
+    pageAgentContext?.title || "현재 페이지"
+  );
+  const nudgePrompts = (pageAgentContext?.suggestedPrompts || [])
+    .map((prompt) => localizeDockNudgeText(prompt))
+    .map((prompt) => prompt.trim())
+    .filter(Boolean)
+    .slice(0, 2);
 
   const requestOpenDock = useCallback(() => {
     if (isChatRoute) return;
@@ -198,6 +354,14 @@ export default function DesktopChatDock() {
     setIsOpen(true);
     setPendingOpen(false);
   }, [hasBooted, isChatRoute, pendingOpen]);
+
+  useEffect(() => {
+    if (isChatRoute || isOpen || pendingOpen || nudgePrompts.length === 0) {
+      setShowRouteNudge(false);
+      return;
+    }
+    setShowRouteNudge(!isDockNudgeDismissed(routeKey));
+  }, [isChatRoute, isOpen, nudgePrompts.length, pendingOpen, routeKey]);
 
   useEffect(() => {
     if (isChatRoute) return;
@@ -258,6 +422,20 @@ export default function DesktopChatDock() {
     });
   }, [isChatRoute]);
 
+  const handleDismissRouteNudge = useCallback(() => {
+    dismissDockNudge(routeKey);
+    setShowRouteNudge(false);
+  }, [routeKey]);
+
+  const openDockWithPrompt = useCallback(
+    (prompt: string) => {
+      queueDockPrompt(prompt);
+      setShowRouteNudge(false);
+      requestOpenDock();
+    },
+    [requestOpenDock]
+  );
+
   useEffect(() => {
     const handleCloseDock = () => {
       setPendingOpen(false);
@@ -287,6 +465,43 @@ export default function DesktopChatDock() {
 
   return (
     <div className="fixed bottom-[max(24px,env(safe-area-inset-bottom))] left-0 right-0 z-[58] flex justify-end px-3 sm:bottom-7 sm:left-auto sm:right-5 sm:px-0">
+      {showRouteNudge && (
+        <div className="pointer-events-auto absolute bottom-[calc(100%+10px)] right-0 w-[min(88vw,330px)] rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-[0_16px_34px_rgba(15,23,42,0.18)] backdrop-blur">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+                에이전트 도움
+              </p>
+              <p className="mt-0.5 text-[12px] text-slate-700">
+                {localizedRouteTitle}에서 바로 실행할 수 있어요.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleDismissRouteNudge}
+              className="rounded-full border border-slate-200 p-1 text-slate-500 hover:bg-slate-100"
+              aria-label="도움 패널 닫기"
+            >
+              <XMarkIcon className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {nudgePrompts.map((prompt) => (
+              <button
+                key={prompt}
+                type="button"
+                onClick={() => openDockWithPrompt(prompt)}
+                className="max-w-full truncate rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] text-sky-700 hover:bg-sky-100"
+                title={prompt}
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <button
         type="button"
         onPointerDown={requestOpenDock}
@@ -341,11 +556,22 @@ function DesktopChatDockPanel({
   const [panelSize, setPanelSize] = useState<DockPanelSize>(() =>
     clampDockSize(loadDockSize() ?? getDefaultDockSize())
   );
+  const [panelPosition, setPanelPosition] = useState<DockPanelPosition>(() =>
+    clampDockPosition(
+      loadDockPosition() ??
+        getDefaultDockPosition(clampDockSize(loadDockSize() ?? getDefaultDockSize())),
+      clampDockSize(loadDockSize() ?? getDefaultDockSize())
+    )
+  );
   const panelSizeRef = useRef(panelSize);
+  const panelPositionRef = useRef(panelPosition);
   const resizeStateRef = useRef<DockResizeState | null>(null);
+  const dragStateRef = useRef<DockDragState | null>(null);
   const resizeRafRef = useRef<number | null>(null);
   const pendingResizeSizeRef = useRef<DockPanelSize | null>(null);
+  const pendingResizePositionRef = useRef<DockPanelPosition | null>(null);
   const [isResizing, setIsResizing] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [showResizeHint, setShowResizeHint] = useState(false);
   const [resizeHintDismissed, setResizeHintDismissed] = useState(false);
   const {
@@ -395,6 +621,14 @@ function DesktopChatDockPanel({
     pageContext: pageAgentContext,
   });
 
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!activeId || loading || bootstrapPending || actionLoading) return;
+    const prompt = consumeDockPrompt();
+    if (!prompt) return;
+    void sendMessage(prompt);
+  }, [activeId, actionLoading, bootstrapPending, isOpen, loading, sendMessage]);
+
   const assistantLoadingMetaByIndex = useMemo(() => {
     const meta = new Map<number, { contextText: string; userTurnCountBefore: number }>();
     if (!active) return meta;
@@ -440,10 +674,22 @@ function DesktopChatDockPanel({
     panel.style.height = `${size.height}px`;
   };
 
+  const applyPanelPositionToDom = (position: DockPanelPosition) => {
+    const panel = panelRef.current;
+    if (!panel) return;
+    panel.style.left = `${position.left}px`;
+    panel.style.top = `${position.top}px`;
+  };
+
   useEffect(() => {
     panelSizeRef.current = panelSize;
     applyPanelSizeToDom(panelSize);
   }, [panelSize]);
+
+  useEffect(() => {
+    panelPositionRef.current = panelPosition;
+    applyPanelPositionToDom(panelPosition);
+  }, [panelPosition]);
 
   useEffect(() => {
     const emitClosed = () =>
@@ -487,7 +733,15 @@ function DesktopChatDockPanel({
         emitClosed();
       }
     };
-  }, [isOpen, panelSize.width, panelSize.height, isResizing]);
+  }, [
+    isOpen,
+    panelPosition.left,
+    panelPosition.top,
+    panelSize.width,
+    panelSize.height,
+    isDragging,
+    isResizing,
+  ]);
 
   useEffect(() => {
     const panel = panelRef.current;
@@ -512,10 +766,19 @@ function DesktopChatDockPanel({
   }, [sessionsOpen]);
 
   useEffect(() => {
-    const restored = clampDockSize(loadDockSize() ?? getDefaultDockSize());
-    setPanelSize(restored);
-    panelSizeRef.current = restored;
-    applyPanelSizeToDom(restored);
+    const restoredSize = clampDockSize(loadDockSize() ?? getDefaultDockSize());
+    const restoredPosition = clampDockPosition(
+      loadDockPosition() ?? getDefaultDockPosition(restoredSize),
+      restoredSize
+    );
+
+    setPanelSize(restoredSize);
+    panelSizeRef.current = restoredSize;
+    applyPanelSizeToDom(restoredSize);
+
+    setPanelPosition(restoredPosition);
+    panelPositionRef.current = restoredPosition;
+    applyPanelPositionToDom(restoredPosition);
   }, []);
 
   useEffect(() => {
@@ -529,11 +792,15 @@ function DesktopChatDockPanel({
 
   useEffect(() => {
     const onResize = () => {
-      setPanelSize((prev) => {
-        const clamped = clampDockSize(prev);
-        panelSizeRef.current = clamped;
-        return clamped;
-      });
+      const nextSize = clampDockSize(panelSizeRef.current);
+      panelSizeRef.current = nextSize;
+      applyPanelSizeToDom(nextSize);
+      setPanelSize(nextSize);
+
+      const nextPosition = clampDockPosition(panelPositionRef.current, nextSize);
+      panelPositionRef.current = nextPosition;
+      applyPanelPositionToDom(nextPosition);
+      setPanelPosition(nextPosition);
     };
 
     window.addEventListener("resize", onResize);
@@ -544,74 +811,137 @@ function DesktopChatDockPanel({
 
   useEffect(() => {
     const onPointerMove = (event: PointerEvent) => {
-      const state = resizeStateRef.current;
-      if (!state) return;
+      const resizeState = resizeStateRef.current;
+      if (resizeState) {
+        let nextWidth = resizeState.startWidth;
+        let nextHeight = resizeState.startHeight;
+        let nextLeft = resizeState.startLeft;
+        let nextTop = resizeState.startTop;
 
-      let nextWidth = state.startWidth;
-      let nextHeight = state.startHeight;
+        if (resizeState.edge === "left" || resizeState.edge === "corner") {
+          nextWidth = resizeState.startWidth - (event.clientX - resizeState.startX);
+        }
+        if (resizeState.edge === "top" || resizeState.edge === "corner") {
+          nextHeight = resizeState.startHeight - (event.clientY - resizeState.startY);
+        }
 
-      if (state.edge === "left" || state.edge === "corner") {
-        nextWidth = state.startWidth + (state.startX - event.clientX);
+        const clampedSize = clampDockSize({ width: nextWidth, height: nextHeight });
+        panelSizeRef.current = clampedSize;
+        pendingResizeSizeRef.current = clampedSize;
+
+        if (resizeState.edge === "left" || resizeState.edge === "corner") {
+          nextLeft = resizeState.startLeft + (resizeState.startWidth - clampedSize.width);
+        }
+        if (resizeState.edge === "top" || resizeState.edge === "corner") {
+          nextTop = resizeState.startTop + (resizeState.startHeight - clampedSize.height);
+        }
+
+        const clampedPosition = clampDockPosition(
+          { left: nextLeft, top: nextTop },
+          clampedSize
+        );
+        panelPositionRef.current = clampedPosition;
+        pendingResizePositionRef.current = clampedPosition;
+
+        if (resizeRafRef.current !== null) return;
+        resizeRafRef.current = window.requestAnimationFrame(() => {
+          resizeRafRef.current = null;
+          const nextSize = pendingResizeSizeRef.current;
+          const nextPosition = pendingResizePositionRef.current;
+          if (nextSize) {
+            applyPanelSizeToDom(nextSize);
+          }
+          if (nextPosition) {
+            applyPanelPositionToDom(nextPosition);
+          }
+        });
+        return;
       }
-      if (state.edge === "top" || state.edge === "corner") {
-        nextHeight = state.startHeight + (state.startY - event.clientY);
-      }
 
-      const clamped = clampDockSize({ width: nextWidth, height: nextHeight });
-      panelSizeRef.current = clamped;
-      pendingResizeSizeRef.current = clamped;
+      const dragState = dragStateRef.current;
+      if (!dragState) return;
 
-      if (resizeRafRef.current !== null) return;
-      resizeRafRef.current = window.requestAnimationFrame(() => {
-        resizeRafRef.current = null;
-        const nextSize = pendingResizeSizeRef.current;
-        if (!nextSize) return;
-        applyPanelSizeToDom(nextSize);
-      });
+      const nextPosition = clampDockPosition(
+        {
+          left: dragState.startLeft + (event.clientX - dragState.startX),
+          top: dragState.startTop + (event.clientY - dragState.startY),
+        },
+        panelSizeRef.current
+      );
+      panelPositionRef.current = nextPosition;
+      applyPanelPositionToDom(nextPosition);
     };
 
-    const stopResize = () => {
-      if (!resizeStateRef.current) return;
+    const stopInteraction = () => {
+      const wasResizing = Boolean(resizeStateRef.current);
+      const wasDragging = Boolean(dragStateRef.current);
+      if (!wasResizing && !wasDragging) return;
+
       resizeStateRef.current = null;
+      dragStateRef.current = null;
+
       if (resizeRafRef.current !== null) {
         window.cancelAnimationFrame(resizeRafRef.current);
         resizeRafRef.current = null;
       }
       pendingResizeSizeRef.current = null;
+      pendingResizePositionRef.current = null;
+
       setIsResizing(false);
+      setIsDragging(false);
       document.body.style.removeProperty("user-select");
       document.body.style.removeProperty("cursor");
+
       const committedSize = panelSizeRef.current;
+      const committedPosition = clampDockPosition(
+        panelPositionRef.current,
+        committedSize
+      );
+
       applyPanelSizeToDom(committedSize);
-      setPanelSize(committedSize);
-      saveDockSize(committedSize);
+      applyPanelPositionToDom(committedPosition);
+      panelPositionRef.current = committedPosition;
+
+      if (wasResizing) {
+        setPanelSize(committedSize);
+        saveDockSize(committedSize);
+      }
+
+      if (wasResizing || wasDragging) {
+        setPanelPosition(committedPosition);
+        saveDockPosition(committedPosition);
+      }
     };
 
     window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", stopResize);
-    window.addEventListener("pointercancel", stopResize);
+    window.addEventListener("pointerup", stopInteraction);
+    window.addEventListener("pointercancel", stopInteraction);
 
     return () => {
       window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", stopResize);
-      window.removeEventListener("pointercancel", stopResize);
+      window.removeEventListener("pointerup", stopInteraction);
+      window.removeEventListener("pointercancel", stopInteraction);
       if (resizeRafRef.current !== null) {
         window.cancelAnimationFrame(resizeRafRef.current);
         resizeRafRef.current = null;
       }
       pendingResizeSizeRef.current = null;
+      pendingResizePositionRef.current = null;
     };
   }, []);
 
   useEffect(() => {
     if (isOpen) return;
     resizeStateRef.current = null;
+    dragStateRef.current = null;
     if (resizeRafRef.current !== null) {
       window.cancelAnimationFrame(resizeRafRef.current);
       resizeRafRef.current = null;
     }
     pendingResizeSizeRef.current = null;
+    pendingResizePositionRef.current = null;
     setIsResizing(false);
+    setIsDragging(false);
     document.body.style.removeProperty("user-select");
     document.body.style.removeProperty("cursor");
   }, [isOpen]);
@@ -636,9 +966,13 @@ function DesktopChatDockPanel({
     edge: DockResizeEdge
   ) => {
     if (!isOpen) return;
+    if (event.button !== 0) return;
     setShowResizeHint(false);
     event.preventDefault();
     event.stopPropagation();
+
+    dragStateRef.current = null;
+    setIsDragging(false);
 
     resizeStateRef.current = {
       edge,
@@ -646,11 +980,41 @@ function DesktopChatDockPanel({
       startY: event.clientY,
       startWidth: panelSizeRef.current.width,
       startHeight: panelSizeRef.current.height,
+      startLeft: panelPositionRef.current.left,
+      startTop: panelPositionRef.current.top,
     };
     setIsResizing(true);
     document.body.style.userSelect = "none";
     document.body.style.cursor =
       edge === "left" ? "ew-resize" : edge === "top" ? "ns-resize" : "nwse-resize";
+  };
+
+  const startDrag = (event: ReactPointerEvent<HTMLElement>) => {
+    if (!isOpen) return;
+    if (event.button !== 0) return;
+    if (isResizing) return;
+
+    const target = event.target;
+    if (
+      target instanceof HTMLElement &&
+      target.closest("button, a, input, textarea, select, [role='button']")
+    ) {
+      return;
+    }
+
+    setShowResizeHint(false);
+    event.preventDefault();
+    event.stopPropagation();
+
+    dragStateRef.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      startLeft: panelPositionRef.current.left,
+      startTop: panelPositionRef.current.top,
+    };
+    setIsDragging(true);
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = "grabbing";
   };
 
   useEffect(() => {
@@ -723,14 +1087,19 @@ function DesktopChatDockPanel({
   return (
     <aside
       ref={panelRef}
-      className={`absolute bottom-0 left-1/2 z-10 isolate flex -translate-x-1/2 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.24)] will-change-[transform,opacity] transition-[opacity,transform,visibility] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none sm:left-auto sm:right-0 sm:translate-x-0 ${
+      className={`fixed z-10 isolate flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.24)] will-change-[transform,opacity,left,top] transition-[opacity,transform,visibility] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
         isOpen
           ? "visible pointer-events-auto translate-y-0 scale-100 opacity-100"
           : "invisible translate-y-4 scale-95 opacity-0 pointer-events-none"
-      } ${isResizing ? "select-none transition-none" : ""}`}
+      } ${isResizing || isDragging ? "select-none transition-none" : ""}`}
       style={{
         width: `${(isResizing ? panelSizeRef.current : panelSize).width}px`,
         height: `${(isResizing ? panelSizeRef.current : panelSize).height}px`,
+        left: `${(isResizing || isDragging
+          ? panelPositionRef.current
+          : panelPosition
+        ).left}px`,
+        top: `${(isResizing || isDragging ? panelPositionRef.current : panelPosition).top}px`,
       }}
     >
       {showResizeHint && (
@@ -770,7 +1139,12 @@ function DesktopChatDockPanel({
         onPointerDown={(event) => startResize(event, "corner")}
         className="absolute -left-1 -top-1 z-50 hidden h-4 w-4 cursor-nwse-resize touch-none sm:block"
       />
-      <header className="flex items-center justify-between border-b border-slate-200 bg-white px-3 py-2.5">
+      <header
+        onPointerDown={startDrag}
+        className={`flex items-center justify-between border-b border-slate-200 bg-white px-3 py-2.5 ${
+          isDragging ? "cursor-grabbing" : "cursor-grab"
+        }`}
+      >
         <div className="flex min-w-0 items-center gap-2">
           <button
             type="button"

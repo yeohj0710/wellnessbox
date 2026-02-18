@@ -422,22 +422,22 @@ export default function useChat(options: UseChatOptions = {}) {
       return [
         {
           id: "agent-buy-all",
-          label: "추천 제품 바로 구매",
+          label: "추천 제품 바로 주문",
           prompt: "추천 상품 전체 바로 구매 진행해줘",
         },
         {
           id: "agent-add-all",
-          label: "추천 제품 장바구니 담기",
+          label: "추천 제품 담기",
           prompt: "추천 상품 전체 장바구니에 담아줘",
         },
         {
           id: "agent-cart-and-assess",
-          label: "담고 정밀검사",
+          label: "담은 뒤 정밀검사",
           prompt: "추천 상품 장바구니에 담고 정밀검사 페이지로 이동해줘",
         },
         {
           id: "agent-open-check-ai",
-          label: "빠른검사 시작",
+          label: "빠른검사 시작하기",
           prompt: "빠른검사 시작해줘",
         },
       ];
@@ -1283,10 +1283,16 @@ export default function useChat(options: UseChatOptions = {}) {
 
   function clearCartFromChat() {
     if (typeof window === "undefined") return;
+    const cartWasOpen =
+      sessionStorage.getItem("wbGlobalCartOpen") === "1" ||
+      localStorage.getItem("openCart") === "true";
     writeClientCartItems([]);
     localStorage.removeItem("selectedPharmacyId");
-    clearCartOpenFlags();
     window.dispatchEvent(new Event("cartUpdated"));
+    if (!cartWasOpen) {
+      sessionStorage.removeItem("wbGlobalCartOpen");
+      localStorage.removeItem("openCart");
+    }
   }
 
   async function runInteractiveAction(

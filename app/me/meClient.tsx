@@ -4,6 +4,10 @@ import NextImage from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getUploadUrl } from "@/lib/upload";
+import {
+  CHAT_PAGE_ACTION_EVENT,
+  type ChatPageActionDetail,
+} from "@/lib/chat/page-action-events";
 import LogoutButton from "./logoutButton";
 import OrdersSection from "./ordersSection";
 import PhoneVerifyModal from "./phoneVerifyModal";
@@ -240,6 +244,36 @@ export default function MeClient({
     }
   }, [isLinked, unlinkLoading, router]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const onPageAction = (event: Event) => {
+      const detail = (event as CustomEvent<ChatPageActionDetail>).detail;
+      if (!detail) return;
+
+      if (detail.action === "focus_me_profile") {
+        document
+          .getElementById("me-profile-section")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+
+      if (detail.action === "focus_me_orders") {
+        document
+          .getElementById("me-orders-section")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    };
+
+    window.addEventListener(CHAT_PAGE_ACTION_EVENT, onPageAction as EventListener);
+    return () => {
+      window.removeEventListener(
+        CHAT_PAGE_ACTION_EVENT,
+        onPageAction as EventListener
+      );
+    };
+  }, []);
+
   return (
     <div className="w-full mt-4 sm:mt-8 mb-12 flex justify-center px-4">
       <div className="w-full sm:w-[640px] bg-white sm:border sm:border-gray-200 sm:rounded-2xl sm:shadow-lg px-5 sm:px-8 py-7 sm:py-8">
@@ -252,7 +286,10 @@ export default function MeClient({
           </div>
         </div>
 
-        <section className="mt-7 rounded-2xl bg-gray-50 p-5 sm:p-6">
+        <section
+          id="me-profile-section"
+          className="mt-7 rounded-2xl bg-gray-50 p-5 sm:p-6"
+        >
           <div className="flex flex-col gap-4 sm:gap-8 sm:flex-row sm:items-center">
             <div className="relative inline-flex items-center">
               <button

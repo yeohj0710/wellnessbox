@@ -36,8 +36,8 @@ function pickHomeSummary(searchParams?: SearchLike | null) {
   if (categoriesQuery) hints.push(`categories=${categoriesQuery}`);
 
   return hints.length > 0
-    ? `Home product filter context: ${hints.join(", ")}`
-    : "Home product browsing context.";
+    ? `홈 상품 필터 컨텍스트: ${hints.join(", ")}`
+    : "홈 상품 탐색 컨텍스트.";
 }
 
 function buildRouteContext(
@@ -74,12 +74,12 @@ export function buildPageAgentContext(
   if (pathname.startsWith("/chat")) {
     return buildRouteContext(
       "chat",
-      "AI chat workspace",
-      "Full chat surface. Prefer deep guidance, tool execution, and follow-up planning.",
+      "AI 채팅 워크스페이스",
+      "전체 화면 채팅입니다. 실행 가능한 액션과 후속 계획 중심으로 안내합니다.",
       [
-        "Summarize what I can do from this page.",
-        "Guide me to the next best action from my current status.",
-        "Run the recommended cart and order flow.",
+        "이 페이지에서 가능한 작업을 요약해줘.",
+        "지금 상태에서 다음으로 할 일을 추천해줘.",
+        "추천 장바구니-주문 흐름을 실행해줘.",
       ],
       ["open_explore", "open_my_orders", "open_me", "open_cart"]
     );
@@ -88,12 +88,12 @@ export function buildPageAgentContext(
   if (pathname === "/" || pathname.startsWith("/explore")) {
     return buildRouteContext(
       "home-products",
-      "Home product browsing",
+      "홈 상품 탐색",
       pickHomeSummary(params.searchParams),
       [
-        "Show me products for a 7-day package.",
-        "Scroll to the home product section.",
-        "Open cart and continue checkout.",
+        "7일치 패키지 상품 보여줘.",
+        "홈 상품 섹션으로 이동해줘.",
+        "장바구니 열고 결제 계속 진행해줘.",
       ],
       ["focus_home_products", "open_7day_purchase", "open_cart", "open_check_ai"]
     );
@@ -102,12 +102,12 @@ export function buildPageAgentContext(
   if (pathname.startsWith("/my-orders")) {
     return buildRouteContext(
       "my-orders",
-      "Order lookup",
-      "Order lookup supports linked-phone flow and manual phone+password flow.",
+      "주문 조회",
+      "연결된 번호 조회와 수동 번호+비밀번호 조회를 지원합니다.",
       [
-        "Move to linked-phone order lookup.",
-        "Move to manual order lookup form.",
-        "Help me verify order status step by step.",
+        "연결 번호 주문조회 영역으로 이동해줘.",
+        "수동 주문조회 폼으로 이동해줘.",
+        "주문 상태 확인을 단계별로 도와줘.",
       ],
       ["focus_linked_order_lookup", "focus_manual_order_lookup", "open_contact", "open_me"]
     );
@@ -116,68 +116,80 @@ export function buildPageAgentContext(
   if (pathname.startsWith("/me")) {
     return buildRouteContext(
       "me",
-      "My profile",
-      "Profile, phone link, and personal account settings.",
+      "내 정보",
+      "프로필, 전화번호 연동, 계정 설정을 관리합니다.",
       [
-        "Open profile setup from chat.",
-        "Guide me through phone link status.",
-        "Move to my order history.",
+        "현재 페이지에서 프로필 수정 영역으로 이동해줘.",
+        "현재 페이지에서 내 주문 영역으로 이동해줘.",
+        "전화번호 연동 상태를 점검해줘.",
       ],
-      ["open_profile", "open_my_orders", "open_my_data", "open_contact"]
+      ["focus_me_profile", "focus_me_orders", "open_profile", "open_my_orders"]
     );
   }
 
   if (pathname.startsWith("/my-data")) {
     return buildRouteContext(
       "my-data",
-      "My data dashboard",
-      "Unified view for assessment, quick-check, orders, and chat history.",
+      "내 데이터 대시보드",
+      "검사/빠른검사/주문/상담 데이터를 통합 조회합니다.",
       [
-        "Summarize my data highlights.",
-        "Show actions based on my recent data.",
-        "Move to detailed order lookup.",
+        "현재 페이지에서 계정 요약 섹션으로 이동해줘.",
+        "현재 페이지에서 주문 내역 섹션으로 이동해줘.",
+        "최근 데이터 기반으로 다음 액션 추천해줘.",
       ],
-      ["open_my_orders", "open_check_ai", "open_assess", "open_explore"]
+      [
+        "focus_my_data_account",
+        "focus_my_data_orders",
+        "open_my_orders",
+        "open_assess",
+      ]
     );
   }
 
   if (pathname.startsWith("/assess")) {
     return buildRouteContext(
       "assess",
-      "Deep assessment",
-      "Deep assessment flow. Can continue in-page or switch to chat-based assessment.",
+      "정밀검사",
+      "정밀검사 진행 화면입니다. 페이지 내 진행 또는 채팅형 검사 전환이 가능합니다.",
       [
-        "Run deep assessment inside chat.",
-        "Open quick-check instead.",
-        "Recommend products after assessment.",
+        "현재 페이지에서 정밀검사 진행 영역으로 이동해줘.",
+        "채팅에서 정밀검사를 진행해줘.",
+        "빠른검사로 전환해줘.",
+        "검사 결과 기반 상품 추천해줘.",
       ],
-      ["start_chat_assess", "open_check_ai", "open_explore", "open_cart"]
+      ["focus_assess_flow", "start_chat_assess", "open_check_ai", "open_explore"]
     );
   }
 
   if (pathname.startsWith("/check-ai")) {
     return buildRouteContext(
       "check-ai",
-      "Quick check",
-      "Fast check flow. Can continue in-page or switch to deep assessment.",
+      "빠른검사",
+      "빠른검사 진행 화면입니다. 페이지 내 진행 또는 정밀검사 전환이 가능합니다.",
       [
-        "Run quick-check inside chat.",
-        "Move to deep assessment page.",
-        "Open product recommendations after results.",
+        "현재 페이지에서 빠른검사 문항 영역으로 이동해줘.",
+        "채팅에서 빠른검사를 진행해줘.",
+        "정밀검사 페이지로 이동해줘.",
+        "결과 기반 추천 상품 열어줘.",
       ],
-      ["start_chat_quick_check", "open_assess", "open_explore", "open_cart"]
+      [
+        "focus_check_ai_form",
+        "start_chat_quick_check",
+        "open_assess",
+        "open_explore",
+      ]
     );
   }
 
   if (pathname.startsWith("/pharm")) {
     return buildRouteContext(
       "pharm",
-      "Pharmacy operations",
-      "Pharmacy dashboard and product management.",
+      "약국 운영",
+      "약국 대시보드와 상품 관리를 지원합니다.",
       [
-        "Open pharmacy order dashboard.",
-        "Open pharmacy product management.",
-        "Help me process pending orders.",
+        "약국 주문 관리 화면으로 이동해줘.",
+        "약국 상품 관리 화면으로 이동해줘.",
+        "대기 주문 처리 순서를 안내해줘.",
       ],
       ["open_pharm_dashboard", "open_pharm_manage_products", "open_contact", "open_chat_page"]
     );
@@ -186,12 +198,12 @@ export function buildPageAgentContext(
   if (pathname.startsWith("/rider")) {
     return buildRouteContext(
       "rider",
-      "Rider operations",
-      "Rider delivery dashboard and status handling.",
+      "라이더 운영",
+      "라이더 배송 대시보드와 상태 처리를 지원합니다.",
       [
-        "Open rider dashboard.",
-        "Guide delivery status workflow.",
-        "Open support contact page.",
+        "라이더 배송 관리 화면으로 이동해줘.",
+        "배송 상태 처리 순서를 안내해줘.",
+        "문의 페이지 열어줘.",
       ],
       ["open_rider_dashboard", "open_contact", "open_chat_page", "open_my_orders"]
     );
@@ -200,12 +212,12 @@ export function buildPageAgentContext(
   if (pathname.startsWith("/admin")) {
     return buildRouteContext(
       "admin",
-      "Admin operations",
-      "Admin login and site management context.",
+      "관리자 운영",
+      "관리자 로그인 및 사이트 운영 컨텍스트입니다.",
       [
-        "Open admin login page.",
-        "Open admin dashboard.",
-        "Show operational quick links.",
+        "관리자 로그인 페이지 열어줘.",
+        "관리자 대시보드 열어줘.",
+        "운영 관련 바로가기 보여줘.",
       ],
       ["open_admin_login", "open_admin_dashboard", "open_contact", "open_chat_page"]
     );
@@ -214,12 +226,12 @@ export function buildPageAgentContext(
   if (pathname.startsWith("/about")) {
     return buildRouteContext(
       "about",
-      "Support and policy",
-      "Support pages, contact, terms, privacy, and refund policy.",
+      "문의 및 정책",
+      "문의, 약관, 개인정보, 환불 정책 페이지 컨텍스트입니다.",
       [
-        "Open contact page.",
-        "Open terms and privacy pages.",
-        "Open refund policy.",
+        "문의 페이지 열어줘.",
+        "약관/개인정보 페이지 열어줘.",
+        "환불 정책 페이지 열어줘.",
       ],
       ["open_contact", "open_terms", "open_privacy", "open_refund_policy"]
     );
@@ -227,12 +239,12 @@ export function buildPageAgentContext(
 
   return buildRouteContext(
     "generic",
-    "General page",
-    "General browsing context. Provide guided actions and route shortcuts when needed.",
+    "일반 페이지",
+    "일반 탐색 컨텍스트입니다. 필요 시 가이드 액션과 이동 바로가기를 제공합니다.",
     [
-      "Show what can be done from this page.",
-      "Open AI full chat page.",
-      "Move to product browsing.",
+      "이 페이지에서 가능한 작업을 알려줘.",
+      "AI 전체 채팅 화면으로 이동해줘.",
+      "상품 탐색 화면으로 이동해줘.",
     ],
     ["open_chat_page", "open_explore", "open_my_orders", "open_contact"]
   );

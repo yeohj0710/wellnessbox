@@ -314,7 +314,7 @@ export default function ChatInput({
           <div className="mx-auto max-w-[760px] rounded-2xl border border-slate-200 bg-white/95 px-3 py-2.5 shadow-[0_10px_26px_rgba(15,23,42,0.08)] backdrop-blur">
             <div className="flex items-center justify-between gap-2">
               <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
-                Quick Actions
+                빠른 실행
               </p>
               <button
                 type="button"

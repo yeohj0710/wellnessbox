@@ -15,6 +15,10 @@ import ConfirmResetModal from "./components/ConfirmResetModal";
 import { KEY_TO_CODE, labelOf, type CategoryKey } from "@/lib/categories";
 import type { CSectionResult } from "./components/CSection";
 import { fetchCategories, type CategoryLite } from "@/lib/client/categories";
+import {
+  CHAT_PAGE_ACTION_EVENT,
+  type ChatPageActionDetail,
+} from "@/lib/chat/page-action-events";
 
 const STORAGE_KEY = "assess-state";
 const C_PERSIST_KEY = `${STORAGE_KEY}::C`;
@@ -124,6 +128,28 @@ export default function Assess() {
 
   useEffect(() => {
     refreshClientIdCookieIfNeeded();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const onPageAction = (event: Event) => {
+      const detail = (event as CustomEvent<ChatPageActionDetail>).detail;
+      if (!detail) return;
+      if (detail.action !== "focus_assess_flow") return;
+
+      document
+        .getElementById("assess-flow")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+
+    window.addEventListener(CHAT_PAGE_ACTION_EVENT, onPageAction as EventListener);
+    return () => {
+      window.removeEventListener(
+        CHAT_PAGE_ACTION_EVENT,
+        onPageAction as EventListener
+      );
+    };
   }, []);
 
   useEffect(() => {
@@ -499,7 +525,7 @@ export default function Assess() {
 
   return (
     <>
-      {content}
+      <div id="assess-flow">{content}</div>
       <ConfirmResetModal
         open={confirmOpen}
         cancelBtnRef={cancelBtnRef}

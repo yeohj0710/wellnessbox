@@ -802,7 +802,7 @@ export default function HomeProductSection({
   const symptomCategoryPairs: Array<{ symptom: string; categories: string[] }> =
     [
       {
-        symptom: "?쇰줈媛?",
+        symptom: "피로감",
         categories: [
           CATEGORY_LABELS.vitaminB,
           CATEGORY_LABELS.coenzymeQ10,
@@ -810,11 +810,11 @@ export default function HomeProductSection({
         ],
       },
       {
-        symptom: "??嫄닿컯",
+        symptom: "눈 건강",
         categories: [CATEGORY_LABELS.lutein, CATEGORY_LABELS.vitaminA],
       },
       {
-        symptom: "?쇰? 嫄닿컯",
+        symptom: "피부 건강",
         categories: [
           CATEGORY_LABELS.collagen,
           CATEGORY_LABELS.vitaminC,
@@ -822,30 +822,30 @@ export default function HomeProductSection({
         ],
       },
       {
-        symptom: "泥댁?諛?",
+        symptom: "체지방",
         categories: [CATEGORY_LABELS.garcinia, CATEGORY_LABELS.psyllium],
       },
       {
-        symptom: "?덇? & ?덉븸?쒗솚",
+        symptom: "혈관 & 혈액순환",
         categories: [CATEGORY_LABELS.omega3, CATEGORY_LABELS.coenzymeQ10],
       },
       {
-        symptom: "媛?嫄닿컯",
+        symptom: "간 건강",
         categories: [CATEGORY_LABELS.milkThistle],
       },
       {
-        symptom: "??嫄닿컯",
+        symptom: "장 건강",
         categories: [CATEGORY_LABELS.probiotics, CATEGORY_LABELS.psyllium],
       },
       {
-        symptom: "?ㅽ듃?덉뒪 & ?섎㈃",
+        symptom: "스트레스 & 수면",
         categories: [
           CATEGORY_LABELS.magnesium,
           CATEGORY_LABELS.phosphatidylserine,
         ],
       },
       {
-        symptom: "硫댁뿭 湲곕뒫",
+        symptom: "면역 기능",
         categories: [
           CATEGORY_LABELS.vitaminD,
           CATEGORY_LABELS.zinc,
@@ -853,7 +853,7 @@ export default function HomeProductSection({
         ],
       },
       {
-        symptom: "?덉쨷 肄쒕젅?ㅽ뀒濡?",
+        symptom: "혈중 콜레스테롤",
         categories: [CATEGORY_LABELS.omega3],
       },
     ];
@@ -920,12 +920,13 @@ export default function HomeProductSection({
 
       {cartItems.length > 0 && selectedPharmacy && (
         <div className="mx-2 sm:mx-0 bg-gray-100 px-3 py-2 mt-1.5 mb-4 rounded-md text-sm text-gray-700">
-          Selected pharmacy near your address:{" "}
+          선택하신 상품을 보유한 약국 중 주소로부터{" "}
           <strong className="text-sky-500">
             {selectedPharmacy.distance?.toFixed(1)}km
           </strong>{" "}
-          away,{" "}
-          <strong className="text-sky-500">{selectedPharmacy.name}</strong>.
+          거리에 위치한{" "}
+          <strong className="text-sky-500">{selectedPharmacy.name}</strong>의
+          상품들이에요.
         </div>
       )}
 

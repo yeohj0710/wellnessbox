@@ -20,7 +20,7 @@ export default function OrdersSection({
   const phoneNormalized = useMemo(() => phone.replace(/\D/g, ""), [phone]);
 
   return (
-    <section className="mt-7">
+    <section id="me-orders-section" className="mt-7">
       <div className="flex items-start justify-between gap-3">
         <div className="text-base font-bold text-gray-900">주문 내역</div>
       </div>

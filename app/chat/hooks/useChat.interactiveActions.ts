@@ -46,87 +46,87 @@ type NavigationActionConfig = {
 const NAVIGATION_ACTIONS: Partial<Record<ChatActionType, NavigationActionConfig>> = {
   open_my_orders: {
     path: "/my-orders",
-    message: "I will move to the order lookup page.",
+    message: "주문 조회 화면으로 이동해둘게요.",
   },
   open_me: {
     path: "/me",
-    message: "I will move to your profile page.",
+    message: "내 정보 페이지로 이동해둘게요.",
   },
   open_my_data: {
     path: "/my-data",
-    message: "I will open your unified data page.",
+    message: "내 데이터 통합 화면을 열어둘게요.",
   },
   open_check_ai: {
     path: "/check-ai",
-    message: "I will move to the quick-check page.",
+    message: "빠른검사 페이지로 이동해둘게요.",
   },
   open_assess: {
     path: "/assess",
-    message: "I will move to the deep assessment page.",
+    message: "정밀검사 페이지로 이동해둘게요.",
   },
   open_explore: {
     path: "/explore#home-products",
-    message: "I will move to product explore.",
+    message: "상품 탐색 화면으로 이동해둘게요.",
   },
   open_home: {
     path: "/",
-    message: "I will move to the home page.",
+    message: "홈으로 이동해둘게요.",
   },
   open_home_products: {
     path: "/#home-products",
-    message: "I will move to the home products section.",
+    message: "홈 상품 섹션으로 이동해둘게요.",
   },
   open_7day_purchase: {
     path: "/?package=7#home-products",
-    message: "I will move to the 7-day purchase section.",
+    message: "7일치 구매 섹션으로 이동해둘게요.",
   },
   open_chat_page: {
     path: "/chat",
-    message: "I will open the full AI chat page.",
+    message: "AI 전체 채팅 화면을 열어둘게요.",
   },
   open_about: {
     path: "/about",
-    message: "I will open the about page.",
+    message: "회사 소개 페이지를 열어둘게요.",
   },
   open_contact: {
     path: "/about/contact",
-    message: "I will open the contact page.",
+    message: "문의 페이지를 열어둘게요.",
   },
   open_terms: {
     path: "/about/terms",
-    message: "I will open the terms page.",
+    message: "이용약관 페이지를 열어둘게요.",
   },
   open_privacy: {
     path: "/about/privacy",
-    message: "I will open the privacy page.",
+    message: "개인정보처리방침 페이지를 열어둘게요.",
   },
   open_refund_policy: {
     path: "/about/refund-policy",
-    message: "I will open the refund policy page.",
+    message: "환불 정책 페이지를 열어둘게요.",
   },
   open_auth_phone: {
     path: "/auth/phone",
-    message: "I will open the phone verification page.",
+    message: "전화번호 인증 페이지를 열어둘게요.",
   },
   open_pharm_dashboard: {
     path: "/pharm",
-    message: "I will open the pharmacy dashboard.",
+    message: "약국 대시보드를 열어둘게요.",
   },
   open_pharm_manage_products: {
     path: "/pharm/manage-products",
-    message: "I will open pharmacy product management.",
+    message: "약국 상품 관리 화면을 열어둘게요.",
   },
   open_rider_dashboard: {
     path: "/rider",
-    message: "I will open the rider dashboard.",
+    message: "라이더 대시보드를 열어둘게요.",
   },
   open_admin_login: {
     path: "/admin-login",
-    message: "I will open the admin login page.",
+    message: "관리자 로그인 페이지를 열어둘게요.",
   },
   open_admin_dashboard: {
     path: "/admin",
-    message: "I will open the admin dashboard.",
+    message: "관리자 대시보드를 열어둘게요.",
   },
 };
 
@@ -147,7 +147,7 @@ function runPageActionOrFallback(
     dispatchChatPageAction(detail);
     return {
       executed: true,
-      message: "I applied that action directly in the current page.",
+      message: "현재 페이지에서 바로 실행해둘게요.",
       summary: "",
     };
   }
@@ -190,9 +190,9 @@ export async function runSingleInteractiveAction(
       message: result.executed
         ? result.hasAddress
           ? action === "buy_recommended_all"
-            ? "I will open checkout with all recommended items."
-            : "I added all recommended items to cart."
-          : "Address is required first, so I will open address input."
+            ? "추천 상품 전체로 바로 구매할 수 있게 열어둘게요."
+            : "추천 상품 전체를 장바구니에 담아둘게요."
+          : "주소 입력이 먼저 필요해서 주소 입력부터 열어둘게요."
         : "",
       summary: result.summary,
       hasAddress: result.hasAddress,
@@ -201,24 +201,24 @@ export async function runSingleInteractiveAction(
 
   if (action === "open_cart") {
     openCart();
-    return { executed: true, message: "I opened the cart.", summary: "" };
+    return { executed: true, message: "장바구니를 열어둘게요.", summary: "" };
   }
 
   if (action === "clear_cart") {
     clearCart();
-    return { executed: true, message: "I cleared the cart.", summary: "" };
+    return { executed: true, message: "장바구니를 비워둘게요.", summary: "" };
   }
 
   if (action === "open_profile") {
     openProfileSettings();
-    return { executed: true, message: "I opened profile settings.", summary: "" };
+    return { executed: true, message: "프로필 설정 창을 열어둘게요.", summary: "" };
   }
 
   if (action === "focus_home_products") {
     return runPageActionOrFallback(
       { action: "focus_home_products" },
       "/#home-products",
-      "I moved to the home product section.",
+      "현재 페이지에서 홈 상품 섹션으로 이동해둘게요.",
       navigateTo
     );
   }
@@ -227,7 +227,7 @@ export async function runSingleInteractiveAction(
     return runPageActionOrFallback(
       { action: "focus_manual_order_lookup" },
       "/my-orders#manual-form",
-      "I moved to the manual order lookup form.",
+      "수동 주문 조회 폼으로 이동해둘게요.",
       navigateTo
     );
   }
@@ -236,7 +236,61 @@ export async function runSingleInteractiveAction(
     return runPageActionOrFallback(
       { action: "focus_linked_order_lookup" },
       "/my-orders",
-      "I moved to the linked-phone order lookup section.",
+      "연결 번호 주문 조회 영역으로 이동해둘게요.",
+      navigateTo
+    );
+  }
+
+  if (action === "focus_me_profile") {
+    return runPageActionOrFallback(
+      { action: "focus_me_profile" },
+      "/me#me-profile-section",
+      "현재 페이지에서 프로필 영역으로 이동해둘게요.",
+      navigateTo
+    );
+  }
+
+  if (action === "focus_me_orders") {
+    return runPageActionOrFallback(
+      { action: "focus_me_orders" },
+      "/me#me-orders-section",
+      "현재 페이지에서 내 주문 영역으로 이동해둘게요.",
+      navigateTo
+    );
+  }
+
+  if (action === "focus_my_data_account") {
+    return runPageActionOrFallback(
+      { action: "focus_my_data_account" },
+      "/my-data#my-data-account",
+      "계정 요약 섹션으로 이동해둘게요.",
+      navigateTo
+    );
+  }
+
+  if (action === "focus_my_data_orders") {
+    return runPageActionOrFallback(
+      { action: "focus_my_data_orders" },
+      "/my-data#my-data-orders",
+      "주문 내역 섹션으로 이동해둘게요.",
+      navigateTo
+    );
+  }
+
+  if (action === "focus_check_ai_form") {
+    return runPageActionOrFallback(
+      { action: "focus_check_ai_form" },
+      "/check-ai#check-ai-form",
+      "빠른검사 문항 영역으로 이동해둘게요.",
+      navigateTo
+    );
+  }
+
+  if (action === "focus_assess_flow") {
+    return runPageActionOrFallback(
+      { action: "focus_assess_flow" },
+      "/assess#assess-flow",
+      "정밀검사 진행 영역으로 이동해둘게요.",
       navigateTo
     );
   }
@@ -247,7 +301,7 @@ export async function runSingleInteractiveAction(
     return {
       executed: opened,
       navigated: opened,
-      message: "I opened the support email composer.",
+      message: "문의 이메일 작성 창을 열어둘게요.",
       summary: "",
     };
   }
@@ -258,7 +312,7 @@ export async function runSingleInteractiveAction(
     return {
       executed: opened,
       navigated: opened,
-      message: "I attempted to open support phone call.",
+      message: "고객센터 전화 연결을 시도해둘게요.",
       summary: "",
     };
   }

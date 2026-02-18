@@ -6,6 +6,7 @@ import {
   normalizeCheckAiResult,
 } from "@/lib/server/result-normalizer";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
+import MyDataPageActionBridge from "./MyDataPageActionBridge";
 
 export const dynamic = "force-dynamic";
 
@@ -337,7 +338,8 @@ export default async function MyDataPage() {
   const lastChatAt = chatSessions[0]?.updatedAt ?? null;
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-10">
+    <div id="my-data-overview" className="mx-auto w-full max-w-6xl px-4 py-10">
+      <MyDataPageActionBridge />
       <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
@@ -395,80 +397,82 @@ export default async function MyDataPage() {
         </div>
 
         <div className="mt-8 space-y-4">
-          <AccordionCard
-            title="계정 정보"
-            subtitle="기본 정보 및 연결 상태를 요약합니다."
-            defaultOpen
-            right={
-              <div className="flex items-center gap-2">
-                {appUser ? (
-                  <Pill tone="good">appUser</Pill>
-                ) : (
-                  <Pill>no appUser</Pill>
-                )}
-              </div>
-            }
-          >
-            <InfoGrid>
-              <InfoRow
-                label="로그인 상태"
-                value={isKakaoLoggedIn ? "카카오 로그인" : "세션"}
-              />
-              <InfoRow
-                label="닉네임"
-                value={appUser?.nickname ?? user?.nickname ?? "-"}
-              />
-              <InfoRow
-                label="이메일"
-                value={appUser?.email ?? user?.email ?? "-"}
-              />
-              <InfoRow
-                label="카카오 이메일"
-                value={appUser?.kakaoEmail ?? user?.kakaoEmail ?? "-"}
-              />
-              <InfoRow
-                label="전화번호"
-                value={
-                  phoneCandidates.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {phoneCandidates.map((phone) => (
-                        <Pill key={phone}>{phone}</Pill>
-                      ))}
-                    </div>
+          <div id="my-data-account">
+            <AccordionCard
+              title="계정 정보"
+              subtitle="기본 정보 및 연결 상태를 요약합니다."
+              defaultOpen
+              right={
+                <div className="flex items-center gap-2">
+                  {appUser ? (
+                    <Pill tone="good">appUser</Pill>
                   ) : (
-                    "-"
-                  )
-                }
-              />
-              <InfoRow
-                label="전화번호 인증일"
-                value={formatDate(
-                  appUser?.phoneLinkedAt ?? user?.phoneLinkedAt
-                )}
-              />
-              <InfoRow
-                label="프로필 이미지"
-                value={
-                  <span className="break-all">
-                    {appUser?.profileImageUrl ?? user?.profileImageUrl ?? "-"}
-                  </span>
-                }
-              />
+                    <Pill>no appUser</Pill>
+                  )}
+                </div>
+              }
+            >
+              <InfoGrid>
+                <InfoRow
+                  label="로그인 상태"
+                  value={isKakaoLoggedIn ? "카카오 로그인" : "세션"}
+                />
+                <InfoRow
+                  label="닉네임"
+                  value={appUser?.nickname ?? user?.nickname ?? "-"}
+                />
+                <InfoRow
+                  label="이메일"
+                  value={appUser?.email ?? user?.email ?? "-"}
+                />
+                <InfoRow
+                  label="카카오 이메일"
+                  value={appUser?.kakaoEmail ?? user?.kakaoEmail ?? "-"}
+                />
+                <InfoRow
+                  label="전화번호"
+                  value={
+                    phoneCandidates.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {phoneCandidates.map((phone) => (
+                          <Pill key={phone}>{phone}</Pill>
+                        ))}
+                      </div>
+                    ) : (
+                      "-"
+                    )
+                  }
+                />
+                <InfoRow
+                  label="전화번호 인증일"
+                  value={formatDate(
+                    appUser?.phoneLinkedAt ?? user?.phoneLinkedAt
+                  )}
+                />
+                <InfoRow
+                  label="프로필 이미지"
+                  value={
+                    <span className="break-all">
+                      {appUser?.profileImageUrl ?? user?.profileImageUrl ?? "-"}
+                    </span>
+                  }
+                />
 
-              {appUser ? (
-                <>
-                  <InfoRow
-                    label="가입일"
-                    value={formatDate(appUser.createdAt)}
-                  />
-                  <InfoRow
-                    label="최근 업데이트"
-                    value={formatDate(appUser.updatedAt)}
-                  />
-                </>
-              ) : null}
-            </InfoGrid>
-          </AccordionCard>
+                {appUser ? (
+                  <>
+                    <InfoRow
+                      label="가입일"
+                      value={formatDate(appUser.createdAt)}
+                    />
+                    <InfoRow
+                      label="최근 업데이트"
+                      value={formatDate(appUser.updatedAt)}
+                    />
+                  </>
+                ) : null}
+              </InfoGrid>
+            </AccordionCard>
+          </div>
 
           <AccordionCard
             title="세션 프로필"
@@ -478,101 +482,103 @@ export default async function MyDataPage() {
             <JsonBox data={profile?.data} maxHeightClass="max-h-96" />
           </AccordionCard>
 
-          <AccordionCard
-            title="주문 내역"
-            subtitle={
-              isKakaoLoggedIn && !phoneLinked
-                ? "전화번호 인증을 완료해야 계정에 주문이 연결됩니다."
-                : "주문 1건씩 펼쳐서 상세를 확인하세요."
-            }
-            right={
-              <div className="flex items-center gap-2">
-                <Pill>{orders.length}건</Pill>
-                <Pill
-                  tone={isKakaoLoggedIn && !phoneLinked ? "warn" : "neutral"}
-                >
-                  최근: {formatDate(lastOrderAt)}
-                </Pill>
-              </div>
-            }
-          >
-            {orders.length === 0 ? (
-              <p className="text-sm text-gray-500">주문 내역이 없습니다.</p>
-            ) : (
-              <div className="space-y-3">
-                {orders.map((order) => {
-                  const itemCount = order.orderItems?.length ?? 0;
-                  return (
-                    <MiniAccordion
-                      key={order.id}
-                      title={`주문 #${order.id}`}
-                      subtitle={`${formatDate(order.createdAt)} · ${
-                        order.pharmacy?.name ?? "약국 미지정"
-                      } · 상품 ${itemCount}개`}
-                      right={<Pill>{order.status ?? "상태 미기록"}</Pill>}
-                    >
-                      <div className="grid gap-3 md:grid-cols-2">
-                        <InfoRow
-                          label="약국"
-                          value={order.pharmacy?.name ?? "-"}
-                        />
-                        <InfoRow label="전화번호" value={order.phone ?? "-"} />
-                        <InfoRow
-                          label="주소"
-                          value={
-                            order.roadAddress
-                              ? `${order.roadAddress} ${
-                                  order.detailAddress ?? ""
-                                }`
-                              : "-"
-                          }
-                        />
-                        <InfoRow
-                          label="요청사항"
-                          value={order.requestNotes ?? "-"}
-                        />
-                      </div>
-
-                      <div className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-gray-100">
-                        <div className="text-sm font-extrabold text-gray-900">
-                          주문 상품
+          <div id="my-data-orders">
+            <AccordionCard
+              title="주문 내역"
+              subtitle={
+                isKakaoLoggedIn && !phoneLinked
+                  ? "전화번호 인증을 완료해야 계정에 주문이 연결됩니다."
+                  : "주문 1건씩 펼쳐서 상세를 확인하세요."
+              }
+              right={
+                <div className="flex items-center gap-2">
+                  <Pill>{orders.length}건</Pill>
+                  <Pill
+                    tone={isKakaoLoggedIn && !phoneLinked ? "warn" : "neutral"}
+                  >
+                    최근: {formatDate(lastOrderAt)}
+                  </Pill>
+                </div>
+              }
+            >
+              {orders.length === 0 ? (
+                <p className="text-sm text-gray-500">주문 내역이 없습니다.</p>
+              ) : (
+                <div className="space-y-3">
+                  {orders.map((order) => {
+                    const itemCount = order.orderItems?.length ?? 0;
+                    return (
+                      <MiniAccordion
+                        key={order.id}
+                        title={`주문 #${order.id}`}
+                        subtitle={`${formatDate(order.createdAt)} · ${
+                          order.pharmacy?.name ?? "약국 미지정"
+                        } · 상품 ${itemCount}개`}
+                        right={<Pill>{order.status ?? "상태 미기록"}</Pill>}
+                      >
+                        <div className="grid gap-3 md:grid-cols-2">
+                          <InfoRow
+                            label="약국"
+                            value={order.pharmacy?.name ?? "-"}
+                          />
+                          <InfoRow label="전화번호" value={order.phone ?? "-"} />
+                          <InfoRow
+                            label="주소"
+                            value={
+                              order.roadAddress
+                                ? `${order.roadAddress} ${
+                                    order.detailAddress ?? ""
+                                  }`
+                                : "-"
+                            }
+                          />
+                          <InfoRow
+                            label="요청사항"
+                            value={order.requestNotes ?? "-"}
+                          />
                         </div>
-                        {order.orderItems.length === 0 ? (
-                          <p className="mt-2 text-xs text-gray-500">
-                            주문 상품 정보가 없습니다.
-                          </p>
-                        ) : (
-                          <ul className="mt-2 space-y-2 text-sm text-gray-700">
-                            {order.orderItems.map((item) => (
-                              <li
-                                key={item.id}
-                                className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-gray-50 px-3 py-2"
-                              >
-                                <div className="min-w-0">
-                                  <div className="truncate font-semibold text-gray-900">
-                                    {item.pharmacyProduct?.product?.name ??
-                                      "상품"}
+
+                        <div className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-gray-100">
+                          <div className="text-sm font-extrabold text-gray-900">
+                            주문 상품
+                          </div>
+                          {order.orderItems.length === 0 ? (
+                            <p className="mt-2 text-xs text-gray-500">
+                              주문 상품 정보가 없습니다.
+                            </p>
+                          ) : (
+                            <ul className="mt-2 space-y-2 text-sm text-gray-700">
+                              {order.orderItems.map((item) => (
+                                <li
+                                  key={item.id}
+                                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-gray-50 px-3 py-2"
+                                >
+                                  <div className="min-w-0">
+                                    <div className="truncate font-semibold text-gray-900">
+                                      {item.pharmacyProduct?.product?.name ??
+                                        "상품"}
+                                    </div>
+                                    <div className="mt-0.5 text-xs text-gray-500">
+                                      {item.pharmacyProduct?.optionType
+                                        ? `옵션: ${item.pharmacyProduct.optionType}`
+                                        : "옵션 없음"}
+                                    </div>
                                   </div>
-                                  <div className="mt-0.5 text-xs text-gray-500">
-                                    {item.pharmacyProduct?.optionType
-                                      ? `옵션: ${item.pharmacyProduct.optionType}`
-                                      : "옵션 없음"}
-                                  </div>
-                                </div>
-                                <Pill>
-                                  수량: {item.quantity ? item.quantity : 0}
-                                </Pill>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    </MiniAccordion>
-                  );
-                })}
-              </div>
-            )}
-          </AccordionCard>
+                                  <Pill>
+                                    수량: {item.quantity ? item.quantity : 0}
+                                  </Pill>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      </MiniAccordion>
+                    );
+                  })}
+                </div>
+              )}
+            </AccordionCard>
+          </div>
 
           <AccordionCard
             title="정밀 검사 내역"

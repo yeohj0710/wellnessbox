@@ -45,6 +45,20 @@ const MANUAL_ORDER_LOOKUP_REGEX = /(manual|수동|다른\s*번호|직접\s*입�
 const LINKED_ORDER_LOOKUP_REGEX = /(연결된?\s*번호|인증된?\s*번호|linked\s*phone)/i;
 const HOME_SECTION_FOCUS_REGEX =
   /(상품\s*섹션|상품\s*목록|제품\s*목록|home\s*products|home-products)/i;
+const ME_PROFILE_FOCUS_REGEX =
+  /(프로필\s*(수정|영역|섹션)|내\s*정보\s*(수정|영역|섹션)|account\s*profile|profile\s*section)/i;
+const ME_ORDERS_FOCUS_REGEX =
+  /(내\s*정보.*주문|주문\s*내역\s*(영역|섹션)?|my\s*orders?\s*section|order\s*section)/i;
+const MY_DATA_ACCOUNT_FOCUS_REGEX =
+  /(내\s*데이터.*계정|계정\s*정보|account\s*summary|profile\s*summary)/i;
+const MY_DATA_ORDERS_FOCUS_REGEX =
+  /(내\s*데이터.*주문|주문\s*내역\s*(영역|섹션)|order\s*history\s*section)/i;
+const CHECK_AI_FORM_FOCUS_REGEX =
+  /(빠른\s*검사.*(문항|질문|폼)|문항\s*영역|질문\s*영역|제출\s*버튼|quick\s*check\s*(form|question))/i;
+const ASSESS_FLOW_FOCUS_REGEX =
+  /(정밀\s*검사.*(진행|문항|질문|섹션)|설문\s*진행|assessment\s*(flow|question))/i;
+const IN_PAGE_FOCUS_HINT_REGEX =
+  /(현재\s*페이지|이\s*페이지|여기서|페이지\s*안에서|scroll|포커스)/i;
 const PROFILE_REGEX = /(프로필\s*설정|프로필|내\s*프로필|profile)/i;
 const MY_ORDERS_REGEX =
   /(내\s*주문|주문\s*(내역|조회)|배송\s*조회|my-orders|order\s*lookup)/i;
@@ -313,12 +327,36 @@ function buildRuntimeContextFlags(runtimeContextText: string) {
     inMyOrders:
       text.includes("/my-orders") ||
       text.includes("my-orders") ||
-      text.includes("order lookup"),
+      text.includes("order lookup") ||
+      text.includes("route_key: my-orders") ||
+      text.includes("route_path: my-orders"),
     inHomeProducts:
       text.includes("home-products") ||
       text.includes("/explore") ||
       text.includes("home product") ||
-      text.includes("product browsing"),
+      text.includes("product browsing") ||
+      text.includes("route_key: home-products") ||
+      text.includes("route_path: home-products"),
+    inMe:
+      text.includes("/me") ||
+      text.includes("route_key: me") ||
+      text.includes("route_path: me") ||
+      text.includes("my profile"),
+    inMyData:
+      text.includes("/my-data") ||
+      text.includes("route_key: my-data") ||
+      text.includes("route_path: my-data") ||
+      text.includes("data dashboard"),
+    inCheckAi:
+      text.includes("/check-ai") ||
+      text.includes("route_key: check-ai") ||
+      text.includes("route_path: check-ai") ||
+      text.includes("quick check"),
+    inAssess:
+      text.includes("/assess") ||
+      text.includes("route_key: assess") ||
+      text.includes("route_path: assess") ||
+      text.includes("deep assessment"),
   };
 }
 
@@ -348,6 +386,8 @@ function buildFallbackExecuteDecision(body: ExecuteBody): ChatAgentExecuteDecisi
     if (!actions.includes(action)) actions.push(action);
   };
   const prefersChatMode = CHAT_MODE_REGEX.test(text) && !NAVIGATION_INTENT_REGEX.test(text);
+  const prefersInPageFocus =
+    IN_PAGE_FOCUS_HINT_REGEX.test(text) && !NAVIGATION_INTENT_REGEX.test(text);
 
   if (runtimeFlags.inMyOrders && MANUAL_ORDER_LOOKUP_REGEX.test(text)) {
     pushAction("focus_manual_order_lookup");
@@ -363,18 +403,77 @@ function buildFallbackExecuteDecision(body: ExecuteBody): ChatAgentExecuteDecisi
     pushAction("focus_home_products");
   }
 
+  if (
+    runtimeFlags.inMe &&
+    (ME_PROFILE_FOCUS_REGEX.test(text) || (prefersInPageFocus && PROFILE_REGEX.test(text)))
+  ) {
+    pushAction("focus_me_profile");
+  }
+  if (
+    runtimeFlags.inMe &&
+    (ME_ORDERS_FOCUS_REGEX.test(text) || (prefersInPageFocus && MY_ORDERS_REGEX.test(text)))
+  ) {
+    pushAction("focus_me_orders");
+  }
+
+  if (
+    runtimeFlags.inMyData &&
+    (MY_DATA_ACCOUNT_FOCUS_REGEX.test(text) ||
+      (prefersInPageFocus && MY_DATA_REGEX.test(text)))
+  ) {
+    pushAction("focus_my_data_account");
+  }
+  if (
+    runtimeFlags.inMyData &&
+    (MY_DATA_ORDERS_FOCUS_REGEX.test(text) ||
+      (prefersInPageFocus && MY_ORDERS_REGEX.test(text)))
+  ) {
+    pushAction("focus_my_data_orders");
+  }
+
+  if (
+    runtimeFlags.inCheckAi &&
+    CHECK_AI_FORM_FOCUS_REGEX.test(text) &&
+    !NAVIGATION_INTENT_REGEX.test(text)
+  ) {
+    pushAction("focus_check_ai_form");
+  }
+
+  if (
+    runtimeFlags.inAssess &&
+    ASSESS_FLOW_FOCUS_REGEX.test(text) &&
+    !NAVIGATION_INTENT_REGEX.test(text)
+  ) {
+    pushAction("focus_assess_flow");
+  }
+
   let navigationAction: ChatActionType | null = null;
   if (QUICK_CHECK_REGEX.test(text) && !prefersChatMode) {
-    navigationAction = "open_check_ai";
+    navigationAction =
+      runtimeFlags.inCheckAi && !NAVIGATION_INTENT_REGEX.test(text)
+        ? "focus_check_ai_form"
+        : "open_check_ai";
   } else if (
     (DEEP_ASSESS_REGEX.test(text) || GENERIC_ASSESS_REGEX.test(text)) &&
     !prefersChatMode
   ) {
-    navigationAction = "open_assess";
+    navigationAction =
+      runtimeFlags.inAssess && !NAVIGATION_INTENT_REGEX.test(text)
+        ? "focus_assess_flow"
+        : "open_assess";
   } else if (MY_ORDERS_REGEX.test(text)) {
-    navigationAction = "open_my_orders";
+    if (runtimeFlags.inMe && !NAVIGATION_INTENT_REGEX.test(text)) {
+      navigationAction = "focus_me_orders";
+    } else if (runtimeFlags.inMyData && !NAVIGATION_INTENT_REGEX.test(text)) {
+      navigationAction = "focus_my_data_orders";
+    } else {
+      navigationAction = "open_my_orders";
+    }
   } else if (MY_DATA_REGEX.test(text)) {
-    navigationAction = "open_my_data";
+    navigationAction =
+      runtimeFlags.inMyData && !NAVIGATION_INTENT_REGEX.test(text)
+        ? "focus_my_data_account"
+        : "open_my_data";
   } else if (START_7DAY_REGEX.test(text)) {
     navigationAction = "open_7day_purchase";
   } else if (HOME_PRODUCTS_REGEX.test(text)) {
@@ -388,7 +487,10 @@ function buildFallbackExecuteDecision(body: ExecuteBody): ChatAgentExecuteDecisi
   } else if (CHAT_PAGE_REGEX.test(text)) {
     navigationAction = "open_chat_page";
   } else if (OPEN_ME_REGEX.test(text) && !PROFILE_REGEX.test(text)) {
-    navigationAction = "open_me";
+    navigationAction =
+      runtimeFlags.inMe && !NAVIGATION_INTENT_REGEX.test(text)
+        ? "focus_me_profile"
+        : "open_me";
   } else if (PHONE_AUTH_REGEX.test(text)) {
     navigationAction = "open_auth_phone";
   } else if (SUPPORT_EMAIL_REGEX.test(text)) {
@@ -464,104 +566,95 @@ function buildFallbackExecuteDecision(body: ExecuteBody): ChatAgentExecuteDecisi
   if (cartMode !== "none") {
     assistantParts.push(
       cartMode === "buy_all"
-        ? "異붿쿇 ?쒗뭹??二쇰Ц ?먮쫫??留욊쾶 諛붾줈 泥섎━?좉쾶??"
-        : "異붿쿇 ?쒗뭹???λ컮援щ땲???댁븘?섍쾶??"
+        ? "추천 상품 전체를 바로 구매 흐름으로 진행해둘게요."
+        : "추천 상품 전체를 장바구니에 담아둘게요."
     );
   }
 
-  if (navigationAction === "open_check_ai") {
-    assistantParts.push("鍮좊Ⅸ寃???섏씠吏濡?諛붾줈 ?대룞?좉쾶??");
-  } else if (navigationAction === "open_assess") {
-    assistantParts.push("?뺣?寃???섏씠吏濡?諛붾줈 ?대룞?좉쾶??");
-  } else if (navigationAction === "open_my_orders") {
-    assistantParts.push("??二쇰Ц 議고쉶 ?붾㈃?쇰줈 ?대룞?좉쾶??");
-  } else if (navigationAction === "open_my_data") {
-    assistantParts.push("???곗씠???섏씠吏濡??대룞?좉쾶??");
-  } else if (navigationAction === "open_7day_purchase") {
-    assistantParts.push("7?쇱튂 援щℓ ?뱀뀡?쇰줈 ?대룞?좉쾶??");
-  } else if (navigationAction === "open_home_products") {
-    assistantParts.push("???곹뭹 ?뱀뀡?쇰줈 ?대룞?좉쾶??");
-  } else if (navigationAction === "open_explore") {
-    assistantParts.push("?곹뭹 ?먯깋 ?붾㈃?쇰줈 ?대룞?좉쾶??");
-  } else if (navigationAction === "open_home") {
-    assistantParts.push("???붾㈃?쇰줈 ?대룞?좉쾶??");
-  } else if (navigationAction === "open_chat_page") {
-    assistantParts.push("AI 留욎땄 ?곷떞 ?꾩껜 ?붾㈃?쇰줈 ?대룞?좉쾶??");
-  } else if (navigationAction === "open_me") {
-    assistantParts.push("???뺣낫 ?붾㈃?쇰줈 ?대룞?좉쾶??");
-  } else if (navigationAction === "open_auth_phone") {
-    assistantParts.push("?꾪솕 ?몄쬆 ?섏씠吏濡??대룞?좉쾶??");
-  } else if (navigationAction === "open_contact") {
-    assistantParts.push("臾몄쓽?섍린 ?섏씠吏濡??대룞?좉쾶??");
-  } else if (navigationAction === "open_terms") {
-    assistantParts.push("?댁슜?쎄? ?섏씠吏瑜??닿쾶??");
-  } else if (navigationAction === "open_privacy") {
-    assistantParts.push("媛쒖씤?뺣낫泥섎━諛⑹묠 ?섏씠吏瑜??닿쾶??");
-  } else if (navigationAction === "open_refund_policy") {
-    assistantParts.push("?섎텋 洹쒖젙 ?섏씠吏瑜??닿쾶??");
-  } else if (navigationAction === "open_about") {
-    assistantParts.push("?뚯궗 ?뚭컻 ?섏씠吏濡??대룞?좉쾶??");
-  } else if (navigationAction === "open_support_email") {
-    assistantParts.push("臾몄쓽 ?대찓???묒꽦 李쎌쓣 ?닿쾶??");
-  } else if (navigationAction === "open_support_call") {
-    assistantParts.push("怨좉컼?쇳꽣 ?꾪솕 ?곌껐???쒕룄?좉쾶??");
-  } else if (navigationAction === "open_pharm_dashboard") {
-    assistantParts.push("?쎄뎅 二쇰Ц 愿由??섏씠吏濡??대룞?좉쾶??");
-  } else if (navigationAction === "open_pharm_manage_products") {
-    assistantParts.push("?쎄뎅 ?곹뭹 ?깅줉/愿由??섏씠吏濡??대룞?좉쾶??");
-  } else if (navigationAction === "open_rider_dashboard") {
-    assistantParts.push("?쇱씠??諛곗넚 愿由??섏씠吏濡??대룞?좉쾶??");
-  } else if (navigationAction === "open_admin_login") {
-    assistantParts.push("愿由ъ옄 濡쒓렇???섏씠吏濡??대룞?좉쾶??");
-  } else if (navigationAction === "open_admin_dashboard") {
-    assistantParts.push("?ъ씠??愿由??섏씠吏濡??대룞?좉쾶??");
+  const actionFeedback: Partial<Record<ChatActionType, string>> = {
+    open_check_ai: "빠른검사 페이지로 이동해둘게요.",
+    open_assess: "정밀검사 페이지로 이동해둘게요.",
+    open_my_orders: "내 주문 조회 화면으로 이동해둘게요.",
+    open_my_data: "내 데이터 페이지로 이동해둘게요.",
+    open_7day_purchase: "7일치 구매 섹션으로 이동해둘게요.",
+    open_home_products: "홈 상품 섹션으로 이동해둘게요.",
+    open_explore: "상품 탐색 화면으로 이동해둘게요.",
+    open_home: "홈으로 이동해둘게요.",
+    open_chat_page: "AI 맞춤 상담 전체 화면으로 이동해둘게요.",
+    open_me: "내 정보 페이지로 이동해둘게요.",
+    open_auth_phone: "전화번호 인증 페이지로 이동해둘게요.",
+    open_contact: "문의하기 페이지를 열어둘게요.",
+    open_terms: "이용약관 페이지를 열어둘게요.",
+    open_privacy: "개인정보처리방침 페이지를 열어둘게요.",
+    open_refund_policy: "환불 규정 페이지를 열어둘게요.",
+    open_about: "회사 소개 페이지를 열어둘게요.",
+    open_support_email: "문의 이메일 작성 창을 열어둘게요.",
+    open_support_call: "고객센터 전화 연결을 시도해둘게요.",
+    open_pharm_dashboard: "약국 주문 관리 페이지로 이동해둘게요.",
+    open_pharm_manage_products: "약국 상품 관리 페이지로 이동해둘게요.",
+    open_rider_dashboard: "라이더 배송 관리 페이지로 이동해둘게요.",
+    open_admin_login: "관리자 로그인 페이지로 이동해둘게요.",
+    open_admin_dashboard: "관리자 대시보드로 이동해둘게요.",
+    open_profile: "프로필 설정 창을 열어둘게요.",
+    open_cart: "장바구니를 열어 확인할 수 있게 해둘게요.",
+    clear_cart: "장바구니를 비워둘게요.",
+    start_chat_quick_check: "페이지 이동 없이 대화형 빠른검사를 시작해둘게요.",
+    start_chat_assess: "페이지 이동 없이 대화형 정밀검사를 시작해둘게요.",
+    focus_home_products: "현재 페이지에서 상품 섹션으로 이동해둘게요.",
+    focus_manual_order_lookup: "현재 페이지에서 수동 주문 조회 폼으로 이동해둘게요.",
+    focus_linked_order_lookup: "현재 페이지에서 연결 번호 주문 조회 영역으로 이동해둘게요.",
+    focus_me_profile: "현재 페이지에서 내 정보 프로필 영역으로 이동해둘게요.",
+    focus_me_orders: "현재 페이지에서 내 정보 주문 내역 영역으로 이동해둘게요.",
+    focus_my_data_account: "현재 페이지에서 내 데이터 계정 정보 영역으로 이동해둘게요.",
+    focus_my_data_orders: "현재 페이지에서 내 데이터 주문 내역 영역으로 이동해둘게요.",
+    focus_check_ai_form: "현재 페이지에서 빠른검사 문항 영역으로 이동해둘게요.",
+    focus_assess_flow: "현재 페이지에서 정밀검사 진행 영역으로 이동해둘게요.",
+  };
+
+  const pushedMessages = new Set<string>();
+  const pushFeedback = (action: ChatActionType) => {
+    const textForAction = actionFeedback[action];
+    if (!textForAction || pushedMessages.has(textForAction)) return;
+    pushedMessages.add(textForAction);
+    assistantParts.push(textForAction);
+  };
+
+  if (navigationAction) {
+    pushFeedback(navigationAction);
   }
 
-  if (!navigationAction && actions.includes("open_profile")) {
-    assistantParts.push("?꾨줈???ㅼ젙 ?붾㈃??諛붾줈 ?닿쾶??");
-  }
-  if (actions.includes("focus_home_products")) {
-    assistantParts.push("I focused the home product section in this page.");
-  }
-  if (actions.includes("focus_manual_order_lookup")) {
-    assistantParts.push("I focused the manual order lookup form.");
-  }
-  if (actions.includes("focus_linked_order_lookup")) {
-    assistantParts.push("I focused the linked-phone lookup area.");
-  }
-  if (!navigationAction && actions.includes("open_cart")) {
-    assistantParts.push("?λ컮援щ땲瑜??댁뼱 ?뺤씤?????덇쾶 ?좉쾶??");
-  }
-  if (actions.includes("clear_cart")) {
-    assistantParts.push("?λ컮援щ땲瑜?鍮꾩썙?섍쾶??");
-  }
-  if (actions.includes("start_chat_quick_check")) {
-    assistantParts.push("?섏씠吏 ?대룞 ?놁씠 ??뷀삎 鍮좊Ⅸ寃?щ? ?쒖옉?좉쾶??");
-  }
-  if (actions.includes("start_chat_assess")) {
-    assistantParts.push("?섏씠吏 ?대룞 ?놁씠 ??뷀삎 ?뺣?寃?щ? ?쒖옉?좉쾶??");
+  for (const action of actions) {
+    if (action === navigationAction) continue;
+    if (action === "add_recommended_all" || action === "buy_recommended_all") {
+      continue;
+    }
+    pushFeedback(action);
   }
 
   const reasons: string[] = [];
   if (cartMode !== "none") reasons.push("cart");
-  if (navigationAction) reasons.push(`nav:${navigationAction}`);
+  if (navigationAction) reasons.push(`primary:${navigationAction}`);
   if (actions.includes("focus_home_products")) reasons.push("focus:home-products");
   if (actions.includes("focus_manual_order_lookup")) reasons.push("focus:manual-order");
   if (actions.includes("focus_linked_order_lookup")) reasons.push("focus:linked-order");
-  if (!navigationAction && actions.includes("open_profile")) reasons.push("profile");
-  if (!navigationAction && actions.includes("open_cart")) reasons.push("cart-open");
+  if (actions.includes("focus_me_profile")) reasons.push("focus:me-profile");
+  if (actions.includes("focus_me_orders")) reasons.push("focus:me-orders");
+  if (actions.includes("focus_my_data_account")) reasons.push("focus:my-data-account");
+  if (actions.includes("focus_my_data_orders")) reasons.push("focus:my-data-orders");
+  if (actions.includes("focus_check_ai_form")) reasons.push("focus:check-ai-form");
+  if (actions.includes("focus_assess_flow")) reasons.push("focus:assess-flow");
   if (actions.includes("clear_cart")) reasons.push("cart-clear");
   if (actions.includes("start_chat_quick_check")) reasons.push("chat-quick-check");
   if (actions.includes("start_chat_assess")) reasons.push("chat-deep-assess");
 
   return {
     handled: true,
-    assistantReply: assistantParts.join(" ").trim() || "?붿껌?섏떊 ?숈옉???ㅽ뻾?좉쾶??",
+    assistantReply: assistantParts.join(" ").trim() || "요청하신 동작을 실행해둘게요.",
     actions,
     cartIntent: {
       mode: cartMode,
     },
-    confidence: cartMode !== "none" || navigationAction ? 0.84 : 0.76,
+    confidence: cartMode !== "none" || actions.length > 0 ? 0.84 : 0.76,
     reason: `fallback: ${reasons.join(",") || "action"}`,
   };
 }
@@ -597,20 +690,48 @@ function buildFallbackSuggestedActions(
       ]
     : runtimeFlags.inHomeProducts
       ? ["focus_home_products", "open_cart", "open_7day_purchase", "open_check_ai"]
-      : hasRecommendation
-        ? ["add_recommended_all", "buy_recommended_all", "open_cart", "clear_cart"]
-        : hasSupportContext
-          ? ["open_contact", "open_terms", "open_privacy", "open_refund_policy"]
-          : hasChatAssessmentContext
-            ? ["start_chat_quick_check", "start_chat_assess", "open_check_ai", "open_assess"]
-            : hasAssessmentContext
+      : runtimeFlags.inMe
+        ? ["focus_me_profile", "focus_me_orders", "open_profile", "open_my_data"]
+        : runtimeFlags.inMyData
+          ? [
+              "focus_my_data_account",
+              "focus_my_data_orders",
+              "open_assess",
+              "open_my_orders",
+            ]
+          : runtimeFlags.inCheckAi
+            ? [
+                "focus_check_ai_form",
+                "start_chat_quick_check",
+                "open_assess",
+                "open_explore",
+              ]
+            : runtimeFlags.inAssess
               ? [
-                  "start_chat_quick_check",
+                  "focus_assess_flow",
                   "start_chat_assess",
                   "open_check_ai",
-                  "open_assess",
+                  "open_explore",
                 ]
-              : ["open_explore", "open_my_orders", "open_contact", "open_terms"];
+              : hasRecommendation
+                ? ["add_recommended_all", "buy_recommended_all", "open_cart", "clear_cart"]
+                : hasSupportContext
+                  ? ["open_contact", "open_terms", "open_privacy", "open_refund_policy"]
+                  : hasChatAssessmentContext
+                    ? [
+                        "start_chat_quick_check",
+                        "start_chat_assess",
+                        "open_check_ai",
+                        "open_assess",
+                      ]
+                    : hasAssessmentContext
+                      ? [
+                          "start_chat_quick_check",
+                          "start_chat_assess",
+                          "open_check_ai",
+                          "open_assess",
+                        ]
+                      : ["open_explore", "open_my_orders", "open_contact", "open_terms"];
 
   return actions.slice(0, 4).map((type) => ({
     type,
@@ -655,15 +776,19 @@ async function decideExecuteByModel(body: ExecuteBody) {
     CHAT_ACTION_TYPES.join(", "),
     "Never invent a new action type outside the allowed list.",
     "If there is no explicit actionable intent, return handled=false.",
-    "If user gives short confirmation (e.g. ????醫뗭븘) after recommendation context, map to add_all or buy_all intent.",
+    'If user gives short confirmation (e.g. "응", "좋아") after recommendation context, map to add_all or buy_all intent.',
     "If a message has mixed intents, keep cartIntent and include at most one navigation action.",
     "Map quick-check intent to open_check_ai and deep/general diagnosis intent to open_assess.",
-    "Map policy/support intents (臾몄쓽, ?쎄?, 媛쒖씤?뺣낫, ?섎텋, ?대찓?? ?꾪솕) to matching open_* support actions.",
-    "Map account/menu intents (???곗씠?? ???뺣낫, 二쇰Ц 議고쉶, ???먯깋/7?쇱튂 援щℓ) to matching navigation actions.",
+    "Map policy/support intents (문의, 약관, 개인정보, 환불, 이메일, 전화) to matching open_* support actions.",
+    "Map account/menu intents (내 정보, 내 데이터, 주문 조회, 탐색/7일치 구매) to matching navigation actions.",
     "If runtime context indicates my-orders page, prioritize focus_linked_order_lookup or focus_manual_order_lookup.",
     "If runtime context indicates home/explore product browsing, prioritize focus_home_products for in-page request.",
+    "If runtime context is /me, prioritize focus_me_profile or focus_me_orders for in-page request.",
+    "If runtime context is /my-data, prioritize focus_my_data_account or focus_my_data_orders for in-page request.",
+    "If runtime context is /check-ai, prioritize focus_check_ai_form for in-page request.",
+    "If runtime context is /assess, prioritize focus_assess_flow for in-page request.",
     "Do not drop diagnosis/navigation intent even when cart intent also exists.",
-    "If user asks to run diagnosis in chat (??붾줈/梨꾪똿?쇰줈/?ш린??, use start_chat_quick_check or start_chat_assess instead of navigation.",
+    "If user asks to run diagnosis in chat (대화로/채팅으로/여기서), use start_chat_quick_check or start_chat_assess instead of navigation.",
     "If user asks to clear cart, use clear_cart action.",
     "Return JSON object only.",
   ].join("\n");
@@ -749,6 +874,10 @@ async function suggestActionsByModel(body: SuggestBody) {
           "For chat-based diagnosis flow, prioritize start_chat_quick_check or start_chat_assess.",
           "If runtime context is my-orders, prioritize focus_linked_order_lookup and focus_manual_order_lookup.",
           "If runtime context is home product browsing, prioritize focus_home_products before route navigation.",
+          "If runtime context is /me, prioritize focus_me_profile and focus_me_orders.",
+          "If runtime context is /my-data, prioritize focus_my_data_account and focus_my_data_orders.",
+          "If runtime context is /check-ai, prioritize focus_check_ai_form.",
+          "If runtime context is /assess, prioritize focus_assess_flow.",
           "When no recommendation context exists, include at least one navigation or support action when relevant.",
           "Return JSON object only.",
         ].join("\n"),
