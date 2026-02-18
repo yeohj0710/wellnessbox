@@ -36,19 +36,43 @@ import {
   parseCartCommandFromMessages,
 } from "./useChat.cart-command";
 import { dispatchChatCartActionRequest } from "@/lib/chat/cart-action-events";
+import { writeClientCartItems } from "@/lib/client/cart-storage";
+import { evaluate as evaluateAssessAB } from "@/app/assess/logic/algorithm";
+import { KEY_TO_CODE, labelOf } from "@/lib/categories";
 import {
   CHAT_ACTION_LABELS,
+  CHAT_CAPABILITY_ACTIONS,
   type ChatActionType,
+  type ChatCapabilityAction,
   type ChatAgentExecuteDecision,
   type ChatAgentSuggestedAction,
 } from "@/lib/chat/agent-actions";
 import {
-  buildSyntheticCartCommand,
   hasRecommendationSection,
   isLikelyActionIntentText,
   normalizeActionTypeList,
   pickLatestAssistantText,
 } from "./useChat.agentActions";
+import {
+  DEEP_CHAT_QUESTIONS,
+  QUICK_CHAT_QUESTIONS,
+  buildInChatAssessmentPrompt,
+  createAssessmentResultSummary,
+  findNextAssessmentIndex,
+  formatAssessmentQuestionPrompt,
+  isAssessmentCancelIntent,
+  isAssessmentEscapeIntent,
+  parseChoiceAnswer,
+  parseNumberAnswer,
+  type InChatAssessmentMode,
+  type InChatAssessmentState,
+} from "./useChat.assessment";
+import { runSingleInteractiveAction as runSingleInteractiveActionFlow } from "./useChat.interactiveActions";
+import {
+  buildFallbackInteractiveActions,
+  normalizeExecuteDecision,
+  runAgentDecision as runAgentDecisionFlow,
+} from "./useChat.agentDecision";
 
 type UseChatOptions = {
   manageFooter?: boolean;
@@ -60,6 +84,10 @@ type AgentGuideExample = {
   id: string;
   label: string;
   prompt: string;
+};
+
+type AgentCapabilityItem = ChatCapabilityAction & {
+  id: string;
 };
 
 const OFFLINE_INIT_MESSAGE =
@@ -96,6 +124,8 @@ export default function useChat(options: UseChatOptions = {}) {
   const [interactiveActions, setInteractiveActions] = useState<
     ChatAgentSuggestedAction[]
   >([]);
+  const [inChatAssessment, setInChatAssessment] =
+    useState<InChatAssessmentState | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [titleLoading, setTitleLoading] = useState(false);
   const [titleError, setTitleError] = useState(false);
@@ -135,6 +165,28 @@ export default function useChat(options: UseChatOptions = {}) {
   function requestCloseDock() {
     if (typeof window === "undefined") return;
     window.dispatchEvent(new Event("wb:chat-close-dock"));
+  }
+
+  function clearCartOpenFlags() {
+    if (typeof window === "undefined") return;
+    sessionStorage.removeItem("wbGlobalCartOpen");
+    localStorage.removeItem("openCart");
+    window.dispatchEvent(new Event("closeCart"));
+  }
+
+  function navigateTo(path: string) {
+    if (typeof window === "undefined") return false;
+    clearCartOpenFlags();
+    requestCloseDock();
+    window.location.assign(path);
+    return true;
+  }
+
+  function openExternalLink(url: string) {
+    if (typeof window === "undefined") return false;
+    requestCloseDock();
+    window.location.assign(url);
+    return true;
   }
 
   useEffect(() => {
@@ -310,6 +362,47 @@ export default function useChat(options: UseChatOptions = {}) {
     [active?.messages]
   );
 
+  const agentCapabilityActions = useMemo<AgentCapabilityItem[]>(() => {
+    const inAssessmentMode = inChatAssessment?.mode;
+    const hasRecommendation = hasRecommendationSection(latestAssistantTextInActive);
+
+    const scored = CHAT_CAPABILITY_ACTIONS.map((item) => {
+      let priority = 0;
+      if (hasRecommendation) {
+        if (item.category === "cart") priority += 60;
+        if (item.type === "open_my_orders") priority += 18;
+        if (item.type === "start_chat_assess") priority += 15;
+      } else {
+        if (item.type === "open_explore") priority += 14;
+        if (item.type === "start_chat_quick_check") priority += 12;
+        if (item.type === "open_my_orders") priority += 10;
+      }
+
+      if (inAssessmentMode === "quick") {
+        if (item.type === "start_chat_quick_check") priority += 60;
+        if (item.type === "open_check_ai") priority += 28;
+      } else if (inAssessmentMode === "deep") {
+        if (item.type === "start_chat_assess") priority += 60;
+        if (item.type === "open_assess") priority += 28;
+      }
+
+      if (item.type === "open_contact" || item.type === "open_support_call") {
+        priority += 5;
+      }
+
+      return {
+        ...item,
+        id: `cap-${item.type}`,
+        priority,
+      };
+    }).sort(
+      (left, right) =>
+        right.priority - left.priority || left.label.localeCompare(right.label, "ko")
+    );
+
+    return scored.map(({ priority: _priority, ...item }) => item);
+  }, [inChatAssessment?.mode, latestAssistantTextInActive]);
+
   const agentGuideExamples = useMemo<AgentGuideExample[]>(() => {
     if (hasRecommendationSection(latestAssistantTextInActive)) {
       return [
@@ -324,41 +417,44 @@ export default function useChat(options: UseChatOptions = {}) {
           prompt: "추천 상품 전체 장바구니에 담아줘",
         },
         {
-          id: "agent-open-cart",
-          label: "장바구니 열기",
-          prompt: "장바구니 열어줘",
+          id: "agent-cart-and-assess",
+          label: "담고 정밀검사",
+          prompt: "추천 상품 장바구니에 담고 정밀검사 페이지로 이동해줘",
+        },
+        {
+          id: "agent-open-check-ai",
+          label: "빠른검사 시작",
+          prompt: "빠른검사 시작해줘",
         },
       ];
     }
 
-    return [
-      {
-        id: "agent-personal-reco",
-        label: "맞춤 추천 요청",
-        prompt: "내 상황에 맞는 영양소와 제품을 추천해줘",
-      },
-      {
-        id: "agent-open-profile",
-        label: "프로필 설정 열기",
-        prompt: "프로필 설정 열어줘",
-      },
-      {
-        id: "agent-open-orders",
-        label: "내 주문 조회 열기",
-        prompt: "내 주문 조회 화면으로 이동해줘",
-      },
-    ];
-  }, [latestAssistantTextInActive]);
+    return agentCapabilityActions.slice(0, 4).map((item) => ({
+      id: item.id,
+      label: item.label,
+      prompt: item.prompt,
+    }));
+  }, [agentCapabilityActions, latestAssistantTextInActive]);
 
   const showAgentGuide = useMemo(() => {
     if (!active) return false;
+    if (inChatAssessment && inChatAssessment.sessionId === active.id) return false;
     const userMessageCount = active.messages.filter(
       (message) => message.role === "user"
     ).length;
 
     if (userMessageCount <= 2) return true;
     return userMessageCount <= 4 && interactiveActions.length === 0;
-  }, [active, interactiveActions.length]);
+  }, [active, interactiveActions.length, inChatAssessment]);
+
+  const showAgentCapabilityHub = useMemo(() => {
+    if (!active) return false;
+    if (inChatAssessment && inChatAssessment.sessionId === active.id) return false;
+    const userMessageCount = active.messages.filter(
+      (message) => message.role === "user"
+    ).length;
+    return userMessageCount <= 8;
+  }, [active, inChatAssessment]);
 
   const buildSummaryForSession = (sessionId: string | null) => {
     return buildUserContextSummary(
@@ -493,6 +589,7 @@ export default function useChat(options: UseChatOptions = {}) {
     setActiveId(id);
     setSuggestions([]);
     setInteractiveActions([]);
+    setInChatAssessment(null);
     firstUserMessageRef.current = "";
     firstAssistantMessageRef.current = "";
     firstAssistantReplyRef.current = "";
@@ -510,6 +607,9 @@ export default function useChat(options: UseChatOptions = {}) {
     const next = sessions.filter((session) => session.id !== id);
     setSessions(next);
     if (activeId === id) setActiveId(next[0]?.id ?? null);
+    if (inChatAssessment?.sessionId === id) {
+      setInChatAssessment(null);
+    }
 
     delete readyToPersistRef.current[id];
     delete suggestionHistoryRef.current[id];
@@ -748,67 +848,16 @@ export default function useChat(options: UseChatOptions = {}) {
     }
   }
 
-  function normalizeExecuteDecision(raw: unknown): ChatAgentExecuteDecision {
-    const data = raw && typeof raw === "object" ? (raw as any) : {};
-    const cartIntentRaw =
-      data.cartIntent && typeof data.cartIntent === "object"
-        ? (data.cartIntent as any)
-        : {};
-    const cartIntentMode =
-      cartIntentRaw.mode === "add_all" ||
-      cartIntentRaw.mode === "buy_all" ||
-      cartIntentRaw.mode === "add_named" ||
-      cartIntentRaw.mode === "buy_named"
-        ? cartIntentRaw.mode
-        : "none";
-
-    return {
-      handled: data.handled === true,
-      assistantReply:
-        typeof data.assistantReply === "string"
-          ? data.assistantReply.trim().slice(0, 240)
-          : "",
-      actions: normalizeActionTypeList(data.actions),
-      cartIntent: {
-        mode: cartIntentMode,
-        targetProductName:
-          typeof cartIntentRaw.targetProductName === "string"
-            ? cartIntentRaw.targetProductName.trim().slice(0, 80)
-            : undefined,
-        quantity:
-          typeof cartIntentRaw.quantity === "number"
-            ? Math.max(1, Math.min(20, Math.floor(cartIntentRaw.quantity)))
-            : 1,
-      },
-      confidence:
-        typeof data.confidence === "number"
-          ? Math.max(0, Math.min(1, data.confidence))
-          : 0,
-      reason:
-        typeof data.reason === "string"
-          ? data.reason.trim().slice(0, 180)
-          : undefined,
-    };
-  }
-
-  function buildFallbackInteractiveActions(lastAssistantText: string) {
-    const hasRecommendation = hasRecommendationSection(lastAssistantText);
-    const base: ChatActionType[] = hasRecommendation
-      ? ["add_recommended_all", "buy_recommended_all", "open_cart", "open_profile"]
-      : ["open_profile", "open_my_orders", "open_cart"];
-
-    return base.map((type) => ({
-      type,
-      label: CHAT_ACTION_LABELS[type],
-    }));
-  }
-
   async function fetchInteractiveActions(
     lastAssistantText: string,
     sessionIdOverride?: string
   ) {
     const targetSessionId = sessionIdOverride ?? active?.id ?? null;
     if (!targetSessionId) {
+      setInteractiveActions([]);
+      return;
+    }
+    if (inChatAssessment && inChatAssessment.sessionId === targetSessionId) {
       setInteractiveActions([]);
       return;
     }
@@ -866,6 +915,305 @@ export default function useChat(options: UseChatOptions = {}) {
     }
   }
 
+  function initializeInChatAssessment(
+    sessionId: string,
+    mode: InChatAssessmentMode
+  ): string {
+    const questions = (mode === "quick" ? QUICK_CHAT_QUESTIONS : DEEP_CHAT_QUESTIONS).slice();
+    const initialState: InChatAssessmentState = {
+      sessionId,
+      mode,
+      questions,
+      currentIndex: 0,
+      answers: {},
+    };
+    setInChatAssessment(initialState);
+    setSuggestions([]);
+    setInteractiveActions([]);
+    return [
+      mode === "quick"
+        ? "좋아요. 페이지 이동 없이 대화형 빠른검사를 시작할게요."
+        : "좋아요. 페이지 이동 없이 대화형 정밀검사를 시작할게요.",
+      formatAssessmentQuestionPrompt({
+        mode,
+        index: 0,
+        total: questions.length,
+        question: questions[0],
+      }),
+    ].join("\n\n");
+  }
+
+  async function evaluateQuickCheckAnswers(
+    answers: Record<string, unknown>
+  ): Promise<{ labels: string[]; percents: number[] }> {
+    const responses = QUICK_CHAT_QUESTIONS.map((question) => {
+      const value = Number(answers[question.id]);
+      if (!Number.isFinite(value) || value < 1 || value > 5) return 3;
+      return Math.floor(value);
+    });
+
+    try {
+      const response = await fetch("/api/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ responses }),
+      });
+      const json = await response.json().catch(() => null);
+      if (!Array.isArray(json) || json.length === 0) {
+        throw new Error("invalid quick check response");
+      }
+      const scores = json
+        .map((row: any) => ({
+          label: typeof row?.label === "string" ? row.label : "",
+          value:
+            typeof row?.prob === "number"
+              ? row.prob
+              : typeof row?.percent === "number"
+                ? row.percent / 100
+                : 0,
+        }))
+        .filter((row: { label: string; value: number }) => row.label)
+        .sort((left: { value: number }, right: { value: number }) => right.value - left.value)
+        .slice(0, 3);
+      if (!scores.length) throw new Error("empty quick check scores");
+
+      const labels = scores.map((score: { label: string }) => score.label);
+      const percents = scores.map((score: { value: number }) =>
+        Math.max(0, Math.min(1, score.value))
+      );
+
+      try {
+        localStorage.setItem(
+          "wb_check_ai_result_v1",
+          JSON.stringify({
+            topLabels: labels,
+            savedAt: Date.now(),
+          })
+        );
+      } catch {}
+
+      setLocalCheckAi(labels);
+      setCheckAiResult({
+        labels,
+        answers: responses.map((value, index) => ({
+          question: QUICK_CHAT_QUESTIONS[index]?.text || "",
+          answer: value,
+        })),
+      });
+
+      try {
+        await fetch("/api/check-ai/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            result: {
+              topLabels: labels,
+              scores: scores.map((score: { label: string; value: number }) => ({
+                label: score.label,
+                prob: score.value,
+              })),
+            },
+            answers: responses,
+            tzOffsetMinutes: getTzOffsetMinutes(),
+          }),
+        });
+      } catch {}
+
+      return { labels, percents };
+    } catch {
+      const fallbackLabels = ["종합비타민", "오메가3", "프로바이오틱스(유산균)"];
+      return { labels: fallbackLabels, percents: [0.82, 0.74, 0.67] };
+    }
+  }
+
+  async function evaluateDeepAssessAnswers(
+    answers: Record<string, unknown>
+  ): Promise<{ labels: string[]; percents: number[] }> {
+    try {
+      const evaluated = evaluateAssessAB(answers as any).top.slice(0, 3);
+      const catsOrdered = evaluated.map((item) => KEY_TO_CODE[item.key] ?? item.key);
+      const percents = evaluated.map((item) =>
+        Math.max(0, Math.min(1, Number.isFinite(item.score) ? item.score : 0))
+      );
+      const labels = catsOrdered.map((code) => labelOf(code));
+
+      try {
+        const raw = localStorage.getItem("assess-state");
+        const parsed = raw ? JSON.parse(raw) : {};
+        parsed.cResult = {
+          catsOrdered,
+          percents,
+        };
+        parsed.savedAt = Date.now();
+        localStorage.setItem("assess-state", JSON.stringify(parsed));
+      } catch {}
+
+      setLocalAssessCats(catsOrdered);
+      setAssessResult({
+        summary: labels,
+        answers: Object.entries(answers).map(([questionId, answer]) => ({
+          question: questionId,
+          answer: String(answer),
+        })),
+      });
+
+      try {
+        await fetch("/api/assess/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            answers,
+            cResult: {
+              catsOrdered,
+              percents,
+            },
+            tzOffsetMinutes: getTzOffsetMinutes(),
+          }),
+        });
+      } catch {}
+
+      return { labels, percents };
+    } catch {
+      const fallbackLabels = ["종합비타민", "비타민D", "마그네슘"];
+      return { labels: fallbackLabels, percents: [0.78, 0.71, 0.66] };
+    }
+  }
+
+  async function tryHandleInChatAssessmentInput(params: {
+    text: string;
+    sessionId: string;
+    userMessage: ChatMessage;
+    assistantMessage: ChatMessage;
+    isFirst: boolean;
+  }) {
+    const state = inChatAssessment;
+    if (!state || state.sessionId !== params.sessionId) return false;
+
+    if (isAssessmentEscapeIntent(params.text)) {
+      setInChatAssessment(null);
+      return false;
+    }
+
+    if (isAssessmentCancelIntent(params.text)) {
+      setInChatAssessment(null);
+      setSuggestions([]);
+      setInteractiveActions([]);
+      const cancelText = "대화형 검사를 중단했어요. 원하면 다시 시작해 주세요.";
+      updateAssistantMessage(params.sessionId, params.assistantMessage.id, cancelText);
+      return true;
+    }
+
+    const currentQuestion = state.questions[state.currentIndex];
+    if (!currentQuestion) {
+      setInChatAssessment(null);
+      return false;
+    }
+
+    const parsed =
+      currentQuestion.kind === "number"
+        ? parseNumberAnswer(params.text, currentQuestion)
+        : parseChoiceAnswer(params.text, currentQuestion);
+
+    if (!parsed) {
+      const guide =
+        currentQuestion.kind === "number"
+          ? `숫자로 답변해 주세요.${typeof currentQuestion.min === "number" && typeof currentQuestion.max === "number" ? ` (${currentQuestion.min}~${currentQuestion.max})` : ""}`
+          : "아래 선택지 버튼을 누르거나 번호(예: 1번)로 답변해 주세요.";
+      const retryText = `${guide}\n\n${formatAssessmentQuestionPrompt({
+        mode: state.mode,
+        index: state.currentIndex,
+        total: state.questions.length,
+        question: currentQuestion,
+      })}`;
+      updateAssistantMessage(params.sessionId, params.assistantMessage.id, retryText);
+      return true;
+    }
+
+    const nextAnswers = {
+      ...state.answers,
+      [currentQuestion.id]: parsed.parsed,
+    };
+    const nextIndex = findNextAssessmentIndex(
+      state.questions,
+      nextAnswers,
+      state.currentIndex + 1
+    );
+
+    if (nextIndex >= 0) {
+      const nextState: InChatAssessmentState = {
+        ...state,
+        answers: nextAnswers,
+        currentIndex: nextIndex,
+      };
+      setInChatAssessment(nextState);
+      const nextQuestion = nextState.questions[nextState.currentIndex];
+      const nextText = [
+        `${currentQuestion.id} 응답: ${parsed.label}`,
+        "",
+        formatAssessmentQuestionPrompt({
+          mode: nextState.mode,
+          index: nextState.currentIndex,
+          total: nextState.questions.length,
+          question: nextQuestion,
+        }),
+      ].join("\n");
+      updateAssistantMessage(params.sessionId, params.assistantMessage.id, nextText);
+      return true;
+    }
+
+    setInChatAssessment(null);
+    setSuggestions([]);
+    setInteractiveActions([]);
+
+    const result =
+      state.mode === "quick"
+        ? await evaluateQuickCheckAnswers(nextAnswers)
+        : await evaluateDeepAssessAnswers(nextAnswers);
+
+    const doneText = [
+      `${currentQuestion.id} 응답: ${parsed.label}`,
+      "",
+      createAssessmentResultSummary({
+        mode: state.mode,
+        labels: result.labels,
+        percents: result.percents,
+      }),
+      "",
+      state.mode === "quick"
+        ? "원하면 지금 정밀검사(대화형)도 이어서 진행할 수 있어요."
+        : "원하면 추천 카테고리 기준으로 제품 탐색도 바로 도와드릴게요.",
+    ].join("\n");
+
+    updateAssistantMessage(params.sessionId, params.assistantMessage.id, doneText);
+
+    if (params.isFirst) {
+      firstAssistantReplyRef.current = doneText;
+      await generateTitle();
+    }
+    await Promise.all([
+      fetchSuggestions(doneText, params.sessionId),
+      fetchInteractiveActions(doneText, params.sessionId),
+    ]);
+
+    try {
+      const clientId = getClientIdLocal();
+      await saveChatOnce({
+        clientId,
+        sessionId: params.sessionId,
+        title:
+          sessions.find((session) => session.id === params.sessionId)?.title ||
+          DEFAULT_CHAT_TITLE,
+        messages: [
+          params.userMessage,
+          { ...params.assistantMessage, content: doneText },
+        ],
+        tzOffsetMinutes: getTzOffsetMinutes(),
+      });
+    } catch {}
+
+    return true;
+  }
+
   async function executeCartCommandText(params: {
     commandText: string;
     sessionMessages: ChatMessage[];
@@ -897,116 +1245,53 @@ export default function useChat(options: UseChatOptions = {}) {
     };
   }
 
-  async function runSingleInteractiveAction(
+  function openCartFromChat() {
+    if (typeof window === "undefined") return;
+    requestCloseDock();
+    localStorage.setItem("openCart", "true");
+    window.dispatchEvent(new Event("openCart"));
+  }
+
+  function clearCartFromChat() {
+    if (typeof window === "undefined") return;
+    writeClientCartItems([]);
+    localStorage.removeItem("selectedPharmacyId");
+    clearCartOpenFlags();
+    window.dispatchEvent(new Event("cartUpdated"));
+  }
+
+  async function runInteractiveAction(
     action: ChatActionType,
     sessionMessages: ChatMessage[]
   ) {
-    if (action === "add_recommended_all" || action === "buy_recommended_all") {
-      const result = await executeCartCommandText({
-        commandText:
-          action === "buy_recommended_all"
-            ? "추천 상품 전체 바로 구매"
-            : "추천 상품 전체 담아줘",
-        sessionMessages,
-      });
-      return {
-        executed: result.executed,
-        message: result.executed
-          ? result.hasAddress
-            ? action === "buy_recommended_all"
-              ? "추천 제품을 주문할 수 있도록 바로 열어둘게요."
-              : "추천 제품을 장바구니에 담아둘게요."
-            : "주소 입력이 필요해서 주소 입력 창부터 열어둘게요."
-          : "",
-        summary: result.summary,
-        hasAddress: result.hasAddress,
-      };
-    }
-
-    if (action === "open_cart") {
-      if (typeof window !== "undefined") {
-        requestCloseDock();
-        localStorage.setItem("openCart", "true");
-        window.dispatchEvent(new Event("openCart"));
-      }
-      return { executed: true, message: "장바구니를 열어둘게요.", summary: "" };
-    }
-
-    if (action === "open_profile") {
-      setShowSettings(true);
-      return { executed: true, message: "프로필 설정을 열어둘게요.", summary: "" };
-    }
-
-    if (action === "open_my_orders") {
-      if (typeof window !== "undefined") {
-        requestCloseDock();
-        window.location.assign("/my-orders");
-      }
-      return { executed: true, message: "내 주문 조회 화면으로 이동할게요.", summary: "" };
-    }
-
-    if (action === "open_me") {
-      if (typeof window !== "undefined") {
-        requestCloseDock();
-        window.location.assign("/me");
-      }
-      return { executed: true, message: "내 정보 화면으로 이동할게요.", summary: "" };
-    }
-
-    return { executed: false, message: "", summary: "" };
+    return runSingleInteractiveActionFlow({
+      action,
+      sessionMessages,
+      executeCartCommandText,
+      openCart: openCartFromChat,
+      clearCart: clearCartFromChat,
+      openProfileSettings: () => setShowSettings(true),
+      resetInChatAssessment: () => setInChatAssessment(null),
+      startInChatAssessment: (mode) => {
+        const sessionId = activeIdRef.current;
+        if (!sessionId) return null;
+        return initializeInChatAssessment(sessionId, mode);
+      },
+      navigateTo,
+      openExternalLink,
+    });
   }
 
   async function runAgentDecision(params: {
     decision: ChatAgentExecuteDecision;
     sessionMessages: ChatMessage[];
   }) {
-    let executed = false;
-    let summary = "";
-    const messages: string[] = [];
-
-    const syntheticCommand = buildSyntheticCartCommand({
-      actions: params.decision.actions,
-      cartIntent: params.decision.cartIntent,
+    return runAgentDecisionFlow({
+      decision: params.decision,
+      sessionMessages: params.sessionMessages,
+      executeCartCommandText,
+      runSingleInteractiveAction: runInteractiveAction,
     });
-    if (syntheticCommand) {
-      const cartResult = await executeCartCommandText({
-        commandText: syntheticCommand,
-        sessionMessages: params.sessionMessages,
-      });
-      if (cartResult.executed) {
-        executed = true;
-        summary = cartResult.summary;
-        messages.push(
-          cartResult.hasAddress
-            ? cartResult.openCartAfterSave
-              ? "요청한 추천 제품으로 바로 구매를 진행할 수 있게 열어둘게요."
-              : "요청한 추천 제품을 장바구니에 담아둘게요."
-            : "주소 입력이 필요해서 주소 입력 창부터 열어둘게요."
-        );
-      }
-    }
-
-    const nonCartActions = params.decision.actions.filter(
-      (action) =>
-        action !== "add_recommended_all" && action !== "buy_recommended_all"
-    );
-
-    for (const action of nonCartActions) {
-      const result = await runSingleInteractiveAction(action, params.sessionMessages);
-      if (!result.executed) continue;
-      executed = true;
-      if (result.summary) summary = result.summary;
-      if (result.message) messages.push(result.message);
-    }
-
-    return {
-      executed,
-      summary,
-      message:
-        params.decision.assistantReply ||
-        messages.find(Boolean) ||
-        "요청하신 동작을 실행해둘게요.",
-    };
   }
 
   async function tryHandleCartCommand(params: {
@@ -1158,7 +1443,7 @@ export default function useChat(options: UseChatOptions = {}) {
 
     setActionLoading(true);
     try {
-      const result = await runSingleInteractiveAction(
+      const result = await runInteractiveAction(
         actionType,
         active.messages || []
       );
@@ -1250,6 +1535,15 @@ export default function useChat(options: UseChatOptions = {}) {
     stickToBottomRef.current = true;
     requestAnimationFrame(() => requestAnimationFrame(scrollToBottom));
 
+    const handledByInChatAssessment = await tryHandleInChatAssessmentInput({
+      text,
+      sessionId: active.id,
+      userMessage,
+      assistantMessage,
+      isFirst,
+    });
+    if (handledByInChatAssessment) return;
+
     if (!isBrowserOnline()) {
       updateAssistantMessage(active.id, assistantMessage.id, OFFLINE_CHAT_MESSAGE);
       return;
@@ -1258,16 +1552,6 @@ export default function useChat(options: UseChatOptions = {}) {
     setLoading(true);
 
     try {
-      const handledByCommand = await tryHandleCartCommand({
-        text,
-        sessionId: active.id,
-        sessionMessages: active.messages || [],
-        userMessage,
-        assistantMessage,
-        isFirst,
-      });
-      if (handledByCommand) return;
-
       const handledByAgentAction = await tryHandleAgentActionDecision({
         text,
         sessionId: active.id,
@@ -1277,6 +1561,16 @@ export default function useChat(options: UseChatOptions = {}) {
         isFirst,
       });
       if (handledByAgentAction) return;
+
+      const handledByCommand = await tryHandleCartCommand({
+        text,
+        sessionId: active.id,
+        sessionMessages: active.messages || [],
+        userMessage,
+        assistantMessage,
+        isFirst,
+      });
+      if (handledByCommand) return;
 
       const controller = new AbortController();
       abortRef.current = controller;
@@ -1467,6 +1761,50 @@ export default function useChat(options: UseChatOptions = {}) {
     saveProfileServer(nextProfile);
   }
 
+  function cancelInChatAssessment() {
+    if (!inChatAssessment) return;
+    if (!activeId || inChatAssessment.sessionId !== activeId) {
+      setInChatAssessment(null);
+      return;
+    }
+    const assistantMessage: ChatMessage = {
+      id: uid(),
+      role: "assistant",
+      content: "대화형 검사를 중단했어요. 원하면 다시 시작해 주세요.",
+      createdAt: Date.now(),
+    };
+    setInChatAssessment(null);
+    setSessions((prev) =>
+      prev.map((session) =>
+        session.id === activeId
+          ? {
+              ...session,
+              updatedAt: Date.now(),
+              messages: [...session.messages, assistantMessage],
+            }
+          : session
+      )
+    );
+  }
+
+  function openAssessmentPageFromChat(mode: InChatAssessmentMode) {
+    setInChatAssessment(null);
+    if (mode === "quick") {
+      navigateTo("/check-ai");
+      return;
+    }
+    navigateTo("/assess");
+  }
+
+  const inChatAssessmentPrompt = useMemo(
+    () =>
+      buildInChatAssessmentPrompt({
+        state: inChatAssessment,
+        activeSessionId: activeId,
+      }),
+    [inChatAssessment, activeId]
+  );
+
   const bootstrapPending =
     !profileLoaded ||
     !resultsLoaded ||
@@ -1504,11 +1842,14 @@ export default function useChat(options: UseChatOptions = {}) {
     interactiveActions,
     showAgentGuide,
     agentGuideExamples,
+    showAgentCapabilityHub,
+    agentCapabilityActions,
     actionLoading,
     bootstrapPending,
     titleLoading,
     titleError,
     topTitleHighlight,
+    inChatAssessmentPrompt,
     messagesContainerRef,
     messagesEndRef,
     newChat,
@@ -1517,6 +1858,8 @@ export default function useChat(options: UseChatOptions = {}) {
     stopStreaming,
     sendMessage,
     handleInteractiveAction,
+    cancelInChatAssessment,
+    openAssessmentPageFromChat,
     generateTitle,
     active,
     handleProfileChange,

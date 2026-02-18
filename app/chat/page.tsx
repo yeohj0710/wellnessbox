@@ -21,6 +21,14 @@ const RecommendedProductActions = dynamic(
   () => import("./components/RecommendedProductActions"),
   { ssr: false }
 );
+const AssessmentActionCard = dynamic(
+  () => import("./components/AssessmentActionCard"),
+  { ssr: false }
+);
+const AgentCapabilityHub = dynamic(
+  () => import("./components/AgentCapabilityHub"),
+  { ssr: false }
+);
 
 export default function ChatPage() {
   const {
@@ -45,11 +53,14 @@ export default function ChatPage() {
     interactiveActions,
     showAgentGuide,
     agentGuideExamples,
+    showAgentCapabilityHub,
+    agentCapabilityActions,
     actionLoading,
     bootstrapPending,
     titleLoading,
     titleError,
     topTitleHighlight,
+    inChatAssessmentPrompt,
     input,
     setInput,
     loading,
@@ -59,6 +70,8 @@ export default function ChatPage() {
     deleteChat,
     renameChat,
     handleInteractiveAction,
+    cancelInChatAssessment,
+    openAssessmentPageFromChat,
     messagesContainerRef,
     messagesEndRef,
     active,
@@ -181,6 +194,20 @@ export default function ChatPage() {
                   )}
                 </div>
               ))}
+            <AgentCapabilityHub
+              visible={showAgentCapabilityHub}
+              actions={agentCapabilityActions}
+              disabled={loading || bootstrapPending || actionLoading}
+              onRunPrompt={(prompt) => sendMessage(prompt)}
+              onRunAction={handleInteractiveAction}
+            />
+            <AssessmentActionCard
+              prompt={inChatAssessmentPrompt}
+              disabled={loading || bootstrapPending}
+              onSelectOption={(label) => sendMessage(label)}
+              onCancel={cancelInChatAssessment}
+              onOpenPage={openAssessmentPageFromChat}
+            />
             <div ref={messagesEndRef} />
           </div>
         </div>

@@ -27,6 +27,8 @@ import MessageBubble from "@/app/chat/components/MessageBubble";
 import ProfileModal from "@/app/chat/components/ProfileModal";
 import ReferenceData from "@/app/chat/components/ReferenceData";
 import RecommendedProductActions from "@/app/chat/components/RecommendedProductActions";
+import AssessmentActionCard from "@/app/chat/components/AssessmentActionCard";
+import AgentCapabilityHub from "@/app/chat/components/AgentCapabilityHub";
 
 const VERTICAL_SCROLLABLE_OVERFLOW = new Set(["auto", "scroll", "overlay"]);
 const SCROLL_EPSILON = 1;
@@ -347,6 +349,9 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
     interactiveActions,
     showAgentGuide,
     agentGuideExamples,
+    showAgentCapabilityHub,
+    agentCapabilityActions,
+    inChatAssessmentPrompt,
     actionLoading,
     bootstrapPending,
     input,
@@ -358,6 +363,8 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
     deleteChat,
     renameChat,
     handleInteractiveAction,
+    cancelInChatAssessment,
+    openAssessmentPageFromChat,
     messagesContainerRef,
     messagesEndRef,
     active,
@@ -891,6 +898,20 @@ function DesktopChatDockPanel({ isOpen, onClose }: DockPanelProps) {
                     )}
                   </div>
                 ))}
+              <AgentCapabilityHub
+                visible={showAgentCapabilityHub}
+                actions={agentCapabilityActions}
+                disabled={loading || bootstrapPending || actionLoading}
+                onRunPrompt={(prompt) => sendMessage(prompt)}
+                onRunAction={handleInteractiveAction}
+              />
+              <AssessmentActionCard
+                prompt={inChatAssessmentPrompt}
+                disabled={loading || bootstrapPending}
+                onSelectOption={(label) => sendMessage(label)}
+                onCancel={cancelInChatAssessment}
+                onOpenPage={openAssessmentPageFromChat}
+              />
               <div ref={messagesEndRef} />
             </div>
           </div>
