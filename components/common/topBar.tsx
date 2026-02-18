@@ -30,15 +30,6 @@ type LoginStatus = {
   isTestLoggedIn: boolean;
 };
 const GLOBAL_CART_OPEN_KEY = "wbGlobalCartOpen";
-const GLOBAL_CART_VISIBILITY_EVENT = "wb:global-cart-visibility";
-
-function isGlobalCartOpenFromStorage() {
-  if (typeof window === "undefined") return false;
-  return (
-    sessionStorage.getItem(GLOBAL_CART_OPEN_KEY) === "1" ||
-    localStorage.getItem("openCart") === "true"
-  );
-}
 
 export default function TopBar() {
   return (
@@ -71,11 +62,6 @@ function TopBarInner() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const logoRef = useRef<HTMLImageElement>(null);
   const { showLoading } = useLoading();
-  const [hideOnScroll, setHideOnScroll] = useState(false);
-  const [isGlobalCartVisible, setIsGlobalCartVisible] = useState(() =>
-    isGlobalCartOpenFromStorage()
-  );
-  const lastYRef = useRef(0);
 
   const reqSeqRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
@@ -164,60 +150,9 @@ function TopBarInner() {
     };
   }, []);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const syncFromStorage = () => {
-      const opened = isGlobalCartOpenFromStorage();
-      setIsGlobalCartVisible(opened);
-      if (opened) {
-        setHideOnScroll(false);
-      }
-    };
-
-    const onOpenCart = () => {
-      setIsGlobalCartVisible(true);
-      setHideOnScroll(false);
-    };
-
-    const onCloseCart = () => {
-      setIsGlobalCartVisible(false);
-      setHideOnScroll(false);
-    };
-
-    const onCartVisibility = (event: Event) => {
-      const detail = (event as CustomEvent<{ visible?: boolean }>).detail;
-      const visible =
-        typeof detail?.visible === "boolean"
-          ? detail.visible
-          : isGlobalCartOpenFromStorage();
-      setIsGlobalCartVisible(visible);
-      if (visible) {
-        setHideOnScroll(false);
-      }
-    };
-
-    syncFromStorage();
-    window.addEventListener("openCart", onOpenCart);
-    window.addEventListener("closeCart", onCloseCart);
-    window.addEventListener(
-      GLOBAL_CART_VISIBILITY_EVENT,
-      onCartVisibility as EventListener
-    );
-
-    return () => {
-      window.removeEventListener("openCart", onOpenCart);
-      window.removeEventListener("closeCart", onCloseCart);
-      window.removeEventListener(
-        GLOBAL_CART_VISIBILITY_EVENT,
-        onCartVisibility as EventListener
-      );
-    };
-  }, []);
-
   const closeCartOverlay = useCallback(() => {
     if (typeof window === "undefined") return;
-    sessionStorage.removeItem("wbGlobalCartOpen");
+    sessionStorage.removeItem(GLOBAL_CART_OPEN_KEY);
     localStorage.removeItem("openCart");
     window.dispatchEvent(new Event("closeCart"));
   }, []);
@@ -281,7 +216,7 @@ function TopBarInner() {
       window.dispatchEvent(new Event("wb:chat-close-dock"));
       clearCartReturnState();
       sessionStorage.setItem("scrollPos", String(window.scrollY));
-      sessionStorage.setItem("wbGlobalCartOpen", "1");
+      sessionStorage.setItem(GLOBAL_CART_OPEN_KEY, "1");
       localStorage.setItem("openCart", "true");
       window.dispatchEvent(new Event("openCart"));
     }
@@ -298,36 +233,6 @@ function TopBarInner() {
     }, 30000);
     return () => clearInterval(interval);
   }, []);
-
-  useEffect(() => {
-    if (pathname?.startsWith("/chat") || isGlobalCartVisible) {
-      setHideOnScroll(false);
-      return;
-    }
-
-    if (typeof window === "undefined") return;
-    lastYRef.current = window.scrollY;
-
-    const onScroll = () => {
-      const nextY = window.scrollY;
-      const delta = nextY - lastYRef.current;
-
-      if (nextY <= 28) {
-        setHideOnScroll(false);
-      } else if (delta > 8) {
-        setHideOnScroll(true);
-      } else if (delta < -8) {
-        setHideOnScroll(false);
-      }
-
-      lastYRef.current = nextY;
-    };
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-    };
-  }, [pathname, isGlobalCartVisible]);
 
   const searchParamsString = searchParams?.toString() ?? "";
   useEffect(() => {
@@ -352,11 +257,7 @@ function TopBarInner() {
   return (
     <>
       <header
-        className={`fixed top-0 z-40 w-full border-b border-slate-200/80 bg-white transition-transform duration-300 will-change-transform ${
-          hideOnScroll && !isGlobalCartVisible
-            ? "-translate-y-full"
-            : "translate-y-0"
-        }`}
+        className="fixed top-0 z-40 w-full border-b border-slate-200/80 bg-white"
       >
         <div className="mx-auto flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-[120rem]">
           <div className="flex items-center gap-6">

@@ -9,6 +9,23 @@ interface FooterCartBarProps {
 }
 
 const FOOTER_CART_BAR_LAYOUT_EVENT = "wb:footer-cart-bar-layout";
+const FOOTER_CART_BAR_HEIGHT_CSS_VAR = "--wb-footer-cart-bar-height";
+const FOOTER_CART_BAR_OFFSET_CSS_VAR = "--wb-footer-cart-bar-offset";
+const MOBILE_TRIGGER_EXTRA_GAP = 12;
+
+function syncFooterCartBarCssVars(height: number) {
+  if (typeof document === "undefined") return;
+  const safeHeight = Math.max(0, Math.round(height));
+  const offset = safeHeight > 0 ? safeHeight + MOBILE_TRIGGER_EXTRA_GAP : 0;
+  document.documentElement.style.setProperty(
+    FOOTER_CART_BAR_HEIGHT_CSS_VAR,
+    `${safeHeight}px`
+  );
+  document.documentElement.style.setProperty(
+    FOOTER_CART_BAR_OFFSET_CSS_VAR,
+    `${offset}px`
+  );
+}
 
 export default function FooterCartBar({
   totalPrice,
@@ -25,7 +42,11 @@ export default function FooterCartBar({
       const height =
         shouldHideForMobile || !containerRef.current
           ? 0
-          : Math.max(0, Math.round(containerRef.current.getBoundingClientRect().height));
+          : Math.max(
+              0,
+              Math.round(containerRef.current.getBoundingClientRect().height)
+            );
+      syncFooterCartBarCssVars(height);
       window.dispatchEvent(
         new CustomEvent(FOOTER_CART_BAR_LAYOUT_EVENT, {
           detail: {
@@ -51,6 +72,7 @@ export default function FooterCartBar({
     return () => {
       observer?.disconnect();
       window.removeEventListener("resize", emitLayout);
+      syncFooterCartBarCssVars(0);
       window.dispatchEvent(
         new CustomEvent(FOOTER_CART_BAR_LAYOUT_EVENT, {
           detail: { visible: false, height: 0 },

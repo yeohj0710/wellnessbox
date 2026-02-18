@@ -43,6 +43,7 @@ const DOCK_RESIZE_HINT_DISMISS_KEY = "wb_chat_dock_resize_hint_dismissed_v1";
 const DOCK_RESIZE_HINT_WIDTH = 420;
 const CHAT_DOCK_LAYOUT_EVENT = "wb:chat-dock-layout";
 const FOOTER_CART_BAR_LAYOUT_EVENT = "wb:footer-cart-bar-layout";
+const FOOTER_CART_BAR_OFFSET_CSS_VAR = "--wb-footer-cart-bar-offset";
 const MOBILE_TRIGGER_BREAKPOINT = 640;
 const MOBILE_TRIGGER_EXTRA_GAP = 12;
 const PENDING_DOCK_PROMPT_KEY = "wb_chat_dock_pending_prompt_v1";
@@ -131,6 +132,16 @@ function isFooterCartBarLayoutDetail(
   if (!value || typeof value !== "object") return false;
   const row = value as Record<string, unknown>;
   return typeof row.visible === "boolean" && typeof row.height === "number";
+}
+
+function readFooterCartBarOffsetPx() {
+  if (typeof window === "undefined") return 0;
+  const raw =
+    window
+      .getComputedStyle(document.documentElement)
+      .getPropertyValue(FOOTER_CART_BAR_OFFSET_CSS_VAR) || "0";
+  const parsed = Number.parseFloat(raw);
+  return Number.isFinite(parsed) ? Math.max(0, Math.round(parsed)) : 0;
 }
 
 function queueDockPrompt(prompt: string) {
@@ -387,7 +398,9 @@ export default function DesktopChatDock() {
   const [viewportWidth, setViewportWidth] = useState(() =>
     typeof window === "undefined" ? 0 : window.innerWidth
   );
-  const [mobileFooterCartBarHeight, setMobileFooterCartBarHeight] = useState(0);
+  const [mobileFooterCartBarHeight, setMobileFooterCartBarHeight] = useState(
+    () => readFooterCartBarOffsetPx()
+  );
   const [showRouteNudge, setShowRouteNudge] = useState(false);
   const routeKey = pageAgentContext?.routeKey || "generic";
   const localizedRouteTitle = localizeDockNudgeText(
@@ -463,7 +476,10 @@ export default function DesktopChatDock() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const onResize = () => setViewportWidth(window.innerWidth);
+    const onResize = () => {
+      setViewportWidth(window.innerWidth);
+      setMobileFooterCartBarHeight(readFooterCartBarOffsetPx());
+    };
     onResize();
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
@@ -476,7 +492,7 @@ export default function DesktopChatDock() {
       if (!isFooterCartBarLayoutDetail(detail)) return;
       const nextHeight =
         detail.visible && Number.isFinite(detail.height)
-          ? Math.max(0, Math.round(detail.height))
+          ? Math.max(0, Math.round(detail.height)) + MOBILE_TRIGGER_EXTRA_GAP
           : 0;
       setMobileFooterCartBarHeight(nextHeight);
     };
@@ -560,8 +576,7 @@ export default function DesktopChatDock() {
 
   const isMobileViewport = viewportWidth > 0 && viewportWidth < MOBILE_TRIGGER_BREAKPOINT;
   const mobileTriggerOffset = isMobileViewport
-    ? mobileFooterCartBarHeight +
-      (mobileFooterCartBarHeight > 0 ? MOBILE_TRIGGER_EXTRA_GAP : 0)
+    ? mobileFooterCartBarHeight
     : 0;
   const triggerBottomStyle = isMobileViewport
     ? `calc(max(24px, env(safe-area-inset-bottom)) + ${mobileTriggerOffset}px)`

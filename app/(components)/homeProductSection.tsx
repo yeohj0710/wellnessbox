@@ -971,6 +971,7 @@ export default function HomeProductSection({
       )}
 
       {selectedPharmacy &&
+        !selectedProduct &&
         (totalPrice > 0 || isCartBarLoading) &&
         (isCartBarLoading ? (
           <FooterCartBarLoading />
