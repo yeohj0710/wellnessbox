@@ -349,7 +349,7 @@ function TopBarInner() {
               aria-label="Open command palette"
               title="Ctrl+K"
             >
-              <span>Quick</span>
+              <span>빠른 메뉴 실행</span>
               <kbd className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px]">
                 Ctrl+K
               </kbd>

@@ -93,6 +93,17 @@ type DockDragState = {
   startTop: number;
 };
 
+type DocumentScrollLockSnapshot = {
+  bodyOverflow: string;
+  bodyTouchAction: string;
+  bodyOverscrollBehavior: string;
+  bodyUserSelect: string;
+  bodyCursor: string;
+  rootOverflow: string;
+  rootTouchAction: string;
+  rootOverscrollBehavior: string;
+};
+
 type ChatDockLayoutDetail = {
   open: boolean;
   left: number;
@@ -605,6 +616,8 @@ function DesktopChatDockPanel({
   const resizeRafRef = useRef<number | null>(null);
   const pendingResizeSizeRef = useRef<DockPanelSize | null>(null);
   const pendingResizePositionRef = useRef<DockPanelPosition | null>(null);
+  const interactionDocumentLockRef =
+    useRef<DocumentScrollLockSnapshot | null>(null);
   const [isResizing, setIsResizing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [showResizeHint, setShowResizeHint] = useState(false);
@@ -718,6 +731,49 @@ function DesktopChatDockPanel({
     panel.style.left = `${position.left}px`;
     panel.style.top = `${position.top}px`;
   };
+
+  const lockInteractionScroll = useCallback((cursor: string) => {
+    if (typeof document === "undefined") return;
+    const bodyStyle = document.body.style;
+    const rootStyle = document.documentElement.style;
+    if (!interactionDocumentLockRef.current) {
+      interactionDocumentLockRef.current = {
+        bodyOverflow: bodyStyle.overflow,
+        bodyTouchAction: bodyStyle.touchAction,
+        bodyOverscrollBehavior: bodyStyle.overscrollBehavior,
+        bodyUserSelect: bodyStyle.userSelect,
+        bodyCursor: bodyStyle.cursor,
+        rootOverflow: rootStyle.overflow,
+        rootTouchAction: rootStyle.touchAction,
+        rootOverscrollBehavior: rootStyle.overscrollBehavior,
+      };
+    }
+    bodyStyle.overflow = "hidden";
+    bodyStyle.touchAction = "none";
+    bodyStyle.overscrollBehavior = "none";
+    bodyStyle.userSelect = "none";
+    bodyStyle.cursor = cursor;
+    rootStyle.overflow = "hidden";
+    rootStyle.touchAction = "none";
+    rootStyle.overscrollBehavior = "none";
+  }, []);
+
+  const releaseInteractionScroll = useCallback(() => {
+    if (typeof document === "undefined") return;
+    const snapshot = interactionDocumentLockRef.current;
+    if (!snapshot) return;
+    const bodyStyle = document.body.style;
+    const rootStyle = document.documentElement.style;
+    bodyStyle.overflow = snapshot.bodyOverflow;
+    bodyStyle.touchAction = snapshot.bodyTouchAction;
+    bodyStyle.overscrollBehavior = snapshot.bodyOverscrollBehavior;
+    bodyStyle.userSelect = snapshot.bodyUserSelect;
+    bodyStyle.cursor = snapshot.bodyCursor;
+    rootStyle.overflow = snapshot.rootOverflow;
+    rootStyle.touchAction = snapshot.rootTouchAction;
+    rootStyle.overscrollBehavior = snapshot.rootOverscrollBehavior;
+    interactionDocumentLockRef.current = null;
+  }, []);
 
   useEffect(() => {
     panelSizeRef.current = panelSize;
@@ -854,6 +910,7 @@ function DesktopChatDockPanel({
     const onPointerMove = (event: PointerEvent) => {
       const resizeState = resizeStateRef.current;
       if (resizeState) {
+        event.preventDefault();
         const deltaX = event.clientX - resizeState.startX;
         const deltaY = event.clientY - resizeState.startY;
         let nextWidth = resizeState.startWidth;
@@ -916,6 +973,7 @@ function DesktopChatDockPanel({
 
       const dragState = dragStateRef.current;
       if (!dragState) return;
+      event.preventDefault();
 
       const nextPosition = clampDockPosition(
         {
@@ -945,8 +1003,7 @@ function DesktopChatDockPanel({
 
       setIsResizing(false);
       setIsDragging(false);
-      document.body.style.removeProperty("user-select");
-      document.body.style.removeProperty("cursor");
+      releaseInteractionScroll();
 
       const committedSize = panelSizeRef.current;
       const committedPosition = clampDockPosition(
@@ -983,8 +1040,9 @@ function DesktopChatDockPanel({
       }
       pendingResizeSizeRef.current = null;
       pendingResizePositionRef.current = null;
+      releaseInteractionScroll();
     };
-  }, []);
+  }, [releaseInteractionScroll]);
 
   useEffect(() => {
     if (isOpen) return;
@@ -998,9 +1056,8 @@ function DesktopChatDockPanel({
     pendingResizePositionRef.current = null;
     setIsResizing(false);
     setIsDragging(false);
-    document.body.style.removeProperty("user-select");
-    document.body.style.removeProperty("cursor");
-  }, [isOpen]);
+    releaseInteractionScroll();
+  }, [isOpen, releaseInteractionScroll]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1040,8 +1097,7 @@ function DesktopChatDockPanel({
       startTop: panelPositionRef.current.top,
     };
     setIsResizing(true);
-    document.body.style.userSelect = "none";
-    document.body.style.cursor = resizeCursorForEdge(edge);
+    lockInteractionScroll(resizeCursorForEdge(edge));
   };
 
   const startDrag = (event: ReactPointerEvent<HTMLElement>) => {
@@ -1068,8 +1124,7 @@ function DesktopChatDockPanel({
       startTop: panelPositionRef.current.top,
     };
     setIsDragging(true);
-    document.body.style.userSelect = "none";
-    document.body.style.cursor = "grabbing";
+    lockInteractionScroll("grabbing");
   };
 
   useEffect(() => {

@@ -27,6 +27,17 @@ type UseDraggableModalOptions = {
   resetOnOpen?: boolean;
 };
 
+type DragDocumentStyleSnapshot = {
+  bodyOverflow: string;
+  bodyTouchAction: string;
+  bodyOverscrollBehavior: string;
+  bodyUserSelect: string;
+  bodyCursor: string;
+  rootOverflow: string;
+  rootTouchAction: string;
+  rootOverscrollBehavior: string;
+};
+
 function clampDragOffset(
   raw: DragOffset,
   panelWidth: number,
@@ -55,12 +66,52 @@ export function useDraggableModal(
   const panelRef = useRef<HTMLDivElement | null>(null);
   const dragStateRef = useRef<DragState | null>(null);
   const offsetRef = useRef<DragOffset>({ x: 0, y: 0 });
+  const dragDocumentStyleSnapshotRef =
+    useRef<DragDocumentStyleSnapshot | null>(null);
   const [offset, setOffset] = useState<DragOffset>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
 
+  const applyDraggingBodyState = useCallback((cursor: string) => {
+    if (typeof document === "undefined") return;
+    const bodyStyle = document.body.style;
+    const rootStyle = document.documentElement.style;
+    if (!dragDocumentStyleSnapshotRef.current) {
+      dragDocumentStyleSnapshotRef.current = {
+        bodyOverflow: bodyStyle.overflow,
+        bodyTouchAction: bodyStyle.touchAction,
+        bodyOverscrollBehavior: bodyStyle.overscrollBehavior,
+        bodyUserSelect: bodyStyle.userSelect,
+        bodyCursor: bodyStyle.cursor,
+        rootOverflow: rootStyle.overflow,
+        rootTouchAction: rootStyle.touchAction,
+        rootOverscrollBehavior: rootStyle.overscrollBehavior,
+      };
+    }
+    bodyStyle.overflow = "hidden";
+    bodyStyle.touchAction = "none";
+    bodyStyle.overscrollBehavior = "none";
+    bodyStyle.userSelect = "none";
+    bodyStyle.cursor = cursor;
+    rootStyle.overflow = "hidden";
+    rootStyle.touchAction = "none";
+    rootStyle.overscrollBehavior = "none";
+  }, []);
+
   const clearDraggingBodyState = useCallback(() => {
-    document.body.style.removeProperty("user-select");
-    document.body.style.removeProperty("cursor");
+    if (typeof document === "undefined") return;
+    const snapshot = dragDocumentStyleSnapshotRef.current;
+    if (!snapshot) return;
+    const bodyStyle = document.body.style;
+    const rootStyle = document.documentElement.style;
+    bodyStyle.overflow = snapshot.bodyOverflow;
+    bodyStyle.touchAction = snapshot.bodyTouchAction;
+    bodyStyle.overscrollBehavior = snapshot.bodyOverscrollBehavior;
+    bodyStyle.userSelect = snapshot.bodyUserSelect;
+    bodyStyle.cursor = snapshot.bodyCursor;
+    rootStyle.overflow = snapshot.rootOverflow;
+    rootStyle.touchAction = snapshot.rootTouchAction;
+    rootStyle.overscrollBehavior = snapshot.rootOverscrollBehavior;
+    dragDocumentStyleSnapshotRef.current = null;
   }, []);
 
   const stopDragging = useCallback(() => {
@@ -86,6 +137,7 @@ export function useDraggableModal(
     const onPointerMove = (event: PointerEvent) => {
       const dragState = dragStateRef.current;
       if (!dragState) return;
+      event.preventDefault();
 
       const panel = panelRef.current;
       const panelRect = panel?.getBoundingClientRect();
@@ -144,10 +196,9 @@ export function useDraggableModal(
         startOffsetY: offsetRef.current.y,
       };
       setIsDragging(true);
-      document.body.style.userSelect = "none";
-      document.body.style.cursor = "grabbing";
+      applyDraggingBodyState("grabbing");
     },
-    [open]
+    [applyDraggingBodyState, open]
   );
 
   const panelStyle = useMemo<CSSProperties>(
