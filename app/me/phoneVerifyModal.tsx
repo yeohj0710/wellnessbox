@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import PhoneLinkSection from "./phoneLinkSection";
 import ConfirmDialog from "./confirmDialog";
+import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 type PhoneVerifyModalProps = {
   open: boolean;
@@ -35,6 +36,8 @@ export default function PhoneVerifyModal({
     () => linkBusy || unlinkLoading,
     [linkBusy, unlinkLoading]
   );
+  const { panelRef, panelStyle, handleDragPointerDown, isDragging } =
+    useDraggableModal(open, { resetOnOpen: true });
 
   useEffect(() => {
     if (!open) return;
@@ -64,11 +67,18 @@ export default function PhoneVerifyModal({
 
       <div
         className="relative w-full max-w-[560px] overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5"
+        ref={panelRef}
+        style={panelStyle}
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-6 sm:px-7 py-5">
-          <div className="flex items-center justify-between gap-3">
+          <div
+            className={`flex items-center justify-between gap-3 touch-none ${
+              isDragging ? "cursor-grabbing" : "cursor-grab"
+            }`}
+            onPointerDown={handleDragPointerDown}
+          >
             <div className="text-xl font-bold text-gray-900">전화번호 인증</div>
 
             <div className="flex items-center gap-2">

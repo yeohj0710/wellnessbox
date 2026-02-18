@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import AddressModal from "@/components/modal/addressModal";
+import { useDraggableModal } from "@/components/common/useDraggableModal";
 import {
   type ActionableRecommendation,
   hasSavedRoadAddress,
@@ -45,6 +46,12 @@ export default function RecommendedProductActions({ content }: { content: string
   const [pendingCartAction, setPendingCartAction] =
     useState<PendingCartAction>(null);
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>(null);
+  const guideModalDrag = useDraggableModal(showAddressGuideModal, {
+    resetOnOpen: true,
+  });
+  const confirmModalDrag = useDraggableModal(Boolean(confirmDialog), {
+    resetOnOpen: true,
+  });
 
   useEffect(() => {
     if (!feedback) return;
@@ -282,9 +289,18 @@ export default function RecommendedProductActions({ content }: { content: string
           }}
         >
           <div
-            className="m-3 w-[min(32rem,calc(100%-1.5rem))] rounded-xl bg-white px-6 py-8 shadow-2xl sm:px-8"
+            className="relative m-3 w-[min(32rem,calc(100%-1.5rem))] rounded-xl bg-white px-6 py-8 shadow-2xl sm:px-8"
+            ref={guideModalDrag.panelRef}
+            style={guideModalDrag.panelStyle}
             onClick={(event) => event.stopPropagation()}
           >
+            <div
+              onPointerDown={guideModalDrag.handleDragPointerDown}
+              className={`absolute left-0 right-0 top-0 h-10 touch-none ${
+                guideModalDrag.isDragging ? "cursor-grabbing" : "cursor-grab"
+              }`}
+              aria-hidden
+            />
             <h2 className="mb-4 text-lg font-semibold text-gray-800">
               주소를 입력해 주세요!
             </h2>
@@ -326,9 +342,18 @@ export default function RecommendedProductActions({ content }: { content: string
           onClick={() => setConfirmDialog(null)}
         >
           <div
-            className="m-3 w-[min(28rem,calc(100%-1.5rem))] rounded-2xl bg-white p-5 shadow-2xl ring-1 ring-slate-100"
+            className="relative m-3 w-[min(28rem,calc(100%-1.5rem))] rounded-2xl bg-white p-5 shadow-2xl ring-1 ring-slate-100"
+            ref={confirmModalDrag.panelRef}
+            style={confirmModalDrag.panelStyle}
             onClick={(event) => event.stopPropagation()}
           >
+            <div
+              onPointerDown={confirmModalDrag.handleDragPointerDown}
+              className={`absolute left-0 right-0 top-0 h-10 touch-none ${
+                confirmModalDrag.isDragging ? "cursor-grabbing" : "cursor-grab"
+              }`}
+              aria-hidden
+            />
             <h3 className="text-[16px] font-semibold text-slate-900">
               {confirmDialog.title}
             </h3>

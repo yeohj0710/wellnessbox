@@ -9,6 +9,7 @@ import { getUploadUrl } from "@/lib/upload";
 import { getCategories } from "@/lib/product";
 import { ArrowPathIcon } from "@heroicons/react/24/outline";
 import Image from "next/image";
+import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 export default function ProductManager() {
   const [products, setProducts] = useState<any[]>([]);
@@ -20,6 +21,8 @@ export default function ProductManager() {
   const [isRefreshingCategories, setIsRefreshingCategories] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { panelRef, panelStyle, handleDragPointerDown, isDragging } =
+    useDraggableModal(isProductModalOpen, { resetOnOpen: true });
   useEffect(() => {
     const fetchData = async () => {
       const fetchedProducts = await getProductsForAdmin();
@@ -163,8 +166,17 @@ export default function ProductManager() {
         >
           <div
             className="relative bg-white p-6 rounded shadow-md w-96"
+            ref={panelRef}
+            style={panelStyle}
             onClick={(e) => e.stopPropagation()}
           >
+            <div
+              onPointerDown={handleDragPointerDown}
+              className={`absolute left-0 right-12 top-0 h-10 touch-none ${
+                isDragging ? "cursor-grabbing" : "cursor-grab"
+              }`}
+              aria-hidden
+            />
             <h3 className="text-lg font-bold mb-6">
               {selectedProduct?.id ? "상품 수정" : "새 상품 등록"}
             </h3>

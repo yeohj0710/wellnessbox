@@ -209,6 +209,7 @@ export function buildSystemPrompt(input: BuildSystemPromptInput = {}): string {
     ...outputRules,
     "- 제품 추천이 들어갈 때는 '추천 제품(7일 기준 가격)' 소제목과 '카테고리: 제품명 (가격원)' 형식을 사용합니다.",
     "- 가격 숫자는 product_catalog_brief에 있는 값만 사용합니다. 임의 예시 가격이나 반올림 추정값을 만들지 않습니다.",
+    "- product_catalog_brief에 해당 카테고리 데이터가 있으면 '가격 미정/확인 중' 같은 문구를 쓰지 않습니다.",
     "- product_catalog_brief가 비어 있으면 추천 제품 섹션에는 '가격 데이터 확인 중'만 짧게 안내하고, 임의 제품/가격은 쓰지 않습니다.",
     "- 내부 JSON 키, 내부 라벨명(evidence_labels 등)은 그대로 노출하지 않습니다.",
     "- 단계별 행동 지침을 구체적으로 제시합니다.",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 type ApiResponse = { ok?: boolean; error?: string; nickname?: string; available?: boolean };
 
@@ -65,6 +66,8 @@ export default function NicknameChangeModal({
     () => !available || !isNicknameValid(nickname) || busy,
     [available, nickname, busy]
   );
+  const { panelRef, panelStyle, handleDragPointerDown, isDragging } =
+    useDraggableModal(open, { resetOnOpen: true });
 
   useEffect(() => {
     if (!open) return;
@@ -169,11 +172,18 @@ export default function NicknameChangeModal({
 
       <div
         className="relative w-full max-w-[560px] overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5"
+        ref={panelRef}
+        style={panelStyle}
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-6 sm:px-7 py-5">
-          <div className="flex items-center justify-between gap-3">
+          <div
+            className={`flex items-center justify-between gap-3 touch-none ${
+              isDragging ? "cursor-grabbing" : "cursor-grab"
+            }`}
+            onPointerDown={handleDragPointerDown}
+          >
             <div className="text-xl font-bold text-gray-900">닉네임 변경</div>
 
             <button

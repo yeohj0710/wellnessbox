@@ -6,6 +6,7 @@ import { getReviewExistsByOrderItemId, upsertReview } from "@/lib/review";
 import { getOrderForReview } from "@/lib/order";
 import { getUploadUrl } from "@/lib/upload";
 import Image from "next/image";
+import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 export default function ReviewModal({
   initialOrder,
@@ -20,6 +21,8 @@ export default function ReviewModal({
   const [hoverRate, setHoverRate] = useState<number | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [orderItemsLength, setOrderItemsLength] = useState(1);
+  const { panelRef, panelStyle, handleDragPointerDown, isDragging } =
+    useDraggableModal(true);
   const currentItem =
     order?.orderItems && order.orderItems[currentIndex]
       ? order.orderItems[currentIndex]
@@ -141,8 +144,17 @@ export default function ReviewModal({
     >
       <div
         className="relative bg-white p-6 rounded shadow-md w-96"
+        ref={panelRef}
+        style={panelStyle}
         onClick={(e) => e.stopPropagation()}
       >
+        <div
+          onPointerDown={handleDragPointerDown}
+          className={`absolute left-0 right-12 top-0 h-10 touch-none ${
+            isDragging ? "cursor-grabbing" : "cursor-grab"
+          }`}
+          aria-hidden
+        />
         <button
           className="absolute top-4 right-4 text-gray-600 hover:text-gray-900"
           onClick={onClose}

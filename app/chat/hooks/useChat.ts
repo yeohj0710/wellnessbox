@@ -30,6 +30,14 @@ import {
 } from "./useChat.suggestions";
 import { readStreamingText } from "./useChat.stream";
 import { normalizeNewlines, sanitizeAssistantText } from "./useChat.text";
+import { hydrateRecommendationPrices } from "./useChat.recommendation";
+import {
+  readActionMemory,
+  rememberActionMemoryList,
+  scoreActionMemory,
+  sortActionsByMemory,
+  type ActionMemoryMap,
+} from "./useChat.actionMemory";
 import {
   formatCartCommandSummary,
   hasRoadAddressInLocalStorage,
@@ -133,6 +141,13 @@ export default function useChat(options: UseChatOptions = {}) {
   const [titleLoading, setTitleLoading] = useState(false);
   const [titleError, setTitleError] = useState(false);
   const [topTitleHighlight, setTopTitleHighlight] = useState(false);
+  const [actionMemory, setActionMemory] = useState<ActionMemoryMap>(() =>
+    readActionMemory()
+  );
+
+  useEffect(() => {
+    setActionMemory(readActionMemory());
+  }, []);
 
   const firstUserMessageRef = useRef<string>("");
   const firstAssistantMessageRef = useRef<string>("");
@@ -190,6 +205,11 @@ export default function useChat(options: UseChatOptions = {}) {
     requestCloseDock();
     window.location.assign(url);
     return true;
+  }
+
+  function rememberExecutedActions(actions: ChatActionType[]) {
+    if (!Array.isArray(actions) || actions.length === 0) return;
+    setActionMemory((prev) => rememberActionMemoryList(actions, prev));
   }
 
   useEffect(() => {
@@ -403,6 +423,7 @@ export default function useChat(options: UseChatOptions = {}) {
       if (pageContextActionSet.has(item.type)) {
         priority += 35;
       }
+      priority += scoreActionMemory(item.type, actionMemory);
 
       return {
         ...item,
@@ -415,7 +436,12 @@ export default function useChat(options: UseChatOptions = {}) {
     );
 
     return scored.map(({ priority: _priority, ...item }) => item);
-  }, [inChatAssessment?.mode, latestAssistantTextInActive, pageContextActionSet]);
+  }, [
+    actionMemory,
+    inChatAssessment?.mode,
+    latestAssistantTextInActive,
+    pageContextActionSet,
+  ]);
 
   const agentGuideExamples = useMemo<AgentGuideExample[]>(() => {
     if (hasRecommendationSection(latestAssistantTextInActive)) {
@@ -933,14 +959,24 @@ export default function useChat(options: UseChatOptions = {}) {
       });
 
       if ((activeIdRef.current || "") !== targetSessionId) return;
+      const prioritizedMapped = sortActionsByMemory(mapped, actionMemory);
+      const fallbackRows = sortActionsByMemory(
+        buildFallbackInteractiveActions(lastAssistantText),
+        actionMemory
+      );
       setInteractiveActions(
-        mapped.length > 0
-          ? mapped.slice(0, 4)
-          : buildFallbackInteractiveActions(lastAssistantText).slice(0, 4)
+        prioritizedMapped.length > 0
+          ? prioritizedMapped.slice(0, 4)
+          : fallbackRows.slice(0, 4)
       );
     } catch {
       if ((activeIdRef.current || "") !== targetSessionId) return;
-      setInteractiveActions(buildFallbackInteractiveActions(lastAssistantText).slice(0, 4));
+      setInteractiveActions(
+        sortActionsByMemory(buildFallbackInteractiveActions(lastAssistantText), actionMemory).slice(
+          0,
+          4
+        )
+      );
     }
   }
 
@@ -1431,6 +1467,7 @@ export default function useChat(options: UseChatOptions = {}) {
       sessionMessages: params.sessionMessages,
     });
     if (!result.executed) return false;
+    rememberExecutedActions(result.executedActions);
 
     const fullText = result.summary
       ? `${result.message} ${result.summary}`.trim()
@@ -1484,6 +1521,7 @@ export default function useChat(options: UseChatOptions = {}) {
         active.messages || []
       );
       if (!result.executed) return;
+      rememberExecutedActions([actionType]);
 
       const assistantMessage: ChatMessage = {
         id: uid(),
@@ -1650,6 +1688,9 @@ export default function useChat(options: UseChatOptions = {}) {
       if (finalizedText !== fullText) {
         fullText = finalizedText;
       }
+      try {
+        fullText = await hydrateRecommendationPrices(fullText);
+      } catch {}
 
       updateAssistantMessage(active.id, assistantMessage.id, fullText);
 
@@ -1757,6 +1798,9 @@ export default function useChat(options: UseChatOptions = {}) {
       if (finalizedText !== fullText) {
         fullText = finalizedText;
       }
+      try {
+        fullText = await hydrateRecommendationPrices(fullText);
+      } catch {}
 
       updateAssistantMessage(sessionId, assistantMessage.id, fullText);
       fetchSuggestions(fullText, sessionId).catch(() => {});

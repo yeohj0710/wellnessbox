@@ -15,6 +15,7 @@ import {
 } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import { shouldBypassNextImageOptimizer } from "@/lib/shared/image";
+import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 export default function ProductDetail({
   product,
@@ -36,6 +37,9 @@ export default function ProductDetail({
   const firstModalRef = useRef(false);
   const [isImageLoading, setIsImageLoading] = useState(true);
   const [currentIdx, setCurrentIdx] = useState(0);
+  const imagePreviewDrag = useDraggableModal(Boolean(selectedImage), {
+    resetOnOpen: true,
+  });
 
   useEffect(() => {
     async function fetchReviews() {
@@ -378,7 +382,18 @@ export default function ProductDetail({
               className="px-2 sm:px-0 fixed inset-0 flex items-center justify-center bg-black/70 z-50"
               onClick={() => setSelectedImage(null)}
             >
-              <div className="relative w-full h-full max-w-[640px]">
+              <div
+                className="relative w-full h-full max-w-[640px]"
+                ref={imagePreviewDrag.panelRef}
+                style={imagePreviewDrag.panelStyle}
+              >
+                <div
+                  onPointerDown={imagePreviewDrag.handleDragPointerDown}
+                  className={`absolute left-0 right-12 top-0 z-20 h-12 touch-none ${
+                    imagePreviewDrag.isDragging ? "cursor-grabbing" : "cursor-grab"
+                  }`}
+                  aria-hidden
+                />
                 <button
                   className="absolute top-3 right-3 grid place-items-center h-9 w-9 rounded-full bg-white shadow"
                   onClick={() => setSelectedImage(null)}

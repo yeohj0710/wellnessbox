@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 interface OrderNotifyModalProps {
   orderId: number;
@@ -17,6 +18,8 @@ export default function OrderNotifyModal({
   onClose,
   loading = false,
 }: OrderNotifyModalProps) {
+  const { panelRef, panelStyle, handleDragPointerDown, isDragging } =
+    useDraggableModal(true);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -40,8 +43,17 @@ export default function OrderNotifyModal({
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
         className="relative w-full max-w-sm mx-3 transition-all duration-200 ease-out max-h-[85vh] overflow-y-auto rounded-2xl"
+        ref={panelRef}
+        style={panelStyle}
         onClick={(e) => e.stopPropagation()}
       >
+        <div
+          onPointerDown={handleDragPointerDown}
+          className={`absolute left-0 right-12 top-0 z-20 h-12 touch-none ${
+            isDragging ? "cursor-grabbing" : "cursor-grab"
+          }`}
+          aria-hidden
+        />
         <div className="p-[1.25px] rounded-2xl bg-[conic-gradient(at_50%_50%,#6C4DFF_0deg,#3B5BFF_140deg,#56CCF2_260deg,#6C4DFF_360deg)] shadow-[0_16px_40px_rgba(0,0,0,0.25)]">
           <div className="relative rounded-2xl bg-white">
             <button

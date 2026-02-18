@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 interface ComingSoonPopupProps {
   open: boolean;
@@ -12,6 +13,8 @@ export default function ComingSoonPopup({
   onClose,
 }: ComingSoonPopupProps) {
   const [visible, setVisible] = useState(false);
+  const { panelRef, panelStyle, handleDragPointerDown, isDragging } =
+    useDraggableModal(open, { resetOnOpen: true });
 
   useEffect(() => {
     if (!open) return;
@@ -47,8 +50,19 @@ export default function ComingSoonPopup({
         }`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-[1.5px] rounded-2xl bg-[conic-gradient(at_50%_50%,#6C4DFF_0deg,#3B5BFF_120deg,#56CCF2_240deg,#6C4DFF_360deg)] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+        <div
+          className="p-[1.5px] rounded-2xl bg-[conic-gradient(at_50%_50%,#6C4DFF_0deg,#3B5BFF_120deg,#56CCF2_240deg,#6C4DFF_360deg)] shadow-[0_20px_60px_rgba(0,0,0,0.35)]"
+          ref={panelRef}
+          style={panelStyle}
+        >
           <div className="relative rounded-2xl bg-white dark:bg-neutral-950">
+            <div
+              onPointerDown={handleDragPointerDown}
+              className={`absolute left-0 right-14 top-0 z-10 h-12 touch-none ${
+                isDragging ? "cursor-grabbing" : "cursor-grab"
+              }`}
+              aria-hidden
+            />
             <button
               aria-label="닫기"
               onClick={onClose}

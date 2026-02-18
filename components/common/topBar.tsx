@@ -158,6 +158,11 @@ function TopBarInner() {
     window.dispatchEvent(new Event("closeCart"));
   }, []);
 
+  const openCommandPalette = useCallback(() => {
+    if (typeof window === "undefined") return;
+    window.dispatchEvent(new Event("wb:open-command-palette"));
+  }, []);
+
   const closeDrawer = () => {
     setIsDrawerOpen(false);
   };
@@ -235,6 +240,29 @@ function TopBarInner() {
       setHideOnScroll(false);
       return;
     }
+
+    if (typeof window === "undefined") return;
+    lastYRef.current = window.scrollY;
+
+    const onScroll = () => {
+      const nextY = window.scrollY;
+      const delta = nextY - lastYRef.current;
+
+      if (nextY <= 28) {
+        setHideOnScroll(false);
+      } else if (delta > 8) {
+        setHideOnScroll(true);
+      } else if (delta < -8) {
+        setHideOnScroll(false);
+      }
+
+      lastYRef.current = nextY;
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+    };
   }, [pathname]);
 
   const searchParamsString = searchParams?.toString() ?? "";
@@ -315,6 +343,19 @@ function TopBarInner() {
             </button>
 
             <button
+              type="button"
+              onClick={openCommandPalette}
+              className="hidden md:inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+              aria-label="Open command palette"
+              title="Ctrl+K"
+            >
+              <span>Quick</span>
+              <kbd className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px]">
+                Ctrl+K
+              </kbd>
+            </button>
+
+            <button
               {...sevenDayIntentHandlers}
               onClick={goSevenDays}
               className="hidden sm:block text-[15px] font-semibold text-slate-600"
@@ -366,6 +407,17 @@ function TopBarInner() {
             className="text-left text-slate-500"
           >
             7일치 구매하기
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setIsDrawerOpen(false);
+              openCommandPalette();
+            }}
+            className="text-left text-slate-500"
+          >
+            빠른 메뉴 실행 (Ctrl+K)
           </button>
 
           <button

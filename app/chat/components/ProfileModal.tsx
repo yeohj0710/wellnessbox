@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import type { UserProfile } from "@/types/chat";
+import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 export default function ProfileModal({
   profile,
@@ -17,6 +18,8 @@ export default function ProfileModal({
   const [local, setLocal] = useState<UserProfile>({ ...(profile || {}) });
   const [confirmReset, setConfirmReset] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const modalDrag = useDraggableModal(isMounted, { resetOnOpen: true });
+  const resetDialogDrag = useDraggableModal(confirmReset, { resetOnOpen: true });
 
   useEffect(() => {
     setLocal({ ...(profile || {}) });
@@ -57,9 +60,16 @@ export default function ProfileModal({
     >
       <div
         className="flex max-h-[min(92dvh,860px)] w-[min(100vw-24px,620px)] flex-col overflow-hidden rounded-2xl bg-white shadow-xl"
+        ref={modalDrag.panelRef}
+        style={modalDrag.panelStyle}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4 sm:px-6 sm:py-5">
+        <div
+          className={`flex items-center justify-between border-b border-slate-200 px-4 py-4 sm:px-6 sm:py-5 touch-none ${
+            modalDrag.isDragging ? "cursor-grabbing" : "cursor-grab"
+          }`}
+          onPointerDown={modalDrag.handleDragPointerDown}
+        >
           <div className="text-lg font-semibold text-slate-900">
             프로필 설정
           </div>
@@ -226,9 +236,16 @@ export default function ProfileModal({
         >
           <div
             className="w-[min(100%,420px)] rounded-2xl bg-white shadow-xl border border-slate-200 p-5"
+            ref={resetDialogDrag.panelRef}
+            style={resetDialogDrag.panelStyle}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="text-base font-semibold text-slate-900">
+            <div
+              className={`text-base font-semibold text-slate-900 touch-none ${
+                resetDialogDrag.isDragging ? "cursor-grabbing" : "cursor-grab"
+              }`}
+              onPointerDown={resetDialogDrag.handleDragPointerDown}
+            >
               초기화하시겠어요?
             </div>
             <p className="mt-2 text-sm text-slate-600">

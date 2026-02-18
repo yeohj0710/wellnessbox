@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 export default function AddressModal({ onClose, onSave, onDelete }: any) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -12,6 +13,10 @@ export default function AddressModal({ onClose, onSave, onDelete }: any) {
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [canDelete, setCanDelete] = useState(false);
+  const addressDrag = useDraggableModal(true);
+  const confirmDrag = useDraggableModal(isConfirmModalOpen, {
+    resetOnOpen: true,
+  });
   useEffect(() => {
     try {
       const has =
@@ -73,9 +78,18 @@ export default function AddressModal({ onClose, onSave, onDelete }: any) {
         onClick={onClose}
       >
         <div
-          className="bg-white rounded-lg shadow-lg p-6 w-96 m-2"
+          className="relative bg-white rounded-lg shadow-lg p-6 w-96 m-2"
+          ref={addressDrag.panelRef}
+          style={addressDrag.panelStyle}
           onClick={(e) => e.stopPropagation()}
         >
+          <div
+            onPointerDown={addressDrag.handleDragPointerDown}
+            className={`absolute left-0 right-12 top-0 h-10 touch-none ${
+              addressDrag.isDragging ? "cursor-grabbing" : "cursor-grab"
+            }`}
+            aria-hidden
+          />
           <h2 className="text-black text-lg font-bold mb-4">주소 설정</h2>
           <div className="mb-4 flex items-center">
             <input
@@ -187,7 +201,18 @@ export default function AddressModal({ onClose, onSave, onDelete }: any) {
       </div>
       {isConfirmModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-80">
+          <div
+            className="relative bg-white rounded-lg shadow-lg p-6 w-80"
+            ref={confirmDrag.panelRef}
+            style={confirmDrag.panelStyle}
+          >
+            <div
+              onPointerDown={confirmDrag.handleDragPointerDown}
+              className={`absolute left-0 right-12 top-0 h-10 touch-none ${
+                confirmDrag.isDragging ? "cursor-grabbing" : "cursor-grab"
+              }`}
+              aria-hidden
+            />
             <h2 className="text-black text-xl font-bold mb-4">주소 확인</h2>
             <p className="text-sm text-gray-700 mb-4 flex flex-col gap-1">
               <span className="font-normal">이 주소가 맞나요?</span>

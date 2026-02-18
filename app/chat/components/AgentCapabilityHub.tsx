@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ChevronDownIcon,
   ChevronUpIcon,
+  MagnifyingGlassIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import type { ChatActionType } from "@/lib/chat/agent-actions";
@@ -27,6 +28,7 @@ type CapabilityAction = {
 };
 
 const DISMISS_KEY = "wb_chat_agent_capability_hub_dismissed_v1";
+const HUB_QUERY_MAX_LENGTH = 24;
 
 const CATEGORY_LABELS: Record<CapabilityCategory | "all", string> = {
   all: "전체",
@@ -50,6 +52,7 @@ export default function AgentCapabilityHub(props: {
   const [expanded, setExpanded] = useState(false);
   const [category, setCategory] = useState<CapabilityCategory | "all">("all");
   const [selectedId, setSelectedId] = useState<string>("");
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -63,10 +66,22 @@ export default function AgentCapabilityHub(props: {
     return ["all", ...fromActions] as Array<CapabilityCategory | "all">;
   }, [props.actions]);
 
+  const normalizedQuery = query.trim().toLowerCase();
+
   const filteredActions = useMemo(() => {
-    if (category === "all") return props.actions;
-    return props.actions.filter((item) => item.category === category);
-  }, [category, props.actions]);
+    const byCategory =
+      category === "all"
+        ? props.actions
+        : props.actions.filter((item) => item.category === category);
+    if (!normalizedQuery) return byCategory;
+
+    return byCategory.filter((item) => {
+      const haystack = [item.label, item.description || "", item.prompt]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(normalizedQuery);
+    });
+  }, [category, normalizedQuery, props.actions]);
 
   useEffect(() => {
     if (!filteredActions.length) {
@@ -80,8 +95,27 @@ export default function AgentCapabilityHub(props: {
   const selectedAction =
     filteredActions.find((item) => item.id === selectedId) || filteredActions[0] || null;
 
-  if (!props.visible || dismissed || props.actions.length === 0) {
+  if (!props.visible || props.actions.length === 0) {
     return null;
+  }
+
+  if (dismissed) {
+    return (
+      <div className="mx-2 flex justify-end">
+        <button
+          type="button"
+          onClick={() => {
+            setDismissed(false);
+            try {
+              window.localStorage.removeItem(DISMISS_KEY);
+            } catch {}
+          }}
+          className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-medium text-slate-600 hover:bg-slate-50"
+        >
+          에이전트 기능 다시 보기
+        </button>
+      </div>
+    );
   }
 
   const runAction = (item: CapabilityAction) => {
@@ -107,7 +141,7 @@ export default function AgentCapabilityHub(props: {
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
-            Agent Hub
+            에이전트 허브
           </p>
           <p className="mt-0.5 text-[12px] text-slate-700">
             페이지 이동, 검사, 주문, 문의를 채팅으로 바로 실행할 수 있어요.
@@ -155,26 +189,48 @@ export default function AgentCapabilityHub(props: {
         ))}
       </div>
 
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        {quickActions.map((item) => (
-          <button
-            key={item.id}
-            type="button"
+      <div className="mt-2">
+        <label className="relative block">
+          <MagnifyingGlassIcon className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            value={query}
+            onChange={(event) =>
+              setQuery(event.target.value.slice(0, HUB_QUERY_MAX_LENGTH))
+            }
+            placeholder="기능 검색 (예: 장바구니, 정밀검사)"
+            className="w-full rounded-full border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-[12px] text-slate-700 placeholder:text-slate-400 focus:border-sky-300 focus:outline-none"
             disabled={props.disabled}
-            onClick={() => {
-              setSelectedId(item.id);
-              runAction(item);
-            }}
-            className={`max-w-[13rem] truncate rounded-full border px-3 py-1 text-[11px] ${
-              selectedAction?.id === item.id
-                ? "border-slate-300 bg-slate-900 text-white"
-                : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
-            } disabled:opacity-50`}
-            title={item.description || item.prompt}
-          >
-            {item.label}
-          </button>
-        ))}
+          />
+        </label>
+      </div>
+
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {quickActions.length > 0 ? (
+          quickActions.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              disabled={props.disabled}
+              onClick={() => {
+                setSelectedId(item.id);
+                runAction(item);
+              }}
+              className={`max-w-[13rem] truncate rounded-full border px-3 py-1 text-[11px] ${
+                selectedAction?.id === item.id
+                  ? "border-slate-300 bg-slate-900 text-white"
+                  : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
+              } disabled:opacity-50`}
+              title={item.description || item.prompt}
+            >
+              {item.label}
+            </button>
+          ))
+        ) : (
+          <p className="rounded-lg bg-slate-50 px-2.5 py-2 text-[11px] text-slate-500">
+            검색 조건에 맞는 기능이 없어요.
+          </p>
+        )}
       </div>
 
       {selectedAction && (

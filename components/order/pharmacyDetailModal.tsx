@@ -1,5 +1,7 @@
 "use client";
 
+import { useDraggableModal } from "@/components/common/useDraggableModal";
+
 export default function PharmacyDetailModal({
   selectedPharmacy,
   onClose,
@@ -7,6 +9,8 @@ export default function PharmacyDetailModal({
   selectedPharmacy: any;
   onClose: () => void;
 }) {
+  const { panelRef, panelStyle, handleDragPointerDown, isDragging } =
+    useDraggableModal(true);
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
@@ -15,8 +19,17 @@ export default function PharmacyDetailModal({
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
         className="relative w-full max-w-xl mx-3 max-h-[90vh] overflow-y-auto rounded-2xl transition-all duration-200 ease-out"
+        ref={panelRef}
+        style={panelStyle}
         onClick={(e) => e.stopPropagation()}
       >
+        <div
+          onPointerDown={handleDragPointerDown}
+          className={`absolute left-0 right-12 top-0 z-20 h-12 touch-none ${
+            isDragging ? "cursor-grabbing" : "cursor-grab"
+          }`}
+          aria-hidden
+        />
         <div className="p-[1px] rounded-2xl bg-[conic-gradient(at_50%_50%,#6C4DFF_0deg,#3B5BFF_140deg,#56CCF2_260deg,#6C4DFF_360deg)] shadow-[0_14px_36px_rgba(0,0,0,0.22)]">
           <div className="relative rounded-2xl bg-white">
             <button

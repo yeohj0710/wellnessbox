@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 type ApiResponse = { ok?: boolean; error?: string; email?: string };
 
@@ -63,6 +64,8 @@ export default function EmailChangeModal({
     () => (cooldownEndsAt ? Math.max(0, cooldownEndsAt - now) : 0),
     [cooldownEndsAt, now]
   );
+  const { panelRef, panelStyle, handleDragPointerDown, isDragging } =
+    useDraggableModal(open, { resetOnOpen: true });
 
   useEffect(() => {
     if (!open) return;
@@ -193,11 +196,18 @@ export default function EmailChangeModal({
 
       <div
         className="relative w-full max-w-[560px] overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5"
+        ref={panelRef}
+        style={panelStyle}
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-6 sm:px-7 py-5">
-          <div className="flex items-center justify-between gap-3">
+          <div
+            className={`flex items-center justify-between gap-3 touch-none ${
+              isDragging ? "cursor-grabbing" : "cursor-grab"
+            }`}
+            onPointerDown={handleDragPointerDown}
+          >
             <div className="text-xl font-bold text-gray-900">이메일 변경</div>
 
             <button

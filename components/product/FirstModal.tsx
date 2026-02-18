@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import AddressModal from "@/components/modal/addressModal";
+import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 export default function FirstModal({
   product,
@@ -13,6 +14,8 @@ export default function FirstModal({
 }: any) {
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const { panelRef, panelStyle, handleDragPointerDown, isDragging } =
+    useDraggableModal(!isAddressModalOpen, { resetOnOpen: true });
   const handleBackgroundClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onClose();
   };
@@ -23,7 +26,18 @@ export default function FirstModal({
           className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
           onClick={handleBackgroundClick}
         >
-          <div className="bg-white rounded-xl shadow-2xl px-6 sm:px-8 py-8 w-128">
+          <div
+            className="relative bg-white rounded-xl shadow-2xl px-6 sm:px-8 py-8 w-128"
+            ref={panelRef}
+            style={panelStyle}
+          >
+            <div
+              onPointerDown={handleDragPointerDown}
+              className={`absolute left-0 right-12 top-0 h-10 touch-none ${
+                isDragging ? "cursor-grabbing" : "cursor-grab"
+              }`}
+              aria-hidden
+            />
             <h2 className="text-lg font-semibold text-gray-800 mb-4">
               주소를 입력해 주세요!
             </h2>

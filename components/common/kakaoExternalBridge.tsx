@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
+import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 const IOS_KEY = "wb_ios_ext_consent_v1";
 const SESSION_DECLINE_KEY = "wb_ios_ext_consent_dismissed";
@@ -30,6 +31,8 @@ export default function KakaoExternalBridge() {
   const [showIosGuide, setShowIosGuide] = useState(false);
   const [closing, setClosing] = useState<"modal" | "guide" | null>(null);
   const overrides = useMemo(getOverrides, []);
+  const iosModalDrag = useDraggableModal(showIosModal, { resetOnOpen: true });
+  const iosGuideDrag = useDraggableModal(showIosGuide, { resetOnOpen: true });
 
   const env = useMemo(() => {
     if (typeof navigator === "undefined")
@@ -176,10 +179,17 @@ export default function KakaoExternalBridge() {
                 ? "translate-y-3 sm:-translate-y-1 sm:opacity-0"
                 : "translate-y-0 sm:translate-y-0 sm:opacity-100"
             }`}
+            ref={iosModalDrag.panelRef}
+            style={iosModalDrag.panelStyle}
             onMouseDown={(e) => e.stopPropagation()}
           >
             <div className="p-5">
-              <div className="flex items-start gap-3">
+              <div
+                className={`flex items-start gap-3 touch-none ${
+                  iosModalDrag.isDragging ? "cursor-grabbing" : "cursor-grab"
+                }`}
+                onPointerDown={iosModalDrag.handleDragPointerDown}
+              >
                 <div className="h-12 flex items-center">
                   <Image
                     src="/logo.png"
@@ -252,10 +262,17 @@ export default function KakaoExternalBridge() {
                 ? "translate-y-3 sm:-translate-y-1 sm:opacity-0"
                 : "translate-y-0 sm:translate-y-0 sm:opacity-100"
             }`}
+            ref={iosGuideDrag.panelRef}
+            style={iosGuideDrag.panelStyle}
             onMouseDown={(e) => e.stopPropagation()}
           >
             <div className="p-5">
-              <div className="flex items-center justify-between">
+              <div
+                className={`flex items-center justify-between touch-none ${
+                  iosGuideDrag.isDragging ? "cursor-grabbing" : "cursor-grab"
+                }`}
+                onPointerDown={iosGuideDrag.handleDragPointerDown}
+              >
                 <div className="text-base font-bold text-slate-900">
                   열리지 않나요?
                 </div>

@@ -14,6 +14,7 @@ import {
   ShieldCheckIcon,
   ChartPieIcon,
 } from "@heroicons/react/24/outline";
+import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 interface SearchModalProps {
   onSelect: (selectedItems: string[]) => void;
@@ -48,6 +49,8 @@ const searchIcons = [
 
 export default function SymptomModal({ onSelect, onClose }: SearchModalProps) {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const { panelRef, panelStyle, handleDragPointerDown, isDragging } =
+    useDraggableModal(true);
   const toggleSelection = (item: string) => {
     setSelectedItems((prev) =>
       prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]
@@ -71,8 +74,17 @@ export default function SymptomModal({ onSelect, onClose }: SearchModalProps) {
     >
       <div
         className="mx-2 relative bg-white rounded-lg px-6 pt-8 pb-6 max-w-lg w-full"
+        ref={panelRef}
+        style={panelStyle}
         onClick={(e) => e.stopPropagation()}
       >
+        <div
+          onPointerDown={handleDragPointerDown}
+          className={`absolute left-0 right-12 top-0 h-10 touch-none ${
+            isDragging ? "cursor-grabbing" : "cursor-grab"
+          }`}
+          aria-hidden
+        />
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-1 text-gray-600 hover:text-gray-800"

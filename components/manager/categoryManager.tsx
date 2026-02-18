@@ -9,6 +9,7 @@ import {
 } from "@/lib/product";
 import { getUploadUrl } from "@/lib/upload";
 import Image from "next/image";
+import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 export default function CategoryManager() {
   const [categories, setCategories] = useState<any[]>([]);
@@ -18,6 +19,8 @@ export default function CategoryManager() {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { panelRef, panelStyle, handleDragPointerDown, isDragging } =
+    useDraggableModal(isCategoryModalOpen, { resetOnOpen: true });
   useEffect(() => {
     const fetchCategories = async () => {
       const fetchedCategories = await getCategories();
@@ -149,8 +152,17 @@ export default function CategoryManager() {
         >
           <div
             className="relative bg-white p-6 rounded shadow-md w-96"
+            ref={panelRef}
+            style={panelStyle}
             onClick={(e) => e.stopPropagation()}
           >
+            <div
+              onPointerDown={handleDragPointerDown}
+              className={`absolute left-0 right-12 top-0 h-10 touch-none ${
+                isDragging ? "cursor-grabbing" : "cursor-grab"
+              }`}
+              aria-hidden
+            />
             <h3 className="text-lg font-bold mb-4">
               {selectedCategory ? "카테고리 수정" : "새 카테고리 등록"}
             </h3>

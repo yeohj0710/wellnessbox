@@ -3,6 +3,7 @@
 import { useState } from "react";
 import AddressModal from "@/components/modal/addressModal";
 import { TrashIcon } from "@heroicons/react/24/outline";
+import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 interface AddressSectionProps {
   roadAddress: string;
@@ -18,6 +19,9 @@ export default function AddressSection({
   setIsAddressModalOpen,
 }: AddressSectionProps) {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const confirmModalDrag = useDraggableModal(isConfirmOpen, {
+    resetOnOpen: true,
+  });
 
   const handleSave = (newRoadAddress: string, detailAddress: string) => {
     setRoadAddress(newRoadAddress);
@@ -80,9 +84,18 @@ export default function AddressSection({
           onClick={() => setIsConfirmOpen(false)}
         >
           <div
-            className="bg-white rounded-lg shadow-lg w-[calc(100%-2rem)] max-w-sm p-5"
+            className="relative bg-white rounded-lg shadow-lg w-[calc(100%-2rem)] max-w-sm p-5"
+            ref={confirmModalDrag.panelRef}
+            style={confirmModalDrag.panelStyle}
             onClick={(e) => e.stopPropagation()}
           >
+            <div
+              onPointerDown={confirmModalDrag.handleDragPointerDown}
+              className={`absolute left-0 right-0 top-0 h-10 touch-none ${
+                confirmModalDrag.isDragging ? "cursor-grabbing" : "cursor-grab"
+              }`}
+              aria-hidden
+            />
             <h2 className="text-lg font-bold text-gray-900">
               주소를 삭제할까요?
             </h2>

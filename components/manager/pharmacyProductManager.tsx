@@ -13,6 +13,7 @@ import { getUploadUrl } from "@/lib/upload";
 import { getPharmaciesIdName } from "@/lib/pharmacy";
 import { ArrowPathIcon } from "@heroicons/react/24/outline";
 import Image from "next/image";
+import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 export default function PharmacyProductManager({ pharmacyId }: any) {
   const [pharmacyProducts, setPharmacyProducts] = useState<any[]>([]);
@@ -26,6 +27,8 @@ export default function PharmacyProductManager({ pharmacyId }: any) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRefreshingProducts, setIsRefreshingProducts] = useState(false);
+  const { panelRef, panelStyle, handleDragPointerDown, isDragging } =
+    useDraggableModal(isModalOpen, { resetOnOpen: true });
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -190,8 +193,17 @@ export default function PharmacyProductManager({ pharmacyId }: any) {
         >
           <div
             className="relative bg-white p-6 rounded shadow-md w-96"
+            ref={panelRef}
+            style={panelStyle}
             onClick={(e) => e.stopPropagation()}
           >
+            <div
+              onPointerDown={handleDragPointerDown}
+              className={`absolute left-0 right-12 top-0 h-10 touch-none ${
+                isDragging ? "cursor-grabbing" : "cursor-grab"
+              }`}
+              aria-hidden
+            />
             <button
               className="absolute top-2 right-4 text-gray-600 hover:text-gray-900 text-2xl"
               onClick={() => setIsModalOpen(false)}

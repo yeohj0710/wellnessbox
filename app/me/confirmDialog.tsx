@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
+import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 type ConfirmDialogProps = {
   open: boolean;
@@ -37,6 +38,8 @@ export default function ConfirmDialog({
   onClose,
 }: ConfirmDialogProps) {
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const { panelRef, panelStyle, handleDragPointerDown, isDragging } =
+    useDraggableModal(open, { resetOnOpen: true });
 
   const confirmBtnClass = useMemo(() => {
     if (tone === "danger") {
@@ -88,10 +91,17 @@ export default function ConfirmDialog({
         role="dialog"
         aria-modal="true"
         className="relative w-full max-w-[420px] overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5"
+        ref={panelRef}
+        style={panelStyle}
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-6 py-5">
+        <div
+          className={`px-6 py-5 touch-none ${
+            isDragging ? "cursor-grabbing" : "cursor-grab"
+          }`}
+          onPointerDown={handleDragPointerDown}
+        >
           <div className="text-lg font-bold text-gray-900">{title}</div>
           {description ? (
             <div className="mt-2 text-sm text-gray-600">{description}</div>

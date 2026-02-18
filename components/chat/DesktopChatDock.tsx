@@ -46,7 +46,7 @@ const PENDING_DOCK_PROMPT_KEY = "wb_chat_dock_pending_prompt_v1";
 const DOCK_NUDGE_DISMISS_KEY_PREFIX = "wb_chat_dock_nudge_dismissed_v2:";
 const DOCK_POSITION_STORAGE_KEY = "wb_chat_dock_position_v1";
 const DOCK_NUDGE_TEXT_MAP: Record<string, string> = {
-  "agent assist": "에이전트 도움",
+  "agent assist": "AI 에이전트",
   "home product browsing": "홈 상품 탐색",
   "show me products for a 7-day package.": "7일 패키지 상품 보여줘.",
   "show me products for a 7-day package": "7일 패키지 상품 보여줘.",
@@ -61,7 +61,15 @@ type DockPanelSize = {
   height: number;
 };
 
-type DockResizeEdge = "left" | "top" | "corner";
+type DockResizeEdge =
+  | "left"
+  | "right"
+  | "top"
+  | "bottom"
+  | "top-left"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-right";
 
 type DockResizeState = {
   edge: DockResizeEdge;
@@ -112,7 +120,9 @@ function queueDockPrompt(prompt: string) {
 function consumeDockPrompt() {
   if (typeof window === "undefined") return "";
   try {
-    const text = (window.sessionStorage.getItem(PENDING_DOCK_PROMPT_KEY) || "").trim();
+    const text = (
+      window.sessionStorage.getItem(PENDING_DOCK_PROMPT_KEY) || ""
+    ).trim();
     if (!text) return "";
     window.sessionStorage.removeItem(PENDING_DOCK_PROMPT_KEY);
     return text;
@@ -303,6 +313,29 @@ function blurFocusedDescendant(container: HTMLElement | null) {
   }
 }
 
+function edgeIncludesLeft(edge: DockResizeEdge) {
+  return edge === "left" || edge === "top-left" || edge === "bottom-left";
+}
+
+function edgeIncludesRight(edge: DockResizeEdge) {
+  return edge === "right" || edge === "top-right" || edge === "bottom-right";
+}
+
+function edgeIncludesTop(edge: DockResizeEdge) {
+  return edge === "top" || edge === "top-left" || edge === "top-right";
+}
+
+function edgeIncludesBottom(edge: DockResizeEdge) {
+  return edge === "bottom" || edge === "bottom-left" || edge === "bottom-right";
+}
+
+function resizeCursorForEdge(edge: DockResizeEdge) {
+  if (edge === "left" || edge === "right") return "ew-resize";
+  if (edge === "top" || edge === "bottom") return "ns-resize";
+  if (edge === "top-right" || edge === "bottom-left") return "nesw-resize";
+  return "nwse-resize";
+}
+
 type DockPanelProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -470,7 +503,7 @@ export default function DesktopChatDock() {
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
-                에이전트 도움
+                AI 에이전트
               </p>
               <p className="mt-0.5 text-[12px] text-slate-700">
                 {localizedRouteTitle}에서 바로 실행할 수 있어요.
@@ -510,8 +543,8 @@ export default function DesktopChatDock() {
           isOpen
             ? "translate-y-2 scale-95 opacity-0 pointer-events-none"
             : pendingOpen
-              ? "translate-y-0 scale-100 opacity-80 pointer-events-none"
-              : "translate-y-0 scale-100 opacity-100 pointer-events-auto"
+            ? "translate-y-0 scale-100 opacity-80 pointer-events-none"
+            : "translate-y-0 scale-100 opacity-100 pointer-events-auto"
         }`}
         aria-label="AI 에이전트 열기"
         title="AI 에이전트 열기"
@@ -559,7 +592,9 @@ function DesktopChatDockPanel({
   const [panelPosition, setPanelPosition] = useState<DockPanelPosition>(() =>
     clampDockPosition(
       loadDockPosition() ??
-        getDefaultDockPosition(clampDockSize(loadDockSize() ?? getDefaultDockSize())),
+        getDefaultDockPosition(
+          clampDockSize(loadDockSize() ?? getDefaultDockSize())
+        ),
       clampDockSize(loadDockSize() ?? getDefaultDockSize())
     )
   );
@@ -630,7 +665,10 @@ function DesktopChatDockPanel({
   }, [activeId, actionLoading, bootstrapPending, isOpen, loading, sendMessage]);
 
   const assistantLoadingMetaByIndex = useMemo(() => {
-    const meta = new Map<number, { contextText: string; userTurnCountBefore: number }>();
+    const meta = new Map<
+      number,
+      { contextText: string; userTurnCountBefore: number }
+    >();
     if (!active) return meta;
 
     let userTurnCount = 0;
@@ -797,7 +835,10 @@ function DesktopChatDockPanel({
       applyPanelSizeToDom(nextSize);
       setPanelSize(nextSize);
 
-      const nextPosition = clampDockPosition(panelPositionRef.current, nextSize);
+      const nextPosition = clampDockPosition(
+        panelPositionRef.current,
+        nextSize
+      );
       panelPositionRef.current = nextPosition;
       applyPanelPositionToDom(nextPosition);
       setPanelPosition(nextPosition);
@@ -813,27 +854,42 @@ function DesktopChatDockPanel({
     const onPointerMove = (event: PointerEvent) => {
       const resizeState = resizeStateRef.current;
       if (resizeState) {
+        const deltaX = event.clientX - resizeState.startX;
+        const deltaY = event.clientY - resizeState.startY;
         let nextWidth = resizeState.startWidth;
         let nextHeight = resizeState.startHeight;
         let nextLeft = resizeState.startLeft;
         let nextTop = resizeState.startTop;
 
-        if (resizeState.edge === "left" || resizeState.edge === "corner") {
-          nextWidth = resizeState.startWidth - (event.clientX - resizeState.startX);
+        if (edgeIncludesLeft(resizeState.edge)) {
+          nextWidth = resizeState.startWidth - deltaX;
         }
-        if (resizeState.edge === "top" || resizeState.edge === "corner") {
-          nextHeight = resizeState.startHeight - (event.clientY - resizeState.startY);
+        if (edgeIncludesRight(resizeState.edge)) {
+          nextWidth = resizeState.startWidth + deltaX;
+        }
+        if (edgeIncludesTop(resizeState.edge)) {
+          nextHeight = resizeState.startHeight - deltaY;
+        }
+        if (edgeIncludesBottom(resizeState.edge)) {
+          nextHeight = resizeState.startHeight + deltaY;
         }
 
-        const clampedSize = clampDockSize({ width: nextWidth, height: nextHeight });
+        const clampedSize = clampDockSize({
+          width: nextWidth,
+          height: nextHeight,
+        });
         panelSizeRef.current = clampedSize;
         pendingResizeSizeRef.current = clampedSize;
 
-        if (resizeState.edge === "left" || resizeState.edge === "corner") {
-          nextLeft = resizeState.startLeft + (resizeState.startWidth - clampedSize.width);
+        if (edgeIncludesLeft(resizeState.edge)) {
+          nextLeft =
+            resizeState.startLeft +
+            (resizeState.startWidth - clampedSize.width);
         }
-        if (resizeState.edge === "top" || resizeState.edge === "corner") {
-          nextTop = resizeState.startTop + (resizeState.startHeight - clampedSize.height);
+        if (edgeIncludesTop(resizeState.edge)) {
+          nextTop =
+            resizeState.startTop +
+            (resizeState.startHeight - clampedSize.height);
         }
 
         const clampedPosition = clampDockPosition(
@@ -985,8 +1041,7 @@ function DesktopChatDockPanel({
     };
     setIsResizing(true);
     document.body.style.userSelect = "none";
-    document.body.style.cursor =
-      edge === "left" ? "ew-resize" : edge === "top" ? "ns-resize" : "nwse-resize";
+    document.body.style.cursor = resizeCursorForEdge(edge);
   };
 
   const startDrag = (event: ReactPointerEvent<HTMLElement>) => {
@@ -1022,7 +1077,10 @@ function DesktopChatDockPanel({
       setSessionsOpen(false);
       return;
     }
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
   }, [isOpen, active?.messages.length, messagesEndRef]);
 
   useEffect(() => {
@@ -1095,11 +1153,14 @@ function DesktopChatDockPanel({
       style={{
         width: `${(isResizing ? panelSizeRef.current : panelSize).width}px`,
         height: `${(isResizing ? panelSizeRef.current : panelSize).height}px`,
-        left: `${(isResizing || isDragging
-          ? panelPositionRef.current
-          : panelPosition
-        ).left}px`,
-        top: `${(isResizing || isDragging ? panelPositionRef.current : panelPosition).top}px`,
+        left: `${
+          (isResizing || isDragging ? panelPositionRef.current : panelPosition)
+            .left
+        }px`,
+        top: `${
+          (isResizing || isDragging ? panelPositionRef.current : panelPosition)
+            .top
+        }px`,
       }}
     >
       {showResizeHint && (
@@ -1131,13 +1192,38 @@ function DesktopChatDockPanel({
       />
       <div
         aria-hidden
+        onPointerDown={(event) => startResize(event, "right")}
+        className="absolute -right-1 top-0 z-40 hidden h-full w-3 cursor-ew-resize touch-none sm:block"
+      />
+      <div
+        aria-hidden
         onPointerDown={(event) => startResize(event, "top")}
         className="absolute left-0 -top-1 z-40 hidden h-3 w-full cursor-ns-resize touch-none sm:block"
       />
       <div
         aria-hidden
-        onPointerDown={(event) => startResize(event, "corner")}
+        onPointerDown={(event) => startResize(event, "bottom")}
+        className="absolute -bottom-1 left-0 z-40 hidden h-3 w-full cursor-ns-resize touch-none sm:block"
+      />
+      <div
+        aria-hidden
+        onPointerDown={(event) => startResize(event, "top-left")}
         className="absolute -left-1 -top-1 z-50 hidden h-4 w-4 cursor-nwse-resize touch-none sm:block"
+      />
+      <div
+        aria-hidden
+        onPointerDown={(event) => startResize(event, "top-right")}
+        className="absolute -right-1 -top-1 z-50 hidden h-4 w-4 cursor-nesw-resize touch-none sm:block"
+      />
+      <div
+        aria-hidden
+        onPointerDown={(event) => startResize(event, "bottom-left")}
+        className="absolute -bottom-1 -left-1 z-50 hidden h-4 w-4 cursor-nesw-resize touch-none sm:block"
+      />
+      <div
+        aria-hidden
+        onPointerDown={(event) => startResize(event, "bottom-right")}
+        className="absolute -bottom-1 -right-1 z-50 hidden h-4 w-4 cursor-nwse-resize touch-none sm:block"
       />
       <header
         onPointerDown={startDrag}
@@ -1281,12 +1367,14 @@ function DesktopChatDockPanel({
                       content={message.content}
                       loadingContextText={
                         message.role === "assistant"
-                          ? assistantLoadingMetaByIndex.get(index)?.contextText || ""
+                          ? assistantLoadingMetaByIndex.get(index)
+                              ?.contextText || ""
                           : ""
                       }
                       loadingUserTurnCount={
                         message.role === "assistant"
-                          ? assistantLoadingMetaByIndex.get(index)?.userTurnCountBefore ?? 0
+                          ? assistantLoadingMetaByIndex.get(index)
+                              ?.userTurnCountBefore ?? 0
                           : 0
                       }
                     />
@@ -1416,7 +1504,10 @@ function DesktopChatDockPanel({
                     <button
                       type="button"
                       onClick={() =>
-                        void handleDelete(session.id, session.title || "새 상담")
+                        void handleDelete(
+                          session.id,
+                          session.title || "새 상담"
+                        )
                       }
                       className="shrink-0 rounded p-1 text-rose-500 hover:bg-rose-50"
                       title="삭제"

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { TrashIcon, EllipsisHorizontalIcon } from "@heroicons/react/24/outline";
 import type { ChatSession } from "@/types/chat";
+import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 interface ChatDrawerProps {
   sessions: ChatSession[];
@@ -35,6 +36,9 @@ export default function ChatDrawer({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmDeleteTitle, setConfirmDeleteTitle] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const deleteConfirmDrag = useDraggableModal(Boolean(confirmDeleteId), {
+    resetOnOpen: true,
+  });
 
   function commitRename() {
     if (editingId && editingTitle.trim()) {
@@ -279,9 +283,16 @@ export default function ChatDrawer({
 
           <div
             className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_20px_60px_rgba(2,6,23,0.25)]"
+            ref={deleteConfirmDrag.panelRef}
+            style={deleteConfirmDrag.panelStyle}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-5">
+            <div
+              className={`p-5 touch-none ${
+                deleteConfirmDrag.isDragging ? "cursor-grabbing" : "cursor-grab"
+              }`}
+              onPointerDown={deleteConfirmDrag.handleDragPointerDown}
+            >
               <div className="flex items-start gap-4">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-red-50 to-rose-50 ring-1 ring-red-100">
                   <TrashIcon className="h-5 w-5 text-red-600" />

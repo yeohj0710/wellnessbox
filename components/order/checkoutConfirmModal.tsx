@@ -6,6 +6,7 @@ import {
   MapPinIcon,
   PhoneIcon,
 } from "@heroicons/react/24/solid";
+import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 interface CheckoutConfirmModalProps {
   visible: boolean;
@@ -24,6 +25,8 @@ export default function CheckoutConfirmModal({
   onCancel,
   onConfirm,
 }: CheckoutConfirmModalProps) {
+  const { panelRef, panelStyle, handleDragPointerDown, isDragging } =
+    useDraggableModal(visible, { resetOnOpen: true });
   if (!visible) return null;
   return (
     <div className="fixed inset-0 z-50 grid place-items-center p-4">
@@ -35,7 +38,16 @@ export default function CheckoutConfirmModal({
         role="dialog"
         aria-modal="true"
         className="relative w-full max-w-md origin-center rounded-3xl p-1 shadow-2xl transition-all bg-gradient-to-br from-sky-400/70 via-indigo-500/60 to-fuchsia-500/60 max-h-[90vh] overflow-hidden"
+        ref={panelRef}
+        style={panelStyle}
       >
+        <div
+          onPointerDown={handleDragPointerDown}
+          className={`absolute left-0 right-14 top-0 z-20 h-12 touch-none ${
+            isDragging ? "cursor-grabbing" : "cursor-grab"
+          }`}
+          aria-hidden
+        />
         <div className="rounded-3xl bg-white max-h-[90vh]">
           <div className="relative overflow-hidden rounded-3xl">
             <div className="absolute -top-20 -right-16 h-48 w-48 rounded-full bg-sky-100 blur-2xl" />

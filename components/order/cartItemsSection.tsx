@@ -5,6 +5,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { TrashIcon } from "@heroicons/react/16/solid";
 import { fetchJsonWithTimeout, FetchTimeoutError } from "@/lib/client/fetch-utils";
 import { writeClientCartItems } from "@/lib/client/cart-storage";
+import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 export default function CartItemsSection({
   cartItems,
@@ -26,6 +27,9 @@ export default function CartItemsSection({
   const [productsResolveToken, setProductsResolveToken] = useState(0);
   const [isResolvingProducts, setIsResolvingProducts] = useState(false);
   const onUpdateCartRef = useRef(onUpdateCart);
+  const confirmModalDrag = useDraggableModal(Boolean(confirmType), {
+    resetOnOpen: true,
+  });
 
   useEffect(() => {
     onUpdateCartRef.current = onUpdateCart;
@@ -366,8 +370,17 @@ export default function CartItemsSection({
         >
           <div
             className="relative bg-gradient-to-br from-sky-400/90 via-indigo-500/90 to-fuchsia-500/90 rounded-2xl shadow-2xl w-full max-w-sm mx-4 animate-scaleIn"
+            ref={confirmModalDrag.panelRef}
+            style={confirmModalDrag.panelStyle}
             onClick={(e) => e.stopPropagation()}
           >
+            <div
+              onPointerDown={confirmModalDrag.handleDragPointerDown}
+              className={`absolute left-0 right-0 top-0 h-10 touch-none ${
+                confirmModalDrag.isDragging ? "cursor-grabbing" : "cursor-grab"
+              }`}
+              aria-hidden
+            />
             <div className="p-6 bg-white/90 rounded-2xl text-center">
               <h2 className="text-lg font-bold text-gray-800 mb-3">
                 변경 확인

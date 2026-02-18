@@ -129,10 +129,16 @@ export function buildFallbackInteractiveActions(lastAssistantText: string) {
 
 export async function runAgentDecision(
   params: RunAgentDecisionParams
-): Promise<{ executed: boolean; summary: string; message: string }> {
+): Promise<{
+  executed: boolean;
+  summary: string;
+  message: string;
+  executedActions: ChatActionType[];
+}> {
   let executed = false;
   let summary = "";
   const messages: string[] = [];
+  const executedActions: ChatActionType[] = [];
   const hasClearCartAction = params.decision.actions.includes("clear_cart");
 
   const syntheticCommand = hasClearCartAction
@@ -149,6 +155,15 @@ export async function runAgentDecision(
     if (cartResult.executed) {
       executed = true;
       summary = cartResult.summary;
+      if (params.decision.cartIntent.mode === "buy_all") {
+        executedActions.push("buy_recommended_all");
+      } else if (params.decision.cartIntent.mode === "add_all") {
+        executedActions.push("add_recommended_all");
+      } else if (params.decision.actions.includes("buy_recommended_all")) {
+        executedActions.push("buy_recommended_all");
+      } else if (params.decision.actions.includes("add_recommended_all")) {
+        executedActions.push("add_recommended_all");
+      }
       messages.push(
         cartResult.hasAddress
           ? cartResult.openCartAfterSave
@@ -170,6 +185,7 @@ export async function runAgentDecision(
     const result = await params.runSingleInteractiveAction(action, params.sessionMessages);
     if (!result.executed) continue;
     executed = true;
+    executedActions.push(action);
     if (result.summary) summary = result.summary;
     if (result.message) messages.push(result.message);
     if (result.navigated) break;
@@ -182,5 +198,6 @@ export async function runAgentDecision(
       params.decision.assistantReply ||
       messages.find(Boolean) ||
       "요청하신 동작을 실행해둘게요.",
+    executedActions,
   };
 }

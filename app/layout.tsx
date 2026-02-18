@@ -16,6 +16,7 @@ import PullToRefresh from "@/components/common/pullToRefresh";
 import GlobalCartHost from "@/components/order/globalCartHost";
 import DesktopChatDock from "@/components/chat/DesktopChatDock";
 import ChatCartActionHost from "@/components/chat/ChatCartActionHost";
+import CommandPalette from "@/components/common/commandPalette";
 import Script from "next/script";
 import GoogleTranslateGate from "@/components/common/GoogleTranslateGate";
 
@@ -91,6 +92,12 @@ export default async function RootLayout({
       <body
         className={`${pretendard.className} overflow-x-hidden flex flex-col bg-white`}
       >
+        <a
+          href="#wb-main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[300] focus:rounded-md focus:bg-slate-900 focus:px-3 focus:py-2 focus:text-sm focus:text-white"
+        >
+          Skip to content
+        </a>
         <AppDeepLinkHandler />
         <KakaoExternalBridge />
         <PullToRefresh />
@@ -103,6 +110,7 @@ export default async function RootLayout({
                   <TopBar />
                 </Suspense>
                 <main
+                  id="wb-main-content"
                   className="min-h-[105vh] flex flex-col items-center"
                   style={{
                     paddingTop: "3.5rem",
@@ -112,7 +120,10 @@ export default async function RootLayout({
                 </main>
                 <GlobalCartHost />
                 <ChatCartActionHost />
-                <DesktopChatDock />
+                <Suspense fallback={null}>
+                  <DesktopChatDock />
+                </Suspense>
+                <CommandPalette />
                 <RouteTransition />
               </ToastProvider>
             </LoadingProvider>

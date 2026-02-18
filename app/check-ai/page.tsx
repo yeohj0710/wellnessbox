@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useLoading } from "@/components/common/loadingContext.client";
+import { useDraggableModal } from "@/components/common/useDraggableModal";
 import {
   getOrCreateClientId,
   refreshClientIdCookieIfNeeded,
@@ -44,6 +45,7 @@ export default function CheckAI() {
   const [modalOpen, setModalOpen] = useState(false);
   const [animateBars, setAnimateBars] = useState(false);
   const [categories, setCategories] = useState<CategoryLite[]>([]);
+  const resultModalDrag = useDraggableModal(modalOpen, { resetOnOpen: true });
 
   const completion = useMemo(() => {
     const answered = answers.filter((v) => v > 0).length;
@@ -314,9 +316,16 @@ export default function CheckAI() {
         >
           <div
             className="w-full max-w-md scale-100 rounded-2xl bg-white p-6 shadow-[0_20px_60px_rgba(2,6,23,0.25)] ring-1 ring-black/5 animate-[fadeIn_.18s_ease-out]"
+            ref={resultModalDrag.panelRef}
+            style={resultModalDrag.panelStyle}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between">
+            <div
+              className={`flex items-start justify-between touch-none ${
+                resultModalDrag.isDragging ? "cursor-grabbing" : "cursor-grab"
+              }`}
+              onPointerDown={resultModalDrag.handleDragPointerDown}
+            >
               <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900">
                 AI 추천 결과
               </h2>
