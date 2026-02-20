@@ -50,9 +50,17 @@ When touching these files, prefer block-level extraction over in-place growth:
 
 - `lib/useLoginStatus.ts` is the canonical source for `LoginStatus` type + normalization.
 - Header/nav ownership:
-  - `components/common/topBar.tsx` = shell orchestration (drawer, cart, route transitions)
+  - `components/common/topBar.tsx` = shell orchestration (route transitions + action wiring)
+  - `components/common/topBar.header.tsx` = top header rendering
+  - `components/common/topBar.drawer.tsx` = drawer rendering + overlay
+  - `components/common/topBar.hooks.ts` = login/cart/scroll/logo hooks
   - `components/common/menuLinks.tsx` = menu controller state (admin reveal, AI dropdown, timers)
   - `components/common/menuLinks.desktop.tsx` = desktop menu rendering
   - `components/common/menuLinks.drawer.tsx` = drawer menu rendering
   - `components/common/menuLinks.shared.tsx` = shared badges/visibility/operator links
 - If updating menu policy, keep desktop and drawer variants in sync.
+
+## 6) Push Subscriptions
+
+- `lib/notification/subscriptions.ts` now uses typed `PushSubscriptionPayload` + shared DB/log helpers.
+- Keep route-level ownership guards intact; only persistence/logging logic belongs here.

@@ -1,40 +1,131 @@
-import db from "@/lib/db";
+﻿import db from "@/lib/db";
 import {
   elapsedPushMs,
   pushLog,
   startPushTimer,
 } from "@/lib/push/logging";
+import type { Prisma } from "@prisma/client";
 
-export async function saveSubscription(
-  orderId: number,
-  sub: any,
-  role: string
-) {
+type PushSubscriptionPayload = {
+  endpoint: string;
+  keys?: {
+    auth?: string;
+    p256dh?: string;
+  };
+};
+
+type PushStatusAction = "sync" | "resubscribe" | "noop";
+
+type PushStatusResult = {
+  subscribed: boolean;
+  action: PushStatusAction;
+};
+
+const ACTIVE_RESET_DATA = {
+  invalidatedAt: null,
+  lastFailureStatus: null,
+} as const;
+
+function extractSubscriptionCrypto(sub: PushSubscriptionPayload) {
+  return {
+    auth: sub.keys?.auth ?? "",
+    p256dh: sub.keys?.p256dh ?? "",
+  };
+}
+
+function resolveStatusAction(sub: { invalidatedAt: Date | null } | null): PushStatusResult {
+  if (!sub) return { subscribed: false, action: "sync" };
+  if (sub.invalidatedAt) {
+    return { subscribed: false, action: "resubscribe" };
+  }
+  return { subscribed: true, action: "noop" };
+}
+
+async function upsertSubscriptionWithLog(options: {
+  subscription: PushSubscriptionPayload;
+  upsert: Parameters<typeof db.subscription.upsert>[0];
+  logEvent: string;
+  logMeta: Record<string, unknown>;
+}) {
   const startedAt = startPushTimer();
-  const auth = sub.keys?.auth || "";
-  const p256dh = sub.keys?.p256dh || "";
-  const saved = await db.subscription.upsert({
-    where: {
-      role_orderId_endpoint: { role, orderId, endpoint: sub.endpoint },
-    },
-    update: { auth, p256dh, invalidatedAt: null, lastFailureStatus: null },
-    create: {
-      role,
-      orderId,
-      endpoint: sub.endpoint,
-      auth,
-      p256dh,
-      invalidatedAt: null,
-      lastFailureStatus: null,
-    },
-  });
-  pushLog("subscription.save", {
-    role,
-    orderId,
-    endpoint: sub.endpoint,
+  const saved = await db.subscription.upsert(options.upsert);
+  pushLog(options.logEvent, {
+    ...options.logMeta,
+    endpoint: options.subscription.endpoint,
     elapsedMs: elapsedPushMs(startedAt),
   });
   return saved;
+}
+
+async function deleteSubscriptionsWithLog(options: {
+  where: Prisma.SubscriptionWhereInput;
+  logEvent: string;
+  logMeta: Record<string, unknown>;
+}) {
+  const startedAt = startPushTimer();
+  const removed = await db.subscription.deleteMany({ where: options.where });
+  pushLog(options.logEvent, {
+    ...options.logMeta,
+    removedCount: removed.count,
+    elapsedMs: elapsedPushMs(startedAt),
+  });
+  return removed;
+}
+
+async function hasActiveSubscription(
+  where: Prisma.SubscriptionWhereInput
+): Promise<boolean> {
+  const sub = await db.subscription.findFirst({
+    where,
+    select: { id: true, invalidatedAt: true },
+  });
+  return !!sub && !sub.invalidatedAt;
+}
+
+async function getStatusWithLog(options: {
+  where: Prisma.SubscriptionWhereInput;
+  logEvent: string;
+  logMeta: Record<string, unknown>;
+}) {
+  const startedAt = startPushTimer();
+  const sub = await db.subscription.findFirst({
+    where: options.where,
+    select: { invalidatedAt: true },
+  });
+  const result = resolveStatusAction(sub);
+  pushLog(options.logEvent, {
+    ...options.logMeta,
+    subscribed: result.subscribed,
+    action: result.action,
+    elapsedMs: elapsedPushMs(startedAt),
+  });
+  return result;
+}
+
+export async function saveSubscription(
+  orderId: number,
+  sub: PushSubscriptionPayload,
+  role: string
+) {
+  const crypto = extractSubscriptionCrypto(sub);
+  return upsertSubscriptionWithLog({
+    subscription: sub,
+    logEvent: "subscription.save",
+    logMeta: { role, orderId },
+    upsert: {
+      where: {
+        role_orderId_endpoint: { role, orderId, endpoint: sub.endpoint },
+      },
+      update: { ...crypto, ...ACTIVE_RESET_DATA },
+      create: {
+        role,
+        orderId,
+        endpoint: sub.endpoint,
+        ...crypto,
+        ...ACTIVE_RESET_DATA,
+      },
+    },
+  });
 }
 
 export async function removeSubscription(
@@ -42,65 +133,41 @@ export async function removeSubscription(
   orderId: number,
   role: string
 ) {
-  const startedAt = startPushTimer();
-  const removed = await db.subscription.deleteMany({
+  return deleteSubscriptionsWithLog({
     where: { endpoint, orderId, role },
+    logEvent: "subscription.remove",
+    logMeta: { role, orderId, endpoint },
   });
-  pushLog("subscription.remove", {
-    role,
-    orderId,
-    endpoint,
-    removedCount: removed.count,
-    elapsedMs: elapsedPushMs(startedAt),
-  });
-  return removed;
 }
 
 export async function removeSubscriptionsByEndpoint(
   endpoint: string,
   role: string
 ) {
-  const startedAt = startPushTimer();
-  const removed = await db.subscription.deleteMany({
+  return deleteSubscriptionsWithLog({
     where: { endpoint, role },
+    logEvent: "subscription.remove_by_endpoint",
+    logMeta: { role, endpoint },
   });
-  pushLog("subscription.remove_by_endpoint", {
-    role,
-    endpoint,
-    removedCount: removed.count,
-    elapsedMs: elapsedPushMs(startedAt),
-  });
-  return removed;
 }
 
 export async function removeSubscriptionsByEndpointAll(endpoint: string) {
-  const startedAt = startPushTimer();
-  const removed = await db.subscription.deleteMany({
+  return deleteSubscriptionsWithLog({
     where: { endpoint },
+    logEvent: "subscription.remove_all_roles",
+    logMeta: { endpoint },
   });
-  pushLog("subscription.remove_all_roles", {
-    endpoint,
-    removedCount: removed.count,
-    elapsedMs: elapsedPushMs(startedAt),
-  });
-  return removed;
 }
 
 export async function removeSubscriptionsByEndpointExceptRole(
   endpoint: string,
   role: string
 ) {
-  const startedAt = startPushTimer();
-  const removed = await db.subscription.deleteMany({
+  return deleteSubscriptionsWithLog({
     where: { endpoint, role: { not: role } },
+    logEvent: "subscription.remove_except_role",
+    logMeta: { role, endpoint },
   });
-  pushLog("subscription.remove_except_role", {
-    role,
-    endpoint,
-    removedCount: removed.count,
-    elapsedMs: elapsedPushMs(startedAt),
-  });
-  return removed;
 }
 
 export async function isSubscribed(
@@ -108,176 +175,120 @@ export async function isSubscribed(
   endpoint: string,
   role: string
 ) {
-  const sub = await db.subscription.findFirst({
-    where: { orderId, endpoint, role },
-    select: { id: true, invalidatedAt: true },
-  });
-  return !!sub && !sub.invalidatedAt;
+  return hasActiveSubscription({ orderId, endpoint, role });
 }
 
-export async function savePharmacySubscription(pharmacyId: number, sub: any) {
-  const startedAt = startPushTimer();
-  const auth = sub.keys?.auth || "";
-  const p256dh = sub.keys?.p256dh || "";
-  const saved = await db.subscription.upsert({
-    where: {
-      role_pharmacyId_endpoint: {
+export async function savePharmacySubscription(
+  pharmacyId: number,
+  sub: PushSubscriptionPayload
+) {
+  const crypto = extractSubscriptionCrypto(sub);
+  return upsertSubscriptionWithLog({
+    subscription: sub,
+    logEvent: "subscription.save_pharm",
+    logMeta: { role: "pharm", pharmacyId },
+    upsert: {
+      where: {
+        role_pharmacyId_endpoint: {
+          role: "pharm",
+          pharmacyId,
+          endpoint: sub.endpoint,
+        },
+      },
+      update: { ...crypto, ...ACTIVE_RESET_DATA },
+      create: {
         role: "pharm",
         pharmacyId,
         endpoint: sub.endpoint,
+        ...crypto,
+        ...ACTIVE_RESET_DATA,
       },
     },
-    update: { auth, p256dh, invalidatedAt: null, lastFailureStatus: null },
-    create: {
-      role: "pharm",
-      pharmacyId,
-      endpoint: sub.endpoint,
-      auth,
-      p256dh,
-      invalidatedAt: null,
-      lastFailureStatus: null,
-    },
   });
-  pushLog("subscription.save_pharm", {
-    role: "pharm",
-    pharmacyId,
-    endpoint: sub.endpoint,
-    elapsedMs: elapsedPushMs(startedAt),
-  });
-  return saved;
 }
 
 export async function removePharmacySubscription(
   endpoint: string,
   pharmacyId: number
 ) {
-  const startedAt = startPushTimer();
-  const removed = await db.subscription.deleteMany({
+  return deleteSubscriptionsWithLog({
     where: { endpoint, pharmacyId, role: "pharm" },
+    logEvent: "subscription.remove_pharm",
+    logMeta: { role: "pharm", pharmacyId, endpoint },
   });
-  pushLog("subscription.remove_pharm", {
-    role: "pharm",
-    pharmacyId,
-    endpoint,
-    removedCount: removed.count,
-    elapsedMs: elapsedPushMs(startedAt),
-  });
-  return removed;
 }
 
 export async function removePharmacySubscriptionsByEndpointExcept(
   endpoint: string,
   pharmacyId: number
 ) {
-  const startedAt = startPushTimer();
-  const removed = await db.subscription.deleteMany({
+  return deleteSubscriptionsWithLog({
     where: { endpoint, role: "pharm", NOT: { pharmacyId } },
+    logEvent: "subscription.remove_pharm_except",
+    logMeta: { role: "pharm", pharmacyId, endpoint },
   });
-  pushLog("subscription.remove_pharm_except", {
-    role: "pharm",
-    pharmacyId,
-    endpoint,
-    removedCount: removed.count,
-    elapsedMs: elapsedPushMs(startedAt),
-  });
-  return removed;
 }
 
 export async function isPharmacySubscribed(
   pharmacyId: number,
   endpoint: string
 ) {
-  const sub = await db.subscription.findFirst({
-    where: { pharmacyId, endpoint, role: "pharm" },
-    select: { id: true, invalidatedAt: true },
-  });
-  return !!sub && !sub.invalidatedAt;
+  return hasActiveSubscription({ pharmacyId, endpoint, role: "pharm" });
 }
 
-export async function saveRiderSubscription(riderId: number, sub: any) {
-  const startedAt = startPushTimer();
-  const auth = sub.keys?.auth || "";
-  const p256dh = sub.keys?.p256dh || "";
-  const saved = await db.subscription.upsert({
-    where: {
-      role_riderId_endpoint: {
+export async function saveRiderSubscription(
+  riderId: number,
+  sub: PushSubscriptionPayload
+) {
+  const crypto = extractSubscriptionCrypto(sub);
+  return upsertSubscriptionWithLog({
+    subscription: sub,
+    logEvent: "subscription.save_rider",
+    logMeta: { role: "rider", riderId },
+    upsert: {
+      where: {
+        role_riderId_endpoint: {
+          role: "rider",
+          riderId,
+          endpoint: sub.endpoint,
+        },
+      },
+      update: { ...crypto, ...ACTIVE_RESET_DATA },
+      create: {
         role: "rider",
         riderId,
         endpoint: sub.endpoint,
+        ...crypto,
+        ...ACTIVE_RESET_DATA,
       },
     },
-    update: { auth, p256dh, invalidatedAt: null, lastFailureStatus: null },
-    create: {
-      role: "rider",
-      riderId,
-      endpoint: sub.endpoint,
-      auth,
-      p256dh,
-      invalidatedAt: null,
-      lastFailureStatus: null,
-    },
   });
-  pushLog("subscription.save_rider", {
-    role: "rider",
-    riderId,
-    endpoint: sub.endpoint,
-    elapsedMs: elapsedPushMs(startedAt),
-  });
-  return saved;
 }
 
 export async function removeRiderSubscription(
   endpoint: string,
   riderId: number
 ) {
-  const startedAt = startPushTimer();
-  const removed = await db.subscription.deleteMany({
+  return deleteSubscriptionsWithLog({
     where: { endpoint, riderId, role: "rider" },
+    logEvent: "subscription.remove_rider",
+    logMeta: { role: "rider", riderId, endpoint },
   });
-  pushLog("subscription.remove_rider", {
-    role: "rider",
-    riderId,
-    endpoint,
-    removedCount: removed.count,
-    elapsedMs: elapsedPushMs(startedAt),
-  });
-  return removed;
 }
 
 export async function removeRiderSubscriptionsByEndpointExcept(
   endpoint: string,
   riderId: number
 ) {
-  const startedAt = startPushTimer();
-  const removed = await db.subscription.deleteMany({
+  return deleteSubscriptionsWithLog({
     where: { endpoint, role: "rider", NOT: { riderId } },
+    logEvent: "subscription.remove_rider_except",
+    logMeta: { role: "rider", riderId, endpoint },
   });
-  pushLog("subscription.remove_rider_except", {
-    role: "rider",
-    riderId,
-    endpoint,
-    removedCount: removed.count,
-    elapsedMs: elapsedPushMs(startedAt),
-  });
-  return removed;
 }
 
 export async function isRiderSubscribed(riderId: number, endpoint: string) {
-  const sub = await db.subscription.findFirst({
-    where: { riderId, endpoint, role: "rider" },
-    select: { id: true, invalidatedAt: true },
-  });
-  return !!sub && !sub.invalidatedAt;
-}
-
-type PushStatusAction = "sync" | "resubscribe" | "noop";
-
-function resolveStatusAction(sub: { invalidatedAt: Date | null } | null) {
-  if (!sub) return { subscribed: false, action: "sync" as PushStatusAction };
-  if (sub.invalidatedAt) {
-    return { subscribed: false, action: "resubscribe" as PushStatusAction };
-  }
-  return { subscribed: true, action: "noop" as PushStatusAction };
+  return hasActiveSubscription({ riderId, endpoint, role: "rider" });
 }
 
 export async function getSubscriptionStatus(
@@ -285,61 +296,31 @@ export async function getSubscriptionStatus(
   endpoint: string,
   role: string
 ) {
-  const startedAt = startPushTimer();
-  const sub = await db.subscription.findFirst({
+  return getStatusWithLog({
     where: { orderId, endpoint, role },
-    select: { invalidatedAt: true },
+    logEvent: "subscription.status",
+    logMeta: { role, orderId, endpoint },
   });
-  const result = resolveStatusAction(sub);
-  pushLog("subscription.status", {
-    role,
-    orderId,
-    endpoint,
-    subscribed: result.subscribed,
-    action: result.action,
-    elapsedMs: elapsedPushMs(startedAt),
-  });
-  return result;
 }
 
 export async function getPharmacySubscriptionStatus(
   pharmacyId: number,
   endpoint: string
 ) {
-  const startedAt = startPushTimer();
-  const sub = await db.subscription.findFirst({
+  return getStatusWithLog({
     where: { pharmacyId, endpoint, role: "pharm" },
-    select: { invalidatedAt: true },
+    logEvent: "subscription.status_pharm",
+    logMeta: { role: "pharm", pharmacyId, endpoint },
   });
-  const result = resolveStatusAction(sub);
-  pushLog("subscription.status_pharm", {
-    role: "pharm",
-    pharmacyId,
-    endpoint,
-    subscribed: result.subscribed,
-    action: result.action,
-    elapsedMs: elapsedPushMs(startedAt),
-  });
-  return result;
 }
 
 export async function getRiderSubscriptionStatus(
   riderId: number,
   endpoint: string
 ) {
-  const startedAt = startPushTimer();
-  const sub = await db.subscription.findFirst({
+  return getStatusWithLog({
     where: { riderId, endpoint, role: "rider" },
-    select: { invalidatedAt: true },
+    logEvent: "subscription.status_rider",
+    logMeta: { role: "rider", riderId, endpoint },
   });
-  const result = resolveStatusAction(sub);
-  pushLog("subscription.status_rider", {
-    role: "rider",
-    riderId,
-    endpoint,
-    subscribed: result.subscribed,
-    action: result.action,
-    elapsedMs: elapsedPushMs(startedAt),
-  });
-  return result;
 }
