@@ -63,6 +63,10 @@ When touching these files, prefer block-level extraction over in-place growth:
 - Chat action planner split:
   - `app/api/chat/actions/route.ts` = model call + request/response orchestration
   - `lib/chat/action-intent-rules.ts` = regex intent rules + runtime-context flags + fallback action feedback
+- Chat guide composition split:
+  - `app/chat/hooks/useChat.ts` = hook state lifecycle + I/O orchestration
+  - `app/chat/hooks/useChat.agentGuide.ts` = capability prioritization + guide example selection
+  - `app/chat/hooks/useChat.ts` `finalizeAssistantTurn(...)` = shared post-response pipeline (title/suggestions/actions/persist)
 - Header/nav ownership:
   - `components/common/topBar.tsx` = shell orchestration (route transitions + action wiring)
   - `components/common/topBar.header.tsx` = top header rendering

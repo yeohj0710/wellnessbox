@@ -34,7 +34,6 @@ import { hydrateRecommendationPrices } from "./useChat.recommendation";
 import {
   readActionMemory,
   rememberActionMemoryList,
-  scoreActionMemory,
   sortActionsByMemory,
   type ActionMemoryMap,
 } from "./useChat.actionMemory";
@@ -49,14 +48,11 @@ import { evaluate as evaluateAssessAB } from "@/app/assess/logic/algorithm";
 import { KEY_TO_CODE, labelOf } from "@/lib/categories";
 import {
   CHAT_ACTION_LABELS,
-  CHAT_CAPABILITY_ACTIONS,
   type ChatActionType,
-  type ChatCapabilityAction,
   type ChatAgentExecuteDecision,
   type ChatAgentSuggestedAction,
 } from "@/lib/chat/agent-actions";
 import {
-  hasRecommendationSection,
   isLikelyActionIntentText,
   normalizeActionTypeList,
   pickLatestAssistantText,
@@ -75,6 +71,12 @@ import {
   type InChatAssessmentMode,
   type InChatAssessmentState,
 } from "./useChat.assessment";
+import {
+  buildAgentCapabilityActions,
+  buildAgentGuideExamples,
+  type AgentCapabilityItem,
+  type AgentGuideExample,
+} from "./useChat.agentGuide";
 import { runSingleInteractiveAction as runSingleInteractiveActionFlow } from "./useChat.interactiveActions";
 import {
   buildFallbackInteractiveActions,
@@ -88,16 +90,6 @@ type UseChatOptions = {
   remoteBootstrap?: boolean;
   enableAutoInit?: boolean;
   pageContext?: ChatPageAgentContext | null;
-};
-
-type AgentGuideExample = {
-  id: string;
-  label: string;
-  prompt: string;
-};
-
-type AgentCapabilityItem = ChatCapabilityAction & {
-  id: string;
 };
 
 const OFFLINE_INIT_MESSAGE =
@@ -394,48 +386,12 @@ export default function useChat(options: UseChatOptions = {}) {
   );
 
   const agentCapabilityActions = useMemo<AgentCapabilityItem[]>(() => {
-    const inAssessmentMode = inChatAssessment?.mode;
-    const hasRecommendation = hasRecommendationSection(latestAssistantTextInActive);
-
-    const scored = CHAT_CAPABILITY_ACTIONS.map((item) => {
-      let priority = 0;
-      if (hasRecommendation) {
-        if (item.category === "cart") priority += 60;
-        if (item.type === "open_my_orders") priority += 18;
-        if (item.type === "start_chat_assess") priority += 15;
-      } else {
-        if (item.type === "open_explore") priority += 14;
-        if (item.type === "start_chat_quick_check") priority += 12;
-        if (item.type === "open_my_orders") priority += 10;
-      }
-
-      if (inAssessmentMode === "quick") {
-        if (item.type === "start_chat_quick_check") priority += 60;
-        if (item.type === "open_check_ai") priority += 28;
-      } else if (inAssessmentMode === "deep") {
-        if (item.type === "start_chat_assess") priority += 60;
-        if (item.type === "open_assess") priority += 28;
-      }
-
-      if (item.type === "open_contact" || item.type === "open_support_call") {
-        priority += 5;
-      }
-      if (pageContextActionSet.has(item.type)) {
-        priority += 35;
-      }
-      priority += scoreActionMemory(item.type, actionMemory);
-
-      return {
-        ...item,
-        id: `cap-${item.type}`,
-        priority,
-      };
-    }).sort(
-      (left, right) =>
-        right.priority - left.priority || left.label.localeCompare(right.label, "ko")
-    );
-
-    return scored.map(({ priority: _priority, ...item }) => item);
+    return buildAgentCapabilityActions({
+      latestAssistantText: latestAssistantTextInActive,
+      inAssessmentMode: inChatAssessment?.mode ?? null,
+      pageContextActionSet,
+      actionMemory,
+    });
   }, [
     actionMemory,
     inChatAssessment?.mode,
@@ -444,44 +400,11 @@ export default function useChat(options: UseChatOptions = {}) {
   ]);
 
   const agentGuideExamples = useMemo<AgentGuideExample[]>(() => {
-    if (hasRecommendationSection(latestAssistantTextInActive)) {
-      return [
-        {
-          id: "agent-buy-all",
-          label: "추천 제품 바로 주문",
-          prompt: "추천 상품 전체 바로 구매 진행해줘",
-        },
-        {
-          id: "agent-add-all",
-          label: "추천 제품 담기",
-          prompt: "추천 상품 전체 장바구니에 담아줘",
-        },
-        {
-          id: "agent-cart-and-assess",
-          label: "담은 뒤 정밀검사",
-          prompt: "추천 상품 장바구니에 담고 정밀검사 페이지로 이동해줘",
-        },
-        {
-          id: "agent-open-check-ai",
-          label: "빠른검사 시작하기",
-          prompt: "빠른검사 시작해줘",
-        },
-      ];
-    }
-
-    if (Array.isArray(pageContext?.suggestedPrompts) && pageContext.suggestedPrompts.length > 0) {
-      return pageContext.suggestedPrompts.slice(0, 4).map((prompt, index) => ({
-        id: `ctx-${index}-${prompt}`,
-        label: prompt.length > 18 ? `${prompt.slice(0, 18)}...` : prompt,
-        prompt,
-      }));
-    }
-
-    return agentCapabilityActions.slice(0, 4).map((item) => ({
-      id: item.id,
-      label: item.label,
-      prompt: item.prompt,
-    }));
+    return buildAgentGuideExamples({
+      latestAssistantText: latestAssistantTextInActive,
+      pageSuggestedPrompts: pageContext?.suggestedPrompts ?? null,
+      agentCapabilityActions,
+    });
   }, [agentCapabilityActions, latestAssistantTextInActive, pageContext]);
 
   const showAgentGuide = useMemo(() => {
@@ -777,6 +700,42 @@ export default function useChat(options: UseChatOptions = {}) {
         tzOffsetMinutes,
       }),
     });
+  }
+
+  async function finalizeAssistantTurn(input: {
+    sessionId: string;
+    content: string;
+    assistantMessage: ChatMessage;
+    userMessage?: ChatMessage;
+    isFirst?: boolean;
+  }) {
+    if (input.isFirst) {
+      firstAssistantReplyRef.current = input.content;
+      await generateTitle();
+    }
+
+    await Promise.all([
+      fetchSuggestions(input.content, input.sessionId),
+      fetchInteractiveActions(input.content, input.sessionId),
+    ]);
+
+    try {
+      const clientId = getClientIdLocal();
+      const tzOffsetMinutes = getTzOffsetMinutes();
+      const persistedMessages = input.userMessage
+        ? [input.userMessage, { ...input.assistantMessage, content: input.content }]
+        : [{ ...input.assistantMessage, content: input.content }];
+
+      await saveChatOnce({
+        clientId,
+        sessionId: input.sessionId,
+        title:
+          sessions.find((session) => session.id === input.sessionId)?.title ||
+          DEFAULT_CHAT_TITLE,
+        messages: persistedMessages,
+        tzOffsetMinutes,
+      });
+    } catch {}
   }
 
   async function generateTitle() {
@@ -1251,30 +1210,13 @@ export default function useChat(options: UseChatOptions = {}) {
 
     updateAssistantMessage(params.sessionId, params.assistantMessage.id, doneText);
 
-    if (params.isFirst) {
-      firstAssistantReplyRef.current = doneText;
-      await generateTitle();
-    }
-    await Promise.all([
-      fetchSuggestions(doneText, params.sessionId),
-      fetchInteractiveActions(doneText, params.sessionId),
-    ]);
-
-    try {
-      const clientId = getClientIdLocal();
-      await saveChatOnce({
-        clientId,
-        sessionId: params.sessionId,
-        title:
-          sessions.find((session) => session.id === params.sessionId)?.title ||
-          DEFAULT_CHAT_TITLE,
-        messages: [
-          params.userMessage,
-          { ...params.assistantMessage, content: doneText },
-        ],
-        tzOffsetMinutes: getTzOffsetMinutes(),
-      });
-    } catch {}
+    await finalizeAssistantTurn({
+      sessionId: params.sessionId,
+      content: doneText,
+      assistantMessage: params.assistantMessage,
+      userMessage: params.userMessage,
+      isFirst: params.isFirst,
+    });
 
     return true;
   }
@@ -1387,31 +1329,13 @@ export default function useChat(options: UseChatOptions = {}) {
 
     updateAssistantMessage(params.sessionId, params.assistantMessage.id, fullText);
 
-    if (params.isFirst) {
-      firstAssistantReplyRef.current = fullText;
-      await generateTitle();
-    }
-    await Promise.all([
-      fetchSuggestions(fullText, params.sessionId),
-      fetchInteractiveActions(fullText, params.sessionId),
-    ]);
-
-    try {
-      const clientId = getClientIdLocal();
-      const tzOffsetMinutes = getTzOffsetMinutes();
-      await saveChatOnce({
-        clientId,
-        sessionId: params.sessionId,
-        title:
-          sessions.find((session) => session.id === params.sessionId)?.title ||
-          DEFAULT_CHAT_TITLE,
-        messages: [
-          params.userMessage,
-          { ...params.assistantMessage, content: fullText },
-        ],
-        tzOffsetMinutes,
-      });
-    } catch {}
+    await finalizeAssistantTurn({
+      sessionId: params.sessionId,
+      content: fullText,
+      assistantMessage: params.assistantMessage,
+      userMessage: params.userMessage,
+      isFirst: params.isFirst,
+    });
 
     return true;
   }
@@ -1475,31 +1399,13 @@ export default function useChat(options: UseChatOptions = {}) {
 
     updateAssistantMessage(params.sessionId, params.assistantMessage.id, fullText);
 
-    if (params.isFirst) {
-      firstAssistantReplyRef.current = fullText;
-      await generateTitle();
-    }
-    await Promise.all([
-      fetchSuggestions(fullText, params.sessionId),
-      fetchInteractiveActions(fullText, params.sessionId),
-    ]);
-
-    try {
-      const clientId = getClientIdLocal();
-      const tzOffsetMinutes = getTzOffsetMinutes();
-      await saveChatOnce({
-        clientId,
-        sessionId: params.sessionId,
-        title:
-          sessions.find((session) => session.id === params.sessionId)?.title ||
-          DEFAULT_CHAT_TITLE,
-        messages: [
-          params.userMessage,
-          { ...params.assistantMessage, content: fullText },
-        ],
-        tzOffsetMinutes,
-      });
-    } catch {}
+    await finalizeAssistantTurn({
+      sessionId: params.sessionId,
+      content: fullText,
+      assistantMessage: params.assistantMessage,
+      userMessage: params.userMessage,
+      isFirst: params.isFirst,
+    });
 
     return true;
   }
@@ -1544,24 +1450,11 @@ export default function useChat(options: UseChatOptions = {}) {
         )
       );
 
-      await Promise.all([
-        fetchSuggestions(assistantMessage.content, active.id),
-        fetchInteractiveActions(assistantMessage.content, active.id),
-      ]);
-
-      try {
-        const clientId = getClientIdLocal();
-        const tzOffsetMinutes = getTzOffsetMinutes();
-        await saveChatOnce({
-          clientId,
-          sessionId: active.id,
-          title:
-            sessions.find((session) => session.id === active.id)?.title ||
-            DEFAULT_CHAT_TITLE,
-          messages: [assistantMessage],
-          tzOffsetMinutes,
-        });
-      } catch {}
+      await finalizeAssistantTurn({
+        sessionId: active.id,
+        content: assistantMessage.content,
+        assistantMessage,
+      });
     } finally {
       setActionLoading(false);
     }
@@ -1694,27 +1587,13 @@ export default function useChat(options: UseChatOptions = {}) {
 
       updateAssistantMessage(active.id, assistantMessage.id, fullText);
 
-      if (isFirst) {
-        firstAssistantReplyRef.current = fullText;
-        await generateTitle();
-      }
-      await Promise.all([
-        fetchSuggestions(fullText, active.id),
-        fetchInteractiveActions(fullText, active.id),
-      ]);
-
-      try {
-        const tzOffsetMinutes = getTzOffsetMinutes();
-        await saveChatOnce({
-          clientId,
-          sessionId: active.id,
-          title:
-            sessions.find((session) => session.id === active.id)?.title ||
-            DEFAULT_CHAT_TITLE,
-          messages: [userMessage, { ...assistantMessage, content: fullText }],
-          tzOffsetMinutes,
-        });
-      } catch {}
+      await finalizeAssistantTurn({
+        sessionId: active.id,
+        content: fullText,
+        assistantMessage,
+        userMessage,
+        isFirst,
+      });
     } catch (error) {
       if ((error as any)?.name !== "AbortError") {
         const errText = (error as Error).message || "문제가 발생했어요.";
