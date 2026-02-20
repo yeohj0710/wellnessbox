@@ -25,7 +25,7 @@ export type QuestionSnapshotV1 = {
 export type ScoreSnapshotV1 = {
   version: number;
   kind: "assess" | "check-ai";
-  scores: Array<{ code?: string; label: string; value: number }>;
+  scores: NormalizedScore[];
   topLabels?: string[];
 };
 
@@ -36,11 +36,13 @@ export type NormalizedResult = {
   scoreSource: "snapshot" | "legacy" | "fallback";
   questions: SnapshotQuestion[];
   options: SnapshotOption[];
-  scores: Array<{ code?: string; label: string; value: number }>;
+  scores: NormalizedScore[];
   topLabels: string[];
   createdAt?: string;
   tzOffsetMinutes?: number;
 };
+
+type NormalizedScore = { code?: string; label: string; value: number };
 
 const ASSESS_QUESTIONS: SnapshotQuestion[] = [...sectionA, ...sectionB].map(
   (question) => ({
@@ -74,15 +76,66 @@ function asNumber(value: unknown): number | undefined {
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
+function readStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+}
+
+function normalizeQuestionList(
+  source: unknown,
+  includeIndex = false
+): SnapshotQuestion[] {
+  if (!Array.isArray(source)) return [];
+  return source
+    .map((question, idx) =>
+      normalizeSnapshotQuestion(question, includeIndex ? idx : undefined)
+    )
+    .filter((question): question is SnapshotQuestion => !!question);
+}
+
+function normalizeOptionList(source: unknown): SnapshotOption[] {
+  if (!Array.isArray(source)) return [];
+  return source
+    .map((option) => normalizeOption(option))
+    .filter((option): option is SnapshotOption => !!option);
+}
+
+function normalizeScoreList(source: unknown): NormalizedScore[] {
+  if (!Array.isArray(source)) return [];
+  return source
+    .map((score) => normalizeScore(score))
+    .filter((score): score is NormalizedScore => !!score);
+}
+
+function resolveTopLabels(
+  source: unknown,
+  fallbackScores: NormalizedScore[]
+): string[] {
+  const labels = readStringArray(source);
+  return labels.length > 0 ? labels : fallbackScores.map((score) => score.label);
+}
+
+function serializeQuestionSnapshotItems(
+  questions: SnapshotQuestion[]
+): SnapshotQuestion[] {
+  return questions.map((question) => ({
+    id: question.id,
+    text: question.text,
+    ...(question.type ? { type: question.type } : {}),
+    ...(question.options ? { options: question.options } : {}),
+    ...(typeof question.min === "number" ? { min: question.min } : {}),
+    ...(typeof question.max === "number" ? { max: question.max } : {}),
+  }));
+}
+
 function normalizeAssessQuestionSnapshot(snapshot: unknown): {
   snapshot: QuestionSnapshotV1;
   source: NormalizedResult["questionSource"];
 } {
   if (isRecord(snapshot) && typeof snapshot.version === "number") {
     const questions = Array.isArray(snapshot.questions)
-      ? snapshot.questions
-          .map((q) => normalizeSnapshotQuestion(q))
-          .filter((q): q is SnapshotQuestion => !!q)
+      ? normalizeQuestionList(snapshot.questions)
       : ASSESS_QUESTIONS;
     return {
       snapshot: {
@@ -95,9 +148,7 @@ function normalizeAssessQuestionSnapshot(snapshot: unknown): {
   }
 
   if (Array.isArray(snapshot)) {
-    const questions = snapshot
-      .map((q) => normalizeSnapshotQuestion(q))
-      .filter((q): q is SnapshotQuestion => !!q);
+    const questions = normalizeQuestionList(snapshot);
     return {
       snapshot: {
         version: ASSESS_SNAPSHOT_VERSION,
@@ -124,14 +175,10 @@ function normalizeCheckAiQuestionSnapshot(snapshot: unknown): {
 } {
   if (isRecord(snapshot) && typeof snapshot.version === "number") {
     const questions = Array.isArray(snapshot.questions)
-      ? snapshot.questions
-          .map((q) => normalizeSnapshotQuestion(q))
-          .filter((q): q is SnapshotQuestion => !!q)
+      ? normalizeQuestionList(snapshot.questions)
       : CHECK_AI_QUESTION_ITEMS;
     const options = Array.isArray(snapshot.options)
-      ? snapshot.options
-          .map((opt) => normalizeOption(opt))
-          .filter((opt): opt is SnapshotOption => !!opt)
+      ? normalizeOptionList(snapshot.options)
       : CHECK_AI_OPTIONS_LIST;
     return {
       snapshot: {
@@ -145,13 +192,9 @@ function normalizeCheckAiQuestionSnapshot(snapshot: unknown): {
   }
 
   if (isRecord(snapshot) && Array.isArray(snapshot.questions)) {
-    const questions = snapshot.questions
-      .map((q, idx) => normalizeSnapshotQuestion(q, idx))
-      .filter((q): q is SnapshotQuestion => !!q);
+    const questions = normalizeQuestionList(snapshot.questions, true);
     const options = Array.isArray(snapshot.options)
-      ? snapshot.options
-          .map((opt) => normalizeOption(opt))
-          .filter((opt): opt is SnapshotOption => !!opt)
+      ? normalizeOptionList(snapshot.options)
       : CHECK_AI_OPTIONS_LIST;
     return {
       snapshot: {
@@ -225,17 +268,8 @@ function normalizeAssessScoreSnapshot(
   source: NormalizedResult["scoreSource"];
 } {
   if (isRecord(snapshot) && typeof snapshot.version === "number") {
-    const scores = Array.isArray(snapshot.scores)
-      ? snapshot.scores
-          .map((score) => normalizeScore(score))
-      .filter(
-        (score): score is { code?: string; label: string; value: number } =>
-          !!score
-      )
-      : [];
-    const topLabels = Array.isArray(snapshot.topLabels)
-      ? snapshot.topLabels.filter((label): label is string => typeof label === "string")
-      : scores.map((score) => score.label);
+    const scores = normalizeScoreList(snapshot.scores);
+    const topLabels = resolveTopLabels(snapshot.topLabels, scores);
     return {
       snapshot: {
         version: snapshot.version,
@@ -248,9 +282,7 @@ function normalizeAssessScoreSnapshot(
   }
 
   if (isRecord(cResult) && Array.isArray(cResult.catsOrdered)) {
-    const labels = cResult.catsOrdered.filter(
-      (label): label is string => typeof label === "string"
-    );
+    const labels = readStringArray(cResult.catsOrdered);
     const percents = Array.isArray(cResult.percents)
       ? cResult.percents.map((value) => asNumber(value) ?? 0)
       : [];
@@ -288,17 +320,8 @@ function normalizeCheckAiScoreSnapshot(
   source: NormalizedResult["scoreSource"];
 } {
   if (isRecord(snapshot) && typeof snapshot.version === "number") {
-    const scores = Array.isArray(snapshot.scores)
-      ? snapshot.scores
-          .map((score) => normalizeScore(score))
-      .filter(
-        (score): score is { code?: string; label: string; value: number } =>
-          !!score
-      )
-      : [];
-    const topLabels = Array.isArray(snapshot.topLabels)
-      ? snapshot.topLabels.filter((label): label is string => typeof label === "string")
-      : scores.map((score) => score.label);
+    const scores = normalizeScoreList(snapshot.scores);
+    const topLabels = resolveTopLabels(snapshot.topLabels, scores);
     return {
       snapshot: {
         version: snapshot.version,
@@ -310,13 +333,8 @@ function normalizeCheckAiScoreSnapshot(
     };
   }
 
-  const scoresFromResult = isRecord(result) && Array.isArray(result.scores)
-    ? result.scores
-        .map((score) => normalizeScore(score))
-        .filter(
-          (score): score is { code?: string; label: string; value: number } =>
-            !!score
-        )
+  const scoresFromResult = isRecord(result)
+    ? normalizeScoreList(result.scores)
     : [];
 
   if (
@@ -325,12 +343,10 @@ function normalizeCheckAiScoreSnapshot(
   ) {
     const topLabels =
       isRecord(result) && Array.isArray(result.topLabels)
-        ? result.topLabels.filter(
-            (label: unknown): label is string => typeof label === "string"
-          )
+        ? readStringArray(result.topLabels)
         : scoresFromResult
             .slice()
-            .sort((a, b) => (b.value ?? 0) - (a.value ?? 0))
+            .sort((a, b) => b.value - a.value)
             .map((score) => score.label);
     return {
       snapshot: {
@@ -356,7 +372,7 @@ function normalizeCheckAiScoreSnapshot(
 
 function normalizeScore(
   score: unknown
-): { code?: string; label: string; value: number } | null {
+): NormalizedScore | null {
   if (!isRecord(score)) return null;
   const label = typeof score.label === "string" ? score.label : null;
   if (!label) return null;
@@ -369,14 +385,7 @@ function normalizeScore(
 }
 
 export function buildAssessQuestionSnapshot(): QuestionSnapshotV1 {
-  const questions = ASSESS_QUESTIONS.map((question) => ({
-    id: question.id,
-    text: question.text,
-    ...(question.type ? { type: question.type } : {}),
-    ...(question.options ? { options: question.options } : {}),
-    ...(typeof question.min === "number" ? { min: question.min } : {}),
-    ...(typeof question.max === "number" ? { max: question.max } : {}),
-  }));
+  const questions = serializeQuestionSnapshotItems(ASSESS_QUESTIONS);
   return {
     version: ASSESS_SNAPSHOT_VERSION,
     kind: "assess",
@@ -388,14 +397,7 @@ export function buildCheckAiQuestionSnapshot(
   incoming?: unknown
 ): QuestionSnapshotV1 {
   const normalized = normalizeCheckAiQuestionSnapshot(incoming);
-  const questions = normalized.snapshot.questions.map((question) => ({
-    id: question.id,
-    text: question.text,
-    ...(question.type ? { type: question.type } : {}),
-    ...(question.options ? { options: question.options } : {}),
-    ...(typeof question.min === "number" ? { min: question.min } : {}),
-    ...(typeof question.max === "number" ? { max: question.max } : {}),
-  }));
+  const questions = serializeQuestionSnapshotItems(normalized.snapshot.questions);
   return {
     version: CHECK_AI_SNAPSHOT_VERSION,
     kind: "check-ai",
@@ -453,10 +455,7 @@ export function normalizeCheckAiResult(record: CheckAiResult): NormalizedResult 
 }
 
 export function pickCheckAiResultSummary(result: unknown): { topLabels: string[] } {
-  const topLabels =
-    isRecord(result) && Array.isArray(result.topLabels)
-      ? result.topLabels.filter((label): label is string => typeof label === "string")
-      : [];
+  const topLabels = isRecord(result) ? readStringArray(result.topLabels) : [];
   return { topLabels };
 }
 
@@ -471,11 +470,11 @@ export function pickAssessResultSummary(
   }
   if (isRecord(fallback) && Array.isArray(fallback.catsOrdered)) {
     return {
-      catsOrdered: fallback.catsOrdered.filter(
-        (label): label is string => typeof label === "string"
-      ),
+      catsOrdered: readStringArray(fallback.catsOrdered),
       percents: Array.isArray(fallback.percents)
-        ? fallback.percents.filter((value): value is number => typeof value === "number")
+        ? fallback.percents.filter(
+            (value): value is number => typeof value === "number"
+          )
         : [],
     };
   }

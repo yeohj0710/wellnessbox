@@ -38,6 +38,12 @@ type ResolveResult = {
   appUserId?: string;
 };
 
+type SessionResolutionContext = {
+  loggedIn: boolean;
+  kakaoId?: string;
+  trustedCandidate?: string;
+};
+
 async function findAppUserClient(kakaoId: string) {
   return db.appUser.findUnique({
     where: { kakaoId },
@@ -53,6 +59,25 @@ function sanitizeCandidate(
   if (loggedIn) return undefined;
   if (source === "header") return candidate;
   return undefined;
+}
+
+async function resolveSessionContext(
+  candidate?: string | null,
+  candidateSource?: ClientIdCandidateSource
+): Promise<SessionResolutionContext> {
+  const session = await getSession();
+  const user = session.user;
+  const loggedIn = !!user?.loggedIn && typeof user.kakaoId === "number";
+  const trustedCandidate = sanitizeCandidate(
+    loggedIn,
+    candidate,
+    candidateSource
+  );
+  return {
+    loggedIn,
+    kakaoId: loggedIn ? String(user.kakaoId) : undefined,
+    trustedCandidate: trustedCandidate ?? undefined,
+  };
 }
 
 async function pickPreferredClientId(
@@ -311,17 +336,38 @@ export async function resolveClientIdForRead(
   candidate?: string | null,
   candidateSource?: ClientIdCandidateSource
 ): Promise<ResolveResult> {
-  const session = await getSession();
-  const user = session.user;
-  const loggedIn = !!user?.loggedIn && typeof user.kakaoId === "number";
-  const trustedCandidate = sanitizeCandidate(
-    loggedIn,
-    candidate,
-    candidateSource
-  );
+  const context = await resolveSessionContext(candidate, candidateSource);
+  return resolveClientIdForReadWithContext(req, context, candidateSource);
+}
 
-  if (loggedIn) {
-    const appUser = await findAppUserClient(String(user.kakaoId));
+export async function resolveClientIdForWrite(
+  req: NextRequest,
+  candidate?: string | null,
+  candidateSource?: ClientIdCandidateSource
+): Promise<ResolveResult> {
+  const context = await resolveSessionContext(candidate, candidateSource);
+  return resolveClientIdForWriteWithContext(req, context, candidateSource);
+}
+
+export async function resolveClientIdForAppUserRequest(
+  req: NextRequest,
+  candidate?: string | null,
+  candidateSource?: ClientIdCandidateSource,
+  intent: "read" | "write" = "read"
+): Promise<ResolveResult> {
+  const context = await resolveSessionContext(candidate, candidateSource);
+  return intent === "write"
+    ? resolveClientIdForWriteWithContext(req, context, candidateSource)
+    : resolveClientIdForReadWithContext(req, context, candidateSource);
+}
+
+async function resolveClientIdForReadWithContext(
+  req: NextRequest,
+  context: SessionResolutionContext,
+  candidateSource?: ClientIdCandidateSource
+): Promise<ResolveResult> {
+  if (context.loggedIn && context.kakaoId) {
+    const appUser = await findAppUserClient(context.kakaoId);
     return {
       clientId: appUser?.clientId ?? null,
       appUserId: appUser?.id,
@@ -330,32 +376,20 @@ export async function resolveClientIdForRead(
 
   const base = resolveClientIdFromRequest(
     req,
-    trustedCandidate ?? undefined,
+    context.trustedCandidate,
     candidateSource
   );
-  let clientId = base.clientId;
-  let cookieToSet = base.cookieToSet;
-  let appUserId: string | undefined;
 
-  return { clientId: clientId ?? null, cookieToSet, appUserId };
+  return { clientId: base.clientId ?? null, cookieToSet: base.cookieToSet };
 }
 
-export async function resolveClientIdForWrite(
+async function resolveClientIdForWriteWithContext(
   req: NextRequest,
-  candidate?: string | null,
+  context: SessionResolutionContext,
   candidateSource?: ClientIdCandidateSource
 ): Promise<ResolveResult> {
-  const session = await getSession();
-  const user = session.user;
-  const loggedIn = !!user?.loggedIn && typeof user.kakaoId === "number";
-  const trustedCandidate = sanitizeCandidate(
-    loggedIn,
-    candidate,
-    candidateSource
-  );
-
-  if (loggedIn) {
-    const appUser = await findAppUserClient(String(user.kakaoId));
+  if (context.loggedIn && context.kakaoId) {
+    const appUser = await findAppUserClient(context.kakaoId);
     if (!appUser) {
       return { clientId: null };
     }
@@ -373,41 +407,17 @@ export async function resolveClientIdForWrite(
 
   const base = resolveClientIdFromRequest(
     req,
-    trustedCandidate ?? undefined,
+    context.trustedCandidate,
     candidateSource
   );
-  let clientId = base.clientId;
   let cookieToSet = base.cookieToSet;
-  const finalClientId = resolveOrCreateClientId(clientId);
+  const finalClientId = resolveOrCreateClientId(base.clientId);
   const cookieVal = req.cookies.get(CLIENT_COOKIE_NAME)?.value;
   if (!cookieToSet && cookieVal !== finalClientId) {
-    cookieToSet = buildClientCookie(
-      finalClientId,
-      isRequestHttps(req)
-    );
+    cookieToSet = buildClientCookie(finalClientId, isRequestHttps(req));
   }
 
   return { clientId: finalClientId, cookieToSet };
-}
-
-export async function resolveClientIdForAppUserRequest(
-  req: NextRequest,
-  candidate?: string | null,
-  candidateSource?: ClientIdCandidateSource,
-  intent: "read" | "write" = "read"
-): Promise<ResolveResult> {
-  const session = await getSession();
-  const user = session.user;
-  const loggedIn = !!user?.loggedIn && typeof user.kakaoId === "number";
-  const trustedCandidate = sanitizeCandidate(
-    loggedIn,
-    candidate,
-    candidateSource
-  );
-
-  return intent === "write"
-    ? resolveClientIdForWrite(req, trustedCandidate, candidateSource)
-    : resolveClientIdForRead(req, trustedCandidate, candidateSource);
 }
 
 export function withClientCookie(

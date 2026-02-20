@@ -14,6 +14,7 @@
     "lint": "next lint",
     "perf:push-benchmark": "node scripts/perf/push-notification-benchmark.cjs",
     "audit:clients": "ts-node scripts/audit-clients.ts",
+    "audit:hotspots": "ts-node scripts/audit-hotspots.ts",
     "rnd:module02:scaffold": "node scripts/rnd/module02/run-scaffold.cjs",
     "rnd:module02:mvp": "node scripts/rnd/module02/run-mvp-ingest.cjs",
     "rnd:module02:evaluation": "node scripts/rnd/module02/run-evaluation.cjs",
