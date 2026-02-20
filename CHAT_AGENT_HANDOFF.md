@@ -11,6 +11,9 @@ Delete this file after the next session completes this track.
 - Split chat capability/guide ranking logic from the main hook:
   - `app/chat/hooks/useChat.agentGuide.ts`
   - `app/chat/hooks/useChat.ts` now delegates guide/capability composition
+- Split desktop chat dock layout utilities from render shell:
+  - `components/chat/DesktopChatDock.layout.ts` (dock geometry/storage/scroll/resize/event helpers)
+  - `components/chat/DesktopChatDock.tsx` now focuses on UI composition + interaction wiring
 - Added route-aware page context for chat agent:
   - `lib/chat/page-agent-context.ts`
 - Added in-page action event bus:

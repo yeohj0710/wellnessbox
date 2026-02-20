@@ -42,6 +42,7 @@ When touching these files, prefer block-level extraction over in-place growth:
 
 - `app/chat/hooks/useChat.ts`
 - `components/chat/DesktopChatDock.tsx`
+- `components/chat/DesktopChatDock.layout.ts`
 - `app/api/chat/actions/route.ts`
 - `lib/chat/action-intent-rules.ts`
 - `lib/chat/context.ts`
@@ -67,6 +68,9 @@ When touching these files, prefer block-level extraction over in-place growth:
   - `app/chat/hooks/useChat.ts` = hook state lifecycle + I/O orchestration
   - `app/chat/hooks/useChat.agentGuide.ts` = capability prioritization + guide example selection
   - `app/chat/hooks/useChat.ts` `finalizeAssistantTurn(...)` = shared post-response pipeline (title/suggestions/actions/persist)
+- Desktop dock layout split:
+  - `components/chat/DesktopChatDock.tsx` = dock shell + interaction handlers + JSX composition
+  - `components/chat/DesktopChatDock.layout.ts` = geometry/storage/event/scroll utilities
 - Header/nav ownership:
   - `components/common/topBar.tsx` = shell orchestration (route transitions + action wiring)
   - `components/common/topBar.header.tsx` = top header rendering
