@@ -19,10 +19,54 @@ type BuildContextParams = {
   searchParams?: SearchLike | null;
 };
 
-function normalizePath(pathname: string | null | undefined) {
-  if (!pathname || typeof pathname !== "string") return "/";
+const ROUTE_KEY_PATH_ALIASES: Record<string, string> = {
+  chat: "/chat",
+  "home-products": "/explore",
+  "my-orders": "/my-orders",
+  me: "/me",
+  "my-data": "/my-data",
+  assess: "/assess",
+  "check-ai": "/check-ai",
+  pharm: "/pharm",
+  rider: "/rider",
+  admin: "/admin",
+  about: "/about",
+  generic: "/",
+  dock: "/",
+};
+
+function parsePathInput(pathname: string | null | undefined): {
+  pathname: string;
+  inlineSearchParams: URLSearchParams | null;
+} {
+  if (!pathname || typeof pathname !== "string") {
+    return { pathname: "/", inlineSearchParams: null };
+  }
+
   const trimmed = pathname.trim();
-  return trimmed || "/";
+  if (!trimmed) {
+    return { pathname: "/", inlineSearchParams: null };
+  }
+
+  const hashIndex = trimmed.indexOf("#");
+  const withoutHash = hashIndex >= 0 ? trimmed.slice(0, hashIndex) : trimmed;
+  const queryIndex = withoutHash.indexOf("?");
+
+  const rawPath =
+    queryIndex >= 0 ? withoutHash.slice(0, queryIndex) : withoutHash;
+  const query = queryIndex >= 0 ? withoutHash.slice(queryIndex + 1) : "";
+  const aliasedPath = ROUTE_KEY_PATH_ALIASES[rawPath] || rawPath;
+
+  const normalizedPath = aliasedPath
+    ? aliasedPath.startsWith("/")
+      ? aliasedPath
+      : `/${aliasedPath}`
+    : "/";
+
+  return {
+    pathname: normalizedPath,
+    inlineSearchParams: query ? new URLSearchParams(query) : null,
+  };
 }
 
 function pickHomeSummary(searchParams?: SearchLike | null) {
@@ -69,7 +113,8 @@ function buildRouteContext(
 export function buildPageAgentContext(
   params: BuildContextParams = {}
 ): ChatPageAgentContext | null {
-  const pathname = normalizePath(params.pathname);
+  const { pathname, inlineSearchParams } = parsePathInput(params.pathname);
+  const searchParams = inlineSearchParams ?? params.searchParams;
 
   if (pathname.startsWith("/chat")) {
     return buildRouteContext(
@@ -89,7 +134,7 @@ export function buildPageAgentContext(
     return buildRouteContext(
       "home-products",
       "홈 상품 탐색",
-      pickHomeSummary(params.searchParams),
+      pickHomeSummary(searchParams),
       [
         "7일치 패키지 상품 보여줘.",
         "홈 상품 섹션으로 이동해줘.",

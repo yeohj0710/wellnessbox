@@ -35,15 +35,28 @@ const AgentCapabilityHub = dynamic(
 export default function ChatPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const fromPath = searchParams.get("from") || pathname || "/chat";
-  const pageContext = useMemo(
-    () =>
-      buildPageAgentContext({
-        pathname: fromPath,
+  const from = searchParams.get("from");
+  const pageContext = useMemo(() => {
+    const fallbackPath = pathname || "/chat";
+    const trimmedFrom = (from || "").trim();
+
+    if (!trimmedFrom) {
+      return buildPageAgentContext({
+        pathname: fallbackPath,
         searchParams,
-      }),
-    [fromPath, searchParams]
-  );
+      });
+    }
+
+    const queryIndex = trimmedFrom.indexOf("?");
+    const fromPath =
+      queryIndex >= 0 ? trimmedFrom.slice(0, queryIndex) : trimmedFrom;
+    const fromQuery = queryIndex >= 0 ? trimmedFrom.slice(queryIndex + 1) : "";
+
+    return buildPageAgentContext({
+      pathname: fromPath || fallbackPath,
+      searchParams: fromQuery ? new URLSearchParams(fromQuery) : searchParams,
+    });
+  }, [from, pathname, searchParams]);
   const {
     sessions,
     activeId,

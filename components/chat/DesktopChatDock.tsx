@@ -378,6 +378,7 @@ type DockPanelProps = {
   isOpen: boolean;
   onClose: () => void;
   pageAgentContext: ReturnType<typeof buildPageAgentContext>;
+  fromPath: string;
 };
 
 export default function DesktopChatDock() {
@@ -392,6 +393,11 @@ export default function DesktopChatDock() {
       }),
     [pathname, searchParams]
   );
+  const contextFromPath = useMemo(() => {
+    const basePath = pathname || "/";
+    const query = searchParams.toString();
+    return query ? `${basePath}?${query}` : basePath;
+  }, [pathname, searchParams]);
   const [isOpen, setIsOpen] = useState(false);
   const [hasBooted, setHasBooted] = useState(false);
   const [pendingOpen, setPendingOpen] = useState(false);
@@ -664,6 +670,7 @@ export default function DesktopChatDock() {
           isOpen={isOpen}
           onClose={() => setIsOpen(false)}
           pageAgentContext={pageAgentContext}
+          fromPath={contextFromPath}
         />
       )}
     </div>
@@ -674,6 +681,7 @@ function DesktopChatDockPanel({
   isOpen,
   onClose,
   pageAgentContext,
+  fromPath,
 }: DockPanelProps) {
   const router = useRouter();
   const panelRef = useRef<HTMLElement | null>(null);
@@ -1435,7 +1443,7 @@ function DesktopChatDockPanel({
             onClick={() =>
               router.push(
                 `/chat?from=${encodeURIComponent(
-                  pageAgentContext?.routePath || "dock"
+                  fromPath || pageAgentContext?.routePath || "dock"
                 )}`
               )
             }
