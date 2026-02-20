@@ -23,7 +23,7 @@ npm run preflight:agent
 - mojibake and suspicious broken-text pattern checks across text/code files
 
 `audit:hotspots` gives:
-- top long files by line count (refactor candidates)
+- runtime code hotspots + script hotspots by line count (refactor candidates)
 - critical route guard checks for admin/rag/push endpoints
 
 ## 2) Non-Negotiable Invariants
@@ -43,6 +43,7 @@ When touching these files, prefer block-level extraction over in-place growth:
 - `app/chat/hooks/useChat.ts`
 - `components/chat/DesktopChatDock.tsx`
 - `app/api/chat/actions/route.ts`
+- `lib/chat/action-intent-rules.ts`
 - `lib/chat/context.ts`
 - `components/order/orderDetails.tsx`
 
@@ -59,6 +60,9 @@ When touching these files, prefer block-level extraction over in-place growth:
 ## 5) Navigation Shell Notes
 
 - `lib/useLoginStatus.ts` is the canonical source for `LoginStatus` type + normalization.
+- Chat action planner split:
+  - `app/api/chat/actions/route.ts` = model call + request/response orchestration
+  - `lib/chat/action-intent-rules.ts` = regex intent rules + runtime-context flags + fallback action feedback
 - Header/nav ownership:
   - `components/common/topBar.tsx` = shell orchestration (route transitions + action wiring)
   - `components/common/topBar.header.tsx` = top header rendering

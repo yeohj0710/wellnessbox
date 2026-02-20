@@ -96,10 +96,18 @@ function toPosix(filePath: string): string {
   return filePath.split(path.sep).join("/");
 }
 
-function buildHotspotReport(limit: number): FileStat[] {
+function buildHotspotReport(
+  limit: number,
+  predicate?: (file: string) => boolean
+): FileStat[] {
   const files = walkCodeFiles();
-  const stats = files.map((file) => ({ file: toPosix(file), lines: countLines(file) }));
+  const filtered = predicate ? files.filter((file) => predicate(toPosix(file))) : files;
+  const stats = filtered.map((file) => ({ file: toPosix(file), lines: countLines(file) }));
   return stats.sort((a, b) => b.lines - a.lines).slice(0, limit);
+}
+
+function isScriptFile(file: string) {
+  return file.startsWith("scripts/");
 }
 
 function runGuardChecks(): { passed: number; failed: number } {
@@ -139,9 +147,17 @@ function statSafe(absPath: string): boolean {
 }
 
 function main() {
-  const hotspots = buildHotspotReport(25);
-  console.log("== Code Hotspots (Top 25 by line count) ==");
-  for (const { file, lines } of hotspots) {
+  const runtimeHotspots = buildHotspotReport(25, (file) => !isScriptFile(file));
+  console.log("== Runtime Code Hotspots (Top 25 by line count) ==");
+  for (const { file, lines } of runtimeHotspots) {
+    const padded = String(lines).padStart(5, " ");
+    console.log(`${padded}  ${file}`);
+  }
+
+  const scriptHotspots = buildHotspotReport(15, (file) => isScriptFile(file));
+  console.log("");
+  console.log("== Script Hotspots (Top 15 by line count) ==");
+  for (const { file, lines } of scriptHotspots) {
     const padded = String(lines).padStart(5, " ");
     console.log(`${padded}  ${file}`);
   }

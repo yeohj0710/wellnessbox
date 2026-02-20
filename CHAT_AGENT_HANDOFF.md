@@ -5,6 +5,9 @@ Delete this file after the next session completes this track.
 
 ## Completed in this session
 
+- Split chat action intent rules from route handler:
+  - `lib/chat/action-intent-rules.ts` (regex rules, action sets, runtime-context flags, fallback action feedback)
+  - `app/api/chat/actions/route.ts` now focuses on model orchestration + fallback assembly
 - Added route-aware page context for chat agent:
   - `lib/chat/page-agent-context.ts`
 - Added in-page action event bus:
