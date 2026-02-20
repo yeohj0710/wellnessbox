@@ -49,19 +49,19 @@ export function TopBarHeader({
             className={menuItemClasses(
               "group text-[17px] font-extrabold tracking-tight flex items-center gap-2"
             )}
-            aria-label="?덉쑝濡?"
+            aria-label="홈으로"
           >
             <div className="relative w-8 h-8">
               <Image
                 src="/logo.png"
-                alt="?곕땲?ㅻ컯??"
+                alt="웰니스박스"
                 ref={logoRef}
                 fill
                 sizes="64px"
                 className="object-contain group-hover:animate-bounce-custom"
               />
             </div>
-            <span>?곕땲?ㅻ컯??</span>
+            <span>웰니스박스</span>
           </button>
 
           <nav className="hidden min-[1440px]:flex items-center gap-8 text-[15px] font-medium text-slate-500 [&_a]:text-slate-500 [&_a:hover]:text-slate-900">
@@ -72,13 +72,13 @@ export function TopBarHeader({
         <div className="flex items-center gap-3 md:gap-5">
           {loginStatus?.isTestLoggedIn === true && (
             <span className="hidden sm:inline-flex rounded-full bg-orange-400 px-3 py-1 text-xs font-bold text-white cursor-default">
-              ?뚯뒪??
+              테스트
             </span>
           )}
 
           <button
             className={menuItemClasses("text-slate-600 relative")}
-            aria-label="?λ컮援щ땲"
+            aria-label="장바구니"
             onClick={onOpenCart}
           >
             <ShoppingCartIcon className="w-6 h-6" />
@@ -96,7 +96,7 @@ export function TopBarHeader({
             aria-label="Open command palette"
             title="Ctrl+K"
           >
-            <span>鍮좊Ⅸ 硫붾돱 ?ㅽ뻾</span>
+            <span>빠른 메뉴 실행</span>
             <kbd className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px]">
               Ctrl+K
             </kbd>
@@ -107,7 +107,7 @@ export function TopBarHeader({
             onClick={onGoSevenDays}
             className="hidden sm:block text-[15px] font-semibold text-slate-600"
           >
-            7?쇱튂 援щℓ?섍린
+            7일치 구매하기
           </button>
 
           <button
@@ -115,13 +115,13 @@ export function TopBarHeader({
             onClick={onGoSevenDays}
             className="group relative inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#59C1FF] to-[#7B61FF] shadow-[0_10px_30px_rgba(86,115,255,0.35)] transition-all duration-300 ease-out will-change-transform hover:scale-[1.03] hover:shadow-[0_14px_36px_rgba(86,115,255,0.5)] hover:saturate-150 hover:brightness-110 hover:from-[#6BD1FF] hover:to-[#6E58FF] active:translate-y-[1px] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#6E58FF] after:content-[''] after:absolute after:inset-0 after:rounded-full after:bg-white/20 after:opacity-0 hover:after:opacity-10"
           >
-            ?쒖옉?섍린
+            시작하기
           </button>
 
           <button
             className={menuItemClasses("text-2xl ml-1 min-[1440px]:hidden")}
             onClick={onToggleDrawer}
-            aria-label="硫붾돱 ?닿린"
+            aria-label="메뉴 열기"
           >
             ??
           </button>

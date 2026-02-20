@@ -37,7 +37,7 @@ function TopBarFallback() {
     <header className="fixed top-0 z-40 w-full border-b border-slate-200/80 bg-white">
       <div className="mx-auto flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-[120rem]">
         <div className="text-[17px] font-extrabold tracking-tight text-slate-900">
-          ?곕땲?ㅻ컯??
+          웰니스박스
         </div>
       </div>
     </header>

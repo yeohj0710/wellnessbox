@@ -39,8 +39,9 @@ Delete this file after the next session completes this track.
 
 ## Next session checklist
 
-1. Browser E2E verify page-focus actions and cart/order flows.
-2. Extend page-focus actions to `/me`, `/my-data`, `/check-ai`, `/assess`.
-3. Confirm `clear_cart` reflects immediately when cart overlay is already open.
-4. Polish discoverability/UX (context hints, reduced action clutter).
-5. Re-run full build with longer/adjusted environment limits.
+1. Run baseline checks first: `npm run audit:encoding` then `npm run preflight:agent`.
+2. Browser E2E verify page-focus actions and cart/order flows.
+3. Extend page-focus actions to `/me`, `/my-data`, `/check-ai`, `/assess`.
+4. Confirm `clear_cart` reflects immediately when cart overlay is already open.
+5. Polish discoverability/UX (context hints, reduced action clutter).
+6. Re-run full build with longer/adjusted environment limits.

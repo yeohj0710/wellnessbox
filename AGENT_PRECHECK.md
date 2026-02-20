@@ -7,10 +7,20 @@ Purpose: speed up new coding sessions by checking structural risks first, before
 Run these in order:
 
 ```bash
+npm run audit:encoding
 npm run audit:hotspots
 npm run lint
 npm run build
 ```
+
+Or run one command:
+
+```bash
+npm run preflight:agent
+```
+
+`audit:encoding` gives:
+- mojibake and suspicious broken-text pattern checks across text/code files
 
 `audit:hotspots` gives:
 - top long files by line count (refactor candidates)

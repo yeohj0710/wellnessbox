@@ -27,8 +27,8 @@ export default function ConfirmResetModal({ open, cancelBtnRef, onCancel, onConf
           onPointerDown={handleDragPointerDown}
           className={`touch-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
         >
-          <h3 className="text-lg font-bold text-gray-900">泥섏쓬遺???ㅼ떆 ?쒖옉?좉퉴??</h3>
-          <p className="mt-2 text-sm text-gray-600">??λ맂 ?묐떟? 紐⑤몢 ??젣?쇱슂.</p>
+          <h3 className="text-lg font-bold text-gray-900">처음부터 다시 시작할까요?</h3>
+          <p className="mt-2 text-sm text-gray-600">입력한 답변은 모두 삭제돼요.</p>
         </div>
         <div className="mt-6 flex items-center justify-end gap-3">
           <button
@@ -36,13 +36,14 @@ export default function ConfirmResetModal({ open, cancelBtnRef, onCancel, onConf
             onClick={onCancel}
             className="rounded-full px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50 [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
           >
-            痍⑥냼
+            취소
           </button>
           <button
             onClick={onConfirm}
             className="rounded-full px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-indigo-500 [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
           >
-            泥섏쓬遺??          </button>
+            처음부터
+          </button>
         </div>
       </div>
     </div>

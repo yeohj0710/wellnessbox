@@ -1,12 +1,12 @@
-# AGENTS.md — WellnessBox (Codex)
+# AGENTS.md - WellnessBox (Codex)
 
 ## TL;DR (Read this first)
 
 ### Priority order (conflicts)
 
 1. **Non-Negotiable Guardrails** (this file)
-2. `docs/rnd/*` (requirements + KPI/eval) — **R&D tasks only**
-3. `docs/rnd_impl/*` (optional notes) — use only if needed
+2. `docs/rnd/*` (requirements + KPI/eval) - **R&D tasks only**
+3. `docs/rnd_impl/*` (optional notes) - use only if needed
 
 ### Golden rules (do not violate)
 
@@ -15,17 +15,28 @@
 - **Prisma:** Preserve singleton pattern in `lib/db.ts` (never instantiate `PrismaClient` per module).
 - **Admin gate:** Keep `/api/verify-password` + `lib/admin-token.ts` + `middleware.ts` aligned; never store plaintext admin password in cookies.
 
+### Encoding safety (critical)
+
+- All source/docs/config text files must remain **UTF-8** and **LF**.
+- For files containing non-ASCII text (Korean included), prefer `apply_patch` edits. Avoid shell overwrite commands that may depend on terminal codepage.
+- At the **start of every session** and again before finalizing changes, run:
+  - `npm run audit:encoding`
+- If `audit:encoding` reports findings, fix them before feature/refactor work.
+- `npm run dev`, `npm run lint`, and `npm run build` now execute encoding audit automatically via `pre*` scripts; do not remove this chain.
+- CI guard is defined in `.github/workflows/encoding-guard.yml`; keep it passing on every PR.
+
 ### Default work order
 
 1. Scope impact with `rg`
-2. Check auth/access paths first (`route-auth`, `middleware`, session usage)
-3. Implement with explicit validation + type safety
-4. Run `npm run lint` → `npm run build`
-5. If touching order/auth/push: do a manual flow check
+2. Run `npm run audit:encoding`
+3. Check auth/access paths first (`route-auth`, `middleware`, session usage)
+4. Implement with explicit validation + type safety
+5. Run `npm run lint` -> `npm run build`
+6. If touching order/auth/push: do a manual flow check
 
 ---
 
-## Project Overview (for Codex)
+## Project overview (for Codex)
 
 - Stack: Next.js 15 (App Router), TypeScript, Prisma, PostgreSQL, Capacitor.
 - Domains: checkout/orders, pharmacy/rider ops, push notifications, Kakao auth, assessment AI, chat/RAG.
@@ -38,7 +49,7 @@
 
 ---
 
-## R&D Docs (TIPS Extension) — Read Rules (R&D tasks only)
+## R&D docs (TIPS extension) - read rules (R&D tasks only)
 
 This repo already contains a production platform. New TIPS R&D features must be added without breaking existing invariants.
 
@@ -69,7 +80,7 @@ Do NOT load all R&D docs at once unless explicitly required.
 
 ---
 
-## Project Map (Read this first)
+## Project map (read this first)
 
 - `app/`: App Router pages/layouts/route groups (user/admin/pharm/rider UX)
 - `app/api/`: route handlers (`route.ts`) for auth, payment, push, chat, RAG, profile
@@ -83,7 +94,7 @@ Do NOT load all R&D docs at once unless explicitly required.
 
 ---
 
-## Source of truth modules & invariants (read before changes)
+## Source-of-truth modules & invariants (read before changes)
 
 ### Order integrity
 
@@ -115,26 +126,26 @@ Do NOT load all R&D docs at once unless explicitly required.
 
 ---
 
-## Mini flow sketches (for quick orientation)
+## Mini flow sketches (quick orientation)
 
 ### Order flow (checkout complete)
 
 - `app/(orders)/order-complete/page.tsx`
-  - → `/api/get-payment-info` (payment verification)
-  - → `lib/order/mutations.ts:createOrder` (transaction: stock decrement + order create)
-  - → `lib/order/queries.ts:getOrderByPaymentId` (render summary)
-  - → optional `/api/push/subscribe` + `/api/push/send`
+  - -> `/api/get-payment-info` (payment verification)
+  - -> `lib/order/mutations.ts:createOrder` (transaction: stock decrement + order create)
+  - -> `lib/order/queries.ts:getOrderByPaymentId` (render summary)
+  - -> optional `/api/push/subscribe` + `/api/push/send`
 
 ### Push flow (customer/pharm/rider)
 
 - client obtains subscription (`ensureCustomerPushSubscription` or dashboard helpers)
-  - → `/api/push/*` or `/api/pharm-push/*` or `/api/rider-push/*`
-  - → guard check in `lib/server/route-auth.ts`
-  - → persistence/send via `lib/notification.ts`
+  - -> `/api/push/*` or `/api/pharm-push/*` or `/api/rider-push/*`
+  - -> guard check in `lib/server/route-auth.ts`
+  - -> persistence/send via `lib/notification.ts`
 
 ### Admin auth flow
 
-- `app/(admin)/admin-login/page.tsx` → `/api/verify-password`
+- `app/(admin)/admin-login/page.tsx` -> `/api/verify-password`
   - server sets session + admin token cookie (`lib/admin-token.ts`)
   - request to `/admin` hits `middleware.ts` protected-path check
   - admin APIs (e.g. `/api/admin/model`) also require `requireAdminSession`
@@ -152,7 +163,7 @@ Do NOT load all R&D docs at once unless explicitly required.
 
 ---
 
-## Non-Negotiable Guardrails (Security + Integrity)
+## Non-Negotiable guardrails (security + integrity)
 
 - Do not expose operational routes without auth.
   - Admin-only routes: `app/api/admin/model`, `app/api/agent-playground/run`, `app/api/rag/*`
@@ -172,19 +183,20 @@ Do NOT load all R&D docs at once unless explicitly required.
 
 ---
 
-## Recommended Work Order (for changes)
+## Recommended work order (for changes)
 
 0. (R&D only) load minimal docs per R&D rules above
 1. Scope impact first with `rg`
-2. Check auth/access paths first (`route-auth`, `middleware`, session usage)
-3. Apply change with explicit input validation + type safety
-4. Validate: `npm run lint` → `npm run build`
-5. If touching orders/push/auth:
-   - manual flow check: login → checkout complete → order 조회 → push subscribe/status
+2. Run `npm run audit:encoding`
+3. Check auth/access paths first (`route-auth`, `middleware`, session usage)
+4. Apply change with explicit input validation + type safety
+5. Validate: `npm run lint` -> `npm run build`
+6. If touching orders/push/auth:
+   - manual flow check: login -> checkout complete -> order lookup -> push subscribe/status
 
 ---
 
-## Priority Areas (Performance & Stability)
+## Priority areas (performance & stability)
 
 - P1: auth/access regressions and operational endpoint exposure
 - P2: order integrity (duplicate order, stock underflow, partial failures)
@@ -193,19 +205,22 @@ Do NOT load all R&D docs at once unless explicitly required.
 
 ---
 
-## Common Commands
+## Common commands
 
 - Install: `npm install`
 - Dev: `npm run dev`
 - Lint: `npm run lint`
 - Build: `npm run build`
 - Start: `npm run start`
+- Agent preflight: `npm run preflight:agent`
 - Prisma generate: `npm run predev` or `npx prisma generate`
 - Client audit helper: `npm run audit:clients`
+- Hotspot + guard audit: `npm run audit:hotspots`
+- Encoding audit: `npm run audit:encoding`
 
 ---
 
-## Common Mistakes to Avoid
+## Common mistakes to avoid
 
 - Adding DB write routes in `app/api/*` without role/ownership checks
 - Trusting `orderId`, `pharmacyId`, `riderId` from request body alone
@@ -213,3 +228,4 @@ Do NOT load all R&D docs at once unless explicitly required.
 - Reverting admin auth to plaintext cookie equality checks
 - Instantiating new `PrismaClient` per import location
 - Re-introducing dev/build script duplication by manually calling pre hooks inside script bodies
+- Editing Korean/non-ASCII files with shell overwrite commands that can change encoding
