@@ -1,18 +1,10 @@
 ﻿"use client";
 
-import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-import { ChevronDownIcon } from "@heroicons/react/24/outline";
-import KakaoLoginButton from "@/components/common/kakaoLoginButton";
-import IntentPrefetchLink from "@/components/common/intentPrefetchLink";
-
-type LoginStatus = {
-  isUserLoggedIn: boolean;
-  isPharmLoggedIn: boolean;
-  isRiderLoggedIn: boolean;
-  isAdminLoggedIn: boolean;
-  isTestLoggedIn: boolean;
-};
+import { useCallback, useEffect, useRef, useState } from "react";
+import { DrawerMenuContent } from "./menuLinks.drawer";
+import { DesktopMenuContent } from "./menuLinks.desktop";
+import { getMenuVisibility, type LinkPressHandlers } from "./menuLinks.shared";
+import type { LoginStatus } from "@/lib/useLoginStatus";
 
 interface MenuLinksProps {
   loginStatus: LoginStatus | null;
@@ -26,11 +18,10 @@ export function MenuLinks({
   isDrawer = false,
 }: MenuLinksProps) {
   const [adminVisible, setAdminVisible] = useState(false);
-  const [pressTimer, setPressTimer] = useState<ReturnType<
-    typeof setTimeout
-  > | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
   const aiRef = useRef<HTMLDivElement>(null);
+  const pressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const visibility = getMenuVisibility(loginStatus);
 
   useEffect(() => {
     if (isDrawer) return;
@@ -42,296 +33,61 @@ export function MenuLinks({
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [isDrawer]);
 
-  const menuItemClasses = (additionalClasses = "") =>
-    `relative font-semibold transition-transform duration-200 ease-in-out hover:scale-105 hover:text-gray-800 ${additionalClasses}`;
+  useEffect(() => {
+    return () => {
+      if (!pressTimerRef.current) return;
+      clearTimeout(pressTimerRef.current);
+      pressTimerRef.current = null;
+    };
+  }, []);
 
-  const handlePressStart = () => {
-    const timer = setTimeout(() => {
+  const handlePressEnd = useCallback(() => {
+    if (!pressTimerRef.current) return;
+    clearTimeout(pressTimerRef.current);
+    pressTimerRef.current = null;
+  }, []);
+
+  const handlePressStart = useCallback(() => {
+    handlePressEnd();
+    pressTimerRef.current = setTimeout(() => {
       setAdminVisible(true);
     }, 4000);
-    setPressTimer(timer);
-  };
+  }, [handlePressEnd]);
 
-  const handlePressEnd = () => {
-    if (pressTimer) {
-      clearTimeout(pressTimer);
-      setPressTimer(null);
-    }
-  };
+  const handleManagedItemClick = useCallback(() => {
+    onItemClick?.();
+  }, [onItemClick]);
 
-  const linkProps = {
+  const pressHandlers: LinkPressHandlers = {
     onMouseDown: handlePressStart,
     onMouseUp: handlePressEnd,
     onTouchStart: handlePressStart,
     onTouchEnd: handlePressEnd,
-    onClick: onItemClick,
+    onClick: handleManagedItemClick,
   };
-
-  const kakaoLoggedIn = loginStatus?.isUserLoggedIn === true;
-
-  const isPharmLoggedIn = loginStatus?.isPharmLoggedIn === true;
-  const isRiderLoggedIn = loginStatus?.isRiderLoggedIn === true;
-  const isAdminLoggedIn = loginStatus?.isAdminLoggedIn === true;
-
-  const showPharmMenus = isPharmLoggedIn;
-  const showRiderMenus = isRiderLoggedIn;
-  const showAdminMenus = isAdminLoggedIn;
 
   if (isDrawer) {
     return (
-      <>
-        <IntentPrefetchLink
-          href="/explore"
-          className={menuItemClasses()}
-          {...linkProps}
-        >
-          상품 둘러보기
-        </IntentPrefetchLink>
-
-        <IntentPrefetchLink
-          href="/my-orders"
-          className={menuItemClasses()}
-          onClick={onItemClick}
-        >
-          내 주문 조회
-        </IntentPrefetchLink>
-
-        <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
-          <span>AI 진단 검사</span>
-          <span className="inline-flex rounded-full bg-emerald-50 ring-1 ring-emerald-200 max-w-[220px]">
-            <span className="block w-full px-3 py-1 text-[10px] font-bold text-emerald-600 leading-tight text-center break-words">
-              가입없이 바로
-            </span>
-          </span>
-        </div>
-
-        <IntentPrefetchLink
-          href="/assess"
-          className="-mt-2 inline-flex items-center gap-1 rounded-lg px-3 py-2 hover:bg-slate-50"
-          onClick={onItemClick}
-        >
-          <span>정밀 검사</span>
-          <span className="flex items-center justify-center ml-1 rounded-full bg-indigo-100 w-10 h-5 text-[10px] font-bold text-indigo-600">
-            BETA
-          </span>
-        </IntentPrefetchLink>
-
-        <IntentPrefetchLink
-          href="/check-ai"
-          className="-mt-4 rounded-lg px-3 py-2 -mb-2 hover:bg-slate-50"
-          onClick={onItemClick}
-        >
-          빠른 검사
-        </IntentPrefetchLink>
-
-        <IntentPrefetchLink
-          href="/chat"
-          className={`${menuItemClasses()} flex items-center mt-2`}
-          onClick={onItemClick}
-        >
-          <span>AI 맞춤 상담</span>
-          <span className="ml-2 flex items-center justify-center rounded-full bg-indigo-100 w-10 h-5 text-[10px] font-bold text-indigo-600">
-            BETA
-          </span>
-        </IntentPrefetchLink>
-
-        {showPharmMenus && (
-          <>
-            <div className="mt-2 h-px bg-slate-100" />
-            <Link
-              href="/pharm"
-              className={menuItemClasses()}
-              onClick={onItemClick}
-            >
-              주문 관리
-            </Link>
-            <Link
-              href="/pharm/manage-products"
-              className={menuItemClasses()}
-              onClick={onItemClick}
-            >
-              상품 등록/관리
-            </Link>
-          </>
-        )}
-
-        {showRiderMenus && (
-          <>
-            <div className="mt-2 h-px bg-slate-100" />
-            <Link
-              href="/rider"
-              className={menuItemClasses()}
-              onClick={onItemClick}
-            >
-              배송 관리
-            </Link>
-          </>
-        )}
-
-        {adminVisible && !isAdminLoggedIn && (
-          <Link
-            href="/admin-login"
-            className={menuItemClasses()}
-            onClick={onItemClick}
-          >
-            관리자 로그인
-          </Link>
-        )}
-
-        {showAdminMenus ? (
-          <Link
-            href="/admin"
-            className={menuItemClasses()}
-            onClick={onItemClick}
-          >
-            사이트 관리
-          </Link>
-        ) : null}
-
-        {kakaoLoggedIn ? (
-          <Link href="/me" className={menuItemClasses()} onClick={onItemClick}>
-            내 정보
-          </Link>
-        ) : null}
-      </>
+      <DrawerMenuContent
+        onItemClick={onItemClick}
+        pressHandlers={pressHandlers}
+        visibility={visibility}
+        adminVisible={adminVisible}
+      />
     );
   }
 
   return (
-    <>
-      <IntentPrefetchLink
-        href="/explore"
-        className={menuItemClasses()}
-        {...linkProps}
-      >
-        상품 둘러보기
-      </IntentPrefetchLink>
-
-      <IntentPrefetchLink
-        href="/my-orders"
-        className={menuItemClasses()}
-        onClick={onItemClick}
-      >
-        내 주문 조회
-      </IntentPrefetchLink>
-
-      <div className="relative flex items-center gap-2" ref={aiRef}>
-        <button
-          onClick={() => setAiOpen((v) => !v)}
-          className="hover:text-gray-800 inline-flex items-center gap-1 font-semibold transition-transform duration-200 ease-in-out hover:scale-105"
-          aria-haspopup="menu"
-          aria-expanded={aiOpen}
-        >
-          <span className="inline-flex items-center gap-2">
-            <span>AI 진단 검사</span>
-            <span className="inline-flex rounded-full bg-emerald-50 ring-1 ring-emerald-200 max-w-[220px]">
-              <span className="block w-full px-3 py-1 text-[10px] font-bold text-emerald-600 leading-tight text-center break-words">
-                가입없이 바로
-              </span>
-            </span>
-          </span>
-          <ChevronDownIcon
-            className={`w-4 h-4 transition-transform ${
-              aiOpen ? "rotate-180" : ""
-            }`}
-          />
-        </button>
-
-        <IntentPrefetchLink
-          href="/chat"
-          className={menuItemClasses(
-            "ml-1.5 inline-flex items-center gap-1 leading-none"
-          )}
-          onClick={onItemClick}
-        >
-          <span>AI 맞춤 상담</span>
-          <span className="ml-0.5 flex items-center justify-center rounded-full bg-indigo-100 w-10 h-5 text-[10px] font-bold text-indigo-600">
-            BETA
-          </span>
-        </IntentPrefetchLink>
-
-        {aiOpen && (
-          <div className="absolute left-0 top-full mt-2 w-56 rounded-xl border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 p-2">
-            <IntentPrefetchLink
-              href="/assess"
-              className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-slate-50"
-              onClick={() => {
-                setAiOpen(false);
-                if (onItemClick) onItemClick();
-              }}
-            >
-              <span>정밀 검사</span>
-              <span className="ml-2 flex items-center justify-center rounded-full bg-indigo-100 w-10 h-5 text-[10px] font-bold text-indigo-600">
-                BETA
-              </span>
-            </IntentPrefetchLink>
-
-            <IntentPrefetchLink
-              href="/check-ai"
-              className="block rounded-lg px-3 py-2 text-slate-800 hover:bg-slate-50"
-              onClick={() => {
-                setAiOpen(false);
-                if (onItemClick) onItemClick();
-              }}
-            >
-              빠른 검사
-            </IntentPrefetchLink>
-          </div>
-        )}
-      </div>
-
-      {showPharmMenus && (
-        <>
-          <Link
-            href="/pharm"
-            className={menuItemClasses()}
-            onClick={onItemClick}
-          >
-            주문 관리
-          </Link>
-          <Link
-            href="/pharm/manage-products"
-            className={menuItemClasses()}
-            onClick={onItemClick}
-          >
-            상품 등록/관리
-          </Link>
-        </>
-      )}
-
-      {showRiderMenus && (
-        <Link href="/rider" className={menuItemClasses()} onClick={onItemClick}>
-          배송 관리
-        </Link>
-      )}
-
-      {adminVisible && !isAdminLoggedIn && (
-        <Link
-          href="/admin-login"
-          className={menuItemClasses()}
-          onClick={onItemClick}
-        >
-          관리자 로그인
-        </Link>
-      )}
-
-      {!isDrawer && loginStatus !== null && !kakaoLoggedIn && (
-        <div className="hidden md:block">
-          <KakaoLoginButton />
-        </div>
-      )}
-
-      {showAdminMenus ? (
-        <Link href="/admin" className={menuItemClasses()} onClick={onItemClick}>
-          사이트 관리
-        </Link>
-      ) : null}
-
-      {kakaoLoggedIn ? (
-        <Link href="/me" className={menuItemClasses()} onClick={onItemClick}>
-          내 정보
-        </Link>
-      ) : null}
-    </>
+    <DesktopMenuContent
+      aiOpen={aiOpen}
+      onToggleAiOpen={() => setAiOpen((value) => !value)}
+      onCloseAiOpen={() => setAiOpen(false)}
+      aiRef={aiRef}
+      onItemClick={onItemClick}
+      pressHandlers={pressHandlers}
+      loginStatus={loginStatus}
+      visibility={visibility}
+      adminVisible={adminVisible}
+    />
   );
 }

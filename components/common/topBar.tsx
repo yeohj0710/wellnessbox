@@ -10,7 +10,12 @@ import {
 } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { MenuLinks } from "./menuLinks";
-import { getLoginStatus } from "@/lib/useLoginStatus";
+import {
+  EMPTY_LOGIN_STATUS,
+  getLoginStatus,
+  normalizeLoginStatusResponse,
+  type LoginStatus,
+} from "@/lib/useLoginStatus";
 import Image from "next/image";
 import { ShoppingCartIcon } from "@heroicons/react/24/outline";
 import { useLoading } from "@/components/common/loadingContext.client";
@@ -22,13 +27,6 @@ import {
   consumeCartScrollRestoreForPath,
 } from "@/lib/client/cart-navigation";
 
-type LoginStatus = {
-  isUserLoggedIn: boolean;
-  isPharmLoggedIn: boolean;
-  isRiderLoggedIn: boolean;
-  isAdminLoggedIn: boolean;
-  isTestLoggedIn: boolean;
-};
 const GLOBAL_CART_OPEN_KEY = "wbGlobalCartOpen";
 
 export default function TopBar() {
@@ -80,24 +78,12 @@ function TopBarInner() {
       if (ac.signal.aborted) return;
       if (seq !== reqSeqRef.current) return;
 
-      setLoginStatus({
-        isUserLoggedIn: s.isUserLoggedIn === true,
-        isPharmLoggedIn: s.isPharmLoggedIn === true,
-        isRiderLoggedIn: s.isRiderLoggedIn === true,
-        isAdminLoggedIn: s.isAdminLoggedIn === true,
-        isTestLoggedIn: s.isTestLoggedIn === true,
-      });
+      setLoginStatus(normalizeLoginStatusResponse(s));
     } catch (e) {
       if (ac.signal.aborted) return;
       if (seq !== reqSeqRef.current) return;
 
-      setLoginStatus({
-        isUserLoggedIn: false,
-        isPharmLoggedIn: false,
-        isRiderLoggedIn: false,
-        isAdminLoggedIn: false,
-        isTestLoggedIn: false,
-      });
+      setLoginStatus(EMPTY_LOGIN_STATUS);
     }
   }, []);
 
@@ -183,10 +169,9 @@ function TopBarInner() {
     router,
   });
 
-  const goSevenDays = () => {
+  const navigateTo = (url: string) => {
     setIsDrawerOpen(false);
     closeCartOverlay();
-    const url = sevenDayHref;
     if (shouldShowLoading(url)) {
       showLoading();
     }
@@ -195,16 +180,12 @@ function TopBarInner() {
     });
   };
 
+  const goSevenDays = () => {
+    navigateTo(sevenDayHref);
+  };
+
   const goHome = () => {
-    setIsDrawerOpen(false);
-    closeCartOverlay();
-    const url = "/";
-    if (shouldShowLoading(url)) {
-      showLoading();
-    }
-    startTransition(() => {
-      router.push(url);
-    });
+    navigateTo("/");
   };
 
   const openCartFromOutside = useCallback(() => {

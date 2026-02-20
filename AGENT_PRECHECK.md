@@ -45,3 +45,14 @@ When touching these files, prefer block-level extraction over in-place growth:
   - checkout complete
   - my-orders lookup
   - push subscribe/status
+
+## 5) Navigation Shell Notes
+
+- `lib/useLoginStatus.ts` is the canonical source for `LoginStatus` type + normalization.
+- Header/nav ownership:
+  - `components/common/topBar.tsx` = shell orchestration (drawer, cart, route transitions)
+  - `components/common/menuLinks.tsx` = menu controller state (admin reveal, AI dropdown, timers)
+  - `components/common/menuLinks.desktop.tsx` = desktop menu rendering
+  - `components/common/menuLinks.drawer.tsx` = drawer menu rendering
+  - `components/common/menuLinks.shared.tsx` = shared badges/visibility/operator links
+- If updating menu policy, keep desktop and drawer variants in sync.

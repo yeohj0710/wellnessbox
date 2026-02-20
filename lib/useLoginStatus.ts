@@ -6,7 +6,7 @@ export type LoginStatus = {
   isTestLoggedIn: boolean;
 };
 
-const fallback: LoginStatus = {
+export const EMPTY_LOGIN_STATUS: LoginStatus = {
   isUserLoggedIn: false,
   isPharmLoggedIn: false,
   isRiderLoggedIn: false,
@@ -14,9 +14,21 @@ const fallback: LoginStatus = {
   isTestLoggedIn: false,
 };
 
+export function normalizeLoginStatusResponse(
+  raw: Partial<Record<keyof LoginStatus, unknown>> | null | undefined
+): LoginStatus {
+  return {
+    isUserLoggedIn: raw?.isUserLoggedIn === true,
+    isPharmLoggedIn: raw?.isPharmLoggedIn === true,
+    isRiderLoggedIn: raw?.isRiderLoggedIn === true,
+    isAdminLoggedIn: raw?.isAdminLoggedIn === true,
+    isTestLoggedIn: raw?.isTestLoggedIn === true,
+  };
+}
+
 const NETWORK_ERROR_COOLDOWN_MS = 4000;
 let networkErrorUntil = 0;
-let lastKnownStatus: LoginStatus = fallback;
+let lastKnownStatus: LoginStatus = EMPTY_LOGIN_STATUS;
 
 export async function getLoginStatus(
   signal?: AbortSignal
@@ -58,14 +70,7 @@ export async function getLoginStatus(
   if (!res.ok) return lastKnownStatus;
 
   const raw = (await res.json()) as Partial<Record<keyof LoginStatus, unknown>>;
-
-  const normalized = {
-    isUserLoggedIn: raw.isUserLoggedIn === true,
-    isPharmLoggedIn: raw.isPharmLoggedIn === true,
-    isRiderLoggedIn: raw.isRiderLoggedIn === true,
-    isAdminLoggedIn: raw.isAdminLoggedIn === true,
-    isTestLoggedIn: raw.isTestLoggedIn === true,
-  };
+  const normalized = normalizeLoginStatusResponse(raw);
   lastKnownStatus = normalized;
   networkErrorUntil = 0;
   return normalized;
