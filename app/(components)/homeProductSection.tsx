@@ -26,7 +26,6 @@ import ProductGrid from "@/app/(components)/productGrid";
 import FooterCartBar from "@/app/(components)/footerCartBar";
 import FooterCartBarLoading from "@/app/(components)/footerCartBarLoading";
 import SymptomFilter from "@/app/(components)/symptomFilter";
-import { CATEGORY_LABELS } from "@/lib/categories";
 import {
   fetchJsonWithTimeout,
   FetchTimeoutError,
@@ -45,12 +44,16 @@ import {
   queueCartScrollRestore,
 } from "@/lib/client/cart-navigation";
 import {
+  buildCategoryRecommendationToast,
   calculateCartTotalForPharmacy,
+  filterCartItemsByPharmacyStock,
   filterHomeProducts,
   HOME_CACHE_TTL_MS,
   HOME_FETCH_RETRIES,
   HOME_FETCH_TIMEOUT_MS,
+  HOME_SYMPTOM_CATEGORY_PAIRS,
   HOME_STALE_CACHE_TTL_MS,
+  resolveCategoryIdsFromSymptoms,
   type HomeDataResponse,
   readCachedHomeData,
 } from "./homeProductSection.helpers";
@@ -58,6 +61,10 @@ import {
   CHAT_PAGE_ACTION_EVENT,
   type ChatPageActionDetail,
 } from "@/lib/chat/page-action-events";
+import {
+  HomeProductsStatusState,
+  SelectedPharmacyNotice,
+} from "./homeProductSection.view";
 
 interface HomeProductSectionProps {
   initialCategories?: any[];
@@ -476,14 +483,12 @@ export default function HomeProductSection({
         .filter((n) => !isNaN(n));
       setSelectedCategories(ids);
       if (categories.length) {
-        const names = categories
-          .filter((cat: any) => ids.includes(cat.id))
-          .map((cat: any) => cat.name);
-        if (names.length)
-          showToast(
-            `검사 결과로 추천된 ${names.join(", ")} 카테고리의 상품들이에요.`
-          );
-        else showToast(`검사 결과로 추천된 카테고리의 상품들이에요.`);
+        showToast(
+          buildCategoryRecommendationToast({
+            categoryIds: ids,
+            categories,
+          })
+        );
         toastShownRef.current = true;
       }
     } else if (singleCat) {
@@ -651,36 +656,23 @@ export default function HomeProductSection({
   }, [cartItems, selectedPharmacy, allProducts]);
 
   useEffect(() => {
-    if (selectedSymptoms.length === 0) return;
-    const mappedCategoryNames = selectedSymptoms.reduce<string[]>(
-      (acc, item) => {
-        const cats = symptomCategoryPairs.reduce<string[]>((bucket, entry) => {
-          if (entry.symptom !== item) return bucket;
-          return [...bucket, ...entry.categories];
-        }, []);
-        return [...acc, ...cats];
-      },
-      []
-    );
-    const matchedCategories = categories.filter((cat: any) =>
-      mappedCategoryNames.includes(cat.name)
-    );
-    setSelectedCategories(matchedCategories.map((cat: any) => cat.id));
+    const resolvedCategoryIds = resolveCategoryIdsFromSymptoms({
+      selectedSymptoms,
+      categories,
+      symptomCategoryPairs: HOME_SYMPTOM_CATEGORY_PAIRS,
+    });
+    if (resolvedCategoryIds.length === 0) return;
+    setSelectedCategories(resolvedCategoryIds);
   }, [selectedSymptoms, categories]);
 
   useEffect(() => {
     if (!selectedPharmacy) return;
     if (isLoading || allProducts.length === 0) return;
 
-    const filteredCartItems = cartItems.filter((item) => {
-      const product = allProducts.find((p) => p.id === item.productId);
-      if (!product) return false;
-      const hasMatch = product.pharmacyProducts?.some(
-        (pp: any) =>
-          (pp.pharmacyId ?? pp.pharmacy?.id) === selectedPharmacy.id &&
-          pp.optionType === item.optionType
-      );
-      return !!hasMatch;
+    const filteredCartItems = filterCartItemsByPharmacyStock({
+      cartItems,
+      allProducts,
+      selectedPharmacy,
     });
 
     if (filteredCartItems.length !== cartItems.length) {
@@ -798,66 +790,6 @@ export default function HomeProductSection({
       return updated;
     });
   };
-
-  const symptomCategoryPairs: Array<{ symptom: string; categories: string[] }> =
-    [
-      {
-        symptom: "피로감",
-        categories: [
-          CATEGORY_LABELS.vitaminB,
-          CATEGORY_LABELS.coenzymeQ10,
-          CATEGORY_LABELS.iron,
-        ],
-      },
-      {
-        symptom: "눈 건강",
-        categories: [CATEGORY_LABELS.lutein, CATEGORY_LABELS.vitaminA],
-      },
-      {
-        symptom: "피부 건강",
-        categories: [
-          CATEGORY_LABELS.collagen,
-          CATEGORY_LABELS.vitaminC,
-          CATEGORY_LABELS.zinc,
-        ],
-      },
-      {
-        symptom: "체지방",
-        categories: [CATEGORY_LABELS.garcinia, CATEGORY_LABELS.psyllium],
-      },
-      {
-        symptom: "혈관 & 혈액순환",
-        categories: [CATEGORY_LABELS.omega3, CATEGORY_LABELS.coenzymeQ10],
-      },
-      {
-        symptom: "간 건강",
-        categories: [CATEGORY_LABELS.milkThistle],
-      },
-      {
-        symptom: "장 건강",
-        categories: [CATEGORY_LABELS.probiotics, CATEGORY_LABELS.psyllium],
-      },
-      {
-        symptom: "스트레스 & 수면",
-        categories: [
-          CATEGORY_LABELS.magnesium,
-          CATEGORY_LABELS.phosphatidylserine,
-        ],
-      },
-      {
-        symptom: "면역 기능",
-        categories: [
-          CATEGORY_LABELS.vitaminD,
-          CATEGORY_LABELS.zinc,
-          CATEGORY_LABELS.vitaminC,
-        ],
-      },
-      {
-        symptom: "혈중 콜레스테롤",
-        categories: [CATEGORY_LABELS.omega3],
-      },
-    ];
-
   const handleSearchSelect = (selectedItems: string[]) => {
     setSelectedSymptoms(selectedItems);
     setIsSymptomModalVisible(false);
@@ -918,17 +850,15 @@ export default function HomeProductSection({
         setSelectedPackage={handlePackageSelect}
       />
 
-      {cartItems.length > 0 && selectedPharmacy && (
-        <div className="mx-2 sm:mx-0 bg-gray-100 px-3 py-2 mt-1.5 mb-4 rounded-md text-sm text-gray-700">
-          선택하신 상품을 보유한 약국 중 주소로부터{" "}
-          <strong className="text-sky-500">
-            {selectedPharmacy.distance?.toFixed(1)}km
-          </strong>{" "}
-          거리에 위치한{" "}
-          <strong className="text-sky-500">{selectedPharmacy.name}</strong>의
-          상품들이에요.
-        </div>
-      )}
+      <SelectedPharmacyNotice
+        visible={cartItems.length > 0 && !!selectedPharmacy}
+        pharmacyName={selectedPharmacy?.name}
+        distanceKm={
+          typeof selectedPharmacy?.distance === "number"
+            ? selectedPharmacy.distance
+            : null
+        }
+      />
 
       <ProductGrid
         isLoading={isLoading && allProducts.length === 0}
@@ -939,36 +869,13 @@ export default function HomeProductSection({
         setSelectedProduct={openProductDetail}
       />
 
-      {error && !isLoading && (
-        <div className="min-h-[30vh] mb-12 flex flex-col items-center justify-center py-10">
-          <p className="text-gray-500 text-sm mb-2">{error}</p>
-          {isRecovering && (
-            <p className="text-xs text-gray-400 mb-3">
-              Auto-retrying in the background.
-            </p>
-          )}
-          <button
-            className="text-sky-500 text-sm"
-            onClick={() => void fetchData("recovery")}
-          >
-            Retry
-          </button>
-        </div>
-      )}
-
-      {!error && allProducts.length === 0 && !isLoading && (
-        <div className="min-h-[30vh] mb-12 flex flex-col items-center justify-center gap-6 py-10">
-          <p className="text-sm text-gray-500">
-            Products are taking longer than expected.
-          </p>
-          <button
-            className="text-sky-500 text-sm"
-            onClick={() => void fetchData("recovery")}
-          >
-            Retry now
-          </button>
-        </div>
-      )}
+      <HomeProductsStatusState
+        error={error}
+        isLoading={isLoading}
+        isRecovering={isRecovering}
+        hasProducts={allProducts.length > 0}
+        onRetry={() => void fetchData("recovery")}
+      />
 
       {selectedPharmacy &&
         !selectedProduct &&

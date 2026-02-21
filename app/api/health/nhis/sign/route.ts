@@ -11,13 +11,15 @@ import {
   saveNhisLinkError,
   upsertNhisLink,
 } from "@/lib/server/hyphen/link";
+import { resolveNhisIdentityHash } from "@/lib/server/hyphen/fetch-cache";
+import { runWithHyphenInFlightDedup } from "@/lib/server/hyphen/inflight-dedup";
 import {
   getErrorCodeMessage,
   hyphenErrorToResponse,
   NO_STORE_HEADERS,
 } from "@/lib/server/hyphen/route-utils";
 import { buildNhisRequestDefaults } from "@/lib/server/hyphen/request-defaults";
-import { getPendingEasyAuth } from "@/lib/server/hyphen/session";
+import { clearPendingEasyAuth, getPendingEasyAuth } from "@/lib/server/hyphen/session";
 import { requireUserSession } from "@/lib/server/route-auth";
 
 export const runtime = "nodejs";
@@ -69,38 +71,71 @@ export async function POST(req: Request) {
     );
   }
 
+  const identity = resolveNhisIdentityHash({
+    appUserId: auth.data.appUserId,
+    loginOrgCd: pendingEasyAuth.loginOrgCd,
+    resNm: pendingEasyAuth.resNm,
+    resNo: pendingEasyAuth.resNo,
+    mobileNo: pendingEasyAuth.mobileNo,
+    storedIdentityHash: link.lastIdentityHash,
+  });
+
+  if (
+    link.linked === true &&
+    link.cookieData &&
+    link.lastIdentityHash === identity.identityHash
+  ) {
+    return NextResponse.json(
+      {
+        ok: true,
+        linked: true,
+        reused: true,
+      },
+      { headers: NO_STORE_HEADERS }
+    );
+  }
+
   try {
-    const signResponse = await fetchMedicalInfo({
-      loginMethod: "EASY",
-      loginOrgCd: pendingEasyAuth.loginOrgCd,
-      resNm: pendingEasyAuth.resNm,
-      resNo: pendingEasyAuth.resNo,
-      mobileNo: pendingEasyAuth.mobileNo,
-      ...requestDefaults,
-      stepMode: "step",
-      step: "sign",
-      step_data: link.stepData,
-      cookieData: link.cookieData ?? undefined,
-      showCookie: "Y",
-      ...(parsed.data.otpOrAuthResult !== undefined
-        ? { otpOrAuthResult: parsed.data.otpOrAuthResult }
-        : {}),
-    });
+    const signResponse = await runWithHyphenInFlightDedup(
+      "nhis-sign",
+      `${auth.data.appUserId}|${identity.identityHash}|${pendingEasyAuth.loginOrgCd}`,
+      () =>
+        fetchMedicalInfo({
+          loginMethod: "EASY",
+          loginOrgCd: pendingEasyAuth.loginOrgCd,
+          resNm: pendingEasyAuth.resNm,
+          resNo: pendingEasyAuth.resNo,
+          mobileNo: pendingEasyAuth.mobileNo,
+          ...requestDefaults,
+          stepMode: "step",
+          step: "sign",
+          step_data: link.stepData,
+          cookieData: link.cookieData ?? undefined,
+          showCookie: "Y",
+          ...(parsed.data.otpOrAuthResult !== undefined
+            ? { otpOrAuthResult: parsed.data.otpOrAuthResult }
+            : {}),
+        })
+    );
 
     const nextStepData = extractStepData(signResponse);
     const nextCookieData = extractCookieData(signResponse);
 
-    await upsertNhisLink(auth.data.appUserId, {
-      linked: true,
-      loginMethod: "EASY",
-      loginOrgCd: pendingEasyAuth.loginOrgCd,
-      stepMode: "step",
-      stepData: toPrismaJson(nextStepData ?? link.stepData),
-      cookieData: toPrismaJson(nextCookieData ?? link.cookieData),
-      lastLinkedAt: new Date(),
-      lastErrorCode: null,
-      lastErrorMessage: null,
-    });
+    await Promise.all([
+      upsertNhisLink(auth.data.appUserId, {
+        linked: true,
+        loginMethod: "EASY",
+        loginOrgCd: pendingEasyAuth.loginOrgCd,
+        stepMode: "step",
+        stepData: toPrismaJson(nextStepData ?? link.stepData),
+        cookieData: toPrismaJson(nextCookieData ?? link.cookieData),
+        lastIdentityHash: identity.identityHash,
+        lastLinkedAt: new Date(),
+        lastErrorCode: null,
+        lastErrorMessage: null,
+      }),
+      clearPendingEasyAuth(),
+    ]);
 
     return NextResponse.json(
       { ok: true, linked: true },

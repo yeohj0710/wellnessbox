@@ -21,15 +21,12 @@ import {
   readLocalAssessCats,
   readLocalCheckAiTopLabels,
 } from "./useChat.results";
-import { createDraftSession, DEFAULT_CHAT_TITLE, mergeServerSessions } from "./useChat.session";
+import { DEFAULT_CHAT_TITLE, mergeServerSessions } from "./useChat.session";
 import {
   buildFinalSuggestions,
   getSuggestionHistory,
   rememberSuggestions,
 } from "./useChat.suggestions";
-import { readStreamingText } from "./useChat.stream";
-import { normalizeNewlines, sanitizeAssistantText } from "./useChat.text";
-import { hydrateRecommendationPrices } from "./useChat.recommendation";
 import {
   readActionMemory,
   rememberActionMemoryList,
@@ -48,10 +45,6 @@ import {
   openCartFromChat,
   openExternalLink,
 } from "./useChat.browser";
-import {
-  evaluateDeepAssessAnswers,
-  evaluateQuickCheckAnswers,
-} from "./useChat.evaluation";
 import { dispatchChatCartActionRequest } from "@/lib/chat/cart-action-events";
 import {
   type ChatActionType,
@@ -63,16 +56,7 @@ import {
   pickLatestAssistantText,
 } from "./useChat.agentActions";
 import {
-  DEEP_CHAT_QUESTIONS,
-  QUICK_CHAT_QUESTIONS,
   buildInChatAssessmentPrompt,
-  createAssessmentResultSummary,
-  findNextAssessmentIndex,
-  formatAssessmentQuestionPrompt,
-  isAssessmentCancelIntent,
-  isAssessmentEscapeIntent,
-  parseChoiceAnswer,
-  parseNumberAnswer,
   type InChatAssessmentMode,
   type InChatAssessmentState,
 } from "./useChat.assessment";
@@ -90,10 +74,30 @@ import {
 import {
   requestActionExecutionDecision,
   requestActionSuggestions,
-  requestChatStream,
+  requestDeleteChatSession,
   requestChatSuggestions,
   requestChatTitle,
 } from "./useChat.api";
+import { filterPersistableSessions, saveChatOnce } from "./useChat.persistence";
+import {
+  appendMessagesToSession,
+  replaceSessionMessageContent,
+  updateSessionTitle,
+} from "./useChat.sessionState";
+import { prepareOutgoingTurn } from "./useChat.sendMessage";
+import { resolveSendMessageBranch } from "./useChat.sendMessageFlow";
+import { runStreamedAssistantTurn } from "./useChat.streamTurn";
+import { startInitialAssistantMessageFlow } from "./useChat.initialAssistant";
+import { createNewChatSession, deleteChatSessionState } from "./useChat.sessionActions";
+import {
+  finalizeAssistantTurnFlow,
+  generateTitleFlow,
+  type FinalizeAssistantTurnInput,
+} from "./useChat.finalizeFlow";
+import {
+  handleInChatAssessmentInputFlow,
+  initializeInChatAssessmentFlow,
+} from "./useChat.assessmentFlow";
 import type { ChatPageAgentContext } from "@/lib/chat/page-agent-context";
 
 type UseChatOptions = {
@@ -196,20 +200,16 @@ export default function useChat(options: UseChatOptions = {}) {
         readyToPersistRef.current[session.id] = true;
       });
     } else {
-      const id = uid();
-      const now = Date.now();
-      setSessions([
-        createDraftSession({
-          id,
-          now,
-          actor: {
-            loggedIn: actorLoggedInRef.current,
-            appUserId: actorAppUserIdRef.current,
-          },
-        }),
-      ]);
-      setActiveId(id);
-      readyToPersistRef.current[id] = false;
+      const created = createNewChatSession({
+        sessions: [],
+        actor: {
+          loggedIn: actorLoggedInRef.current,
+          appUserId: actorAppUserIdRef.current,
+        },
+      });
+      setSessions(created.nextSessions);
+      setActiveId(created.id);
+      readyToPersistRef.current[created.id] = false;
     }
 
     (async () => {
@@ -275,15 +275,7 @@ export default function useChat(options: UseChatOptions = {}) {
   useEffect(() => {
     if (!sessions.length) return;
 
-    const persistable = sessions.filter((session) => {
-      const first = session.messages[0];
-      if (first && first.role === "assistant") {
-        return !!readyToPersistRef.current[session.id];
-      }
-      return true;
-    });
-
-    saveSessions(persistable);
+    saveSessions(filterPersistableSessions(sessions, readyToPersistRef.current));
   }, [sessions]);
 
   const { hideFooter, showFooter } = useFooter();
@@ -541,20 +533,16 @@ export default function useChat(options: UseChatOptions = {}) {
   }
 
   function newChat() {
-    const id = uid();
-    const now = Date.now();
-
-    const session = createDraftSession({
-      id,
-      now,
+    const created = createNewChatSession({
+      sessions,
       actor: {
         loggedIn: actorLoggedInRef.current,
         appUserId: actorAppUserIdRef.current,
       },
     });
 
-    setSessions([session, ...sessions]);
-    setActiveId(id);
+    setSessions(created.nextSessions);
+    setActiveId(created.id);
     setSuggestions([]);
     setInteractiveActions([]);
     setInChatAssessment(null);
@@ -563,8 +551,8 @@ export default function useChat(options: UseChatOptions = {}) {
     firstAssistantReplyRef.current = "";
     setTitleLoading(false);
     setTitleError(false);
-    readyToPersistRef.current[id] = false;
-    suggestionHistoryRef.current[id] = [];
+    readyToPersistRef.current[created.id] = false;
+    suggestionHistoryRef.current[created.id] = [];
   }
 
   async function deleteChat(id: string) {
@@ -572,9 +560,13 @@ export default function useChat(options: UseChatOptions = {}) {
     const prevActiveId = activeId;
     const prevReady = { ...readyToPersistRef.current };
 
-    const next = sessions.filter((session) => session.id !== id);
-    setSessions(next);
-    if (activeId === id) setActiveId(next[0]?.id ?? null);
+    const nextState = deleteChatSessionState({
+      sessions,
+      activeId,
+      deleteId: id,
+    });
+    setSessions(nextState.nextSessions);
+    setActiveId(nextState.nextActiveId);
     if (inChatAssessment?.sessionId === id) {
       setInChatAssessment(null);
     }
@@ -583,15 +575,7 @@ export default function useChat(options: UseChatOptions = {}) {
     delete suggestionHistoryRef.current[id];
 
     try {
-      const response = await fetch("/api/chat/delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId: id }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to delete chat session");
-      }
+      await requestDeleteChatSession(id);
     } catch {
       readyToPersistRef.current = prevReady;
       setSessions(prevSessions);
@@ -600,9 +584,7 @@ export default function useChat(options: UseChatOptions = {}) {
   }
 
   function renameChat(id: string, title: string) {
-    setSessions((prev) =>
-      prev.map((session) => (session.id === id ? { ...session, title } : session))
-    );
+    setSessions((prev) => updateSessionTitle(prev, id, title));
   }
 
   function stopStreaming() {
@@ -611,122 +593,55 @@ export default function useChat(options: UseChatOptions = {}) {
 
   function updateAssistantMessage(sessionId: string, messageId: string, content: string) {
     setSessions((prev) =>
-      prev.map((session) =>
-        session.id === sessionId
-          ? {
-              ...session,
-              updatedAt: Date.now(),
-              messages: session.messages.map((message) =>
-                message.id === messageId ? { ...message, content } : message
-              ),
-            }
-          : session
-      )
+      replaceSessionMessageContent(prev, sessionId, messageId, content)
     );
   }
 
-  async function saveChatOnce({
-    clientId,
-    sessionId,
-    title,
-    messages,
-    tzOffsetMinutes,
-  }: {
-    clientId: string;
-    sessionId: string;
-    title?: string;
-    messages: ChatMessage[];
-    tzOffsetMinutes: number;
-  }) {
-    const key = `${sessionId}:${messages.map((message) => message.id).join(",")}`;
-    if (savedKeysRef.current.has(key)) return;
+  async function finalizeAssistantTurn(input: FinalizeAssistantTurnInput) {
+    await finalizeAssistantTurnFlow({
+      turn: input,
+      onFirstTurn: async (content) => {
+        firstAssistantReplyRef.current = content;
+        await generateTitle();
+      },
+      fetchSuggestions,
+      fetchInteractiveActions,
+      persistTurn: async (turn) => {
+        const clientId = getClientIdLocal();
+        const tzOffsetMinutes = getTzOffsetMinutes();
+        const persistedMessages = turn.userMessage
+          ? [turn.userMessage, { ...turn.assistantMessage, content: turn.content }]
+          : [{ ...turn.assistantMessage, content: turn.content }];
 
-    savedKeysRef.current.add(key);
-    await fetch("/api/chat/save", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        clientId,
-        sessionId,
-        title,
-        messages,
-        tzOffsetMinutes,
-      }),
+        await saveChatOnce({
+          savedKeys: savedKeysRef.current,
+          clientId,
+          sessionId: turn.sessionId,
+          title:
+            sessions.find((session) => session.id === turn.sessionId)?.title ||
+            DEFAULT_CHAT_TITLE,
+          messages: persistedMessages,
+          tzOffsetMinutes,
+        });
+      },
     });
   }
 
-  async function finalizeAssistantTurn(input: {
-    sessionId: string;
-    content: string;
-    assistantMessage: ChatMessage;
-    userMessage?: ChatMessage;
-    isFirst?: boolean;
-  }) {
-    if (input.isFirst) {
-      firstAssistantReplyRef.current = input.content;
-      await generateTitle();
-    }
-
-    await Promise.all([
-      fetchSuggestions(input.content, input.sessionId),
-      fetchInteractiveActions(input.content, input.sessionId),
-    ]);
-
-    try {
-      const clientId = getClientIdLocal();
-      const tzOffsetMinutes = getTzOffsetMinutes();
-      const persistedMessages = input.userMessage
-        ? [input.userMessage, { ...input.assistantMessage, content: input.content }]
-        : [{ ...input.assistantMessage, content: input.content }];
-
-      await saveChatOnce({
-        clientId,
-        sessionId: input.sessionId,
-        title:
-          sessions.find((session) => session.id === input.sessionId)?.title ||
-          DEFAULT_CHAT_TITLE,
-        messages: persistedMessages,
-        tzOffsetMinutes,
-      });
-    } catch {}
-  }
-
   async function generateTitle() {
-    if (
-      !firstUserMessageRef.current ||
-      !firstAssistantMessageRef.current ||
-      !firstAssistantReplyRef.current ||
-      !activeId
-    ) {
-      return;
-    }
-
-    setTitleLoading(true);
-    setTitleError(false);
-
-    try {
-      const title = await requestChatTitle({
-        firstUserMessage: firstUserMessageRef.current,
-        firstAssistantMessage: firstAssistantMessageRef.current,
-        assistantReply: firstAssistantReplyRef.current,
-      });
-
-      setSessions((prev) =>
-        prev.map((session) =>
-          session.id === activeId ? { ...session, title } : session
-        )
-      );
-      setTitleHighlightId(activeId);
-      setTopTitleHighlight(true);
-      setTimeout(() => {
-        setTitleHighlightId(null);
-        setTopTitleHighlight(false);
-      }, 1500);
-    } catch {
-      setTitleError(true);
-    } finally {
-      setTitleLoading(false);
-    }
+    await generateTitleFlow({
+      activeId,
+      firstUserMessage: firstUserMessageRef.current,
+      firstAssistantMessage: firstAssistantMessageRef.current,
+      firstAssistantReply: firstAssistantReplyRef.current,
+      setTitleLoading,
+      setTitleError,
+      requestTitle: requestChatTitle,
+      applyTitle: (sessionId, title) => {
+        setSessions((prev) => updateSessionTitle(prev, sessionId, title));
+      },
+      setTitleHighlightId,
+      setTopTitleHighlight,
+    });
   }
 
   async function fetchSuggestions(
@@ -845,28 +760,15 @@ export default function useChat(options: UseChatOptions = {}) {
     sessionId: string,
     mode: InChatAssessmentMode
   ): string {
-    const questions = (mode === "quick" ? QUICK_CHAT_QUESTIONS : DEEP_CHAT_QUESTIONS).slice();
-    const initialState: InChatAssessmentState = {
+    return initializeInChatAssessmentFlow({
       sessionId,
       mode,
-      questions,
-      currentIndex: 0,
-      answers: {},
-    };
-    setInChatAssessment(initialState);
-    setSuggestions([]);
-    setInteractiveActions([]);
-    return [
-      mode === "quick"
-        ? "좋아요. 페이지 이동 없이 대화형 빠른검사를 시작할게요."
-        : "좋아요. 페이지 이동 없이 대화형 정밀검사를 시작할게요.",
-      formatAssessmentQuestionPrompt({
-        mode,
-        index: 0,
-        total: questions.length,
-        question: questions[0],
-      }),
-    ].join("\n\n");
+      setInChatAssessment,
+      clearSuggestionsAndActions: () => {
+        setSuggestions([]);
+        setInteractiveActions([]);
+      },
+    });
   }
 
   async function tryHandleInChatAssessmentInput(params: {
@@ -876,125 +778,26 @@ export default function useChat(options: UseChatOptions = {}) {
     assistantMessage: ChatMessage;
     isFirst: boolean;
   }) {
-    const state = inChatAssessment;
-    if (!state || state.sessionId !== params.sessionId) return false;
-
-    if (isAssessmentEscapeIntent(params.text)) {
-      setInChatAssessment(null);
-      return false;
-    }
-
-    if (isAssessmentCancelIntent(params.text)) {
-      setInChatAssessment(null);
-      setSuggestions([]);
-      setInteractiveActions([]);
-      const cancelText = "대화형 검사를 중단했어요. 원하면 다시 시작해 주세요.";
-      updateAssistantMessage(params.sessionId, params.assistantMessage.id, cancelText);
-      return true;
-    }
-
-    const currentQuestion = state.questions[state.currentIndex];
-    if (!currentQuestion) {
-      setInChatAssessment(null);
-      return false;
-    }
-
-    const parsed =
-      currentQuestion.kind === "number"
-        ? parseNumberAnswer(params.text, currentQuestion)
-        : parseChoiceAnswer(params.text, currentQuestion);
-
-    if (!parsed) {
-      const guide =
-        currentQuestion.kind === "number"
-          ? `숫자로 답변해 주세요.${typeof currentQuestion.min === "number" && typeof currentQuestion.max === "number" ? ` (${currentQuestion.min}~${currentQuestion.max})` : ""}`
-          : "아래 선택지 버튼을 누르거나 번호(예: 1번)로 답변해 주세요.";
-      const retryText = `${guide}\n\n${formatAssessmentQuestionPrompt({
-        mode: state.mode,
-        index: state.currentIndex,
-        total: state.questions.length,
-        question: currentQuestion,
-      })}`;
-      updateAssistantMessage(params.sessionId, params.assistantMessage.id, retryText);
-      return true;
-    }
-
-    const nextAnswers = {
-      ...state.answers,
-      [currentQuestion.id]: parsed.parsed,
-    };
-    const nextIndex = findNextAssessmentIndex(
-      state.questions,
-      nextAnswers,
-      state.currentIndex + 1
-    );
-
-    if (nextIndex >= 0) {
-      const nextState: InChatAssessmentState = {
-        ...state,
-        answers: nextAnswers,
-        currentIndex: nextIndex,
-      };
-      setInChatAssessment(nextState);
-      const nextQuestion = nextState.questions[nextState.currentIndex];
-      const nextText = [
-        `${currentQuestion.id} 응답: ${parsed.label}`,
-        "",
-        formatAssessmentQuestionPrompt({
-          mode: nextState.mode,
-          index: nextState.currentIndex,
-          total: nextState.questions.length,
-          question: nextQuestion,
-        }),
-      ].join("\n");
-      updateAssistantMessage(params.sessionId, params.assistantMessage.id, nextText);
-      return true;
-    }
-
-    setInChatAssessment(null);
-    setSuggestions([]);
-    setInteractiveActions([]);
-
-    const result =
-      state.mode === "quick"
-        ? await evaluateQuickCheckAnswers({
-            answers: nextAnswers,
-            setLocalCheckAi,
-            setCheckAiResult,
-            getTzOffsetMinutes,
-          })
-        : await evaluateDeepAssessAnswers({
-            answers: nextAnswers,
-            setLocalAssessCats,
-            setAssessResult,
-            getTzOffsetMinutes,
-          });
-
-    const doneText = [
-      `${currentQuestion.id} 응답: ${parsed.label}`,
-      "",
-      createAssessmentResultSummary({
-        mode: state.mode,
-        labels: result.labels,
-        percents: result.percents,
-      }),
-      "",
-      state.mode === "quick"
-        ? "원하면 지금 정밀검사(대화형)도 이어서 진행할 수 있어요."
-        : "원하면 추천 카테고리 기준으로 제품 탐색도 바로 도와드릴게요.",
-    ].join("\n");
-
-    updateAssistantMessage(params.sessionId, params.assistantMessage.id, doneText);
-
-    await finalizeAssistantTurn({
+    return handleInChatAssessmentInputFlow({
+      state: inChatAssessment,
+      text: params.text,
       sessionId: params.sessionId,
-      content: doneText,
-      assistantMessage: params.assistantMessage,
       userMessage: params.userMessage,
+      assistantMessage: params.assistantMessage,
       isFirst: params.isFirst,
+      setInChatAssessment,
+      clearSuggestionsAndActions: () => {
+        setSuggestions([]);
+        setInteractiveActions([]);
+      },
+      updateAssistantMessage,
+      finalizeAssistantTurn,
+      setLocalCheckAi,
+      setCheckAiResult,
+      setLocalAssessCats,
+      setAssessResult,
+      getTzOffsetMinutes,
     });
-
-    return true;
   }
 
   async function executeCartCommandText(params: {
@@ -1187,15 +990,7 @@ export default function useChat(options: UseChatOptions = {}) {
       };
 
       setSessions((prev) =>
-        prev.map((session) =>
-          session.id === active.id
-            ? {
-                ...session,
-                updatedAt: Date.now(),
-                messages: [...session.messages, assistantMessage],
-              }
-            : session
-        )
+        appendMessagesToSession(prev, active.id, [assistantMessage])
       );
 
       await finalizeAssistantTurn({
@@ -1209,232 +1004,131 @@ export default function useChat(options: UseChatOptions = {}) {
   }
 
   async function sendMessage(overrideText?: string) {
-    if (loading) return;
-    if (!active) return;
+    const preparedTurn = prepareOutgoingTurn({
+      loading,
+      active,
+      input,
+      overrideText,
+    });
+    if (!preparedTurn) return;
 
-    const text = (overrideText ?? input).trim();
-    if (!text) return;
+    const {
+      text,
+      isFirst,
+      now,
+      sessionId,
+      sessionMessages,
+      userMessage,
+      assistantMessage,
+    } = preparedTurn;
 
-    const isFirst = active.messages.length === 1;
     setInput("");
     setSuggestions([]);
     setInteractiveActions([]);
     if (isFirst) firstUserMessageRef.current = text;
 
-    const now = Date.now();
-    const userMessage: ChatMessage = {
-      id: uid(),
-      role: "user",
-      content: normalizeNewlines(text),
-      createdAt: now,
-    };
-    const assistantMessage: ChatMessage = {
-      id: uid(),
-      role: "assistant",
-      content: "",
-      createdAt: now,
-    };
-
     setSessions((prev) =>
-      prev.map((session) =>
-        session.id === active.id
-          ? {
-              ...session,
-              updatedAt: Date.now(),
-              messages: [...session.messages, userMessage, assistantMessage],
-            }
-          : session
-      )
+      appendMessagesToSession(prev, sessionId, [userMessage, assistantMessage], now)
     );
 
     stickToBottomRef.current = true;
     requestAnimationFrame(() => requestAnimationFrame(scrollToBottom));
 
-    const handledByInChatAssessment = await tryHandleInChatAssessmentInput({
-      text,
-      sessionId: active.id,
-      userMessage,
-      assistantMessage,
-      isFirst,
-    });
-    if (handledByInChatAssessment) return;
-
-    if (!isBrowserOnline()) {
-      updateAssistantMessage(active.id, assistantMessage.id, OFFLINE_CHAT_MESSAGE);
-      return;
-    }
+    const branchResult = await resolveSendMessageBranch(
+      {
+        text,
+        sessionId,
+        sessionMessages,
+        userMessage,
+        assistantMessage,
+        isFirst,
+      },
+      {
+        tryHandleInChatAssessmentInput,
+        isBrowserOnline,
+        handleOffline: ({ sessionId: targetSessionId, assistantMessage: targetAssistantMessage }) => {
+          updateAssistantMessage(
+            targetSessionId,
+            targetAssistantMessage.id,
+            OFFLINE_CHAT_MESSAGE
+          );
+        },
+        tryHandleAgentActionDecision,
+        tryHandleCartCommand,
+      }
+    );
+    if (branchResult !== "stream") return;
 
     setLoading(true);
 
     try {
-      const handledByAgentAction = await tryHandleAgentActionDecision({
-        text,
-        sessionId: active.id,
-        sessionMessages: active.messages || [],
-        userMessage,
-        assistantMessage,
-        isFirst,
-      });
-      if (handledByAgentAction) return;
-
-      const handledByCommand = await tryHandleCartCommand({
-        text,
-        sessionId: active.id,
-        sessionMessages: active.messages || [],
-        userMessage,
-        assistantMessage,
-        isFirst,
-      });
-      if (handledByCommand) return;
-
-      const controller = new AbortController();
-      abortRef.current = controller;
-      const clientId = getClientIdLocal();
-      const contextPayload = buildContextPayload(active.id);
-      const response = await requestChatStream({
+      await runStreamedAssistantTurn({
         mode: "chat",
-        messages: (active.messages || []).concat(userMessage),
-        clientId,
-        contextPayload,
-        runtimeContext: buildRuntimeContextPayload(),
-        signal: controller.signal,
-      });
-
-      let fullText = await readStreamingText(response, (textSoFar) => {
-        updateAssistantMessage(
-          active.id,
-          assistantMessage.id,
-          textSoFar
-        );
-      });
-
-      const finalizedText = sanitizeAssistantText(fullText, true);
-      if (finalizedText !== fullText) {
-        fullText = finalizedText;
-      }
-      try {
-        fullText = await hydrateRecommendationPrices(fullText);
-      } catch {}
-
-      updateAssistantMessage(active.id, assistantMessage.id, fullText);
-
-      await finalizeAssistantTurn({
-        sessionId: active.id,
-        content: fullText,
+        sessionId,
+        messages: sessionMessages.concat(userMessage),
         assistantMessage,
-        userMessage,
-        isFirst,
+        buildContextPayload,
+        buildRuntimeContextPayload,
+        updateAssistantMessage,
+        setAbortController: (controller) => {
+          abortRef.current = controller;
+        },
+        onComplete: async (fullText) => {
+          await finalizeAssistantTurn({
+            sessionId,
+            content: fullText,
+            assistantMessage,
+            userMessage,
+            isFirst,
+          });
+        },
       });
     } catch (error) {
       if ((error as any)?.name !== "AbortError") {
         const errText = (error as Error).message || "문제가 발생했어요.";
-        updateAssistantMessage(active.id, assistantMessage.id, `오류: ${errText}`);
+        updateAssistantMessage(sessionId, assistantMessage.id, `오류: ${errText}`);
       }
     } finally {
       setLoading(false);
-      abortRef.current = null;
     }
   }
 
   async function startInitialAssistantMessage(sessionId: string) {
-    if (!resultsLoaded) return;
-    if (initStartedRef.current[sessionId]) return;
+    await startInitialAssistantMessageFlow({
+      sessionId,
+      sessions,
+      resultsLoaded,
+      initStartedMap: initStartedRef.current,
+      isOnline: isBrowserOnline,
+      offlineMessage: OFFLINE_INIT_MESSAGE,
+      setSessions,
+      setLoading,
+      setAbortController: (controller) => {
+        abortRef.current = controller;
+      },
+      buildContextPayload,
+      buildRuntimeContextPayload,
+      updateAssistantMessage,
+      onComplete: async ({ fullText, assistantMessage }) => {
+        fetchSuggestions(fullText, sessionId).catch(() => {});
+        fetchInteractiveActions(fullText, sessionId).catch(() => {});
+        firstAssistantMessageRef.current = fullText;
 
-    initStartedRef.current[sessionId] = true;
-    const session = sessions.find((item) => item.id === sessionId);
-    if (!session || session.messages.length > 0) return;
-
-    const now = Date.now();
-    const assistantMessage: ChatMessage = {
-      id: uid(),
-      role: "assistant",
-      content: "",
-      createdAt: now,
-    };
-
-    setSessions((prev) =>
-      prev.map((item) =>
-        item.id === sessionId ? { ...item, messages: [assistantMessage] } : item
-      )
-    );
-
-    if (!isBrowserOnline()) {
-      updateAssistantMessage(sessionId, assistantMessage.id, OFFLINE_INIT_MESSAGE);
-      return;
-    }
-
-    setLoading(true);
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    try {
-      const clientId = getClientIdLocal();
-      const contextPayload = buildContextPayload(sessionId);
-      const response = await requestChatStream({
-        mode: "init",
-        messages: [],
-        clientId,
-        contextPayload,
-        runtimeContext: buildRuntimeContextPayload(),
-        signal: controller.signal,
-      });
-
-      let fullText = await readStreamingText(response, (textSoFar) => {
-        updateAssistantMessage(
-          sessionId,
-          assistantMessage.id,
-          textSoFar
-        );
-      });
-
-      const finalizedText = sanitizeAssistantText(fullText, true);
-      if (finalizedText !== fullText) {
-        fullText = finalizedText;
-      }
-      try {
-        fullText = await hydrateRecommendationPrices(fullText);
-      } catch {}
-
-      updateAssistantMessage(sessionId, assistantMessage.id, fullText);
-      fetchSuggestions(fullText, sessionId).catch(() => {});
-      fetchInteractiveActions(fullText, sessionId).catch(() => {});
-      firstAssistantMessageRef.current = fullText;
-
-      try {
-        const tzOffsetMinutes = getTzOffsetMinutes();
-        const clientId2 = getClientIdLocal();
-        await saveChatOnce({
-          clientId: clientId2,
-          sessionId,
-          messages: [{ ...assistantMessage, content: fullText }],
-          tzOffsetMinutes,
-        });
-        readyToPersistRef.current[sessionId] = true;
-        setSessions((prev) => prev.slice());
-      } catch {}
-    } catch (error) {
-      if ((error as any)?.name !== "AbortError") {
-        const errText = (error as Error).message || "문제가 발생했어요.";
-        setSessions((prev) =>
-          prev.map((item) =>
-            item.id === sessionId
-              ? {
-                  ...item,
-                  updatedAt: Date.now(),
-                  messages: item.messages.map((message) =>
-                    message.role === "assistant" && message.content === ""
-                      ? { ...message, content: `오류: ${errText}` }
-                      : message
-                  ),
-                }
-              : item
-          )
-        );
-      }
-    } finally {
-      setLoading(false);
-      abortRef.current = null;
-    }
+        try {
+          const tzOffsetMinutes = getTzOffsetMinutes();
+          const clientId2 = getClientIdLocal();
+          await saveChatOnce({
+            savedKeys: savedKeysRef.current,
+            clientId: clientId2,
+            sessionId,
+            messages: [{ ...assistantMessage, content: fullText }],
+            tzOffsetMinutes,
+          });
+          readyToPersistRef.current[sessionId] = true;
+          setSessions((prev) => prev.slice());
+        } catch {}
+      },
+    });
   }
 
   function handleProfileChange(nextProfile?: UserProfile) {
@@ -1468,15 +1162,7 @@ export default function useChat(options: UseChatOptions = {}) {
     };
     setInChatAssessment(null);
     setSessions((prev) =>
-      prev.map((session) =>
-        session.id === activeId
-          ? {
-              ...session,
-              updatedAt: Date.now(),
-              messages: [...session.messages, assistantMessage],
-            }
-          : session
-      )
+      appendMessagesToSession(prev, activeId, [assistantMessage])
     );
   }
 

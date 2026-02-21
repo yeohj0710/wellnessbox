@@ -1,11 +1,24 @@
 import type { WorkflowStep } from "./types";
+import { HEALTH_LINK_COPY } from "./copy";
 
 export const NHIS_LOGIN_ORG = "kakao";
 
 export const NHIS_WORKFLOW_STEPS: WorkflowStep[] = [
-  { id: "status", title: "연동 준비", subtitle: "본인 정보 입력 후 인증 요청" },
-  { id: "auth", title: "카카오 인증", subtitle: "카카오에서 인증 완료 확인" },
-  { id: "sync", title: "검진 수치 동기화", subtitle: "건강검진 핵심 수치만 불러오기" },
+  {
+    id: "status",
+    title: HEALTH_LINK_COPY.workflow.statusTitle,
+    subtitle: HEALTH_LINK_COPY.workflow.statusSubtitle,
+  },
+  {
+    id: "auth",
+    title: HEALTH_LINK_COPY.workflow.authTitle,
+    subtitle: HEALTH_LINK_COPY.workflow.authSubtitle,
+  },
+  {
+    id: "sync",
+    title: HEALTH_LINK_COPY.workflow.syncTitle,
+    subtitle: HEALTH_LINK_COPY.workflow.syncSubtitle,
+  },
 ];
 
 export const NHIS_ERR_CODE_HEALTHIN_REQUIRED = "C0012-001";

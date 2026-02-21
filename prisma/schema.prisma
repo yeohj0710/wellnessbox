@@ -277,6 +277,8 @@ model AppUser {
   orders          Order[]
   chatSessions    ChatSession[]
   healthProviderLinks HealthProviderLink[]
+  healthProviderFetchCaches HealthProviderFetchCache[]
+  healthProviderFetchAttempts HealthProviderFetchAttempt[]
 
   @@index([clientId])
   @@index([email])
@@ -293,6 +295,7 @@ model HealthProviderLink {
   stepMode         String?
   stepData         Json?
   cookieData       Json?
+  lastIdentityHash String?
   lastLinkedAt     DateTime?
   lastFetchedAt    DateTime?
   lastErrorCode    String?
@@ -304,6 +307,55 @@ model HealthProviderLink {
   @@unique([appUserId, provider])
   @@index([provider, linked])
   @@index([appUserId, updatedAt])
+}
+
+model HealthProviderFetchCache {
+  id            String   @id @default(cuid())
+  appUserId     String
+  provider      String
+  identityHash  String
+  requestHash   String
+  requestKey    String
+  targets       String[]
+  yearLimit     Int?
+  fromDate      String?
+  toDate        String?
+  subjectType   String?
+  statusCode    Int
+  ok            Boolean
+  partial       Boolean  @default(false)
+  payload       Json
+  fetchedAt     DateTime @default(now())
+  expiresAt     DateTime
+  hitCount      Int      @default(0)
+  lastHitAt     DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+  appUser       AppUser  @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+
+  @@unique([appUserId, provider, requestHash])
+  @@index([appUserId, provider, expiresAt])
+  @@index([provider, identityHash, expiresAt])
+  @@index([appUserId, fetchedAt])
+}
+
+model HealthProviderFetchAttempt {
+  id           String   @id @default(cuid())
+  appUserId    String
+  provider     String
+  identityHash String?
+  requestHash  String?
+  requestKey   String?
+  forceRefresh Boolean  @default(false)
+  cached       Boolean  @default(false)
+  statusCode   Int?
+  ok           Boolean?
+  createdAt    DateTime @default(now())
+  appUser      AppUser  @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+
+  @@index([appUserId, provider, createdAt])
+  @@index([appUserId, provider, forceRefresh, createdAt])
+  @@index([provider, createdAt])
 }
 
 model ChatSession {

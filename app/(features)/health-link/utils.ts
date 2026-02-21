@@ -18,42 +18,42 @@ const TABLE_PRIORITY_KEYS = [
 ] as const;
 
 const FIELD_LABELS: Record<string, string> = {
-  metric: "검진 항목",
-  value: "측정값",
-  checkupDate: "검진일",
-  year: "연도",
-  itemName: "검진 항목",
-  itemData: "측정값",
-  result: "결과",
-  height: "키",
-  weight: "체중",
+  metric: "Metric",
+  value: "Value",
+  checkupDate: "Checkup Date",
+  year: "Year",
+  itemName: "Item",
+  itemData: "Value",
+  result: "Result",
+  height: "Height",
+  weight: "Weight",
   bmi: "BMI",
-  waist: "허리둘레",
-  bp: "혈압",
-  bloodPressure: "혈압",
-  systolic: "수축기 혈압",
-  diastolic: "이완기 혈압",
-  pulse: "맥박",
-  hemoglobin: "혈색소",
-  glucose: "혈당",
-  cholesterol: "총 콜레스테롤",
+  waist: "Waist",
+  bp: "Blood Pressure",
+  bloodPressure: "Blood Pressure",
+  systolic: "Systolic",
+  diastolic: "Diastolic",
+  pulse: "Pulse",
+  hemoglobin: "Hemoglobin",
+  glucose: "Glucose",
+  cholesterol: "Total Cholesterol",
   hdl: "HDL",
   ldl: "LDL",
-  triglyceride: "중성지방",
+  triglyceride: "Triglyceride",
   ast: "AST",
   alt: "ALT",
   ggt: "GGT",
-  creatinine: "크레아티닌",
+  creatinine: "Creatinine",
   egfr: "eGFR",
-  bun: "요소질소",
-  uric: "요산",
+  bun: "BUN",
+  uric: "Uric Acid",
 };
 
 const CHECKUP_METRIC_EXCLUDED_KEY_PATTERN =
-  /(agency|hospital|hsp|pharm|clinic|org|provider|institution|place|address|name|subject|examinee|detailkey|title|qtitle|comment|memo|opinion|error|code|기관|병원|약국|주소|성명|이름|구분)/i;
+  /(agency|hospital|hsp|pharm|clinic|org|provider|institution|place|address|name|subject|examinee|detailkey|title|qtitle|comment|memo|opinion|error|code|category|group)/i;
 
 const CHECKUP_METRIC_INCLUDED_KEY_PATTERN =
-  /(height|weight|bmi|waist|bp|pressure|systolic|diastolic|pulse|heart|vision|hearing|hemoglobin|glucose|sugar|a1c|cholesterol|hdl|ldl|triglyceride|ast|alt|gamma|ggt|creatinine|egfr|bun|albumin|protein|uric|rbc|wbc|platelet|hematocrit|hematoglobin|키|체중|혈압|허리|맥박|혈색소|혈당|콜레스테롤|중성지방|간수치|크레아티닌|사구체|요산)/i;
+  /(height|weight|bmi|waist|bp|pressure|systolic|diastolic|pulse|heart|vision|hearing|hemoglobin|glucose|sugar|a1c|cholesterol|hdl|ldl|triglyceride|ast|alt|gamma|ggt|creatinine|egfr|bun|albumin|protein|uric|rbc|wbc|platelet|hematocrit|hematoglobin)/i;
 
 const CHECKUP_METRIC_NUMERIC_VALUE_PATTERN =
   /^-?\d+(?:,\d{3})*(?:\.\d+)?(?:\s?(%|kg|cm|mmhg|mg\/dl|g\/dl|bpm|kg\/m2))?$/i;
@@ -185,12 +185,12 @@ export function pickTableColumns(rows: NhisDataRow[], maxColumns = 8): string[] 
 }
 
 export function mapTargetLabel(target: string) {
-  if (target === "medical") return "진료정보";
-  if (target === "medication") return "투약정보";
-  if (target === "checkupList") return "건강검진 결과 목록";
-  if (target === "checkupYearly") return "연도별 건강검진 상세";
-  if (target === "checkupOverview") return "건강검진 결과 한눈에 보기";
-  if (target === "healthAge") return "건강나이";
+  if (target === "medical") return "Medical";
+  if (target === "medication") return "Medication";
+  if (target === "checkupList") return "Checkup List";
+  if (target === "checkupYearly") return "Checkup Detail (Yearly)";
+  if (target === "checkupOverview") return "Checkup Overview";
+  if (target === "healthAge") return "Health Age";
   return target;
 }
 
@@ -203,9 +203,9 @@ export function describeFetchFailure(failure: {
     failure.target === "healthAge" &&
     (failure.errCd || "").trim() === NHIS_ERR_CODE_HEALTHAGE_UNAVAILABLE
   ) {
-    return "건강나이는 건강검진 내역이 있는 경우에만 제공됩니다.";
+    return "Health-age data is provided only when available in NHIS records.";
   }
-  return parseErrorMessage(failure.errMsg || undefined, "요청 실패");
+  return parseErrorMessage(failure.errMsg || undefined, "Request failed");
 }
 
 export function toJsonPreview(value: unknown, maxChars = 12000) {

@@ -3,6 +3,7 @@ import "server-only";
 import { Prisma } from "@prisma/client";
 import db from "@/lib/db";
 import { HYPHEN_PROVIDER } from "@/lib/server/hyphen/client";
+import { clearNhisFetchCaches } from "@/lib/server/hyphen/fetch-cache";
 
 const provider = HYPHEN_PROVIDER;
 
@@ -30,6 +31,7 @@ export async function upsertNhisLink(
     stepMode?: string | null;
     stepData?: Prisma.InputJsonValue | typeof Prisma.JsonNull;
     cookieData?: Prisma.InputJsonValue | typeof Prisma.JsonNull;
+    lastIdentityHash?: string | null;
     lastLinkedAt?: Date | null;
     lastFetchedAt?: Date | null;
     lastErrorCode?: string | null;
@@ -45,6 +47,7 @@ export async function upsertNhisLink(
     ...(patch.stepMode !== undefined ? { stepMode: patch.stepMode } : {}),
     ...(patch.stepData !== undefined ? { stepData: patch.stepData } : {}),
     ...(patch.cookieData !== undefined ? { cookieData: patch.cookieData } : {}),
+    ...(patch.lastIdentityHash !== undefined ? { lastIdentityHash: patch.lastIdentityHash } : {}),
     ...(patch.lastLinkedAt !== undefined ? { lastLinkedAt: patch.lastLinkedAt } : {}),
     ...(patch.lastFetchedAt !== undefined ? { lastFetchedAt: patch.lastFetchedAt } : {}),
     ...(patch.lastErrorCode !== undefined ? { lastErrorCode: patch.lastErrorCode } : {}),
@@ -60,6 +63,7 @@ export async function upsertNhisLink(
     ...(patch.stepMode !== undefined ? { stepMode: patch.stepMode } : {}),
     ...(patch.stepData !== undefined ? { stepData: patch.stepData } : {}),
     ...(patch.cookieData !== undefined ? { cookieData: patch.cookieData } : {}),
+    ...(patch.lastIdentityHash !== undefined ? { lastIdentityHash: patch.lastIdentityHash } : {}),
     ...(patch.lastLinkedAt !== undefined ? { lastLinkedAt: patch.lastLinkedAt } : {}),
     ...(patch.lastFetchedAt !== undefined ? { lastFetchedAt: patch.lastFetchedAt } : {}),
     ...(patch.lastErrorCode !== undefined ? { lastErrorCode: patch.lastErrorCode } : {}),
@@ -86,14 +90,18 @@ export async function saveNhisLinkError(
 }
 
 export async function clearNhisLink(appUserId: string) {
-  return upsertNhisLink(appUserId, {
-    linked: false,
-    stepData: Prisma.JsonNull,
-    cookieData: Prisma.JsonNull,
-    lastErrorCode: null,
-    lastErrorMessage: null,
-    loginMethod: null,
-    loginOrgCd: null,
-    stepMode: null,
-  });
+  await Promise.all([
+    upsertNhisLink(appUserId, {
+      linked: false,
+      stepData: Prisma.JsonNull,
+      cookieData: Prisma.JsonNull,
+      lastIdentityHash: null,
+      lastErrorCode: null,
+      lastErrorMessage: null,
+      loginMethod: null,
+      loginOrgCd: null,
+      stepMode: null,
+    }),
+    clearNhisFetchCaches(appUserId),
+  ]);
 }

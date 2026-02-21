@@ -44,12 +44,53 @@ export type NhisStatusResponse = {
     hasStepData: boolean;
     hasCookieData: boolean;
     pendingAuthReady: boolean;
+    forceRefresh?: {
+      available: boolean;
+      cooldownSeconds: number;
+      remainingSeconds: number;
+      availableAt: string | null;
+    };
+    targetPolicy?: {
+      highCostTargetsEnabled: boolean;
+      allowedTargets: string[];
+    };
+    cache?: {
+      totalEntries: number;
+      validEntries: number;
+      latestFetchedAt: string | null;
+      latestExpiresAt: string | null;
+      latestHitAt: string | null;
+      latestHitCount: number;
+    };
+    latestFetchAttemptAt?: string | null;
+    fetchBudget?: {
+      windowHours: number;
+      fresh: {
+        used: number;
+        limit: number;
+        remaining: number;
+      };
+      forceRefresh: {
+        used: number;
+        limit: number;
+        remaining: number;
+      };
+    };
   };
   error?: string;
 };
 
 export type NhisFetchResponse = {
   ok: boolean;
+  cached?: boolean;
+  forceRefreshGuarded?: boolean;
+  forceRefreshAgeSeconds?: number | null;
+  forceRefreshGuardSeconds?: number | null;
+  cache?: {
+    source?: string;
+    fetchedAt?: string | null;
+    expiresAt?: string | null;
+  };
   partial?: boolean;
   failed?: NhisFetchFailure[];
   data?: {
@@ -90,20 +131,58 @@ export type NhisFetchResponse = {
   error?: string;
   errCd?: string | null;
   errMsg?: string | null;
+  retryAfterSec?: number;
+  blockedTargets?: string[];
+  budget?: {
+    windowHours: number;
+    fresh: {
+      used: number;
+      limit: number;
+      remaining: number;
+    };
+    forceRefresh: {
+      used: number;
+      limit: number;
+      remaining: number;
+    };
+  };
 };
 
 export type NhisActionResponse = {
   ok: boolean;
+  reused?: boolean;
   error?: string;
   errCd?: string | null;
   errMsg?: string | null;
+  retryAfterSec?: number;
+  blockedTargets?: string[];
+  budget?: {
+    windowHours: number;
+    fresh: {
+      used: number;
+      limit: number;
+      remaining: number;
+    };
+    forceRefresh: {
+      used: number;
+      limit: number;
+      remaining: number;
+    };
+  };
 };
 
 export type HealthLinkClientProps = {
   loggedIn: boolean;
 };
 
-export type ActionKind = null | "init" | "sign" | "fetch" | "unlink" | "status";
+export type ActionKind =
+  | null
+  | "init"
+  | "sign"
+  | "fetch"
+  | "fetchDetail"
+  | "unlink"
+  | "status";
 
 export type WorkflowStep = {
   id: "status" | "auth" | "sync";

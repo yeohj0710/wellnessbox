@@ -86,6 +86,36 @@ export async function requestChatTitle(params: {
   return DEFAULT_CHAT_TITLE;
 }
 
+export async function requestSaveChatSession(params: {
+  clientId: string;
+  sessionId: string;
+  title?: string;
+  messages: ChatMessage[];
+  tzOffsetMinutes: number;
+}) {
+  const response = await fetch("/api/chat/save", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to save chat session (HTTP ${response.status})`);
+  }
+}
+
+export async function requestDeleteChatSession(sessionId: string) {
+  const response = await fetch("/api/chat/delete", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sessionId }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to delete chat session (HTTP ${response.status})`);
+  }
+}
+
 export async function requestChatSuggestions(params: {
   text: string;
   recentMessages: ChatMessage[];

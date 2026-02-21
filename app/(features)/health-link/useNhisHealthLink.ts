@@ -1,7 +1,26 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  NHIS_FETCH_DAILY_LIMIT_ERR_CODE,
+  NHIS_FORCE_REFRESH_COOLDOWN_ERR_CODE,
+  NHIS_FORCE_REFRESH_DAILY_LIMIT_ERR_CODE,
+  NHIS_TARGET_POLICY_BLOCKED_ERR_CODE,
+} from "@/lib/shared/hyphen-fetch";
 import { NHIS_ERR_CODE_HEALTHIN_REQUIRED, NHIS_LOGIN_ORG } from "./constants";
+import { HEALTH_LINK_COPY } from "./copy";
+import {
+  buildFetchNotice,
+  buildForceRefreshCooldownMessage,
+  CHECKUP_DETAIL_TARGETS,
+  CHECKUP_ONLY_TARGETS,
+  DETAIL_YEAR_LIMIT,
+  getFetchMessages,
+  mapFetchCacheInfo,
+  type FetchCacheInfo,
+  type FetchMessages,
+  type FetchMode,
+} from "./fetchClientPolicy";
 import type {
   ActionKind,
   NhisActionResponse,
@@ -11,7 +30,60 @@ import type {
 } from "./types";
 import { parseErrorMessage, readJson } from "./utils";
 
-const CHECKUP_ONLY_TARGETS = ["checkupOverview"] as const;
+function resolveActionErrorMessage(
+  payload: Pick<
+    NhisActionResponse,
+    "error" | "errCd" | "errMsg" | "retryAfterSec" | "blockedTargets" | "budget"
+  >,
+  fallback: string
+) {
+  const errCode = payload.errCd?.trim() || null;
+  if (errCode === NHIS_FORCE_REFRESH_COOLDOWN_ERR_CODE) {
+    if (typeof payload.retryAfterSec === "number" && payload.retryAfterSec > 0) {
+      return buildForceRefreshCooldownMessage(payload.retryAfterSec);
+    }
+    return HEALTH_LINK_COPY.hook.forceRefreshCooldownFallback;
+  }
+
+  if (errCode === NHIS_TARGET_POLICY_BLOCKED_ERR_CODE) {
+    const blocked = payload.blockedTargets?.filter(Boolean) ?? [];
+    if (blocked.length > 0) {
+      return `${HEALTH_LINK_COPY.hook.targetPolicyBlockedPrefix} ${blocked.join(", ")}`;
+    }
+    return HEALTH_LINK_COPY.hook.targetPolicyBlockedDefault;
+  }
+
+  if (
+    errCode === NHIS_FETCH_DAILY_LIMIT_ERR_CODE ||
+    errCode === NHIS_FORCE_REFRESH_DAILY_LIMIT_ERR_CODE
+  ) {
+    const windowHours = payload.budget?.windowHours ?? 24;
+    const used =
+      errCode === NHIS_FORCE_REFRESH_DAILY_LIMIT_ERR_CODE
+        ? payload.budget?.forceRefresh.used
+        : payload.budget?.fresh.used;
+    const limit =
+      errCode === NHIS_FORCE_REFRESH_DAILY_LIMIT_ERR_CODE
+        ? payload.budget?.forceRefresh.limit
+        : payload.budget?.fresh.limit;
+    const retryText =
+      typeof payload.retryAfterSec === "number" && payload.retryAfterSec > 0
+        ? `${HEALTH_LINK_COPY.hook.budgetRetrySuffixPrefix} ${payload.retryAfterSec}${HEALTH_LINK_COPY.hook.budgetRetrySuffixUnit}`
+        : "";
+
+    if (typeof used === "number" && typeof limit === "number") {
+      return [
+        HEALTH_LINK_COPY.hook.budgetExceededDetailedPrefix,
+        ` ${windowHours} ${HEALTH_LINK_COPY.hook.budgetExceededDetailedMiddle}`,
+        ` ${used}/${limit} ${HEALTH_LINK_COPY.hook.budgetExceededDetailedSuffix}`,
+        retryText,
+      ].join("");
+    }
+    return `${HEALTH_LINK_COPY.hook.budgetExceededFallback}${retryText}`;
+  }
+
+  return parseErrorMessage(payload.errMsg || payload.error, fallback);
+}
 
 export function useNhisHealthLink(loggedIn: boolean) {
   const [status, setStatus] = useState<NhisStatusResponse["status"]>();
@@ -29,10 +101,17 @@ export function useNhisHealthLink(loggedIn: boolean) {
 
   const [fetched, setFetched] = useState<NhisFetchResponse["data"] | null>(null);
   const [fetchFailures, setFetchFailures] = useState<NhisFetchFailure[]>([]);
+  const [fetchCacheInfo, setFetchCacheInfo] = useState<FetchCacheInfo | null>(null);
 
   const canRequest = loggedIn && actionLoading === null;
   const canSign = canRequest && !!(status?.pendingAuthReady || status?.hasStepData);
   const canFetch = canRequest && !!status?.linked;
+  const hasDetailedRows = useMemo(() => {
+    const rows = fetched?.normalized?.checkup?.yearly;
+    return Array.isArray(rows) && rows.length > 0;
+  }, [fetched?.normalized?.checkup?.yearly]);
+  const forceRefreshRemainingSeconds = status?.forceRefresh?.remainingSeconds ?? 0;
+  const forceRefreshBlocked = forceRefreshRemainingSeconds > 0;
 
   const loadStatus = useCallback(async () => {
     if (!loggedIn) return;
@@ -45,7 +124,7 @@ export function useNhisHealthLink(loggedIn: boolean) {
       });
       const data = await readJson<NhisStatusResponse>(res);
       if (!res.ok || !data.ok) {
-        setStatusError(parseErrorMessage(data.error, "연동 상태를 불러오지 못했습니다."));
+        setStatusError(parseErrorMessage(data.error, HEALTH_LINK_COPY.hook.statusLoadFallback));
         return;
       }
       setStatus(data.status);
@@ -83,8 +162,8 @@ export function useNhisHealthLink(loggedIn: boolean) {
         const data = await readJson<T>(res);
         if (!res.ok || !data.ok) {
           const errCode = (data as NhisActionResponse).errCd?.trim() || null;
-          const msg = parseErrorMessage(
-            (data as NhisActionResponse).errMsg || (data as NhisActionResponse).error,
+          const msg = resolveActionErrorMessage(
+            data as NhisActionResponse,
             options.fallbackError
           );
           setActionErrorCode(errCode);
@@ -102,24 +181,88 @@ export function useNhisHealthLink(loggedIn: boolean) {
     [canRequest]
   );
 
+  const applyFetchFailure = useCallback(
+    async (payload: NhisFetchResponse) => {
+      setFetchFailures(payload.failed ?? []);
+      setFetchCacheInfo(mapFetchCacheInfo(payload));
+      await loadStatus();
+    },
+    [loadStatus]
+  );
+
+  const applyFetchSuccess = useCallback(
+    async (payload: NhisFetchResponse, messages: FetchMessages) => {
+      setFetched(payload.data ?? null);
+      setFetchFailures(payload.failed ?? []);
+      setFetchCacheInfo(mapFetchCacheInfo(payload));
+      setActionNotice(buildFetchNotice(payload, messages));
+      await loadStatus();
+    },
+    [loadStatus]
+  );
+
+  const runFetch = useCallback(
+    async (mode: FetchMode, forceRefresh = false) => {
+      if (mode === "detail" && !forceRefresh && hasDetailedRows) {
+        setActionError(null);
+        setActionErrorCode(null);
+        setActionNotice(HEALTH_LINK_COPY.hook.detailAlreadyLoadedNotice);
+        return;
+      }
+
+      if (forceRefresh && forceRefreshBlocked) {
+        setActionErrorCode(NHIS_FORCE_REFRESH_COOLDOWN_ERR_CODE);
+        setActionError(buildForceRefreshCooldownMessage(forceRefreshRemainingSeconds));
+        return;
+      }
+
+      const isDetail = mode === "detail";
+      const messages = getFetchMessages(mode, forceRefresh);
+      await runRequest<NhisFetchResponse>({
+        kind: isDetail ? "fetchDetail" : "fetch",
+        url: "/api/health/nhis/fetch",
+        body: {
+          targets: isDetail ? CHECKUP_DETAIL_TARGETS : CHECKUP_ONLY_TARGETS,
+          ...(isDetail ? { yearLimit: DETAIL_YEAR_LIMIT } : {}),
+          ...(forceRefresh ? { forceRefresh: true } : {}),
+        },
+        fallbackError: messages.fallbackError,
+        onFailure: async (payload) => {
+          await applyFetchFailure(payload);
+        },
+        onSuccess: async (payload) => {
+          await applyFetchSuccess(payload, messages);
+        },
+      });
+    },
+    [
+      applyFetchFailure,
+      applyFetchSuccess,
+      forceRefreshBlocked,
+      forceRefreshRemainingSeconds,
+      hasDetailedRows,
+      runRequest,
+    ]
+  );
+
   const handleInit = useCallback(async () => {
     if (!resNm.trim()) {
-      setActionError("이름을 입력해 주세요.");
+      setActionError(HEALTH_LINK_COPY.hook.inputNameRequired);
       return;
     }
     if (!/^\d{8}$/.test(resNo)) {
-      setActionError("생년월일은 YYYYMMDD 형식으로 입력해 주세요.");
+      setActionError(HEALTH_LINK_COPY.hook.inputBirthInvalid);
       return;
     }
     if (!/^\d{10,11}$/.test(mobileNo)) {
-      setActionError("휴대폰 번호는 숫자 10~11자리로 입력해 주세요.");
+      setActionError(HEALTH_LINK_COPY.hook.inputPhoneInvalid);
       return;
     }
 
     await runRequest<NhisActionResponse>({
       kind: "init",
       url: "/api/health/nhis/init",
-      fallbackError: "인증 요청에 실패했습니다.",
+      fallbackError: HEALTH_LINK_COPY.hook.initFallback,
       body: {
         loginMethod: "EASY",
         loginOrgCd: NHIS_LOGIN_ORG,
@@ -127,8 +270,12 @@ export function useNhisHealthLink(loggedIn: boolean) {
         resNo,
         mobileNo,
       },
-      onSuccess: async () => {
-        setActionNotice("카카오 인증 요청을 보냈습니다. 카카오 앱에서 인증 후 다음을 눌러 주세요.");
+      onSuccess: async (payload) => {
+        setActionNotice(
+          payload.reused
+            ? HEALTH_LINK_COPY.hook.initNoticeReused
+            : HEALTH_LINK_COPY.hook.initNoticeCreated
+        );
         await loadStatus();
       },
       onFailure: async () => {
@@ -141,9 +288,13 @@ export function useNhisHealthLink(loggedIn: boolean) {
     await runRequest<NhisActionResponse>({
       kind: "sign",
       url: "/api/health/nhis/sign",
-      fallbackError: "인증 완료 처리에 실패했습니다.",
-      onSuccess: async () => {
-        setActionNotice("연동 인증이 완료되었습니다.");
+      fallbackError: HEALTH_LINK_COPY.hook.signFallback,
+      onSuccess: async (payload) => {
+        setActionNotice(
+          payload.reused
+            ? HEALTH_LINK_COPY.hook.signNoticeReused
+            : HEALTH_LINK_COPY.hook.signNoticeCompleted
+        );
         await loadStatus();
       },
       onFailure: async () => {
@@ -153,39 +304,31 @@ export function useNhisHealthLink(loggedIn: boolean) {
   }, [loadStatus, runRequest]);
 
   const handleFetch = useCallback(async () => {
-    await runRequest<NhisFetchResponse>({
-      kind: "fetch",
-      url: "/api/health/nhis/fetch",
-      body: {
-        targets: CHECKUP_ONLY_TARGETS,
-      },
-      fallbackError: "검진 데이터 조회에 실패했습니다.",
-      onFailure: async (payload) => {
-        setFetchFailures(payload.failed ?? []);
-        await loadStatus();
-      },
-      onSuccess: async (payload) => {
-        setFetched(payload.data ?? null);
-        setFetchFailures(payload.failed ?? []);
-        setActionNotice(
-          payload.partial
-            ? "일부 항목 조회에 실패했습니다. 실패 항목을 확인해 주세요."
-            : "건강검진 수치를 성공적으로 불러왔습니다."
-        );
-        await loadStatus();
-      },
-    });
-  }, [loadStatus, runRequest]);
+    await runFetch("summary");
+  }, [runFetch]);
+
+  const handleFetchFresh = useCallback(async () => {
+    await runFetch("summary", true);
+  }, [runFetch]);
+
+  const handleFetchDetailed = useCallback(async () => {
+    await runFetch("detail");
+  }, [runFetch]);
+
+  const handleFetchDetailedFresh = useCallback(async () => {
+    await runFetch("detail", true);
+  }, [runFetch]);
 
   const handleUnlink = useCallback(async () => {
     await runRequest<NhisActionResponse>({
       kind: "unlink",
       url: "/api/health/nhis/unlink",
-      fallbackError: "연동 해제에 실패했습니다.",
+      fallbackError: HEALTH_LINK_COPY.hook.unlinkFallback,
       onSuccess: async () => {
         setFetched(null);
         setFetchFailures([]);
-        setActionNotice("연동이 해제되었습니다.");
+        setFetchCacheInfo(null);
+        setActionNotice(HEALTH_LINK_COPY.hook.unlinkNotice);
         await loadStatus();
       },
       onFailure: async () => {
@@ -220,15 +363,22 @@ export function useNhisHealthLink(loggedIn: boolean) {
     actionError,
     fetched,
     fetchFailures,
+    fetchCacheInfo,
     canRequest,
     canSign,
     canFetch,
+    hasDetailedRows,
+    forceRefreshBlocked,
+    forceRefreshRemainingSeconds,
     currentStep,
     showHealthInPrereqGuide,
     loadStatus,
     handleInit,
     handleSign,
     handleFetch,
+    handleFetchFresh,
+    handleFetchDetailed,
+    handleFetchDetailedFresh,
     handleUnlink,
   };
 }
