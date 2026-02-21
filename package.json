@@ -17,6 +17,8 @@
     "audit:clients": "ts-node scripts/audit-clients.ts",
     "audit:encoding": "ts-node scripts/audit-encoding.ts",
     "audit:hotspots": "ts-node scripts/audit-hotspots.ts",
+    "agent:skills-catalog": "ts-node scripts/agent/generate-skill-catalog.cts",
+    "agent:refactor-report": "ts-node scripts/agent/generate-refactor-report.cts",
     "preflight:agent": "npm run audit:encoding && npm run audit:hotspots && npm run lint && npm run build",
     "rnd:module02:scaffold": "node scripts/rnd/module02/run-scaffold.cjs",
     "rnd:module02:mvp": "node scripts/rnd/module02/run-mvp-ingest.cjs",

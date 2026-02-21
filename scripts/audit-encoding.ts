@@ -26,6 +26,16 @@
     ".txt",
   ]);
 
+  const TEXT_FILENAMES = new Set([
+    ".editorconfig",
+    ".gitattributes",
+    ".gitignore",
+    ".npmrc",
+    ".nvmrc",
+    ".prettierrc",
+    ".prettierignore",
+  ]);
+
   const EXCLUDED_DIRS = new Set([
     ".git",
     ".next",
@@ -45,6 +55,8 @@
   }
 
   function shouldScanFile(filePath: string) {
+    const basename = path.basename(filePath).toLowerCase();
+    if (TEXT_FILENAMES.has(basename)) return true;
     const ext = path.extname(filePath).toLowerCase();
     return TEXT_EXTENSIONS.has(ext);
   }
@@ -56,12 +68,11 @@
 
     for (const entry of entries) {
       if (entry.isDirectory()) {
-        if (entry.name.startsWith(".") || EXCLUDED_DIRS.has(entry.name)) continue;
+        if (EXCLUDED_DIRS.has(entry.name)) continue;
         files.push(...walk(path.join(relativeDir, entry.name)));
         continue;
       }
 
-      if (entry.name.startsWith(".")) continue;
       const nextPath = path.join(relativeDir, entry.name);
       if (!shouldScanFile(nextPath)) continue;
       files.push(nextPath);
@@ -97,6 +108,10 @@
       /[\uAC00-\uD7A3]\?[\uAC00-\uD7A3]/.test(line) ||
       /\?[\uAC00-\uD7A3]/.test(line)
     );
+  }
+
+  function hasSuspiciousDoubleQuestionLiteral(line: string) {
+    return /(["'`])\?\?\1/.test(line);
   }
 
   function findLineIssues(filePath: string): Finding[] {
@@ -147,6 +162,16 @@
           file: posixFilePath,
           line: index + 1,
           reason: "contains suspicious '?' pattern near Hangul",
+          snippet: line.trim(),
+        });
+        continue;
+      }
+
+      if (hasSuspiciousDoubleQuestionLiteral(line)) {
+        findings.push({
+          file: posixFilePath,
+          line: index + 1,
+          reason: "contains suspicious '??' literal",
           snippet: line.trim(),
         });
       }

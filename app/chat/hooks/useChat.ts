@@ -23,9 +23,8 @@ import {
 } from "./useChat.results";
 import { createDraftSession, DEFAULT_CHAT_TITLE, mergeServerSessions } from "./useChat.session";
 import {
+  buildFinalSuggestions,
   getSuggestionHistory,
-  normalizeSuggestionKey,
-  pickFreshSuggestions,
   rememberSuggestions,
 } from "./useChat.suggestions";
 import { readStreamingText } from "./useChat.stream";
@@ -42,19 +41,25 @@ import {
   hasRoadAddressInLocalStorage,
   parseCartCommandFromMessages,
 } from "./useChat.cart-command";
-import { dispatchChatCartActionRequest } from "@/lib/chat/cart-action-events";
-import { writeClientCartItems } from "@/lib/client/cart-storage";
-import { evaluate as evaluateAssessAB } from "@/app/assess/logic/algorithm";
-import { KEY_TO_CODE, labelOf } from "@/lib/categories";
 import {
-  CHAT_ACTION_LABELS,
+  clearCartFromChat,
+  isBrowserOnline,
+  navigateTo,
+  openCartFromChat,
+  openExternalLink,
+} from "./useChat.browser";
+import {
+  evaluateDeepAssessAnswers,
+  evaluateQuickCheckAnswers,
+} from "./useChat.evaluation";
+import { dispatchChatCartActionRequest } from "@/lib/chat/cart-action-events";
+import {
   type ChatActionType,
   type ChatAgentExecuteDecision,
   type ChatAgentSuggestedAction,
 } from "@/lib/chat/agent-actions";
 import {
   isLikelyActionIntentText,
-  normalizeActionTypeList,
   pickLatestAssistantText,
 } from "./useChat.agentActions";
 import {
@@ -80,9 +85,15 @@ import {
 import { runSingleInteractiveAction as runSingleInteractiveActionFlow } from "./useChat.interactiveActions";
 import {
   buildFallbackInteractiveActions,
-  normalizeExecuteDecision,
   runAgentDecision as runAgentDecisionFlow,
 } from "./useChat.agentDecision";
+import {
+  requestActionExecutionDecision,
+  requestActionSuggestions,
+  requestChatStream,
+  requestChatSuggestions,
+  requestChatTitle,
+} from "./useChat.api";
 import type { ChatPageAgentContext } from "@/lib/chat/page-agent-context";
 
 type UseChatOptions = {
@@ -96,10 +107,6 @@ const OFFLINE_INIT_MESSAGE =
   "지금 네트워크 연결이 불안정해서 초기 상담 내용을 불러오지 못했어요. 연결이 복구되면 새로고침 없이 다시 이어서 도와드릴게요.";
 const OFFLINE_CHAT_MESSAGE =
   "지금 네트워크 연결이 불안정해서 답변을 불러오지 못했어요. 연결이 안정되면 같은 질문을 다시 보내 주세요.";
-
-function isBrowserOnline() {
-  return typeof navigator === "undefined" || navigator.onLine !== false;
-}
 
 export default function useChat(options: UseChatOptions = {}) {
   const manageFooter = options.manageFooter ?? true;
@@ -170,33 +177,6 @@ export default function useChat(options: UseChatOptions = {}) {
   function closeDrawer() {
     setDrawerOpen(false);
     setTimeout(() => setDrawerVisible(false), 200);
-  }
-
-  function requestCloseDock() {
-    if (typeof window === "undefined") return;
-    window.dispatchEvent(new Event("wb:chat-close-dock"));
-  }
-
-  function clearCartOpenFlags() {
-    if (typeof window === "undefined") return;
-    sessionStorage.removeItem("wbGlobalCartOpen");
-    localStorage.removeItem("openCart");
-    window.dispatchEvent(new Event("closeCart"));
-  }
-
-  function navigateTo(path: string) {
-    if (typeof window === "undefined") return false;
-    clearCartOpenFlags();
-    requestCloseDock();
-    window.location.assign(path);
-    return true;
-  }
-
-  function openExternalLink(url: string) {
-    if (typeof window === "undefined") return false;
-    requestCloseDock();
-    window.location.assign(url);
-    return true;
   }
 
   function rememberExecutedActions(actions: ChatActionType[]) {
@@ -482,6 +462,18 @@ export default function useChat(options: UseChatOptions = {}) {
     });
   };
 
+  const buildRuntimeContextPayload = () => {
+    if (!pageContext) return null;
+    return {
+      routeKey: pageContext.routeKey,
+      routePath: pageContext.routePath,
+      pageTitle: pageContext.title,
+      pageSummary: pageContext.summary,
+      suggestedPrompts: pageContext.suggestedPrompts,
+      runtimeContextText,
+    };
+  };
+
   const prevActiveIdRef = useRef<string | null>(null);
   const prevMsgCountRef = useRef(0);
 
@@ -633,45 +625,6 @@ export default function useChat(options: UseChatOptions = {}) {
     );
   }
 
-  function buildFinalSuggestions(input: {
-    fromApi: string[];
-    fallback: string[];
-    recentSuggestionHistory: string[];
-    safeCount: number;
-  }) {
-    const pickedFromApi = pickFreshSuggestions({
-      pool: input.fromApi,
-      recentSuggestionHistory: input.recentSuggestionHistory,
-      count: input.safeCount,
-    });
-
-    const remainder = Math.max(0, input.safeCount - pickedFromApi.length);
-    const pickedFallback =
-      remainder > 0
-        ? pickFreshSuggestions({
-            pool: input.fallback.filter((item) => {
-              const key = normalizeSuggestionKey(item);
-              return !pickedFromApi.some(
-                (selected) => normalizeSuggestionKey(selected) === key
-              );
-            }),
-            recentSuggestionHistory: input.recentSuggestionHistory,
-            count: remainder,
-          })
-        : [];
-
-    const picked = pickedFromApi.concat(pickedFallback).slice(0, input.safeCount);
-    const safeFallback = pickFreshSuggestions({
-      pool: input.fallback,
-      recentSuggestionHistory: input.recentSuggestionHistory,
-      count: input.safeCount,
-    });
-
-    if (picked.length > 0) return picked;
-    if (safeFallback.length > 0) return safeFallback;
-    return input.fallback.slice(0, input.safeCount);
-  }
-
   async function saveChatOnce({
     clientId,
     sessionId,
@@ -752,21 +705,11 @@ export default function useChat(options: UseChatOptions = {}) {
     setTitleError(false);
 
     try {
-      const response = await fetch("/api/chat/title", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstUserMessage: firstUserMessageRef.current,
-          firstAssistantMessage: firstAssistantMessageRef.current,
-          assistantReply: firstAssistantReplyRef.current,
-        }),
+      const title = await requestChatTitle({
+        firstUserMessage: firstUserMessageRef.current,
+        firstAssistantMessage: firstAssistantMessageRef.current,
+        assistantReply: firstAssistantReplyRef.current,
       });
-
-      const json = await response.json().catch(() => ({}));
-      const title =
-        typeof json?.title === "string" && json.title
-          ? json.title
-          : DEFAULT_CHAT_TITLE;
 
       setSessions((prev) =>
         prev.map((session) =>
@@ -807,29 +750,18 @@ export default function useChat(options: UseChatOptions = {}) {
       safeCount,
       recentSuggestionHistory
     );
+    const recentMessages =
+      sessions.find((session) => session.id === targetSessionId)?.messages ?? [];
 
     try {
-      const response = await fetch("/api/chat/suggest", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: lastAssistantText,
-          ...buildContextPayload(targetSessionId),
-          runtimeContextText,
-          recentMessages:
-            sessions.find((session) => session.id === targetSessionId)?.messages ??
-            [],
-          excludeSuggestions: recentSuggestionHistory,
-          count: safeCount,
-        }),
+      const fromApi = await requestChatSuggestions({
+        text: lastAssistantText,
+        contextPayload: buildContextPayload(targetSessionId),
+        runtimeContextText,
+        recentMessages,
+        excludeSuggestions: recentSuggestionHistory,
+        count: safeCount,
       });
-
-      const json = await response.json().catch(() => ({}));
-      const fromApi = Array.isArray(json?.suggestions)
-        ? json.suggestions
-            .map((item: unknown) => (typeof item === "string" ? item.trim() : ""))
-            .filter(Boolean)
-        : [];
 
       const finalSuggestions = buildFinalSuggestions({
         fromApi,
@@ -880,41 +812,11 @@ export default function useChat(options: UseChatOptions = {}) {
     const contextSummaryText = buildActionContextText(targetSessionId);
 
     try {
-      const response = await fetch("/api/chat/actions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          mode: "suggest",
-          assistantText: lastAssistantText,
-          recentMessages,
-          contextSummaryText,
-          runtimeContextText,
-        }),
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      const json = await response.json().catch(() => ({}));
-      const rows = Array.isArray(json?.uiActions) ? json.uiActions : [];
-      const mapped = normalizeActionTypeList(
-        rows.map((item: any) => item?.type)
-      ).map((type) => {
-        const row = rows.find((item: any) => item?.type === type);
-        return {
-          type,
-          label:
-            typeof row?.label === "string" && row.label.trim()
-              ? row.label.trim().slice(0, 40)
-              : CHAT_ACTION_LABELS[type],
-          reason:
-            typeof row?.reason === "string"
-              ? row.reason.trim().slice(0, 120)
-              : undefined,
-          confidence:
-            typeof row?.confidence === "number"
-              ? Math.max(0, Math.min(1, row.confidence))
-              : undefined,
-        } satisfies ChatAgentSuggestedAction;
+      const mapped = await requestActionSuggestions({
+        assistantText: lastAssistantText,
+        recentMessages,
+        contextSummaryText,
+        runtimeContextText,
       });
 
       if ((activeIdRef.current || "") !== targetSessionId) return;
@@ -965,142 +867,6 @@ export default function useChat(options: UseChatOptions = {}) {
         question: questions[0],
       }),
     ].join("\n\n");
-  }
-
-  async function evaluateQuickCheckAnswers(
-    answers: Record<string, unknown>
-  ): Promise<{ labels: string[]; percents: number[] }> {
-    const responses = QUICK_CHAT_QUESTIONS.map((question) => {
-      const value = Number(answers[question.id]);
-      if (!Number.isFinite(value) || value < 1 || value > 5) return 3;
-      return Math.floor(value);
-    });
-
-    try {
-      const response = await fetch("/api/predict", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ responses }),
-      });
-      const json = await response.json().catch(() => null);
-      if (!Array.isArray(json) || json.length === 0) {
-        throw new Error("invalid quick check response");
-      }
-      const scores = json
-        .map((row: any) => ({
-          label: typeof row?.label === "string" ? row.label : "",
-          value:
-            typeof row?.prob === "number"
-              ? row.prob
-              : typeof row?.percent === "number"
-                ? row.percent / 100
-                : 0,
-        }))
-        .filter((row: { label: string; value: number }) => row.label)
-        .sort((left: { value: number }, right: { value: number }) => right.value - left.value)
-        .slice(0, 3);
-      if (!scores.length) throw new Error("empty quick check scores");
-
-      const labels = scores.map((score: { label: string }) => score.label);
-      const percents = scores.map((score: { value: number }) =>
-        Math.max(0, Math.min(1, score.value))
-      );
-
-      try {
-        localStorage.setItem(
-          "wb_check_ai_result_v1",
-          JSON.stringify({
-            topLabels: labels,
-            savedAt: Date.now(),
-          })
-        );
-      } catch {}
-
-      setLocalCheckAi(labels);
-      setCheckAiResult({
-        labels,
-        answers: responses.map((value, index) => ({
-          question: QUICK_CHAT_QUESTIONS[index]?.text || "",
-          answer: value,
-        })),
-      });
-
-      try {
-        await fetch("/api/check-ai/save", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            result: {
-              topLabels: labels,
-              scores: scores.map((score: { label: string; value: number }) => ({
-                label: score.label,
-                prob: score.value,
-              })),
-            },
-            answers: responses,
-            tzOffsetMinutes: getTzOffsetMinutes(),
-          }),
-        });
-      } catch {}
-
-      return { labels, percents };
-    } catch {
-      const fallbackLabels = ["종합비타민", "오메가3", "프로바이오틱스(유산균)"];
-      return { labels: fallbackLabels, percents: [0.82, 0.74, 0.67] };
-    }
-  }
-
-  async function evaluateDeepAssessAnswers(
-    answers: Record<string, unknown>
-  ): Promise<{ labels: string[]; percents: number[] }> {
-    try {
-      const evaluated = evaluateAssessAB(answers as any).top.slice(0, 3);
-      const catsOrdered = evaluated.map((item) => KEY_TO_CODE[item.key] ?? item.key);
-      const percents = evaluated.map((item) =>
-        Math.max(0, Math.min(1, Number.isFinite(item.score) ? item.score : 0))
-      );
-      const labels = catsOrdered.map((code) => labelOf(code));
-
-      try {
-        const raw = localStorage.getItem("assess-state");
-        const parsed = raw ? JSON.parse(raw) : {};
-        parsed.cResult = {
-          catsOrdered,
-          percents,
-        };
-        parsed.savedAt = Date.now();
-        localStorage.setItem("assess-state", JSON.stringify(parsed));
-      } catch {}
-
-      setLocalAssessCats(catsOrdered);
-      setAssessResult({
-        summary: labels,
-        answers: Object.entries(answers).map(([questionId, answer]) => ({
-          question: questionId,
-          answer: String(answer),
-        })),
-      });
-
-      try {
-        await fetch("/api/assess/save", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            answers,
-            cResult: {
-              catsOrdered,
-              percents,
-            },
-            tzOffsetMinutes: getTzOffsetMinutes(),
-          }),
-        });
-      } catch {}
-
-      return { labels, percents };
-    } catch {
-      const fallbackLabels = ["종합비타민", "비타민D", "마그네슘"];
-      return { labels: fallbackLabels, percents: [0.78, 0.71, 0.66] };
-    }
   }
 
   async function tryHandleInChatAssessmentInput(params: {
@@ -1191,8 +957,18 @@ export default function useChat(options: UseChatOptions = {}) {
 
     const result =
       state.mode === "quick"
-        ? await evaluateQuickCheckAnswers(nextAnswers)
-        : await evaluateDeepAssessAnswers(nextAnswers);
+        ? await evaluateQuickCheckAnswers({
+            answers: nextAnswers,
+            setLocalCheckAi,
+            setCheckAiResult,
+            getTzOffsetMinutes,
+          })
+        : await evaluateDeepAssessAnswers({
+            answers: nextAnswers,
+            setLocalAssessCats,
+            setAssessResult,
+            getTzOffsetMinutes,
+          });
 
     const doneText = [
       `${currentQuestion.id} 응답: ${parsed.label}`,
@@ -1250,27 +1026,6 @@ export default function useChat(options: UseChatOptions = {}) {
       hasAddress: hasRoadAddressInLocalStorage(),
       openCartAfterSave: parsed.openCartAfterSave,
     };
-  }
-
-  function openCartFromChat() {
-    if (typeof window === "undefined") return;
-    requestCloseDock();
-    localStorage.setItem("openCart", "true");
-    window.dispatchEvent(new Event("openCart"));
-  }
-
-  function clearCartFromChat() {
-    if (typeof window === "undefined") return;
-    const cartWasOpen =
-      sessionStorage.getItem("wbGlobalCartOpen") === "1" ||
-      localStorage.getItem("openCart") === "true";
-    writeClientCartItems([]);
-    localStorage.removeItem("selectedPharmacyId");
-    window.dispatchEvent(new Event("cartUpdated"));
-    if (!cartWasOpen) {
-      sessionStorage.removeItem("wbGlobalCartOpen");
-      localStorage.removeItem("openCart");
-    }
   }
 
   async function runInteractiveAction(
@@ -1361,19 +1116,12 @@ export default function useChat(options: UseChatOptions = {}) {
     };
 
     try {
-      const response = await fetch("/api/chat/actions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          mode: "execute",
-          text: params.text,
-          recentMessages: params.sessionMessages.slice(-10),
-          contextSummaryText: buildActionContextText(params.sessionId),
-          runtimeContextText,
-        }),
+      decision = await requestActionExecutionDecision({
+        text: params.text,
+        recentMessages: params.sessionMessages.slice(-10),
+        contextSummaryText: buildActionContextText(params.sessionId),
+        runtimeContextText,
       });
-      const json = await response.json().catch(() => ({}));
-      decision = normalizeExecuteDecision(json);
     } catch {
       return false;
     }
@@ -1543,31 +1291,14 @@ export default function useChat(options: UseChatOptions = {}) {
       abortRef.current = controller;
       const clientId = getClientIdLocal();
       const contextPayload = buildContextPayload(active.id);
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: (active.messages || []).concat(userMessage),
-          clientId,
-          mode: "chat",
-          runtimeContext: pageContext
-            ? {
-                routeKey: pageContext.routeKey,
-                routePath: pageContext.routePath,
-                pageTitle: pageContext.title,
-                pageSummary: pageContext.summary,
-                suggestedPrompts: pageContext.suggestedPrompts,
-                runtimeContextText,
-              }
-            : undefined,
-          ...contextPayload,
-        }),
+      const response = await requestChatStream({
+        mode: "chat",
+        messages: (active.messages || []).concat(userMessage),
+        clientId,
+        contextPayload,
+        runtimeContext: buildRuntimeContextPayload(),
         signal: controller.signal,
       });
-
-      if (!response.ok || !response.body) {
-        throw new Error("대화를 이어받지 못했어요.");
-      }
 
       let fullText = await readStreamingText(response, (textSoFar) => {
         updateAssistantMessage(
@@ -1639,31 +1370,14 @@ export default function useChat(options: UseChatOptions = {}) {
     try {
       const clientId = getClientIdLocal();
       const contextPayload = buildContextPayload(sessionId);
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: [],
-          clientId,
-          mode: "init",
-          runtimeContext: pageContext
-            ? {
-                routeKey: pageContext.routeKey,
-                routePath: pageContext.routePath,
-                pageTitle: pageContext.title,
-                pageSummary: pageContext.summary,
-                suggestedPrompts: pageContext.suggestedPrompts,
-                runtimeContextText,
-              }
-            : undefined,
-          ...contextPayload,
-        }),
+      const response = await requestChatStream({
+        mode: "init",
+        messages: [],
+        clientId,
+        contextPayload,
+        runtimeContext: buildRuntimeContextPayload(),
         signal: controller.signal,
       });
-
-      if (!response.ok || !response.body) {
-        throw new Error("초기 메시지를 받아오지 못했어요.");
-      }
 
       let fullText = await readStreamingText(response, (textSoFar) => {
         updateAssistantMessage(

@@ -2,7 +2,7 @@
 
 import type { ComponentPropsWithoutRef, RefObject } from "react";
 import Image from "next/image";
-import { ShoppingCartIcon } from "@heroicons/react/24/outline";
+import { Bars3Icon, ShoppingCartIcon } from "@heroicons/react/24/outline";
 import { MenuLinks } from "./menuLinks";
 import type { LoginStatus } from "@/lib/useLoginStatus";
 
@@ -123,7 +123,7 @@ export function TopBarHeader({
             onClick={onToggleDrawer}
             aria-label="메뉴 열기"
           >
-            ??
+            <Bars3Icon className="h-6 w-6 text-slate-700" />
           </button>
         </div>
       </div>

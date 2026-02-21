@@ -1,37 +1,73 @@
 import "server-only";
 
 import { NextResponse } from "next/server";
-import {
-  getHyphenCommon,
-  isHyphenApiError,
-} from "@/lib/server/hyphen/client";
+import { getHyphenCommon, isHyphenApiError } from "@/lib/server/hyphen/client";
 
 export const NO_STORE_HEADERS = {
   "Cache-Control": "no-store, no-cache, must-revalidate",
 };
 
+const BR_TAG_PATTERN = /<br\s*\/?>/gi;
+const HTML_TAG_PATTERN = /<\/?[^>]+>/g;
+const MULTI_SPACE_PATTERN = /\s{2,}/g;
+const ERROR_CODE_PREFIX_PATTERN = /^\s*\[([A-Za-z0-9-]+)\]\s*/;
+const PRECONDITION_ERROR_CODES = new Set(["C0012-001"]);
+
+export function sanitizeHyphenMessage(
+  message: string | null | undefined
+): string | undefined {
+  if (!message) return undefined;
+  const cleaned = message
+    .replace(BR_TAG_PATTERN, "\n")
+    .replace(HTML_TAG_PATTERN, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\s+\n/g, "\n")
+    .replace(/\n\s+/g, "\n")
+    .replace(MULTI_SPACE_PATTERN, " ")
+    .trim();
+  return cleaned || undefined;
+}
+
+function extractHyphenErrCode(
+  errCd: string | null | undefined,
+  errMsg: string | null | undefined
+): string | undefined {
+  const fromCode = (errCd || "").trim();
+  if (fromCode) return fromCode;
+  const fromMessage = sanitizeHyphenMessage(errMsg);
+  if (!fromMessage) return undefined;
+  const matched = fromMessage.match(ERROR_CODE_PREFIX_PATTERN);
+  return matched?.[1];
+}
+
 export function hyphenErrorToResponse(
   error: unknown,
-  fallbackMessage = "하이픈 연동 중 오류가 발생했습니다."
+  fallbackMessage = "Failed to process Hyphen request."
 ) {
+  const safeFallback =
+    sanitizeHyphenMessage(fallbackMessage) ?? "Failed to process Hyphen request.";
+
   if (isHyphenApiError(error)) {
+    const safeErrMsg = sanitizeHyphenMessage(error.errMsg);
+    const resolvedErrCd = extractHyphenErrCode(error.errCd, error.errMsg);
     console.error("[hyphen][route] request failed", {
       endpoint: error.endpoint,
       status: error.status,
-      errCd: error.errCd,
+      errCd: resolvedErrCd ?? error.errCd,
       errMsg: error.errMsg,
       hyphenTrNo: error.hyphenTrNo,
       userTrNo: error.userTrNo,
     });
+    const responseStatus = resolveRouteStatus(error.status, resolvedErrCd);
     return NextResponse.json(
       {
         ok: false,
-        error: fallbackMessage,
-        errCd: error.errCd ?? null,
-        errMsg: error.errMsg ?? null,
+        error: safeFallback,
+        errCd: resolvedErrCd ?? null,
+        errMsg: safeErrMsg ?? null,
       },
       {
-        status: error.status >= 400 ? error.status : 502,
+        status: responseStatus,
         headers: NO_STORE_HEADERS,
       }
     );
@@ -40,15 +76,18 @@ export function hyphenErrorToResponse(
   const knownCommon = getCommonFromUnknown(error);
   if (knownCommon) {
     console.error("[hyphen][route] common error payload", knownCommon);
+    const safeErrMsg = sanitizeHyphenMessage(knownCommon.errMsg);
+    const resolvedErrCd = extractHyphenErrCode(knownCommon.errCd, knownCommon.errMsg);
+    const responseStatus = resolveRouteStatus(422, resolvedErrCd);
     return NextResponse.json(
       {
         ok: false,
-        error: fallbackMessage,
-        errCd: knownCommon.errCd ?? null,
-        errMsg: knownCommon.errMsg ?? null,
+        error: safeFallback,
+        errCd: resolvedErrCd ?? null,
+        errMsg: safeErrMsg ?? null,
       },
       {
-        status: 502,
+        status: responseStatus,
         headers: NO_STORE_HEADERS,
       }
     );
@@ -61,7 +100,7 @@ export function hyphenErrorToResponse(
   return NextResponse.json(
     {
       ok: false,
-      error: fallbackMessage,
+      error: safeFallback,
     },
     {
       status: 500,
@@ -70,18 +109,25 @@ export function hyphenErrorToResponse(
   );
 }
 
+function resolveRouteStatus(sourceStatus: number, errCode?: string) {
+  if (errCode && PRECONDITION_ERROR_CODES.has(errCode)) {
+    return 412;
+  }
+  return sourceStatus >= 400 ? sourceStatus : 422;
+}
+
 export function getErrorCodeMessage(error: unknown) {
   if (isHyphenApiError(error)) {
     return {
-      code: error.errCd,
-      message: error.errMsg || error.message,
+      code: extractHyphenErrCode(error.errCd, error.errMsg),
+      message: sanitizeHyphenMessage(error.errMsg) || error.message,
     };
   }
   const knownCommon = getCommonFromUnknown(error);
   if (knownCommon) {
     return {
-      code: knownCommon.errCd,
-      message: knownCommon.errMsg,
+      code: extractHyphenErrCode(knownCommon.errCd, knownCommon.errMsg),
+      message: sanitizeHyphenMessage(knownCommon.errMsg),
     };
   }
   return {
@@ -101,11 +147,12 @@ function getCommonFromUnknown(value: unknown) {
 
 export function logHyphenError(label: string, error: unknown) {
   if (isHyphenApiError(error)) {
+    const resolvedErrCd = extractHyphenErrCode(error.errCd, error.errMsg);
     console.error(label, {
       endpoint: error.endpoint,
       status: error.status,
-      errCd: error.errCd,
-      errMsg: error.errMsg,
+      errCd: resolvedErrCd ?? error.errCd,
+      errMsg: sanitizeHyphenMessage(error.errMsg) ?? error.errMsg,
       hyphenTrNo: error.hyphenTrNo,
       userTrNo: error.userTrNo,
     });
@@ -113,7 +160,12 @@ export function logHyphenError(label: string, error: unknown) {
   }
   const common = getCommonFromUnknown(error);
   if (common) {
-    console.error(label, common);
+    const resolvedErrCd = extractHyphenErrCode(common.errCd, common.errMsg);
+    console.error(label, {
+      ...common,
+      errCd: resolvedErrCd ?? common.errCd,
+      errMsg: sanitizeHyphenMessage(common.errMsg) ?? common.errMsg,
+    });
     return;
   }
   console.error(label, {

@@ -3,7 +3,7 @@ import { z } from "zod";
 import {
   extractCookieData,
   extractStepData,
-  fetchCheckupList,
+  fetchMedicalInfo,
 } from "@/lib/server/hyphen/client";
 import { toPrismaJson } from "@/lib/server/hyphen/json";
 import {
@@ -16,6 +16,7 @@ import {
   hyphenErrorToResponse,
   NO_STORE_HEADERS,
 } from "@/lib/server/hyphen/route-utils";
+import { buildNhisRequestDefaults } from "@/lib/server/hyphen/request-defaults";
 import { getPendingEasyAuth } from "@/lib/server/hyphen/session";
 import { requireUserSession } from "@/lib/server/route-auth";
 
@@ -46,6 +47,7 @@ export async function POST(req: Request) {
     getNhisLink(auth.data.appUserId),
     getPendingEasyAuth(),
   ]);
+  const requestDefaults = buildNhisRequestDefaults();
 
   if (!link?.stepData) {
     return NextResponse.json(
@@ -56,6 +58,7 @@ export async function POST(req: Request) {
       { status: 409, headers: NO_STORE_HEADERS }
     );
   }
+
   if (!pendingEasyAuth) {
     return NextResponse.json(
       {
@@ -67,13 +70,13 @@ export async function POST(req: Request) {
   }
 
   try {
-    const signResponse = await fetchCheckupList({
+    const signResponse = await fetchMedicalInfo({
       loginMethod: "EASY",
       loginOrgCd: pendingEasyAuth.loginOrgCd,
       resNm: pendingEasyAuth.resNm,
       resNo: pendingEasyAuth.resNo,
       mobileNo: pendingEasyAuth.mobileNo,
-      mobileCo: pendingEasyAuth.mobileCo,
+      ...requestDefaults,
       stepMode: "step",
       step: "sign",
       step_data: link.stepData,
@@ -100,13 +103,8 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(
-      {
-        ok: true,
-        linked: true,
-      },
-      {
-        headers: NO_STORE_HEADERS,
-      }
+      { ok: true, linked: true },
+      { headers: NO_STORE_HEADERS }
     );
   } catch (error) {
     const errorInfo = getErrorCodeMessage(error);
@@ -116,7 +114,7 @@ export async function POST(req: Request) {
     });
     return hyphenErrorToResponse(
       error,
-      "인증 완료(sign) 처리에 실패했습니다. 휴대폰에서 인증 승인 후 다시 시도해 주세요."
+      "인증 완료(sign) 처리에 실패했습니다. 카카오톡 승인 상태를 확인한 뒤 다시 시도해 주세요."
     );
   }
 }

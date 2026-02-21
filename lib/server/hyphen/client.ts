@@ -4,13 +4,26 @@ const HYPHEN_BASE_URL = "https://api.hyphen.im";
 
 export const HYPHEN_PROVIDER = "HYPHEN_NHIS";
 
-export const NHIS_ENDPOINTS = {
+export const NHIS_MEDICAL_INFO_ENDPOINTS = {
+  MEDICAL_INFO: "/in0002000427",
+  MEDICATION_INFO: "/in0002000428",
+  CHECKUP_TARGET: "/in0002000429",
+  CHECKUP_RESULT_LIST: "/in0002000430",
+  CHECKUP_YEARLY_RESULT: "/in0002000431",
+  CHECKUP_OVERVIEW: "/in0002000432",
+  SCALING_INFO: "/in0002000433",
+  HEALTH_AGE: "/in0002000434",
+  INFANT_CHECKUP_TARGET: "/in0002000435",
+  INFANT_CHECKUP_RESULT: "/in0002000436",
+} as const;
+
+export const NHIS_MEDICAL_INFO2_ENDPOINTS = {
   CHECKUP_LIST: "/in0002000977",
   CHECKUP_DETAIL_0978: "/in0002000978",
   CHECKUP_DETAIL_0979: "/in0002000979",
   CHECKUP_DETAIL_0980: "/in0002000980",
   LIFESTYLE: "/in0002000981",
-  HEALTH_AGE: "/in0002000982",
+  HEALTH_AGE_0982: "/in0002000982",
   DETAIL_0983: "/in0002000983",
   DETAIL_0984: "/in0002000984",
   DETAIL_0985: "/in0002000985",
@@ -18,8 +31,12 @@ export const NHIS_ENDPOINTS = {
   DETAIL_0987: "/in0002000987",
 } as const;
 
-export type HyphenEndpointPath =
-  (typeof NHIS_ENDPOINTS)[keyof typeof NHIS_ENDPOINTS];
+export const NHIS_ENDPOINTS = {
+  ...NHIS_MEDICAL_INFO_ENDPOINTS,
+  ...NHIS_MEDICAL_INFO2_ENDPOINTS,
+} as const;
+
+export type HyphenEndpointPath = (typeof NHIS_ENDPOINTS)[keyof typeof NHIS_ENDPOINTS];
 
 export type HyphenLoginMethod = "EASY" | "CERT";
 export type HyphenStepMode = "step";
@@ -46,6 +63,10 @@ export type HyphenNhisRequestPayload = {
   resNo?: string;
   mobileNo?: string;
   mobileCo?: string;
+  cloudCertYn?: "Y" | "N";
+  subjectType?: "00" | "01" | "02" | string;
+  fromDate?: string;
+  toDate?: string;
   stepMode?: HyphenStepMode;
   step?: HyphenStep;
   step_data?: unknown;
@@ -221,79 +242,143 @@ export function getHyphenCommon(payload: unknown): HyphenCommon {
   return normalizeCommon(payload);
 }
 
-export async function fetchCheckupList(
+export async function fetchMedicalInfo(
   payload: HyphenNhisRequestPayload,
   options: HyphenRequestOptions = {}
 ) {
-  return hyphenPost(NHIS_ENDPOINTS.CHECKUP_LIST, payload, options);
+  return hyphenPost(NHIS_MEDICAL_INFO_ENDPOINTS.MEDICAL_INFO, payload, options);
 }
 
-export async function fetchLifestyle(
+export async function fetchMedicationInfo(
   payload: HyphenNhisRequestPayload,
   options: HyphenRequestOptions = {}
 ) {
-  return hyphenPost(NHIS_ENDPOINTS.LIFESTYLE, payload, options);
+  return hyphenPost(NHIS_MEDICAL_INFO_ENDPOINTS.MEDICATION_INFO, payload, options);
 }
 
 export async function fetchHealthAge(
   payload: HyphenNhisRequestPayload,
   options: HyphenRequestOptions = {}
 ) {
-  return hyphenPost(NHIS_ENDPOINTS.HEALTH_AGE, payload, options);
+  return hyphenPost(NHIS_MEDICAL_INFO_ENDPOINTS.HEALTH_AGE, payload, options);
+}
+
+export async function fetchNhis0067(
+  payload: HyphenNhisRequestPayload,
+  options: HyphenRequestOptions = {}
+) {
+  return hyphenPost(NHIS_MEDICAL_INFO_ENDPOINTS.CHECKUP_TARGET, payload, options);
+}
+
+export async function fetchNhis0068(
+  payload: HyphenNhisRequestPayload,
+  options: HyphenRequestOptions = {}
+) {
+  return hyphenPost(NHIS_MEDICAL_INFO_ENDPOINTS.CHECKUP_RESULT_LIST, payload, options);
+}
+
+export async function fetchNhis0069(
+  payload: HyphenNhisRequestPayload,
+  options: HyphenRequestOptions = {}
+) {
+  return hyphenPost(NHIS_MEDICAL_INFO_ENDPOINTS.CHECKUP_YEARLY_RESULT, payload, options);
+}
+
+export async function fetchNhis0070(
+  payload: HyphenNhisRequestPayload,
+  options: HyphenRequestOptions = {}
+) {
+  return hyphenPost(NHIS_MEDICAL_INFO_ENDPOINTS.CHECKUP_OVERVIEW, payload, options);
+}
+
+export async function fetchNhis0071(
+  payload: HyphenNhisRequestPayload,
+  options: HyphenRequestOptions = {}
+) {
+  return hyphenPost(NHIS_MEDICAL_INFO_ENDPOINTS.SCALING_INFO, payload, options);
+}
+
+export async function fetchNhis0073(
+  payload: HyphenNhisRequestPayload,
+  options: HyphenRequestOptions = {}
+) {
+  return hyphenPost(NHIS_MEDICAL_INFO_ENDPOINTS.INFANT_CHECKUP_TARGET, payload, options);
+}
+
+export async function fetchNhis0074(
+  payload: HyphenNhisRequestPayload,
+  options: HyphenRequestOptions = {}
+) {
+  return hyphenPost(NHIS_MEDICAL_INFO_ENDPOINTS.INFANT_CHECKUP_RESULT, payload, options);
+}
+
+// Legacy wrappers for previously used "진료정보2" names.
+export async function fetchCheckupList(
+  payload: HyphenNhisRequestPayload,
+  options: HyphenRequestOptions = {}
+) {
+  return fetchNhis0068(payload, options);
+}
+
+export async function fetchLifestyle(
+  payload: HyphenNhisRequestPayload,
+  options: HyphenRequestOptions = {}
+) {
+  return fetchMedicationInfo(payload, options);
 }
 
 export async function fetchNhis0978(
   payload: HyphenNhisRequestPayload,
   options: HyphenRequestOptions = {}
 ) {
-  return hyphenPost(NHIS_ENDPOINTS.CHECKUP_DETAIL_0978, payload, options);
+  return hyphenPost(NHIS_MEDICAL_INFO2_ENDPOINTS.CHECKUP_DETAIL_0978, payload, options);
 }
 
 export async function fetchNhis0979(
   payload: HyphenNhisRequestPayload,
   options: HyphenRequestOptions = {}
 ) {
-  return hyphenPost(NHIS_ENDPOINTS.CHECKUP_DETAIL_0979, payload, options);
+  return hyphenPost(NHIS_MEDICAL_INFO2_ENDPOINTS.CHECKUP_DETAIL_0979, payload, options);
 }
 
 export async function fetchNhis0980(
   payload: HyphenNhisRequestPayload,
   options: HyphenRequestOptions = {}
 ) {
-  return hyphenPost(NHIS_ENDPOINTS.CHECKUP_DETAIL_0980, payload, options);
+  return hyphenPost(NHIS_MEDICAL_INFO2_ENDPOINTS.CHECKUP_DETAIL_0980, payload, options);
 }
 
 export async function fetchNhis0983(
   payload: HyphenNhisRequestPayload,
   options: HyphenRequestOptions = {}
 ) {
-  return hyphenPost(NHIS_ENDPOINTS.DETAIL_0983, payload, options);
+  return hyphenPost(NHIS_MEDICAL_INFO2_ENDPOINTS.DETAIL_0983, payload, options);
 }
 
 export async function fetchNhis0984(
   payload: HyphenNhisRequestPayload,
   options: HyphenRequestOptions = {}
 ) {
-  return hyphenPost(NHIS_ENDPOINTS.DETAIL_0984, payload, options);
+  return hyphenPost(NHIS_MEDICAL_INFO2_ENDPOINTS.DETAIL_0984, payload, options);
 }
 
 export async function fetchNhis0985(
   payload: HyphenNhisRequestPayload,
   options: HyphenRequestOptions = {}
 ) {
-  return hyphenPost(NHIS_ENDPOINTS.DETAIL_0985, payload, options);
+  return hyphenPost(NHIS_MEDICAL_INFO2_ENDPOINTS.DETAIL_0985, payload, options);
 }
 
 export async function fetchNhis0986(
   payload: HyphenNhisRequestPayload,
   options: HyphenRequestOptions = {}
 ) {
-  return hyphenPost(NHIS_ENDPOINTS.DETAIL_0986, payload, options);
+  return hyphenPost(NHIS_MEDICAL_INFO2_ENDPOINTS.DETAIL_0986, payload, options);
 }
 
 export async function fetchNhis0987(
   payload: HyphenNhisRequestPayload,
   options: HyphenRequestOptions = {}
 ) {
-  return hyphenPost(NHIS_ENDPOINTS.DETAIL_0987, payload, options);
+  return hyphenPost(NHIS_MEDICAL_INFO2_ENDPOINTS.DETAIL_0987, payload, options);
 }

@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import type { HyphenApiResponse } from "@/lib/server/hyphen/client";
 import {
-  fetchCheckupList,
   fetchHealthAge,
-  fetchLifestyle,
+  fetchMedicalInfo,
+  fetchMedicationInfo,
 } from "@/lib/server/hyphen/client";
 import {
   getNhisLink,
@@ -17,12 +17,13 @@ import {
   logHyphenError,
   NO_STORE_HEADERS,
 } from "@/lib/server/hyphen/route-utils";
+import { buildNhisRequestDefaults } from "@/lib/server/hyphen/request-defaults";
 import { getPendingEasyAuth } from "@/lib/server/hyphen/session";
 import { requireUserSession } from "@/lib/server/route-auth";
 
 export const runtime = "nodejs";
 
-const targetEnum = z.enum(["checkup", "lifestyle", "healthAge"]);
+const targetEnum = z.enum(["medical", "medication", "healthAge"]);
 const fetchSchema = z
   .object({
     targets: z.array(targetEnum).min(1).optional(),
@@ -31,9 +32,15 @@ const fetchSchema = z
 
 type FetchTarget = z.infer<typeof targetEnum>;
 
+function getErrorBody(error: unknown): unknown | null {
+  if (!error || typeof error !== "object") return null;
+  const candidate = (error as { body?: unknown }).body;
+  return candidate ?? null;
+}
+
 function dedupeTargets(input?: FetchTarget[]) {
   if (!input || input.length === 0) {
-    return ["checkup", "lifestyle", "healthAge"] as FetchTarget[];
+    return ["medical", "medication", "healthAge"] as FetchTarget[];
   }
   return Array.from(new Set(input));
 }
@@ -63,6 +70,7 @@ export async function POST(req: Request) {
     getNhisLink(auth.data.appUserId),
     getPendingEasyAuth(),
   ]);
+  const requestDefaults = buildNhisRequestDefaults();
 
   if (!link?.linked) {
     return NextResponse.json(
@@ -80,38 +88,26 @@ export async function POST(req: Request) {
     resNm: pendingEasyAuth?.resNm,
     resNo: pendingEasyAuth?.resNo,
     mobileNo: pendingEasyAuth?.mobileNo,
-    mobileCo: pendingEasyAuth?.mobileCo,
+    ...requestDefaults,
     cookieData: link.cookieData ?? undefined,
     showCookie: "Y" as const,
   };
 
   const requestEntries = targets.map((target) => {
-    if (target === "checkup") {
-      return {
-        target,
-        promise: fetchCheckupList(basePayload),
-      };
+    if (target === "medical") {
+      return { target, promise: fetchMedicalInfo(basePayload) };
     }
-    if (target === "lifestyle") {
-      return {
-        target,
-        promise: fetchLifestyle(basePayload),
-      };
+    if (target === "medication") {
+      return { target, promise: fetchMedicationInfo(basePayload) };
     }
-    return {
-      target,
-      promise: fetchHealthAge(basePayload),
-    };
+    return { target, promise: fetchHealthAge(basePayload) };
   });
 
   const settled = await Promise.allSettled(requestEntries.map((entry) => entry.promise));
 
   const successful = new Map<FetchTarget, HyphenApiResponse>();
-  const failed: Array<{
-    target: FetchTarget;
-    errCd?: string;
-    errMsg?: string;
-  }> = [];
+  const rawFailures = new Map<FetchTarget, unknown>();
+  const failed: Array<{ target: FetchTarget; errCd?: string; errMsg?: string }> = [];
 
   settled.forEach((result, index) => {
     const target = requestEntries[index]!.target;
@@ -119,9 +115,14 @@ export async function POST(req: Request) {
       successful.set(target, result.value);
       return;
     }
+
     const reason = result.reason;
     logHyphenError(`[hyphen][fetch] target=${target} failed`, reason);
     const errorInfo = getErrorCodeMessage(reason);
+    const errorBody = getErrorBody(reason);
+    if (errorBody !== null) {
+      rawFailures.set(target, errorBody);
+    }
     failed.push({
       target,
       errCd: errorInfo.code,
@@ -149,8 +150,8 @@ export async function POST(req: Request) {
   }
 
   const normalized = normalizeNhisPayload({
-    checkup: successful.get("checkup") ?? emptyPayload(),
-    lifestyle: successful.get("lifestyle") ?? emptyPayload(),
+    medical: successful.get("medical") ?? emptyPayload(),
+    medication: successful.get("medication") ?? emptyPayload(),
     healthAge: successful.get("healthAge") ?? emptyPayload(),
   });
 
@@ -171,9 +172,9 @@ export async function POST(req: Request) {
       data: {
         normalized,
         raw: {
-          checkup: successful.get("checkup") ?? null,
-          lifestyle: successful.get("lifestyle") ?? null,
-          healthAge: successful.get("healthAge") ?? null,
+          medical: successful.get("medical") ?? rawFailures.get("medical") ?? null,
+          medication: successful.get("medication") ?? rawFailures.get("medication") ?? null,
+          healthAge: successful.get("healthAge") ?? rawFailures.get("healthAge") ?? null,
         },
       },
     },
