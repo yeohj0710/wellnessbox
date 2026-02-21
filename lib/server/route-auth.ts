@@ -79,6 +79,26 @@ export async function requireAnySession(): Promise<GuardResult<null>> {
   return { ok: true, data: null };
 }
 
+export async function requireUserSession(): Promise<
+  GuardResult<{ appUserId: string; kakaoId: string; phone: string | null }>
+> {
+  const { session, appUser } = await resolveLoggedInAppUser();
+  if (!session.user?.loggedIn || typeof session.user.kakaoId !== "number") {
+    return unauthorized();
+  }
+  if (!appUser) {
+    return unauthorized();
+  }
+  return {
+    ok: true,
+    data: {
+      appUserId: appUser.id,
+      kakaoId: String(session.user.kakaoId),
+      phone: appUser.phone ?? null,
+    },
+  };
+}
+
 export async function requirePharmSession(
   expectedPharmacyId?: number
 ): Promise<GuardResult<{ pharmacyId: number }>> {

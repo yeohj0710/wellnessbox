@@ -30,6 +30,17 @@ interface SessionContent {
     id?: number;
     loggedIn: boolean;
   };
+  hyphen?: {
+    pendingEasyAuth?: {
+      loginMethod: "EASY";
+      loginOrgCd: string;
+      resNm: string;
+      resNo: string;
+      mobileNo: string;
+      mobileCo?: string;
+      savedAt: string;
+    };
+  };
 }
 
 function normalizeSessionContent(session: SessionContent) {

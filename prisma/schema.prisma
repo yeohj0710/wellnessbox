@@ -276,10 +276,34 @@ model AppUser {
   emailOtps       EmailOtp[]
   orders          Order[]
   chatSessions    ChatSession[]
+  healthProviderLinks HealthProviderLink[]
 
   @@index([clientId])
   @@index([email])
   @@index([phone])
+}
+
+model HealthProviderLink {
+  id               String   @id @default(cuid())
+  appUserId        String
+  provider         String
+  linked           Boolean  @default(false)
+  loginMethod      String?
+  loginOrgCd       String?
+  stepMode         String?
+  stepData         Json?
+  cookieData       Json?
+  lastLinkedAt     DateTime?
+  lastFetchedAt    DateTime?
+  lastErrorCode    String?
+  lastErrorMessage String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
+  appUser          AppUser  @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+
+  @@unique([appUserId, provider])
+  @@index([provider, linked])
+  @@index([appUserId, updatedAt])
 }
 
 model ChatSession {
