@@ -67,6 +67,12 @@ export type HyphenNhisRequestPayload = {
   subjectType?: "00" | "01" | "02" | string;
   fromDate?: string;
   toDate?: string;
+  yyyy?: string;
+  detailYn?: "Y" | "N";
+  imgYn?: "Y" | "N";
+  detailKey?: string;
+  detailKey2?: string;
+  coption?: string;
   stepMode?: HyphenStepMode;
   step?: HyphenStep;
   step_data?: unknown;
@@ -381,4 +387,25 @@ export async function fetchNhis0987(
   options: HyphenRequestOptions = {}
 ) {
   return hyphenPost(NHIS_MEDICAL_INFO2_ENDPOINTS.DETAIL_0987, payload, options);
+}
+
+export async function fetchCheckupResultList(
+  payload: HyphenNhisRequestPayload,
+  options: HyphenRequestOptions = {}
+) {
+  return fetchNhis0068(payload, options);
+}
+
+export async function fetchCheckupYearlyResult(
+  payload: HyphenNhisRequestPayload,
+  options: HyphenRequestOptions = {}
+) {
+  return fetchNhis0069(payload, options);
+}
+
+export async function fetchCheckupOverview(
+  payload: HyphenNhisRequestPayload,
+  options: HyphenRequestOptions = {}
+) {
+  return fetchNhis0070(payload, options);
 }

@@ -1,11 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  NHIS_ERR_CODE_HEALTHAGE_UNAVAILABLE,
-  NHIS_ERR_CODE_HEALTHIN_REQUIRED,
-  NHIS_LOGIN_ORG,
-} from "./constants";
+import { NHIS_ERR_CODE_HEALTHIN_REQUIRED, NHIS_LOGIN_ORG } from "./constants";
 import type {
   ActionKind,
   NhisActionResponse,
@@ -14,6 +10,8 @@ import type {
   NhisStatusResponse,
 } from "./types";
 import { parseErrorMessage, readJson } from "./utils";
+
+const CHECKUP_ONLY_TARGETS = ["checkupOverview"] as const;
 
 export function useNhisHealthLink(loggedIn: boolean) {
   const [status, setStatus] = useState<NhisStatusResponse["status"]>();
@@ -47,7 +45,7 @@ export function useNhisHealthLink(loggedIn: boolean) {
       });
       const data = await readJson<NhisStatusResponse>(res);
       if (!res.ok || !data.ok) {
-        setStatusError(parseErrorMessage(data.error, "연동 상태 조회에 실패했습니다."));
+        setStatusError(parseErrorMessage(data.error, "연동 상태를 불러오지 못했습니다."));
         return;
       }
       setStatus(data.status);
@@ -114,7 +112,7 @@ export function useNhisHealthLink(loggedIn: boolean) {
       return;
     }
     if (!/^\d{10,11}$/.test(mobileNo)) {
-      setActionError("휴대폰 번호를 숫자 10~11자리로 입력해 주세요.");
+      setActionError("휴대폰 번호는 숫자 10~11자리로 입력해 주세요.");
       return;
     }
 
@@ -130,9 +128,7 @@ export function useNhisHealthLink(loggedIn: boolean) {
         mobileNo,
       },
       onSuccess: async () => {
-        setActionNotice(
-          "카카오 인증 요청을 전송했습니다. 카카오톡 승인 후 '인증 완료'를 눌러 주세요."
-        );
+        setActionNotice("카카오 인증 요청을 보냈습니다. 카카오 앱에서 인증 후 다음을 눌러 주세요.");
         await loadStatus();
       },
       onFailure: async () => {
@@ -160,7 +156,10 @@ export function useNhisHealthLink(loggedIn: boolean) {
     await runRequest<NhisFetchResponse>({
       kind: "fetch",
       url: "/api/health/nhis/fetch",
-      fallbackError: "데이터 조회에 실패했습니다.",
+      body: {
+        targets: CHECKUP_ONLY_TARGETS,
+      },
+      fallbackError: "검진 데이터 조회에 실패했습니다.",
       onFailure: async (payload) => {
         setFetchFailures(payload.failed ?? []);
         await loadStatus();
@@ -168,17 +167,10 @@ export function useNhisHealthLink(loggedIn: boolean) {
       onSuccess: async (payload) => {
         setFetched(payload.data ?? null);
         setFetchFailures(payload.failed ?? []);
-        const failures = payload.failed ?? [];
-        const onlyHealthAgeUnavailable =
-          failures.length === 1 &&
-          failures[0]?.target === "healthAge" &&
-          (failures[0]?.errCd || "").trim() === NHIS_ERR_CODE_HEALTHAGE_UNAVAILABLE;
         setActionNotice(
           payload.partial
-            ? onlyHealthAgeUnavailable
-              ? "진료/투약 정보는 조회되었고 건강나이는 검진내역이 있는 경우에만 제공됩니다."
-              : "일부 항목만 조회되었습니다. 실패 항목을 확인해 주세요."
-            : "데이터를 성공적으로 불러왔습니다."
+            ? "일부 항목 조회에 실패했습니다. 실패 항목을 확인해 주세요."
+            : "건강검진 수치를 성공적으로 불러왔습니다."
         );
         await loadStatus();
       },

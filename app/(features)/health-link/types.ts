@@ -4,6 +4,33 @@ export type NhisFetchFailure = {
   errMsg?: string | null;
 };
 
+export type NhisPrimitive = string | number | boolean | null;
+export type NhisDataRow = Record<string, NhisPrimitive>;
+
+export type NhisListSummary = {
+  totalCount: number;
+  recentLines: string[];
+  peopleCount?: number;
+  detailCount?: number;
+};
+
+export type NhisCheckupSummary = {
+  listCount: number;
+  yearlyCount: number;
+  overviewCount: number;
+  yearCount: number;
+  peopleCount: number;
+  recentLines: string[];
+};
+
+export type NhisRecommendationSummary = {
+  diagnosisTimeline: NhisDataRow[];
+  medicationTimeline: NhisDataRow[];
+  activeIngredients: string[];
+  cautions: string[];
+  checkupFindings: NhisDataRow[];
+};
+
 export type NhisStatusResponse = {
   ok: boolean;
   status?: {
@@ -28,18 +55,18 @@ export type NhisFetchResponse = {
   data?: {
     normalized?: {
       medical?: {
-        list?: unknown[];
-        summary?: {
-          totalCount: number;
-          recentLines: string[];
-        };
+        list?: NhisDataRow[];
+        summary?: NhisListSummary;
       };
       medication?: {
-        list?: unknown[];
-        summary?: {
-          totalCount: number;
-          recentLines: string[];
-        };
+        list?: NhisDataRow[];
+        summary?: NhisListSummary;
+      };
+      checkup?: {
+        list?: NhisDataRow[];
+        yearly?: NhisDataRow[];
+        overview?: NhisDataRow[];
+        summary?: NhisCheckupSummary;
       };
       healthAge?: {
         healthAge: string | number | null;
@@ -48,11 +75,16 @@ export type NhisFetchResponse = {
         advice: string | null;
         riskFactorTable: unknown;
       };
+      recommendation?: NhisRecommendationSummary;
     };
     raw?: {
       medical?: unknown;
       medication?: unknown;
+      checkupList?: unknown;
+      checkupYearly?: unknown;
+      checkupOverview?: unknown;
       healthAge?: unknown;
+      checkupListByYear?: unknown;
     };
   };
   error?: string;
