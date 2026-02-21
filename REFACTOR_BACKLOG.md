@@ -124,11 +124,14 @@ Base input: `npm run audit:hotspots`
    - Added `useChat.finalizeFlow.ts` for title-generation + assistant turn finalize orchestration.
    - Added `useChat.assessmentFlow.ts` for in-chat assessment bootstrap/input flow.
    - Reduced inline assessment parser/evaluation branching and finalize post-processing in `useChat.ts`.
+34. `app/chat/hooks/useChat.ts` follow-up fetch orchestration split
+   - Added `useChat.followups.ts` to centralize suggestion/action follow-up fetch pipelines.
+   - Moved fallback/history handling for suggestion generation out of `useChat.ts`.
+   - Moved interactive action candidate resolution + fallback prioritization out of `useChat.ts`.
 
 ## Priority 1 (next)
 
 1. `app/chat/hooks/useChat.ts` (~1247 lines)
-   - Extract suggestion/action fetch orchestration into dedicated module with shared active-session guard.
    - Split cart-command + action-decision handlers into policy module.
 2. `components/chat/DesktopChatDockPanel.tsx` (~991 lines)
    - Split header/feed/resize-hint into dedicated components.

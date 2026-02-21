@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFooter } from "@/components/common/footerContext";
-import { buildDataDrivenSuggestions, buildUserContextSummary } from "@/lib/chat/context";
+import { buildUserContextSummary } from "@/lib/chat/context";
 import type { ChatMessage, ChatSession, UserProfile } from "@/types/chat";
 import {
   getClientIdLocal,
@@ -23,14 +23,8 @@ import {
 } from "./useChat.results";
 import { DEFAULT_CHAT_TITLE, mergeServerSessions } from "./useChat.session";
 import {
-  buildFinalSuggestions,
-  getSuggestionHistory,
-  rememberSuggestions,
-} from "./useChat.suggestions";
-import {
   readActionMemory,
   rememberActionMemoryList,
-  sortActionsByMemory,
   type ActionMemoryMap,
 } from "./useChat.actionMemory";
 import {
@@ -67,14 +61,11 @@ import {
   type AgentGuideExample,
 } from "./useChat.agentGuide";
 import { runSingleInteractiveAction as runSingleInteractiveActionFlow } from "./useChat.interactiveActions";
-import {
-  buildFallbackInteractiveActions,
-  runAgentDecision as runAgentDecisionFlow,
-} from "./useChat.agentDecision";
+import { runAgentDecision as runAgentDecisionFlow } from "./useChat.agentDecision";
 import {
   requestActionExecutionDecision,
-  requestActionSuggestions,
   requestDeleteChatSession,
+  requestActionSuggestions,
   requestChatSuggestions,
   requestChatTitle,
 } from "./useChat.api";
@@ -98,6 +89,10 @@ import {
   handleInChatAssessmentInputFlow,
   initializeInChatAssessmentFlow,
 } from "./useChat.assessmentFlow";
+import {
+  fetchInteractiveActionsForSession,
+  fetchSuggestionsForSession,
+} from "./useChat.followups";
 import type { ChatPageAgentContext } from "@/lib/chat/page-agent-context";
 
 type UseChatOptions = {
@@ -653,59 +648,17 @@ export default function useChat(options: UseChatOptions = {}) {
       setSuggestions([]);
       return;
     }
-
-    const safeCount = 2;
-    const recentSuggestionHistory = getSuggestionHistory(
-      suggestionHistoryRef.current,
-      targetSessionId
-    ).slice(-8);
-    const summaryForSession = buildSummaryForSession(targetSessionId);
-    const fallback = buildDataDrivenSuggestions(
-      summaryForSession,
-      safeCount,
-      recentSuggestionHistory
-    );
-    const recentMessages =
-      sessions.find((session) => session.id === targetSessionId)?.messages ?? [];
-
-    try {
-      const fromApi = await requestChatSuggestions({
-        text: lastAssistantText,
-        contextPayload: buildContextPayload(targetSessionId),
-        runtimeContextText,
-        recentMessages,
-        excludeSuggestions: recentSuggestionHistory,
-        count: safeCount,
-      });
-
-      const finalSuggestions = buildFinalSuggestions({
-        fromApi,
-        fallback,
-        recentSuggestionHistory,
-        safeCount,
-      });
-
-      setSuggestions(finalSuggestions);
-      rememberSuggestions(
-        suggestionHistoryRef.current,
-        targetSessionId,
-        finalSuggestions
-      );
-    } catch {
-      const finalSuggestions = buildFinalSuggestions({
-        fromApi: [],
-        fallback,
-        recentSuggestionHistory,
-        safeCount,
-      });
-
-      setSuggestions(finalSuggestions);
-      rememberSuggestions(
-        suggestionHistoryRef.current,
-        targetSessionId,
-        finalSuggestions
-      );
-    }
+    const finalSuggestions = await fetchSuggestionsForSession({
+      sessionId: targetSessionId,
+      sessions,
+      lastAssistantText,
+      runtimeContextText,
+      suggestionHistoryStore: suggestionHistoryRef.current,
+      buildSummaryForSession: (sessionId) => buildSummaryForSession(sessionId),
+      buildContextPayload: (sessionId) => buildContextPayload(sessionId),
+      requestChatSuggestions,
+    });
+    setSuggestions(finalSuggestions);
   }
 
   async function fetchInteractiveActions(
@@ -717,43 +670,19 @@ export default function useChat(options: UseChatOptions = {}) {
       setInteractiveActions([]);
       return;
     }
-    if (inChatAssessment && inChatAssessment.sessionId === targetSessionId) {
-      setInteractiveActions([]);
-      return;
-    }
+    const resolvedActions = await fetchInteractiveActionsForSession({
+      sessionId: targetSessionId,
+      sessions,
+      lastAssistantText,
+      runtimeContextText,
+      actionMemory,
+      inChatAssessmentSessionId: inChatAssessment?.sessionId ?? null,
+      buildActionContextText: (sessionId) => buildActionContextText(sessionId),
+      requestActionSuggestions,
+    });
 
-    const recentMessages =
-      sessions.find((session) => session.id === targetSessionId)?.messages ?? [];
-    const contextSummaryText = buildActionContextText(targetSessionId);
-
-    try {
-      const mapped = await requestActionSuggestions({
-        assistantText: lastAssistantText,
-        recentMessages,
-        contextSummaryText,
-        runtimeContextText,
-      });
-
-      if ((activeIdRef.current || "") !== targetSessionId) return;
-      const prioritizedMapped = sortActionsByMemory(mapped, actionMemory);
-      const fallbackRows = sortActionsByMemory(
-        buildFallbackInteractiveActions(lastAssistantText),
-        actionMemory
-      );
-      setInteractiveActions(
-        prioritizedMapped.length > 0
-          ? prioritizedMapped.slice(0, 4)
-          : fallbackRows.slice(0, 4)
-      );
-    } catch {
-      if ((activeIdRef.current || "") !== targetSessionId) return;
-      setInteractiveActions(
-        sortActionsByMemory(buildFallbackInteractiveActions(lastAssistantText), actionMemory).slice(
-          0,
-          4
-        )
-      );
-    }
+    if ((activeIdRef.current || "") !== targetSessionId) return;
+    setInteractiveActions(resolvedActions);
   }
 
   function initializeInChatAssessment(
