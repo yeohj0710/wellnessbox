@@ -12,7 +12,6 @@ import {
   filterCheckupMetricRows,
   formatDateTime,
   hasNhisSessionExpiredFailure,
-  isNhisSessionExpiredError,
   resolveCheckupMetricTone,
   selectLatestCheckupRows,
   summarizeMedicationRows,
@@ -47,6 +46,8 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
     canRequest,
     canSign,
     canFetch,
+    summaryFetchBlocked,
+    summaryFetchBlockedMessage,
     forceRefreshBlocked,
     forceRefreshRemainingSeconds,
     showHealthInPrereqGuide,
@@ -68,15 +69,10 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
         : styles.statusOff;
 
   const basePrimaryFlow = resolvePrimaryFlow(statusLinked, hasAuthRequested);
-  const statusSessionExpired = isNhisSessionExpiredError(
-    status?.lastError?.code,
-    status?.lastError?.message
-  );
   const hasFetchedResponse = fetched !== null;
   const hasSessionExpiredSignal =
     actionErrorCode === NHIS_ERR_CODE_LOGIN_SESSION_EXPIRED ||
-    hasNhisSessionExpiredFailure(fetchFailures) ||
-    statusSessionExpired;
+    hasNhisSessionExpiredFailure(fetchFailures);
   const shouldForceReauth = hasSessionExpiredSignal && !hasFetchedResponse;
   const showAuthStage = !statusLinked || shouldForceReauth;
   const primaryFlow = shouldForceReauth
@@ -194,6 +190,9 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
       {!showAuthStage ? (
         <HealthLinkResultSection
           linked={!!status?.linked}
+          canFetch={canFetch}
+          summaryFetchBlocked={summaryFetchBlocked}
+          summaryFetchBlockedMessage={summaryFetchBlockedMessage}
           fetchCacheHint={fetchCacheHint}
           forceRefreshHint={forceRefreshHint}
           forceRefreshDisabled={forceRefreshDisabled}
@@ -205,6 +204,7 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
           medicationDigest={medicationDigest}
           checkupSummary={checkupSummary}
           raw={fetched?.raw}
+          onSummaryFetch={() => void handleFetch()}
           onSummaryFresh={handleSummaryFreshAction}
         />
       ) : null}

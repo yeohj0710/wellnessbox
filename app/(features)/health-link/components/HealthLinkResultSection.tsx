@@ -28,6 +28,9 @@ type LatestCheckupRow = {
 
 type HealthLinkResultSectionProps = {
   linked: boolean;
+  canFetch: boolean;
+  summaryFetchBlocked: boolean;
+  summaryFetchBlockedMessage: string | null;
   fetchCacheHint: string | null;
   forceRefreshHint: string;
   forceRefreshDisabled: boolean;
@@ -43,6 +46,7 @@ type HealthLinkResultSectionProps = {
       ? R | null | undefined
       : null | undefined
     : null | undefined;
+  onSummaryFetch: () => void;
   onSummaryFresh: () => void;
 };
 
@@ -87,6 +91,9 @@ function renderMetricRows(rows: LatestCheckupRow[]) {
 
 export function HealthLinkResultSection({
   linked,
+  canFetch,
+  summaryFetchBlocked,
+  summaryFetchBlockedMessage,
   fetchCacheHint,
   forceRefreshHint,
   forceRefreshDisabled,
@@ -98,6 +105,7 @@ export function HealthLinkResultSection({
   medicationDigest,
   checkupSummary,
   raw,
+  onSummaryFetch,
   onSummaryFresh,
 }: HealthLinkResultSectionProps) {
   const sessionExpiredFailure = hasNhisSessionExpiredFailure(fetchFailures);
@@ -131,12 +139,19 @@ export function HealthLinkResultSection({
 
       <HealthLinkFetchActions
         statusLinked={linked}
+        summaryDisabled={!canFetch}
+        hasFetchResult={hasFetchResult}
         forceRefreshDisabled={forceRefreshDisabled}
         fetchCacheHint={fetchCacheHint}
         forceRefreshHint={forceRefreshHint}
         primaryLoading={primaryLoading}
+        onSummaryFetch={onSummaryFetch}
         onSummaryFresh={onSummaryFresh}
       />
+
+      {summaryFetchBlocked && summaryFetchBlockedMessage ? (
+        <div className={styles.noticeWarn}>{summaryFetchBlockedMessage}</div>
+      ) : null}
 
       {fetchFailures.length > 0 ? (
         <>

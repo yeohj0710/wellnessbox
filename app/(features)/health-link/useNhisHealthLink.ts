@@ -95,6 +95,37 @@ function resolveActionErrorMessage(
   return parseErrorMessage(payload.errMsg || payload.error, fallback);
 }
 
+function buildClientBudgetBlockedMessage(options: {
+  reason: "fresh" | "forceRefresh";
+  budget:
+    | {
+        windowHours?: number;
+        fresh?: { used?: number; limit?: number };
+        forceRefresh?: { used?: number; limit?: number };
+      }
+    | undefined;
+  retryAfterSec?: number;
+}) {
+  const windowHours = options.budget?.windowHours ?? 24;
+  const used =
+    options.reason === "forceRefresh"
+      ? options.budget?.forceRefresh?.used
+      : options.budget?.fresh?.used;
+  const limit =
+    options.reason === "forceRefresh"
+      ? options.budget?.forceRefresh?.limit
+      : options.budget?.fresh?.limit;
+  const retrySuffix =
+    typeof options.retryAfterSec === "number" && options.retryAfterSec > 0
+      ? ` ${options.retryAfterSec}초 후 다시 시도해 주세요.`
+      : "";
+
+  if (typeof used === "number" && typeof limit === "number") {
+    return `최근 ${windowHours}시간 기준 조회 한도 ${used}/${limit}회를 모두 사용했습니다.${retrySuffix}`;
+  }
+  return `조회 한도를 모두 사용했습니다.${retrySuffix}`;
+}
+
 export function useNhisHealthLink(loggedIn: boolean) {
   const autoFetchAfterSignRef = useRef(false);
   const [status, setStatus] = useState<NhisStatusResponse["status"]>();
@@ -113,16 +144,33 @@ export function useNhisHealthLink(loggedIn: boolean) {
   const [fetched, setFetched] = useState<NhisFetchResponse["data"] | null>(null);
   const [fetchFailures, setFetchFailures] = useState<NhisFetchFailure[]>([]);
   const [fetchCacheInfo, setFetchCacheInfo] = useState<FetchCacheInfo | null>(null);
+  const fetchInFlightRef = useRef(false);
+
+  const fetchBudget = status?.fetchBudget;
+  const hasValidServerCache = (status?.cache?.validEntries ?? 0) > 0;
+  const freshBudgetBlocked =
+    typeof fetchBudget?.fresh?.remaining === "number" &&
+    fetchBudget.fresh.remaining <= 0;
+  const forceRefreshBudgetBlocked =
+    typeof fetchBudget?.forceRefresh?.remaining === "number" &&
+    fetchBudget.forceRefresh.remaining <= 0;
+  const summaryFetchBlocked = freshBudgetBlocked && !hasValidServerCache;
 
   const canRequest = loggedIn && actionLoading === null;
   const canSign = canRequest && !!(status?.pendingAuthReady || status?.hasStepData);
-  const canFetch = canRequest && !!status?.linked;
+  const canFetch = canRequest && !!status?.linked && !summaryFetchBlocked;
   const hasDetailedRows = useMemo(() => {
     const rows = fetched?.normalized?.checkup?.yearly;
     return Array.isArray(rows) && rows.length > 0;
   }, [fetched?.normalized?.checkup?.yearly]);
   const forceRefreshRemainingSeconds = status?.forceRefresh?.remainingSeconds ?? 0;
   const forceRefreshBlocked = forceRefreshRemainingSeconds > 0;
+  const summaryFetchBlockedMessage = summaryFetchBlocked
+    ? buildClientBudgetBlockedMessage({
+        reason: "fresh",
+        budget: fetchBudget,
+      })
+    : null;
 
   const loadStatus = useCallback(async () => {
     if (!loggedIn) return;
@@ -230,10 +278,36 @@ export function useNhisHealthLink(loggedIn: boolean) {
 
   const runFetch = useCallback(
     async (mode: FetchMode, forceRefresh = false) => {
+      if (fetchInFlightRef.current) return;
+
       if (mode === "detail" && !forceRefresh && hasDetailedRows) {
         setActionError(null);
         setActionErrorCode(null);
         setActionNotice(HEALTH_LINK_COPY.hook.detailAlreadyLoadedNotice);
+        return;
+      }
+
+      if (summaryFetchBlocked) {
+        setActionNotice(null);
+        setActionErrorCode(NHIS_FETCH_DAILY_LIMIT_ERR_CODE);
+        setActionError(
+          buildClientBudgetBlockedMessage({
+            reason: "fresh",
+            budget: fetchBudget,
+          })
+        );
+        return;
+      }
+
+      if (forceRefresh && forceRefreshBudgetBlocked) {
+        setActionNotice(null);
+        setActionErrorCode(NHIS_FORCE_REFRESH_DAILY_LIMIT_ERR_CODE);
+        setActionError(
+          buildClientBudgetBlockedMessage({
+            reason: "forceRefresh",
+            budget: fetchBudget,
+          })
+        );
         return;
       }
 
@@ -245,30 +319,38 @@ export function useNhisHealthLink(loggedIn: boolean) {
 
       const isDetail = mode === "detail";
       const messages = getFetchMessages(mode, forceRefresh);
-      await runRequest<NhisFetchResponse>({
-        kind: isDetail ? "fetchDetail" : "fetch",
-        url: "/api/health/nhis/fetch",
-        body: {
-          targets: isDetail ? CHECKUP_DETAIL_TARGETS : SUMMARY_FETCH_TARGETS,
-          ...(isDetail ? { yearLimit: DETAIL_YEAR_LIMIT } : {}),
-          ...(forceRefresh ? { forceRefresh: true } : {}),
-        },
-        fallbackError: messages.fallbackError,
-        onFailure: async (payload) => {
-          await applyFetchFailure(payload);
-        },
-        onSuccess: async (payload) => {
-          await applyFetchSuccess(payload, messages);
-        },
-      });
+      fetchInFlightRef.current = true;
+      try {
+        await runRequest<NhisFetchResponse>({
+          kind: isDetail ? "fetchDetail" : "fetch",
+          url: "/api/health/nhis/fetch",
+          body: {
+            targets: isDetail ? CHECKUP_DETAIL_TARGETS : SUMMARY_FETCH_TARGETS,
+            ...(isDetail ? { yearLimit: DETAIL_YEAR_LIMIT } : {}),
+            ...(forceRefresh ? { forceRefresh: true } : {}),
+          },
+          fallbackError: messages.fallbackError,
+          onFailure: async (payload) => {
+            await applyFetchFailure(payload);
+          },
+          onSuccess: async (payload) => {
+            await applyFetchSuccess(payload, messages);
+          },
+        });
+      } finally {
+        fetchInFlightRef.current = false;
+      }
     },
     [
       applyFetchFailure,
       applyFetchSuccess,
+      fetchBudget,
       forceRefreshBlocked,
+      forceRefreshBudgetBlocked,
       forceRefreshRemainingSeconds,
       hasDetailedRows,
       runRequest,
+      summaryFetchBlocked,
     ]
   );
 
@@ -339,11 +421,48 @@ export function useNhisHealthLink(loggedIn: boolean) {
     if (!autoFetchAfterSignRef.current) return;
     if (actionLoading !== null) return;
     if (!status?.linked) return;
+    if (summaryFetchBlocked) {
+      autoFetchAfterSignRef.current = false;
+      setActionNotice(null);
+      setActionErrorCode(NHIS_FETCH_DAILY_LIMIT_ERR_CODE);
+      setActionError(
+        buildClientBudgetBlockedMessage({
+          reason: "fresh",
+          budget: status.fetchBudget,
+        })
+      );
+      return;
+    }
 
     autoFetchAfterSignRef.current = false;
     setActionNotice(HEALTH_LINK_COPY.hook.autoFetchAfterSignNotice);
     void runFetch("summary");
-  }, [actionLoading, runFetch, status?.linked]);
+  }, [actionLoading, runFetch, status?.fetchBudget, status?.linked, summaryFetchBlocked]);
+
+  useEffect(() => {
+    if (!status?.linked) return;
+    if (!summaryFetchBlocked) return;
+    if (fetched) return;
+    if (actionLoading !== null) return;
+    if (actionErrorCode === NHIS_FETCH_DAILY_LIMIT_ERR_CODE && actionError) return;
+
+    setActionNotice(null);
+    setActionErrorCode(NHIS_FETCH_DAILY_LIMIT_ERR_CODE);
+    setActionError(
+      buildClientBudgetBlockedMessage({
+        reason: "fresh",
+        budget: status.fetchBudget,
+      })
+    );
+  }, [
+    actionError,
+    actionErrorCode,
+    actionLoading,
+    fetched,
+    status?.fetchBudget,
+    status?.linked,
+    summaryFetchBlocked,
+  ]);
 
   const handleFetch = useCallback(async () => {
     await runFetch("summary");
@@ -410,6 +529,8 @@ export function useNhisHealthLink(loggedIn: boolean) {
     canRequest,
     canSign,
     canFetch,
+    summaryFetchBlocked,
+    summaryFetchBlockedMessage,
     hasDetailedRows,
     forceRefreshBlocked,
     forceRefreshRemainingSeconds,
