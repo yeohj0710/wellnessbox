@@ -95,7 +95,7 @@ function resolveActionErrorMessage(
   return parseErrorMessage(payload.errMsg || payload.error, fallback);
 }
 
-function buildClientBudgetBlockedMessage(options: {
+function buildClientBudgetBlockedMessageSafe(options: {
   reason: "fresh" | "forceRefresh";
   budget:
     | {
@@ -117,13 +117,20 @@ function buildClientBudgetBlockedMessage(options: {
       : options.budget?.fresh?.limit;
   const retrySuffix =
     typeof options.retryAfterSec === "number" && options.retryAfterSec > 0
-      ? ` ${options.retryAfterSec}초 후 다시 시도해 주세요.`
+      ? `${HEALTH_LINK_COPY.hook.budgetRetrySuffixPrefix} ${options.retryAfterSec}${HEALTH_LINK_COPY.hook.budgetRetrySuffixUnit}`
       : "";
 
   if (typeof used === "number" && typeof limit === "number") {
-    return `최근 ${windowHours}시간 기준 조회 한도 ${used}/${limit}회를 모두 사용했습니다.${retrySuffix}`;
+    return [
+      HEALTH_LINK_COPY.hook.budgetExceededDetailedPrefix,
+      ` ${windowHours} ${HEALTH_LINK_COPY.hook.budgetExceededDetailedMiddle}`,
+      ` ${used}/${limit} ${HEALTH_LINK_COPY.hook.budgetExceededDetailedSuffix}`,
+      retrySuffix ? ` ${retrySuffix}` : "",
+    ].join("");
   }
-  return `조회 한도를 모두 사용했습니다.${retrySuffix}`;
+  return retrySuffix
+    ? `${HEALTH_LINK_COPY.hook.budgetExceededFallback} ${retrySuffix}`
+    : HEALTH_LINK_COPY.hook.budgetExceededFallback;
 }
 
 export function useNhisHealthLink(loggedIn: boolean) {
@@ -147,14 +154,14 @@ export function useNhisHealthLink(loggedIn: boolean) {
   const fetchInFlightRef = useRef(false);
 
   const fetchBudget = status?.fetchBudget;
-  const hasValidServerCache = (status?.cache?.validEntries ?? 0) > 0;
+  const hasValidSummaryCache = status?.cache?.summaryAvailable === true;
   const freshBudgetBlocked =
     typeof fetchBudget?.fresh?.remaining === "number" &&
     fetchBudget.fresh.remaining <= 0;
   const forceRefreshBudgetBlocked =
     typeof fetchBudget?.forceRefresh?.remaining === "number" &&
     fetchBudget.forceRefresh.remaining <= 0;
-  const summaryFetchBlocked = freshBudgetBlocked && !hasValidServerCache;
+  const summaryFetchBlocked = freshBudgetBlocked && !hasValidSummaryCache;
 
   const canRequest = loggedIn && actionLoading === null;
   const canSign = canRequest && !!(status?.pendingAuthReady || status?.hasStepData);
@@ -166,7 +173,7 @@ export function useNhisHealthLink(loggedIn: boolean) {
   const forceRefreshRemainingSeconds = status?.forceRefresh?.remainingSeconds ?? 0;
   const forceRefreshBlocked = forceRefreshRemainingSeconds > 0;
   const summaryFetchBlockedMessage = summaryFetchBlocked
-    ? buildClientBudgetBlockedMessage({
+    ? buildClientBudgetBlockedMessageSafe({
         reason: "fresh",
         budget: fetchBudget,
       })
@@ -291,7 +298,7 @@ export function useNhisHealthLink(loggedIn: boolean) {
         setActionNotice(null);
         setActionErrorCode(NHIS_FETCH_DAILY_LIMIT_ERR_CODE);
         setActionError(
-          buildClientBudgetBlockedMessage({
+          buildClientBudgetBlockedMessageSafe({
             reason: "fresh",
             budget: fetchBudget,
           })
@@ -303,7 +310,7 @@ export function useNhisHealthLink(loggedIn: boolean) {
         setActionNotice(null);
         setActionErrorCode(NHIS_FORCE_REFRESH_DAILY_LIMIT_ERR_CODE);
         setActionError(
-          buildClientBudgetBlockedMessage({
+          buildClientBudgetBlockedMessageSafe({
             reason: "forceRefresh",
             budget: fetchBudget,
           })
@@ -426,7 +433,7 @@ export function useNhisHealthLink(loggedIn: boolean) {
       setActionNotice(null);
       setActionErrorCode(NHIS_FETCH_DAILY_LIMIT_ERR_CODE);
       setActionError(
-        buildClientBudgetBlockedMessage({
+        buildClientBudgetBlockedMessageSafe({
           reason: "fresh",
           budget: status.fetchBudget,
         })
@@ -449,7 +456,7 @@ export function useNhisHealthLink(loggedIn: boolean) {
     setActionNotice(null);
     setActionErrorCode(NHIS_FETCH_DAILY_LIMIT_ERR_CODE);
     setActionError(
-      buildClientBudgetBlockedMessage({
+      buildClientBudgetBlockedMessageSafe({
         reason: "fresh",
         budget: status.fetchBudget,
       })

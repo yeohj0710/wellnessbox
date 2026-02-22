@@ -2,12 +2,17 @@ import { NextResponse } from "next/server";
 import db from "@/lib/db";
 import { HYPHEN_PROVIDER } from "@/lib/server/hyphen/client";
 import { getNhisFetchBudgetSnapshot } from "@/lib/server/hyphen/fetch-attempt";
-import { getLatestNhisFetchAttemptAt } from "@/lib/server/hyphen/fetch-cache";
+import {
+  getLatestNhisFetchAttemptAt,
+  getValidNhisFetchCacheByIdentity,
+  resolveNhisIdentityHash,
+} from "@/lib/server/hyphen/fetch-cache";
 import {
   computeNhisForceRefreshCooldown,
   pickMostRecentDate,
 } from "@/lib/server/hyphen/fetch-policy";
 import { getNhisLink } from "@/lib/server/hyphen/link";
+import { buildNhisRequestDefaults } from "@/lib/server/hyphen/request-defaults";
 import { getPendingEasyAuth } from "@/lib/server/hyphen/session";
 import {
   isNhisHighCostTargetsEnabled,
@@ -19,11 +24,18 @@ import { requireUserSession } from "@/lib/server/route-auth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const SUMMARY_STATUS_TARGET_SETS = [
+  ["checkupOverview", "medication"],
+  ["checkupOverview"],
+] as const;
+const SUMMARY_STATUS_YEAR_LIMIT = 1;
+
 export async function GET() {
   const auth = await requireUserSession();
   if (!auth.ok) return auth.response;
 
   const now = new Date();
+  const requestDefaults = buildNhisRequestDefaults();
   const [link, pendingEasyAuth, totalCacheEntries, validCacheEntries, latestCacheEntry, fetchBudget, latestFetchAttemptAt] =
     await Promise.all([
       getNhisLink(auth.data.appUserId),
@@ -57,6 +69,27 @@ export async function GET() {
       getNhisFetchBudgetSnapshot(auth.data.appUserId, now),
       getLatestNhisFetchAttemptAt(auth.data.appUserId),
     ]);
+
+  let summaryCacheAvailable = false;
+  if (link?.linked) {
+    const identity = resolveNhisIdentityHash({
+      appUserId: auth.data.appUserId,
+      loginOrgCd: link.loginOrgCd,
+      storedIdentityHash: link.lastIdentityHash,
+    });
+    const summaryCaches = await Promise.all(
+      SUMMARY_STATUS_TARGET_SETS.map((targets) =>
+        getValidNhisFetchCacheByIdentity({
+          appUserId: auth.data.appUserId,
+          identityHash: identity.identityHash,
+          targets: [...targets],
+          yearLimit: SUMMARY_STATUS_YEAR_LIMIT,
+          subjectType: requestDefaults.subjectType,
+        })
+      )
+    );
+    summaryCacheAvailable = summaryCaches.some((cache) => cache !== null);
+  }
 
   const forceRefreshCooldown = computeNhisForceRefreshCooldown(
     pickMostRecentDate(
@@ -100,6 +133,7 @@ export async function GET() {
         cache: {
           totalEntries: totalCacheEntries,
           validEntries: validCacheEntries,
+          summaryAvailable: summaryCacheAvailable,
           latestFetchedAt: latestCacheEntry?.fetchedAt?.toISOString() ?? null,
           latestExpiresAt: latestCacheEntry?.expiresAt?.toISOString() ?? null,
           latestHitAt: latestCacheEntry?.lastHitAt?.toISOString() ?? null,

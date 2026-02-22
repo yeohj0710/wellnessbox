@@ -82,15 +82,22 @@ function computeWindowStart(now: Date, windowHours: number) {
 async function countAttempts(options: {
   appUserId: string;
   windowStart: Date;
-  forceRefreshOnly: boolean;
+  filterMode: "all" | "freshOnly" | "forceRefreshOnly";
 }) {
+  const forceRefreshFilter =
+    options.filterMode === "forceRefreshOnly"
+      ? { forceRefresh: true }
+      : options.filterMode === "freshOnly"
+        ? { forceRefresh: false }
+        : {};
+
   return db.healthProviderFetchAttempt.count({
     where: {
       appUserId: options.appUserId,
       provider: HYPHEN_PROVIDER,
       cached: false,
       createdAt: { gte: options.windowStart },
-      ...(options.forceRefreshOnly ? { forceRefresh: true } : {}),
+      ...forceRefreshFilter,
     },
   });
 }
@@ -100,15 +107,20 @@ async function computeRetryAfterSec(options: {
   now: Date;
   windowStart: Date;
   windowHours: number;
-  forceRefreshOnly: boolean;
+  filterMode: "freshOnly" | "forceRefreshOnly";
 }) {
+  const forceRefreshFilter =
+    options.filterMode === "forceRefreshOnly"
+      ? { forceRefresh: true }
+      : { forceRefresh: false };
+
   const earliest = await db.healthProviderFetchAttempt.findFirst({
     where: {
       appUserId: options.appUserId,
       provider: HYPHEN_PROVIDER,
       cached: false,
       createdAt: { gte: options.windowStart },
-      ...(options.forceRefreshOnly ? { forceRefresh: true } : {}),
+      ...forceRefreshFilter,
     },
     orderBy: { createdAt: "asc" },
     select: { createdAt: true },
@@ -157,12 +169,12 @@ export async function getNhisFetchBudgetSnapshot(
     countAttempts({
       appUserId,
       windowStart,
-      forceRefreshOnly: false,
+      filterMode: "freshOnly",
     }),
     countAttempts({
       appUserId,
       windowStart,
-      forceRefreshOnly: true,
+      filterMode: "forceRefreshOnly",
     }),
   ]);
 
@@ -190,12 +202,12 @@ export async function evaluateNhisFetchBudget(input: {
     countAttempts({
       appUserId: input.appUserId,
       windowStart,
-      forceRefreshOnly: false,
+      filterMode: "freshOnly",
     }),
     countAttempts({
       appUserId: input.appUserId,
       windowStart,
-      forceRefreshOnly: true,
+      filterMode: "forceRefreshOnly",
     }),
   ]);
 
@@ -226,7 +238,7 @@ export async function evaluateNhisFetchBudget(input: {
     now,
     windowStart,
     windowHours,
-    forceRefreshOnly: blockedReason === "forceRefresh",
+    filterMode: blockedReason === "forceRefresh" ? "forceRefreshOnly" : "freshOnly",
   });
 
   return {

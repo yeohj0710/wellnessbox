@@ -57,6 +57,7 @@ export type NhisStatusResponse = {
     cache?: {
       totalEntries: number;
       validEntries: number;
+      summaryAvailable: boolean;
       latestFetchedAt: string | null;
       latestExpiresAt: string | null;
       latestHitAt: string | null;

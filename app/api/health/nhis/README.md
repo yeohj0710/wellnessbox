@@ -9,6 +9,7 @@
 - `GET /api/health/nhis/status`
   - Returns link status for current signed-in user.
   - Includes cache metrics (`totalEntries`, `validEntries`, latest cache timestamps/hit count).
+  - Includes `cache.summaryAvailable` so client can avoid budget-blocked summary fetch calls.
   - Includes force-refresh cooldown state (`available`, `remainingSeconds`, `availableAt`).
   - Includes target policy state (`highCostTargetsEnabled`, `allowedTargets`).
 - `POST /api/health/nhis/fetch`
@@ -57,7 +58,7 @@
   - server records every non-cached fetch execution in `HealthProviderFetchAttempt`
   - server enforces rolling-window limits before external provider fanout
   - default limits:
-    - fresh fetches: 6 per 24h
+    - fresh fetches (non-force-refresh): 6 per 24h
     - force refreshes: 2 per 24h
   - when blocked, returns `429` with:
     - `errCd: NHIS_FETCH_DAILY_LIMIT` or `NHIS_FORCE_REFRESH_DAILY_LIMIT`
