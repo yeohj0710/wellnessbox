@@ -7,7 +7,7 @@ Single page flow for Hyphen NHIS integration:
 1. Load link status
 2. Start EASY auth (`init`)
 3. Confirm auth (`sign`)
-4. Fetch normalized data (`fetch`)
+4. Auto-fetch latest checkup + medication summary (`fetch`)
 
 ## Files
 
@@ -44,7 +44,13 @@ Single page flow for Hyphen NHIS integration:
 - `view-model.ts`
   - Derived UI-state helpers (status chip, flow resolution, force-refresh hints).
 - `utils.ts`
-  - Formatting and data summarization helpers.
+  - Utility barrel export used by client/components.
+- `utils-format.ts`
+  - Formatting, labels, table-column selection, and JSON preview helpers.
+- `utils-session.ts`
+  - Session-expiry 판단 및 fetch 실패 메시지 정규화 로직.
+- `utils-health-data.ts`
+  - 검진/투약 행 요약, 최신 검진 메타 추출, 지표 톤 판별 로직.
 - `HealthLinkClient.module.css`
   - Page-specific styles.
 
@@ -57,20 +63,21 @@ Single page flow for Hyphen NHIS integration:
 ## Behavioral Notes
 
 - Current UX supports KAKAO-first EASY flow.
+- After `sign` success, the client immediately runs summary fetch (no extra middle step click).
 - `fetch` supports partial success handling so one endpoint failure does not drop all cards.
 - Error code `C0012-001` should trigger a prerequisite guidance card.
 
 ## Cost Guardrails
 
-- Summary fetch defaults to `targets: ["checkupOverview"]`.
+- Summary fetch defaults to `targets: ["checkupOverview", "medication"]`.
 - Detail fetch uses low-cost mode:
   - client requests `targets: ["checkupList", "checkupYearly"]` with `yearLimit: 1`
   - server clamps checkup list year scan to max 2 years
   - server caps yearly-detail calls to max 1 request per fetch
 - If `detailKey` is missing, yearly endpoint is not called blindly.
 - High-cost targets are blocked by default on the server:
-  - blocked: `medical`, `medication`, `healthAge`
-  - allowed: `checkupOverview`, `checkupList`, `checkupYearly`
+  - blocked: `medical`, `healthAge`
+  - allowed: `checkupOverview`, `medication`, `checkupList`, `checkupYearly`
   - blocked response: `errCd: NHIS_TARGET_POLICY_BLOCKED`
 - Force refresh is available for manual troubleshooting, but:
   - server can replay recent cache first for cost protection
@@ -105,7 +112,7 @@ Single page flow for Hyphen NHIS integration:
 - `HYPHEN_NHIS_CACHE_HASH_SALT`
 - `HYPHEN_NHIS_FORCE_REFRESH_COOLDOWN_SECONDS`
 - `HYPHEN_NHIS_FORCE_REFRESH_CACHE_GUARD_SECONDS` (`0` disables, default `1800`)
-- `HYPHEN_NHIS_ENABLE_HIGH_COST_TARGETS` (`1` enables all targets, default is checkup-only)
+- `HYPHEN_NHIS_ENABLE_HIGH_COST_TARGETS` (`1` enables all targets, default is checkup+medication low-cost profile)
 - `HYPHEN_NHIS_FETCH_BUDGET_WINDOW_HOURS`
 - `HYPHEN_NHIS_MAX_FRESH_FETCHES_PER_WINDOW`
 - `HYPHEN_NHIS_MAX_FORCE_REFRESHES_PER_WINDOW`

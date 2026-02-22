@@ -1,3 +1,5 @@
+import { buildUserContextSummary } from "@/lib/chat/context";
+import type { ChatPageAgentContext } from "@/lib/chat/page-agent-context";
 import type { UserContextSummaryInput } from "@/lib/chat/context";
 import type { ChatSession, UserProfile } from "@/types/chat";
 
@@ -19,6 +21,15 @@ type BuildUserContextInputParams = {
 };
 
 type BuildChatContextPayloadParams = BuildUserContextInputParams;
+
+type BuildActionContextTextParams = BuildUserContextInputParams & {
+  runtimeContextText: string;
+};
+
+type BuildRuntimeContextPayloadParams = {
+  pageContext: ChatPageAgentContext | null;
+  runtimeContextText: string;
+};
 
 function buildContextSessionPayload(
   sessions: ChatSession[],
@@ -85,5 +96,28 @@ export function buildChatContextPayload(params: BuildChatContextPayloadParams) {
       params.sessions,
       params.currentSessionId
     ),
+  };
+}
+
+export function buildSummaryForSession(params: BuildUserContextInputParams) {
+  return buildUserContextSummary(buildUserContextInput(params));
+}
+
+export function buildActionContextText(params: BuildActionContextTextParams) {
+  const summaryText = buildSummaryForSession(params).promptSummaryText;
+  return [summaryText, params.runtimeContextText].filter(Boolean).join("\n\n");
+}
+
+export function buildRuntimeContextPayload(
+  params: BuildRuntimeContextPayloadParams
+) {
+  if (!params.pageContext) return null;
+  return {
+    routeKey: params.pageContext.routeKey,
+    routePath: params.pageContext.routePath,
+    pageTitle: params.pageContext.title,
+    pageSummary: params.pageContext.summary,
+    suggestedPrompts: params.pageContext.suggestedPrompts,
+    runtimeContextText: params.runtimeContextText,
   };
 }

@@ -114,15 +114,51 @@
     return /(["'`])\?\?\1/.test(line);
   }
 
+  function findLineByIndex(content: string, index: number) {
+    const safeIndex = Math.max(0, Math.min(index, content.length));
+    const line = content.slice(0, safeIndex).split(/\n/).length;
+    const lineText = content.split(/\r?\n/)[line - 1] ?? "";
+    return { line, lineText };
+  }
+
   function findLineIssues(filePath: string): Finding[] {
     const posixFilePath = toPosix(filePath);
     if (posixFilePath === SELF_FILE_POSIX) {
       return [];
     }
 
-    const content = readFileSync(path.join(ROOT, filePath), "utf8");
+    const buffer = readFileSync(path.join(ROOT, filePath));
+    const content = buffer.toString("utf8");
     const lines = content.split(/\r?\n/);
     const findings: Finding[] = [];
+    const ext = path.extname(filePath).toLowerCase();
+    const enforceMarkdownLineEnding = ext === ".md";
+
+    const hasUtf8Bom =
+      buffer.length >= 3 &&
+      buffer[0] === 0xef &&
+      buffer[1] === 0xbb &&
+      buffer[2] === 0xbf;
+
+    if (hasUtf8Bom && enforceMarkdownLineEnding) {
+      findings.push({
+        file: posixFilePath,
+        line: 1,
+        reason: "contains UTF-8 BOM (use UTF-8 without BOM)",
+        snippet: lines[0]?.trim() ?? "",
+      });
+    }
+
+    const firstCrIndex = content.indexOf("\r");
+    if (firstCrIndex >= 0 && enforceMarkdownLineEnding) {
+      const { line, lineText } = findLineByIndex(content, firstCrIndex);
+      findings.push({
+        file: posixFilePath,
+        line,
+        reason: "contains CRLF/CR line endings (use LF only)",
+        snippet: lineText.trim(),
+      });
+    }
 
     for (let index = 0; index < lines.length; index += 1) {
       const line = lines[index];

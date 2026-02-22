@@ -42,6 +42,7 @@ import { resolveBlockedNhisFetchTargets } from "@/lib/server/hyphen/target-polic
 import { requireUserSession } from "@/lib/server/route-auth";
 
 export const runtime = "nodejs";
+const NHIS_LOGIN_SESSION_EXPIRED_ERR_CODE = "LOGIN-999";
 
 const targetEnum = z.enum(NHIS_FETCH_TARGETS);
 const fetchSchema = z
@@ -276,6 +277,19 @@ export async function POST(req: Request) {
       });
 
       if (!executed.payload.ok) {
+        const failedErrCode =
+          typeof executed.firstFailed?.errCd === "string"
+            ? executed.firstFailed.errCd.trim().toUpperCase()
+            : "";
+        const hasSessionExpiredFailure = (executed.payload.failed ?? []).some(
+          (failure) =>
+            (failure.errCd || "").trim().toUpperCase() ===
+            NHIS_LOGIN_SESSION_EXPIRED_ERR_CODE
+        );
+        const failedStatusCode =
+          failedErrCode === NHIS_LOGIN_SESSION_EXPIRED_ERR_CODE || hasSessionExpiredFailure
+            ? 401
+            : 502;
         await persistNhisFetchResult({
           appUserId: auth.data.appUserId,
           identityHash: identity.identityHash,
@@ -284,7 +298,7 @@ export async function POST(req: Request) {
           targets: requestHashMeta.normalizedTargets,
           yearLimit: effectiveYearLimit,
           requestDefaults,
-          statusCode: 502,
+          statusCode: failedStatusCode,
           payload: executed.payload,
           firstFailed: executed.firstFailed,
           updateFetchedAt: false,
@@ -295,11 +309,11 @@ export async function POST(req: Request) {
           requestHash: requestHashMeta.requestHash,
           requestKey: requestHashMeta.requestKey,
           forceRefresh,
-          statusCode: 502,
+          statusCode: failedStatusCode,
           ok: false,
         });
         return {
-          statusCode: 502,
+          statusCode: failedStatusCode,
           payload: executed.payload,
         };
       }

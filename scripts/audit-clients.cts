@@ -1,5 +1,5 @@
-import { PrismaClient } from "@prisma/client";
-import { CLIENT_COOKIE_NAME } from "../lib/shared/client-id";
+const { PrismaClient } = require("@prisma/client") as typeof import("@prisma/client");
+const { CLIENT_COOKIE_NAME } = require("../lib/shared/client-id.ts") as typeof import("../lib/shared/client-id");
 
 const prisma = new PrismaClient();
 
@@ -31,21 +31,21 @@ async function main() {
 
   const dayCounts = new Map<string, number>();
   const hourCounts = new Map<string, number>();
-  for (const c of recentClients) {
-    const dayKey = formatDateKey(c.createdAt);
+  for (const client of recentClients) {
+    const dayKey = formatDateKey(client.createdAt);
     dayCounts.set(dayKey, (dayCounts.get(dayKey) || 0) + 1);
-    if (c.createdAt >= dayAgo) {
-      const hourKey = formatDateKey(c.createdAt, "hour");
+    if (client.createdAt >= dayAgo) {
+      const hourKey = formatDateKey(client.createdAt, "hour");
       hourCounts.set(hourKey, (hourCounts.get(hourKey) || 0) + 1);
     }
   }
 
   const uaTotals = new Map<string, { total: number; recent: number }>();
-  for (const c of allClients) {
-    const ua = c.userAgent || "<empty>";
+  for (const client of allClients) {
+    const ua = client.userAgent || "<empty>";
     const bucket = uaTotals.get(ua) || { total: 0, recent: 0 };
     bucket.total += 1;
-    if (c.createdAt >= weekAgo) bucket.recent += 1;
+    if (client.createdAt >= weekAgo) bucket.recent += 1;
     uaTotals.set(ua, bucket);
   }
   const topUa = Array.from(uaTotals.entries())
@@ -53,17 +53,19 @@ async function main() {
     .slice(0, 10);
 
   const lengthBuckets = new Map<number, number>();
-  for (const c of allClients) {
-    const len = c.id.length;
-    lengthBuckets.set(len, (lengthBuckets.get(len) || 0) + 1);
+  for (const client of allClients) {
+    const length = client.id.length;
+    lengthBuckets.set(length, (lengthBuckets.get(length) || 0) + 1);
   }
 
-  const shortLived = allClients.filter((c) => {
-    if (!c.lastSeenAt) return true;
-    return c.lastSeenAt.getTime() - c.createdAt.getTime() < 5 * 60 * 1000;
+  const shortLived = allClients.filter((client) => {
+    if (!client.lastSeenAt) return true;
+    return client.lastSeenAt.getTime() - client.createdAt.getTime() < 5 * 60 * 1000;
   }).length;
 
-  const activeWithinWeek = allClients.filter((c) => c.lastSeenAt && c.lastSeenAt >= weekAgo).length;
+  const activeWithinWeek = allClients.filter(
+    (client) => client.lastSeenAt && client.lastSeenAt >= weekAgo
+  ).length;
 
   const [usersWithClient, userTotal] = await Promise.all([
     prisma.appUser.count({ where: { clientId: { not: null } } }),
@@ -109,7 +111,7 @@ async function main() {
 }
 
 main()
-  .catch((err) => {
+  .catch((err: unknown) => {
     console.error(err);
     process.exit(1);
   })

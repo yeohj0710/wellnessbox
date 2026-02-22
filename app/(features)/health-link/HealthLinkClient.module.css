@@ -160,6 +160,17 @@
   cursor: not-allowed;
 }
 
+.ghostButton:focus-visible,
+.nextButton:focus-visible,
+.unlinkButton:focus-visible,
+.detailButton:focus-visible,
+.advancedActionDetails summary:focus-visible,
+.statusDetails summary:focus-visible,
+.rawSection summary:focus-visible {
+  outline: 2px solid #6ba4ff;
+  outline-offset: 2px;
+}
+
 .spinnerLabel {
   display: inline-flex;
   align-items: center;
@@ -442,6 +453,12 @@
   font-weight: 700;
 }
 
+.detailsBody {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+
 .metaGrid {
   margin-top: 10px;
   display: grid;
@@ -486,6 +503,27 @@
   gap: 8px;
 }
 
+.advancedActionDetails {
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #fafcff;
+  padding: 10px 12px;
+}
+
+.advancedActionDetails summary {
+  cursor: pointer;
+  user-select: none;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.advancedActionBody {
+  margin-top: 8px;
+  display: grid;
+  gap: 8px;
+}
+
 .detailButton {
   min-height: 40px;
   border: 1px solid #cde2ff;
@@ -514,7 +552,7 @@
 
 .metricGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -624,11 +662,176 @@
   font-size: 13px;
 }
 
+.compactSection {
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.compactHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.compactHeader h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.compactHeader span {
+  color: var(--ink-3);
+  font-size: 12px;
+}
+
+.metricList {
+  display: grid;
+  gap: 8px;
+}
+
+.metricRow {
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #fafcff;
+  padding: 10px;
+  display: grid;
+  gap: 6px;
+}
+
+.metricRowMain {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.metricRowMain strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-1);
+}
+
+.metricRowMain span {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-1);
+}
+
+.metricRowMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.metricRowMeta small {
+  color: var(--ink-3);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.metricTone {
+  border-radius: 999px;
+  border: 1px solid transparent;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.toneNormal {
+  color: #107c41;
+  border-color: #b7e2c7;
+  background: #ecfaf1;
+}
+
+.toneCaution {
+  color: #b54708;
+  border-color: #ffd8ae;
+  background: #fff3e8;
+}
+
+.toneUnknown {
+  color: #475467;
+  border-color: #d0d5dd;
+  background: #f8f9fb;
+}
+
+.medicationGrid {
+  display: grid;
+  gap: 8px;
+}
+
+.medicationBlock {
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #f9fafc;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.medicationBlock strong {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.chipWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.infoChip {
+  border-radius: 999px;
+  border: 1px solid #d8dfee;
+  background: #ffffff;
+  color: var(--ink-2);
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.recentMedicationList {
+  display: grid;
+  gap: 6px;
+}
+
+.recentMedicationItem {
+  border-radius: 8px;
+  border: 1px solid #e6eaf2;
+  background: #fff;
+  padding: 8px;
+  display: grid;
+  gap: 2px;
+}
+
+.recentMedicationItem span {
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.recentMedicationItem strong {
+  font-size: 13px;
+  color: var(--ink-1);
+}
+
+.recentMedicationItem small {
+  font-size: 11px;
+  color: var(--ink-2);
+}
+
 .rawSection {
   border-radius: 14px;
   border: 1px solid var(--line);
   background: #fff;
   padding: 10px 12px;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .rawSection summary {
@@ -640,6 +843,7 @@
 
 .rawGrid {
   margin-top: 10px;
+  min-width: 0;
 }
 
 .rawBlock {
@@ -647,6 +851,9 @@
   border: 1px solid var(--line);
   background: #f9fafc;
   padding: 10px;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .rawTitle {
@@ -657,10 +864,16 @@
 }
 
 .rawPre {
+  display: block;
   margin: 0;
+  width: 100%;
+  max-width: 100%;
   max-height: 300px;
-  overflow: auto;
-  white-space: pre;
+  overflow-x: auto;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   font-size: 11px;
   line-height: 1.45;
   color: var(--ink-1);

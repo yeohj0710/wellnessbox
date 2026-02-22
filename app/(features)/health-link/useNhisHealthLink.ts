@@ -1,22 +1,26 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   NHIS_FETCH_DAILY_LIMIT_ERR_CODE,
   NHIS_FORCE_REFRESH_COOLDOWN_ERR_CODE,
   NHIS_FORCE_REFRESH_DAILY_LIMIT_ERR_CODE,
   NHIS_TARGET_POLICY_BLOCKED_ERR_CODE,
 } from "@/lib/shared/hyphen-fetch";
-import { NHIS_ERR_CODE_HEALTHIN_REQUIRED, NHIS_LOGIN_ORG } from "./constants";
+import {
+  NHIS_ERR_CODE_HEALTHIN_REQUIRED,
+  NHIS_ERR_CODE_LOGIN_SESSION_EXPIRED,
+  NHIS_LOGIN_ORG,
+} from "./constants";
 import { HEALTH_LINK_COPY } from "./copy";
 import {
   buildFetchNotice,
   buildForceRefreshCooldownMessage,
   CHECKUP_DETAIL_TARGETS,
-  CHECKUP_ONLY_TARGETS,
   DETAIL_YEAR_LIMIT,
   getFetchMessages,
   mapFetchCacheInfo,
+  SUMMARY_FETCH_TARGETS,
   type FetchCacheInfo,
   type FetchMessages,
   type FetchMode,
@@ -28,16 +32,22 @@ import type {
   NhisFetchResponse,
   NhisStatusResponse,
 } from "./types";
-import { parseErrorMessage, readJson } from "./utils";
+import { hasNhisSessionExpiredFailure, parseErrorMessage, readJson } from "./utils";
 
 function resolveActionErrorMessage(
   payload: Pick<
     NhisActionResponse,
     "error" | "errCd" | "errMsg" | "retryAfterSec" | "blockedTargets" | "budget"
-  >,
+  > & { failed?: NhisFetchFailure[] },
   fallback: string
 ) {
   const errCode = payload.errCd?.trim() || null;
+  if (
+    errCode === NHIS_ERR_CODE_LOGIN_SESSION_EXPIRED ||
+    hasNhisSessionExpiredFailure(payload.failed ?? [])
+  ) {
+    return HEALTH_LINK_COPY.hook.sessionExpiredDetected;
+  }
   if (errCode === NHIS_FORCE_REFRESH_COOLDOWN_ERR_CODE) {
     if (typeof payload.retryAfterSec === "number" && payload.retryAfterSec > 0) {
       return buildForceRefreshCooldownMessage(payload.retryAfterSec);
@@ -86,6 +96,7 @@ function resolveActionErrorMessage(
 }
 
 export function useNhisHealthLink(loggedIn: boolean) {
+  const autoFetchAfterSignRef = useRef(false);
   const [status, setStatus] = useState<NhisStatusResponse["status"]>();
   const [statusError, setStatusError] = useState<string | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
@@ -161,9 +172,25 @@ export function useNhisHealthLink(loggedIn: boolean) {
         });
         const data = await readJson<T>(res);
         if (!res.ok || !data.ok) {
-          const errCode = (data as NhisActionResponse).errCd?.trim() || null;
+          const responseLike = data as NhisActionResponse & {
+            failed?: NhisFetchFailure[];
+          };
+          const firstFailedCode =
+            responseLike.failed
+              ?.map((item) => item.errCd?.trim() || null)
+              .find((code) => code !== null) ?? null;
+          const hasSessionExpiredFailure = hasNhisSessionExpiredFailure(
+            responseLike.failed ?? []
+          );
+          const errCode =
+            responseLike.errCd?.trim() ||
+            (hasSessionExpiredFailure ? NHIS_ERR_CODE_LOGIN_SESSION_EXPIRED : null) ||
+            firstFailedCode;
           const msg = resolveActionErrorMessage(
-            data as NhisActionResponse,
+            {
+              ...responseLike,
+              errCd: errCode,
+            },
             options.fallbackError
           );
           setActionErrorCode(errCode);
@@ -222,7 +249,7 @@ export function useNhisHealthLink(loggedIn: boolean) {
         kind: isDetail ? "fetchDetail" : "fetch",
         url: "/api/health/nhis/fetch",
         body: {
-          targets: isDetail ? CHECKUP_DETAIL_TARGETS : CHECKUP_ONLY_TARGETS,
+          targets: isDetail ? CHECKUP_DETAIL_TARGETS : SUMMARY_FETCH_TARGETS,
           ...(isDetail ? { yearLimit: DETAIL_YEAR_LIMIT } : {}),
           ...(forceRefresh ? { forceRefresh: true } : {}),
         },
@@ -271,6 +298,9 @@ export function useNhisHealthLink(loggedIn: boolean) {
         mobileNo,
       },
       onSuccess: async (payload) => {
+        setFetchFailures([]);
+        setFetched(null);
+        setFetchCacheInfo(null);
         setActionNotice(
           payload.reused
             ? HEALTH_LINK_COPY.hook.initNoticeReused
@@ -290,11 +320,13 @@ export function useNhisHealthLink(loggedIn: boolean) {
       url: "/api/health/nhis/sign",
       fallbackError: HEALTH_LINK_COPY.hook.signFallback,
       onSuccess: async (payload) => {
+        setFetchFailures([]);
         setActionNotice(
           payload.reused
             ? HEALTH_LINK_COPY.hook.signNoticeReused
             : HEALTH_LINK_COPY.hook.signNoticeCompleted
         );
+        autoFetchAfterSignRef.current = true;
         await loadStatus();
       },
       onFailure: async () => {
@@ -302,6 +334,16 @@ export function useNhisHealthLink(loggedIn: boolean) {
       },
     });
   }, [loadStatus, runRequest]);
+
+  useEffect(() => {
+    if (!autoFetchAfterSignRef.current) return;
+    if (actionLoading !== null) return;
+    if (!status?.linked) return;
+
+    autoFetchAfterSignRef.current = false;
+    setActionNotice(HEALTH_LINK_COPY.hook.autoFetchAfterSignNotice);
+    void runFetch("summary");
+  }, [actionLoading, runFetch, status?.linked]);
 
   const handleFetch = useCallback(async () => {
     await runFetch("summary");
@@ -361,6 +403,7 @@ export function useNhisHealthLink(loggedIn: boolean) {
     actionLoading,
     actionNotice,
     actionError,
+    actionErrorCode,
     fetched,
     fetchFailures,
     fetchCacheInfo,

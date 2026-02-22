@@ -13,6 +13,7 @@ export type NhisFetchTarget = (typeof NHIS_FETCH_TARGETS)[number];
 
 export const LOW_COST_NHIS_FETCH_TARGETS: NhisFetchTarget[] = [
   "checkupOverview",
+  "medication",
   "checkupList",
   "checkupYearly",
 ];

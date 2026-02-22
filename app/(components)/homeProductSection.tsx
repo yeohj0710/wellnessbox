@@ -13,7 +13,6 @@ import ProductDetail from "@/components/product/productDetail";
 import Cart from "@/components/order/cart";
 import { sortByImportanceDesc } from "@/lib/utils";
 import { useFooter } from "@/components/common/footerContext";
-import axios from "axios";
 import { getLowestAverageOptionType } from "@/lib/utils";
 import { useLoading } from "@/components/common/loadingContext.client";
 import { useToast } from "@/components/common/toastContext.client";
@@ -65,6 +64,12 @@ import {
   HomeProductsStatusState,
   SelectedPharmacyNotice,
 } from "./homeProductSection.view";
+import {
+  HOME_PACKAGE_LABELS,
+  HOME_PRODUCT_COPY,
+  resolvePackageFromQueryParam,
+} from "./homeProductSection.copy";
+import { useHomeProductPharmacy } from "./useHomeProductPharmacy";
 
 interface HomeProductSectionProps {
   initialCategories?: any[];
@@ -109,20 +114,32 @@ export default function HomeProductSection({
   );
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
-  const [selectedPackage, setSelectedPackage] = useState<string>("전체");
+  const [selectedPackage, setSelectedPackage] = useState<string>(
+    HOME_PACKAGE_LABELS.all
+  );
   const deferredSelectedCategories = useDeferredValue(selectedCategories);
   const deferredSelectedPackage = useDeferredValue(selectedPackage);
   const [totalPrice, setTotalPrice] = useState(0);
   const [isCartBarLoading, setIsCartBarLoading] = useState(false);
   const [roadAddress, setRoadAddress] = useState("");
-  const [pharmacies, setPharmacies] = useState<any[]>([]);
   const [selectedPharmacy, setSelectedPharmacy] = useState<any>(null);
-  const [pharmacyError, setPharmacyError] = useState<string | null>(null);
-  const [pharmacyResolveToken, setPharmacyResolveToken] = useState(0);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [cartItems, setCartItems] = useState<any[]>(() =>
     typeof window !== "undefined" ? readClientCartItems() : []
   );
+  const {
+    pharmacies,
+    pharmacyError,
+    isPharmacyLoading,
+    retryPharmacyResolve,
+    resetPharmacyState,
+  } = useHomeProductPharmacy({
+    cartItems,
+    roadAddress,
+    selectedPharmacy,
+    setSelectedPharmacy,
+    setCartItems,
+  });
   const syncCartItemsFromStorage = useCallback(() => {
     const next = readClientCartItems();
     setCartItems((prev) =>
@@ -130,14 +147,10 @@ export default function HomeProductSection({
     );
   }, []);
 
-  const [mounted, setMounted] = useState(false);
   const [isRecovering, setIsRecovering] = useState(false);
   const filterInteractionStartedRef = useRef<number | null>(null);
   const missingAddressPromptedRef = useRef(false);
   const homeFetchSeqRef = useRef(0);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const applyHomeData = useCallback(
     (
@@ -241,15 +254,15 @@ export default function HomeProductSection({
             staleCache.products,
             staleCache.cacheTimestamp
           );
-          setError("Connection is slow. Showing cached products.");
+          setError(HOME_PRODUCT_COPY.connectionSlowUsingCache);
           setIsRecovering(true);
           return;
         }
 
         if (error instanceof FetchTimeoutError) {
-          setError("Loading products timed out. Please try again.");
+          setError(HOME_PRODUCT_COPY.loadingTimeout);
         } else {
-          setError("Failed to load products. Please retry.");
+          setError(HOME_PRODUCT_COPY.loadFailed);
         }
       } finally {
         if (requestSeq === homeFetchSeqRef.current) {
@@ -362,7 +375,7 @@ export default function HomeProductSection({
       const target = document.getElementById("home-products");
       if (!target) return;
       target.scrollIntoView({ behavior: "smooth", block: "start" });
-      showToast("Moved to product section.");
+      showToast(HOME_PRODUCT_COPY.movedToProductSection);
     };
 
     window.addEventListener(CHAT_PAGE_ACTION_EVENT, onPageAction as EventListener);
@@ -373,8 +386,6 @@ export default function HomeProductSection({
       );
     };
   }, [showToast]);
-
-  const [isSymptomModalVisible, setIsSymptomModalVisible] = useState(false);
 
   const openProductDetail = (product: any) => {
     if (typeof window !== "undefined") {
@@ -447,10 +458,12 @@ export default function HomeProductSection({
   }, [openCart]);
 
   useEffect(() => {
-    const pkg = searchParams.get("package");
-    if (pkg === "7") setSelectedPackage("7일 패키지");
-    else if (pkg === "30") setSelectedPackage("30일 패키지");
-    else if (pkg === "normal") setSelectedPackage("일반 상품");
+    const resolvedPackage = resolvePackageFromQueryParam(
+      searchParams.get("package")
+    );
+    if (resolvedPackage) {
+      setSelectedPackage(resolvedPackage);
+    }
   }, [searchParams]);
 
   const didHashScrollRef = useRef(false);
@@ -586,9 +599,7 @@ export default function HomeProductSection({
   useEffect(() => {
     const handleCleared = () => {
       setRoadAddress("");
-      setPharmacies([]);
-      setSelectedPharmacy(null);
-      setPharmacyError(null);
+      resetPharmacyState();
       setCartItems([]);
       setIsCartVisible(false);
       setTotalPrice(0);
@@ -598,7 +609,7 @@ export default function HomeProductSection({
     };
     window.addEventListener("addressCleared", handleCleared);
     return () => window.removeEventListener("addressCleared", handleCleared);
-  }, [allProducts]);
+  }, [resetPharmacyState]);
 
   useEffect(() => {
     if (roadAddress.trim() || cartItems.length === 0) {
@@ -682,81 +693,6 @@ export default function HomeProductSection({
     }
   }, [selectedPharmacy, isLoading, allProducts.length, cartItems]);
 
-  const [isPharmacyLoading, setIsPharmacyLoading] = useState(false);
-  const retryPharmacyResolve = useCallback(() => {
-    setPharmacyResolveToken((prev) => prev + 1);
-  }, []);
-
-  useEffect(() => {
-    if (cartItems.length === 0) {
-      setPharmacies([]);
-      setSelectedPharmacy(null);
-      setPharmacyError(null);
-      setIsPharmacyLoading(false);
-      return;
-    }
-    if (!roadAddress) {
-      setPharmacies([]);
-      setSelectedPharmacy(null);
-      setPharmacyError(
-        "주소를 설정해 주세요! 해당 상품을 주문할 수 있는 약국을 보여드릴게요."
-      );
-      setIsPharmacyLoading(false);
-      return;
-    }
-
-    const controller = new AbortController();
-    let alive = true;
-
-    setIsPharmacyLoading(true);
-    setPharmacyError(null);
-    (async () => {
-      try {
-        const response = await axios.post(
-          "/api/get-sorted-pharmacies",
-          { cartItem: cartItems[0], roadAddress },
-          { signal: controller.signal, timeout: 9000 }
-        );
-        const sortedPharmacies = response.data?.pharmacies || [];
-        const filteredPharmacies = sortedPharmacies.filter(
-          (pharmacy: any) => pharmacy.registrationNumber !== null
-        );
-        if (!alive) return;
-
-        if (!filteredPharmacies.length) {
-          alert(
-            "선택하신 상품의 해당량만큼의 재고를 보유한 약국이 존재하지 않아요. 해당 상품을 장바구니에서 제외할게요."
-          );
-          setPharmacyError("No nearby pharmacy has stock for this item.");
-          const updatedCartItems = writeClientCartItems(cartItems.slice(1));
-          setCartItems(updatedCartItems);
-          window.dispatchEvent(new Event("cartUpdated"));
-          return;
-        }
-
-        setPharmacies(filteredPharmacies);
-        if (
-          !selectedPharmacy ||
-          !filteredPharmacies.some((p: any) => p.id === selectedPharmacy.id)
-        ) {
-          setSelectedPharmacy(filteredPharmacies[0]);
-        }
-      } catch (e: any) {
-        if (e?.name === "CanceledError") return;
-        if (alive) {
-          setPharmacyError("Failed to load nearby pharmacies. Retry.");
-        }
-        console.error("약국 정보를 가져오는 데 실패했습니다:", e);
-      } finally {
-        if (alive) setIsPharmacyLoading(false);
-      }
-    })();
-
-    return () => {
-      alive = false;
-      controller.abort();
-    };
-  }, [roadAddress, cartItems, selectedPharmacy?.id, pharmacyResolveToken]);
 
   useEffect(() => {
     const filtered = filterHomeProducts({
@@ -790,14 +726,6 @@ export default function HomeProductSection({
       return updated;
     });
   };
-  const handleSearchSelect = (selectedItems: string[]) => {
-    setSelectedSymptoms(selectedItems);
-    setIsSymptomModalVisible(false);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("visited", "true");
-    }
-  };
-
   return (
     <div
       id="home-products"
@@ -806,17 +734,6 @@ export default function HomeProductSection({
         totalPrice > 0 ? "pb-20" : ""
       }`}
     >
-      {mounted &&
-        isSymptomModalVisible &&
-        cartItems.length === 0 &&
-        !isCartVisible && (
-          <></>
-          // <SymptomModal
-          //   onSelect={handleSearchSelect}
-          //   onClose={() => setIsSymptomModalVisible(false)}
-          // />
-        )}
-
       <AddressSection
         roadAddress={roadAddress}
         setRoadAddress={setRoadAddress}
@@ -890,7 +807,7 @@ export default function HomeProductSection({
         <ProductDetail
           product={selectedProduct}
           optionType={
-            selectedPackage === "전체"
+            selectedPackage === HOME_PACKAGE_LABELS.all
               ? getLowestAverageOptionType({
                   product: selectedProduct,
                   pharmacy: selectedPharmacy,

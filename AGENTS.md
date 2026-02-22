@@ -25,6 +25,13 @@
 - `npm run dev`, `npm run lint`, and `npm run build` now execute encoding audit automatically via `pre*` scripts; do not remove this chain.
 - CI guard is defined in `.github/workflows/encoding-guard.yml`; keep it passing on every PR.
 
+### UI copy locale safety (critical)
+
+- WellnessBox user-facing copy defaults to **Korean** (`ko-KR`) unless the task explicitly asks for another language.
+- Do not ship new English-only labels/messages/placeholders in app UI (`app/**`, `components/**`) without explicit requirement.
+- For mixed-language terms (brand/protocol/API identifiers), keep user-visible explanation in Korean.
+- Before finalizing UI text changes, run a quick grep on touched files and verify accidental English copy is not introduced.
+
 ### Default work order
 
 1. Scope impact with `rg`
@@ -229,3 +236,4 @@ Do NOT load all R&D docs at once unless explicitly required.
 - Instantiating new `PrismaClient` per import location
 - Re-introducing dev/build script duplication by manually calling pre hooks inside script bodies
 - Editing Korean/non-ASCII files with shell overwrite commands that can change encoding
+- Shipping English-only user-facing UI copy on Korean-first surfaces without explicit requirement

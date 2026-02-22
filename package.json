@@ -14,7 +14,7 @@
     "prelint": "npm run audit:encoding",
     "lint": "next lint",
     "perf:push-benchmark": "node scripts/perf/push-notification-benchmark.cjs",
-    "audit:clients": "ts-node scripts/audit-clients.ts",
+    "audit:clients": "ts-node scripts/audit-clients.cts",
     "audit:encoding": "ts-node scripts/audit-encoding.ts",
     "audit:hotspots": "ts-node scripts/audit-hotspots.ts",
     "maintenance:nhis-prune-attempts": "ts-node scripts/maintenance/prune-hyphen-fetch-attempts.cts",

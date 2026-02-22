@@ -3,9 +3,20 @@
 import { HealthLinkAuthSection } from "./components/HealthLinkAuthSection";
 import { HealthLinkHeader } from "./components/HealthLinkHeader";
 import { HealthLinkResultSection } from "./components/HealthLinkResultSection";
+import { NHIS_ERR_CODE_LOGIN_SESSION_EXPIRED } from "./constants";
+import { HEALTH_LINK_COPY } from "./copy";
 import type { HealthLinkClientProps } from "./types";
 import { useNhisHealthLink } from "./useNhisHealthLink";
-import { filterCheckupMetricRows, formatDateTime } from "./utils";
+import {
+  extractLatestCheckupMeta,
+  filterCheckupMetricRows,
+  formatDateTime,
+  hasNhisSessionExpiredFailure,
+  isNhisSessionExpiredError,
+  resolveCheckupMetricTone,
+  selectLatestCheckupRows,
+  summarizeMedicationRows,
+} from "./utils";
 import {
   buildForceRefreshConfirmMessage,
   resolveFetchCacheHint,
@@ -20,7 +31,6 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
   const {
     status,
     statusError,
-    statusLoading,
     resNm,
     setResNm,
     resNo,
@@ -30,24 +40,20 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
     actionLoading,
     actionNotice,
     actionError,
+    actionErrorCode,
     fetched,
     fetchFailures,
     fetchCacheInfo,
     canRequest,
     canSign,
     canFetch,
-    hasDetailedRows,
     forceRefreshBlocked,
     forceRefreshRemainingSeconds,
-    currentStep,
     showHealthInPrereqGuide,
-    loadStatus,
     handleInit,
     handleSign,
     handleFetch,
     handleFetchFresh,
-    handleFetchDetailed,
-    handleFetchDetailedFresh,
     handleUnlink,
   } = useNhisHealthLink(loggedIn);
 
@@ -61,27 +67,52 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
         ? styles.statusPending
         : styles.statusOff;
 
-  const primaryFlow = resolvePrimaryFlow(statusLinked, hasAuthRequested);
+  const basePrimaryFlow = resolvePrimaryFlow(statusLinked, hasAuthRequested);
+  const statusSessionExpired = isNhisSessionExpiredError(
+    status?.lastError?.code,
+    status?.lastError?.message
+  );
+  const hasFetchedResponse = fetched !== null;
+  const hasSessionExpiredSignal =
+    actionErrorCode === NHIS_ERR_CODE_LOGIN_SESSION_EXPIRED ||
+    hasNhisSessionExpiredFailure(fetchFailures) ||
+    statusSessionExpired;
+  const shouldForceReauth = hasSessionExpiredSignal && !hasFetchedResponse;
+  const showAuthStage = !statusLinked || shouldForceReauth;
+  const primaryFlow = shouldForceReauth
+    ? ({
+        kind: "init" as const,
+        step: 1,
+        title: HEALTH_LINK_COPY.flow.reauth.title,
+        guide: HEALTH_LINK_COPY.flow.reauth.guide,
+      } as const)
+    : basePrimaryFlow;
 
   const checkupOverviewRows = fetched?.normalized?.checkup?.overview ?? [];
-  const checkupListRows = fetched?.normalized?.checkup?.list ?? [];
-  const checkupYearlyRows = fetched?.normalized?.checkup?.yearly ?? [];
   const checkupSummary = fetched?.normalized?.checkup?.summary;
-  const metricSourceRows = [...checkupYearlyRows, ...checkupListRows, ...checkupOverviewRows];
+  const medicationRows = fetched?.normalized?.medication?.list ?? [];
+  const metricSourceRows = checkupOverviewRows;
   const checkupMetricRows = filterCheckupMetricRows(metricSourceRows);
-  const displayRows = checkupMetricRows.length > 0 ? checkupMetricRows : checkupOverviewRows;
-  const hasFetchResult = displayRows.length > 0;
+  const latestCheckupRows = selectLatestCheckupRows(checkupMetricRows).map((row) => ({
+    ...row,
+    statusTone: resolveCheckupMetricTone(row),
+  }));
+  const latestCheckupMeta = extractLatestCheckupMeta(
+    selectLatestCheckupRows(checkupOverviewRows)
+  );
+  const medicationDigest = summarizeMedicationRows(medicationRows);
+  const hasFetchResult = latestCheckupRows.length > 0 || medicationRows.length > 0;
   const fetchCacheHint = resolveFetchCacheHint(fetchCacheInfo, formatDateTime);
 
   const primaryLoading = actionLoading === primaryFlow.kind;
-  const detailLoading = actionLoading === "fetchDetail";
-  const primaryButtonLabel = resolvePrimaryButtonLabel(primaryFlow.kind === "fetch", hasFetchResult);
+  const primaryButtonLabel = shouldForceReauth
+    ? HEALTH_LINK_COPY.action.retryAuth
+    : resolvePrimaryButtonLabel(primaryFlow.kind === "fetch", hasFetchResult);
   const primaryDisabled =
     !loggedIn ||
     !canRequest ||
     (primaryFlow.kind === "sign" && !canSign) ||
     (primaryFlow.kind === "fetch" && !canFetch);
-  const detailDisabled = !canFetch || !canRequest || hasDetailedRows;
   const forceRefreshAvailableAt = status?.forceRefresh?.availableAt ?? null;
   const forceRefreshBudgetRemaining = status?.fetchBudget?.forceRefresh.remaining ?? null;
   const forceRefreshBudgetLimit = status?.fetchBudget?.forceRefresh.limit ?? null;
@@ -89,7 +120,7 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
   const forceRefreshBudgetBlocked =
     typeof forceRefreshBudgetRemaining === "number" && forceRefreshBudgetRemaining <= 0;
   const forceRefreshDisabled =
-    detailDisabled || forceRefreshBlocked || forceRefreshBudgetBlocked;
+    !canFetch || !canRequest || forceRefreshBlocked || forceRefreshBudgetBlocked;
   const forceRefreshHint = resolveForceRefreshHint(
     forceRefreshBlocked,
     forceRefreshRemainingSeconds,
@@ -101,7 +132,6 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
     },
     formatDateTime
   );
-  const showForceRefreshHint = forceRefreshBlocked || forceRefreshBudgetBlocked;
 
   const handlePrimaryAction = () => {
     if (primaryFlow.kind === "init") {
@@ -115,20 +145,14 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
     void handleFetch();
   };
 
-  const confirmForceRefresh = (kind: "summary" | "detail") => {
-    return window.confirm(buildForceRefreshConfirmMessage(kind));
+  const confirmForceRefresh = () => {
+    return window.confirm(buildForceRefreshConfirmMessage("summary"));
   };
 
   const handleSummaryFreshAction = () => {
     if (forceRefreshBlocked || forceRefreshBudgetBlocked) return;
-    if (!confirmForceRefresh("summary")) return;
+    if (!confirmForceRefresh()) return;
     void handleFetchFresh();
-  };
-
-  const handleDetailFreshAction = () => {
-    if (forceRefreshBlocked || forceRefreshBudgetBlocked) return;
-    if (!confirmForceRefresh("detail")) return;
-    void handleFetchDetailedFresh();
   };
 
   return (
@@ -139,58 +163,51 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
         statusChipTone={statusChipTone}
         loginOrgCd={status?.loginOrgCd}
         lastLinkedAt={status?.lastLinkedAt}
+        showResultMode={!showAuthStage}
       />
 
-      <HealthLinkAuthSection
-        loggedIn={loggedIn}
-        status={status}
-        statusLinked={statusLinked}
-        statusLoading={statusLoading}
-        statusError={statusError}
-        actionNotice={actionNotice}
-        actionError={actionError}
-        showHealthInPrereqGuide={showHealthInPrereqGuide}
-        currentStep={currentStep}
-        primaryFlow={primaryFlow}
-        canRequest={canRequest}
-        primaryDisabled={primaryDisabled}
-        primaryLoading={primaryLoading}
-        primaryButtonLabel={primaryButtonLabel}
-        resNm={resNm}
-        setResNm={setResNm}
-        resNo={resNo}
-        setResNo={setResNo}
-        mobileNo={mobileNo}
-        setMobileNo={setMobileNo}
-        forceRefreshRemainingSeconds={forceRefreshRemainingSeconds}
-        forceRefreshAvailableAt={forceRefreshAvailableAt}
-        onRefreshStatus={() => void loadStatus()}
-        onPrimaryAction={handlePrimaryAction}
-        onUnlink={() => void handleUnlink()}
-      />
+      {showAuthStage ? (
+        <HealthLinkAuthSection
+          loggedIn={loggedIn}
+          statusError={statusError}
+          actionNotice={actionNotice}
+          actionError={actionError}
+          actionErrorCode={actionErrorCode}
+          sessionExpired={shouldForceReauth}
+          showHealthInPrereqGuide={showHealthInPrereqGuide}
+          primaryFlow={primaryFlow}
+          canRequest={canRequest}
+          primaryDisabled={primaryDisabled}
+          primaryLoading={primaryLoading}
+          primaryButtonLabel={primaryButtonLabel}
+          resNm={resNm}
+          setResNm={setResNm}
+          resNo={resNo}
+          setResNo={setResNo}
+          mobileNo={mobileNo}
+          setMobileNo={setMobileNo}
+          onPrimaryAction={handlePrimaryAction}
+          onUnlink={() => void handleUnlink()}
+        />
+      ) : null}
 
-      <HealthLinkResultSection
-        linked={!!status?.linked}
-        fetchCacheHint={fetchCacheHint}
-        showForceRefreshHint={showForceRefreshHint}
-        forceRefreshHint={forceRefreshHint}
-        detailAlreadyLoaded={hasDetailedRows}
-        detailDisabled={detailDisabled}
-        forceRefreshDisabled={forceRefreshDisabled}
-        primaryLoading={primaryLoading}
-        detailLoading={detailLoading}
-        fetchFailures={fetchFailures}
-        hasFetchResult={hasFetchResult}
-        checkupMetricRows={checkupMetricRows}
-        checkupYearlyRows={checkupYearlyRows}
-        checkupOverviewRows={checkupOverviewRows}
-        checkupSummary={checkupSummary}
-        displayRows={displayRows}
-        raw={fetched?.raw}
-        onFetchDetailed={() => void handleFetchDetailed()}
-        onDetailFresh={handleDetailFreshAction}
-        onSummaryFresh={handleSummaryFreshAction}
-      />
+      {!showAuthStage ? (
+        <HealthLinkResultSection
+          linked={!!status?.linked}
+          fetchCacheHint={fetchCacheHint}
+          forceRefreshHint={forceRefreshHint}
+          forceRefreshDisabled={forceRefreshDisabled}
+          primaryLoading={primaryLoading}
+          fetchFailures={fetchFailures}
+          hasFetchResult={hasFetchResult}
+          latestCheckupRows={latestCheckupRows}
+          latestCheckupMeta={latestCheckupMeta}
+          medicationDigest={medicationDigest}
+          checkupSummary={checkupSummary}
+          raw={fetched?.raw}
+          onSummaryFresh={handleSummaryFreshAction}
+        />
+      ) : null}
     </div>
   );
 }

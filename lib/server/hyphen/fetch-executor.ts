@@ -302,18 +302,13 @@ export async function executeNhisFetch(input: ExecuteNhisFetchInput): Promise<Ex
           yearlyRaw.push(bodyValue);
         }
       });
-    } else {
-      yearlyFailures.push({
-        errMsg: "건강검진결과목록에서 상세 조회 키(detailKey)를 찾지 못했습니다.",
-      });
-      yearlyRaw.push({
-        reason: "MISSING_DETAIL_KEY",
-        message: "건강검진결과목록에서 detailKey/detailKey2를 찾지 못했습니다.",
-      });
     }
 
     if (yearlyPayloads.length > 0) {
       successful.set("checkupYearly", yearlyPayloads);
+    } else if (keyPairs.length === 0) {
+      // 상세 조회 키가 없으면 연도별 상세 호출을 건너뛰고 빈 결과를 정상 처리한다.
+      successful.set("checkupYearly", []);
     } else {
       const firstFailure = yearlyFailures[0];
       failed.push({
@@ -328,12 +323,15 @@ export async function executeNhisFetch(input: ExecuteNhisFetchInput): Promise<Ex
   await Promise.all(independentJobs);
 
   if (successful.size === 0) {
+    const firstFailure = failed[0];
     const payload: NhisFetchRoutePayload = {
       ok: false,
       error: "데이터 조회에 실패했습니다. 잠시 후 다시 시도해 주세요.",
+      errCd: firstFailure?.errCd,
+      errMsg: firstFailure?.errMsg,
       failed,
     };
-    return { payload, firstFailed: failed[0] };
+    return { payload, firstFailed: firstFailure };
   }
 
   const checkupListPayload = (successful.get("checkupList") as HyphenApiResponse[] | undefined) ?? [];

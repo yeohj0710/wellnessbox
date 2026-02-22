@@ -1,4 +1,5 @@
 import { CATEGORY_LABELS } from "@/lib/categories";
+import { HOME_PACKAGE_LABELS } from "./homeProductSection.copy";
 
 type SymptomCategoryPair = {
   symptom: string;
@@ -123,7 +124,7 @@ export function filterHomeProducts(input: {
 
   if (
     input.selectedPharmacy &&
-    input.selectedPackage !== "\uC804\uCCB4"
+    input.selectedPackage !== HOME_PACKAGE_LABELS.all
   ) {
     filtered = filtered.filter((product) =>
       product.pharmacyProducts.some(
@@ -151,23 +152,23 @@ export function filterHomeProducts(input: {
     );
   }
 
-  if (input.selectedPackage === "7\uC77C \uD328\uD0A4\uC9C0") {
+  if (input.selectedPackage === HOME_PACKAGE_LABELS.days7) {
     filtered = filtered.filter((product: any) =>
       product.pharmacyProducts.some((pharmacyProduct: any) =>
         pharmacyProduct.optionType?.includes("7")
       )
     );
-  } else if (input.selectedPackage === "30\uC77C \uD328\uD0A4\uC9C0") {
+  } else if (input.selectedPackage === HOME_PACKAGE_LABELS.days30) {
     filtered = filtered.filter((product: any) =>
       product.pharmacyProducts.some((pharmacyProduct: any) =>
         pharmacyProduct.optionType?.includes("30")
       )
     );
-  } else if (input.selectedPackage === "\uC77C\uBC18 \uC0C1\uD488") {
+  } else if (input.selectedPackage === HOME_PACKAGE_LABELS.normal) {
     filtered = filtered.filter((product: any) =>
       product.pharmacyProducts.some(
         (pharmacyProduct: any) =>
-          pharmacyProduct.optionType === "\uC77C\uBC18 \uC0C1\uD488"
+          pharmacyProduct.optionType === HOME_PACKAGE_LABELS.normal
       )
     );
   }

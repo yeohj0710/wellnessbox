@@ -27,11 +27,13 @@ export function HealthLinkRawResponseSection({ raw }: HealthLinkRawResponseSecti
       <summary>{HEALTH_LINK_COPY.raw.summary}</summary>
       <div className={styles.rawGrid}>
         {raw?.checkupOverview !== undefined ? (
-          <RawJsonBlock title="checkupOverview raw" value={raw.checkupOverview} />
+          <RawJsonBlock title="검진 요약 원본" value={raw.checkupOverview} />
         ) : null}
-        {raw?.checkupList !== undefined ? <RawJsonBlock title="checkupList raw" value={raw.checkupList} /> : null}
+        {raw?.checkupList !== undefined ? (
+          <RawJsonBlock title="검진 목록 원본" value={raw.checkupList} />
+        ) : null}
         {raw?.checkupYearly !== undefined ? (
-          <RawJsonBlock title="checkupYearly raw" value={raw.checkupYearly} />
+          <RawJsonBlock title="검진 연도별 원본" value={raw.checkupYearly} />
         ) : null}
       </div>
     </details>

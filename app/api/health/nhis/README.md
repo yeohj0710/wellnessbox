@@ -38,8 +38,8 @@
 ## Fetch Cost Guardrails
 
 - High-cost targets are blocked by default (low-cost policy):
-  - blocked by default: `medical`, `medication`, `healthAge`
-  - allowed by default: `checkupOverview`, `checkupList`, `checkupYearly`
+  - blocked by default: `medical`, `healthAge`
+  - allowed by default: `checkupOverview`, `medication`, `checkupList`, `checkupYearly`
   - blocked request returns `400` with `errCd: NHIS_TARGET_POLICY_BLOCKED`
 - Detailed fetch policy is intentionally strict:
   - list year scan max 2 years per request

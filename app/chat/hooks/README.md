@@ -2,20 +2,20 @@
 
 ## Goal
 
-Keep `useChat.ts` as orchestration-only and move heavy logic into focused modules.
+Keep `useChat.ts` orchestration-focused and push parsing/branching/side-effect details into focused modules.
 
 ## Current Modules
 
 - `useChat.ts`
-  - Main state machine for chat sessions, active session routing, and UI-facing callbacks.
+  - Main chat state machine and UI-facing callbacks.
 - `useChat.api.ts`
-  - API wrappers for `chat`, `chat/title`, `chat/suggest`, `chat/actions`, `chat/save`, and `chat/delete`.
+  - API wrappers for chat, title, suggestions, actions, save, and delete.
 - `useChat.browser.ts`
   - Browser-only side effects (navigation, cart open/clear, external link).
 - `useChat.suggestions.ts`
   - Suggestion merge/dedupe/history utilities.
 - `useChat.agentDecision.ts`
-  - Action execution decision normalization and fallback action policy.
+  - Action execution decision normalization and fallback policy.
 - `useChat.interactiveActions.ts`
   - Interactive action execution flows.
 - `useChat.assessment.ts`
@@ -23,42 +23,56 @@ Keep `useChat.ts` as orchestration-only and move heavy logic into focused module
 - `useChat.evaluation.ts`
   - Quick/deep assessment scoring and result persistence calls.
 - `useChat.cart-command.ts`
-  - Cart command parsing + summary.
+  - Cart command parsing and summary formatting.
 - `useChat.session.ts`
   - Session draft/merge/title defaults.
 - `useChat.results.ts`
   - All-results payload normalization.
 - `useChat.text.ts`, `useChat.stream.ts`, `useChat.recommendation.ts`
-  - Text normalization, streaming reader, recommendation hydration.
+  - Text normalization, stream reader, recommendation hydration.
 - `useChat.assistant.ts`
   - Shared assistant stream flow (`/api/chat` request -> stream read -> sanitize -> recommendation hydration).
 - `useChat.persistence.ts`
   - Session persistence helpers (persistable filter + idempotent save-once transport).
 - `useChat.sessionState.ts`
-  - Pure immutable session-state update helpers for title/message append/replace paths.
+  - Pure immutable session-state update helpers.
 - `useChat.sendMessage.ts`
-  - Outgoing turn preparation helper for `sendMessage` (trim/validate/session refs/message construction).
+  - Outgoing turn preparation helper (trim/validate/session refs/message construction).
 - `useChat.sendMessageFlow.ts`
-  - Deterministic branch resolver for `sendMessage` (assessment/offline/action/cart/stream path selection).
+  - Deterministic send branch resolver (assessment/offline/action/cart/stream).
+- `useChat.actionFlow.ts`
+  - Cart-command and action-decision handlers used by `sendMessage`.
 - `useChat.streamTurn.ts`
-  - Shared streamed-assistant turn runner used by both `sendMessage` and initial assistant bootstrap.
+  - Shared streamed-assistant turn runner for `sendMessage` and initial assistant bootstrap.
 - `useChat.initialAssistant.ts`
-  - Initial assistant bootstrap flow (empty session guard, offline fallback, stream start, error handling).
+  - Initial assistant bootstrap flow (empty-session guard, offline fallback, stream start, error handling).
 - `useChat.sessionActions.ts`
-  - Session create/delete state transition helpers for `useChat.ts`.
+  - Session create/delete transition helpers.
 - `useChat.finalizeFlow.ts`
-  - Assistant turn finalization and title-generation flow helpers.
+  - Assistant turn finalization and title generation flow helpers.
 - `useChat.assessmentFlow.ts`
-  - In-chat assessment bootstrap/input handling flow helpers.
+  - In-chat assessment bootstrap/input handling helpers.
+- `useChat.copy.ts`
+  - Chat UX copy constants and assistant error-text formatter.
+- `useChat.lifecycle.ts`
+  - Session/profile/results bootstrap data loaders.
+- `useChat.ui.ts`
+  - Drawer/scroll UI helpers.
+- `useChat.interactionGuard.ts`
+  - Duplicate interactive-action guard (debounce policy).
+- `useChat.bootstrap.ts`
+  - Bootstrap effect wrappers consumed by `useChat.ts`.
+- `useChat.derived.ts`
+  - Derived context/state builders (summary, action-context text, guide/capability visibility).
 
 ## Refactor Rule
 
-- New logic should be added to module files first.
-- `useChat.ts` should only compose modules and manage React state/refs.
+- Add new logic to module files first.
+- Keep `useChat.ts` focused on state composition and orchestration.
 - If a function can run without React state setters, move it out.
 
 ## Next Safe Targets
 
-1. Extract suggestion/action fetch orchestration into dedicated module with shared "active session" guard.
-2. Split cart-command and action-decision handlers into isolated policy module.
-3. Split large JSX consumers by moving prompt cards and metadata mappers into standalone components.
+1. Split message-row rendering details when feed variants increase again.
+2. Add a lightweight Playwright smoke flow for dock open -> send -> close.
+3. Group actor refs (`loggedIn`, `appUserId`, `phoneLinked`) behind a tiny helper object.

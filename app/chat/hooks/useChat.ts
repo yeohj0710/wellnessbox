@@ -2,26 +2,20 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFooter } from "@/components/common/footerContext";
-import { buildUserContextSummary } from "@/lib/chat/context";
 import type { ChatMessage, ChatSession, UserProfile } from "@/types/chat";
 import {
   getClientIdLocal,
   getTzOffsetMinutes,
-  loadProfileLocal,
-  loadProfileServer,
-  loadSessions,
   saveProfileLocal,
   saveProfileServer,
   saveSessions,
   uid,
 } from "../utils";
-import { buildChatContextPayload, buildUserContextInput } from "./useChat.context";
 import {
-  normalizeAllResultsPayload,
   readLocalAssessCats,
   readLocalCheckAiTopLabels,
 } from "./useChat.results";
-import { DEFAULT_CHAT_TITLE, mergeServerSessions } from "./useChat.session";
+import { DEFAULT_CHAT_TITLE } from "./useChat.session";
 import {
   readActionMemory,
   rememberActionMemoryList,
@@ -46,7 +40,6 @@ import {
   type ChatAgentSuggestedAction,
 } from "@/lib/chat/agent-actions";
 import {
-  isLikelyActionIntentText,
   pickLatestAssistantText,
 } from "./useChat.agentActions";
 import {
@@ -54,12 +47,6 @@ import {
   type InChatAssessmentMode,
   type InChatAssessmentState,
 } from "./useChat.assessment";
-import {
-  buildAgentCapabilityActions,
-  buildAgentGuideExamples,
-  type AgentCapabilityItem,
-  type AgentGuideExample,
-} from "./useChat.agentGuide";
 import { runSingleInteractiveAction as runSingleInteractiveActionFlow } from "./useChat.interactiveActions";
 import { runAgentDecision as runAgentDecisionFlow } from "./useChat.agentDecision";
 import {
@@ -93,6 +80,28 @@ import {
   fetchInteractiveActionsForSession,
   fetchSuggestionsForSession,
 } from "./useChat.followups";
+import {
+  tryHandleAgentActionDecisionFlow,
+  tryHandleCartCommandFlow,
+} from "./useChat.actionFlow";
+import { CHAT_COPY, toAssistantErrorText } from "./useChat.copy";
+import {
+  closeChatDrawer,
+  isContainerAtBottom,
+  openChatDrawer,
+  scrollContainerToBottom,
+  scrollContainerToTop,
+} from "./useChat.ui";
+import {
+  nextInteractiveActionMark,
+  shouldBlockInteractiveAction,
+  type LastInteractiveAction,
+} from "./useChat.interactionGuard";
+import {
+  useAllResultsBootstrap,
+  useSessionAndProfileBootstrap,
+} from "./useChat.bootstrap";
+import { useChatDerivedState } from "./useChat.derived";
 import type { ChatPageAgentContext } from "@/lib/chat/page-agent-context";
 
 type UseChatOptions = {
@@ -101,11 +110,6 @@ type UseChatOptions = {
   enableAutoInit?: boolean;
   pageContext?: ChatPageAgentContext | null;
 };
-
-const OFFLINE_INIT_MESSAGE =
-  "지금 네트워크 연결이 불안정해서 초기 상담 내용을 불러오지 못했어요. 연결이 복구되면 새로고침 없이 다시 이어서 도와드릴게요.";
-const OFFLINE_CHAT_MESSAGE =
-  "지금 네트워크 연결이 불안정해서 답변을 불러오지 못했어요. 연결이 안정되면 같은 질문을 다시 보내 주세요.";
 
 export default function useChat(options: UseChatOptions = {}) {
   const manageFooter = options.manageFooter ?? true;
@@ -163,19 +167,14 @@ export default function useChat(options: UseChatOptions = {}) {
   const actorLoggedInRef = useRef(false);
   const actorPhoneLinkedRef = useRef(false);
   const suggestionHistoryRef = useRef<Record<string, string[]>>({});
-  const lastInteractiveActionRef = useRef<{
-    type: ChatActionType;
-    at: number;
-  } | null>(null);
+  const lastInteractiveActionRef = useRef<LastInteractiveAction>(null);
 
   function openDrawer() {
-    setDrawerVisible(true);
-    setTimeout(() => setDrawerOpen(true), 0);
+    openChatDrawer(setDrawerVisible, setDrawerOpen);
   }
 
   function closeDrawer() {
-    setDrawerOpen(false);
-    setTimeout(() => setDrawerVisible(false), 200);
+    closeChatDrawer(setDrawerVisible, setDrawerOpen);
   }
 
   function rememberExecutedActions(actions: ChatActionType[]) {
@@ -183,88 +182,31 @@ export default function useChat(options: UseChatOptions = {}) {
     setActionMemory((prev) => rememberActionMemoryList(actions, prev));
   }
 
-  useEffect(() => {
-    const existing = loadSessions();
-    if (existing.length > 0) {
-      const sorted = [...existing].sort(
-        (a, b) => (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt)
-      );
-      setSessions(sorted);
-      setActiveId(sorted[0].id);
-      sorted.forEach((session) => {
-        readyToPersistRef.current[session.id] = true;
-      });
-    } else {
-      const created = createNewChatSession({
-        sessions: [],
-        actor: {
-          loggedIn: actorLoggedInRef.current,
-          appUserId: actorAppUserIdRef.current,
-        },
-      });
-      setSessions(created.nextSessions);
-      setActiveId(created.id);
-      readyToPersistRef.current[created.id] = false;
-    }
+  function clearFollowups() {
+    setSuggestions([]);
+    setInteractiveActions([]);
+  }
 
-    (async () => {
-      if (!remoteBootstrap || !isBrowserOnline()) return;
-      try {
-        const response = await fetch("/api/chat/save", { method: "GET" });
-        if (!response.ok) return;
-
-        const json = await response.json().catch(() => ({}));
-        if (json?.actor) {
-          actorLoggedInRef.current = !!json.actor.loggedIn;
-          actorAppUserIdRef.current = json.actor.appUserId ?? null;
-          actorPhoneLinkedRef.current = !!json.actor.phoneLinked;
-        }
-
-        if (!Array.isArray(json?.sessions)) return;
-
-        setSessions((prev) => {
-          const merged = mergeServerSessions({
-            prevSessions: prev,
-            incomingSessions: json.sessions,
-            currentReadyMap: readyToPersistRef.current,
-            actor: {
-              loggedIn: actorLoggedInRef.current,
-              appUserId: actorAppUserIdRef.current,
-            },
-            currentActiveId: activeIdRef.current,
-          });
-
-          readyToPersistRef.current = merged.nextReadyMap;
-          setActiveId(merged.nextActiveId);
-          return merged.sessions;
-        });
-      } catch {}
-    })();
-
-    (async () => {
-      let resolved: UserProfile | undefined = undefined;
-      const remote = remoteBootstrap ? await loadProfileServer() : undefined;
-      if (remote) {
-        resolved = remote;
-        saveProfileLocal(remote);
-      } else {
-        const local = loadProfileLocal();
-        if (local) resolved = local;
-      }
-
-      setProfile(resolved);
-      setShowProfileBanner(!resolved);
-      setProfileLoaded(true);
-    })();
-  }, [remoteBootstrap]);
+  useSessionAndProfileBootstrap({
+    remoteBootstrap,
+    activeIdRef,
+    readyToPersistRef,
+    actorLoggedInRef,
+    actorAppUserIdRef,
+    actorPhoneLinkedRef,
+    setSessions,
+    setActiveId,
+    setProfile,
+    setShowProfileBanner,
+    setProfileLoaded,
+  });
 
   useEffect(() => {
     activeIdRef.current = activeId;
   }, [activeId]);
 
   useEffect(() => {
-    setSuggestions([]);
-    setInteractiveActions([]);
+    clearFollowups();
   }, [activeId]);
 
   useEffect(() => {
@@ -290,176 +232,50 @@ export default function useChat(options: UseChatOptions = {}) {
     if (cats.length) setLocalAssessCats(cats);
   }, []);
 
-  useEffect(() => {
-    if (!remoteBootstrap) {
-      setResultsLoaded(true);
-      return;
-    }
-    if (!isBrowserOnline()) {
-      setResultsLoaded(true);
-      return;
-    }
-
-    const controller = new AbortController();
-    let alive = true;
-
-    fetch(`/api/user/all-results`, { signal: controller.signal })
-      .then((response) => {
-        if (!response.ok) return {};
-        return response.json();
-      })
-      .then((data) => {
-        if (!alive) return;
-        const normalized = normalizeAllResultsPayload(data);
-
-        if (normalized.actor) {
-          actorLoggedInRef.current = normalized.actor.loggedIn;
-          actorAppUserIdRef.current = normalized.actor.appUserId;
-          actorPhoneLinkedRef.current = normalized.actor.phoneLinked;
-        }
-
-        setAssessResult(normalized.assessResult);
-        setCheckAiResult(normalized.checkAiResult);
-        setOrders(normalized.orders);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!alive) return;
-        setResultsLoaded(true);
-      });
-
-    return () => {
-      alive = false;
-      controller.abort();
-    };
-  }, [remoteBootstrap]);
+  useAllResultsBootstrap({
+    remoteBootstrap,
+    actorLoggedInRef,
+    actorAppUserIdRef,
+    actorPhoneLinkedRef,
+    setAssessResult,
+    setCheckAiResult,
+    setOrders,
+    setResultsLoaded,
+  });
 
   const active = useMemo(
     () => sessions.find((session) => session.id === activeId) || null,
     [sessions, activeId]
   );
 
-  const latestAssistantTextInActive = useMemo(
-    () => pickLatestAssistantText(active?.messages || []),
-    [active?.messages]
-  );
-  const runtimeContextText = useMemo(
-    () => (typeof pageContext?.runtimeContextText === "string" ? pageContext.runtimeContextText.trim() : ""),
-    [pageContext]
-  );
-  const pageContextActionSet = useMemo(
-    () => new Set<ChatActionType>(pageContext?.preferredActions || []),
-    [pageContext]
-  );
-
-  const agentCapabilityActions = useMemo<AgentCapabilityItem[]>(() => {
-    return buildAgentCapabilityActions({
-      latestAssistantText: latestAssistantTextInActive,
-      inAssessmentMode: inChatAssessment?.mode ?? null,
-      pageContextActionSet,
-      actionMemory,
-    });
-  }, [
+  const {
+    runtimeContextText,
+    userContextSummary,
+    showAgentGuide,
+    showAgentCapabilityHub,
+    agentCapabilityActions,
+    agentGuideExamples,
+    buildSummaryForSession,
+    buildActionContextText,
+    buildContextPayload,
+    buildRuntimeContextPayload,
+  } = useChatDerivedState({
+    active,
+    activeId,
+    profile,
+    orders,
+    assessResult,
+    checkAiResult,
+    sessions,
+    localAssessCats,
+    localCheckAi,
+    pageContext,
+    inChatAssessment,
+    interactiveActionsLength: interactiveActions.length,
     actionMemory,
-    inChatAssessment?.mode,
-    latestAssistantTextInActive,
-    pageContextActionSet,
-  ]);
-
-  const agentGuideExamples = useMemo<AgentGuideExample[]>(() => {
-    return buildAgentGuideExamples({
-      latestAssistantText: latestAssistantTextInActive,
-      pageSuggestedPrompts: pageContext?.suggestedPrompts ?? null,
-      agentCapabilityActions,
-    });
-  }, [agentCapabilityActions, latestAssistantTextInActive, pageContext]);
-
-  const showAgentGuide = useMemo(() => {
-    if (!active) return false;
-    if (inChatAssessment && inChatAssessment.sessionId === active.id) return false;
-    const userMessageCount = active.messages.filter(
-      (message) => message.role === "user"
-    ).length;
-
-    if (userMessageCount <= 2) return true;
-    return userMessageCount <= 4 && interactiveActions.length === 0;
-  }, [active, interactiveActions.length, inChatAssessment]);
-
-  const showAgentCapabilityHub = useMemo(() => {
-    if (!active) return false;
-    if (inChatAssessment && inChatAssessment.sessionId === active.id) return false;
-    const userMessageCount = active.messages.filter(
-      (message) => message.role === "user"
-    ).length;
-    return userMessageCount <= 8;
-  }, [active, inChatAssessment]);
-
-  const buildSummaryForSession = (sessionId: string | null) => {
-    return buildUserContextSummary(
-      buildUserContextInput({
-        profile,
-        orders,
-        assessResult,
-        checkAiResult,
-        sessions,
-        currentSessionId: sessionId,
-        localAssessCats,
-        localCheckAi,
-        actorContext: {
-          loggedIn: actorLoggedInRef.current,
-          phoneLinked: actorPhoneLinkedRef.current,
-        },
-      })
-    );
-  };
-  const buildActionContextText = (sessionId: string | null) => {
-    const summaryText = buildSummaryForSession(sessionId).promptSummaryText;
-    return [summaryText, runtimeContextText].filter(Boolean).join("\n\n");
-  };
-
-  const userContextSummary = useMemo(
-    () => buildSummaryForSession(activeId),
-    [
-      profile,
-      orders,
-      assessResult,
-      checkAiResult,
-      sessions,
-      activeId,
-      localAssessCats,
-      localCheckAi,
-      runtimeContextText,
-    ]
-  );
-
-  const buildContextPayload = (currentSessionId: string | null) => {
-    return buildChatContextPayload({
-      profile,
-      orders,
-      assessResult,
-      checkAiResult,
-      sessions,
-      currentSessionId,
-      localAssessCats,
-      localCheckAi,
-      actorContext: {
-        loggedIn: actorLoggedInRef.current,
-        phoneLinked: actorPhoneLinkedRef.current,
-      },
-    });
-  };
-
-  const buildRuntimeContextPayload = () => {
-    if (!pageContext) return null;
-    return {
-      routeKey: pageContext.routeKey,
-      routePath: pageContext.routePath,
-      pageTitle: pageContext.title,
-      pageSummary: pageContext.summary,
-      suggestedPrompts: pageContext.suggestedPrompts,
-      runtimeContextText,
-    };
-  };
+    actorLoggedIn: actorLoggedInRef.current,
+    actorPhoneLinked: actorPhoneLinkedRef.current,
+  });
 
   const prevActiveIdRef = useRef<string | null>(null);
   const prevMsgCountRef = useRef(0);
@@ -470,7 +286,7 @@ export default function useChat(options: UseChatOptions = {}) {
     const msgLength = active.messages.length;
     if (prevActiveIdRef.current !== activeId) {
       requestAnimationFrame(() => {
-        scrollToTop();
+        scrollContainerToTop(messagesContainerRef);
       });
       prevActiveIdRef.current = activeId;
       prevMsgCountRef.current = msgLength;
@@ -479,7 +295,9 @@ export default function useChat(options: UseChatOptions = {}) {
 
     if (msgLength > prevMsgCountRef.current) {
       requestAnimationFrame(() => {
-        if (stickToBottomRef.current) scrollToBottom();
+        if (stickToBottomRef.current) {
+          scrollContainerToBottom(messagesContainerRef);
+        }
       });
       prevMsgCountRef.current = msgLength;
     }
@@ -501,31 +319,12 @@ export default function useChat(options: UseChatOptions = {}) {
     if (!container) return;
 
     const onScroll = () => {
-      stickToBottomRef.current = isAtBottom();
+      stickToBottomRef.current = isContainerAtBottom(messagesContainerRef);
     };
 
     container.addEventListener("scroll", onScroll, { passive: true });
     return () => container.removeEventListener("scroll", onScroll);
   }, [messagesContainerRef.current]);
-
-  function scrollToBottom() {
-    const container = messagesContainerRef.current;
-    if (container) container.scrollTop = container.scrollHeight;
-  }
-
-  function scrollToTop() {
-    const container = messagesContainerRef.current;
-    if (container) container.scrollTop = 0;
-  }
-
-  function isAtBottom(threshold = 80) {
-    const container = messagesContainerRef.current;
-    if (!container) return false;
-    return (
-      container.scrollHeight - container.scrollTop - container.clientHeight <=
-      threshold
-    );
-  }
 
   function newChat() {
     const created = createNewChatSession({
@@ -538,8 +337,7 @@ export default function useChat(options: UseChatOptions = {}) {
 
     setSessions(created.nextSessions);
     setActiveId(created.id);
-    setSuggestions([]);
-    setInteractiveActions([]);
+    clearFollowups();
     setInChatAssessment(null);
     firstUserMessageRef.current = "";
     firstAssistantMessageRef.current = "";
@@ -693,10 +491,7 @@ export default function useChat(options: UseChatOptions = {}) {
       sessionId,
       mode,
       setInChatAssessment,
-      clearSuggestionsAndActions: () => {
-        setSuggestions([]);
-        setInteractiveActions([]);
-      },
+      clearSuggestionsAndActions: clearFollowups,
     });
   }
 
@@ -715,10 +510,7 @@ export default function useChat(options: UseChatOptions = {}) {
       assistantMessage: params.assistantMessage,
       isFirst: params.isFirst,
       setInChatAssessment,
-      clearSuggestionsAndActions: () => {
-        setSuggestions([]);
-        setInteractiveActions([]);
-      },
+      clearSuggestionsAndActions: clearFollowups,
       updateAssistantMessage,
       finalizeAssistantTurn,
       setLocalCheckAi,
@@ -802,29 +594,12 @@ export default function useChat(options: UseChatOptions = {}) {
     assistantMessage: ChatMessage;
     isFirst: boolean;
   }) {
-    const result = await executeCartCommandText({
-      commandText: params.text,
-      sessionMessages: params.sessionMessages,
+    return tryHandleCartCommandFlow({
+      ...params,
+      executeCartCommandText,
+      updateAssistantMessage,
+      finalizeAssistantTurn,
     });
-    if (!result.executed) return false;
-
-    const fullText = result.hasAddress
-      ? result.openCartAfterSave
-        ? `요청한 제품을 장바구니에 담고 바로 구매를 진행할 수 있게 열어둘게요. ${result.summary}`
-        : `요청한 제품을 장바구니에 담았어요. ${result.summary}`
-      : `요청한 제품을 담을 수 있도록 주소 입력 창을 열었어요. 주소를 입력하면 자동으로 담아둘게요. ${result.summary}`;
-
-    updateAssistantMessage(params.sessionId, params.assistantMessage.id, fullText);
-
-    await finalizeAssistantTurn({
-      sessionId: params.sessionId,
-      content: fullText,
-      assistantMessage: params.assistantMessage,
-      userMessage: params.userMessage,
-      isFirst: params.isFirst,
-    });
-
-    return true;
   }
 
   async function tryHandleAgentActionDecision(params: {
@@ -835,70 +610,32 @@ export default function useChat(options: UseChatOptions = {}) {
     assistantMessage: ChatMessage;
     isFirst: boolean;
   }) {
-    if (!isLikelyActionIntentText(params.text, params.sessionMessages)) {
-      return false;
-    }
-
-    let decision: ChatAgentExecuteDecision = {
-      handled: false,
-      assistantReply: "",
-      actions: [],
-      cartIntent: { mode: "none" },
-      confidence: 0,
-    };
-
-    try {
-      decision = await requestActionExecutionDecision({
-        text: params.text,
-        recentMessages: params.sessionMessages.slice(-10),
-        contextSummaryText: buildActionContextText(params.sessionId),
-        runtimeContextText,
-      });
-    } catch {
-      return false;
-    }
-
-    if (
-      !decision.handled &&
-      decision.actions.length === 0 &&
-      decision.cartIntent.mode === "none"
-    ) {
-      return false;
-    }
-
-    const result = await runAgentDecision({
-      decision,
-      sessionMessages: params.sessionMessages,
+    return tryHandleAgentActionDecisionFlow({
+      ...params,
+      runtimeContextText,
+      buildActionContextText,
+      requestActionExecutionDecision,
+      runAgentDecision,
+      rememberExecutedActions,
+      updateAssistantMessage,
+      finalizeAssistantTurn,
     });
-    if (!result.executed) return false;
-    rememberExecutedActions(result.executedActions);
-
-    const fullText = result.summary
-      ? `${result.message} ${result.summary}`.trim()
-      : result.message;
-
-    updateAssistantMessage(params.sessionId, params.assistantMessage.id, fullText);
-
-    await finalizeAssistantTurn({
-      sessionId: params.sessionId,
-      content: fullText,
-      assistantMessage: params.assistantMessage,
-      userMessage: params.userMessage,
-      isFirst: params.isFirst,
-    });
-
-    return true;
   }
 
   async function handleInteractiveAction(actionType: ChatActionType) {
     if (!active || loading || actionLoading) return;
 
     const now = Date.now();
-    const recent = lastInteractiveActionRef.current;
-    if (recent && recent.type === actionType && now - recent.at < 900) {
+    if (
+      shouldBlockInteractiveAction({
+        recent: lastInteractiveActionRef.current,
+        nextType: actionType,
+        now,
+      })
+    ) {
       return;
     }
-    lastInteractiveActionRef.current = { type: actionType, at: now };
+    lastInteractiveActionRef.current = nextInteractiveActionMark(actionType, now);
 
     setActionLoading(true);
     try {
@@ -952,8 +689,7 @@ export default function useChat(options: UseChatOptions = {}) {
     } = preparedTurn;
 
     setInput("");
-    setSuggestions([]);
-    setInteractiveActions([]);
+    clearFollowups();
     if (isFirst) firstUserMessageRef.current = text;
 
     setSessions((prev) =>
@@ -961,7 +697,9 @@ export default function useChat(options: UseChatOptions = {}) {
     );
 
     stickToBottomRef.current = true;
-    requestAnimationFrame(() => requestAnimationFrame(scrollToBottom));
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => scrollContainerToBottom(messagesContainerRef))
+    );
 
     const branchResult = await resolveSendMessageBranch(
       {
@@ -979,7 +717,7 @@ export default function useChat(options: UseChatOptions = {}) {
           updateAssistantMessage(
             targetSessionId,
             targetAssistantMessage.id,
-            OFFLINE_CHAT_MESSAGE
+            CHAT_COPY.offlineChat
           );
         },
         tryHandleAgentActionDecision,
@@ -1014,8 +752,11 @@ export default function useChat(options: UseChatOptions = {}) {
       });
     } catch (error) {
       if ((error as any)?.name !== "AbortError") {
-        const errText = (error as Error).message || "문제가 발생했어요.";
-        updateAssistantMessage(sessionId, assistantMessage.id, `오류: ${errText}`);
+        updateAssistantMessage(
+          sessionId,
+          assistantMessage.id,
+          toAssistantErrorText(error)
+        );
       }
     } finally {
       setLoading(false);
@@ -1029,7 +770,7 @@ export default function useChat(options: UseChatOptions = {}) {
       resultsLoaded,
       initStartedMap: initStartedRef.current,
       isOnline: isBrowserOnline,
-      offlineMessage: OFFLINE_INIT_MESSAGE,
+      offlineMessage: CHAT_COPY.offlineInit,
       setSessions,
       setLoading,
       setAbortController: (controller) => {
@@ -1086,7 +827,7 @@ export default function useChat(options: UseChatOptions = {}) {
     const assistantMessage: ChatMessage = {
       id: uid(),
       role: "assistant",
-      content: "대화형 검사를 중단했어요. 원하면 다시 시작해 주세요.",
+      content: CHAT_COPY.inChatAssessmentCanceled,
       createdAt: Date.now(),
     };
     setInChatAssessment(null);

@@ -187,8 +187,13 @@ export default function ProductDetail({
   return (
     <div className="z-20 fixed inset-0 bg-white flex justify-center items-center">
       <div
-        className="overflow-y-auto max-h-screen fixed inset-x-0 top-12 bg-white w-full max-w-[640px] mx-auto"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        className="overflow-y-auto max-h-screen fixed inset-x-0 bg-white w-full max-w-[640px] mx-auto"
+        style={{
+          top: "calc(env(safe-area-inset-top) + 4.25rem)",
+          maxHeight: "calc(100dvh - env(safe-area-inset-top) - 4.25rem)",
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+        }}
       >
         <style jsx>{`
           div::-webkit-scrollbar {
@@ -264,7 +269,7 @@ export default function ProductDetail({
 
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 grid place-items-center h-9 w-9 rounded-full bg-white/95 hover:bg-gray-100 shadow ring-1 ring-gray-200"
+            className="absolute top-4 right-4 sm:top-5 sm:right-5 grid place-items-center h-10 w-10 rounded-full bg-white/95 hover:bg-gray-100 shadow ring-1 ring-gray-200"
           >
             <XMarkIcon className="w-5 h-5 text-gray-700" />
           </button>

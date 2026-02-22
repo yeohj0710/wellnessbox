@@ -77,13 +77,25 @@ export async function tryServeNhisFetchCache(input: TryServeNhisFetchCacheInput)
   const cachedPayload = toFetchRoutePayload(identityCached.payload);
   if (!cachedPayload) return null;
 
+  const linkPatch: {
+    lastIdentityHash?: string;
+    lastErrorCode?: null;
+    lastErrorMessage?: null;
+  } = {};
+  if (input.shouldUpdateIdentityHash) {
+    linkPatch.lastIdentityHash = input.identityHash;
+  }
+  if (cachedPayload.ok) {
+    // Successful cached payloads should not keep stale session-expired errors.
+    linkPatch.lastErrorCode = null;
+    linkPatch.lastErrorMessage = null;
+  }
+
   await Promise.all([
     markNhisFetchCacheHit(identityCached.id),
-    ...(input.shouldUpdateIdentityHash
+    ...(Object.keys(linkPatch).length > 0
       ? [
-          upsertNhisLink(input.appUserId, {
-            lastIdentityHash: input.identityHash,
-          }),
+          upsertNhisLink(input.appUserId, linkPatch),
         ]
       : []),
   ]);
@@ -110,13 +122,17 @@ export async function tryServeNhisFetchCache(input: TryServeNhisFetchCacheInput)
 }
 
 export async function persistNhisFetchResult(input: PersistNhisFetchResultInput) {
+  const lastErrorCode = input.payload.ok ? null : input.firstFailed?.errCd ?? null;
+  const lastErrorMessage = input.payload.ok
+    ? null
+    : input.firstFailed?.errMsg ?? (input.defaultErrorMessage ?? "Fetch failed");
+
   await Promise.all([
     upsertNhisLink(input.appUserId, {
       lastIdentityHash: input.identityHash,
       ...(input.updateFetchedAt ? { lastFetchedAt: new Date() } : {}),
-      lastErrorCode: input.firstFailed?.errCd ?? null,
-      lastErrorMessage:
-        input.firstFailed?.errMsg ?? (input.payload.ok ? null : input.defaultErrorMessage ?? "Fetch failed"),
+      lastErrorCode,
+      lastErrorMessage,
     }),
     saveNhisFetchCache({
       appUserId: input.appUserId,
