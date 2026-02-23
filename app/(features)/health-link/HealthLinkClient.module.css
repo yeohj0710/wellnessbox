@@ -144,6 +144,20 @@
   line-height: 1.5;
 }
 
+.sectionLead {
+  margin: -4px 0 2px;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.sectionSubText {
+  margin: -2px 0 0;
+  color: var(--ink-3);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .ghostButton {
   min-height: 40px;
   border-radius: 12px;
@@ -408,6 +422,11 @@
 .nextButton:disabled {
   background: #9abef8;
   cursor: not-allowed;
+}
+
+.primaryActionWrap {
+  display: grid;
+  gap: 8px;
 }
 
 .unlinkButton {
@@ -713,6 +732,37 @@
   gap: 10px;
 }
 
+.resultOverview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.overviewItem {
+  border-radius: 12px;
+  border: 1px solid #dae2ef;
+  background: #f8fbff;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.overviewItem span {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.overviewItem strong {
+  font-size: 17px;
+  color: var(--ink-1);
+  letter-spacing: -0.01em;
+}
+
+.overviewWarn {
+  border-color: #ffd8ae;
+  background: #fff8ef;
+}
+
 .metricCard {
   border-radius: 14px;
   border: 1px solid var(--line);
@@ -848,6 +898,72 @@
 .metricList {
   display: grid;
   gap: 8px;
+}
+
+.metricFilterWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.metricFilterChip {
+  border: 1px solid #d6dde9;
+  background: #fff;
+  color: var(--ink-2);
+  border-radius: 999px;
+  height: 33px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.metricFilterChipActive {
+  border-color: #9ec3ff;
+  background: #edf5ff;
+  color: #205ecf;
+}
+
+.metricBoard {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.metricCardCompact {
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #fbfdff;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.metricCardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.metricCardTop strong {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.metricCardValue {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink-1);
+}
+
+.metricReference {
+  margin: 0;
+  color: var(--ink-3);
+  font-size: 11px;
+  line-height: 1.45;
 }
 
 .metricRow {
@@ -1060,7 +1176,9 @@
   .formGrid,
   .metricGrid,
   .metaGrid,
-  .loadingSkeletonGrid {
+  .loadingSkeletonGrid,
+  .resultOverview,
+  .metricBoard {
     grid-template-columns: 1fr;
   }
 

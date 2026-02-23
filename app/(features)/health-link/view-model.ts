@@ -58,14 +58,17 @@ export function resolveFetchCacheHint(
   formatDateTime: (value?: string | null) => string
 ) {
   if (!fetchCacheInfo) return null;
-  if (!fetchCacheInfo.cached) return HEALTH_LINK_COPY.fetch.liveResponse;
+  if (!fetchCacheInfo.cached) return null;
+  if (!fetchCacheInfo.fetchedAt || !fetchCacheInfo.expiresAt) {
+    return "저장된 결과를 우선 보여주고 있습니다.";
+  }
 
   return [
-    HEALTH_LINK_COPY.fetch.cacheHitPrefix,
-    ` ${formatDateTime(fetchCacheInfo.fetchedAt)}`,
-    HEALTH_LINK_COPY.fetch.cacheHitInfix,
-    ` ${formatDateTime(fetchCacheInfo.expiresAt)}`,
-    HEALTH_LINK_COPY.fetch.cacheHitSuffix,
+    "저장 결과 사용 중 (조회 ",
+    `${formatDateTime(fetchCacheInfo.fetchedAt)}`,
+    ", 만료 ",
+    `${formatDateTime(fetchCacheInfo.expiresAt)}`,
+    ")",
   ].join("");
 }
 

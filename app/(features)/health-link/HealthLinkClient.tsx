@@ -22,7 +22,6 @@ import {
   resolveForceRefreshHint,
   resolvePrimaryButtonLabel,
   resolvePrimaryFlow,
-  resolveStatusChip,
 } from "./view-model";
 import styles from "./HealthLinkClient.module.css";
 
@@ -60,13 +59,6 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
 
   const hasAuthRequested = !!(status?.pendingAuthReady || status?.hasStepData);
   const statusLinked = !!status?.linked;
-  const statusChip = resolveStatusChip(statusLinked, hasAuthRequested);
-  const statusChipTone =
-    statusChip.tone === "on"
-      ? styles.statusOn
-      : statusChip.tone === "pending"
-      ? styles.statusPending
-      : styles.statusOff;
 
   const basePrimaryFlow = resolvePrimaryFlow(statusLinked, hasAuthRequested);
   const hasFetchedResponse = fetched !== null;
@@ -85,7 +77,6 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
     : basePrimaryFlow;
 
   const checkupOverviewRows = fetched?.normalized?.checkup?.overview ?? [];
-  const checkupSummary = fetched?.normalized?.checkup?.summary;
   const medicationRows = fetched?.normalized?.medication?.list ?? [];
   const metricSourceRows = checkupOverviewRows;
   const checkupMetricRows = filterCheckupMetricRows(metricSourceRows);
@@ -162,13 +153,7 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
 
   return (
     <div className={styles.page}>
-      <HealthLinkHeader
-        statusChipLabel={statusChip.label}
-        statusChipTone={statusChipTone}
-        loginOrgCd={status?.loginOrgCd}
-        lastLinkedAt={status?.lastLinkedAt}
-        showResultMode={!showAuthStage}
-      />
+      <HealthLinkHeader />
 
       {showAuthStage ? (
         <HealthLinkAuthSection
@@ -211,8 +196,6 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
           latestCheckupRows={latestCheckupRows}
           latestCheckupMeta={latestCheckupMeta}
           medicationDigest={medicationDigest}
-          checkupSummary={checkupSummary}
-          raw={fetched?.raw}
           onSummaryFetch={() => void handleFetch()}
           onSummaryFresh={handleSummaryFreshAction}
         />

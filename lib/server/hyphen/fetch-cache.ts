@@ -63,10 +63,10 @@ type IdentityCacheQueryMode = {
 };
 
 const DEFAULT_HASH_SALT = "wellnessbox-hyphen-cache-v1";
-const DEFAULT_SUMMARY_TTL_MINUTES = 60 * 12;
-const DEFAULT_DETAIL_TTL_MINUTES = 60 * 24 * 3;
-const DEFAULT_PARTIAL_TTL_MINUTES = 60 * 2;
-const DEFAULT_FAILURE_TTL_MINUTES = 10;
+const DEFAULT_SUMMARY_TTL_MINUTES = 60 * 24 * 30;
+const DEFAULT_DETAIL_TTL_MINUTES = 60 * 24 * 180;
+const DEFAULT_PARTIAL_TTL_MINUTES = 60 * 24 * 7;
+const DEFAULT_FAILURE_TTL_MINUTES = 30;
 
 function normalizeText(value: string | null | undefined) {
   if (typeof value !== "string") return "";

@@ -8,6 +8,10 @@ import {
   markNhisFetchCacheHit,
   saveNhisFetchCache,
 } from "@/lib/server/hyphen/fetch-cache";
+import {
+  readNhisFetchMemoryCache,
+  writeNhisFetchMemoryCache,
+} from "@/lib/server/hyphen/fetch-memory-cache";
 import { upsertNhisLink } from "@/lib/server/hyphen/link";
 import { NO_STORE_HEADERS } from "@/lib/server/hyphen/route-utils";
 import type { NhisFetchRoutePayload } from "./fetch-contract";
@@ -55,6 +59,63 @@ function toFetchRoutePayload(value: unknown): NhisFetchRoutePayload | null {
 }
 
 export async function tryServeNhisFetchCache(input: TryServeNhisFetchCacheInput) {
+  const memoryCached = readNhisFetchMemoryCache({
+    appUserId: input.appUserId,
+    requestHash: input.requestHash,
+    identityHash: input.identityHash,
+    targets: input.targets,
+    yearLimit: input.yearLimit,
+    subjectType: input.subjectType,
+    allowHistoryFallback: input.allowHistoryFallback,
+    maxAgeSeconds: input.maxAgeSeconds,
+  });
+  if (memoryCached) {
+    const cachedPayload = memoryCached.entry.payload;
+    const linkPatch: {
+      lastIdentityHash?: string;
+      lastErrorCode?: null;
+      lastErrorMessage?: null;
+    } = {};
+    if (input.shouldUpdateIdentityHash) {
+      linkPatch.lastIdentityHash = input.identityHash;
+    }
+    if (cachedPayload.ok) {
+      linkPatch.lastErrorCode = null;
+      linkPatch.lastErrorMessage = null;
+    }
+
+    await Promise.all([
+      ...(memoryCached.entry.cacheId
+        ? [markNhisFetchCacheHit(memoryCached.entry.cacheId)]
+        : []),
+      ...(Object.keys(linkPatch).length > 0
+        ? [upsertNhisLink(input.appUserId, linkPatch)]
+        : []),
+    ]);
+
+    const resolvedSource = input.sourceOverride || memoryCached.source;
+    return NextResponse.json(
+      {
+        ...cachedPayload,
+        cached: true,
+        ...(input.forceRefreshGuarded
+          ? {
+              forceRefreshGuarded: true,
+              forceRefreshAgeSeconds: memoryCached.ageSeconds,
+              forceRefreshGuardSeconds: input.maxAgeSeconds ?? null,
+            }
+          : {}),
+        cache: {
+          source: resolvedSource,
+          stale: memoryCached.stale,
+          fetchedAt: new Date(memoryCached.entry.fetchedAtMs).toISOString(),
+          expiresAt: new Date(memoryCached.entry.expiresAtMs).toISOString(),
+        },
+      },
+      { status: memoryCached.entry.statusCode, headers: NO_STORE_HEADERS }
+    );
+  }
+
   const directCached = await getValidNhisFetchCache(input.appUserId, input.requestHash);
   const identityCached =
     directCached ??
@@ -117,6 +178,20 @@ export async function tryServeNhisFetchCache(input: TryServeNhisFetchCacheInput)
       : []),
   ]);
 
+  writeNhisFetchMemoryCache({
+    cacheId: selectedCache.id,
+    appUserId: input.appUserId,
+    requestHash: selectedCache.requestHash,
+    identityHash: selectedCache.identityHash,
+    targets: selectedCache.targets,
+    yearLimit: input.yearLimit,
+    subjectType: input.subjectType,
+    statusCode: selectedCache.statusCode,
+    payload: cachedPayload,
+    fetchedAt: selectedCache.fetchedAt,
+    expiresAt: selectedCache.expiresAt,
+  });
+
   return NextResponse.json(
     {
       ...cachedPayload,
@@ -145,7 +220,7 @@ export async function persistNhisFetchResult(input: PersistNhisFetchResultInput)
     ? null
     : input.firstFailed?.errMsg ?? (input.defaultErrorMessage ?? "Fetch failed");
 
-  await Promise.all([
+  const [, savedCache] = await Promise.all([
     upsertNhisLink(input.appUserId, {
       lastIdentityHash: input.identityHash,
       ...(input.updateFetchedAt ? { lastFetchedAt: new Date() } : {}),
@@ -166,4 +241,18 @@ export async function persistNhisFetchResult(input: PersistNhisFetchResultInput)
       payload: input.payload,
     }),
   ]);
+
+  writeNhisFetchMemoryCache({
+    cacheId: savedCache.id,
+    appUserId: input.appUserId,
+    requestHash: input.requestHash,
+    identityHash: input.identityHash,
+    targets: input.targets,
+    yearLimit: input.yearLimit,
+    subjectType: input.requestDefaults.subjectType,
+    statusCode: input.statusCode,
+    payload: input.payload,
+    fetchedAt: savedCache.fetchedAt,
+    expiresAt: savedCache.expiresAt,
+  });
 }

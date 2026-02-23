@@ -20,8 +20,12 @@ import {
   type NhisFetchRoutePayload,
   type NhisFetchTarget,
 } from "@/lib/server/hyphen/fetch-contract";
+import { normalizeCheckupOverviewPayload } from "@/lib/server/hyphen/normalize-checkup";
 import { normalizeNhisPayload } from "@/lib/server/hyphen/normalize";
-import { getErrorCodeMessage, logHyphenError } from "@/lib/server/hyphen/route-utils";
+import {
+  getErrorCodeMessage,
+  logHyphenError,
+} from "@/lib/server/hyphen/route-utils";
 
 type DetailKeyPair = {
   detailKey: string;
@@ -153,7 +157,9 @@ function normalizeYearLimit(value: number) {
   );
 }
 
-export async function executeNhisFetch(input: ExecuteNhisFetchInput): Promise<ExecuteNhisFetchOutput> {
+export async function executeNhisFetch(
+  input: ExecuteNhisFetchInput
+): Promise<ExecuteNhisFetchOutput> {
   const effectiveYearLimit = normalizeYearLimit(input.effectiveYearLimit);
   const successful = new Map<NhisFetchTarget, unknown>();
   const failed: NhisFetchFailedItem[] = [];
@@ -196,21 +202,80 @@ export async function executeNhisFetch(input: ExecuteNhisFetchInput): Promise<Ex
     );
   };
 
-  runIndependentTarget("medical", () => fetchMedicalInfo(input.detailPayload), "진료 정보 조회 실패");
   runIndependentTarget(
-    "medication",
-    () => fetchMedicationInfo(input.detailPayload),
-    "투약 정보 조회 실패"
+    "medical",
+    () => fetchMedicalInfo(input.detailPayload),
+    "진료 정보를 불러오지 못했습니다."
   );
   runIndependentTarget(
-    "checkupOverview",
-    () => fetchCheckupOverview(input.basePayload),
-    "건강검진 결과 한눈에 보기 조회 실패"
+    "healthAge",
+    () => fetchHealthAge(input.basePayload),
+    "건강 나이 정보를 불러오지 못했습니다."
   );
-  runIndependentTarget("healthAge", () => fetchHealthAge(input.basePayload), "건강나이 조회 실패");
+
+  const needsCheckupOverview = input.targets.includes("checkupOverview");
+  const needsMedication = input.targets.includes("medication");
+  if (needsCheckupOverview && needsMedication) {
+    independentJobs.push(
+      (async () => {
+        let shouldFallbackToMedication = false;
+        let pendingCheckupError: unknown | null = null;
+
+        try {
+          const checkupPayload = await fetchCheckupOverview(input.basePayload);
+          successful.set("checkupOverview", checkupPayload);
+          const checkupRows = normalizeCheckupOverviewPayload(checkupPayload);
+          const hasMeaningfulCheckupRow = checkupRows.some((row) => {
+            const metric = typeof row.metric === "string" ? row.metric.trim() : "";
+            const itemName = typeof row.itemName === "string" ? row.itemName.trim() : "";
+            const itemData =
+              row.itemData == null ? "" : String(row.itemData).trim();
+            const result = row.result == null ? "" : String(row.result).trim();
+            return metric || itemName || itemData || result;
+          });
+          shouldFallbackToMedication = !hasMeaningfulCheckupRow;
+        } catch (error) {
+          pendingCheckupError = error;
+          shouldFallbackToMedication = true;
+        }
+
+        if (!shouldFallbackToMedication) return;
+
+        try {
+          const medicationPayload = await fetchMedicationInfo(input.detailPayload);
+          successful.set("medication", medicationPayload);
+        } catch (medicationError) {
+          if (pendingCheckupError) {
+            markFailure(
+              "checkupOverview",
+              pendingCheckupError,
+              "검진 결과를 먼저 확인하지 못했습니다."
+            );
+          }
+          markFailure(
+            "medication",
+            medicationError,
+            "투약 정보를 불러오지 못했습니다."
+          );
+        }
+      })()
+    );
+  } else {
+    runIndependentTarget(
+      "checkupOverview",
+      () => fetchCheckupOverview(input.basePayload),
+      "검진 요약을 불러오지 못했습니다."
+    );
+    runIndependentTarget(
+      "medication",
+      () => fetchMedicationInfo(input.detailPayload),
+      "투약 정보를 불러오지 못했습니다."
+    );
+  }
 
   const shouldLoadCheckupList =
-    input.targets.includes("checkupList") || input.targets.includes("checkupYearly");
+    input.targets.includes("checkupList") ||
+    input.targets.includes("checkupYearly");
   let checkupListPayloads: HyphenApiResponse[] = [];
   let checkupListRawByYear: Record<string, unknown> = {};
   let checkupDetailKeyPairs: DetailKeyPair[] = [];
@@ -227,14 +292,23 @@ export async function executeNhisFetch(input: ExecuteNhisFetchInput): Promise<Ex
 
     for (const year of years) {
       try {
-        const payload = await fetchCheckupResultList({ ...input.basePayload, yyyy: year });
+        const payload = await fetchCheckupResultList({
+          ...input.basePayload,
+          yyyy: year,
+        });
         checkupListPayloads.push(payload);
         checkupListRawByYear[year] = payload;
 
         if (shouldSeekDetailKey) {
-          const keyPairs = collectDetailKeyPairs(payload, MAX_CHECKUP_YEARLY_REQUESTS_PER_FETCH);
+          const keyPairs = collectDetailKeyPairs(
+            payload,
+            MAX_CHECKUP_YEARLY_REQUESTS_PER_FETCH
+          );
           if (keyPairs.length > 0) {
-            checkupDetailKeyPairs = keyPairs.slice(0, MAX_CHECKUP_YEARLY_REQUESTS_PER_FETCH);
+            checkupDetailKeyPairs = keyPairs.slice(
+              0,
+              MAX_CHECKUP_YEARLY_REQUESTS_PER_FETCH
+            );
             break;
           }
         }
@@ -253,13 +327,15 @@ export async function executeNhisFetch(input: ExecuteNhisFetchInput): Promise<Ex
       if (yearFailures.length > 0) {
         failed.push({
           target: "checkupList",
-          errMsg: `건강검진결과목록 일부 연도 실패 (${yearFailures.slice(0, 4).join(", ")})`,
+          errMsg: `건강검진 목록 일부 조회에 실패했습니다. (${yearFailures
+            .slice(0, 4)
+            .join(", ")})`,
         });
       }
     } else {
       failed.push({
         target: "checkupList",
-        errMsg: "건강검진결과목록 조회 실패",
+        errMsg: "건강검진 목록을 불러오지 못했습니다.",
       });
       rawFailures.set("checkupList", checkupListRawByYear);
     }
@@ -273,7 +349,11 @@ export async function executeNhisFetch(input: ExecuteNhisFetchInput): Promise<Ex
     const keyPairs =
       checkupDetailKeyPairs.length > 0
         ? checkupDetailKeyPairs
-        : collectDetailKeyPairs(checkupListPayloads, MAX_CHECKUP_YEARLY_REQUESTS_PER_FETCH);
+        : collectDetailKeyPairs(
+            checkupListPayloads,
+            MAX_CHECKUP_YEARLY_REQUESTS_PER_FETCH
+          );
+
     if (keyPairs.length > 0) {
       const settled = await Promise.allSettled(
         keyPairs.map((pair) =>
@@ -307,14 +387,13 @@ export async function executeNhisFetch(input: ExecuteNhisFetchInput): Promise<Ex
     if (yearlyPayloads.length > 0) {
       successful.set("checkupYearly", yearlyPayloads);
     } else if (keyPairs.length === 0) {
-      // 상세 조회 키가 없으면 연도별 상세 호출을 건너뛰고 빈 결과를 정상 처리한다.
       successful.set("checkupYearly", []);
     } else {
       const firstFailure = yearlyFailures[0];
       failed.push({
         target: "checkupYearly",
         errCd: firstFailure?.errCd,
-        errMsg: firstFailure?.errMsg || "연도별건강검진결과 상세 조회 실패",
+        errMsg: firstFailure?.errMsg || "검진 상세 데이터를 불러오지 못했습니다.",
       });
       rawFailures.set("checkupYearly", yearlyRaw);
     }
@@ -326,7 +405,7 @@ export async function executeNhisFetch(input: ExecuteNhisFetchInput): Promise<Ex
     const firstFailure = failed[0];
     const payload: NhisFetchRoutePayload = {
       ok: false,
-      error: "데이터 조회에 실패했습니다. 잠시 후 다시 시도해 주세요.",
+      error: "데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.",
       errCd: firstFailure?.errCd,
       errMsg: firstFailure?.errMsg,
       failed,
@@ -334,17 +413,26 @@ export async function executeNhisFetch(input: ExecuteNhisFetchInput): Promise<Ex
     return { payload, firstFailed: firstFailure };
   }
 
-  const checkupListPayload = (successful.get("checkupList") as HyphenApiResponse[] | undefined) ?? [];
+  const checkupListPayload =
+    (successful.get("checkupList") as HyphenApiResponse[] | undefined) ?? [];
   const checkupYearlyPayload =
     (successful.get("checkupYearly") as HyphenApiResponse[] | undefined) ?? [];
+
   const normalized = normalizeNhisPayload({
-    medical: (successful.get("medical") as HyphenApiResponse | undefined) ?? emptyPayload(),
-    medication: (successful.get("medication") as HyphenApiResponse | undefined) ?? emptyPayload(),
+    medical:
+      (successful.get("medical") as HyphenApiResponse | undefined) ??
+      emptyPayload(),
+    medication:
+      (successful.get("medication") as HyphenApiResponse | undefined) ??
+      emptyPayload(),
     checkupList: checkupListPayload,
     checkupYearly: checkupYearlyPayload,
     checkupOverview:
-      (successful.get("checkupOverview") as HyphenApiResponse | undefined) ?? emptyPayload(),
-    healthAge: (successful.get("healthAge") as HyphenApiResponse | undefined) ?? emptyPayload(),
+      (successful.get("checkupOverview") as HyphenApiResponse | undefined) ??
+      emptyPayload(),
+    healthAge:
+      (successful.get("healthAge") as HyphenApiResponse | undefined) ??
+      emptyPayload(),
   });
 
   const payload: NhisFetchRoutePayload = {
@@ -355,7 +443,8 @@ export async function executeNhisFetch(input: ExecuteNhisFetchInput): Promise<Ex
       normalized,
       raw: {
         medical: successful.get("medical") ?? rawFailures.get("medical") ?? null,
-        medication: successful.get("medication") ?? rawFailures.get("medication") ?? null,
+        medication:
+          successful.get("medication") ?? rawFailures.get("medication") ?? null,
         checkupList:
           (checkupListPayload.length > 0
             ? mergeListPayloads(checkupListPayload)
@@ -365,8 +454,11 @@ export async function executeNhisFetch(input: ExecuteNhisFetchInput): Promise<Ex
             ? checkupYearlyPayload
             : rawFailures.get("checkupYearly")) ?? null,
         checkupOverview:
-          successful.get("checkupOverview") ?? rawFailures.get("checkupOverview") ?? null,
-        healthAge: successful.get("healthAge") ?? rawFailures.get("healthAge") ?? null,
+          successful.get("checkupOverview") ??
+          rawFailures.get("checkupOverview") ??
+          null,
+        healthAge:
+          successful.get("healthAge") ?? rawFailures.get("healthAge") ?? null,
         checkupListByYear: checkupListRawByYear,
       },
     },

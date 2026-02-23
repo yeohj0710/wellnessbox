@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import db from "@/lib/db";
 import { HYPHEN_PROVIDER } from "@/lib/server/hyphen/client";
 import { clearNhisFetchCaches } from "@/lib/server/hyphen/fetch-cache";
+import { clearNhisFetchMemoryCacheForUser } from "@/lib/server/hyphen/fetch-memory-cache";
 
 const provider = HYPHEN_PROVIDER;
 
@@ -104,4 +105,5 @@ export async function clearNhisLink(appUserId: string) {
     }),
     clearNhisFetchCaches(appUserId),
   ]);
+  clearNhisFetchMemoryCacheForUser(appUserId);
 }

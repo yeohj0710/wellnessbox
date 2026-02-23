@@ -30,9 +30,7 @@ export function HealthLinkFetchActions({
   if (!statusLinked) return null;
 
   return (
-    <>
-      {fetchCacheHint ? <div className={styles.noticeInfo}>{fetchCacheHint}</div> : null}
-
+    <div className={styles.primaryActionWrap}>
       <button
         type="button"
         onClick={onSummaryFetch}
@@ -64,10 +62,13 @@ export function HealthLinkFetchActions({
                 label={HEALTH_LINK_COPY.fetch.summaryForceButton}
               />
             </button>
+            {fetchCacheHint ? (
+              <p className={styles.detailHint}>{fetchCacheHint}</p>
+            ) : null}
             <p className={styles.detailHint}>{forceRefreshHint}</p>
           </div>
         </details>
       ) : null}
-    </>
+    </div>
   );
 }
