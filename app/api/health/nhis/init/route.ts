@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { z } from "zod";
 import { normalizeHyphenEasyLoginOrg } from "@/lib/shared/hyphen-login";
 import {
@@ -9,33 +9,47 @@ import {
 import { toPrismaJson } from "@/lib/server/hyphen/json";
 import { runWithHyphenInFlightDedup } from "@/lib/server/hyphen/inflight-dedup";
 import { getNhisLink, upsertNhisLink } from "@/lib/server/hyphen/link";
-import { resolveNhisIdentityHash } from "@/lib/server/hyphen/fetch-cache";
+import {
+  getLatestNhisFetchCacheByIdentity,
+  resolveNhisIdentityHash,
+} from "@/lib/server/hyphen/fetch-cache";
 import { buildNhisRequestDefaults } from "@/lib/server/hyphen/request-defaults";
 import {
   getErrorCodeMessage,
   hyphenErrorToResponse,
   NO_STORE_HEADERS,
 } from "@/lib/server/hyphen/route-utils";
-import { getPendingEasyAuth, savePendingEasyAuth } from "@/lib/server/hyphen/session";
-import { requireUserSession } from "@/lib/server/route-auth";
-
+import {
+  clearPendingEasyAuth,
+  getPendingEasyAuth,
+  savePendingEasyAuth,
+} from "@/lib/server/hyphen/session";
+import { requireNhisSession } from "@/lib/server/route-auth";
 export const runtime = "nodejs";
-
+const SUMMARY_CACHE_TARGET_SETS = [
+  ["checkupOverview", "medication"],
+  ["checkupOverview"],
+] as const;
+const SUMMARY_CACHE_YEAR_LIMIT = 1;
 const initSchema = z.object({
   loginMethod: z.literal("EASY").optional().default("EASY"),
   loginOrgCd: z.string().trim().min(1).max(20),
   resNm: z.string().trim().min(1).max(60),
-  resNo: z.string().trim().regex(/^\d{8}$/),
-  mobileNo: z.string().trim().regex(/^\d{10,11}$/),
+  resNo: z
+    .string()
+    .trim()
+    .regex(/^\d{8}$/),
+  mobileNo: z
+    .string()
+    .trim()
+    .regex(/^\d{10,11}$/),
 });
-
 function badRequest(message: string) {
   return NextResponse.json(
     { ok: false, error: message },
     { status: 400, headers: NO_STORE_HEADERS }
   );
 }
-
 function isSameIdentityInput(
   input: { loginOrgCd: string; resNm: string; resNo: string; mobileNo: string },
   pending: {
@@ -52,30 +66,27 @@ function isSameIdentityInput(
     input.mobileNo === pending.mobileNo
   );
 }
-
 export async function POST(req: Request) {
-  const auth = await requireUserSession();
+  const auth = await requireNhisSession();
   if (!auth.ok) return auth.response;
-
   const raw = await req.json().catch(() => null);
   if (!raw) return badRequest("Invalid JSON body");
-
   const parsed = initSchema.safeParse(raw);
   if (!parsed.success) {
     return badRequest(parsed.error.issues[0]?.message || "Invalid input");
   }
-
   const input = parsed.data;
   const loginOrgCd = normalizeHyphenEasyLoginOrg(input.loginOrgCd);
   if (!loginOrgCd) return badRequest("loginOrgCd must be kakao");
   if (loginOrgCd !== "kakao") {
-    return badRequest("Only kakao loginOrgCd is supported in current deployment");
+    return badRequest(
+      "Only kakao loginOrgCd is supported in current deployment"
+    );
   }
   const [existingLink, pendingEasyAuth] = await Promise.all([
     getNhisLink(auth.data.appUserId),
     getPendingEasyAuth(),
   ]);
-
   const identity = resolveNhisIdentityHash({
     appUserId: auth.data.appUserId,
     loginOrgCd,
@@ -84,7 +95,48 @@ export async function POST(req: Request) {
     mobileNo: input.mobileNo,
   });
   const requestDefaults = buildNhisRequestDefaults();
-
+  const canUseIdentityReplay =
+    existingLink?.lastIdentityHash === identity.identityHash;
+  const replayableSummaryCache = canUseIdentityReplay
+    ? (
+        await Promise.all(
+          SUMMARY_CACHE_TARGET_SETS.map((targets) =>
+            getLatestNhisFetchCacheByIdentity({
+              appUserId: auth.data.appUserId,
+              identityHash: identity.identityHash,
+              targets: [...targets],
+              yearLimit: SUMMARY_CACHE_YEAR_LIMIT,
+              subjectType: requestDefaults.subjectType,
+            })
+          )
+        )
+      ).find((item) => item !== null) ?? null
+    : null;
+  if (canUseIdentityReplay && replayableSummaryCache) {
+    await Promise.all([
+      upsertNhisLink(auth.data.appUserId, {
+        linked: true,
+        loginMethod: "EASY",
+        loginOrgCd,
+        lastIdentityHash: identity.identityHash,
+        lastLinkedAt:
+          existingLink?.lastLinkedAt ?? replayableSummaryCache.fetchedAt,
+        lastErrorCode: null,
+        lastErrorMessage: null,
+      }),
+      clearPendingEasyAuth(),
+    ]);
+    return NextResponse.json(
+      {
+        ok: true,
+        nextStep: "fetch",
+        linked: true,
+        reused: true,
+        source: "db-history",
+      },
+      { headers: NO_STORE_HEADERS }
+    );
+  }
   if (
     existingLink?.linked !== true &&
     existingLink?.stepData &&
@@ -108,18 +160,11 @@ export async function POST(req: Request) {
       lastErrorCode: null,
       lastErrorMessage: null,
     });
-
     return NextResponse.json(
-      {
-        ok: true,
-        nextStep: "sign",
-        linked: false,
-        reused: true,
-      },
+      { ok: true, nextStep: "sign", linked: false, reused: true },
       { headers: NO_STORE_HEADERS }
     );
   }
-
   try {
     const initResponse = await runWithHyphenInFlightDedup(
       "nhis-init",
@@ -137,13 +182,11 @@ export async function POST(req: Request) {
           showCookie: "Y",
         })
     );
-
     const stepData = extractStepData(initResponse);
     const cookieData = extractCookieData(initResponse);
     if (stepData == null) {
       throw new Error("Init response does not include stepData");
     }
-
     await Promise.all([
       upsertNhisLink(auth.data.appUserId, {
         linked: false,
@@ -164,13 +207,8 @@ export async function POST(req: Request) {
         mobileNo: input.mobileNo,
       }),
     ]);
-
     return NextResponse.json(
-      {
-        ok: true,
-        nextStep: "sign",
-        linked: false,
-      },
+      { ok: true, nextStep: "sign", linked: false },
       { headers: NO_STORE_HEADERS }
     );
   } catch (error) {

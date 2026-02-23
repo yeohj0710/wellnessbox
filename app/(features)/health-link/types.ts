@@ -58,6 +58,7 @@ export type NhisStatusResponse = {
       totalEntries: number;
       validEntries: number;
       summaryAvailable: boolean;
+      summarySource?: "valid" | "history" | null;
       latestFetchedAt: string | null;
       latestExpiresAt: string | null;
       latestHitAt: string | null;
@@ -89,6 +90,7 @@ export type NhisFetchResponse = {
   forceRefreshGuardSeconds?: number | null;
   cache?: {
     source?: string;
+    stale?: boolean;
     fetchedAt?: string | null;
     expiresAt?: string | null;
   };
@@ -152,6 +154,9 @@ export type NhisFetchResponse = {
 export type NhisActionResponse = {
   ok: boolean;
   reused?: boolean;
+  linked?: boolean;
+  nextStep?: "sign" | "fetch";
+  source?: string;
   error?: string;
   errCd?: string | null;
   errMsg?: string | null;

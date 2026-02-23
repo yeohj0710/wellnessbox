@@ -57,6 +57,11 @@ type IdentityCacheLookupInput = {
   subjectType?: string;
 };
 
+type IdentityCacheQueryMode = {
+  includeExpired: boolean;
+  okOnly: boolean;
+};
+
 const DEFAULT_HASH_SALT = "wellnessbox-hyphen-cache-v1";
 const DEFAULT_SUMMARY_TTL_MINUTES = 60 * 12;
 const DEFAULT_DETAIL_TTL_MINUTES = 60 * 24 * 3;
@@ -185,21 +190,40 @@ export async function getValidNhisFetchCache(appUserId: string, requestHash: str
 }
 
 export async function getValidNhisFetchCacheByIdentity(input: IdentityCacheLookupInput) {
+  return findNhisFetchCacheByIdentity(input, {
+    includeExpired: false,
+    okOnly: true,
+  });
+}
+
+export async function getLatestNhisFetchCacheByIdentity(input: IdentityCacheLookupInput) {
+  return findNhisFetchCacheByIdentity(input, {
+    includeExpired: true,
+    okOnly: true,
+  });
+}
+
+async function findNhisFetchCacheByIdentity(
+  input: IdentityCacheLookupInput,
+  mode: IdentityCacheQueryMode
+) {
   const now = new Date();
   const normalizedTargets = [...new Set(input.targets.map((target) => target.trim()).filter(Boolean))]
     .sort((left, right) => left.localeCompare(right));
 
+  const where: Prisma.HealthProviderFetchCacheWhereInput = {
+    appUserId: input.appUserId,
+    provider: HYPHEN_PROVIDER,
+    identityHash: input.identityHash,
+    targets: { equals: normalizedTargets },
+    yearLimit: input.yearLimit ?? null,
+    subjectType: input.subjectType ?? null,
+    ...(mode.okOnly ? { ok: true } : {}),
+    ...(mode.includeExpired ? {} : { expiresAt: { gt: now } }),
+  };
+
   const cached = await db.healthProviderFetchCache.findFirst({
-    where: {
-      appUserId: input.appUserId,
-      provider: HYPHEN_PROVIDER,
-      identityHash: input.identityHash,
-      targets: { equals: normalizedTargets },
-      yearLimit: input.yearLimit ?? null,
-      subjectType: input.subjectType ?? null,
-      ok: true,
-      expiresAt: { gt: now },
-    },
+    where,
     orderBy: { fetchedAt: "desc" },
   });
 

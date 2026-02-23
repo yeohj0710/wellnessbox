@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
   NHIS_FETCH_DAILY_LIMIT_ERR_CODE,
@@ -7,9 +7,7 @@ import {
   NHIS_TARGET_POLICY_BLOCKED_ERR_CODE,
 } from "@/lib/shared/hyphen-fetch";
 import type { HyphenNhisRequestPayload } from "@/lib/server/hyphen/client";
-import {
-  NHIS_FETCH_TARGETS,
-} from "@/lib/server/hyphen/fetch-contract";
+import { NHIS_FETCH_TARGETS } from "@/lib/server/hyphen/fetch-contract";
 import type { NhisFetchTarget } from "@/lib/server/hyphen/fetch-contract";
 import { executeNhisFetch } from "@/lib/server/hyphen/fetch-executor";
 import {
@@ -37,13 +35,14 @@ import {
 } from "@/lib/server/hyphen/fetch-policy";
 import { getNhisLink } from "@/lib/server/hyphen/link";
 import { buildNhisRequestDefaults } from "@/lib/server/hyphen/request-defaults";
-import { logHyphenError, NO_STORE_HEADERS } from "@/lib/server/hyphen/route-utils";
+import {
+  logHyphenError,
+  NO_STORE_HEADERS,
+} from "@/lib/server/hyphen/route-utils";
 import { resolveBlockedNhisFetchTargets } from "@/lib/server/hyphen/target-policy";
-import { requireUserSession } from "@/lib/server/route-auth";
-
+import { requireNhisSession } from "@/lib/server/route-auth";
 export const runtime = "nodejs";
 const NHIS_LOGIN_SESSION_EXPIRED_ERR_CODE = "LOGIN-999";
-
 const targetEnum = z.enum(NHIS_FETCH_TARGETS);
 const fetchSchema = z
   .object({
@@ -52,11 +51,9 @@ const fetchSchema = z
     forceRefresh: z.boolean().optional(),
   })
   .optional();
-
 function dedupeTargets(input?: NhisFetchTarget[]) {
   return dedupeNhisFetchTargets(input);
 }
-
 function buildBasePayload(options: {
   linkLoginMethod: string | null | undefined;
   linkLoginOrgCd: string | null | undefined;
@@ -71,15 +68,11 @@ function buildBasePayload(options: {
     showCookie: "Y" as const,
   };
 }
-
-function buildDetailPayload(basePayload: HyphenNhisRequestPayload): HyphenNhisRequestPayload {
-  return {
-    ...basePayload,
-    detailYn: "Y" as const,
-    imgYn: "N" as const,
-  };
+function buildDetailPayload(
+  basePayload: HyphenNhisRequestPayload
+): HyphenNhisRequestPayload {
+  return { ...basePayload, detailYn: "Y" as const, imgYn: "N" as const };
 }
-
 async function recordNhisFetchAttemptSafe(input: {
   appUserId: string;
   identityHash: string;
@@ -90,31 +83,22 @@ async function recordNhisFetchAttemptSafe(input: {
   ok: boolean;
 }) {
   try {
-    await recordNhisFetchAttempt({
-      ...input,
-      cached: false,
-    });
+    await recordNhisFetchAttempt({ ...input, cached: false });
   } catch (error) {
     logHyphenError("[hyphen][fetch] failed to record fetch attempt", error);
   }
 }
-
 export async function POST(req: Request) {
-  const auth = await requireUserSession();
+  const auth = await requireNhisSession();
   if (!auth.ok) return auth.response;
-
   const body = await req.json().catch(() => ({}));
   const parsed = fetchSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      {
-        ok: false,
-        error: parsed.error.issues[0]?.message || "Invalid input",
-      },
+      { ok: false, error: parsed.error.issues[0]?.message || "Invalid input" },
       { status: 400, headers: NO_STORE_HEADERS }
     );
   }
-
   const targets = dedupeTargets(parsed.data?.targets);
   const effectiveYearLimit = resolveNhisEffectiveYearLimit(
     targets,
@@ -122,7 +106,6 @@ export async function POST(req: Request) {
   );
   const forceRefresh = parsed.data?.forceRefresh === true;
   const blockedTargets = resolveBlockedNhisFetchTargets(targets);
-
   if (blockedTargets.length > 0) {
     return NextResponse.json(
       {
@@ -135,23 +118,19 @@ export async function POST(req: Request) {
       { status: 400, headers: NO_STORE_HEADERS }
     );
   }
-
   const [link, latestFetchAttemptAt] = await Promise.all([
     getNhisLink(auth.data.appUserId),
-    forceRefresh ? getLatestNhisFetchAttemptAt(auth.data.appUserId) : Promise.resolve(null),
+    forceRefresh
+      ? getLatestNhisFetchAttemptAt(auth.data.appUserId)
+      : Promise.resolve(null),
   ]);
   const requestDefaults = buildNhisRequestDefaults();
-
   if (!link?.linked) {
     return NextResponse.json(
-      {
-        ok: false,
-        error: "Link is not completed. Run init/sign first.",
-      },
+      { ok: false, error: "Link is not completed. Run init/sign first." },
       { status: 409, headers: NO_STORE_HEADERS }
     );
   }
-
   const identity = resolveNhisIdentityHash({
     appUserId: auth.data.appUserId,
     loginOrgCd: link.loginOrgCd,
@@ -165,10 +144,11 @@ export async function POST(req: Request) {
     toDate: requestDefaults.toDate,
     subjectType: requestDefaults.subjectType,
   });
-  const shouldUpdateIdentityHash = link.lastIdentityHash !== identity.identityHash;
-
+  const shouldUpdateIdentityHash =
+    link.lastIdentityHash !== identity.identityHash;
   if (forceRefresh) {
-    const forceRefreshCacheGuardSeconds = resolveNhisForceRefreshCacheGuardSeconds();
+    const forceRefreshCacheGuardSeconds =
+      resolveNhisForceRefreshCacheGuardSeconds();
     if (forceRefreshCacheGuardSeconds > 0) {
       const guardedCachedResponse = await tryServeNhisFetchCache({
         appUserId: auth.data.appUserId,
@@ -184,7 +164,6 @@ export async function POST(req: Request) {
       });
       if (guardedCachedResponse) return guardedCachedResponse;
     }
-
     const cooldown = computeNhisForceRefreshCooldown(
       pickMostRecentDate(link.lastFetchedAt, latestFetchAttemptAt)
     );
@@ -200,15 +179,11 @@ export async function POST(req: Request) {
         },
         {
           status: 429,
-          headers: {
-            ...NO_STORE_HEADERS,
-            "Retry-After": String(retryAfter),
-          },
+          headers: { ...NO_STORE_HEADERS, "Retry-After": String(retryAfter) },
         }
       );
     }
   }
-
   if (!forceRefresh) {
     const cachedResponse = await tryServeNhisFetchCache({
       appUserId: auth.data.appUserId,
@@ -218,10 +193,10 @@ export async function POST(req: Request) {
       targets: requestHashMeta.normalizedTargets,
       yearLimit: effectiveYearLimit,
       subjectType: requestDefaults.subjectType,
+      allowHistoryFallback: true,
     });
     if (cachedResponse) return cachedResponse;
   }
-
   const fetchBudget = await evaluateNhisFetchBudget({
     appUserId: auth.data.appUserId,
     forceRefresh,
@@ -256,7 +231,6 @@ export async function POST(req: Request) {
       }
     );
   }
-
   const basePayload = buildBasePayload({
     linkLoginMethod: link.loginMethod,
     linkLoginOrgCd: link.loginOrgCd,
@@ -264,7 +238,6 @@ export async function POST(req: Request) {
     requestDefaults,
   });
   const detailPayload = buildDetailPayload(basePayload);
-
   const dedupKey = `${auth.data.appUserId}|${requestHashMeta.requestHash}`;
   const freshResult = await runWithNhisFetchDedup(dedupKey, async () => {
     try {
@@ -275,7 +248,6 @@ export async function POST(req: Request) {
         detailPayload,
         requestDefaults,
       });
-
       if (!executed.payload.ok) {
         const failedErrCode =
           typeof executed.firstFailed?.errCd === "string"
@@ -287,7 +259,8 @@ export async function POST(req: Request) {
             NHIS_LOGIN_SESSION_EXPIRED_ERR_CODE
         );
         const failedStatusCode =
-          failedErrCode === NHIS_LOGIN_SESSION_EXPIRED_ERR_CODE || hasSessionExpiredFailure
+          failedErrCode === NHIS_LOGIN_SESSION_EXPIRED_ERR_CODE ||
+          hasSessionExpiredFailure
             ? 401
             : 502;
         await persistNhisFetchResult({
@@ -312,12 +285,8 @@ export async function POST(req: Request) {
           statusCode: failedStatusCode,
           ok: false,
         });
-        return {
-          statusCode: failedStatusCode,
-          payload: executed.payload,
-        };
+        return { statusCode: failedStatusCode, payload: executed.payload };
       }
-
       await persistNhisFetchResult({
         appUserId: auth.data.appUserId,
         identityHash: identity.identityHash,
@@ -340,11 +309,7 @@ export async function POST(req: Request) {
         statusCode: 200,
         ok: true,
       });
-
-      return {
-        statusCode: 200,
-        payload: executed.payload,
-      };
+      return { statusCode: 200, payload: executed.payload };
     } catch (error) {
       await recordNhisFetchAttemptSafe({
         appUserId: auth.data.appUserId,
@@ -358,22 +323,14 @@ export async function POST(req: Request) {
       throw error;
     }
   });
-
   if (!freshResult.payload.ok) {
     return NextResponse.json(freshResult.payload, {
       status: freshResult.statusCode,
       headers: NO_STORE_HEADERS,
     });
   }
-
   return NextResponse.json(
-    {
-      ...freshResult.payload,
-      cached: false,
-      cache: {
-        source: "fresh",
-      },
-    },
+    { ...freshResult.payload, cached: false, cache: { source: "fresh" } },
     { status: freshResult.statusCode, headers: NO_STORE_HEADERS }
   );
 }

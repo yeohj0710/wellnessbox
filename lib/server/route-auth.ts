@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
+import { headers as nextHeaders, cookies as nextCookies } from "next/headers";
 import db from "@/lib/db";
 import getSession from "@/lib/session";
+import { ensureClient } from "@/lib/server/client";
 import { normalizePhone } from "@/lib/otp";
+import { CLIENT_COOKIE_NAME, isValidClientIdValue } from "@/lib/shared/client-id";
 
 type GuardSuccess<T> = { ok: true; data: T };
 type GuardFailure = { ok: false; response: NextResponse };
@@ -27,6 +30,25 @@ function badRequest(message = "Invalid request"): GuardFailure {
 
 function normalizePhoneLoose(value: string | null | undefined): string {
   return normalizePhone(value ?? "").replace(/\D/g, "");
+}
+
+function toGuestKakaoId(clientId: string) {
+  return `guest:cid:${clientId}`;
+}
+
+async function ensureGuestAppUser(clientId: string) {
+  const guestKakaoId = toGuestKakaoId(clientId);
+  return db.appUser.upsert({
+    where: { kakaoId: guestKakaoId },
+    create: {
+      kakaoId: guestKakaoId,
+      clientId,
+    },
+    update: {
+      clientId,
+    },
+    select: { id: true, phone: true },
+  });
 }
 
 async function resolveLoggedInAppUser() {
@@ -95,6 +117,66 @@ export async function requireUserSession(): Promise<
       appUserId: appUser.id,
       kakaoId: String(session.user.kakaoId),
       phone: appUser.phone ?? null,
+    },
+  };
+}
+
+export async function requireNhisSession(): Promise<
+  GuardResult<{
+    appUserId: string;
+    kakaoId: string | null;
+    phone: string | null;
+    loggedIn: boolean;
+    guest: boolean;
+    clientId: string | null;
+  }>
+> {
+  const { session, appUser } = await resolveLoggedInAppUser();
+  if (session.user?.loggedIn && typeof session.user.kakaoId === "number") {
+    const kakaoId = String(session.user.kakaoId);
+    const resolvedAppUser =
+      appUser ??
+      (await db.appUser.upsert({
+        where: { kakaoId },
+        create: { kakaoId },
+        update: {},
+        select: { id: true, phone: true },
+      }));
+
+    return {
+      ok: true,
+      data: {
+        appUserId: resolvedAppUser.id,
+        kakaoId,
+        phone: resolvedAppUser.phone ?? null,
+        loggedIn: true,
+        guest: false,
+        clientId: null,
+      },
+    };
+  }
+
+  const cookieStore = await nextCookies();
+  const clientIdRaw = cookieStore.get(CLIENT_COOKIE_NAME)?.value ?? null;
+  if (!isValidClientIdValue(clientIdRaw)) {
+    return unauthorized("Client session is required");
+  }
+
+  const h = await nextHeaders();
+  await ensureClient(clientIdRaw, {
+    userAgent: h.get("user-agent"),
+  });
+  const guestAppUser = await ensureGuestAppUser(clientIdRaw);
+
+  return {
+    ok: true,
+    data: {
+      appUserId: guestAppUser.id,
+      kakaoId: null,
+      phone: guestAppUser.phone ?? null,
+      loggedIn: false,
+      guest: true,
+      clientId: clientIdRaw,
     },
   };
 }

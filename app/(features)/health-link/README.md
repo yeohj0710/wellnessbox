@@ -62,8 +62,11 @@ Single page flow for Hyphen NHIS integration:
 
 ## Behavioral Notes
 
-- Current UX supports KAKAO-first EASY flow.
+- 카카오 로그인 없이도 본인정보 입력 후 바로 EASY 연동을 시작할 수 있습니다.
+- 카카오 로그인은 선택이며, 다기기 기록 복원 용도로만 권장됩니다.
+- Same identity + existing DB cache can short-circuit `init` to immediate relink (`nextStep: fetch`).
 - After `sign` success, the client immediately runs summary fetch (no extra middle step click).
+- linked 상태로 페이지에 진입하면 최신 요약 조회를 자동으로 1회 실행합니다.
 - `fetch` supports partial success handling so one endpoint failure does not drop all cards.
 - Error code `C0012-001` should trigger a prerequisite guidance card.
 
@@ -100,6 +103,7 @@ Single page flow for Hyphen NHIS integration:
   - `cached: true|false`
   - `cache.source`
   - `cache.fetchedAt`, `cache.expiresAt`
+  - `cache.source = db-history` means latest identity cache was replayed even after TTL expiry.
   - `cache.source = db-force-guard` means a force-refresh request was replayed from recent cache.
 - `unlink` clears both link credentials and cached fetch entries.
 

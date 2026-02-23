@@ -17,10 +17,7 @@
   margin: 0 auto;
   padding: 20px 14px 64px;
   color: var(--ink-1);
-  font-family:
-    "Pretendard Variable",
-    "Noto Sans KR",
-    "Apple SD Gothic Neo",
+  font-family: "Pretendard Variable", "Noto Sans KR", "Apple SD Gothic Neo",
     sans-serif;
 }
 
@@ -116,6 +113,10 @@
   font-weight: 700;
 }
 
+.headerNotice {
+  margin-top: 12px;
+}
+
 .sectionCard {
   margin-top: 12px;
   padding: 20px;
@@ -166,6 +167,7 @@
 .detailButton:focus-visible,
 .advancedActionDetails summary:focus-visible,
 .statusDetails summary:focus-visible,
+.optionalLoginDetails summary:focus-visible,
 .rawSection summary:focus-visible {
   outline: 2px solid #6ba4ff;
   outline-offset: 2px;
@@ -255,12 +257,70 @@
   gap: 10px;
 }
 
+.requiredCard {
+  border-radius: 14px;
+  border: 1px solid #cdddfc;
+  background: #eff5ff;
+  padding: 12px 13px;
+  display: grid;
+  gap: 6px;
+}
+
+.requiredCard strong {
+  color: #245ecf;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.requiredCard p {
+  margin: 0;
+  color: #3f4b5f;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.optionalLoginDetails {
+  margin-top: 2px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #fbfcfe;
+  padding: 10px 12px;
+}
+
+.optionalLoginDetails summary {
+  cursor: pointer;
+  user-select: none;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.optionalLoginBody {
+  margin-top: 8px;
+  display: grid;
+  gap: 8px;
+}
+
+.optionalLoginBody p {
+  margin: 0;
+  color: var(--ink-3);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.optionalLoginButton {
+  min-height: 44px;
+  border-radius: 12px !important;
+  font-size: 14px;
+  font-weight: 700;
+}
+
 .kakaoOnly {
   grid-column: 1 / -1;
-  border-radius: 14px;
-  border: 1px solid #f0d23f;
-  background: linear-gradient(180deg, #fff9d7, #fffdf1);
-  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid #dae2f1;
+  background: #f7f9fd;
+  padding: 14px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -268,15 +328,15 @@
 
 .kakaoOnly strong {
   display: block;
-  font-size: 14px;
-  font-weight: 800;
-  color: #1f2937;
+  font-size: 13px;
+  font-weight: 700;
+  color: #2e3647;
 }
 
 .kakaoOnly p {
   margin: 2px 0 0;
   font-size: 12px;
-  color: #5e6470;
+  color: #667085;
 }
 
 .field {
@@ -365,6 +425,12 @@
 .unlinkButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.mandatoryHint {
+  margin: 0;
+  color: #51627a;
+  font-size: 12px;
 }
 
 .noticeStack {

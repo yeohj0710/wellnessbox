@@ -3,7 +3,10 @@
 import Image from "next/image";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { TrashIcon } from "@heroicons/react/16/solid";
-import { fetchJsonWithTimeout, FetchTimeoutError } from "@/lib/client/fetch-utils";
+import {
+  fetchJsonWithTimeout,
+  FetchTimeoutError,
+} from "@/lib/client/fetch-utils";
 import { writeClientCartItems } from "@/lib/client/cart-storage";
 import { useDraggableModal } from "@/components/common/useDraggableModal";
 
@@ -23,7 +26,9 @@ export default function CartItemsSection({
 }: any) {
   const [confirmType, setConfirmType] = useState<string | null>(null);
   const [products, setProducts] = useState<any[]>(allProducts);
-  const [cartProductsError, setCartProductsError] = useState<string | null>(null);
+  const [cartProductsError, setCartProductsError] = useState<string | null>(
+    null
+  );
   const [productsResolveToken, setProductsResolveToken] = useState(0);
   const [isResolvingProducts, setIsResolvingProducts] = useState(false);
   const onUpdateCartRef = useRef(onUpdateCart);
@@ -151,7 +156,9 @@ export default function CartItemsSection({
   return (
     <>
       <div className="px-4 sm:mt-2">
-        <h2 className="text-lg font-bold pb-4 border-b mb-4">선택한 상품</h2>
+        <h2 className="text-lg font-bold pb-4 border-b mb-4 mt-4">
+          선택한 상품
+        </h2>
       </div>
 
       <div className="space-y-4 px-4 mb-2 min-h-28">

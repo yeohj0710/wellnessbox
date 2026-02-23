@@ -2,6 +2,7 @@ import "server-only";
 
 import { NextResponse } from "next/server";
 import {
+  getLatestNhisFetchCacheByIdentity,
   getValidNhisFetchCache,
   getValidNhisFetchCacheByIdentity,
   markNhisFetchCacheHit,
@@ -26,6 +27,7 @@ type TryServeNhisFetchCacheInput = {
   yearLimit: number;
   subjectType: string;
   maxAgeSeconds?: number;
+  allowHistoryFallback?: boolean;
   sourceOverride?: string;
   forceRefreshGuarded?: boolean;
 };
@@ -63,19 +65,34 @@ export async function tryServeNhisFetchCache(input: TryServeNhisFetchCacheInput)
       yearLimit: input.yearLimit,
       subjectType: input.subjectType,
     }));
-  if (!identityCached) return null;
+  const historyCached =
+    !identityCached && input.allowHistoryFallback
+      ? await getLatestNhisFetchCacheByIdentity({
+          appUserId: input.appUserId,
+          identityHash: input.identityHash,
+          targets: input.targets,
+          yearLimit: input.yearLimit,
+          subjectType: input.subjectType,
+        })
+      : null;
+  const selectedCache = identityCached ?? historyCached;
+  if (!selectedCache) return null;
 
   let ageSeconds: number | null = null;
   if (typeof input.maxAgeSeconds === "number" && input.maxAgeSeconds >= 0) {
     ageSeconds = Math.max(
       0,
-      Math.floor((Date.now() - identityCached.fetchedAt.getTime()) / 1000)
+      Math.floor((Date.now() - selectedCache.fetchedAt.getTime()) / 1000)
     );
     if (ageSeconds > input.maxAgeSeconds) return null;
   }
 
-  const cachedPayload = toFetchRoutePayload(identityCached.payload);
+  const cachedPayload = toFetchRoutePayload(selectedCache.payload);
   if (!cachedPayload) return null;
+  const stale = selectedCache.expiresAt.getTime() <= Date.now();
+  const resolvedSource =
+    input.sourceOverride ||
+    (historyCached ? "db-history" : directCached ? "db" : "db-identity");
 
   const linkPatch: {
     lastIdentityHash?: string;
@@ -92,7 +109,7 @@ export async function tryServeNhisFetchCache(input: TryServeNhisFetchCacheInput)
   }
 
   await Promise.all([
-    markNhisFetchCacheHit(identityCached.id),
+    markNhisFetchCacheHit(selectedCache.id),
     ...(Object.keys(linkPatch).length > 0
       ? [
           upsertNhisLink(input.appUserId, linkPatch),
@@ -112,12 +129,13 @@ export async function tryServeNhisFetchCache(input: TryServeNhisFetchCacheInput)
           }
         : {}),
       cache: {
-        source: input.sourceOverride || (directCached ? "db" : "db-identity"),
-        fetchedAt: identityCached.fetchedAt.toISOString(),
-        expiresAt: identityCached.expiresAt.toISOString(),
+        source: resolvedSource,
+        stale,
+        fetchedAt: selectedCache.fetchedAt.toISOString(),
+        expiresAt: selectedCache.expiresAt.toISOString(),
       },
     },
-    { status: identityCached.statusCode, headers: NO_STORE_HEADERS }
+    { status: selectedCache.statusCode, headers: NO_STORE_HEADERS }
   );
 }
 

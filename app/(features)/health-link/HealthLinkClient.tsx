@@ -56,7 +56,7 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
     handleFetch,
     handleFetchFresh,
     handleUnlink,
-  } = useNhisHealthLink(loggedIn);
+  } = useNhisHealthLink();
 
   const hasAuthRequested = !!(status?.pendingAuthReady || status?.hasStepData);
   const statusLinked = !!status?.linked;
@@ -65,8 +65,8 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
     statusChip.tone === "on"
       ? styles.statusOn
       : statusChip.tone === "pending"
-        ? styles.statusPending
-        : styles.statusOff;
+      ? styles.statusPending
+      : styles.statusOff;
 
   const basePrimaryFlow = resolvePrimaryFlow(statusLinked, hasAuthRequested);
   const hasFetchedResponse = fetched !== null;
@@ -89,15 +89,18 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
   const medicationRows = fetched?.normalized?.medication?.list ?? [];
   const metricSourceRows = checkupOverviewRows;
   const checkupMetricRows = filterCheckupMetricRows(metricSourceRows);
-  const latestCheckupRows = selectLatestCheckupRows(checkupMetricRows).map((row) => ({
-    ...row,
-    statusTone: resolveCheckupMetricTone(row),
-  }));
+  const latestCheckupRows = selectLatestCheckupRows(checkupMetricRows).map(
+    (row) => ({
+      ...row,
+      statusTone: resolveCheckupMetricTone(row),
+    })
+  );
   const latestCheckupMeta = extractLatestCheckupMeta(
     selectLatestCheckupRows(checkupOverviewRows)
   );
   const medicationDigest = summarizeMedicationRows(medicationRows);
-  const hasFetchResult = latestCheckupRows.length > 0 || medicationRows.length > 0;
+  const hasFetchResult =
+    latestCheckupRows.length > 0 || medicationRows.length > 0;
   const fetchCacheHint = resolveFetchCacheHint(fetchCacheInfo, formatDateTime);
 
   const primaryLoading = actionLoading === primaryFlow.kind;
@@ -105,18 +108,24 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
     ? HEALTH_LINK_COPY.action.retryAuth
     : resolvePrimaryButtonLabel(primaryFlow.kind === "fetch", hasFetchResult);
   const primaryDisabled =
-    !loggedIn ||
     !canRequest ||
     (primaryFlow.kind === "sign" && !canSign) ||
     (primaryFlow.kind === "fetch" && !canFetch);
   const forceRefreshAvailableAt = status?.forceRefresh?.availableAt ?? null;
-  const forceRefreshBudgetRemaining = status?.fetchBudget?.forceRefresh.remaining ?? null;
-  const forceRefreshBudgetLimit = status?.fetchBudget?.forceRefresh.limit ?? null;
-  const forceRefreshBudgetWindowHours = status?.fetchBudget?.windowHours ?? null;
+  const forceRefreshBudgetRemaining =
+    status?.fetchBudget?.forceRefresh.remaining ?? null;
+  const forceRefreshBudgetLimit =
+    status?.fetchBudget?.forceRefresh.limit ?? null;
+  const forceRefreshBudgetWindowHours =
+    status?.fetchBudget?.windowHours ?? null;
   const forceRefreshBudgetBlocked =
-    typeof forceRefreshBudgetRemaining === "number" && forceRefreshBudgetRemaining <= 0;
+    typeof forceRefreshBudgetRemaining === "number" &&
+    forceRefreshBudgetRemaining <= 0;
   const forceRefreshDisabled =
-    !canFetch || !canRequest || forceRefreshBlocked || forceRefreshBudgetBlocked;
+    !canFetch ||
+    !canRequest ||
+    forceRefreshBlocked ||
+    forceRefreshBudgetBlocked;
   const forceRefreshHint = resolveForceRefreshHint(
     forceRefreshBlocked,
     forceRefreshRemainingSeconds,
@@ -154,7 +163,6 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
   return (
     <div className={styles.page}>
       <HealthLinkHeader
-        loggedIn={loggedIn}
         statusChipLabel={statusChip.label}
         statusChipTone={statusChipTone}
         loginOrgCd={status?.loginOrgCd}

@@ -4,12 +4,13 @@
 
 - `POST /api/health/nhis/init`
   - Starts EASY auth (kakao only in current deployment).
+  - Supports both logged-in users and guest users with client cookie.
 - `POST /api/health/nhis/sign`
   - Completes EASY auth and persists cookie/session artifacts.
 - `GET /api/health/nhis/status`
-  - Returns link status for current signed-in user.
+  - Returns link status for current actor (logged-in user or guest actor).
   - Includes cache metrics (`totalEntries`, `validEntries`, latest cache timestamps/hit count).
-  - Includes `cache.summaryAvailable` so client can avoid budget-blocked summary fetch calls.
+  - Includes `cache.summaryAvailable` + `cache.summarySource` (`valid` | `history`) so client can avoid budget-blocked summary fetch calls.
   - Includes force-refresh cooldown state (`available`, `remainingSeconds`, `availableAt`).
   - Includes target policy state (`highCostTargetsEnabled`, `allowedTargets`).
 - `POST /api/health/nhis/fetch`
@@ -21,6 +22,15 @@
   - Fetch flow relies on persisted linked credentials only; it does not consume pending easy-auth session state.
 - `POST /api/health/nhis/unlink`
   - Clears link info and fetch cache.
+
+## Access Model
+
+- Health-link routes use `requireNhisSession` guard.
+- Logged-in case:
+  - uses Kakao-linked `AppUser`.
+- Guest case (no Kakao login):
+  - uses client cookie (`wb_cid`) scoped guest `AppUser` (`guest:cid:<clientId>`).
+  - allows fast path without login while isolating data per device client id.
 
 ## Fetch Request
 
@@ -66,6 +76,7 @@
     - `budget` snapshot (`windowHours`, `fresh`, `forceRefresh`)
 - Init/Sign duplicate-call protection:
   - `init` reuses existing pending step state for same identity instead of re-calling provider
+  - `init` can relink immediately from DB cache for same identity (`nextStep: fetch`) without re-calling provider
   - `init`/`sign` use in-flight dedupe to collapse concurrent duplicate requests
   - `sign` short-circuits when already linked for same identity
 - Cache-first behavior:
@@ -75,6 +86,7 @@
   - `cache.source` values:
     - `db`: exact request-hash hit
     - `db-identity`: identity-level fallback hit
+    - `db-history`: identity-level latest success cache replay (expired cache fallback)
     - `db-force-guard`: force-refresh request replayed from recent cache by cost guard
     - `fresh`: provider fanout executed
 - In-flight dedupe:

@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import db from "@/lib/db";
 import { HYPHEN_PROVIDER } from "@/lib/server/hyphen/client";
 import { getNhisFetchBudgetSnapshot } from "@/lib/server/hyphen/fetch-attempt";
 import {
+  getLatestNhisFetchCacheByIdentity,
   getLatestNhisFetchAttemptAt,
   getValidNhisFetchCacheByIdentity,
   resolveNhisIdentityHash,
@@ -19,88 +20,110 @@ import {
   resolveAllowedNhisFetchTargets,
 } from "@/lib/server/hyphen/target-policy";
 import { NO_STORE_HEADERS } from "@/lib/server/hyphen/route-utils";
-import { requireUserSession } from "@/lib/server/route-auth";
-
+import { requireNhisSession } from "@/lib/server/route-auth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
 const SUMMARY_STATUS_TARGET_SETS = [
   ["checkupOverview", "medication"],
   ["checkupOverview"],
 ] as const;
 const SUMMARY_STATUS_YEAR_LIMIT = 1;
-
 export async function GET() {
-  const auth = await requireUserSession();
+  const auth = await requireNhisSession();
   if (!auth.ok) return auth.response;
-
   const now = new Date();
   const requestDefaults = buildNhisRequestDefaults();
-  const [link, pendingEasyAuth, totalCacheEntries, validCacheEntries, latestCacheEntry, fetchBudget, latestFetchAttemptAt] =
-    await Promise.all([
-      getNhisLink(auth.data.appUserId),
-      getPendingEasyAuth(),
-      db.healthProviderFetchCache.count({
-        where: {
-          appUserId: auth.data.appUserId,
-          provider: HYPHEN_PROVIDER,
-        },
-      }),
-      db.healthProviderFetchCache.count({
-        where: {
-          appUserId: auth.data.appUserId,
-          provider: HYPHEN_PROVIDER,
-          expiresAt: { gt: now },
-        },
-      }),
-      db.healthProviderFetchCache.findFirst({
-        where: {
-          appUserId: auth.data.appUserId,
-          provider: HYPHEN_PROVIDER,
-        },
-        orderBy: { fetchedAt: "desc" },
-        select: {
-          fetchedAt: true,
-          expiresAt: true,
-          lastHitAt: true,
-          hitCount: true,
-        },
-      }),
-      getNhisFetchBudgetSnapshot(auth.data.appUserId, now),
-      getLatestNhisFetchAttemptAt(auth.data.appUserId),
-    ]);
-
+  const [
+    link,
+    pendingEasyAuth,
+    totalCacheEntries,
+    validCacheEntries,
+    latestCacheEntry,
+    fetchBudget,
+    latestFetchAttemptAt,
+  ] = await Promise.all([
+    getNhisLink(auth.data.appUserId),
+    getPendingEasyAuth(),
+    db.healthProviderFetchCache.count({
+      where: { appUserId: auth.data.appUserId, provider: HYPHEN_PROVIDER },
+    }),
+    db.healthProviderFetchCache.count({
+      where: {
+        appUserId: auth.data.appUserId,
+        provider: HYPHEN_PROVIDER,
+        expiresAt: { gt: now },
+      },
+    }),
+    db.healthProviderFetchCache.findFirst({
+      where: { appUserId: auth.data.appUserId, provider: HYPHEN_PROVIDER },
+      orderBy: { fetchedAt: "desc" },
+      select: {
+        fetchedAt: true,
+        expiresAt: true,
+        lastHitAt: true,
+        hitCount: true,
+      },
+    }),
+    getNhisFetchBudgetSnapshot(auth.data.appUserId, now),
+    getLatestNhisFetchAttemptAt(auth.data.appUserId),
+  ]);
   let summaryCacheAvailable = false;
+  let summaryCacheSource: "valid" | "history" | null = null;
   if (link?.linked) {
     const identity = resolveNhisIdentityHash({
       appUserId: auth.data.appUserId,
       loginOrgCd: link.loginOrgCd,
       storedIdentityHash: link.lastIdentityHash,
     });
-    const summaryCaches = await Promise.all(
-      SUMMARY_STATUS_TARGET_SETS.map((targets) =>
-        getValidNhisFetchCacheByIdentity({
-          appUserId: auth.data.appUserId,
-          identityHash: identity.identityHash,
-          targets: [...targets],
-          yearLimit: SUMMARY_STATUS_YEAR_LIMIT,
-          subjectType: requestDefaults.subjectType,
-        })
-      )
+    const [summaryValidCaches, summaryHistoryCaches] = await Promise.all([
+      Promise.all(
+        SUMMARY_STATUS_TARGET_SETS.map((targets) =>
+          getValidNhisFetchCacheByIdentity({
+            appUserId: auth.data.appUserId,
+            identityHash: identity.identityHash,
+            targets: [...targets],
+            yearLimit: SUMMARY_STATUS_YEAR_LIMIT,
+            subjectType: requestDefaults.subjectType,
+          })
+        )
+      ),
+      Promise.all(
+        SUMMARY_STATUS_TARGET_SETS.map((targets) =>
+          getLatestNhisFetchCacheByIdentity({
+            appUserId: auth.data.appUserId,
+            identityHash: identity.identityHash,
+            targets: [...targets],
+            yearLimit: SUMMARY_STATUS_YEAR_LIMIT,
+            subjectType: requestDefaults.subjectType,
+          })
+        )
+      ),
+    ]);
+    const hasValidSummaryCache = summaryValidCaches.some(
+      (cache) => cache !== null
     );
-    summaryCacheAvailable = summaryCaches.some((cache) => cache !== null);
+    const hasHistorySummaryCache = summaryHistoryCaches.some(
+      (cache) => cache !== null
+    );
+    summaryCacheAvailable = hasValidSummaryCache || hasHistorySummaryCache;
+    summaryCacheSource = hasValidSummaryCache
+      ? "valid"
+      : hasHistorySummaryCache
+      ? "history"
+      : null;
   }
-
   const forceRefreshCooldown = computeNhisForceRefreshCooldown(
     pickMostRecentDate(
       link?.lastFetchedAt ?? null,
-      pickMostRecentDate(latestFetchAttemptAt, latestCacheEntry?.fetchedAt ?? null)
+      pickMostRecentDate(
+        latestFetchAttemptAt,
+        latestCacheEntry?.fetchedAt ?? null
+      )
     ),
     now
   );
   const highCostTargetsEnabled = isNhisHighCostTargetsEnabled();
   const allowedTargets = resolveAllowedNhisFetchTargets();
-
   return NextResponse.json(
     {
       ok: true,
@@ -111,12 +134,10 @@ export async function GET() {
         loginOrgCd: link?.loginOrgCd ?? null,
         lastLinkedAt: link?.lastLinkedAt?.toISOString() ?? null,
         lastFetchedAt: link?.lastFetchedAt?.toISOString() ?? null,
-        lastError: link?.lastErrorCode || link?.lastErrorMessage
-          ? {
-              code: link.lastErrorCode,
-              message: link.lastErrorMessage,
-            }
-          : null,
+        lastError:
+          link?.lastErrorCode || link?.lastErrorMessage
+            ? { code: link.lastErrorCode, message: link.lastErrorMessage }
+            : null,
         hasStepData: !!link?.stepData,
         hasCookieData: !!link?.cookieData,
         pendingAuthReady: !!pendingEasyAuth,
@@ -126,14 +147,12 @@ export async function GET() {
           remainingSeconds: forceRefreshCooldown.remainingSeconds,
           availableAt: forceRefreshCooldown.availableAt?.toISOString() ?? null,
         },
-        targetPolicy: {
-          highCostTargetsEnabled,
-          allowedTargets,
-        },
+        targetPolicy: { highCostTargetsEnabled, allowedTargets },
         cache: {
           totalEntries: totalCacheEntries,
           validEntries: validCacheEntries,
           summaryAvailable: summaryCacheAvailable,
+          summarySource: summaryCacheSource,
           latestFetchedAt: latestCacheEntry?.fetchedAt?.toISOString() ?? null,
           latestExpiresAt: latestCacheEntry?.expiresAt?.toISOString() ?? null,
           latestHitAt: latestCacheEntry?.lastHitAt?.toISOString() ?? null,
@@ -143,8 +162,6 @@ export async function GET() {
         fetchBudget,
       },
     },
-    {
-      headers: NO_STORE_HEADERS,
-    }
+    { headers: NO_STORE_HEADERS }
   );
 }

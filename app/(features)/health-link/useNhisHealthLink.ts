@@ -133,8 +133,9 @@ function buildClientBudgetBlockedMessageSafe(options: {
     : HEALTH_LINK_COPY.hook.budgetExceededFallback;
 }
 
-export function useNhisHealthLink(loggedIn: boolean) {
+export function useNhisHealthLink() {
   const autoFetchAfterSignRef = useRef(false);
+  const autoFetchOnEntryRef = useRef(false);
   const [status, setStatus] = useState<NhisStatusResponse["status"]>();
   const [statusError, setStatusError] = useState<string | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
@@ -163,7 +164,7 @@ export function useNhisHealthLink(loggedIn: boolean) {
     fetchBudget.forceRefresh.remaining <= 0;
   const summaryFetchBlocked = freshBudgetBlocked && !hasValidSummaryCache;
 
-  const canRequest = loggedIn && actionLoading === null;
+  const canRequest = actionLoading === null;
   const canSign = canRequest && !!(status?.pendingAuthReady || status?.hasStepData);
   const canFetch = canRequest && !!status?.linked && !summaryFetchBlocked;
   const hasDetailedRows = useMemo(() => {
@@ -180,7 +181,6 @@ export function useNhisHealthLink(loggedIn: boolean) {
     : null;
 
   const loadStatus = useCallback(async () => {
-    if (!loggedIn) return;
     setStatusLoading(true);
     setStatusError(null);
     try {
@@ -199,7 +199,7 @@ export function useNhisHealthLink(loggedIn: boolean) {
     } finally {
       setStatusLoading(false);
     }
-  }, [loggedIn]);
+  }, []);
 
   useEffect(() => {
     void loadStatus();
@@ -390,11 +390,20 @@ export function useNhisHealthLink(loggedIn: boolean) {
         setFetchFailures([]);
         setFetched(null);
         setFetchCacheInfo(null);
-        setActionNotice(
-          payload.reused
-            ? HEALTH_LINK_COPY.hook.initNoticeReused
-            : HEALTH_LINK_COPY.hook.initNoticeCreated
-        );
+        if (payload.linked) {
+          setActionNotice(
+            payload.reused
+              ? HEALTH_LINK_COPY.hook.initNoticeDbReused
+              : HEALTH_LINK_COPY.hook.initNoticeCreated
+          );
+          autoFetchAfterSignRef.current = true;
+        } else {
+          setActionNotice(
+            payload.reused
+              ? HEALTH_LINK_COPY.hook.initNoticeReused
+              : HEALTH_LINK_COPY.hook.initNoticeCreated
+          );
+        }
         await loadStatus();
       },
       onFailure: async () => {
@@ -445,6 +454,21 @@ export function useNhisHealthLink(loggedIn: boolean) {
     setActionNotice(HEALTH_LINK_COPY.hook.autoFetchAfterSignNotice);
     void runFetch("summary");
   }, [actionLoading, runFetch, status?.fetchBudget, status?.linked, summaryFetchBlocked]);
+
+  useEffect(() => {
+    if (autoFetchOnEntryRef.current) return;
+    if (!status?.linked) return;
+    if (actionLoading !== null) return;
+    if (fetched) {
+      autoFetchOnEntryRef.current = true;
+      return;
+    }
+    if (summaryFetchBlocked) return;
+
+    autoFetchOnEntryRef.current = true;
+    setActionNotice(HEALTH_LINK_COPY.hook.autoFetchOnEntryNotice);
+    void runFetch("summary");
+  }, [actionLoading, fetched, runFetch, status?.linked, summaryFetchBlocked]);
 
   useEffect(() => {
     if (!status?.linked) return;

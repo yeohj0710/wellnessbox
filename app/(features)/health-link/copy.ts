@@ -11,7 +11,8 @@ export const HEALTH_LINK_COPY = {
     },
     reauth: {
       title: "카카오 인증 다시 요청",
-      guide: "세션 만료로 조회가 중단되었습니다. 인증을 다시 요청한 뒤 카카오에서 승인해 주세요.",
+      guide:
+        "세션 만료로 조회가 중단되었습니다. 인증을 다시 요청한 뒤 카카오에서 승인해 주세요.",
     },
     sign: {
       title: "카카오 인증 완료",
@@ -35,12 +36,24 @@ export const HEALTH_LINK_COPY = {
     title: "건강검진 연동",
     description:
       "한 화면에서 한 단계만 진행합니다. 인증 후 결과를 자동으로 불러옵니다.",
-    signInRequired: "연동을 시작하려면 카카오 로그인이 필요합니다.",
   },
   auth: {
     title: "인증 및 연동",
     channelTitle: "카카오 인증",
-    channelDescription: "현재 배포 환경에서는 인증 채널이 카카오로 고정되어 있습니다.",
+    channelDescription: "필수 인증 채널은 카카오입니다.",
+    requiredInitTitle: "필수 단계 1. 본인정보 입력",
+    requiredInitDescription:
+      "이름, 생년월일, 휴대폰 번호를 정확히 입력하고 `다음`을 눌러 인증을 요청해 주세요.",
+    requiredSignTitle: "필수 단계 2. 카카오 승인",
+    requiredSignDescription:
+      "카카오 앱에서 인증 요청을 승인한 뒤 이 화면으로 돌아와 `다음`을 눌러 완료해 주세요.",
+    requiredActionHintInit: "필수: 입력 후 `다음`을 눌러 인증 요청",
+    requiredActionHintSign: "필수: 카카오 승인 후 `다음`을 눌러 완료",
+    optionalLoginSummary: "선택 옵션: 카카오 로그인 연동",
+    optionalLoginDescription:
+      "로그인하면 기기 변경 시 기존 기록을 더 안정적으로 이어볼 수 있습니다.",
+    optionalLoginHint:
+      "빠른 조회만 필요하면 로그인 없이 그대로 진행해도 됩니다.",
     nameLabel: "이름",
     namePlaceholder: "홍길동",
     birthLabel: "생년월일 (YYYYMMDD)",
@@ -49,7 +62,8 @@ export const HEALTH_LINK_COPY = {
     phonePlaceholder: "01012345678",
     currentStepPrefix: "현재 단계",
     pendingTitle: "카카오 인증을 완료해 주세요",
-    pendingDescription: "카카오 앱에서 인증 승인 후 확인을 누르면 결과를 자동으로 불러옵니다.",
+    pendingDescription:
+      "카카오 앱에서 인증 승인 후 확인을 누르면 결과를 자동으로 불러옵니다.",
     prerequisiteTitle: "사전 준비가 필요합니다",
     prerequisiteDescription:
       "건강iN에서 건강검진 서비스를 먼저 활성화한 뒤 다시 시도해 주세요.",
@@ -61,12 +75,10 @@ export const HEALTH_LINK_COPY = {
       "비용 보호 정책으로 강제 새로고침이 잠시 제한되었습니다. 잠시 후 다시 시도해 주세요.",
     targetPolicyBlockedPrefix:
       "현재 비용 정책에서는 검진 타깃만 허용됩니다. 차단된 타깃:",
-    targetPolicyBlockedDefault:
-      "현재 비용 정책에서는 검진 타깃만 허용됩니다.",
+    targetPolicyBlockedDefault: "현재 비용 정책에서는 검진 타깃만 허용됩니다.",
     budgetRetrySuffixPrefix: " 재시도 가능까지",
     budgetRetrySuffixUnit: "초 남았습니다.",
-    budgetExceededDetailedPrefix:
-      "비용 보호 윈도우 한도에 도달했습니다. 최근",
+    budgetExceededDetailedPrefix: "비용 보호 윈도우 한도에 도달했습니다. 최근",
     budgetExceededDetailedMiddle: "시간 사용량:",
     budgetExceededDetailedSuffix: "사용됨.",
     budgetExceededFallback: "비용 보호 윈도우 한도에 도달했습니다.",
@@ -77,12 +89,17 @@ export const HEALTH_LINK_COPY = {
     initFallback: "인증 요청에 실패했습니다.",
     initNoticeReused:
       "기존 인증 요청 상태를 재사용했습니다. 카카오에서 인증 완료 후 다음 단계로 진행해 주세요.",
+    initNoticeDbReused:
+      "동일한 본인정보가 확인되어 저장된 검진 데이터를 DB에서 바로 불러옵니다.",
     initNoticeCreated:
       "카카오 인증 요청을 보냈습니다. 카카오에서 인증 완료 후 다음 단계로 진행해 주세요.",
     signFallback: "인증 완료 처리에 실패했습니다.",
     signNoticeReused: "이미 인증이 완료된 상태입니다.",
     signNoticeCompleted: "연동 인증이 완료되었습니다.",
-    autoFetchAfterSignNotice: "인증 완료 후 최신 검진/투약 데이터를 자동으로 조회 중입니다.",
+    autoFetchAfterSignNotice:
+      "인증 완료 후 최신 검진/투약 데이터를 자동으로 조회 중입니다.",
+    autoFetchOnEntryNotice:
+      "저장된 연동 상태를 확인해 최신 결과를 자동으로 불러오는 중입니다.",
     detailAlreadyLoadedNotice:
       "상세 수치를 이미 불러왔습니다. 추가 유료 호출 없이 현재 결과를 재사용합니다.",
     sessionExpiredDetected:
