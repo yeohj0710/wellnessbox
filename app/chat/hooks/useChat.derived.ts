@@ -4,6 +4,11 @@ import { useCallback, useMemo } from "react";
 import type { ChatSession, UserProfile } from "@/types/chat";
 import type { ChatActionType } from "@/lib/chat/agent-actions";
 import type { ChatPageAgentContext } from "@/lib/chat/page-agent-context";
+import type {
+  NormalizedAssessResult,
+  NormalizedCheckAiResult,
+  NormalizedOrderSummary,
+} from "./useChat.results";
 import {
   buildActionContextText as buildActionContextTextPayload,
   buildChatContextPayload,
@@ -24,9 +29,9 @@ type UseChatDerivedStateOptions = {
   active: ChatSession | null;
   activeId: string | null;
   profile: UserProfile | undefined;
-  orders: any[];
-  assessResult: any | null;
-  checkAiResult: any | null;
+  orders: NormalizedOrderSummary[];
+  assessResult: NormalizedAssessResult | null;
+  checkAiResult: NormalizedCheckAiResult | null;
   sessions: ChatSession[];
   localAssessCats: string[];
   localCheckAi: string[];

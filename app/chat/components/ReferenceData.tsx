@@ -1,38 +1,21 @@
 "use client";
 
 import { useMemo } from "react";
-
-interface OrderItem {
-  name: string;
-  quantity?: number;
-}
-
-interface Order {
-  id: string;
-  status: string;
-  updatedAt: number;
-  items: OrderItem[];
-}
-
-interface AssessResult {
-  createdAt: number;
-  summary: string[];
-  answers?: { question: string; answer: string }[];
-}
-
-interface CheckAiResult {
-  createdAt: number;
-  labels: string[];
-  answers?: { question: string; answer: string }[];
-}
+import type {
+  NormalizedAssessResult,
+  NormalizedCheckAiResult,
+  NormalizedOrderSummary,
+} from "../hooks/useChat.results";
 
 interface ReferenceDataProps {
-  orders: Order[];
-  assessResult: AssessResult | null;
-  checkAiResult: CheckAiResult | null;
+  orders: NormalizedOrderSummary[];
+  assessResult: NormalizedAssessResult | null;
+  checkAiResult: NormalizedCheckAiResult | null;
 }
 
-function formatKo(dt: number) {
+function formatKo(dt: string | number | Date | null) {
+  const source = dt ?? Date.now();
+  const resolved = source instanceof Date ? source : new Date(source);
   try {
     return new Intl.DateTimeFormat("ko-KR", {
       year: "numeric",
@@ -42,10 +25,20 @@ function formatKo(dt: number) {
       minute: "2-digit",
       hour12: false,
       timeZone: "Asia/Seoul",
-    }).format(new Date(dt));
+    }).format(resolved);
   } catch {
-    return new Date(dt).toLocaleString("ko-KR");
+    return resolved.toLocaleString("ko-KR");
   }
+}
+
+function toTimestamp(value: string | number | Date | null) {
+  if (value instanceof Date) return value.getTime();
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Date.parse(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
 }
 
 function clip(text: string, max = 60) {
@@ -59,7 +52,9 @@ export default function ReferenceData({
 }: ReferenceDataProps) {
   const hasOrders = Array.isArray(orders) && orders.length > 0;
   const lastOrder = hasOrders
-    ? [...orders].sort((a, b) => b.updatedAt - a.updatedAt)[0]
+    ? [...orders].sort(
+        (a, b) => toTimestamp(b.updatedAt) - toTimestamp(a.updatedAt)
+      )[0]
     : null;
   const hasAssess =
     !!assessResult &&

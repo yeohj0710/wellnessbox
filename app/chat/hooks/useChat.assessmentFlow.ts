@@ -1,5 +1,9 @@
 import type { ChatMessage } from "@/types/chat";
 import { evaluateDeepAssessAnswers, evaluateQuickCheckAnswers } from "./useChat.evaluation";
+import type {
+  NormalizedAssessResult,
+  NormalizedCheckAiResult,
+} from "./useChat.results";
 import {
   createAssessmentResultSummary,
   findNextAssessmentIndex,
@@ -65,9 +69,9 @@ type HandleInChatAssessmentInputFlowInput = {
   updateAssistantMessage: (sessionId: string, messageId: string, content: string) => void;
   finalizeAssistantTurn: (input: FinalizeAssistantTurnInput) => Promise<void>;
   setLocalCheckAi: (labels: string[]) => void;
-  setCheckAiResult: (value: unknown) => void;
+  setCheckAiResult: (value: NormalizedCheckAiResult | null) => void;
   setLocalAssessCats: (cats: string[]) => void;
-  setAssessResult: (value: unknown) => void;
+  setAssessResult: (value: NormalizedAssessResult | null) => void;
   getTzOffsetMinutes: () => number;
 };
 

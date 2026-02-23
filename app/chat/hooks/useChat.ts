@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFooter } from "@/components/common/footerContext";
-import type { ChatMessage, ChatSession, UserProfile } from "@/types/chat";
+import type { ChatSession, UserProfile } from "@/types/chat";
 import {
   getClientIdLocal,
   getTzOffsetMinutes,
@@ -11,6 +11,9 @@ import {
 import {
   readLocalAssessCats,
   readLocalCheckAiTopLabels,
+  type NormalizedAssessResult,
+  type NormalizedCheckAiResult,
+  type NormalizedOrderSummary,
 } from "./useChat.results";
 import { DEFAULT_CHAT_TITLE } from "./useChat.session";
 import {
@@ -25,45 +28,26 @@ import {
 } from "@/lib/chat/agent-actions";
 import {
   buildInChatAssessmentPrompt,
-  type InChatAssessmentMode,
   type InChatAssessmentState,
 } from "./useChat.assessment";
 import {
   requestActionExecutionDecision,
-  requestActionSuggestions,
-  requestChatSuggestions,
   requestChatTitle,
 } from "./useChat.api";
 import { filterPersistableSessions, saveChatOnce } from "./useChat.persistence";
 import {
-  appendMessagesToSession,
   replaceSessionMessageContent,
   updateSessionTitle,
 } from "./useChat.sessionState";
-import { prepareOutgoingTurn } from "./useChat.sendMessage";
-import { resolveSendMessageBranch } from "./useChat.sendMessageFlow";
-import { runStreamedAssistantTurn } from "./useChat.streamTurn";
-import { startInitialAssistantMessageFlow } from "./useChat.initialAssistant";
 import {
   finalizeAssistantTurnFlow,
   generateTitleFlow,
   type FinalizeAssistantTurnInput,
 } from "./useChat.finalizeFlow";
-import {
-  handleInChatAssessmentInputFlow,
-  initializeInChatAssessmentFlow,
-} from "./useChat.assessmentFlow";
-import {
-  fetchInteractiveActionsForSession,
-  fetchSuggestionsForSession,
-} from "./useChat.followups";
 import { CHAT_COPY, toAssistantErrorText } from "./useChat.copy";
 import {
   closeChatDrawer,
-  isContainerAtBottom,
   openChatDrawer,
-  scrollContainerToBottom,
-  scrollContainerToTop,
 } from "./useChat.ui";
 import { type LastInteractiveAction } from "./useChat.interactionGuard";
 import {
@@ -74,6 +58,15 @@ import { useChatDerivedState } from "./useChat.derived";
 import type { ChatPageAgentContext } from "@/lib/chat/page-agent-context";
 import { createInteractiveCommands } from "./useChat.interactiveCommands";
 import { createSessionCommands } from "./useChat.sessionCommands";
+import {
+  useActiveSessionScrollEffect,
+  useAutoInitAssistantEffect,
+  useStickToBottomTrackingEffect,
+} from "./useChat.scrollEffects";
+import { useChatFollowupActions } from "./useChat.followupActions";
+import { createInChatAssessmentHandlers } from "./useChat.assessmentHandlers";
+import { runSendMessageFlow } from "./useChat.sendMessageHandler";
+import { runInitialAssistantMessageHandler } from "./useChat.initialMessageHandler";
 
 type UseChatOptions = {
   manageFooter?: boolean;
@@ -99,9 +92,11 @@ export default function useChat(options: UseChatOptions = {}) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [localCheckAi, setLocalCheckAi] = useState<string[]>([]);
   const [localAssessCats, setLocalAssessCats] = useState<string[]>([]);
-  const [assessResult, setAssessResult] = useState<any | null>(null);
-  const [checkAiResult, setCheckAiResult] = useState<any | null>(null);
-  const [orders, setOrders] = useState<any[]>([]);
+  const [assessResult, setAssessResult] =
+    useState<NormalizedAssessResult | null>(null);
+  const [checkAiResult, setCheckAiResult] =
+    useState<NormalizedCheckAiResult | null>(null);
+  const [orders, setOrders] = useState<NormalizedOrderSummary[]>([]);
   const [resultsLoaded, setResultsLoaded] = useState(false);
   const [titleHighlightId, setTitleHighlightId] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -248,54 +243,20 @@ export default function useChat(options: UseChatOptions = {}) {
     actorPhoneLinked: actorPhoneLinkedRef.current,
   });
 
-  const prevActiveIdRef = useRef<string | null>(null);
-  const prevMsgCountRef = useRef(0);
-
-  useEffect(() => {
-    if (!active) return;
-
-    const msgLength = active.messages.length;
-    if (prevActiveIdRef.current !== activeId) {
-      requestAnimationFrame(() => {
-        scrollContainerToTop(messagesContainerRef);
-      });
-      prevActiveIdRef.current = activeId;
-      prevMsgCountRef.current = msgLength;
-      return;
-    }
-
-    if (msgLength > prevMsgCountRef.current) {
-      requestAnimationFrame(() => {
-        if (stickToBottomRef.current) {
-          scrollContainerToBottom(messagesContainerRef);
-        }
-      });
-      prevMsgCountRef.current = msgLength;
-    }
-  }, [activeId, active?.messages.length]);
-
-  useEffect(() => {
-    if (!enableAutoInit) return;
-    if (!resultsLoaded || !profileLoaded) return;
-    if (!activeId) return;
-
-    const session = sessions.find((item) => item.id === activeId);
-    if (!session || session.messages.length > 0) return;
-
-    startInitialAssistantMessage(activeId);
-  }, [enableAutoInit, resultsLoaded, profileLoaded, activeId, sessions]);
-
-  useEffect(() => {
-    const container = messagesContainerRef.current;
-    if (!container) return;
-
-    const onScroll = () => {
-      stickToBottomRef.current = isContainerAtBottom(messagesContainerRef);
-    };
-
-    container.addEventListener("scroll", onScroll, { passive: true });
-    return () => container.removeEventListener("scroll", onScroll);
-  }, [messagesContainerRef.current]);
+  const { fetchSuggestions, fetchInteractiveActions } = useChatFollowupActions({
+    active,
+    sessions,
+    runtimeContextText,
+    suggestionHistoryRef,
+    buildSummaryForSession,
+    buildContextPayload,
+    setSuggestions,
+    actionMemory,
+    inChatAssessmentSessionId: inChatAssessment?.sessionId ?? null,
+    buildActionContextText,
+    activeIdRef,
+    setInteractiveActions,
+  });
 
   function updateAssistantMessage(sessionId: string, messageId: string, content: string) {
     setSessions((prev) =>
@@ -350,80 +311,11 @@ export default function useChat(options: UseChatOptions = {}) {
     });
   }
 
-  async function fetchSuggestions(
-    lastAssistantText: string,
-    sessionIdOverride?: string
-  ) {
-    const targetSessionId = sessionIdOverride ?? active?.id ?? null;
-    if (!targetSessionId) {
-      setSuggestions([]);
-      return;
-    }
-    const finalSuggestions = await fetchSuggestionsForSession({
-      sessionId: targetSessionId,
-      sessions,
-      lastAssistantText,
-      runtimeContextText,
-      suggestionHistoryStore: suggestionHistoryRef.current,
-      buildSummaryForSession: (sessionId) => buildSummaryForSession(sessionId),
-      buildContextPayload: (sessionId) => buildContextPayload(sessionId),
-      requestChatSuggestions,
-    });
-    setSuggestions(finalSuggestions);
-  }
-
-  async function fetchInteractiveActions(
-    lastAssistantText: string,
-    sessionIdOverride?: string
-  ) {
-    const targetSessionId = sessionIdOverride ?? active?.id ?? null;
-    if (!targetSessionId) {
-      setInteractiveActions([]);
-      return;
-    }
-    const resolvedActions = await fetchInteractiveActionsForSession({
-      sessionId: targetSessionId,
-      sessions,
-      lastAssistantText,
-      runtimeContextText,
-      actionMemory,
-      inChatAssessmentSessionId: inChatAssessment?.sessionId ?? null,
-      buildActionContextText: (sessionId) => buildActionContextText(sessionId),
-      requestActionSuggestions,
-    });
-
-    if ((activeIdRef.current || "") !== targetSessionId) return;
-    setInteractiveActions(resolvedActions);
-  }
-
-  function initializeInChatAssessment(
-    sessionId: string,
-    mode: InChatAssessmentMode
-  ): string {
-    return initializeInChatAssessmentFlow({
-      sessionId,
-      mode,
-      setInChatAssessment,
-      clearSuggestionsAndActions: clearFollowups,
-    });
-  }
-
-  async function tryHandleInChatAssessmentInput(params: {
-    text: string;
-    sessionId: string;
-    userMessage: ChatMessage;
-    assistantMessage: ChatMessage;
-    isFirst: boolean;
-  }) {
-    return handleInChatAssessmentInputFlow({
+  const { initializeInChatAssessment, tryHandleInChatAssessmentInput } =
+    createInChatAssessmentHandlers({
       state: inChatAssessment,
-      text: params.text,
-      sessionId: params.sessionId,
-      userMessage: params.userMessage,
-      assistantMessage: params.assistantMessage,
-      isFirst: params.isFirst,
       setInChatAssessment,
-      clearSuggestionsAndActions: clearFollowups,
+      clearFollowups,
       updateAssistantMessage,
       finalizeAssistantTurn,
       setLocalCheckAi,
@@ -432,7 +324,6 @@ export default function useChat(options: UseChatOptions = {}) {
       setAssessResult,
       getTzOffsetMinutes,
     });
-  }
 
   const interactiveCommands = createInteractiveCommands({
     active,
@@ -459,101 +350,35 @@ export default function useChat(options: UseChatOptions = {}) {
   } = interactiveCommands;
 
   async function sendMessage(overrideText?: string) {
-    const preparedTurn = prepareOutgoingTurn({
+    await runSendMessageFlow(overrideText, {
       loading,
       active,
       input,
-      overrideText,
-    });
-    if (!preparedTurn) return;
-
-    const {
-      text,
-      isFirst,
-      now,
-      sessionId,
-      sessionMessages,
-      userMessage,
-      assistantMessage,
-    } = preparedTurn;
-
-    setInput("");
-    clearFollowups();
-    if (isFirst) firstUserMessageRef.current = text;
-
-    setSessions((prev) =>
-      appendMessagesToSession(prev, sessionId, [userMessage, assistantMessage], now)
-    );
-
-    stickToBottomRef.current = true;
-    requestAnimationFrame(() =>
-      requestAnimationFrame(() => scrollContainerToBottom(messagesContainerRef))
-    );
-
-    const branchResult = await resolveSendMessageBranch(
-      {
-        text,
-        sessionId,
-        sessionMessages,
-        userMessage,
-        assistantMessage,
-        isFirst,
+      setInput,
+      clearFollowups,
+      firstUserMessageRef,
+      setSessions,
+      stickToBottomRef,
+      messagesContainerRef,
+      tryHandleInChatAssessmentInput,
+      isBrowserOnline,
+      tryHandleAgentActionDecision,
+      tryHandleCartCommand,
+      updateAssistantMessage,
+      offlineChatMessage: CHAT_COPY.offlineChat,
+      setLoading,
+      buildContextPayload,
+      buildRuntimeContextPayload,
+      setAbortController: (controller) => {
+        abortRef.current = controller;
       },
-      {
-        tryHandleInChatAssessmentInput,
-        isBrowserOnline,
-        handleOffline: ({ sessionId: targetSessionId, assistantMessage: targetAssistantMessage }) => {
-          updateAssistantMessage(
-            targetSessionId,
-            targetAssistantMessage.id,
-            CHAT_COPY.offlineChat
-          );
-        },
-        tryHandleAgentActionDecision,
-        tryHandleCartCommand,
-      }
-    );
-    if (branchResult !== "stream") return;
-
-    setLoading(true);
-
-    try {
-      await runStreamedAssistantTurn({
-        mode: "chat",
-        sessionId,
-        messages: sessionMessages.concat(userMessage),
-        assistantMessage,
-        buildContextPayload,
-        buildRuntimeContextPayload,
-        updateAssistantMessage,
-        setAbortController: (controller) => {
-          abortRef.current = controller;
-        },
-        onComplete: async (fullText) => {
-          await finalizeAssistantTurn({
-            sessionId,
-            content: fullText,
-            assistantMessage,
-            userMessage,
-            isFirst,
-          });
-        },
-      });
-    } catch (error) {
-      if ((error as any)?.name !== "AbortError") {
-        updateAssistantMessage(
-          sessionId,
-          assistantMessage.id,
-          toAssistantErrorText(error)
-        );
-      }
-    } finally {
-      setLoading(false);
-    }
+      finalizeAssistantTurn,
+      toAssistantErrorText,
+    });
   }
 
   async function startInitialAssistantMessage(sessionId: string) {
-    await startInitialAssistantMessageFlow({
+    await runInitialAssistantMessageHandler({
       sessionId,
       sessions,
       resultsLoaded,
@@ -568,27 +393,34 @@ export default function useChat(options: UseChatOptions = {}) {
       buildContextPayload,
       buildRuntimeContextPayload,
       updateAssistantMessage,
-      onComplete: async ({ fullText, assistantMessage }) => {
-        fetchSuggestions(fullText, sessionId).catch(() => {});
-        fetchInteractiveActions(fullText, sessionId).catch(() => {});
-        firstAssistantMessageRef.current = fullText;
-
-        try {
-          const tzOffsetMinutes = getTzOffsetMinutes();
-          const clientId2 = getClientIdLocal();
-          await saveChatOnce({
-            savedKeys: savedKeysRef.current,
-            clientId: clientId2,
-            sessionId,
-            messages: [{ ...assistantMessage, content: fullText }],
-            tzOffsetMinutes,
-          });
-          readyToPersistRef.current[sessionId] = true;
-          setSessions((prev) => prev.slice());
-        } catch {}
-      },
+      fetchSuggestions,
+      fetchInteractiveActions,
+      firstAssistantMessageRef,
+      savedKeysRef,
+      readyToPersistRef,
     });
   }
+
+  useActiveSessionScrollEffect({
+    active,
+    activeId,
+    messagesContainerRef,
+    stickToBottomRef,
+  });
+
+  useAutoInitAssistantEffect({
+    enableAutoInit,
+    resultsLoaded,
+    profileLoaded,
+    activeId,
+    sessions,
+    startInitialAssistantMessage,
+  });
+
+  useStickToBottomTrackingEffect({
+    messagesContainerRef,
+    stickToBottomRef,
+  });
 
   const {
     newChat,

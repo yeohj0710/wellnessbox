@@ -1,70 +1,119 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { getOrderById, getOrderStatusById } from "@/lib/order";
 import { updateOrderStatus } from "@/lib/order/mutations";
 import OrderProgressBar from "@/components/order/orderProgressBar";
 import OrderAccordionHeader from "@/components/order/orderAccordionHeader";
-import { ORDER_STATUS, OrderStatus } from "@/lib/order/orderStatus";
-import Image from "next/image";
+import { ORDER_STATUS, type OrderStatus } from "@/lib/order/orderStatus";
 import { getStreamToken } from "@/lib/streamToken";
+import type {
+  OrderAccordionOrder,
+  OrderMessage,
+} from "@/components/order/orderAccordion.types";
+import {
+  RiderOrderCustomerInfoSection,
+  RiderOrderItemsSection,
+  RiderOrderPharmacyInfoSection,
+  RiderOrderStatusActionsSection,
+} from "./riderOrderAccordionSections";
+
+const POLL_INTERVAL_MS = 10_000;
 
 type OrderAccordionItemProps = {
-  initialOrder: any;
+  initialOrder: OrderAccordionOrder;
   isInitiallyExpanded: boolean;
 };
+
+function isOrderStatus(value: unknown): value is OrderStatus {
+  return (
+    typeof value === "string" &&
+    (Object.values(ORDER_STATUS) as string[]).includes(value)
+  );
+}
 
 export default function OrderAccordionItem({
   initialOrder,
   isInitiallyExpanded,
 }: OrderAccordionItemProps) {
   const [isExpanded, setIsExpanded] = useState(isInitiallyExpanded);
-  const [order, setOrder] = useState(initialOrder);
+  const [order, setOrder] = useState<OrderAccordionOrder>(initialOrder);
   const [isLoaded, setIsLoaded] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState<number | null>(null);
   const [isStateRefreshing, setIsStateRefreshing] = useState(false);
-  const [, setMessages] = useState<any[]>([]);
+  const [, setMessages] = useState<OrderMessage[]>([]);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
     if (!isExpanded || isLoaded) return;
+
+    let cancelled = false;
+
     async function fetchDetails() {
-      const detailedOrder = await getOrderById(initialOrder.id);
-      setOrder((prevOrder: any) => ({ ...prevOrder, ...detailedOrder }));
-      setIsLoaded(true);
+      try {
+        const detailedOrder = await getOrderById(initialOrder.id);
+        if (cancelled || !detailedOrder) return;
+
+        setOrder((prev) => {
+          const merged = {
+            ...prev,
+            ...(detailedOrder as Partial<OrderAccordionOrder>),
+          };
+          return {
+            ...merged,
+            status: isOrderStatus(merged.status) ? merged.status : prev.status,
+          };
+        });
+        setIsLoaded(true);
+      } catch (error) {
+        console.error(error);
+      }
     }
-    fetchDetails();
-  }, [isExpanded, isLoaded]);
+
+    void fetchDetails();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialOrder.id, isExpanded, isLoaded]);
 
   useEffect(() => {
     if (!isExpanded || !isLoaded) return;
     const intervalId = setInterval(() => {
-      refreshOrderStatus();
-    }, 10000);
+      void refreshOrderStatus();
+    }, POLL_INTERVAL_MS);
     return () => clearInterval(intervalId);
-  }, [isExpanded, isLoaded]);
+  }, [isExpanded, isLoaded, order.id]);
 
-  const esRef = useRef<EventSource | null>(null);
   useEffect(() => {
     if (!isExpanded) return;
+
     let cancelled = false;
+
     const connect = async () => {
       try {
         const token = await getStreamToken("rider", order.id);
         if (cancelled) return;
-        esRef.current = new EventSource(`/api/messages/stream/${order.id}?token=${token}`);
-        esRef.current.onmessage = (e) => {
+
+        const source = new EventSource(`/api/messages/stream/${order.id}?token=${token}`);
+        eventSourceRef.current = source;
+        source.onmessage = (event) => {
           try {
-            const msg = JSON.parse(e.data);
-            setMessages((prev) => (prev.some((m: any) => m.id === msg.id) ? prev : [...prev, msg]));
+            const message = JSON.parse(event.data) as OrderMessage;
+            setMessages((prev) =>
+              prev.some((item) => item.id === message.id) ? prev : [...prev, message]
+            );
           } catch {}
         };
       } catch {}
     };
-    connect();
+
+    void connect();
+
     return () => {
       cancelled = true;
-      esRef.current?.close();
-      esRef.current = null;
+      eventSourceRef.current?.close();
+      eventSourceRef.current = null;
     };
   }, [isExpanded, order.id]);
 
@@ -72,52 +121,56 @@ export default function OrderAccordionItem({
     setIsExpanded((prev) => !prev);
   };
 
-  const refreshOrderStatus = async (manual: boolean = false) => {
+  const refreshOrderStatus = async (manual = false) => {
     try {
       const updatedStatus = await getOrderStatusById(order.id);
-      setOrder((prev: any) => ({
+      setOrder((prev) => ({
         ...prev,
-        status: updatedStatus?.status,
+        status: isOrderStatus(updatedStatus?.status)
+          ? updatedStatus.status
+          : prev.status,
       }));
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
     } finally {
       if (manual) setIsStateRefreshing(false);
     }
   };
 
-
   const handleUpdateOrderStatus = async (
-    orderid: number,
+    orderId: number,
     newStatus: OrderStatus
   ) => {
-    setLoadingStatus(orderid);
-    const updatedOrder = await updateOrderStatus(orderid, newStatus);
-    setOrder((prevOrder: any) => ({
-      ...prevOrder,
-      ...updatedOrder,
-    }));
-    setLoadingStatus(null);
+    setLoadingStatus(orderId);
+    try {
+      const updatedOrder = (await updateOrderStatus(
+        orderId,
+        newStatus
+      )) as Partial<OrderAccordionOrder> | null;
+
+      if (!updatedOrder) return;
+
+      setOrder((prev) => {
+        const merged = {
+          ...prev,
+          ...updatedOrder,
+        };
+        return {
+          ...merged,
+          status: isOrderStatus(merged.status) ? merged.status : prev.status,
+        };
+      });
+    } finally {
+      setLoadingStatus(null);
+    }
+  };
+
+  const handleCancelPickup = () => {
+    if (!window.confirm("정말로 픽업을 취소할까요?")) return;
+    void handleUpdateOrderStatus(order.id, ORDER_STATUS.DISPENSE_COMPLETE);
   };
 
   if (isExpanded && !isLoaded) {
-      return (
-        <div className="w-full max-w-[640px] mx-auto px-6 py-6 bg-white sm:shadow-md sm:rounded-lg">
-          <OrderAccordionHeader
-            role="rider"
-            order={order}
-            isExpanded={isExpanded}
-            toggle={toggleExpanded}
-          />
-          <div className="mt-4 border-t sm:px-4 pt-16 sm:pt-12 pb-4">
-            <div className="flex justify-center items-center mt-2 mb-6">
-              <div className="w-6 h-6 border-2 border-sky-400 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-        </div>
-      </div>
-    );
-  }
-
     return (
       <div className="w-full max-w-[640px] mx-auto px-6 py-6 bg-white sm:shadow-md sm:rounded-lg">
         <OrderAccordionHeader
@@ -126,207 +179,48 @@ export default function OrderAccordionItem({
           isExpanded={isExpanded}
           toggle={toggleExpanded}
         />
-        {isExpanded && (
         <div className="mt-4 border-t sm:px-4 pt-16 sm:pt-12 pb-4">
-          <OrderProgressBar currentStatus={order.status} />
-          <div className="flex flex-col sm:flex-row justify-between sm:gap-8 mt-12 mb-6">
-            <span className="text-lg font-bold text-gray-700">
-              주문 상태 변경
-            </span>
-            <div className="flex gap-2 mt-4 sm:mt-0">
-              <button
-                onClick={() =>
-                  handleUpdateOrderStatus(
-                    order.id,
-                    ORDER_STATUS.PICKUP_COMPLETE
-                  )
-                }
-                className="text-sm flex justify-center items-center w-20 h-8 bg-orange-400 hover:bg-orange-500 text-white rounded"
-                disabled={loadingStatus === order.id}
-              >
-                {loadingStatus === order.id ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                ) : (
-                  "픽업 완료"
-                )}
-              </button>
-              <button
-                onClick={() =>
-                  handleUpdateOrderStatus(
-                    order.id,
-                    ORDER_STATUS.DELIVERY_COMPLETE
-                  )
-                }
-                className="text-sm flex justify-center items-center w-20 h-8 bg-gray-400 hover:bg-gray-500 text-white rounded"
-                disabled={loadingStatus === order.id}
-              >
-                {loadingStatus === order.id ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                ) : (
-                  "배송 완료"
-                )}
-              </button>
-              <button
-                onClick={() => {
-                  const confirmCancel =
-                    window.confirm("정말로 픽업을 취소할까요?");
-                  if (confirmCancel) {
-                    handleUpdateOrderStatus(
-                      order.id,
-                      ORDER_STATUS.DISPENSE_COMPLETE
-                    );
-                  }
-                }}
-                className="text-sm flex justify-center items-center w-20 h-8 bg-red-400 hover:bg-red-500 text-white rounded"
-                disabled={loadingStatus === order.id}
-              >
-                {loadingStatus === order.id ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                ) : (
-                  "픽업 취소"
-                )}
-              </button>
-            </div>
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-gray-700 mb-4 mt-4">
-              주문 상세 내역
-            </h2>
-            {order.orderItems.map((orderItem: any, orderId: number) => {
-              const { pharmacyProduct } = orderItem;
-              const { product } = pharmacyProduct;
-              const productImage =
-                product.images?.[0] || "/placeholder.png";
-              const productName = product.name;
-              const optionType = pharmacyProduct.optionType;
-              const productCategories = product.categories?.length
-                ? product.categories
-                    .map((category: any) => category.name)
-                    .join(", ")
-                : "옵션 없음";
-              const productPrice =
-                pharmacyProduct.price.toLocaleString();
-              const totalPrice = (
-                pharmacyProduct.price * orderItem.quantity
-              ).toLocaleString();
-              return (
-                <div
-                  key={orderId}
-                  className="flex items-center justify-between mb-6"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="relative w-16 h-16">
-                      <Image
-                        src={productImage}
-                        alt={productName}
-                        fill
-                        sizes="128px"
-                        className="object-cover rounded-lg"
-                      />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-gray-800">
-                        {productName} ({optionType})
-                      </h3>
-                      <p className="text-xs text-gray-500">
-                        {productCategories}
-                      </p>
-                      <p className="text-sm font-bold text-sky-400 mt-1">
-                        {productPrice}원 ×{" "}
-                        <span className="text-rose-500">
-                          {orderItem.quantity}
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                  <p className="text-sm font-bold text-sky-400">
-                    {totalPrice}원
-                  </p>
-                </div>
-              );
-            })}
-            <div className="flex justify-end text-sm text-gray-600">
-              <span>배송비</span>
-              <span className="font-bold ml-2">3,000원</span>
-            </div>
-            <div className="flex justify-end gap-2 text-base font-bold mt-2">
-              <span className="text-gray-700">총 결제 금액</span>
-              <span className="text-sky-400">
-                {order.totalPrice.toLocaleString()}원
-              </span>
-            </div>
-          </div>
-          <h3 className="mb-2 font-bold mt-4 border-t pt-4">약국 정보</h3>
-          <div className="flex flex-col text-sm gap-1 mt-4 mb-6">
-            <div className="flex items-center">
-              <span className="w-20 font-bold text-gray-500">약국명</span>
-              <span className="flex-1 text-gray-800">
-                {order.pharmacy?.name}
-              </span>
-            </div>
-            <div className="flex items-center">
-              <span className="w-20 font-bold text-gray-500">약국 주소</span>
-              <span className="flex-1 text-gray-800">
-                {order.pharmacy?.address}
-              </span>
-            </div>
-            <div className="flex items-center">
-              <span className="w-20 font-bold text-gray-500">전화번호</span>
-              <span className="flex-1 text-gray-800">
-                {order.pharmacy?.phone}
-              </span>
-            </div>
-          </div>
-          <h3 className="mb-2 font-bold mt-4 border-t pt-4">주문자 정보</h3>
-          <div className="flex flex-col text-sm gap-1 mt-4">
-            <div className="flex items-center">
-              <span className="w-32 font-bold text-gray-500">주소</span>
-              <span className="flex-1 text-gray-800">
-                {order.roadAddress} {order.detailAddress}
-              </span>
-            </div>
-            <div className="flex items-center">
-              <span className="w-32 font-bold text-gray-500">연락처</span>
-              <span className="flex-1 text-gray-800">{order.phone}</span>
-            </div>
-            <div className="flex items-center">
-              <span className="w-32 font-bold text-gray-500">주문일시</span>
-              <span className="flex-1 text-gray-800">
-                {order.createdAt.toLocaleString("ko-KR", {
-                  month: "long",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
-            </div>
-            <div className="flex items-center">
-              <span className="w-32 font-bold text-gray-500">
-                배송 시 요청 사항
-              </span>
-              <span className="flex-1 text-gray-800">
-                {order.requestNotes || "없음"}
-              </span>
-            </div>
-            <div className="flex items-center">
-              <span className="w-32 font-bold text-gray-500">
-                공동현관 비밀번호
-              </span>
-              <span className="flex-1 text-gray-800">
-                {order.entrancePassword || "없음"}
-              </span>
-            </div>
-            <div className="flex items-center">
-              <span className="w-32 font-bold text-gray-500">
-                찾아오는 길 안내
-              </span>
-              <span className="flex-1 text-gray-800">
-                {order.directions || "없음"}
-              </span>
-            </div>
+          <div className="flex justify-center items-center mt-2 mb-6">
+            <div className="w-6 h-6 border-2 border-sky-400 border-t-transparent rounded-full animate-spin" />
           </div>
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full max-w-[640px] mx-auto px-6 py-6 bg-white sm:shadow-md sm:rounded-lg">
+      <OrderAccordionHeader
+        role="rider"
+        order={order}
+        isExpanded={isExpanded}
+        toggle={toggleExpanded}
+      />
+      {isExpanded ? (
+        <div className="mt-4 border-t sm:px-4 pt-16 sm:pt-12 pb-4">
+          <OrderProgressBar currentStatus={order.status} />
+
+          <RiderOrderStatusActionsSection
+            order={order}
+            loadingStatus={loadingStatus}
+            onUpdateOrderStatus={handleUpdateOrderStatus}
+            onCancelPickup={handleCancelPickup}
+          />
+
+          <button
+            type="button"
+            onClick={() => void refreshOrderStatus(true)}
+            className="mb-4 text-sm text-sky-500 hover:underline"
+            disabled={isStateRefreshing}
+          >
+            {isStateRefreshing ? "상태 확인 중..." : "상태 새로고침"}
+          </button>
+
+          <RiderOrderItemsSection order={order} />
+          <RiderOrderPharmacyInfoSection order={order} />
+          <RiderOrderCustomerInfoSection order={order} />
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -11,9 +11,8 @@ import {
   CHECK_AI_OPTIONS as OPTIONS,
 } from "@/lib/checkai";
 import {
-  CHAT_PAGE_ACTION_EVENT,
-  type ChatPageActionDetail,
-} from "@/lib/chat/page-action-events";
+  useChatPageActionListener,
+} from "@/lib/chat/useChatPageActionListener";
 import { getTzOffsetMinutes } from "@/lib/timezone";
 import {
   type CheckAiClientScore,
@@ -51,27 +50,13 @@ export default function CheckAI() {
     refreshClientIdCookieIfNeeded();
   }, []);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  useChatPageActionListener((detail) => {
+    if (detail.action !== "focus_check_ai_form") return;
 
-    const onPageAction = (event: Event) => {
-      const detail = (event as CustomEvent<ChatPageActionDetail>).detail;
-      if (!detail) return;
-      if (detail.action !== "focus_check_ai_form") return;
-
-      document
-        .getElementById("check-ai-form")
-        ?.scrollIntoView({ behavior: "smooth", block: "start" });
-    };
-
-    window.addEventListener(CHAT_PAGE_ACTION_EVENT, onPageAction as EventListener);
-    return () => {
-      window.removeEventListener(
-        CHAT_PAGE_ACTION_EVENT,
-        onPageAction as EventListener
-      );
-    };
-  }, []);
+    document
+      .getElementById("check-ai-form")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
 
   useEffect(() => {
     const controller = new AbortController();

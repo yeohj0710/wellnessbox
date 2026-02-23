@@ -11,10 +11,23 @@ import {
 import StatusLabel from "@/components/common/statusLabel";
 import ReviewModal from "@/components/modal/reviewModal";
 import { ORDER_STATUS } from "@/lib/order/orderStatus";
+import type { OrderAccordionOrder } from "./orderAccordion.types";
+
+function formatOrderCreatedAt(value: OrderAccordionOrder["createdAt"]) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+
+  return date.toLocaleString("ko-KR", {
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 interface OrderAccordionHeaderProps {
   role: "customer" | "pharmacist" | "rider";
-  order: any;
+  order: OrderAccordionOrder;
   isExpanded: boolean;
   toggle: () => void;
   onBack?: () => void;
@@ -34,13 +47,16 @@ export default function OrderAccordionHeader({
   subscriptionLoading,
 }: OrderAccordionHeaderProps) {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-  const firstPharmacyProduct = order.orderItems[0].pharmacyProduct;
   const [allReviewsCompleted, setAllReviewsCompleted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  const firstPharmacyProduct = order.orderItems[0]?.pharmacyProduct;
+  const firstProductName = firstPharmacyProduct?.product?.name || "주문 상품";
+  const firstOptionType = firstPharmacyProduct?.optionType || "-";
+
   useEffect(() => {
     const isAllReviewsCompleted = order.orderItems.every(
-      (item: any) => item.review && item.review.rate
+      (item) => item.review && item.review.rate
     );
     setAllReviewsCompleted(isAllReviewsCompleted);
     setIsLoading(false);
@@ -49,10 +65,10 @@ export default function OrderAccordionHeader({
   return (
     <>
       <div className="relative cursor-pointer" onClick={toggle}>
-        {toggleSubscription && (
+        {toggleSubscription ? (
           <button
-            onClick={(e) => {
-              e.stopPropagation();
+            onClick={(event) => {
+              event.stopPropagation();
               toggleSubscription();
             }}
             className={`absolute top-0 right-0 inline-flex items-center gap-1 rounded px-2 py-1 text-xs sm:text-sm whitespace-nowrap ${
@@ -69,11 +85,9 @@ export default function OrderAccordionHeader({
             ) : (
               <BellSlashIcon className="w-4 h-4" />
             )}
-            <span className="whitespace-nowrap">
-              {isSubscribed ? "켜짐" : "꺼짐"}
-            </span>
+            <span className="whitespace-nowrap">{isSubscribed ? "켜짐" : "꺼짐"}</span>
           </button>
-        )}
+        ) : null}
 
         <span
           className={`absolute right-0 ${
@@ -93,62 +107,56 @@ export default function OrderAccordionHeader({
           </div>
 
           <div className="mt-2 text-sm sm:text-base font-bold text-gray-700">
-            {firstPharmacyProduct.product.name} (
-            {firstPharmacyProduct.optionType})
-            {order.orderItems.length > 1 && (
+            {firstProductName} ({firstOptionType})
+            {order.orderItems.length > 1 ? (
               <span className="text-gray-500 text-sm">{` 외 ${
                 order.orderItems.length - 1
               }개`}</span>
-            )}
+            ) : null}
           </div>
 
           <div className="mt-2.5 flex flex-row items-center gap-2 sm:gap-6 text-sm text-gray-500">
             <span>
               주문일시:{" "}
               <span className="text-gray-700">
-                {order.createdAt.toLocaleString("ko-KR", {
-                  month: "long",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+                {formatOrderCreatedAt(order.createdAt)}
               </span>
             </span>
             <span className="hidden sm:inline">
               <StatusLabel status={order.status} />
             </span>
             {!isLoading &&
-              role === "customer" &&
-              onBack &&
-              order.status === ORDER_STATUS.DELIVERY_COMPLETE && (
-                <div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (!allReviewsCompleted) setIsReviewModalOpen(true);
-                    }}
-                    className={`px-3 py-1 ml-2 sm:ml-0 -my-2 rounded ${
-                      allReviewsCompleted
-                        ? "bg-gray-300 text-gray-500 cursor-default"
-                        : "bg-sky-400 text-white hover:bg-sky-500"
-                    }`}
-                    disabled={allReviewsCompleted}
-                  >
-                    {allReviewsCompleted ? "리뷰 완료" : "리뷰 작성"}
-                  </button>
-                </div>
-              )}
+            role === "customer" &&
+            onBack &&
+            order.status === ORDER_STATUS.DELIVERY_COMPLETE ? (
+              <div>
+                <button
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    if (!allReviewsCompleted) setIsReviewModalOpen(true);
+                  }}
+                  className={`px-3 py-1 ml-2 sm:ml-0 -my-2 rounded ${
+                    allReviewsCompleted
+                      ? "bg-gray-300 text-gray-500 cursor-default"
+                      : "bg-sky-400 text-white hover:bg-sky-500"
+                  }`}
+                  disabled={allReviewsCompleted}
+                >
+                  {allReviewsCompleted ? "리뷰 완료" : "리뷰 작성"}
+                </button>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
 
-      {isReviewModalOpen && (
+      {isReviewModalOpen ? (
         <ReviewModal
           initialOrder={order}
           onClose={() => setIsReviewModalOpen(false)}
           setAllReviewsCompleted={setAllReviewsCompleted}
         />
-      )}
+      ) : null}
     </>
   );
 }

@@ -1,11 +1,8 @@
 "use client";
 
 import PhoneVerifyModal from "@/app/me/phoneVerifyModal";
-import { useCallback, useEffect } from "react";
-import {
-  CHAT_PAGE_ACTION_EVENT,
-  type ChatPageActionDetail,
-} from "@/lib/chat/page-action-events";
+import { useCallback } from "react";
+import { useChatPageActionListener } from "@/lib/chat/useChatPageActionListener";
 
 import { ManualLookupSection } from "./components/manualLookupSection";
 import { LinkedPhoneLookupSection } from "./components/linkedPhoneLookupSection";
@@ -24,31 +21,16 @@ export default function MyOrdersPage() {
     document.getElementById("manual-form")?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  useChatPageActionListener((detail) => {
+    if (detail.action === "focus_manual_order_lookup") {
+      scrollToManual();
+      return;
+    }
 
-    const onPageAction = (event: Event) => {
-      const detail = (event as CustomEvent<ChatPageActionDetail>).detail;
-      if (!detail) return;
-
-      if (detail.action === "focus_manual_order_lookup") {
-        scrollToManual();
-        return;
-      }
-
-      if (detail.action === "focus_linked_order_lookup") {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }
-    };
-
-    window.addEventListener(CHAT_PAGE_ACTION_EVENT, onPageAction as EventListener);
-    return () => {
-      window.removeEventListener(
-        CHAT_PAGE_ACTION_EVENT,
-        onPageAction as EventListener
-      );
-    };
-  }, [scrollToManual]);
+    if (detail.action === "focus_linked_order_lookup") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  });
 
   if (viewConfig) {
     return (

@@ -15,9 +15,8 @@ import type { CSectionResult } from "./components/CSection";
 import { fetchCategories, type CategoryLite } from "@/lib/client/categories";
 import { getTzOffsetMinutes } from "@/lib/timezone";
 import {
-  CHAT_PAGE_ACTION_EVENT,
-  type ChatPageActionDetail,
-} from "@/lib/chat/page-action-events";
+  useChatPageActionListener,
+} from "@/lib/chat/useChatPageActionListener";
 import { resolveProgressMessage } from "./logic/progress-message";
 import { composeAssessAnswers } from "./logic/compose-answers";
 import { computeRemainingQuestionIds } from "./logic/question-flow";
@@ -78,27 +77,13 @@ export default function Assess() {
     refreshClientIdCookieIfNeeded();
   }, []);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  useChatPageActionListener((detail) => {
+    if (detail.action !== "focus_assess_flow") return;
 
-    const onPageAction = (event: Event) => {
-      const detail = (event as CustomEvent<ChatPageActionDetail>).detail;
-      if (!detail) return;
-      if (detail.action !== "focus_assess_flow") return;
-
-      document
-        .getElementById("assess-flow")
-        ?.scrollIntoView({ behavior: "smooth", block: "start" });
-    };
-
-    window.addEventListener(CHAT_PAGE_ACTION_EVENT, onPageAction as EventListener);
-    return () => {
-      window.removeEventListener(
-        CHAT_PAGE_ACTION_EVENT,
-        onPageAction as EventListener
-      );
-    };
-  }, []);
+    document
+      .getElementById("assess-flow")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
 
   useEffect(() => {
     if (!confirmOpen) return;

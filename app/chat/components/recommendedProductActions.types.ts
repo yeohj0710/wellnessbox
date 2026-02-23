@@ -40,3 +40,8 @@ export type ProductIdScore = {
   score: number;
   source: "name" | "category";
 };
+
+export type RecommendationLineMatch = {
+  line: RecommendationLine;
+  candidates: ProductIdScore[];
+};

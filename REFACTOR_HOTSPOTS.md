@@ -7,31 +7,31 @@ Run `npm run agent:refactor-report` to refresh this report.
 
 | Lines | File |
 |---:|---|
-| 865 | `app/(components)/homeProductSection.tsx` |
-| 858 | `components/order/orderDetails.tsx` |
-| 745 | `app/my-data/page.tsx` |
 | 709 | `app/(components)/landingSection2.tsx` |
-| 691 | `app/chat/hooks/useChat.ts` |
 | 686 | `app/test/page.tsx` |
 | 682 | `lib/ai/chain.ts` |
 | 666 | `lib/rnd/module07-biosensor-genetic-integration/mvp-engine.ts` |
 | 608 | `lib/notification/core.ts` |
+| 604 | `app/(components)/homeProductSection.tsx` |
 | 592 | `lib/rnd/module06-closed-loop-ai/contracts.ts` |
 | 586 | `lib/server/hyphen/fetch-executor.ts` |
 | 583 | `lib/rnd/module06-closed-loop-ai/mvp-engine.ts` |
-| 571 | `components/pharm/orderAccordionItem.tsx` |
+| 575 | `app/my-data/page.tsx` |
 | 542 | `lib/rnd/module05-optimization/mvp-engine.ts` |
-| 517 | `app/(pharm)/pharm/page.tsx` |
-| 516 | `app/(rider)/rider/page.tsx` |
-| 510 | `app/chat/components/recommendedProductActions.resolve.ts` |
+| 523 | `app/chat/hooks/useChat.ts` |
+| 516 | `app/(components)/useHomeProductSectionEffects.ts` |
 | 507 | `app/(orders)/order-complete/page.tsx` |
-| 507 | `app/me/meClient.tsx` |
 | 503 | `lib/rnd/module07-biosensor-genetic-integration/scaffold.ts` |
 | 490 | `app/assess/components/CSection.tsx` |
+| 489 | `app/me/meClient.tsx` |
 | 489 | `app/me/profileImageEditor.tsx` |
 | 489 | `lib/server/result-normalizer.ts` |
 | 487 | `lib/server/hyphen/client.ts` |
 | 478 | `lib/product/product.ts` |
+| 474 | `components/common/GoogleTranslateGate.tsx` |
+| 469 | `lib/agent-playground/patterns.ts` |
+| 469 | `lib/rnd/module06-closed-loop-ai/scaffold.ts` |
+| 466 | `app/agent-playground/page.tsx` |
 
 ## Scripts Top 15
 

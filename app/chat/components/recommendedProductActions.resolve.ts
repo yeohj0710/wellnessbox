@@ -1,14 +1,16 @@
 import {
-  isExact7DayOption,
   normalizeKey,
-  toSevenDayPrice,
 } from "./recommendedProductActions.shared";
+import {
+  buildResolvedRecommendations,
+  dedupeRecommendationsByProductOption,
+} from "./recommendedProductActions.scoring";
 import type {
   ActionableRecommendation,
-  CartProductItem,
   ProductIdScore,
   ProductNameItem,
   RecommendationLine,
+  RecommendationLineMatch,
 } from "./recommendedProductActions.types";
 
 const PRODUCT_NAME_CATALOG_TTL_MS = 5 * 60 * 1000;
@@ -303,61 +305,6 @@ function findBestProductCandidateByCategory(
   };
 }
 
-async function fetchCartProducts(ids: number[]) {
-  const response = await fetch("/api/cart-products", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ids }),
-  });
-  const json = await response.json().catch(() => ({}));
-  return Array.isArray(json?.products) ? (json.products as CartProductItem[]) : [];
-}
-
-function pickBestCartOption(product: CartProductItem) {
-  const options = Array.isArray(product?.pharmacyProducts)
-    ? product.pharmacyProducts
-        .map((item) => ({
-          price: typeof item?.price === "number" ? item.price : null,
-          optionType:
-            typeof item?.optionType === "string" ? item.optionType.trim() : null,
-          capacity: typeof item?.capacity === "string" ? item.capacity.trim() : null,
-          stock: typeof item?.stock === "number" ? item.stock : 0,
-        }))
-        .filter((item) => item.price != null && item.price > 0 && item.stock > 0)
-        .filter((item) => Boolean(item.optionType))
-    : [];
-
-  if (!options.length) return null;
-
-  const exact7 = options
-    .filter((item) => isExact7DayOption(item.optionType, item.capacity))
-    .sort((left, right) => (left.price as number) - (right.price as number))[0];
-
-  if (exact7) {
-    return {
-      optionType: exact7.optionType as string,
-      capacity: exact7.capacity,
-      packagePrice: exact7.price as number,
-      sevenDayPrice: exact7.price as number,
-    };
-  }
-
-  const cheapest = [...options].sort(
-    (left, right) => (left.price as number) - (right.price as number)
-  )[0];
-
-  return {
-    optionType: cheapest.optionType as string,
-    capacity: cheapest.capacity,
-    packagePrice: cheapest.price as number,
-    sevenDayPrice: toSevenDayPrice({
-      price: cheapest.price as number,
-      optionType: cheapest.optionType,
-      capacity: cheapest.capacity,
-    }),
-  };
-}
-
 function buildResolveCacheKey(
   lines: RecommendationLine[],
   dedupeByProductOption: boolean
@@ -371,14 +318,6 @@ function buildResolveCacheKey(
     )
     .join("|");
   return `${dedupeByProductOption ? "dedupe" : "keep"}:${lineKey}`;
-}
-
-function scorePriceSimilarity(sourcePrice: number | null, targetPrice: number) {
-  if (sourcePrice == null || sourcePrice <= 0) return 0;
-  if (!Number.isFinite(targetPrice) || targetPrice <= 0) return -1_500;
-
-  const diffRatio = Math.abs(sourcePrice - targetPrice) / sourcePrice;
-  return Math.max(-2_200, 1_500 - Math.round(diffRatio * 2_400));
 }
 
 export async function resolveRecommendations(
@@ -409,10 +348,7 @@ export async function resolveRecommendations(
     const catalog = await fetchProductNameCatalog();
     if (!catalog.length) return [];
 
-    const lineMatches: Array<{
-      line: RecommendationLine;
-      candidates: ProductIdScore[];
-    }> = [];
+    const lineMatches: RecommendationLineMatch[] = [];
     for (const line of lines) {
       const allowCategoryFallback =
         isPlaceholderProductName(line.productName) ||
@@ -441,67 +377,13 @@ export async function resolveRecommendations(
 
     if (!lineMatches.length) return [];
 
-    const ids = Array.from(
-      new Set(
-        lineMatches.flatMap((item) => item.candidates.map((candidate) => candidate.id))
-      )
-    );
-    const products = await fetchCartProducts(ids);
-    const productById = new Map(products.map((item) => [item.id, item]));
-
-    const out: ActionableRecommendation[] = [];
-    for (const { line, candidates } of lineMatches) {
-      let picked:
-        | {
-            candidate: ProductIdScore;
-            product: CartProductItem;
-            option: NonNullable<ReturnType<typeof pickBestCartOption>>;
-            score: number;
-          }
-        | null = null;
-
-      for (const candidate of candidates) {
-        const product = productById.get(candidate.id);
-        if (!product || !product.name) continue;
-        const option = pickBestCartOption(product);
-        if (!option) continue;
-
-        const score =
-          candidate.score + scorePriceSimilarity(line.sourcePrice, option.sevenDayPrice);
-        if (!picked || score > picked.score) {
-          picked = { candidate, product, option, score };
-        }
-      }
-      if (!picked) continue;
-
-      out.push({
-        category: line.category,
-        sourceCategory: line.category,
-        sourceProductName: line.productName,
-        productId: picked.product.id,
-        productName: picked.product.name,
-        optionType: picked.option.optionType,
-        capacity: picked.option.capacity,
-        packagePrice: picked.option.packagePrice,
-        sevenDayPrice: picked.option.sevenDayPrice,
-        sourcePrice: line.sourcePrice,
-      });
-    }
+    const out = await buildResolvedRecommendations(lineMatches);
 
     if (!dedupeByProductOption) {
       return out.slice(0, 6);
     }
 
-    const deduped: ActionableRecommendation[] = [];
-    const seen = new Set<string>();
-    for (const item of out) {
-      const key = `${item.productId}:${normalizeKey(item.optionType)}`;
-      if (!key || seen.has(key)) continue;
-      seen.add(key);
-      deduped.push(item);
-    }
-
-    return deduped.slice(0, 6);
+    return dedupeRecommendationsByProductOption(out, 6);
   })();
 
   recommendationResolveCache.set(key, { createdAt: Date.now(), promise: pending });

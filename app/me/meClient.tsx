@@ -4,10 +4,7 @@ import NextImage from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getUploadUrl } from "@/lib/upload";
-import {
-  CHAT_PAGE_ACTION_EVENT,
-  type ChatPageActionDetail,
-} from "@/lib/chat/page-action-events";
+import { useChatPageActionListener } from "@/lib/chat/useChatPageActionListener";
 import LogoutButton from "./logoutButton";
 import OrdersSection from "./ordersSection";
 import PhoneVerifyModal from "./phoneVerifyModal";
@@ -244,35 +241,20 @@ export default function MeClient({
     }
   }, [isLinked, unlinkLoading, router]);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  useChatPageActionListener((detail) => {
+    if (detail.action === "focus_me_profile") {
+      document
+        .getElementById("me-profile-section")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
 
-    const onPageAction = (event: Event) => {
-      const detail = (event as CustomEvent<ChatPageActionDetail>).detail;
-      if (!detail) return;
-
-      if (detail.action === "focus_me_profile") {
-        document
-          .getElementById("me-profile-section")
-          ?.scrollIntoView({ behavior: "smooth", block: "start" });
-        return;
-      }
-
-      if (detail.action === "focus_me_orders") {
-        document
-          .getElementById("me-orders-section")
-          ?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    };
-
-    window.addEventListener(CHAT_PAGE_ACTION_EVENT, onPageAction as EventListener);
-    return () => {
-      window.removeEventListener(
-        CHAT_PAGE_ACTION_EVENT,
-        onPageAction as EventListener
-      );
-    };
-  }, []);
+    if (detail.action === "focus_me_orders") {
+      document
+        .getElementById("me-orders-section")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  });
 
   return (
     <div className="w-full mt-4 sm:mt-8 mb-12 flex justify-center px-4">

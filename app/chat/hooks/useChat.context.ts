@@ -2,6 +2,11 @@ import { buildUserContextSummary } from "@/lib/chat/context";
 import type { ChatPageAgentContext } from "@/lib/chat/page-agent-context";
 import type { UserContextSummaryInput } from "@/lib/chat/context";
 import type { ChatSession, UserProfile } from "@/types/chat";
+import type {
+  NormalizedAssessResult,
+  NormalizedCheckAiResult,
+  NormalizedOrderSummary,
+} from "./useChat.results";
 
 type ActorContext = {
   loggedIn: boolean;
@@ -10,9 +15,9 @@ type ActorContext = {
 
 type BuildUserContextInputParams = {
   profile: UserProfile | undefined;
-  orders: any[];
-  assessResult: any | null;
-  checkAiResult: any | null;
+  orders: NormalizedOrderSummary[];
+  assessResult: NormalizedAssessResult | null;
+  checkAiResult: NormalizedCheckAiResult | null;
   sessions: ChatSession[];
   currentSessionId: string | null;
   localAssessCats: string[];
@@ -82,10 +87,9 @@ export function buildChatContextPayload(params: BuildChatContextPayloadParams) {
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
       items: Array.isArray(order.items)
-        ? order.items.map((item: any) => ({
-            name: item?.name || "상품",
-            quantity:
-              typeof item?.quantity === "number" ? item.quantity : undefined,
+        ? order.items.map((item) => ({
+            name: item.name || "상품",
+            quantity: item.quantity,
           }))
         : [],
     })),

@@ -1,6 +1,11 @@
 import { useEffect, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
 import type { ChatSession, UserProfile } from "@/types/chat";
 import { isBrowserOnline } from "./useChat.browser";
+import type {
+  NormalizedAssessResult,
+  NormalizedCheckAiResult,
+  NormalizedOrderSummary,
+} from "./useChat.results";
 import {
   buildInitialSessionBootstrap,
   fetchAllResultsBootstrap,
@@ -29,9 +34,9 @@ type SessionBootstrapParams = ActorRefs & {
 
 type AllResultsBootstrapParams = ActorRefs & {
   remoteBootstrap: boolean;
-  setAssessResult: (result: any | null) => void;
-  setCheckAiResult: (result: any | null) => void;
-  setOrders: (orders: any[]) => void;
+  setAssessResult: Dispatch<SetStateAction<NormalizedAssessResult | null>>;
+  setCheckAiResult: Dispatch<SetStateAction<NormalizedCheckAiResult | null>>;
+  setOrders: Dispatch<SetStateAction<NormalizedOrderSummary[]>>;
   setResultsLoaded: (loaded: boolean) => void;
 };
 

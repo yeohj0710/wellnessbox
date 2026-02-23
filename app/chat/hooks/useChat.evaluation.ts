@@ -5,18 +5,22 @@ import {
   requestCheckAiPredictScores,
 } from "@/lib/checkai-client";
 import { QUICK_CHAT_QUESTIONS } from "./useChat.assessment";
+import type {
+  NormalizedAssessResult,
+  NormalizedCheckAiResult,
+} from "./useChat.results";
 
 type EvaluateQuickOptions = {
   answers: Record<string, unknown>;
   setLocalCheckAi: (labels: string[]) => void;
-  setCheckAiResult: (value: unknown) => void;
+  setCheckAiResult: (value: NormalizedCheckAiResult | null) => void;
   getTzOffsetMinutes: () => number;
 };
 
 type EvaluateDeepOptions = {
   answers: Record<string, unknown>;
   setLocalAssessCats: (cats: string[]) => void;
-  setAssessResult: (value: unknown) => void;
+  setAssessResult: (value: NormalizedAssessResult | null) => void;
   getTzOffsetMinutes: () => number;
 };
 
@@ -43,6 +47,7 @@ export async function evaluateQuickCheckAnswers(
 
     options.setLocalCheckAi(labels);
     options.setCheckAiResult({
+      createdAt: null,
       labels,
       answers: responses.map((value, index) => ({
         question: QUICK_CHAT_QUESTIONS[index]?.text || "",
@@ -89,6 +94,7 @@ export async function evaluateDeepAssessAnswers(
 
     options.setLocalAssessCats(catsOrdered);
     options.setAssessResult({
+      createdAt: null,
       summary: labels,
       answers: Object.entries(options.answers).map(([questionId, answer]) => ({
         question: questionId,
