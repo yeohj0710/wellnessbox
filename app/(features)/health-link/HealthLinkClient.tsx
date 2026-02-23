@@ -10,16 +10,12 @@ import { useNhisHealthLink } from "./useNhisHealthLink";
 import {
   extractLatestCheckupMeta,
   filterCheckupMetricRows,
-  formatDateTime,
   hasNhisSessionExpiredFailure,
   resolveCheckupMetricTone,
   selectLatestCheckupRows,
   summarizeMedicationRows,
 } from "./utils";
 import {
-  buildForceRefreshConfirmMessage,
-  resolveFetchCacheHint,
-  resolveForceRefreshHint,
   resolvePrimaryButtonLabel,
   resolvePrimaryFlow,
 } from "./view-model";
@@ -41,19 +37,15 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
     actionErrorCode,
     fetched,
     fetchFailures,
-    fetchCacheInfo,
     canRequest,
     canSign,
     canFetch,
     summaryFetchBlocked,
     summaryFetchBlockedMessage,
-    forceRefreshBlocked,
-    forceRefreshRemainingSeconds,
     showHealthInPrereqGuide,
     handleInit,
     handleSign,
     handleFetch,
-    handleFetchFresh,
     handleUnlink,
   } = useNhisHealthLink();
 
@@ -78,6 +70,7 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
 
   const checkupOverviewRows = fetched?.normalized?.checkup?.overview ?? [];
   const medicationRows = fetched?.normalized?.medication?.list ?? [];
+  const aiSummary = fetched?.normalized?.aiSummary ?? null;
   const metricSourceRows = checkupOverviewRows;
   const checkupMetricRows = filterCheckupMetricRows(metricSourceRows);
   const latestCheckupRows = selectLatestCheckupRows(checkupMetricRows).map(
@@ -92,7 +85,6 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
   const medicationDigest = summarizeMedicationRows(medicationRows);
   const hasFetchResult =
     latestCheckupRows.length > 0 || medicationRows.length > 0;
-  const fetchCacheHint = resolveFetchCacheHint(fetchCacheInfo, formatDateTime);
 
   const primaryLoading = actionLoading === primaryFlow.kind;
   const primaryButtonLabel = shouldForceReauth
@@ -102,32 +94,6 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
     !canRequest ||
     (primaryFlow.kind === "sign" && !canSign) ||
     (primaryFlow.kind === "fetch" && !canFetch);
-  const forceRefreshAvailableAt = status?.forceRefresh?.availableAt ?? null;
-  const forceRefreshBudgetRemaining =
-    status?.fetchBudget?.forceRefresh.remaining ?? null;
-  const forceRefreshBudgetLimit =
-    status?.fetchBudget?.forceRefresh.limit ?? null;
-  const forceRefreshBudgetWindowHours =
-    status?.fetchBudget?.windowHours ?? null;
-  const forceRefreshBudgetBlocked =
-    typeof forceRefreshBudgetRemaining === "number" &&
-    forceRefreshBudgetRemaining <= 0;
-  const forceRefreshDisabled =
-    !canFetch ||
-    !canRequest ||
-    forceRefreshBlocked ||
-    forceRefreshBudgetBlocked;
-  const forceRefreshHint = resolveForceRefreshHint(
-    forceRefreshBlocked,
-    forceRefreshRemainingSeconds,
-    forceRefreshAvailableAt,
-    {
-      remaining: forceRefreshBudgetRemaining,
-      limit: forceRefreshBudgetLimit,
-      windowHours: forceRefreshBudgetWindowHours,
-    },
-    formatDateTime
-  );
 
   const handlePrimaryAction = () => {
     if (primaryFlow.kind === "init") {
@@ -139,16 +105,6 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
       return;
     }
     void handleFetch();
-  };
-
-  const confirmForceRefresh = () => {
-    return window.confirm(buildForceRefreshConfirmMessage("summary"));
-  };
-
-  const handleSummaryFreshAction = () => {
-    if (forceRefreshBlocked || forceRefreshBudgetBlocked) return;
-    if (!confirmForceRefresh()) return;
-    void handleFetchFresh();
   };
 
   return (
@@ -187,17 +143,14 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
           fetchLoading={actionLoading === "fetch"}
           summaryFetchBlocked={summaryFetchBlocked}
           summaryFetchBlockedMessage={summaryFetchBlockedMessage}
-          fetchCacheHint={fetchCacheHint}
-          forceRefreshHint={forceRefreshHint}
-          forceRefreshDisabled={forceRefreshDisabled}
           primaryLoading={primaryLoading}
           fetchFailures={fetchFailures}
           hasFetchResult={hasFetchResult}
           latestCheckupRows={latestCheckupRows}
           latestCheckupMeta={latestCheckupMeta}
           medicationDigest={medicationDigest}
+          aiSummary={aiSummary}
           onSummaryFetch={() => void handleFetch()}
-          onSummaryFresh={handleSummaryFreshAction}
         />
       ) : null}
     </div>

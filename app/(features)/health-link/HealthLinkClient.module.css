@@ -878,6 +878,93 @@
   gap: 10px;
 }
 
+.aiSummarySection {
+  border-color: #cfe0ff;
+  background:
+    radial-gradient(circle at 92% 4%, rgba(49, 130, 246, 0.14), transparent 46%),
+    #f7fbff;
+}
+
+.aiSummaryHeadline {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.4;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.aiSummaryText {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.aiRiskBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.aiRiskLow {
+  color: #137333;
+  border-color: #b7e2c7;
+  background: #ecfaf1;
+}
+
+.aiRiskMedium {
+  color: #8a5b00;
+  border-color: #ffd8ae;
+  background: #fff3e8;
+}
+
+.aiRiskHigh {
+  color: #b42318;
+  border-color: #f9b4b4;
+  background: #fff1f1;
+}
+
+.aiRiskUnknown {
+  color: #4e5968;
+  border-color: #d0d7e4;
+  background: #f3f6fb;
+}
+
+.aiChipWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.aiHighlightChip {
+  border-radius: 999px;
+  border: 1px solid #d8e6fb;
+  background: #ffffff;
+  color: #2e3a4d;
+  padding: 5px 10px;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.aiActionList {
+  margin: 0;
+  padding: 0 0 0 18px;
+  display: grid;
+  gap: 6px;
+}
+
+.aiActionList li {
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .compactHeader {
   display: flex;
   align-items: center;
@@ -1052,6 +1139,107 @@
   font-weight: 700;
 }
 
+.medicationFocusSection {
+  border-color: #d6e6ff;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(49, 130, 246, 0.12), transparent 42%),
+    #f7fbff;
+}
+
+.medicationHeroCard {
+  border-radius: 12px;
+  border: 1px solid #cfe0fb;
+  background: #ffffff;
+  padding: 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.medicationHeroKicker {
+  margin: 0;
+  width: fit-content;
+  border-radius: 999px;
+  border: 1px solid #d8e7ff;
+  background: #edf5ff;
+  color: #275cc7;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+}
+
+.medicationHeroMedicine {
+  font-size: 20px;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.medicationHeroMeta {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 12px;
+}
+
+.medicationHeroPurpose {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.medicationSummaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.medicationSummaryCard {
+  border-radius: 10px;
+  border: 1px solid #d9e5f8;
+  background: #fff;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.medicationSummaryCard span {
+  color: var(--ink-3);
+  font-size: 11px;
+}
+
+.medicationSummaryCard strong {
+  font-size: 16px;
+  line-height: 1.3;
+}
+
+.medicationInsightList {
+  border-radius: 10px;
+  border: 1px solid #dce7f6;
+  background: #fff;
+  padding: 10px;
+  display: grid;
+  gap: 6px;
+}
+
+.medicationInsightList p {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.medicationActionList {
+  margin: 0;
+  padding: 0 0 0 18px;
+  display: grid;
+  gap: 6px;
+}
+
+.medicationActionList li {
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .chipWrap {
   display: flex;
   flex-wrap: wrap;
@@ -1158,14 +1346,20 @@
   }
 
   .headerCard,
-  .sectionCard,
-  .noticeCritical {
-    border-radius: 20px;
+  .sectionCard {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
   }
 
   .headerCard,
   .sectionCard {
-    padding: 16px;
+    padding: 0;
+  }
+
+  .noticeCritical {
+    border-radius: 14px;
   }
 
   .sectionHeader {
@@ -1178,7 +1372,8 @@
   .metaGrid,
   .loadingSkeletonGrid,
   .resultOverview,
-  .metricBoard {
+  .metricBoard,
+  .medicationSummaryGrid {
     grid-template-columns: 1fr;
   }
 

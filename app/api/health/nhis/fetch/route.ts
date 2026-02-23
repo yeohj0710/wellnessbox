@@ -10,6 +10,7 @@ import type { HyphenNhisRequestPayload } from "@/lib/server/hyphen/client";
 import { NHIS_FETCH_TARGETS } from "@/lib/server/hyphen/fetch-contract";
 import type { NhisFetchTarget } from "@/lib/server/hyphen/fetch-contract";
 import { executeNhisFetch } from "@/lib/server/hyphen/fetch-executor";
+import { enrichNhisPayloadWithAiSummary } from "@/lib/server/hyphen/fetch-ai-summary";
 import {
   evaluateNhisFetchBudget,
   recordNhisFetchAttempt,
@@ -88,6 +89,18 @@ async function recordNhisFetchAttemptSafe(input: {
     logHyphenError("[hyphen][fetch] failed to record fetch attempt", error);
   }
 }
+
+async function enrichNhisPayloadWithAiSummarySafe(
+  payload: Awaited<ReturnType<typeof executeNhisFetch>>["payload"]
+) {
+  if (!payload.ok) return payload;
+  try {
+    return await enrichNhisPayloadWithAiSummary(payload);
+  } catch (error) {
+    logHyphenError("[hyphen][fetch] ai summary enrichment failed", error);
+    return payload;
+  }
+}
 export async function POST(req: Request) {
   const auth = await requireNhisSession();
   if (!auth.ok) return auth.response;
@@ -110,7 +123,8 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         ok: false,
-        error: "Current cost policy allows checkup targets only.",
+        error:
+          "\ud604\uc7ac \ube44\uc6a9 \uc815\ucc45\uc5d0\uc11c\ub294 \uc694\uc57d \ub300\uc0c1\ub9cc \uc870\ud68c\ud560 \uc218 \uc788\uc5b4\uc694.",
         errCd: NHIS_TARGET_POLICY_BLOCKED_ERR_CODE,
         errMsg: `Blocked targets: ${blockedTargets.join(", ")}`,
         blockedTargets,
@@ -260,12 +274,17 @@ export async function POST(req: Request) {
         detailPayload,
         requestDefaults,
       });
-      if (!executed.payload.ok) {
+      const payloadWithAiSummary = await enrichNhisPayloadWithAiSummarySafe(
+        executed.payload
+      );
+      if (!payloadWithAiSummary.ok) {
         const failedErrCode =
           typeof executed.firstFailed?.errCd === "string"
             ? executed.firstFailed.errCd.trim().toUpperCase()
             : "";
-        const hasSessionExpiredFailure = (executed.payload.failed ?? []).some(
+        const hasSessionExpiredFailure = (
+          payloadWithAiSummary.failed ?? []
+        ).some(
           (failure) =>
             (failure.errCd || "").trim().toUpperCase() ===
             NHIS_LOGIN_SESSION_EXPIRED_ERR_CODE
@@ -284,7 +303,7 @@ export async function POST(req: Request) {
           yearLimit: effectiveYearLimit,
           requestDefaults,
           statusCode: failedStatusCode,
-          payload: executed.payload,
+          payload: payloadWithAiSummary,
           firstFailed: executed.firstFailed,
           updateFetchedAt: false,
         });
@@ -297,7 +316,7 @@ export async function POST(req: Request) {
           statusCode: failedStatusCode,
           ok: false,
         });
-        return { statusCode: failedStatusCode, payload: executed.payload };
+        return { statusCode: failedStatusCode, payload: payloadWithAiSummary };
       }
       await persistNhisFetchResult({
         appUserId: auth.data.appUserId,
@@ -308,7 +327,7 @@ export async function POST(req: Request) {
         yearLimit: effectiveYearLimit,
         requestDefaults,
         statusCode: 200,
-        payload: executed.payload,
+        payload: payloadWithAiSummary,
         firstFailed: executed.firstFailed,
         updateFetchedAt: true,
       });
@@ -321,7 +340,7 @@ export async function POST(req: Request) {
         statusCode: 200,
         ok: true,
       });
-      return { statusCode: 200, payload: executed.payload };
+      return { statusCode: 200, payload: payloadWithAiSummary };
     } catch (error) {
       await recordNhisFetchAttemptSafe({
         appUserId: auth.data.appUserId,

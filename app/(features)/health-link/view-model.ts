@@ -1,27 +1,10 @@
 import { HEALTH_LINK_COPY } from "./copy";
-import type { FetchCacheInfo } from "./fetchClientPolicy";
 import type { PrimaryFlow } from "./ui-types";
 
-export function resolveStatusChip(hasLinked: boolean, hasAuthRequested: boolean) {
-  if (hasLinked) {
-    return {
-      label: HEALTH_LINK_COPY.status.linked,
-      tone: "on" as const,
-    };
-  }
-  if (hasAuthRequested) {
-    return {
-      label: HEALTH_LINK_COPY.status.authRequested,
-      tone: "pending" as const,
-    };
-  }
-  return {
-    label: HEALTH_LINK_COPY.status.notLinked,
-    tone: "off" as const,
-  };
-}
-
-export function resolvePrimaryFlow(statusLinked: boolean, hasAuthRequested: boolean): PrimaryFlow {
+export function resolvePrimaryFlow(
+  statusLinked: boolean,
+  hasAuthRequested: boolean
+): PrimaryFlow {
   if (statusLinked) {
     return {
       kind: "fetch",
@@ -48,75 +31,10 @@ export function resolvePrimaryFlow(statusLinked: boolean, hasAuthRequested: bool
   };
 }
 
-export function resolvePrimaryButtonLabel(isFetchStep: boolean, hasFetchResult: boolean) {
+export function resolvePrimaryButtonLabel(
+  isFetchStep: boolean,
+  hasFetchResult: boolean
+) {
   if (isFetchStep && hasFetchResult) return HEALTH_LINK_COPY.action.reload;
   return HEALTH_LINK_COPY.action.next;
-}
-
-export function resolveFetchCacheHint(
-  fetchCacheInfo: FetchCacheInfo | null,
-  formatDateTime: (value?: string | null) => string
-) {
-  if (!fetchCacheInfo) return null;
-  if (!fetchCacheInfo.cached) return null;
-  if (!fetchCacheInfo.fetchedAt || !fetchCacheInfo.expiresAt) {
-    return "저장된 결과를 우선 보여주고 있습니다.";
-  }
-
-  return [
-    "저장 결과 사용 중 (조회 ",
-    `${formatDateTime(fetchCacheInfo.fetchedAt)}`,
-    ", 만료 ",
-    `${formatDateTime(fetchCacheInfo.expiresAt)}`,
-    ")",
-  ].join("");
-}
-
-export function resolveForceRefreshHint(
-  forceRefreshBlocked: boolean,
-  forceRefreshRemainingSeconds: number,
-  forceRefreshAvailableAt: string | null,
-  forceRefreshBudget: {
-    remaining: number | null;
-    limit: number | null;
-    windowHours: number | null;
-  },
-  formatDateTime: (value?: string | null) => string
-) {
-  if (
-    typeof forceRefreshBudget.remaining === "number" &&
-    forceRefreshBudget.remaining <= 0 &&
-    typeof forceRefreshBudget.limit === "number"
-  ) {
-    const windowText =
-      typeof forceRefreshBudget.windowHours === "number"
-        ? ` ${HEALTH_LINK_COPY.fetch.forceRefreshBudgetBlockedWindowPrefix} ${forceRefreshBudget.windowHours}${HEALTH_LINK_COPY.fetch.forceRefreshBudgetBlockedWindowSuffix}`
-        : "";
-    return [
-      HEALTH_LINK_COPY.fetch.forceRefreshBudgetBlockedPrefix,
-      `${forceRefreshBudget.remaining}`,
-      HEALTH_LINK_COPY.fetch.forceRefreshBudgetBlockedMiddle,
-      `${forceRefreshBudget.limit}`,
-      HEALTH_LINK_COPY.fetch.forceRefreshBudgetBlockedSuffix,
-      windowText,
-    ].join("");
-  }
-
-  if (!forceRefreshBlocked) return HEALTH_LINK_COPY.fetch.forceRefreshDefault;
-
-  return [
-    HEALTH_LINK_COPY.fetch.forceRefreshBlockedPrefix,
-    ` ${forceRefreshRemainingSeconds}`,
-    HEALTH_LINK_COPY.fetch.forceRefreshBlockedMiddle,
-    ` ${formatDateTime(forceRefreshAvailableAt)}`,
-    HEALTH_LINK_COPY.fetch.forceRefreshBlockedSuffix,
-  ].join("");
-}
-
-export function buildForceRefreshConfirmMessage(kind: "summary" | "detail") {
-  const subject =
-    kind === "detail"
-      ? HEALTH_LINK_COPY.fetch.confirmDetailSubject
-      : HEALTH_LINK_COPY.fetch.confirmSummarySubject;
-  return `${HEALTH_LINK_COPY.fetch.confirmLine1Prefix} ${subject} ${HEALTH_LINK_COPY.fetch.confirmLine1Suffix}\n${HEALTH_LINK_COPY.fetch.confirmLine2}`;
 }

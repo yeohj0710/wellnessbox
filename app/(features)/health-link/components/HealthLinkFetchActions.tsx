@@ -8,24 +8,16 @@ type HealthLinkFetchActionsProps = {
   statusLinked: boolean;
   summaryDisabled: boolean;
   hasFetchResult: boolean;
-  forceRefreshDisabled: boolean;
-  fetchCacheHint: string | null;
-  forceRefreshHint: string;
   primaryLoading: boolean;
   onSummaryFetch: () => void;
-  onSummaryFresh: () => void;
 };
 
 export function HealthLinkFetchActions({
   statusLinked,
   summaryDisabled,
   hasFetchResult,
-  forceRefreshDisabled,
-  fetchCacheHint,
-  forceRefreshHint,
   primaryLoading,
   onSummaryFetch,
-  onSummaryFresh,
 }: HealthLinkFetchActionsProps) {
   if (!statusLinked) return null;
 
@@ -35,6 +27,7 @@ export function HealthLinkFetchActions({
         type="button"
         onClick={onSummaryFetch}
         disabled={summaryDisabled}
+        aria-busy={primaryLoading}
         className={styles.nextButton}
       >
         <SpinnerLabel
@@ -46,29 +39,6 @@ export function HealthLinkFetchActions({
           }
         />
       </button>
-
-      {hasFetchResult ? (
-        <details className={styles.advancedActionDetails}>
-          <summary>{HEALTH_LINK_COPY.fetch.advancedSummary}</summary>
-          <div className={styles.advancedActionBody}>
-            <button
-              type="button"
-              onClick={onSummaryFresh}
-              disabled={forceRefreshDisabled}
-              className={styles.ghostButton}
-            >
-              <SpinnerLabel
-                loading={primaryLoading}
-                label={HEALTH_LINK_COPY.fetch.summaryForceButton}
-              />
-            </button>
-            {fetchCacheHint ? (
-              <p className={styles.detailHint}>{fetchCacheHint}</p>
-            ) : null}
-            <p className={styles.detailHint}>{forceRefreshHint}</p>
-          </div>
-        </details>
-      ) : null}
     </div>
   );
 }

@@ -173,6 +173,7 @@ export function HealthLinkAuthSection({
           type="button"
           onClick={onPrimaryAction}
           disabled={primaryDisabled}
+          aria-busy={primaryLoading}
           className={styles.nextButton}
         >
           <SpinnerLabel loading={primaryLoading} label={primaryButtonLabel} />
@@ -188,9 +189,9 @@ export function HealthLinkAuthSection({
         <p className={styles.mandatoryHint}>{mandatoryActionHint}</p>
       </div>
 
-      <div className={styles.noticeStack} aria-live="polite">
+      <div className={styles.noticeStack} aria-live="polite" role="status">
         {statusError ? (
-          <div className={styles.noticeError}>
+          <div className={styles.noticeError} role="alert">
             {parseErrorMessage(
               statusError,
               HEALTH_LINK_COPY.auth.statusLoadFallback
@@ -209,7 +210,9 @@ export function HealthLinkAuthSection({
           </div>
         ) : null}
         {actionError && !isSessionExpired ? (
-          <div className={styles.noticeError}>{actionError}</div>
+          <div className={styles.noticeError} role="alert">
+            {actionError}
+          </div>
         ) : null}
 
         {showHealthInPrereqGuide ? (

@@ -1,11 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   NHIS_FETCH_DAILY_LIMIT_ERR_CODE,
-  NHIS_FORCE_REFRESH_COOLDOWN_ERR_CODE,
-  NHIS_FORCE_REFRESH_DAILY_LIMIT_ERR_CODE,
-  NHIS_TARGET_POLICY_BLOCKED_ERR_CODE,
 } from "@/lib/shared/hyphen-fetch";
 import {
   NHIS_ERR_CODE_HEALTHIN_REQUIRED,
@@ -15,15 +12,9 @@ import {
 import { HEALTH_LINK_COPY } from "./copy";
 import {
   buildFetchNotice,
-  buildForceRefreshCooldownMessage,
-  CHECKUP_DETAIL_TARGETS,
-  DETAIL_YEAR_LIMIT,
   getFetchMessages,
-  mapFetchCacheInfo,
   SUMMARY_FETCH_TARGETS,
-  type FetchCacheInfo,
   type FetchMessages,
-  type FetchMode,
 } from "./fetchClientPolicy";
 import type {
   ActionKind,
@@ -33,138 +24,22 @@ import type {
   NhisStatusResponse,
 } from "./types";
 import {
+  ACTION_TIMEOUT_MS,
+  buildClientBudgetBlockedMessage,
+  resolveActionErrorMessage,
+  resolveActionTimeoutMessage,
+} from "./request-utils";
+import {
   hasNhisSessionExpiredFailure,
   parseErrorMessage,
   readJson,
 } from "./utils";
-
-const ACTION_TIMEOUT_MS: Record<Exclude<ActionKind, null>, number> = {
-  init: 25_000,
-  sign: 35_000,
-  fetch: 45_000,
-  fetchDetail: 45_000,
-  unlink: 15_000,
-  status: 15_000,
-};
-
-function resolveActionTimeoutMessage(kind: Exclude<ActionKind, null>) {
-  if (kind === "fetch") return HEALTH_LINK_COPY.hook.fetchTimeout;
-  if (kind === "fetchDetail") return HEALTH_LINK_COPY.hook.fetchDetailTimeout;
-  if (kind === "sign") return HEALTH_LINK_COPY.hook.signTimeout;
-  if (kind === "init") return HEALTH_LINK_COPY.hook.initTimeout;
-  return HEALTH_LINK_COPY.hook.requestTimeoutFallback;
-}
-
-function resolveActionErrorMessage(
-  payload: Pick<
-    NhisActionResponse,
-    "error" | "errCd" | "errMsg" | "retryAfterSec" | "blockedTargets" | "budget"
-  > & { failed?: NhisFetchFailure[] },
-  fallback: string
-) {
-  const errCode = payload.errCd?.trim() || null;
-  if (
-    errCode === NHIS_ERR_CODE_LOGIN_SESSION_EXPIRED ||
-    hasNhisSessionExpiredFailure(payload.failed ?? [])
-  ) {
-    return HEALTH_LINK_COPY.hook.sessionExpiredDetected;
-  }
-  if (errCode === NHIS_FORCE_REFRESH_COOLDOWN_ERR_CODE) {
-    if (
-      typeof payload.retryAfterSec === "number" &&
-      payload.retryAfterSec > 0
-    ) {
-      return buildForceRefreshCooldownMessage(payload.retryAfterSec);
-    }
-    return HEALTH_LINK_COPY.hook.forceRefreshCooldownFallback;
-  }
-
-  if (errCode === NHIS_TARGET_POLICY_BLOCKED_ERR_CODE) {
-    const blocked = payload.blockedTargets?.filter(Boolean) ?? [];
-    if (blocked.length > 0) {
-      return `${HEALTH_LINK_COPY.hook.targetPolicyBlockedPrefix} ${blocked.join(
-        ", "
-      )}`;
-    }
-    return HEALTH_LINK_COPY.hook.targetPolicyBlockedDefault;
-  }
-
-  if (
-    errCode === NHIS_FETCH_DAILY_LIMIT_ERR_CODE ||
-    errCode === NHIS_FORCE_REFRESH_DAILY_LIMIT_ERR_CODE
-  ) {
-    const windowHours = payload.budget?.windowHours ?? 24;
-    const used =
-      errCode === NHIS_FORCE_REFRESH_DAILY_LIMIT_ERR_CODE
-        ? payload.budget?.forceRefresh.used
-        : payload.budget?.fresh.used;
-    const limit =
-      errCode === NHIS_FORCE_REFRESH_DAILY_LIMIT_ERR_CODE
-        ? payload.budget?.forceRefresh.limit
-        : payload.budget?.fresh.limit;
-    const retryText =
-      typeof payload.retryAfterSec === "number" && payload.retryAfterSec > 0
-        ? `${HEALTH_LINK_COPY.hook.budgetRetrySuffixPrefix} ${payload.retryAfterSec}${HEALTH_LINK_COPY.hook.budgetRetrySuffixUnit}`
-        : "";
-
-    if (typeof used === "number" && typeof limit === "number") {
-      return [
-        HEALTH_LINK_COPY.hook.budgetExceededDetailedPrefix,
-        ` ${windowHours} ${HEALTH_LINK_COPY.hook.budgetExceededDetailedMiddle}`,
-        ` ${used}/${limit} ${HEALTH_LINK_COPY.hook.budgetExceededDetailedSuffix}`,
-        retryText,
-      ].join("");
-    }
-    return `${HEALTH_LINK_COPY.hook.budgetExceededFallback}${retryText}`;
-  }
-
-  return parseErrorMessage(payload.errMsg || payload.error, fallback);
-}
-
-function buildClientBudgetBlockedMessageSafe(options: {
-  reason: "fresh" | "forceRefresh";
-  budget:
-    | {
-        windowHours?: number;
-        fresh?: { used?: number; limit?: number };
-        forceRefresh?: { used?: number; limit?: number };
-      }
-    | undefined;
-  retryAfterSec?: number;
-}) {
-  const windowHours = options.budget?.windowHours ?? 24;
-  const used =
-    options.reason === "forceRefresh"
-      ? options.budget?.forceRefresh?.used
-      : options.budget?.fresh?.used;
-  const limit =
-    options.reason === "forceRefresh"
-      ? options.budget?.forceRefresh?.limit
-      : options.budget?.fresh?.limit;
-  const retrySuffix =
-    typeof options.retryAfterSec === "number" && options.retryAfterSec > 0
-      ? `${HEALTH_LINK_COPY.hook.budgetRetrySuffixPrefix} ${options.retryAfterSec}${HEALTH_LINK_COPY.hook.budgetRetrySuffixUnit}`
-      : "";
-
-  if (typeof used === "number" && typeof limit === "number") {
-    return [
-      HEALTH_LINK_COPY.hook.budgetExceededDetailedPrefix,
-      ` ${windowHours} ${HEALTH_LINK_COPY.hook.budgetExceededDetailedMiddle}`,
-      ` ${used}/${limit} ${HEALTH_LINK_COPY.hook.budgetExceededDetailedSuffix}`,
-      retrySuffix ? ` ${retrySuffix}` : "",
-    ].join("");
-  }
-  return retrySuffix
-    ? `${HEALTH_LINK_COPY.hook.budgetExceededFallback} ${retrySuffix}`
-    : HEALTH_LINK_COPY.hook.budgetExceededFallback;
-}
 
 export function useNhisHealthLink() {
   const autoFetchAfterSignRef = useRef(false);
   const autoFetchOnEntryRef = useRef(false);
   const [status, setStatus] = useState<NhisStatusResponse["status"]>();
   const [statusError, setStatusError] = useState<string | null>(null);
-  const [statusLoading, setStatusLoading] = useState(false);
 
   const [resNm, setResNm] = useState("");
   const [resNo, setResNo] = useState("");
@@ -179,9 +54,6 @@ export function useNhisHealthLink() {
     null
   );
   const [fetchFailures, setFetchFailures] = useState<NhisFetchFailure[]>([]);
-  const [fetchCacheInfo, setFetchCacheInfo] = useState<FetchCacheInfo | null>(
-    null
-  );
   const fetchInFlightRef = useRef(false);
 
   const fetchBudget = status?.fetchBudget;
@@ -189,31 +61,20 @@ export function useNhisHealthLink() {
   const freshBudgetBlocked =
     typeof fetchBudget?.fresh?.remaining === "number" &&
     fetchBudget.fresh.remaining <= 0;
-  const forceRefreshBudgetBlocked =
-    typeof fetchBudget?.forceRefresh?.remaining === "number" &&
-    fetchBudget.forceRefresh.remaining <= 0;
   const summaryFetchBlocked = freshBudgetBlocked && !hasValidSummaryCache;
 
   const canRequest = actionLoading === null;
   const canSign =
     canRequest && !!(status?.pendingAuthReady || status?.hasStepData);
   const canFetch = canRequest && !!status?.linked && !summaryFetchBlocked;
-  const hasDetailedRows = useMemo(() => {
-    const rows = fetched?.normalized?.checkup?.yearly;
-    return Array.isArray(rows) && rows.length > 0;
-  }, [fetched?.normalized?.checkup?.yearly]);
-  const forceRefreshRemainingSeconds =
-    status?.forceRefresh?.remainingSeconds ?? 0;
-  const forceRefreshBlocked = forceRefreshRemainingSeconds > 0;
   const summaryFetchBlockedMessage = summaryFetchBlocked
-    ? buildClientBudgetBlockedMessageSafe({
+    ? buildClientBudgetBlockedMessage({
         reason: "fresh",
         budget: fetchBudget,
       })
     : null;
 
   const loadStatus = useCallback(async () => {
-    setStatusLoading(true);
     setStatusError(null);
     try {
       const res = await fetch("/api/health/nhis/status", {
@@ -233,8 +94,6 @@ export function useNhisHealthLink() {
       setStatus(data.status);
     } catch (error) {
       setStatusError(error instanceof Error ? error.message : String(error));
-    } finally {
-      setStatusLoading(false);
     }
   }, []);
 
@@ -318,7 +177,6 @@ export function useNhisHealthLink() {
   const applyFetchFailure = useCallback(
     async (payload: NhisFetchResponse) => {
       setFetchFailures(payload.failed ?? []);
-      setFetchCacheInfo(mapFetchCacheInfo(payload));
       await loadStatus();
     },
     [loadStatus]
@@ -328,92 +186,53 @@ export function useNhisHealthLink() {
     async (payload: NhisFetchResponse, messages: FetchMessages) => {
       setFetched(payload.data ?? null);
       setFetchFailures(payload.failed ?? []);
-      setFetchCacheInfo(mapFetchCacheInfo(payload));
       setActionNotice(buildFetchNotice(payload, messages));
       await loadStatus();
     },
     [loadStatus]
   );
 
-  const runFetch = useCallback(
-    async (mode: FetchMode, forceRefresh = false) => {
-      if (fetchInFlightRef.current) return;
+  const runSummaryFetch = useCallback(async () => {
+    if (fetchInFlightRef.current) return;
+    if (summaryFetchBlocked) {
+      setActionNotice(null);
+      setActionErrorCode(NHIS_FETCH_DAILY_LIMIT_ERR_CODE);
+      setActionError(
+        buildClientBudgetBlockedMessage({
+          reason: "fresh",
+          budget: fetchBudget,
+        })
+      );
+      return;
+    }
 
-      if (mode === "detail" && !forceRefresh && hasDetailedRows) {
-        setActionError(null);
-        setActionErrorCode(null);
-        setActionNotice(HEALTH_LINK_COPY.hook.detailAlreadyLoadedNotice);
-        return;
-      }
-
-      if (summaryFetchBlocked) {
-        setActionNotice(null);
-        setActionErrorCode(NHIS_FETCH_DAILY_LIMIT_ERR_CODE);
-        setActionError(
-          buildClientBudgetBlockedMessageSafe({
-            reason: "fresh",
-            budget: fetchBudget,
-          })
-        );
-        return;
-      }
-
-      if (forceRefresh && forceRefreshBudgetBlocked) {
-        setActionNotice(null);
-        setActionErrorCode(NHIS_FORCE_REFRESH_DAILY_LIMIT_ERR_CODE);
-        setActionError(
-          buildClientBudgetBlockedMessageSafe({
-            reason: "forceRefresh",
-            budget: fetchBudget,
-          })
-        );
-        return;
-      }
-
-      if (forceRefresh && forceRefreshBlocked) {
-        setActionErrorCode(NHIS_FORCE_REFRESH_COOLDOWN_ERR_CODE);
-        setActionError(
-          buildForceRefreshCooldownMessage(forceRefreshRemainingSeconds)
-        );
-        return;
-      }
-
-      const isDetail = mode === "detail";
-      const messages = getFetchMessages(mode, forceRefresh);
-      fetchInFlightRef.current = true;
-      try {
-        await runRequest<NhisFetchResponse>({
-          kind: isDetail ? "fetchDetail" : "fetch",
-          url: "/api/health/nhis/fetch",
-          body: {
-            targets: isDetail ? CHECKUP_DETAIL_TARGETS : SUMMARY_FETCH_TARGETS,
-            ...(isDetail ? { yearLimit: DETAIL_YEAR_LIMIT } : {}),
-            ...(forceRefresh ? { forceRefresh: true } : {}),
-          },
-          fallbackError: messages.fallbackError,
-          onFailure: async (payload) => {
-            await applyFetchFailure(payload);
-          },
-          onSuccess: async (payload) => {
-            await applyFetchSuccess(payload, messages);
-          },
-        });
-      } finally {
-        fetchInFlightRef.current = false;
-      }
-    },
-    [
-      applyFetchFailure,
-      applyFetchSuccess,
-      fetchBudget,
-      forceRefreshBlocked,
-      forceRefreshBudgetBlocked,
-      forceRefreshRemainingSeconds,
-      hasDetailedRows,
-      runRequest,
-      summaryFetchBlocked,
-    ]
-  );
+    const messages = getFetchMessages("summary", false);
+    fetchInFlightRef.current = true;
+    try {
+      await runRequest<NhisFetchResponse>({
+        kind: "fetch",
+        url: "/api/health/nhis/fetch",
+        body: {
+          targets: SUMMARY_FETCH_TARGETS,
+        },
+        fallbackError: messages.fallbackError,
+        onFailure: async (payload) => {
+          await applyFetchFailure(payload);
+        },
+        onSuccess: async (payload) => {
+          await applyFetchSuccess(payload, messages);
+        },
+      });
+    } finally {
+      fetchInFlightRef.current = false;
+    }
+  }, [
+    applyFetchFailure,
+    applyFetchSuccess,
+    fetchBudget,
+    runRequest,
+    summaryFetchBlocked,
+  ]);
 
   const handleInit = useCallback(async () => {
     if (!resNm.trim()) {
@@ -443,7 +262,6 @@ export function useNhisHealthLink() {
       onSuccess: async (payload) => {
         setFetchFailures([]);
         setFetched(null);
-        setFetchCacheInfo(null);
         if (payload.linked) {
           setActionNotice(
             payload.reused
@@ -496,7 +314,7 @@ export function useNhisHealthLink() {
       setActionNotice(null);
       setActionErrorCode(NHIS_FETCH_DAILY_LIMIT_ERR_CODE);
       setActionError(
-        buildClientBudgetBlockedMessageSafe({
+        buildClientBudgetBlockedMessage({
           reason: "fresh",
           budget: status.fetchBudget,
         })
@@ -506,10 +324,10 @@ export function useNhisHealthLink() {
 
     autoFetchAfterSignRef.current = false;
     setActionNotice(HEALTH_LINK_COPY.hook.autoFetchAfterSignNotice);
-    void runFetch("summary");
+    void runSummaryFetch();
   }, [
     actionLoading,
-    runFetch,
+    runSummaryFetch,
     status?.fetchBudget,
     status?.linked,
     summaryFetchBlocked,
@@ -527,8 +345,14 @@ export function useNhisHealthLink() {
 
     autoFetchOnEntryRef.current = true;
     setActionNotice(HEALTH_LINK_COPY.hook.autoFetchOnEntryNotice);
-    void runFetch("summary");
-  }, [actionLoading, fetched, runFetch, status?.linked, summaryFetchBlocked]);
+    void runSummaryFetch();
+  }, [
+    actionLoading,
+    fetched,
+    runSummaryFetch,
+    status?.linked,
+    summaryFetchBlocked,
+  ]);
 
   useEffect(() => {
     if (!status?.linked) return;
@@ -541,7 +365,7 @@ export function useNhisHealthLink() {
     setActionNotice(null);
     setActionErrorCode(NHIS_FETCH_DAILY_LIMIT_ERR_CODE);
     setActionError(
-      buildClientBudgetBlockedMessageSafe({
+      buildClientBudgetBlockedMessage({
         reason: "fresh",
         budget: status.fetchBudget,
       })
@@ -557,20 +381,8 @@ export function useNhisHealthLink() {
   ]);
 
   const handleFetch = useCallback(async () => {
-    await runFetch("summary");
-  }, [runFetch]);
-
-  const handleFetchFresh = useCallback(async () => {
-    await runFetch("summary", true);
-  }, [runFetch]);
-
-  const handleFetchDetailed = useCallback(async () => {
-    await runFetch("detail");
-  }, [runFetch]);
-
-  const handleFetchDetailedFresh = useCallback(async () => {
-    await runFetch("detail", true);
-  }, [runFetch]);
+    await runSummaryFetch();
+  }, [runSummaryFetch]);
 
   const handleUnlink = useCallback(async () => {
     await runRequest<NhisActionResponse>({
@@ -580,7 +392,6 @@ export function useNhisHealthLink() {
       onSuccess: async () => {
         setFetched(null);
         setFetchFailures([]);
-        setFetchCacheInfo(null);
         setActionNotice(HEALTH_LINK_COPY.hook.unlinkNotice);
         await loadStatus();
       },
@@ -590,13 +401,6 @@ export function useNhisHealthLink() {
     });
   }, [loadStatus, runRequest]);
 
-  const currentStep = useMemo(() => {
-    if (fetched) return 3;
-    if (status?.linked) return 2;
-    if (status?.pendingAuthReady || status?.hasStepData) return 1;
-    return 0;
-  }, [fetched, status?.hasStepData, status?.linked, status?.pendingAuthReady]);
-
   const showHealthInPrereqGuide =
     actionErrorCode === NHIS_ERR_CODE_HEALTHIN_REQUIRED ||
     status?.lastError?.code === NHIS_ERR_CODE_HEALTHIN_REQUIRED;
@@ -604,7 +408,6 @@ export function useNhisHealthLink() {
   return {
     status,
     statusError,
-    statusLoading,
     resNm,
     setResNm,
     resNo,
@@ -617,24 +420,16 @@ export function useNhisHealthLink() {
     actionErrorCode,
     fetched,
     fetchFailures,
-    fetchCacheInfo,
     canRequest,
     canSign,
     canFetch,
     summaryFetchBlocked,
     summaryFetchBlockedMessage,
-    hasDetailedRows,
-    forceRefreshBlocked,
-    forceRefreshRemainingSeconds,
-    currentStep,
     showHealthInPrereqGuide,
     loadStatus,
     handleInit,
     handleSign,
     handleFetch,
-    handleFetchFresh,
-    handleFetchDetailed,
-    handleFetchDetailedFresh,
     handleUnlink,
   };
 }

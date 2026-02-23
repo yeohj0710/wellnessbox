@@ -20,17 +20,25 @@ Single page flow for Hyphen NHIS integration:
 - `components/HealthLinkAuthSection.tsx`
   - Auth/init/sign form section and status notices.
 - `components/HealthLinkResultSection.tsx`
-  - Result metrics section, action toolbar integration, and table rendering.
+  - Result stage orchestrator (loading/notice/content composition).
+- `components/HealthLinkResultContent.tsx`
+  - Main result rendering block (overview, AI summary, checkup groups, medication).
+- `components/HealthLinkResultLoadingPanel.tsx`
+  - Long-fetch loading panel with progress + skeleton UI.
+- `components/HealthLinkResultFailureNotice.tsx`
+  - Soft failure notice/detail block for partial-fetch scenarios.
+- `components/HealthLinkResultSection.helpers.tsx`
+  - Result section helper types and pure rendering/normalization helpers.
 - `components/HealthLinkCommon.tsx`
   - Reusable presentational blocks (step strip, metric cards, table panel).
 - `components/HealthLinkFetchActions.tsx`
-  - Detail/force-refresh action rows.
+  - Result refresh action row.
 - `components/HealthLinkRawResponseSection.tsx`
   - Collapsible raw JSON response block.
-- `components/HealthLinkStatusMeta.tsx`
-  - Status-details card block for cache/cooldown/policy visibility.
 - `useNhisHealthLink.ts`
   - Client workflow state + API calls.
+- `request-utils.ts`
+  - Shared request timeout/error/budget message helpers for hook logic.
 - `fetchClientPolicy.ts`
   - Client-side low-cost target constants and fetch notice/cooldown copy policy.
 - `types.ts`
@@ -51,8 +59,12 @@ Single page flow for Hyphen NHIS integration:
   - Session-expiry 판단 및 fetch 실패 메시지 정규화 로직.
 - `utils-health-data.ts`
   - 검진/투약 행 요약, 최신 검진 메타 추출, 지표 톤 판별 로직.
+- `utils-health-metric-tone.ts`
+  - 검진 수치 판정용 텍스트/범위 규칙과 수치 파싱 유틸.
 - `HealthLinkClient.module.css`
   - Page-specific styles.
+- `MAINTENANCE.md`
+  - Quick handoff guide for future engineers/agents.
 
 ## Security Rules
 
@@ -69,24 +81,28 @@ Single page flow for Hyphen NHIS integration:
 - linked 상태로 페이지에 진입하면 최신 요약 조회를 자동으로 1회 실행합니다.
 - `fetch` supports partial success handling so one endpoint failure does not drop all cards.
 - Error code `C0012-001` should trigger a prerequisite guidance card.
+- Successful fetch payloads include `normalized.aiSummary` (best-effort OpenAI + fallback).
+- AI summary generation must never break or block the core fetch UX.
 
 ## Cost Guardrails
 
 - Summary fetch defaults to `targets: ["checkupOverview", "medication"]`.
-- Detail fetch uses low-cost mode:
-  - client requests `targets: ["checkupList", "checkupYearly"]` with `yearLimit: 1`
-  - server clamps checkup list year scan to max 2 years
+- Current client UX only triggers summary fetch.
+  - no visible detail-fetch or force-refresh controls in `/health-link`
+  - this keeps default user flow on the low-cost profile
+- Detail fetch is treated as high-cost mode:
+  - `checkupList` / `checkupYearly` are blocked unless `HYPHEN_NHIS_ENABLE_HIGH_COST_TARGETS=1`
+  - when enabled, `yearLimit` still clamps to max 1 year
   - server caps yearly-detail calls to max 1 request per fetch
 - If `detailKey` is missing, yearly endpoint is not called blindly.
 - High-cost targets are blocked by default on the server:
-  - blocked: `medical`, `healthAge`
-  - allowed: `checkupOverview`, `medication`, `checkupList`, `checkupYearly`
+  - blocked: `medical`, `healthAge`, `checkupList`, `checkupYearly`
+  - allowed: `checkupOverview`, `medication`
   - blocked response: `errCd: NHIS_TARGET_POLICY_BLOCKED`
-- Force refresh is available for manual troubleshooting, but:
+- Force refresh is intentionally hidden from default UI and reserved for internal troubleshooting paths:
   - server can replay recent cache first for cost protection
   - server cooldown limits rapid retries
-  - UI reads `status.forceRefresh` and disables force-refresh buttons while cooldown remains
-  - UI also disables force-refresh buttons when rolling budget remaining is `0`
+  - rolling budget still blocks overuse (`status.fetchBudget`)
   - in-flight dedupe merges concurrent same-key fresh requests
 - Rolling fetch-budget limits are enforced server-side (non-cached fetch executions only):
   - default fresh budget: 6 per 24h

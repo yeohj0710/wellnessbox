@@ -22,6 +22,7 @@ import {
 } from "@/lib/server/hyphen/fetch-contract";
 import { normalizeCheckupOverviewPayload } from "@/lib/server/hyphen/normalize-checkup";
 import { normalizeNhisPayload } from "@/lib/server/hyphen/normalize";
+import { normalizeTreatmentPayload } from "@/lib/server/hyphen/normalize-treatment";
 import {
   getErrorCodeMessage,
   logHyphenError,
@@ -157,6 +158,115 @@ function normalizeYearLimit(value: number) {
   );
 }
 
+const YMD_PATTERN = /^\d{8}$/;
+const MEDICATION_PROBE_WINDOWS_DAYS = [30, 180, 365] as const;
+
+function parseYmd(value: string | undefined): Date | null {
+  if (!value || !YMD_PATTERN.test(value)) return null;
+  const year = Number(value.slice(0, 4));
+  const month = Number(value.slice(4, 6)) - 1;
+  const day = Number(value.slice(6, 8));
+  const parsed = new Date(Date.UTC(year, month, day));
+  return Number.isFinite(parsed.getTime()) ? parsed : null;
+}
+
+function formatYmdUtc(date: Date): string {
+  const year = String(date.getUTCFullYear());
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${year}${month}${day}`;
+}
+
+function shiftDaysUtc(base: Date, days: number): Date {
+  const shifted = new Date(base.getTime());
+  shifted.setUTCDate(shifted.getUTCDate() + days);
+  return shifted;
+}
+
+function hasMeaningfulCheckupRow(payload: HyphenApiResponse) {
+  const checkupRows = normalizeCheckupOverviewPayload(payload);
+  return checkupRows.some((row) => {
+    const metric = typeof row.metric === "string" ? row.metric.trim() : "";
+    const itemName = typeof row.itemName === "string" ? row.itemName.trim() : "";
+    const itemData = row.itemData == null ? "" : String(row.itemData).trim();
+    const result = row.result == null ? "" : String(row.result).trim();
+    return metric || itemName || itemData || result;
+  });
+}
+
+function hasMedicationRow(payload: HyphenApiResponse) {
+  return normalizeTreatmentPayload(payload).list.length > 0;
+}
+
+function hasNoDataSignal(reason: unknown) {
+  const info = getErrorCodeMessage(reason);
+  const merged = `${info.code ?? ""} ${info.message ?? ""}`.toLowerCase();
+  return (
+    merged.includes("no data") ||
+    merged.includes("조회 결과") ||
+    merged.includes("조회결과") ||
+    merged.includes("내역이 없습니다") ||
+    merged.includes("데이터가 없습니다")
+  );
+}
+
+function resolveMedicationProbeWindows(requestDefaults: RequestDefaultsLike) {
+  const to = parseYmd(requestDefaults.toDate);
+  const from = parseYmd(requestDefaults.fromDate);
+  if (!to) {
+    return [
+      {
+        fromDate: requestDefaults.fromDate,
+        toDate: requestDefaults.toDate,
+      },
+    ];
+  }
+
+  const windows: Array<{ fromDate: string | undefined; toDate: string | undefined }> = [];
+  const seen = new Set<string>();
+  const pushWindow = (fromDate: string | undefined, toDate: string | undefined) => {
+    const key = `${fromDate ?? "-"}|${toDate ?? "-"}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    windows.push({ fromDate, toDate });
+  };
+
+  for (const days of MEDICATION_PROBE_WINDOWS_DAYS) {
+    const candidateFrom = shiftDaysUtc(to, -(days - 1));
+    const boundedFrom =
+      from && candidateFrom.getTime() < from.getTime() ? from : candidateFrom;
+    pushWindow(formatYmdUtc(boundedFrom), formatYmdUtc(to));
+  }
+
+  pushWindow(
+    requestDefaults.fromDate ?? (from ? formatYmdUtc(from) : undefined),
+    requestDefaults.toDate ?? formatYmdUtc(to)
+  );
+
+  return windows;
+}
+
+async function fetchLatestMedicationPayload(input: {
+  detailPayload: HyphenNhisRequestPayload;
+  requestDefaults: RequestDefaultsLike;
+}) {
+  const windows = resolveMedicationProbeWindows(input.requestDefaults);
+  let lastPayload: HyphenApiResponse | null = null;
+
+  for (const window of windows) {
+    const payload = await fetchMedicationInfo({
+      ...input.detailPayload,
+      ...(window.fromDate ? { fromDate: window.fromDate } : {}),
+      ...(window.toDate ? { toDate: window.toDate } : {}),
+    });
+    lastPayload = payload;
+    if (hasMedicationRow(payload)) return payload;
+  }
+
+  if (lastPayload) return lastPayload;
+  return fetchMedicationInfo(input.detailPayload);
+}
+
 export async function executeNhisFetch(
   input: ExecuteNhisFetchInput
 ): Promise<ExecuteNhisFetchOutput> {
@@ -224,38 +334,41 @@ export async function executeNhisFetch(
         try {
           const checkupPayload = await fetchCheckupOverview(input.basePayload);
           successful.set("checkupOverview", checkupPayload);
-          const checkupRows = normalizeCheckupOverviewPayload(checkupPayload);
-          const hasMeaningfulCheckupRow = checkupRows.some((row) => {
-            const metric = typeof row.metric === "string" ? row.metric.trim() : "";
-            const itemName = typeof row.itemName === "string" ? row.itemName.trim() : "";
-            const itemData =
-              row.itemData == null ? "" : String(row.itemData).trim();
-            const result = row.result == null ? "" : String(row.result).trim();
-            return metric || itemName || itemData || result;
-          });
-          shouldFallbackToMedication = !hasMeaningfulCheckupRow;
+          shouldFallbackToMedication = !hasMeaningfulCheckupRow(checkupPayload);
         } catch (error) {
           pendingCheckupError = error;
-          shouldFallbackToMedication = true;
+          shouldFallbackToMedication = hasNoDataSignal(error);
         }
 
-        if (!shouldFallbackToMedication) return;
+        if (!shouldFallbackToMedication) {
+          if (pendingCheckupError) {
+            markFailure(
+              "checkupOverview",
+              pendingCheckupError,
+              "\uac80\uc9c4 \uacb0\uacfc\ub97c \ubd88\ub7ec\uc624\uc9c0 \ubabb\ud588\uc5b4\uc694."
+            );
+          }
+          return;
+        }
 
         try {
-          const medicationPayload = await fetchMedicationInfo(input.detailPayload);
+          const medicationPayload = await fetchLatestMedicationPayload({
+            detailPayload: input.detailPayload,
+            requestDefaults: input.requestDefaults,
+          });
           successful.set("medication", medicationPayload);
         } catch (medicationError) {
           if (pendingCheckupError) {
             markFailure(
               "checkupOverview",
               pendingCheckupError,
-              "검진 결과를 먼저 확인하지 못했습니다."
+              "\uac80\uc9c4 \uacb0\uacfc\ub97c \ubd88\ub7ec\uc624\uc9c0 \ubabb\ud588\uc5b4\uc694."
             );
           }
           markFailure(
             "medication",
             medicationError,
-            "투약 정보를 불러오지 못했습니다."
+            "\ud22c\uc57d \uc815\ubcf4\ub97c \ubd88\ub7ec\uc624\uc9c0 \ubabb\ud588\uc5b4\uc694."
           );
         }
       })()
@@ -268,8 +381,12 @@ export async function executeNhisFetch(
     );
     runIndependentTarget(
       "medication",
-      () => fetchMedicationInfo(input.detailPayload),
-      "투약 정보를 불러오지 못했습니다."
+      () =>
+        fetchLatestMedicationPayload({
+          detailPayload: input.detailPayload,
+          requestDefaults: input.requestDefaults,
+        }),
+      "\ud22c\uc57d \uc815\ubcf4\ub97c \ubd88\ub7ec\uc624\uc9c0 \ubabb\ud588\uc5b4\uc694."
     );
   }
 

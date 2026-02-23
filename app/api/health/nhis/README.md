@@ -50,10 +50,11 @@
 
 - High-cost targets are blocked by default (low-cost policy):
   - blocked by default: `medical`, `healthAge`
-  - allowed by default: `checkupOverview`, `medication`, `checkupList`, `checkupYearly`
+  - allowed by default: `checkupOverview`, `medication`
   - blocked request returns `400` with `errCd: NHIS_TARGET_POLICY_BLOCKED`
 - Detailed fetch policy is intentionally strict:
-  - list year scan max 2 years per request
+  - `checkupList`, `checkupYearly` are treated as high-cost targets and blocked unless `HYPHEN_NHIS_ENABLE_HIGH_COST_TARGETS=1`
+  - when enabled, list year scan max is 1 year per request
   - yearly detail max 1 call per request
   - no blind yearly call when `detailKey` is missing
   - `yearLimit` is canonicalized for summary-only requests to avoid cache-key drift
@@ -107,7 +108,7 @@
 
 - `HYPHEN_NHIS_FORCE_REFRESH_COOLDOWN_SECONDS`
 - `HYPHEN_NHIS_FORCE_REFRESH_CACHE_GUARD_SECONDS` (default `1800`, set `0` to disable)
-- `HYPHEN_NHIS_ENABLE_HIGH_COST_TARGETS` (`1` enables all targets, default is checkup-only)
+- `HYPHEN_NHIS_ENABLE_HIGH_COST_TARGETS` (`1` enables all targets, default allows summary targets only)
 - `HYPHEN_NHIS_FETCH_BUDGET_WINDOW_HOURS` (default `24`)
 - `HYPHEN_NHIS_MAX_FRESH_FETCHES_PER_WINDOW` (default `6`)
 - `HYPHEN_NHIS_MAX_FORCE_REFRESHES_PER_WINDOW` (default `2`)

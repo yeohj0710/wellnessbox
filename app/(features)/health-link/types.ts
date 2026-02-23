@@ -31,6 +31,17 @@ export type NhisRecommendationSummary = {
   checkupFindings: NhisDataRow[];
 };
 
+export type NhisAiSummary = {
+  source?: "openai" | "fallback";
+  model?: string;
+  generatedAt?: string;
+  headline: string;
+  summary: string;
+  highlights: string[];
+  nextSteps: string[];
+  riskLevel?: "low" | "medium" | "high" | "unknown";
+};
+
 export type NhisStatusResponse = {
   ok: boolean;
   status?: {
@@ -120,6 +131,7 @@ export type NhisFetchResponse = {
         riskFactorTable: unknown;
       };
       recommendation?: NhisRecommendationSummary;
+      aiSummary?: NhisAiSummary;
     };
     raw?: {
       medical?: unknown;

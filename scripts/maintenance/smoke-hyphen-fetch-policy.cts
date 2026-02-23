@@ -36,8 +36,7 @@ function run() {
   ] as const;
   const lowCostTargets = [
     "checkupOverview",
-    "checkupList",
-    "checkupYearly",
+    "medication",
   ] as const;
   const defaultTargets = ["checkupOverview"] as const;
   const detailTargets = ["checkupList", "checkupYearly"] as const;

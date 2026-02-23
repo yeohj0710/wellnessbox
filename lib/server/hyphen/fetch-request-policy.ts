@@ -14,7 +14,15 @@ import {
 } from "@/lib/shared/nhis-fetch-policy";
 
 export function dedupeNhisFetchTargets(input?: NhisFetchTarget[]) {
-  return dedupeFetchTargets(input, DEFAULT_NHIS_FETCH_TARGETS);
+  const deduped = dedupeFetchTargets(input, DEFAULT_NHIS_FETCH_TARGETS);
+  if (deduped.includes("medication") && !deduped.includes("checkupOverview")) {
+    const withCheckupOverview: NhisFetchTarget[] = [
+      "checkupOverview",
+      ...deduped.filter((target) => target !== "checkupOverview"),
+    ];
+    return withCheckupOverview;
+  }
+  return deduped;
 }
 
 export function normalizeNhisFetchYearLimit(value?: number) {

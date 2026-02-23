@@ -20,6 +20,7 @@
     "maintenance:nhis-prune-attempts": "ts-node scripts/maintenance/prune-hyphen-fetch-attempts.cts",
     "maintenance:nhis-prune-cache": "ts-node scripts/maintenance/prune-hyphen-fetch-cache.cts",
     "maintenance:nhis-report-attempts": "ts-node scripts/maintenance/report-hyphen-fetch-attempts.cts",
+    "maintenance:nhis-smoke-ai-summary": "node scripts/maintenance/run-smoke-hyphen-ai-summary.cjs",
     "maintenance:nhis-smoke-policy": "ts-node scripts/maintenance/smoke-hyphen-fetch-policy.cts",
     "agent:skills-catalog": "ts-node scripts/agent/generate-skill-catalog.cts",
     "agent:refactor-report": "ts-node scripts/agent/generate-refactor-report.cts",

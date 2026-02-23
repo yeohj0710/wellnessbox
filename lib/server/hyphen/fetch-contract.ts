@@ -14,8 +14,6 @@ export type NhisFetchTarget = (typeof NHIS_FETCH_TARGETS)[number];
 export const LOW_COST_NHIS_FETCH_TARGETS: NhisFetchTarget[] = [
   "checkupOverview",
   "medication",
-  "checkupList",
-  "checkupYearly",
 ];
 
 export const DETAIL_YEAR_LIMIT_TARGETS: NhisFetchTarget[] = [
@@ -45,5 +43,5 @@ export const DEFAULT_NHIS_FETCH_TARGETS: NhisFetchTarget[] = ["checkupOverview"]
 
 // Cost guard defaults: keep detailed fetch narrow unless explicitly expanded later.
 export const DEFAULT_DETAIL_YEAR_LIMIT = 1;
-export const MAX_CHECKUP_LIST_YEARS_PER_REQUEST = 2;
+export const MAX_CHECKUP_LIST_YEARS_PER_REQUEST = 1;
 export const MAX_CHECKUP_YEARLY_REQUESTS_PER_FETCH = 1;
