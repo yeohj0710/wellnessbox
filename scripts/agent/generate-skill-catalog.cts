@@ -30,25 +30,66 @@ function walkDirs(dir: string): string[] {
   return out;
 }
 
-function readFrontmatter(markdown: string): Record<string, string> {
-  if (!markdown.startsWith("---")) return {};
-  const end = markdown.indexOf("\n---", 3);
-  if (end < 0) return {};
-  const block = markdown.slice(3, end).trim();
-  const lines = block.split("\n");
-  const out: Record<string, string> = {};
+function extractFrontmatterBlock(markdown: string) {
+  if (!markdown.startsWith("---")) return null;
+  const match = markdown.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!match) return null;
+  return match[1];
+}
 
-  for (const line of lines) {
-    const idx = line.indexOf(":");
-    if (idx <= 0) continue;
-    const key = line.slice(0, idx).trim();
-    const value = line
-      .slice(idx + 1)
-      .trim()
-      .replace(/^"(.*)"$/, "$1")
-      .replace(/^'(.*)'$/, "$1");
-    out[key] = value;
+function unquote(value: string) {
+  return value.replace(/^"(.*)"$/, "$1").replace(/^'(.*)'$/, "$1");
+}
+
+function readScalarValue(
+  lines: string[],
+  key: string
+): string | undefined {
+  const keyPattern = new RegExp(`^${key}:\\s*(.*)$`);
+  const topLevelKeyPattern = /^[A-Za-z0-9_-]+:\s*/;
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    const match = line.match(keyPattern);
+    if (!match) continue;
+
+    const initialValue = match[1].trim();
+    if (initialValue.length > 0 && initialValue !== "|" && initialValue !== ">") {
+      return unquote(initialValue);
+    }
+
+    const continuation: string[] = [];
+    for (let j = i + 1; j < lines.length; j += 1) {
+      const next = lines[j];
+      if (topLevelKeyPattern.test(next)) break;
+      if (!/^\s+/.test(next)) break;
+      continuation.push(next.trim());
+    }
+
+    const joined =
+      initialValue === "|"
+        ? continuation.join("\n")
+        : continuation.join(" ");
+    if (joined.trim().length > 0) {
+      return unquote(joined.trim());
+    }
+    return undefined;
   }
+
+  return undefined;
+}
+
+function readFrontmatter(markdown: string): Record<string, string> {
+  const block = extractFrontmatterBlock(markdown);
+  if (!block) return {};
+
+  const lines = block.split(/\r?\n/);
+  const name = readScalarValue(lines, "name");
+  const description = readScalarValue(lines, "description");
+
+  const out: Record<string, string> = {};
+  if (name) out.name = name;
+  if (description) out.description = description;
   return out;
 }
 
@@ -76,7 +117,7 @@ function toMarkdown(entries: SkillEntry[]) {
   lines.push("npx ts-node scripts/agent/generate-skill-catalog.cts");
   lines.push("```");
   lines.push("");
-  lines.push(`Generated at: ${new Date().toISOString()}`);
+  lines.push("Run `npm run agent:skills-catalog` to refresh this catalog.");
   lines.push("");
   lines.push("| Skill | Description | Path |");
   lines.push("|---|---|---|");

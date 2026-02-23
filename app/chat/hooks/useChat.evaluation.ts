@@ -1,5 +1,9 @@
 import { evaluate as evaluateAssessAB } from "@/app/assess/logic/algorithm";
 import { KEY_TO_CODE, labelOf } from "@/lib/categories";
+import {
+  persistCheckAiResult,
+  requestCheckAiPredictScores,
+} from "@/lib/checkai-client";
 import { QUICK_CHAT_QUESTIONS } from "./useChat.assessment";
 
 type EvaluateQuickOptions = {
@@ -31,47 +35,11 @@ export async function evaluateQuickCheckAnswers(
   });
 
   try {
-    const response = await fetch("/api/predict", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ responses }),
-    });
-    const json = await response.json().catch(() => null);
-    if (!Array.isArray(json) || json.length === 0) {
-      throw new Error("invalid quick check response");
-    }
-    const scores = json
-      .map((row: any) => ({
-        label: typeof row?.label === "string" ? row.label : "",
-        value:
-          typeof row?.prob === "number"
-            ? row.prob
-            : typeof row?.percent === "number"
-              ? row.percent / 100
-              : 0,
-      }))
-      .filter((row: { label: string; value: number }) => row.label)
-      .sort(
-        (left: { value: number }, right: { value: number }) =>
-          right.value - left.value
-      )
-      .slice(0, 3);
-    if (!scores.length) throw new Error("empty quick check scores");
+    const scores = await requestCheckAiPredictScores(responses, "/api/predict");
+    if (!scores.length) throw new Error("invalid quick check response");
 
-    const labels = scores.map((score: { label: string }) => score.label);
-    const percents = scores.map((score: { value: number }) =>
-      Math.max(0, Math.min(1, score.value))
-    );
-
-    try {
-      localStorage.setItem(
-        "wb_check_ai_result_v1",
-        JSON.stringify({
-          topLabels: labels,
-          savedAt: Date.now(),
-        })
-      );
-    } catch {}
+    const labels = scores.map((score) => score.label);
+    const percents = scores.map((score) => score.prob);
 
     options.setLocalCheckAi(labels);
     options.setCheckAiResult({
@@ -82,23 +50,13 @@ export async function evaluateQuickCheckAnswers(
       })),
     });
 
-    try {
-      await fetch("/api/check-ai/save", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          result: {
-            topLabels: labels,
-            scores: scores.map((score: { label: string; value: number }) => ({
-              label: score.label,
-              prob: score.value,
-            })),
-          },
-          answers: responses,
-          tzOffsetMinutes: options.getTzOffsetMinutes(),
-        }),
-      });
-    } catch {}
+    await persistCheckAiResult({
+      topLabels: labels,
+      scores,
+      answers: responses,
+      tzOffsetMinutes: options.getTzOffsetMinutes(),
+      saveUrl: "/api/check-ai/save",
+    });
 
     return { labels, percents };
   } catch {

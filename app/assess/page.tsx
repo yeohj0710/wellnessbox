@@ -3,8 +3,6 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { evaluate } from "@/app/assess/logic/algorithm";
 import { sectionA, sectionB, fixedA, hashChoice } from "./data/questions";
-import { BANK } from "./data/c-bank";
-import { C_OPTIONS } from "./data/c-options";
 import { useLoading } from "@/components/common/loadingContext.client";
 import { getOrCreateClientId, refreshClientIdCookieIfNeeded } from "@/lib/client-id";
 import IntroSection from "./components/IntroSection";
@@ -15,48 +13,17 @@ import ConfirmResetModal from "./components/ConfirmResetModal";
 import { KEY_TO_CODE, labelOf, type CategoryKey } from "@/lib/categories";
 import type { CSectionResult } from "./components/CSection";
 import { fetchCategories, type CategoryLite } from "@/lib/client/categories";
+import { getTzOffsetMinutes } from "@/lib/timezone";
 import {
   CHAT_PAGE_ACTION_EVENT,
   type ChatPageActionDetail,
 } from "@/lib/chat/page-action-events";
+import { resolveProgressMessage } from "./logic/progress-message";
+import { composeAssessAnswers } from "./logic/compose-answers";
+import { computeRemainingQuestionIds } from "./logic/question-flow";
 
 const STORAGE_KEY = "assess-state";
 const C_PERSIST_KEY = `${STORAGE_KEY}::C`;
-
-function getTzOffsetMinutes(): number {
-  try {
-    return -new Date().getTimezoneOffset();
-  } catch {
-    return 0;
-  }
-}
-
-function composeAnswers(
-  ab: Record<string, any>,
-  cAns: Record<string, number[]>,
-  cats: string[]
-) {
-  const out: Record<string, any> = {};
-  for (const q of [...sectionA, ...sectionB]) {
-    if (ab[q.id] !== undefined) out[q.id] = ab[q.id];
-  }
-  for (const cat of cats) {
-    const arr = cAns[cat] || [];
-    const bankArr = BANK[cat] || [];
-    for (let i = 0; i < Math.min(arr.length, bankArr.length); i++) {
-      const v = arr[i];
-      if (v < 0) continue;
-      const q = bankArr[i];
-      const opts = C_OPTIONS[q.type as keyof typeof C_OPTIONS] as readonly {
-        value: number;
-        label: string;
-      }[];
-      const label = opts.find((o) => o.value === v)?.label ?? v;
-      out[q.prompt] = label;
-    }
-  }
-  return out;
-}
 
 export default function Assess() {
   const { showLoading } = useLoading();
@@ -101,26 +68,7 @@ export default function Assess() {
   const [cProgress, setCProgress] = useState({ step: 0, total: 0, pct: 0 });
 
   const cProgressMsg = useMemo(() => {
-    const tot = cProgress.total;
-    const ans = cProgress.step;
-    if (tot <= 0) return "";
-
-    const remain = Math.max(tot - ans, 0);
-    const ratio = ans / tot;
-
-    if (remain === 0) return "";
-    if (remain === 1) return "마지막 문항이에요!";
-    if (remain === 2) return "거의 끝! 2문항만 더 하면 돼요.";
-    if (remain <= 3) return "마무리 단계예요. 조금만 더 힘내요!";
-
-    if (ratio === 0) return "시작해볼까요?";
-    if (ratio < 0.2) return "좋은 출발이에요!";
-    if (ratio < 0.35) return "순조롭게 진행 중이에요.";
-    if (ratio < 0.5) return "잘하고 있어요, 곧 절반이에요.";
-    if (ratio < 0.55) return "절반 넘겼어요! 계속 가볼까요?";
-    if (ratio < 0.7) return "벌써 절반을 넘겼어요.";
-    if (ratio < 0.85) return "많이 왔어요! 막바지로 가는 중이에요.";
-    return "거의 다 왔어요! 페이스 그대로 가면 돼요.";
+    return resolveProgressMessage(cProgress.step, cProgress.total);
   }, [cProgress.step, cProgress.total]);
 
   const [hydrated, setHydrated] = useState(false);
@@ -165,23 +113,6 @@ export default function Assess() {
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [confirmOpen]);
-
-  const computeRemaining = (
-    sec: "A" | "B",
-    ans: Record<string, any>,
-    hist: string[]
-  ) => {
-    const answeredSet = new Set(hist.filter((id) => id.startsWith(sec)));
-    if (sec === "A") {
-      let ids = sectionA.map((q) => q.id).filter((id) => !fixedA.includes(id));
-      if (ans.A1 === "M") ids = ids.filter((id) => id !== "A5");
-      return ids.filter((id) => !answeredSet.has(id));
-    } else {
-      let ids = sectionB.map((q) => q.id);
-      if (ans.A1 !== "F") ids = ids.filter((id) => id !== "B22");
-      return ids.filter((id) => !answeredSet.has(id));
-    }
-  };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -275,24 +206,7 @@ export default function Assess() {
 
   const progressMsg = useMemo(() => {
     if (section !== "A" && section !== "B") return "";
-    if (total <= 0) return "";
-
-    const remain = Math.max(total - answered, 0);
-    const ratio = answered / total;
-
-    if (remain === 0) return "";
-    if (remain === 1) return "마지막 문항이에요!";
-    if (remain === 2) return "거의 끝! 2문항만 더 하면 돼요.";
-    if (remain <= 3) return "마무리 단계예요. 조금만 더 힘내요!";
-
-    if (ratio === 0) return "시작해볼까요?";
-    if (ratio < 0.2) return "좋은 출발이에요!";
-    if (ratio < 0.35) return "순조롭게 진행 중이에요.";
-    if (ratio < 0.5) return "잘하고 있어요, 곧 절반이에요.";
-    if (ratio < 0.55) return "절반 넘겼어요! 계속 가볼까요?";
-    if (ratio < 0.7) return "벌써 절반을 넘겼어요.";
-    if (ratio < 0.85) return "많이 왔어요! 막바지로 가는 중이에요.";
-    return "거의 다 왔어요! 페이스 그대로 가면 돼요.";
+    return resolveProgressMessage(answered, total);
   }, [section, answered, total]);
 
   const isAB = section === "A" || section === "B";
@@ -410,7 +324,7 @@ export default function Assess() {
         return;
       }
     }
-    const remaining = computeRemaining(
+    const remaining = computeRemainingQuestionIds(
       section === "A" ? "A" : "B",
       pruned,
       newHistory
@@ -420,7 +334,7 @@ export default function Assess() {
         message = "이제 생활 습관과 증상들을 알아볼게요.";
         delay = 2500;
         action = () => {
-          const remB = computeRemaining("B", pruned, newHistory);
+          const remB = computeRemainingQuestionIds("B", pruned, newHistory);
           setSection("B");
           setCurrent(remB[0]);
           setFixedIdx(0);
@@ -473,7 +387,7 @@ export default function Assess() {
           setCResult(res);
           const payload = {
             clientId: getOrCreateClientId(),
-            answers: composeAnswers(answers, cAns, cCats),
+            answers: composeAssessAnswers(answers, cAns, cCats),
             cResult: res,
             tzOffsetMinutes: getTzOffsetMinutes(),
           };

@@ -3,10 +3,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useLoading } from "@/components/common/loadingContext.client";
 import { useDraggableModal } from "@/components/common/useDraggableModal";
-import {
-  getOrCreateClientId,
-  refreshClientIdCookieIfNeeded,
-} from "@/lib/client-id";
+import { CheckAiAnimationStyles } from "@/components/check-ai/CheckAiAnimationStyles";
+import { refreshClientIdCookieIfNeeded } from "@/lib/client-id";
 import { fetchCategories, type CategoryLite } from "@/lib/client/categories";
 import {
   CHECK_AI_QUESTIONS as QUESTIONS,
@@ -16,9 +14,14 @@ import {
   CHAT_PAGE_ACTION_EVENT,
   type ChatPageActionDetail,
 } from "@/lib/chat/page-action-events";
-
-type Result = { code: string; label: string; prob: number };
-const getClientIdLocal = getOrCreateClientId;
+import { getTzOffsetMinutes } from "@/lib/timezone";
+import {
+  type CheckAiClientScore,
+  ensureMinimumDelay,
+  persistCheckAiResult,
+  requestCheckAiPredictScores,
+  resolveRecommendedCategoryIds,
+} from "@/lib/checkai-client";
 
 function getApiUrl(path: string) {
   if (typeof window === "undefined") {
@@ -27,20 +30,12 @@ function getApiUrl(path: string) {
   return new URL(path, window.location.origin).toString();
 }
 
-function getTzOffsetMinutes(): number {
-  try {
-    return -new Date().getTimezoneOffset();
-  } catch {
-    return 0;
-  }
-}
-
 export default function CheckAI() {
   const { showLoading } = useLoading();
   const [answers, setAnswers] = useState<number[]>(
     Array(QUESTIONS.length).fill(0)
   );
-  const [results, setResults] = useState<Result[] | null>(null);
+  const [results, setResults] = useState<CheckAiClientScore[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [animateBars, setAnimateBars] = useState(false);
@@ -87,11 +82,7 @@ export default function CheckAI() {
   }, []);
 
   const recommendedIds = useMemo(() => {
-    if (!results || categories.length === 0) return [];
-    const ids = results
-      .map((r) => categories.find((c) => c.name === r.label)?.id)
-      .filter((id): id is number => typeof id === "number");
-    return Array.from(new Set(ids)).slice(0, 3);
+    return resolveRecommendedCategoryIds(results, categories);
   }, [results, categories]);
 
   useEffect(() => {
@@ -114,58 +105,24 @@ export default function CheckAI() {
     setLoading(true);
     const start = Date.now();
     const filled = answers.map((v) => (v > 0 ? v : 3));
-    const res = await fetch(getApiUrl("/api/predict"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ responses: filled }),
-    }).catch(() => null);
-    if (!res?.ok) {
-      setLoading(false);
-      return;
-    }
-    const data = await res.json().catch(() => null);
-    if (!Array.isArray(data)) {
+    const normalized = await requestCheckAiPredictScores(
+      filled,
+      getApiUrl("/api/predict")
+    ).catch(() => []);
+    if (!normalized.length) {
       setLoading(false);
       return;
     }
 
-    const normalized: Result[] = data.map((d: any) => ({
-      code: typeof d?.code === "string" ? d.code : "",
-      label: typeof d?.label === "string" ? d.label : "",
-      prob:
-        typeof d?.prob === "number"
-          ? d.prob
-          : typeof d?.percent === "number"
-          ? d.percent / 100
-          : 0,
-    }));
-
-    const elapsed = Date.now() - start;
-    if (elapsed < 3000) await new Promise((r) => setTimeout(r, 3000 - elapsed));
+    await ensureMinimumDelay(start, 3000);
     setResults(normalized);
 
-    try {
-      const top = normalized.slice(0, 3).map((r) => r.label);
-      if (typeof window !== "undefined") {
-        localStorage.setItem(
-          "wb_check_ai_result_v1",
-          JSON.stringify({ topLabels: top, savedAt: Date.now() })
-        );
-        try {
-          const cid = getClientIdLocal();
-          fetch(getApiUrl("/api/check-ai/save"), {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              clientId: cid,
-              result: { topLabels: top, scores: normalized },
-              answers: filled,
-              tzOffsetMinutes: getTzOffsetMinutes(),
-            }),
-          }).catch(() => {});
-        } catch {}
-      }
-    } catch {}
+    void persistCheckAiResult({
+      scores: normalized,
+      answers: filled,
+      tzOffsetMinutes: getTzOffsetMinutes(),
+      saveUrl: getApiUrl("/api/check-ai/save"),
+    });
     setLoading(false);
     setModalOpen(true);
   };
@@ -390,29 +347,7 @@ export default function CheckAI() {
         </div>
       )}
 
-      <style jsx global>{`
-        @keyframes pulseGlow {
-          0%,
-          100% {
-            opacity: 0.7;
-          }
-          50% {
-            opacity: 1;
-          }
-        }
-        @keyframes dotBounce {
-          0%,
-          80%,
-          100% {
-            transform: translateY(0);
-            opacity: 0.7;
-          }
-          40% {
-            transform: translateY(-6px);
-            opacity: 1;
-          }
-        }
-      `}</style>
+      <CheckAiAnimationStyles />
     </div>
   );
 }

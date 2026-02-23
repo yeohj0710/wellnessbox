@@ -1342,7 +1342,7 @@
 
 @media (max-width: 768px) {
   .page {
-    padding: 16px max(16px, env(safe-area-inset-right)) 64px max(16px, env(safe-area-inset-left));
+    padding: 40px max(24px, env(safe-area-inset-right)) 80px max(24px, env(safe-area-inset-left));
   }
 
   .headerCard,
@@ -1351,10 +1351,6 @@
     border-radius: 0;
     background: transparent;
     box-shadow: none;
-  }
-
-  .headerCard,
-  .sectionCard {
     padding: 0;
   }
 

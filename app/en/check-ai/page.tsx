@@ -1,10 +1,24 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { getOrCreateClientId, refreshClientIdCookieIfNeeded } from "@/lib/client-id";
-import { CODE_TO_LABEL } from "@/lib/categories";
+import { refreshClientIdCookieIfNeeded } from "@/lib/client-id";
 import { fetchCategories, type CategoryLite } from "@/lib/client/categories";
 import { useDraggableModal } from "@/components/common/useDraggableModal";
+import { CheckAiAnimationStyles } from "@/components/check-ai/CheckAiAnimationStyles";
+import { getTzOffsetMinutes } from "@/lib/timezone";
+import {
+  CHECK_AI_RESULT_STORAGE_KEY,
+  ensureMinimumDelay,
+  type CheckAiClientScore,
+  persistCheckAiResult,
+  resolveRecommendedCategoryIds,
+} from "@/lib/checkai-client";
+import {
+  resolveEnglishCategoryDescription,
+  resolveEnglishCategoryLabel,
+} from "./content";
+import { runEnglishCheckAiPrediction } from "./prediction";
+import { disableGoogleTranslateForEnglishMode } from "./translate-guard";
 
 const QUESTIONS = [
   "I feel tired even after waking up and get exhausted easily during the day. (I feel foggy in the afternoon and have trouble focusing.)",
@@ -27,223 +41,12 @@ const OPTIONS = [
   { value: 5, label: "Strongly agree" },
 ];
 
-const getClientIdLocal = getOrCreateClientId;
-
-const EN_CATEGORY_LABELS: Record<string, string> = {
-  vitc: "Vitamin C",
-  omega3: "Omega-3",
-  ca: "Calcium",
-  lutein: "Lutein",
-  vitd: "Vitamin D",
-  milkthistle: "Milk Thistle",
-  probiotics: "Probiotics",
-  vitb: "Vitamin B",
-  mg: "Magnesium",
-  garcinia: "Garcinia",
-  multivitamin: "Multivitamin",
-  zn: "Zinc",
-  psyllium: "Psyllium Husk",
-  minerals: "Minerals",
-  vita: "Vitamin A",
-  fe: "Iron",
-  ps: "Phosphatidylserine",
-  folate: "Folic Acid",
-  arginine: "Arginine",
-  chondroitin: "Chondroitin",
-  coq10: "Coenzyme Q10",
-  collagen: "Collagen",
-};
-
-const EN_CATEGORY_DESC: Record<string, string> = {
-  vitc: "Supports immune health and helps protect cells from everyday stress.",
-  omega3: "Supports heart, brain, and eye health with healthy fats.",
-  ca: "Helps support strong bones and normal muscle function.",
-  lutein: "Supports eye health and helps protect the retina from strain.",
-  vitd: "Helps your body absorb calcium and supports immune health.",
-  milkthistle: "Traditionally used to support liver health and recovery.",
-  probiotics: "Supports gut balance and comfortable digestion.",
-  vitb: "Helps support energy metabolism and nervous system function.",
-  mg: "Supports muscle relaxation, sleep quality, and stress management.",
-  garcinia: "Often used to support appetite control and weight management.",
-  multivitamin: "Helps fill common nutrient gaps for daily wellness support.",
-  zn: "Supports immune function and helps maintain healthy skin.",
-  psyllium: "A gentle fiber that supports regularity and digestive comfort.",
-  minerals: "Supports key body functions with essential trace minerals.",
-  vita: "Supports vision and healthy skin and immune function.",
-  fe: "Supports red blood cell production and helps reduce tiredness.",
-  ps: "Supports memory, focus, and healthy brain function.",
-  folate: "Supports healthy cell growth and normal blood formation.",
-  arginine: "Supports blood flow and exercise performance.",
-  chondroitin: "Supports joint comfort and healthy cartilage.",
-  coq10: "Supports cellular energy and heart health.",
-  collagen: "Supports skin elasticity and joint comfort.",
-};
-
-const MODEL_URL = "/simple_model.onnx";
-const CAT_ORDER_URL = "/assess-model/c-section-scorer-v1.cats.json";
-
-function getTzOffsetMinutes(): number {
-  try {
-    return -new Date().getTimezoneOffset();
-  } catch {
-    return 0;
-  }
-}
-
-type Result = { code: string; label: string; prob: number };
-
-let sessionPromise: Promise<any> | null = null;
-let catOrderPromise: Promise<string[]> | null = null;
-
-async function loadCatOrder(): Promise<string[]> {
-  if (!catOrderPromise) {
-    catOrderPromise = fetch(CAT_ORDER_URL)
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error("Failed to load category order.");
-        }
-        return res.json();
-      })
-      .then((data) => {
-        if (!Array.isArray(data?.cat_order)) {
-          throw new Error("Invalid category order format.");
-        }
-        return data.cat_order as string[];
-      });
-  }
-  return catOrderPromise;
-}
-
-async function loadSession() {
-  if (!sessionPromise) {
-    sessionPromise = (async () => {
-      const ort = await import("onnxruntime-web");
-      ort.env.wasm.numThreads = 1;
-      ort.env.wasm.proxy = false;
-      ort.env.wasm.wasmPaths = "/onnx/";
-      return ort.InferenceSession.create(MODEL_URL);
-    })();
-  }
-  return sessionPromise;
-}
-
-function clampAnswer(value: number) {
-  const numeric = Number(value);
-  const clamped = Math.max(
-    1,
-    Math.min(5, Number.isFinite(numeric) ? numeric : 3)
-  );
-  return (clamped - 1) / 4;
-}
-
-async function runPrediction(responses: number[]): Promise<Result[]> {
-  const ort = await import("onnxruntime-web");
-  const [session, catOrder] = await Promise.all([
-    loadSession(),
-    loadCatOrder(),
-  ]);
-  const normalized = responses.map(clampAnswer);
-  const input = new ort.Tensor("float32", Float32Array.from(normalized), [
-    1,
-    normalized.length,
-  ]);
-
-  const output = await session.run({ input });
-  const outputName = session.outputNames[0];
-  const logits = output[outputName].data as Float32Array;
-
-  if (logits.length !== catOrder.length) {
-    throw new Error(
-      `Model output (${logits.length}) does not match categories (${catOrder.length}).`
-    );
-  }
-
-  const percents = Array.from(logits, (x) => {
-    const prob = 1 / (1 + Math.exp(-x));
-    return Math.round(prob * 1000) / 10;
-  });
-
-  return percents
-    .map((percent, i) => ({
-      code: catOrder[i],
-      label: CODE_TO_LABEL[catOrder[i]] ?? catOrder[i],
-      prob: percent / 100,
-    }))
-    .sort((a, b) => b.prob - a.prob)
-    .slice(0, 3);
-}
-
-function displayLabel(code: string, fallback: string) {
-  return EN_CATEGORY_LABELS[code] ?? fallback;
-}
-
-function displayDesc(code: string) {
-  return (
-    EN_CATEGORY_DESC[code] ??
-    "Supports general wellness based on common health needs."
-  );
-}
-
-function disableGoogleTranslate() {
-  if (typeof window === "undefined") return;
-  const wbWindow = window as typeof window & {
-    __wbEnglishModeActive?: boolean;
-    __wbDisconnectTranslateObserver?: () => void;
-  };
-
-  try {
-    wbWindow.__wbEnglishModeActive = false;
-  } catch {}
-
-  try {
-    wbWindow.__wbDisconnectTranslateObserver?.();
-  } catch {}
-
-  try {
-    document.documentElement.removeAttribute("data-wb-translate-state");
-    document.documentElement.classList.remove(
-      "translated-ltr",
-      "translated-rtl"
-    );
-    document.documentElement.setAttribute("lang", "en");
-  } catch {}
-
-  const expireDate = new Date(0).toUTCString();
-  const clearCookie = (domain?: string) => {
-    const base = `googtrans=; expires=${expireDate}; path=/`;
-    document.cookie = domain ? `${base}; domain=${domain}` : base;
-  };
-  try {
-    clearCookie();
-    const hostname = window.location.hostname;
-    if (hostname.includes(".")) {
-      clearCookie(hostname);
-      clearCookie(`.${hostname}`);
-    }
-  } catch {}
-
-  try {
-    document
-      .querySelectorAll(
-        'script[src*="translate.google.com/translate_a/element.js"], #google-translate-script, #google-translate-script-tag'
-      )
-      .forEach((node) => node.parentNode?.removeChild(node));
-  } catch {}
-
-  try {
-    document
-      .querySelectorAll(
-        ".goog-te-banner-frame, .goog-te-menu-frame, .goog-tooltip, .goog-te-balloon-frame, body > .skiptranslate"
-      )
-      .forEach((node) => node.parentNode?.removeChild(node));
-  } catch {}
-}
 
 export default function EnglishCheckAI() {
   const [answers, setAnswers] = useState<number[]>(
     Array(QUESTIONS.length).fill(0)
   );
-  const [results, setResults] = useState<Result[] | null>(null);
+  const [results, setResults] = useState<CheckAiClientScore[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [animateBars, setAnimateBars] = useState(false);
@@ -260,7 +63,7 @@ export default function EnglishCheckAI() {
   }, []);
 
   useEffect(() => {
-    disableGoogleTranslate();
+    disableGoogleTranslateForEnglishMode();
     if (typeof window !== "undefined") {
       window.dispatchEvent(new Event("wb-locale-change"));
     }
@@ -275,11 +78,7 @@ export default function EnglishCheckAI() {
   }, []);
 
   const recommendedIds = useMemo(() => {
-    if (!results || categories.length === 0) return [];
-    const ids = results
-      .map((r) => categories.find((c) => c.name === r.label)?.id)
-      .filter((id): id is number => typeof id === "number");
-    return Array.from(new Set(ids)).slice(0, 3);
+    return resolveRecommendedCategoryIds(results, categories);
   }, [results, categories]);
 
   useEffect(() => {
@@ -306,7 +105,7 @@ export default function EnglishCheckAI() {
     setAnimateBars(false);
     try {
       if (typeof window !== "undefined") {
-        localStorage.removeItem("wb_check_ai_result_v1");
+        localStorage.removeItem(CHECK_AI_RESULT_STORAGE_KEY);
       }
     } catch {}
     requestAnimationFrame(() => {
@@ -321,43 +120,24 @@ export default function EnglishCheckAI() {
     const start = Date.now();
     const filled = answers.map((v) => (v > 0 ? v : 3));
 
-    let normalized: Result[];
+    let normalized: CheckAiClientScore[];
     try {
-      normalized = await runPrediction(filled);
+      normalized = await runEnglishCheckAiPrediction(filled);
     } catch {
       setLoading(false);
       return;
     }
 
-    const elapsed = Date.now() - start;
-    if (elapsed < 3000) {
-      await new Promise((r) => setTimeout(r, 3000 - elapsed));
-    }
+    await ensureMinimumDelay(start, 3000);
     setResults(normalized);
 
-    try {
-      const top = normalized.slice(0, 3).map((r) => r.label);
-      if (typeof window !== "undefined") {
-        localStorage.setItem(
-          "wb_check_ai_result_v1",
-          JSON.stringify({ topLabels: top, savedAt: Date.now() })
-        );
-      }
-      try {
-        const cid = getClientIdLocal();
-        fetch("/api/check-ai/save", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            clientId: cid,
-            result: { topLabels: top, scores: normalized },
-            answers: filled,
-            questionSnapshot: { questions: QUESTIONS, options: OPTIONS },
-            tzOffsetMinutes: getTzOffsetMinutes(),
-          }),
-        }).catch(() => {});
-      } catch {}
-    } catch {}
+    void persistCheckAiResult({
+      scores: normalized,
+      answers: filled,
+      tzOffsetMinutes: getTzOffsetMinutes(),
+      questionSnapshot: { questions: QUESTIONS, options: OPTIONS },
+      saveUrl: "/api/check-ai/save",
+    });
 
     setLoading(false);
     setModalOpen(true);
@@ -558,7 +338,7 @@ export default function EnglishCheckAI() {
                     <div className="relative px-4 py-3">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-semibold text-gray-800">
-                          {displayLabel(r.code, r.label)}
+                          {resolveEnglishCategoryLabel(r.code, r.label)}
                         </span>
                         <span className="tabular-nums text-sm font-extrabold text-gray-900">
                           {(r.prob * 100).toFixed(1)}%
@@ -568,7 +348,7 @@ export default function EnglishCheckAI() {
                   </div>
 
                   <p className="mt-2 px-1 text-[12px] leading-snug text-gray-600">
-                    {displayDesc(r.code)}
+                    {resolveEnglishCategoryDescription(r.code)}
                   </p>
                 </li>
               ))}
@@ -585,29 +365,7 @@ export default function EnglishCheckAI() {
         </div>
       )}
 
-      <style jsx global>{`
-        @keyframes pulseGlow {
-          0%,
-          100% {
-            opacity: 0.7;
-          }
-          50% {
-            opacity: 1;
-          }
-        }
-        @keyframes dotBounce {
-          0%,
-          80%,
-          100% {
-            transform: translateY(0);
-            opacity: 0.7;
-          }
-          40% {
-            transform: translateY(-6px);
-            opacity: 1;
-          }
-        }
-      `}</style>
+      <CheckAiAnimationStyles />
     </div>
   );
 }

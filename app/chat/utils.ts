@@ -1,6 +1,7 @@
 import type { ChatSession, UserProfile } from "@/types/chat";
 import { CODE_TO_LABEL } from "@/lib/categories";
 import { getOrCreateClientId } from "@/lib/client-id";
+export { getTzOffsetMinutes } from "@/lib/timezone";
 
 export const LS_SESSIONS_KEY = "wb_chat_sessions_v1";
 export const LS_PROFILE_KEY = "wb_user_profile_v1";
@@ -14,14 +15,6 @@ export function uid() {
 
 export function getClientIdLocal(): string {
   return getOrCreateClientId();
-}
-
-export function getTzOffsetMinutes(): number {
-  try {
-    return -new Date().getTimezoneOffset();
-  } catch {
-    return 0;
-  }
 }
 
 export function loadSessions(): ChatSession[] {

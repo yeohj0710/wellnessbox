@@ -1,10 +1,11 @@
 import { formatAssessCat } from "../utils";
+import { CHECK_AI_RESULT_STORAGE_KEY } from "@/lib/checkai-client";
 
 export function readLocalCheckAiTopLabels() {
   try {
     const raw =
       typeof localStorage !== "undefined"
-        ? localStorage.getItem("wb_check_ai_result_v1")
+        ? localStorage.getItem(CHECK_AI_RESULT_STORAGE_KEY)
         : null;
     if (!raw) return [];
     const parsed = JSON.parse(raw);
