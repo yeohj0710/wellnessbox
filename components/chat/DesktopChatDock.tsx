@@ -62,9 +62,7 @@ export default function DesktopChatDock() {
   const [isOpen, setIsOpen] = useState(false);
   const [hasBooted, setHasBooted] = useState(false);
   const [pendingOpen, setPendingOpen] = useState(false);
-  const [viewportWidth, setViewportWidth] = useState(() =>
-    typeof window === "undefined" ? 0 : window.innerWidth
-  );
+  const [viewportWidth, setViewportWidth] = useState(0);
   const [mobileFooterCartBarHeight, setMobileFooterCartBarHeight] = useState(
     () => readFooterCartBarOffsetPx()
   );

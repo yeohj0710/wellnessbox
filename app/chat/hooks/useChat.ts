@@ -6,10 +6,7 @@ import type { ChatMessage, ChatSession, UserProfile } from "@/types/chat";
 import {
   getClientIdLocal,
   getTzOffsetMinutes,
-  saveProfileLocal,
-  saveProfileServer,
   saveSessions,
-  uid,
 } from "../utils";
 import {
   readLocalAssessCats,
@@ -21,37 +18,18 @@ import {
   rememberActionMemoryList,
   type ActionMemoryMap,
 } from "./useChat.actionMemory";
-import {
-  formatCartCommandSummary,
-  hasRoadAddressInLocalStorage,
-  parseCartCommandFromMessages,
-} from "./useChat.cart-command";
-import {
-  clearCartFromChat,
-  isBrowserOnline,
-  navigateTo,
-  openCartFromChat,
-  openExternalLink,
-} from "./useChat.browser";
-import { dispatchChatCartActionRequest } from "@/lib/chat/cart-action-events";
+import { isBrowserOnline } from "./useChat.browser";
 import {
   type ChatActionType,
-  type ChatAgentExecuteDecision,
   type ChatAgentSuggestedAction,
 } from "@/lib/chat/agent-actions";
-import {
-  pickLatestAssistantText,
-} from "./useChat.agentActions";
 import {
   buildInChatAssessmentPrompt,
   type InChatAssessmentMode,
   type InChatAssessmentState,
 } from "./useChat.assessment";
-import { runSingleInteractiveAction as runSingleInteractiveActionFlow } from "./useChat.interactiveActions";
-import { runAgentDecision as runAgentDecisionFlow } from "./useChat.agentDecision";
 import {
   requestActionExecutionDecision,
-  requestDeleteChatSession,
   requestActionSuggestions,
   requestChatSuggestions,
   requestChatTitle,
@@ -66,7 +44,6 @@ import { prepareOutgoingTurn } from "./useChat.sendMessage";
 import { resolveSendMessageBranch } from "./useChat.sendMessageFlow";
 import { runStreamedAssistantTurn } from "./useChat.streamTurn";
 import { startInitialAssistantMessageFlow } from "./useChat.initialAssistant";
-import { createNewChatSession, deleteChatSessionState } from "./useChat.sessionActions";
 import {
   finalizeAssistantTurnFlow,
   generateTitleFlow,
@@ -80,10 +57,6 @@ import {
   fetchInteractiveActionsForSession,
   fetchSuggestionsForSession,
 } from "./useChat.followups";
-import {
-  tryHandleAgentActionDecisionFlow,
-  tryHandleCartCommandFlow,
-} from "./useChat.actionFlow";
 import { CHAT_COPY, toAssistantErrorText } from "./useChat.copy";
 import {
   closeChatDrawer,
@@ -92,17 +65,15 @@ import {
   scrollContainerToBottom,
   scrollContainerToTop,
 } from "./useChat.ui";
-import {
-  nextInteractiveActionMark,
-  shouldBlockInteractiveAction,
-  type LastInteractiveAction,
-} from "./useChat.interactionGuard";
+import { type LastInteractiveAction } from "./useChat.interactionGuard";
 import {
   useAllResultsBootstrap,
   useSessionAndProfileBootstrap,
 } from "./useChat.bootstrap";
 import { useChatDerivedState } from "./useChat.derived";
 import type { ChatPageAgentContext } from "@/lib/chat/page-agent-context";
+import { createInteractiveCommands } from "./useChat.interactiveCommands";
+import { createSessionCommands } from "./useChat.sessionCommands";
 
 type UseChatOptions = {
   manageFooter?: boolean;
@@ -326,64 +297,6 @@ export default function useChat(options: UseChatOptions = {}) {
     return () => container.removeEventListener("scroll", onScroll);
   }, [messagesContainerRef.current]);
 
-  function newChat() {
-    const created = createNewChatSession({
-      sessions,
-      actor: {
-        loggedIn: actorLoggedInRef.current,
-        appUserId: actorAppUserIdRef.current,
-      },
-    });
-
-    setSessions(created.nextSessions);
-    setActiveId(created.id);
-    clearFollowups();
-    setInChatAssessment(null);
-    firstUserMessageRef.current = "";
-    firstAssistantMessageRef.current = "";
-    firstAssistantReplyRef.current = "";
-    setTitleLoading(false);
-    setTitleError(false);
-    readyToPersistRef.current[created.id] = false;
-    suggestionHistoryRef.current[created.id] = [];
-  }
-
-  async function deleteChat(id: string) {
-    const prevSessions = sessions;
-    const prevActiveId = activeId;
-    const prevReady = { ...readyToPersistRef.current };
-
-    const nextState = deleteChatSessionState({
-      sessions,
-      activeId,
-      deleteId: id,
-    });
-    setSessions(nextState.nextSessions);
-    setActiveId(nextState.nextActiveId);
-    if (inChatAssessment?.sessionId === id) {
-      setInChatAssessment(null);
-    }
-
-    delete readyToPersistRef.current[id];
-    delete suggestionHistoryRef.current[id];
-
-    try {
-      await requestDeleteChatSession(id);
-    } catch {
-      readyToPersistRef.current = prevReady;
-      setSessions(prevSessions);
-      setActiveId(prevActiveId);
-    }
-  }
-
-  function renameChat(id: string, title: string) {
-    setSessions((prev) => updateSessionTitle(prev, id, title));
-  }
-
-  function stopStreaming() {
-    abortRef.current?.abort();
-  }
-
   function updateAssistantMessage(sessionId: string, messageId: string, content: string) {
     setSessions((prev) =>
       replaceSessionMessageContent(prev, sessionId, messageId, content)
@@ -521,153 +434,29 @@ export default function useChat(options: UseChatOptions = {}) {
     });
   }
 
-  async function executeCartCommandText(params: {
-    commandText: string;
-    sessionMessages: ChatMessage[];
-  }) {
-    const parsed = await parseCartCommandFromMessages({
-      text: params.commandText,
-      messages: params.sessionMessages,
-    });
-    if (!parsed) {
-      return { executed: false, summary: "", hasAddress: hasRoadAddressInLocalStorage() };
-    }
-
-    dispatchChatCartActionRequest({
-      source: "chat-command",
-      openCartAfterSave: parsed.openCartAfterSave,
-      items: parsed.items.map((entry) => ({
-        productId: entry.recommendation.productId,
-        productName: entry.recommendation.productName,
-        optionType: entry.recommendation.optionType,
-        quantity: entry.quantity,
-      })),
-    });
-
-    return {
-      executed: true,
-      summary: formatCartCommandSummary(parsed.items),
-      hasAddress: hasRoadAddressInLocalStorage(),
-      openCartAfterSave: parsed.openCartAfterSave,
-    };
-  }
-
-  async function runInteractiveAction(
-    action: ChatActionType,
-    sessionMessages: ChatMessage[]
-  ) {
-    return runSingleInteractiveActionFlow({
-      action,
-      sessionMessages,
-      executeCartCommandText,
-      openCart: openCartFromChat,
-      clearCart: clearCartFromChat,
-      openProfileSettings: () => setShowSettings(true),
-      resetInChatAssessment: () => setInChatAssessment(null),
-      startInChatAssessment: (mode) => {
-        const sessionId = activeIdRef.current;
-        if (!sessionId) return null;
-        return initializeInChatAssessment(sessionId, mode);
-      },
-      navigateTo,
-      openExternalLink,
-    });
-  }
-
-  async function runAgentDecision(params: {
-    decision: ChatAgentExecuteDecision;
-    sessionMessages: ChatMessage[];
-  }) {
-    return runAgentDecisionFlow({
-      decision: params.decision,
-      sessionMessages: params.sessionMessages,
-      executeCartCommandText,
-      runSingleInteractiveAction: runInteractiveAction,
-    });
-  }
-
-  async function tryHandleCartCommand(params: {
-    text: string;
-    sessionId: string;
-    sessionMessages: ChatMessage[];
-    userMessage: ChatMessage;
-    assistantMessage: ChatMessage;
-    isFirst: boolean;
-  }) {
-    return tryHandleCartCommandFlow({
-      ...params,
-      executeCartCommandText,
-      updateAssistantMessage,
-      finalizeAssistantTurn,
-    });
-  }
-
-  async function tryHandleAgentActionDecision(params: {
-    text: string;
-    sessionId: string;
-    sessionMessages: ChatMessage[];
-    userMessage: ChatMessage;
-    assistantMessage: ChatMessage;
-    isFirst: boolean;
-  }) {
-    return tryHandleAgentActionDecisionFlow({
-      ...params,
-      runtimeContextText,
-      buildActionContextText,
-      requestActionExecutionDecision,
-      runAgentDecision,
-      rememberExecutedActions,
-      updateAssistantMessage,
-      finalizeAssistantTurn,
-    });
-  }
-
-  async function handleInteractiveAction(actionType: ChatActionType) {
-    if (!active || loading || actionLoading) return;
-
-    const now = Date.now();
-    if (
-      shouldBlockInteractiveAction({
-        recent: lastInteractiveActionRef.current,
-        nextType: actionType,
-        now,
-      })
-    ) {
-      return;
-    }
-    lastInteractiveActionRef.current = nextInteractiveActionMark(actionType, now);
-
-    setActionLoading(true);
-    try {
-      const result = await runInteractiveAction(
-        actionType,
-        active.messages || []
-      );
-      if (!result.executed) return;
-      rememberExecutedActions([actionType]);
-
-      const assistantMessage: ChatMessage = {
-        id: uid(),
-        role: "assistant",
-        content: result.summary
-          ? `${result.message} ${result.summary}`.trim()
-          : result.message,
-        createdAt: now,
-      };
-
-      setSessions((prev) =>
-        appendMessagesToSession(prev, active.id, [assistantMessage])
-      );
-
-      await finalizeAssistantTurn({
-        sessionId: active.id,
-        content: assistantMessage.content,
-        assistantMessage,
-      });
-    } finally {
-      setActionLoading(false);
-    }
-  }
+  const interactiveCommands = createInteractiveCommands({
+    active,
+    loading,
+    actionLoading,
+    runtimeContextText,
+    buildActionContextText,
+    requestActionExecutionDecision,
+    activeIdRef,
+    lastInteractiveActionRef,
+    setActionLoading,
+    setShowSettings,
+    setInChatAssessment,
+    setSessions,
+    rememberExecutedActions,
+    initializeInChatAssessment,
+    finalizeAssistantTurn,
+    updateAssistantMessage,
+  });
+  const {
+    tryHandleCartCommand,
+    tryHandleAgentActionDecision,
+    handleInteractiveAction,
+  } = interactiveCommands;
 
   async function sendMessage(overrideText?: string) {
     const preparedTurn = prepareOutgoingTurn({
@@ -801,49 +590,34 @@ export default function useChat(options: UseChatOptions = {}) {
     });
   }
 
-  function handleProfileChange(nextProfile?: UserProfile) {
-    if (!nextProfile) {
-      setProfile(undefined);
-      saveProfileLocal(undefined as any);
-      saveProfileServer(undefined as any);
-      return;
-    }
-
-    if (typeof nextProfile === "object" && Object.keys(nextProfile).length === 0) {
-      return;
-    }
-
-    setProfile(nextProfile);
-    saveProfileLocal(nextProfile);
-    saveProfileServer(nextProfile);
-  }
-
-  function cancelInChatAssessment() {
-    if (!inChatAssessment) return;
-    if (!activeId || inChatAssessment.sessionId !== activeId) {
-      setInChatAssessment(null);
-      return;
-    }
-    const assistantMessage: ChatMessage = {
-      id: uid(),
-      role: "assistant",
-      content: CHAT_COPY.inChatAssessmentCanceled,
-      createdAt: Date.now(),
-    };
-    setInChatAssessment(null);
-    setSessions((prev) =>
-      appendMessagesToSession(prev, activeId, [assistantMessage])
-    );
-  }
-
-  function openAssessmentPageFromChat(mode: InChatAssessmentMode) {
-    setInChatAssessment(null);
-    if (mode === "quick") {
-      navigateTo("/check-ai");
-      return;
-    }
-    navigateTo("/assess");
-  }
+  const {
+    newChat,
+    deleteChat,
+    renameChat,
+    stopStreaming,
+    handleProfileChange,
+    cancelInChatAssessment,
+    openAssessmentPageFromChat,
+  } = createSessionCommands({
+    sessions,
+    activeId,
+    inChatAssessment,
+    actorLoggedIn: actorLoggedInRef.current,
+    actorAppUserId: actorAppUserIdRef.current,
+    abortRef,
+    firstUserMessageRef,
+    firstAssistantMessageRef,
+    firstAssistantReplyRef,
+    readyToPersistRef,
+    suggestionHistoryRef,
+    setSessions,
+    setActiveId,
+    setProfile,
+    setInChatAssessment,
+    setTitleLoading,
+    setTitleError,
+    clearFollowups,
+  });
 
   const inChatAssessmentPrompt = useMemo(
     () =>
