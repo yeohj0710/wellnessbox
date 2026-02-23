@@ -199,6 +199,7 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
         <HealthLinkResultSection
           linked={!!status?.linked}
           canFetch={canFetch}
+          fetchLoading={actionLoading === "fetch"}
           summaryFetchBlocked={summaryFetchBlocked}
           summaryFetchBlockedMessage={summaryFetchBlockedMessage}
           fetchCacheHint={fetchCacheHint}

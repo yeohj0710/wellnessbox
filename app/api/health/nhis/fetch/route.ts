@@ -197,6 +197,18 @@ export async function POST(req: Request) {
     });
     if (cachedResponse) return cachedResponse;
   }
+  if (!link.cookieData) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error:
+          "인증 세션이 만료되어 조회를 진행할 수 없습니다. 인증을 다시 진행해 주세요.",
+        errCd: NHIS_LOGIN_SESSION_EXPIRED_ERR_CODE,
+        errMsg: "Missing NHIS cookie session.",
+      },
+      { status: 409, headers: NO_STORE_HEADERS }
+    );
+  }
   const fetchBudget = await evaluateNhisFetchBudget({
     appUserId: auth.data.appUserId,
     forceRefresh,

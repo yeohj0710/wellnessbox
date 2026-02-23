@@ -25,6 +25,7 @@ export const HEALTH_LINK_COPY = {
   },
   action: {
     next: "다음",
+    fetchNow: "최신 결과 불러오기",
     reload: "최신 결과 다시 조회",
     retryAuth: "카카오 인증 다시 요청",
     unlink: "연동 해제",
@@ -87,6 +88,8 @@ export const HEALTH_LINK_COPY = {
     inputBirthInvalid: "생년월일은 YYYYMMDD 형식으로 입력해 주세요.",
     inputPhoneInvalid: "휴대폰 번호는 숫자 10~11자리여야 합니다.",
     initFallback: "인증 요청에 실패했습니다.",
+    initTimeout:
+      "인증 요청 응답이 지연되고 있습니다. 잠시 후 `다음`을 다시 눌러 주세요.",
     initNoticeReused:
       "기존 인증 요청 상태를 재사용했습니다. 카카오에서 인증 완료 후 다음 단계로 진행해 주세요.",
     initNoticeDbReused:
@@ -94,12 +97,20 @@ export const HEALTH_LINK_COPY = {
     initNoticeCreated:
       "카카오 인증 요청을 보냈습니다. 카카오에서 인증 완료 후 다음 단계로 진행해 주세요.",
     signFallback: "인증 완료 처리에 실패했습니다.",
+    signTimeout:
+      "인증 완료 확인이 지연되고 있습니다. 카카오 승인 상태를 확인한 뒤 `다음`을 다시 눌러 주세요.",
     signNoticeReused: "이미 인증이 완료된 상태입니다.",
     signNoticeCompleted: "연동 인증이 완료되었습니다.",
     autoFetchAfterSignNotice:
       "인증 완료 후 최신 검진/투약 데이터를 자동으로 조회 중입니다.",
     autoFetchOnEntryNotice:
       "저장된 연동 상태를 확인해 최신 결과를 자동으로 불러오는 중입니다.",
+    fetchTimeout:
+      "조회 응답이 오래 걸리고 있습니다. 잠시 후 `최신 결과 불러오기`를 다시 누르면 저장된 결과를 우선 확인합니다.",
+    fetchDetailTimeout:
+      "상세 조회 응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.",
+    requestTimeoutFallback:
+      "응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.",
     detailAlreadyLoadedNotice:
       "상세 수치를 이미 불러왔습니다. 추가 유료 호출 없이 현재 결과를 재사용합니다.",
     sessionExpiredDetected:
@@ -129,6 +140,15 @@ export const HEALTH_LINK_COPY = {
     title: "검진 수치",
     description:
       "최근 건강검진 1회차 핵심 수치와 투약 이력을 한 화면에서 확인할 수 있습니다.",
+    loadingTitle: "검진 데이터를 불러오는 중입니다",
+    loadingStageInit: "연동 상태를 확인하고 조회 준비를 진행하고 있어요.",
+    loadingStageFetch:
+      "건보공단 데이터를 안전하게 불러오고 있어요. 조금만 기다려 주세요.",
+    loadingStageSlow:
+      "응답이 지연되고 있어요. 완료되면 자동으로 결과를 표시합니다.",
+    loadingElapsedUnit: "초 경과",
+    loadingHint:
+      "응답이 오래 걸리면 잠시 후 `최신 결과 불러오기`를 다시 눌러 저장된 결과를 우선 확인해 주세요.",
     linkRequired: "먼저 연동 인증을 완료한 뒤 데이터를 조회해 주세요.",
     partialFailureTitle: "일부 조회 실패",
     partialFailureHint:

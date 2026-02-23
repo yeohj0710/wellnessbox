@@ -41,7 +41,11 @@ export function HealthLinkFetchActions({
       >
         <SpinnerLabel
           loading={primaryLoading}
-          label={hasFetchResult ? HEALTH_LINK_COPY.action.reload : HEALTH_LINK_COPY.action.next}
+          label={
+            hasFetchResult
+              ? HEALTH_LINK_COPY.action.reload
+              : HEALTH_LINK_COPY.action.fetchNow
+          }
         />
       </button>
 

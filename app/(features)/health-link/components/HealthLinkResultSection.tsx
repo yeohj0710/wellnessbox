@@ -1,6 +1,11 @@
 "use client";
 
-import type { NhisCheckupSummary, NhisFetchFailure, NhisFetchResponse } from "../types";
+import React from "react";
+import type {
+  NhisCheckupSummary,
+  NhisFetchFailure,
+  NhisFetchResponse,
+} from "../types";
 import {
   describeFetchFailure,
   formatDataCell,
@@ -29,6 +34,7 @@ type LatestCheckupRow = {
 type HealthLinkResultSectionProps = {
   linked: boolean;
   canFetch: boolean;
+  fetchLoading: boolean;
   summaryFetchBlocked: boolean;
   summaryFetchBlockedMessage: string | null;
   fetchCacheHint: string | null;
@@ -92,6 +98,7 @@ function renderMetricRows(rows: LatestCheckupRow[]) {
 export function HealthLinkResultSection({
   linked,
   canFetch,
+  fetchLoading,
   summaryFetchBlocked,
   summaryFetchBlockedMessage,
   fetchCacheHint,
@@ -110,13 +117,50 @@ export function HealthLinkResultSection({
 }: HealthLinkResultSectionProps) {
   const sessionExpiredFailure = hasNhisSessionExpiredFailure(fetchFailures);
   const sessionExpiredBlocking = sessionExpiredFailure && !hasFetchResult;
-  const cautionRows = latestCheckupRows.filter((row) => row.statusTone === "caution");
+  const cautionRows = latestCheckupRows.filter(
+    (row) => row.statusTone === "caution"
+  );
   const visibleCautionRows = cautionRows.slice(0, 6);
-  const normalCount = latestCheckupRows.filter((row) => row.statusTone === "normal").length;
-  const unknownCount = latestCheckupRows.filter((row) => row.statusTone === "unknown").length;
+  const normalCount = latestCheckupRows.filter(
+    (row) => row.statusTone === "normal"
+  ).length;
+  const unknownCount = latestCheckupRows.filter(
+    (row) => row.statusTone === "unknown"
+  ).length;
   const topMedicines = medicationDigest.topMedicines.slice(0, 3);
   const topConditions = medicationDigest.topConditions.slice(0, 3);
   const recentMedications = medicationDigest.recentMedications.slice(0, 4);
+  const [fetchLoadingElapsedSec, setFetchLoadingElapsedSec] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!fetchLoading) {
+      setFetchLoadingElapsedSec(0);
+      return;
+    }
+    setFetchLoadingElapsedSec(0);
+    const startedAt = Date.now();
+    const timer = window.setInterval(() => {
+      const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+      setFetchLoadingElapsedSec(elapsed);
+    }, 1_000);
+    return () => window.clearInterval(timer);
+  }, [fetchLoading]);
+
+  const loadingProgressPercent = Math.min(
+    92,
+    fetchLoadingElapsedSec < 10
+      ? 20 + fetchLoadingElapsedSec * 5
+      : fetchLoadingElapsedSec < 25
+      ? 70 + (fetchLoadingElapsedSec - 10)
+      : 86 + Math.floor((fetchLoadingElapsedSec - 25) / 6)
+  );
+  const loadingStageMessage =
+    fetchLoadingElapsedSec < 8
+      ? HEALTH_LINK_COPY.result.loadingStageInit
+      : fetchLoadingElapsedSec < 20
+      ? HEALTH_LINK_COPY.result.loadingStageFetch
+      : HEALTH_LINK_COPY.result.loadingStageSlow;
+  const loadingElapsedLabel = `${fetchLoadingElapsedSec}${HEALTH_LINK_COPY.result.loadingElapsedUnit}`;
 
   if (!linked) {
     return (
@@ -124,8 +168,12 @@ export function HealthLinkResultSection({
         <div className={styles.sectionHeader}>
           <h2>{HEALTH_LINK_COPY.result.title}</h2>
         </div>
-        <p className={styles.sectionDescription}>{HEALTH_LINK_COPY.result.description}</p>
-        <div className={styles.noticeInfo}>{HEALTH_LINK_COPY.result.linkRequired}</div>
+        <p className={styles.sectionDescription}>
+          {HEALTH_LINK_COPY.result.description}
+        </p>
+        <div className={styles.noticeInfo}>
+          {HEALTH_LINK_COPY.result.linkRequired}
+        </div>
       </article>
     );
   }
@@ -135,7 +183,9 @@ export function HealthLinkResultSection({
       <div className={styles.sectionHeader}>
         <h2>{HEALTH_LINK_COPY.result.title}</h2>
       </div>
-      <p className={styles.sectionDescription}>{HEALTH_LINK_COPY.result.description}</p>
+      <p className={styles.sectionDescription}>
+        {HEALTH_LINK_COPY.result.description}
+      </p>
 
       <HealthLinkFetchActions
         statusLinked={linked}
@@ -149,13 +199,47 @@ export function HealthLinkResultSection({
         onSummaryFresh={onSummaryFresh}
       />
 
+      {fetchLoading ? (
+        <section className={styles.loadingPanel} aria-live="polite">
+          <div className={styles.loadingHeader}>
+            <strong>{HEALTH_LINK_COPY.result.loadingTitle}</strong>
+            <span>{loadingElapsedLabel}</span>
+          </div>
+          <p className={styles.loadingDescription}>{loadingStageMessage}</p>
+          <div className={styles.loadingBarTrack}>
+            <div
+              className={styles.loadingBarFill}
+              style={{ width: `${loadingProgressPercent}%` }}
+            />
+          </div>
+          <div className={styles.loadingSkeletonGrid} aria-hidden>
+            <div className={styles.loadingSkeletonCard} />
+            <div className={styles.loadingSkeletonCard} />
+            <div className={styles.loadingSkeletonCard} />
+            <div className={styles.loadingSkeletonCard} />
+          </div>
+          <div className={styles.loadingSkeletonList} aria-hidden>
+            <div className={styles.loadingSkeletonLine} />
+            <div className={styles.loadingSkeletonLineShort} />
+            <div className={styles.loadingSkeletonLine} />
+          </div>
+          <p className={styles.loadingHint}>
+            {HEALTH_LINK_COPY.result.loadingHint}
+          </p>
+        </section>
+      ) : null}
+
       {summaryFetchBlocked && summaryFetchBlockedMessage ? (
         <div className={styles.noticeWarn}>{summaryFetchBlockedMessage}</div>
       ) : null}
 
       {fetchFailures.length > 0 ? (
         <>
-          <div className={sessionExpiredBlocking ? styles.noticeError : styles.noticeWarn}>
+          <div
+            className={
+              sessionExpiredBlocking ? styles.noticeError : styles.noticeWarn
+            }
+          >
             {sessionExpiredBlocking
               ? HEALTH_LINK_COPY.result.sessionExpiredTitle
               : HEALTH_LINK_COPY.result.partialFailureTitle}
@@ -167,12 +251,15 @@ export function HealthLinkResultSection({
           </div>
           {!sessionExpiredBlocking ? (
             <details className={styles.statusDetails}>
-              <summary>{HEALTH_LINK_COPY.result.partialFailureDetailSummary}</summary>
+              <summary>
+                {HEALTH_LINK_COPY.result.partialFailureDetailSummary}
+              </summary>
               <div className={styles.detailsBody}>
                 <div className={styles.detailHint}>
                   {fetchFailures.map((failure, index) => (
                     <div key={`${failure.target}-${index}`}>
-                      {mapTargetLabel(failure.target)} - {describeFetchFailure(failure)}
+                      {mapTargetLabel(failure.target)} -{" "}
+                      {describeFetchFailure(failure)}
                     </div>
                   ))}
                 </div>
@@ -188,7 +275,10 @@ export function HealthLinkResultSection({
             <MetricCard
               title={HEALTH_LINK_COPY.result.latestDateTitle}
               value={latestCheckupMeta.checkupDate ?? "-"}
-              note={latestCheckupMeta.year ?? HEALTH_LINK_COPY.result.latestDateFallback}
+              note={
+                latestCheckupMeta.year ??
+                HEALTH_LINK_COPY.result.latestDateFallback
+              }
             />
             <MetricCard
               title={HEALTH_LINK_COPY.result.latestAgencyTitle}
@@ -202,8 +292,14 @@ export function HealthLinkResultSection({
             />
             <MetricCard
               title={HEALTH_LINK_COPY.result.medicationCountTitle}
-              value={`${medicationDigest.totalRows.toLocaleString("ko-KR")} ${HEALTH_LINK_COPY.table.rowUnit}`}
-              note={`${HEALTH_LINK_COPY.result.medicationCountNotePrefix} ${medicationDigest.uniqueMedicineCount.toLocaleString("ko-KR")}`}
+              value={`${medicationDigest.totalRows.toLocaleString("ko-KR")} ${
+                HEALTH_LINK_COPY.table.rowUnit
+              }`}
+              note={`${
+                HEALTH_LINK_COPY.result.medicationCountNotePrefix
+              } ${medicationDigest.uniqueMedicineCount.toLocaleString(
+                "ko-KR"
+              )}`}
             />
           </div>
 
@@ -213,16 +309,24 @@ export function HealthLinkResultSection({
               <span>{cautionRows.length.toLocaleString("ko-KR")}건</span>
             </div>
             {cautionRows.length === 0 ? (
-              <div className={styles.noticeSuccess}>{HEALTH_LINK_COPY.result.cautionEmpty}</div>
+              <div className={styles.noticeSuccess}>
+                {HEALTH_LINK_COPY.result.cautionEmpty}
+              </div>
             ) : (
-              <div className={styles.metricList}>{renderMetricRows(visibleCautionRows)}</div>
+              <div className={styles.metricList}>
+                {renderMetricRows(visibleCautionRows)}
+              </div>
             )}
             {cautionRows.length > visibleCautionRows.length ? (
-              <p className={styles.detailHint}>{HEALTH_LINK_COPY.result.cautionLimitHint}</p>
+              <p className={styles.detailHint}>
+                {HEALTH_LINK_COPY.result.cautionLimitHint}
+              </p>
             ) : null}
             <p className={styles.detailHint}>
-              {HEALTH_LINK_COPY.result.statusNormal} {normalCount.toLocaleString("ko-KR")}건 ·{" "}
-              {HEALTH_LINK_COPY.result.statusUnknown} {unknownCount.toLocaleString("ko-KR")}건
+              {HEALTH_LINK_COPY.result.statusNormal}{" "}
+              {normalCount.toLocaleString("ko-KR")}건 ·{" "}
+              {HEALTH_LINK_COPY.result.statusUnknown}{" "}
+              {unknownCount.toLocaleString("ko-KR")}건
             </p>
           </section>
 
@@ -234,7 +338,9 @@ export function HealthLinkResultSection({
                 {HEALTH_LINK_COPY.table.rowUnit})
               </summary>
               <div className={styles.detailsBody}>
-                <div className={styles.metricList}>{renderMetricRows(latestCheckupRows)}</div>
+                <div className={styles.metricList}>
+                  {renderMetricRows(latestCheckupRows)}
+                </div>
               </div>
             </details>
           ) : null}
@@ -245,7 +351,9 @@ export function HealthLinkResultSection({
               <span>{HEALTH_LINK_COPY.result.medicationSummaryNote}</span>
             </div>
             {medicationDigest.totalRows === 0 ? (
-              <div className={styles.emptyHint}>{HEALTH_LINK_COPY.result.medicationEmpty}</div>
+              <div className={styles.emptyHint}>
+                {HEALTH_LINK_COPY.result.medicationEmpty}
+              </div>
             ) : (
               <div className={styles.medicationGrid}>
                 <div className={styles.medicationBlock}>
@@ -277,7 +385,9 @@ export function HealthLinkResultSection({
                   </div>
                 </div>
                 <div className={styles.medicationBlock}>
-                  <strong>{HEALTH_LINK_COPY.result.recentMedicationTitle}</strong>
+                  <strong>
+                    {HEALTH_LINK_COPY.result.recentMedicationTitle}
+                  </strong>
                   <div className={styles.recentMedicationList}>
                     {recentMedications.length === 0 ? (
                       <span className={styles.emptyHint}>-</span>
@@ -299,7 +409,8 @@ export function HealthLinkResultSection({
             )}
           </section>
 
-          {checkupSummary?.recentLines && checkupSummary.recentLines.length > 0 ? (
+          {checkupSummary?.recentLines &&
+          checkupSummary.recentLines.length > 0 ? (
             <details className={styles.statusDetails}>
               <summary>{HEALTH_LINK_COPY.result.recentLinesSummary}</summary>
               <div className={styles.detailsBody}>
@@ -312,7 +423,7 @@ export function HealthLinkResultSection({
             </details>
           ) : null}
         </>
-      ) : fetchFailures.length === 0 ? (
+      ) : fetchFailures.length === 0 && !fetchLoading ? (
         <div className={styles.emptyPanel}>{HEALTH_LINK_COPY.result.empty}</div>
       ) : null}
 
