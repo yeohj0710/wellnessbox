@@ -1520,16 +1520,55 @@
     grid-template-columns: 1fr;
   }
 
+  .compactSection {
+    padding: 11px;
+    gap: 8px;
+    border-radius: 12px;
+  }
+
+  .summaryInsightList {
+    gap: 6px;
+  }
+
   .nextButton {
     min-height: 50px;
   }
 
   .summaryInsightList li {
-    padding: 9px;
+    padding: 8px 0;
+    border-width: 0 0 1px;
+    border-radius: 0;
+    border-color: #e3e8f3;
+    background: transparent;
+  }
+
+  .summaryInsightList li:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
   }
 
   .summaryInsightValue {
     font-size: 18px;
+  }
+
+  .metricBoard {
+    display: block;
+    border-top: 1px solid var(--line);
+    gap: 0;
+  }
+
+  .metricCardCompact {
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    border-radius: 0;
+    background: transparent;
+    padding: 10px 0;
+    gap: 6px;
+  }
+
+  .metricCardCompact:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
   }
 }
 

@@ -22,7 +22,13 @@ Single page flow for Hyphen NHIS integration:
 - `components/HealthLinkResultSection.tsx`
   - Result stage orchestrator (loading/notice/content composition).
 - `components/HealthLinkResultContent.tsx`
-  - Main result rendering block (overview, AI summary, checkup groups, medication).
+  - Result content composition (`summary hero -> checkup -> optional medication`).
+- `components/HealthLinkSummaryHero.tsx`
+  - Single high-priority summary block for mobile users.
+- `components/HealthLinkCheckupSection.tsx`
+  - Checkup tabs + prioritized rows + expand/collapse handling.
+- `components/HealthLinkMedicationOptionalSection.tsx`
+  - Optional collapsed medication detail block.
 - `components/HealthLinkResultLoadingPanel.tsx`
   - Long-fetch loading panel with progress + skeleton UI.
 - `components/HealthLinkResultFailureNotice.tsx`
@@ -32,11 +38,17 @@ Single page flow for Hyphen NHIS integration:
 - `components/HealthLinkCommon.tsx`
   - Reusable presentational blocks (step strip, metric cards, table panel).
 - `components/HealthLinkFetchActions.tsx`
-  - Result refresh action row.
+  - Primary action row + collapsed secondary options.
 - `components/HealthLinkRawResponseSection.tsx`
   - Collapsible raw JSON response block.
 - `useNhisHealthLink.ts`
   - Client workflow state + API calls.
+- `useNhisActionRequest.ts`
+  - Shared request executor hook (timeout/error/session-expiry handling).
+- `useNhisSummaryAutoFetch.ts`
+  - Auto-fetch side effects for linked sessions and budget-block synchronization.
+- `useNhisHealthLink.helpers.ts`
+  - Shared validation/notice/budget helper logic for the client hook.
 - `request-utils.ts`
   - Shared request timeout/error/budget message helpers for hook logic.
 - `fetchClientPolicy.ts`
@@ -79,9 +91,13 @@ Single page flow for Hyphen NHIS integration:
 - Same identity + existing DB cache can short-circuit `init` to immediate relink (`nextStep: fetch`).
 - After `sign` success, the client immediately runs summary fetch (no extra middle step click).
 - linked 상태로 페이지에 진입하면 최신 요약 조회를 자동으로 1회 실행합니다.
+- result stage prioritizes one summary hero card before detailed lists.
+- collapsed checkup preview avoids immediately repeating metrics already shown in summary insights (`더 보기`에서 전체 확인 가능).
+- secondary actions (e.g. identity switch) are collapsed under optional controls.
 - `fetch` supports partial success handling so one endpoint failure does not drop all cards.
 - Error code `C0012-001` should trigger a prerequisite guidance card.
 - Successful fetch payloads include `normalized.aiSummary` (best-effort OpenAI + fallback).
+- `normalized.aiSummary.metricInsights` may be returned and is used for plain-language key insights.
 - AI summary generation must never break or block the core fetch UX.
 
 ## Cost Guardrails

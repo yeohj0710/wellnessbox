@@ -5,15 +5,15 @@ import type { NhisAiSummary } from "../types";
 import { HEALTH_LINK_COPY } from "../copy";
 import type { LatestCheckupMeta, MedicationDigest } from "../utils";
 import styles from "../HealthLinkClient.module.css";
+import { HealthLinkCheckupSection } from "./HealthLinkCheckupSection";
+import { HealthLinkMedicationOptionalSection } from "./HealthLinkMedicationOptionalSection";
+import { HealthLinkSummaryHero, type SummaryInsightItem } from "./HealthLinkSummaryHero";
 import {
   buildMedicationAnalysisModel,
   buildMetricInsightCards,
   buildMetricGroups,
   buildMetricTabs,
   normalizeCompactText,
-  renderMetricCards,
-  resolveAiRiskClass,
-  resolveAiRiskLabel,
   type LatestCheckupRow,
   type MetricGroupId,
 } from "./HealthLinkResultSection.helpers";
@@ -24,6 +24,11 @@ type HealthLinkResultContentProps = {
   medicationDigest: MedicationDigest;
   aiSummary: NhisAiSummary | null;
 };
+
+function toMetricKey(metric: string | null | undefined) {
+  if (!metric) return "";
+  return metric.replace(/\s+/g, "").toLowerCase();
+}
 
 export function HealthLinkResultContent({
   latestCheckupRows,
@@ -73,25 +78,7 @@ export function HealthLinkResultContent({
     setShowAllMetrics(false);
   }, [activeGroup]);
 
-  const visibleRows =
-    activeGroup === "all" ? latestCheckupRows : groupedRows[activeGroup];
-  const prioritizedRows =
-    activeGroup === "all"
-      ? [
-          ...visibleRows.filter((row) => row.statusTone === "caution"),
-          ...visibleRows.filter((row) => row.statusTone !== "caution"),
-        ]
-      : visibleRows;
-  const metricVisibleCount = 8;
-  const metricRows = showAllMetrics
-    ? prioritizedRows
-    : prioritizedRows.slice(0, metricVisibleCount);
-  const hiddenMetricCount = Math.max(
-    prioritizedRows.length - metricRows.length,
-    0
-  );
-
-  const summaryInsights = React.useMemo(() => {
+  const summaryInsights = React.useMemo<SummaryInsightItem[]>(() => {
     const aiInsights =
       aiSummary?.metricInsights
         ?.map((item) => {
@@ -100,6 +87,7 @@ export function HealthLinkResultContent({
           const interpretation = item?.interpretation?.trim();
           const tip = item?.tip?.trim();
           if (!metric || !value || !interpretation || !tip) return null;
+
           return {
             metric,
             value,
@@ -118,6 +106,7 @@ export function HealthLinkResultContent({
         .filter(
           (item): item is NonNullable<typeof item> => item !== null
         ) ?? [];
+
     if (aiInsights.length > 0) return aiInsights.slice(0, 3);
 
     const sourceRows = cautionRows.length > 0 ? cautionRows : latestCheckupRows;
@@ -134,138 +123,74 @@ export function HealthLinkResultContent({
       : HEALTH_LINK_COPY.result.summaryFallbackBody;
   const summaryRiskLevel =
     hasAiSummary && aiSummary ? aiSummary.riskLevel : "unknown";
+
+  const visibleRows =
+    activeGroup === "all" ? latestCheckupRows : groupedRows[activeGroup];
+  const prioritizedRows =
+    activeGroup === "all"
+      ? [
+          ...visibleRows.filter((row) => row.statusTone === "caution"),
+          ...visibleRows.filter((row) => row.statusTone !== "caution"),
+        ]
+      : visibleRows;
+
+  const summaryInsightMetricKeys = React.useMemo(() => {
+    return new Set(
+      summaryInsights
+        .map((item) => toMetricKey(item.metric))
+        .filter((metricKey) => metricKey.length > 0)
+    );
+  }, [summaryInsights]);
+
+  const collapsedRows = React.useMemo(() => {
+    if (activeGroup !== "all") return prioritizedRows;
+    const filtered = prioritizedRows.filter((row) => {
+      const metricKey = toMetricKey(
+        typeof row.metric === "string" ? row.metric : null
+      );
+      return metricKey ? !summaryInsightMetricKeys.has(metricKey) : true;
+    });
+    return filtered.length > 0 ? filtered : prioritizedRows;
+  }, [activeGroup, prioritizedRows, summaryInsightMetricKeys]);
+
+  const metricVisibleCount = 8;
+  const metricRows = showAllMetrics
+    ? prioritizedRows
+    : collapsedRows.slice(0, metricVisibleCount);
+  const hiddenMetricCount = Math.max(prioritizedRows.length - metricRows.length, 0);
+
   const topMedicineLine = topMedicines
     .map((item) => `${item.label} ${item.count}건`)
     .join(", ");
 
-  const resolveInsightToneLabel = (
-    tone: "normal" | "caution" | "unknown"
-  ) => {
-    if (tone === "caution") return HEALTH_LINK_COPY.result.statusCaution;
-    if (tone === "normal") return HEALTH_LINK_COPY.result.statusNormal;
-    return HEALTH_LINK_COPY.result.statusUnknown;
-  };
-
-  const resolveInsightToneClass = (
-    tone: "normal" | "caution" | "unknown"
-  ) => {
-    if (tone === "caution") return styles.toneCaution;
-    if (tone === "normal") return styles.toneNormal;
-    return styles.toneUnknown;
-  };
-
   return (
     <>
-      <section className={`${styles.compactSection} ${styles.summaryHeroSection}`}>
-        <div className={styles.compactHeader}>
-          <h3>{HEALTH_LINK_COPY.result.summaryTitle}</h3>
-          <span
-            className={`${styles.aiRiskBadge} ${resolveAiRiskClass(
-              summaryRiskLevel
-            )}`}
-          >
-            {resolveAiRiskLabel(summaryRiskLevel)}
-          </span>
-        </div>
-
-        <p className={styles.summaryHeroHeadline}>{summaryHeadline}</p>
-        <p className={styles.summaryHeroBody}>{summaryBody}</p>
-
-        <div className={styles.summaryStatRow}>
-          {hasCheckupRows ? (
-            <span className={styles.summaryStatPill}>
-              검진 {latestCheckupRows.length.toLocaleString("ko-KR")}개
-            </span>
-          ) : null}
-          {hasCheckupRows ? (
-            <span className={`${styles.summaryStatPill} ${styles.summaryWarnPill}`}>
-              주의 {cautionRows.length.toLocaleString("ko-KR")}개
-            </span>
-          ) : null}
-          {showMedicationSection ? (
-            <span className={styles.summaryStatPill}>
-              투약 {medicationDigest.totalRows.toLocaleString("ko-KR")}건
-            </span>
-          ) : null}
-        </div>
-
-        {summaryInsights.length > 0 ? (
-          <ul className={styles.summaryInsightList}>
-            {summaryInsights.map((item, index) => (
-              <li key={`${item.metric}-${item.value}-${index}`}>
-                <div className={styles.summaryInsightTop}>
-                  <strong>{item.metric}</strong>
-                  <span
-                    className={`${styles.metricTone} ${resolveInsightToneClass(
-                      item.tone
-                    )}`}
-                  >
-                    {resolveInsightToneLabel(item.tone)}
-                  </span>
-                </div>
-                <p className={styles.summaryInsightValue}>{item.value}</p>
-                <p className={styles.summaryInsightText}>{item.interpretation}</p>
-                <p className={styles.summaryInsightTip}>{item.tip}</p>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-      </section>
+      <HealthLinkSummaryHero
+        checkupCount={latestCheckupRows.length}
+        cautionCount={cautionRows.length}
+        medicationCount={medicationDigest.totalRows}
+        showCheckupCount={hasCheckupRows}
+        showMedicationCount={showMedicationSection}
+        summaryHeadline={summaryHeadline}
+        summaryBody={summaryBody}
+        summaryRiskLevel={summaryRiskLevel}
+        summaryInsights={summaryInsights}
+      />
 
       {hasCheckupRows ? (
-        <section className={styles.compactSection}>
-          <div className={styles.compactHeader}>
-            <h3>검진 항목</h3>
-            <span>
-              {latestCheckupMeta.checkupDate
-                ? `최근 검사 ${latestCheckupMeta.checkupDate}`
-                : `${prioritizedRows.length.toLocaleString("ko-KR")}개 표시`}
-            </span>
-          </div>
-          <p className={styles.sectionSubText}>
-            {HEALTH_LINK_COPY.result.metricLead}
-          </p>
-          <div className={styles.metricFilterWrap}>
-            {metricTabs.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                aria-pressed={activeGroup === tab.id}
-                className={`${styles.metricFilterChip} ${
-                  activeGroup === tab.id ? styles.metricFilterChipActive : ""
-                }`}
-                onClick={() => setActiveGroup(tab.id)}
-              >
-                {tab.label} {tab.count}
-              </button>
-            ))}
-          </div>
-          {metricRows.length > 0 ? (
-            <div className={styles.metricBoard}>{renderMetricCards(metricRows)}</div>
-          ) : (
-            <div className={styles.emptyHint}>표시할 검진 항목이 없습니다.</div>
-          )}
-          {hiddenMetricCount > 0 ? (
-            <button
-              type="button"
-              className={styles.metricExpandButton}
-              onClick={() => setShowAllMetrics(true)}
-            >
-              {`${HEALTH_LINK_COPY.result.metricExpandPrefix}${hiddenMetricCount.toLocaleString(
-                "ko-KR"
-              )}${HEALTH_LINK_COPY.result.metricExpandSuffix}`}
-            </button>
-          ) : null}
-          {showAllMetrics && prioritizedRows.length > metricVisibleCount ? (
-            <button
-              type="button"
-              className={styles.metricCollapseButton}
-              onClick={() => setShowAllMetrics(false)}
-            >
-              {HEALTH_LINK_COPY.result.metricCollapseLabel}
-            </button>
-          ) : null}
-        </section>
+        <HealthLinkCheckupSection
+          latestCheckupMeta={latestCheckupMeta}
+          prioritizedRowsCount={prioritizedRows.length}
+          metricTabs={metricTabs}
+          activeGroupId={activeGroup}
+          onSelectGroup={setActiveGroup}
+          metricRows={metricRows}
+          hiddenMetricCount={hiddenMetricCount}
+          showAllMetrics={showAllMetrics}
+          metricVisibleCount={metricVisibleCount}
+          onExpand={() => setShowAllMetrics(true)}
+          onCollapse={() => setShowAllMetrics(false)}
+        />
       ) : null}
 
       {medicationOnlyMode ? (
@@ -321,47 +246,12 @@ export function HealthLinkResultContent({
       ) : null}
 
       {showMedicationSection && !medicationOnlyMode ? (
-        <details className={styles.optionalSection}>
-          <summary>
-            <span>{HEALTH_LINK_COPY.result.medicationDetailsSummary}</span>
-            <small>
-              {medicationDigest.totalRows.toLocaleString("ko-KR")}
-              건
-            </small>
-          </summary>
-          <div className={styles.optionalSectionBody}>
-            <div className={styles.optionalSummaryRow}>
-              <span>
-                복약 이력 {medicationDigest.totalRows.toLocaleString("ko-KR")}건
-              </span>
-              <span>
-                고유 약품{" "}
-                {medicationDigest.uniqueMedicineCount.toLocaleString("ko-KR")}종
-              </span>
-            </div>
-            {topMedicineLine ? (
-              <p className={styles.optionalBodyText}>
-                자주 복용한 약: {topMedicineLine}
-              </p>
-            ) : null}
-            <div className={styles.recentMedicationList}>
-              {recentMedications.length === 0 ? (
-                <span className={styles.emptyHint}>-</span>
-              ) : (
-                recentMedications.map((item) => (
-                  <div
-                    key={`${item.date}-${item.medicine}`}
-                    className={styles.recentMedicationItem}
-                  >
-                    <span>{item.date}</span>
-                    <strong>{item.medicine}</strong>
-                    <small>{item.effect ?? "-"}</small>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </details>
+        <HealthLinkMedicationOptionalSection
+          totalRows={medicationDigest.totalRows}
+          uniqueMedicineCount={medicationDigest.uniqueMedicineCount}
+          topMedicineLine={topMedicineLine}
+          recentMedications={recentMedications}
+        />
       ) : null}
     </>
   );

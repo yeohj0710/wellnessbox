@@ -109,9 +109,7 @@ export function HealthLinkResultSection({
       <div className={styles.sectionHeader}>
         <h2>{HEALTH_LINK_COPY.result.title}</h2>
       </div>
-      <p className={styles.sectionLead}>
-        필요한 결과만 먼저 정리해 드려요. 중요한 항목부터 차례로 확인해 주세요.
-      </p>
+      <p className={styles.sectionLead}>{HEALTH_LINK_COPY.result.description}</p>
 
       <HealthLinkFetchActions
         statusLinked={linked}
