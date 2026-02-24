@@ -1,0 +1,236 @@
+{
+  "responses": {
+    "medical.init": {
+      "common": {
+        "errYn": "N",
+        "userTrNo": "mock-user-tr-no",
+        "hyphenTrNo": "mock-hyphen-tr-no-init"
+      },
+      "data": {
+        "stepData": {
+          "txId": "mock-step-init",
+          "challenge": "kakao"
+        },
+        "cookieData": {
+          "session": "mock-session-init"
+        },
+        "list": []
+      }
+    },
+    "medical.sign": {
+      "common": {
+        "errYn": "N",
+        "userTrNo": "mock-user-tr-no",
+        "hyphenTrNo": "mock-hyphen-tr-no-sign"
+      },
+      "data": {
+        "stepData": {
+          "txId": "mock-step-sign",
+          "signed": true
+        },
+        "cookieData": {
+          "session": "mock-session-signed"
+        },
+        "list": []
+      }
+    },
+    "medical.fetch": {
+      "common": {
+        "errYn": "N",
+        "userTrNo": "mock-user-tr-no",
+        "hyphenTrNo": "mock-hyphen-tr-no-medical"
+      },
+      "data": {
+        "list": [
+          {
+            "subject": "self",
+            "examinee": "employee",
+            "sublist": [
+              {
+                "diagDate": "2026-01-10",
+                "diagType": "outpatient",
+                "hospitalNm": "Mock Clinic",
+                "medList": [
+                  {
+                    "medicineNm": "Acetaminophen",
+                    "dosageDay": "3",
+                    "detailObj": {
+                      "CMPN_NM": "Acetaminophen",
+                      "PRSC_YMD": "20260110"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "medication.fetch": {
+      "common": {
+        "errYn": "N",
+        "userTrNo": "mock-user-tr-no",
+        "hyphenTrNo": "mock-hyphen-tr-no-medication"
+      },
+      "data": {
+        "list": [
+          {
+            "subject": "self",
+            "examinee": "employee",
+            "sublist": [
+              {
+                "diagDate": "2026-02-10",
+                "diagType": "prescription",
+                "hospitalNm": "Mock Internal Clinic",
+                "medList": [
+                  {
+                    "medicineNm": "Mock Drug A",
+                    "dosageDay": "5",
+                    "detailObj": {
+                      "CMPN_NM": "Ingredient A",
+                      "PRSC_YMD": "20260210",
+                      "MOHW_CLSF": "normal"
+                    }
+                  }
+                ]
+              },
+              {
+                "diagDate": "2026-01-24",
+                "diagType": "prescription",
+                "hospitalNm": "Mock Internal Clinic",
+                "medList": [
+                  {
+                    "medicineNm": "Mock Drug B",
+                    "dosageDay": "7",
+                    "detailObj": {
+                      "CMPN_NM": "Ingredient B",
+                      "PRSC_YMD": "20260124"
+                    }
+                  }
+                ]
+              },
+              {
+                "diagDate": "2026-01-06",
+                "diagType": "prescription",
+                "hospitalNm": "Mock Internal Clinic",
+                "medList": [
+                  {
+                    "medicineNm": "Mock Drug C",
+                    "dosageDay": "4",
+                    "detailObj": {
+                      "CMPN_NM": "Ingredient C",
+                      "PRSC_YMD": "20260106"
+                    }
+                  }
+                ]
+              },
+              {
+                "diagDate": "2025-12-15",
+                "diagType": "prescription",
+                "hospitalNm": "Mock Internal Clinic",
+                "medList": [
+                  {
+                    "medicineNm": "Mock Drug D",
+                    "dosageDay": "10",
+                    "detailObj": {
+                      "CMPN_NM": "Ingredient D",
+                      "PRSC_YMD": "20251215"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "checkupOverview.fetch": {
+      "common": {
+        "errYn": "N",
+        "userTrNo": "mock-user-tr-no",
+        "hyphenTrNo": "mock-hyphen-tr-no-checkup-overview"
+      },
+      "data": {
+        "list": [
+          {
+            "year": "2025",
+            "result": "normal",
+            "chkAgency": "Mock NHIS Center",
+            "opinion": "stable",
+            "chkResult": [
+              {
+                "inspectItem": "검진일",
+                "result": "2025-11-15"
+              },
+              {
+                "inspectItem": "혈압(최고/최저)",
+                "result": "123/75",
+                "unit": "mmHg"
+              },
+              {
+                "inspectItem": "체질량지수",
+                "result": "21.1",
+                "unit": "kg/m2"
+              },
+              {
+                "inspectItem": "공복혈당",
+                "result": "95",
+                "unit": "mg/dL"
+              }
+            ]
+          },
+          {
+            "year": "2024",
+            "result": "normal",
+            "chkAgency": "Mock NHIS Center",
+            "opinion": "stable",
+            "chkResult": [
+              {
+                "inspectItem": "검진일",
+                "result": "2024-10-11"
+              },
+              {
+                "inspectItem": "혈압(최고/최저)",
+                "result": "121/79",
+                "unit": "mmHg"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "healthAge.fetch": {
+      "common": {
+        "errYn": "N",
+        "userTrNo": "mock-user-tr-no",
+        "hyphenTrNo": "mock-hyphen-tr-no-health-age"
+      },
+      "data": {
+        "list": []
+      }
+    },
+    "checkupResultList.fetch": {
+      "common": {
+        "errYn": "N",
+        "userTrNo": "mock-user-tr-no",
+        "hyphenTrNo": "mock-hyphen-tr-no-checkup-list"
+      },
+      "data": {
+        "yyyy": "2025",
+        "list": []
+      }
+    },
+    "checkupYearly.fetch": {
+      "common": {
+        "errYn": "N",
+        "userTrNo": "mock-user-tr-no",
+        "hyphenTrNo": "mock-hyphen-tr-no-checkup-yearly"
+      },
+      "data": {
+        "detailKey": "mock-detail-key",
+        "detailKey2": "mock-detail-key-2",
+        "list": []
+      }
+    }
+  }
+}

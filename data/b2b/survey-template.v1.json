@@ -1,0 +1,898 @@
+{
+  "version": 1,
+  "title": "웰니스박스 임직원 설문지 v1",
+  "description": "공통 1~27 문항과 선택 섹션(S01~S24) 기반의 관리자 입력용 설문 템플릿입니다.",
+  "common": [
+    {
+      "key": "C01",
+      "index": 1,
+      "text": "공통 문항 C01",
+      "type": "text"
+    },
+    {
+      "key": "C02",
+      "index": 2,
+      "text": "공통 문항 C02",
+      "type": "text"
+    },
+    {
+      "key": "C03",
+      "index": 3,
+      "text": "공통 문항 C03",
+      "type": "text"
+    },
+    {
+      "key": "C04",
+      "index": 4,
+      "text": "공통 문항 C04",
+      "type": "text"
+    },
+    {
+      "key": "C05",
+      "index": 5,
+      "text": "공통 문항 C05",
+      "type": "text"
+    },
+    {
+      "key": "C06",
+      "index": 6,
+      "text": "공통 문항 C06",
+      "type": "text"
+    },
+    {
+      "key": "C07",
+      "index": 7,
+      "text": "공통 문항 C07",
+      "type": "text"
+    },
+    {
+      "key": "C08",
+      "index": 8,
+      "text": "공통 문항 C08",
+      "type": "text"
+    },
+    {
+      "key": "C09",
+      "index": 9,
+      "text": "공통 문항 C09",
+      "type": "text"
+    },
+    {
+      "key": "C10",
+      "index": 10,
+      "text": "공통 문항 C10",
+      "type": "text"
+    },
+    {
+      "key": "C11",
+      "index": 11,
+      "text": "공통 문항 C11",
+      "type": "text"
+    },
+    {
+      "key": "C12",
+      "index": 12,
+      "text": "공통 문항 C12",
+      "type": "text"
+    },
+    {
+      "key": "C13",
+      "index": 13,
+      "text": "공통 문항 C13",
+      "type": "text"
+    },
+    {
+      "key": "C14",
+      "index": 14,
+      "text": "공통 문항 C14",
+      "type": "text"
+    },
+    {
+      "key": "C15",
+      "index": 15,
+      "text": "공통 문항 C15",
+      "type": "text"
+    },
+    {
+      "key": "C16",
+      "index": 16,
+      "text": "공통 문항 C16",
+      "type": "text"
+    },
+    {
+      "key": "C17",
+      "index": 17,
+      "text": "공통 문항 C17",
+      "type": "text"
+    },
+    {
+      "key": "C18",
+      "index": 18,
+      "text": "공통 문항 C18",
+      "type": "text"
+    },
+    {
+      "key": "C19",
+      "index": 19,
+      "text": "공통 문항 C19",
+      "type": "text"
+    },
+    {
+      "key": "C20",
+      "index": 20,
+      "text": "공통 문항 C20",
+      "type": "text"
+    },
+    {
+      "key": "C21",
+      "index": 21,
+      "text": "공통 문항 C21",
+      "type": "text"
+    },
+    {
+      "key": "C22",
+      "index": 22,
+      "text": "공통 문항 C22",
+      "type": "text"
+    },
+    {
+      "key": "C23",
+      "index": 23,
+      "text": "공통 문항 C23",
+      "type": "text"
+    },
+    {
+      "key": "C24",
+      "index": 24,
+      "text": "공통 문항 C24",
+      "type": "text"
+    },
+    {
+      "key": "C25",
+      "index": 25,
+      "text": "공통 문항 C25",
+      "type": "text"
+    },
+    {
+      "key": "C26",
+      "index": 26,
+      "text": "공통 문항 C26",
+      "type": "text"
+    },
+    {
+      "key": "C27",
+      "index": 27,
+      "text": "공통 문항 C27 (선택한 건강 관심 영역을 최대 5개까지 입력하세요)",
+      "type": "text"
+    }
+  ],
+  "sectionCatalog": [
+    {
+      "key": "S01",
+      "title": "세부 영역 01",
+      "triggerLabel": "건강목표 01",
+      "questionCount": 3
+    },
+    {
+      "key": "S02",
+      "title": "세부 영역 02",
+      "triggerLabel": "건강목표 02",
+      "questionCount": 3
+    },
+    {
+      "key": "S03",
+      "title": "세부 영역 03",
+      "triggerLabel": "건강목표 03",
+      "questionCount": 3
+    },
+    {
+      "key": "S04",
+      "title": "세부 영역 04",
+      "triggerLabel": "건강목표 04",
+      "questionCount": 3
+    },
+    {
+      "key": "S05",
+      "title": "세부 영역 05",
+      "triggerLabel": "건강목표 05",
+      "questionCount": 3
+    },
+    {
+      "key": "S06",
+      "title": "세부 영역 06",
+      "triggerLabel": "건강목표 06",
+      "questionCount": 3
+    },
+    {
+      "key": "S07",
+      "title": "세부 영역 07",
+      "triggerLabel": "건강목표 07",
+      "questionCount": 3
+    },
+    {
+      "key": "S08",
+      "title": "세부 영역 08",
+      "triggerLabel": "건강목표 08",
+      "questionCount": 3
+    },
+    {
+      "key": "S09",
+      "title": "세부 영역 09",
+      "triggerLabel": "건강목표 09",
+      "questionCount": 3
+    },
+    {
+      "key": "S10",
+      "title": "세부 영역 10",
+      "triggerLabel": "건강목표 10",
+      "questionCount": 3
+    },
+    {
+      "key": "S11",
+      "title": "세부 영역 11",
+      "triggerLabel": "건강목표 11",
+      "questionCount": 3
+    },
+    {
+      "key": "S12",
+      "title": "세부 영역 12",
+      "triggerLabel": "건강목표 12",
+      "questionCount": 3
+    },
+    {
+      "key": "S13",
+      "title": "세부 영역 13",
+      "triggerLabel": "건강목표 13",
+      "questionCount": 3
+    },
+    {
+      "key": "S14",
+      "title": "세부 영역 14",
+      "triggerLabel": "건강목표 14",
+      "questionCount": 3
+    },
+    {
+      "key": "S15",
+      "title": "세부 영역 15",
+      "triggerLabel": "건강목표 15",
+      "questionCount": 3
+    },
+    {
+      "key": "S16",
+      "title": "세부 영역 16",
+      "triggerLabel": "건강목표 16",
+      "questionCount": 3
+    },
+    {
+      "key": "S17",
+      "title": "세부 영역 17",
+      "triggerLabel": "건강목표 17",
+      "questionCount": 3
+    },
+    {
+      "key": "S18",
+      "title": "세부 영역 18",
+      "triggerLabel": "건강목표 18",
+      "questionCount": 3
+    },
+    {
+      "key": "S19",
+      "title": "세부 영역 19",
+      "triggerLabel": "건강목표 19",
+      "questionCount": 3
+    },
+    {
+      "key": "S20",
+      "title": "세부 영역 20",
+      "triggerLabel": "건강목표 20",
+      "questionCount": 3
+    },
+    {
+      "key": "S21",
+      "title": "세부 영역 21",
+      "triggerLabel": "건강목표 21",
+      "questionCount": 3
+    },
+    {
+      "key": "S22",
+      "title": "세부 영역 22",
+      "triggerLabel": "건강목표 22",
+      "questionCount": 3
+    },
+    {
+      "key": "S23",
+      "title": "세부 영역 23",
+      "triggerLabel": "건강목표 23",
+      "questionCount": 3
+    },
+    {
+      "key": "S24",
+      "title": "세부 영역 24",
+      "triggerLabel": "건강목표 24",
+      "questionCount": 3
+    }
+  ],
+  "sections": [
+    {
+      "key": "S01",
+      "title": "세부 영역 01",
+      "questions": [
+        {
+          "key": "S01_Q01",
+          "index": 1,
+          "text": "세부 영역 01 문항 1",
+          "type": "text"
+        },
+        {
+          "key": "S01_Q02",
+          "index": 2,
+          "text": "세부 영역 01 문항 2",
+          "type": "text"
+        },
+        {
+          "key": "S01_Q03",
+          "index": 3,
+          "text": "세부 영역 01 문항 3",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "key": "S02",
+      "title": "세부 영역 02",
+      "questions": [
+        {
+          "key": "S02_Q01",
+          "index": 1,
+          "text": "세부 영역 02 문항 1",
+          "type": "text"
+        },
+        {
+          "key": "S02_Q02",
+          "index": 2,
+          "text": "세부 영역 02 문항 2",
+          "type": "text"
+        },
+        {
+          "key": "S02_Q03",
+          "index": 3,
+          "text": "세부 영역 02 문항 3",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "key": "S03",
+      "title": "세부 영역 03",
+      "questions": [
+        {
+          "key": "S03_Q01",
+          "index": 1,
+          "text": "세부 영역 03 문항 1",
+          "type": "text"
+        },
+        {
+          "key": "S03_Q02",
+          "index": 2,
+          "text": "세부 영역 03 문항 2",
+          "type": "text"
+        },
+        {
+          "key": "S03_Q03",
+          "index": 3,
+          "text": "세부 영역 03 문항 3",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "key": "S04",
+      "title": "세부 영역 04",
+      "questions": [
+        {
+          "key": "S04_Q01",
+          "index": 1,
+          "text": "세부 영역 04 문항 1",
+          "type": "text"
+        },
+        {
+          "key": "S04_Q02",
+          "index": 2,
+          "text": "세부 영역 04 문항 2",
+          "type": "text"
+        },
+        {
+          "key": "S04_Q03",
+          "index": 3,
+          "text": "세부 영역 04 문항 3",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "key": "S05",
+      "title": "세부 영역 05",
+      "questions": [
+        {
+          "key": "S05_Q01",
+          "index": 1,
+          "text": "세부 영역 05 문항 1",
+          "type": "text"
+        },
+        {
+          "key": "S05_Q02",
+          "index": 2,
+          "text": "세부 영역 05 문항 2",
+          "type": "text"
+        },
+        {
+          "key": "S05_Q03",
+          "index": 3,
+          "text": "세부 영역 05 문항 3",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "key": "S06",
+      "title": "세부 영역 06",
+      "questions": [
+        {
+          "key": "S06_Q01",
+          "index": 1,
+          "text": "세부 영역 06 문항 1",
+          "type": "text"
+        },
+        {
+          "key": "S06_Q02",
+          "index": 2,
+          "text": "세부 영역 06 문항 2",
+          "type": "text"
+        },
+        {
+          "key": "S06_Q03",
+          "index": 3,
+          "text": "세부 영역 06 문항 3",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "key": "S07",
+      "title": "세부 영역 07",
+      "questions": [
+        {
+          "key": "S07_Q01",
+          "index": 1,
+          "text": "세부 영역 07 문항 1",
+          "type": "text"
+        },
+        {
+          "key": "S07_Q02",
+          "index": 2,
+          "text": "세부 영역 07 문항 2",
+          "type": "text"
+        },
+        {
+          "key": "S07_Q03",
+          "index": 3,
+          "text": "세부 영역 07 문항 3",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "key": "S08",
+      "title": "세부 영역 08",
+      "questions": [
+        {
+          "key": "S08_Q01",
+          "index": 1,
+          "text": "세부 영역 08 문항 1",
+          "type": "text"
+        },
+        {
+          "key": "S08_Q02",
+          "index": 2,
+          "text": "세부 영역 08 문항 2",
+          "type": "text"
+        },
+        {
+          "key": "S08_Q03",
+          "index": 3,
+          "text": "세부 영역 08 문항 3",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "key": "S09",
+      "title": "세부 영역 09",
+      "questions": [
+        {
+          "key": "S09_Q01",
+          "index": 1,
+          "text": "세부 영역 09 문항 1",
+          "type": "text"
+        },
+        {
+          "key": "S09_Q02",
+          "index": 2,
+          "text": "세부 영역 09 문항 2",
+          "type": "text"
+        },
+        {
+          "key": "S09_Q03",
+          "index": 3,
+          "text": "세부 영역 09 문항 3",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "key": "S10",
+      "title": "세부 영역 10",
+      "questions": [
+        {
+          "key": "S10_Q01",
+          "index": 1,
+          "text": "세부 영역 10 문항 1",
+          "type": "text"
+        },
+        {
+          "key": "S10_Q02",
+          "index": 2,
+          "text": "세부 영역 10 문항 2",
+          "type": "text"
+        },
+        {
+          "key": "S10_Q03",
+          "index": 3,
+          "text": "세부 영역 10 문항 3",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "key": "S11",
+      "title": "세부 영역 11",
+      "questions": [
+        {
+          "key": "S11_Q01",
+          "index": 1,
+          "text": "세부 영역 11 문항 1",
+          "type": "text"
+        },
+        {
+          "key": "S11_Q02",
+          "index": 2,
+          "text": "세부 영역 11 문항 2",
+          "type": "text"
+        },
+        {
+          "key": "S11_Q03",
+          "index": 3,
+          "text": "세부 영역 11 문항 3",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "key": "S12",
+      "title": "세부 영역 12",
+      "questions": [
+        {
+          "key": "S12_Q01",
+          "index": 1,
+          "text": "세부 영역 12 문항 1",
+          "type": "text"
+        },
+        {
+          "key": "S12_Q02",
+          "index": 2,
+          "text": "세부 영역 12 문항 2",
+          "type": "text"
+        },
+        {
+          "key": "S12_Q03",
+          "index": 3,
+          "text": "세부 영역 12 문항 3",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "key": "S13",
+      "title": "세부 영역 13",
+      "questions": [
+        {
+          "key": "S13_Q01",
+          "index": 1,
+          "text": "세부 영역 13 문항 1",
+          "type": "text"
+        },
+        {
+          "key": "S13_Q02",
+          "index": 2,
+          "text": "세부 영역 13 문항 2",
+          "type": "text"
+        },
+        {
+          "key": "S13_Q03",
+          "index": 3,
+          "text": "세부 영역 13 문항 3",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "key": "S14",
+      "title": "세부 영역 14",
+      "questions": [
+        {
+          "key": "S14_Q01",
+          "index": 1,
+          "text": "세부 영역 14 문항 1",
+          "type": "text"
+        },
+        {
+          "key": "S14_Q02",
+          "index": 2,
+          "text": "세부 영역 14 문항 2",
+          "type": "text"
+        },
+        {
+          "key": "S14_Q03",
+          "index": 3,
+          "text": "세부 영역 14 문항 3",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "key": "S15",
+      "title": "세부 영역 15",
+      "questions": [
+        {
+          "key": "S15_Q01",
+          "index": 1,
+          "text": "세부 영역 15 문항 1",
+          "type": "text"
+        },
+        {
+          "key": "S15_Q02",
+          "index": 2,
+          "text": "세부 영역 15 문항 2",
+          "type": "text"
+        },
+        {
+          "key": "S15_Q03",
+          "index": 3,
+          "text": "세부 영역 15 문항 3",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "key": "S16",
+      "title": "세부 영역 16",
+      "questions": [
+        {
+          "key": "S16_Q01",
+          "index": 1,
+          "text": "세부 영역 16 문항 1",
+          "type": "text"
+        },
+        {
+          "key": "S16_Q02",
+          "index": 2,
+          "text": "세부 영역 16 문항 2",
+          "type": "text"
+        },
+        {
+          "key": "S16_Q03",
+          "index": 3,
+          "text": "세부 영역 16 문항 3",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "key": "S17",
+      "title": "세부 영역 17",
+      "questions": [
+        {
+          "key": "S17_Q01",
+          "index": 1,
+          "text": "세부 영역 17 문항 1",
+          "type": "text"
+        },
+        {
+          "key": "S17_Q02",
+          "index": 2,
+          "text": "세부 영역 17 문항 2",
+          "type": "text"
+        },
+        {
+          "key": "S17_Q03",
+          "index": 3,
+          "text": "세부 영역 17 문항 3",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "key": "S18",
+      "title": "세부 영역 18",
+      "questions": [
+        {
+          "key": "S18_Q01",
+          "index": 1,
+          "text": "세부 영역 18 문항 1",
+          "type": "text"
+        },
+        {
+          "key": "S18_Q02",
+          "index": 2,
+          "text": "세부 영역 18 문항 2",
+          "type": "text"
+        },
+        {
+          "key": "S18_Q03",
+          "index": 3,
+          "text": "세부 영역 18 문항 3",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "key": "S19",
+      "title": "세부 영역 19",
+      "questions": [
+        {
+          "key": "S19_Q01",
+          "index": 1,
+          "text": "세부 영역 19 문항 1",
+          "type": "text"
+        },
+        {
+          "key": "S19_Q02",
+          "index": 2,
+          "text": "세부 영역 19 문항 2",
+          "type": "text"
+        },
+        {
+          "key": "S19_Q03",
+          "index": 3,
+          "text": "세부 영역 19 문항 3",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "key": "S20",
+      "title": "세부 영역 20",
+      "questions": [
+        {
+          "key": "S20_Q01",
+          "index": 1,
+          "text": "세부 영역 20 문항 1",
+          "type": "text"
+        },
+        {
+          "key": "S20_Q02",
+          "index": 2,
+          "text": "세부 영역 20 문항 2",
+          "type": "text"
+        },
+        {
+          "key": "S20_Q03",
+          "index": 3,
+          "text": "세부 영역 20 문항 3",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "key": "S21",
+      "title": "세부 영역 21",
+      "questions": [
+        {
+          "key": "S21_Q01",
+          "index": 1,
+          "text": "세부 영역 21 문항 1",
+          "type": "text"
+        },
+        {
+          "key": "S21_Q02",
+          "index": 2,
+          "text": "세부 영역 21 문항 2",
+          "type": "text"
+        },
+        {
+          "key": "S21_Q03",
+          "index": 3,
+          "text": "세부 영역 21 문항 3",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "key": "S22",
+      "title": "세부 영역 22",
+      "questions": [
+        {
+          "key": "S22_Q01",
+          "index": 1,
+          "text": "세부 영역 22 문항 1",
+          "type": "text"
+        },
+        {
+          "key": "S22_Q02",
+          "index": 2,
+          "text": "세부 영역 22 문항 2",
+          "type": "text"
+        },
+        {
+          "key": "S22_Q03",
+          "index": 3,
+          "text": "세부 영역 22 문항 3",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "key": "S23",
+      "title": "세부 영역 23",
+      "questions": [
+        {
+          "key": "S23_Q01",
+          "index": 1,
+          "text": "세부 영역 23 문항 1",
+          "type": "text"
+        },
+        {
+          "key": "S23_Q02",
+          "index": 2,
+          "text": "세부 영역 23 문항 2",
+          "type": "text"
+        },
+        {
+          "key": "S23_Q03",
+          "index": 3,
+          "text": "세부 영역 23 문항 3",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "key": "S24",
+      "title": "세부 영역 24",
+      "questions": [
+        {
+          "key": "S24_Q01",
+          "index": 1,
+          "text": "세부 영역 24 문항 1",
+          "type": "text"
+        },
+        {
+          "key": "S24_Q02",
+          "index": 2,
+          "text": "세부 영역 24 문항 2",
+          "type": "text"
+        },
+        {
+          "key": "S24_Q03",
+          "index": 3,
+          "text": "세부 영역 24 문항 3",
+          "type": "text"
+        }
+      ]
+    }
+  ],
+  "rules": {
+    "selectSectionByCommonQuestionKey": "C27",
+    "maxSelectedSections": 5,
+    "minSelectedSections": 0
+  }
+}

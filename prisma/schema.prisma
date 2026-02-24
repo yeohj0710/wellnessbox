@@ -279,6 +279,8 @@ model AppUser {
   healthProviderLinks HealthProviderLink[]
   healthProviderFetchCaches HealthProviderFetchCache[]
   healthProviderFetchAttempts HealthProviderFetchAttempt[]
+  b2bEmployees B2bEmployee[]
+  b2bEmployeeAccessLogs B2bEmployeeAccessLog[]
 
   @@index([clientId])
   @@index([email])
@@ -436,6 +438,172 @@ model AppLoginTransferToken {
   expiresAt  DateTime
   consumedAt DateTime?
   createdAt  DateTime @default(now())
+}
+
+model B2bEmployee {
+  id              String   @id @default(cuid())
+  appUserId       String?
+  name            String
+  birthDate       String
+  phoneNormalized String
+  identityHash    String   @unique
+  linkedProvider  String   @default("HYPHEN_NHIS")
+  lastSyncedAt    DateTime?
+  lastViewedAt    DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now()) @updatedAt
+  appUser         AppUser? @relation(fields: [appUserId], references: [id], onDelete: SetNull)
+  healthSnapshots B2bHealthDataSnapshot[]
+  surveyResponses B2bSurveyResponse[]
+  analysisResults B2bAnalysisResult[]
+  pharmacistNotes B2bPharmacistNote[]
+  reports         B2bReport[]
+  accessLogs      B2bEmployeeAccessLog[]
+  adminActionLogs B2bAdminActionLog[]
+
+  @@index([appUserId, updatedAt])
+  @@index([name, birthDate, phoneNormalized])
+  @@index([phoneNormalized, updatedAt])
+}
+
+model B2bHealthDataSnapshot {
+  id             String   @id @default(cuid())
+  employeeId     String
+  provider       String   @default("HYPHEN_NHIS")
+  sourceMode     String   @default("hyphen")
+  rawJson        Json
+  normalizedJson Json
+  fetchedAt      DateTime
+  createdAt      DateTime @default(now())
+  employee       B2bEmployee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId, fetchedAt])
+  @@index([provider, fetchedAt])
+}
+
+model B2bSurveyTemplate {
+  id        String   @id @default(cuid())
+  version   Int      @unique
+  title     String
+  schema    Json
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  responses B2bSurveyResponse[]
+
+  @@index([isActive, version])
+}
+
+model B2bSurveyResponse {
+  id              String   @id @default(cuid())
+  employeeId      String
+  templateId      String
+  templateVersion Int
+  selectedSections String[] @default([])
+  answersJson     Json
+  submittedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now()) @updatedAt
+  employee        B2bEmployee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  template        B2bSurveyTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  answers         B2bSurveyAnswer[]
+
+  @@index([employeeId, updatedAt])
+  @@index([templateVersion, updatedAt])
+}
+
+model B2bSurveyAnswer {
+  id          String   @id @default(cuid())
+  responseId  String
+  questionKey String
+  sectionKey  String?
+  answerText  String?
+  answerValue String?
+  score       Float?
+  meta        Json?
+  createdAt   DateTime @default(now())
+  response    B2bSurveyResponse @relation(fields: [responseId], references: [id], onDelete: Cascade)
+
+  @@index([responseId, questionKey])
+  @@index([sectionKey, questionKey])
+}
+
+model B2bAnalysisResult {
+  id         String   @id @default(cuid())
+  employeeId String
+  version    Int
+  payload    Json
+  computedAt DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+  employee   B2bEmployee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, version])
+  @@index([employeeId, createdAt])
+}
+
+model B2bPharmacistNote {
+  id                String   @id @default(cuid())
+  employeeId        String
+  note              String?
+  recommendations   String?
+  cautions          String?
+  createdByAdminTag String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now()) @updatedAt
+  employee          B2bEmployee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId, updatedAt])
+}
+
+model B2bReport {
+  id          String   @id @default(cuid())
+  employeeId  String
+  variantIndex Int
+  status      String   @default("draft")
+  pageSize    String   @default("A4")
+  stylePreset String?
+  reportPayload Json
+  layoutDsl   Json?
+  exportAudit Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+  employee    B2bEmployee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, variantIndex])
+  @@index([employeeId, createdAt])
+  @@index([status, createdAt])
+}
+
+model B2bEmployeeAccessLog {
+  id        String   @id @default(cuid())
+  employeeId String?
+  appUserId String?
+  action    String
+  route     String?
+  ipHash    String?
+  userAgent String?
+  payload   Json?
+  createdAt DateTime @default(now())
+  employee  B2bEmployee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  appUser   AppUser?  @relation(fields: [appUserId], references: [id], onDelete: SetNull)
+
+  @@index([employeeId, createdAt])
+  @@index([appUserId, createdAt])
+  @@index([action, createdAt])
+}
+
+model B2bAdminActionLog {
+  id         String   @id @default(cuid())
+  employeeId String?
+  action     String
+  actorTag   String?
+  payload    Json?
+  createdAt  DateTime @default(now())
+  employee   B2bEmployee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+
+  @@index([employeeId, createdAt])
+  @@index([action, createdAt])
 }
 
 /// DB에 이미 있는 vector 테이블 유지 (drop 위험 방지)

@@ -13,6 +13,10 @@ import {
   resolveHyphenTimeoutMs,
   shouldUseGustationHeader,
 } from "./client.runtime";
+import {
+  isHyphenMockModeEnabled,
+  resolveHyphenMockResponse,
+} from "./client.mock";
 
 export class HyphenApiError extends Error {
   readonly status: number;
@@ -53,6 +57,10 @@ export async function hyphenPost<TData = Record<string, unknown>>(
   body: HyphenNhisRequestPayload,
   options: HyphenRequestOptions = {}
 ): Promise<HyphenApiResponse<TData>> {
+  if (isHyphenMockModeEnabled()) {
+    return resolveHyphenMockResponse(endpoint, body) as HyphenApiResponse<TData>;
+  }
+
   const authHeaders = resolveHyphenAuthHeaders();
   const headers = new Headers({
     "Content-Type": "application/json",

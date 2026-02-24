@@ -5,6 +5,10 @@ import getSession from "@/lib/session";
 import { ensureClient } from "@/lib/server/client";
 import { normalizePhone } from "@/lib/otp";
 import { CLIENT_COOKIE_NAME, isValidClientIdValue } from "@/lib/shared/client-id";
+import {
+  B2B_EMPLOYEE_TOKEN_COOKIE,
+  verifyB2bEmployeeAccessToken,
+} from "@/lib/b2b/employee-token";
 
 type GuardSuccess<T> = { ok: true; data: T };
 type GuardFailure = { ok: false; response: NextResponse };
@@ -257,4 +261,30 @@ export async function requireCustomerOrderAccess(
   if (!ownsById && !ownsByPhone) return unauthorized();
 
   return { ok: true, data: { order, appUserId: appUser.id } };
+}
+
+export async function requireB2bEmployeeToken(): Promise<
+  GuardResult<{ employeeId: string; identityHash: string }>
+> {
+  const cookieStore = await nextCookies();
+  const token = cookieStore.get(B2B_EMPLOYEE_TOKEN_COOKIE)?.value;
+  const payload = verifyB2bEmployeeAccessToken(token);
+  if (!payload) return unauthorized("임직원 인증이 필요합니다.");
+
+  const employee = await db.b2bEmployee.findUnique({
+    where: { id: payload.employeeId },
+    select: { id: true, identityHash: true },
+  });
+  if (!employee) return unauthorized("임직원 정보를 찾을 수 없습니다.");
+  if (employee.identityHash !== payload.identityHash) {
+    return unauthorized("임직원 인증이 만료되었습니다.");
+  }
+
+  return {
+    ok: true,
+    data: {
+      employeeId: employee.id,
+      identityHash: employee.identityHash,
+    },
+  };
 }
