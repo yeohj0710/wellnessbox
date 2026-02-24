@@ -2,18 +2,20 @@
 
 import React from "react";
 import type { NhisAiSummary } from "../types";
-import { HEALTH_LINK_COPY } from "../copy";
-import type { LatestCheckupMeta, MedicationDigest } from "../utils";
+import {
+  resolveMetricDisplayValue,
+  type LatestCheckupMeta,
+  type MedicationDigest,
+} from "../utils";
 import styles from "../HealthLinkClient.module.css";
 import { HealthLinkCheckupSection } from "./HealthLinkCheckupSection";
 import { HealthLinkMedicationOptionalSection } from "./HealthLinkMedicationOptionalSection";
-import { HealthLinkSummaryHero, type SummaryInsightItem } from "./HealthLinkSummaryHero";
 import {
   buildMedicationAnalysisModel,
-  buildMetricInsightCards,
   buildMetricGroups,
   buildMetricTabs,
   normalizeCompactText,
+  shouldHideMetricTone,
   type LatestCheckupRow,
   type MetricGroupId,
 } from "./HealthLinkResultSection.helpers";
@@ -25,45 +27,43 @@ type HealthLinkResultContentProps = {
   aiSummary: NhisAiSummary | null;
 };
 
-function toMetricKey(metric: string | null | undefined) {
-  if (!metric) return "";
-  return metric.replace(/\s+/g, "").toLowerCase();
-}
-
 export function HealthLinkResultContent({
   latestCheckupRows,
   latestCheckupMeta,
   medicationDigest,
-  aiSummary,
+  aiSummary: _aiSummary,
 }: HealthLinkResultContentProps) {
-  const hasCheckupRows = latestCheckupRows.length > 0;
+  const sanitizedCheckupRows = React.useMemo(
+    () =>
+      latestCheckupRows.filter((row) => {
+        const metric = typeof row.metric === "string" ? row.metric.trim() : "";
+        if (!metric || shouldHideMetricTone(metric)) return false;
+        return resolveMetricDisplayValue(row) !== null;
+      }),
+    [latestCheckupRows]
+  );
+  const hasCheckupRows = sanitizedCheckupRows.length > 0;
   const hasMedicationRows = medicationDigest.totalRows > 0;
   const showMedicationSection = hasMedicationRows || !hasCheckupRows;
-  const cautionRows = latestCheckupRows.filter(
+  const cautionRows = sanitizedCheckupRows.filter(
     (row) => row.statusTone === "caution"
   );
-  const topMedicines = medicationDigest.topMedicines.slice(0, 4);
-  const recentMedications = medicationDigest.recentMedications.slice(0, 4);
+  const topMedicines = medicationDigest.topMedicines.slice(0, 3);
+  const recentMedications = medicationDigest.recentMedications.slice(0, 3);
   const medicationOnlyMode = !hasCheckupRows && hasMedicationRows;
   const medicationAnalysis = React.useMemo(
     () => buildMedicationAnalysisModel(medicationDigest),
     [medicationDigest]
   );
 
-  const hasAiSummary =
-    !!aiSummary &&
-    (aiSummary.summary.trim().length > 0 ||
-      aiSummary.highlights.length > 0 ||
-      aiSummary.nextSteps.length > 0);
-
   const groupedRows = React.useMemo(
-    () => buildMetricGroups(latestCheckupRows),
-    [latestCheckupRows]
+    () => buildMetricGroups(sanitizedCheckupRows),
+    [sanitizedCheckupRows]
   );
 
   const metricTabs = React.useMemo(
-    () => buildMetricTabs(groupedRows, latestCheckupRows.length),
-    [groupedRows, latestCheckupRows.length]
+    () => buildMetricTabs(groupedRows, sanitizedCheckupRows.length),
+    [groupedRows, sanitizedCheckupRows.length]
   );
 
   const [activeGroup, setActiveGroup] = React.useState<MetricGroupId>("all");
@@ -78,54 +78,8 @@ export function HealthLinkResultContent({
     setShowAllMetrics(false);
   }, [activeGroup]);
 
-  const summaryInsights = React.useMemo<SummaryInsightItem[]>(() => {
-    const aiInsights =
-      aiSummary?.metricInsights
-        ?.map((item) => {
-          const metric = item?.metric?.trim();
-          const value = item?.value?.trim();
-          const interpretation = item?.interpretation?.trim();
-          const tip = item?.tip?.trim();
-          if (!metric || !value || !interpretation || !tip) return null;
-
-          return {
-            metric,
-            value,
-            interpretation,
-            tip,
-            tone:
-              cautionRows.some(
-                (row) =>
-                  (row.metric ?? "").replace(/\s+/g, "").toLowerCase() ===
-                  metric.replace(/\s+/g, "").toLowerCase()
-              ) && hasCheckupRows
-                ? ("caution" as const)
-                : ("normal" as const),
-          };
-        })
-        .filter(
-          (item): item is NonNullable<typeof item> => item !== null
-        ) ?? [];
-
-    if (aiInsights.length > 0) return aiInsights.slice(0, 3);
-
-    const sourceRows = cautionRows.length > 0 ? cautionRows : latestCheckupRows;
-    return buildMetricInsightCards(sourceRows, 3);
-  }, [aiSummary?.metricInsights, cautionRows, hasCheckupRows, latestCheckupRows]);
-
-  const summaryHeadline =
-    hasAiSummary && aiSummary
-      ? aiSummary.headline
-      : HEALTH_LINK_COPY.result.summaryFallbackHeadline;
-  const summaryBody =
-    hasAiSummary && aiSummary
-      ? aiSummary.summary
-      : HEALTH_LINK_COPY.result.summaryFallbackBody;
-  const summaryRiskLevel =
-    hasAiSummary && aiSummary ? aiSummary.riskLevel : "unknown";
-
   const visibleRows =
-    activeGroup === "all" ? latestCheckupRows : groupedRows[activeGroup];
+    activeGroup === "all" ? sanitizedCheckupRows : groupedRows[activeGroup];
   const prioritizedRows =
     activeGroup === "all"
       ? [
@@ -134,29 +88,10 @@ export function HealthLinkResultContent({
         ]
       : visibleRows;
 
-  const summaryInsightMetricKeys = React.useMemo(() => {
-    return new Set(
-      summaryInsights
-        .map((item) => toMetricKey(item.metric))
-        .filter((metricKey) => metricKey.length > 0)
-    );
-  }, [summaryInsights]);
-
-  const collapsedRows = React.useMemo(() => {
-    if (activeGroup !== "all") return prioritizedRows;
-    const filtered = prioritizedRows.filter((row) => {
-      const metricKey = toMetricKey(
-        typeof row.metric === "string" ? row.metric : null
-      );
-      return metricKey ? !summaryInsightMetricKeys.has(metricKey) : true;
-    });
-    return filtered.length > 0 ? filtered : prioritizedRows;
-  }, [activeGroup, prioritizedRows, summaryInsightMetricKeys]);
-
   const metricVisibleCount = 8;
   const metricRows = showAllMetrics
     ? prioritizedRows
-    : collapsedRows.slice(0, metricVisibleCount);
+    : prioritizedRows.slice(0, metricVisibleCount);
   const hiddenMetricCount = Math.max(prioritizedRows.length - metricRows.length, 0);
 
   const topMedicineLine = topMedicines
@@ -165,18 +100,6 @@ export function HealthLinkResultContent({
 
   return (
     <>
-      <HealthLinkSummaryHero
-        checkupCount={latestCheckupRows.length}
-        cautionCount={cautionRows.length}
-        medicationCount={medicationDigest.totalRows}
-        showCheckupCount={hasCheckupRows}
-        showMedicationCount={showMedicationSection}
-        summaryHeadline={summaryHeadline}
-        summaryBody={summaryBody}
-        summaryRiskLevel={summaryRiskLevel}
-        summaryInsights={summaryInsights}
-      />
-
       {hasCheckupRows ? (
         <HealthLinkCheckupSection
           latestCheckupMeta={latestCheckupMeta}

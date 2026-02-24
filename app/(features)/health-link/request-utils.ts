@@ -10,7 +10,11 @@ import { NHIS_ERR_CODE_LOGIN_SESSION_EXPIRED } from "./constants";
 import { HEALTH_LINK_COPY } from "./copy";
 import { buildForceRefreshCooldownMessage } from "./fetchClientPolicy";
 import type { ActionKind, NhisActionResponse, NhisFetchFailure } from "./types";
-import { hasNhisSessionExpiredFailure, parseErrorMessage } from "./utils";
+import {
+  hasNhisSessionExpiredFailure,
+  isNhisSessionExpiredError,
+  parseErrorMessage,
+} from "./utils";
 
 type BudgetLike = {
   windowHours?: number;
@@ -47,6 +51,7 @@ export function resolveActionErrorMessage(
   const errCode = payload.errCd?.trim() || null;
   if (
     errCode === NHIS_ERR_CODE_LOGIN_SESSION_EXPIRED ||
+    isNhisSessionExpiredError(payload.errCd, payload.errMsg || payload.error) ||
     hasNhisSessionExpiredFailure(payload.failed ?? [])
   ) {
     return HEALTH_LINK_COPY.hook.sessionExpiredDetected;

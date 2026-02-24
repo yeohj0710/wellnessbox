@@ -4,7 +4,8 @@ import {
 } from "./constants";
 import { parseErrorMessage } from "./utils-format";
 
-const SESSION_EXPIRED_MESSAGE_PATTERN = /세션이 만료|다시 로그인/i;
+const SESSION_EXPIRED_MESSAGE_PATTERN =
+  /세션이 만료|다시 로그인|토큰 유효 시간 만료|토큰 만료|token expired|expired token/i;
 
 export function isNhisSessionExpiredError(errCd?: string | null, errMsg?: string | null) {
   if ((errCd || "").trim().toUpperCase() === NHIS_ERR_CODE_LOGIN_SESSION_EXPIRED) return true;

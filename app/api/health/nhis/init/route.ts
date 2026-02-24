@@ -95,32 +95,28 @@ export async function POST(req: Request) {
     mobileNo: input.mobileNo,
   });
   const requestDefaults = buildNhisRequestDefaults();
-  const canUseIdentityReplay =
-    existingLink?.lastIdentityHash === identity.identityHash;
-  const replayableSummaryCache = canUseIdentityReplay
-    ? (
-        await Promise.all(
-          SUMMARY_CACHE_TARGET_SETS.map((targets) =>
-            getLatestNhisFetchCacheByIdentity({
-              appUserId: auth.data.appUserId,
-              identityHash: identity.identityHash,
-              targets: [...targets],
-              yearLimit: SUMMARY_CACHE_YEAR_LIMIT,
-              subjectType: requestDefaults.subjectType,
-            })
-          )
+  const replayableSummaryCache =
+    (
+      await Promise.all(
+        SUMMARY_CACHE_TARGET_SETS.map((targets) =>
+          getLatestNhisFetchCacheByIdentity({
+            appUserId: auth.data.appUserId,
+            identityHash: identity.identityHash,
+            targets: [...targets],
+            yearLimit: SUMMARY_CACHE_YEAR_LIMIT,
+            subjectType: requestDefaults.subjectType,
+          })
         )
-      ).find((item) => item !== null) ?? null
-    : null;
-  if (canUseIdentityReplay && replayableSummaryCache) {
+      )
+    ).find((item) => item !== null) ?? null;
+  if (replayableSummaryCache) {
     await Promise.all([
       upsertNhisLink(auth.data.appUserId, {
         linked: true,
         loginMethod: "EASY",
         loginOrgCd,
         lastIdentityHash: identity.identityHash,
-        lastLinkedAt:
-          existingLink?.lastLinkedAt ?? replayableSummaryCache.fetchedAt,
+        lastLinkedAt: new Date(),
         lastErrorCode: null,
         lastErrorMessage: null,
       }),

@@ -15,7 +15,11 @@ import {
   resolveActionErrorMessage,
   resolveActionTimeoutMessage,
 } from "./request-utils";
-import { hasNhisSessionExpiredFailure, readJson } from "./utils";
+import {
+  hasNhisSessionExpiredFailure,
+  isNhisSessionExpiredError,
+  readJson,
+} from "./utils";
 
 type RunRequestOptions<T extends NhisActionResponse | NhisFetchResponse> = {
   kind: Exclude<ActionKind, null>;
@@ -28,7 +32,7 @@ type RunRequestOptions<T extends NhisActionResponse | NhisFetchResponse> = {
 
 type UseNhisActionRequestInput = {
   canRequest: boolean;
-  loadStatus: () => Promise<void>;
+  loadStatus: (options?: { preserveError?: boolean }) => Promise<void>;
   setActionLoading: (value: ActionKind) => void;
   setActionNotice: (value: string | null) => void;
   setActionError: (value: string | null) => void;
@@ -79,9 +83,13 @@ export function useNhisActionRequest({
           const hasSessionExpiredFailure = hasNhisSessionExpiredFailure(
             responseLike.failed ?? []
           );
+          const hasSessionExpiredError = isNhisSessionExpiredError(
+            responseLike.errCd,
+            responseLike.errMsg || responseLike.error
+          );
           const errCode =
             responseLike.errCd?.trim() ||
-            (hasSessionExpiredFailure
+            (hasSessionExpiredFailure || hasSessionExpiredError
               ? NHIS_ERR_CODE_LOGIN_SESSION_EXPIRED
               : null) ||
             firstFailedCode;
@@ -102,7 +110,7 @@ export function useNhisActionRequest({
         if (error instanceof DOMException && error.name === "AbortError") {
           setActionErrorCode("CLIENT_TIMEOUT");
           setActionError(resolveActionTimeoutMessage(options.kind));
-          void loadStatus();
+          void loadStatus({ preserveError: true });
           return;
         }
         setActionError(error instanceof Error ? error.message : String(error));

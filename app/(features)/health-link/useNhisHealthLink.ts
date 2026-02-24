@@ -30,6 +30,30 @@ import {
 } from "./useNhisHealthLink.helpers";
 import { useNhisSummaryAutoFetch } from "./useNhisSummaryAutoFetch";
 import { useNhisActionRequest } from "./useNhisActionRequest";
+import {
+  clearLocalNhisFetchData,
+  restoreLocalNhisFetchData,
+  saveLocalNhisFetchData,
+} from "./local-fetch-cache";
+
+type LoadStatusOptions = {
+  preserveError?: boolean;
+};
+
+function buildFallbackStatus(): NonNullable<NhisStatusResponse["status"]> {
+  return {
+    linked: false,
+    provider: "HYPHEN_NHIS",
+    loginMethod: null,
+    loginOrgCd: null,
+    lastLinkedAt: null,
+    lastFetchedAt: null,
+    lastError: null,
+    hasStepData: false,
+    hasCookieData: false,
+    pendingAuthReady: false,
+  };
+}
 
 export function useNhisHealthLink() {
   const [status, setStatus] = useState<NhisStatusResponse["status"]>();
@@ -47,8 +71,10 @@ export function useNhisHealthLink() {
   const [fetched, setFetched] = useState<NhisFetchResponse["data"] | null>(
     null
   );
+  const [fetchedFromLocalCache, setFetchedFromLocalCache] = useState(false);
   const [fetchFailures, setFetchFailures] = useState<NhisFetchFailure[]>([]);
   const fetchInFlightRef = useRef(false);
+  const statusLoadSeqRef = useRef(0);
 
   const summaryFetchBlocked = resolveSummaryFetchBlocked(status);
 
@@ -60,26 +86,47 @@ export function useNhisHealthLink() {
     ? resolveSummaryFetchBlockedMessage(status)
     : null;
 
-  const loadStatus = useCallback(async () => {
-    setStatusError(null);
+  const patchStatus = useCallback(
+    (patch: Partial<NonNullable<NhisStatusResponse["status"]>>) => {
+      setStatus((prev) => ({
+        ...(prev ?? buildFallbackStatus()),
+        ...patch,
+      }));
+    },
+    []
+  );
+
+  const loadStatus = useCallback(async (options?: LoadStatusOptions) => {
+    const preserveError = options?.preserveError === true;
+    const requestSeq = ++statusLoadSeqRef.current;
+    if (!preserveError) {
+      setStatusError(null);
+    }
     try {
       const res = await fetch("/api/health/nhis/status", {
         method: "GET",
         cache: "no-store",
       });
       const data = await readJson<NhisStatusResponse>(res);
+      if (requestSeq !== statusLoadSeqRef.current) return;
       if (!res.ok || !data.ok) {
-        setStatusError(
-          parseErrorMessage(
-            data.error,
-            HEALTH_LINK_COPY.hook.statusLoadFallback
-          )
-        );
+        if (!preserveError) {
+          setStatusError(
+            parseErrorMessage(
+              data.error,
+              HEALTH_LINK_COPY.hook.statusLoadFallback
+            )
+          );
+        }
         return;
       }
       setStatus(data.status);
+      setStatusError(null);
     } catch (error) {
-      setStatusError(error instanceof Error ? error.message : String(error));
+      if (requestSeq !== statusLoadSeqRef.current) return;
+      if (!preserveError) {
+        setStatusError(error instanceof Error ? error.message : String(error));
+      }
     }
   }, []);
 
@@ -99,7 +146,7 @@ export function useNhisHealthLink() {
   const applyFetchFailure = useCallback(
     async (payload: NhisFetchResponse) => {
       setFetchFailures(payload.failed ?? []);
-      await loadStatus();
+      await loadStatus({ preserveError: true });
     },
     [loadStatus]
   );
@@ -107,12 +154,42 @@ export function useNhisHealthLink() {
   const applyFetchSuccess = useCallback(
     async (payload: NhisFetchResponse, messages: FetchMessages) => {
       setFetched(payload.data ?? null);
+      setFetchedFromLocalCache(false);
       setFetchFailures(payload.failed ?? []);
       setActionNotice(buildFetchNotice(payload, messages));
-      await loadStatus();
+      setStatusError(null);
+      saveLocalNhisFetchData({
+        data: payload.data ?? null,
+        fetchedAt: payload.cache?.fetchedAt ?? null,
+      });
+      await loadStatus({ preserveError: true });
     },
     [loadStatus]
   );
+
+  const restoreFetchedFromLocalCache = useCallback(
+    (expectedFetchedAt?: string | null) => {
+      const restored = restoreLocalNhisFetchData({ expectedFetchedAt });
+      if (!restored) return false;
+      setFetched(restored);
+      setFetchedFromLocalCache(true);
+      setFetchFailures([]);
+      return true;
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (!status?.linked) return;
+    if (fetched !== null) return;
+    if (!status.lastFetchedAt) return;
+    restoreFetchedFromLocalCache(status.lastFetchedAt);
+  }, [
+    fetched,
+    restoreFetchedFromLocalCache,
+    status?.lastFetchedAt,
+    status?.linked,
+  ]);
 
   const runSummaryFetch = useCallback(async () => {
     if (fetchInFlightRef.current) return;
@@ -160,6 +237,7 @@ export function useNhisHealthLink() {
     actionLoading,
     status,
     fetched,
+    fetchedFromLocalCache,
     summaryFetchBlocked,
     actionErrorCode,
     actionError,
@@ -193,16 +271,53 @@ export function useNhisHealthLink() {
       },
       onSuccess: async (payload) => {
         setFetchFailures([]);
-        setFetched(null);
+        const restoredFromLocal =
+          payload.linked && payload.reused
+            ? restoreFetchedFromLocalCache(status?.lastFetchedAt ?? null)
+            : false;
+        if (!restoredFromLocal) {
+          setFetched(null);
+          setFetchedFromLocalCache(false);
+        }
         setActionNotice(resolveInitSuccessNotice(payload));
+        setStatusError(null);
+        if (payload.linked) {
+          patchStatus({
+            linked: true,
+            loginMethod: "EASY",
+            loginOrgCd: NHIS_LOGIN_ORG,
+            pendingAuthReady: false,
+            lastLinkedAt: new Date().toISOString(),
+            lastError: null,
+          });
+        } else {
+          patchStatus({
+            linked: false,
+            loginMethod: "EASY",
+            loginOrgCd: NHIS_LOGIN_ORG,
+            pendingAuthReady: true,
+            hasStepData: true,
+            lastError: null,
+          });
+        }
         if (payload.linked) requestAutoFetchAfterSign();
-        await loadStatus();
+        await loadStatus({ preserveError: true });
       },
       onFailure: async () => {
-        await loadStatus();
+        await loadStatus({ preserveError: true });
       },
     });
-  }, [loadStatus, mobileNo, requestAutoFetchAfterSign, resNm, resNo, runRequest]);
+  }, [
+    loadStatus,
+    mobileNo,
+    patchStatus,
+    requestAutoFetchAfterSign,
+    resNm,
+    resNo,
+    restoreFetchedFromLocalCache,
+    runRequest,
+    status?.lastFetchedAt,
+  ]);
 
   const handleSign = useCallback(async () => {
     await runRequest<NhisActionResponse>({
@@ -212,14 +327,23 @@ export function useNhisHealthLink() {
       onSuccess: async (payload) => {
         setFetchFailures([]);
         setActionNotice(resolveSignSuccessNotice(payload));
+        setStatusError(null);
+        patchStatus({
+          linked: true,
+          pendingAuthReady: false,
+          loginMethod: "EASY",
+          loginOrgCd: NHIS_LOGIN_ORG,
+          lastLinkedAt: new Date().toISOString(),
+          lastError: null,
+        });
         requestAutoFetchAfterSign();
-        await loadStatus();
+        await loadStatus({ preserveError: true });
       },
       onFailure: async () => {
-        await loadStatus();
+        await loadStatus({ preserveError: true });
       },
     });
-  }, [loadStatus, requestAutoFetchAfterSign, runRequest]);
+  }, [loadStatus, patchStatus, requestAutoFetchAfterSign, runRequest]);
 
   const handleFetch = useCallback(async () => {
     await runSummaryFetch();
@@ -232,15 +356,27 @@ export function useNhisHealthLink() {
       fallbackError: HEALTH_LINK_COPY.hook.unlinkFallback,
       onSuccess: async () => {
         setFetched(null);
+        setFetchedFromLocalCache(false);
+        clearLocalNhisFetchData();
         setFetchFailures([]);
         setActionNotice(HEALTH_LINK_COPY.hook.unlinkNotice);
-        await loadStatus();
+        setStatusError(null);
+        patchStatus({
+          linked: false,
+          loginMethod: null,
+          loginOrgCd: null,
+          pendingAuthReady: false,
+          hasStepData: false,
+          hasCookieData: false,
+          lastError: null,
+        });
+        await loadStatus({ preserveError: true });
       },
       onFailure: async () => {
-        await loadStatus();
+        await loadStatus({ preserveError: true });
       },
     });
-  }, [loadStatus, runRequest]);
+  }, [loadStatus, patchStatus, runRequest]);
 
   const showHealthInPrereqGuide =
     actionErrorCode === NHIS_ERR_CODE_HEALTHIN_REQUIRED ||

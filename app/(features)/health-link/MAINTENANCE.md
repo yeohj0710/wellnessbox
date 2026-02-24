@@ -39,8 +39,9 @@ This file is for engineers/agents who continue work on `/health-link`.
 
 1. Keep default summary fetch low-cost:
    - `checkupOverview`, `medication`.
-2. Never request medication in bulk blindly:
-   - latest-first probing must stay in `fetch-executor`.
+2. Keep provider fanout minimal:
+   - summary path should call `checkupOverview` once and `medication` once.
+   - avoid multi-window retry fanout in default flow.
 3. Do not block user flow on AI summary errors:
    - AI enrichment must be best-effort and fallback-safe.
 4. Keep cache-first behavior:

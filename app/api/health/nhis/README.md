@@ -21,7 +21,8 @@
   - Request policy helpers are isolated in `lib/server/hyphen/fetch-request-policy.ts`.
   - Fetch flow relies on persisted linked credentials only; it does not consume pending easy-auth session state.
 - `POST /api/health/nhis/unlink`
-  - Clears link info and fetch cache.
+  - Clears linked auth/session state.
+  - Keeps DB fetch cache so the same identity can be relinked via cache replay on next `init`.
 
 ## Access Model
 
@@ -36,15 +37,19 @@
 
 ```json
 {
-  "targets": ["checkupOverview"],
+  "targets": ["checkupOverview", "medication"],
   "yearLimit": 1,
   "forceRefresh": false
 }
 ```
 
-- `targets` optional; default is `["checkupOverview"]`.
+- `targets` optional; default is `["checkupOverview", "medication"]`.
 - `yearLimit` optional; server clamps to policy range.
 - `forceRefresh` optional; when `true`, server attempts fresh fetch but may reuse recent cache under cost-guard policy.
+- Summary default fanout is fixed to low-cost pair:
+  - one checkup overview call
+  - one medication call
+  - no `medical` call in the default path.
 
 ## Fetch Cost Guardrails
 
@@ -133,6 +138,10 @@
   - custom window: `npm run maintenance:nhis-report-attempts -- --window-hours=72 --top-users=30`
 - Smoke-check request policy invariants:
   - `npm run maintenance:nhis-smoke-policy`
+- Smoke-check summary slim payload invariants:
+  - `npm run maintenance:nhis-smoke-fetch-slim`
+- External testbed runbook:
+  - `app/api/health/nhis/TESTBED_FETCH_SLIM_RUNBOOK.md`
 
 ## Troubleshooting
 

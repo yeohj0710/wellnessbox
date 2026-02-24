@@ -39,7 +39,10 @@ export type NhisFetchRoutePayload = {
   [key: string]: unknown;
 };
 
-export const DEFAULT_NHIS_FETCH_TARGETS: NhisFetchTarget[] = ["checkupOverview"];
+export const DEFAULT_NHIS_FETCH_TARGETS: NhisFetchTarget[] = [
+  "checkupOverview",
+  "medication",
+];
 
 // Cost guard defaults: keep detailed fetch narrow unless explicitly expanded later.
 export const DEFAULT_DETAIL_YEAR_LIMIT = 1;

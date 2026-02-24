@@ -1,5 +1,5 @@
 import type { NhisDataRow, NhisPrimitive } from "./types";
-import { mapFieldLabel } from "./utils-format";
+import { formatDataCell, mapFieldLabel } from "./utils-format";
 import {
   isCheckupCautionText,
   isCheckupNormalText,
@@ -18,6 +18,16 @@ const CHECKUP_METRIC_INCLUDED_KEY_PATTERN =
 const CHECKUP_METRIC_NUMERIC_VALUE_PATTERN =
   /^-?\d+(?:,\d{3})*(?:\.\d+)?(?:\s?(%|kg|cm|mmhg|mg\/dl|g\/dl|bpm|kg\/m2))?$/i;
 const CHECKUP_METRIC_BP_VALUE_PATTERN = /^\d{2,3}\s*\/\s*\d{2,3}$/;
+const CHECKUP_METRIC_BP_COMPLETE_PATTERN =
+  /^(\d{2,3})\s*\/\s*(\d{2,3})(?:\s*mmhg)?$/i;
+const CHECKUP_METRIC_BP_INCOMPLETE_PATTERN =
+  /^(?:\/\s*\d{2,3}|\d{2,3}\s*\/)(?:\s*mmhg)?$/i;
+const CHECKUP_METRIC_UNIT_ONLY_PATTERN =
+  /^(?:kg\/m2|kg\/m²|kg\/㎡|mmhg|mg\/dl|g\/dl|bpm|cm|kg|%|mmol\/l|회\/분|㎎\/㎗|㎜hg)$/i;
+const CHECKUP_METRIC_VALUE_HAS_UNIT_PATTERN =
+  /(mmhg|mg\/dl|g\/dl|kg\/m2|kg\/m²|kg\/㎡|mmol\/l|bpm|cm|kg|%|회\/분|㎎\/㎗|㎜hg)/i;
+const CHECKUP_BLOOD_PRESSURE_METRIC_PATTERN =
+  /(혈압|수축기|이완기|pressure|bp)/i;
 
 
 const PRESERVED_SOURCE_KEYS = [
@@ -100,6 +110,125 @@ function primitiveToText(value: NhisPrimitive | undefined) {
   if (value == null) return null;
   const text = String(value).trim();
   return text.length > 0 ? text : null;
+}
+
+function toDisplayText(value: unknown) {
+  const text = formatDataCell(value);
+  if (!text || text === "-") return null;
+  const normalized = text.replace(/\s+/g, " ").trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function normalizeCompactText(value: string) {
+  return value.replace(/\s+/g, "").trim();
+}
+
+function isUnitOnlyMetricText(value: string) {
+  return CHECKUP_METRIC_UNIT_ONLY_PATTERN.test(normalizeCompactText(value));
+}
+
+function hasMetricNumericToken(value: string) {
+  if (CHECKUP_METRIC_BP_COMPLETE_PATTERN.test(normalizeCompactText(value))) {
+    return true;
+  }
+  return parseNumberFromText(value) !== null;
+}
+
+function maybeAppendMetricUnit(value: string, unit: string | null) {
+  if (!unit) return value;
+  if (!hasMetricNumericToken(value)) return value;
+  if (CHECKUP_METRIC_VALUE_HAS_UNIT_PATTERN.test(value)) return value;
+  return `${value} ${unit}`.trim();
+}
+
+function resolveMetricUnitText(row: NhisDataRow) {
+  const unit = toDisplayText(row.unit);
+  if (!unit) return null;
+  return normalizeCompactText(unit);
+}
+
+function normalizeBloodPressureDisplay(value: string, unit: string | null) {
+  const compact = normalizeCompactText(value);
+  const match = compact.match(CHECKUP_METRIC_BP_COMPLETE_PATTERN);
+  if (!match) return null;
+  const systolic = Number(match[1]);
+  const diastolic = Number(match[2]);
+  if (!Number.isFinite(systolic) || !Number.isFinite(diastolic)) return null;
+  const base = `${systolic}/${diastolic}`;
+  return maybeAppendMetricUnit(base, unit || "mmHg");
+}
+
+function toIntegerText(value: unknown) {
+  const text = toDisplayText(value);
+  if (!text) return null;
+  const parsed = parseNumberFromText(text);
+  if (parsed === null || !Number.isFinite(parsed)) return null;
+  return String(Math.round(parsed));
+}
+
+function resolveBloodPressureValue(row: NhisDataRow, unit: string | null) {
+  const candidates = [
+    row.itemData,
+    row.value,
+    row.result,
+    row.bp,
+    row.bloodPressure,
+  ]
+    .map((item) => toDisplayText(item))
+    .filter((item): item is string => Boolean(item));
+
+  for (const candidate of candidates) {
+    const normalized = normalizeBloodPressureDisplay(candidate, unit);
+    if (normalized) return normalized;
+  }
+
+  const systolic = [
+    row.systolic,
+    row.maxBp,
+    row.highBp,
+    row.highBloodPressure,
+  ]
+    .map((item) => toIntegerText(item))
+    .find((item): item is string => Boolean(item));
+  const diastolic = [
+    row.diastolic,
+    row.minBp,
+    row.lowBp,
+    row.lowBloodPressure,
+  ]
+    .map((item) => toIntegerText(item))
+    .find((item): item is string => Boolean(item));
+
+  if (!systolic || !diastolic) return null;
+  return maybeAppendMetricUnit(`${systolic}/${diastolic}`, unit || "mmHg");
+}
+
+export function resolveMetricDisplayValue(row: NhisDataRow): string | null {
+  const metric = primitiveToText(asPrimitiveOrUndefined(row.metric)) ?? "";
+  const unit = resolveMetricUnitText(row);
+
+  if (CHECKUP_BLOOD_PRESSURE_METRIC_PATTERN.test(metric)) {
+    return resolveBloodPressureValue(row, unit);
+  }
+
+  const candidates = [row.itemData, row.value, row.result]
+    .map((item) => toDisplayText(item))
+    .filter((item): item is string => Boolean(item))
+    .filter(
+      (item) => !CHECKUP_METRIC_BP_INCOMPLETE_PATTERN.test(normalizeCompactText(item))
+    );
+
+  const numericCandidate = candidates.find(
+    (item) => hasMetricNumericToken(item) && !isUnitOnlyMetricText(item)
+  );
+  if (numericCandidate) {
+    return maybeAppendMetricUnit(numericCandidate, unit);
+  }
+
+  const fallbackCandidate = candidates.find((item) => !isUnitOnlyMetricText(item));
+  if (fallbackCandidate) return fallbackCandidate;
+
+  return null;
 }
 
 function pickFirstText(row: NhisDataRow, keys: string[]) {
@@ -374,7 +503,7 @@ export function summarizeMedicationRows(rows: NhisDataRow[]): MedicationDigest {
         parseSortableDateScore(right.date) - parseSortableDateScore(left.date) ||
         left.medicine.localeCompare(right.medicine, "ko")
     )
-    .slice(0, 6);
+    .slice(0, 3);
 
   return {
     totalRows: rows.length,

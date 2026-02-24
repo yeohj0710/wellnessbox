@@ -23,13 +23,10 @@ import {
   mergeListPayloads,
   normalizeYearLimit,
   parseYears,
-  resolveMedicationProbeWindows,
   type DetailKeyPair,
   type RequestDefaultsLike,
 } from "@/lib/server/hyphen/fetch-executor.helpers";
-import { normalizeCheckupOverviewPayload } from "@/lib/server/hyphen/normalize-checkup";
 import { normalizeNhisPayload } from "@/lib/server/hyphen/normalize";
-import { normalizeTreatmentPayload } from "@/lib/server/hyphen/normalize-treatment";
 import {
   getErrorCodeMessage,
   logHyphenError,
@@ -57,52 +54,9 @@ function getErrorBody(error: unknown): unknown | null {
 function emptyPayload(): HyphenApiResponse {
   return { data: {} };
 }
-
-function hasMeaningfulCheckupRow(payload: HyphenApiResponse) {
-  const checkupRows = normalizeCheckupOverviewPayload(payload);
-  return checkupRows.some((row) => {
-    const metric = typeof row.metric === "string" ? row.metric.trim() : "";
-    const itemName = typeof row.itemName === "string" ? row.itemName.trim() : "";
-    const itemData = row.itemData == null ? "" : String(row.itemData).trim();
-    const result = row.result == null ? "" : String(row.result).trim();
-    return metric || itemName || itemData || result;
-  });
-}
-
-function hasMedicationRow(payload: HyphenApiResponse) {
-  return normalizeTreatmentPayload(payload).list.length > 0;
-}
-
-function hasNoDataSignal(reason: unknown) {
-  const info = getErrorCodeMessage(reason);
-  const merged = `${info.code ?? ""} ${info.message ?? ""}`.toLowerCase();
-  return (
-    merged.includes("no data") ||
-    merged.includes("조회 결과") ||
-    merged.includes("조회결과") ||
-    merged.includes("내역이 없습니다") ||
-    merged.includes("데이터가 없습니다")
-  );
-}
-
 async function fetchLatestMedicationPayload(input: {
   detailPayload: HyphenNhisRequestPayload;
-  requestDefaults: RequestDefaultsLike;
 }) {
-  const windows = resolveMedicationProbeWindows(input.requestDefaults);
-  let lastPayload: HyphenApiResponse | null = null;
-
-  for (const window of windows) {
-    const payload = await fetchMedicationInfo({
-      ...input.detailPayload,
-      ...(window.fromDate ? { fromDate: window.fromDate } : {}),
-      ...(window.toDate ? { toDate: window.toDate } : {}),
-    });
-    lastPayload = payload;
-    if (hasMedicationRow(payload)) return payload;
-  }
-
-  if (lastPayload) return lastPayload;
   return fetchMedicationInfo(input.detailPayload);
 }
 
@@ -161,73 +115,19 @@ export async function executeNhisFetch(
     () => fetchHealthAge(input.basePayload),
     "건강 나이 정보를 불러오지 못했습니다."
   );
-
-  const needsCheckupOverview = input.targets.includes("checkupOverview");
-  const needsMedication = input.targets.includes("medication");
-  if (needsCheckupOverview && needsMedication) {
-    independentJobs.push(
-      (async () => {
-        let shouldFallbackToMedication = false;
-        let pendingCheckupError: unknown | null = null;
-
-        try {
-          const checkupPayload = await fetchCheckupOverview(input.basePayload);
-          successful.set("checkupOverview", checkupPayload);
-          shouldFallbackToMedication = !hasMeaningfulCheckupRow(checkupPayload);
-        } catch (error) {
-          pendingCheckupError = error;
-          shouldFallbackToMedication = hasNoDataSignal(error);
-        }
-
-        if (!shouldFallbackToMedication) {
-          if (pendingCheckupError) {
-            markFailure(
-              "checkupOverview",
-              pendingCheckupError,
-              "\uac80\uc9c4 \uacb0\uacfc\ub97c \ubd88\ub7ec\uc624\uc9c0 \ubabb\ud588\uc5b4\uc694."
-            );
-          }
-          return;
-        }
-
-        try {
-          const medicationPayload = await fetchLatestMedicationPayload({
-            detailPayload: input.detailPayload,
-            requestDefaults: input.requestDefaults,
-          });
-          successful.set("medication", medicationPayload);
-        } catch (medicationError) {
-          if (pendingCheckupError) {
-            markFailure(
-              "checkupOverview",
-              pendingCheckupError,
-              "\uac80\uc9c4 \uacb0\uacfc\ub97c \ubd88\ub7ec\uc624\uc9c0 \ubabb\ud588\uc5b4\uc694."
-            );
-          }
-          markFailure(
-            "medication",
-            medicationError,
-            "\ud22c\uc57d \uc815\ubcf4\ub97c \ubd88\ub7ec\uc624\uc9c0 \ubabb\ud588\uc5b4\uc694."
-          );
-        }
-      })()
-    );
-  } else {
-    runIndependentTarget(
-      "checkupOverview",
-      () => fetchCheckupOverview(input.basePayload),
-      "검진 요약을 불러오지 못했습니다."
-    );
-    runIndependentTarget(
-      "medication",
-      () =>
-        fetchLatestMedicationPayload({
-          detailPayload: input.detailPayload,
-          requestDefaults: input.requestDefaults,
-        }),
-      "\ud22c\uc57d \uc815\ubcf4\ub97c \ubd88\ub7ec\uc624\uc9c0 \ubabb\ud588\uc5b4\uc694."
-    );
-  }
+  runIndependentTarget(
+    "checkupOverview",
+    () => fetchCheckupOverview(input.basePayload),
+    "\uac80\uc9c4 \uc694\uc57d\uc744 \ubd88\ub7ec\uc624\uc9c0 \ubabb\ud588\uc5b4\uc694."
+  );
+  runIndependentTarget(
+    "medication",
+    () =>
+      fetchLatestMedicationPayload({
+        detailPayload: input.detailPayload,
+      }),
+    "\ud22c\uc57d \uc815\ubcf4\ub97c \ubd88\ub7ec\uc624\uc9c0 \ubabb\ud588\uc5b4\uc694."
+  );
 
   const shouldLoadCheckupList =
     input.targets.includes("checkupList") ||

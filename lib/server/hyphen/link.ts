@@ -3,7 +3,6 @@ import "server-only";
 import { Prisma } from "@prisma/client";
 import db from "@/lib/db";
 import { HYPHEN_PROVIDER } from "@/lib/server/hyphen/client";
-import { clearNhisFetchCaches } from "@/lib/server/hyphen/fetch-cache";
 import { clearNhisFetchMemoryCacheForUser } from "@/lib/server/hyphen/fetch-memory-cache";
 
 const provider = HYPHEN_PROVIDER;
@@ -91,19 +90,16 @@ export async function saveNhisLinkError(
 }
 
 export async function clearNhisLink(appUserId: string) {
-  await Promise.all([
-    upsertNhisLink(appUserId, {
-      linked: false,
-      stepData: Prisma.JsonNull,
-      cookieData: Prisma.JsonNull,
-      lastIdentityHash: null,
-      lastErrorCode: null,
-      lastErrorMessage: null,
-      loginMethod: null,
-      loginOrgCd: null,
-      stepMode: null,
-    }),
-    clearNhisFetchCaches(appUserId),
-  ]);
+  await upsertNhisLink(appUserId, {
+    linked: false,
+    stepData: Prisma.JsonNull,
+    cookieData: Prisma.JsonNull,
+    lastIdentityHash: null,
+    lastErrorCode: null,
+    lastErrorMessage: null,
+    loginMethod: null,
+    loginOrgCd: null,
+    stepMode: null,
+  });
   clearNhisFetchMemoryCacheForUser(appUserId);
 }

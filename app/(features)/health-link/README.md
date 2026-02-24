@@ -103,6 +103,13 @@ Single page flow for Hyphen NHIS integration:
 ## Cost Guardrails
 
 - Summary fetch defaults to `targets: ["checkupOverview", "medication"]`.
+- Summary fetch provider fanout is fixed to:
+  - 1x `checkupOverview`
+  - 1x `medication`
+  - no default `medical` call
+- Normalized summary payload is slimmed for UI:
+  - latest checkup batch only
+  - latest medication 3 rows only
 - Current client UX only triggers summary fetch.
   - no visible detail-fetch or force-refresh controls in `/health-link`
   - this keeps default user flow on the low-cost profile

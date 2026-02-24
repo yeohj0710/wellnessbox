@@ -11,6 +11,7 @@ import {
   extractLatestCheckupMeta,
   filterCheckupMetricRows,
   hasNhisSessionExpiredFailure,
+  isNhisSessionExpiredError,
   resolveCheckupMetricTone,
   selectLatestCheckupRows,
   summarizeMedicationRows,
@@ -54,7 +55,12 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
 
   const basePrimaryFlow = resolvePrimaryFlow(statusLinked, hasAuthRequested);
   const hasFetchedResponse = fetched !== null;
+  const hasPersistedSessionExpiredError = isNhisSessionExpiredError(
+    status?.lastError?.code,
+    status?.lastError?.message
+  );
   const hasSessionExpiredSignal =
+    hasPersistedSessionExpiredError ||
     actionErrorCode === NHIS_ERR_CODE_LOGIN_SESSION_EXPIRED ||
     hasNhisSessionExpiredFailure(fetchFailures);
   const shouldForceReauth = hasSessionExpiredSignal && !hasFetchedResponse;

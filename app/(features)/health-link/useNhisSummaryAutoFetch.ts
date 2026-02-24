@@ -10,6 +10,7 @@ type UseNhisSummaryAutoFetchInput = {
   actionLoading: ActionKind;
   status: NhisStatusResponse["status"] | undefined;
   fetched: NhisFetchResponse["data"] | null;
+  fetchedFromLocalCache: boolean;
   summaryFetchBlocked: boolean;
   actionErrorCode: string | null;
   actionError: string | null;
@@ -63,7 +64,7 @@ export function useNhisSummaryAutoFetch(input: UseNhisSummaryAutoFetchInput) {
     if (!input.status?.linked) return;
     if (input.actionLoading !== null) return;
 
-    if (input.fetched) {
+    if (input.fetched && !input.fetchedFromLocalCache) {
       autoFetchOnEntryRef.current = true;
       return;
     }
@@ -71,11 +72,14 @@ export function useNhisSummaryAutoFetch(input: UseNhisSummaryAutoFetchInput) {
     if (input.summaryFetchBlocked) return;
 
     autoFetchOnEntryRef.current = true;
-    input.setActionNotice(HEALTH_LINK_COPY.hook.autoFetchOnEntryNotice);
+    if (!input.fetchedFromLocalCache) {
+      input.setActionNotice(HEALTH_LINK_COPY.hook.autoFetchOnEntryNotice);
+    }
     void input.runSummaryFetch();
   }, [
     input.actionLoading,
     input.fetched,
+    input.fetchedFromLocalCache,
     input.runSummaryFetch,
     input.setActionNotice,
     input.status?.linked,
@@ -118,4 +122,3 @@ export function useNhisSummaryAutoFetch(input: UseNhisSummaryAutoFetchInput) {
     requestAutoFetchAfterSign,
   };
 }
-

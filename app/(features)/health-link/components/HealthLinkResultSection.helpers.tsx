@@ -1,23 +1,18 @@
 "use client";
 
 import React from "react";
-import type { NhisAiSummary, NhisFetchFailure } from "../types";
+import type { NhisAiSummary, NhisDataRow, NhisFetchFailure } from "../types";
 import {
   describeFetchFailure,
   formatDataCell,
+  resolveMetricDisplayValue,
   type CheckupMetricTone,
   type MedicationDigest,
 } from "../utils";
 import { parseNumberFromText, parseRangeFromText } from "../utils-health-metric-tone";
 import styles from "../HealthLinkClient.module.css";
 
-export type LatestCheckupRow = {
-  metric?: string | null;
-  value?: string | number | boolean | null;
-  itemData?: string | number | boolean | null;
-  normalA?: string | number | boolean | null;
-  normalB?: string | number | boolean | null;
-  suspicionDis?: string | number | boolean | null;
+export type LatestCheckupRow = NhisDataRow & {
   statusTone: CheckupMetricTone;
 };
 
@@ -114,7 +109,7 @@ export function resolveAiRiskClass(level: NhisAiSummary["riskLevel"]) {
   return styles.aiRiskUnknown;
 }
 
-function shouldHideMetricTone(metric: string) {
+export function shouldHideMetricTone(metric: string) {
   const normalized = metric.toLowerCase().replace(/\s+/g, "");
   return [
     "검진일",
@@ -147,6 +142,7 @@ export function buildMetricGroups(rows: LatestCheckupRow[]) {
 
   for (const row of rows) {
     const metric = typeof row.metric === "string" ? row.metric.trim() : "";
+    if (!metric || shouldHideMetricTone(metric)) continue;
     const groupId = metric ? resolveMetricGroupId(metric) : "other";
     grouped[groupId].push(row);
   }
@@ -245,10 +241,10 @@ export function buildMetricInsightCards(
 
   for (const row of rows) {
     const metric = typeof row.metric === "string" ? row.metric.trim() : "";
-    if (!metric) continue;
+    if (!metric || shouldHideMetricTone(metric)) continue;
 
-    const value = formatDataCell(row.value ?? row.itemData ?? null);
-    if (!value || value === "-") continue;
+    const value = resolveMetricDisplayValue(row);
+    if (!value) continue;
 
     const reference = [row.normalA, row.normalB, row.suspicionDis]
       .map((item) => formatDataCell(item))
@@ -301,22 +297,14 @@ export function buildMetricTabs(
 }
 
 export function renderMetricCards(rows: LatestCheckupRow[]) {
-  return rows.map((row, index) => {
+  return rows
+    .map((row, index) => {
     const metric = typeof row.metric === "string" ? row.metric : "-";
-    const value = formatDataCell(row.value ?? row.itemData ?? null);
+    if (shouldHideMetricTone(metric)) return null;
+    const value = resolveMetricDisplayValue(row);
+    if (!value) return null;
     const tone = row.statusTone;
     const showTone = !shouldHideMetricTone(metric);
-    const reference = [row.normalA, row.normalB, row.suspicionDis]
-      .map((item) => formatDataCell(item))
-      .filter((item) => item !== "-")
-      .join(" | ");
-    const inlineGuide = buildMetricGuide({
-      metric,
-      value,
-      tone,
-      reference,
-    });
-    const showInlineGuide = tone === "caution";
 
     return (
       <article
@@ -332,13 +320,10 @@ export function renderMetricCards(rows: LatestCheckupRow[]) {
           ) : null}
         </div>
         <div className={styles.metricCardValue}>{value}</div>
-        {showInlineGuide && inlineGuide ? (
-          <p className={styles.metricGuide}>{inlineGuide}</p>
-        ) : null}
-        {reference ? <p className={styles.metricReference}>{reference}</p> : null}
       </article>
     );
-  });
+    })
+    .filter((item): item is JSX.Element => item !== null);
 }
 
 export function normalizeCompactText(value: string | null | undefined) {

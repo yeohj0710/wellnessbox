@@ -15,12 +15,17 @@ import {
 
 export function dedupeNhisFetchTargets(input?: NhisFetchTarget[]) {
   const deduped = dedupeFetchTargets(input, DEFAULT_NHIS_FETCH_TARGETS);
-  if (deduped.includes("medication") && !deduped.includes("checkupOverview")) {
-    const withCheckupOverview: NhisFetchTarget[] = [
+  const needsSummaryPair =
+    deduped.includes("checkupOverview") || deduped.includes("medication");
+  if (needsSummaryPair) {
+    const restTargets = deduped.filter(
+      (target) => target !== "checkupOverview" && target !== "medication"
+    );
+    const summaryTargets: NhisFetchTarget[] = [
       "checkupOverview",
-      ...deduped.filter((target) => target !== "checkupOverview"),
+      "medication",
     ];
-    return withCheckupOverview;
+    return [...summaryTargets, ...restTargets];
   }
   return deduped;
 }
