@@ -18,7 +18,6 @@ import {
   type RndModule07GeneticVariant,
   type RndModule07IntegrationOutput,
   type RndModule07IntegrationSession,
-  type RndModule07SourceSummary,
   type RndModule07WearableMetric,
 } from "./contracts";
 import {
@@ -26,13 +25,25 @@ import {
   createRndDataLakeRecord,
   type RndDataLakeRecord,
   type RndDataSensitivity,
-  type RndEvidenceUnit,
-  type RndLineageStep,
   type RndModule02SourceKind,
 } from "../module02-data-lake/contracts";
-
-const MODULE07_MVP_PHASE = "MVP" as const;
-const MODULE07_MVP_RUN_ID_PREFIX = "rnd07-mvp-run" as const;
+import {
+  MODULE07_MVP_PHASE,
+  assertIsoDateTime,
+  buildRunId,
+  buildSourceSummaries,
+  groupAdjustmentsByUserId,
+  groupBySessionId,
+  mapSourceToModule02SourceKind,
+  mapSourceToSensitivity,
+  sortByKey,
+  uniqueSorted,
+} from "./mvp-engine.shared";
+import {
+  buildEvidenceUnits,
+  buildLineageSteps,
+  buildSessionArtifacts,
+} from "./mvp-engine.artifacts";
 
 export type Module07MvpRuntimeLog = {
   logId: string;
@@ -80,257 +91,6 @@ export type RunModule07IntegrationMvpResult = {
   wiringLogs: Module07MvpWiringLog[];
   runtimeLogs: Module07MvpRuntimeLog[];
 };
-
-type Module07SessionArtifacts = {
-  payload: Record<string, unknown>;
-  metricIds: string[];
-  variantIds: string[];
-  adjustmentIds: string[];
-  metricCount: number;
-  variantCount: number;
-  adjustmentCount: number;
-};
-
-function assertIsoDateTime(value: string, fieldName: string): void {
-  if (!Number.isFinite(Date.parse(value))) {
-    throw new Error(`${fieldName} must be an ISO datetime string.`);
-  }
-}
-
-function toRate(successfulSessions: number, totalSessions: number): number {
-  if (totalSessions <= 0) return 0;
-  return Number(((successfulSessions / totalSessions) * 100).toFixed(2));
-}
-
-function uniqueSorted(values: string[]): string[] {
-  return Array.from(new Set(values)).sort((left, right) => left.localeCompare(right));
-}
-
-function buildRunId(generatedAt: string): string {
-  const token = generatedAt.replace(/[^0-9]/g, "");
-  return `${MODULE07_MVP_RUN_ID_PREFIX}-${token}`;
-}
-
-function mapSourceToModule02SourceKind(
-  source: RndModule07DataSource
-): RndModule02SourceKind {
-  switch (source) {
-    case "wearable":
-      return "internal_behavior";
-    case "continuous_glucose":
-      return "internal_behavior";
-    case "genetic_test":
-      return "internal_profile";
-    default: {
-      const _exhaustiveCheck: never = source;
-      throw new Error(`Unsupported Module 07 source: ${_exhaustiveCheck}`);
-    }
-  }
-}
-
-function mapSourceToSensitivity(source: RndModule07DataSource): RndDataSensitivity {
-  return source === "genetic_test" ? "sensitive" : "internal";
-}
-
-function groupBySessionId<T extends { sessionId: string }>(rows: T[]): Map<string, T[]> {
-  const map = new Map<string, T[]>();
-  for (const row of rows) {
-    const existing = map.get(row.sessionId) ?? [];
-    existing.push(row);
-    map.set(row.sessionId, existing);
-  }
-  return map;
-}
-
-function groupAdjustmentsByUserId(
-  rows: RndModule07AlgorithmAdjustment[]
-): Map<string, RndModule07AlgorithmAdjustment[]> {
-  const map = new Map<string, RndModule07AlgorithmAdjustment[]>();
-  for (const row of rows) {
-    const existing = map.get(row.appUserIdHash) ?? [];
-    existing.push(row);
-    map.set(row.appUserIdHash, existing);
-  }
-  return map;
-}
-
-function sortByKey<T>(rows: T[], selector: (row: T) => string): T[] {
-  return [...rows].sort((left, right) =>
-    selector(left).localeCompare(selector(right))
-  );
-}
-
-function buildSourceSummaries(
-  sessions: RndModule07IntegrationSession[]
-): RndModule07SourceSummary[] {
-  return RND_MODULE_07_DATA_SOURCES.map((source) => {
-    const sourceSessions = sessions.filter((session) => session.source === source);
-    const totalSessions = sourceSessions.length;
-    const successfulSessions = sourceSessions.filter(
-      (session) => session.status === "success"
-    ).length;
-    const sampleCount = sourceSessions.reduce(
-      (sum, session) => sum + session.recordsAccepted,
-      0
-    );
-    return {
-      source,
-      totalSessions,
-      successfulSessions,
-      sampleCount,
-      integrationRate: toRate(successfulSessions, totalSessions),
-    };
-  });
-}
-
-function buildSessionArtifacts(
-  session: RndModule07IntegrationSession,
-  wearableMetricsBySession: Map<string, RndModule07WearableMetric[]>,
-  cgmMetricsBySession: Map<string, RndModule07CgmMetric[]>,
-  geneticVariantsBySession: Map<string, RndModule07GeneticVariant[]>,
-  adjustmentsByUserId: Map<string, RndModule07AlgorithmAdjustment[]>
-): Module07SessionArtifacts {
-  const wearableMetrics =
-    session.source === "wearable"
-      ? sortByKey(wearableMetricsBySession.get(session.sessionId) ?? [], (item) => item.metricId)
-      : [];
-  const cgmMetrics =
-    session.source === "continuous_glucose"
-      ? sortByKey(cgmMetricsBySession.get(session.sessionId) ?? [], (item) => item.metricId)
-      : [];
-  const geneticVariants =
-    session.source === "genetic_test"
-      ? sortByKey(geneticVariantsBySession.get(session.sessionId) ?? [], (item) => item.variantId)
-      : [];
-
-  const userAdjustments = sortByKey(
-    (adjustmentsByUserId.get(session.appUserIdHash) ?? []).filter(
-      (adjustment) => adjustment.source === session.source
-    ),
-    (item) => item.adjustmentId
-  );
-
-  if (session.recordsAccepted > 0) {
-    if (session.source === "wearable" && wearableMetrics.length === 0) {
-      throw new Error(`Session ${session.sessionId} accepted records but has no wearable metrics.`);
-    }
-    if (session.source === "continuous_glucose" && cgmMetrics.length === 0) {
-      throw new Error(`Session ${session.sessionId} accepted records but has no CGM metrics.`);
-    }
-    if (session.source === "genetic_test" && geneticVariants.length === 0) {
-      throw new Error(`Session ${session.sessionId} accepted records but has no genetic variants.`);
-    }
-  }
-
-  const metricIds = uniqueSorted([
-    ...wearableMetrics.map((metric) => metric.metricId),
-    ...cgmMetrics.map((metric) => metric.metricId),
-  ]);
-  const variantIds = uniqueSorted(geneticVariants.map((variant) => variant.variantId));
-  const adjustmentIds = uniqueSorted(userAdjustments.map((adjustment) => adjustment.adjustmentId));
-
-  const payload: Record<string, unknown> = {
-    integrationModule: RND_MODULE_07_NAME,
-    source: session.source,
-    sessionId: session.sessionId,
-    appUserIdHash: session.appUserIdHash,
-    status: session.status,
-    schemaMapped: session.schemaMapped,
-    recordsReceived: session.recordsReceived,
-    recordsAccepted: session.recordsAccepted,
-    metrics: [...wearableMetrics, ...cgmMetrics].map((metric) => ({
-      metricId: metric.metricId,
-      category: metric.category,
-      metricKey: metric.metricKey,
-      value: metric.value,
-      unit: metric.unit,
-      measuredAt: metric.measuredAt,
-    })),
-    geneticVariants: geneticVariants.map((variant) => ({
-      variantId: variant.variantId,
-      gene: variant.gene,
-      snpId: variant.snpId,
-      allele: variant.allele,
-      riskLevel: variant.riskLevel,
-      interpretation: variant.interpretation,
-      parameterWeightDelta: variant.parameterWeightDelta,
-      measuredAt: variant.measuredAt,
-    })),
-    algorithmAdjustments: userAdjustments.map((adjustment) => ({
-      adjustmentId: adjustment.adjustmentId,
-      kind: adjustment.kind,
-      targetKey: adjustment.targetKey,
-      value: adjustment.value,
-      rationale: adjustment.rationale,
-      appliedAt: adjustment.appliedAt,
-    })),
-  };
-
-  return {
-    payload,
-    metricIds,
-    variantIds,
-    adjustmentIds,
-    metricCount: metricIds.length,
-    variantCount: variantIds.length,
-    adjustmentCount: adjustmentIds.length,
-  };
-}
-
-function buildEvidenceUnits(
-  sourceKind: RndModule02SourceKind,
-  session: RndModule07IntegrationSession,
-  generatedAt: string,
-  artifacts: Module07SessionArtifacts
-): RndEvidenceUnit[] {
-  const unitIds = uniqueSorted([
-    ...artifacts.metricIds,
-    ...artifacts.variantIds,
-    ...artifacts.adjustmentIds,
-  ]);
-  const resolvedUnitIds = unitIds.length > 0 ? unitIds : [`session:${session.sessionId}`];
-
-  return resolvedUnitIds.map((unitId, index) => {
-    return {
-      evidenceId: `m07-evidence-${session.sessionId}-${String(index + 1).padStart(3, "0")}`,
-      sourceKind,
-      sourceRef: `module07:${session.sessionId}`,
-      chunk: {
-        unitId,
-        locator: `session:${session.sessionId}`,
-      },
-      capturedAt: generatedAt,
-    };
-  });
-}
-
-function buildLineageSteps(
-  recordId: string,
-  session: RndModule07IntegrationSession,
-  evidenceUnits: RndEvidenceUnit[],
-  generatedAt: string
-): RndLineageStep[] {
-  return [
-    {
-      step: "ingest",
-      actor: "module07-mvp",
-      occurredAt: generatedAt,
-      inputIds: [session.sessionId],
-    },
-    {
-      step: "tag",
-      actor: "module07-mvp",
-      occurredAt: generatedAt,
-      inputIds: evidenceUnits.map((item) => item.chunk.unitId),
-    },
-    {
-      step: "index",
-      actor: "module07-mvp",
-      occurredAt: generatedAt,
-      inputIds: [recordId],
-    },
-  ];
-}
 
 export function runModule07IntegrationMvp(
   input: RunModule07IntegrationMvpInput

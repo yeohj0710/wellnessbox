@@ -1,163 +1,68 @@
 "use server";
 
 import db from "@/lib/db";
+import {
+  getProductSummaries as getProductSummariesFromCatalog,
+  getProducts as getProductsFromCatalog,
+  getProductsByUpdatedAt as getProductsByUpdatedAtFromCatalog,
+  getProductsIdName as getProductsIdNameFromCatalog,
+} from "./product.catalog";
+import {
+  createProduct as createProductFromAdmin,
+  deleteProduct as deleteProductFromAdmin,
+  getProductsByPharmacy as getProductsByPharmacyFromAdmin,
+  getProductsForAdmin as getProductsForAdminFromAdmin,
+  updateProduct as updateProductFromAdmin,
+} from "./product.admin";
+import { DEFAULT_PRODUCT_ORDER, IN_STOCK_PRODUCT_WHERE } from "./product.shared";
 
 export async function getProducts() {
-  const products = await db.product.findMany({
-    where: {
-      pharmacyProducts: {
-        some: {
-          stock: { gt: 0 },
-        },
-      },
-    },
-    select: {
-      id: true,
-      name: true,
-      images: true,
-      description: true,
-      importance: true,
-      categories: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-      pharmacyProducts: {
-        select: {
-          id: true,
-          price: true,
-          optionType: true,
-          capacity: true,
-          stock: true,
-          pharmacyId: true,
-          pharmacy: {
-            select: {
-              id: true,
-              name: true,
-              address: true,
-            },
-          },
-        },
-      },
-    },
-    orderBy: [
-      { importance: "desc" },
-      { updatedAt: "desc" },
-    ],
-  });
-  return products.map((product) => ({
-    ...product,
-    rating: 0,
-    reviewCount: 0,
-  }));
+  return getProductsFromCatalog();
 }
 
 export async function getProductsByUpdatedAt() {
-  const products = await db.product.findMany({
-    where: {
-      pharmacyProducts: {
-        some: {
-          stock: { gt: 0 },
-        },
-      },
-    },
-    select: {
-      id: true,
-      name: true,
-      images: true,
-      description: true,
-      importance: true,
-      categories: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-      pharmacyProducts: {
-        select: {
-          id: true,
-          price: true,
-          optionType: true,
-          capacity: true,
-          stock: true,
-          pharmacyId: true,
-          pharmacy: {
-            select: {
-              id: true,
-              name: true,
-              address: true,
-            },
-          },
-        },
-      },
-    },
-    orderBy: [
-      { importance: "desc" },
-      { updatedAt: "desc" },
-    ],
-  });
-  return products.map((product) => ({
-    ...product,
-    rating: 0,
-    reviewCount: 0,
-  }));
+  return getProductsByUpdatedAtFromCatalog();
 }
 
 export async function getProductsIdName() {
-  const products = await db.product.findMany({
-    select: {
-      id: true,
-      name: true,
-    },
-    orderBy: { updatedAt: "desc" },
-  });
-  return products;
+  return getProductsIdNameFromCatalog();
 }
 
 export async function getProductSummaries(limit = 30) {
-  const products = await db.product.findMany({
-    where: {
-      pharmacyProducts: {
-        some: {
-          stock: { gt: 0 },
-        },
-      },
-    },
-    select: {
-      name: true,
-      categories: {
-        select: {
-          name: true,
-        },
-      },
-      pharmacyProducts: {
-        where: {
-          stock: { gt: 0 },
-        },
-        select: {
-          price: true,
-          optionType: true,
-          capacity: true,
-        },
-        orderBy: { price: "asc" },
-        take: 1,
-      },
-    },
-    orderBy: [
-      { importance: "desc" },
-      { updatedAt: "desc" },
-    ],
-    take: limit,
-  });
+  return getProductSummariesFromCatalog(limit);
+}
 
-  return products.map((p) => ({
-    name: p.name ?? "",
-    categories: p.categories.map((c) => c.name ?? "").filter(Boolean),
-    capacity: p.pharmacyProducts[0]?.capacity ?? null,
-    optionType: p.pharmacyProducts[0]?.optionType ?? null,
-    price: p.pharmacyProducts[0]?.price ?? null,
-  }));
+export async function getProductsForAdmin() {
+  return getProductsForAdminFromAdmin();
+}
+
+export async function createProduct(data: {
+  name: string;
+  images: string[];
+  description: string;
+  categories: { id: number; name?: string }[];
+}) {
+  return createProductFromAdmin(data);
+}
+
+export async function updateProduct(
+  productid: number,
+  data: {
+    name?: string;
+    images?: string[];
+    description?: string;
+    categories?: { id: number; name?: string }[];
+  }
+) {
+  return updateProductFromAdmin(productid, data);
+}
+
+export async function deleteProduct(productId: number) {
+  return deleteProductFromAdmin(productId);
+}
+
+export async function getProductsByPharmacy(pharmacyId: number) {
+  return getProductsByPharmacyFromAdmin(pharmacyId);
 }
 
 type ChatProductOption = {
@@ -275,13 +180,7 @@ function pickChatOption(
 
 export async function getChatProductCatalog(): Promise<ChatProductCatalogItem[]> {
   const products = await db.product.findMany({
-    where: {
-      pharmacyProducts: {
-        some: {
-          stock: { gt: 0 },
-        },
-      },
-    },
+    where: IN_STOCK_PRODUCT_WHERE,
     select: {
       name: true,
       categories: {
@@ -302,10 +201,7 @@ export async function getChatProductCatalog(): Promise<ChatProductCatalogItem[]>
         take: 12,
       },
     },
-    orderBy: [
-      { importance: "desc" },
-      { updatedAt: "desc" },
-    ],
+    orderBy: DEFAULT_PRODUCT_ORDER,
   });
 
   const byCategory = new Map<
@@ -376,102 +272,4 @@ export async function getChatProductCatalog(): Promise<ChatProductCatalogItem[]>
     .sort((left, right) => left.category.localeCompare(right.category, "ko"));
 
   return result;
-}
-
-export async function getProductsForAdmin() {
-  const products = await db.product.findMany({
-    select: {
-      id: true,
-      name: true,
-      images: true,
-      importance: true,
-      categories: true,
-    },
-    orderBy: [
-      { importance: "desc" },
-      { updatedAt: "desc" },
-    ],
-  });
-  return products;
-}
-
-export async function createProduct(data: {
-  name: string;
-  images: string[];
-  description: string;
-  categories: { id: number; name?: string }[];
-}) {
-  const formatRelation = (relation: any[] = []) =>
-    relation.map((item) => ({ id: item.id }));
-  const newProduct = await db.product.create({
-    data: {
-      name: data.name || null,
-      images: data.images || [],
-      description: data.description || null,
-      categories: {
-        connect: formatRelation(data.categories),
-      },
-    },
-  });
-
-  return newProduct;
-}
-
-export async function updateProduct(
-  productid: number,
-  data: {
-    name?: string;
-    images?: string[];
-    description?: string;
-    categories?: { id: number; name?: string }[];
-  }
-) {
-  const formatRelation = (relation: any[] = []) =>
-    relation.map((item) => ({ id: item.id }));
-  const updatedProduct = await db.product.update({
-    where: { id: productid },
-    data: {
-      name: data.name ?? undefined,
-      images: data.images ?? undefined,
-      description: data.description ?? undefined,
-      categories: data.categories
-        ? {
-            set: [],
-            connect: formatRelation(data.categories),
-          }
-        : undefined,
-    },
-  });
-  return updatedProduct;
-}
-
-export async function deleteProduct(productId: number) {
-  const relatedPharmacyProducts = await db.pharmacyProduct.findMany({
-    where: {
-      productId,
-    },
-  });
-  if (relatedPharmacyProducts.length > 0) return null;
-  const deletedProduct = await db.product.delete({
-    where: { id: productId },
-  });
-  return deletedProduct;
-}
-
-export async function getProductsByPharmacy(pharmacyId: number) {
-  return await db.product.findMany({
-    where: {
-      pharmacyProducts: {
-        some: {
-          pharmacyId,
-        },
-      },
-    },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      images: true,
-    },
-  });
 }

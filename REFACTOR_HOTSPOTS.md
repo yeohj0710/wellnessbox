@@ -10,28 +10,28 @@ Run `npm run agent:refactor-report` to refresh this report.
 | 709 | `app/(components)/landingSection2.tsx` |
 | 686 | `app/test/page.tsx` |
 | 682 | `lib/ai/chain.ts` |
-| 666 | `lib/rnd/module07-biosensor-genetic-integration/mvp-engine.ts` |
-| 608 | `lib/notification/core.ts` |
-| 604 | `app/(components)/homeProductSection.tsx` |
 | 592 | `lib/rnd/module06-closed-loop-ai/contracts.ts` |
-| 586 | `lib/server/hyphen/fetch-executor.ts` |
 | 583 | `lib/rnd/module06-closed-loop-ai/mvp-engine.ts` |
-| 575 | `app/my-data/page.tsx` |
 | 542 | `lib/rnd/module05-optimization/mvp-engine.ts` |
+| 535 | `app/(components)/homeProductSection.tsx` |
 | 523 | `app/chat/hooks/useChat.ts` |
-| 516 | `app/(components)/useHomeProductSectionEffects.ts` |
-| 507 | `app/(orders)/order-complete/page.tsx` |
 | 503 | `lib/rnd/module07-biosensor-genetic-integration/scaffold.ts` |
 | 490 | `app/assess/components/CSection.tsx` |
 | 489 | `app/me/meClient.tsx` |
 | 489 | `app/me/profileImageEditor.tsx` |
-| 489 | `lib/server/result-normalizer.ts` |
-| 487 | `lib/server/hyphen/client.ts` |
-| 478 | `lib/product/product.ts` |
+| 476 | `app/my-data/page.tsx` |
 | 474 | `components/common/GoogleTranslateGate.tsx` |
 | 469 | `lib/agent-playground/patterns.ts` |
 | 469 | `lib/rnd/module06-closed-loop-ai/scaffold.ts` |
 | 466 | `app/agent-playground/page.tsx` |
+| 463 | `lib/rnd/module04-efficacy-quantification/mvp-engine.ts` |
+| 455 | `app/(features)/health-link/components/HealthLinkResultSection.helpers.tsx` |
+| 451 | `lib/server/hyphen/fetch-ai-summary-core.ts` |
+| 428 | `app/chat/components/RecommendedProductActions.tsx` |
+| 426 | `components/order/cartItemsSection.tsx` |
+| 426 | `lib/rnd/module07-biosensor-genetic-integration/mvp-engine.ts` |
+| 425 | `lib/server/hyphen/fetch-executor.ts` |
+| 422 | `app/assess/page.tsx` |
 
 ## Scripts Top 15
 

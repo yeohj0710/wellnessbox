@@ -1,11 +1,13 @@
-import getSession from "@/lib/session";
-import db from "@/lib/db";
-import { resolveActorForServerComponent } from "@/lib/server/actor";
 import {
   normalizeAssessmentResult,
   normalizeCheckAiResult,
 } from "@/lib/server/result-normalizer";
 import MyDataPageActionBridge from "./MyDataPageActionBridge";
+import {
+  loadMyDataActorContext,
+  loadMyDataCollections,
+  readProfilePhone,
+} from "./myDataPageData";
 import {
   AccordionCard,
   formatDate,
@@ -20,47 +22,15 @@ import {
 
 export const dynamic = "force-dynamic";
 
-type SessionUser = {
-  kakaoId: number;
-  loggedIn: boolean;
-  nickname?: string;
-  profileImageUrl?: string;
-  email?: string;
-  kakaoEmail?: string;
-  phone?: string;
-  phoneLinkedAt?: string;
-};
-
 export default async function MyDataPage() {
-  const session = await getSession();
-  const user = session.user as Partial<SessionUser> | undefined;
-
-  const isKakaoLoggedIn =
-    user?.loggedIn === true && typeof user.kakaoId === "number";
-
-  const actor = await resolveActorForServerComponent();
-  const deviceClientId = actor.deviceClientId;
-  const appUserId = actor.appUserId;
-  const phoneLinked = actor.phoneLinked;
-
-  const appUser = isKakaoLoggedIn
-    ? await db.appUser.findUnique({
-        where: { kakaoId: String(user.kakaoId) },
-        select: {
-          id: true,
-          kakaoId: true,
-          clientId: true,
-          nickname: true,
-          email: true,
-          kakaoEmail: true,
-          phone: true,
-          phoneLinkedAt: true,
-          profileImageUrl: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      })
-    : null;
+  const {
+    user,
+    isKakaoLoggedIn,
+    deviceClientId,
+    appUserId,
+    phoneLinked,
+    appUser,
+  } = await loadMyDataActorContext();
 
   if (!deviceClientId && !isKakaoLoggedIn) {
     return (
@@ -78,87 +48,18 @@ export default async function MyDataPage() {
     );
   }
 
-  const [profile, assessResults, checkAiResults, orders, chatSessions] =
-    deviceClientId || appUserId
-      ? await Promise.all([
-          deviceClientId
-            ? db.userProfile.findUnique({
-                where: { clientId: deviceClientId },
-              })
-            : Promise.resolve(null),
-          db.assessmentResult.findMany({
-            where: isKakaoLoggedIn
-              ? appUserId
-                ? { appUserId }
-                : { id: "missing" }
-              : { clientId: deviceClientId ?? "missing" },
-            orderBy: { createdAt: "desc" },
-          }),
-          db.checkAiResult.findMany({
-            where: isKakaoLoggedIn
-              ? appUserId
-                ? { appUserId }
-                : { id: "missing" }
-              : { clientId: deviceClientId ?? "missing" },
-            orderBy: { createdAt: "desc" },
-          }),
-          db.order.findMany({
-            where: isKakaoLoggedIn
-              ? phoneLinked && appUserId
-                ? { appUserId }
-                : { id: -1 }
-              : deviceClientId
-              ? { endpoint: deviceClientId }
-              : { id: -1 },
-            orderBy: { createdAt: "desc" },
-            include: {
-              pharmacy: true,
-              orderItems: {
-                include: {
-                  pharmacyProduct: {
-                    include: { product: true },
-                  },
-                },
-              },
-            },
-          }),
-          isKakaoLoggedIn && appUserId
-            ? db.chatSession.findMany({
-                where: {
-                  OR: [
-                    { appUserId },
-                    deviceClientId
-                      ? { clientId: deviceClientId, appUserId: null }
-                      : { id: "missing" },
-                  ],
-                },
-                orderBy: { updatedAt: "desc" },
-                include: {
-                  messages: {
-                    orderBy: { createdAt: "asc" },
-                  },
-                },
-              })
-            : deviceClientId
-            ? db.chatSession.findMany({
-                where: { clientId: deviceClientId, appUserId: null },
-                orderBy: { updatedAt: "desc" },
-                include: {
-                  messages: {
-                    orderBy: { createdAt: "asc" },
-                  },
-                },
-              })
-            : Promise.resolve([]),
-        ])
-      : [null, [], [], [], []];
+  const { profile, assessResults, checkAiResults, orders, chatSessions } =
+    await loadMyDataCollections({
+      isKakaoLoggedIn,
+      appUserId,
+      deviceClientId,
+      phoneLinked,
+    });
 
   const phoneCandidates = uniqueList([
     appUser?.phone,
     user?.phone,
-    profile?.data && typeof profile.data === "object"
-      ? ((profile.data as Record<string, any>).phone as string | undefined)
-      : undefined,
+    readProfilePhone(profile),
     ...orders.map((order) => order.phone ?? null),
   ]);
 

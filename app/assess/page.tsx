@@ -20,9 +20,15 @@ import {
 import { resolveProgressMessage } from "./logic/progress-message";
 import { composeAssessAnswers } from "./logic/compose-answers";
 import { computeRemainingQuestionIds } from "./logic/question-flow";
-
-const STORAGE_KEY = "assess-state";
-const C_PERSIST_KEY = `${STORAGE_KEY}::C`;
+import {
+  ASSESS_C_PERSIST_KEY,
+  ASSESS_STORAGE_KEY,
+  clearAssessCPersistStorage,
+  clearAssessStorage,
+  loadAssessStateSnapshot,
+  rollbackLatestCStateAnswer,
+  saveAssessStateSnapshot,
+} from "./lib/assessStorage";
 
 export default function Assess() {
   const { showLoading } = useLoading();
@@ -100,11 +106,9 @@ export default function Assess() {
   }, [confirmOpen]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
+      const parsed = loadAssessStateSnapshot(ASSESS_STORAGE_KEY);
+      if (parsed) {
         setSection(parsed.section ?? "INTRO");
         setAnswers(parsed.answers ?? {});
         setCurrent(parsed.current ?? fixedA[0]);
@@ -126,10 +130,9 @@ export default function Assess() {
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !hydrated) return;
+    if (!hydrated) return;
     try {
-      const baseRaw = localStorage.getItem(STORAGE_KEY);
-      const base = baseRaw ? JSON.parse(baseRaw) : {};
+      const base = loadAssessStateSnapshot(ASSESS_STORAGE_KEY) ?? {};
       const next = {
         ...base,
         section,
@@ -141,7 +144,7 @@ export default function Assess() {
         cResult,
         cAnswers,
       };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      saveAssessStateSnapshot(ASSESS_STORAGE_KEY, next);
     } catch {}
   }, [
     hydrated,
@@ -209,10 +212,7 @@ export default function Assess() {
     setCCats([]);
     setCResult(null);
     setCAnswers({});
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem(C_PERSIST_KEY);
-    }
+    clearAssessStorage(ASSESS_STORAGE_KEY, ASSESS_C_PERSIST_KEY);
   };
 
   const confirmReset = () => setConfirmOpen(true);
@@ -236,23 +236,7 @@ export default function Assess() {
 
   const goBack = () => {
     if (section === "DONE") {
-      try {
-        const raw = localStorage.getItem(C_PERSIST_KEY);
-        if (raw) {
-          const obj = JSON.parse(raw);
-          const s = obj?.cState;
-          const step = typeof s?.step === "number" ? s.step : 0;
-          const pair = Array.isArray(s?.plan) ? s.plan[step] : null;
-          if (pair && s?.filled?.[pair.cat]?.[pair.qIdx]) {
-            s.filled[pair.cat][pair.qIdx] = false;
-            if (Array.isArray(s?.answers?.[pair.cat])) {
-              s.answers[pair.cat][pair.qIdx] = -1;
-            }
-            obj.cState = s;
-            localStorage.setItem(C_PERSIST_KEY, JSON.stringify(obj));
-          }
-        }
-      } catch {}
+      rollbackLatestCStateAnswer(ASSESS_C_PERSIST_KEY);
       setSection("C");
       setCEpoch((n) => n + 1);
       return;
@@ -329,9 +313,7 @@ export default function Assess() {
         delay = 2500;
         type TopItem = { key: CategoryKey; label: string; score: number };
         action = () => {
-          try {
-            localStorage.removeItem(C_PERSIST_KEY);
-          } catch {}
+          clearAssessCPersistStorage(ASSESS_C_PERSIST_KEY);
 
           const { top } = evaluate(pruned as any) as { top: TopItem[] };
           const nextCats = top.map(({ key }) => KEY_TO_CODE[key]);
@@ -385,7 +367,7 @@ export default function Assess() {
         }}
         onProgress={handleCProgress}
         registerPrev={registerPrevCb}
-        persistKey={C_PERSIST_KEY}
+        persistKey={ASSESS_C_PERSIST_KEY}
         onLoadingChange={(flag, text) => {
           setLoadingText(text || "");
           setLoading(!!flag);

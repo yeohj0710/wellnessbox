@@ -36,12 +36,6 @@ import {
   writeClientCartItems,
 } from "@/lib/client/cart-storage";
 import {
-  clearCartReturnState,
-  consumeCartReturnState,
-  getCurrentPathWithSearchFromWindow,
-  queueCartScrollRestore,
-} from "@/lib/client/cart-navigation";
-import {
   HOME_CACHE_TTL_MS,
   HOME_FETCH_RETRIES,
   HOME_FETCH_TIMEOUT_MS,
@@ -64,6 +58,7 @@ import {
   useHomeProductQuerySyncEffects,
   useHomeProductUiSyncEffects,
 } from "./useHomeProductSectionEffects";
+import { useHomeProductActions } from "./useHomeProductActions";
 
 interface HomeProductSectionProps {
   initialCategories?: any[];
@@ -271,6 +266,16 @@ export default function HomeProductSection({
 
   const scrollPositionRef = useRef(0);
   const cartContainerRef = useRef<HTMLDivElement>(null);
+  const { openProductDetail, closeProductDetail, openCart, closeCart } =
+    useHomeProductActions({
+      hideLoading,
+      syncCartItemsFromStorage,
+      scrollPositionRef,
+      setSelectedProduct,
+      setIsCartVisible,
+      replaceRoute: (pathWithSearch) =>
+        router.replace(pathWithSearch, { scroll: false }),
+    });
   const isFilterUpdating = useMemo(() => {
     if (isLoading) return true;
     if (deferredSelectedPackage !== selectedPackage) return true;
@@ -313,80 +318,6 @@ export default function HomeProductSection({
     console.info(`[perf] home:filter-visible ${elapsedMs.toFixed(1)}ms`);
     filterInteractionStartedRef.current = null;
   }, [isFilterUpdating]);
-
-  const restoreScroll = useCallback((y: number) => {
-    const el = document.documentElement;
-    const prev = el.style.scrollBehavior;
-
-    el.style.scrollBehavior = "auto";
-    window.scrollTo(0, y);
-    requestAnimationFrame(() => window.scrollTo(0, y));
-    el.style.scrollBehavior = prev;
-  }, []);
-
-  const openProductDetail = (product: any) => {
-    if (typeof window !== "undefined") {
-      const y = window.scrollY;
-      scrollPositionRef.current = y;
-      sessionStorage.setItem("scrollPos", String(y));
-    }
-    setSelectedProduct(product);
-  };
-
-  const closeProductDetail = () => {
-    const y = scrollPositionRef.current;
-
-    setSelectedProduct(null);
-    if (typeof window !== "undefined") {
-      const url = new URL(window.location.href);
-      url.searchParams.delete("product");
-      window.history.replaceState({}, "", url.toString());
-      sessionStorage.removeItem("scrollPos");
-
-      requestAnimationFrame(() => restoreScroll(y));
-    }
-  };
-
-  const openCart = useCallback(() => {
-    if (typeof window !== "undefined") {
-      clearCartReturnState();
-      const y = window.scrollY;
-      scrollPositionRef.current = y;
-      sessionStorage.setItem("scrollPos", String(y));
-      localStorage.setItem("openCart", "true");
-    }
-    syncCartItemsFromStorage();
-    hideLoading();
-    setIsCartVisible(true);
-  }, [hideLoading, syncCartItemsFromStorage]);
-
-  const closeCart = useCallback(() => {
-    const y = scrollPositionRef.current;
-    setIsCartVisible(false);
-    if (typeof window === "undefined") return;
-
-    localStorage.removeItem("openCart");
-
-    const currentPathWithSearch = getCurrentPathWithSearchFromWindow();
-    const returnState = consumeCartReturnState();
-
-    const url = new URL(window.location.href);
-    url.searchParams.delete("cart");
-    window.history.replaceState({}, "", url.toString());
-    sessionStorage.removeItem("scrollPos");
-
-    if (
-      returnState &&
-      returnState.pathWithSearch &&
-      returnState.pathWithSearch !== currentPathWithSearch
-    ) {
-      queueCartScrollRestore(returnState.pathWithSearch, returnState.scrollY);
-      router.replace(returnState.pathWithSearch, { scroll: false });
-      return;
-    }
-
-    requestAnimationFrame(() => restoreScroll(y));
-  }, [restoreScroll, router]);
 
   useHomeProductUiSyncEffects({
     syncCartItemsFromStorage,

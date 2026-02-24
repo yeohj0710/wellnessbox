@@ -4,7 +4,6 @@ import FullPageLoader from "@/components/common/fullPageLoader";
 import { createOrder } from "@/lib/order/mutations";
 import { getOrderByPaymentId } from "@/lib/order/queries";
 import { getClientIdLocal } from "@/app/chat/utils";
-import { getLoginStatus } from "@/lib/useLoginStatus";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { ORDER_STATUS } from "@/lib/order/orderStatus";
@@ -13,14 +12,36 @@ import OrderCancelledView from "@/components/order/orderCancelledView";
 import OrderNotifyModal from "@/components/order/orderNotifyModal";
 import OrderSummary from "@/components/order/orderSummary";
 import { ensureCustomerPushSubscription } from "@/lib/push/customerSubscription";
+import {
+  clearCheckoutProgressStorage,
+  clearPaymentStorage,
+  prepareOrderDraftFromStorage,
+  readPaymentContext,
+  resolvePaymentOutcome,
+} from "./orderCompleteFlow";
 
 interface SubscriptionInfo {
   endpoint: string;
 }
 
+type OrderRecord = NonNullable<Awaited<ReturnType<typeof getOrderByPaymentId>>>;
+
+async function readPaymentInfoJson(response: Response) {
+  try {
+    return (await response.json()) as unknown;
+  } catch {
+    return null;
+  }
+}
+
+function readApiErrorMessage(payload: unknown) {
+  if (!payload || typeof payload !== "object") return null;
+  const error = (payload as { error?: unknown }).error;
+  return typeof error === "string" && error.trim() ? error.trim() : null;
+}
+
 export default function OrderComplete() {
-  const [loginStatus, setLoginStatus] = useState<any>([]);
-  const [order, setOrder] = useState<any | null>(null);
+  const [order, setOrder] = useState<OrderRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [cancelled, setCancelled] = useState(false);
   const [showNotifyModal, setShowNotifyModal] = useState(false);
@@ -48,13 +69,58 @@ export default function OrderComplete() {
     router.push("/");
   };
 
-  useEffect(() => {
-    const fetchLoginStatus = async () => {
-      const fetchgedLoginStatus = await getLoginStatus();
-      setLoginStatus(fetchgedLoginStatus);
-    };
-    fetchLoginStatus();
-  }, []);
+  const createOrderFromPaymentOutcome = async (input: {
+    paymentId: string;
+    txId: string;
+    totalPrice: number;
+  }) => {
+    const draft = prepareOrderDraftFromStorage();
+    const { rawCartItems, orderItems } = draft;
+
+    if (!rawCartItems.length) {
+      alert("장바구니가 비어 있어요.");
+      returnToCart();
+      return;
+    }
+    if (orderItems.length !== rawCartItems.length) {
+      alert(
+        "일부 상품의 약국 옵션을 확인할 수 없어 장바구니에서 다시 시도해 주세요."
+      );
+      returnToCart();
+      return;
+    }
+    if (!orderItems.length) {
+      alert("장바구니가 비어 있어요.");
+      returnToCart();
+      return;
+    }
+
+    const endpoint = getClientIdLocal();
+    await createOrder({
+      endpoint,
+      roadAddress: draft.roadAddress,
+      detailAddress: draft.detailAddress,
+      phone: draft.phone,
+      password: draft.password,
+      requestNotes: draft.requestNotes,
+      entrancePassword: draft.entrancePassword,
+      directions: draft.directions,
+      paymentId: input.paymentId,
+      transactionType: "PAYMENT",
+      txId: input.txId,
+      totalPrice: input.totalPrice,
+      status: ORDER_STATUS.PAYMENT_COMPLETE,
+      pharmacyId: draft.pharmacyId,
+      orderItems,
+    });
+
+    const fullOrder = await getOrderByPaymentId(input.paymentId);
+    setOrder(fullOrder);
+    setShowNotifyModal(true);
+    clearCart();
+    clearCheckoutProgressStorage();
+    clearPaymentStorage();
+  };
 
   useEffect(() => {
     if (!order) return;
@@ -74,9 +140,7 @@ export default function OrderComplete() {
 
   useEffect(() => {
     if (cancelled) {
-      localStorage.removeItem("paymentId");
-      localStorage.removeItem("paymentMethod");
-      localStorage.removeItem("impUid");
+      clearPaymentStorage();
     }
   }, [cancelled]);
 
@@ -93,47 +157,44 @@ export default function OrderComplete() {
       return;
     }
     const fetchOrder = async () => {
+      let lockKey = "";
+      let lockAcquired = false;
       try {
-        let paymentId = localStorage.getItem("paymentId");
-        let paymentMethod = localStorage.getItem("paymentMethod");
         const params = new URLSearchParams(window.location.search);
-        let impUid =
-          localStorage.getItem("impUid") || params.get("imp_uid") || "";
-        if (impUid) localStorage.setItem("impUid", impUid);
-        if (!paymentId) {
-          paymentId =
-            params.get("paymentId") || params.get("merchant_uid") || "";
-          if (paymentId) localStorage.setItem("paymentId", paymentId);
-        }
-        if (!paymentMethod) {
-          paymentMethod = params.get("method") || "";
-          if (paymentMethod)
-            localStorage.setItem("paymentMethod", paymentMethod);
-        }
+        const { paymentId, paymentMethod, impUid } = readPaymentContext(params);
         if (!paymentId) {
           alert("결제 정보가 없어요.");
           localStorage.removeItem("impUid");
           returnToCart();
           return;
         }
-        const lockKey = `oc:lock:${paymentId}`;
+        if (!paymentMethod) {
+          alert("결제 수단 정보가 없어요.");
+          clearPaymentStorage();
+          returnToCart();
+          return;
+        }
+        lockKey = `oc:lock:${paymentId}`;
         if (sessionStorage.getItem(lockKey)) {
           return;
         }
         sessionStorage.setItem(lockKey, "1");
+        lockAcquired = true;
         const existingOrder = await getOrderByPaymentId(paymentId);
         if (existingOrder) {
           setOrder(existingOrder);
           setShowNotifyModal(true);
-          localStorage.removeItem("paymentId");
-          localStorage.removeItem("paymentMethod");
-          localStorage.removeItem("impUid");
+          clearPaymentStorage();
 
           if (existingOrder.status === ORDER_STATUS.PAYMENT_COMPLETE) {
             clearCart();
           }
 
-          sessionStorage.removeItem(lockKey);
+          return;
+        }
+        if (paymentMethod === "inicis" && !impUid) {
+          alert("결제 정보가 없어요.");
+          returnToCart();
           return;
         }
         const response = await fetch("/api/get-payment-info", {
@@ -144,207 +205,33 @@ export default function OrderComplete() {
             paymentMethod,
           }),
         });
-        if (paymentMethod === "inicis") {
-          if (!impUid) {
-            alert("결제 정보가 없어요.");
-            returnToCart();
-            return;
-          }
-          const paymentInfo = await response.json();
-          const paymentResponse = paymentInfo.response;
-          if (!paymentResponse || paymentResponse.status !== "paid") {
-            alert("결제에 실패하였어요. 다시 시도해 주세요.");
-            localStorage.removeItem("paymentId");
-            localStorage.removeItem("paymentMethod");
-            localStorage.removeItem("impUid");
-            sessionStorage.removeItem(lockKey);
-            returnToCart();
-            return;
-          }
-          const roadAddress = localStorage.getItem("roadAddress") || "";
-          const detailAddress = localStorage.getItem("detailAddress") || "";
-          const phone = `${localStorage.getItem("phonePart1") || ""}-${
-            localStorage.getItem("phonePart2") || ""
-          }-${localStorage.getItem("phonePart3") || ""}`;
-          const password = localStorage.getItem("password") || "";
-          const requestNotes = localStorage.getItem("requestNotes") || "";
-          const entrancePassword =
-            localStorage.getItem("entrancePassword") || "";
-          const directions = localStorage.getItem("directions") || "";
-          const transactionType = "PAYMENT";
-          const txId = impUid || paymentResponse.imp_uid || "";
-          const totalPrice = paymentResponse.amount ?? 0;
-          const status = ORDER_STATUS.PAYMENT_COMPLETE;
-          const pharmacyId =
-            Number(localStorage.getItem("selectedPharmacyId") || "0") ||
-            undefined;
-          const rawCartItems =
-            JSON.parse(localStorage.getItem("cartItems") || "[]") || [];
-
-          const orderItems = rawCartItems
-            .map((c: any) => {
-              const pid = c.pharmacyProductId ?? resolvePharmacyProductId(c);
-              return {
-                pharmacyProductId: typeof pid === "string" ? Number(pid) : pid,
-                quantity: Number(c.quantity ?? c.count ?? 1),
-              };
-            })
-            .filter((oi: any) => !!oi.pharmacyProductId);
-
-          if (!rawCartItems.length) {
-            alert("장바구니가 비어 있어요.");
-            sessionStorage.removeItem(lockKey);
-            returnToCart();
-            return;
-          }
-          if (orderItems.length !== rawCartItems.length) {
-            alert(
-              "일부 상품의 약국 옵션을 확인할 수 없어요. 장바구니에서 다시 시도해 주세요."
-            );
-            sessionStorage.removeItem(lockKey);
-            returnToCart();
-            return;
-          }
-
-          if (!orderItems.length) {
-            alert("장바구니가 비어 있어요.");
-            sessionStorage.removeItem(lockKey);
-            returnToCart();
-            return;
-          }
-          const endpoint = getClientIdLocal();
-          await createOrder({
-            endpoint,
-            roadAddress,
-            detailAddress,
-            phone,
-            password,
-            requestNotes,
-            entrancePassword,
-            directions,
-            paymentId,
-            transactionType,
-            txId,
-            totalPrice,
-            status,
-            pharmacyId,
-            orderItems,
-          });
-          const fullOrder = await getOrderByPaymentId(paymentId as string);
-          setOrder(fullOrder);
-          setShowNotifyModal(true);
-          clearCart();
-
-          localStorage.removeItem("cartBackup");
-          localStorage.removeItem("restoreCartFromBackup");
-          localStorage.removeItem("checkoutInProgress");
-
-          localStorage.removeItem("paymentId");
-          localStorage.removeItem("paymentMethod");
-          localStorage.removeItem("impUid");
-          sessionStorage.removeItem(lockKey);
-        } else {
-          const paymentInfo = await response.json();
-          const transaction = paymentInfo.response.payment.transactions?.[0];
-          if (!transaction || transaction.status !== "PAID") {
-            alert("결제에 실패하였어요. 다시 시도해 주세요.");
-            localStorage.removeItem("paymentId");
-            localStorage.removeItem("paymentMethod");
-            localStorage.removeItem("impUid");
-            sessionStorage.removeItem(lockKey);
-            returnToCart();
-            return;
-          }
-          const roadAddress = localStorage.getItem("roadAddress") || "";
-          const detailAddress = localStorage.getItem("detailAddress") || "";
-          const phone = `${localStorage.getItem("phonePart1") || ""}-${
-            localStorage.getItem("phonePart2") || ""
-          }-${localStorage.getItem("phonePart3") || ""}`;
-          const password = localStorage.getItem("password") || "";
-          const requestNotes = localStorage.getItem("requestNotes") || "";
-          const entrancePassword =
-            localStorage.getItem("entrancePassword") || "";
-          const directions = localStorage.getItem("directions") || "";
-          const transactionType = "PAYMENT";
-          const txId =
-            paymentInfo?.response?.payment?.id ||
-            transaction?.paymentId ||
-            paymentId ||
-            "";
-          const totalPrice =
-            transaction?.amount?.total ??
-            paymentInfo?.response?.payment?.amount?.total ??
-            0;
-          const status = ORDER_STATUS.PAYMENT_COMPLETE;
-          const pharmacyId =
-            Number(localStorage.getItem("selectedPharmacyId") || "0") ||
-            undefined;
-          const rawCartItems =
-            JSON.parse(localStorage.getItem("cartItems") || "[]") || [];
-
-          const orderItems = rawCartItems
-            .map((c: any) => {
-              const pid = c.pharmacyProductId ?? resolvePharmacyProductId(c);
-              return {
-                pharmacyProductId: typeof pid === "string" ? Number(pid) : pid,
-                quantity: Number(c.quantity ?? c.count ?? 1),
-              };
-            })
-            .filter((oi: any) => !!oi.pharmacyProductId);
-
-          if (!rawCartItems.length) {
-            alert("장바구니가 비어 있어요.");
-            sessionStorage.removeItem(lockKey);
-            returnToCart();
-            return;
-          }
-          if (orderItems.length !== rawCartItems.length) {
-            alert(
-              "일부 상품의 약국 옵션을 확인할 수 없어요. 장바구니에서 다시 시도해 주세요."
-            );
-            sessionStorage.removeItem(lockKey);
-            returnToCart();
-            return;
-          }
-
-          if (!orderItems.length) {
-            alert("장바구니가 비어 있어요.");
-            sessionStorage.removeItem(lockKey);
-            returnToCart();
-            return;
-          }
-          const endpoint = getClientIdLocal();
-          await createOrder({
-            endpoint,
-            roadAddress,
-            detailAddress,
-            phone,
-            password,
-            requestNotes,
-            entrancePassword,
-            directions,
-            paymentId,
-            transactionType,
-            txId,
-            totalPrice,
-            status,
-            pharmacyId,
-            orderItems,
-          });
-          const fullOrder = await getOrderByPaymentId(paymentId as string);
-          setOrder(fullOrder);
-          setShowNotifyModal(true);
-          clearCart();
-
-          localStorage.removeItem("cartBackup");
-          localStorage.removeItem("restoreCartFromBackup");
-          localStorage.removeItem("checkoutInProgress");
-
-          localStorage.removeItem("paymentId");
-          localStorage.removeItem("paymentMethod");
-          localStorage.removeItem("impUid");
-          sessionStorage.removeItem(lockKey);
+        const paymentInfo = await readPaymentInfoJson(response);
+        if (!response.ok || !paymentInfo) {
+          const fallbackError =
+            "결제 정보를 확인하지 못했어요. 다시 시도해 주세요.";
+          alert(readApiErrorMessage(paymentInfo) ?? fallbackError);
+          clearPaymentStorage();
+          returnToCart();
+          return;
         }
+        const paymentOutcome = resolvePaymentOutcome(
+          paymentMethod,
+          paymentInfo,
+          paymentId,
+          impUid
+        );
+        if (!paymentOutcome) {
+          alert("결제에 실패했어요. 다시 시도해 주세요.");
+          clearPaymentStorage();
+          returnToCart();
+          return;
+        }
+
+        await createOrderFromPaymentOutcome({
+          paymentId,
+          txId: paymentOutcome.txId,
+          totalPrice: paymentOutcome.totalPrice,
+        });
       } catch (error: any) {
         alert(
           `주문 정보를 불러오는 중 오류가 발생했습니다: ${
@@ -352,27 +239,15 @@ export default function OrderComplete() {
           }`
         );
       } finally {
+        if (lockAcquired && lockKey) {
+          sessionStorage.removeItem(lockKey);
+        }
         setLoading(false);
       }
     };
     fetchOrder();
     window.scrollTo(0, 0);
   }, []);
-
-  const resolvePharmacyProductId = (cartItem: any): number | undefined => {
-    const products = JSON.parse(localStorage.getItem("products") || "[]");
-    const selectedPharmacyId = Number(
-      localStorage.getItem("selectedPharmacyId") || "0"
-    );
-    const product = products.find((p: any) => p.id === cartItem.productId);
-    if (!product) return undefined;
-    const pp = product.pharmacyProducts?.find(
-      (x: any) =>
-        (x.pharmacyId ?? x.pharmacy?.id) === selectedPharmacyId &&
-        x.optionType === cartItem.optionType
-    );
-    return pp?.id;
-  };
 
   const subscribePush = async () => {
     try {
@@ -468,7 +343,7 @@ export default function OrderComplete() {
           loading={notifyLoading}
         />
       )}
-      <div className="w-full max-w-[640px] mx-2 sm:mx-auto">
+      <main className="w-full max-w-[640px] mx-2 sm:mx-auto">
         <h1 className="text-2xl font-bold text-center text-gray-800 mb-6 mt-12">
           결제가 완료되었습니다! 🎉
         </h1>
@@ -484,18 +359,22 @@ export default function OrderComplete() {
         <div className="mt-6 flex justify-center">
           <Link
             href="/my-orders"
-            className="bg-sky-400 text-white font-bold py-2 px-6 rounded-lg hover:bg-sky-500 transition mb-12"
+            className="bg-sky-400 text-white font-bold py-2 px-6 rounded-lg hover:bg-sky-500 transition mb-12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2"
           >
             내 주문 조회하기
           </Link>
         </div>
-      </div>
+      </main>
       {subscriptionInfo && (
-        <div className="fixed bottom-4 right-4 bg-white shadow-md rounded-lg p-3 text-sm">
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-4 right-4 bg-white shadow-md rounded-lg p-3 text-sm"
+        >
           <span>배송 알림이 켜져 있어요.</span>
           <button
             onClick={handleUnsubscribe}
-            className="ml-2 text-sky-500 underline"
+            className="ml-2 text-sky-500 underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2"
           >
             알림 끄기
           </button>

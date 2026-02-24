@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
 import db from "@/lib/db";
-import getSession from "@/lib/session";
 import { CLIENT_COOKIE_NAME } from "../shared/client-id";
 import {
   buildClientCookie,
@@ -12,6 +10,13 @@ import {
   type ClientIdCandidateSource,
 } from "./client";
 import { backfillLoginDataForAppUser } from "@/lib/server/app-user-sync";
+import { maskPhone, mergeClientData, pickPreferredClientId } from "./client-link.merge";
+import {
+  findAppUserClient,
+  resolveSessionContext,
+  sanitizeCandidate,
+  type SessionResolutionContext,
+} from "./client-link.session";
 
 type AttachSource =
   | "kakao-login"
@@ -28,160 +33,11 @@ type AttachResult = {
   appUserId?: string;
 };
 
-type MergeSummary = {
-  movedFrom: string[];
-};
-
 type ResolveResult = {
   clientId: string | null;
   cookieToSet?: ReturnType<typeof buildClientCookie>;
   appUserId?: string;
 };
-
-type SessionResolutionContext = {
-  loggedIn: boolean;
-  kakaoId?: string;
-  trustedCandidate?: string;
-};
-
-async function findAppUserClient(kakaoId: string) {
-  return db.appUser.findUnique({
-    where: { kakaoId },
-    select: { id: true, clientId: true },
-  });
-}
-
-function sanitizeCandidate(
-  loggedIn: boolean,
-  candidate: string | null | undefined,
-  source: ClientIdCandidateSource | undefined
-) {
-  if (loggedIn) return undefined;
-  if (source === "header") return candidate;
-  return undefined;
-}
-
-async function resolveSessionContext(
-  candidate?: string | null,
-  candidateSource?: ClientIdCandidateSource
-): Promise<SessionResolutionContext> {
-  const session = await getSession();
-  const user = session.user;
-  const loggedIn = !!user?.loggedIn && typeof user.kakaoId === "number";
-  const trustedCandidate = sanitizeCandidate(
-    loggedIn,
-    candidate,
-    candidateSource
-  );
-  return {
-    loggedIn,
-    kakaoId: loggedIn ? String(user.kakaoId) : undefined,
-    trustedCandidate: trustedCandidate ?? undefined,
-  };
-}
-
-async function pickPreferredClientId(
-  current: string | null,
-  incoming: string | null
-): Promise<string | null> {
-  if (current && incoming && current === incoming) return current;
-  if (!current) return incoming;
-  if (!incoming) return current;
-
-  const ids = [current, incoming].filter(Boolean) as string[];
-  const rows = await db.client.findMany({
-    where: { id: { in: ids } },
-    select: { id: true, lastSeenAt: true, createdAt: true },
-  });
-
-  const map = new Map(rows.map((r) => [r.id, r]));
-  const currentRow = map.get(current);
-  const incomingRow = map.get(incoming);
-
-  const currentSeen = currentRow?.lastSeenAt ?? currentRow?.createdAt;
-  const incomingSeen = incomingRow?.lastSeenAt ?? incomingRow?.createdAt;
-
-  if (!currentSeen && incomingSeen) return incoming;
-  if (!incomingSeen && currentSeen) return current;
-  if (!currentSeen && !incomingSeen) return incoming;
-
-  if ((incomingSeen?.getTime() ?? 0) >= (currentSeen?.getTime() ?? 0)) {
-    return incoming;
-  }
-
-  return current;
-}
-
-async function mergeUserProfiles(
-  fromClientId: string,
-  toClientId: string,
-  tx: Prisma.TransactionClient
-) {
-  const profiles = await tx.userProfile.findMany({
-    where: { clientId: { in: [fromClientId, toClientId] } },
-  });
-
-  const fromProfile = profiles.find((p) => p.clientId === fromClientId);
-  const toProfile = profiles.find((p) => p.clientId === toClientId);
-
-  if (fromProfile && !toProfile) {
-    await tx.userProfile.update({
-      where: { clientId: fromClientId },
-      data: { clientId: toClientId },
-    });
-    return;
-  }
-
-  if (!fromProfile || !toProfile) return;
-
-  const preferFrom = fromProfile.updatedAt > toProfile.updatedAt;
-  if (preferFrom) {
-    await tx.userProfile.update({
-      where: { clientId: toClientId },
-      data: { data: fromProfile.data as Prisma.InputJsonValue },
-    });
-  }
-
-  await tx.userProfile.delete({ where: { clientId: fromClientId } });
-}
-
-async function mergeClientData(
-  fromClientId: string,
-  toClientId: string
-): Promise<MergeSummary> {
-  if (fromClientId === toClientId) return { movedFrom: [] };
-
-  await db.$transaction(async (tx) => {
-    await tx.assessmentResult.updateMany({
-      where: { clientId: fromClientId },
-      data: { clientId: toClientId },
-    });
-
-    await tx.checkAiResult.updateMany({
-      where: { clientId: fromClientId },
-      data: { clientId: toClientId },
-    });
-
-    await tx.chatSession.updateMany({
-      where: { clientId: fromClientId },
-      data: { clientId: toClientId },
-    });
-
-    await mergeUserProfiles(fromClientId, toClientId, tx);
-
-    await tx.order.updateMany({
-      where: { endpoint: fromClientId },
-      data: { endpoint: toClientId },
-    });
-  });
-
-  return { movedFrom: [fromClientId] };
-}
-
-function maskPhone(phone?: string | null) {
-  if (!phone) return phone;
-  return phone.replace(/(\d{3})\d*(\d{2})/, "$1***$2");
-}
 
 export async function attachClientToAppUser(options: {
   req?: NextRequest;

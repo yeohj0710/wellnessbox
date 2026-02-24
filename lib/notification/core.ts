@@ -7,241 +7,28 @@ import {
   startPushTimer,
 } from "@/lib/push/logging";
 import { webpush } from "./webpush-client";
+import { classifyPushError } from "./core.error";
+import {
+  finalizePushDeliveryGate,
+  invalidateDeadSubscriptions,
+  reservePushDeliveryGate,
+} from "./core.delivery-gate";
+import {
+  addFailureCount,
+  countDeadEndpointGroups,
+  dedupeSubscriptionsByEndpoint,
+  mapWithConcurrency,
+  resolvePushFanoutRuntimeConfig,
+  waitForRetry,
+} from "./core.runtime";
+import {
+  PushSendOutcome,
+  PushRole,
+  PushTarget,
+  SubscriptionRecord,
+} from "./core.types";
 
-export type PushRole = "customer" | "pharm" | "rider";
-
-export type PushTarget = {
-  orderId?: number;
-  pharmacyId?: number;
-  riderId?: number;
-};
-
-export type SubscriptionRecord = {
-  endpoint: string;
-  auth: string;
-  p256dh: string;
-};
-
-type PushFailureType =
-  | "dead_endpoint"
-  | "auth_error"
-  | "timeout"
-  | "network"
-  | "unknown"
-  | "internal";
-
-type PushClassifiedError = {
-  failureType: Exclude<PushFailureType, "internal">;
-  statusCode: number | null;
-  isDeadEndpoint: boolean;
-  isRetryable: boolean;
-};
-
-type PushSendOutcome =
-  | { kind: "sent"; endpoint: string }
-  | {
-      kind: "failed";
-      endpoint: string;
-      failureType: PushFailureType;
-      statusCode: number | null;
-      isDeadEndpoint: boolean;
-      errorMeta?: Record<string, unknown>;
-    };
-
-const DEFAULT_PUSH_CONCURRENCY = 8;
-const MAX_PUSH_CONCURRENCY = 32;
-const DEFAULT_PUSH_RETRY_COUNT = 1;
-const MAX_PUSH_RETRY_COUNT = 3;
-const TRANSIENT_ERROR_CODES = new Set([
-  "ETIMEDOUT",
-  "ESOCKETTIMEDOUT",
-  "ECONNRESET",
-  "EAI_AGAIN",
-  "ENOTFOUND",
-]);
-let pushDeliveryTableAvailable = true;
-
-function readPositiveInt(
-  value: string | undefined,
-  fallback: number,
-  max: number
-) {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
-  return Math.min(max, Math.floor(parsed));
-}
-
-function readNonNegativeInt(
-  value: string | undefined,
-  fallback: number,
-  max: number
-) {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed < 0) return fallback;
-  return Math.min(max, Math.floor(parsed));
-}
-
-function resolvePushConcurrency() {
-  return readPositiveInt(
-    process.env.WB_PUSH_SEND_CONCURRENCY,
-    DEFAULT_PUSH_CONCURRENCY,
-    MAX_PUSH_CONCURRENCY
-  );
-}
-
-function resolvePushRetryCount() {
-  return readNonNegativeInt(
-    process.env.WB_PUSH_SEND_RETRIES,
-    DEFAULT_PUSH_RETRY_COUNT,
-    MAX_PUSH_RETRY_COUNT
-  );
-}
-
-function isPushDedupeEnabled() {
-  return process.env.WB_PUSH_ENABLE_DEDUPE !== "0";
-}
-
-function shouldCleanDeadSubscriptions() {
-  return process.env.WB_PUSH_CLEAN_DEAD !== "0";
-}
-
-function dedupeByEndpoint(subs: SubscriptionRecord[]) {
-  const unique = new Map<string, SubscriptionRecord>();
-  for (const sub of subs) {
-    if (!sub.endpoint || unique.has(sub.endpoint)) continue;
-    unique.set(sub.endpoint, sub);
-  }
-  return Array.from(unique.values());
-}
-
-function isPrismaUniqueConstraintError(error: unknown) {
-  return (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    error.code === "P2002"
-  );
-}
-
-function isPushDeliveryTableMissingError(error: unknown) {
-  if (!(error instanceof Prisma.PrismaClientKnownRequestError)) return false;
-  if (error.code !== "P2021") return false;
-  const tableName = String((error.meta as { table?: unknown })?.table ?? "");
-  return tableName.toLowerCase().includes("pushdelivery");
-}
-
-function isRetryableStatusCode(statusCode: number | null) {
-  if (statusCode === null) return false;
-  return statusCode === 408 || statusCode === 429 || statusCode >= 500;
-}
-
-function classifyPushError(error: unknown): PushClassifiedError {
-  const rawStatusCode = Number(
-    (error as { statusCode?: unknown; status?: unknown } | undefined)
-      ?.statusCode ??
-      (error as { status?: unknown } | undefined)?.status
-  );
-  const statusCode = Number.isFinite(rawStatusCode) ? rawStatusCode : null;
-  const errorCode = String(
-    (error as { code?: unknown } | undefined)?.code ?? ""
-  ).toUpperCase();
-
-  if (statusCode === 404 || statusCode === 410) {
-    return {
-      failureType: "dead_endpoint",
-      statusCode,
-      isDeadEndpoint: true,
-      isRetryable: false,
-    };
-  }
-  if (statusCode === 401 || statusCode === 403) {
-    return {
-      failureType: "auth_error",
-      statusCode,
-      isDeadEndpoint: false,
-      isRetryable: false,
-    };
-  }
-  if (TRANSIENT_ERROR_CODES.has(errorCode) || statusCode === 408) {
-    return {
-      failureType: "timeout",
-      statusCode,
-      isDeadEndpoint: false,
-      isRetryable: true,
-    };
-  }
-  if (errorCode.startsWith("ECONN") || isRetryableStatusCode(statusCode)) {
-    return {
-      failureType: "network",
-      statusCode,
-      isDeadEndpoint: false,
-      isRetryable: true,
-    };
-  }
-  return {
-    failureType: "unknown",
-    statusCode,
-    isDeadEndpoint: false,
-    isRetryable: false,
-  };
-}
-
-function resolveTargetScope(role: PushRole, target: PushTarget) {
-  if (role === "customer") return { orderId: target.orderId };
-  if (role === "pharm") return { pharmacyId: target.pharmacyId };
-  return { riderId: target.riderId };
-}
-
-function buildPushDeliveryGateWhere(
-  eventKey: string,
-  role: PushRole,
-  target: PushTarget
-): Prisma.PushDeliveryWhereInput {
-  return {
-    eventKey,
-    role,
-    endpoint: "__target__",
-    ...resolveTargetScope(role, target),
-  };
-}
-
-function addFailureCount(
-  failureByType: Record<string, number>,
-  failureType: PushFailureType
-) {
-  failureByType[failureType] = (failureByType[failureType] ?? 0) + 1;
-}
-
-async function wait(ms: number) {
-  if (ms <= 0) return;
-  await new Promise<void>((resolve) => setTimeout(resolve, ms));
-}
-
-async function mapWithConcurrency<T, R>(
-  items: T[],
-  concurrency: number,
-  worker: (item: T, index: number) => Promise<R>
-): Promise<PromiseSettledResult<R>[]> {
-  if (items.length === 0) return [];
-  const size = Math.max(1, Math.min(concurrency, items.length));
-  const results = new Array<PromiseSettledResult<R>>(items.length);
-  let index = 0;
-
-  async function runWorker() {
-    while (true) {
-      const current = index;
-      index += 1;
-      if (current >= items.length) break;
-      try {
-        const value = await worker(items[current], current);
-        results[current] = { status: "fulfilled", value };
-      } catch (reason) {
-        results[current] = { status: "rejected", reason };
-      }
-    }
-  }
-
-  await Promise.all(Array.from({ length: size }, () => runWorker()));
-  return results;
-}
+export type { PushRole, PushTarget, SubscriptionRecord } from "./core.types";
 
 export async function fetchActiveSubscriptions(
   where: Prisma.SubscriptionWhereInput,
@@ -252,7 +39,7 @@ export async function fetchActiveSubscriptions(
     where: { ...where, invalidatedAt: null },
     select: { endpoint: true, auth: true, p256dh: true },
   });
-  const deduped = dedupeByEndpoint(raw);
+  const deduped = dedupeSubscriptionsByEndpoint(raw);
   pushLog("subscription.fetch", {
     label,
     rawCount: raw.length,
@@ -339,107 +126,6 @@ export async function getOrderPushSummary(
   };
 }
 
-async function reservePushDelivery(
-  eventKey: string,
-  role: PushRole,
-  target: PushTarget
-) {
-  if (!pushDeliveryTableAvailable) {
-    return { trackingEnabled: false, deduped: false };
-  }
-  try {
-    const result = await db.pushDelivery.createMany({
-      data: [
-        {
-          eventKey,
-          role,
-          endpoint: "__target__",
-          status: "pending",
-          ...resolveTargetScope(role, target),
-        },
-      ],
-      skipDuplicates: true,
-    });
-    return {
-      trackingEnabled: true,
-      deduped: result.count === 0,
-    };
-  } catch (error) {
-    if (isPushDeliveryTableMissingError(error)) {
-      pushDeliveryTableAvailable = false;
-      pushLog("send.dedupe.disabled", {
-        reason: "push_delivery_table_missing",
-      });
-      return { trackingEnabled: false, deduped: false };
-    }
-    if (isPrismaUniqueConstraintError(error)) {
-      return { trackingEnabled: true, deduped: true };
-    }
-    throw error;
-  }
-}
-
-async function finalizePushDeliveryGate(
-  eventKey: string,
-  role: PushRole,
-  target: PushTarget,
-  trackingEnabled: boolean,
-  status: "sent" | "failed" | "partial_failed",
-  failureByType: Record<string, number>
-) {
-  if (!trackingEnabled) return;
-  try {
-    await db.pushDelivery.updateMany({
-      where: buildPushDeliveryGateWhere(eventKey, role, target),
-      data: {
-        status,
-        deliveredAt: new Date(),
-        errorType: status === "sent" ? null : Object.keys(failureByType).join(","),
-        errorStatusCode: null,
-      },
-    });
-  } catch (error) {
-    if (isPushDeliveryTableMissingError(error)) {
-      pushDeliveryTableAvailable = false;
-      return;
-    }
-    throw error;
-  }
-}
-
-async function invalidateDeadSubscriptions(
-  role: PushRole,
-  target: PushTarget,
-  deadByStatus: Map<number, Set<string>>
-) {
-  if (deadByStatus.size === 0) return;
-  const scopeWhere = resolveTargetScope(role, target);
-  const now = new Date();
-  const updates: Prisma.PrismaPromise<unknown>[] = [];
-
-  for (const [statusCode, endpointSet] of deadByStatus.entries()) {
-    const endpoints = Array.from(endpointSet);
-    if (endpoints.length === 0) continue;
-    updates.push(
-      db.subscription.updateMany({
-        where: {
-          role,
-          ...scopeWhere,
-          endpoint: { in: endpoints },
-        },
-        data: {
-          invalidatedAt: now,
-          lastFailureStatus: statusCode,
-        },
-      })
-    );
-  }
-
-  if (updates.length > 0) {
-    await db.$transaction(updates);
-  }
-}
-
 type SendPushFanoutOptions = {
   label: string;
   role: PushRole;
@@ -463,13 +149,11 @@ export async function sendPushFanout({
   }
 
   const startedAt = startPushTimer();
-  const concurrency = resolvePushConcurrency();
-  const retryCount = resolvePushRetryCount();
-  const dedupeEnabled = isPushDedupeEnabled();
-  const deadCleanupEnabled = shouldCleanDeadSubscriptions();
+  const { concurrency, retryCount, dedupeEnabled, deadCleanupEnabled } =
+    resolvePushFanoutRuntimeConfig();
 
   const deliveryGate = dedupeEnabled
-    ? await reservePushDelivery(eventKey, role, target)
+    ? await reservePushDeliveryGate(eventKey, role, target)
     : { trackingEnabled: false, deduped: false };
   if (dedupeEnabled && deliveryGate.deduped) {
     pushLog("send.deduped", {
@@ -519,7 +203,7 @@ export async function sendPushFanout({
           const classified = classifyPushError(error);
           const shouldRetry = classified.isRetryable && attempt < maxAttempts;
           if (shouldRetry) {
-            await wait(60 * attempt);
+            await waitForRetry(60 * attempt);
             continue;
           }
           return {
@@ -597,10 +281,7 @@ export async function sendPushFanout({
     sentCount,
     failedCount,
     dedupedCount: dedupeEnabled && deliveryGate.deduped ? subscriptions.length : 0,
-    deadEndpointCount: Array.from(deadByStatus.values()).reduce(
-      (acc, endpointSet) => acc + endpointSet.size,
-      0
-    ),
+    deadEndpointCount: countDeadEndpointGroups(deadByStatus),
     failureByType,
     elapsedMs: elapsedPushMs(startedAt),
   });

@@ -2,9 +2,6 @@
 
 import { useEffect, useMemo, useState, useRef } from "react";
 import { formatPriceRange } from "@/lib/utils";
-import { getReviewsByProductId } from "@/lib/review";
-import StarRating from "@/components/common/starRating";
-import FullPageLoader from "@/components/common/fullPageLoader";
 import FirstModal from "@/components/product/FirstModal";
 import {
   ChevronLeftIcon,
@@ -16,6 +13,13 @@ import {
 import Image from "next/image";
 import { shouldBypassNextImageOptimizer } from "@/lib/shared/image";
 import { useDraggableModal } from "@/components/common/useDraggableModal";
+import {
+  getCapacityByOptionType,
+  getRelevantPharmacyProducts,
+  readCartSnapshotSafe,
+  sortOptionTypes,
+} from "./productDetail.helpers";
+import { useProductDetailDismissGuards } from "./useProductDetailDismissGuards";
 
 export default function ProductDetail({
   product,
@@ -27,10 +31,6 @@ export default function ProductDetail({
 }: any) {
   const [quantity, setQuantity] = useState(1);
   const [isFirstModalOpen, setIsFirstModalOpen] = useState(false);
-  const [reviews, setReviews] = useState<any[]>([]);
-  const [isLoadingReviews, setIsLoadingReviews] = useState(true);
-  const [totalReviewCount, setTotalReviewCount] = useState(0);
-  const [averageRating, setAverageRating] = useState<number>(5.0);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedOption, setSelectedOption] = useState<any>(optionType);
   const selectedImageRef = useRef<string | null>(null);
@@ -41,88 +41,15 @@ export default function ProductDetail({
     resetOnOpen: true,
   });
 
-  useEffect(() => {
-    async function fetchReviews() {
-      if (!product.id) return;
-      setIsLoadingReviews(true);
-      const fetchedReviews = await getReviewsByProductId(product.id);
-      let totalRating = 0;
-      const maskedReviews = fetchedReviews.map((review: any) => {
-        totalRating += review.rate;
-        return {
-          ...review,
-          order: {
-            phone: review.order?.phone
-              ? review.order.phone.replace(
-                  /(\d{3})[-.]?(\d{4})[-.]?(\d{4})/,
-                  "$1-****-$3"
-                )
-              : null,
-          },
-          formattedCreatedAt: new Date(review.createdAt).toLocaleDateString(),
-          formattedOrderCreatedAt: review.order?.createdAt
-            ? new Date(review.order.createdAt).toLocaleDateString()
-            : null,
-        };
-      });
-      setReviews(maskedReviews);
-      setTotalReviewCount(maskedReviews.length);
-      setAverageRating(
-        maskedReviews.length > 0
-          ? parseFloat((totalRating / maskedReviews.length).toFixed(1))
-          : 0.0
-      );
-      setIsLoadingReviews(false);
-    }
-    fetchReviews();
-  }, [product.id]);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        if (selectedImageRef.current) {
-          setSelectedImage(null);
-          return;
-        }
-        if (firstModalRef.current) {
-          setIsFirstModalOpen(false);
-          return;
-        }
-        onClose();
-      }
-      if (event.key === "ArrowLeft") setCurrentIdx((v) => Math.max(0, v - 1));
-      if (event.key === "ArrowRight")
-        setCurrentIdx((v) =>
-          Math.min((product.images?.length || 1) - 1, v + 1)
-        );
-    };
-    document.addEventListener("keydown", handleKeyDown);
-
-    const isMobile = /Mobi|Android/i.test(navigator.userAgent);
-    const handlePopState = () => {
-      if (selectedImageRef.current) {
-        setSelectedImage(null);
-        window.history.pushState(null, "", window.location.href);
-        return;
-      }
-      if (firstModalRef.current) {
-        setIsFirstModalOpen(false);
-        window.history.pushState(null, "", window.location.href);
-        return;
-      }
-      onClose();
-    };
-
-    if (isMobile) {
-      window.history.pushState(null, "", window.location.href);
-      window.addEventListener("popstate", handlePopState);
-    }
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      if (isMobile) window.removeEventListener("popstate", handlePopState);
-    };
-  }, [onClose, product.images?.length]);
+  useProductDetailDismissGuards({
+    onClose,
+    imageCount: product.images?.length || 1,
+    selectedImageRef,
+    setSelectedImage,
+    firstModalRef,
+    setIsFirstModalOpen,
+    setCurrentIdx,
+  });
 
   useEffect(() => {
     selectedImageRef.current = selectedImage;
@@ -138,40 +65,24 @@ export default function ProductDetail({
     }
   }, [product.pharmacyProducts, selectedOption]);
 
-  const rawOptionTypes = useMemo(() => {
-    const base = pharmacy
-      ? product.pharmacyProducts.filter(
-          (pp: any) => pp.pharmacy?.id === pharmacy.id
-        )
-      : product.pharmacyProducts;
-    return Array.from(
-      new Set(base.map((pp: any) => pp.optionType))
-    ) as string[];
-  }, [product.pharmacyProducts, pharmacy]);
+  const relevantPharmacyProducts = useMemo(
+    () => getRelevantPharmacyProducts(product.pharmacyProducts, pharmacy),
+    [pharmacy, product.pharmacyProducts]
+  );
 
   const sortedOptionTypes = useMemo(() => {
-    const score = (ot: string) => {
-      if (/일반/.test(ot)) return { group: 2, n: Number.POSITIVE_INFINITY };
-      const m = ot.match(/(\d+)\s*(일|정)/);
-      if (m) return { group: 0, n: parseInt(m[1], 10) };
-      return { group: 1, n: Number.POSITIVE_INFINITY - 1 };
-    };
-    return [...rawOptionTypes].sort((a, b) => {
-      const sa = score(a);
-      const sb = score(b);
-      if (sa.group !== sb.group) return sa.group - sb.group;
-      return sa.n - sb.n;
-    });
-  }, [rawOptionTypes]);
+    const uniqueOptionTypes = Array.from(
+      new Set(
+        relevantPharmacyProducts
+          .map((item) => item.optionType)
+          .filter((optionType): optionType is string => !!optionType)
+      )
+    );
+    return sortOptionTypes(uniqueOptionTypes);
+  }, [relevantPharmacyProducts]);
 
-  const getCapacityOf = (ot: string) => {
-    const relevant = pharmacy
-      ? product.pharmacyProducts.filter(
-          (pp: any) => pp.pharmacy?.id === pharmacy.id
-        )
-      : product.pharmacyProducts;
-    return relevant.find((pp: any) => pp.optionType === ot)?.capacity;
-  };
+  const getCapacityOf = (optionType: string) =>
+    getCapacityByOptionType(relevantPharmacyProducts, optionType);
 
   const handleQuantityChange = (delta: number) => {
     setQuantity((prev) => Math.max(1, prev + delta));
@@ -356,8 +267,7 @@ export default function ProductDetail({
               onClick={async () => {
                 if (!selectedOption) return;
 
-                const snapshotStr = localStorage.getItem("cartItems");
-                const snapshot = snapshotStr ? JSON.parse(snapshotStr) : [];
+                const snapshot = readCartSnapshotSafe();
                 if (
                   snapshot.length === 0 &&
                   !localStorage.getItem("roadAddress")

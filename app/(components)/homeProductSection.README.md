@@ -14,6 +14,20 @@ Keep `homeProductSection.tsx` focused on orchestration and UI composition, while
   - Package labels and user-facing copy constants (Korean default).
 - `useHomeProductPharmacy.ts`
   - Nearby-pharmacy fetch/retry lifecycle (address guard, empty-stock fallback, loading/error state).
+- `useHomeProductActions.ts`
+  - Product detail/cart open-close callbacks, return-path restore, and scroll restoration orchestration.
+- `useHomeProductSectionEffects.ts`
+  - Stable barrel export surface for home section effect hooks.
+- `useHomeProductSectionEffects.ui.ts`
+  - UI sync effects (cart sync listeners, hash/open-cart events, footer visibility control).
+- `useHomeProductSectionEffects.query.ts`
+  - Search param synchronization effects (package/category/product/cart query handling).
+- `useHomeProductSectionEffects.lifecycle.ts`
+  - Lifecycle effects (cache bootstrap, cart restore, recovery fetch, address-clear handling).
+- `useHomeProductSectionEffects.computation.ts`
+  - Computation effects (total price, symptom->category mapping, stock-aware cart prune, filtered products).
+- `homeProductSectionEffects.types.ts`
+  - Shared effect input type aliases used across effect modules.
 - `homeProductSection.view.tsx`
   - View-only shared status/notice components.
 

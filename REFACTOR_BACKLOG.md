@@ -128,6 +128,81 @@ Base input: `npm run audit:hotspots`
    - Added `useChat.followups.ts` to centralize suggestion/action follow-up fetch pipelines.
    - Moved fallback/history handling for suggestion generation out of `useChat.ts`.
    - Moved interactive action candidate resolution + fallback prioritization out of `useChat.ts`.
+35. `lib/notification/core.ts` push fanout boundary split
+   - Extracted push runtime/env policy helpers to `lib/notification/core.runtime.ts`.
+   - Extracted push error classification + Prisma error guards to `lib/notification/core.error.ts`.
+   - Extracted push delivery dedupe/finalize/dead-endpoint cleanup to `lib/notification/core.delivery-gate.ts`.
+   - Added shared push types in `lib/notification/core.types.ts`.
+   - Reduced `core.ts` to subscription/query + fanout orchestration flow.
+36. `lib/server/result-normalizer.ts` snapshot normalization boundary split
+   - Added `lib/server/result-normalizer.types.ts` for snapshot/result contracts + version constants.
+   - Added `lib/server/result-normalizer.shared.ts` for parser/normalizer primitives.
+   - Split assess-specific logic into `lib/server/result-normalizer.assess.ts`.
+   - Split check-ai-specific logic into `lib/server/result-normalizer.check-ai.ts`.
+   - Reduced `lib/server/result-normalizer.ts` to stable export surface + snapshot-version assertion.
+37. `app/my-data/page.tsx` server-data orchestration split
+   - Added `app/my-data/myDataPageData.ts` to isolate session/actor/appUser lookup and DB query orchestration.
+   - Reduced page-level responsibilities to route guard + view composition.
+   - Replaced inline profile-phone cast with typed helper (`readProfilePhone`).
+38. `lib/product/product.ts` query duplication cleanup
+   - Added shared in-stock where/select/order constants (`IN_STOCK_PRODUCT_WHERE`, `PRODUCT_CARD_SELECT`, `DEFAULT_PRODUCT_ORDER`).
+   - Deduplicated `getProducts`/`getProductsByUpdatedAt` through `findProductsForCards`.
+   - Replaced repeated relation id formatter (`any[]`) with typed helper `mapRelationIds`.
+39. `app/(orders)/order-complete/page.tsx` payment/orchestration cleanup
+   - Added `app/(orders)/order-complete/orderCompleteFlow.ts` for payment-context parsing, order-draft hydration, payment-outcome normalization, and checkout/payment storage cleanup helpers.
+   - Replaced duplicated inicis/non-inicis order-create branches with one shared `createOrderFromPaymentOutcome` path.
+   - Added lock release safety (`finally`) and non-OK payment-info response handling to prevent stale local storage loops.
+   - Removed unused login-status fetch from order-complete page.
+   - Added semantic/accessibility polish (`main` landmark, `aria-live` push status toast, focus-visible rings).
+40. `app/chat/components/MessageBubble.tsx` markdown-rendering boundary split
+   - Added `app/chat/components/messageBubble.markdown.tsx` for markdown plugin configuration and renderer component map.
+   - Added `app/chat/components/messageBubble.format.ts` for shared message-text newline normalization.
+   - Reduced in-component object churn by memoizing remark/rehype plugin lists and markdown component map.
+   - Kept loading/copy/chat bubble orchestration in `MessageBubble.tsx` while moving render policy helpers out.
+41. `app/api/get-payment-info/route.ts` payment verification safety hardening
+   - Replaced ad-hoc body parsing with `zod` request validation (`paymentId`, `paymentMethod` required).
+   - Added explicit env validation for PortOne v1/v2 credentials before remote calls.
+   - Split PortOne v1/v2 token/payment lookup paths into dedicated helpers with shared error parsing.
+   - Normalized API error responses (`400` invalid input, `500` provider/runtime failure) for predictable caller handling.
+42. `app/(components)/homeProductSection.tsx` UI action boundary split
+   - Added `app/(components)/useHomeProductActions.ts` for product-detail/cart open-close callbacks and scroll/return-path restore behavior.
+   - Removed inline `restoreScroll`, `openProductDetail`, `closeProductDetail`, `openCart`, `closeCart` blocks from page component.
+   - Kept page-level state/effect orchestration in `homeProductSection.tsx` and moved only imperative UI action handlers.
+43. `app/assess/page.tsx` storage boundary split
+   - Added `app/assess/lib/assessStorage.ts` for assess state load/save/clear helpers and C-section rollback helper.
+   - Replaced direct inline `localStorage` snapshot/rollback mutations in page with storage helper calls.
+   - Kept question flow/evaluation orchestration in page component while isolating persistence concerns.
+44. `app/(components)/useHomeProductSectionEffects.ts` effect-module boundary split
+   - Split monolithic effect module into dedicated files:
+     - `useHomeProductSectionEffects.ui.ts`
+     - `useHomeProductSectionEffects.query.ts`
+     - `useHomeProductSectionEffects.lifecycle.ts`
+     - `useHomeProductSectionEffects.computation.ts`
+   - Added shared type aliases in `homeProductSectionEffects.types.ts`.
+   - Converted `useHomeProductSectionEffects.ts` into a stable barrel export surface to keep call sites unchanged.
+45. `lib/product/product.ts` product-module boundary split
+   - Added `lib/product/product.shared.ts` for shared in-stock where/select/order constants and rating-default mapper.
+   - Added `lib/product/product.catalog.ts` for card list, updated list, name list, and summary query paths.
+   - Added `lib/product/product.admin.ts` for admin CRUD/query paths and typed relation-id mapping helper.
+   - Kept `lib/product/product.ts` as the stable export surface and chat-catalog pricing-selection logic with async wrapper exports.
+46. `lib/server/client-link.ts` client-resolution boundary split
+   - Added `lib/server/client-link.session.ts` for session-context resolution and appUser client lookup helpers.
+   - Added `lib/server/client-link.merge.ts` for client merge selection/merge execution/masked phone helpers.
+   - Reduced `lib/server/client-link.ts` to attach/resolve orchestration with shared helper imports.
+   - Preserved auth/ownership behavior while shrinking high-cyclomatic merge/session internals from the main entry module.
+47. `lib/server/hyphen/client.ts` transport boundary split
+   - Added `lib/server/hyphen/client.contracts.ts` for endpoint constants and Hyphen request/response contracts.
+   - Added `lib/server/hyphen/client.runtime.ts` for auth-header/env timeout/common parsing helpers.
+   - Added `lib/server/hyphen/client.request.ts` for `hyphenPost` transport and `HyphenApiError` classification.
+   - Reduced `lib/server/hyphen/client.ts` to stable export surface + endpoint wrapper composition.
+48. `lib/server/hyphen/fetch-executor.ts` helper-boundary split
+   - Added `lib/server/hyphen/fetch-executor.helpers.ts` for date/year parsing, detail-key extraction, list merge, and medication probe-window helpers.
+   - Reduced `lib/server/hyphen/fetch-executor.ts` to orchestration flow + failure policy handling.
+   - Preserved endpoint call order and partial-failure semantics while lowering core executor size.
+49. `lib/rnd/module07-biosensor-genetic-integration/mvp-engine.ts` runtime boundary split
+   - Added `lib/rnd/module07-biosensor-genetic-integration/mvp-engine.shared.ts` for deterministic run-id/source-map/group/sort/source-summary helpers.
+   - Added `lib/rnd/module07-biosensor-genetic-integration/mvp-engine.artifacts.ts` for session artifact payload/evidence/lineage construction.
+   - Reduced `mvp-engine.ts` to input validation + wiring/orchestration loop while preserving deterministic output contracts.
 
 ## Priority 1 (next)
 

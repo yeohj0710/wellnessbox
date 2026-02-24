@@ -98,6 +98,7 @@ export async function middleware(req: NextRequest) {
 
   const isEnglishRoute = isEnglishPrefixed(pathname);
   const hasEnglishCookie = req.cookies.get(EN_LOCALE_COOKIE)?.value === "en";
+  const normalizedPathname = stripEnglishPrefix(pathname);
 
   const referer = req.headers.get("referer");
   let refererPathname: string | null = null;
@@ -121,6 +122,28 @@ export async function middleware(req: NextRequest) {
     isEnglishRoute || (hasEnglishCookie && cameFromEnglish);
 
   if (!isDocumentNav) {
+    if (isEnglishRoute) {
+      const rewriteUrl = req.nextUrl.clone();
+      rewriteUrl.pathname = normalizedPathname;
+
+      const requestHeaders = new Headers(req.headers);
+      requestHeaders.set(EN_LOCALE_HEADER, "en");
+
+      const rewriteResponse = NextResponse.rewrite(rewriteUrl, {
+        request: {
+          headers: requestHeaders,
+        },
+      });
+
+      rewriteResponse.cookies.set(EN_LOCALE_COOKIE, "en", {
+        path: "/",
+        maxAge: 60 * 60 * 24 * 30,
+      });
+      rewriteResponse.headers.set(EN_LOCALE_HEADER, "en");
+
+      return attachClientCookie(req, rewriteResponse);
+    }
+
     const res = NextResponse.next();
     if (!cameFromEnglish && hasEnglishCookie) {
       res.cookies.delete(EN_LOCALE_COOKIE);
@@ -145,7 +168,6 @@ export async function middleware(req: NextRequest) {
     return attachClientCookie(req, res);
   }
 
-  const normalizedPathname = stripEnglishPrefix(pathname);
   const adminToken = req.cookies.get("admin")?.value;
 
   const shouldProtect = isProtectedPath(normalizedPathname);
