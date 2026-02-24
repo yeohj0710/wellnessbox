@@ -179,8 +179,13 @@
 .nextButton:focus-visible,
 .unlinkButton:focus-visible,
 .detailButton:focus-visible,
+.metricExpandButton:focus-visible,
+.metricCollapseButton:focus-visible,
 .advancedActionDetails summary:focus-visible,
+.secondaryActionDetails summary:focus-visible,
+.secondaryActionButton:focus-visible,
 .statusDetails summary:focus-visible,
+.optionalSection summary:focus-visible,
 .optionalLoginDetails summary:focus-visible,
 .rawSection summary:focus-visible {
   outline: 2px solid #6ba4ff;
@@ -429,6 +434,52 @@
   gap: 8px;
 }
 
+.secondaryActionDetails {
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #f8fafd;
+  padding: 10px 12px;
+}
+
+.secondaryActionDetails summary {
+  cursor: pointer;
+  user-select: none;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.secondaryActionBody {
+  margin-top: 8px;
+  display: grid;
+  gap: 7px;
+}
+
+.secondaryActionButton {
+  width: fit-content;
+  border: 0;
+  background: transparent;
+  color: #245ecf;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.secondaryActionButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.secondaryActionHint {
+  margin: 0;
+  color: var(--ink-3);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .unlinkButton {
   width: fit-content;
   border: 0;
@@ -570,6 +621,60 @@
   color: var(--ink-1);
   line-height: 1.45;
   word-break: break-word;
+}
+
+.optionalSection {
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 10px 12px;
+}
+
+.optionalSection summary {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-1);
+}
+
+.optionalSection summary small {
+  color: var(--ink-3);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.optionalSectionBody {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.optionalSummaryRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.optionalSummaryRow span {
+  border-radius: 999px;
+  border: 1px solid #dce4f2;
+  background: #f8fafd;
+  color: var(--ink-2);
+  padding: 4px 9px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.optionalBodyText {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .emptyPanel {
@@ -732,37 +837,6 @@
   gap: 10px;
 }
 
-.resultOverview {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.overviewItem {
-  border-radius: 12px;
-  border: 1px solid #dae2ef;
-  background: #f8fbff;
-  padding: 10px;
-  display: grid;
-  gap: 4px;
-}
-
-.overviewItem span {
-  font-size: 12px;
-  color: var(--ink-3);
-}
-
-.overviewItem strong {
-  font-size: 17px;
-  color: var(--ink-1);
-  letter-spacing: -0.01em;
-}
-
-.overviewWarn {
-  border-color: #ffd8ae;
-  background: #fff8ef;
-}
-
 .metricCard {
   border-radius: 14px;
   border: 1px solid var(--line);
@@ -878,14 +952,14 @@
   gap: 10px;
 }
 
-.aiSummarySection {
+.summaryHeroSection {
   border-color: #cfe0ff;
   background:
-    radial-gradient(circle at 92% 4%, rgba(49, 130, 246, 0.14), transparent 46%),
-    #f7fbff;
+    radial-gradient(circle at 92% 4%, rgba(49, 130, 246, 0.12), transparent 46%),
+    linear-gradient(180deg, #f8fbff 0%, #ffffff 88%);
 }
 
-.aiSummaryHeadline {
+.summaryHeroHeadline {
   margin: 0;
   font-size: 16px;
   line-height: 1.4;
@@ -893,11 +967,84 @@
   letter-spacing: -0.01em;
 }
 
-.aiSummaryText {
+.summaryHeroBody {
   margin: 0;
   color: var(--ink-2);
   font-size: 13px;
   line-height: 1.6;
+}
+
+.summaryStatRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.summaryStatPill {
+  border-radius: 999px;
+  border: 1px solid #dbe4f4;
+  background: #fff;
+  color: var(--ink-2);
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.summaryWarnPill {
+  border-color: #ffd8ae;
+  background: #fff8ef;
+  color: #8a5b00;
+}
+
+.summaryInsightList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.summaryInsightList li {
+  border-radius: 10px;
+  border: 1px solid #dce6f8;
+  background: #fff;
+  padding: 10px;
+  display: grid;
+  gap: 5px;
+}
+
+.summaryInsightTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.summaryInsightTop strong {
+  font-size: 13px;
+}
+
+.summaryInsightValue {
+  margin: 0;
+  color: var(--ink-1);
+  font-size: 20px;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.summaryInsightText {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.summaryInsightTip {
+  margin: 0;
+  color: #486188;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .aiRiskBadge {
@@ -934,35 +1081,6 @@
   color: #4e5968;
   border-color: #d0d7e4;
   background: #f3f6fb;
-}
-
-.aiChipWrap {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.aiHighlightChip {
-  border-radius: 999px;
-  border: 1px solid #d8e6fb;
-  background: #ffffff;
-  color: #2e3a4d;
-  padding: 5px 10px;
-  font-size: 12px;
-  line-height: 1.3;
-}
-
-.aiActionList {
-  margin: 0;
-  padding: 0 0 0 18px;
-  display: grid;
-  gap: 6px;
-}
-
-.aiActionList li {
-  color: var(--ink-2);
-  font-size: 13px;
-  line-height: 1.5;
 }
 
 .compactHeader {
@@ -1046,11 +1164,41 @@
   color: var(--ink-1);
 }
 
+.metricGuide {
+  margin: 0;
+  color: #2f3d53;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .metricReference {
   margin: 0;
   color: var(--ink-3);
   font-size: 11px;
   line-height: 1.45;
+}
+
+.metricExpandButton,
+.metricCollapseButton {
+  min-height: 42px;
+  border-radius: 12px;
+  border: 1px solid #cde2ff;
+  background: #edf5ff;
+  color: #245ecf;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.metricCollapseButton {
+  border-color: var(--line-strong);
+  background: #fff;
+  color: var(--ink-2);
+}
+
+.metricExpandButton:hover,
+.metricCollapseButton:hover {
+  filter: brightness(0.98);
 }
 
 .metricRow {
@@ -1367,7 +1515,6 @@
   .metricGrid,
   .metaGrid,
   .loadingSkeletonGrid,
-  .resultOverview,
   .metricBoard,
   .medicationSummaryGrid {
     grid-template-columns: 1fr;
@@ -1375,6 +1522,14 @@
 
   .nextButton {
     min-height: 50px;
+  }
+
+  .summaryInsightList li {
+    padding: 9px;
+  }
+
+  .summaryInsightValue {
+    font-size: 18px;
   }
 }
 

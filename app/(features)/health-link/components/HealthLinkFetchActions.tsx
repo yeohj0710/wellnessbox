@@ -7,17 +7,21 @@ import { SpinnerLabel } from "./HealthLinkCommon";
 type HealthLinkFetchActionsProps = {
   statusLinked: boolean;
   summaryDisabled: boolean;
+  switchIdentityDisabled: boolean;
   hasFetchResult: boolean;
   primaryLoading: boolean;
   onSummaryFetch: () => void;
+  onSwitchIdentity: () => void;
 };
 
 export function HealthLinkFetchActions({
   statusLinked,
   summaryDisabled,
+  switchIdentityDisabled,
   hasFetchResult,
   primaryLoading,
   onSummaryFetch,
+  onSwitchIdentity,
 }: HealthLinkFetchActionsProps) {
   if (!statusLinked) return null;
 
@@ -39,6 +43,22 @@ export function HealthLinkFetchActions({
           }
         />
       </button>
+      <details className={styles.secondaryActionDetails}>
+        <summary>{HEALTH_LINK_COPY.action.moreOptions}</summary>
+        <div className={styles.secondaryActionBody}>
+          <button
+            type="button"
+            onClick={onSwitchIdentity}
+            disabled={switchIdentityDisabled}
+            className={styles.secondaryActionButton}
+          >
+            {HEALTH_LINK_COPY.action.switchIdentity}
+          </button>
+          <p className={styles.secondaryActionHint}>
+            {HEALTH_LINK_COPY.result.switchIdentityHint}
+          </p>
+        </div>
+      </details>
     </div>
   );
 }

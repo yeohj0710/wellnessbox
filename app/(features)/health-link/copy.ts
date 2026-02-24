@@ -28,6 +28,10 @@ export const HEALTH_LINK_COPY = {
     fetchNow: "최신 결과 불러오기",
     reload: "최신 결과 다시 조회",
     retryAuth: "카카오 인증 다시 요청",
+    moreOptions: "기타 옵션",
+    switchIdentity: "다른 사람으로 조회",
+    switchIdentityConfirm:
+      "현재 연동 정보를 정리하고 다른 사람 조회를 시작할까요?",
     unlink: "연동 해제",
     refreshStatus: "상태 새로고침",
   },
@@ -157,6 +161,16 @@ export const HEALTH_LINK_COPY = {
     sessionExpiredTitle: "세션이 만료되었습니다",
     sessionExpiredGuide:
       "상단 1번 영역에서 `카카오 인증 다시 요청`을 눌러 재인증을 시작해 주세요.",
+    switchIdentityHint: "새 인증이 필요할 때만 사용하세요.",
+    summaryTitle: "핵심 요약",
+    summaryFallbackHeadline: "검사 결과를 간단히 정리했어요.",
+    summaryFallbackBody:
+      "필요한 항목부터 확인할 수 있도록 핵심 수치와 주의 항목을 먼저 보여드려요.",
+    metricExpandPrefix: "검진 항목 ",
+    metricExpandSuffix: "개 더 보기",
+    metricCollapseLabel: "검진 항목 접기",
+    metricLead: "궁금한 묶음만 선택해 빠르게 확인하세요.",
+    medicationDetailsSummary: "복약 이력 보기",
     empty: "아직 불러온 검진 수치가 없습니다.",
     latestDateTitle: "최신 검진일",
     latestDateFallback: "검진일 정보 없음",

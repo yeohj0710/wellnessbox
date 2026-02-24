@@ -8,6 +8,7 @@ import {
   type CheckupMetricTone,
   type MedicationDigest,
 } from "../utils";
+import { parseNumberFromText, parseRangeFromText } from "../utils-health-metric-tone";
 import styles from "../HealthLinkClient.module.css";
 
 export type LatestCheckupRow = {
@@ -41,6 +42,14 @@ export type MetricTab = {
   id: MetricGroupId;
   label: string;
   count: number;
+};
+
+export type MetricInsightCard = {
+  metric: string;
+  value: string;
+  tone: CheckupMetricTone;
+  interpretation: string;
+  tip: string;
 };
 
 const METRIC_GROUPS: Array<{
@@ -145,6 +154,126 @@ export function buildMetricGroups(rows: LatestCheckupRow[]) {
   return grouped;
 }
 
+function resolveMetricActionTip(metric: string) {
+  const normalized = metric.toLowerCase();
+  if (/(혈압|수축기|이완기|pressure|bp)/i.test(normalized)) {
+    return "아침/저녁 같은 시간대에 1주일 정도 재서 추세를 같이 확인해 보세요.";
+  }
+  if (/(혈당|당화|hba1c|a1c|glucose)/i.test(normalized)) {
+    return "식사 시간과 간식 패턴을 기록하면 다음 검사에서 원인 파악이 쉬워져요.";
+  }
+  if (/(체질량|bmi|체중|허리|복부)/i.test(normalized)) {
+    return "급격한 변화보다 수면과 식사 시간을 일정하게 맞추는 것부터 시작해 보세요.";
+  }
+  if (/(콜레스테롤|hdl|ldl|중성지방|triglyceride)/i.test(normalized)) {
+    return "야식과 기름진 음식 빈도를 줄이고 한 달 후 변화를 비교해 보세요.";
+  }
+  if (/(ast|alt|간|ggt|감마|크레아티닌|egfr|신장)/i.test(normalized)) {
+    return "충분한 수분 섭취와 생활습관 점검 후 필요하면 의료진과 상담해 보세요.";
+  }
+  return "이번 수치를 저장해 두고 다음 검진 때 같은 항목과 비교해 보세요.";
+}
+
+function resolveMetricInterpretation(
+  metric: string,
+  valueText: string,
+  tone: CheckupMetricTone,
+  reference: string
+) {
+  const normalizedMetric = metric.toLowerCase();
+  const bp = valueText.replace(/\s/g, "").match(/^(\d{2,3})\/(\d{2,3})/);
+  if (bp && /(혈압|수축기|이완기|pressure|bp)/i.test(normalizedMetric)) {
+    const systolic = Number(bp[1]);
+    const diastolic = Number(bp[2]);
+    if (systolic >= 140 || diastolic >= 90) {
+      return "혈압이 높게 기록되어 생활습관 점검이 필요해 보입니다.";
+    }
+    if (systolic < 90 || diastolic < 60) {
+      return "혈압이 낮게 기록되어 컨디션과 함께 다시 확인해 보는 편이 좋아요.";
+    }
+    return "혈압이 기준 범위에 가까운 편으로 보여요.";
+  }
+
+  const numericValue = parseNumberFromText(valueText);
+  if (numericValue !== null && reference) {
+    const ranges = reference
+      .split("|")
+      .map((item) => parseRangeFromText(item))
+      .filter((range) => range !== null);
+    if (ranges.length > 0) {
+      const inRange = ranges.some((range) => {
+        const minOk = typeof range.min !== "number" || numericValue >= range.min;
+        const maxOk = typeof range.max !== "number" || numericValue <= range.max;
+        return minOk && maxOk;
+      });
+      if (inRange) {
+        return "참고 범위 안에서 확인되는 수치예요.";
+      }
+      return "참고 범위와 차이가 있어 추가 확인이 필요할 수 있어요.";
+    }
+  }
+
+  if (tone === "caution") {
+    return "최근 검사 기준으로 생활 관리가 필요한 항목으로 표시됐어요.";
+  }
+
+  if (reference) {
+    return `참고 범위(${reference})와 함께 보면 변화 여부를 더 쉽게 알 수 있어요.`;
+  }
+  return "현재 수치를 기준으로 다음 검사에서 추세를 비교해 보세요.";
+}
+
+function buildMetricGuide({
+  metric,
+  value,
+  tone,
+  reference,
+}: {
+  metric: string;
+  value: string;
+  tone: CheckupMetricTone;
+  reference: string;
+}) {
+  return resolveMetricInterpretation(metric, value, tone, reference);
+}
+
+export function buildMetricInsightCards(
+  rows: LatestCheckupRow[],
+  maxItems = 4
+): MetricInsightCard[] {
+  const cards: MetricInsightCard[] = [];
+
+  for (const row of rows) {
+    const metric = typeof row.metric === "string" ? row.metric.trim() : "";
+    if (!metric) continue;
+
+    const value = formatDataCell(row.value ?? row.itemData ?? null);
+    if (!value || value === "-") continue;
+
+    const reference = [row.normalA, row.normalB, row.suspicionDis]
+      .map((item) => formatDataCell(item))
+      .filter((item) => item !== "-")
+      .join(" | ");
+
+    cards.push({
+      metric,
+      value,
+      tone: row.statusTone,
+      interpretation: buildMetricGuide({
+        metric,
+        value,
+        tone: row.statusTone,
+        reference,
+      }),
+      tip: resolveMetricActionTip(metric),
+    });
+
+    if (cards.length >= maxItems) break;
+  }
+
+  return cards;
+}
+
 export function buildMetricTabs(
   groupedRows: Record<Exclude<MetricGroupId, "all">, LatestCheckupRow[]>,
   totalCount: number
@@ -181,6 +310,13 @@ export function renderMetricCards(rows: LatestCheckupRow[]) {
       .map((item) => formatDataCell(item))
       .filter((item) => item !== "-")
       .join(" | ");
+    const inlineGuide = buildMetricGuide({
+      metric,
+      value,
+      tone,
+      reference,
+    });
+    const showInlineGuide = tone === "caution";
 
     return (
       <article
@@ -196,6 +332,9 @@ export function renderMetricCards(rows: LatestCheckupRow[]) {
           ) : null}
         </div>
         <div className={styles.metricCardValue}>{value}</div>
+        {showInlineGuide && inlineGuide ? (
+          <p className={styles.metricGuide}>{inlineGuide}</p>
+        ) : null}
         {reference ? <p className={styles.metricReference}>{reference}</p> : null}
       </article>
     );

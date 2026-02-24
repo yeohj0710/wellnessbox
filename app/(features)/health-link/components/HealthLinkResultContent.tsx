@@ -7,6 +7,7 @@ import type { LatestCheckupMeta, MedicationDigest } from "../utils";
 import styles from "../HealthLinkClient.module.css";
 import {
   buildMedicationAnalysisModel,
+  buildMetricInsightCards,
   buildMetricGroups,
   buildMetricTabs,
   normalizeCompactText,
@@ -37,15 +38,12 @@ export function HealthLinkResultContent({
     (row) => row.statusTone === "caution"
   );
   const topMedicines = medicationDigest.topMedicines.slice(0, 4);
-  const topConditions = medicationDigest.topConditions.slice(0, 4);
-  const recentMedications = medicationDigest.recentMedications.slice(0, 5);
+  const recentMedications = medicationDigest.recentMedications.slice(0, 4);
   const medicationOnlyMode = !hasCheckupRows && hasMedicationRows;
   const medicationAnalysis = React.useMemo(
     () => buildMedicationAnalysisModel(medicationDigest),
     [medicationDigest]
   );
-  const compactMedicationSummaryMode =
-    medicationOnlyMode && medicationDigest.totalRows <= 1;
 
   const hasAiSummary =
     !!aiSummary &&
@@ -64,89 +62,155 @@ export function HealthLinkResultContent({
   );
 
   const [activeGroup, setActiveGroup] = React.useState<MetricGroupId>("all");
+  const [showAllMetrics, setShowAllMetrics] = React.useState(false);
 
   React.useEffect(() => {
     if (metricTabs.some((tab) => tab.id === activeGroup)) return;
     setActiveGroup("all");
   }, [activeGroup, metricTabs]);
 
+  React.useEffect(() => {
+    setShowAllMetrics(false);
+  }, [activeGroup]);
+
   const visibleRows =
     activeGroup === "all" ? latestCheckupRows : groupedRows[activeGroup];
+  const prioritizedRows =
+    activeGroup === "all"
+      ? [
+          ...visibleRows.filter((row) => row.statusTone === "caution"),
+          ...visibleRows.filter((row) => row.statusTone !== "caution"),
+        ]
+      : visibleRows;
+  const metricVisibleCount = 8;
+  const metricRows = showAllMetrics
+    ? prioritizedRows
+    : prioritizedRows.slice(0, metricVisibleCount);
+  const hiddenMetricCount = Math.max(
+    prioritizedRows.length - metricRows.length,
+    0
+  );
+
+  const summaryInsights = React.useMemo(() => {
+    const aiInsights =
+      aiSummary?.metricInsights
+        ?.map((item) => {
+          const metric = item?.metric?.trim();
+          const value = item?.value?.trim();
+          const interpretation = item?.interpretation?.trim();
+          const tip = item?.tip?.trim();
+          if (!metric || !value || !interpretation || !tip) return null;
+          return {
+            metric,
+            value,
+            interpretation,
+            tip,
+            tone:
+              cautionRows.some(
+                (row) =>
+                  (row.metric ?? "").replace(/\s+/g, "").toLowerCase() ===
+                  metric.replace(/\s+/g, "").toLowerCase()
+              ) && hasCheckupRows
+                ? ("caution" as const)
+                : ("normal" as const),
+          };
+        })
+        .filter(
+          (item): item is NonNullable<typeof item> => item !== null
+        ) ?? [];
+    if (aiInsights.length > 0) return aiInsights.slice(0, 3);
+
+    const sourceRows = cautionRows.length > 0 ? cautionRows : latestCheckupRows;
+    return buildMetricInsightCards(sourceRows, 3);
+  }, [aiSummary?.metricInsights, cautionRows, hasCheckupRows, latestCheckupRows]);
+
+  const summaryHeadline =
+    hasAiSummary && aiSummary
+      ? aiSummary.headline
+      : HEALTH_LINK_COPY.result.summaryFallbackHeadline;
+  const summaryBody =
+    hasAiSummary && aiSummary
+      ? aiSummary.summary
+      : HEALTH_LINK_COPY.result.summaryFallbackBody;
+  const summaryRiskLevel =
+    hasAiSummary && aiSummary ? aiSummary.riskLevel : "unknown";
+  const topMedicineLine = topMedicines
+    .map((item) => `${item.label} ${item.count}건`)
+    .join(", ");
+
+  const resolveInsightToneLabel = (
+    tone: "normal" | "caution" | "unknown"
+  ) => {
+    if (tone === "caution") return HEALTH_LINK_COPY.result.statusCaution;
+    if (tone === "normal") return HEALTH_LINK_COPY.result.statusNormal;
+    return HEALTH_LINK_COPY.result.statusUnknown;
+  };
+
+  const resolveInsightToneClass = (
+    tone: "normal" | "caution" | "unknown"
+  ) => {
+    if (tone === "caution") return styles.toneCaution;
+    if (tone === "normal") return styles.toneNormal;
+    return styles.toneUnknown;
+  };
 
   return (
     <>
-      <section className={styles.resultOverview}>
-        {hasCheckupRows ? (
-          <article className={styles.overviewItem}>
-            <span>검진 항목</span>
-            <strong>{latestCheckupRows.length.toLocaleString("ko-KR")}개</strong>
-          </article>
-        ) : null}
+      <section className={`${styles.compactSection} ${styles.summaryHeroSection}`}>
+        <div className={styles.compactHeader}>
+          <h3>{HEALTH_LINK_COPY.result.summaryTitle}</h3>
+          <span
+            className={`${styles.aiRiskBadge} ${resolveAiRiskClass(
+              summaryRiskLevel
+            )}`}
+          >
+            {resolveAiRiskLabel(summaryRiskLevel)}
+          </span>
+        </div>
 
-        {hasCheckupRows ? (
-          <article className={`${styles.overviewItem} ${styles.overviewWarn}`}>
-            <span>주의 항목</span>
-            <strong>{cautionRows.length.toLocaleString("ko-KR")}개</strong>
-          </article>
-        ) : null}
+        <p className={styles.summaryHeroHeadline}>{summaryHeadline}</p>
+        <p className={styles.summaryHeroBody}>{summaryBody}</p>
 
-        {showMedicationSection ? (
-          <article className={styles.overviewItem}>
-            <span>투약 이력</span>
-            <strong>{medicationDigest.totalRows.toLocaleString("ko-KR")}건</strong>
-          </article>
+        <div className={styles.summaryStatRow}>
+          {hasCheckupRows ? (
+            <span className={styles.summaryStatPill}>
+              검진 {latestCheckupRows.length.toLocaleString("ko-KR")}개
+            </span>
+          ) : null}
+          {hasCheckupRows ? (
+            <span className={`${styles.summaryStatPill} ${styles.summaryWarnPill}`}>
+              주의 {cautionRows.length.toLocaleString("ko-KR")}개
+            </span>
+          ) : null}
+          {showMedicationSection ? (
+            <span className={styles.summaryStatPill}>
+              투약 {medicationDigest.totalRows.toLocaleString("ko-KR")}건
+            </span>
+          ) : null}
+        </div>
+
+        {summaryInsights.length > 0 ? (
+          <ul className={styles.summaryInsightList}>
+            {summaryInsights.map((item, index) => (
+              <li key={`${item.metric}-${item.value}-${index}`}>
+                <div className={styles.summaryInsightTop}>
+                  <strong>{item.metric}</strong>
+                  <span
+                    className={`${styles.metricTone} ${resolveInsightToneClass(
+                      item.tone
+                    )}`}
+                  >
+                    {resolveInsightToneLabel(item.tone)}
+                  </span>
+                </div>
+                <p className={styles.summaryInsightValue}>{item.value}</p>
+                <p className={styles.summaryInsightText}>{item.interpretation}</p>
+                <p className={styles.summaryInsightTip}>{item.tip}</p>
+              </li>
+            ))}
+          </ul>
         ) : null}
       </section>
-
-      {hasAiSummary && aiSummary ? (
-        <section className={`${styles.compactSection} ${styles.aiSummarySection}`}>
-          <div className={styles.compactHeader}>
-            <h3>AI 핵심 요약</h3>
-            <span
-              className={`${styles.aiRiskBadge} ${resolveAiRiskClass(
-                aiSummary.riskLevel
-              )}`}
-            >
-              {resolveAiRiskLabel(aiSummary.riskLevel)}
-            </span>
-          </div>
-          <p className={styles.aiSummaryHeadline}>{aiSummary.headline}</p>
-          <p className={styles.aiSummaryText}>{aiSummary.summary}</p>
-
-          {aiSummary.highlights.length > 0 ? (
-            <div className={styles.aiChipWrap}>
-              {aiSummary.highlights.map((item, index) => (
-                <span key={`${item}-${index}`} className={styles.aiHighlightChip}>
-                  {item}
-                </span>
-              ))}
-            </div>
-          ) : null}
-
-          {aiSummary.nextSteps.length > 0 ? (
-            <ul className={styles.aiActionList}>
-              {aiSummary.nextSteps.map((item, index) => (
-                <li key={`${item}-${index}`}>{item}</li>
-              ))}
-            </ul>
-          ) : null}
-        </section>
-      ) : null}
-
-      {hasCheckupRows && cautionRows.length > 0 ? (
-        <section className={styles.compactSection}>
-          <div className={styles.compactHeader}>
-            <h3>{HEALTH_LINK_COPY.result.cautionTitle}</h3>
-            <span>{cautionRows.length.toLocaleString("ko-KR")}개</span>
-          </div>
-          <p className={styles.sectionSubText}>
-            생활 관리가 필요한 항목이에요. 최근 검사 기준으로 먼저 확인해 주세요.
-          </p>
-          <div className={styles.metricBoard}>
-            {renderMetricCards(cautionRows.slice(0, 6))}
-          </div>
-        </section>
-      ) : null}
 
       {hasCheckupRows ? (
         <section className={styles.compactSection}>
@@ -155,11 +219,11 @@ export function HealthLinkResultContent({
             <span>
               {latestCheckupMeta.checkupDate
                 ? `최근 검사 ${latestCheckupMeta.checkupDate}`
-                : `${visibleRows.length.toLocaleString("ko-KR")}개 표시`}
+                : `${prioritizedRows.length.toLocaleString("ko-KR")}개 표시`}
             </span>
           </div>
           <p className={styles.sectionSubText}>
-            복잡하지 않게 묶어서 보여드려요. 궁금한 항목만 골라서 확인해 보세요.
+            {HEALTH_LINK_COPY.result.metricLead}
           </p>
           <div className={styles.metricFilterWrap}>
             {metricTabs.map((tab) => (
@@ -176,11 +240,31 @@ export function HealthLinkResultContent({
               </button>
             ))}
           </div>
-          {visibleRows.length > 0 ? (
-            <div className={styles.metricBoard}>{renderMetricCards(visibleRows)}</div>
+          {metricRows.length > 0 ? (
+            <div className={styles.metricBoard}>{renderMetricCards(metricRows)}</div>
           ) : (
             <div className={styles.emptyHint}>표시할 검진 항목이 없습니다.</div>
           )}
+          {hiddenMetricCount > 0 ? (
+            <button
+              type="button"
+              className={styles.metricExpandButton}
+              onClick={() => setShowAllMetrics(true)}
+            >
+              {`${HEALTH_LINK_COPY.result.metricExpandPrefix}${hiddenMetricCount.toLocaleString(
+                "ko-KR"
+              )}${HEALTH_LINK_COPY.result.metricExpandSuffix}`}
+            </button>
+          ) : null}
+          {showAllMetrics && prioritizedRows.length > metricVisibleCount ? (
+            <button
+              type="button"
+              className={styles.metricCollapseButton}
+              onClick={() => setShowAllMetrics(false)}
+            >
+              {HEALTH_LINK_COPY.result.metricCollapseLabel}
+            </button>
+          ) : null}
         </section>
       ) : null}
 
@@ -236,87 +320,48 @@ export function HealthLinkResultContent({
         </section>
       ) : null}
 
-      {showMedicationSection ? (
-        <section className={styles.compactSection}>
-          <div className={styles.compactHeader}>
-            <h3>{HEALTH_LINK_COPY.result.medicationSummaryTitle}</h3>
-            <span>{HEALTH_LINK_COPY.result.medicationSummaryNote}</span>
+      {showMedicationSection && !medicationOnlyMode ? (
+        <details className={styles.optionalSection}>
+          <summary>
+            <span>{HEALTH_LINK_COPY.result.medicationDetailsSummary}</span>
+            <small>
+              {medicationDigest.totalRows.toLocaleString("ko-KR")}
+              건
+            </small>
+          </summary>
+          <div className={styles.optionalSectionBody}>
+            <div className={styles.optionalSummaryRow}>
+              <span>
+                복약 이력 {medicationDigest.totalRows.toLocaleString("ko-KR")}건
+              </span>
+              <span>
+                고유 약품{" "}
+                {medicationDigest.uniqueMedicineCount.toLocaleString("ko-KR")}종
+              </span>
+            </div>
+            {topMedicineLine ? (
+              <p className={styles.optionalBodyText}>
+                자주 복용한 약: {topMedicineLine}
+              </p>
+            ) : null}
+            <div className={styles.recentMedicationList}>
+              {recentMedications.length === 0 ? (
+                <span className={styles.emptyHint}>-</span>
+              ) : (
+                recentMedications.map((item) => (
+                  <div
+                    key={`${item.date}-${item.medicine}`}
+                    className={styles.recentMedicationItem}
+                  >
+                    <span>{item.date}</span>
+                    <strong>{item.medicine}</strong>
+                    <small>{item.effect ?? "-"}</small>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
-
-          {!hasCheckupRows ? (
-            <p className={styles.sectionSubText}>
-              {medicationOnlyMode
-                ? "아래에서 복약 이력 원본을 확인하실 수 있어요."
-                : "이번에는 투약 이력 중심으로 확인되어 최근 복약 이력을 기반으로 정리해 드려요."}
-            </p>
-          ) : null}
-
-          {medicationDigest.totalRows === 0 ? (
-            <div className={styles.noticeInfo}>
-              {HEALTH_LINK_COPY.result.medicationEmpty}
-            </div>
-          ) : (
-            <div className={styles.medicationGrid}>
-              {!compactMedicationSummaryMode ? (
-                <div className={styles.medicationBlock}>
-                  <strong>{HEALTH_LINK_COPY.result.topMedicineTitle}</strong>
-                  <div className={styles.chipWrap}>
-                    {topMedicines.length === 0 ? (
-                      <span className={styles.emptyHint}>-</span>
-                    ) : (
-                      topMedicines.map((item) => (
-                        <span key={item.label} className={styles.infoChip}>
-                          {item.label} {item.count}건
-                        </span>
-                      ))
-                    )}
-                  </div>
-                </div>
-              ) : null}
-
-              {!compactMedicationSummaryMode ? (
-                <div className={styles.medicationBlock}>
-                  <strong>{HEALTH_LINK_COPY.result.topConditionTitle}</strong>
-                  <div className={styles.chipWrap}>
-                    {topConditions.length === 0 ? (
-                      <span className={styles.emptyHint}>-</span>
-                    ) : (
-                      topConditions.map((item) => (
-                        <span key={item.label} className={styles.infoChip}>
-                          {item.label} {item.count}건
-                        </span>
-                      ))
-                    )}
-                  </div>
-                </div>
-              ) : null}
-
-              <div className={styles.medicationBlock}>
-                <strong>
-                  {compactMedicationSummaryMode
-                    ? "복약 이력 원본"
-                    : HEALTH_LINK_COPY.result.recentMedicationTitle}
-                </strong>
-                <div className={styles.recentMedicationList}>
-                  {recentMedications.length === 0 ? (
-                    <span className={styles.emptyHint}>-</span>
-                  ) : (
-                    recentMedications.map((item) => (
-                      <div
-                        key={`${item.date}-${item.medicine}`}
-                        className={styles.recentMedicationItem}
-                      >
-                        <span>{item.date}</span>
-                        <strong>{item.medicine}</strong>
-                        <small>{item.effect ?? "-"}</small>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </section>
+        </details>
       ) : null}
     </>
   );

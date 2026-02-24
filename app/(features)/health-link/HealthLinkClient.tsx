@@ -107,6 +107,15 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
     void handleFetch();
   };
 
+  const handleSwitchIdentity = () => {
+    if (!canRequest) return;
+    const shouldSwitch = window.confirm(
+      HEALTH_LINK_COPY.action.switchIdentityConfirm
+    );
+    if (!shouldSwitch) return;
+    void handleUnlink();
+  };
+
   return (
     <div className={styles.page}>
       <HealthLinkHeader />
@@ -151,6 +160,8 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
           medicationDigest={medicationDigest}
           aiSummary={aiSummary}
           onSummaryFetch={() => void handleFetch()}
+          switchIdentityDisabled={!canRequest}
+          onSwitchIdentity={handleSwitchIdentity}
         />
       ) : null}
     </div>

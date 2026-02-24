@@ -39,6 +39,12 @@ export type NhisAiSummary = {
   summary: string;
   highlights: string[];
   nextSteps: string[];
+  metricInsights?: Array<{
+    metric: string;
+    value: string;
+    interpretation: string;
+    tip: string;
+  }>;
   riskLevel?: "low" | "medium" | "high" | "unknown";
 };
 

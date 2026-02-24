@@ -14,6 +14,7 @@ import { isSkippableFailure, type LatestCheckupRow } from "./HealthLinkResultSec
 type HealthLinkResultSectionProps = {
   linked: boolean;
   canFetch: boolean;
+  switchIdentityDisabled: boolean;
   fetchLoading: boolean;
   summaryFetchBlocked: boolean;
   summaryFetchBlockedMessage: string | null;
@@ -25,11 +26,13 @@ type HealthLinkResultSectionProps = {
   medicationDigest: MedicationDigest;
   aiSummary: NhisAiSummary | null;
   onSummaryFetch: () => void;
+  onSwitchIdentity: () => void;
 };
 
 export function HealthLinkResultSection({
   linked,
   canFetch,
+  switchIdentityDisabled,
   fetchLoading,
   summaryFetchBlocked,
   summaryFetchBlockedMessage,
@@ -41,6 +44,7 @@ export function HealthLinkResultSection({
   medicationDigest,
   aiSummary,
   onSummaryFetch,
+  onSwitchIdentity,
 }: HealthLinkResultSectionProps) {
   const hasCheckupRows = latestCheckupRows.length > 0;
   const hasMedicationRows = medicationDigest.totalRows > 0;
@@ -112,9 +116,11 @@ export function HealthLinkResultSection({
       <HealthLinkFetchActions
         statusLinked={linked}
         summaryDisabled={!canFetch}
+        switchIdentityDisabled={switchIdentityDisabled}
         hasFetchResult={hasFetchResult}
         primaryLoading={primaryLoading}
         onSummaryFetch={onSummaryFetch}
+        onSwitchIdentity={onSwitchIdentity}
       />
 
       {fetchLoading ? (
