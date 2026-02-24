@@ -2,6 +2,12 @@ import B2bAdminReportClient from "./B2bAdminReportClient";
 
 export const dynamic = "force-dynamic";
 
-export default function B2bAdminReportPage() {
-  return <B2bAdminReportClient />;
+type PageProps = {
+  searchParams?: Promise<{ demo?: string }>;
+};
+
+export default async function B2bAdminReportPage(props: PageProps) {
+  const searchParams = (await props.searchParams) ?? {};
+  const demoMode = searchParams.demo === "1";
+  return <B2bAdminReportClient demoMode={demoMode} />;
 }

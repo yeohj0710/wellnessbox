@@ -31,7 +31,7 @@ export async function GET(_req: Request, ctx: RouteContext) {
     },
   });
   if (!report) {
-    return noStoreJson({ ok: false, error: "레포트를 찾을 수 없습니다." }, 404);
+    return noStoreJson({ ok: false, error: "리포트를 찾을 수 없습니다." }, 404);
   }
 
   const result = await runB2bReportExport(reportId);
@@ -56,6 +56,7 @@ export async function GET(_req: Request, ctx: RouteContext) {
   const conversion = await convertPptxBufferToPdf({
     pptxBuffer: result.pptxBuffer,
     filename: result.filename,
+    layout: result.layout,
   });
   if (!conversion.ok) {
     await logB2bAdminAction({
@@ -71,7 +72,7 @@ export async function GET(_req: Request, ctx: RouteContext) {
       {
         ok: false,
         error:
-          "서버에서 PDF 변환에 실패했습니다. LibreOffice(soffice) 설정을 확인해 주세요.",
+          "서버에서 PDF 변환에 실패했습니다. LibreOffice(soffice) 설치 상태를 확인해 주세요.",
         reason: conversion.reason,
       },
       501

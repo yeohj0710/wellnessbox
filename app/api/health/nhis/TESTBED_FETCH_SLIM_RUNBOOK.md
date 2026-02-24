@@ -64,3 +64,20 @@
 - `npm run lint`
 - `npm run build`
 
+## B2B Preview/Export Manual Checks
+
+1. `HYPHEN_MOCK_MODE=1` 설정 후 `/employee-report`에서 인증/동기화 수행
+2. A4 미리보기 렌더 확인
+   - `폭 맞춤` / `100% 크기` / `인쇄` 동작
+   - 상단 `MOCK 데이터 사용 중` 배너 확인
+3. `/admin/b2b-reports`에서 동일 임직원 선택 후 미리보기 비교
+   - employee/admin 화면이 동일 레이아웃인지 확인
+   - `레이아웃 검증` 실행 후 실패 시 이슈 목록(코드/노드/좌표) 표시 확인
+   - `디버그 오버레이` 토글로 경계/이슈 박스 표시 확인
+4. Export 검증
+   - `PPTX Export` / `PDF Export` 성공 확인
+   - 실패 시 400과 검증 이슈 payload 확인
+5. 복약 상태 분기 확인
+   - 정상: 최근 복약 3건 표시
+   - 없음: "복약 이력 없음" 문구
+   - 실패: "조회 실패" 문구

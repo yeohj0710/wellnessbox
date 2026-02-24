@@ -5,29 +5,44 @@ import path from "path";
 import { z } from "zod";
 import db from "@/lib/db";
 
+const surveyOptionSchema = z.object({
+  value: z.string().trim().min(1),
+  label: z.string().trim().min(1),
+  score: z.number().min(0).max(1).optional(),
+});
+
 const surveyQuestionSchema = z.object({
   key: z.string().trim().min(1),
   index: z.number().int().min(1),
-  text: z.string(),
-  type: z.string().default("text"),
+  text: z.string().min(1),
+  helpText: z.string().optional(),
+  type: z.enum(["text", "single", "multi"]).default("single"),
+  required: z.boolean().optional(),
+  options: z.array(surveyOptionSchema).optional(),
+  placeholder: z.string().optional(),
+  maxSelect: z.number().int().min(1).max(10).optional(),
 });
 
 const surveySectionCatalogSchema = z.object({
   key: z.string().trim().min(1),
-  title: z.string(),
-  triggerLabel: z.string(),
+  title: z.string().min(1),
+  displayName: z.string().optional(),
+  description: z.string().optional(),
+  triggerLabel: z.string().min(1),
   questionCount: z.number().int().min(0),
 });
 
 const surveySectionSchema = z.object({
   key: z.string().trim().min(1),
-  title: z.string(),
+  title: z.string().min(1),
+  displayName: z.string().optional(),
+  description: z.string().optional(),
   questions: z.array(surveyQuestionSchema),
 });
 
 const surveyTemplateSchema = z.object({
   version: z.number().int().min(1),
-  title: z.string(),
+  title: z.string().min(1),
   description: z.string().optional(),
   common: z.array(surveyQuestionSchema).min(1),
   sectionCatalog: z.array(surveySectionCatalogSchema).min(1),
@@ -49,11 +64,56 @@ export type B2bSurveyTemplateSchema = z.infer<typeof surveyTemplateSchema>;
 
 let cachedFileTemplate: B2bSurveyTemplateSchema | null = null;
 
+function normalizeQuestion(
+  question: B2bSurveyTemplateSchema["common"][number]
+): B2bSurveyTemplateSchema["common"][number] {
+  return {
+    ...question,
+    required: question.required ?? false,
+    options: question.options ?? [],
+    placeholder: question.placeholder ?? "응답 입력",
+    maxSelect: question.type === "multi" ? question.maxSelect ?? 5 : undefined,
+  };
+}
+
+function normalizeTemplateSchema(
+  schema: B2bSurveyTemplateSchema
+): B2bSurveyTemplateSchema {
+  const sectionCatalog = schema.sectionCatalog.map((section) => ({
+    ...section,
+    displayName: section.displayName ?? section.title,
+    description:
+      section.description ?? `${section.triggerLabel} 관련 상세 문항`,
+  }));
+
+  const sectionByKey = new Map(sectionCatalog.map((item) => [item.key, item]));
+
+  return {
+    ...schema,
+    common: schema.common.map((question) => normalizeQuestion(question)),
+    sectionCatalog,
+    sections: schema.sections.map((section) => {
+      const linked = sectionByKey.get(section.key);
+      return {
+        ...section,
+        displayName: section.displayName ?? linked?.displayName ?? section.title,
+        description:
+          section.description ??
+          linked?.description ??
+          `${linked?.triggerLabel ?? section.title} 관련 상세 문항`,
+        questions: section.questions.map((question) => normalizeQuestion(question)),
+      };
+    }),
+  };
+}
+
 function loadTemplateFileFromDisk() {
   if (cachedFileTemplate) return cachedFileTemplate;
   const filePath = path.join(process.cwd(), "data", "b2b", "survey-template.v1.json");
   const raw = readFileSync(filePath, "utf8");
-  const parsed = surveyTemplateSchema.parse(JSON.parse(raw));
+  const parsed = normalizeTemplateSchema(
+    surveyTemplateSchema.parse(JSON.parse(raw))
+  );
   cachedFileTemplate = parsed;
   return parsed;
 }
@@ -74,10 +134,10 @@ export async function ensureActiveB2bSurveyTemplate() {
   });
   if (active) {
     const schema = mapJsonValue<B2bSurveyTemplateSchema | null>(active.schema, null);
-    if (schema) return { template: active, schema };
+    if (schema) return { template: active, schema: normalizeTemplateSchema(schema) };
   }
 
-  const fileTemplate = loadTemplateFileFromDisk();
+  const fileTemplate = normalizeTemplateSchema(loadTemplateFileFromDisk());
   const upserted = await db.b2bSurveyTemplate.upsert({
     where: { version: fileTemplate.version },
     create: {
@@ -106,17 +166,23 @@ export async function ensureActiveB2bSurveyTemplate() {
 
 export function resolveSectionKeysFromC27Input(
   templateSchema: B2bSurveyTemplateSchema,
-  rawC27Value: string
+  rawC27Value: unknown
 ) {
-  const normalized = rawC27Value
-    .split(/[,\n/|]/g)
-    .map((item) => item.trim())
-    .filter(Boolean);
+  const rawTokens = Array.isArray(rawC27Value)
+    ? rawC27Value.map((item) => String(item))
+    : typeof rawC27Value === "string"
+    ? rawC27Value.split(/[,\n/|]/g)
+    : typeof rawC27Value === "object" && rawC27Value
+    ? Object.values(rawC27Value as Record<string, unknown>).map((value) => String(value))
+    : [];
+
+  const normalized = rawTokens.map((item) => item.trim()).filter(Boolean);
   if (normalized.length === 0) return [];
 
   const sectionByKeyword = templateSchema.sectionCatalog.map((section) => ({
     key: section.key,
     title: section.title.toLowerCase(),
+    displayName: (section.displayName ?? section.title).toLowerCase(),
     triggerLabel: section.triggerLabel.toLowerCase(),
   }));
 
@@ -127,6 +193,7 @@ export function resolveSectionKeysFromC27Input(
       (section) =>
         lowered === section.key.toLowerCase() ||
         lowered.includes(section.title) ||
+        lowered.includes(section.displayName) ||
         lowered.includes(section.triggerLabel)
     );
     if (matched) selected.add(matched.key);

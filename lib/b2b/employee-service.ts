@@ -1,4 +1,4 @@
-import "server-only";
+﻿import "server-only";
 
 import { createHash } from "crypto";
 import { Prisma } from "@prisma/client";
@@ -16,12 +16,14 @@ import {
   getValidNhisFetchCache,
   markNhisFetchCacheHit,
   resolveNhisIdentityHash,
+  runWithNhisFetchDedup,
   saveNhisFetchCache,
 } from "@/lib/server/hyphen/fetch-cache";
 import { getNhisLink } from "@/lib/server/hyphen/link";
 import { buildNhisRequestDefaults } from "@/lib/server/hyphen/request-defaults";
 import type { HyphenNhisRequestPayload } from "@/lib/server/hyphen/client";
 import { HYPHEN_PROVIDER } from "@/lib/server/hyphen/client";
+import { periodKeyToCycle, resolveCurrentPeriodKey } from "@/lib/b2b/period";
 
 function asJsonValue(
   value: unknown
@@ -71,6 +73,45 @@ function parseCachedPayload(
   } catch {
     return null;
   }
+}
+
+function buildSnapshotRawEnvelope(input: {
+  source: "cache-valid" | "cache-history" | "fresh";
+  payload: NhisFetchRoutePayload;
+}) {
+  return {
+    meta: {
+      ok: input.payload.ok,
+      partial: input.payload.partial === true,
+      failed: input.payload.failed ?? [],
+      source: input.source,
+      capturedAt: new Date().toISOString(),
+    },
+    raw: input.payload.data?.raw ?? null,
+  };
+}
+
+async function createB2bHealthSnapshot(input: {
+  employeeId: string;
+  normalizedJson: unknown;
+  rawJson: unknown;
+  fetchedAt?: Date;
+}) {
+  const fetchedAt = input.fetchedAt ?? new Date();
+  const periodKey = resolveCurrentPeriodKey(fetchedAt);
+  const reportCycle = periodKeyToCycle(periodKey);
+  return db.b2bHealthDataSnapshot.create({
+    data: {
+      employeeId: input.employeeId,
+      provider: HYPHEN_PROVIDER,
+      sourceMode: process.env.HYPHEN_MOCK_MODE === "1" ? "mock" : "hyphen",
+      rawJson: asJsonValue(input.rawJson),
+      normalizedJson: asJsonValue(input.normalizedJson),
+      fetchedAt,
+      periodKey,
+      reportCycle: reportCycle ?? null,
+    },
+  });
 }
 
 export async function upsertB2bEmployee(input: {
@@ -158,6 +199,7 @@ export async function fetchAndStoreB2bHealthSnapshot(input: {
     birthDate: string;
     phoneNormalized: string;
   };
+  forceRefresh?: boolean;
 }) {
   const link = await getNhisLink(input.appUserId);
   if (!link?.linked) {
@@ -185,143 +227,144 @@ export async function fetchAndStoreB2bHealthSnapshot(input: {
     toDate: requestDefaults.toDate,
     subjectType: requestDefaults.subjectType,
   });
+  const dedupeKey = `${input.employeeId}|${requestHashMeta.requestHash}|${
+    input.forceRefresh ? "force" : "normal"
+  }`;
 
-  const cached = await getValidNhisFetchCache(
-    input.appUserId,
-    requestHashMeta.requestHash
-  );
-  if (cached) {
-    await markNhisFetchCacheHit(cached.id).catch(() => undefined);
-    const parsed = parseCachedPayload(cached.payload);
-    if (parsed?.ok) {
-      const normalizedJson = parsed.data?.normalized ?? null;
-      const rawJson = parsed.data?.raw ?? null;
-      const snapshot = await db.b2bHealthDataSnapshot.create({
-        data: {
-          employeeId: input.employeeId,
-          provider: HYPHEN_PROVIDER,
-          sourceMode: process.env.HYPHEN_MOCK_MODE === "1" ? "mock" : "hyphen",
-          rawJson: asJsonValue(rawJson),
-          normalizedJson: asJsonValue(normalizedJson),
-          fetchedAt: new Date(),
-        },
+  return runWithNhisFetchDedup(dedupeKey, async () => {
+    if (!input.forceRefresh) {
+      const cached = await getValidNhisFetchCache(
+        input.appUserId,
+        requestHashMeta.requestHash
+      );
+      if (cached) {
+        await markNhisFetchCacheHit(cached.id).catch(() => undefined);
+        const parsed = parseCachedPayload(cached.payload);
+        if (parsed?.ok) {
+          const normalizedJson = parsed.data?.normalized ?? null;
+          const rawJson = buildSnapshotRawEnvelope({
+            source: "cache-valid",
+            payload: parsed,
+          });
+          const snapshot = await createB2bHealthSnapshot({
+            employeeId: input.employeeId,
+            normalizedJson,
+            rawJson,
+          });
+          await db.b2bEmployee.update({
+            where: { id: input.employeeId },
+            data: {
+              lastSyncedAt: new Date(),
+            },
+          });
+          return {
+            source: "cache-valid" as const,
+            payload: parsed,
+            snapshot,
+          };
+        }
+      }
+
+      const historyCache = await getLatestNhisFetchCacheByIdentity({
+        appUserId: input.appUserId,
+        identityHash: identity.identityHash,
+        targets,
+        yearLimit: effectiveYearLimit,
+        subjectType: requestDefaults.subjectType,
       });
-      await db.b2bEmployee.update({
-        where: { id: input.employeeId },
-        data: {
-          lastSyncedAt: new Date(),
-        },
-      });
-      return {
-        source: "cache-valid" as const,
-        payload: parsed,
-        snapshot,
-      };
+      if (historyCache) {
+        const parsed = parseCachedPayload(historyCache.payload);
+        if (parsed?.ok) {
+          const normalizedJson = parsed.data?.normalized ?? null;
+          const rawJson = buildSnapshotRawEnvelope({
+            source: "cache-history",
+            payload: parsed,
+          });
+          const snapshot = await createB2bHealthSnapshot({
+            employeeId: input.employeeId,
+            normalizedJson,
+            rawJson,
+          });
+          await db.b2bEmployee.update({
+            where: { id: input.employeeId },
+            data: {
+              lastSyncedAt: new Date(),
+            },
+          });
+          return {
+            source: "cache-history" as const,
+            payload: parsed,
+            snapshot,
+          };
+        }
+      }
     }
-  }
 
-  const historyCache = await getLatestNhisFetchCacheByIdentity({
-    appUserId: input.appUserId,
-    identityHash: identity.identityHash,
-    targets,
-    yearLimit: effectiveYearLimit,
-    subjectType: requestDefaults.subjectType,
-  });
-  if (historyCache) {
-    const parsed = parseCachedPayload(historyCache.payload);
-    if (parsed?.ok) {
-      const normalizedJson = parsed.data?.normalized ?? null;
-      const rawJson = parsed.data?.raw ?? null;
-      const snapshot = await db.b2bHealthDataSnapshot.create({
-        data: {
-          employeeId: input.employeeId,
-          provider: HYPHEN_PROVIDER,
-          sourceMode: process.env.HYPHEN_MOCK_MODE === "1" ? "mock" : "hyphen",
-          rawJson: asJsonValue(rawJson),
-          normalizedJson: asJsonValue(normalizedJson),
-          fetchedAt: new Date(),
-        },
-      });
-      await db.b2bEmployee.update({
-        where: { id: input.employeeId },
-        data: {
-          lastSyncedAt: new Date(),
-        },
-      });
-      return {
-        source: "cache-history" as const,
-        payload: parsed,
-        snapshot,
-      };
+    if (!link.cookieData) {
+      throw new Error("연동된 하이픈 인증 세션이 없습니다.");
     }
-  }
 
-  if (!link.cookieData) {
-    throw new Error("연동된 하이픈 인증 세션이 없습니다.");
-  }
+    const basePayload = buildBasePayload({
+      linkLoginMethod: link.loginMethod,
+      linkLoginOrgCd: link.loginOrgCd,
+      linkCookieData: link.cookieData,
+      requestDefaults,
+    });
+    const detailPayload = buildDetailPayload(basePayload);
 
-  const basePayload = buildBasePayload({
-    linkLoginMethod: link.loginMethod,
-    linkLoginOrgCd: link.loginOrgCd,
-    linkCookieData: link.cookieData,
-    requestDefaults,
-  });
-  const detailPayload = buildDetailPayload(basePayload);
+    const executed = await executeNhisFetch({
+      targets,
+      effectiveYearLimit,
+      basePayload,
+      detailPayload,
+      requestDefaults,
+    });
 
-  const executed = await executeNhisFetch({
-    targets,
-    effectiveYearLimit,
-    basePayload,
-    detailPayload,
-    requestDefaults,
-  });
+    await saveNhisFetchCache({
+      appUserId: input.appUserId,
+      identityHash: identity.identityHash,
+      requestHash: requestHashMeta.requestHash,
+      requestKey: requestHashMeta.requestKey,
+      targets: requestHashMeta.normalizedTargets,
+      yearLimit: effectiveYearLimit,
+      fromDate: requestDefaults.fromDate,
+      toDate: requestDefaults.toDate,
+      subjectType: requestDefaults.subjectType,
+      statusCode: executed.payload.ok ? 200 : 502,
+      payload: executed.payload,
+    });
 
-  await saveNhisFetchCache({
-    appUserId: input.appUserId,
-    identityHash: identity.identityHash,
-    requestHash: requestHashMeta.requestHash,
-    requestKey: requestHashMeta.requestKey,
-    targets: requestHashMeta.normalizedTargets,
-    yearLimit: effectiveYearLimit,
-    fromDate: requestDefaults.fromDate,
-    toDate: requestDefaults.toDate,
-    subjectType: requestDefaults.subjectType,
-    statusCode: executed.payload.ok ? 200 : 502,
-    payload: executed.payload,
-  });
+    if (!executed.payload.ok) {
+      throw new Error(
+        executed.payload.error ||
+          executed.firstFailed?.errMsg ||
+          "건강 데이터를 불러오지 못했습니다."
+      );
+    }
 
-  if (!executed.payload.ok) {
-    throw new Error(
-      executed.payload.error ||
-        executed.firstFailed?.errMsg ||
-        "건강 데이터를 불러오지 못했습니다."
-    );
-  }
+    const normalizedJson = executed.payload.data?.normalized ?? null;
+    const rawJson = buildSnapshotRawEnvelope({
+      source: "fresh",
+      payload: executed.payload,
+    });
 
-  const normalizedJson = executed.payload.data?.normalized ?? null;
-  const rawJson = executed.payload.data?.raw ?? null;
-
-  const snapshot = await db.b2bHealthDataSnapshot.create({
-    data: {
+    const snapshot = await createB2bHealthSnapshot({
       employeeId: input.employeeId,
-      provider: HYPHEN_PROVIDER,
-      sourceMode: process.env.HYPHEN_MOCK_MODE === "1" ? "mock" : "hyphen",
-      rawJson: asJsonValue(rawJson),
-      normalizedJson: asJsonValue(normalizedJson),
-      fetchedAt: new Date(),
-    },
-  });
+      normalizedJson,
+      rawJson,
+    });
 
-  await db.b2bEmployee.update({
-    where: { id: input.employeeId },
-    data: {
-      lastSyncedAt: new Date(),
-    },
-  });
+    await db.b2bEmployee.update({
+      where: { id: input.employeeId },
+      data: {
+        lastSyncedAt: new Date(),
+      },
+    });
 
-  return {
-    source: "fresh" as const,
-    payload: executed.payload,
-    snapshot,
-  };
+    return {
+      source: "fresh" as const,
+      payload: executed.payload,
+      snapshot,
+    };
+  });
 }

@@ -1,14 +1,15 @@
 import "server-only";
 
 import db from "@/lib/db";
+import { computeAndSaveB2bAnalysis } from "@/lib/b2b/analysis-service";
 import { buildB2bReportPayload } from "@/lib/b2b/report-payload";
+import { pickStylePreset } from "@/lib/b2b/export/layout-dsl";
 import {
-  generateLayoutFromPayload,
-  pickStylePreset,
-  type PageSizeKey,
-  type StylePreset,
-} from "@/lib/b2b/export/layout-dsl";
-import { runB2bExportPipeline } from "@/lib/b2b/export/pipeline";
+  runB2bExportPipeline,
+  runB2bLayoutPipeline,
+} from "@/lib/b2b/export/pipeline";
+import { periodKeyToCycle, resolveCurrentPeriodKey } from "@/lib/b2b/period";
+import type { PageSizeKey, StylePreset } from "@/lib/b2b/export/layout-types";
 
 function asJsonValue(value: unknown) {
   return JSON.parse(JSON.stringify(value));
@@ -26,19 +27,40 @@ export async function getNextB2bReportVariantIndex(employeeId: string) {
 export async function createB2bReportSnapshot(input: {
   employeeId: string;
   pageSize?: PageSizeKey;
+  periodKey?: string | null;
   variantIndex?: number;
   stylePreset?: StylePreset;
+  recomputeAnalysis?: boolean;
+  generateAiEvaluation?: boolean;
 }) {
   const pageSize = input.pageSize ?? "A4";
+  const periodKey = input.periodKey ?? resolveCurrentPeriodKey();
+  const reportCycle = periodKeyToCycle(periodKey);
   const variantIndex =
     input.variantIndex ?? (await getNextB2bReportVariantIndex(input.employeeId));
   const stylePreset = input.stylePreset ?? pickStylePreset(variantIndex);
+
+  const latestPeriodAnalysis = await db.b2bAnalysisResult.findFirst({
+    where: { employeeId: input.employeeId, periodKey },
+    orderBy: [{ updatedAt: "desc" }, { version: "desc" }],
+    select: { id: true },
+  });
+  if (input.recomputeAnalysis || !latestPeriodAnalysis) {
+    await computeAndSaveB2bAnalysis({
+      employeeId: input.employeeId,
+      periodKey,
+      replaceLatestPeriodEntry: true,
+      generateAiEvaluation: input.generateAiEvaluation,
+    });
+  }
+
   const payload = await buildB2bReportPayload({
     employeeId: input.employeeId,
+    periodKey,
     variantIndex,
     stylePreset,
   });
-  const layout = generateLayoutFromPayload({
+  const previewLayoutResult = await runB2bLayoutPipeline({
     payload,
     intent: "preview",
     pageSize,
@@ -46,40 +68,71 @@ export async function createB2bReportSnapshot(input: {
     stylePreset,
   });
 
+  const status = previewLayoutResult.ok ? "ready" : "validation_failed";
+  const layoutDsl = previewLayoutResult.ok ? previewLayoutResult.layout : null;
+  const exportAudit = previewLayoutResult.audit;
+
   return db.b2bReport.create({
     data: {
       employeeId: input.employeeId,
       variantIndex,
-      status: "ready",
+      status,
       pageSize,
       stylePreset,
       reportPayload: asJsonValue(payload),
-      layoutDsl: asJsonValue(layout),
+      layoutDsl: asJsonValue(layoutDsl),
+      exportAudit: asJsonValue(exportAudit),
+      periodKey,
+      reportCycle: reportCycle ?? null,
     },
   });
 }
 
-export async function getLatestB2bReport(employeeId: string) {
+export async function getLatestB2bReport(employeeId: string, periodKey?: string | null) {
   return db.b2bReport.findFirst({
-    where: { employeeId },
+    where: {
+      employeeId,
+      ...(periodKey ? { periodKey } : {}),
+    },
     orderBy: [{ variantIndex: "desc" }, { createdAt: "desc" }],
   });
 }
 
-export async function ensureLatestB2bReport(employeeId: string) {
-  const latest = await getLatestB2bReport(employeeId);
+export async function ensureLatestB2bReport(employeeId: string, periodKey?: string | null) {
+  const targetPeriod = periodKey ?? resolveCurrentPeriodKey();
+  const latest = await getLatestB2bReport(employeeId, targetPeriod);
   if (latest) return latest;
-  return createB2bReportSnapshot({ employeeId });
+  return createB2bReportSnapshot({ employeeId, periodKey: targetPeriod });
 }
 
 export async function regenerateB2bReport(input: {
   employeeId: string;
   pageSize?: PageSizeKey;
+  periodKey?: string | null;
+  recomputeAnalysis?: boolean;
+  generateAiEvaluation?: boolean;
 }) {
   return createB2bReportSnapshot({
     employeeId: input.employeeId,
     pageSize: input.pageSize ?? "A4",
+    periodKey: input.periodKey ?? resolveCurrentPeriodKey(),
+    recomputeAnalysis: input.recomputeAnalysis,
+    generateAiEvaluation: input.generateAiEvaluation,
   });
+}
+
+export async function listB2bReportPeriods(employeeId: string) {
+  const rows = await db.b2bReport.findMany({
+    where: { employeeId, periodKey: { not: null } },
+    orderBy: [{ periodKey: "desc" }, { createdAt: "desc" }],
+    select: { periodKey: true },
+    take: 24,
+  });
+  const set = new Set<string>();
+  for (const row of rows) {
+    if (row.periodKey) set.add(row.periodKey);
+  }
+  return [...set];
 }
 
 export async function runB2bReportExport(reportId: string) {
@@ -87,7 +140,7 @@ export async function runB2bReportExport(reportId: string) {
     where: { id: reportId },
   });
   if (!report) {
-    throw new Error("레포트를 찾을 수 없습니다.");
+    throw new Error("리포트를 찾을 수 없습니다.");
   }
 
   const pageSize = (report.pageSize || "A4") as PageSizeKey;

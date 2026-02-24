@@ -1,7 +1,7 @@
 import "server-only";
 
 import PptxGenJS from "pptxgenjs";
-import type { LayoutDocument, LayoutNode } from "@/lib/b2b/export/layout-dsl";
+import type { LayoutDocument, LayoutNode } from "@/lib/b2b/export/layout-types";
 
 function mmToInch(mm: number) {
   return mm / 25.4;

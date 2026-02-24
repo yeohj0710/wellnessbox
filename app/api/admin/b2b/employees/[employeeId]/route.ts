@@ -42,15 +42,15 @@ export async function GET(_req: Request, ctx: RouteContext) {
         },
       },
       analysisResults: {
-        orderBy: [{ version: "desc" }, { createdAt: "desc" }],
+        orderBy: [{ periodKey: "desc" }, { version: "desc" }, { createdAt: "desc" }],
         take: 1,
       },
       pharmacistNotes: {
-        orderBy: { updatedAt: "desc" },
+        orderBy: [{ periodKey: "desc" }, { updatedAt: "desc" }],
         take: 1,
       },
       reports: {
-        orderBy: [{ variantIndex: "desc" }, { createdAt: "desc" }],
+        orderBy: [{ periodKey: "desc" }, { variantIndex: "desc" }, { createdAt: "desc" }],
         take: 5,
       },
       accessLogs: {
@@ -81,6 +81,7 @@ export async function GET(_req: Request, ctx: RouteContext) {
         id: snapshot.id,
         provider: snapshot.provider,
         sourceMode: snapshot.sourceMode,
+        periodKey: snapshot.periodKey,
         fetchedAt: snapshot.fetchedAt.toISOString(),
         normalizedJson: snapshot.normalizedJson,
         rawJson: snapshot.rawJson,
@@ -88,6 +89,8 @@ export async function GET(_req: Request, ctx: RouteContext) {
       latestSurvey: employee.surveyResponses[0]
         ? {
             id: employee.surveyResponses[0].id,
+            periodKey: employee.surveyResponses[0].periodKey,
+            reportCycle: employee.surveyResponses[0].reportCycle,
             templateVersion: employee.surveyResponses[0].templateVersion,
             selectedSections: employee.surveyResponses[0].selectedSections,
             answersJson: employee.surveyResponses[0].answersJson,
@@ -105,6 +108,8 @@ export async function GET(_req: Request, ctx: RouteContext) {
         ? {
             id: employee.analysisResults[0].id,
             version: employee.analysisResults[0].version,
+            periodKey: employee.analysisResults[0].periodKey,
+            reportCycle: employee.analysisResults[0].reportCycle,
             payload: employee.analysisResults[0].payload,
             updatedAt: employee.analysisResults[0].updatedAt.toISOString(),
           }
@@ -115,12 +120,16 @@ export async function GET(_req: Request, ctx: RouteContext) {
             note: employee.pharmacistNotes[0].note,
             recommendations: employee.pharmacistNotes[0].recommendations,
             cautions: employee.pharmacistNotes[0].cautions,
+            periodKey: employee.pharmacistNotes[0].periodKey,
+            reportCycle: employee.pharmacistNotes[0].reportCycle,
             updatedAt: employee.pharmacistNotes[0].updatedAt.toISOString(),
           }
         : null,
       reports: employee.reports.map((report) => ({
         id: report.id,
         variantIndex: report.variantIndex,
+        periodKey: report.periodKey,
+        reportCycle: report.reportCycle,
         status: report.status,
         pageSize: report.pageSize,
         stylePreset: report.stylePreset,

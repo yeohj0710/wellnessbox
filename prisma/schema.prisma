@@ -474,9 +474,12 @@ model B2bHealthDataSnapshot {
   rawJson        Json
   normalizedJson Json
   fetchedAt      DateTime
+  periodKey      String?
+  reportCycle    Int?
   createdAt      DateTime @default(now())
   employee       B2bEmployee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
+  @@index([employeeId, periodKey, fetchedAt])
   @@index([employeeId, fetchedAt])
   @@index([provider, fetchedAt])
 }
@@ -502,12 +505,15 @@ model B2bSurveyResponse {
   selectedSections String[] @default([])
   answersJson     Json
   submittedAt     DateTime?
+  periodKey       String?
+  reportCycle     Int?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @default(now()) @updatedAt
   employee        B2bEmployee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   template        B2bSurveyTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
   answers         B2bSurveyAnswer[]
 
+  @@index([employeeId, periodKey, updatedAt])
   @@index([employeeId, updatedAt])
   @@index([templateVersion, updatedAt])
 }
@@ -534,11 +540,14 @@ model B2bAnalysisResult {
   version    Int
   payload    Json
   computedAt DateTime?
+  periodKey  String?
+  reportCycle Int?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now()) @updatedAt
   employee   B2bEmployee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
   @@unique([employeeId, version])
+  @@index([employeeId, periodKey, updatedAt])
   @@index([employeeId, createdAt])
 }
 
@@ -549,10 +558,13 @@ model B2bPharmacistNote {
   recommendations   String?
   cautions          String?
   createdByAdminTag String?
+  periodKey         String?
+  reportCycle       Int?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @default(now()) @updatedAt
   employee          B2bEmployee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
+  @@index([employeeId, periodKey, updatedAt])
   @@index([employeeId, updatedAt])
 }
 
@@ -566,11 +578,14 @@ model B2bReport {
   reportPayload Json
   layoutDsl   Json?
   exportAudit Json?
+  periodKey   String?
+  reportCycle Int?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
   employee    B2bEmployee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
   @@unique([employeeId, variantIndex])
+  @@index([employeeId, periodKey, createdAt])
   @@index([employeeId, createdAt])
   @@index([status, createdAt])
 }

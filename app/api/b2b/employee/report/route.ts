@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import db from "@/lib/db";
-import { ensureLatestB2bReport } from "@/lib/b2b/report-service";
+import {
+  ensureLatestB2bReport,
+  listB2bReportPeriods,
+} from "@/lib/b2b/report-service";
 import { logB2bEmployeeAccess } from "@/lib/b2b/employee-service";
 import { requireB2bEmployeeToken } from "@/lib/server/route-auth";
+import { resolveCurrentPeriodKey } from "@/lib/b2b/period";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,7 +22,14 @@ export async function GET(req: Request) {
   const auth = await requireB2bEmployeeToken();
   if (!auth.ok) return auth.response;
 
-  const report = await ensureLatestB2bReport(auth.data.employeeId);
+  const { searchParams } = new URL(req.url);
+  const periodKey = searchParams.get("period") || resolveCurrentPeriodKey();
+
+  const [report, availablePeriods] = await Promise.all([
+    ensureLatestB2bReport(auth.data.employeeId, periodKey),
+    listB2bReportPeriods(auth.data.employeeId),
+  ]);
+
   const employee = await db.b2bEmployee.findUnique({
     where: { id: auth.data.employeeId },
     select: {
@@ -41,7 +52,7 @@ export async function GET(req: Request) {
     employeeId: employee.id,
     action: "report_view",
     route: "/api/b2b/employee/report",
-    payload: { reportId: report.id },
+    payload: { reportId: report.id, periodKey: report.periodKey ?? periodKey },
     ip: req.headers.get("x-forwarded-for"),
     userAgent: req.headers.get("user-agent"),
   });
@@ -58,8 +69,14 @@ export async function GET(req: Request) {
       variantIndex: report.variantIndex,
       status: report.status,
       pageSize: report.pageSize,
+      periodKey: report.periodKey ?? periodKey,
+      reportCycle: report.reportCycle ?? null,
       payload: report.reportPayload,
+      layoutDsl: report.layoutDsl,
+      exportAudit: report.exportAudit,
       updatedAt: report.updatedAt.toISOString(),
     },
+    periodKey: report.periodKey ?? periodKey,
+    availablePeriods,
   });
 }

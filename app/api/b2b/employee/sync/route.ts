@@ -11,6 +11,7 @@ import {
   upsertB2bEmployee,
 } from "@/lib/b2b/employee-service";
 import { regenerateB2bReport } from "@/lib/b2b/report-service";
+import { resolveCurrentPeriodKey } from "@/lib/b2b/period";
 import { requireNhisSession } from "@/lib/server/route-auth";
 
 export const runtime = "nodejs";
@@ -19,6 +20,9 @@ const schema = z.object({
   name: z.string().trim().min(1).max(60),
   birthDate: z.string().trim().regex(/^\d{8}$/),
   phone: z.string().trim().regex(/^\d{10,11}$/),
+  forceRefresh: z.boolean().optional(),
+  periodKey: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional(),
+  generateAiEvaluation: z.boolean().optional(),
 });
 
 function noStoreJson(payload: unknown, status = 200) {
@@ -77,11 +81,16 @@ export async function POST(req: Request) {
       appUserId: auth.data.appUserId,
       employeeId: upserted.employee.id,
       identity: upserted.identity,
+      forceRefresh: parsed.data.forceRefresh === true,
     });
 
+    const periodKey = parsed.data.periodKey ?? resolveCurrentPeriodKey();
     const report = await regenerateB2bReport({
       employeeId: upserted.employee.id,
       pageSize: "A4",
+      periodKey,
+      recomputeAnalysis: true,
+      generateAiEvaluation: parsed.data.generateAiEvaluation === true,
     });
 
     const token = buildB2bEmployeeAccessToken({
@@ -98,11 +107,13 @@ export async function POST(req: Request) {
       sync: {
         source: syncResult.source,
         snapshotId: syncResult.snapshot.id,
+        forceRefresh: parsed.data.forceRefresh === true,
       },
       report: {
         id: report.id,
         variantIndex: report.variantIndex,
         status: report.status,
+        periodKey: report.periodKey ?? periodKey,
       },
     });
     response.cookies.set(
@@ -121,6 +132,8 @@ export async function POST(req: Request) {
       payload: {
         reportId: report.id,
         source: syncResult.source,
+        periodKey,
+        forceRefresh: parsed.data.forceRefresh === true,
       },
     });
 
@@ -136,9 +149,7 @@ export async function POST(req: Request) {
       route: "/api/b2b/employee/sync",
       ip,
       userAgent,
-      payload: {
-        error: message,
-      },
+      payload: { error: message },
     });
 
     return noStoreJson({ ok: false, error: message }, 502);

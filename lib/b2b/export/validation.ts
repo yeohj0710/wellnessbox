@@ -1,15 +1,12 @@
 import "server-only";
 
-import type { LayoutDocument, LayoutNode } from "@/lib/b2b/export/layout-dsl";
+import type { LayoutDocument, LayoutNode } from "@/lib/b2b/export/layout-types";
+import type {
+  LayoutNodeBounds,
+  LayoutValidationIssue,
+} from "@/lib/b2b/export/validation-types";
 
 const MM_TO_PX = 3.7795275591;
-
-export type LayoutValidationIssue = {
-  code: "BOUNDS" | "OVERLAP" | "TEXT_OVERFLOW";
-  pageId: string;
-  nodeId?: string;
-  detail: string;
-};
 
 export type LayoutValidationResult = {
   ok: boolean;
@@ -18,7 +15,16 @@ export type LayoutValidationResult = {
   runtimeEngine: "playwright" | "heuristic";
 };
 
-function intersects(a: LayoutNode, b: LayoutNode) {
+function toBounds(node: LayoutNode): LayoutNodeBounds {
+  return {
+    x: Number(node.x.toFixed(2)),
+    y: Number(node.y.toFixed(2)),
+    w: Number(node.w.toFixed(2)),
+    h: Number(node.h.toFixed(2)),
+  };
+}
+
+function intersects(a: LayoutNodeBounds, b: LayoutNodeBounds) {
   return !(
     a.x + a.w <= b.x ||
     b.x + b.w <= a.x ||
@@ -36,35 +42,66 @@ function estimateTextHeightMm(fontSize = 12) {
   return Math.max(4, fontSize * 0.42);
 }
 
+function isBackgroundLike(node: LayoutNode) {
+  if (node.allowOverlap) return true;
+  if (node.role === "background") return true;
+  if (node.id.includes("-bg-")) return true;
+  return false;
+}
+
+function shouldIgnoreOverlap(left: LayoutNode, right: LayoutNode) {
+  return isBackgroundLike(left) || isBackgroundLike(right);
+}
+
+function buildBoundsIssue(input: {
+  pageId: string;
+  node: LayoutNode;
+  detail: string;
+}): LayoutValidationIssue {
+  return {
+    code: "BOUNDS",
+    pageId: input.pageId,
+    nodeId: input.node.id,
+    detail: input.detail,
+    nodeBounds: toBounds(input.node),
+  };
+}
+
 export function validateLayoutStatic(layout: LayoutDocument) {
   const issues: LayoutValidationIssue[] = [];
 
   for (const page of layout.pages) {
     for (const node of page.nodes) {
       if (node.w <= 0 || node.h <= 0) {
-        issues.push({
-          code: "BOUNDS",
-          pageId: page.id,
-          nodeId: node.id,
-          detail: "노드 크기는 0보다 커야 합니다.",
-        });
+        issues.push(
+          buildBoundsIssue({
+            pageId: page.id,
+            node,
+            detail: "요소 너비/높이는 0보다 커야 합니다.",
+          })
+        );
       }
+
       if (node.x < 0 || node.y < 0) {
-        issues.push({
-          code: "BOUNDS",
-          pageId: page.id,
-          nodeId: node.id,
-          detail: "노드 좌표는 음수일 수 없습니다.",
-        });
+        issues.push(
+          buildBoundsIssue({
+            pageId: page.id,
+            node,
+            detail: "요소 좌표는 음수일 수 없습니다.",
+          })
+        );
       }
+
       if (node.x + node.w > page.widthMm || node.y + node.h > page.heightMm) {
-        issues.push({
-          code: "BOUNDS",
-          pageId: page.id,
-          nodeId: node.id,
-          detail: "노드가 페이지 경계를 벗어났습니다.",
-        });
+        issues.push(
+          buildBoundsIssue({
+            pageId: page.id,
+            node,
+            detail: "요소가 페이지 경계를 벗어났습니다.",
+          })
+        );
       }
+
       if (node.type === "text" && node.text) {
         const estimatedW = estimateTextWidthMm(node.text, node.fontSize);
         const estimatedH = estimateTextHeightMm(node.fontSize);
@@ -73,9 +110,31 @@ export function validateLayoutStatic(layout: LayoutDocument) {
             code: "TEXT_OVERFLOW",
             pageId: page.id,
             nodeId: node.id,
-            detail: "텍스트 길이가 노드 영역 대비 과도합니다.",
+            detail: "텍스트 길이가 요소 영역 대비 과도합니다.",
+            nodeBounds: toBounds(node),
           });
         }
+      }
+    }
+
+    const textNodes = page.nodes.filter((node) => node.type === "text");
+    for (let i = 0; i < textNodes.length; i += 1) {
+      const left = textNodes[i];
+      const leftBounds = toBounds(left);
+      for (let j = i + 1; j < textNodes.length; j += 1) {
+        const right = textNodes[j];
+        if (shouldIgnoreOverlap(left, right)) continue;
+        const rightBounds = toBounds(right);
+        if (!intersects(leftBounds, rightBounds)) continue;
+        issues.push({
+          code: "OVERLAP",
+          pageId: page.id,
+          nodeId: left.id,
+          relatedNodeId: right.id,
+          detail: "텍스트 요소 간 겹침이 감지되었습니다.",
+          nodeBounds: leftBounds,
+          relatedNodeBounds: rightBounds,
+        });
       }
     }
   }
@@ -98,14 +157,20 @@ function buildRuntimeHtml(layout: LayoutDocument) {
             "overflow:hidden",
             node.type === "rect" ? `background:#${node.fill || "FFFFFF"}` : "",
             node.type === "text"
-              ? `font-size:${(node.fontSize ?? 12) * 1.2}px;line-height:1.2;font-family:'Noto Sans KR',sans-serif;color:#${node.color || "111827"};font-weight:${node.bold ? 700 : 400}`
+              ? `font-size:${node.fontSize ?? 12}px;line-height:1.28;font-family:'Noto Sans KR',sans-serif;color:#${
+                  node.color || "111827"
+                };font-weight:${node.bold ? 700 : 400};white-space:pre-wrap;word-break:keep-all`
               : "",
           ]
             .filter(Boolean)
             .join(";");
 
           const content = node.type === "text" ? node.text ?? "" : "";
-          return `<div data-page-id="${page.id}" data-node-id="${node.id}" data-node-type="${node.type}" style="${style}">${content}</div>`;
+          return `<div data-page-id="${page.id}" data-node-id="${node.id}" data-node-type="${
+            node.type
+          }" data-role="${node.role || ""}" data-allow-overlap="${
+            node.allowOverlap ? "1" : "0"
+          }" data-x="${node.x}" data-y="${node.y}" data-w="${node.w}" data-h="${node.h}" style="${style}">${content}</div>`;
         })
         .join("");
 
@@ -118,17 +183,19 @@ function buildRuntimeHtml(layout: LayoutDocument) {
 
 function runtimeValidateByHeuristic(layout: LayoutDocument) {
   const issues: LayoutValidationIssue[] = [];
+
   for (const page of layout.pages) {
-    for (let i = 0; i < page.nodes.length; i += 1) {
-      const node = page.nodes[i];
+    for (const node of page.nodes) {
       if (node.x + node.w > page.widthMm || node.y + node.h > page.heightMm) {
         issues.push({
           code: "BOUNDS",
           pageId: page.id,
           nodeId: node.id,
-          detail: "노드가 페이지 밖으로 나갑니다.",
+          detail: "요소가 페이지 경계를 벗어났습니다.",
+          nodeBounds: toBounds(node),
         });
       }
+
       if (node.type === "text" && node.text) {
         const estimatedW = estimateTextWidthMm(node.text, node.fontSize);
         if (estimatedW > node.w) {
@@ -136,23 +203,35 @@ function runtimeValidateByHeuristic(layout: LayoutDocument) {
             code: "TEXT_OVERFLOW",
             pageId: page.id,
             nodeId: node.id,
-            detail: "텍스트 오버플로우가 예상됩니다.",
-          });
-        }
-      }
-      for (let j = i + 1; j < page.nodes.length; j += 1) {
-        const other = page.nodes[j];
-        if (intersects(node, other)) {
-          issues.push({
-            code: "OVERLAP",
-            pageId: page.id,
-            nodeId: `${node.id}|${other.id}`,
-            detail: "노드가 서로 겹칩니다.",
+            detail: "텍스트가 영역보다 길어 오버플로우가 예상됩니다.",
+            nodeBounds: toBounds(node),
           });
         }
       }
     }
+
+    const textNodes = page.nodes.filter((node) => node.type === "text");
+    for (let i = 0; i < textNodes.length; i += 1) {
+      const left = textNodes[i];
+      const leftBounds = toBounds(left);
+      for (let j = i + 1; j < textNodes.length; j += 1) {
+        const right = textNodes[j];
+        if (shouldIgnoreOverlap(left, right)) continue;
+        const rightBounds = toBounds(right);
+        if (!intersects(leftBounds, rightBounds)) continue;
+        issues.push({
+          code: "OVERLAP",
+          pageId: page.id,
+          nodeId: left.id,
+          relatedNodeId: right.id,
+          detail: "텍스트 요소 간 겹침이 감지되었습니다.",
+          nodeBounds: leftBounds,
+          relatedNodeBounds: rightBounds,
+        });
+      }
+    }
   }
+
   return issues;
 }
 
@@ -177,69 +256,115 @@ async function runtimeValidateByPlaywright(layout: LayoutDocument) {
     await page.setContent(buildRuntimeHtml(layout), { waitUntil: "domcontentloaded" });
 
     const issues = (await page.evaluate(() => {
+      const discovered: Array<{
+        code: "BOUNDS" | "OVERLAP" | "TEXT_OVERFLOW" | "CLIP";
+        pageId: string;
+        nodeId?: string;
+        relatedNodeId?: string;
+        detail: string;
+        nodeBounds?: { x: number; y: number; w: number; h: number };
+        relatedNodeBounds?: { x: number; y: number; w: number; h: number };
+      }> = [];
+
+      const parseBounds = (element: HTMLElement) => {
+        const x = Number(element.dataset.x ?? 0);
+        const y = Number(element.dataset.y ?? 0);
+        const w = Number(element.dataset.w ?? 0);
+        const h = Number(element.dataset.h ?? 0);
+        return {
+          x: Number(x.toFixed(2)),
+          y: Number(y.toFixed(2)),
+          w: Number(w.toFixed(2)),
+          h: Number(h.toFixed(2)),
+        };
+      };
+
       const pageElements = Array.from(
         document.querySelectorAll<HTMLElement>("[data-layout-page]")
       );
-      const discovered: Array<{
-        code: "BOUNDS" | "OVERLAP" | "TEXT_OVERFLOW";
-        pageId: string;
-        nodeId?: string;
-        detail: string;
-      }> = [];
-
       for (const pageEl of pageElements) {
         const pageId = pageEl.dataset.layoutPage || "unknown-page";
         const pageRect = pageEl.getBoundingClientRect();
-        const nodes = Array.from(
-          pageEl.querySelectorAll<HTMLElement>("[data-node-id]")
-        );
+        const nodes = Array.from(pageEl.querySelectorAll<HTMLElement>("[data-node-id]"));
 
-        for (let i = 0; i < nodes.length; i += 1) {
-          const node = nodes[i];
+        for (const node of nodes) {
           const nodeId = node.dataset.nodeId || "unknown-node";
-          const rect = node.getBoundingClientRect();
+          const nodeRect = node.getBoundingClientRect();
+          const nodeType = node.dataset.nodeType;
+          const bounds = parseBounds(node);
 
           if (
-            rect.left < pageRect.left ||
-            rect.top < pageRect.top ||
-            rect.right > pageRect.right ||
-            rect.bottom > pageRect.bottom
+            nodeRect.left < pageRect.left ||
+            nodeRect.top < pageRect.top ||
+            nodeRect.right > pageRect.right ||
+            nodeRect.bottom > pageRect.bottom
           ) {
             discovered.push({
               code: "BOUNDS",
               pageId,
               nodeId,
-              detail: "노드가 페이지 경계 밖으로 배치되었습니다.",
+              detail: "요소가 페이지 경계를 벗어났습니다.",
+              nodeBounds: bounds,
             });
           }
 
-          const isTextNode = node.dataset.nodeType === "text";
-          if (isTextNode) {
+          if (nodeType === "text") {
             if (node.scrollWidth > node.clientWidth + 1 || node.scrollHeight > node.clientHeight + 1) {
               discovered.push({
                 code: "TEXT_OVERFLOW",
                 pageId,
                 nodeId,
-                detail: "텍스트가 노드 영역을 넘쳤습니다.",
+                detail: "텍스트가 영역을 벗어납니다.",
+                nodeBounds: bounds,
+              });
+            }
+            if (node.offsetWidth < 1 || node.offsetHeight < 1) {
+              discovered.push({
+                code: "CLIP",
+                pageId,
+                nodeId,
+                detail: "렌더링 결과에서 텍스트 요소가 잘렸습니다.",
+                nodeBounds: bounds,
               });
             }
           }
+        }
 
-          for (let j = i + 1; j < nodes.length; j += 1) {
-            const other = nodes[j];
-            const otherRect = other.getBoundingClientRect();
+        const textNodes = nodes.filter((node) => node.dataset.nodeType === "text");
+        for (let i = 0; i < textNodes.length; i += 1) {
+          const left = textNodes[i];
+          const leftSkip =
+            left.dataset.allowOverlap === "1" ||
+            left.dataset.role === "background" ||
+            (left.dataset.nodeId || "").includes("-bg-");
+          const leftRect = left.getBoundingClientRect();
+          const leftBounds = parseBounds(left);
+          const leftId = left.dataset.nodeId || "unknown-node";
+
+          for (let j = i + 1; j < textNodes.length; j += 1) {
+            const right = textNodes[j];
+            const rightSkip =
+              right.dataset.allowOverlap === "1" ||
+              right.dataset.role === "background" ||
+              (right.dataset.nodeId || "").includes("-bg-");
+            if (leftSkip || rightSkip) continue;
+
+            const rightRect = right.getBoundingClientRect();
             const overlapX =
-              Math.min(rect.right, otherRect.right) - Math.max(rect.left, otherRect.left);
+              Math.min(leftRect.right, rightRect.right) - Math.max(leftRect.left, rightRect.left);
             const overlapY =
-              Math.min(rect.bottom, otherRect.bottom) - Math.max(rect.top, otherRect.top);
-            if (overlapX > 1 && overlapY > 1) {
-              discovered.push({
-                code: "OVERLAP",
-                pageId,
-                nodeId: `${nodeId}|${other.dataset.nodeId || "unknown-node"}`,
-                detail: "노드가 겹칩니다.",
-              });
-            }
+              Math.min(leftRect.bottom, rightRect.bottom) - Math.max(leftRect.top, rightRect.top);
+            if (overlapX <= 1 || overlapY <= 0.6) continue;
+
+            discovered.push({
+              code: "OVERLAP",
+              pageId,
+              nodeId: leftId,
+              relatedNodeId: right.dataset.nodeId || "unknown-node",
+              detail: "텍스트 요소 간 겹침이 감지되었습니다.",
+              nodeBounds: leftBounds,
+              relatedNodeBounds: parseBounds(right),
+            });
           }
         }
       }
@@ -261,13 +386,16 @@ export async function validateLayoutRuntime(layout: LayoutDocument) {
       issues: playwrightIssues,
     };
   }
+
   return {
     engine: "heuristic" as const,
     issues: runtimeValidateByHeuristic(layout),
   };
 }
 
-export async function validateLayout(layout: LayoutDocument): Promise<LayoutValidationResult> {
+export async function validateLayout(
+  layout: LayoutDocument
+): Promise<LayoutValidationResult> {
   const staticIssues = validateLayoutStatic(layout);
   const runtime = await validateLayoutRuntime(layout);
   const runtimeIssues = runtime.issues;

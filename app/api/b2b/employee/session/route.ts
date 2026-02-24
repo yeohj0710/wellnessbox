@@ -125,7 +125,7 @@ export async function POST(req: Request) {
     return noStoreJson({
       ok: true,
       found: false,
-      message: "기존 레포트가 없어 인증 연동이 필요합니다.",
+      message: "기존 리포트가 없어 인증 연동이 필요합니다.",
     });
   }
 

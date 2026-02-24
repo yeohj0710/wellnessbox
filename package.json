@@ -24,6 +24,7 @@
     "maintenance:nhis-smoke-fetch-slim": "ts-node scripts/maintenance/smoke-hyphen-fetch-slim.cts",
     "maintenance:nhis-smoke-policy": "ts-node scripts/maintenance/smoke-hyphen-fetch-policy.cts",
     "b2b:seed:survey-template": "ts-node scripts/b2b/seed-survey-template.cts",
+    "b2b:seed:demo-reports": "node scripts/b2b/seed-demo-reports.cjs",
     "agent:skills-catalog": "ts-node scripts/agent/generate-skill-catalog.cts",
     "agent:refactor-report": "ts-node scripts/agent/generate-refactor-report.cts",
     "preflight:agent": "npm run audit:encoding && npm run audit:hotspots && npm run lint && npm run build",

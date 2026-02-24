@@ -22,10 +22,7 @@ function noStoreJson(payload: unknown, status = 200) {
   });
 }
 
-async function resolveTargetReports(input: {
-  reportIds?: string[];
-  employeeIds?: string[];
-}) {
+async function resolveTargetReports(input: { reportIds?: string[]; employeeIds?: string[] }) {
   if (input.reportIds && input.reportIds.length > 0) {
     return db.b2bReport.findMany({
       where: { id: { in: input.reportIds } },
@@ -43,7 +40,7 @@ async function resolveTargetReports(input: {
         })
       )
     );
-    return reports.filter((report): report is NonNullable<typeof report> => !!report);
+    return reports.filter((report): report is NonNullable<typeof report> => Boolean(report));
   }
 
   return db.b2bReport.findMany({
@@ -56,11 +53,21 @@ export async function POST(req: Request) {
   const auth = await requireAdminSession();
   if (!auth.ok) return auth.response;
 
+  if (process.env.B2B_ENABLE_BATCH_EXPORT !== "1") {
+    return noStoreJson(
+      {
+        ok: false,
+        error: "현재 운영 정책에서 배치 ZIP Export는 비활성화되어 있습니다.",
+      },
+      410
+    );
+  }
+
   const body = await req.json().catch(() => null);
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
     return noStoreJson(
-      { ok: false, error: parsed.error.issues[0]?.message || "입력 형식이 올바르지 않습니다." },
+      { ok: false, error: parsed.error.issues[0]?.message || "입력 형식을 확인해 주세요." },
       400
     );
   }
@@ -70,7 +77,7 @@ export async function POST(req: Request) {
     employeeIds: parsed.data.employeeIds,
   });
   if (targetReports.length === 0) {
-    return noStoreJson({ ok: false, error: "내보낼 레포트가 없습니다." }, 404);
+    return noStoreJson({ ok: false, error: "내보낼 리포트가 없습니다." }, 404);
   }
 
   const files: Array<{ filename: string; content: Buffer }> = [];
@@ -115,7 +122,10 @@ export async function POST(req: Request) {
         });
         addedFiles.push(pdfFilename);
       } else {
-        const errorFilename = `${exportResult.filename.replace(/\.pptx$/i, "")}_pdf_error.txt`;
+        const errorFilename = `${exportResult.filename.replace(
+          /\.pptx$/i,
+          ""
+        )}_pdf_error.txt`;
         files.push({
           filename: errorFilename,
           content: Buffer.from(

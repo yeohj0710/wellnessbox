@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import db from "@/lib/db";
 import { logB2bAdminAction } from "@/lib/b2b/employee-service";
+import { periodKeyToCycle, resolveCurrentPeriodKey } from "@/lib/b2b/period";
 import { requireAdminSession } from "@/lib/server/route-auth";
 
 export const runtime = "nodejs";
@@ -16,6 +17,7 @@ const putSchema = z.object({
   recommendations: z.string().max(4000).nullable().optional(),
   cautions: z.string().max(4000).nullable().optional(),
   actorTag: z.string().max(120).optional(),
+  periodKey: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional(),
 });
 
 function noStoreJson(payload: unknown, status = 200) {
@@ -25,9 +27,12 @@ function noStoreJson(payload: unknown, status = 200) {
   });
 }
 
-export async function GET(_req: Request, ctx: RouteContext) {
+export async function GET(req: Request, ctx: RouteContext) {
   const auth = await requireAdminSession();
   if (!auth.ok) return auth.response;
+
+  const { searchParams } = new URL(req.url);
+  const periodKey = searchParams.get("period");
 
   const { employeeId } = await ctx.params;
   const employee = await db.b2bEmployee.findUnique({ where: { id: employeeId } });
@@ -36,7 +41,10 @@ export async function GET(_req: Request, ctx: RouteContext) {
   }
 
   const latest = await db.b2bPharmacistNote.findFirst({
-    where: { employeeId },
+    where: {
+      employeeId,
+      ...(periodKey ? { periodKey } : {}),
+    },
     orderBy: { updatedAt: "desc" },
   });
 
@@ -49,6 +57,8 @@ export async function GET(_req: Request, ctx: RouteContext) {
           recommendations: latest.recommendations,
           cautions: latest.cautions,
           createdByAdminTag: latest.createdByAdminTag,
+          periodKey: latest.periodKey ?? null,
+          reportCycle: latest.reportCycle ?? null,
           updatedAt: latest.updatedAt.toISOString(),
         }
       : null,
@@ -69,13 +79,16 @@ export async function PUT(req: Request, ctx: RouteContext) {
   const parsed = putSchema.safeParse(body);
   if (!parsed.success) {
     return noStoreJson(
-      { ok: false, error: parsed.error.issues[0]?.message || "입력 형식이 올바르지 않습니다." },
+      { ok: false, error: parsed.error.issues[0]?.message || "입력 형식을 확인해 주세요." },
       400
     );
   }
 
+  const periodKey = parsed.data.periodKey ?? resolveCurrentPeriodKey();
+  const reportCycle = periodKeyToCycle(periodKey);
+
   const latest = await db.b2bPharmacistNote.findFirst({
-    where: { employeeId },
+    where: { employeeId, periodKey },
     orderBy: { updatedAt: "desc" },
   });
 
@@ -87,6 +100,8 @@ export async function PUT(req: Request, ctx: RouteContext) {
           recommendations: parsed.data.recommendations ?? null,
           cautions: parsed.data.cautions ?? null,
           createdByAdminTag: parsed.data.actorTag ?? latest.createdByAdminTag ?? null,
+          periodKey,
+          reportCycle: reportCycle ?? null,
         },
       })
     : await db.b2bPharmacistNote.create({
@@ -96,6 +111,8 @@ export async function PUT(req: Request, ctx: RouteContext) {
           recommendations: parsed.data.recommendations ?? null,
           cautions: parsed.data.cautions ?? null,
           createdByAdminTag: parsed.data.actorTag ?? "admin",
+          periodKey,
+          reportCycle: reportCycle ?? null,
         },
       });
 
@@ -103,13 +120,15 @@ export async function PUT(req: Request, ctx: RouteContext) {
     employeeId,
     action: "pharmacist_note_upsert",
     actorTag: parsed.data.actorTag ?? "admin",
-    payload: { noteId: note.id },
+    payload: { noteId: note.id, periodKey },
   });
 
   return noStoreJson({
     ok: true,
     note: {
       id: note.id,
+      periodKey: note.periodKey ?? periodKey,
+      reportCycle: note.reportCycle ?? null,
       updatedAt: note.updatedAt.toISOString(),
     },
   });

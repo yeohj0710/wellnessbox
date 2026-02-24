@@ -6,16 +6,20 @@ import {
   generateLayoutFromPayload,
   persistGeneratedLayout,
   pickStylePreset,
-  type LayoutDocument,
-  type PageSizeKey,
-  type StylePreset,
 } from "@/lib/b2b/export/layout-dsl";
+import type {
+  LayoutDocument,
+  LayoutIntent,
+  PageSizeKey,
+  StylePreset,
+} from "@/lib/b2b/export/layout-types";
 import { renderLayoutToPptxBuffer } from "@/lib/b2b/export/pptx";
-import { validateLayout, type LayoutValidationIssue } from "@/lib/b2b/export/validation";
+import { validateLayout } from "@/lib/b2b/export/validation";
+import type { LayoutValidationIssue } from "@/lib/b2b/export/validation-types";
 
-type AutofixStage = "base" | "shorten" | "compact" | "fallback";
+export type AutofixStage = "base" | "shorten" | "compact" | "fallback";
 
-type ValidationAuditEntry = {
+export type ValidationAuditEntry = {
   stage: AutofixStage;
   ok: boolean;
   staticIssueCount: number;
@@ -26,6 +30,7 @@ type ValidationAuditEntry = {
 
 export type ExportAudit = {
   generatedAt: string;
+  intent: LayoutIntent;
   pageSize: PageSizeKey;
   variantIndex: number;
   stylePresetCandidates: StylePreset[];
@@ -37,6 +42,14 @@ export type ExportAudit = {
 
 type PipelineInput = {
   payload: B2bReportPayload;
+  intent: LayoutIntent;
+  pageSize: PageSizeKey;
+  variantIndex: number;
+  stylePreset?: StylePreset;
+};
+
+type ExportPipelineInput = {
+  payload: B2bReportPayload;
   pageSize: PageSizeKey;
   variantIndex: number;
   stylePreset?: StylePreset;
@@ -46,29 +59,24 @@ function deepClone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
+function shortenText(text: string | null | undefined, max = 90) {
+  if (!text) return text ?? null;
+  if (text.length <= max) return text;
+  return `${text.slice(0, Math.max(0, max - 1))}…`;
+}
+
 function shortenPayloadText(payload: B2bReportPayload) {
   const next = deepClone(payload);
-
-  const shorten = (text: string | null | undefined, max = 90) => {
-    if (!text) return text ?? null;
-    if (text.length <= max) return text;
-    return `${text.slice(0, Math.max(0, max - 1))}…`;
-  };
-
-  next.pharmacist.note = shorten(next.pharmacist.note, 70);
-  next.pharmacist.recommendations = shorten(next.pharmacist.recommendations, 70);
-  next.pharmacist.cautions = shorten(next.pharmacist.cautions, 70);
+  next.pharmacist.note = shortenText(next.pharmacist.note, 70);
+  next.pharmacist.recommendations = shortenText(next.pharmacist.recommendations, 70);
+  next.pharmacist.cautions = shortenText(next.pharmacist.cautions, 70);
   return next;
 }
 
 function resolveStylePresetCandidates(variantIndex: number): StylePreset[] {
   const base = pickStylePreset(variantIndex);
-  const candidates: StylePreset[] = [base];
   const all: StylePreset[] = ["fresh", "calm", "focus"];
-  for (const preset of all) {
-    if (!candidates.includes(preset)) candidates.push(preset);
-  }
-  return candidates.slice(0, 3);
+  return [base, ...all.filter((preset) => preset !== base)].slice(0, 3);
 }
 
 function buildPptxFilename(input: {
@@ -105,21 +113,12 @@ async function runValidation(stage: AutofixStage, layout: LayoutDocument) {
   };
 }
 
-export async function runB2bExportPipeline(input: PipelineInput) {
-  clearGeneratedLayoutArtifacts();
-
+export async function runB2bLayoutPipeline(input: PipelineInput) {
   const stylePresetCandidates = resolveStylePresetCandidates(input.variantIndex);
   const selectedStylePreset = input.stylePreset ?? stylePresetCandidates[0];
 
   const basePayload = deepClone(input.payload);
   const shortenedPayload = shortenPayloadText(basePayload);
-
-  const attempts: Array<{
-    stage: AutofixStage;
-    layout: LayoutDocument;
-    validation: Awaited<ReturnType<typeof runValidation>>;
-  }> = [];
-
   const stageSpecs: Array<{
     stage: AutofixStage;
     payload: B2bReportPayload;
@@ -132,10 +131,16 @@ export async function runB2bExportPipeline(input: PipelineInput) {
     { stage: "fallback", payload: shortenedPayload, compact: true, templateMode: "fallback" },
   ];
 
+  const attempts: Array<{
+    stage: AutofixStage;
+    layout: LayoutDocument;
+    validation: Awaited<ReturnType<typeof runValidation>>;
+  }> = [];
+
   for (const spec of stageSpecs) {
     const layout = generateLayoutFromPayload({
       payload: spec.payload,
-      intent: "export",
+      intent: input.intent,
       pageSize: input.pageSize,
       variantIndex: input.variantIndex,
       stylePreset: selectedStylePreset,
@@ -144,37 +149,31 @@ export async function runB2bExportPipeline(input: PipelineInput) {
     });
     const validation = await runValidation(spec.stage, layout);
     attempts.push({ stage: spec.stage, layout, validation });
-    if (validation.result.ok) {
-      persistGeneratedLayout(layout);
-      const pptxBuffer = await renderLayoutToPptxBuffer(layout);
-      const filename = buildPptxFilename({
-        docTitle: layout.docTitle,
-        pageSize: input.pageSize,
-        variantIndex: input.variantIndex,
-        pageCount: layout.pages.length,
-      });
-      const audit: ExportAudit = {
-        generatedAt: new Date().toISOString(),
-        pageSize: input.pageSize,
-        variantIndex: input.variantIndex,
-        stylePresetCandidates,
-        selectedStylePreset,
-        validation: attempts.map((attempt) => attempt.validation.audit),
-        selectedStage: spec.stage,
-        pageCount: layout.pages.length,
-      };
-      return {
-        ok: true as const,
-        layout,
-        filename,
-        pptxBuffer,
-        audit,
-      };
-    }
+    if (!validation.result.ok) continue;
+
+    const audit: ExportAudit = {
+      generatedAt: new Date().toISOString(),
+      intent: input.intent,
+      pageSize: input.pageSize,
+      variantIndex: input.variantIndex,
+      stylePresetCandidates,
+      selectedStylePreset,
+      validation: attempts.map((attempt) => attempt.validation.audit),
+      selectedStage: spec.stage,
+      pageCount: layout.pages.length,
+    };
+
+    return {
+      ok: true as const,
+      layout,
+      audit,
+      selectedStage: spec.stage,
+    };
   }
 
   const audit: ExportAudit = {
     generatedAt: new Date().toISOString(),
+    intent: input.intent,
     pageSize: input.pageSize,
     variantIndex: input.variantIndex,
     stylePresetCandidates,
@@ -188,5 +187,37 @@ export async function runB2bExportPipeline(input: PipelineInput) {
     ok: false as const,
     audit,
     issues: audit.validation.flatMap((entry) => entry.issues),
+  };
+}
+
+export async function runB2bExportPipeline(input: ExportPipelineInput) {
+  clearGeneratedLayoutArtifacts();
+
+  const layoutResult = await runB2bLayoutPipeline({
+    payload: input.payload,
+    intent: "export",
+    pageSize: input.pageSize,
+    variantIndex: input.variantIndex,
+    stylePreset: input.stylePreset,
+  });
+  if (!layoutResult.ok) {
+    return layoutResult;
+  }
+
+  persistGeneratedLayout(layoutResult.layout);
+  const pptxBuffer = await renderLayoutToPptxBuffer(layoutResult.layout);
+  const filename = buildPptxFilename({
+    docTitle: layoutResult.layout.docTitle,
+    pageSize: input.pageSize,
+    variantIndex: input.variantIndex,
+    pageCount: layoutResult.layout.pages.length,
+  });
+
+  return {
+    ok: true as const,
+    layout: layoutResult.layout,
+    filename,
+    pptxBuffer,
+    audit: layoutResult.audit,
   };
 }
