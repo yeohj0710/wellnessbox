@@ -180,14 +180,19 @@ function addHeader(input: {
     color: colors.accent,
   });
 
+  const subY = y + (compact ? 10.2 : 11);
+  const subH = compact ? 4.6 : 5.2;
+  const sub2Y = subY + subH + (compact ? 0.9 : 1.1);
+  const sub2H = compact ? 4.3 : 4.8;
+
   addNode(ctx, {
     id: `header-sub-${ctx.pages.length}`,
     type: "text",
     role: "content",
     x: x + 4,
-    y: y + 11,
+    y: subY,
     w: w - 8,
-    h: 8,
+    h: subH,
     text: `대상자 ${payload.meta.employeeName} | 기간 ${payload.meta.periodKey} | 생성 ${new Date(
       payload.meta.generatedAt
     ).toLocaleString("ko-KR")}`,
@@ -200,9 +205,9 @@ function addHeader(input: {
     type: "text",
     role: "content",
     x: x + 4,
-    y: y + 16.4,
+    y: sub2Y,
     w: w - 8,
-    h: 7,
+    h: sub2H,
     text: `생년월일 ${payload.meta.birthDateMasked} | 연락처 ${payload.meta.phoneMasked} | 리포트 버전 v${payload.meta.variantIndex}`,
     fontSize: compact ? 8.7 : 9.1,
     color: colors.muted,

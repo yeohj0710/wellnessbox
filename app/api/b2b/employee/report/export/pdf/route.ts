@@ -38,12 +38,22 @@ export async function GET(req: Request) {
     const report = await ensureLatestB2bReport(auth.data.employeeId, periodKey);
     const result = await runB2bReportExport(report.id);
     if (!result.ok) {
+      await logB2bEmployeeAccess({
+        employeeId: auth.data.employeeId,
+        action: "report_export_pdf_validation_failed",
+        route: "/api/b2b/employee/report/export/pdf",
+        payload: {
+          reportId: report.id,
+          periodKey: report.periodKey ?? periodKey,
+          issueCount: result.issues.length,
+        },
+        ip: req.headers.get("x-forwarded-for"),
+        userAgent: req.headers.get("user-agent"),
+      });
       return noStoreJson(
         {
           ok: false,
-          error: "레이아웃 검증에 실패했습니다.",
-          audit: result.audit,
-          issues: result.issues,
+          error: "PDF 생성을 준비 중입니다. 잠시 후 다시 시도해 주세요.",
         },
         400
       );

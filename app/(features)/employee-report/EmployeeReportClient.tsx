@@ -46,13 +46,43 @@ type EmployeeSyncResponse = {
   ok: boolean;
   sync?: {
     source?: "fresh" | "cache-valid" | "cache-history";
+    forceRefresh?: boolean;
+    cooldown?: {
+      cooldownSeconds: number;
+      remainingSeconds: number;
+      availableAt: string | null;
+    };
   };
   report?: {
     id: string;
   };
 };
 
-const LS_KEY = "wb:b2b:employee:last-input:v1";
+const LS_KEY = "wb:b2b:employee:last-input:v2";
+const IDENTITY_TTL_MS = 1000 * 60 * 60 * 24 * 30;
+
+type ApiErrorPayload = {
+  error?: string;
+  retryAfterSec?: number;
+  availableAt?: string;
+  cooldown?: {
+    cooldownSeconds?: number;
+    remainingSeconds?: number;
+    availableAt?: string | null;
+  };
+};
+
+class ApiRequestError extends Error {
+  status: number;
+  payload: ApiErrorPayload;
+
+  constructor(status: number, payload: ApiErrorPayload) {
+    super(payload.error || "요청 처리에 실패했습니다.");
+    this.name = "ApiRequestError";
+    this.status = status;
+    this.payload = payload;
+  }
+}
 
 function normalizeDigits(value: string) {
   return value.replace(/\D/g, "");
@@ -62,14 +92,31 @@ function readStoredIdentity(): IdentityInput | null {
   if (typeof window === "undefined") return null;
   try {
     const parsed = JSON.parse(localStorage.getItem(LS_KEY) || "null") as
-      | IdentityInput
+      | {
+          schemaVersion?: number;
+          savedAt?: string;
+          identity?: IdentityInput;
+          name?: string;
+          birthDate?: string;
+          phone?: string;
+        }
       | null;
     if (!parsed) return null;
-    if (!parsed.name || !parsed.birthDate || !parsed.phone) return null;
+    const savedAtMs = parsed.savedAt ? new Date(parsed.savedAt).getTime() : Date.now();
+    if (!Number.isFinite(savedAtMs) || Date.now() - savedAtMs > IDENTITY_TTL_MS) {
+      localStorage.removeItem(LS_KEY);
+      return null;
+    }
+    const candidate = parsed.identity ?? {
+      name: parsed.name || "",
+      birthDate: parsed.birthDate || "",
+      phone: parsed.phone || "",
+    };
+    if (!candidate.name || !candidate.birthDate || !candidate.phone) return null;
     return {
-      name: parsed.name,
-      birthDate: normalizeDigits(parsed.birthDate),
-      phone: normalizeDigits(parsed.phone),
+      name: candidate.name,
+      birthDate: normalizeDigits(candidate.birthDate),
+      phone: normalizeDigits(candidate.phone),
     };
   } catch {
     return null;
@@ -78,7 +125,14 @@ function readStoredIdentity(): IdentityInput | null {
 
 function saveStoredIdentity(identity: IdentityInput) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(LS_KEY, JSON.stringify(identity));
+  localStorage.setItem(
+    LS_KEY,
+    JSON.stringify({
+      schemaVersion: 2,
+      savedAt: new Date().toISOString(),
+      identity,
+    })
+  );
 }
 
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
@@ -92,8 +146,7 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   });
   const data = (await response.json().catch(() => ({}))) as T;
   if (!response.ok) {
-    const message = (data as { error?: string })?.error || "요청 처리에 실패했습니다.";
-    throw new Error(message);
+    throw new ApiRequestError(response.status, data as ApiErrorPayload);
   }
   return data;
 }
@@ -168,6 +221,34 @@ function formatDateTime(value: string | null | undefined) {
   return date.toLocaleString("ko-KR");
 }
 
+function formatRelativeTime(value: string | null | undefined) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  const diffMs = Date.now() - date.getTime();
+  if (diffMs < 0) return "방금";
+  const diffSec = Math.floor(diffMs / 1000);
+  if (diffSec < 60) return "방금";
+  if (diffSec < 3600) return `${Math.floor(diffSec / 60)}분 전`;
+  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}시간 전`;
+  if (diffSec < 172800) return "어제";
+  if (diffSec < 86400 * 7) return `${Math.floor(diffSec / 86400)}일 전`;
+  return date.toLocaleDateString("ko-KR");
+}
+
+function resolveCooldownUntilFromPayload(payload: ApiErrorPayload) {
+  const availableAt = payload.availableAt || payload.cooldown?.availableAt;
+  if (availableAt) {
+    const parsed = new Date(availableAt).getTime();
+    if (Number.isFinite(parsed) && parsed > Date.now()) return parsed;
+  }
+  const retryAfter = payload.retryAfterSec ?? payload.cooldown?.remainingSeconds;
+  if (typeof retryAfter === "number" && Number.isFinite(retryAfter) && retryAfter > 0) {
+    return Date.now() + retryAfter * 1000;
+  }
+  return null;
+}
+
 export default function EmployeeReportClient() {
   const [identity, setIdentity] = useState<IdentityInput>({
     name: "",
@@ -180,6 +261,8 @@ export default function EmployeeReportClient() {
   const [error, setError] = useState("");
   const [reportData, setReportData] = useState<EmployeeReportResponse | null>(null);
   const [selectedPeriodKey, setSelectedPeriodKey] = useState("");
+  const [forceSyncCooldownUntil, setForceSyncCooldownUntil] = useState<number | null>(null);
+  const [cooldownNow, setCooldownNow] = useState(() => Date.now());
   const hasTriedStoredLogin = useRef(false);
 
   const validIdentity = useMemo(() => {
@@ -195,10 +278,11 @@ export default function EmployeeReportClient() {
     [reportData]
   );
 
-  const validationIssueCount = useMemo(() => {
-    const entries = reportData?.report?.exportAudit?.validation ?? [];
-    return entries.reduce((sum, entry) => sum + (entry.issues?.length ?? 0), 0);
-  }, [reportData?.report?.exportAudit]);
+  const forceSyncRemainingSec = useMemo(() => {
+    if (!forceSyncCooldownUntil) return 0;
+    const remainingMs = forceSyncCooldownUntil - cooldownNow;
+    return remainingMs > 0 ? Math.ceil(remainingMs / 1000) : 0;
+  }, [cooldownNow, forceSyncCooldownUntil]);
 
   const periodOptions = useMemo(() => {
     const options = reportData?.availablePeriods ?? [];
@@ -208,12 +292,39 @@ export default function EmployeeReportClient() {
     return [];
   }, [reportData?.availablePeriods, reportData?.periodKey, selectedPeriodKey]);
 
+  useEffect(() => {
+    if (!forceSyncCooldownUntil) return;
+    if (forceSyncCooldownUntil <= Date.now()) {
+      setForceSyncCooldownUntil(null);
+      return;
+    }
+    const timer = window.setInterval(() => {
+      setCooldownNow(Date.now());
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [forceSyncCooldownUntil]);
+
+  useEffect(() => {
+    if (forceSyncRemainingSec <= 0 && forceSyncCooldownUntil) {
+      setForceSyncCooldownUntil(null);
+    }
+  }, [forceSyncCooldownUntil, forceSyncRemainingSec]);
+
   function getIdentityPayload() {
     return {
       name: identity.name.trim(),
       birthDate: normalizeDigits(identity.birthDate),
       phone: normalizeDigits(identity.phone),
     };
+  }
+
+  function applyForceSyncCooldown(payload: ApiErrorPayload | null | undefined) {
+    if (!payload) return;
+    const until = resolveCooldownUntilFromPayload(payload);
+    if (until) {
+      setForceSyncCooldownUntil(until);
+      setCooldownNow(Date.now());
+    }
   }
 
   async function loadReport(periodKey?: string) {
@@ -247,6 +358,9 @@ export default function EmployeeReportClient() {
       }
     );
     saveStoredIdentity(payload);
+    if (syncResult.sync?.cooldown) {
+      applyForceSyncCooldown({ cooldown: syncResult.sync.cooldown });
+    }
     await loadReport(selectedPeriodKey || undefined);
     return syncResult;
   }
@@ -387,14 +501,7 @@ export default function EmployeeReportClient() {
     }
   }
 
-  async function handleSignAndSync(forceRefresh = false) {
-    if (!validIdentity) {
-      setError("이름, 생년월일(8자리), 휴대폰 번호를 정확히 입력해 주세요.");
-      return;
-    }
-    setBusy(true);
-    setError("");
-    setNotice("");
+  async function ensureNhisReadyForSync() {
     try {
       const signResult = await requestJson<{
         ok: boolean;
@@ -404,8 +511,52 @@ export default function EmployeeReportClient() {
         method: "POST",
         body: JSON.stringify({}),
       });
-      if (!signResult.linked) {
-        setNotice("카카오톡 인증 완료 후 다시 시도해 주세요.");
+      return {
+        linked: signResult.linked === true,
+        reused: signResult.reused === true,
+      };
+    } catch (err) {
+      if (!(err instanceof ApiRequestError) || err.status !== 409) throw err;
+      const initResult = await requestJson<NhisInitResponse>("/api/health/nhis/init", {
+        method: "POST",
+        body: JSON.stringify({
+          loginMethod: "EASY",
+          loginOrgCd: "kakao",
+          resNm: identity.name.trim(),
+          resNo: normalizeDigits(identity.birthDate),
+          mobileNo: normalizeDigits(identity.phone),
+        }),
+      });
+      if (initResult.linked || initResult.nextStep === "fetch") {
+        return {
+          linked: true,
+          reused: initResult.reused === true || initResult.source === "db-history",
+        };
+      }
+      setNotice(
+        "카카오톡에서 인증 승인을 완료한 뒤 '인증 완료 후 연동' 버튼을 다시 눌러 주세요."
+      );
+      return { linked: false, reused: false };
+    }
+  }
+
+  async function handleSignAndSync(forceRefresh = false) {
+    if (!validIdentity) {
+      setError("이름, 생년월일(8자리), 휴대폰 번호를 정확히 입력해 주세요.");
+      return;
+    }
+    if (forceRefresh && forceSyncRemainingSec > 0) {
+      const availableAtIso = new Date(Date.now() + forceSyncRemainingSec * 1000).toISOString();
+      setNotice(`재연동은 ${formatDateTime(availableAtIso)} 이후 가능합니다.`);
+      return;
+    }
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      const ready = await ensureNhisReadyForSync();
+      if (!ready.linked) {
+        setNotice("카카오톡 인증을 완료한 뒤 다시 시도해 주세요.");
         return;
       }
 
@@ -415,12 +566,24 @@ export default function EmployeeReportClient() {
         syncResult.sync?.source === "cache-history"
       ) {
         setNotice("캐시 데이터를 사용해 레포트를 갱신했습니다.");
-      } else if (signResult.reused) {
+      } else if (ready.reused) {
         setNotice("기존 인증 상태를 사용해 레포트를 갱신했습니다.");
       } else {
         setNotice("최신 정보를 연동해 레포트를 갱신했습니다.");
       }
     } catch (err) {
+      if (err instanceof ApiRequestError) {
+        applyForceSyncCooldown(err.payload);
+        if (err.status === 429) {
+          const cooldownUntil = resolveCooldownUntilFromPayload(err.payload);
+          if (cooldownUntil) {
+            setNotice(
+              `재연동은 ${formatDateTime(new Date(cooldownUntil).toISOString())} 이후 가능합니다.`
+            );
+            return;
+          }
+        }
+      }
       setError(err instanceof Error ? err.message : "데이터 연동에 실패했습니다.");
     } finally {
       setBusy(false);
@@ -466,11 +629,23 @@ export default function EmployeeReportClient() {
 
   if (booting) {
     return (
-      <div className={`${styles.page} ${styles.compactPage}`}>
+      <div className={`${styles.page} ${styles.compactPage} ${styles.stack}`}>
+        <header className={styles.heroCard}>
+          <span className={`${styles.skeletonPill} ${styles.skeletonBlock}`} />
+          <span className={`${styles.skeletonLine} ${styles.skeletonBlock}`} />
+          <span className={`${styles.skeletonLineShort} ${styles.skeletonBlock}`} />
+          <div className={styles.skeletonRow}>
+            <span className={`${styles.skeletonPill} ${styles.skeletonBlock}`} />
+            <span className={`${styles.skeletonPill} ${styles.skeletonBlock}`} />
+          </div>
+        </header>
         <section className={styles.sectionCard}>
-          <p className={styles.inlineHint}>
-            임직원 건강 레포트 정보를 불러오는 중입니다.
-          </p>
+          <div className={styles.skeletonRow}>
+            <span className={`${styles.skeletonLine} ${styles.skeletonBlock}`} />
+            <span className={`${styles.skeletonPill} ${styles.skeletonBlock}`} />
+          </div>
+          <span className={`${styles.skeletonLine} ${styles.skeletonBlock}`} />
+          <span className={`${styles.skeletonLineShort} ${styles.skeletonBlock}`} />
         </section>
       </div>
     );
@@ -603,15 +778,26 @@ export default function EmployeeReportClient() {
                   님 레포트
                 </h2>
                 <p className={styles.sectionDescription}>
-                  생성 시각:{" "}
-                  {formatDateTime(
-                    reportData.report.payload?.meta?.generatedAt ||
-                      reportData.report.updatedAt
+                  최근 연동:{" "}
+                  {formatRelativeTime(
+                    reportData.employee?.lastSyncedAt || reportData.report.updatedAt
                   )}
                 </p>
-                <p className={styles.sectionDescription}>
-                  최근 연동: {formatDateTime(reportData.employee?.lastSyncedAt)}
-                </p>
+                <details className={styles.optionalCard}>
+                  <summary>상세 정보</summary>
+                  <div className={styles.optionalBody}>
+                    <p className={styles.optionalText}>
+                      생성 시각:{" "}
+                      {formatDateTime(
+                        reportData.report.payload?.meta?.generatedAt ||
+                          reportData.report.updatedAt
+                      )}
+                    </p>
+                    <p className={styles.optionalText}>
+                      최근 연동 시각: {formatDateTime(reportData.employee?.lastSyncedAt)}
+                    </p>
+                  </div>
+                </details>
               </div>
             </div>
 
@@ -657,7 +843,7 @@ export default function EmployeeReportClient() {
                   <button
                     type="button"
                     onClick={() => handleSignAndSync(true)}
-                    disabled={busy}
+                    disabled={busy || forceSyncRemainingSec > 0}
                     className={styles.buttonSecondary}
                   >
                     최신 정보 다시 연동
@@ -671,6 +857,11 @@ export default function EmployeeReportClient() {
                     다른 이름 조회
                   </button>
                 </div>
+                {forceSyncRemainingSec > 0 ? (
+                  <p className={styles.inlineHint}>
+                    재연동 가능까지 약 {Math.ceil(forceSyncRemainingSec / 60)}분 남았습니다.
+                  </p>
+                ) : null}
               </div>
             </details>
           </section>
@@ -690,13 +881,6 @@ export default function EmployeeReportClient() {
               }
             >
               {medicationStatus.text}
-            </div>
-          ) : null}
-
-          {validationIssueCount > 0 ? (
-            <div className={styles.noticeWarn}>
-              내보내기 검증 이슈가 {validationIssueCount}건 있습니다. 필요 시 관리자에게
-              확인을 요청해 주세요.
             </div>
           ) : null}
 

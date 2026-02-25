@@ -7,6 +7,7 @@ import { resolveB2bEmployeeIdentity } from "@/lib/b2b/identity";
 import {
   DEFAULT_DETAIL_YEAR_LIMIT,
   DEFAULT_NHIS_FETCH_TARGETS,
+  type NhisFetchTarget,
   type NhisFetchRoutePayload,
 } from "@/lib/server/hyphen/fetch-contract";
 import { executeNhisFetch } from "@/lib/server/hyphen/fetch-executor";
@@ -73,6 +74,224 @@ function parseCachedPayload(
   } catch {
     return null;
   }
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+function asArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [];
+}
+
+function resolveMedicationRows(normalizedJson: unknown) {
+  const normalized = asRecord(normalizedJson);
+  const medication = normalized?.medication;
+  if (Array.isArray(medication)) return medication;
+  const medicationRecord = asRecord(medication);
+  if (!medicationRecord) return null;
+  if (Array.isArray(medicationRecord.list)) return medicationRecord.list;
+  if (Array.isArray(medicationRecord.rows)) return medicationRecord.rows;
+  if (Array.isArray(medicationRecord.items)) return medicationRecord.items;
+  return [];
+}
+
+function resolveCheckupRows(normalizedJson: unknown) {
+  const normalized = asRecord(normalizedJson);
+  const checkup = normalized?.checkup;
+  if (Array.isArray(checkup)) return checkup;
+  const checkupRecord = asRecord(checkup);
+  if (!checkupRecord) return null;
+  if (Array.isArray(checkupRecord.overview)) return checkupRecord.overview;
+  if (Array.isArray(checkupRecord.list)) return checkupRecord.list;
+  return [];
+}
+
+function resolveMissingSummaryTargets(normalizedJson: unknown) {
+  const missing = new Set<NhisFetchTarget>();
+  const medicationRows = resolveMedicationRows(normalizedJson);
+  const checkupRows = resolveCheckupRows(normalizedJson);
+
+  if (!medicationRows || medicationRows.length === 0) {
+    missing.add("medication");
+  }
+  if (!checkupRows || checkupRows.length === 0) {
+    missing.add("checkupOverview");
+  }
+  return [...missing];
+}
+
+function mergeSummaryNormalizedPayload(input: {
+  baseNormalized: unknown;
+  patchNormalized: unknown;
+  targets: NhisFetchTarget[];
+}) {
+  const base = asRecord(input.baseNormalized) ?? {};
+  const patch = asRecord(input.patchNormalized) ?? {};
+  const merged: Record<string, unknown> = { ...base };
+
+  if (input.targets.includes("medication") && patch.medication !== undefined) {
+    merged.medication = patch.medication;
+  }
+
+  if (input.targets.includes("checkupOverview")) {
+    const baseCheckup = asRecord(base.checkup) ?? {};
+    const patchCheckup = asRecord(patch.checkup) ?? {};
+    const mergedCheckup: Record<string, unknown> = { ...baseCheckup };
+    if (patchCheckup.overview !== undefined) {
+      mergedCheckup.overview = patchCheckup.overview;
+    } else if (patch.checkup !== undefined && Array.isArray(patch.checkup)) {
+      mergedCheckup.overview = patch.checkup;
+    }
+    merged.checkup = mergedCheckup;
+  }
+
+  return merged;
+}
+
+type SummaryPatchResult = {
+  payload: NhisFetchRoutePayload;
+  usedNetwork: boolean;
+  patchedTargets: NhisFetchTarget[];
+};
+
+async function resolveSummaryPatchPayload(input: {
+  appUserId: string;
+  identityHash: string;
+  targets: NhisFetchTarget[];
+  effectiveYearLimit: number;
+  requestDefaults: ReturnType<typeof buildNhisRequestDefaults>;
+  linkLoginMethod: string | null | undefined;
+  linkLoginOrgCd: string | null | undefined;
+  linkCookieData: unknown;
+}) {
+  if (input.targets.length === 0) return null;
+
+  const hashMeta = buildNhisFetchRequestHash({
+    identityHash: input.identityHash,
+    targets: input.targets,
+    yearLimit: input.effectiveYearLimit,
+    fromDate: input.requestDefaults.fromDate,
+    toDate: input.requestDefaults.toDate,
+    subjectType: input.requestDefaults.subjectType,
+  });
+
+  const validCache = await getValidNhisFetchCache(
+    input.appUserId,
+    hashMeta.requestHash
+  );
+  if (validCache) {
+    await markNhisFetchCacheHit(validCache.id).catch(() => undefined);
+    const parsed = parseCachedPayload(validCache.payload);
+    if (parsed?.ok) {
+      return { payload: parsed, usedNetwork: false };
+    }
+  }
+
+  const historyCache = await getLatestNhisFetchCacheByIdentity({
+    appUserId: input.appUserId,
+    identityHash: input.identityHash,
+    targets: input.targets,
+    yearLimit: input.effectiveYearLimit,
+    subjectType: input.requestDefaults.subjectType,
+  });
+  if (historyCache) {
+    const parsed = parseCachedPayload(historyCache.payload);
+    if (parsed?.ok) {
+      return { payload: parsed, usedNetwork: false };
+    }
+  }
+
+  if (!input.linkCookieData) return null;
+
+  const basePayload = buildBasePayload({
+    linkLoginMethod: input.linkLoginMethod,
+    linkLoginOrgCd: input.linkLoginOrgCd,
+    linkCookieData: input.linkCookieData,
+    requestDefaults: input.requestDefaults,
+  });
+  const detailPayload = buildDetailPayload(basePayload);
+  const executed = await executeNhisFetch({
+    targets: input.targets,
+    effectiveYearLimit: input.effectiveYearLimit,
+    basePayload,
+    detailPayload,
+    requestDefaults: input.requestDefaults,
+  });
+
+  await saveNhisFetchCache({
+    appUserId: input.appUserId,
+    identityHash: input.identityHash,
+    requestHash: hashMeta.requestHash,
+    requestKey: hashMeta.requestKey,
+    targets: hashMeta.normalizedTargets,
+    yearLimit: input.effectiveYearLimit,
+    fromDate: input.requestDefaults.fromDate,
+    toDate: input.requestDefaults.toDate,
+    subjectType: input.requestDefaults.subjectType,
+    statusCode: executed.payload.ok ? 200 : 502,
+    payload: executed.payload,
+  });
+
+  if (!executed.payload.ok) return null;
+  return { payload: executed.payload, usedNetwork: true };
+}
+
+async function patchSummaryTargetsIfNeeded(input: {
+  appUserId: string;
+  identityHash: string;
+  payload: NhisFetchRoutePayload;
+  effectiveYearLimit: number;
+  requestDefaults: ReturnType<typeof buildNhisRequestDefaults>;
+  linkLoginMethod: string | null | undefined;
+  linkLoginOrgCd: string | null | undefined;
+  linkCookieData: unknown;
+}): Promise<SummaryPatchResult> {
+  const baseNormalized = input.payload.data?.normalized ?? null;
+  const missingTargets = resolveMissingSummaryTargets(baseNormalized);
+  if (missingTargets.length === 0) {
+    return { payload: input.payload, usedNetwork: false, patchedTargets: [] };
+  }
+
+  const patch = await resolveSummaryPatchPayload({
+    appUserId: input.appUserId,
+    identityHash: input.identityHash,
+    targets: missingTargets,
+    effectiveYearLimit: input.effectiveYearLimit,
+    requestDefaults: input.requestDefaults,
+    linkLoginMethod: input.linkLoginMethod,
+    linkLoginOrgCd: input.linkLoginOrgCd,
+    linkCookieData: input.linkCookieData,
+  });
+  if (!patch) {
+    return { payload: input.payload, usedNetwork: false, patchedTargets: [] };
+  }
+
+  const patchedNormalized = mergeSummaryNormalizedPayload({
+    baseNormalized,
+    patchNormalized: patch.payload.data?.normalized ?? null,
+    targets: missingTargets,
+  });
+  const mergedPayload: NhisFetchRoutePayload = {
+    ...input.payload,
+    partial: input.payload.partial === true || patch.payload.partial === true,
+    failed: [
+      ...asArray(input.payload.failed),
+      ...asArray(patch.payload.failed),
+    ] as NhisFetchRoutePayload["failed"],
+    data: {
+      ...asRecord(input.payload.data),
+      normalized: patchedNormalized,
+      raw: input.payload.data?.raw ?? patch.payload.data?.raw ?? null,
+    },
+  };
+
+  return {
+    payload: mergedPayload,
+    usedNetwork: patch.usedNetwork,
+    patchedTargets: missingTargets,
+  };
 }
 
 function buildSnapshotRawEnvelope(input: {
@@ -241,10 +460,21 @@ export async function fetchAndStoreB2bHealthSnapshot(input: {
         await markNhisFetchCacheHit(cached.id).catch(() => undefined);
         const parsed = parseCachedPayload(cached.payload);
         if (parsed?.ok) {
-          const normalizedJson = parsed.data?.normalized ?? null;
-          const rawJson = buildSnapshotRawEnvelope({
-            source: "cache-valid",
+          const patched = await patchSummaryTargetsIfNeeded({
+            appUserId: input.appUserId,
+            identityHash: identity.identityHash,
             payload: parsed,
+            effectiveYearLimit,
+            requestDefaults,
+            linkLoginMethod: link.loginMethod,
+            linkLoginOrgCd: link.loginOrgCd,
+            linkCookieData: link.cookieData,
+          });
+          const source = patched.usedNetwork ? "fresh" : "cache-valid";
+          const normalizedJson = patched.payload.data?.normalized ?? null;
+          const rawJson = buildSnapshotRawEnvelope({
+            source,
+            payload: patched.payload,
           });
           const snapshot = await createB2bHealthSnapshot({
             employeeId: input.employeeId,
@@ -258,8 +488,8 @@ export async function fetchAndStoreB2bHealthSnapshot(input: {
             },
           });
           return {
-            source: "cache-valid" as const,
-            payload: parsed,
+            source,
+            payload: patched.payload,
             snapshot,
           };
         }
@@ -275,10 +505,21 @@ export async function fetchAndStoreB2bHealthSnapshot(input: {
       if (historyCache) {
         const parsed = parseCachedPayload(historyCache.payload);
         if (parsed?.ok) {
-          const normalizedJson = parsed.data?.normalized ?? null;
-          const rawJson = buildSnapshotRawEnvelope({
-            source: "cache-history",
+          const patched = await patchSummaryTargetsIfNeeded({
+            appUserId: input.appUserId,
+            identityHash: identity.identityHash,
             payload: parsed,
+            effectiveYearLimit,
+            requestDefaults,
+            linkLoginMethod: link.loginMethod,
+            linkLoginOrgCd: link.loginOrgCd,
+            linkCookieData: link.cookieData,
+          });
+          const source = patched.usedNetwork ? "fresh" : "cache-history";
+          const normalizedJson = patched.payload.data?.normalized ?? null;
+          const rawJson = buildSnapshotRawEnvelope({
+            source,
+            payload: patched.payload,
           });
           const snapshot = await createB2bHealthSnapshot({
             employeeId: input.employeeId,
@@ -292,8 +533,8 @@ export async function fetchAndStoreB2bHealthSnapshot(input: {
             },
           });
           return {
-            source: "cache-history" as const,
-            payload: parsed,
+            source,
+            payload: patched.payload,
             snapshot,
           };
         }
@@ -342,10 +583,20 @@ export async function fetchAndStoreB2bHealthSnapshot(input: {
       );
     }
 
-    const normalizedJson = executed.payload.data?.normalized ?? null;
+    const patched = await patchSummaryTargetsIfNeeded({
+      appUserId: input.appUserId,
+      identityHash: identity.identityHash,
+      payload: executed.payload,
+      effectiveYearLimit,
+      requestDefaults,
+      linkLoginMethod: link.loginMethod,
+      linkLoginOrgCd: link.loginOrgCd,
+      linkCookieData: link.cookieData,
+    });
+    const normalizedJson = patched.payload.data?.normalized ?? null;
     const rawJson = buildSnapshotRawEnvelope({
       source: "fresh",
-      payload: executed.payload,
+      payload: patched.payload,
     });
 
     const snapshot = await createB2bHealthSnapshot({
@@ -363,7 +614,7 @@ export async function fetchAndStoreB2bHealthSnapshot(input: {
 
     return {
       source: "fresh" as const,
-      payload: executed.payload,
+      payload: patched.payload,
       snapshot,
     };
   });

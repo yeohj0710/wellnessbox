@@ -11,6 +11,11 @@ const DIRECT_URL_KEYS = [
 ] as const;
 
 const ACCEPTED_URL_PREFIX = /^(postgres(?:ql)?:\/\/|prisma:\/\/|prisma\+postgres:\/\/)/i;
+const POSTGRES_URL_PREFIX = /^postgres(?:ql)?:\/\//i;
+const ACCELERATE_PROTOCOL_ERROR_SIGNATURES = [
+  "must start with the protocol `prisma://` or `prisma+postgres://`",
+  "must start with prisma:// or prisma+postgres://",
+];
 
 export type PrismaEnvValidation = {
   ok: boolean;
@@ -109,6 +114,24 @@ export function ensurePrismaEnvConfigured(force = false): PrismaEnvValidation {
   return cachedValidation;
 }
 
+function resolveDatabaseUrlValue() {
+  return pickEnvValue(DATABASE_URL_KEYS)?.value ?? "";
+}
+
+function isPrismaEngineModeMismatchMessage(message: string) {
+  const normalized = message.toLowerCase();
+  return ACCELERATE_PROTOCOL_ERROR_SIGNATURES.some((signature) =>
+    normalized.includes(signature)
+  );
+}
+
+export function isPrismaEngineModeMismatch(error: unknown) {
+  const rawMessage = error instanceof Error ? error.message : "";
+  if (!rawMessage) return false;
+  if (!isPrismaEngineModeMismatchMessage(rawMessage)) return false;
+  return POSTGRES_URL_PREFIX.test(resolveDatabaseUrlValue());
+}
+
 function hasPrismaEnvSignature(message: string) {
   const normalized = message.toLowerCase();
   return (
@@ -127,6 +150,7 @@ export function resolvePrismaEnvErrorMessage(error: unknown) {
   if (!status.ok) return status.message;
   const rawMessage = error instanceof Error ? error.message : "";
   if (!rawMessage) return null;
+  if (isPrismaEngineModeMismatch(error)) return null;
   if (!hasPrismaEnvSignature(rawMessage)) return null;
   return buildPrismaEnvGuide([
     "Prisma 연결 중 환경변수 해석 오류가 발생했습니다. DATABASE_URL/DIRECT_URL 및 대체 키를 다시 확인해 주세요.",

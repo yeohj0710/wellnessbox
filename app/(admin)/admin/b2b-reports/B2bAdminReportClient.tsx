@@ -80,6 +80,21 @@ function formatDateTime(raw: string | null | undefined) {
   return date.toLocaleString("ko-KR");
 }
 
+function formatRelativeTime(raw: string | null | undefined) {
+  if (!raw) return "-";
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return "-";
+  const diffMs = Date.now() - date.getTime();
+  if (diffMs < 0) return "방금";
+  const diffSec = Math.floor(diffMs / 1000);
+  if (diffSec < 60) return "방금";
+  if (diffSec < 3600) return `${Math.floor(diffSec / 60)}분 전`;
+  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}시간 전`;
+  if (diffSec < 172800) return "어제";
+  if (diffSec < 86400 * 7) return `${Math.floor(diffSec / 86400)}일 전`;
+  return date.toLocaleDateString("ko-KR");
+}
+
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, {
     ...init,
@@ -142,6 +157,13 @@ function formatBounds(issue: LayoutValidationIssue) {
     ? ` / 상대 x:${second.x.toFixed(1)} y:${second.y.toFixed(1)} w:${second.w.toFixed(1)} h:${second.h.toFixed(1)}`
     : "";
   return `${firstText}${secondText}`;
+}
+
+function formatIssueDebug(issue: LayoutValidationIssue) {
+  const page = issue.pageId || "-";
+  const node = issue.nodeId || "-";
+  const related = issue.relatedNodeId ? ` / related:${issue.relatedNodeId}` : "";
+  return `page:${page} / node:${node}${related} / ${formatBounds(issue)}`;
 }
 
 function mergePeriods(...groups: Array<Array<string> | undefined>) {
@@ -693,7 +715,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
       {notice ? <div className={styles.noticeSuccess}>{notice}</div> : null}
 
       <div className={styles.splitLayout}>
-        <section className={styles.sectionCard}>
+        <section className={`${styles.sectionCard} ${styles.sidebarCard}`}>
           <h2 className={styles.sectionTitle}>임직원 목록</h2>
           <div className={styles.listWrap}>
             {employees.map((employee) => (
@@ -739,8 +761,10 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
                   {selectedEmployeeDetail.name} ({selectedEmployeeDetail.birthDate})
                 </h2>
                 <p className={styles.sectionDescription}>
-                  최근 업데이트:{" "}
-                  {formatDateTime(selectedEmployeeDetail.lastSyncedAt || latestReport?.updatedAt)}
+                  최근 연동:{" "}
+                  {formatRelativeTime(
+                    selectedEmployeeDetail.lastSyncedAt || latestReport?.updatedAt
+                  )}
                 </p>
                 <div className={styles.actionRow}>
                   <select
@@ -783,6 +807,20 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
                 <details className={styles.optionalCard}>
                   <summary>고급 작업</summary>
                   <div className={styles.optionalBody}>
+                    <div className={styles.optionalCard}>
+                      <p className={styles.optionalText}>
+                        최근 연동 시각: {formatDateTime(selectedEmployeeDetail.lastSyncedAt)}
+                      </p>
+                      <p className={styles.optionalText}>
+                        레포트 생성 시각:{" "}
+                        {formatDateTime(
+                          latestReport?.payload?.meta?.generatedAt || latestReport?.updatedAt
+                        )}
+                      </p>
+                      <p className={styles.optionalText}>
+                        레포트 갱신 시각: {formatDateTime(latestReport?.updatedAt)}
+                      </p>
+                    </div>
                     <div className={styles.actionRow}>
                       <button
                         type="button"
@@ -961,7 +999,8 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
                     <ul className={styles.listPlain}>
                       {validationIssues.map((issue, index) => (
                         <li key={`${issue.pageId}-${index}`}>
-                          [{issue.code}] {issue.detail} / {formatBounds(issue)}
+                          <strong>[{issue.code}]</strong> {issue.detail}
+                          <div className={styles.inlineHint}>{formatIssueDebug(issue)}</div>
                         </li>
                       ))}
                     </ul>

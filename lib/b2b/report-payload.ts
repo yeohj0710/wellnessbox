@@ -90,10 +90,41 @@ function extractHealthMetrics(normalizedJson: unknown) {
   return metrics;
 }
 
-function extractMedicationRows(normalizedJson: unknown) {
+type MedicationContainerState = "present" | "missing" | "unrecognized";
+
+function extractMedicationRows(normalizedJson: unknown): {
+  rows: Array<{
+    medicationName: string;
+    hospitalName: string | null;
+    date: string | null;
+    dosageDay: string | null;
+  }>;
+  containerState: MedicationContainerState;
+} {
   const normalized = asRecord(normalizedJson);
-  const medication = asRecord(normalized?.medication);
-  const list = asArray(medication?.list);
+  if (!normalized || !("medication" in normalized)) {
+    return { rows: [], containerState: "missing" };
+  }
+  const medicationRaw = normalized.medication;
+  const medicationRecord = asRecord(medicationRaw);
+  const list = Array.isArray(medicationRaw)
+    ? medicationRaw
+    : asArray(
+        medicationRecord?.list ??
+          medicationRecord?.rows ??
+          medicationRecord?.items ??
+          medicationRecord?.history
+      );
+  const containerState: MedicationContainerState =
+    Array.isArray(medicationRaw) ||
+    Array.isArray(medicationRecord?.list) ||
+    Array.isArray(medicationRecord?.rows) ||
+    Array.isArray(medicationRecord?.items) ||
+    Array.isArray(medicationRecord?.history)
+      ? "present"
+      : medicationRecord
+      ? "unrecognized"
+      : "missing";
   const rows: Array<{
     medicationName: string;
     hospitalName: string | null;
@@ -148,9 +179,12 @@ function extractMedicationRows(normalizedJson: unknown) {
     });
   }
 
-  return rows
-    .sort((a, b) => parseSortableDateScore(b.date) - parseSortableDateScore(a.date))
-    .slice(0, 3);
+  return {
+    rows: rows
+      .sort((a, b) => parseSortableDateScore(b.date) - parseSortableDateScore(a.date))
+      .slice(0, 3),
+    containerState,
+  };
 }
 
 function extractFailedTargets(rawJson: unknown) {
@@ -171,6 +205,7 @@ function resolveMedicationStatus(input: {
     date: string | null;
     dosageDay: string | null;
   }>;
+  containerState: MedicationContainerState;
   sourceMode: string | null;
   rawJson: unknown;
 }) {
@@ -200,13 +235,20 @@ function resolveMedicationStatus(input: {
   if (input.sourceMode === "mock") {
     return {
       type: "unknown" as const,
-      message: "MOCK 데이터에서는 복약 정보가 없을 수 있습니다.",
+      message: "데모 데이터에서는 복약 정보를 확인할 수 없습니다.",
+      failedTargets,
+    };
+  }
+  if (input.containerState === "missing" || input.containerState === "unrecognized") {
+    return {
+      type: "unknown" as const,
+      message: "복약 데이터 구조를 확인하지 못했습니다. 잠시 후 다시 연동해 주세요.",
       failedTargets,
     };
   }
   return {
     type: "none" as const,
-    message: "복약 이력이 없습니다.",
+    message: "최근 3회 복약 이력이 없습니다.",
     failedTargets,
   };
 }
@@ -591,10 +633,12 @@ export async function buildB2bReportPayload(input: {
   ]);
 
   const metrics = extractHealthMetrics(latestHealth?.normalizedJson);
-  const medications = extractMedicationRows(latestHealth?.normalizedJson);
+  const medicationExtraction = extractMedicationRows(latestHealth?.normalizedJson);
+  const medications = medicationExtraction.rows;
   const fetchStatus = parseFetchFlags(latestHealth?.rawJson);
   const medicationStatus = resolveMedicationStatus({
     medications,
+    containerState: medicationExtraction.containerState,
     sourceMode: latestHealth?.sourceMode ?? null,
     rawJson: latestHealth?.rawJson,
   });

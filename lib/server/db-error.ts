@@ -1,7 +1,10 @@
 import "server-only";
 
 import { Prisma } from "@prisma/client";
-import { resolvePrismaEnvErrorMessage } from "@/lib/db-env";
+import {
+  isPrismaEngineModeMismatch,
+  resolvePrismaEnvErrorMessage,
+} from "@/lib/db-env";
 
 export type DbRouteError = {
   status: number;
@@ -18,6 +21,7 @@ export function resolveDbRouteError(
   error: unknown,
   fallbackMessage = "데이터베이스 처리 중 오류가 발생했습니다."
 ): DbRouteError {
+  const isEngineModeMismatch = isPrismaEngineModeMismatch(error);
   const envMessage = resolvePrismaEnvErrorMessage(error);
   if (envMessage) {
     return {
@@ -28,6 +32,13 @@ export function resolveDbRouteError(
   }
 
   if (error instanceof Prisma.PrismaClientInitializationError) {
+    if (isEngineModeMismatch) {
+      return {
+        status: 500,
+        code: "DB_QUERY_FAILED",
+        message: fallbackMessage,
+      };
+    }
     return {
       status: 503,
       code: "DB_ENV_INVALID",
@@ -36,7 +47,11 @@ export function resolveDbRouteError(
     };
   }
 
-  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P6001") {
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P6001" &&
+    !isEngineModeMismatch
+  ) {
     return {
       status: 503,
       code: "DB_ENV_INVALID",
@@ -46,7 +61,7 @@ export function resolveDbRouteError(
   }
 
   const rawMessage = normalizeErrorMessage(error).toLowerCase();
-  if (rawMessage.includes("p6001")) {
+  if (rawMessage.includes("p6001") && !isEngineModeMismatch) {
     return {
       status: 503,
       code: "DB_ENV_INVALID",
@@ -61,4 +76,3 @@ export function resolveDbRouteError(
     message: fallbackMessage,
   };
 }
-

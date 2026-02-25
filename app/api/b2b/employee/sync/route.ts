@@ -26,6 +26,44 @@ const schema = z.object({
   generateAiEvaluation: z.boolean().optional(),
 });
 
+const MIN_FORCE_REFRESH_COOLDOWN_SECONDS = 10 * 60;
+const MAX_FORCE_REFRESH_COOLDOWN_SECONDS = 30 * 60;
+const DEFAULT_FORCE_REFRESH_COOLDOWN_SECONDS = 15 * 60;
+
+function resolveForceRefreshCooldownSeconds() {
+  const parsed = Number(process.env.B2B_EMPLOYEE_FORCE_REFRESH_COOLDOWN_SECONDS);
+  if (!Number.isFinite(parsed)) return DEFAULT_FORCE_REFRESH_COOLDOWN_SECONDS;
+  const rounded = Math.round(parsed);
+  return Math.min(
+    MAX_FORCE_REFRESH_COOLDOWN_SECONDS,
+    Math.max(MIN_FORCE_REFRESH_COOLDOWN_SECONDS, rounded)
+  );
+}
+
+function computeForceRefreshCooldown(lastSyncedAt: Date | null, cooldownSeconds: number) {
+  if (!lastSyncedAt) {
+    return {
+      available: true,
+      remainingSeconds: 0,
+      availableAt: null as string | null,
+    };
+  }
+  const availableAtMs = lastSyncedAt.getTime() + cooldownSeconds * 1000;
+  const remainingMs = availableAtMs - Date.now();
+  if (remainingMs <= 0) {
+    return {
+      available: true,
+      remainingSeconds: 0,
+      availableAt: null as string | null,
+    };
+  }
+  return {
+    available: false,
+    remainingSeconds: Math.ceil(remainingMs / 1000),
+    availableAt: new Date(availableAtMs).toISOString(),
+  };
+}
+
 function noStoreJson(payload: unknown, status = 200) {
   return NextResponse.json(payload, {
     status,
@@ -60,6 +98,8 @@ export async function POST(req: Request) {
 
     const ip = readClientIp(req);
     const userAgent = req.headers.get("user-agent");
+    const forceRefreshRequested = parsed.data.forceRefresh === true;
+    const forceRefreshCooldownSeconds = resolveForceRefreshCooldownSeconds();
 
     const upserted = await upsertB2bEmployee({
       appUserId: auth.data.appUserId,
@@ -78,12 +118,48 @@ export async function POST(req: Request) {
       payload: { guest: auth.data.guest },
     });
 
+    if (forceRefreshRequested) {
+      const cooldown = computeForceRefreshCooldown(
+        upserted.employee.lastSyncedAt,
+        forceRefreshCooldownSeconds
+      );
+      if (!cooldown.available) {
+        await logB2bEmployeeAccess({
+          employeeId: upserted.employee.id,
+          appUserId: auth.data.appUserId,
+          action: "sync_force_refresh_cooldown",
+          route: "/api/b2b/employee/sync",
+          ip,
+          userAgent,
+          payload: {
+            retryAfterSec: cooldown.remainingSeconds,
+            availableAt: cooldown.availableAt,
+            cooldownSeconds: forceRefreshCooldownSeconds,
+          },
+        });
+        return noStoreJson(
+          {
+            ok: false,
+            error: "재연동은 잠시 후 다시 시도해 주세요.",
+            retryAfterSec: cooldown.remainingSeconds,
+            availableAt: cooldown.availableAt,
+            cooldown: {
+              cooldownSeconds: forceRefreshCooldownSeconds,
+              remainingSeconds: cooldown.remainingSeconds,
+              availableAt: cooldown.availableAt,
+            },
+          },
+          429
+        );
+      }
+    }
+
     try {
       const syncResult = await fetchAndStoreB2bHealthSnapshot({
         appUserId: auth.data.appUserId,
         employeeId: upserted.employee.id,
         identity: upserted.identity,
-        forceRefresh: parsed.data.forceRefresh === true,
+        forceRefresh: forceRefreshRequested,
       });
 
       const periodKey = parsed.data.periodKey ?? resolveCurrentPeriodKey();
@@ -109,7 +185,18 @@ export async function POST(req: Request) {
         sync: {
           source: syncResult.source,
           snapshotId: syncResult.snapshot.id,
-          forceRefresh: parsed.data.forceRefresh === true,
+          forceRefresh: forceRefreshRequested,
+          cooldown: {
+            cooldownSeconds: forceRefreshCooldownSeconds,
+            remainingSeconds: forceRefreshRequested
+              ? forceRefreshCooldownSeconds
+              : 0,
+            availableAt: forceRefreshRequested
+              ? new Date(
+                  Date.now() + forceRefreshCooldownSeconds * 1000
+                ).toISOString()
+              : null,
+          },
         },
         report: {
           id: report.id,
@@ -135,7 +222,7 @@ export async function POST(req: Request) {
           reportId: report.id,
           source: syncResult.source,
           periodKey,
-          forceRefresh: parsed.data.forceRefresh === true,
+          forceRefresh: forceRefreshRequested,
         },
       });
 
