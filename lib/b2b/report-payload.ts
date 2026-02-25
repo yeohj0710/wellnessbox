@@ -3,6 +3,10 @@ import "server-only";
 import db from "@/lib/db";
 import { maskBirthDate, maskPhone } from "@/lib/b2b/identity";
 import { monthRangeFromPeriodKey, periodKeyToCycle } from "@/lib/b2b/period";
+import {
+  resolveReportScores,
+  type ReportScoreDetailMap,
+} from "@/lib/b2b/report-score-engine";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -292,11 +296,12 @@ function extractAnalysisSummary(payload: unknown) {
   const record = asRecord(payload);
   const summary = asRecord(record?.summary);
   return {
-    overallScore: typeof summary?.overallScore === "number" ? summary.overallScore : 0,
-    surveyScore: typeof summary?.surveyScore === "number" ? summary.surveyScore : 0,
-    healthScore: typeof summary?.healthScore === "number" ? summary.healthScore : 0,
+    overallScore:
+      typeof summary?.overallScore === "number" ? summary.overallScore : null,
+    surveyScore: typeof summary?.surveyScore === "number" ? summary.surveyScore : null,
+    healthScore: typeof summary?.healthScore === "number" ? summary.healthScore : null,
     medicationScore:
-      typeof summary?.medicationScore === "number" ? summary.medicationScore : 0,
+      typeof summary?.medicationScore === "number" ? summary.medicationScore : null,
     riskLevel: typeof summary?.riskLevel === "string" ? summary.riskLevel : "unknown",
     topIssues: Array.isArray(summary?.topIssues)
       ? summary.topIssues
@@ -335,7 +340,7 @@ function extractAnalysisSurvey(payload: unknown) {
 
   return {
     sectionScores,
-    overallScore: typeof survey?.overallScore === "number" ? survey.overallScore : 0,
+    overallScore: typeof survey?.overallScore === "number" ? survey.overallScore : null,
     topIssues: Array.isArray(survey?.topIssues)
       ? survey.topIssues
           .map((item) => asRecord(item))
@@ -510,7 +515,7 @@ export type B2bReportPayload = {
       answeredCount: number;
       questionCount: number;
     }>;
-    overallScore: number;
+    overallScore: number | null;
     topIssues: Array<{
       sectionKey: string;
       title: string;
@@ -530,10 +535,10 @@ export type B2bReportPayload = {
     reportCycle: number | null;
     payload: unknown;
     summary: {
-      overallScore: number;
-      surveyScore: number;
-      healthScore: number;
-      medicationScore: number;
+      overallScore: number | null;
+      surveyScore: number | null;
+      healthScore: number | null;
+      medicationScore: number | null;
       riskLevel: string;
       topIssues: Array<{
         sectionKey: string;
@@ -541,6 +546,8 @@ export type B2bReportPayload = {
         score: number;
       }>;
     };
+    scoreDetails: ReportScoreDetailMap;
+    scoreEngineVersion: string;
     riskFlags: string[];
     recommendations: string[];
     trend: {
@@ -673,6 +680,14 @@ export async function buildB2bReportPayload(input: {
   const analysisTrend = extractAnalysisTrend(latestAnalysis?.payload);
   const externalCards = extractExternalCards(latestAnalysis?.payload);
   const aiEvaluation = extractAiEvaluation(latestAnalysis?.payload);
+  const scoreResolution = resolveReportScores({
+    analysisSummary,
+    analysisSurveyOverallScore: analysisSurvey.overallScore,
+    surveySectionScores: analysisSurvey.sectionScores,
+    healthCoreMetrics: analysisHealth.coreMetrics,
+    medicationStatusType: medicationStatus.type,
+    medicationCount: medications.length,
+  });
   const analysisRecord = asRecord(latestAnalysis?.payload);
 
   const riskFlags = Array.isArray(analysisRecord?.riskFlags)
@@ -713,7 +728,7 @@ export async function buildB2bReportPayload(input: {
       templateVersion: latestSurvey?.templateVersion ?? null,
       selectedSections: latestSurvey?.selectedSections ?? [],
       sectionScores: analysisSurvey.sectionScores,
-      overallScore: analysisSurvey.overallScore,
+      overallScore: scoreResolution.summary.surveyScore,
       topIssues: analysisSurvey.topIssues,
       answers:
         latestSurvey?.answers.map((answer) => ({
@@ -731,7 +746,16 @@ export async function buildB2bReportPayload(input: {
         latestAnalysis?.reportCycle ??
         periodKeyToCycle(latestAnalysis?.periodKey ?? input.periodKey),
       payload: latestAnalysis?.payload ?? null,
-      summary: analysisSummary,
+      summary: {
+        overallScore: scoreResolution.summary.overallScore,
+        surveyScore: scoreResolution.summary.surveyScore,
+        healthScore: scoreResolution.summary.healthScore,
+        medicationScore: scoreResolution.summary.medicationScore,
+        riskLevel: scoreResolution.summary.riskLevel,
+        topIssues: analysisSummary.topIssues,
+      },
+      scoreDetails: scoreResolution.details,
+      scoreEngineVersion: scoreResolution.version,
       riskFlags,
       recommendations,
       trend: analysisTrend,

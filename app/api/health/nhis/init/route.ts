@@ -43,6 +43,7 @@ const initSchema = z.object({
     .string()
     .trim()
     .regex(/^\d{10,11}$/),
+  forceInit: z.boolean().optional().default(false),
 });
 function badRequest(message: string) {
   return NextResponse.json(
@@ -76,6 +77,7 @@ export async function POST(req: Request) {
     return badRequest(parsed.error.issues[0]?.message || "Invalid input");
   }
   const input = parsed.data;
+  const forceInit = input.forceInit === true;
   const loginOrgCd = normalizeHyphenEasyLoginOrg(input.loginOrgCd);
   if (!loginOrgCd) return badRequest("loginOrgCd must be kakao");
   if (loginOrgCd !== "kakao") {
@@ -109,7 +111,7 @@ export async function POST(req: Request) {
         )
       )
     ).find((item) => item !== null) ?? null;
-  if (replayableSummaryCache) {
+  if (!forceInit && replayableSummaryCache) {
     await Promise.all([
       upsertNhisLink(auth.data.appUserId, {
         linked: true,
@@ -134,6 +136,7 @@ export async function POST(req: Request) {
     );
   }
   if (
+    !forceInit &&
     existingLink?.linked !== true &&
     existingLink?.stepData &&
     pendingEasyAuth &&

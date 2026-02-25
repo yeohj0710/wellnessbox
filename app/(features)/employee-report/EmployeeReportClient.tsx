@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import ReportSummaryCards from "@/components/b2b/ReportSummaryCards";
 import styles from "@/components/b2b/B2bUx.module.css";
 
@@ -58,6 +59,26 @@ type EmployeeSyncResponse = {
   };
 };
 
+type LoginStatusResponse = {
+  isAdminLoggedIn?: boolean;
+};
+
+type SyncGuidance = {
+  code?: string;
+  reason?: string;
+  nextAction?: "init" | "sign" | "retry" | "wait";
+  message: string;
+  retryAfterSec?: number;
+  availableAt?: string | null;
+};
+
+function toSyncNextAction(
+  value: SyncGuidance["nextAction"]
+): "init" | "sign" | "retry" | null {
+  if (value === "init" || value === "sign" || value === "retry") return value;
+  return null;
+}
+
 const LS_KEY = "wb:b2b:employee:last-input:v2";
 const IDENTITY_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 
@@ -89,6 +110,10 @@ class ApiRequestError extends Error {
 
 function normalizeDigits(value: string) {
   return value.replace(/\D/g, "");
+}
+
+function sleep(ms: number) {
+  return new Promise<void>((resolve) => window.setTimeout(resolve, ms));
 }
 
 function readStoredIdentity(): IdentityInput | null {
@@ -253,6 +278,8 @@ function resolveCooldownUntilFromPayload(payload: ApiErrorPayload) {
 }
 
 export default function EmployeeReportClient() {
+  const searchParams = useSearchParams();
+  const debugMode = searchParams.get("debug") === "1";
   const [identity, setIdentity] = useState<IdentityInput>({
     name: "",
     birthDate: "",
@@ -267,7 +294,12 @@ export default function EmployeeReportClient() {
   const [syncNextAction, setSyncNextAction] = useState<
     "init" | "sign" | "retry" | null
   >(null);
+  const [syncGuidance, setSyncGuidance] = useState<SyncGuidance | null>(null);
   const [forceSyncCooldownUntil, setForceSyncCooldownUntil] = useState<number | null>(null);
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  const [forceConfirmOpen, setForceConfirmOpen] = useState(false);
+  const [forceConfirmText, setForceConfirmText] = useState("");
+  const [forceConfirmChecked, setForceConfirmChecked] = useState(false);
   const [cooldownNow, setCooldownNow] = useState(() => Date.now());
   const hasTriedStoredLogin = useRef(false);
 
@@ -298,6 +330,16 @@ export default function EmployeeReportClient() {
     return [];
   }, [reportData?.availablePeriods, reportData?.periodKey, selectedPeriodKey]);
 
+  const canUseForceSync = useMemo(
+    () => debugMode || isAdminLoggedIn,
+    [debugMode, isAdminLoggedIn]
+  );
+
+  const canExecuteForceSync = useMemo(
+    () => forceConfirmChecked && forceConfirmText.trim() === "강제 재조회",
+    [forceConfirmChecked, forceConfirmText]
+  );
+
   useEffect(() => {
     if (!forceSyncCooldownUntil) return;
     if (forceSyncCooldownUntil <= Date.now()) {
@@ -323,6 +365,19 @@ export default function EmployeeReportClient() {
       phone: normalizeDigits(identity.phone),
     };
   }
+
+  useEffect(() => {
+    let mounted = true;
+    void requestJson<LoginStatusResponse>("/api/auth/login-status")
+      .then((status) => {
+        if (!mounted) return;
+        setIsAdminLoggedIn(status.isAdminLoggedIn === true);
+      })
+      .catch(() => undefined);
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   function applyForceSyncCooldown(payload: ApiErrorPayload | null | undefined) {
     if (!payload) return;
@@ -351,12 +406,18 @@ export default function EmployeeReportClient() {
     }
   }
 
-  async function syncEmployeeReport(forceRefresh = false) {
+  async function syncEmployeeReport(
+    forceRefresh = false,
+    options?: { debugOverride?: boolean }
+  ) {
     const payload = getIdentityPayload();
     const syncResult = await requestJson<EmployeeSyncResponse>(
       "/api/b2b/employee/sync",
       {
         method: "POST",
+        headers: options?.debugOverride
+          ? { "x-wb-force-refresh-debug": "1" }
+          : undefined,
         body: JSON.stringify({
           ...payload,
           forceRefresh,
@@ -406,6 +467,7 @@ export default function EmployeeReportClient() {
           );
           if (loginResult.found) {
             setNotice("이전에 조회한 정보로 자동 로그인했습니다.");
+            setSyncGuidance(null);
             await loadReport();
             return;
           }
@@ -453,6 +515,7 @@ export default function EmployeeReportClient() {
       saveStoredIdentity(payload);
       setNotice("기존 레포트를 불러왔습니다.");
       setSyncNextAction(null);
+      setSyncGuidance(null);
       await loadReport();
     } catch (err) {
       setError(
@@ -463,52 +526,44 @@ export default function EmployeeReportClient() {
     }
   }
 
-  async function handleInitKakao() {
-    if (!validIdentity) {
-      setError("이름, 생년월일(8자리), 휴대폰 번호를 정확히 입력해 주세요.");
-      return;
+  function buildSyncGuidance(
+    payload: ApiErrorPayload,
+    status: number,
+    fallbackMessage: string
+  ): SyncGuidance {
+    const nextAction = payload.nextAction;
+    if (nextAction === "init") {
+      return {
+        code: payload.code,
+        reason: payload.reason,
+        nextAction,
+        message: "연동 초기화가 필요합니다. 인증 다시하기를 눌러 카카오 인증을 시작해 주세요.",
+      };
     }
-    setBusy(true);
-    setError("");
-    setNotice("");
-    setSyncNextAction(null);
-    try {
-      const initResult = await requestJson<NhisInitResponse>("/api/health/nhis/init", {
-        method: "POST",
-        body: JSON.stringify({
-          loginMethod: "EASY",
-          loginOrgCd: "kakao",
-          resNm: identity.name.trim(),
-          resNo: normalizeDigits(identity.birthDate),
-          mobileNo: normalizeDigits(identity.phone),
-        }),
-      });
-      if (initResult.linked || initResult.nextStep === "fetch") {
-        const syncResult = await syncEmployeeReport(false);
-        const reusedFromCache =
-          initResult.reused ||
-          initResult.source === "db-history" ||
-          syncResult.sync?.source === "cache-valid" ||
-          syncResult.sync?.source === "cache-history";
-        setNotice(
-          reusedFromCache
-            ? "기존 연동 데이터를 사용해 레포트를 불러왔습니다."
-            : "카카오 인증이 완료되어 최신 데이터를 불러왔습니다."
-        );
-        setSyncNextAction(null);
-        return;
-      }
-      setSyncNextAction("sign");
-      setNotice(
-        "카카오톡에서 인증을 완료한 뒤, 아래의 '인증 완료 후 연동' 버튼을 눌러 주세요."
-      );
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "카카오 인증 요청에 실패했습니다."
-      );
-    } finally {
-      setBusy(false);
+    if (nextAction === "sign") {
+      return {
+        code: payload.code,
+        reason: payload.reason,
+        nextAction,
+        message: "카카오 인증 승인 대기 중입니다. 승인 후 '연동 완료 확인'을 눌러 주세요.",
+      };
     }
+    if (nextAction === "wait" || status === 429) {
+      return {
+        code: payload.code,
+        reason: payload.reason,
+        nextAction: "wait",
+        retryAfterSec: payload.retryAfterSec ?? payload.cooldown?.remainingSeconds,
+        availableAt: payload.availableAt ?? payload.cooldown?.availableAt ?? null,
+        message: "재연동 대기 시간이 남아 있습니다. 안내된 시각 이후 다시 시도해 주세요.",
+      };
+    }
+    return {
+      code: payload.code,
+      reason: payload.reason,
+      nextAction: nextAction === "retry" ? "retry" : "retry",
+      message: payload.error || fallbackMessage,
+    };
   }
 
   async function ensureNhisReadyForSync() {
@@ -543,10 +598,128 @@ export default function EmployeeReportClient() {
           reused: initResult.reused === true || initResult.source === "db-history",
         };
       }
-      setNotice(
-        "카카오톡에서 인증 승인을 완료한 뒤 '인증 완료 후 연동' 버튼을 다시 눌러 주세요."
-      );
       return { linked: false, reused: false };
+    }
+  }
+
+  async function pollSignAndSyncWithSingleClick() {
+    const maxAttempts = 15;
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      try {
+        const signResult = await requestJson<{
+          ok: boolean;
+          linked?: boolean;
+        }>("/api/health/nhis/sign", {
+          method: "POST",
+          body: JSON.stringify({}),
+        });
+
+        if (signResult.linked) {
+          const syncResult = await syncEmployeeReport(false, {
+            debugOverride: debugMode,
+          });
+          const reusedFromCache =
+            syncResult.sync?.source === "cache-valid" ||
+            syncResult.sync?.source === "cache-history";
+          setNotice(
+            reusedFromCache
+              ? "기존 연동 데이터를 사용해 레포트를 불러왔습니다."
+              : "인증 완료 후 최신 데이터를 불러왔습니다."
+          );
+          setSyncGuidance(null);
+          setSyncNextAction(null);
+          return true;
+        }
+      } catch (err) {
+        if (err instanceof ApiRequestError) {
+          if (
+            err.status === 409 ||
+            err.status === 412 ||
+            err.status === 422 ||
+            err.status === 502
+          ) {
+            await sleep(4000);
+            continue;
+          }
+          throw err;
+        }
+        throw err;
+      }
+
+      await sleep(4000);
+    }
+
+    setSyncNextAction("sign");
+    setSyncGuidance({
+      nextAction: "sign",
+      message: "카카오 인증 승인 후 '연동 완료 확인' 버튼을 눌러 마무리해 주세요.",
+    });
+    return false;
+  }
+
+  async function handleRestartAuth() {
+    if (!validIdentity) {
+      setError("이름, 생년월일(8자리), 휴대폰 번호를 정확히 입력해 주세요.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    setNotice("");
+    setSyncGuidance(null);
+    setSyncNextAction(null);
+    try {
+      const initResult = await requestJson<NhisInitResponse>("/api/health/nhis/init", {
+        method: "POST",
+        body: JSON.stringify({
+          loginMethod: "EASY",
+          loginOrgCd: "kakao",
+          resNm: identity.name.trim(),
+          resNo: normalizeDigits(identity.birthDate),
+          mobileNo: normalizeDigits(identity.phone),
+          forceInit: true,
+        }),
+      });
+
+      if (initResult.linked || initResult.nextStep === "fetch") {
+        const syncResult = await syncEmployeeReport(false, {
+          debugOverride: debugMode,
+        });
+        const reusedFromCache =
+          initResult.reused ||
+          initResult.source === "db-history" ||
+          syncResult.sync?.source === "cache-valid" ||
+          syncResult.sync?.source === "cache-history";
+        setNotice(
+          reusedFromCache
+            ? "기존 연동 데이터를 사용해 레포트를 불러왔습니다."
+            : "카카오 인증이 완료되어 최신 데이터를 불러왔습니다."
+        );
+        return;
+      }
+
+      setSyncNextAction("sign");
+      setSyncGuidance({
+        nextAction: "sign",
+        message: "카카오 인증을 요청했습니다. 카카오톡 승인 후 자동으로 연동을 시도합니다.",
+      });
+      await pollSignAndSyncWithSingleClick();
+    } catch (err) {
+      if (err instanceof ApiRequestError) {
+        applyForceSyncCooldown(err.payload);
+        const guidance = buildSyncGuidance(
+          err.payload,
+          err.status,
+          "카카오 인증 요청에 실패했습니다."
+        );
+        setSyncGuidance(guidance);
+        setSyncNextAction(toSyncNextAction(guidance.nextAction) ?? "retry");
+        setNotice(guidance.message);
+      } else {
+        setSyncNextAction("retry");
+        setError(err instanceof Error ? err.message : "카카오 인증 요청에 실패했습니다.");
+      }
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -555,23 +728,40 @@ export default function EmployeeReportClient() {
       setError("이름, 생년월일(8자리), 휴대폰 번호를 정확히 입력해 주세요.");
       return;
     }
+    if (forceRefresh && !canUseForceSync) {
+      setError("강제 재조회는 운영자 도구에서만 사용할 수 있습니다.");
+      return;
+    }
     if (forceRefresh && forceSyncRemainingSec > 0) {
       const availableAtIso = new Date(Date.now() + forceSyncRemainingSec * 1000).toISOString();
       setNotice(`재연동은 ${formatDateTime(availableAtIso)} 이후 가능합니다.`);
       return;
     }
+
     setBusy(true);
     setError("");
     setNotice("");
+    setSyncGuidance(null);
     try {
-      const ready = await ensureNhisReadyForSync();
-      if (!ready.linked) {
+      let ready: { linked: boolean; reused: boolean } = {
+        linked: true,
+        reused: false,
+      };
+      if (!forceRefresh) {
+        ready = await ensureNhisReadyForSync();
+        if (!ready.linked) {
         setSyncNextAction("sign");
-        setNotice("카카오톡 인증을 완료한 뒤 다시 시도해 주세요.");
+        setSyncGuidance({
+          nextAction: "sign",
+          message: "카카오 인증 승인 대기 중입니다. 인증을 완료한 뒤 다시 확인해 주세요.",
+        });
         return;
       }
+      }
 
-      const syncResult = await syncEmployeeReport(forceRefresh);
+      const syncResult = await syncEmployeeReport(forceRefresh, {
+        debugOverride: debugMode,
+      });
       if (
         syncResult.sync?.source === "cache-valid" ||
         syncResult.sync?.source === "cache-history"
@@ -580,36 +770,29 @@ export default function EmployeeReportClient() {
       } else if (ready.reused) {
         setNotice("기존 인증 상태를 사용해 레포트를 갱신했습니다.");
       } else {
-        setNotice("최신 정보를 연동해 레포트를 갱신했습니다.");
+        setNotice(
+          forceRefresh
+            ? "강제 재조회로 최신 정보를 반영했습니다."
+            : "최신 정보를 연동해 레포트를 갱신했습니다."
+        );
       }
       setSyncNextAction(null);
+      setSyncGuidance(null);
     } catch (err) {
       if (err instanceof ApiRequestError) {
         applyForceSyncCooldown(err.payload);
-        if (err.payload.nextAction === "init") {
-          setSyncNextAction("init");
-          setNotice("연동 초기화가 필요합니다. 아래 '인증 다시 시작'을 눌러 주세요.");
-          return;
-        }
-        if (err.payload.nextAction === "sign") {
-          setSyncNextAction("sign");
-          setNotice(
-            "카카오 인증 승인이 필요합니다. '인증 다시 시작' 후 '인증 완료 후 연동'을 눌러 주세요."
-          );
-          return;
-        }
-        if (err.status === 429) {
-          const cooldownUntil = resolveCooldownUntilFromPayload(err.payload);
-          if (cooldownUntil) {
-            setNotice(
-              `재연동은 ${formatDateTime(new Date(cooldownUntil).toISOString())} 이후 가능합니다.`
-            );
-            return;
-          }
-        }
+        const guidance = buildSyncGuidance(
+          err.payload,
+          err.status,
+          "데이터 연동에 실패했습니다."
+        );
+        setSyncGuidance(guidance);
+        setSyncNextAction(toSyncNextAction(guidance.nextAction) ?? "retry");
+        setNotice(guidance.message);
+      } else {
+        setSyncNextAction("retry");
+        setError(err instanceof Error ? err.message : "데이터 연동에 실패했습니다.");
       }
-      setSyncNextAction("retry");
-      setError(err instanceof Error ? err.message : "데이터 연동에 실패했습니다.");
     } finally {
       setBusy(false);
     }
@@ -645,6 +828,10 @@ export default function EmployeeReportClient() {
       setReportData(null);
       setSelectedPeriodKey("");
       setSyncNextAction(null);
+      setSyncGuidance(null);
+      setForceConfirmOpen(false);
+      setForceConfirmText("");
+      setForceConfirmChecked(false);
       setNotice("현재 연결된 조회 세션을 해제했습니다.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "세션 해제에 실패했습니다.");
@@ -697,6 +884,53 @@ export default function EmployeeReportClient() {
 
       {error ? <div className={styles.noticeError}>{error}</div> : null}
       {notice ? <div className={styles.noticeSuccess}>{notice}</div> : null}
+      {syncGuidance ? (
+        <section className={styles.noticeInfo}>
+          <p className={styles.optionalText}>{syncGuidance.message}</p>
+          <div className={`${styles.actionRow} ${styles.mt8}`}>
+            {syncGuidance.nextAction === "init" ? (
+              <button
+                type="button"
+                onClick={handleRestartAuth}
+                disabled={busy}
+                className={styles.buttonPrimary}
+              >
+                인증 다시하기
+              </button>
+            ) : null}
+            {syncGuidance.nextAction === "sign" ? (
+              <button
+                type="button"
+                onClick={() => void handleSignAndSync(false)}
+                disabled={busy}
+                className={styles.buttonSecondary}
+              >
+                연동 완료 확인
+              </button>
+            ) : null}
+            {syncGuidance.nextAction === "retry" ? (
+              <button
+                type="button"
+                onClick={() => void handleSignAndSync(false)}
+                disabled={busy}
+                className={styles.buttonSecondary}
+              >
+                다시 시도
+              </button>
+            ) : null}
+          </div>
+          {(syncGuidance.code || syncGuidance.reason) && (
+            <p className={styles.inlineHint}>
+              code: {syncGuidance.code || "-"} / reason: {syncGuidance.reason || "-"}
+            </p>
+          )}
+          {syncGuidance.availableAt ? (
+            <p className={styles.inlineHint}>
+              재시도 가능 시각: {formatDateTime(syncGuidance.availableAt)}
+            </p>
+          ) : null}
+        </section>
+      ) : null}
 
       {!reportData ? (
         <section className={styles.sectionCard}>
@@ -754,20 +988,22 @@ export default function EmployeeReportClient() {
           <div className={styles.actionRow}>
             <button
               type="button"
-              onClick={handleInitKakao}
+              onClick={handleRestartAuth}
               disabled={busy}
               className={styles.buttonPrimary}
             >
-              카카오 인증 요청
+              인증 다시하기
             </button>
-            <button
-              type="button"
-              onClick={() => handleSignAndSync(false)}
-              disabled={busy}
-              className={styles.buttonSecondary}
-            >
-              인증 완료 후 연동
-            </button>
+            {syncNextAction === "sign" ? (
+              <button
+                type="button"
+                onClick={() => void handleSignAndSync(false)}
+                disabled={busy}
+                className={styles.buttonSecondary}
+              >
+                연동 완료 확인
+              </button>
+            ) : null}
           </div>
 
           <details className={styles.optionalCard}>
@@ -804,32 +1040,25 @@ export default function EmployeeReportClient() {
                   님 레포트
                 </h2>
                 <p className={styles.sectionDescription}>
-                  최근 연동:{" "}
+                  마지막 업데이트:{" "}
                   {formatRelativeTime(
                     reportData.employee?.lastSyncedAt || reportData.report.updatedAt
                   )}
                 </p>
-                <details className={styles.optionalCard}>
-                  <summary>상세 정보</summary>
-                  <div className={styles.optionalBody}>
-                    <p className={styles.optionalText}>
-                      생성 시각:{" "}
-                      {formatDateTime(
-                        reportData.report.payload?.meta?.generatedAt ||
-                          reportData.report.updatedAt
-                      )}
-                    </p>
-                    <p className={styles.optionalText}>
-                      최근 연동 시각: {formatDateTime(reportData.employee?.lastSyncedAt)}
-                    </p>
-                  </div>
-                </details>
+              </div>
+              <div className={styles.statusRow}>
+                {selectedPeriodKey ? (
+                  <span className={styles.pill}>{selectedPeriodKey}</span>
+                ) : null}
+                {reportData.report.payload?.meta?.isMockData ? (
+                  <span className={styles.statusWarn}>데모 데이터</span>
+                ) : null}
               </div>
             </div>
 
-            <div className={styles.actionRow}>
+            <div className={styles.toolbarRow}>
               <select
-                className={styles.select}
+                className={`${styles.select} ${styles.toolbarControl}`}
                 value={selectedPeriodKey}
                 disabled={periodOptions.length === 0}
                 onChange={(event) => {
@@ -852,62 +1081,75 @@ export default function EmployeeReportClient() {
                 type="button"
                 onClick={handleDownloadPdf}
                 disabled={busy}
-                className={styles.buttonPrimary}
+                className={`${styles.buttonPrimary} ${styles.toolbarControl}`}
               >
                 PDF 다운로드
               </button>
             </div>
+            <div className={styles.actionRow}>
+              <button
+                type="button"
+                onClick={handleRestartAuth}
+                disabled={busy}
+                className={styles.buttonSecondary}
+              >
+                인증 다시하기
+              </button>
+              {syncNextAction === "sign" ? (
+                <button
+                  type="button"
+                  onClick={() => void handleSignAndSync(false)}
+                  disabled={busy}
+                  className={styles.buttonSecondary}
+                >
+                  연동 완료 확인
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={busy}
+                className={styles.buttonGhost}
+              >
+                다른 이름 조회
+              </button>
+            </div>
+            {forceSyncRemainingSec > 0 ? (
+              <p className={styles.inlineHint}>
+                재연동 가능까지 약 {Math.ceil(forceSyncRemainingSec / 60)}분 남았습니다.
+              </p>
+            ) : null}
 
-            <details className={styles.optionalCard}>
-              <summary>고급 옵션 보기</summary>
-              <div className={styles.optionalBody}>
-                <p className={styles.optionalText}>
-                  최신 정보 재연동은 필요할 때만 사용해 주세요. 기본 조회는 캐시 데이터를
-                  우선 사용합니다.
-                </p>
-                <div className={styles.actionRow}>
-                  <button
-                    type="button"
-                    onClick={() => handleSignAndSync(true)}
-                    disabled={busy || forceSyncRemainingSec > 0}
-                    className={styles.buttonSecondary}
-                  >
-                    최신 정보 다시 연동
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleInitKakao}
-                    disabled={busy}
-                    className={styles.buttonGhost}
-                  >
-                    인증 다시 시작
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    disabled={busy}
-                    className={styles.buttonGhost}
-                  >
-                    다른 이름 조회
-                  </button>
+            {canUseForceSync ? (
+              <details className={styles.optionalCard}>
+                <summary>운영자 도구 (비용 발생)</summary>
+                <div className={styles.optionalBody}>
+                  <p className={styles.optionalText}>
+                    강제 재조회는 캐시를 무시하고 외부 조회를 시도합니다. 비용이 발생할 수
+                    있으므로 운영자 점검 시에만 사용하세요.
+                  </p>
+                  <div className={styles.actionRow}>
+                    <button
+                      type="button"
+                      onClick={() => setForceConfirmOpen(true)}
+                      disabled={busy || forceSyncRemainingSec > 0}
+                      className={styles.buttonDanger}
+                    >
+                      강제 재조회 실행
+                    </button>
+                  </div>
+                  {forceSyncRemainingSec > 0 ? (
+                    <p className={styles.inlineHint}>
+                      강제 재조회 가능까지 약 {Math.ceil(forceSyncRemainingSec / 60)}분
+                      남았습니다.
+                    </p>
+                  ) : null}
+                  <p className={styles.inlineHint}>
+                    노출 조건: 관리자 로그인 또는 `?debug=1` 플래그
+                  </p>
                 </div>
-                {forceSyncRemainingSec > 0 ? (
-                  <p className={styles.inlineHint}>
-                    재연동 가능까지 약 {Math.ceil(forceSyncRemainingSec / 60)}분 남았습니다.
-                  </p>
-                ) : null}
-                {syncNextAction === "init" ? (
-                  <p className={styles.inlineHint}>
-                    현재 상태: 연동 초기화 필요. 인증 다시 시작을 먼저 진행해 주세요.
-                  </p>
-                ) : null}
-                {syncNextAction === "sign" ? (
-                  <p className={styles.inlineHint}>
-                    현재 상태: 카카오 인증 승인 필요. 인증 완료 후 연동 버튼을 눌러 주세요.
-                  </p>
-                ) : null}
-              </div>
-            </details>
+              </details>
+            ) : null}
           </section>
 
           {reportData.report.payload?.meta?.isMockData ? (
@@ -930,6 +1172,69 @@ export default function EmployeeReportClient() {
 
           <ReportSummaryCards payload={reportData.report.payload} viewerMode="employee" />
         </>
+      ) : null}
+
+      {forceConfirmOpen ? (
+        <div
+          className="fixed inset-0 z-[1200] flex items-center justify-center bg-slate-900/45 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="강제 재조회 확인"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
+            <h2 className="text-lg font-bold text-slate-900">강제 재조회 실행</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-700">
+              캐시를 무시하고 재조회합니다. 추가 API 비용이 발생할 수 있으며 되돌릴 수
+              없습니다.
+            </p>
+            <label className="mt-3 flex items-start gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={forceConfirmChecked}
+                onChange={(event) => setForceConfirmChecked(event.target.checked)}
+                className="mt-1"
+              />
+              비용 발생 가능성을 확인했고, 운영 목적으로만 실행합니다.
+            </label>
+            <p className="mt-3 text-xs text-slate-500">
+              확인을 위해 아래 입력창에 <span className="font-semibold">강제 재조회</span>
+              를 입력해 주세요.
+            </p>
+            <input
+              value={forceConfirmText}
+              onChange={(event) => setForceConfirmText(event.target.value)}
+              placeholder="강제 재조회"
+              className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-rose-300"
+            />
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (busy) return;
+                  setForceConfirmOpen(false);
+                  setForceConfirmText("");
+                  setForceConfirmChecked(false);
+                }}
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-slate-400"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                disabled={!canExecuteForceSync || busy}
+                onClick={() => {
+                  setForceConfirmOpen(false);
+                  setForceConfirmText("");
+                  setForceConfirmChecked(false);
+                  void handleSignAndSync(true);
+                }}
+                className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60"
+              >
+                강제 재조회 실행
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </div>
   );

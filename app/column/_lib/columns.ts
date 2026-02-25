@@ -20,12 +20,14 @@ export type TocItem = {
 };
 
 export type ColumnSummary = {
+  postId: string | null;
   slug: string;
   title: string;
   description: string;
   summary: string;
   publishedAt: string;
   tags: string[];
+  coverImageUrl: string | null;
   updatedAt: string;
   readingMinutes: number;
   draft: boolean;
@@ -219,12 +221,12 @@ function parseTagList(rawTags: string | undefined) {
 }
 
 function normalizeSlug(input: string) {
-  return input
+  return safeDecodeURIComponent(input)
     .trim()
     .toLowerCase()
     .replace(/\\/g, "/")
     .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9/_-]/g, "-")
+    .replace(/[^\p{L}\p{N}/_-]+/gu, "-")
     .replace(/\/+/g, "/")
     .replace(/-+/g, "-")
     .replace(/^[-/]+|[-/]+$/g, "");
@@ -324,12 +326,14 @@ async function parseColumnFile(absolutePath: string): Promise<ColumnDetail> {
   const draft = parseBoolean(frontmatter.draft);
 
   return {
+    postId: null,
     slug,
     title,
     description,
     summary: description,
     publishedAt,
     tags,
+    coverImageUrl: null,
     content,
     toc,
     draft,
@@ -362,6 +366,7 @@ function isColumnPostTableMissing(error: unknown) {
 }
 
 function mapDbPostToColumnDetail(post: {
+  id: string;
   slug: string;
   title: string;
   excerpt: string | null;
@@ -369,6 +374,7 @@ function mapDbPostToColumnDetail(post: {
   tags: string[];
   status: string;
   publishedAt: Date | null;
+  coverImageUrl: string | null;
   updatedAt: Date;
 }) {
   const content = post.contentMarkdown;
@@ -377,12 +383,14 @@ function mapDbPostToColumnDetail(post: {
     (post.excerpt || "").trim() || summarize(plainText, 160) || "웰니스박스 칼럼입니다.";
 
   return {
+    postId: post.id,
     slug: normalizeSlug(post.slug),
     title: post.title.trim() || "웰니스박스 칼럼",
     description,
     summary: description,
     publishedAt: (post.publishedAt ?? post.updatedAt).toISOString(),
     tags: post.tags.filter((item) => typeof item === "string" && item.trim().length > 0),
+    coverImageUrl: post.coverImageUrl?.trim() || null,
     content,
     toc: buildToc(content),
     draft: post.status !== "published",
@@ -408,6 +416,7 @@ async function getPublishedDbColumns(): Promise<ColumnDetail[]> {
       where: { status: "published" },
       orderBy: [{ publishedAt: "desc" }, { updatedAt: "desc" }],
       select: {
+        id: true,
         slug: true,
         title: true,
         excerpt: true,
@@ -415,6 +424,7 @@ async function getPublishedDbColumns(): Promise<ColumnDetail[]> {
         tags: true,
         status: true,
         publishedAt: true,
+        coverImageUrl: true,
         updatedAt: true,
       },
     });
@@ -439,6 +449,7 @@ async function getPublishedDbColumnBySlug(slug: string): Promise<ColumnDetail | 
         status: "published",
       },
       select: {
+        id: true,
         slug: true,
         title: true,
         excerpt: true,
@@ -446,6 +457,7 @@ async function getPublishedDbColumnBySlug(slug: string): Promise<ColumnDetail | 
         tags: true,
         status: true,
         publishedAt: true,
+        coverImageUrl: true,
         updatedAt: true,
       },
     });

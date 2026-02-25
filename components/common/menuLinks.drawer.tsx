@@ -42,6 +42,14 @@ export function DrawerMenuContent({
         내 주문 조회
       </IntentPrefetchLink>
 
+      <IntentPrefetchLink
+        href="/column"
+        className={menuItemClasses()}
+        onClick={onItemClick}
+      >
+        칼럼
+      </IntentPrefetchLink>
+
       <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
         <span>AI 진단 검사</span>
         <AiPromptBadge />

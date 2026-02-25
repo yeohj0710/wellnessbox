@@ -2,23 +2,15 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import "./globals.css";
 import { SITE_URL } from "@/lib/constants";
-import TopBar from "@/components/common/topBar";
 import { FooterProvider } from "@/components/common/footerContext";
 import { LocalStorageProvider } from "@/components/common/localStorage";
 import { LoadingProvider } from "@/components/common/loadingContext.client";
 import { ToastProvider } from "@/components/common/toastContext.client";
 import { pretendard } from "./fonts";
-import RouteTransition from "@/components/common/routeTransition";
-import KakaoExternalBridge from "@/components/common/kakaoExternalBridge";
-import AppDeepLinkHandler from "@/components/common/appDeepLinkHandler";
-import AppBackHandler from "@/components/common/appBackHandler";
-import PullToRefresh from "@/components/common/pullToRefresh";
-import GlobalCartHost from "@/components/order/globalCartHost";
-import DesktopChatDock from "@/components/chat/DesktopChatDock";
-import ChatCartActionHost from "@/components/chat/ChatCartActionHost";
-import CommandPalette from "@/components/common/commandPalette";
 import Script from "next/script";
-import GoogleTranslateGate from "@/components/common/GoogleTranslateGate";
+import RootLayoutBoot from "@/components/common/rootLayoutBoot.client";
+import RootLayoutEnhancers from "@/components/common/rootLayoutEnhancers.client";
+import RootLayoutGate from "@/components/common/rootLayoutGate.client";
 
 export const viewport = {
   themeColor: "#ffffff",
@@ -95,16 +87,13 @@ export default async function RootLayout({
         >
           Skip to content
         </a>
-        <AppDeepLinkHandler />
-        <KakaoExternalBridge />
-        <PullToRefresh />
+        <RootLayoutBoot />
         <LocalStorageProvider>
           <FooterProvider>
             <LoadingProvider>
               <ToastProvider>
-                <AppBackHandler />
                 <Suspense fallback={null}>
-                  <TopBar />
+                  <RootLayoutEnhancers />
                 </Suspense>
                 <main
                   id="wb-main-content"
@@ -115,13 +104,6 @@ export default async function RootLayout({
                 >
                   {children}
                 </main>
-                <GlobalCartHost />
-                <ChatCartActionHost />
-                <Suspense fallback={null}>
-                  <DesktopChatDock />
-                </Suspense>
-                <CommandPalette />
-                <RouteTransition />
               </ToastProvider>
             </LoadingProvider>
           </FooterProvider>
@@ -176,7 +158,7 @@ export default async function RootLayout({
             `,
           }}
         />
-        <GoogleTranslateGate />
+        <RootLayoutGate />
       </body>
     </html>
   );

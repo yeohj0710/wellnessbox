@@ -156,9 +156,18 @@ export function IdentityMenuLinks({
       )}
 
       {showAdminMenus && (
-        <Link href="/admin" className={menuItemClasses()} onClick={onItemClick}>
-          사이트 관리
-        </Link>
+        <>
+          <Link href="/admin" className={menuItemClasses()} onClick={onItemClick}>
+            사이트 관리
+          </Link>
+          <Link
+            href="/admin/column/editor"
+            className={menuItemClasses()}
+            onClick={onItemClick}
+          >
+            글쓰기
+          </Link>
+        </>
       )}
 
       {kakaoLoggedIn && (

@@ -1,6 +1,22 @@
 "use client";
 
 import styles from "./B2bUx.module.css";
+import {
+  REPORT_ACCENT_COLORS,
+  clampScore,
+  formatScore,
+  medicationStatusLabel,
+  medicationStatusTone,
+  normalizeMetricStatusLabel,
+  normalizeRiskLevelLabel,
+  resolveMetricStatusTone,
+  scorePercent,
+} from "@/lib/b2b/report-design";
+import type {
+  ReportScoreDetail,
+  ReportScoreDetailMap,
+  ReportScoreKey,
+} from "@/lib/b2b/report-score-engine";
 
 type PayloadSummary = {
   meta?: {
@@ -11,13 +27,14 @@ type PayloadSummary = {
   };
   analysis?: {
     summary?: {
-      overallScore?: number;
-      surveyScore?: number;
-      healthScore?: number;
-      medicationScore?: number;
+      overallScore?: number | null;
+      surveyScore?: number | null;
+      healthScore?: number | null;
+      medicationScore?: number | null;
       riskLevel?: string;
       topIssues?: Array<{ title?: string; score?: number; reason?: string }>;
     };
+    scoreDetails?: Partial<ReportScoreDetailMap>;
     recommendations?: string[];
     trend?: {
       months?: Array<{
@@ -41,6 +58,7 @@ type PayloadSummary = {
       answeredCount?: number;
       questionCount?: number;
     }>;
+    answers?: Array<{ questionKey?: string }>;
   };
   health?: {
     coreMetrics?: Array<{
@@ -68,9 +86,16 @@ type PayloadSummary = {
   };
 };
 
-function formatScore(value: unknown) {
-  if (typeof value !== "number" || !Number.isFinite(value)) return "-";
-  return `${Math.round(value)}점`;
+const GAUGE_RADIUS = 46;
+const GAUGE_CIRCUMFERENCE = 2 * Math.PI * GAUGE_RADIUS;
+const SPARKLINE_WIDTH = 320;
+const SPARKLINE_HEIGHT = 112;
+const SPARKLINE_PAD = 12;
+
+function firstOrDash(value: string | null | undefined) {
+  if (!value) return "-";
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : "-";
 }
 
 function formatDate(value: unknown) {
@@ -80,26 +105,113 @@ function formatDate(value: unknown) {
   return date.toLocaleString("ko-KR");
 }
 
-function formatMetricStatus(status?: string) {
-  if (!status) return "확인 필요";
-  if (status === "normal") return "정상";
-  if (status === "high") return "높음";
-  if (status === "low") return "낮음";
-  if (status === "caution") return "주의";
-  return status;
+function scoreTone(score: number | null): "ok" | "warning" | "danger" | "muted" {
+  if (score == null) return "muted";
+  if (score >= 80) return "ok";
+  if (score >= 60) return "warning";
+  return "danger";
 }
 
-function medicationStatusLabel(type?: string) {
-  if (type === "available") return "연동 완료";
-  if (type === "none") return "기록 없음";
-  if (type === "fetch_failed") return "조회 실패";
-  return "확인 필요";
+function scoreBarClass(score: number | null) {
+  if (score == null) return "bg-slate-300";
+  if (score >= 80) return "bg-emerald-500";
+  if (score >= 60) return "bg-amber-500";
+  return "bg-rose-500";
 }
 
-function firstOrDash(value: string | null | undefined) {
-  if (!value) return "-";
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : "-";
+function badgeClass(tone: "ok" | "warning" | "danger" | "muted") {
+  if (tone === "ok") return "bg-emerald-50 text-emerald-700 border-emerald-200";
+  if (tone === "warning") return "bg-amber-50 text-amber-700 border-amber-200";
+  if (tone === "danger") return "bg-rose-50 text-rose-700 border-rose-200";
+  return "bg-slate-100 text-slate-600 border-slate-200";
+}
+
+function toneLabel(tone: "ok" | "warning" | "danger" | "muted") {
+  if (tone === "ok") return "정상";
+  if (tone === "warning") return "주의";
+  if (tone === "danger") return "고위험";
+  return "미측정";
+}
+
+function toneColor(tone: "ok" | "warning" | "danger" | "muted") {
+  if (tone === "ok") return "#16A34A";
+  if (tone === "warning") return "#D97706";
+  if (tone === "danger") return "#DC2626";
+  return "#94A3B8";
+}
+
+function toScoreValue(value: unknown): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  return clampScore(value);
+}
+
+function toScoreLabel(value: number | null) {
+  if (value == null) return "점수 없음";
+  return formatScore(value);
+}
+
+function scoreWidth(value: number | null) {
+  if (value == null) return 0;
+  return scorePercent(value);
+}
+
+function resolveScore(
+  key: ReportScoreKey,
+  fallbackValue: unknown,
+  details: Partial<ReportScoreDetailMap> | undefined
+) {
+  const detail = details?.[key] as ReportScoreDetail | undefined;
+  const detailValue = toScoreValue(detail?.value);
+  if (detail) {
+    return {
+      value: detailValue,
+      status: detail.status,
+      source: detail.source,
+      reason: detail.reason,
+      label: detail.label,
+    };
+  }
+  const fallback = toScoreValue(fallbackValue);
+  if (fallback != null) {
+    return {
+      value: fallback,
+      status: "computed" as const,
+      source: "analysis_summary" as const,
+      reason: "분석 점수를 사용했습니다.",
+      label: "",
+    };
+  }
+  return {
+    value: null,
+    status: "missing" as const,
+    source: "none" as const,
+    reason: "점수를 산출할 데이터가 부족합니다.",
+    label: "",
+  };
+}
+
+function buildSparklinePoints(scores: number[]) {
+  if (scores.length === 0) return "";
+  const width = SPARKLINE_WIDTH - SPARKLINE_PAD * 2;
+  const height = SPARKLINE_HEIGHT - SPARKLINE_PAD * 2;
+  const stepX = scores.length > 1 ? width / (scores.length - 1) : 0;
+
+  return scores
+    .map((score, index) => {
+      const x = SPARKLINE_PAD + stepX * index;
+      const y = SPARKLINE_HEIGHT - SPARKLINE_PAD - (score / 100) * height;
+      return `${x.toFixed(2)},${y.toFixed(2)}`;
+    })
+    .join(" ");
+}
+
+function formatDelta(current: number | null, previous: number | null) {
+  if (current == null) return "점수 데이터 부족";
+  if (previous == null) return "비교 데이터 없음";
+  const delta = current - previous;
+  if (delta === 0) return "전월과 동일";
+  if (delta > 0) return `전월 대비 +${delta}점`;
+  return `전월 대비 ${delta}점`;
 }
 
 export default function ReportSummaryCards(props: {
@@ -108,10 +220,11 @@ export default function ReportSummaryCards(props: {
 }) {
   const payload = props.payload;
   const viewerMode = props.viewerMode ?? "admin";
+
   if (!payload) {
     return (
       <section className={styles.sectionCard}>
-        <p className={styles.inlineHint}>아직 생성된 레포트 데이터가 없습니다.</p>
+        <p className={styles.inlineHint}>아직 생성된 리포트 데이터가 없습니다.</p>
       </section>
     );
   }
@@ -119,78 +232,365 @@ export default function ReportSummaryCards(props: {
   const topIssues = payload.analysis?.summary?.topIssues ?? [];
   const sectionScores = payload.survey?.sectionScores ?? [];
   const recommendations = payload.analysis?.recommendations ?? [];
-  const trend = payload.analysis?.trend?.months ?? [];
+  const trendMonths = payload.analysis?.trend?.months ?? [];
   const metrics = payload.health?.coreMetrics ?? [];
   const medications = payload.health?.medications ?? [];
   const ai = payload.analysis?.aiEvaluation;
   const medStatus = payload.health?.medicationStatus;
+  const scoreDetails = payload.analysis?.scoreDetails;
 
-  const issueRows = topIssues.slice(0, 3);
-  const trendRows = trend.slice(-6);
-  const metricRows = metrics.slice(0, 8);
-  const sectionRows = sectionScores.slice(0, 8);
-  const recommendationRows = recommendations.slice(0, 6);
+  const overallScoreInfo = resolveScore(
+    "overall",
+    payload.analysis?.summary?.overallScore,
+    scoreDetails
+  );
+  const surveyScoreInfo = resolveScore(
+    "survey",
+    payload.analysis?.summary?.surveyScore,
+    scoreDetails
+  );
+  const healthScoreInfo = resolveScore(
+    "health",
+    payload.analysis?.summary?.healthScore,
+    scoreDetails
+  );
+  const medicationScoreInfo = resolveScore(
+    "medication",
+    payload.analysis?.summary?.medicationScore,
+    scoreDetails
+  );
+
+  const overallScore = overallScoreInfo.value;
+  const surveyScore = surveyScoreInfo.value;
+  const healthScore = healthScoreInfo.value;
+  const medicationScore = medicationScoreInfo.value;
+  const riskTone = scoreTone(overallScore);
+  const gaugeOffset =
+    overallScore == null
+      ? GAUGE_CIRCUMFERENCE
+      : GAUGE_CIRCUMFERENCE * (1 - scorePercent(overallScore) / 100);
+
+  const summaryCards = [
+    {
+      key: "overall",
+      label: "종합 점수",
+      score: overallScore,
+      helper:
+        overallScoreInfo.status === "missing"
+          ? overallScoreInfo.reason
+          : `위험도 ${normalizeRiskLevelLabel(payload.analysis?.summary?.riskLevel)}`,
+    },
+    {
+      key: "survey",
+      label: "설문 점수",
+      score: surveyScore,
+      helper:
+        surveyScoreInfo.status === "missing"
+          ? surveyScoreInfo.reason
+          : "설문 응답 기반 점수",
+    },
+    {
+      key: "health",
+      label: "검진 점수",
+      score: healthScore,
+      helper:
+        healthScoreInfo.status === "missing"
+          ? healthScoreInfo.reason
+          : "건강검진 핵심 지표 점수",
+    },
+    {
+      key: "medication",
+      label: "복약 점수",
+      score: medicationScore,
+      helper:
+        medicationScoreInfo.status === "missing"
+          ? medicationScoreInfo.reason
+          : `상태 ${medicationStatusLabel(medStatus?.type)}`,
+    },
+  ];
+
+  const scoreChartItems = [
+    { key: "overall", label: "종합", score: overallScore, color: REPORT_ACCENT_COLORS.primary },
+    { key: "survey", label: "설문", score: surveyScore, color: REPORT_ACCENT_COLORS.warning },
+    { key: "health", label: "검진", score: healthScore, color: REPORT_ACCENT_COLORS.secondary },
+    {
+      key: "medication",
+      label: "복약",
+      score: medicationScore,
+      color: REPORT_ACCENT_COLORS.neutral,
+    },
+  ];
+
+  const trendRows = trendMonths.slice(-6).map((row) => ({
+    periodKey: firstOrDash(row.periodKey),
+    overallScore: toScoreValue(row.overallScore),
+    surveyScore: toScoreValue(row.surveyScore),
+    healthScore: toScoreValue(row.healthScore),
+  }));
+  const sparklineScores = trendRows.map((row) => row.overallScore ?? 0);
+  const sparklinePoints = buildSparklinePoints(sparklineScores);
+  const previousOverallScore =
+    trendRows.length >= 2 ? trendRows[trendRows.length - 2].overallScore : null;
+  const overallDeltaText = formatDelta(overallScore, previousOverallScore);
+
+  const distributionCounts = metrics.reduce(
+    (acc, metric) => {
+      const tone = resolveMetricStatusTone(metric.status);
+      acc[tone] += 1;
+      return acc;
+    },
+    {
+      ok: 0,
+      warning: 0,
+      danger: 0,
+      muted: 0,
+    }
+  );
+
+  const distributionItems = [
+    { key: "ok", tone: "ok", count: distributionCounts.ok },
+    { key: "warning", tone: "warning", count: distributionCounts.warning },
+    { key: "danger", tone: "danger", count: distributionCounts.danger },
+    { key: "muted", tone: "muted", count: distributionCounts.muted },
+  ] as const;
+  const distributionTotal = distributionItems.reduce((sum, item) => sum + item.count, 0);
+
+  const surveyAnsweredCount = sectionScores.reduce(
+    (sum, row) => sum + (row.answeredCount ?? 0),
+    0
+  );
+  const surveyQuestionCount = sectionScores.reduce(
+    (sum, row) => sum + (row.questionCount ?? 0),
+    0
+  );
+  const surveyResponseCount = payload.survey?.answers?.length ?? surveyAnsweredCount;
+
+  const sectionScoreChart = [...sectionScores]
+    .map((row) => ({
+      title: firstOrDash(row.sectionTitle),
+      score: toScoreValue(row.score) ?? 0,
+      answeredCount: row.answeredCount ?? 0,
+      questionCount: row.questionCount ?? 0,
+    }))
+    .sort((a, b) => a.score - b.score)
+    .slice(0, 6);
+
+  const guideItems = (ai?.actionItems ?? [])
+    .filter((item): item is string => Boolean(item && item.trim()))
+    .slice(0, 5);
+  const fallbackGuideItems = recommendations
+    .filter((item): item is string => Boolean(item && item.trim()))
+    .slice(0, 5);
+  const practiceItems = guideItems.length > 0 ? guideItems : fallbackGuideItems;
 
   return (
     <div className={styles.stack}>
       <section className={styles.sectionCard}>
         <div className={styles.sectionHeader}>
           <div>
-            <h3 className={styles.sectionTitle}>핵심 건강 요약</h3>
+            <h3 className={styles.sectionTitle}>이번 달 건강 요약</h3>
             <p className={styles.sectionDescription}>
-              이번 달 점수, 주요 이슈, 복약 상태를 한눈에 확인합니다.
+              핵심 점수와 위험도, 우선 확인할 이슈를 먼저 확인하세요.
             </p>
           </div>
+          <span
+            className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${badgeClass(
+              riskTone
+            )}`}
+          >
+            {normalizeRiskLevelLabel(payload.analysis?.summary?.riskLevel)}
+          </span>
         </div>
         <div className={styles.metricsGrid}>
-          <article className={styles.metricCard}>
-            <p className={styles.metricLabel}>종합 점수</p>
-            <p className={styles.metricValue}>
-              {formatScore(payload.analysis?.summary?.overallScore)}
-            </p>
-            <p className={styles.metricSub}>
-              위험 수준: {firstOrDash(payload.analysis?.summary?.riskLevel)}
-            </p>
-          </article>
-          <article className={styles.metricCard}>
-            <p className={styles.metricLabel}>설문 점수</p>
-            <p className={styles.metricValue}>
-              {formatScore(payload.analysis?.summary?.surveyScore)}
-            </p>
-            <p className={styles.metricSub}>설문 답지 환산 기준</p>
-          </article>
-          <article className={styles.metricCard}>
-            <p className={styles.metricLabel}>검진 점수</p>
-            <p className={styles.metricValue}>
-              {formatScore(payload.analysis?.summary?.healthScore)}
-            </p>
-            <p className={styles.metricSub}>최근 건강검진 핵심 지표</p>
-          </article>
-          <article className={styles.metricCard}>
-            <p className={styles.metricLabel}>복약 점수</p>
-            <p className={styles.metricValue}>
-              {formatScore(payload.analysis?.summary?.medicationScore)}
-            </p>
-            <p className={styles.metricSub}>
-              복약 상태: {medicationStatusLabel(medStatus?.type)}
-            </p>
-          </article>
+          {summaryCards.map((card) => (
+            <article key={card.key} className={styles.metricCard}>
+              <p className={styles.metricLabel}>{card.label}</p>
+              <p className={styles.metricValue}>{toScoreLabel(card.score)}</p>
+              <div className={styles.vizTrack}>
+                <div
+                  className={`${styles.vizFill} ${scoreBarClass(card.score)}`}
+                  style={{ width: `${scoreWidth(card.score)}%` }}
+                />
+              </div>
+              <p className={styles.metricSub}>{card.helper}</p>
+            </article>
+          ))}
         </div>
+      </section>
+
+      <section className={styles.visualGrid}>
+        <article className={styles.visualCard}>
+          <div className={styles.sectionHeader}>
+            <h3 className={styles.sectionTitle}>종합 점수 게이지</h3>
+            <span className={styles.inlineHint}>{overallDeltaText}</span>
+          </div>
+          <div className={styles.gaugeWrap}>
+            <svg
+              className={styles.gaugeSvg}
+              viewBox="0 0 120 120"
+              role="img"
+              aria-label={
+                overallScore == null ? "종합 점수 데이터 없음" : `종합 점수 ${overallScore}점`
+              }
+            >
+              <circle cx="60" cy="60" r={GAUGE_RADIUS} className={styles.gaugeTrack} />
+              <circle
+                cx="60"
+                cy="60"
+                r={GAUGE_RADIUS}
+                className={styles.gaugeProgress}
+                style={{
+                  strokeDasharray: GAUGE_CIRCUMFERENCE,
+                  strokeDashoffset: gaugeOffset,
+                  stroke: toneColor(riskTone),
+                }}
+              />
+            </svg>
+            <div className={styles.gaugeValue}>{toScoreLabel(overallScore)}</div>
+            <p className={styles.gaugeLabel}>
+              위험도 {normalizeRiskLevelLabel(payload.analysis?.summary?.riskLevel)}
+            </p>
+          </div>
+        </article>
+
+        <article className={styles.visualCard}>
+          <div className={styles.sectionHeader}>
+            <h3 className={styles.sectionTitle}>영역별 점수 막대</h3>
+          </div>
+          <ul className={styles.vizBarList}>
+            {scoreChartItems.map((item) => (
+              <li key={item.key} className={styles.vizBarRow}>
+                <div className={styles.vizBarHead}>
+                  <span>{item.label}</span>
+                  <strong>{toScoreLabel(item.score)}</strong>
+                </div>
+                <div className={styles.vizTrack}>
+                  <div
+                    className={styles.vizFill}
+                    style={{
+                      width: `${scoreWidth(item.score)}%`,
+                      background: item.color,
+                    }}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </article>
+
+        <article className={styles.visualCard}>
+          <div className={styles.sectionHeader}>
+            <h3 className={styles.sectionTitle}>월별 종합 점수 추이</h3>
+            <span className={styles.inlineHint}>
+              최근 {trendRows.length > 0 ? trendRows.length : 0}개월
+            </span>
+          </div>
+          {trendRows.length === 0 ? (
+            <p className={styles.inlineHint}>추이 데이터가 없습니다.</p>
+          ) : (
+            <div className={styles.sparklineWrap}>
+              <svg
+                className={styles.sparklineSvg}
+                viewBox={`0 0 ${SPARKLINE_WIDTH} ${SPARKLINE_HEIGHT}`}
+                role="img"
+                aria-label="월별 종합 점수 추이"
+              >
+                <line
+                  x1={SPARKLINE_PAD}
+                  y1={SPARKLINE_HEIGHT - SPARKLINE_PAD}
+                  x2={SPARKLINE_WIDTH - SPARKLINE_PAD}
+                  y2={SPARKLINE_HEIGHT - SPARKLINE_PAD}
+                  className={styles.sparklineAxis}
+                />
+                <line
+                  x1={SPARKLINE_PAD}
+                  y1={SPARKLINE_PAD}
+                  x2={SPARKLINE_PAD}
+                  y2={SPARKLINE_HEIGHT - SPARKLINE_PAD}
+                  className={styles.sparklineAxis}
+                />
+                <polyline points={sparklinePoints} className={styles.sparklineLine} />
+                {sparklineScores.map((score, index) => {
+                  const width = SPARKLINE_WIDTH - SPARKLINE_PAD * 2;
+                  const height = SPARKLINE_HEIGHT - SPARKLINE_PAD * 2;
+                  const stepX = sparklineScores.length > 1 ? width / (sparklineScores.length - 1) : 0;
+                  const x = SPARKLINE_PAD + stepX * index;
+                  const y = SPARKLINE_HEIGHT - SPARKLINE_PAD - (score / 100) * height;
+                  return (
+                    <circle
+                      key={`spark-${index}`}
+                      cx={x}
+                      cy={y}
+                      r={3.5}
+                      className={styles.sparklinePoint}
+                    />
+                  );
+                })}
+              </svg>
+              <div className={styles.sparklineLabels}>
+                {trendRows.map((row) => (
+                  <span key={`spark-label-${row.periodKey}`}>{row.periodKey}</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </article>
+
+        <article className={styles.visualCard}>
+          <div className={styles.sectionHeader}>
+            <h3 className={styles.sectionTitle}>검진 판정 분포</h3>
+            <span className={styles.inlineHint}>총 {metrics.length}개 지표</span>
+          </div>
+          {metrics.length === 0 ? (
+            <p className={styles.inlineHint}>검진 지표가 없습니다.</p>
+          ) : (
+            <>
+              <div className={styles.distributionTrack}>
+                {distributionItems.map((item) => {
+                  const ratio =
+                    distributionTotal > 0 ? (item.count / distributionTotal) * 100 : 0;
+                  return (
+                    <span
+                      key={item.key}
+                      className={styles.distributionSegment}
+                      style={{
+                        width: `${ratio}%`,
+                        background: toneColor(item.tone),
+                      }}
+                    />
+                  );
+                })}
+              </div>
+              <ul className={styles.distributionLegend}>
+                {distributionItems.map((item) => (
+                  <li key={`legend-${item.key}`}>
+                    <span
+                      className={styles.legendDot}
+                      style={{ background: toneColor(item.tone) }}
+                    />
+                    {toneLabel(item.tone)} {item.count}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </article>
       </section>
 
       <section className={styles.twoCol}>
         <article className={styles.sectionCard}>
           <div className={styles.sectionHeader}>
-            <h3 className={styles.sectionTitle}>Top 이슈 3</h3>
+            <h3 className={styles.sectionTitle}>핵심 이슈 TOP 3</h3>
           </div>
-          {issueRows.length === 0 ? (
-            <p className={styles.inlineHint}>표시할 이슈가 없습니다.</p>
+          {topIssues.length === 0 ? (
+            <p className={styles.inlineHint}>핵심 이슈가 아직 계산되지 않았습니다.</p>
           ) : (
             <ol className={styles.listPlain}>
-              {issueRows.map((issue, index) => (
+              {topIssues.slice(0, 3).map((issue, index) => (
                 <li key={`${issue.title ?? "issue"}-${index}`}>
-                  {firstOrDash(issue.title)} ({formatScore(issue.score)})
-                  {issue.reason ? ` - ${issue.reason}` : ""}
+                  <span className="font-semibold">{firstOrDash(issue.title)}</span>{" "}
+                  <span className="text-slate-500">({toScoreLabel(toScoreValue(issue.score))})</span>
+                  {issue.reason ? <div className={styles.inlineHint}>{issue.reason}</div> : null}
                 </li>
               ))}
             </ol>
@@ -199,58 +599,22 @@ export default function ReportSummaryCards(props: {
 
         <article className={styles.sectionCard}>
           <div className={styles.sectionHeader}>
-            <h3 className={styles.sectionTitle}>최근 복약 3건</h3>
+            <h3 className={styles.sectionTitle}>이번 달 실천 가이드</h3>
           </div>
-          {medications.length === 0 ? (
-            <p className={styles.inlineHint}>복약 데이터가 없습니다.</p>
+          {practiceItems.length === 0 ? (
+            <p className={styles.inlineHint}>추천 실천 항목이 없습니다.</p>
           ) : (
-            <ul className={styles.listPlain}>
-              {medications.slice(0, 3).map((item, index) => (
-                <li key={`${item.medicationName ?? "med"}-${index}`}>
-                  {firstOrDash(item.medicationName)}
-                  {item.date ? ` / ${item.date}` : ""}
-                  {item.dosageDay ? ` / ${item.dosageDay}` : ""}
-                  {item.hospitalName ? ` / ${item.hospitalName}` : ""}
+            <ul className="grid gap-2">
+              {practiceItems.map((item, index) => (
+                <li
+                  key={`${item}-${index}`}
+                  className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+                >
+                  <span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-700">
+                    {index + 1}
+                  </span>
+                  {item}
                 </li>
-              ))}
-            </ul>
-          )}
-          {medStatus?.message ? (
-            <p className={styles.inlineHint}>{medStatus.message}</p>
-          ) : null}
-        </article>
-      </section>
-
-      <section className={styles.twoCol}>
-        <article className={styles.sectionCard}>
-          <div className={styles.sectionHeader}>
-            <h3 className={styles.sectionTitle}>월별 추이 (최근 6개월)</h3>
-          </div>
-          {trendRows.length === 0 ? (
-            <p className={styles.inlineHint}>추이 데이터가 없습니다.</p>
-          ) : (
-            <ul className={styles.listPlain}>
-              {trendRows.map((month, index) => (
-                <li key={`${month.periodKey ?? "period"}-${index}`}>
-                  {firstOrDash(month.periodKey)} - 종합 {formatScore(month.overallScore)} /
-                  설문 {formatScore(month.surveyScore)} / 검진{" "}
-                  {formatScore(month.healthScore)}
-                </li>
-              ))}
-            </ul>
-          )}
-        </article>
-
-        <article className={styles.sectionCard}>
-          <div className={styles.sectionHeader}>
-            <h3 className={styles.sectionTitle}>권장 실천 항목</h3>
-          </div>
-          {recommendationRows.length === 0 ? (
-            <p className={styles.inlineHint}>추천 항목이 없습니다.</p>
-          ) : (
-            <ul className={styles.listPlain}>
-              {recommendationRows.map((item, index) => (
-                <li key={`${item}-${index}`}>{item}</li>
               ))}
             </ul>
           )}
@@ -258,43 +622,201 @@ export default function ReportSummaryCards(props: {
       </section>
 
       <section className={styles.twoCol}>
-        <article className={styles.sectionCard}>
-          <div className={styles.sectionHeader}>
-            <h3 className={styles.sectionTitle}>섹션별 점수</h3>
-          </div>
-          {sectionRows.length === 0 ? (
-            <p className={styles.inlineHint}>섹션 점수 데이터가 없습니다.</p>
-          ) : (
-            <ul className={styles.listPlain}>
-              {sectionRows.map((section, index) => (
-                <li key={`${section.sectionTitle ?? "section"}-${index}`}>
-                  {firstOrDash(section.sectionTitle)}: {formatScore(section.score)}
-                  {typeof section.answeredCount === "number" &&
-                  typeof section.questionCount === "number"
-                    ? ` (${section.answeredCount}/${section.questionCount})`
-                    : ""}
-                </li>
-              ))}
-            </ul>
-          )}
-        </article>
-
         <article className={styles.sectionCard}>
           <div className={styles.sectionHeader}>
             <h3 className={styles.sectionTitle}>검진 핵심 지표</h3>
           </div>
-          {metricRows.length === 0 ? (
+          {metrics.length === 0 ? (
             <p className={styles.inlineHint}>검진 지표가 없습니다.</p>
           ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full border-separate border-spacing-y-2 text-sm">
+                <thead>
+                  <tr className="text-left text-slate-500">
+                    <th className="px-2">지표</th>
+                    <th className="px-2">값</th>
+                    <th className="px-2">판정</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {metrics.slice(0, 10).map((metric, index) => {
+                    const tone = resolveMetricStatusTone(metric.status);
+                    return (
+                      <tr key={`${metric.label ?? "metric"}-${index}`} className="bg-white">
+                        <td className="rounded-l-lg border border-r-0 border-slate-200 px-2 py-2 font-medium text-slate-800">
+                          {firstOrDash(metric.label)}
+                        </td>
+                        <td className="border border-x-0 border-slate-200 px-2 py-2 text-slate-700">
+                          {firstOrDash(metric.value)}
+                          {metric.unit ? ` ${metric.unit}` : ""}
+                        </td>
+                        <td className="rounded-r-lg border border-l-0 border-slate-200 px-2 py-2">
+                          <span
+                            className={`inline-flex rounded-full border px-2 py-1 text-xs font-semibold ${badgeClass(
+                              tone
+                            )}`}
+                          >
+                            {normalizeMetricStatusLabel(metric.status)}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </article>
+
+        <article className={styles.sectionCard}>
+          <div className={styles.sectionHeader}>
+            <h3 className={styles.sectionTitle}>복약 요약</h3>
+            <span
+              className={`inline-flex rounded-full border px-2 py-1 text-xs font-semibold ${badgeClass(
+                medicationStatusTone(medStatus?.type)
+              )}`}
+            >
+              {medicationStatusLabel(medStatus?.type)}
+            </span>
+          </div>
+          {medications.length === 0 ? (
+            <p className={styles.inlineHint}>
+              {medStatus?.type === "none"
+                ? "최근 복약 이력이 없습니다."
+                : medStatus?.type === "fetch_failed"
+                ? "복약 조회에 실패했습니다."
+                : "복약 데이터가 아직 없습니다."}
+            </p>
+          ) : (
             <ul className={styles.listPlain}>
-              {metricRows.map((metric, index) => (
-                <li key={`${metric.label ?? "metric"}-${index}`}>
-                  {firstOrDash(metric.label)}: {firstOrDash(metric.value)}
-                  {metric.unit ? ` ${metric.unit}` : ""} /{" "}
-                  {formatMetricStatus(metric.status)}
+              {medications.slice(0, 3).map((item, index) => (
+                <li key={`${item.medicationName ?? "med"}-${index}`}>
+                  <span className="font-semibold">{firstOrDash(item.medicationName)}</span>
+                  <div className={styles.inlineHint}>
+                    {item.date || "날짜 없음"}
+                    {item.dosageDay ? ` / ${item.dosageDay}` : ""}
+                    {item.hospitalName ? ` / ${item.hospitalName}` : ""}
+                  </div>
                 </li>
               ))}
             </ul>
+          )}
+          {medStatus?.message ? <p className={styles.inlineHint}>{medStatus.message}</p> : null}
+        </article>
+      </section>
+
+      <section className={styles.twoCol}>
+        <article className={styles.sectionCard}>
+          <div className={styles.sectionHeader}>
+            <h3 className={styles.sectionTitle}>설문 결과 시각화</h3>
+          </div>
+          {surveyResponseCount <= 0 ? (
+            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-3 text-sm text-slate-600">
+              설문 미진행 상태입니다. 설문을 완료하면 맞춤 분석 정확도가 올라갑니다.
+            </div>
+          ) : (
+            <div className={styles.stack}>
+              <p className={styles.inlineHint}>
+                응답 수 {surveyResponseCount} / 완료율{" "}
+                {surveyQuestionCount > 0
+                  ? `${Math.round((surveyAnsweredCount / surveyQuestionCount) * 100)}%`
+                  : "-"}
+              </p>
+              {sectionScoreChart.length === 0 ? (
+                <p className={styles.inlineHint}>섹션 점수 데이터가 없습니다.</p>
+              ) : (
+                <ul className={styles.vizBarList}>
+                  {sectionScoreChart.map((section, index) => (
+                    <li key={`${section.title}-${index}`} className={styles.vizBarRow}>
+                      <div className={styles.vizBarHead}>
+                        <span>{section.title}</span>
+                        <strong>{toScoreLabel(section.score)}</strong>
+                      </div>
+                      <div className={styles.vizTrack}>
+                        <div
+                          className={styles.vizFill}
+                          style={{
+                            width: `${scoreWidth(section.score)}%`,
+                            background: REPORT_ACCENT_COLORS.primary,
+                          }}
+                        />
+                      </div>
+                      <p className={styles.inlineHint}>
+                        응답 {section.answeredCount}/{section.questionCount}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </article>
+
+        <article className={styles.sectionCard}>
+          <div className={styles.sectionHeader}>
+            <h3 className={styles.sectionTitle}>월별 추이</h3>
+          </div>
+          {trendRows.length === 0 ? (
+            <p className={styles.inlineHint}>추이 데이터가 없습니다.</p>
+          ) : (
+            <div className={styles.stack}>
+              <div className={styles.trendColumns}>
+                {trendRows.map((row) => (
+                  <div key={`trend-col-${row.periodKey}`} className={styles.trendColumn}>
+                    <div className={styles.trendBarGroup}>
+                      <span
+                        className={styles.trendBar}
+                        style={{
+                          height: `${scoreWidth(row.overallScore)}%`,
+                          background: REPORT_ACCENT_COLORS.primary,
+                        }}
+                        title={`${row.periodKey} 종합 ${toScoreLabel(row.overallScore)}`}
+                      />
+                      <span
+                        className={styles.trendBar}
+                        style={{
+                          height: `${scoreWidth(row.surveyScore)}%`,
+                          background: REPORT_ACCENT_COLORS.warning,
+                        }}
+                        title={`${row.periodKey} 설문 ${toScoreLabel(row.surveyScore)}`}
+                      />
+                      <span
+                        className={styles.trendBar}
+                        style={{
+                          height: `${scoreWidth(row.healthScore)}%`,
+                          background: REPORT_ACCENT_COLORS.secondary,
+                        }}
+                        title={`${row.periodKey} 검진 ${toScoreLabel(row.healthScore)}`}
+                      />
+                    </div>
+                    <span className={styles.trendLabel}>{row.periodKey}</span>
+                  </div>
+                ))}
+              </div>
+              <ul className={styles.distributionLegend}>
+                <li>
+                  <span
+                    className={styles.legendDot}
+                    style={{ background: REPORT_ACCENT_COLORS.primary }}
+                  />
+                  종합
+                </li>
+                <li>
+                  <span
+                    className={styles.legendDot}
+                    style={{ background: REPORT_ACCENT_COLORS.warning }}
+                  />
+                  설문
+                </li>
+                <li>
+                  <span
+                    className={styles.legendDot}
+                    style={{ background: REPORT_ACCENT_COLORS.secondary }}
+                  />
+                  검진
+                </li>
+              </ul>
+            </div>
           )}
         </article>
       </section>
@@ -304,28 +826,41 @@ export default function ReportSummaryCards(props: {
           <div className={styles.sectionHeader}>
             <h3 className={styles.sectionTitle}>약사 코멘트</h3>
           </div>
-          <ul className={styles.listPlain}>
-            <li>요약: {firstOrDash(payload.pharmacist?.summary)}</li>
-            <li>권장: {firstOrDash(payload.pharmacist?.recommendations)}</li>
-            <li>주의: {firstOrDash(payload.pharmacist?.cautions)}</li>
-          </ul>
+          <p className="text-sm leading-6 text-slate-700">
+            {firstOrDash(payload.pharmacist?.summary)}
+          </p>
+          <details className={styles.optionalCard}>
+            <summary>자세히 보기</summary>
+            <div className={styles.optionalBody}>
+              <p className={styles.optionalText}>
+                권장: {firstOrDash(payload.pharmacist?.recommendations)}
+              </p>
+              <p className={styles.optionalText}>
+                주의: {firstOrDash(payload.pharmacist?.cautions)}
+              </p>
+            </div>
+          </details>
         </article>
 
         <article className={styles.sectionCard}>
           <div className={styles.sectionHeader}>
-            <h3 className={styles.sectionTitle}>AI 종합 평가</h3>
+            <h3 className={styles.sectionTitle}>AI 종합 코멘트</h3>
           </div>
           {ai ? (
-            <ul className={styles.listPlain}>
-              <li>종합 평가: {firstOrDash(ai.summary)}</li>
-              <li>한 달 실천 가이드: {firstOrDash(ai.monthlyGuide)}</li>
-              {Array.isArray(ai.actionItems) && ai.actionItems.length > 0
-                ? ai.actionItems.slice(0, 3).map((item, index) => (
-                    <li key={`${item}-${index}`}>실천 {index + 1}: {item}</li>
-                  ))
-                : null}
-              {ai.caution ? <li>주의 문구: {ai.caution}</li> : null}
-            </ul>
+            <>
+              <p className="text-sm leading-6 text-slate-700">{firstOrDash(ai.summary)}</p>
+              <details className={styles.optionalCard}>
+                <summary>자세히 보기</summary>
+                <div className={styles.optionalBody}>
+                  <p className={styles.optionalText}>
+                    이번 달 가이드: {firstOrDash(ai.monthlyGuide)}
+                  </p>
+                  {ai.caution ? (
+                    <p className={styles.optionalText}>주의 문구: {ai.caution}</p>
+                  ) : null}
+                </div>
+              </details>
+            </>
           ) : (
             <p className={styles.inlineHint}>생성된 AI 평가가 없습니다.</p>
           )}

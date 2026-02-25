@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import ColumnMarkdown from "../_components/columnMarkdown";
+import ColumnAdminActions from "../_components/ColumnAdminActions";
 import {
   getAdjacentColumnSummaries,
-  getAllColumnSummaries,
   getColumnBySlug,
   getRelatedColumnSummaries,
   normalizeTagSlug,
 } from "../_lib/columns";
+import { isColumnAdminSession } from "../_lib/admin-session";
 import { SITE_URL } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
@@ -27,11 +28,6 @@ function formatDate(value: string) {
     month: "long",
     day: "numeric",
   }).format(date);
-}
-
-export async function generateStaticParams() {
-  const columns = await getAllColumnSummaries();
-  return columns.map((column) => ({ slug: column.slug }));
 }
 
 export async function generateMetadata({
@@ -78,9 +74,10 @@ export default async function ColumnDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  const [relatedColumns, adjacent] = await Promise.all([
+  const [relatedColumns, adjacent, isAdmin] = await Promise.all([
     getRelatedColumnSummaries(column.slug, 3),
     getAdjacentColumnSummaries(column.slug),
+    isColumnAdminSession(),
   ]);
   const articleUrl = `${SITE_URL}/column/${column.slug}`;
   const articleJsonLd = {
@@ -176,6 +173,17 @@ export default async function ColumnDetailPage({ params }: PageProps) {
               <p className="mt-4 text-[1.02rem] leading-7 text-slate-700">
                 {column.description}
               </p>
+              {column.coverImageUrl ? (
+                <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={column.coverImageUrl}
+                    alt={`${column.title} 커버 이미지`}
+                    className="h-56 w-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+              ) : null}
               {column.tags.length > 0 && (
                 <div className="mt-5 flex flex-wrap gap-2">
                   {column.tags.map((tag) => (
@@ -189,6 +197,23 @@ export default async function ColumnDetailPage({ params }: PageProps) {
                   ))}
                 </div>
               )}
+              <div className="mt-5">
+                {isAdmin ? (
+                  <ColumnAdminActions
+                    postId={column.postId}
+                    title={column.title}
+                    showListLink
+                    redirectAfterDelete="/column"
+                  />
+                ) : (
+                  <Link
+                    href="/column"
+                    className="inline-flex rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700"
+                  >
+                    목록
+                  </Link>
+                )}
+              </div>
             </header>
 
             <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-6 sm:p-8">

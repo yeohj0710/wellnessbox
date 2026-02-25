@@ -6,6 +6,27 @@ import { usePathname, useRouter } from "next/navigation";
 
 const ROUTE_TRANSITION_HIDE_DELAY_MS = 420;
 const ROUTE_TRANSITION_FAILSAFE_MS = 700;
+const DOWNLOAD_FILE_EXTENSIONS = [
+  ".pdf",
+  ".ppt",
+  ".pptx",
+  ".zip",
+  ".csv",
+  ".xlsx",
+  ".doc",
+  ".docx",
+  ".hwp",
+  ".txt",
+  ".md",
+];
+
+function shouldBypassRouteTransition(url: URL) {
+  if (url.pathname.startsWith("/api/")) return true;
+  if (url.pathname.startsWith("/_next/")) return true;
+  return DOWNLOAD_FILE_EXTENSIONS.some((ext) =>
+    url.pathname.toLowerCase().endsWith(ext)
+  );
+}
 
 export default function RouteTransition() {
   const router = useRouter();
@@ -26,6 +47,7 @@ export default function RouteTransition() {
       if (!href) return;
       if (a.target && a.target !== "_self") return;
       if (a.hasAttribute("download")) return;
+      if (a.dataset.noRouteTransition === "true") return;
 
       const loweredHref = href.trim().toLowerCase();
       if (
@@ -56,6 +78,7 @@ export default function RouteTransition() {
       }
       if (url.origin !== window.location.origin) return;
       if (url.protocol !== "http:" && url.protocol !== "https:") return;
+      if (shouldBypassRouteTransition(url)) return;
 
       const samePathAndSearch =
         url.pathname === window.location.pathname &&
@@ -76,10 +99,7 @@ export default function RouteTransition() {
       e.preventDefault();
       pending.current = url.pathname + url.search + url.hash;
       setShow(true);
-      const nav = () => router.push(pending.current!);
-      const anyDoc: any = document;
-      if (anyDoc.startViewTransition) anyDoc.startViewTransition(() => nav());
-      else nav();
+      router.push(pending.current);
     };
     document.addEventListener("click", onClick, true);
     return () => document.removeEventListener("click", onClick, true);

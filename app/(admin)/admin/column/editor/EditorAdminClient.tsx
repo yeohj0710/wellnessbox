@@ -10,6 +10,7 @@ import {
   type ClipboardEvent,
 } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -163,6 +164,9 @@ async function uploadImageToCloudflare(file: File) {
 }
 
 export default function EditorAdminClient({ allowDevFileSave }: Props) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedPostId = searchParams.get("postId")?.trim() || null;
   const [posts, setPosts] = useState<ColumnPostDto[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -183,9 +187,11 @@ export default function EditorAdminClient({ allowDevFileSave }: Props) {
   const [devSaving, setDevSaving] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const [editorTab, setEditorTab] = useState<"write" | "preview">("write");
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const handledPostIdRef = useRef<string | null>(null);
 
   const selectedPost = useMemo(
     () => posts.find((post) => post.id === selectedId) ?? null,
@@ -228,6 +234,16 @@ export default function EditorAdminClient({ allowDevFileSave }: Props) {
     void loadPosts();
   }, [loadPosts]);
 
+  useEffect(() => {
+    if (!requestedPostId) {
+      handledPostIdRef.current = null;
+      return;
+    }
+    if (handledPostIdRef.current === requestedPostId) return;
+    handledPostIdRef.current = requestedPostId;
+    void openPost(requestedPostId);
+  }, [requestedPostId]);
+
   function applyPostToForm(post: ColumnPostDto) {
     setForm({
       title: post.title,
@@ -252,6 +268,9 @@ export default function EditorAdminClient({ allowDevFileSave }: Props) {
       if (!data.post) throw new Error("게시글을 찾을 수 없습니다.");
       setSelectedId(id);
       applyPostToForm(data.post);
+      router.replace(`/admin/column/editor?postId=${encodeURIComponent(id)}`, {
+        scroll: false,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "게시글 조회에 실패했습니다.");
     } finally {
@@ -268,6 +287,8 @@ export default function EditorAdminClient({ allowDevFileSave }: Props) {
     setUpdatedAt(null);
     setNotice("새 글 작성 모드로 전환했습니다.");
     setError("");
+    handledPostIdRef.current = null;
+    router.replace("/admin/column/editor", { scroll: false });
   }
 
   const updateField = <K extends keyof EditorForm>(key: K, value: EditorForm[K]) =>
@@ -325,6 +346,12 @@ export default function EditorAdminClient({ allowDevFileSave }: Props) {
       applyPostToForm(data.post);
       setSlugEdited(true);
       setNotice(selectedId ? "게시글을 수정 저장했습니다." : "새 게시글을 생성했습니다.");
+      router.replace(
+        `/admin/column/editor?postId=${encodeURIComponent(data.post.id)}`,
+        {
+          scroll: false,
+        }
+      );
       await loadPosts({ keepSelection: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "게시글 저장에 실패했습니다.");
@@ -531,17 +558,21 @@ export default function EditorAdminClient({ allowDevFileSave }: Props) {
           </div>
         ) : null}
         {notice ? (
-          <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          <div
+            data-testid="column-editor-notice"
+            className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"
+          >
             {notice}
           </div>
         ) : null}
 
-        <div className="mt-6 grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="mt-6 grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
           <aside className="rounded-3xl border border-slate-200 bg-white p-5">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-900">게시글 목록</h2>
               <button
                 type="button"
+                data-testid="column-editor-new-post"
                 onClick={resetEditor}
                 className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700"
               >
@@ -617,196 +648,242 @@ export default function EditorAdminClient({ allowDevFileSave }: Props) {
             </div>
           </aside>
 
-          <section className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-6">
-            <h2 className="text-lg font-bold text-slate-900">
-              {selectedId ? "게시글 편집" : "새 게시글 작성"}
-            </h2>
-            <p className="mt-1 text-sm text-slate-500">
-              상태: {activeStatus === "published" ? "발행" : "초안"} / 최근 저장:{" "}
-              {formatDateTime(updatedAt)}
-            </p>
-
-            <div className="mt-4 grid gap-3">
-              <label className="grid gap-1.5 text-sm font-medium text-slate-700">
-                제목
-                <input
-                  value={form.title}
-                  onChange={(event) => {
-                    const nextTitle = event.target.value;
-                    setForm((prev) => ({
-                      ...prev,
-                      title: nextTitle,
-                      slug:
-                        slugEdited && prev.slug.trim().length > 0
-                          ? prev.slug
-                          : slugify(nextTitle),
-                    }));
-                  }}
-                  className="rounded-xl border border-slate-300 px-3 py-2 outline-none focus:border-emerald-400"
-                  placeholder="게시글 제목"
-                />
-              </label>
-
-              <label className="grid gap-1.5 text-sm font-medium text-slate-700">
-                요약(excerpt)
-                <textarea
-                  value={form.excerpt}
-                  onChange={(event) => updateField("excerpt", event.target.value)}
-                  className="min-h-20 rounded-xl border border-slate-300 px-3 py-2 outline-none focus:border-emerald-400"
-                  placeholder="목록/SEO 요약"
-                />
-              </label>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="grid gap-1.5 text-sm font-medium text-slate-700">
-                  slug
-                  <input
-                    value={form.slug}
-                    onChange={(event) => {
-                      const nextSlug = event.target.value;
-                      updateField("slug", nextSlug);
-                      setSlugEdited(nextSlug.trim().length > 0);
-                    }}
-                    className="rounded-xl border border-slate-300 px-3 py-2 outline-none focus:border-emerald-400"
-                    placeholder="column-post-slug"
-                  />
-                  <span className="text-xs font-normal text-slate-500">
-                    공개 URL 경로입니다. 비우면 제목 기준으로 자동 생성됩니다.
-                  </span>
-                </label>
-                <label className="grid gap-1.5 text-sm font-medium text-slate-700">
-                  작성자
-                  <input
-                    value={form.authorName}
-                    onChange={(event) => updateField("authorName", event.target.value)}
-                    className="rounded-xl border border-slate-300 px-3 py-2 outline-none focus:border-emerald-400"
-                    placeholder="관리자명(선택)"
-                  />
-                </label>
+          <div className="space-y-6">
+            <section className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-6">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">
+                    {selectedId ? "게시글 편집" : "새 게시글 작성"}
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    상태: {activeStatus === "published" ? "발행" : "초안"} / 최근 저장:{" "}
+                    {formatDateTime(updatedAt)}
+                  </p>
+                </div>
+                <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1 text-sm">
+                  <button
+                    type="button"
+                    onClick={() => setEditorTab("write")}
+                    className={`rounded-lg px-3 py-1.5 font-semibold ${
+                      editorTab === "write"
+                        ? "bg-white text-slate-900 shadow-sm"
+                        : "text-slate-600"
+                    }`}
+                  >
+                    편집
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditorTab("preview")}
+                    className={`rounded-lg px-3 py-1.5 font-semibold ${
+                      editorTab === "preview"
+                        ? "bg-white text-slate-900 shadow-sm"
+                        : "text-slate-600"
+                    }`}
+                  >
+                    미리보기
+                  </button>
+                </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="grid gap-1.5 text-sm font-medium text-slate-700">
-                  태그(쉼표 구분)
-                  <input
-                    value={form.tags}
-                    onChange={(event) => updateField("tags", event.target.value)}
-                    className="rounded-xl border border-slate-300 px-3 py-2 outline-none focus:border-emerald-400"
-                    placeholder="오메가3, 복용시간, 건강정보"
-                  />
-                </label>
-                <label className="grid gap-1.5 text-sm font-medium text-slate-700">
-                  커버 이미지 URL
-                  <input
-                    value={form.coverImageUrl}
-                    onChange={(event) => updateField("coverImageUrl", event.target.value)}
-                    className="rounded-xl border border-slate-300 px-3 py-2 outline-none focus:border-emerald-400"
-                    placeholder="https://..."
-                  />
-                </label>
-              </div>
+              {editorTab === "write" ? (
+                <div className="mt-4 grid gap-3">
+                  <label className="grid gap-1.5 text-sm font-medium text-slate-700">
+                    제목
+                    <input
+                      data-testid="column-editor-title"
+                      value={form.title}
+                      onChange={(event) => {
+                        const nextTitle = event.target.value;
+                        setForm((prev) => ({
+                          ...prev,
+                          title: nextTitle,
+                          slug:
+                            slugEdited && prev.slug.trim().length > 0
+                              ? prev.slug
+                              : slugify(nextTitle),
+                        }));
+                      }}
+                      className="rounded-xl border border-slate-300 px-3 py-2 outline-none focus:border-emerald-400"
+                      placeholder="게시글 제목"
+                    />
+                  </label>
 
-              <label className="grid gap-1.5 text-sm font-medium text-slate-700">
-                본문 마크다운
-                <textarea
-                  ref={textareaRef}
-                  value={form.contentMarkdown}
-                  onChange={(event) => updateField("contentMarkdown", event.target.value)}
-                  onPaste={(event) => void handlePasteImage(event)}
-                  className="min-h-[30rem] rounded-2xl border border-slate-300 px-3 py-2 font-mono text-[0.95rem] leading-7 outline-none focus:border-emerald-400"
-                />
-              </label>
-            </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="grid gap-1.5 text-sm font-medium text-slate-700">
+                      slug
+                      <input
+                        data-testid="column-editor-slug"
+                        value={form.slug}
+                        onChange={(event) => {
+                          const nextSlug = event.target.value;
+                          updateField("slug", nextSlug);
+                          setSlugEdited(nextSlug.trim().length > 0);
+                        }}
+                        className="rounded-xl border border-slate-300 px-3 py-2 outline-none focus:border-emerald-400"
+                        placeholder="column-post-slug"
+                      />
+                      <span className="text-xs font-normal text-slate-500">
+                        URL에 들어가는 고유 주소입니다. 비우면 제목으로 자동 생성됩니다.
+                      </span>
+                    </label>
+                    <label className="grid gap-1.5 text-sm font-medium text-slate-700">
+                      태그(쉼표 구분)
+                      <input
+                        data-testid="column-editor-tags"
+                        value={form.tags}
+                        onChange={(event) => updateField("tags", event.target.value)}
+                        className="rounded-xl border border-slate-300 px-3 py-2 outline-none focus:border-emerald-400"
+                        placeholder="오메가3, 복용시간, 건강정보"
+                      />
+                    </label>
+                  </div>
 
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={(event) => void handleSelectFiles(event)}
-            />
+                  <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_13rem]">
+                    <label className="grid gap-1.5 text-sm font-medium text-slate-700">
+                      커버 이미지 URL
+                      <input
+                        data-testid="column-editor-cover-url"
+                        value={form.coverImageUrl}
+                        onChange={(event) => updateField("coverImageUrl", event.target.value)}
+                        className="rounded-xl border border-slate-300 px-3 py-2 outline-none focus:border-emerald-400"
+                        placeholder="https://..."
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      disabled={uploading || !canMutate}
+                      onClick={() => fileInputRef.current?.click()}
+                      className="mt-auto rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700 disabled:opacity-60"
+                    >
+                      이미지 업로드
+                    </button>
+                  </div>
 
-            <div className="mt-4 flex flex-wrap gap-2">
-              <button
-                type="button"
-                disabled={uploading || !canMutate}
-                onClick={() => fileInputRef.current?.click()}
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700 disabled:opacity-60"
-              >
-                이미지 업로드
-              </button>
-              <button
-                type="button"
-                disabled={!canMutate}
-                onClick={() => void handleSave()}
-                className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
-              >
-                저장
-              </button>
-              <button
-                type="button"
-                disabled={publishBlockReason !== null}
-                onClick={() => void handlePublish(true)}
-                className="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-60"
-              >
-                발행
-              </button>
-              <button
-                type="button"
-                disabled={!selectedId || publishing}
-                onClick={() => void handlePublish(false)}
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-amber-300 hover:text-amber-700 disabled:opacity-60"
-              >
-                비공개
-              </button>
-              <button
-                type="button"
-                disabled={!selectedId || deleting}
-                onClick={() => void handleDelete()}
-                className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60"
-              >
-                삭제
-              </button>
-              {allowDevFileSave ? (
+                  <details className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                    <summary className="cursor-pointer select-none font-semibold text-slate-700">
+                      선택 입력(요약/작성자)
+                    </summary>
+                    <div className="mt-3 grid gap-3">
+                      <label className="grid gap-1.5 text-sm font-medium text-slate-700">
+                        요약(excerpt)
+                        <textarea
+                          value={form.excerpt}
+                          onChange={(event) => updateField("excerpt", event.target.value)}
+                          className="min-h-20 rounded-xl border border-slate-300 px-3 py-2 outline-none focus:border-emerald-400"
+                          placeholder="비우면 본문에서 자동 생성됩니다."
+                        />
+                      </label>
+                      <label className="grid gap-1.5 text-sm font-medium text-slate-700">
+                        작성자
+                        <input
+                          value={form.authorName}
+                          onChange={(event) => updateField("authorName", event.target.value)}
+                          className="rounded-xl border border-slate-300 px-3 py-2 outline-none focus:border-emerald-400"
+                          placeholder="관리자명(선택)"
+                        />
+                      </label>
+                    </div>
+                  </details>
+
+                  <label className="grid gap-1.5 text-sm font-medium text-slate-700">
+                    본문 마크다운
+                    <textarea
+                      ref={textareaRef}
+                      data-testid="column-editor-content"
+                      value={form.contentMarkdown}
+                      onChange={(event) => updateField("contentMarkdown", event.target.value)}
+                      onPaste={(event) => void handlePasteImage(event)}
+                      className="min-h-[30rem] rounded-2xl border border-slate-300 px-3 py-2 font-mono text-[0.95rem] leading-7 outline-none focus:border-emerald-400"
+                    />
+                  </label>
+                </div>
+              ) : (
+                <div className="mt-4">
+                  <p className="text-sm text-slate-500">
+                    읽기 시간 예상: {Math.max(1, Math.ceil(form.contentMarkdown.length / 450))}분
+                  </p>
+                  <article className="prose prose-slate mt-4 max-w-none prose-headings:font-bold prose-h2:mt-8 prose-h3:mt-6 prose-p:leading-7">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {form.contentMarkdown}
+                    </ReactMarkdown>
+                  </article>
+                </div>
+              )}
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(event) => void handleSelectFiles(event)}
+              />
+
+              <div className="mt-4 flex flex-wrap gap-2">
                 <button
                   type="button"
-                  disabled={devSaving}
-                  onClick={() => void handleSaveToWorkspace()}
-                  className="rounded-xl border border-cyan-300 bg-cyan-50 px-4 py-2 text-sm font-semibold text-cyan-700 hover:bg-cyan-100 disabled:opacity-60"
+                  data-testid="column-editor-save-draft"
+                  disabled={!canMutate}
+                  onClick={() => void handleSave()}
+                  className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
                 >
-                  dev 파일 저장
+                  초안 저장
                 </button>
-              ) : null}
-            </div>
-            {publishBlockReason ? (
-              <p className="mt-2 text-xs text-amber-700">발행 불가 사유: {publishBlockReason}</p>
-            ) : null}
-
-            <details className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
-              <summary className="cursor-pointer select-none font-semibold text-slate-700">
-                고급 정보
-              </summary>
-              <div className="mt-2 space-y-1">
-                <p>게시글 ID: {selectedId || "-"}</p>
-                <p>발행 시각: {formatDateTime(publishedAt)}</p>
-                <p>선택된 목록 행: {selectedPost?.title || "-"}</p>
+                <button
+                  type="button"
+                  data-testid="column-editor-publish"
+                  disabled={publishBlockReason !== null}
+                  onClick={() => void handlePublish(true)}
+                  className="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-60"
+                >
+                  발행
+                </button>
+                <button
+                  type="button"
+                  data-testid="column-editor-unpublish"
+                  disabled={!selectedId || publishing}
+                  onClick={() => void handlePublish(false)}
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-amber-300 hover:text-amber-700 disabled:opacity-60"
+                >
+                  비공개
+                </button>
+                <button
+                  type="button"
+                  data-testid="column-editor-delete"
+                  disabled={!selectedId || deleting}
+                  onClick={() => void handleDelete()}
+                  className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60"
+                >
+                  삭제
+                </button>
+                {allowDevFileSave ? (
+                  <button
+                    type="button"
+                    disabled={devSaving}
+                    onClick={() => void handleSaveToWorkspace()}
+                    className="rounded-xl border border-cyan-300 bg-cyan-50 px-4 py-2 text-sm font-semibold text-cyan-700 hover:bg-cyan-100 disabled:opacity-60"
+                  >
+                    dev 파일 저장
+                  </button>
+                ) : null}
               </div>
-            </details>
-          </section>
+              {publishBlockReason ? (
+                <p className="mt-2 text-xs text-amber-700">발행 불가 사유: {publishBlockReason}</p>
+              ) : null}
 
-          <section className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-6">
-            <h2 className="text-lg font-bold text-slate-900">미리보기</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              읽기 시간 예상: {Math.max(1, Math.ceil(form.contentMarkdown.length / 450))}분
-            </p>
-
-            <article className="prose prose-slate mt-4 max-w-none prose-headings:font-bold prose-h2:mt-8 prose-h3:mt-6 prose-p:leading-7">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {form.contentMarkdown}
-              </ReactMarkdown>
-            </article>
-          </section>
+              <details className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                <summary className="cursor-pointer select-none font-semibold text-slate-700">
+                  고급 정보
+                </summary>
+                <div className="mt-2 space-y-1">
+                  <p>게시글 ID: {selectedId || "-"}</p>
+                  <p>발행 시각: {formatDateTime(publishedAt)}</p>
+                  <p>선택된 목록 행: {selectedPost?.title || "-"}</p>
+                </div>
+              </details>
+            </section>
+          </div>
         </div>
       </div>
     </section>

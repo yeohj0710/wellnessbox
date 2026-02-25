@@ -56,6 +56,14 @@ export function DesktopMenuContent({
         내 주문 조회
       </IntentPrefetchLink>
 
+      <IntentPrefetchLink
+        href="/column"
+        className={menuItemClasses()}
+        onClick={onItemClick}
+      >
+        칼럼
+      </IntentPrefetchLink>
+
       <div className="relative flex items-center gap-2" ref={aiRef}>
         <button
           onClick={onToggleAiOpen}

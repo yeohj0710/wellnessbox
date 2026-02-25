@@ -5,6 +5,7 @@ import {
   buildB2bEmployeeAccessToken,
   getB2bEmployeeCookieOptions,
 } from "@/lib/b2b/employee-token";
+import getSession from "@/lib/session";
 import {
   B2bEmployeeSyncError,
   fetchAndStoreB2bHealthSnapshot,
@@ -100,7 +101,23 @@ export async function POST(req: Request) {
     const ip = readClientIp(req);
     const userAgent = req.headers.get("user-agent");
     const forceRefreshRequested = parsed.data.forceRefresh === true;
+    const session = await getSession();
+    const debugForceRefresh = req.headers.get("x-wb-force-refresh-debug") === "1";
+    const canForceRefresh = session.admin?.loggedIn === true || debugForceRefresh;
     const forceRefreshCooldownSeconds = resolveForceRefreshCooldownSeconds();
+
+    if (forceRefreshRequested && !canForceRefresh) {
+      return noStoreJson(
+        {
+          ok: false,
+          code: "FORCE_REFRESH_RESTRICTED",
+          reason: "force_refresh_restricted",
+          nextAction: "retry",
+          error: "강제 재조회는 운영자 도구에서만 사용할 수 있습니다.",
+        },
+        403
+      );
+    }
 
     const upserted = await upsertB2bEmployee({
       appUserId: auth.data.appUserId,
