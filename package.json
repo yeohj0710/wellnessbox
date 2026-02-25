@@ -17,6 +17,7 @@
     "audit:clients": "ts-node scripts/audit-clients.cts",
     "audit:encoding": "ts-node scripts/audit-encoding.ts",
     "audit:hotspots": "ts-node scripts/audit-hotspots.ts",
+    "check:db-env": "ts-node scripts/check-db-env.ts",
     "maintenance:nhis-prune-attempts": "ts-node scripts/maintenance/prune-hyphen-fetch-attempts.cts",
     "maintenance:nhis-prune-cache": "ts-node scripts/maintenance/prune-hyphen-fetch-cache.cts",
     "maintenance:nhis-report-attempts": "ts-node scripts/maintenance/report-hyphen-fetch-attempts.cts",

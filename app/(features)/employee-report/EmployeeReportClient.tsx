@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import ReportSummaryCards from "@/components/b2b/ReportSummaryCards";
+import styles from "@/components/b2b/B2bUx.module.css";
 
 type IdentityInput = {
   name: string;
@@ -91,8 +92,7 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   });
   const data = (await response.json().catch(() => ({}))) as T;
   if (!response.ok) {
-    const message =
-      (data as { error?: string })?.error || "요청을 처리하지 못했습니다.";
+    const message = (data as { error?: string })?.error || "요청 처리에 실패했습니다.";
     throw new Error(message);
   }
   return data;
@@ -141,13 +141,13 @@ function resolveMedicationStatusMessage(reportData: EmployeeReportResponse | nul
       tone: "error" as const,
       text:
         status.message ||
-        "복약 데이터 조회에 실패했습니다. 잠시 후 다시 연동해 주세요.",
+        "복약 데이터를 가져오지 못했습니다. 잠시 후 다시 연동해 주세요.",
     };
   }
   if (status.type === "none") {
     return {
       tone: "warn" as const,
-      text: "복약 이력이 없습니다.",
+      text: "최근 3회 복약 이력이 없습니다.",
     };
   }
   if (status.type === "unknown") {
@@ -159,6 +159,13 @@ function resolveMedicationStatusMessage(reportData: EmployeeReportResponse | nul
     };
   }
   return null;
+}
+
+function formatDateTime(value: string | null | undefined) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("ko-KR");
 }
 
 export default function EmployeeReportClient() {
@@ -193,6 +200,14 @@ export default function EmployeeReportClient() {
     return entries.reduce((sum, entry) => sum + (entry.issues?.length ?? 0), 0);
   }, [reportData?.report?.exportAudit]);
 
+  const periodOptions = useMemo(() => {
+    const options = reportData?.availablePeriods ?? [];
+    if (options.length > 0) return options;
+    if (selectedPeriodKey) return [selectedPeriodKey];
+    if (reportData?.periodKey) return [reportData.periodKey];
+    return [];
+  }, [reportData?.availablePeriods, reportData?.periodKey, selectedPeriodKey]);
+
   function getIdentityPayload() {
     return {
       name: identity.name.trim(),
@@ -203,8 +218,10 @@ export default function EmployeeReportClient() {
 
   async function loadReport(periodKey?: string) {
     const query = periodKey ? `?period=${encodeURIComponent(periodKey)}` : "";
-    const data = await requestJson<EmployeeReportResponse>(`/api/b2b/employee/report${query}`);
-    if (!data.ok) throw new Error(data.error || "리포트 조회에 실패했습니다.");
+    const data = await requestJson<EmployeeReportResponse>(
+      `/api/b2b/employee/report${query}`
+    );
+    if (!data.ok) throw new Error(data.error || "레포트 조회에 실패했습니다.");
     setReportData(data);
     setSelectedPeriodKey(data.periodKey || periodKey || "");
     setError("");
@@ -219,13 +236,16 @@ export default function EmployeeReportClient() {
 
   async function syncEmployeeReport(forceRefresh = false) {
     const payload = getIdentityPayload();
-    const syncResult = await requestJson<EmployeeSyncResponse>("/api/b2b/employee/sync", {
-      method: "POST",
-      body: JSON.stringify({
-        ...payload,
-        forceRefresh,
-      }),
-    });
+    const syncResult = await requestJson<EmployeeSyncResponse>(
+      "/api/b2b/employee/sync",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          ...payload,
+          forceRefresh,
+        }),
+      }
+    );
     saveStoredIdentity(payload);
     await loadReport(selectedPeriodKey || undefined);
     return syncResult;
@@ -265,7 +285,7 @@ export default function EmployeeReportClient() {
             }
           );
           if (loginResult.found) {
-            setNotice("이전 조회 정보로 자동 로그인했습니다.");
+            setNotice("이전에 조회한 정보로 자동 로그인했습니다.");
             await loadReport();
             return;
           }
@@ -273,7 +293,7 @@ export default function EmployeeReportClient() {
       }
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "세션 확인에 실패했습니다.";
+        err instanceof Error ? err.message : "세션 확인 중 오류가 발생했습니다.";
       setError(message);
     } finally {
       setBooting(false);
@@ -304,14 +324,19 @@ export default function EmployeeReportClient() {
         body: JSON.stringify(payload),
       });
       if (!result.found) {
-        setNotice(result.message || "조회 이력이 없습니다. 카카오 인증 후 연동해 주세요.");
+        setNotice(
+          result.message ||
+            "조회 가능한 기록이 없습니다. 카카오 인증 후 연동해 주세요."
+        );
         return;
       }
       saveStoredIdentity(payload);
-      setNotice("기존 리포트를 불러왔습니다.");
+      setNotice("기존 레포트를 불러왔습니다.");
       await loadReport();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "기존 정보 조회에 실패했습니다.");
+      setError(
+        err instanceof Error ? err.message : "기존 정보 조회에 실패했습니다."
+      );
     } finally {
       setBusy(false);
     }
@@ -345,16 +370,18 @@ export default function EmployeeReportClient() {
           syncResult.sync?.source === "cache-history";
         setNotice(
           reusedFromCache
-            ? "기존 연동 데이터를 활용해 리포트를 불러왔습니다."
+            ? "기존 연동 데이터를 사용해 레포트를 불러왔습니다."
             : "카카오 인증이 완료되어 최신 데이터를 불러왔습니다."
         );
         return;
       }
       setNotice(
-        "카카오 인증 요청을 보냈습니다. 카카오톡에서 승인 후 '인증 완료 후 연동' 버튼을 눌러 주세요."
+        "카카오톡에서 인증을 완료한 뒤, 아래의 '인증 완료 후 연동' 버튼을 눌러 주세요."
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "카카오 인증 요청에 실패했습니다.");
+      setError(
+        err instanceof Error ? err.message : "카카오 인증 요청에 실패했습니다."
+      );
     } finally {
       setBusy(false);
     }
@@ -369,15 +396,16 @@ export default function EmployeeReportClient() {
     setError("");
     setNotice("");
     try {
-      const signResult = await requestJson<{ ok: boolean; linked?: boolean; reused?: boolean }>(
-        "/api/health/nhis/sign",
-        {
-          method: "POST",
-          body: JSON.stringify({}),
-        }
-      );
+      const signResult = await requestJson<{
+        ok: boolean;
+        linked?: boolean;
+        reused?: boolean;
+      }>("/api/health/nhis/sign", {
+        method: "POST",
+        body: JSON.stringify({}),
+      });
       if (!signResult.linked) {
-        setNotice("카카오톡 승인 완료 후 다시 시도해 주세요.");
+        setNotice("카카오톡 인증 완료 후 다시 시도해 주세요.");
         return;
       }
 
@@ -386,11 +414,11 @@ export default function EmployeeReportClient() {
         syncResult.sync?.source === "cache-valid" ||
         syncResult.sync?.source === "cache-history"
       ) {
-        setNotice("캐시된 데이터를 사용해 리포트를 갱신했습니다.");
+        setNotice("캐시 데이터를 사용해 레포트를 갱신했습니다.");
       } else if (signResult.reused) {
-        setNotice("기존 인증 상태를 재사용해 리포트를 갱신했습니다.");
+        setNotice("기존 인증 상태를 사용해 레포트를 갱신했습니다.");
       } else {
-        setNotice("최신 데이터를 연동해 리포트를 갱신했습니다.");
+        setNotice("최신 정보를 연동해 레포트를 갱신했습니다.");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "데이터 연동에 실패했습니다.");
@@ -428,7 +456,7 @@ export default function EmployeeReportClient() {
       await fetch("/api/health/nhis/unlink", { method: "POST" }).catch(() => null);
       setReportData(null);
       setSelectedPeriodKey("");
-      setNotice("연동 세션을 해제했습니다.");
+      setNotice("현재 연결된 조회 세션을 해제했습니다.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "세션 해제에 실패했습니다.");
     } finally {
@@ -438,30 +466,53 @@ export default function EmployeeReportClient() {
 
   if (booting) {
     return (
-      <div className="mx-auto max-w-6xl p-6">
-        <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
-          임직원 건강 리포트 정보를 불러오는 중입니다.
-        </div>
+      <div className={`${styles.page} ${styles.compactPage}`}>
+        <section className={styles.sectionCard}>
+          <p className={styles.inlineHint}>
+            임직원 건강 레포트 정보를 불러오는 중입니다.
+          </p>
+        </section>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-4 p-4 sm:p-6">
-      <div className="rounded-xl border border-slate-200 bg-white p-6">
-        <h1 className="text-2xl font-bold text-slate-900">임직원 건강 리포트</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          웹 화면은 읽기용으로 제공되며, 공식 산출물은 PDF 다운로드로 받으실 수 있습니다.
+    <div className={`${styles.page} ${styles.compactPage} ${styles.stack}`}>
+      <header className={styles.heroCard}>
+        <p className={styles.kicker}>EMPLOYEE REPORT</p>
+        <h1 className={styles.title}>임직원 건강 레포트</h1>
+        <p className={styles.description}>
+          레포트는 화면에서 읽기 쉽게 제공되며, 공식 제출은 PDF 다운로드로 진행합니다.
         </p>
-      </div>
+        <div className={styles.statusRow}>
+          {reportData?.report ? (
+            <span className={styles.statusOn}>레포트 준비 완료</span>
+          ) : (
+            <span className={styles.statusOff}>본인 확인 필요</span>
+          )}
+          {selectedPeriodKey ? <span className={styles.pill}>{selectedPeriodKey}</span> : null}
+        </div>
+      </header>
 
-      {!reportData && (
-        <div className="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
-          <div className="grid gap-3 sm:grid-cols-3">
-            <label className="text-sm text-slate-700">
-              이름
+      {error ? <div className={styles.noticeError}>{error}</div> : null}
+      {notice ? <div className={styles.noticeSuccess}>{notice}</div> : null}
+
+      {!reportData ? (
+        <section className={styles.sectionCard}>
+          <div className={styles.sectionHeader}>
+            <div>
+              <h2 className={styles.sectionTitle}>1. 본인 정보 입력</h2>
+              <p className={styles.sectionDescription}>
+                레포트 조회를 위해 이름, 생년월일, 휴대폰 번호를 입력해 주세요.
+              </p>
+            </div>
+          </div>
+
+          <div className={styles.formGrid}>
+            <label className={styles.field}>
+              <span className={styles.fieldLabel}>이름</span>
               <input
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                className={styles.input}
                 value={identity.name}
                 onChange={(event) =>
                   setIdentity((prev) => ({ ...prev, name: event.target.value }))
@@ -469,10 +520,10 @@ export default function EmployeeReportClient() {
                 placeholder="홍길동"
               />
             </label>
-            <label className="text-sm text-slate-700">
-              생년월일(8자리)
+            <label className={styles.field}>
+              <span className={styles.fieldLabel}>생년월일 (8자리)</span>
               <input
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                className={styles.input}
                 value={identity.birthDate}
                 onChange={(event) =>
                   setIdentity((prev) => ({
@@ -483,10 +534,10 @@ export default function EmployeeReportClient() {
                 placeholder="19900101"
               />
             </label>
-            <label className="text-sm text-slate-700">
-              휴대폰 번호
+            <label className={styles.field}>
+              <span className={styles.fieldLabel}>휴대폰 번호</span>
               <input
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                className={styles.input}
                 value={identity.phone}
                 onChange={(event) =>
                   setIdentity((prev) => ({
@@ -499,20 +550,12 @@ export default function EmployeeReportClient() {
             </label>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={handleFindExisting}
-              disabled={busy}
-              className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-50"
-            >
-              기존 조회 정보 불러오기
-            </button>
+          <div className={styles.actionRow}>
             <button
               type="button"
               onClick={handleInitKakao}
               disabled={busy}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+              className={styles.buttonPrimary}
             >
               카카오 인증 요청
             </button>
@@ -520,118 +563,146 @@ export default function EmployeeReportClient() {
               type="button"
               onClick={() => handleSignAndSync(false)}
               disabled={busy}
-              className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+              className={styles.buttonSecondary}
             >
               인증 완료 후 연동
             </button>
           </div>
-        </div>
-      )}
 
-      {error && (
-        <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-          {error}
-        </div>
-      )}
-      {notice && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          {notice}
-        </div>
-      )}
+          <details className={styles.optionalCard}>
+            <summary>기존 조회 기록이 있으면 바로 불러오기</summary>
+            <div className={styles.optionalBody}>
+              <p className={styles.optionalText}>
+                이전에 같은 이름/생년월일/휴대폰 번호로 조회한 기록이 있으면 인증 없이
+                레포트를 바로 불러올 수 있습니다.
+              </p>
+              <div className={styles.actionRow}>
+                <button
+                  type="button"
+                  onClick={handleFindExisting}
+                  disabled={busy}
+                  className={styles.buttonGhost}
+                >
+                  기존 조회 정보 불러오기
+                </button>
+              </div>
+            </div>
+          </details>
+        </section>
+      ) : null}
 
-      {reportData?.report && (
-        <div className="space-y-4">
-          <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
+      {reportData?.report ? (
+        <>
+          <section className={styles.sectionCard}>
+            <div className={styles.sectionHeader}>
               <div>
-                <h2 className="text-lg font-bold text-slate-900">
-                  {reportData.report.payload?.meta?.employeeName || reportData.employee?.name} 리포트
+                <h2 className={styles.sectionTitle}>
+                  {(reportData.report.payload?.meta?.employeeName ||
+                    reportData.employee?.name ||
+                    "대상자")}
+                  님 레포트
                 </h2>
-                <p className="mt-1 text-sm text-slate-600">
+                <p className={styles.sectionDescription}>
                   생성 시각:{" "}
-                  {new Date(reportData.report.payload?.meta?.generatedAt || reportData.report.updatedAt).toLocaleString(
-                    "ko-KR"
+                  {formatDateTime(
+                    reportData.report.payload?.meta?.generatedAt ||
+                      reportData.report.updatedAt
                   )}
                 </p>
-                {reportData.employee?.lastSyncedAt ? (
-                  <p className="mt-1 text-xs text-slate-500">
-                    최근 동기화: {new Date(reportData.employee.lastSyncedAt).toLocaleString("ko-KR")}
-                  </p>
-                ) : null}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <select
-                  className="rounded-md border border-slate-300 px-3 py-2 text-xs text-slate-700"
-                  value={selectedPeriodKey}
-                  onChange={(event) => {
-                    const next = event.target.value;
-                    setSelectedPeriodKey(next);
-                    void loadReport(next);
-                  }}
-                >
-                  {(reportData.availablePeriods?.length ? reportData.availablePeriods : [selectedPeriodKey]).map(
-                    (period) => (
-                      <option key={period} value={period}>
-                        {period}
-                      </option>
-                    )
-                  )}
-                </select>
-                <button
-                  type="button"
-                  onClick={handleDownloadPdf}
-                  disabled={busy}
-                  className="rounded-md bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
-                >
-                  PDF 다운로드
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSignAndSync(true)}
-                  disabled={busy}
-                  className="rounded-md border border-blue-300 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50"
-                >
-                  최신 정보 다시 연동
-                </button>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  disabled={busy}
-                  className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-                >
-                  다른 사람 조회
-                </button>
+                <p className={styles.sectionDescription}>
+                  최근 연동: {formatDateTime(reportData.employee?.lastSyncedAt)}
+                </p>
               </div>
             </div>
-          </div>
 
-          {reportData.report.payload?.meta?.isMockData && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              MOCK 데이터를 사용 중입니다. 현재 리포트는 테스트 fixture 기반입니다.
+            <div className={styles.actionRow}>
+              <select
+                className={styles.select}
+                value={selectedPeriodKey}
+                disabled={periodOptions.length === 0}
+                onChange={(event) => {
+                  const next = event.target.value;
+                  setSelectedPeriodKey(next);
+                  void loadReport(next);
+                }}
+              >
+                {periodOptions.length === 0 ? (
+                  <option value="">기간 없음</option>
+                ) : (
+                  periodOptions.map((period) => (
+                    <option key={period} value={period}>
+                      {period}
+                    </option>
+                  ))
+                )}
+              </select>
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                disabled={busy}
+                className={styles.buttonPrimary}
+              >
+                PDF 다운로드
+              </button>
             </div>
-          )}
 
-          {medicationStatus && (
+            <details className={styles.optionalCard}>
+              <summary>고급 옵션 보기</summary>
+              <div className={styles.optionalBody}>
+                <p className={styles.optionalText}>
+                  최신 정보 재연동은 필요할 때만 사용해 주세요. 기본 조회는 캐시 데이터를
+                  우선 사용합니다.
+                </p>
+                <div className={styles.actionRow}>
+                  <button
+                    type="button"
+                    onClick={() => handleSignAndSync(true)}
+                    disabled={busy}
+                    className={styles.buttonSecondary}
+                  >
+                    최신 정보 다시 연동
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    disabled={busy}
+                    className={styles.buttonGhost}
+                  >
+                    다른 이름 조회
+                  </button>
+                </div>
+              </div>
+            </details>
+          </section>
+
+          {reportData.report.payload?.meta?.isMockData ? (
+            <div className={styles.noticeWarn}>
+              현재 레포트는 데모 데이터 기반으로 생성되었습니다.
+            </div>
+          ) : null}
+
+          {medicationStatus ? (
             <div
-              className={`rounded-lg px-4 py-3 text-sm ${
+              className={
                 medicationStatus.tone === "error"
-                  ? "border border-rose-200 bg-rose-50 text-rose-700"
-                  : "border border-amber-200 bg-amber-50 text-amber-800"
-              }`}
+                  ? styles.noticeError
+                  : styles.noticeWarn
+              }
             >
               {medicationStatus.text}
             </div>
-          )}
+          ) : null}
 
-          {validationIssueCount > 0 && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              현재 export 검증 이슈가 {validationIssueCount}건 있습니다. 관리자에게 확인 요청해 주세요.
+          {validationIssueCount > 0 ? (
+            <div className={styles.noticeWarn}>
+              내보내기 검증 이슈가 {validationIssueCount}건 있습니다. 필요 시 관리자에게
+              확인을 요청해 주세요.
             </div>
-          )}
+          ) : null}
 
           <ReportSummaryCards payload={reportData.report.payload} />
-        </div>
-      )}
+        </>
+      ) : null}
     </div>
   );
 }

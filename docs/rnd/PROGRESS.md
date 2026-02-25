@@ -1,0 +1,108 @@
+# TIPS R&D Progress
+
+## Completed Items
+- [x] 2026-02-17 module 03 production gate hardening: restored `--require-provided-input` enforcement across `run-scheduler-production-gate.ts` and `validate-scheduler-production-readiness.ts`, including readiness check `provided-input-required` and audit fields in readiness/gate artifacts.
+- [x] 2026-02-17 validation run: executed `npm run rnd:module02:evaluation:rollup` and confirmed all KPI targets/data requirements satisfied (`tmp/rnd/kpi-rollup/2026-02-17T09-06-31-214Z/kpi-rollup-2026-02-17T09-06-31-214Z.json`).
+- [x] Baseline scan completed for `docs/rnd`, `docs/rnd_impl`, `lib/rnd`, `app/api/rnd`, `scripts/rnd`, and `prisma/schema.prisma`.
+- [x] Module 02 `SCAFFOLD`: added Data Lake contract/types and runtime validators in `lib/rnd/module02-data-lake/contracts.ts`.
+- [x] Module 02 `SCAFFOLD`: added deterministic scaffold bundle builder in `lib/rnd/module02-data-lake/scaffold.ts`.
+- [x] Module 02 `SCAFFOLD`: added reproducible scaffold artifact generator `scripts/rnd/module02/generate-scaffold-bundle.ts`.
+- [x] Added npm entrypoint `rnd:module02:scaffold` for repeatable scaffold output.
+- [x] Module 02 `MVP`: added Config-backed persistence layer in `lib/rnd/module02-data-lake/mvp-store.ts`.
+- [x] Module 02 `MVP`: added runnable ingest/load verification script `scripts/rnd/module02/run-mvp-ingest.ts`.
+- [x] Added npm entrypoint `rnd:module02:mvp` for repeatable MVP execution.
+- [x] Module 02 `EVALUATION`: added KPI #5 evaluation utility in `lib/rnd/module02-data-lake/evaluation.ts`.
+- [x] Module 02 `EVALUATION`: added reproducible evaluation runner `scripts/rnd/module02/evaluate-reference-accuracy.ts` (default 100 rules).
+- [x] Added npm entrypoint `rnd:module02:evaluation` for repeatable KPI #5 calculation output.
+- [x] Module 02 `EVALUATION`: added cross-module KPI rollup runner `scripts/rnd/module02/evaluate-kpi-rollup.ts` to consolidate modules 02~07 into one timestamped artifact.
+- [x] Added npm entrypoint `rnd:module02:evaluation:rollup` for repeatable consolidated KPI output.
+- [x] Module 03 `SCAFFOLD`: added personal safety contract/types and runtime validators in `lib/rnd/module03-personal-safety/contracts.ts`.
+- [x] Module 03 `SCAFFOLD`: added deterministic safety-rule I/O + trace scaffold bundle builder in `lib/rnd/module03-personal-safety/scaffold.ts`.
+- [x] Module 03 `SCAFFOLD`: added reproducible scaffold artifact generator `scripts/rnd/module03/generate-scaffold-bundle.ts`.
+- [x] Added npm entrypoint `rnd:module03:scaffold` for repeatable Module 03 scaffold output.
+- [x] Module 03 `MVP`: added deterministic rule-matching execution engine with runtime logs in `lib/rnd/module03-personal-safety/mvp-engine.ts`.
+- [x] Module 03 `MVP`: added runnable validation command `scripts/rnd/module03/run-mvp-validation.ts`.
+- [x] Added npm entrypoint `rnd:module03:mvp` for repeatable Module 03 MVP execution.
+- [x] Module 03 `EVALUATION`: added KPI #5 evaluation utility in `lib/rnd/module03-personal-safety/evaluation.ts`.
+- [x] Module 03 `EVALUATION`: added reproducible evaluation runner `scripts/rnd/module03/evaluate-reference-accuracy.ts` (default 100 rules).
+- [x] Added npm entrypoint `rnd:module03:evaluation` for repeatable Module 03 KPI #5 calculation output.
+- [x] Module 04 `SCAFFOLD`: added efficacy quantification contracts/types and runtime validators in `lib/rnd/module04-efficacy-quantification/contracts.ts`.
+- [x] Module 04 `SCAFFOLD`: added deterministic efficacy scaffold bundle builder in `lib/rnd/module04-efficacy-quantification/scaffold.ts`.
+- [x] Module 04 `SCAFFOLD`: added reproducible scaffold artifact generator `scripts/rnd/module04/generate-scaffold-bundle.ts`.
+- [x] Added npm entrypoint `rnd:module04:scaffold` for repeatable Module 04 scaffold output.
+- [x] Module 04 `MVP`: added deterministic efficacy quantification runtime with inclusion/exclusion logging in `lib/rnd/module04-efficacy-quantification/mvp-engine.ts`.
+- [x] Module 04 `MVP`: added runnable quantification command `scripts/rnd/module04/run-mvp-quantification.ts`.
+- [x] Added npm entrypoint `rnd:module04:mvp` for repeatable Module 04 MVP execution.
+- [x] Module 04 `EVALUATION`: added KPI #2 evaluation utility in `lib/rnd/module04-efficacy-quantification/evaluation.ts`.
+- [x] Module 04 `EVALUATION`: added reproducible evaluation runner `scripts/rnd/module04/evaluate-improvement-pp.ts`.
+- [x] Added npm entrypoint `rnd:module04:evaluation` for repeatable Module 04 KPI #2 calculation output.
+- [x] Module 05 `SCAFFOLD`: added optimization contracts/types and runtime validators in `lib/rnd/module05-optimization/contracts.ts`.
+- [x] Module 05 `SCAFFOLD`: added deterministic optimization scaffold bundle builder in `lib/rnd/module05-optimization/scaffold.ts`.
+- [x] Module 05 `SCAFFOLD`: added reproducible scaffold artifact generator `scripts/rnd/module05/generate-scaffold-bundle.ts`.
+- [x] Added npm entrypoint `rnd:module05:scaffold` for repeatable Module 05 scaffold output.
+- [x] Module 05 `MVP`: added deterministic candidate-combination ranking engine with safety filtering and runtime logs in `lib/rnd/module05-optimization/mvp-engine.ts`.
+- [x] Module 05 `MVP`: added runnable optimization command `scripts/rnd/module05/run-mvp-optimization.ts`.
+- [x] Added npm entrypoint `rnd:module05:mvp` for repeatable Module 05 MVP execution.
+- [x] Module 05 `EVALUATION`: added KPI #1 recommendation-accuracy evaluation utility with intervention-link readiness artifact in `lib/rnd/module05-optimization/evaluation.ts`.
+- [x] Module 05 `EVALUATION`: added reproducible evaluation runner `scripts/rnd/module05/evaluate-recommendation-accuracy.ts` (default 100 cases).
+- [x] Added npm entrypoint `rnd:module05:evaluation` for repeatable Module 05 KPI #1 calculation output.
+- [x] Module 06 `SCAFFOLD`: added closed-loop AI contract/types and runtime validators in `lib/rnd/module06-closed-loop-ai/contracts.ts`.
+- [x] Module 06 `SCAFFOLD`: added deterministic closed-loop scaffold bundle builder in `lib/rnd/module06-closed-loop-ai/scaffold.ts`.
+- [x] Module 06 `SCAFFOLD`: added reproducible scaffold artifact generator `scripts/rnd/module06/generate-scaffold-bundle.ts`.
+- [x] Added npm entrypoint `rnd:module06:scaffold` for repeatable Module 06 scaffold output.
+- [x] Module 06 `MVP`: added deterministic next-action decision/execution runtime with trace/runtime logs in `lib/rnd/module06-closed-loop-ai/mvp-engine.ts`.
+- [x] Module 06 `MVP`: added runnable closed-loop validation command `scripts/rnd/module06/run-mvp-closed-loop.ts`.
+- [x] Added npm entrypoint `rnd:module06:mvp` for repeatable Module 06 MVP execution.
+- [x] Module 06 `EVALUATION`: added KPI #3/#4 evaluation utility in `lib/rnd/module06-closed-loop-ai/evaluation.ts`.
+- [x] Module 06 `EVALUATION`: added reproducible evaluation runner `scripts/rnd/module06/evaluate-closed-loop-accuracy.ts` (default >=100 cases/prompts).
+- [x] Added npm entrypoint `rnd:module06:evaluation` for repeatable Module 06 KPI #3/#4 calculation output.
+- [x] Module 07 `SCAFFOLD`: added biosensor/genetic integration contracts and runtime validators in `lib/rnd/module07-biosensor-genetic-integration/contracts.ts`.
+- [x] Module 07 `SCAFFOLD`: added deterministic biosensor/genetic scaffold bundle builder in `lib/rnd/module07-biosensor-genetic-integration/scaffold.ts`.
+- [x] Module 07 `SCAFFOLD`: added reproducible scaffold artifact generator `scripts/rnd/module07/generate-scaffold-bundle.ts`.
+- [x] Added npm entrypoint `rnd:module07:scaffold` for repeatable Module 07 scaffold output.
+- [x] Module 07 `MVP`: added deterministic ingest/normalization runtime with source-to-Data-Lake wiring logs in `lib/rnd/module07-biosensor-genetic-integration/mvp-engine.ts`.
+- [x] Module 07 `MVP`: added runnable integration command `scripts/rnd/module07/run-mvp-integration.ts`.
+- [x] Added npm entrypoint `rnd:module07:mvp` for repeatable Module 07 MVP execution.
+- [x] Module 07 `EVALUATION`: added KPI #7/KPI #5 evaluation utility in `lib/rnd/module07-biosensor-genetic-integration/evaluation.ts`.
+- [x] Module 07 `EVALUATION`: added reproducible evaluation runner `scripts/rnd/module07/evaluate-integration-rate.ts` (default 100 sessions/rules).
+- [x] Added npm entrypoint `rnd:module07:evaluation` for repeatable Module 07 KPI calculation output.
+- [x] Module 03 `EVALUATION`: added KPI #6 adverse-event yearly-count evaluation utility in `lib/rnd/module03-personal-safety/evaluation.ts`.
+- [x] Module 03 `EVALUATION`: added deterministic KPI #6 dataset fixture builder `scripts/rnd/module03/adverse-event-fixture.ts`.
+- [x] Module 03 `EVALUATION`: added dedicated reproducible KPI #6 runner `scripts/rnd/module03/evaluate-adverse-event-count.ts`.
+- [x] Added npm entrypoint `rnd:module03:evaluation:adverse` for repeatable Module 03 KPI #6 output.
+- [x] Module 02 `EVALUATION`: wired KPI #6 into consolidated rollup in `scripts/rnd/module02/evaluate-kpi-rollup.ts` using Module 03 evaluation artifacts.
+- [x] Module 03 `EVALUATION`: added ops-facing KPI #6 ingestion adapter script `scripts/rnd/module03/evaluate-adverse-event-count-from-source.ts` for direct source-row mapping into the evaluation pipeline.
+- [x] Module 03 `EVALUATION`: added reusable KPI #6 ops artifacts (`scripts/rnd/module03/sql/kpi06_adverse_events_last_12_months.sql`, `scripts/rnd/module03/schema/kpi06_pharmacovigilance_schema_map.json`).
+- [x] Added npm entrypoint `rnd:module03:evaluation:adverse:ops` for repeatable ops-ingestion KPI #6 runs.
+- [x] Module 03 `EVALUATION`: added monthly archive runner `scripts/rnd/module03/archive-adverse-event-evaluation-monthly.ts` to execute KPI #6 ops ingestion and persist replayable month-indexed artifacts.
+- [x] Module 03 `EVALUATION`: added archive manifest and latest-pointer outputs (`archive-manifest.json`, `latest.json`) for audit replay tracking.
+- [x] Added npm entrypoint `rnd:module03:evaluation:adverse:ops:archive` for repeatable scheduled KPI #6 archival runs.
+- [x] Module 03 `EVALUATION`: added retention-policy controls (`--retention-months`) to `scripts/rnd/module03/archive-adverse-event-evaluation-monthly.ts`, including manifest retention metadata and stale-archive pruning.
+- [x] Module 03 `EVALUATION`: added scheduler orchestration runner `scripts/rnd/module03/orchestrate-adverse-event-evaluation-monthly.ts` to automate warehouse export command execution, archive evaluation handoff, and replayable handoff artifacts.
+- [x] Added npm entrypoint `rnd:module03:evaluation:adverse:ops:scheduler` for reproducible scheduler-style KPI #6 runs (`--export-command` or pre-exported `--input`).
+- [x] Module 03 `EVALUATION`: added scheduler secret preflight controls (`--require-env`) in `scripts/rnd/module03/orchestrate-adverse-event-evaluation-monthly.ts` to enforce secret-managed warehouse credential presence before execution.
+- [x] Module 03 `EVALUATION`: added deterministic scheduler failure alert artifacts + optional webhook dispatch (`--failure-webhook-url`, `RND_MODULE03_FAILURE_WEBHOOK_URL`) in `scripts/rnd/module03/orchestrate-adverse-event-evaluation-monthly.ts`.
+- [x] Module 03 `EVALUATION`: added scheduler deployment-bundle generator `scripts/rnd/module03/generate-scheduler-deployment-bundle.ts` for reproducible cron/secret/command handoff artifacts.
+- [x] Added npm entrypoint `rnd:module03:evaluation:adverse:ops:scheduler:bundle` for repeatable deployment-bundle output.
+- [x] Module 03 `EVALUATION`: added scheduler infra-binding generator `scripts/rnd/module03/generate-scheduler-infra-binding.ts` to convert deployment bundles into validated secret-manager binding artifacts.
+- [x] Added npm entrypoint `rnd:module03:evaluation:adverse:ops:scheduler:bind` for repeatable infra-binding artifact output.
+- [x] Module 03 `EVALUATION`: added dry-run execution-window runner `scripts/rnd/module03/run-scheduler-dry-run-window.ts` that consumes scheduler infra-binding artifacts, executes one replayable pre-exported-input window, and verifies expected outputs.
+- [x] Added npm entrypoint `rnd:module03:evaluation:adverse:ops:scheduler:dry-run` for repeatable dry-run execution-window report output.
+- [x] Module 03 `EVALUATION`: added one-command scheduler handoff validation runner `scripts/rnd/module03/run-scheduler-handoff-validation.ts` that generates a representative KPI #6 export window, creates scheduler deployment/infra-binding artifacts, executes strict-env dry-run verification, and writes a replayable validation summary artifact.
+- [x] Added npm entrypoint `rnd:module03:evaluation:adverse:ops:scheduler:handoff-validate` for repeatable scheduler handoff validation runs.
+- [x] Module 03 `EVALUATION`: added scheduler production-readiness validator `scripts/rnd/module03/validate-scheduler-production-readiness.ts` that verifies handoff artifacts against expected production environment and rejects placeholder/default secret refs before infra apply.
+- [x] Added npm entrypoint `rnd:module03:evaluation:adverse:ops:scheduler:readiness` for repeatable scheduler production-readiness reports.
+- [x] Module 03 `EVALUATION`: added scheduler production-gate orchestrator `scripts/rnd/module03/run-scheduler-production-gate.ts` to execute handoff-validation + readiness-validation in one reproducible run and persist a consolidated gate artifact.
+- [x] Added npm entrypoint `rnd:module03:evaluation:adverse:ops:scheduler:gate` for repeatable scheduler production-gate output.
+- [x] Module 03 `EVALUATION`: added production-input enforcement controls (`--require-provided-input`) in `scripts/rnd/module03/run-scheduler-production-gate.ts` and `scripts/rnd/module03/validate-scheduler-production-readiness.ts` so production gates fail when synthetic generated input windows are used.
+
+## Current Module Status
+- Module 02 (Data Lake): `EVALUATION` completed (including consolidated KPI rollup runner).
+- Module 03 (Personal Safety Validation Engine): `EVALUATION` completed (KPI #5 + KPI #6 + ops-ingestion adapter + monthly archive artifacts + retention controls + scheduler orchestration handoff artifacts + secret-env preflight + failure alert artifacts/webhook hook + deployment-bundle generator + infra-binding generator + dry-run execution-window runner + one-command handoff-validation runner + production-readiness validation runner + one-command production-gate runner + production-input enforcement guard for real source-window checks before infra apply).
+- Module 04 (Efficacy Quantification Model): `EVALUATION` completed.
+- Module 05 (Optimization Engine): `EVALUATION` completed.
+- Module 06 (Closed-loop AI): `EVALUATION` completed.
+- Module 07 (Biosensor and Genetic Data Integration): `EVALUATION` completed.
+
+## Next Recommended Step
+- Execute `rnd:module03:evaluation:adverse:ops:scheduler:gate -- --expected-environment production --require-provided-input --input <production-window.json> ...` with real production secret refs/env values (`--secret-binding`) and apply bindings only when the gate/readiness result is `pass`.

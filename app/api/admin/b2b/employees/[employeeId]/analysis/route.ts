@@ -5,6 +5,7 @@ import { computeAndSaveB2bAnalysis } from "@/lib/b2b/analysis-service";
 import { logB2bAdminAction } from "@/lib/b2b/employee-service";
 import { resolveCurrentPeriodKey } from "@/lib/b2b/period";
 import { requireAdminSession } from "@/lib/server/route-auth";
+import { resolveDbRouteError } from "@/lib/server/db-error";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -62,156 +63,189 @@ function summarizeComputedForResponse(computed: Record<string, unknown>) {
 }
 
 export async function GET(req: Request, ctx: RouteContext) {
-  const auth = await requireAdminSession();
-  if (!auth.ok) return auth.response;
+  try {
+    const auth = await requireAdminSession();
+    if (!auth.ok) return auth.response;
 
-  const { employeeId } = await ctx.params;
-  const employee = await requireEmployee(employeeId);
-  if (!employee) {
-    return noStoreJson({ ok: false, error: "임직원을 찾을 수 없습니다." }, 404);
+    const { employeeId } = await ctx.params;
+    const employee = await requireEmployee(employeeId);
+    if (!employee) {
+      return noStoreJson({ ok: false, error: "임직원을 찾을 수 없습니다." }, 404);
+    }
+
+    const { searchParams } = new URL(req.url);
+    const periodKey = searchParams.get("period");
+
+    const [latest, periods] = await Promise.all([
+      db.b2bAnalysisResult.findFirst({
+        where: {
+          employeeId,
+          ...(periodKey ? { periodKey } : {}),
+        },
+        orderBy: [{ updatedAt: "desc" }, { version: "desc" }],
+      }),
+      db.b2bAnalysisResult.findMany({
+        where: { employeeId, periodKey: { not: null } },
+        orderBy: [{ periodKey: "desc" }, { version: "desc" }],
+        select: { periodKey: true },
+        take: 24,
+      }),
+    ]);
+
+    const availablePeriods = [
+      ...new Set(periods.map((row) => row.periodKey).filter((row): row is string => Boolean(row))),
+    ];
+
+    return noStoreJson({
+      ok: true,
+      analysis: latest
+        ? {
+            id: latest.id,
+            version: latest.version,
+            periodKey: latest.periodKey ?? null,
+            reportCycle: latest.reportCycle ?? null,
+            payload: latest.payload,
+            computedAt: latest.computedAt?.toISOString() ?? null,
+            updatedAt: latest.updatedAt.toISOString(),
+          }
+        : null,
+      periodKey: periodKey || latest?.periodKey || resolveCurrentPeriodKey(),
+      availablePeriods,
+    });
+  } catch (error) {
+    const dbError = resolveDbRouteError(
+      error,
+      "분석 조회 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."
+    );
+    return noStoreJson(
+      { ok: false, code: dbError.code, error: dbError.message },
+      dbError.status
+    );
   }
-
-  const { searchParams } = new URL(req.url);
-  const periodKey = searchParams.get("period");
-
-  const [latest, periods] = await Promise.all([
-    db.b2bAnalysisResult.findFirst({
-      where: {
-        employeeId,
-        ...(periodKey ? { periodKey } : {}),
-      },
-      orderBy: [{ updatedAt: "desc" }, { version: "desc" }],
-    }),
-    db.b2bAnalysisResult.findMany({
-      where: { employeeId, periodKey: { not: null } },
-      orderBy: [{ periodKey: "desc" }, { version: "desc" }],
-      select: { periodKey: true },
-      take: 24,
-    }),
-  ]);
-
-  const availablePeriods = [
-    ...new Set(periods.map((row) => row.periodKey).filter((row): row is string => Boolean(row))),
-  ];
-
-  return noStoreJson({
-    ok: true,
-    analysis: latest
-      ? {
-          id: latest.id,
-          version: latest.version,
-          periodKey: latest.periodKey ?? null,
-          reportCycle: latest.reportCycle ?? null,
-          payload: latest.payload,
-          computedAt: latest.computedAt?.toISOString() ?? null,
-          updatedAt: latest.updatedAt.toISOString(),
-        }
-      : null,
-    periodKey: periodKey || latest?.periodKey || resolveCurrentPeriodKey(),
-    availablePeriods,
-  });
 }
 
 export async function PUT(req: Request, ctx: RouteContext) {
-  const auth = await requireAdminSession();
-  if (!auth.ok) return auth.response;
+  try {
+    const auth = await requireAdminSession();
+    if (!auth.ok) return auth.response;
 
-  const { employeeId } = await ctx.params;
-  const employee = await requireEmployee(employeeId);
-  if (!employee) {
-    return noStoreJson({ ok: false, error: "임직원을 찾을 수 없습니다." }, 404);
-  }
+    const { employeeId } = await ctx.params;
+    const employee = await requireEmployee(employeeId);
+    if (!employee) {
+      return noStoreJson({ ok: false, error: "임직원을 찾을 수 없습니다." }, 404);
+    }
 
-  const body = await req.json().catch(() => null);
-  const parsed = putSchema.safeParse(body);
-  if (!parsed.success) {
+    const body = await req.json().catch(() => null);
+    const parsed = putSchema.safeParse(body);
+    if (!parsed.success) {
+      return noStoreJson(
+        { ok: false, error: parsed.error.issues[0]?.message || "입력 형식을 확인해 주세요." },
+        400
+      );
+    }
+
+    const periodKey = parsed.data.periodKey ?? resolveCurrentPeriodKey();
+    const saved = await computeAndSaveB2bAnalysis({
+      employeeId,
+      periodKey,
+      externalAnalysisPayload: parsed.data.payload,
+      replaceLatestPeriodEntry: true,
+      generateAiEvaluation: parsed.data.generateAiEvaluation,
+    });
+
+    await logB2bAdminAction({
+      employeeId,
+      action: "analysis_external_payload_upsert",
+      actorTag: "admin",
+      payload: {
+        analysisId: saved.analysis.id,
+        periodKey,
+        generateAiEvaluation: parsed.data.generateAiEvaluation === true,
+      },
+    });
+
+    return noStoreJson({
+      ok: true,
+      analysis: {
+        id: saved.analysis.id,
+        version: saved.analysis.version,
+        reportCycle: saved.analysis.reportCycle ?? null,
+        updatedAt: saved.analysis.updatedAt.toISOString(),
+        ...summarizeComputedForResponse(saved.computed as Record<string, unknown>),
+      },
+    });
+  } catch (error) {
+    const dbError = resolveDbRouteError(
+      error,
+      "분석 저장 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."
+    );
     return noStoreJson(
-      { ok: false, error: parsed.error.issues[0]?.message || "입력 형식을 확인해 주세요." },
-      400
+      { ok: false, code: dbError.code, error: dbError.message },
+      dbError.status
     );
   }
-
-  const periodKey = parsed.data.periodKey ?? resolveCurrentPeriodKey();
-  const saved = await computeAndSaveB2bAnalysis({
-    employeeId,
-    periodKey,
-    externalAnalysisPayload: parsed.data.payload,
-    replaceLatestPeriodEntry: true,
-    generateAiEvaluation: parsed.data.generateAiEvaluation,
-  });
-
-  await logB2bAdminAction({
-    employeeId,
-    action: "analysis_external_payload_upsert",
-    actorTag: "admin",
-    payload: {
-      analysisId: saved.analysis.id,
-      periodKey,
-      generateAiEvaluation: parsed.data.generateAiEvaluation === true,
-    },
-  });
-
-  return noStoreJson({
-    ok: true,
-    analysis: {
-      id: saved.analysis.id,
-      version: saved.analysis.version,
-      reportCycle: saved.analysis.reportCycle ?? null,
-      updatedAt: saved.analysis.updatedAt.toISOString(),
-      ...summarizeComputedForResponse(saved.computed as Record<string, unknown>),
-    },
-  });
 }
 
 export async function POST(req: Request, ctx: RouteContext) {
-  const auth = await requireAdminSession();
-  if (!auth.ok) return auth.response;
+  try {
+    const auth = await requireAdminSession();
+    if (!auth.ok) return auth.response;
 
-  const { employeeId } = await ctx.params;
-  const employee = await requireEmployee(employeeId);
-  if (!employee) {
-    return noStoreJson({ ok: false, error: "임직원을 찾을 수 없습니다." }, 404);
-  }
+    const { employeeId } = await ctx.params;
+    const employee = await requireEmployee(employeeId);
+    if (!employee) {
+      return noStoreJson({ ok: false, error: "임직원을 찾을 수 없습니다." }, 404);
+    }
 
-  const body = await req.json().catch(() => ({}));
-  const parsed = postSchema.safeParse(body);
-  if (!parsed.success) {
+    const body = await req.json().catch(() => ({}));
+    const parsed = postSchema.safeParse(body);
+    if (!parsed.success) {
+      return noStoreJson(
+        { ok: false, error: parsed.error.issues[0]?.message || "입력 형식을 확인해 주세요." },
+        400
+      );
+    }
+
+    const periodKey = parsed.data.periodKey ?? resolveCurrentPeriodKey();
+    const saved = await computeAndSaveB2bAnalysis({
+      employeeId,
+      periodKey,
+      generateAiEvaluation: parsed.data.generateAiEvaluation,
+      forceAiRegenerate: parsed.data.forceAiRegenerate,
+      externalAnalysisPayload: parsed.data.externalAnalysisPayload,
+      replaceLatestPeriodEntry: parsed.data.replaceLatestPeriodEntry,
+    });
+
+    await logB2bAdminAction({
+      employeeId,
+      action: "analysis_recompute",
+      actorTag: "admin",
+      payload: {
+        analysisId: saved.analysis.id,
+        periodKey,
+        generateAiEvaluation: parsed.data.generateAiEvaluation === true,
+        forceAiRegenerate: parsed.data.forceAiRegenerate === true,
+      },
+    });
+
+    return noStoreJson({
+      ok: true,
+      analysis: {
+        id: saved.analysis.id,
+        version: saved.analysis.version,
+        reportCycle: saved.analysis.reportCycle ?? null,
+        updatedAt: saved.analysis.updatedAt.toISOString(),
+        ...summarizeComputedForResponse(saved.computed as Record<string, unknown>),
+      },
+    });
+  } catch (error) {
+    const dbError = resolveDbRouteError(
+      error,
+      "분석 재생성 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."
+    );
     return noStoreJson(
-      { ok: false, error: parsed.error.issues[0]?.message || "입력 형식을 확인해 주세요." },
-      400
+      { ok: false, code: dbError.code, error: dbError.message },
+      dbError.status
     );
   }
-
-  const periodKey = parsed.data.periodKey ?? resolveCurrentPeriodKey();
-  const saved = await computeAndSaveB2bAnalysis({
-    employeeId,
-    periodKey,
-    generateAiEvaluation: parsed.data.generateAiEvaluation,
-    forceAiRegenerate: parsed.data.forceAiRegenerate,
-    externalAnalysisPayload: parsed.data.externalAnalysisPayload,
-    replaceLatestPeriodEntry: parsed.data.replaceLatestPeriodEntry,
-  });
-
-  await logB2bAdminAction({
-    employeeId,
-    action: "analysis_recompute",
-    actorTag: "admin",
-    payload: {
-      analysisId: saved.analysis.id,
-      periodKey,
-      generateAiEvaluation: parsed.data.generateAiEvaluation === true,
-      forceAiRegenerate: parsed.data.forceAiRegenerate === true,
-    },
-  });
-
-  return noStoreJson({
-    ok: true,
-    analysis: {
-      id: saved.analysis.id,
-      version: saved.analysis.version,
-      reportCycle: saved.analysis.reportCycle ?? null,
-      updatedAt: saved.analysis.updatedAt.toISOString(),
-      ...summarizeComputedForResponse(saved.computed as Record<string, unknown>),
-    },
-  });
 }

@@ -1,66 +1,78 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import styles from "@/components/b2b/B2bUx.module.css";
 
-export default function AdminLogin() {
+export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [redirectPath, setRedirectPath] = useState("/admin");
+
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const redirect = searchParams.get("redirect");
     if (redirect) setRedirectPath(redirect);
   }, []);
+
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setIsLoading(true);
-    const res = await fetch("/api/verify-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password, loginType: "admin" }),
-    });
-    if (res.ok) {
-      window.location.href = redirectPath;
-    } else {
+    setError("");
+    try {
+      const res = await fetch("/api/verify-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password, loginType: "admin" }),
+      });
+      if (res.ok) {
+        window.location.href = redirectPath;
+        return;
+      }
       setError("비밀번호가 올바르지 않습니다.");
+    } catch {
+      setError("로그인 요청 처리 중 오류가 발생했습니다.");
+    } finally {
       setIsLoading(false);
     }
   };
+
   return (
-    <div className="px-2 flex flex-col w-full max-w-[640px] mx-auto items-center min-h-screen py-12">
-      <div className="w-full bg-white shadow-md rounded-lg max-w-md p-8">
-        <h1 className="text-2xl font-bold text-gray-800 text-center">
-          관리자 로그인
-        </h1>
-        <form onSubmit={handleSubmit} className="flex flex-col">
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="비밀번호를 입력하세요"
-            className="mt-6 w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-sky-400"
-          />
-          {error && (
-            <p className="text-sm mt-2 text-red-500 text-center">{error}</p>
-          )}
-          <button
-            type="submit"
-            disabled={isLoading}
-            className={`h-10 flex justify-center items-center mt-3 w-full rounded-lg font-bold text-white transition ${
-              isLoading
-                ? "bg-sky-300 cursor-not-allowed"
-                : "bg-sky-400 hover:bg-sky-500"
-            }`}
-          >
-            {isLoading ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              "로그인"
-            )}
-          </button>
+    <div className={`${styles.page} ${styles.compactPage} ${styles.stack}`}>
+      <header className={styles.heroCard}>
+        <p className={styles.kicker}>ADMIN ACCESS</p>
+        <h1 className={styles.title}>관리자 로그인</h1>
+        <p className={styles.description}>
+          관리자 비밀번호를 입력하면 운영 대시보드로 이동합니다.
+        </p>
+      </header>
+
+      <section className={styles.sectionCard}>
+        <form onSubmit={handleSubmit} className={styles.stack}>
+          <label className={styles.field}>
+            <span className={styles.fieldLabel}>관리자 비밀번호</span>
+            <input
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="비밀번호 입력"
+              className={styles.input}
+            />
+          </label>
+
+          {error ? <div className={styles.noticeError}>{error}</div> : null}
+
+          <div className={styles.actionRow}>
+            <button
+              type="submit"
+              disabled={isLoading || password.trim().length === 0}
+              className={styles.buttonPrimary}
+            >
+              {isLoading ? "로그인 중..." : "로그인"}
+            </button>
+          </div>
         </form>
-      </div>
+      </section>
     </div>
   );
 }
