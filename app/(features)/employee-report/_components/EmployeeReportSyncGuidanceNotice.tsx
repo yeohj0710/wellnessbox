@@ -1,0 +1,69 @@
+import styles from "@/components/b2b/B2bUx.module.css";
+import type { SyncGuidance } from "../_lib/client-types";
+import { formatDateTime } from "../_lib/client-utils";
+
+type EmployeeReportSyncGuidanceNoticeProps = {
+  guidance: SyncGuidance;
+  busy: boolean;
+  onRestartAuth: () => void;
+  onSignAndSync: () => void;
+};
+
+export default function EmployeeReportSyncGuidanceNotice({
+  guidance,
+  busy,
+  onRestartAuth,
+  onSignAndSync,
+}: EmployeeReportSyncGuidanceNoticeProps) {
+  return (
+    <section className={styles.noticeInfo}>
+      <p className={styles.optionalText}>{guidance.message}</p>
+      <div className={`${styles.actionRow} ${styles.mt8}`}>
+        {guidance.nextAction === "init" ? (
+          <button
+            type="button"
+            onClick={onRestartAuth}
+            disabled={busy}
+            data-testid="employee-report-restart-auth"
+            className={styles.buttonPrimary}
+          >
+            인증 다시하기
+          </button>
+        ) : null}
+        {guidance.nextAction === "sign" ? (
+          <button
+            type="button"
+            onClick={onSignAndSync}
+            disabled={busy}
+            data-testid="employee-report-sign-sync"
+            className={styles.buttonSecondary}
+          >
+            연동 완료 확인
+          </button>
+        ) : null}
+        {guidance.nextAction === "retry" ? (
+          <button
+            type="button"
+            onClick={onSignAndSync}
+            disabled={busy}
+            data-testid="employee-report-sign-sync"
+            className={styles.buttonSecondary}
+          >
+            다시 시도
+          </button>
+        ) : null}
+      </div>
+      {(guidance.code || guidance.reason) && (
+        <p className={styles.inlineHint}>
+          code: {guidance.code || "-"} / reason: {guidance.reason || "-"}
+        </p>
+      )}
+      {guidance.availableAt ? (
+        <p className={styles.inlineHint}>
+          재시도 가능 시각: {formatDateTime(guidance.availableAt)}
+        </p>
+      ) : null}
+    </section>
+  );
+}
+

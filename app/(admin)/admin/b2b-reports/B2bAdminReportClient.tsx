@@ -1,240 +1,55 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import ReportRenderer from "@/components/b2b/ReportRenderer";
 import ReportSummaryCards from "@/components/b2b/ReportSummaryCards";
 import styles from "@/components/b2b/B2bUx.module.css";
 import type { LayoutDocument } from "@/lib/b2b/export/layout-types";
 import type { LayoutValidationIssue } from "@/lib/b2b/export/validation-types";
-
-type AdminClientProps = { demoMode?: boolean };
-
-type EmployeeListItem = {
-  id: string;
-  name: string;
-  birthDate: string;
-  phoneNormalized: string;
-  lastSyncedAt: string | null;
-  counts: {
-    healthSnapshots: number;
-    reports: number;
-  };
-};
-
-type SurveyQuestion = {
-  key: string;
-  index: number;
-  text: string;
-  type: "text" | "single" | "multi";
-  required?: boolean;
-  options?: Array<{ value: string; label: string }>;
-  placeholder?: string;
-  maxSelect?: number;
-};
-
-type SurveyTemplateSchema = {
-  common: SurveyQuestion[];
-  sections: Array<{
-    key: string;
-    title: string;
-    displayName?: string;
-    questions: SurveyQuestion[];
-  }>;
-  sectionCatalog: Array<{
-    key: string;
-    title: string;
-    displayName?: string;
-  }>;
-  rules?: { maxSelectedSections?: number };
-};
-
-type ReportAudit = {
-  selectedStage?: string | null;
-  validation?: Array<{
-    stage: string;
-    ok: boolean;
-    issues?: LayoutValidationIssue[];
-    runtimeIssueCount?: number;
-    staticIssueCount?: number;
-  }>;
-};
-
-type ExportApiFailure = {
-  ok?: false;
-  error?: string;
-  code?: string;
-  reason?: string;
-  debugId?: string;
-  audit?: ReportAudit;
-  issues?: LayoutValidationIssue[];
-};
-
-class ExportApiError extends Error {
-  payload: ExportApiFailure;
-
-  constructor(payload: ExportApiFailure) {
-    super(payload.error || "내보내기에 실패했습니다.");
-    this.name = "ExportApiError";
-    this.payload = payload;
-  }
-}
-
-type LatestReport = {
-  id: string;
-  status: string;
-  periodKey?: string | null;
-  payload?: any;
-  layoutDsl?: unknown;
-  exportAudit?: ReportAudit | null;
-  updatedAt: string;
-};
-
-function normalizeDigits(value: string) {
-  return value.replace(/\D/g, "");
-}
-
-function formatDateTime(raw: string | null | undefined) {
-  if (!raw) return "-";
-  const date = new Date(raw);
-  if (Number.isNaN(date.getTime())) return raw;
-  return date.toLocaleString("ko-KR");
-}
-
-function formatRelativeTime(raw: string | null | undefined) {
-  if (!raw) return "-";
-  const date = new Date(raw);
-  if (Number.isNaN(date.getTime())) return "-";
-  const diffMs = Date.now() - date.getTime();
-  if (diffMs < 0) return "방금";
-  const diffSec = Math.floor(diffMs / 1000);
-  if (diffSec < 60) return "방금";
-  if (diffSec < 3600) return `${Math.floor(diffSec / 60)}분 전`;
-  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}시간 전`;
-  if (diffSec < 172800) return "어제";
-  if (diffSec < 86400 * 7) return `${Math.floor(diffSec / 86400)}일 전`;
-  return date.toLocaleDateString("ko-KR");
-}
-
-async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(url, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers || {}),
-    },
-    cache: "no-store",
-  });
-  const data = (await response.json().catch(() => ({}))) as T;
-  if (!response.ok) {
-    const message = (data as { error?: string })?.error || "요청 처리에 실패했습니다.";
-    throw new Error(message);
-  }
-  return data;
-}
-
-function parseLayoutDsl(raw: unknown): LayoutDocument | null {
-  if (!raw || typeof raw !== "object") return null;
-  const layout = raw as LayoutDocument;
-  if (!Array.isArray(layout.pages) || layout.pages.length === 0) return null;
-  if (!layout.pageSizeMm || typeof layout.pageSizeMm.width !== "number") return null;
-  return layout;
-}
-
-function toInputValue(raw: unknown) {
-  if (raw == null) return "";
-  if (typeof raw === "string") return raw;
-  if (typeof raw === "number" || typeof raw === "boolean") return String(raw);
-  if (Array.isArray(raw)) return raw.join(", ");
-  return "";
-}
-
-function toMultiValues(raw: unknown) {
-  if (Array.isArray(raw)) return raw.map((item) => String(item)).filter(Boolean);
-  if (typeof raw === "string") {
-    return raw
-      .split(/[,\n/|]/g)
-      .map((item) => item.trim())
-      .filter(Boolean);
-  }
-  return [];
-}
-
-function extractIssuesFromAudit(audit: ReportAudit | null | undefined) {
-  const entries = audit?.validation ?? [];
-  const selected = entries.find((entry) => entry.stage === audit?.selectedStage);
-  if (selected?.issues?.length) return selected.issues;
-  const latest = [...entries].reverse().find((entry) => entry.issues?.length);
-  return latest?.issues ?? [];
-}
-
-function formatBounds(issue: LayoutValidationIssue) {
-  const first = issue.nodeBounds;
-  const second = issue.relatedNodeBounds;
-  const firstText = first
-    ? `x:${first.x.toFixed(1)} y:${first.y.toFixed(1)} w:${first.w.toFixed(1)} h:${first.h.toFixed(1)}`
-    : "-";
-  const secondText = second
-    ? ` / 상대 x:${second.x.toFixed(1)} y:${second.y.toFixed(1)} w:${second.w.toFixed(1)} h:${second.h.toFixed(1)}`
-    : "";
-  return `${firstText}${secondText}`;
-}
-
-function formatIssueDebug(issue: LayoutValidationIssue) {
-  const page = issue.pageId || "-";
-  const node = issue.nodeId || "-";
-  const related = issue.relatedNodeId ? ` / related:${issue.relatedNodeId}` : "";
-  return `page:${page} / node:${node}${related} / ${formatBounds(issue)}`;
-}
-
-function mergePeriods(...groups: Array<Array<string> | undefined>) {
-  const set = new Set<string>();
-  for (const group of groups) {
-    if (!group) continue;
-    for (const period of group) if (period) set.add(period);
-  }
-  return [...set].sort((a, b) => b.localeCompare(a));
-}
-
-function filenameFromDisposition(header: string | null, fallback: string) {
-  if (!header) return fallback;
-  const match = header.match(
-    /filename\*=UTF-8''([^;]+)|filename=\"?([^\";]+)\"?/i
-  );
-  const encoded = match?.[1] || match?.[2];
-  if (!encoded) return fallback;
-  try {
-    return decodeURIComponent(encoded);
-  } catch {
-    return encoded;
-  }
-}
-
-async function downloadFromApi(url: string, fallbackName: string) {
-  const response = await fetch(url, { cache: "no-store" });
-  if (!response.ok) {
-    const data = (await response.json().catch(() => ({}))) as ExportApiFailure;
-    throw new ExportApiError(data);
-  }
-  const blob = await response.blob();
-  const filename = filenameFromDisposition(
-    response.headers.get("content-disposition"),
-    fallbackName
-  );
-  const objectUrl = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = objectUrl;
-  anchor.download = filename;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(objectUrl);
-}
+import B2bAnalysisJsonPanel from "./_components/B2bAnalysisJsonPanel";
+import B2bAdminOpsHero from "./_components/B2bAdminOpsHero";
+import B2bEmployeeOverviewCard from "./_components/B2bEmployeeOverviewCard";
+import B2bEmployeeSidebar from "./_components/B2bEmployeeSidebar";
+import B2bLayoutValidationPanel from "./_components/B2bLayoutValidationPanel";
+import B2bNoteEditorPanel from "./_components/B2bNoteEditorPanel";
+import B2bSurveyEditorPanel from "./_components/B2bSurveyEditorPanel";
+import type {
+  AdminClientProps,
+  CompletionStats,
+  EmployeeDetail,
+  EmployeeListItem,
+  LatestReport,
+  ReportAudit,
+  SurveyAnswerRow,
+  SurveyQuestion,
+  SurveyTemplateSchema,
+} from "./_lib/client-types";
+import {
+  fetchEmployeeDetailBundle,
+  fetchEmployees,
+  recomputeAnalysis,
+  regenerateReport,
+  runLayoutValidation,
+  saveAnalysisPayload,
+  saveNote,
+  saveSurvey,
+  seedDemoEmployees,
+} from "./_lib/api";
+import {
+  ExportApiError,
+  downloadFromApi,
+  extractIssuesFromAudit,
+  mergePeriods,
+  parseLayoutDsl,
+  toInputValue,
+  toMultiValues,
+} from "./_lib/client-utils";
 
 export default function B2bAdminReportClient({ demoMode = false }: AdminClientProps) {
   const [employees, setEmployees] = useState<EmployeeListItem[]>([]);
   const [search, setSearch] = useState("");
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
-  const [selectedEmployeeDetail, setSelectedEmployeeDetail] = useState<any>(null);
+  const [selectedEmployeeDetail, setSelectedEmployeeDetail] =
+    useState<EmployeeDetail | null>(null);
 
   const [surveyTemplate, setSurveyTemplate] = useState<SurveyTemplateSchema | null>(null);
   const [surveyAnswers, setSurveyAnswers] = useState<Record<string, unknown>>({});
@@ -275,7 +90,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     return [];
   }, [availablePeriods, selectedPeriodKey]);
 
-  const completionStats = useMemo(() => {
+  const completionStats = useMemo<CompletionStats>(() => {
     if (!surveyTemplate) {
       return { total: 0, answered: 0, requiredTotal: 0, requiredAnswered: 0, percent: 0 };
     }
@@ -323,21 +138,13 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
   }
 
   async function loadEmployees(query = "") {
-    const data = await requestJson<{ ok: boolean; employees: EmployeeListItem[] }>(
-      `/api/admin/b2b/employees${query ? `?q=${encodeURIComponent(query)}` : ""}`
-    );
+    const data = await fetchEmployees(query);
     setEmployees(data.employees);
   }
 
   async function loadEmployeeDetail(employeeId: string, periodKey?: string) {
-    const periodQuery = periodKey ? `?period=${encodeURIComponent(periodKey)}` : "";
-    const [detail, survey, analysis, noteData, report] = await Promise.all([
-      requestJson<{ ok: boolean; employee: any }>(`/api/admin/b2b/employees/${employeeId}`),
-      requestJson<any>(`/api/admin/b2b/employees/${employeeId}/survey${periodQuery}`),
-      requestJson<any>(`/api/admin/b2b/employees/${employeeId}/analysis${periodQuery}`),
-      requestJson<any>(`/api/admin/b2b/employees/${employeeId}/note${periodQuery}`),
-      requestJson<any>(`/api/admin/b2b/employees/${employeeId}/report${periodQuery}`),
-    ]);
+    const { detail, survey, analysis, note: noteData, report } =
+      await fetchEmployeeDetailBundle(employeeId, periodKey);
 
     setSelectedEmployeeDetail(detail.employee);
     setSurveyTemplate(survey.template.schema);
@@ -346,10 +153,13 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
 
     const answersFromJson = survey.response?.answersJson || {};
     const answersFromRows =
-      survey.response?.answers?.reduce((acc: Record<string, unknown>, row: any) => {
-        acc[row.questionKey] = row.answerText ?? row.answerValue ?? "";
-        return acc;
-      }, {}) ?? {};
+      survey.response?.answers?.reduce(
+        (acc: Record<string, unknown>, row: SurveyAnswerRow) => {
+          acc[row.questionKey] = row.answerText ?? row.answerValue ?? "";
+          return acc;
+        },
+        {}
+      ) ?? {};
     setSurveyAnswers(
       Object.keys(answersFromJson).length > 0 ? answersFromJson : answersFromRows
     );
@@ -423,13 +233,11 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     setError("");
     setNotice("");
     try {
-      await requestJson(`/api/admin/b2b/employees/${selectedEmployeeId}/survey`, {
-        method: "PUT",
-        body: JSON.stringify({
-          periodKey: selectedPeriodKey || undefined,
-          selectedSections,
-          answers: surveyAnswers,
-        }),
+      await saveSurvey({
+        employeeId: selectedEmployeeId,
+        periodKey: selectedPeriodKey || undefined,
+        selectedSections,
+        answers: surveyAnswers,
       });
       setNotice("설문을 저장했습니다.");
       await reloadCurrentEmployee();
@@ -446,12 +254,10 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     setError("");
     setNotice("");
     try {
-      await requestJson(`/api/admin/b2b/employees/${selectedEmployeeId}/analysis`, {
-        method: "PUT",
-        body: JSON.stringify({
-          periodKey: selectedPeriodKey || undefined,
-          payload: JSON.parse(analysisText || "{}"),
-        }),
+      await saveAnalysisPayload({
+        employeeId: selectedEmployeeId,
+        periodKey: selectedPeriodKey || undefined,
+        payload: JSON.parse(analysisText || "{}"),
       });
       setNotice("분석 JSON을 저장했습니다.");
       await reloadCurrentEmployee();
@@ -468,15 +274,12 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     setError("");
     setNotice("");
     try {
-      await requestJson(`/api/admin/b2b/employees/${selectedEmployeeId}/note`, {
-        method: "PUT",
-        body: JSON.stringify({
-          periodKey: selectedPeriodKey || undefined,
-          note,
-          recommendations,
-          cautions,
-          actorTag: "admin",
-        }),
+      await saveNote({
+        employeeId: selectedEmployeeId,
+        periodKey: selectedPeriodKey || undefined,
+        note,
+        recommendations,
+        cautions,
       });
       setNotice("약사 코멘트를 저장했습니다.");
       await reloadCurrentEmployee();
@@ -493,14 +296,10 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     setError("");
     setNotice("");
     try {
-      await requestJson(`/api/admin/b2b/employees/${selectedEmployeeId}/analysis`, {
-        method: "POST",
-        body: JSON.stringify({
-          periodKey: selectedPeriodKey || undefined,
-          generateAiEvaluation,
-          forceAiRegenerate: generateAiEvaluation,
-          replaceLatestPeriodEntry: true,
-        }),
+      await recomputeAnalysis({
+        employeeId: selectedEmployeeId,
+        periodKey: selectedPeriodKey || undefined,
+        generateAiEvaluation,
       });
       setNotice(
         generateAiEvaluation
@@ -521,13 +320,9 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     setError("");
     setNotice("");
     try {
-      await requestJson(`/api/admin/b2b/employees/${selectedEmployeeId}/report`, {
-        method: "POST",
-        body: JSON.stringify({
-          regenerate: true,
-          pageSize: "A4",
-          periodKey: selectedPeriodKey || undefined,
-        }),
+      await regenerateReport({
+        employeeId: selectedEmployeeId,
+        periodKey: selectedPeriodKey || undefined,
       });
       setNotice("레포트를 재생성했습니다.");
       await reloadCurrentEmployee();
@@ -544,12 +339,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     setError("");
     setNotice("");
     try {
-      const result = await requestJson<{
-        ok: boolean;
-        layout?: LayoutDocument;
-        audit?: ReportAudit;
-        issues?: LayoutValidationIssue[];
-      }>(`/api/admin/b2b/reports/${latestReport.id}/validation`);
+      const result = await runLayoutValidation(latestReport.id);
       setValidationAudit((result.audit ?? null) as ReportAudit | null);
       setValidationIssues(result.issues ?? []);
       if (result.layout) setValidatedLayout(result.layout);
@@ -603,10 +393,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     setError("");
     setNotice("");
     try {
-      const seeded = await requestJson<{ ok: boolean; employeeIds: string[] }>(
-        "/api/admin/b2b/demo/seed",
-        { method: "POST" }
-      );
+      const seeded = await seedDemoEmployees();
       await loadEmployees("데모");
       if (seeded.employeeIds[0]) setSelectedEmployeeId(seeded.employeeIds[0]);
       setNotice("데모 데이터를 생성했습니다.");
@@ -635,153 +422,29 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     });
   }
 
-  function renderQuestionInput(question: SurveyQuestion) {
-    const value = surveyAnswers[question.key];
-    if (question.type === "multi") {
-      const selected = new Set(toMultiValues(value));
-      return (
-        <div key={question.key} className={styles.optionalCard}>
-          <p className={styles.fieldLabel}>
-            {question.index}. {question.text}
-          </p>
-          <div className={styles.actionRow}>
-            {(question.options || []).map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                className={selected.has(option.value) ? styles.chipActive : styles.chip}
-                onClick={() => {
-                  const next = new Set(selected);
-                  if (next.has(option.value)) next.delete(option.value);
-                  else next.add(option.value);
-                  setAnswerValue(
-                    question,
-                    [...next].slice(0, question.maxSelect || maxSelectedSections)
-                  );
-                }}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      );
-    }
-
-    if (question.type === "single" && (question.options?.length ?? 0) > 0) {
-      return (
-        <div key={question.key} className={styles.optionalCard}>
-          <label className={styles.fieldLabel}>
-            {question.index}. {question.text}
-          </label>
-          <select
-            className={styles.select}
-            value={toInputValue(value)}
-            onChange={(event) => setAnswerValue(question, event.target.value)}
-          >
-            <option value="">선택하세요</option>
-            {(question.options || []).map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      );
-    }
-
-    return (
-      <div key={question.key} className={styles.optionalCard}>
-        <label className={styles.fieldLabel}>
-          {question.index}. {question.text}
-        </label>
-        <input
-          className={styles.input}
-          value={toInputValue(value)}
-          onChange={(event) => setAnswerValue(question, event.target.value)}
-          placeholder={question.placeholder || "응답 입력"}
-        />
-      </div>
-    );
-  }
-
   return (
     <div className={`${styles.page} ${styles.stack}`}>
-      <header className={styles.heroCard}>
-        <p className={styles.kicker}>B2B REPORT OPS</p>
-        <h1 className={styles.title}>임직원 건강 레포트 운영</h1>
-        <p className={styles.description}>
-          핵심 흐름은 임직원 선택 → 레포트 확인 → PDF/PPTX 다운로드입니다. 편집/검증은
-          고급 섹션에서 선택적으로 사용하세요.
-        </p>
-        <div className={styles.actionRow}>
-          <input
-            className={styles.input}
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.preventDefault();
-                void handleSearch();
-              }
-            }}
-            placeholder="이름, 생년월일, 휴대폰 번호 검색"
-            style={{ minWidth: 280 }}
-          />
-          <button
-            type="button"
-            onClick={handleSearch}
-            disabled={busy}
-            className={styles.buttonPrimary}
-          >
-            검색
-          </button>
-          {demoMode ? (
-            <button
-              type="button"
-              onClick={handleSeedDemo}
-              disabled={busy}
-              className={styles.buttonSecondary}
-            >
-              데모 생성
-            </button>
-          ) : null}
-        </div>
-      </header>
+      <B2bAdminOpsHero
+        search={search}
+        busy={busy}
+        demoMode={demoMode}
+        onSearchChange={setSearch}
+        onSearchSubmit={() => void handleSearch()}
+        onSeedDemo={() => void handleSeedDemo()}
+      />
 
       {error ? <div className={styles.noticeError}>{error}</div> : null}
       {notice ? <div className={styles.noticeSuccess}>{notice}</div> : null}
 
       <div className={styles.splitLayout}>
-        <section className={`${styles.sectionCard} ${styles.sidebarCard}`}>
-          <h2 className={styles.sectionTitle}>임직원 목록</h2>
-          <div className={styles.listWrap}>
-            {employees.map((employee) => (
-              <button
-                key={employee.id}
-                type="button"
-                onClick={() => {
-                  setSelectedEmployeeId(employee.id);
-                  setSelectedPeriodKey("");
-                }}
-                className={`${styles.listButton} ${
-                  selectedEmployeeId === employee.id ? styles.listButtonActive : ""
-                }`}
-              >
-                <span className={styles.listTitle}>{employee.name}</span>
-                <span className={styles.listMeta}>
-                  {employee.birthDate} / {normalizeDigits(employee.phoneNormalized)}
-                </span>
-                <span className={styles.listMeta}>
-                  스냅샷 {employee.counts.healthSnapshots}건 / 레포트 {employee.counts.reports}건
-                </span>
-              </button>
-            ))}
-            {employees.length === 0 ? (
-              <div className={styles.noticeInfo}>조회된 임직원이 없습니다.</div>
-            ) : null}
-          </div>
-        </section>
+        <B2bEmployeeSidebar
+          employees={employees}
+          selectedEmployeeId={selectedEmployeeId}
+          onSelectEmployee={(employeeId) => {
+            setSelectedEmployeeId(employeeId);
+            setSelectedPeriodKey("");
+          }}
+        />
 
         <div className={styles.stack}>
           {!selectedEmployeeId ? (
@@ -794,271 +457,68 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
 
           {selectedEmployeeId && selectedEmployeeDetail ? (
             <>
-              <section className={styles.sectionCard}>
-                <h2 className={styles.sectionTitle}>
-                  {selectedEmployeeDetail.name} ({selectedEmployeeDetail.birthDate})
-                </h2>
-                <p className={styles.sectionDescription}>
-                  최근 연동:{" "}
-                  {formatRelativeTime(
-                    selectedEmployeeDetail.lastSyncedAt || latestReport?.updatedAt
-                  )}
-                </p>
-                <div className={styles.actionRow}>
-                  <select
-                    className={styles.select}
-                    value={selectedPeriodKey}
-                    disabled={periodOptions.length === 0}
-                    onChange={(event) => {
-                      const next = event.target.value;
-                      setSelectedPeriodKey(next);
-                      if (selectedEmployeeId) void loadEmployeeDetail(selectedEmployeeId, next);
-                    }}
-                  >
-                    {periodOptions.length === 0 ? (
-                      <option value="">기간 없음</option>
-                    ) : (
-                      periodOptions.map((period) => (
-                        <option key={period} value={period}>
-                          {period}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={handleExportPdf}
-                    disabled={busy || !latestReport?.id}
-                    className={styles.buttonPrimary}
-                  >
-                    PDF 다운로드
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleExportPptx}
-                    disabled={busy || !latestReport?.id}
-                    className={styles.buttonSecondary}
-                  >
-                    PPTX 다운로드
-                  </button>
-                </div>
-                <details className={styles.optionalCard}>
-                  <summary>고급 작업</summary>
-                  <div className={styles.optionalBody}>
-                    <div className={styles.optionalCard}>
-                      <p className={styles.optionalText}>
-                        최근 연동 시각: {formatDateTime(selectedEmployeeDetail.lastSyncedAt)}
-                      </p>
-                      <p className={styles.optionalText}>
-                        레포트 생성 시각:{" "}
-                        {formatDateTime(
-                          latestReport?.payload?.meta?.generatedAt || latestReport?.updatedAt
-                        )}
-                      </p>
-                      <p className={styles.optionalText}>
-                        레포트 갱신 시각: {formatDateTime(latestReport?.updatedAt)}
-                      </p>
-                    </div>
-                    <div className={styles.actionRow}>
-                      <button
-                        type="button"
-                        onClick={handleRegenerateReport}
-                        disabled={busy}
-                        className={styles.buttonGhost}
-                      >
-                        레포트 재생성
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleRecomputeAnalysis(false)}
-                        disabled={busy}
-                        className={styles.buttonGhost}
-                      >
-                        분석 재계산
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleRecomputeAnalysis(true)}
-                        disabled={busy}
-                        className={styles.buttonGhost}
-                      >
-                        AI 재생성
-                      </button>
-                    </div>
-                  </div>
-                </details>
-              </section>
+              <B2bEmployeeOverviewCard
+                detail={selectedEmployeeDetail}
+                latestReport={latestReport}
+                selectedPeriodKey={selectedPeriodKey}
+                periodOptions={periodOptions}
+                busy={busy}
+                onPeriodChange={(next) => {
+                  setSelectedPeriodKey(next);
+                  if (selectedEmployeeId) void loadEmployeeDetail(selectedEmployeeId, next);
+                }}
+                onExportPdf={() => void handleExportPdf()}
+                onExportPptx={() => void handleExportPptx()}
+                onRegenerateReport={() => void handleRegenerateReport()}
+                onRecomputeAnalysis={(generateAiEvaluation) => {
+                  void handleRecomputeAnalysis(generateAiEvaluation);
+                }}
+              />
 
               <ReportSummaryCards payload={latestReport?.payload} viewerMode="admin" />
 
-              <details className={styles.optionalCard}>
-                <summary>
-                  설문 입력 ({completionStats.answered}/{completionStats.total},{" "}
-                  {completionStats.percent}%)
-                </summary>
-                <div className={styles.optionalBody}>
-                  <p className={styles.optionalText}>
-                    마지막 저장: {formatDateTime(surveyUpdatedAt)} / 필수{" "}
-                    {completionStats.requiredAnswered}/{completionStats.requiredTotal}
-                  </p>
-                  <div className={styles.actionRow}>
-                    {(surveyTemplate?.sectionCatalog ?? []).map((section) => (
-                      <button
-                        key={section.key}
-                        type="button"
-                        onClick={() => toggleSection(section.key)}
-                        className={
-                          selectedSectionSet.has(section.key) ? styles.chipActive : styles.chip
-                        }
-                      >
-                        {section.displayName || `${section.key} ${section.title}`}
-                      </button>
-                    ))}
-                  </div>
-                  <div className={styles.twoCol}>
-                    <div className={styles.stack}>
-                      <h3 className={styles.sectionTitle}>공통 문항</h3>
-                      {(surveyTemplate?.common ?? []).map((q) => renderQuestionInput(q))}
-                    </div>
-                    <div className={styles.stack}>
-                      <h3 className={styles.sectionTitle}>선택 섹션 문항</h3>
-                      {selectedSectionObjects.length === 0 ? (
-                        <p className={styles.inlineHint}>선택된 섹션이 없습니다.</p>
-                      ) : null}
-                      {selectedSectionObjects.map((section) => (
-                        <section key={section.key} className={styles.sectionCard}>
-                          <h4 className={styles.sectionTitle}>
-                            {section.displayName || `${section.key} ${section.title}`}
-                          </h4>
-                          <div className={styles.stack}>
-                            {section.questions.map((q) => renderQuestionInput(q))}
-                          </div>
-                        </section>
-                      ))}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleSaveSurvey}
-                    disabled={busy}
-                    className={styles.buttonPrimary}
-                  >
-                    설문 저장
-                  </button>
-                </div>
-              </details>
+              <B2bSurveyEditorPanel
+                completionStats={completionStats}
+                surveyUpdatedAt={surveyUpdatedAt}
+                surveyTemplate={surveyTemplate}
+                selectedSectionSet={selectedSectionSet}
+                selectedSectionObjects={selectedSectionObjects}
+                surveyAnswers={surveyAnswers}
+                maxSelectedSections={maxSelectedSections}
+                busy={busy}
+                onToggleSection={toggleSection}
+                onSetAnswerValue={setAnswerValue}
+                onSaveSurvey={() => void handleSaveSurvey()}
+              />
 
-              <details className={styles.optionalCard}>
-                <summary>약사 코멘트 편집</summary>
-                <div className={styles.optionalBody}>
-                  <textarea
-                    className={styles.textarea}
-                    value={note}
-                    onChange={(event) => setNote(event.target.value)}
-                    placeholder="요약 메모"
-                  />
-                  <textarea
-                    className={styles.textarea}
-                    value={recommendations}
-                    onChange={(event) => setRecommendations(event.target.value)}
-                    placeholder="권장 사항"
-                  />
-                  <textarea
-                    className={styles.textarea}
-                    value={cautions}
-                    onChange={(event) => setCautions(event.target.value)}
-                    placeholder="주의 사항"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleSaveNote}
-                    disabled={busy}
-                    className={styles.buttonPrimary}
-                  >
-                    코멘트 저장
-                  </button>
-                </div>
-              </details>
+              <B2bNoteEditorPanel
+                note={note}
+                recommendations={recommendations}
+                cautions={cautions}
+                busy={busy}
+                onNoteChange={setNote}
+                onRecommendationsChange={setRecommendations}
+                onCautionsChange={setCautions}
+                onSave={() => void handleSaveNote()}
+              />
 
-              <details className={styles.optionalCard}>
-                <summary>분석 JSON 편집</summary>
-                <div className={styles.optionalBody}>
-                  <textarea
-                    className={`${styles.textarea} ${styles.mono}`}
-                    style={{ minHeight: 280 }}
-                    value={analysisText}
-                    onChange={(event) => setAnalysisText(event.target.value)}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleSaveAnalysisPayload}
-                    disabled={busy}
-                    className={styles.buttonPrimary}
-                  >
-                    분석 JSON 저장
-                  </button>
-                </div>
-              </details>
+              <B2bAnalysisJsonPanel
+                analysisText={analysisText}
+                busy={busy}
+                onAnalysisTextChange={setAnalysisText}
+                onSave={() => void handleSaveAnalysisPayload()}
+              />
 
-              <details className={styles.optionalCard}>
-                <summary>레이아웃 검증 및 디버그</summary>
-                <div className={styles.optionalBody}>
-                  <div className={styles.actionRow}>
-                    <button
-                      type="button"
-                      onClick={handleRunValidation}
-                      disabled={busy || !latestReport?.id}
-                      className={styles.buttonSecondary}
-                    >
-                      레이아웃 검증 실행
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowExportPreview((prev) => !prev)}
-                      className={styles.buttonGhost}
-                    >
-                      {showExportPreview ? "A4 프리뷰 숨기기" : "A4 프리뷰 보기"}
-                    </button>
-                  </div>
-                  {(validationAudit?.validation?.length ?? 0) > 0 ? (
-                    <ul className={styles.listPlain}>
-                      {(validationAudit?.validation ?? []).map((entry) => (
-                        <li key={entry.stage}>
-                          [{entry.stage}] {entry.ok ? "통과" : "실패"} / static{" "}
-                          {entry.staticIssueCount ?? 0} / runtime{" "}
-                          {entry.runtimeIssueCount ?? 0}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className={styles.inlineHint}>검증 기록이 없습니다.</p>
-                  )}
-                  {validationIssues.length > 0 ? (
-                    <ul className={styles.listPlain}>
-                      {validationIssues.map((issue, index) => (
-                        <li key={`${issue.pageId}-${index}`}>
-                          <strong>[{issue.code}]</strong> {issue.detail}
-                          <div className={styles.inlineHint}>{formatIssueDebug(issue)}</div>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className={styles.inlineHint}>현재 검증 이슈가 없습니다.</p>
-                  )}
-                  {showExportPreview ? (
-                    latestLayout ? (
-                      <ReportRenderer
-                        layout={latestLayout}
-                        fitToWidth
-                        debugOverlay
-                        issues={validationIssues}
-                      />
-                    ) : (
-                      <p className={styles.inlineHint}>표시할 레이아웃이 없습니다.</p>
-                    )
-                  ) : null}
-                </div>
-              </details>
+              <B2bLayoutValidationPanel
+                busy={busy}
+                latestReportId={latestReport?.id ?? null}
+                showExportPreview={showExportPreview}
+                latestLayout={latestLayout}
+                validationAudit={validationAudit}
+                validationIssues={validationIssues}
+                onRunValidation={() => void handleRunValidation()}
+                onTogglePreview={() => setShowExportPreview((prev) => !prev)}
+              />
             </>
           ) : null}
         </div>

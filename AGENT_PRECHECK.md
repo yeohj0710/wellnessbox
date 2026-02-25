@@ -13,6 +13,12 @@ npm run lint
 npm run build
 # Optional (DB-connected env): client ID linkage/quality audit
 npm run audit:clients
+# Optional (C~E regression smoke): column/employee-report/b2b-export
+npm run qa:cde:regression
+# Optional (local auto-runner): start/reuse dev server then run C~E regression
+npm run qa:cde:regression:local
+# Optional (B2B score-engine safety): missing/fallback/risk derivation checks
+npm run qa:b2b:score-engine
 ```
 
 Or run one command:
@@ -219,3 +225,69 @@ When touching these files, prefer block-level extraction over in-place growth:
   - `lib/rnd/module07-biosensor-genetic-integration/mvp-engine.shared.ts` = run-id/source/sensitivity/group/sort/source-summary helpers
   - `lib/rnd/module07-biosensor-genetic-integration/mvp-engine.artifacts.ts` = session artifact payload + evidence + lineage builders
 - If editing algorithm contracts, keep builders in `mvp-engine.artifacts.ts` aligned first, then wire orchestration in `mvp-engine.ts`.
+
+## 17) B2B Score Engine Map
+
+- 점수 산출 분리 경계:
+  - `lib/b2b/report-score-engine.ts` = 점수 산출 오케스트레이션(우선순위/결측 처리/사유(detail) 구성)
+  - `lib/b2b/report-score-profile.ts` = 가중치/상태별 점수/위험도 밴드 정책
+  - `lib/b2b/report-payload.ts` = 원천 데이터 수집 후 엔진 호출 + payload 주입
+- 점수 정책 교체는 프로파일 파일부터 수정하고, 엔진은 가능한 한 조합만 담당하게 유지.
+
+## 18) C~E QA Selector Map
+
+- `scripts/qa/verify-cde-regression.cjs`는 employee-report 자동검증 시 텍스트 매칭 대신 `data-testid`를 우선 사용.
+- selector 계약 문서: `docs/qa_cde_regression_selectors.md`
+- UI 리팩터 시 selector 변경이 필요하면, QA 스크립트와 문서를 반드시 한 번에 동기화.
+
+## 19) B2B Admin Report Client Map
+
+- `admin/b2b-reports` 경계:
+  - 오케스트레이션: `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx`
+  - UI 블록:
+    - `app/(admin)/admin/b2b-reports/_components/B2bAdminOpsHero.tsx`
+    - `app/(admin)/admin/b2b-reports/_components/B2bEmployeeSidebar.tsx`
+    - `app/(admin)/admin/b2b-reports/_components/B2bEmployeeOverviewCard.tsx`
+    - `app/(admin)/admin/b2b-reports/_components/B2bSurveyEditorPanel.tsx`
+    - `app/(admin)/admin/b2b-reports/_components/B2bNoteEditorPanel.tsx`
+    - `app/(admin)/admin/b2b-reports/_components/B2bAnalysisJsonPanel.tsx`
+    - `app/(admin)/admin/b2b-reports/_components/B2bLayoutValidationPanel.tsx`
+  - 설문 입력 필드 UI: `app/(admin)/admin/b2b-reports/_components/SurveyQuestionField.tsx`
+  - 클라이언트 타입: `app/(admin)/admin/b2b-reports/_lib/client-types.ts`
+  - 클라이언트 API: `app/(admin)/admin/b2b-reports/_lib/api.ts`
+  - 클라이언트 유틸: `app/(admin)/admin/b2b-reports/_lib/client-utils.ts`
+  - 공용 payload 타입: `lib/b2b/report-summary-payload.ts`
+- 상세 가이드: `docs/b2b_admin_report_client_map.md`
+
+## 20) B2B Report Summary Map
+
+- `components/b2b/ReportSummaryCards.tsx`는 표현/뷰모델 조합 중심으로 유지.
+- payload 계약 변경은 `lib/b2b/report-summary-payload.ts`부터 수정 후 컴파일 에러를 따라 반영.
+- score 정책 변경은 `lib/b2b/report-score-profile.ts`, `lib/b2b/report-score-engine.ts`에서 처리.
+- 상세 가이드: `docs/b2b_report_summary_map.md`
+
+## 21) Column Editor Map
+
+- `/admin/column/editor` 유지보수 경계:
+  - 오케스트레이션: `app/(admin)/admin/column/editor/EditorAdminClient.tsx`
+  - UI 블록:
+    - `app/(admin)/admin/column/editor/_components/ColumnEditorHeader.tsx`
+    - `app/(admin)/admin/column/editor/_components/ColumnPostListSidebar.tsx`
+    - `app/(admin)/admin/column/editor/_components/ColumnEditorWorkspace.tsx`
+  - 타입 계약: `app/(admin)/admin/column/editor/_lib/types.ts`
+  - API 호출: `app/(admin)/admin/column/editor/_lib/api.ts`
+  - 순수 유틸: `app/(admin)/admin/column/editor/_lib/utils.ts`
+- 상세 가이드: `docs/column_editor_client_map.md`
+
+## 22) Employee Report Client Map
+
+- `/employee-report` 유지보수 경계:
+  - 오케스트레이션: `app/(features)/employee-report/EmployeeReportClient.tsx`
+  - 타입 계약: `app/(features)/employee-report/_lib/client-types.ts`
+  - API 경계: `app/(features)/employee-report/_lib/api.ts`
+  - 요청/가이드 유틸: `app/(features)/employee-report/_lib/client-utils.ts`
+  - UI 블록:
+    - `app/(features)/employee-report/_components/EmployeeReportIdentitySection.tsx`
+    - `app/(features)/employee-report/_components/EmployeeReportSummaryHeaderCard.tsx`
+    - `app/(features)/employee-report/_components/EmployeeReportSyncGuidanceNotice.tsx`
+- 상세 가이드: `docs/employee_report_client_map.md`

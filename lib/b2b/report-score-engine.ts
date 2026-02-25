@@ -1,3 +1,11 @@
+import {
+  DEFAULT_REPORT_SCORE_PROFILE,
+  resolveHealthMetricScore,
+  resolveRiskLevelFromScore,
+  type ReportRiskLevel,
+  type ReportScoreProfile,
+} from "./report-score-profile";
+
 export type ReportScoreKey = "overall" | "survey" | "health" | "medication";
 
 export type ReportScoreStatus = "computed" | "estimated" | "missing";
@@ -51,7 +59,7 @@ export type ReportScoreEngineResult = {
     surveyScore: number | null;
     healthScore: number | null;
     medicationScore: number | null;
-    riskLevel: string;
+    riskLevel: ReportRiskLevel;
   };
   details: ReportScoreDetailMap;
 };
@@ -118,7 +126,7 @@ function estimatedScore(
   };
 }
 
-function normalizeRiskLevel(value: string | null | undefined) {
+function normalizeRiskLevel(value: string | null | undefined): ReportRiskLevel {
   const normalized = (value || "").trim().toLowerCase();
   if (!normalized) return "unknown";
   if (["high", "고위험", "높음"].includes(normalized)) return "high";
@@ -127,11 +135,8 @@ function normalizeRiskLevel(value: string | null | undefined) {
   return "unknown";
 }
 
-function riskFromScore(score: number | null) {
-  if (!isFiniteNumber(score)) return "unknown";
-  if (score >= 80) return "low";
-  if (score >= 60) return "medium";
-  return "high";
+function riskFromScore(score: number | null, profile: ReportScoreProfile) {
+  return resolveRiskLevelFromScore(score, profile);
 }
 
 function deriveSurveyScore(input: ReportScoreEngineInput): ReportScoreDetail {
@@ -192,7 +197,10 @@ function deriveSurveyScore(input: ReportScoreEngineInput): ReportScoreDetail {
   );
 }
 
-function deriveHealthScore(input: ReportScoreEngineInput): ReportScoreDetail {
+function deriveHealthScore(
+  input: ReportScoreEngineInput,
+  profile: ReportScoreProfile
+): ReportScoreDetail {
   const bySummary = scoreFromAnalysis(
     "health",
     input.analysisSummary?.healthScore,
@@ -205,14 +213,9 @@ function deriveHealthScore(input: ReportScoreEngineInput): ReportScoreDetail {
     return missingScore("health", "검진 점수 계산에 필요한 핵심 지표가 없습니다.");
   }
 
-  const mapped = metrics.map((metric) => {
-    const status = (metric.status || "").trim().toLowerCase();
-    if (status === "normal") return 85;
-    if (status === "high") return 35;
-    if (status === "low" || status === "caution") return 60;
-    if (status === "unknown") return 50;
-    return 50;
-  });
+  const mapped = metrics.map((metric) =>
+    resolveHealthMetricScore(metric.status, profile)
+  );
 
   const score = mapped.reduce((sum, item) => sum + item, 0) / mapped.length;
   return estimatedScore(
@@ -223,7 +226,10 @@ function deriveHealthScore(input: ReportScoreEngineInput): ReportScoreDetail {
   );
 }
 
-function deriveMedicationScore(input: ReportScoreEngineInput): ReportScoreDetail {
+function deriveMedicationScore(
+  input: ReportScoreEngineInput,
+  profile: ReportScoreProfile
+): ReportScoreDetail {
   const bySummary = scoreFromAnalysis(
     "medication",
     input.analysisSummary?.medicationScore,
@@ -245,7 +251,9 @@ function deriveMedicationScore(input: ReportScoreEngineInput): ReportScoreDetail
   if (type === "available") {
     return estimatedScore(
       "medication",
-      medicationCount > 0 ? 85 : 75,
+      medicationCount > 0
+        ? profile.medicationScores.availableWithItems
+        : profile.medicationScores.availableEmpty,
       "medication_status",
       "최근 복약 이력의 연동 상태를 기반으로 점수를 추정했습니다."
     );
@@ -254,7 +262,7 @@ function deriveMedicationScore(input: ReportScoreEngineInput): ReportScoreDetail
   if (type === "none") {
     return estimatedScore(
       "medication",
-      60,
+      profile.medicationScores.none,
       "medication_status",
       "복약 이력이 없는 상태를 기준으로 점수를 추정했습니다."
     );
@@ -269,7 +277,8 @@ function deriveOverallScore(
     survey: ReportScoreDetail;
     health: ReportScoreDetail;
     medication: ReportScoreDetail;
-  }
+  },
+  profile: ReportScoreProfile
 ): ReportScoreDetail {
   const bySummary = scoreFromAnalysis(
     "overall",
@@ -279,9 +288,9 @@ function deriveOverallScore(
   if (bySummary) return bySummary;
 
   const weightedSources = [
-    { detail: components.survey, weight: 0.5 },
-    { detail: components.health, weight: 0.35 },
-    { detail: components.medication, weight: 0.15 },
+    { detail: components.survey, weight: profile.weights.survey },
+    { detail: components.health, weight: profile.weights.health },
+    { detail: components.medication, weight: profile.weights.medication },
   ].filter((item) => isFiniteNumber(item.detail.value));
 
   if (weightedSources.length === 0) {
@@ -306,17 +315,20 @@ function deriveOverallScore(
   );
 }
 
-export function resolveReportScores(input: ReportScoreEngineInput): ReportScoreEngineResult {
+export function resolveReportScores(
+  input: ReportScoreEngineInput,
+  profile: ReportScoreProfile = DEFAULT_REPORT_SCORE_PROFILE
+): ReportScoreEngineResult {
   const survey = deriveSurveyScore(input);
-  const health = deriveHealthScore(input);
-  const medication = deriveMedicationScore(input);
-  const overall = deriveOverallScore(input, { survey, health, medication });
+  const health = deriveHealthScore(input, profile);
+  const medication = deriveMedicationScore(input, profile);
+  const overall = deriveOverallScore(input, { survey, health, medication }, profile);
 
   const riskLevelFromAnalysis = normalizeRiskLevel(input.analysisSummary?.riskLevel);
   const riskLevel =
     riskLevelFromAnalysis !== "unknown"
       ? riskLevelFromAnalysis
-      : riskFromScore(overall.value);
+      : riskFromScore(overall.value, profile);
 
   const details: ReportScoreDetailMap = {
     overall,

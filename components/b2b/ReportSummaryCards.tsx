@@ -3,88 +3,29 @@
 import styles from "./B2bUx.module.css";
 import {
   REPORT_ACCENT_COLORS,
-  clampScore,
-  formatScore,
   medicationStatusLabel,
   medicationStatusTone,
   normalizeMetricStatusLabel,
   normalizeRiskLevelLabel,
   resolveMetricStatusTone,
-  scorePercent,
 } from "@/lib/b2b/report-design";
-import type {
-  ReportScoreDetail,
-  ReportScoreDetailMap,
-  ReportScoreKey,
-} from "@/lib/b2b/report-score-engine";
-
-type PayloadSummary = {
-  meta?: {
-    employeeName?: string;
-    generatedAt?: string;
-    periodKey?: string;
-    isMockData?: boolean;
-  };
-  analysis?: {
-    summary?: {
-      overallScore?: number | null;
-      surveyScore?: number | null;
-      healthScore?: number | null;
-      medicationScore?: number | null;
-      riskLevel?: string;
-      topIssues?: Array<{ title?: string; score?: number; reason?: string }>;
-    };
-    scoreDetails?: Partial<ReportScoreDetailMap>;
-    recommendations?: string[];
-    trend?: {
-      months?: Array<{
-        periodKey?: string;
-        overallScore?: number;
-        surveyScore?: number;
-        healthScore?: number;
-      }>;
-    };
-    aiEvaluation?: {
-      summary?: string;
-      monthlyGuide?: string;
-      actionItems?: string[];
-      caution?: string;
-    } | null;
-  };
-  survey?: {
-    sectionScores?: Array<{
-      sectionTitle?: string;
-      score?: number;
-      answeredCount?: number;
-      questionCount?: number;
-    }>;
-    answers?: Array<{ questionKey?: string }>;
-  };
-  health?: {
-    coreMetrics?: Array<{
-      label?: string;
-      value?: string;
-      unit?: string | null;
-      status?: string;
-    }>;
-    medicationStatus?: {
-      type?: "available" | "none" | "fetch_failed" | "unknown";
-      message?: string | null;
-      failedTargets?: string[];
-    };
-    medications?: Array<{
-      medicationName?: string;
-      date?: string | null;
-      dosageDay?: string | null;
-      hospitalName?: string | null;
-    }>;
-  };
-  pharmacist?: {
-    summary?: string | null;
-    recommendations?: string | null;
-    cautions?: string | null;
-  };
-};
+import type { ReportSummaryPayload } from "@/lib/b2b/report-summary-payload";
+import {
+  badgeClass,
+  buildSparklinePoints,
+  ensureArray,
+  firstOrDash,
+  formatDate,
+  formatDelta,
+  resolveScore,
+  scoreBarClass,
+  scoreTone,
+  scoreWidth,
+  toScoreLabel,
+  toScoreValue,
+  toneColor,
+  toneLabel,
+} from "./report-summary/helpers";
 
 const GAUGE_RADIUS = 46;
 const GAUGE_CIRCUMFERENCE = 2 * Math.PI * GAUGE_RADIUS;
@@ -92,130 +33,8 @@ const SPARKLINE_WIDTH = 320;
 const SPARKLINE_HEIGHT = 112;
 const SPARKLINE_PAD = 12;
 
-function firstOrDash(value: string | null | undefined) {
-  if (!value) return "-";
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : "-";
-}
-
-function formatDate(value: unknown) {
-  if (typeof value !== "string" || !value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("ko-KR");
-}
-
-function scoreTone(score: number | null): "ok" | "warning" | "danger" | "muted" {
-  if (score == null) return "muted";
-  if (score >= 80) return "ok";
-  if (score >= 60) return "warning";
-  return "danger";
-}
-
-function scoreBarClass(score: number | null) {
-  if (score == null) return "bg-slate-300";
-  if (score >= 80) return "bg-emerald-500";
-  if (score >= 60) return "bg-amber-500";
-  return "bg-rose-500";
-}
-
-function badgeClass(tone: "ok" | "warning" | "danger" | "muted") {
-  if (tone === "ok") return "bg-emerald-50 text-emerald-700 border-emerald-200";
-  if (tone === "warning") return "bg-amber-50 text-amber-700 border-amber-200";
-  if (tone === "danger") return "bg-rose-50 text-rose-700 border-rose-200";
-  return "bg-slate-100 text-slate-600 border-slate-200";
-}
-
-function toneLabel(tone: "ok" | "warning" | "danger" | "muted") {
-  if (tone === "ok") return "정상";
-  if (tone === "warning") return "주의";
-  if (tone === "danger") return "고위험";
-  return "미측정";
-}
-
-function toneColor(tone: "ok" | "warning" | "danger" | "muted") {
-  if (tone === "ok") return "#16A34A";
-  if (tone === "warning") return "#D97706";
-  if (tone === "danger") return "#DC2626";
-  return "#94A3B8";
-}
-
-function toScoreValue(value: unknown): number | null {
-  if (typeof value !== "number" || !Number.isFinite(value)) return null;
-  return clampScore(value);
-}
-
-function toScoreLabel(value: number | null) {
-  if (value == null) return "점수 없음";
-  return formatScore(value);
-}
-
-function scoreWidth(value: number | null) {
-  if (value == null) return 0;
-  return scorePercent(value);
-}
-
-function resolveScore(
-  key: ReportScoreKey,
-  fallbackValue: unknown,
-  details: Partial<ReportScoreDetailMap> | undefined
-) {
-  const detail = details?.[key] as ReportScoreDetail | undefined;
-  const detailValue = toScoreValue(detail?.value);
-  if (detail) {
-    return {
-      value: detailValue,
-      status: detail.status,
-      source: detail.source,
-      reason: detail.reason,
-      label: detail.label,
-    };
-  }
-  const fallback = toScoreValue(fallbackValue);
-  if (fallback != null) {
-    return {
-      value: fallback,
-      status: "computed" as const,
-      source: "analysis_summary" as const,
-      reason: "분석 점수를 사용했습니다.",
-      label: "",
-    };
-  }
-  return {
-    value: null,
-    status: "missing" as const,
-    source: "none" as const,
-    reason: "점수를 산출할 데이터가 부족합니다.",
-    label: "",
-  };
-}
-
-function buildSparklinePoints(scores: number[]) {
-  if (scores.length === 0) return "";
-  const width = SPARKLINE_WIDTH - SPARKLINE_PAD * 2;
-  const height = SPARKLINE_HEIGHT - SPARKLINE_PAD * 2;
-  const stepX = scores.length > 1 ? width / (scores.length - 1) : 0;
-
-  return scores
-    .map((score, index) => {
-      const x = SPARKLINE_PAD + stepX * index;
-      const y = SPARKLINE_HEIGHT - SPARKLINE_PAD - (score / 100) * height;
-      return `${x.toFixed(2)},${y.toFixed(2)}`;
-    })
-    .join(" ");
-}
-
-function formatDelta(current: number | null, previous: number | null) {
-  if (current == null) return "점수 데이터 부족";
-  if (previous == null) return "비교 데이터 없음";
-  const delta = current - previous;
-  if (delta === 0) return "전월과 동일";
-  if (delta > 0) return `전월 대비 +${delta}점`;
-  return `전월 대비 ${delta}점`;
-}
-
 export default function ReportSummaryCards(props: {
-  payload: PayloadSummary | null | undefined;
+  payload: ReportSummaryPayload | null | undefined;
   viewerMode?: "employee" | "admin";
 }) {
   const payload = props.payload;
@@ -229,12 +48,12 @@ export default function ReportSummaryCards(props: {
     );
   }
 
-  const topIssues = payload.analysis?.summary?.topIssues ?? [];
-  const sectionScores = payload.survey?.sectionScores ?? [];
-  const recommendations = payload.analysis?.recommendations ?? [];
-  const trendMonths = payload.analysis?.trend?.months ?? [];
-  const metrics = payload.health?.coreMetrics ?? [];
-  const medications = payload.health?.medications ?? [];
+  const topIssues = ensureArray(payload.analysis?.summary?.topIssues);
+  const sectionScores = ensureArray(payload.survey?.sectionScores);
+  const recommendations = ensureArray(payload.analysis?.recommendations);
+  const trendMonths = ensureArray(payload.analysis?.trend?.months);
+  const metrics = ensureArray(payload.health?.coreMetrics);
+  const medications = ensureArray(payload.health?.medications);
   const ai = payload.analysis?.aiEvaluation;
   const medStatus = payload.health?.medicationStatus;
   const scoreDetails = payload.analysis?.scoreDetails;
@@ -268,7 +87,7 @@ export default function ReportSummaryCards(props: {
   const gaugeOffset =
     overallScore == null
       ? GAUGE_CIRCUMFERENCE
-      : GAUGE_CIRCUMFERENCE * (1 - scorePercent(overallScore) / 100);
+      : GAUGE_CIRCUMFERENCE * (1 - scoreWidth(overallScore) / 100);
 
   const summaryCards = [
     {
@@ -328,7 +147,11 @@ export default function ReportSummaryCards(props: {
     healthScore: toScoreValue(row.healthScore),
   }));
   const sparklineScores = trendRows.map((row) => row.overallScore ?? 0);
-  const sparklinePoints = buildSparklinePoints(sparklineScores);
+  const sparklinePoints = buildSparklinePoints(sparklineScores, {
+    width: SPARKLINE_WIDTH,
+    height: SPARKLINE_HEIGHT,
+    pad: SPARKLINE_PAD,
+  });
   const previousOverallScore =
     trendRows.length >= 2 ? trendRows[trendRows.length - 2].overallScore : null;
   const overallDeltaText = formatDelta(overallScore, previousOverallScore);
@@ -363,7 +186,8 @@ export default function ReportSummaryCards(props: {
     (sum, row) => sum + (row.questionCount ?? 0),
     0
   );
-  const surveyResponseCount = payload.survey?.answers?.length ?? surveyAnsweredCount;
+  const surveyResponseCount =
+    ensureArray(payload.survey?.answers).length || surveyAnsweredCount;
 
   const sectionScoreChart = [...sectionScores]
     .map((row) => ({
@@ -375,7 +199,7 @@ export default function ReportSummaryCards(props: {
     .sort((a, b) => a.score - b.score)
     .slice(0, 6);
 
-  const guideItems = (ai?.actionItems ?? [])
+  const guideItems = ensureArray(ai?.actionItems)
     .filter((item): item is string => Boolean(item && item.trim()))
     .slice(0, 5);
   const fallbackGuideItems = recommendations
