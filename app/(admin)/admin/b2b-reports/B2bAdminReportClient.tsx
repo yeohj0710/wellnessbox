@@ -59,6 +59,26 @@ type ReportAudit = {
   }>;
 };
 
+type ExportApiFailure = {
+  ok?: false;
+  error?: string;
+  code?: string;
+  reason?: string;
+  debugId?: string;
+  audit?: ReportAudit;
+  issues?: LayoutValidationIssue[];
+};
+
+class ExportApiError extends Error {
+  payload: ExportApiFailure;
+
+  constructor(payload: ExportApiFailure) {
+    super(payload.error || "내보내기에 실패했습니다.");
+    this.name = "ExportApiError";
+    this.payload = payload;
+  }
+}
+
 type LatestReport = {
   id: string;
   status: string;
@@ -192,8 +212,8 @@ function filenameFromDisposition(header: string | null, fallback: string) {
 async function downloadFromApi(url: string, fallbackName: string) {
   const response = await fetch(url, { cache: "no-store" });
   if (!response.ok) {
-    const data = await response.json().catch(() => ({}));
-    throw new Error(data?.error || "다운로드에 실패했습니다.");
+    const data = (await response.json().catch(() => ({}))) as ExportApiFailure;
+    throw new ExportApiError(data);
   }
   const blob = await response.blob();
   const filename = filenameFromDisposition(
@@ -283,6 +303,24 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
       percent: total > 0 ? Math.round((answered / total) * 100) : 0,
     };
   }, [surveyTemplate, selectedSectionSet, surveyAnswers]);
+
+  function applyExportFailure(err: unknown, fallbackMessage: string) {
+    if (err instanceof ExportApiError) {
+      if (err.payload.audit) {
+        setValidationAudit(err.payload.audit);
+      }
+      if (Array.isArray(err.payload.issues)) {
+        setValidationIssues(err.payload.issues);
+      }
+      if (err.payload.audit || (err.payload.issues?.length ?? 0) > 0) {
+        setShowExportPreview(true);
+      }
+      const suffix = err.payload.debugId ? ` (debugId: ${err.payload.debugId})` : "";
+      setError(`${err.payload.error || fallbackMessage}${suffix}`);
+      return;
+    }
+    setError(err instanceof Error ? err.message : fallbackMessage);
+  }
 
   async function loadEmployees(query = "") {
     const data = await requestJson<{ ok: boolean; employees: EmployeeListItem[] }>(
@@ -536,7 +574,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
       );
       setNotice("PPTX 다운로드가 완료되었습니다.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "PPTX 다운로드에 실패했습니다.");
+      applyExportFailure(err, "PPTX 다운로드에 실패했습니다.");
     } finally {
       setBusy(false);
     }
@@ -554,7 +592,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
       );
       setNotice("PDF 다운로드가 완료되었습니다.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "PDF 다운로드에 실패했습니다.");
+      applyExportFailure(err, "PDF 다운로드에 실패했습니다.");
     } finally {
       setBusy(false);
     }
@@ -851,7 +889,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
                 </details>
               </section>
 
-              <ReportSummaryCards payload={latestReport?.payload} />
+              <ReportSummaryCards payload={latestReport?.payload} viewerMode="admin" />
 
               <details className={styles.optionalCard}>
                 <summary>

@@ -11,6 +11,8 @@ import {
 } from "../_lib/columns";
 import { SITE_URL } from "@/lib/constants";
 
+export const dynamic = "force-dynamic";
+
 type PageProps = {
   params: Promise<{ slug: string }>;
 };

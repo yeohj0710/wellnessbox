@@ -1,47 +1,84 @@
-# 웰니스박스 칼럼 운영 메모
+# 웰니스박스 칼럼 운영 가이드
 
-## 콘텐츠 위치
+## 1) 공개 라우트
 
-- 칼럼 원문: `app/column/_content/*.md`
+- 목록: `/column`
+- 상세: `/column/[slug]`
+- 태그: `/column/tag/[tag]`
+- RSS: `/column/rss.xml`
+- 사이트맵: `/sitemap.xml`
+- 로봇: `/robots.txt`
 
-## 지원 frontmatter
+공개 페이지는 **DB 발행본 우선 + 파일 기반 fallback** 전략을 사용합니다.
 
-```md
----
-title: 칼럼 제목
-description: 검색 설명 문구
-date: 2026-02-25
-draft: false
-tags:
-  - 태그1
-  - 태그2
-slug: my-column-slug
----
-```
+## 2) 콘텐츠 소스 우선순위
 
-- `description`이 없으면 `summary`를 대체로 읽습니다.
-- `draft: true` 글은 목록/태그/RSS/상세 공개에서 제외됩니다.
+1. `ColumnPost` 테이블의 `status=published`
+2. `app/column/_content/*.md` 파일
 
-## 편집기
+동일 slug가 있으면 DB가 우선합니다.
 
-- 경로: `/column/editor`
-- 기본 정책: 개발환경에서만 열립니다.
-- 운영에서 열려면 `COLUMN_EDITOR_ENABLED=true`가 필요하며, 업로드/저장 API는 관리자 세션이 필요합니다.
-- 기능:
-  - 마크다운 편집 + 미리보기
-  - `Ctrl+V` 이미지 붙여넣기
-  - 파일 선택 이미지 업로드
-  - `.md` 다운로드 / 클립보드 복사 / dev 로컬 파일 저장
+## 3) 관리자 편집기
 
-## 이미지 업로드(Cloudflare Direct Upload)
+- 운영 경로: `/admin/column/editor`
+- 레거시 경로 `/column/editor`는 관리자 편집기로 라우팅됩니다.
+- 관리자 로그인(`admin` 세션/쿠키) 없이는 접근할 수 없습니다.
 
-- 서버: `/api/column/upload-image`에서 `uploadURL` 발급
-- 브라우저: `uploadURL`로 직접 업로드 후 `variants`의 `/public` URL 사용
-- 필수 env:
-  - `CLOUDFLARE_ACCOUNT_ID`
-  - `CLOUDFLARE_API_KEY` 또는 `CLOUDFLARE_API_TOKEN` 또는 `CLOUDFLARE_IMAGES_API_TOKEN`
+## 4) 관리자 CRUD API
 
-## 로컬 저장 API
+- 목록/검색: `GET /api/admin/column/posts`
+- 생성: `POST /api/admin/column/posts`
+- 상세: `GET /api/admin/column/posts/[id]`
+- 수정: `PATCH /api/admin/column/posts/[id]`
+- 삭제: `DELETE /api/admin/column/posts/[id]`
+- 발행/비공개: `POST /api/admin/column/posts/[id]/publish`
 
-- 경로: `/api/column/editor/save`
-- 동작: `app/column/_content/{slug}.md` 파일에 UTF-8로 저장
+모든 API는 `requireAdminSession` 가드가 적용됩니다.
+
+## 5) 데이터 모델(요약)
+
+`ColumnPost` 주요 필드:
+
+- `slug` (unique)
+- `title`
+- `excerpt`
+- `contentMarkdown`
+- `contentHtml` (optional)
+- `tags` (`String[]`)
+- `status` (`draft` | `published`)
+- `publishedAt`
+- `createdAt`, `updatedAt`
+- `authorName`, `coverImageUrl` (optional)
+
+## 6) 발행 흐름
+
+1. 초안 생성(`draft`)
+2. 마크다운 편집/미리보기
+3. 저장(`PATCH`)
+4. 발행(`publish=true`)
+5. 필요 시 비공개(`publish=false`)
+6. 삭제는 확인 후 `DELETE`
+
+## 7) 이미지 업로드
+
+- 엔드포인트: `POST /api/column/upload-image`
+- 방식: Cloudflare Images Direct Upload URL 발급 후 클라이언트 직접 업로드
+- 보안: Cloudflare 토큰/키는 서버에서만 사용
+- 편집기에서는 `variants` 중 `public` URL을 본문에 삽입
+
+필수 ENV:
+
+- `CLOUDFLARE_ACCOUNT_ID`
+- `CLOUDFLARE_API_KEY` 또는
+  `CLOUDFLARE_API_TOKEN` 또는
+  `CLOUDFLARE_IMAGES_API_TOKEN`
+
+## 8) Dev 전용 파일 저장 API
+
+- 경로: `POST /api/column/editor/save`
+- 정책:
+  - 관리자 세션 필수
+  - `NODE_ENV=production`에서는 차단(403)
+  - 개발 환경에서만 `_content/*.md` 저장 용도로 사용
+
+운영 편집은 DB CRUD를 기본으로 사용합니다.

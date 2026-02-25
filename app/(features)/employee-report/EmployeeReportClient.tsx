@@ -63,6 +63,9 @@ const IDENTITY_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 
 type ApiErrorPayload = {
   error?: string;
+  code?: string;
+  reason?: string;
+  nextAction?: "init" | "sign" | "retry" | "wait";
   retryAfterSec?: number;
   availableAt?: string;
   cooldown?: {
@@ -261,6 +264,9 @@ export default function EmployeeReportClient() {
   const [error, setError] = useState("");
   const [reportData, setReportData] = useState<EmployeeReportResponse | null>(null);
   const [selectedPeriodKey, setSelectedPeriodKey] = useState("");
+  const [syncNextAction, setSyncNextAction] = useState<
+    "init" | "sign" | "retry" | null
+  >(null);
   const [forceSyncCooldownUntil, setForceSyncCooldownUntil] = useState<number | null>(null);
   const [cooldownNow, setCooldownNow] = useState(() => Date.now());
   const hasTriedStoredLogin = useRef(false);
@@ -446,6 +452,7 @@ export default function EmployeeReportClient() {
       }
       saveStoredIdentity(payload);
       setNotice("기존 레포트를 불러왔습니다.");
+      setSyncNextAction(null);
       await loadReport();
     } catch (err) {
       setError(
@@ -464,6 +471,7 @@ export default function EmployeeReportClient() {
     setBusy(true);
     setError("");
     setNotice("");
+    setSyncNextAction(null);
     try {
       const initResult = await requestJson<NhisInitResponse>("/api/health/nhis/init", {
         method: "POST",
@@ -487,8 +495,10 @@ export default function EmployeeReportClient() {
             ? "기존 연동 데이터를 사용해 레포트를 불러왔습니다."
             : "카카오 인증이 완료되어 최신 데이터를 불러왔습니다."
         );
+        setSyncNextAction(null);
         return;
       }
+      setSyncNextAction("sign");
       setNotice(
         "카카오톡에서 인증을 완료한 뒤, 아래의 '인증 완료 후 연동' 버튼을 눌러 주세요."
       );
@@ -556,6 +566,7 @@ export default function EmployeeReportClient() {
     try {
       const ready = await ensureNhisReadyForSync();
       if (!ready.linked) {
+        setSyncNextAction("sign");
         setNotice("카카오톡 인증을 완료한 뒤 다시 시도해 주세요.");
         return;
       }
@@ -571,9 +582,22 @@ export default function EmployeeReportClient() {
       } else {
         setNotice("최신 정보를 연동해 레포트를 갱신했습니다.");
       }
+      setSyncNextAction(null);
     } catch (err) {
       if (err instanceof ApiRequestError) {
         applyForceSyncCooldown(err.payload);
+        if (err.payload.nextAction === "init") {
+          setSyncNextAction("init");
+          setNotice("연동 초기화가 필요합니다. 아래 '인증 다시 시작'을 눌러 주세요.");
+          return;
+        }
+        if (err.payload.nextAction === "sign") {
+          setSyncNextAction("sign");
+          setNotice(
+            "카카오 인증 승인이 필요합니다. '인증 다시 시작' 후 '인증 완료 후 연동'을 눌러 주세요."
+          );
+          return;
+        }
         if (err.status === 429) {
           const cooldownUntil = resolveCooldownUntilFromPayload(err.payload);
           if (cooldownUntil) {
@@ -584,6 +608,7 @@ export default function EmployeeReportClient() {
           }
         }
       }
+      setSyncNextAction("retry");
       setError(err instanceof Error ? err.message : "데이터 연동에 실패했습니다.");
     } finally {
       setBusy(false);
@@ -619,6 +644,7 @@ export default function EmployeeReportClient() {
       await fetch("/api/health/nhis/unlink", { method: "POST" }).catch(() => null);
       setReportData(null);
       setSelectedPeriodKey("");
+      setSyncNextAction(null);
       setNotice("현재 연결된 조회 세션을 해제했습니다.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "세션 해제에 실패했습니다.");
@@ -850,6 +876,14 @@ export default function EmployeeReportClient() {
                   </button>
                   <button
                     type="button"
+                    onClick={handleInitKakao}
+                    disabled={busy}
+                    className={styles.buttonGhost}
+                  >
+                    인증 다시 시작
+                  </button>
+                  <button
+                    type="button"
                     onClick={handleLogout}
                     disabled={busy}
                     className={styles.buttonGhost}
@@ -860,6 +894,16 @@ export default function EmployeeReportClient() {
                 {forceSyncRemainingSec > 0 ? (
                   <p className={styles.inlineHint}>
                     재연동 가능까지 약 {Math.ceil(forceSyncRemainingSec / 60)}분 남았습니다.
+                  </p>
+                ) : null}
+                {syncNextAction === "init" ? (
+                  <p className={styles.inlineHint}>
+                    현재 상태: 연동 초기화 필요. 인증 다시 시작을 먼저 진행해 주세요.
+                  </p>
+                ) : null}
+                {syncNextAction === "sign" ? (
+                  <p className={styles.inlineHint}>
+                    현재 상태: 카카오 인증 승인 필요. 인증 완료 후 연동 버튼을 눌러 주세요.
                   </p>
                 ) : null}
               </div>
@@ -884,7 +928,7 @@ export default function EmployeeReportClient() {
             </div>
           ) : null}
 
-          <ReportSummaryCards payload={reportData.report.payload} />
+          <ReportSummaryCards payload={reportData.report.payload} viewerMode="employee" />
         </>
       ) : null}
     </div>

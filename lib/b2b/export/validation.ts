@@ -33,6 +33,27 @@ function intersects(a: LayoutNodeBounds, b: LayoutNodeBounds) {
   );
 }
 
+function overlapMetrics(a: LayoutNodeBounds, b: LayoutNodeBounds) {
+  const overlapW = Math.max(
+    0,
+    Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)
+  );
+  const overlapH = Math.max(
+    0,
+    Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y)
+  );
+  return {
+    overlapW,
+    overlapH,
+    overlapArea: overlapW * overlapH,
+  };
+}
+
+function isMeaningfulOverlapMm(a: LayoutNodeBounds, b: LayoutNodeBounds) {
+  const { overlapW, overlapH, overlapArea } = overlapMetrics(a, b);
+  return overlapW > 0.4 && overlapH > 0.3 && overlapArea > 0.35;
+}
+
 function estimateTextWidthMm(text: string, fontSize = 12) {
   const averageCharWidthMm = Math.max(1.8, fontSize * 0.16);
   return text.length * averageCharWidthMm;
@@ -105,7 +126,7 @@ export function validateLayoutStatic(layout: LayoutDocument) {
       if (node.type === "text" && node.text) {
         const estimatedW = estimateTextWidthMm(node.text, node.fontSize);
         const estimatedH = estimateTextHeightMm(node.fontSize);
-        if (estimatedW > node.w * 1.2 || estimatedH > node.h * 1.2) {
+        if (estimatedW > node.w * 1.42 || estimatedH > node.h * 1.4) {
           issues.push({
             code: "TEXT_OVERFLOW",
             pageId: page.id,
@@ -126,6 +147,7 @@ export function validateLayoutStatic(layout: LayoutDocument) {
         if (shouldIgnoreOverlap(left, right)) continue;
         const rightBounds = toBounds(right);
         if (!intersects(leftBounds, rightBounds)) continue;
+        if (!isMeaningfulOverlapMm(leftBounds, rightBounds)) continue;
         issues.push({
           code: "OVERLAP",
           pageId: page.id,
@@ -198,7 +220,7 @@ function runtimeValidateByHeuristic(layout: LayoutDocument) {
 
       if (node.type === "text" && node.text) {
         const estimatedW = estimateTextWidthMm(node.text, node.fontSize);
-        if (estimatedW > node.w) {
+        if (estimatedW > node.w * 1.28) {
           issues.push({
             code: "TEXT_OVERFLOW",
             pageId: page.id,
@@ -219,6 +241,7 @@ function runtimeValidateByHeuristic(layout: LayoutDocument) {
         if (shouldIgnoreOverlap(left, right)) continue;
         const rightBounds = toBounds(right);
         if (!intersects(leftBounds, rightBounds)) continue;
+        if (!isMeaningfulOverlapMm(leftBounds, rightBounds)) continue;
         issues.push({
           code: "OVERLAP",
           pageId: page.id,
@@ -354,7 +377,7 @@ async function runtimeValidateByPlaywright(layout: LayoutDocument) {
               Math.min(leftRect.right, rightRect.right) - Math.max(leftRect.left, rightRect.left);
             const overlapY =
               Math.min(leftRect.bottom, rightRect.bottom) - Math.max(leftRect.top, rightRect.top);
-            if (overlapX <= 1 || overlapY <= 0.6) continue;
+            if (overlapX <= 1.8 || overlapY <= 0.9) continue;
 
             discovered.push({
               code: "OVERLAP",

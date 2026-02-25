@@ -90,6 +90,12 @@ async function tryConvertBySoffice(input: {
   return { ok: true as const, pdfBuffer };
 }
 
+function toErrorReason(error: unknown, fallback: string) {
+  return error instanceof Error && error.message.trim().length > 0
+    ? error.message
+    : fallback;
+}
+
 function escapeHtml(value: string) {
   return value
     .replace(/&/g, "&amp;")
@@ -228,11 +234,21 @@ export async function convertPptxBufferToPdf(input: {
   await fs.mkdir(tempDir, { recursive: true });
 
   try {
-    const sofficeResult = await tryConvertBySoffice({
-      tempDir,
-      filename: input.filename,
-      pptxBuffer: input.pptxBuffer,
-    });
+    let sofficeResult:
+      | { ok: true; pdfBuffer: Buffer }
+      | { ok: false; reason: string; stderr?: string };
+    try {
+      sofficeResult = await tryConvertBySoffice({
+        tempDir,
+        filename: input.filename,
+        pptxBuffer: input.pptxBuffer,
+      });
+    } catch (error) {
+      sofficeResult = {
+        ok: false,
+        reason: toErrorReason(error, "soffice conversion failed"),
+      };
+    }
     if (sofficeResult.ok) {
       return { ok: true as const, pdfBuffer: sofficeResult.pdfBuffer, engine: "soffice" as const };
     }

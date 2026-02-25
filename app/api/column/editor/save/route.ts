@@ -2,7 +2,6 @@ import { promises as fs } from "fs";
 import path from "path";
 import { NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/server/route-auth";
-import { isColumnEditorEnabled, isColumnEditorProdGateEnabled } from "@/app/column/_lib/editor-access";
 
 const SLUG_PATTERN = /^[a-z0-9][a-z0-9_-]*$/;
 
@@ -17,16 +16,11 @@ function jsonError(status: number, message: string) {
 }
 
 export async function POST(req: Request) {
-  const isProdGate = isColumnEditorProdGateEnabled();
-  if (isProdGate) {
-    const guard = await requireAdminSession();
-    if (!guard.ok) {
-      return guard.response;
-    }
-  }
+  const guard = await requireAdminSession();
+  if (!guard.ok) return guard.response;
 
-  if (!isColumnEditorEnabled()) {
-    return jsonError(403, "칼럼 편집기는 현재 비활성화 상태입니다.");
+  if (process.env.NODE_ENV === "production") {
+    return jsonError(403, "이 API는 개발 환경에서만 사용할 수 있습니다.");
   }
 
   let body: { slug?: string; markdown?: string } | null = null;
@@ -39,7 +33,7 @@ export async function POST(req: Request) {
   const slug = String(body?.slug ?? "").trim().toLowerCase();
   const markdown = String(body?.markdown ?? "");
   if (!SLUG_PATTERN.test(slug)) {
-    return jsonError(400, "slug는 소문자 영문, 숫자, -, _만 사용할 수 있습니다.");
+    return jsonError(400, "slug는 영문 소문자, 숫자, -, _만 사용할 수 있습니다.");
   }
   if (!markdown.trim()) {
     return jsonError(400, "저장할 마크다운 본문이 비어 있습니다.");

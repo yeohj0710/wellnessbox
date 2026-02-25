@@ -2,7 +2,8 @@ import "server-only";
 
 import { promises as fs } from "fs";
 import path from "path";
-import { cache } from "react";
+import { Prisma } from "@prisma/client";
+import db from "@/lib/db";
 
 const CONTENT_ROOT = path.join(process.cwd(), "app", "column", "_content");
 const MARKDOWN_EXTENSION = /\.md$/i;
@@ -41,6 +42,14 @@ export type ColumnTag = {
   count: number;
 };
 
+function safeDecodeURIComponent(input: string) {
+  try {
+    return decodeURIComponent(input);
+  } catch {
+    return input;
+  }
+}
+
 function normalizeLineEndings(value: string) {
   return value.replace(/\r\n?/g, "\n");
 }
@@ -73,7 +82,7 @@ function parseBoolean(value: string | undefined) {
 }
 
 export function normalizeTagSlug(input: string) {
-  return input
+  return safeDecodeURIComponent(input)
     .trim()
     .toLowerCase()
     .replace(/\s+/g, "-")
@@ -329,49 +338,156 @@ async function parseColumnFile(absolutePath: string): Promise<ColumnDetail> {
   };
 }
 
-const getAllColumns = cache(async (): Promise<ColumnDetail[]> => {
-  const files = await collectMarkdownFiles(CONTENT_ROOT);
-  const columns = await Promise.all(files.map(parseColumnFile));
-
-  return columns
-    .filter((column) => Boolean(column.slug))
-    .sort((a, b) => {
-      const byPublishedAt =
-        new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
-      if (byPublishedAt !== 0) {
-        return byPublishedAt;
-      }
-      return b.updatedAt.localeCompare(a.updatedAt);
-    });
-});
-
-const getPublishedColumns = cache(async (): Promise<ColumnDetail[]> => {
-  const columns = await getAllColumns();
-  return columns.filter((column) => !column.draft);
-});
+function sortColumnsByDateDesc(columns: ColumnDetail[]) {
+  return [...columns].sort((a, b) => {
+    const byPublishedAt =
+      new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+    if (byPublishedAt !== 0) return byPublishedAt;
+    return b.updatedAt.localeCompare(a.updatedAt);
+  });
+}
 
 function toSummary(column: ColumnDetail): ColumnSummary {
   const { content: _content, toc: _toc, ...summary } = column;
   return summary;
 }
 
-export const getAllColumnSummaries = cache(async (): Promise<ColumnSummary[]> => {
-  const columns = await getPublishedColumns();
-  return columns.map(toSummary);
-});
+function isColumnPostTableMissing(error: unknown) {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    return error.code === "P2021";
+  }
+  const message =
+    error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+  return message.includes("columnpost") && message.includes("does not exist");
+}
 
-export const getColumnBySlug = cache(
-  async (slug: string): Promise<ColumnDetail | null> => {
-    const normalized = normalizeSlug(slug);
-    if (!normalized) {
+function mapDbPostToColumnDetail(post: {
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  contentMarkdown: string;
+  tags: string[];
+  status: string;
+  publishedAt: Date | null;
+  updatedAt: Date;
+}) {
+  const content = post.contentMarkdown;
+  const plainText = stripMarkdown(content);
+  const description =
+    (post.excerpt || "").trim() || summarize(plainText, 160) || "웰니스박스 칼럼입니다.";
+
+  return {
+    slug: normalizeSlug(post.slug),
+    title: post.title.trim() || "웰니스박스 칼럼",
+    description,
+    summary: description,
+    publishedAt: (post.publishedAt ?? post.updatedAt).toISOString(),
+    tags: post.tags.filter((item) => typeof item === "string" && item.trim().length > 0),
+    content,
+    toc: buildToc(content),
+    draft: post.status !== "published",
+    updatedAt: post.updatedAt.toISOString(),
+    readingMinutes: estimateReadingMinutes(plainText),
+  } satisfies ColumnDetail;
+}
+
+async function getAllFileColumns(): Promise<ColumnDetail[]> {
+  const files = await collectMarkdownFiles(CONTENT_ROOT);
+  const columns = await Promise.all(files.map(parseColumnFile));
+  return sortColumnsByDateDesc(columns.filter((column) => Boolean(column.slug)));
+}
+
+async function getPublishedFileColumns() {
+  const columns = await getAllFileColumns();
+  return columns.filter((column) => !column.draft);
+}
+
+async function getPublishedDbColumns(): Promise<ColumnDetail[]> {
+  try {
+    const rows = await db.columnPost.findMany({
+      where: { status: "published" },
+      orderBy: [{ publishedAt: "desc" }, { updatedAt: "desc" }],
+      select: {
+        slug: true,
+        title: true,
+        excerpt: true,
+        contentMarkdown: true,
+        tags: true,
+        status: true,
+        publishedAt: true,
+        updatedAt: true,
+      },
+    });
+    return sortColumnsByDateDesc(
+      rows
+        .map(mapDbPostToColumnDetail)
+        .filter((column) => Boolean(column.slug) && !column.draft)
+    );
+  } catch (error) {
+    if (isColumnPostTableMissing(error)) {
+      return [];
+    }
+    throw error;
+  }
+}
+
+async function getPublishedDbColumnBySlug(slug: string): Promise<ColumnDetail | null> {
+  try {
+    const row = await db.columnPost.findFirst({
+      where: {
+        slug,
+        status: "published",
+      },
+      select: {
+        slug: true,
+        title: true,
+        excerpt: true,
+        contentMarkdown: true,
+        tags: true,
+        status: true,
+        publishedAt: true,
+        updatedAt: true,
+      },
+    });
+    return row ? mapDbPostToColumnDetail(row) : null;
+  } catch (error) {
+    if (isColumnPostTableMissing(error)) {
       return null;
     }
-    const columns = await getPublishedColumns();
-    return columns.find((column) => column.slug === normalized) ?? null;
+    throw error;
   }
-);
+}
 
-export const getAllColumnTags = cache(async (): Promise<ColumnTag[]> => {
+async function getPublishedColumns(): Promise<ColumnDetail[]> {
+  const [dbColumns, fileColumns] = await Promise.all([
+    getPublishedDbColumns(),
+    getPublishedFileColumns(),
+  ]);
+  const dbSlugSet = new Set(dbColumns.map((column) => column.slug));
+  const merged = [
+    ...dbColumns,
+    ...fileColumns.filter((column) => !dbSlugSet.has(column.slug)),
+  ];
+  return sortColumnsByDateDesc(merged);
+}
+
+export async function getAllColumnSummaries(): Promise<ColumnSummary[]> {
+  const columns = await getPublishedColumns();
+  return columns.map(toSummary);
+}
+
+export async function getColumnBySlug(slug: string): Promise<ColumnDetail | null> {
+  const normalized = normalizeSlug(slug);
+  if (!normalized) return null;
+
+  const dbFirst = await getPublishedDbColumnBySlug(normalized);
+  if (dbFirst) return dbFirst;
+
+  const fileColumns = await getPublishedFileColumns();
+  return fileColumns.find((column) => column.slug === normalized) ?? null;
+}
+
+export async function getAllColumnTags(): Promise<ColumnTag[]> {
   const columns = await getAllColumnSummaries();
   const counter = new Map<string, ColumnTag>();
 
@@ -396,88 +512,85 @@ export const getAllColumnTags = cache(async (): Promise<ColumnTag[]> => {
   return [...counter.values()].sort(
     (a, b) => b.count - a.count || a.label.localeCompare(b.label, "ko")
   );
-});
+}
 
-export const getColumnsByTagSlug = cache(
-  async (
-    tagSlug: string
-  ): Promise<{ tag: ColumnTag | null; columns: ColumnSummary[] }> => {
-    const normalized = normalizeTagSlug(tagSlug);
-    if (!normalized) {
-      return { tag: null, columns: [] };
-    }
-
-    const [allTags, columns] = await Promise.all([
-      getAllColumnTags(),
-      getAllColumnSummaries(),
-    ]);
-    const tag = allTags.find((item) => item.slug === normalized) ?? null;
-    if (!tag) {
-      return { tag: null, columns: [] };
-    }
-
-    const tagged = columns.filter((column) =>
-      column.tags.some((rawTag) => normalizeTagSlug(rawTag) === normalized)
-    );
-    return { tag, columns: tagged };
+export async function getColumnsByTagSlug(
+  tagSlug: string
+): Promise<{ tag: ColumnTag | null; columns: ColumnSummary[] }> {
+  const normalized = normalizeTagSlug(tagSlug);
+  if (!normalized) {
+    return { tag: null, columns: [] };
   }
-);
 
-export const getRelatedColumnSummaries = cache(
-  async (slug: string, limit = 3): Promise<ColumnSummary[]> => {
-    const normalized = normalizeSlug(slug);
-    if (!normalized || limit <= 0) return [];
-
-    const columns = await getAllColumnSummaries();
-    const current = columns.find((column) => column.slug === normalized);
-    if (!current) return [];
-
-    const currentTagSlugs = new Set(
-      current.tags.map((tag) => normalizeTagSlug(tag)).filter(Boolean)
-    );
-
-    return columns
-      .filter((column) => column.slug !== normalized)
-      .map((column) => {
-        const sharedTagCount = column.tags.reduce((count, rawTag) => {
-          const tagSlug = normalizeTagSlug(rawTag);
-          return currentTagSlugs.has(tagSlug) ? count + 1 : count;
-        }, 0);
-        return { column, sharedTagCount };
-      })
-      .sort((a, b) => {
-        if (a.sharedTagCount !== b.sharedTagCount) {
-          return b.sharedTagCount - a.sharedTagCount;
-        }
-        return (
-          new Date(b.column.publishedAt).getTime() -
-          new Date(a.column.publishedAt).getTime()
-        );
-      })
-      .slice(0, limit)
-      .map((item) => item.column);
+  const [allTags, columns] = await Promise.all([
+    getAllColumnTags(),
+    getAllColumnSummaries(),
+  ]);
+  const tag = allTags.find((item) => item.slug === normalized) ?? null;
+  if (!tag) {
+    return { tag: null, columns: [] };
   }
-);
 
-export const getAdjacentColumnSummaries = cache(
-  async (slug: string): Promise<{
-    previous: ColumnSummary | null;
-    next: ColumnSummary | null;
-  }> => {
-    const normalized = normalizeSlug(slug);
-    if (!normalized) {
-      return { previous: null, next: null };
-    }
+  const tagged = columns.filter((column) =>
+    column.tags.some((rawTag) => normalizeTagSlug(rawTag) === normalized)
+  );
+  return { tag, columns: tagged };
+}
 
-    const columns = await getAllColumnSummaries();
-    const currentIndex = columns.findIndex((column) => column.slug === normalized);
-    if (currentIndex < 0) {
-      return { previous: null, next: null };
-    }
+export async function getRelatedColumnSummaries(
+  slug: string,
+  limit = 3
+): Promise<ColumnSummary[]> {
+  const normalized = normalizeSlug(slug);
+  if (!normalized || limit <= 0) return [];
 
-    return {
-      previous: columns[currentIndex + 1] ?? null,
-      next: columns[currentIndex - 1] ?? null,
-    };
+  const columns = await getAllColumnSummaries();
+  const current = columns.find((column) => column.slug === normalized);
+  if (!current) return [];
+
+  const currentTagSlugs = new Set(
+    current.tags.map((tag) => normalizeTagSlug(tag)).filter(Boolean)
+  );
+
+  return columns
+    .filter((column) => column.slug !== normalized)
+    .map((column) => {
+      const sharedTagCount = column.tags.reduce((count, rawTag) => {
+        const tagSlug = normalizeTagSlug(rawTag);
+        return currentTagSlugs.has(tagSlug) ? count + 1 : count;
+      }, 0);
+      return { column, sharedTagCount };
+    })
+    .sort((a, b) => {
+      if (a.sharedTagCount !== b.sharedTagCount) {
+        return b.sharedTagCount - a.sharedTagCount;
+      }
+      return (
+        new Date(b.column.publishedAt).getTime() -
+        new Date(a.column.publishedAt).getTime()
+      );
+    })
+    .slice(0, limit)
+    .map((item) => item.column);
+}
+
+export async function getAdjacentColumnSummaries(slug: string): Promise<{
+  previous: ColumnSummary | null;
+  next: ColumnSummary | null;
+}> {
+  const normalized = normalizeSlug(slug);
+  if (!normalized) {
+    return { previous: null, next: null };
   }
-);
+
+  const columns = await getAllColumnSummaries();
+  const currentIndex = columns.findIndex((column) => column.slug === normalized);
+  if (currentIndex < 0) {
+    return { previous: null, next: null };
+  }
+
+  return {
+    previous: columns[currentIndex + 1] ?? null,
+    next: columns[currentIndex - 1] ?? null,
+  };
+}

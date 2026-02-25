@@ -160,6 +160,10 @@ export async function computeAndSaveB2bAnalysis(input: SaveAnalysisInput) {
   const existingAi = shouldReuseAi
     ? extractExistingAiEvaluation(latestPeriodAnalysis.payload)
     : null;
+  const shouldGenerateAiEvaluation =
+    input.forceAiRegenerate === true ||
+    input.generateAiEvaluation === true ||
+    (!existingAi && input.generateAiEvaluation !== false);
 
   const draft = analyzeB2bReport({
     periodKey,
@@ -206,7 +210,7 @@ export async function computeAndSaveB2bAnalysis(input: SaveAnalysisInput) {
   });
 
   let computed = draft;
-  if (input.generateAiEvaluation || input.forceAiRegenerate) {
+  if (shouldGenerateAiEvaluation) {
     const aiEvaluation = await generateB2bAiEvaluation({
       periodKey,
       summary: {

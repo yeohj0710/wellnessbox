@@ -6,6 +6,7 @@ import {
   getB2bEmployeeCookieOptions,
 } from "@/lib/b2b/employee-token";
 import {
+  B2bEmployeeSyncError,
   fetchAndStoreB2bHealthSnapshot,
   logB2bEmployeeAccess,
   upsertB2bEmployee,
@@ -140,6 +141,9 @@ export async function POST(req: Request) {
         return noStoreJson(
           {
             ok: false,
+            code: "SYNC_COOLDOWN",
+            reason: "force_refresh_cooldown",
+            nextAction: "wait",
             error: "재연동은 잠시 후 다시 시도해 주세요.",
             retryAfterSec: cooldown.remainingSeconds,
             availableAt: cooldown.availableAt,
@@ -168,7 +172,7 @@ export async function POST(req: Request) {
         pageSize: "A4",
         periodKey,
         recomputeAnalysis: true,
-        generateAiEvaluation: parsed.data.generateAiEvaluation === true,
+        generateAiEvaluation: parsed.data.generateAiEvaluation,
       });
 
       const token = buildB2bEmployeeAccessToken({
@@ -228,6 +232,33 @@ export async function POST(req: Request) {
 
       return response;
     } catch (error) {
+      if (error instanceof B2bEmployeeSyncError) {
+        await logB2bEmployeeAccess({
+          employeeId: upserted.employee.id,
+          appUserId: auth.data.appUserId,
+          action: "sync_blocked",
+          route: "/api/b2b/employee/sync",
+          ip,
+          userAgent,
+          payload: {
+            code: error.code,
+            reason: error.reason,
+            nextAction: error.nextAction,
+          },
+        });
+
+        return noStoreJson(
+          {
+            ok: false,
+            code: error.code,
+            reason: error.reason,
+            nextAction: error.nextAction,
+            error: error.message,
+          },
+          error.status
+        );
+      }
+
       const dbError = resolveDbRouteError(error, "건강 데이터 동기화에 실패했습니다.");
       const message = dbError.message;
 

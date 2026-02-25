@@ -25,6 +25,18 @@ export default function RouteTransition() {
       const href = a.getAttribute("href");
       if (!href) return;
       if (a.target && a.target !== "_self") return;
+      if (a.hasAttribute("download")) return;
+
+      const loweredHref = href.trim().toLowerCase();
+      if (
+        loweredHref.startsWith("blob:") ||
+        loweredHref.startsWith("data:") ||
+        loweredHref.startsWith("mailto:") ||
+        loweredHref.startsWith("tel:") ||
+        loweredHref.startsWith("javascript:")
+      ) {
+        return;
+      }
 
       if (href.startsWith("#")) {
         e.preventDefault();
@@ -36,8 +48,14 @@ export default function RouteTransition() {
         return;
       }
 
-      const url = new URL(href, window.location.href);
+      let url: URL;
+      try {
+        url = new URL(href, window.location.href);
+      } catch {
+        return;
+      }
       if (url.origin !== window.location.origin) return;
+      if (url.protocol !== "http:" && url.protocol !== "https:") return;
 
       const samePathAndSearch =
         url.pathname === window.location.pathname &&

@@ -621,6 +621,26 @@ model B2bAdminActionLog {
   @@index([action, createdAt])
 }
 
+model ColumnPost {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  title           String
+  excerpt         String?
+  contentMarkdown String
+  contentHtml     String?
+  tags            String[] @default([])
+  status          String   @default("draft")
+  publishedAt     DateTime?
+  authorName      String?
+  coverImageUrl   String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now()) @updatedAt
+
+  @@index([status, publishedAt, updatedAt])
+  @@index([publishedAt, updatedAt])
+  @@index([updatedAt])
+}
+
 /// DB에 이미 있는 vector 테이블 유지 (drop 위험 방지)
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model rag_chunks {

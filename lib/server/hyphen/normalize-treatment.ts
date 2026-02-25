@@ -31,7 +31,20 @@ export function normalizeTreatmentPayload(payload: HyphenApiResponse) {
       if (examinee !== undefined) row.examinee = examinee;
       mergePrimitiveFields(row, person, new Set(["sublist"]));
       mergeNestedPrimitiveFields(row, person, "detailObj", "detail_");
-      rows.push(row);
+      const medList = asArray(
+        person.medList ?? person.medicineList ?? person.drugList
+      );
+      if (medList.length === 0) {
+        rows.push(row);
+        continue;
+      }
+      for (const medicineItem of medList) {
+        const medicine = asRecord(medicineItem);
+        const withMedicine: NhisRow = { ...row };
+        mergePrimitiveFields(withMedicine, medicine, new Set(["detailObj"]));
+        mergeNestedPrimitiveFields(withMedicine, medicine, "detailObj", "drug_");
+        rows.push(withMedicine);
+      }
       continue;
     }
 
@@ -46,7 +59,9 @@ export function normalizeTreatmentPayload(payload: HyphenApiResponse) {
       mergePrimitiveFields(baseRow, detail, new Set(["medList", "detailObj"]));
       mergeNestedPrimitiveFields(baseRow, detail, "detailObj", "detail_");
 
-      const medList = asArray(detail.medList);
+      const medList = asArray(
+        detail.medList ?? detail.medicineList ?? detail.drugList
+      );
       if (medList.length === 0) {
         rows.push(baseRow);
         continue;

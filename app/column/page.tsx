@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllColumnSummaries, getAllColumnTags, normalizeTagSlug } from "./_lib/columns";
-import { isColumnEditorEnabled } from "./_lib/editor-access";
+import ColumnAdminWriteButton from "./_components/ColumnAdminWriteButton";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "웰니스박스 칼럼",
@@ -37,7 +39,6 @@ export default async function ColumnPage() {
     getAllColumnSummaries(),
     getAllColumnTags(),
   ]);
-  const editorEnabled = isColumnEditorEnabled();
 
   return (
     <section className="w-full min-h-[calc(100vh-7rem)] bg-[radial-gradient(circle_at_top_left,_#d8f6eb_0%,_#f8fafc_45%,_#ffffff_100%)]">
@@ -55,20 +56,7 @@ export default async function ColumnPage() {
             빠르게 핵심을 확인할 수 있습니다.
           </p>
           <div className="mt-5 flex flex-wrap gap-2 text-sm">
-            <Link
-              href="/column/rss.xml"
-              className="rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1.5 font-medium text-emerald-700 hover:bg-emerald-100"
-            >
-              RSS 구독
-            </Link>
-            {editorEnabled && (
-              <Link
-                href="/column/editor"
-                className="rounded-full border border-slate-300 bg-white px-3 py-1.5 font-medium text-slate-700 hover:border-emerald-300 hover:text-emerald-700"
-              >
-                칼럼 에디터
-              </Link>
-            )}
+            <ColumnAdminWriteButton />
           </div>
         </header>
 

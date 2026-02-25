@@ -104,8 +104,10 @@ function firstOrDash(value: string | null | undefined) {
 
 export default function ReportSummaryCards(props: {
   payload: PayloadSummary | null | undefined;
+  viewerMode?: "employee" | "admin";
 }) {
   const payload = props.payload;
+  const viewerMode = props.viewerMode ?? "admin";
   if (!payload) {
     return (
       <section className={styles.sectionCard}>
@@ -331,10 +333,19 @@ export default function ReportSummaryCards(props: {
       </section>
 
       <section className={styles.metaFooter}>
-        생성 시각: {formatDate(payload.meta?.generatedAt)} / 대상자:{" "}
-        {firstOrDash(payload.meta?.employeeName)} / 기간:{" "}
-        {firstOrDash(payload.meta?.periodKey)}
-        {payload.meta?.isMockData ? " / 데모 데이터" : ""}
+        {viewerMode === "admin" ? (
+          <>
+            생성 시각: {formatDate(payload.meta?.generatedAt)} / 대상자:{" "}
+            {firstOrDash(payload.meta?.employeeName)} / 기간:{" "}
+            {firstOrDash(payload.meta?.periodKey)}
+            {payload.meta?.isMockData ? " / 데모 데이터" : ""}
+          </>
+        ) : (
+          <>
+            대상자: {firstOrDash(payload.meta?.employeeName)} / 기간:{" "}
+            {firstOrDash(payload.meta?.periodKey)}
+          </>
+        )}
       </section>
     </div>
   );

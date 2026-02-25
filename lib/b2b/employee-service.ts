@@ -26,6 +26,30 @@ import type { HyphenNhisRequestPayload } from "@/lib/server/hyphen/client";
 import { HYPHEN_PROVIDER } from "@/lib/server/hyphen/client";
 import { periodKeyToCycle, resolveCurrentPeriodKey } from "@/lib/b2b/period";
 
+export type B2bSyncNextAction = "init" | "sign" | "retry";
+
+export class B2bEmployeeSyncError extends Error {
+  readonly code: string;
+  readonly reason: string;
+  readonly status: number;
+  readonly nextAction: B2bSyncNextAction;
+
+  constructor(input: {
+    message: string;
+    code: string;
+    reason: string;
+    status: number;
+    nextAction: B2bSyncNextAction;
+  }) {
+    super(input.message);
+    this.name = "B2bEmployeeSyncError";
+    this.code = input.code;
+    this.reason = input.reason;
+    this.status = input.status;
+    this.nextAction = input.nextAction;
+  }
+}
+
 function asJsonValue(
   value: unknown
 ): Prisma.InputJsonValue | Prisma.JsonNullValueInput {
@@ -422,7 +446,13 @@ export async function fetchAndStoreB2bHealthSnapshot(input: {
 }) {
   const link = await getNhisLink(input.appUserId);
   if (!link?.linked) {
-    throw new Error("연동된 하이픈 인증 세션이 없습니다.");
+    throw new B2bEmployeeSyncError({
+      message: "연동 초기화가 필요합니다. 카카오 인증 요청을 먼저 진행해 주세요.",
+      code: "NHIS_INIT_REQUIRED",
+      reason: "nhis_init_required",
+      status: 409,
+      nextAction: "init",
+    });
   }
 
   const requestDefaults = buildNhisRequestDefaults();
@@ -542,7 +572,13 @@ export async function fetchAndStoreB2bHealthSnapshot(input: {
     }
 
     if (!link.cookieData) {
-      throw new Error("연동된 하이픈 인증 세션이 없습니다.");
+      throw new B2bEmployeeSyncError({
+        message: "인증 세션이 만료되었습니다. 인증을 다시 진행해 주세요.",
+        code: "NHIS_SIGN_REQUIRED",
+        reason: "nhis_sign_required",
+        status: 409,
+        nextAction: "sign",
+      });
     }
 
     const basePayload = buildBasePayload({
@@ -576,11 +612,26 @@ export async function fetchAndStoreB2bHealthSnapshot(input: {
     });
 
     if (!executed.payload.ok) {
-      throw new Error(
-        executed.payload.error ||
+      const errCd = executed.firstFailed?.errCd?.trim().toUpperCase() || "";
+      if (errCd === "LOGIN-999") {
+        throw new B2bEmployeeSyncError({
+          message: "인증 세션이 만료되었습니다. 카카오 인증을 다시 진행해 주세요.",
+          code: "NHIS_AUTH_EXPIRED",
+          reason: "nhis_auth_expired",
+          status: 409,
+          nextAction: "init",
+        });
+      }
+      throw new B2bEmployeeSyncError({
+        message:
+          executed.payload.error ||
           executed.firstFailed?.errMsg ||
-          "건강 데이터를 불러오지 못했습니다."
-      );
+          "건강 데이터를 불러오지 못했습니다.",
+        code: "HYPHEN_FETCH_FAILED",
+        reason: "hyphen_fetch_failed",
+        status: 502,
+        nextAction: "retry",
+      });
     }
 
     const patched = await patchSummaryTargetsIfNeeded({

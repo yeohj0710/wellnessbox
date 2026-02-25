@@ -8,7 +8,7 @@ function mmToInch(mm: number) {
 }
 
 function nodeToRectShape(slide: PptxGenJS.Slide, node: LayoutNode) {
-  slide.addShape(PptxGenJS.ShapeType.rect, {
+  slide.addShape("rect", {
     x: mmToInch(node.x),
     y: mmToInch(node.y),
     w: mmToInch(node.w),

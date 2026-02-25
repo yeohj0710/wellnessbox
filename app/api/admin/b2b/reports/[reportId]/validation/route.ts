@@ -1,8 +1,9 @@
+import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import db from "@/lib/db";
 import { runB2bLayoutPipeline } from "@/lib/b2b/export/pipeline";
-import { requireAdminSession } from "@/lib/server/route-auth";
 import { resolveDbRouteError } from "@/lib/server/db-error";
+import { requireAdminSession } from "@/lib/server/route-auth";
 
 export const runtime = "nodejs";
 
@@ -62,8 +63,12 @@ export async function GET(_req: Request, ctx: RouteContext) {
     });
 
     if (!validationResult.ok) {
+      const debugId = randomUUID();
       return noStoreJson({
         ok: false,
+        code: "LAYOUT_VALIDATION_FAILED",
+        reason: "layout_validation_failed",
+        debugId,
         audit: validationResult.audit,
         issues: validationResult.issues,
       });
@@ -76,12 +81,19 @@ export async function GET(_req: Request, ctx: RouteContext) {
       issues: [],
     });
   } catch (error) {
+    const debugId = randomUUID();
     const dbError = resolveDbRouteError(
       error,
       "레이아웃 검증 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."
     );
     return noStoreJson(
-      { ok: false, code: dbError.code, error: dbError.message },
+      {
+        ok: false,
+        code: dbError.code,
+        reason: "layout_validation_failed",
+        debugId,
+        error: dbError.message,
+      },
       dbError.status
     );
   }

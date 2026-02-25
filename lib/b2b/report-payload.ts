@@ -138,6 +138,12 @@ function extractMedicationRows(normalizedJson: unknown): {
     if (!row) continue;
     const medicationName = toText(
       row.medicineNm ??
+        row.medicine ??
+        row.drugName ??
+        row.drugNm ??
+        row.medNm ??
+        row.medicineName ??
+        row.prodName ??
         row.drug_MEDI_PRDC_NM ??
         row.MEDI_PRDC_NM ??
         row.detail_CMPN_NM ??
@@ -148,6 +154,9 @@ function extractMedicationRows(normalizedJson: unknown): {
     const hospitalName =
       toText(
         row.hospitalNm ??
+          row.hospitalName ??
+          row.hospital ??
+          row.clinicName ??
           row.hspNm ??
           row.detail_HSP_NM ??
           row.drug_HSP_NM ??
@@ -158,14 +167,29 @@ function extractMedicationRows(normalizedJson: unknown): {
       toText(
         row.diagDate ??
           row.medDate ??
+          row.date ??
+          row.rxDate ??
+          row.prescribeDate ??
+          row.prscDate ??
+          row.takeDate ??
+          row.TRTM_YMD ??
           row.detail_PRSC_YMD ??
+          row.detail_TRTM_YMD ??
           row.drug_PRSC_YMD ??
+          row.drug_TRTM_YMD ??
           row.PRSC_YMD ??
-          row.date
+          row.medicationDate
       ) || null;
 
     const dosageDay =
-      toText(row.dosageDay ?? row.detail_DOSAGE_DAY ?? row.drug_DOSAGE_DAY) || null;
+      toText(
+        row.dosageDay ??
+          row.period ??
+          row.takeDay ??
+          row.dayCount ??
+          row.detail_DOSAGE_DAY ??
+          row.drug_DOSAGE_DAY
+      ) || null;
 
     const uniqueKey = `${medicationName}|${date ?? ""}|${hospitalName ?? ""}`;
     if (seen.has(uniqueKey)) continue;

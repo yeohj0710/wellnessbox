@@ -4,6 +4,7 @@ import db from "@/lib/db";
 import { computeAndSaveB2bAnalysis } from "@/lib/b2b/analysis-service";
 import { logB2bAdminAction } from "@/lib/b2b/employee-service";
 import { resolveCurrentPeriodKey } from "@/lib/b2b/period";
+import { regenerateB2bReport } from "@/lib/b2b/report-service";
 import { requireAdminSession } from "@/lib/server/route-auth";
 import { resolveDbRouteError } from "@/lib/server/db-error";
 
@@ -152,6 +153,13 @@ export async function PUT(req: Request, ctx: RouteContext) {
       replaceLatestPeriodEntry: true,
       generateAiEvaluation: parsed.data.generateAiEvaluation,
     });
+    const report = await regenerateB2bReport({
+      employeeId,
+      periodKey,
+      pageSize: "A4",
+      recomputeAnalysis: false,
+      generateAiEvaluation: parsed.data.generateAiEvaluation,
+    });
 
     await logB2bAdminAction({
       employeeId,
@@ -172,6 +180,13 @@ export async function PUT(req: Request, ctx: RouteContext) {
         reportCycle: saved.analysis.reportCycle ?? null,
         updatedAt: saved.analysis.updatedAt.toISOString(),
         ...summarizeComputedForResponse(saved.computed as Record<string, unknown>),
+      },
+      report: {
+        id: report.id,
+        variantIndex: report.variantIndex,
+        status: report.status,
+        periodKey: report.periodKey ?? periodKey,
+        updatedAt: report.updatedAt.toISOString(),
       },
     });
   } catch (error) {
@@ -215,6 +230,13 @@ export async function POST(req: Request, ctx: RouteContext) {
       externalAnalysisPayload: parsed.data.externalAnalysisPayload,
       replaceLatestPeriodEntry: parsed.data.replaceLatestPeriodEntry,
     });
+    const report = await regenerateB2bReport({
+      employeeId,
+      periodKey,
+      pageSize: "A4",
+      recomputeAnalysis: false,
+      generateAiEvaluation: parsed.data.generateAiEvaluation,
+    });
 
     await logB2bAdminAction({
       employeeId,
@@ -236,6 +258,13 @@ export async function POST(req: Request, ctx: RouteContext) {
         reportCycle: saved.analysis.reportCycle ?? null,
         updatedAt: saved.analysis.updatedAt.toISOString(),
         ...summarizeComputedForResponse(saved.computed as Record<string, unknown>),
+      },
+      report: {
+        id: report.id,
+        variantIndex: report.variantIndex,
+        status: report.status,
+        periodKey: report.periodKey ?? periodKey,
+        updatedAt: report.updatedAt.toISOString(),
       },
     });
   } catch (error) {

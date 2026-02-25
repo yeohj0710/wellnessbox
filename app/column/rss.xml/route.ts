@@ -1,6 +1,8 @@
 import { SITE_URL } from "@/lib/constants";
 import { getAllColumnSummaries } from "../_lib/columns";
 
+export const dynamic = "force-dynamic";
+
 function escapeXml(value: string) {
   return value
     .replace(/&/g, "&amp;")
