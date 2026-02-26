@@ -56,14 +56,6 @@ export function DesktopMenuContent({
         내 주문 조회
       </IntentPrefetchLink>
 
-      <IntentPrefetchLink
-        href="/column"
-        className={menuItemClasses()}
-        onClick={onItemClick}
-      >
-        칼럼
-      </IntentPrefetchLink>
-
       <div className="relative flex items-center gap-2" ref={aiRef}>
         <button
           onClick={onToggleAiOpen}
@@ -76,13 +68,17 @@ export function DesktopMenuContent({
             <AiPromptBadge />
           </span>
           <ChevronDownIcon
-            className={`w-4 h-4 transition-transform ${aiOpen ? "rotate-180" : ""}`}
+            className={`w-4 h-4 transition-transform ${
+              aiOpen ? "rotate-180" : ""
+            }`}
           />
         </button>
 
         <IntentPrefetchLink
           href="/chat"
-          className={menuItemClasses("ml-1.5 inline-flex items-center gap-1 leading-none")}
+          className={menuItemClasses(
+            "ml-1.5 inline-flex items-center gap-1 leading-none"
+          )}
           onClick={onItemClick}
         >
           <span>AI 맞춤 상담</span>
@@ -116,6 +112,14 @@ export function DesktopMenuContent({
           </div>
         )}
       </div>
+
+      <IntentPrefetchLink
+        href="/column"
+        className={menuItemClasses()}
+        onClick={onItemClick}
+      >
+        건강 칼럼
+      </IntentPrefetchLink>
 
       <DesktopOperatorLinks
         showPharmMenus={visibility.showPharmMenus}

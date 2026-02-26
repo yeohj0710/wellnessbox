@@ -3,6 +3,7 @@ import "server-only";
 import db from "@/lib/db";
 import { computeAndSaveB2bAnalysis } from "@/lib/b2b/analysis-service";
 import { buildB2bReportPayload } from "@/lib/b2b/report-payload";
+import type { B2bReportPayload } from "@/lib/b2b/report-payload";
 import {
   LAYOUT_TEMPLATE_VERSION,
   pickStylePreset,

@@ -23,10 +23,14 @@ const DesktopChatDock = dynamic(() => import("@/components/chat/DesktopChatDock"
 const CommandPalette = dynamic(() => import("./commandPalette"), {
   ssr: false,
 });
+const RouteChangeLoading = dynamic(() => import("./routeChangeLoading"), {
+  ssr: false,
+});
 
 export default function RootLayoutEnhancers() {
   return (
     <>
+      <RouteChangeLoading />
       <AppBackHandler />
       <TopBar />
       <GlobalCartHost />
