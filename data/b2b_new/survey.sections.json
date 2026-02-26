@@ -1,0 +1,7476 @@
+{
+  "id": "wellnessbox_wellness_survey_sections_v1",
+  "title": "웰니스 설문지 - 상세 질문지",
+  "version": "1.0.0",
+  "generatedAtUtc": "2026-02-26T10:34:19Z",
+  "sections": [
+    {
+      "id": "S01",
+      "title": "기억력 및 인지 기능",
+      "questionCount": 10,
+      "questions": [
+        {
+          "id": "S01_Q01",
+          "number": 1,
+          "prompt": "현재 연령이 만 50 세 이상이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S01_Q02",
+          "number": 2,
+          "prompt": "현재 지속적으로 복용 중인 정신건강 관련 약물이 있으십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S01_Q03",
+          "number": 3,
+          "prompt": "하루 평균 수면 시간이 6~8 시간 정도로 충분하신 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S01_Q04",
+          "number": 4,
+          "prompt": "평소 음주 횟수는 어느 정도이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "안 마심",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "월 1 회 이하",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "월 2~4 회",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "주 2~3 회",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "주 4 회 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S01_Q05",
+          "number": 5,
+          "prompt": "평소 1 회 음주량은 어느 정도이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "반병 이하",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "1 병",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "1.5 병",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "2 병",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "2.5 병 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S01_Q06",
+          "number": 6,
+          "prompt": "일상생활 중 스트레스를 어느 정도 경험하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "전혀 없다",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "거의 없다",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "가끔 있다",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "자주 있다",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "매우 자주 있다",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S01_Q07",
+          "number": 7,
+          "prompt": "평소 우울감을 자주 느끼시는 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S01_Q08",
+          "number": 8,
+          "prompt": "1 년 전과 비교하여 현재 날짜나 요일을 기억하는 데 어려움이 있으십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "아니다",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "가끔 그렇다",
+              "score": 0.5
+            },
+            {
+              "value": "C",
+              "label": "자주 그렇다",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S01_Q09",
+          "number": 9,
+          "prompt": "1 년 전과 비교하여 대화 내용을 이해하기 어려워 되묻는 경우가 많아지셨습니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "아니다",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "가끔 그렇다",
+              "score": 0.5
+            },
+            {
+              "value": "C",
+              "label": "자주 그렇다",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S01_Q10",
+          "number": 10,
+          "prompt": "1 년 전과 비교하여 일상생활에 필요한 계산 능력이 저하되었다고 느끼십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "아니다",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "가끔 그렇다",
+              "score": 0.5
+            },
+            {
+              "value": "C",
+              "label": "자주 그렇다",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S02",
+      "title": "수면, 피로",
+      "questionCount": 13,
+      "questions": [
+        {
+          "id": "S02_Q01",
+          "number": 1,
+          "prompt": "하루 평균 4 잔 이상의 카페인 음료를 섭취하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S02_Q02",
+          "number": 2,
+          "prompt": "하루 평균 수면 시간이 6~8 시간 정도 되십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S02_Q03",
+          "number": 3,
+          "prompt": "평소 음주 빈도는 어느 정도이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "안 마심",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "월 1 회 이하",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "월 2~4 회",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "주 2~3 회",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "주 4 회 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S02_Q04",
+          "number": 4,
+          "prompt": "평소 음주량은 어느 정도이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "반병 이하",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "1 병",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "1.5 병",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "2 병",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "2.5 병 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S02_Q05",
+          "number": 5,
+          "prompt": "평소 코골이가 심하신 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S02_Q06",
+          "number": 6,
+          "prompt": "지난 한 달 동안 전반적인 수면의 질은 어떠했습니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "매우 좋음",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "상당히 좋음",
+              "score": 0.3
+            },
+            {
+              "value": "C",
+              "label": "상당히 나쁨",
+              "score": 0.6
+            },
+            {
+              "value": "D",
+              "label": "매우 나쁨",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S02_Q07",
+          "number": 7,
+          "prompt": "지난 한 달 동안 일상 활동 중 졸음을 느끼신 적이 얼마나 자주 있습니까? (0)",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "주 1 회 이하",
+              "score": 0.3
+            },
+            {
+              "value": "B",
+              "label": "주 1-2 회",
+              "score": 0.6
+            },
+            {
+              "value": "C",
+              "label": "주 3 회 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S02_Q08",
+          "number": 8,
+          "prompt": "현재 전자담배를 포함한 흡연을 하고 계십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "전혀 안 피움",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "금연 10 년 이상",
+              "score": 0.1
+            },
+            {
+              "value": "C",
+              "label": "금연 10 년 미만",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "흡연 중",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S02_Q09",
+          "number": 9,
+          "prompt": "평소 쉽게 피로감을 느끼시는 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S02_Q10",
+          "number": 10,
+          "prompt": "피로로 인해 신체 기능에 지장을 받고 계십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S02_Q11",
+          "number": 11,
+          "prompt": "피로로 인해 업무나 일상생활 수행에 어려움이 있으십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S02_Q12",
+          "number": 12,
+          "prompt": "수면 후에도 피로가 해소되지 않는 느낌을 자주 받으십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S02_Q13",
+          "number": 13,
+          "prompt": "평소 근육의 피로감을 자주 느끼시는 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S03",
+      "title": "스트레스",
+      "questionCount": 7,
+      "questions": [
+        {
+          "id": "S03_Q01",
+          "number": 1,
+          "prompt": "지난 한 달간 정신적·신체적 부담을 감당하기 어렵다고 느끼신 적이 있습니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "없음",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "간혹 있음",
+              "score": 0.3
+            },
+            {
+              "value": "C",
+              "label": "종종 있음",
+              "score": 0.6
+            },
+            {
+              "value": "D",
+              "label": "항상 있음",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S03_Q02",
+          "number": 2,
+          "prompt": "지난 한 달간 자신의 생활신념을 지키는 과정에서 좌절감을 느끼신 적이 있습니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "없음",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "간혹 있음",
+              "score": 0.3
+            },
+            {
+              "value": "C",
+              "label": "종종 있음",
+              "score": 0.6
+            },
+            {
+              "value": "D",
+              "label": "항상 있음",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S03_Q03",
+          "number": 3,
+          "prompt": "지난 한 달간 미래에 대한 불확실성으로 인해 불안감을 느끼신 적이 있습니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "없음",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "간혹 있음",
+              "score": 0.3
+            },
+            {
+              "value": "C",
+              "label": "종종 있음",
+              "score": 0.6
+            },
+            {
+              "value": "D",
+              "label": "항상 있음",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S03_Q04",
+          "number": 4,
+          "prompt": "지난 한 달간 과도한 업무로 인해 중요한 사항을 잊으신 적이 있습니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "없음",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "간혹 있음",
+              "score": 0.3
+            },
+            {
+              "value": "C",
+              "label": "종종 있음",
+              "score": 0.6
+            },
+            {
+              "value": "D",
+              "label": "항상 있음",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S03_Q05",
+          "number": 5,
+          "prompt": "평소 우울한 기분을 자주 느끼시는 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S03_Q06",
+          "number": 6,
+          "prompt": "평소 초조함을 자주 느끼시는 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S03_Q07",
+          "number": 7,
+          "prompt": "평소 수면을 취하는 데 어려움이 있으십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S04",
+      "title": "구강.치아",
+      "questionCount": 11,
+      "questions": [
+        {
+          "id": "S04_Q01",
+          "number": 1,
+          "prompt": "과거 고혈압 진단을 받으셨거나 현재 치료 중이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S04_Q02",
+          "number": 2,
+          "prompt": "과거 당뇨병 진단을 받으셨거나 현재 치료 중이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S04_Q03",
+          "number": 3,
+          "prompt": "과거 심장질환 진단을 받으셨거나 현재 치료 중이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S04_Q04",
+          "number": 4,
+          "prompt": "직계가족 중 틀니를 사용하시는 분이 있으십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S04_Q05",
+          "number": 5,
+          "prompt": "하루 평균 탄산 및 청량음료 섭취 횟수는 어떻게 되십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "먹지 않음",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "1 번",
+              "score": 0.3
+            },
+            {
+              "value": "C",
+              "label": "2-3 번",
+              "score": 0.6
+            },
+            {
+              "value": "D",
+              "label": "4 번 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S04_Q06",
+          "number": 6,
+          "prompt": "하루 평균 당분이 많거나 점성이 있는 간식의 섭취 횟수는 어떻게 되십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "먹지 않음",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "1 번",
+              "score": 0.3
+            },
+            {
+              "value": "C",
+              "label": "2-3 번",
+              "score": 0.6
+            },
+            {
+              "value": "D",
+              "label": "4 번 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S04_Q07",
+          "number": 7,
+          "prompt": "최근 일주일 동안 치실 또는 치간 칫솔의 사용 빈도는 어느 정도입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "항상 했다",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "대부분 했다",
+              "score": 0.3
+            },
+            {
+              "value": "C",
+              "label": "가끔 했다",
+              "score": 0.6
+            },
+            {
+              "value": "D",
+              "label": "전혀 안 함",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S04_Q08",
+          "number": 8,
+          "prompt": "평소 수면 중 이갈이를 하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S04_Q09",
+          "number": 9,
+          "prompt": "현재 전자담배를 포함한 흡연을 하고 계십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "전혀 안 피움",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "금연 10 년 이상",
+              "score": 0.1
+            },
+            {
+              "value": "C",
+              "label": "금연 10 년 미만",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "흡연 중",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S04_Q10",
+          "number": 10,
+          "prompt": "최근 3 개월 이내에 치아 통증을 경험하신 적이 있습니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S04_Q11",
+          "number": 11,
+          "prompt": "평소 잇몸 통증을 자주 느끼시는 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S05",
+      "title": "눈",
+      "questionCount": 12,
+      "questions": [
+        {
+          "id": "S05_Q01",
+          "number": 1,
+          "prompt": "귀하의 성별을 선택해 주십시오.",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "남성",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "여성",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S05_Q02",
+          "number": 2,
+          "prompt": "현재 연령이 만 60 세 이상이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S05_Q03",
+          "number": 3,
+          "prompt": "과거 고혈압 진단 이력이 있거나 현재 치료 중이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S05_Q04",
+          "number": 4,
+          "prompt": "과거 당뇨병 진단 이력이 있거나 현재 치료 중이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S05_Q05",
+          "number": 5,
+          "prompt": "안질환과 관련한 가족력이 있으십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S05_Q06",
+          "number": 6,
+          "prompt": "평소 녹황색 채소 및 해조류를 규칙적으로 섭취하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S05_Q07",
+          "number": 7,
+          "prompt": "하루 평균 영상 기기(모니터, TV 등)를 6 시간 이상 연속 시청하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S05_Q08",
+          "number": 8,
+          "prompt": "현재 전자담배를 포함한 흡연을 하고 계십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "전혀 안 피움",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "금연 10 년 이상",
+              "score": 0.1
+            },
+            {
+              "value": "C",
+              "label": "금연 10 년 미만",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "흡연 중",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S05_Q09",
+          "number": 9,
+          "prompt": "평소 독서나 신문 읽기에 불편함을 느끼십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S05_Q10",
+          "number": 10,
+          "prompt": "평소 안구 건조감이나 이물감을 자주 느끼십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S05_Q11",
+          "number": 11,
+          "prompt": "평소 눈이 건조하다고 느끼시는 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S05_Q12",
+          "number": 12,
+          "prompt": "콘택트렌즈 착용 시 충혈이 잦거나 불편함이 있으십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S06",
+      "title": "피부",
+      "questionCount": 7,
+      "questions": [
+        {
+          "id": "S06_Q01",
+          "number": 1,
+          "prompt": "현재 연령이 만 40 세 이상이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S06_Q02",
+          "number": 2,
+          "prompt": "평소 자외선 차단제를 규칙적으로 사용하고 계십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S06_Q03",
+          "number": 3,
+          "prompt": "피부가 거칠어 갈라지거나 탄력이 부족하여 푸석하다고 느끼십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S06_Q04",
+          "number": 4,
+          "prompt": "평소 주름이 많다고 느끼시는 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S06_Q05",
+          "number": 5,
+          "prompt": "평소 상처 치유가 더디다고 느끼십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S06_Q06",
+          "number": 6,
+          "prompt": "과거에 아토피 진단을 받으셨거나 현재 치료 중이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S06_Q07",
+          "number": 7,
+          "prompt": "최근 3 일 이내에 가려움증으로 인해 일상생활이나 수면에 방해를 받으신 적이 있습니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "없음",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "무의식중 긁음",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "방해되나 온종일은 아님",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "대부분 방해됨",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "심함",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S07",
+      "title": "간",
+      "questionCount": 10,
+      "questions": [
+        {
+          "id": "S07_Q01",
+          "number": 1,
+          "prompt": "현재 체질량지수(BMI)가 25 이상에 해당하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S07_Q02",
+          "number": 2,
+          "prompt": "과거에 바이러스성 간염 진단을 받으셨거나 현재 치료 중이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S07_Q03",
+          "number": 3,
+          "prompt": "과거에 당뇨병 진단을 받으셨거나 현재 치료 중이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S07_Q04",
+          "number": 4,
+          "prompt": "과거에 이상지질혈증 진단을 받으셨거나 현재 치료 중이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S07_Q05",
+          "number": 5,
+          "prompt": "현재 지속적으로 복용 중인 약물이 있으십니까? (결핵약, 피임약, 항암제 등)",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "있음",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "없음",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S07_Q06",
+          "number": 6,
+          "prompt": "평소 과식을 자주 하시는 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "항상 그렇다",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "보통이다",
+              "score": 0.5
+            },
+            {
+              "value": "C",
+              "label": "아닌 편이다",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S07_Q07",
+          "number": 7,
+          "prompt": "평소 음주 횟수는 어느 정도이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "안 마심",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "월 1 회 이하",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "월 2~4 회",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "주 2~3 회",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "주 4 회 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S07_Q08",
+          "number": 8,
+          "prompt": "평소 1 회 음주량은 어느 정도이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "반병 이하",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "1 병",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "1.5 병",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "2 병",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "2.5 병 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S07_Q09",
+          "number": 9,
+          "prompt": "상복부의 불편감이나 복부 팽만감이 있으십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S07_Q10",
+          "number": 10,
+          "prompt": "충분한 수면 후에도 피로가 해소되지 않는 느낌을 받으십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S08",
+      "title": "위",
+      "questionCount": 11,
+      "questions": [
+        {
+          "id": "S08_Q01",
+          "number": 1,
+          "prompt": "현재 연령이 만 50 세 이상이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S08_Q02",
+          "number": 2,
+          "prompt": "일상생활 중 스트레스를 어느 정도 경험하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "전혀 없다",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "거의 없다",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "가끔 있다",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "자주 있다",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "매우 자주 있다",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S08_Q03",
+          "number": 3,
+          "prompt": "평소 음주 빈도는 어떻게 되십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "안 마심",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "월 1 회 이하",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "월 2~4 회",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "주 2~3 회",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "주 4 회 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S08_Q04",
+          "number": 4,
+          "prompt": "평소 음주량은 어느 정도이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "반병 이하",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "1 병",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "1.5 병",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "2 병",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "2.5 병 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S08_Q05",
+          "number": 5,
+          "prompt": "평소 복부 통증을 자주 느끼시는 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S08_Q06",
+          "number": 6,
+          "prompt": "식사 후 위산 역류나 속쓰림 증상이 있으십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S08_Q07",
+          "number": 7,
+          "prompt": "평소 트림을 자주 하시는 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S08_Q08",
+          "number": 8,
+          "prompt": "평소 소화불량으로 인해 자주 체하시는 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S08_Q09",
+          "number": 9,
+          "prompt": "식사 후 배가 더부룩한 느낌(팽만감)을 받으십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S08_Q10",
+          "number": 10,
+          "prompt": "식사 후 즉시 배변을 보시는 습관이 있으십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S08_Q11",
+          "number": 11,
+          "prompt": "식사 후 졸음이 쏟아지는 식곤증을 자주 경험하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S09",
+      "title": "장",
+      "questionCount": 9,
+      "questions": [
+        {
+          "id": "S09_Q01",
+          "number": 1,
+          "prompt": "불용성 식이섬유(고구마, 김치, 두부, 감자 등)를 포함한 음식을 규칙적으로 섭취하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S09_Q02",
+          "number": 2,
+          "prompt": "인스턴트나 가공식품 등을 매일 1 회 이상 섭취하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "항상 그렇다",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "보통이다",
+              "score": 0.5
+            },
+            {
+              "value": "C",
+              "label": "아닌 편이다",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S09_Q03",
+          "number": 3,
+          "prompt": "현재 지속적으로 복용 중인 항생제가 있으십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S09_Q04",
+          "number": 4,
+          "prompt": "일상생활 중 스트레스를 어느 정도 경험하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "전혀 없다",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "거의 없다",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "가끔 있다",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "자주 있다",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "매우 자주 있다",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S09_Q05",
+          "number": 5,
+          "prompt": "평소 음주 횟수는 어느 정도이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "안 마심",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "월 1 회 이하",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "월 2~4 회",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "주 2~3 회",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "주 4 회 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S09_Q06",
+          "number": 6,
+          "prompt": "평소 음주량은 어느 정도이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "반병 이하",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "1 병",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "1.5 병",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "2 병",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "2.5 병 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S09_Q07",
+          "number": 7,
+          "prompt": "현재 전자담배를 포함한 흡연을 하고 계십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "전혀 피우지 않음",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "피웠지만 금연 10 년 이상",
+              "score": 0.1
+            },
+            {
+              "value": "C",
+              "label": "10 년 미만",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "흡연 중",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S09_Q08",
+          "number": 8,
+          "prompt": "최근 3 개월 이내에 변비 관련 증상이 있었습니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "2 가지 이상 선택 시",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아닌 경우",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S09_Q09",
+          "number": 9,
+          "prompt": "잦은 복통이나 배탈 등으로 장이 예민한 편이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S10",
+      "title": "체지방",
+      "questionCount": 10,
+      "questions": [
+        {
+          "id": "S10_Q01",
+          "number": 1,
+          "prompt": "귀하의 체질량지수(BMI)가 25 이상에 해당하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S10_Q02",
+          "number": 2,
+          "prompt": "당분이 높은 간식이나 음료를 매일 1 회 이상 섭취하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "항상 그런 편이다",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "보통이다",
+              "score": 0.5
+            },
+            {
+              "value": "C",
+              "label": "아닌 편이다",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S10_Q03",
+          "number": 3,
+          "prompt": "평소 탄수화물 위주의 식사를 하시는 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S10_Q04",
+          "number": 4,
+          "prompt": "일주일에 콜레스테롤 함량이 높은 식품을 몇 회 섭취하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "주 4 회 이상",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "주 2-3 회",
+              "score": 0.5
+            },
+            {
+              "value": "C",
+              "label": "주 1 회 이하",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S10_Q05",
+          "number": 5,
+          "prompt": "평소 식사 속도가 10 분 이내로 빠른 편이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S10_Q06",
+          "number": 6,
+          "prompt": "일주일에 3 회 이상, 1 회 30 분 이상 운동하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S10_Q07",
+          "number": 7,
+          "prompt": "하루 평균 앉아서 보내는 시간이 6 시간 이상이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S10_Q08",
+          "number": 8,
+          "prompt": "하루 평균 수면 시간이 6~8 시간 정도 되십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S10_Q09",
+          "number": 9,
+          "prompt": "(여성의 경우) 해당되는 항목이 있으시면 선택해 주십시오.",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "임신",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "수유",
+              "score": 0.0
+            },
+            {
+              "value": "C",
+              "label": "폐경",
+              "score": 1.0
+            },
+            {
+              "value": "D",
+              "label": "해당없음",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S10_Q10",
+          "number": 10,
+          "prompt": "부모님이 현재 또는 과거에 과체중이셨던 적이 있습니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S11",
+      "title": "혈당",
+      "questionCount": 6,
+      "questions": [
+        {
+          "id": "S11_Q01",
+          "number": 1,
+          "prompt": "귀하의 체질량지수(BMI)가 25 이상이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S11_Q02",
+          "number": 2,
+          "prompt": "일주일에 평균 3 회 이상 운동을 수행하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S11_Q03",
+          "number": 3,
+          "prompt": "일상생활 중 스트레스를 어느 정도 경험하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "전혀 없다",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "거의 없다",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "가끔 있다",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "자주 있다",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "매우 자주 있다",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S11_Q04",
+          "number": 4,
+          "prompt": "평소 당분이 많은 음식을 자주 섭취하시는 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S11_Q05",
+          "number": 5,
+          "prompt": "평소 과식을 자주 하시는 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "항상 그런 편이다",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "보통이다",
+              "score": 0.5
+            },
+            {
+              "value": "C",
+              "label": "아닌 편이다",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S11_Q06",
+          "number": 6,
+          "prompt": "평소 식사 속도가 빠른 편이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S12",
+      "title": "갱년기 여성",
+      "questionCount": 9,
+      "questions": [
+        {
+          "id": "S12_Q01",
+          "number": 1,
+          "prompt": "현재 연령이 만 50 세 이상이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S12_Q02",
+          "number": 2,
+          "prompt": "평소 안면 홍조(화끈거림)를 자주 느끼시는 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "없음",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "약간",
+              "score": 0.3
+            },
+            {
+              "value": "C",
+              "label": "보통",
+              "score": 0.6
+            },
+            {
+              "value": "D",
+              "label": "심함",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S12_Q03",
+          "number": 3,
+          "prompt": "평소 손발 저림이나 찌릿한 증상을 자주 느끼십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "없음",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "약간",
+              "score": 0.3
+            },
+            {
+              "value": "C",
+              "label": "보통",
+              "score": 0.6
+            },
+            {
+              "value": "D",
+              "label": "심함",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S12_Q04",
+          "number": 4,
+          "prompt": "평소 입면이 어렵거나 수면 중 자주 깨는 편이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "없음",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "약간",
+              "score": 0.3
+            },
+            {
+              "value": "C",
+              "label": "보통",
+              "score": 0.6
+            },
+            {
+              "value": "D",
+              "label": "심함",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S12_Q05",
+          "number": 5,
+          "prompt": "평소 예민함이나 불안감을 자주 느끼시는 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "없음",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "약간",
+              "score": 0.3
+            },
+            {
+              "value": "C",
+              "label": "보통",
+              "score": 0.6
+            },
+            {
+              "value": "D",
+              "label": "심함",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S12_Q06",
+          "number": 6,
+          "prompt": "평소 쉽게 피로감을 느끼시는 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "없음",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "약간",
+              "score": 0.3
+            },
+            {
+              "value": "C",
+              "label": "보통",
+              "score": 0.6
+            },
+            {
+              "value": "D",
+              "label": "심함",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S12_Q07",
+          "number": 7,
+          "prompt": "평소 두통 증상이 있으십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "없음",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "약간",
+              "score": 0.3
+            },
+            {
+              "value": "C",
+              "label": "보통",
+              "score": 0.6
+            },
+            {
+              "value": "D",
+              "label": "심함",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S12_Q08",
+          "number": 8,
+          "prompt": "평소 관절이나 근육의 피로감을 느끼시는 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "없음",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "약간",
+              "score": 0.3
+            },
+            {
+              "value": "C",
+              "label": "보통",
+              "score": 0.6
+            },
+            {
+              "value": "D",
+              "label": "심함",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S12_Q09",
+          "number": 9,
+          "prompt": "평소 심장 두근거림을 자주 경험하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "없음",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "약간",
+              "score": 0.3
+            },
+            {
+              "value": "C",
+              "label": "보통",
+              "score": 0.6
+            },
+            {
+              "value": "D",
+              "label": "심함",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S13",
+      "title": "갱년기 남성",
+      "questionCount": 8,
+      "questions": [
+        {
+          "id": "S13_Q01",
+          "number": 1,
+          "prompt": "현재 연령이 만 40 세 이상이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S13_Q02",
+          "number": 2,
+          "prompt": "과거에 비해 성욕이 감퇴하였다고 느끼십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S13_Q03",
+          "number": 3,
+          "prompt": "평소 기력이 있으신 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S13_Q04",
+          "number": 4,
+          "prompt": "체력이나 지구력의 저하를 경험하고 계십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S13_Q05",
+          "number": 5,
+          "prompt": "과거에 비해 신장(키)이 감소하셨습니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S13_Q06",
+          "number": 6,
+          "prompt": "평소 울적한 기분이나 이유 없는 짜증을 자주 느끼십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S13_Q07",
+          "number": 7,
+          "prompt": "저녁 식사 후 즉시 수면에 빠지는 경우가 잦으십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S13_Q08",
+          "number": 8,
+          "prompt": "최근 업무나 과업의 수행 능력이 저하되었다고 느끼십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S14",
+      "title": "월경전 증후군",
+      "questionCount": 8,
+      "questions": [
+        {
+          "id": "S14_Q01",
+          "number": 1,
+          "prompt": "일상생활 중 스트레스를 어느 정도 경험하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "전혀 없다",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "거의 없다",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "가끔 있다",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "자주 있다",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "매우 자주 있다",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S14_Q02",
+          "number": 2,
+          "prompt": "월경 전 유방 통증을 느끼시는 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S14_Q03",
+          "number": 3,
+          "prompt": "월경 전 복부 팽만감을 느끼시는 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S14_Q04",
+          "number": 4,
+          "prompt": "월경 전 두통이나 극심한 예민함을 경험하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S14_Q05",
+          "number": 5,
+          "prompt": "월경 전 신체 부종(붓기)이 나타나는 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S14_Q06",
+          "number": 6,
+          "prompt": "월경 전 우울감을 느끼시는 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S14_Q07",
+          "number": 7,
+          "prompt": "월경 전 집중력 저하를 경험하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S14_Q08",
+          "number": 8,
+          "prompt": "월경 전 식욕 변화나 수면 장애(불면 또는 과수면)가 나타납니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S15",
+      "title": "콜레스테롤, 중성지방",
+      "questionCount": 15,
+      "questions": [
+        {
+          "id": "S15_Q01",
+          "number": 1,
+          "prompt": "귀하의 성별을 선택해 주십시오.",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "남성",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "여성",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S15_Q02",
+          "number": 2,
+          "prompt": "귀하의 체질량지수(BMI)가 25 이상에 해당하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S15_Q03",
+          "number": 3,
+          "prompt": "현재 지속적으로 복용 중인 약물을 모두 선택해 주십시오.",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "있음",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "없음",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S15_Q04",
+          "number": 4,
+          "prompt": "일주일 평균 튀김이나 볶음 요리의 섭취 횟수는 어떻게 되십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "주 4 회 이상",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "주 2-3 회",
+              "score": 0.5
+            },
+            {
+              "value": "C",
+              "label": "주 1 회 이하",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S15_Q05",
+          "number": 5,
+          "prompt": "평소 음주 빈도는 어떻게 되십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "안 마심",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "월 1 회 이하",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "월 2~4 회",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "주 2~3 회",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "주 4 회 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S15_Q06",
+          "number": 6,
+          "prompt": "평소 1 회 음주량은 어느 정도이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "반병 이하",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "1 병",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "1.5 병",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "2 병",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "2.5 병 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S15_Q07",
+          "number": 7,
+          "prompt": "일상생활 중 스트레스를 어느 정도 경험하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "전혀 없다",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "거의 없다",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "가끔 있다",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "자주 있다",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "매우 자주 있다",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S15_Q08",
+          "number": 8,
+          "prompt": "과거 고혈압 진단 이력이 있거나 현재 치료 중이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S15_Q09",
+          "number": 9,
+          "prompt": "과거 당뇨병 진단 이력이 있거나 현재 치료 중이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S15_Q10",
+          "number": 10,
+          "prompt": "과거 심장질환 진단 이력이 있거나 현재 치료 중이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S15_Q11",
+          "number": 11,
+          "prompt": "과거 신장질환 진단 이력이 있거나 현재 치료 중이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S15_Q12",
+          "number": 12,
+          "prompt": "이상지질혈증(콜레스테롤혈증)의 가족력이 있으십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S15_Q13",
+          "number": 13,
+          "prompt": "일주일 평균 고콜레스테롤 식품의 섭취 횟수는 어떻게 되십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "주 4 회 이상",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "주 2-3 회",
+              "score": 0.5
+            },
+            {
+              "value": "C",
+              "label": "주 1 회 이하",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S15_Q14",
+          "number": 14,
+          "prompt": "일주일에 평균 3 회 이상, 1 회 30 분 이상 운동을 수행하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S15_Q15",
+          "number": 15,
+          "prompt": "현재 전자담배를 포함한 흡연을 하고 계십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "전혀 피우지 않음",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "피웠지만 금연 10 년 이상",
+              "score": 0.1
+            },
+            {
+              "value": "C",
+              "label": "10 년 미만",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "흡연 중",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S16",
+      "title": "혈압",
+      "questionCount": 8,
+      "questions": [
+        {
+          "id": "S16_Q01",
+          "number": 1,
+          "prompt": "현재 연령이 만 60 세 이상이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S16_Q02",
+          "number": 2,
+          "prompt": "귀하의 체질량지수(BMI)가 25 이상에 해당하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S16_Q03",
+          "number": 3,
+          "prompt": "염분이 높은 식품(젓갈, 장아찌 등)을 매일 1 회 이상 섭취하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "항상 그런 편이다",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "보통이다",
+              "score": 0.5
+            },
+            {
+              "value": "C",
+              "label": "아닌 편이다",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S16_Q04",
+          "number": 4,
+          "prompt": "일주일에 평균 3 회 이상, 1 회 30 분 이상 운동을 수행하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S16_Q05",
+          "number": 5,
+          "prompt": "평소 음주 빈도는 어느 정도이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "안 마심",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "월 1 회 이하",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "월 2~4 회",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "주 2~3 회",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "주 4 회 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S16_Q06",
+          "number": 6,
+          "prompt": "평소 1 회 음주량은 어느 정도이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "반병 이하",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "1 병",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "1.5 병",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "2 병",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "2.5 병 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S16_Q07",
+          "number": 7,
+          "prompt": "현재 전자담배를 포함한 흡연을 하고 계십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "전혀 피우지 않음",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "피웠지만 금연 10 년 이상",
+              "score": 0.1
+            },
+            {
+              "value": "C",
+              "label": "10 년 미만",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "흡연 중",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S16_Q08",
+          "number": 8,
+          "prompt": "일상생활 중 스트레스를 어느 정도 경험하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "전혀 없다",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "거의 없다",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "가끔 있다",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "자주 있다",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "매우 자주 있다",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S17",
+      "title": "면역력",
+      "questionCount": 7,
+      "questions": [
+        {
+          "id": "S17_Q01",
+          "number": 1,
+          "prompt": "당분이 높은 간식이나 음료를 매일 1 회 이상 섭취하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "항상 그런 편이다",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "보통이다",
+              "score": 0.5
+            },
+            {
+              "value": "C",
+              "label": "아닌 편이다",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S17_Q02",
+          "number": 2,
+          "prompt": "평소 음주 횟수는 어느 정도이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "안 마심",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "월 1 회 이하",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "월 2~4 회",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "주 2~3 회",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "주 4 회 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S17_Q03",
+          "number": 3,
+          "prompt": "평소 음주량은 어느 정도이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "반병 이하",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "1 병",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "1.5 병",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "2 병",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "2.5 병 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S17_Q04",
+          "number": 4,
+          "prompt": "현재 흡연을 하고 계십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "전혀 피우지 않음",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "금연한 지 10 년 이상",
+              "score": 0.1
+            },
+            {
+              "value": "C",
+              "label": "금연한 지 10 년 미만",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "흡연 중",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S17_Q05",
+          "number": 5,
+          "prompt": "일상생활 중 스트레스를 어느 정도 경험하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "전혀 없다",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "거의 없다",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "가끔 있다",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "자주 있다",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "매우 자주 있다",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S17_Q06",
+          "number": 6,
+          "prompt": "최근 1 년 이내에 호흡기 질환(감기, 편도염 등) 증상을 2 회 이상 경험하셨습니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S17_Q07",
+          "number": 7,
+          "prompt": "최근 한 달 이내에 피로감 증가나 체력 저하를 느끼셨습니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S18",
+      "title": "항산화",
+      "questionCount": 7,
+      "questions": [
+        {
+          "id": "S18_Q01",
+          "number": 1,
+          "prompt": "현재 연령이 만 60 세 이상이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S18_Q02",
+          "number": 2,
+          "prompt": "평소 과식을 자주 하시는 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "항상 그런 편이다",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "보통이다",
+              "score": 0.5
+            },
+            {
+              "value": "C",
+              "label": "아닌 편이다",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S18_Q03",
+          "number": 3,
+          "prompt": "평소 음주 빈도는 어떻게 되십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "안 마심",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "월 1 회 이하",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "월 2~4 회",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "주 2~3 회",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "주 4 회 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S18_Q04",
+          "number": 4,
+          "prompt": "평소 음주량은 어느 정도이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "반병 이하",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "1 병",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "1.5 병",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "2 병",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "2.5 병 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S18_Q05",
+          "number": 5,
+          "prompt": "현재 전자담배를 포함한 흡연을 하고 계십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "전혀 피우지 않음",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "피웠지만 금연 10 년 이상",
+              "score": 0.1
+            },
+            {
+              "value": "C",
+              "label": "10 년 미만",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "흡연 중",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S18_Q06",
+          "number": 6,
+          "prompt": "일상생활 중 스트레스를 어느 정도 경험하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "전혀 없다",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "거의 없다",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "가끔 있다",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "자주 있다",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "매우 자주 있다",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S18_Q07",
+          "number": 7,
+          "prompt": "최근 피부 건조감이나 탄력 저하를 느끼고 계십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S19",
+      "title": "관절, 뼈",
+      "questionCount": 11,
+      "questions": [
+        {
+          "id": "S19_Q01",
+          "number": 1,
+          "prompt": "귀하의 성별을 선택해 주십시오.",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "남성",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "여성",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S19_Q02",
+          "number": 2,
+          "prompt": "귀하의 체질량지수(BMI) 수치는 어떻게 되십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "25 이상",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "18.5 초과 25 미만",
+              "score": 0.0
+            },
+            {
+              "value": "C",
+              "label": "18.5 이하",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S19_Q03",
+          "number": 3,
+          "prompt": "현재 스테로이드나 항경련제를 지속적으로 복용 중이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "없음",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "1 개",
+              "score": 0.5
+            },
+            {
+              "value": "C",
+              "label": "2 개",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S19_Q04",
+          "number": 4,
+          "prompt": "인스턴트나 당분 함유 식품을 매일 1 회 이상 섭취하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "항상 그런 편이다",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "보통이다",
+              "score": 0.5
+            },
+            {
+              "value": "C",
+              "label": "아닌 편이다",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S19_Q05",
+          "number": 5,
+          "prompt": "일주일에 평균 3 회 이상 운동을 수행하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S19_Q06",
+          "number": 6,
+          "prompt": "평소 음주 빈도는 어떻게 되십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "안 마심",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "월 1 회 이하",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "월 2~4 회",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "주 2~3 회",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "주 4 회 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S19_Q07",
+          "number": 7,
+          "prompt": "평소 음주량은 어느 정도이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "반병 이하",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "1 병",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "1.5 병",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "2 병",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "2.5 병 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S19_Q08",
+          "number": 8,
+          "prompt": "현재 흡연을 하고 계십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "전혀 피우지 않음",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "피웠지만 금연 10 년 이상",
+              "score": 0.1
+            },
+            {
+              "value": "C",
+              "label": "10 년 미만",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "흡연 중",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S19_Q09",
+          "number": 9,
+          "prompt": "(여성의 경우) 해당되는 건강 항목을 알려주십시오.",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "임신",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "수유",
+              "score": 0.0
+            },
+            {
+              "value": "C",
+              "label": "폐경",
+              "score": 1.0
+            },
+            {
+              "value": "D",
+              "label": "해당없음",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S19_Q10",
+          "number": 10,
+          "prompt": "평소 일상생활 중 사지(팔다리)의 움직임에 불편함을 느끼십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S19_Q11",
+          "number": 11,
+          "prompt": "평소 관절 부위의 불편감이 있으십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "아프지 않다",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "약간 아프다",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "보통이다",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "꽤 아프다",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "매우 아프다",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S20",
+      "title": "근육",
+      "questionCount": 11,
+      "questions": [
+        {
+          "id": "S20_Q01",
+          "number": 1,
+          "prompt": "일주일에 평균 3 회 이상, 1 회 30 분 이상 운동을 수행하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S20_Q02",
+          "number": 2,
+          "prompt": "일상생활 중 스트레스를 어느 정도 경험하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "전혀 없다",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "거의 없다",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "가끔 있다",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "자주 있다",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "매우 자주 있다",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S20_Q03",
+          "number": 3,
+          "prompt": "하루에 5 대 영양군을 얼마나 고루 포함하여 섭취하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "5 종류",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "4 종류",
+              "score": 0.5
+            },
+            {
+              "value": "C",
+              "label": "3 종류 이하",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S20_Q04",
+          "number": 4,
+          "prompt": "현재 연령이 만 50 세 이상이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S20_Q05",
+          "number": 5,
+          "prompt": "현재 체질량지수(BMI)가 25 이상에 해당하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S20_Q06",
+          "number": 6,
+          "prompt": "평소 음주 빈도는 어느 정도이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "안 마심",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "월 1 회 이하",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "월 2~4 회",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "주 2~3 회",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "주 4 회 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S20_Q07",
+          "number": 7,
+          "prompt": "평소 1 회 음주량은 어느 정도이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "반병 이하",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "1 병",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "1.5 병",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "2 병",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "2.5 병 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S20_Q08",
+          "number": 8,
+          "prompt": "현재 전자담배를 포함한 흡연을 하고 계십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "전혀 피우지 않음",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "피웠지만 금연 10 년 이상",
+              "score": 0.1
+            },
+            {
+              "value": "C",
+              "label": "10 년 미만",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "흡연 중",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S20_Q09",
+          "number": 9,
+          "prompt": "평소 장거리를 보행할 때 신체적 불편함을 느끼십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S20_Q10",
+          "number": 10,
+          "prompt": "평소 앉거나 서 있을 때 자세가 곧고 바른 편이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S20_Q11",
+          "number": 11,
+          "prompt": "평소 30 분 이상 운동할 때 급격한 피로감을 느끼십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S21",
+      "title": "전립선",
+      "questionCount": 7,
+      "questions": [
+        {
+          "id": "S21_Q01",
+          "number": 1,
+          "prompt": "현재 연령이 만 60 세 이상이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S21_Q02",
+          "number": 2,
+          "prompt": "평소 육류 위주의 식단을 선호하십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S21_Q03",
+          "number": 3,
+          "prompt": "배뇨 후에도 소변이 남은 듯한 잔뇨감을 느끼십니까?",
+          "type": "single_choice",
+          "optionsPrefix": "5 번 중",
+          "options": [
+            {
+              "value": "A",
+              "label": "0 번",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "1 번",
+              "score": 0.2
+            },
+            {
+              "value": "C",
+              "label": "1~2 번",
+              "score": 0.4
+            },
+            {
+              "value": "D",
+              "label": "2~3 번",
+              "score": 0.6
+            },
+            {
+              "value": "E",
+              "label": "3~4 번",
+              "score": 0.8
+            },
+            {
+              "value": "F",
+              "label": "5 번",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          },
+          "variants": {
+            "paperPdf_웰니스_설문지.pdf": {
+              "optionsPrefix": "5 번 중",
+              "options": [
+                {
+                  "value": "A",
+                  "label": "0 번",
+                  "score": 0.0
+                },
+                {
+                  "value": "B",
+                  "label": "1 번",
+                  "score": 0.2
+                },
+                {
+                  "value": "C",
+                  "label": "1~2 번",
+                  "score": 0.4
+                },
+                {
+                  "value": "D",
+                  "label": "3~4 번",
+                  "score": 0.8
+                },
+                {
+                  "value": "E",
+                  "label": "5 번",
+                  "score": 1.0
+                }
+              ],
+              "notes": "원본 설문지 PDF에는 '2~3번' 선택지가 없어서(답지 PDF에는 존재) 실제 종이 설문 응답을 입력할 경우 이 옵션 세트를 사용할 수 있습니다."
+            }
+          }
+        },
+        {
+          "id": "S21_Q04",
+          "number": 4,
+          "prompt": "배뇨 후 2 시간 이내에 다시 소변을 보는 빈뇨 증상이 있으십니까?",
+          "type": "single_choice",
+          "optionsPrefix": "5 번 중",
+          "options": [
+            {
+              "value": "A",
+              "label": "0 번",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "1 번",
+              "score": 0.2
+            },
+            {
+              "value": "C",
+              "label": "1~2 번",
+              "score": 0.4
+            },
+            {
+              "value": "D",
+              "label": "2~3 번",
+              "score": 0.6
+            },
+            {
+              "value": "E",
+              "label": "3~4 번",
+              "score": 0.8
+            },
+            {
+              "value": "F",
+              "label": "5 번",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          },
+          "variants": {
+            "paperPdf_웰니스_설문지.pdf": {
+              "optionsPrefix": "5 번 중",
+              "options": [
+                {
+                  "value": "A",
+                  "label": "0 번",
+                  "score": 0.0
+                },
+                {
+                  "value": "B",
+                  "label": "1 번",
+                  "score": 0.2
+                },
+                {
+                  "value": "C",
+                  "label": "1~2 번",
+                  "score": 0.4
+                },
+                {
+                  "value": "D",
+                  "label": "3~4 번",
+                  "score": 0.8
+                },
+                {
+                  "value": "E",
+                  "label": "5 번",
+                  "score": 1.0
+                }
+              ],
+              "notes": "원본 설문지 PDF에는 '2~3번' 선택지가 없어서(답지 PDF에는 존재) 실제 종이 설문 응답을 입력할 경우 이 옵션 세트를 사용할 수 있습니다."
+            }
+          }
+        },
+        {
+          "id": "S21_Q05",
+          "number": 5,
+          "prompt": "배뇨 중 소변줄기가 끊기거나 다시 힘을 주어야 하는 경우가 있습니까?",
+          "type": "single_choice",
+          "optionsPrefix": "5 번중",
+          "options": [
+            {
+              "value": "A",
+              "label": "0 번",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "1 번",
+              "score": 0.2
+            },
+            {
+              "value": "C",
+              "label": "1~2 번",
+              "score": 0.4
+            },
+            {
+              "value": "D",
+              "label": "2~3 번",
+              "score": 0.6
+            },
+            {
+              "value": "E",
+              "label": "3~4 번",
+              "score": 0.8
+            },
+            {
+              "value": "F",
+              "label": "5 번",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          },
+          "variants": {
+            "paperPdf_웰니스_설문지.pdf": {
+              "optionsPrefix": "5 번 중",
+              "options": [
+                {
+                  "value": "A",
+                  "label": "0 번",
+                  "score": 0.0
+                },
+                {
+                  "value": "B",
+                  "label": "1 번",
+                  "score": 0.2
+                },
+                {
+                  "value": "C",
+                  "label": "1~2 번",
+                  "score": 0.4
+                },
+                {
+                  "value": "D",
+                  "label": "3~4 번",
+                  "score": 0.8
+                },
+                {
+                  "value": "E",
+                  "label": "5 번",
+                  "score": 1.0
+                }
+              ],
+              "notes": "원본 설문지 PDF에는 '2~3번' 선택지가 없어서(답지 PDF에는 존재) 실제 종이 설문 응답을 입력할 경우 이 옵션 세트를 사용할 수 있습니다."
+            }
+          }
+        },
+        {
+          "id": "S21_Q06",
+          "number": 6,
+          "prompt": "평소 소변을 참기 어려운 급박뇨 증상이 있으십니까?",
+          "type": "single_choice",
+          "optionsPrefix": "5 번 중",
+          "options": [
+            {
+              "value": "A",
+              "label": "0 번",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "1 번",
+              "score": 0.2
+            },
+            {
+              "value": "C",
+              "label": "1~2 번",
+              "score": 0.4
+            },
+            {
+              "value": "D",
+              "label": "2~3 번",
+              "score": 0.6
+            },
+            {
+              "value": "E",
+              "label": "3~4 번",
+              "score": 0.8
+            },
+            {
+              "value": "F",
+              "label": "5 번",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          },
+          "variants": {
+            "paperPdf_웰니스_설문지.pdf": {
+              "optionsPrefix": "5 번 중",
+              "options": [
+                {
+                  "value": "A",
+                  "label": "0 번",
+                  "score": 0.0
+                },
+                {
+                  "value": "B",
+                  "label": "1 번",
+                  "score": 0.2
+                },
+                {
+                  "value": "C",
+                  "label": "1~2 번",
+                  "score": 0.4
+                },
+                {
+                  "value": "D",
+                  "label": "3~4 번",
+                  "score": 0.8
+                },
+                {
+                  "value": "E",
+                  "label": "5 번",
+                  "score": 1.0
+                }
+              ],
+              "notes": "원본 설문지 PDF에는 '2~3번' 선택지가 없어서(답지 PDF에는 존재) 실제 종이 설문 응답을 입력할 경우 이 옵션 세트를 사용할 수 있습니다."
+            }
+          }
+        },
+        {
+          "id": "S21_Q07",
+          "number": 7,
+          "prompt": "평소 소변줄기가 약하거나 가늘어졌다고 느끼십니까?",
+          "type": "single_choice",
+          "optionsPrefix": "5 번 중",
+          "options": [
+            {
+              "value": "A",
+              "label": "0 번",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "1 번",
+              "score": 0.2
+            },
+            {
+              "value": "C",
+              "label": "1~2 번",
+              "score": 0.4
+            },
+            {
+              "value": "D",
+              "label": "2~3 번",
+              "score": 0.6
+            },
+            {
+              "value": "E",
+              "label": "3~4 번",
+              "score": 0.8
+            },
+            {
+              "value": "F",
+              "label": "5 번",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          },
+          "variants": {
+            "paperPdf_웰니스_설문지.pdf": {
+              "optionsPrefix": "5 번 중",
+              "options": [
+                {
+                  "value": "A",
+                  "label": "0 번",
+                  "score": 0.0
+                },
+                {
+                  "value": "B",
+                  "label": "1 번",
+                  "score": 0.2
+                },
+                {
+                  "value": "C",
+                  "label": "1~2 번",
+                  "score": 0.4
+                },
+                {
+                  "value": "D",
+                  "label": "3~4 번",
+                  "score": 0.8
+                },
+                {
+                  "value": "E",
+                  "label": "5 번",
+                  "score": 1.0
+                }
+              ],
+              "notes": "원본 설문지 PDF에는 '2~3번' 선택지가 없어서(답지 PDF에는 존재) 실제 종이 설문 응답을 입력할 경우 이 옵션 세트를 사용할 수 있습니다."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "S22",
+      "title": "방광",
+      "questionCount": 6,
+      "questions": [
+        {
+          "id": "S22_Q01",
+          "number": 1,
+          "prompt": "현재 연령이 만 30 세 이상이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S22_Q02",
+          "number": 2,
+          "prompt": "배뇨 시 소변줄기가 중단되어 재차 힘을 주시는 경우가 있습니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S22_Q03",
+          "number": 3,
+          "prompt": "기상 후 취침 전까지 하루 평균 배뇨 횟수는 어떻게 되십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "7 회 이하",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "8~14 회",
+              "score": 0.5
+            },
+            {
+              "value": "C",
+              "label": "15 회 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S22_Q04",
+          "number": 4,
+          "prompt": "취침 중 소변을 보기 위해 일어나는 야간뇨 횟수는 어떻게 되십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "1 회 미만",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "1 회",
+              "score": 0.3
+            },
+            {
+              "value": "C",
+              "label": "2 회",
+              "score": 0.6
+            },
+            {
+              "value": "D",
+              "label": "3 회 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S22_Q05",
+          "number": 5,
+          "prompt": "갑작스러운 요의로 배뇨를 참기 어려우십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "없음",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "주1 회이하",
+              "score": 0.2
+            },
+            {
+              "value": "C",
+              "label": "주1 회이상",
+              "score": 0.4
+            },
+            {
+              "value": "D",
+              "label": "1 일1 회",
+              "score": 0.6
+            },
+            {
+              "value": "E",
+              "label": "1 일2~4 회",
+              "score": 0.8
+            },
+            {
+              "value": "F",
+              "label": "1 일5 회 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S22_Q06",
+          "number": 6,
+          "prompt": "소변을 참지 못해 새어 나온 적 있으십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "없음",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "주1 회이하",
+              "score": 0.2
+            },
+            {
+              "value": "C",
+              "label": "주1 회이상",
+              "score": 0.4
+            },
+            {
+              "value": "D",
+              "label": "1 일1 회",
+              "score": 0.6
+            },
+            {
+              "value": "E",
+              "label": "1 일2~4 회",
+              "score": 0.8
+            },
+            {
+              "value": "F",
+              "label": "1 일5 회 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S23",
+      "title": "요로",
+      "questionCount": 5,
+      "questions": [
+        {
+          "id": "S23_Q01",
+          "number": 1,
+          "prompt": "귀하의 성별을 선택해 주십시오.",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "남성",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "여성",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S23_Q02",
+          "number": 2,
+          "prompt": "평소 방광 부위(하복부)에 통증을 느끼시는 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S23_Q03",
+          "number": 3,
+          "prompt": "배뇨 후 2 시간 이내에 재배뇨가 필요한 경우가 잦으십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S23_Q04",
+          "number": 4,
+          "prompt": "취침 시간 동안 평균 배뇨 횟수는 어느 정도이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "0 회",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "1 회",
+              "score": 0.2
+            },
+            {
+              "value": "C",
+              "label": "3 회",
+              "score": 0.6
+            },
+            {
+              "value": "D",
+              "label": "4 회",
+              "score": 0.8
+            },
+            {
+              "value": "E",
+              "label": "5 회 또는 그 이상",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S23_Q05",
+          "number": 5,
+          "prompt": "갑자기 배뇨를 참지 못하는 경우가 얼마나 자주 발생합니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "없다",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "없는편이다",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "보통이다",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "있는편이다",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "거의 항상 그렇다",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S24",
+      "title": "호흡기",
+      "questionCount": 7,
+      "questions": [
+        {
+          "id": "S24_Q01",
+          "number": 1,
+          "prompt": "과거 천식이나 폐질환 진단을 받으셨거나 현재 치료 중이십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S24_Q02",
+          "number": 2,
+          "prompt": "현재 전자담배를 포함한 흡연을 하고 계십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "전혀 안 피움",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "금연 10 년 이상",
+              "score": 0.1
+            },
+            {
+              "value": "C",
+              "label": "금연 10 년 미만",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "흡연 중",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S24_Q03",
+          "number": 3,
+          "prompt": "평소 기침 증상이 자주 나타나는 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "하지 않는다",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "드물게 한다",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "가끔 한다",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "자주 한다",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "지속적으로 한다",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S24_Q04",
+          "number": 4,
+          "prompt": "평소 가래가 차 있는 듯한 이물감을 느끼십니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "전혀 없다",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "없는 편이다",
+              "score": 0.25
+            },
+            {
+              "value": "C",
+              "label": "보통이다",
+              "score": 0.5
+            },
+            {
+              "value": "D",
+              "label": "있는편이다",
+              "score": 0.75
+            },
+            {
+              "value": "E",
+              "label": "항상 그런편이다",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S24_Q05",
+          "number": 5,
+          "prompt": "계단이나 오르막길 이동 시 숨이 가빠지는 증상이 있습니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "숨이 차지 않는다",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "보통이다",
+              "score": 0.5
+            },
+            {
+              "value": "C",
+              "label": "아주 숨이 찬다",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S24_Q06",
+          "number": 6,
+          "prompt": "평소 흉부의 답답함을 자주 느끼시는 편입니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "전혀 느끼지 않는다",
+              "score": 0.0
+            },
+            {
+              "value": "B",
+              "label": "보통이다",
+              "score": 0.5
+            },
+            {
+              "value": "C",
+              "label": "아주 답답하다",
+              "score": 1.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        },
+        {
+          "id": "S24_Q07",
+          "number": 7,
+          "prompt": "호흡 시 쌕쌕거리는 천명음이 들리는 경우가 있습니까?",
+          "type": "single_choice",
+          "optionsPrefix": null,
+          "options": [
+            {
+              "value": "A",
+              "label": "네",
+              "score": 1.0
+            },
+            {
+              "value": "B",
+              "label": "아니오",
+              "score": 0.0
+            }
+          ],
+          "scoring": {
+            "enabled": true,
+            "scoreRange": [
+              0,
+              1
+            ],
+            "higherIsWorse": true,
+            "method": "option_score"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -13,6 +13,7 @@ type B2bEmployeeOverviewCardProps = {
   onReportDisplayPeriodChange: (value: string) => void;
   onSaveReportDisplayPeriod: () => void;
   onExportPdf: () => void;
+  onExportLegacyPdf: () => void;
   onExportPptx: () => void;
   onRegenerateReport: () => void;
   onRecomputeAnalysis: (generateAiEvaluation: boolean) => void;
@@ -29,6 +30,7 @@ export default function B2bEmployeeOverviewCard({
   onReportDisplayPeriodChange,
   onSaveReportDisplayPeriod,
   onExportPdf,
+  onExportLegacyPdf,
   onExportPptx,
   onRegenerateReport,
   onRecomputeAnalysis,
@@ -64,7 +66,7 @@ export default function B2bEmployeeOverviewCard({
           disabled={busy || !latestReport?.id}
           className={styles.buttonPrimary}
         >
-          {busy ? "PDF 생성 중..." : "PDF 다운로드"}
+          {busy ? "PDF 캡처 생성 중..." : "PDF 다운로드"}
         </button>
         <button
           type="button"
@@ -80,7 +82,7 @@ export default function B2bEmployeeOverviewCard({
         <div className={styles.optionalBody}>
           <div className={styles.optionalCard}>
             <p className={styles.optionalText}>
-              레포트 표기 연월 (배부월): 웹/PDF/PPTX 상단 표기에 동일 반영됩니다.
+              레포트 표기 연월 (반영 후 PDF/PPTX 상단 표기와 동일하게 반영됩니다)
             </p>
             <div className={styles.actionRow}>
               <input
@@ -141,7 +143,15 @@ export default function B2bEmployeeOverviewCard({
               disabled={busy}
               className={styles.buttonGhost}
             >
-              {busy ? "재생성 중..." : "AI 재생성"}
+              {busy ? "생성 중..." : "AI 생성 포함"}
+            </button>
+            <button
+              type="button"
+              onClick={onExportLegacyPdf}
+              disabled={busy || !latestReport?.id}
+              className={styles.buttonGhost}
+            >
+              {busy ? "기존 PDF 생성 중..." : "기존 PDF 엔진 다운로드"}
             </button>
           </div>
         </div>
@@ -149,3 +159,4 @@ export default function B2bEmployeeOverviewCard({
     </section>
   );
 }
+

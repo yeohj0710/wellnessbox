@@ -446,6 +446,131 @@ function extractAiEvaluation(payload: unknown) {
   };
 }
 
+function extractWellnessSectionAdvice(payload: unknown) {
+  const sectionAdviceRecord = asRecord(payload);
+  if (!sectionAdviceRecord) return {};
+
+  const entries = Object.entries(sectionAdviceRecord).map(([sectionId, value]) => {
+    const row = asRecord(value);
+    const sectionTitle = toText(row?.sectionTitle) || sectionId;
+    const items = Array.isArray(row?.items)
+      ? row.items
+          .map((item) => asRecord(item))
+          .filter((item): item is JsonRecord => Boolean(item))
+          .map((item) => ({
+            questionNumber:
+              typeof item.questionNumber === "number"
+                ? item.questionNumber
+                : Number.parseInt(toText(item.questionNumber), 10),
+            text: toText(item.text),
+          }))
+          .filter(
+            (item) => Number.isFinite(item.questionNumber) && Boolean(item.text)
+          )
+          .sort((left, right) => left.questionNumber - right.questionNumber)
+      : [];
+    return [
+      sectionId,
+      {
+        sectionTitle,
+        items,
+      },
+    ] as const;
+  });
+
+  return Object.fromEntries(entries);
+}
+
+function extractWellness(payload: unknown) {
+  const record = asRecord(payload);
+  const wellness = asRecord(record?.wellness);
+  if (!wellness) return null;
+
+  const lifestyleRiskRecord = asRecord(wellness.lifestyleRisk);
+  const lifestyleDomains = Array.isArray(lifestyleRiskRecord?.domains)
+    ? lifestyleRiskRecord.domains
+        .map((item) => asRecord(item))
+        .filter((item): item is JsonRecord => Boolean(item))
+        .map((item) => ({
+          id: toText(item.id) || "-",
+          name: toText(item.name) || toText(item.id) || "-",
+          normalized:
+            typeof item.normalized === "number"
+              ? item.normalized
+              : Number(toText(item.normalized) || 0),
+          percent:
+            typeof item.percent === "number"
+              ? item.percent
+              : Number(toText(item.percent) || 0),
+        }))
+    : [];
+
+  const healthNeedRecord = asRecord(wellness.healthManagementNeed);
+  const healthNeedSections = Array.isArray(healthNeedRecord?.sections)
+    ? healthNeedRecord.sections
+        .map((item) => asRecord(item))
+        .filter((item): item is JsonRecord => Boolean(item))
+        .map((item) => ({
+          sectionId: toText(item.sectionId) || "-",
+          sectionTitle:
+            toText(item.sectionTitle) || toText(item.sectionId) || "-",
+          percent:
+            typeof item.percent === "number"
+              ? item.percent
+              : Number(toText(item.percent) || 0),
+        }))
+    : [];
+
+  const supplementDesign = Array.isArray(wellness.supplementDesign)
+    ? wellness.supplementDesign
+        .map((item) => asRecord(item))
+        .filter((item): item is JsonRecord => Boolean(item))
+        .map((item) => ({
+          sectionId: toText(item.sectionId) || "-",
+          title: toText(item.title) || toText(item.sectionId) || "-",
+          paragraphs: Array.isArray(item.paragraphs)
+            ? item.paragraphs.map((paragraph) => toText(paragraph)).filter(Boolean)
+            : [],
+        }))
+    : [];
+
+  return {
+    schemaVersion: toText(wellness.schemaVersion) || "wellness-score-v1",
+    selectedSections: Array.isArray(wellness.selectedSections)
+      ? wellness.selectedSections.map((item) => toText(item)).filter(Boolean)
+      : [],
+    lifestyleRisk: {
+      domainScoresNormalized: asRecord(lifestyleRiskRecord?.domainScoresNormalized) ?? {},
+      domainScoresPercent: asRecord(lifestyleRiskRecord?.domainScoresPercent) ?? {},
+      domains: lifestyleDomains,
+      overallPercent:
+        typeof lifestyleRiskRecord?.overallPercent === "number"
+          ? lifestyleRiskRecord.overallPercent
+          : Number(toText(lifestyleRiskRecord?.overallPercent) || 0),
+    },
+    healthManagementNeed: {
+      sectionNeedPercentById: asRecord(healthNeedRecord?.sectionNeedPercentById) ?? {},
+      sections: healthNeedSections,
+      averagePercent:
+        typeof healthNeedRecord?.averagePercent === "number"
+          ? healthNeedRecord.averagePercent
+          : Number(toText(healthNeedRecord?.averagePercent) || 0),
+    },
+    overallHealthScore:
+      typeof wellness.overallHealthScore === "number"
+        ? wellness.overallHealthScore
+        : Number(toText(wellness.overallHealthScore) || 0),
+    sectionAdvice: extractWellnessSectionAdvice(wellness.sectionAdvice),
+    lifestyleRoutineAdvice: Array.isArray(wellness.lifestyleRoutineAdvice)
+      ? wellness.lifestyleRoutineAdvice
+          .map((item) => toText(item))
+          .filter(Boolean)
+      : [],
+    supplementDesign,
+    perQuestionScores: asRecord(wellness.perQuestionScores) ?? {},
+  };
+}
+
 type CredibleTopIssue = {
   sectionKey: string;
   title: string;
@@ -764,6 +889,45 @@ export type B2bReportPayload = {
       actionItems: string[];
       caution: string;
     } | null;
+    wellness: {
+      schemaVersion: string;
+      selectedSections: string[];
+      lifestyleRisk: {
+        domainScoresNormalized: Record<string, unknown>;
+        domainScoresPercent: Record<string, unknown>;
+        domains: Array<{
+          id: string;
+          name: string;
+          normalized: number;
+          percent: number;
+        }>;
+        overallPercent: number;
+      };
+      healthManagementNeed: {
+        sectionNeedPercentById: Record<string, unknown>;
+        sections: Array<{
+          sectionId: string;
+          sectionTitle: string;
+          percent: number;
+        }>;
+        averagePercent: number;
+      };
+      overallHealthScore: number;
+      sectionAdvice: Record<
+        string,
+        {
+          sectionTitle: string;
+          items: Array<{ questionNumber: number; text: string }>;
+        }
+      >;
+      lifestyleRoutineAdvice: string[];
+      supplementDesign: Array<{
+        sectionId: string;
+        title: string;
+        paragraphs: string[];
+      }>;
+      perQuestionScores: Record<string, unknown>;
+    } | null;
     updatedAt: string | null;
   };
   pharmacist: {
@@ -873,6 +1037,7 @@ export async function buildB2bReportPayload(input: {
   const analysisTrend = extractAnalysisTrend(latestAnalysis?.payload);
   const externalCards = extractExternalCards(latestAnalysis?.payload);
   const aiEvaluation = extractAiEvaluation(latestAnalysis?.payload);
+  const wellness = extractWellness(latestAnalysis?.payload);
   const scoreResolution = resolveReportScores({
     analysisSummary,
     analysisSurveyOverallScore: analysisSurvey.overallScore,
@@ -977,6 +1142,7 @@ export async function buildB2bReportPayload(input: {
       trend: analysisTrend,
       externalCards,
       aiEvaluation,
+      wellness,
       updatedAt:
         latestAnalysis?.updatedAt?.toISOString() ??
         latestAnalysis?.createdAt?.toISOString() ??

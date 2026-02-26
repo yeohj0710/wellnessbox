@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ReportRenderer from "@/components/b2b/ReportRenderer";
 import ReportSummaryCards from "@/components/b2b/ReportSummaryCards";
 import OperationLoadingOverlay from "@/components/common/operationLoadingOverlay";
 import styles from "@/components/b2b/B2bUx.module.css";
+import { captureElementToPdf } from "@/lib/client/capture-pdf";
 import type { LayoutDocument } from "@/lib/b2b/export/layout-types";
 import type { LayoutValidationIssue } from "@/lib/b2b/export/validation-types";
 import B2bAnalysisJsonPanel from "./_components/B2bAnalysisJsonPanel";
@@ -80,6 +81,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
   const [busyMessage, setBusyMessage] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const webReportCaptureRef = useRef<HTMLDivElement | null>(null);
 
   const maxSelectedSections = surveyTemplate?.rules?.maxSelectedSections ?? 5;
   const selectedSectionSet = useMemo(() => new Set(selectedSections), [selectedSections]);
@@ -172,13 +174,26 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     const answersFromRows =
       survey.response?.answers?.reduce(
         (acc: Record<string, unknown>, row: SurveyAnswerRow) => {
-          acc[row.questionKey] = row.answerText ?? row.answerValue ?? "";
+          const selectedValues = Array.isArray(row.meta?.selectedValues)
+            ? row.meta?.selectedValues
+                .map((item) => (typeof item === "string" ? item : String(item)))
+                .filter(Boolean)
+            : [];
+          const variantId =
+            typeof row.meta?.variantId === "string" ? row.meta?.variantId : undefined;
+          acc[row.questionKey] = {
+            answerText: row.answerText ?? undefined,
+            answerValue: row.answerValue ?? undefined,
+            selectedValues,
+            variantId,
+            score: typeof row.score === "number" ? row.score : undefined,
+          };
           return acc;
         },
         {}
       ) ?? {};
     setSurveyAnswers(
-      Object.keys(answersFromJson).length > 0 ? answersFromJson : answersFromRows
+      Object.keys(answersFromRows).length > 0 ? answersFromRows : answersFromJson
     );
 
     setAnalysisText(JSON.stringify(analysis.analysis?.payload ?? {}, null, 2));
@@ -457,7 +472,33 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
 
   async function handleExportPdf() {
     if (!latestReport?.id) return;
-    beginBusy("PDF 파일을 생성하고 있어요.");
+    const captureTarget = webReportCaptureRef.current;
+    if (!captureTarget) {
+      setError("레포트 캡처 대상을 찾지 못했습니다. 화면을 새로고침 후 다시 시도해 주세요.");
+      return;
+    }
+
+    beginBusy("웹 레포트를 PDF로 캡처하고 있어요.");
+    setError("");
+    setNotice("");
+    try {
+      const periodLabel = selectedPeriodKey || latestReport.periodKey || "latest";
+      await captureElementToPdf({
+        element: captureTarget,
+        fileName: `employee-report-${periodLabel}.pdf`,
+        desktopViewportWidth: 1440,
+      });
+      setNotice("화면 캡처 기반 PDF 다운로드가 완료되었습니다.");
+    } catch (err) {
+      applyExportFailure(err, "PDF 캡처 다운로드에 실패했습니다.");
+    } finally {
+      endBusy();
+    }
+  }
+
+  async function handleExportLegacyPdf() {
+    if (!latestReport?.id) return;
+    beginBusy("기존 PDF 엔진으로 파일을 생성하고 있어요.");
     setError("");
     setNotice("");
     try {
@@ -465,9 +506,9 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
         `/api/admin/b2b/reports/${latestReport.id}/export/pdf`,
         "employee-report.pdf"
       );
-      setNotice("PDF 다운로드가 완료되었습니다.");
+      setNotice("기존 PDF 엔진 다운로드가 완료되었습니다.");
     } catch (err) {
-      applyExportFailure(err, "PDF 다운로드에 실패했습니다.");
+      applyExportFailure(err, "기존 PDF 다운로드에 실패했습니다.");
     } finally {
       endBusy();
     }
@@ -577,6 +618,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
                   onReportDisplayPeriodChange={setReportDisplayPeriodKey}
                   onSaveReportDisplayPeriod={() => void handleSaveDisplayPeriod()}
                   onExportPdf={() => void handleExportPdf()}
+                  onExportLegacyPdf={() => void handleExportLegacyPdf()}
                   onExportPptx={() => void handleExportPptx()}
                   onRegenerateReport={() => void handleRegenerateReport()}
                   onRecomputeAnalysis={(generateAiEvaluation) => {
@@ -584,22 +626,35 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
                   }}
                 />
 
+                {/* New default: web-first report + capture PDF */}
+                <section className={styles.reportCanvas}>
+                  <div className={styles.reportCanvasHeader}>
+                    <div>
+                      <h3>레포트 본문 미리보기</h3>
+                      <p>화면에서 보는 웹 레포트를 그대로 캡처해 PDF로 저장합니다.</p>
+                    </div>
+                    <span className={styles.statusOn}>웹/PDF/PPTX 동일 레이아웃 지향</span>
+                  </div>
+                  <div className={`${styles.reportCanvasBoard} ${styles.reportCanvasBoardWide}`}>
+                    <div ref={webReportCaptureRef} className={styles.reportCaptureSurface}>
+                      <ReportSummaryCards payload={latestReport?.payload} viewerMode="admin" />
+                    </div>
+                  </div>
+                </section>
+
                 {latestLayout ? (
-                  <section className={styles.reportCanvas}>
-                    <div className={styles.reportCanvasHeader}>
-                      <div>
-                        <h3>리포트 본문 미리보기</h3>
-                        <p>현재 미리보기에서 보이는 구성 그대로 PDF/PPTX가 생성돼요.</p>
+                  <details className={`${styles.optionalCard} ${styles.reportLegacyPanel}`}>
+                    <summary>현행 엔진 미리보기</summary>
+                    <div className={styles.optionalBody}>
+                      <p className={styles.optionalText}>
+                        기존 DSL 렌더러 결과입니다. 비교 확인이 필요할 때만 펼쳐서 확인하세요.
+                      </p>
+                      <div className={styles.reportCanvasBoard}>
+                        <ReportRenderer layout={latestLayout} fitToWidth />
                       </div>
-                      <span className={styles.statusOn}>화면/PDF/PPTX 구성 일치</span>
                     </div>
-                    <div className={styles.reportCanvasBoard}>
-                      <ReportRenderer layout={latestLayout} fitToWidth />
-                    </div>
-                  </section>
-                ) : (
-                  <ReportSummaryCards payload={latestReport?.payload} viewerMode="admin" />
-                )}
+                  </details>
+                ) : null}
 
                 <B2bSurveyEditorPanel
                   completionStats={completionStats}

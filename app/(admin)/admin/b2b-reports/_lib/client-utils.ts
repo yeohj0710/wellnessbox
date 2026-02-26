@@ -68,11 +68,39 @@ export function toInputValue(raw: unknown) {
   if (typeof raw === "string") return raw;
   if (typeof raw === "number" || typeof raw === "boolean") return String(raw);
   if (Array.isArray(raw)) return raw.join(", ");
+  if (typeof raw === "object") {
+    const record = raw as Record<string, unknown>;
+    if (typeof record.answerValue === "string") return record.answerValue;
+    if (typeof record.value === "string") return record.value;
+    if (typeof record.answerText === "string") return record.answerText;
+    if (typeof record.text === "string") return record.text;
+    if (Array.isArray(record.selectedValues)) {
+      return record.selectedValues.map((item) => String(item)).join(", ");
+    }
+    if (Array.isArray(record.values)) {
+      return record.values.map((item) => String(item)).join(", ");
+    }
+  }
   return "";
 }
 
 export function toMultiValues(raw: unknown) {
   if (Array.isArray(raw)) return raw.map((item) => String(item)).filter(Boolean);
+  if (typeof raw === "object" && raw) {
+    const record = raw as Record<string, unknown>;
+    if (Array.isArray(record.selectedValues)) {
+      return record.selectedValues.map((item) => String(item)).filter(Boolean);
+    }
+    if (Array.isArray(record.values)) {
+      return record.values.map((item) => String(item)).filter(Boolean);
+    }
+    if (typeof record.answerValue === "string") {
+      return record.answerValue
+        .split(/[,\n/|]/g)
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+  }
   if (typeof raw === "string") {
     return raw
       .split(/[,\n/|]/g)

@@ -21,8 +21,28 @@ type RouteContext = {
 
 const putSchema = z.object({
   periodKey: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional(),
-  selectedSections: z.array(z.string().trim().min(1)).max(5).optional(),
-  answers: z.record(z.string(), z.unknown()).default({}),
+  selectedSections: z.array(z.string().trim().min(1)).max(24).optional(),
+  answers: z
+    .record(
+      z.string().trim().min(1),
+      z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.array(z.union([z.string(), z.number(), z.boolean()])),
+        z.object({
+          answerText: z.string().optional(),
+          text: z.string().optional(),
+          answerValue: z.string().optional(),
+          value: z.string().optional(),
+          values: z.array(z.union([z.string(), z.number(), z.boolean()])).optional(),
+          selectedValues: z.array(z.union([z.string(), z.number(), z.boolean()])).optional(),
+          score: z.number().min(0).max(1).optional(),
+          variantId: z.string().trim().min(1).optional(),
+        }),
+      ])
+    )
+    .default({}),
 });
 
 function noStoreJson(payload: unknown, status = 200) {
@@ -42,8 +62,23 @@ function toText(value: unknown) {
   return String(value).trim();
 }
 
+function clampScore01(value: number) {
+  if (!Number.isFinite(value)) return 0;
+  if (value < 0) return 0;
+  if (value > 1) return 1;
+  return Number(value.toFixed(4));
+}
+
 function normalizeAnswerValue(raw: unknown) {
-  if (raw == null) return { answerText: null, answerValue: null, selectedValues: [] as string[] };
+  if (raw == null) {
+    return {
+      answerText: null,
+      answerValue: null,
+      selectedValues: [] as string[],
+      submittedScore: null as number | null,
+      variantId: null as string | null,
+    };
+  }
   if (Array.isArray(raw)) {
     const selectedValues = raw.map((item) => toText(item)).filter(Boolean);
     const joined = selectedValues.join(", ");
@@ -51,6 +86,8 @@ function normalizeAnswerValue(raw: unknown) {
       answerText: joined || null,
       answerValue: joined || null,
       selectedValues,
+      submittedScore: null as number | null,
+      variantId: null as string | null,
     };
   }
   if (typeof raw === "string") {
@@ -59,11 +96,19 @@ function normalizeAnswerValue(raw: unknown) {
       answerText: text.length > 0 ? text : null,
       answerValue: text || null,
       selectedValues: text ? [text] : [],
+      submittedScore: null as number | null,
+      variantId: null as string | null,
     };
   }
   if (typeof raw === "number" || typeof raw === "boolean") {
     const text = String(raw);
-    return { answerText: text, answerValue: text, selectedValues: [text] };
+    return {
+      answerText: text,
+      answerValue: text,
+      selectedValues: [text],
+      submittedScore: null as number | null,
+      variantId: null as string | null,
+    };
   }
   if (typeof raw === "object") {
     const record = raw as Record<string, unknown>;
@@ -82,28 +127,71 @@ function normalizeAnswerValue(raw: unknown) {
     const values = Array.isArray(record.values)
       ? record.values.map((item) => toText(item)).filter(Boolean)
       : [];
+    const selectedValues = Array.isArray(record.selectedValues)
+      ? record.selectedValues.map((item) => toText(item)).filter(Boolean)
+      : [];
     const normalizedText = text && text.trim().length > 0 ? text.trim() : null;
     const normalizedValue = value && value.trim().length > 0 ? value.trim() : null;
+    const submittedScore =
+      typeof record.score === "number" && Number.isFinite(record.score)
+        ? clampScore01(record.score)
+        : null;
+    const variantId = toText(record.variantId) || null;
     return {
       answerText: normalizedText,
       answerValue: normalizedValue ?? normalizedText,
-      selectedValues: values.length > 0 ? values : normalizedValue ? [normalizedValue] : [],
+      selectedValues:
+        selectedValues.length > 0
+          ? selectedValues
+          : values.length > 0
+          ? values
+          : normalizedValue
+          ? [normalizedValue]
+          : [],
+      submittedScore,
+      variantId,
     };
   }
-  return { answerText: null, answerValue: null, selectedValues: [] };
+  return {
+    answerText: null,
+    answerValue: null,
+    selectedValues: [],
+    submittedScore: null as number | null,
+    variantId: null as string | null,
+  };
 }
 
 function resolveQuestionScore(
   question: {
     type: "text" | "single" | "multi";
     options?: Array<{ value: string; label: string; score?: number }>;
+    variants?: Record<
+      string,
+      {
+        variantId?: string;
+        options?: Array<{ value: string; label: string; score?: number }>;
+      }
+    >;
   },
   normalizedAnswer: ReturnType<typeof normalizeAnswerValue>
 ) {
+  if (typeof normalizedAnswer.submittedScore === "number") {
+    return normalizedAnswer.submittedScore;
+  }
+
   if (!question.options || question.options.length === 0) return null;
 
+  const variantOptions =
+    normalizedAnswer.variantId &&
+    question.variants &&
+    question.variants[normalizedAnswer.variantId]?.options
+      ? question.variants[normalizedAnswer.variantId]?.options
+      : null;
+
   const optionMap = new Map<string, number>();
-  for (const option of question.options) {
+  const sourceOptions = variantOptions && variantOptions.length > 0 ? variantOptions : question.options;
+
+  for (const option of sourceOptions) {
     if (typeof option.score !== "number" || !Number.isFinite(option.score)) continue;
     optionMap.set(option.value.toLowerCase(), option.score);
     optionMap.set(option.label.toLowerCase(), option.score);
@@ -120,6 +208,21 @@ function resolveQuestionScore(
   const matchedScores = candidates
     .map((candidate) => optionMap.get(candidate))
     .filter((score): score is number => typeof score === "number");
+
+  if (matchedScores.length === 0 && variantOptions && variantOptions !== question.options) {
+    for (const option of question.options) {
+      if (typeof option.score !== "number" || !Number.isFinite(option.score)) continue;
+      optionMap.set(option.value.toLowerCase(), option.score);
+      optionMap.set(option.label.toLowerCase(), option.score);
+    }
+    const fallbackMatched = candidates
+      .map((candidate) => optionMap.get(candidate))
+      .filter((score): score is number => typeof score === "number");
+    if (fallbackMatched.length === 0) return null;
+    const fallbackAvg =
+      fallbackMatched.reduce((sum, score) => sum + score, 0) / fallbackMatched.length;
+    return Number(fallbackAvg.toFixed(4));
+  }
 
   if (matchedScores.length === 0) return null;
   const avg = matchedScores.reduce((sum, score) => sum + score, 0) / matchedScores.length;
@@ -187,6 +290,7 @@ export async function GET(req: Request, ctx: RouteContext) {
               answerText: answer.answerText,
               answerValue: answer.answerValue,
               score: answer.score,
+              meta: answer.meta,
             })),
           }
         : null,
@@ -233,9 +337,16 @@ export async function PUT(req: Request, ctx: RouteContext) {
 
     const q27Value = parsed.data.answers[schema.rules.selectSectionByCommonQuestionKey] ?? null;
     const derivedSections = resolveSectionKeysFromC27Input(schema, q27Value);
-    const selectedSections = [
-      ...new Set([...(parsed.data.selectedSections ?? []), ...derivedSections]),
-    ].slice(0, schema.rules.maxSelectedSections);
+    const selectedSections = [...new Set([...(parsed.data.selectedSections ?? []), ...derivedSections])];
+    if (selectedSections.length > schema.rules.maxSelectedSections) {
+      return noStoreJson(
+        {
+          ok: false,
+          error: `상세 섹션은 최대 ${schema.rules.maxSelectedSections}개까지 선택할 수 있습니다.`,
+        },
+        400
+      );
+    }
 
     const latestResponse = await db.b2bSurveyResponse.findFirst({
       where: { employeeId, templateId: template.id, periodKey },
@@ -280,6 +391,11 @@ export async function PUT(req: Request, ctx: RouteContext) {
 
         const normalized = normalizeAnswerValue(value);
         const score = resolveQuestionScore(question, normalized);
+        const answerMeta = {
+          selectedValues: normalized.selectedValues,
+          variantId: normalized.variantId ?? "base",
+          lockedScore: score,
+        };
         return {
           responseId: response.id,
           questionKey,
@@ -287,10 +403,7 @@ export async function PUT(req: Request, ctx: RouteContext) {
           answerText: normalized.answerText,
           answerValue: normalized.answerValue,
           score,
-          meta:
-            normalized.selectedValues.length > 1
-              ? ({ selectedValues: normalized.selectedValues } as Prisma.InputJsonValue)
-              : undefined,
+          meta: asJsonValue(answerMeta),
         };
       })
       .filter((item): item is NonNullable<typeof item> => Boolean(item));

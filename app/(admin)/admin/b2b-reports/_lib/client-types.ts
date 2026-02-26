@@ -30,9 +30,22 @@ export type SurveyQuestion = {
   text: string;
   type: "text" | "single" | "multi";
   required?: boolean;
-  options?: Array<{ value: string; label: string }>;
+  options?: Array<{ value: string; label: string; score?: number }>;
   placeholder?: string;
   maxSelect?: number;
+  optionsPrefix?: string;
+  variants?: Record<
+    string,
+    {
+      variantId?: string;
+      optionsPrefix?: string;
+      options?: Array<{ value: string; label: string; score?: number }>;
+    }
+  >;
+  constraints?: {
+    maxSelections?: number;
+    recommendedSelectionsRange?: [number, number];
+  };
 };
 
 export type SurveyTemplateSchema = {
@@ -48,7 +61,10 @@ export type SurveyTemplateSchema = {
     title: string;
     displayName?: string;
   }>;
-  rules?: { maxSelectedSections?: number };
+  rules?: {
+    maxSelectedSections?: number;
+    recommendedSelectionsRange?: [number, number];
+  };
 };
 
 export type ReportAudit = {
@@ -98,6 +114,7 @@ export type SurveyAnswerRow = {
   answerText?: string | null;
   answerValue?: string | null;
   score?: number | null;
+  meta?: Record<string, unknown> | null;
 };
 
 export type SurveyResponseRecord = {

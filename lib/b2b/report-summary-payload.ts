@@ -33,6 +33,41 @@ export type ReportSummaryPayload = {
       actionItems?: string[];
       caution?: string;
     } | null;
+    wellness?: {
+      schemaVersion?: string;
+      selectedSections?: string[];
+      lifestyleRisk?: {
+        overallPercent?: number;
+        domains?: Array<{
+          id?: string;
+          name?: string;
+          normalized?: number;
+          percent?: number;
+        }>;
+      };
+      healthManagementNeed?: {
+        averagePercent?: number;
+        sections?: Array<{
+          sectionId?: string;
+          sectionTitle?: string;
+          percent?: number;
+        }>;
+      };
+      overallHealthScore?: number;
+      sectionAdvice?: Record<
+        string,
+        {
+          sectionTitle?: string;
+          items?: Array<{ questionNumber?: number; text?: string }>;
+        }
+      >;
+      lifestyleRoutineAdvice?: string[];
+      supplementDesign?: Array<{
+        sectionId?: string;
+        title?: string;
+        paragraphs?: string[];
+      }>;
+    } | null;
   };
   survey?: {
     sectionScores?: Array<{

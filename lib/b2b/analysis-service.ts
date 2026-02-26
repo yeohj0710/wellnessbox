@@ -3,6 +3,7 @@ import "server-only";
 import db from "@/lib/db";
 import { analyzeB2bReport } from "@/lib/b2b/analyzer";
 import { generateB2bAiEvaluation } from "@/lib/b2b/ai-evaluation";
+import { computeWellnessResult } from "@/lib/wellness/analysis";
 import {
   monthRangeFromPeriodKey,
   periodKeyToCycle,
@@ -165,6 +166,20 @@ export async function computeAndSaveB2bAnalysis(input: SaveAnalysisInput) {
     input.generateAiEvaluation === true ||
     (!existingAi && input.generateAiEvaluation !== false);
 
+  const wellness = computeWellnessResult({
+    selectedSections: survey?.selectedSections ?? [],
+    answersJson: asRecord(survey?.answersJson) ?? null,
+    answers:
+      survey?.answers.map((answer) => ({
+        questionKey: answer.questionKey,
+        sectionKey: answer.sectionKey ?? null,
+        answerText: answer.answerText ?? null,
+        answerValue: answer.answerValue ?? null,
+        score: typeof answer.score === "number" ? answer.score : null,
+        meta: answer.meta ?? null,
+      })) ?? [],
+  });
+
   const draft = analyzeB2bReport({
     periodKey,
     surveyTemplate: templateState.schema,
@@ -209,7 +224,10 @@ export async function computeAndSaveB2bAnalysis(input: SaveAnalysisInput) {
       .filter((row) => row.periodKey),
   });
 
-  let computed = draft;
+  let computed = {
+    ...draft,
+    wellness,
+  };
   if (shouldGenerateAiEvaluation) {
     const aiEvaluation = await generateB2bAiEvaluation({
       periodKey,

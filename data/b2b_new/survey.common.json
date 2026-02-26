@@ -1,0 +1,1199 @@
+{
+  "id": "wellnessbox_wellness_survey_common_v1",
+  "title": "웰니스 설문지 - 공통 질문지",
+  "version": "1.0.0",
+  "generatedAtUtc": "2026-02-26T10:34:19Z",
+  "questions": [
+    {
+      "id": "C01",
+      "number": 1,
+      "prompt": "귀하의 성별을 선택해주십시오.",
+      "type": "single_choice",
+      "options": [
+        {
+          "value": "A",
+          "label": "남성"
+        },
+        {
+          "value": "B",
+          "label": "여성"
+        }
+      ],
+      "scoring": {
+        "enabled": false
+      }
+    },
+    {
+      "id": "C02",
+      "number": 2,
+      "prompt": "귀하의 만 나이를 알려주십시오.",
+      "type": "number",
+      "unit": "세",
+      "constraints": {
+        "min": 0,
+        "max": 120,
+        "integer": true
+      },
+      "scoring": {
+        "enabled": false
+      }
+    },
+    {
+      "id": "C03",
+      "number": 3,
+      "prompt": "귀하의 키, 몸무게를 알려주십시오.",
+      "type": "group",
+      "fields": [
+        {
+          "id": "heightCm",
+          "label": "키",
+          "type": "number",
+          "unit": "cm",
+          "constraints": {
+            "min": 50,
+            "max": 250,
+            "integer": false
+          }
+        },
+        {
+          "id": "weightKg",
+          "label": "몸무게",
+          "type": "number",
+          "unit": "kg",
+          "constraints": {
+            "min": 10,
+            "max": 300,
+            "integer": false
+          }
+        }
+      ],
+      "scoring": {
+        "enabled": false
+      }
+    },
+    {
+      "id": "C04",
+      "number": 4,
+      "prompt": "귀하가 여성일 경우 해당되는 것을 선택해주십시오.",
+      "type": "single_choice",
+      "displayIf": {
+        "field": "C01",
+        "equals": "B"
+      },
+      "options": [
+        {
+          "value": "A",
+          "label": "임신"
+        },
+        {
+          "value": "B",
+          "label": "수유"
+        },
+        {
+          "value": "C",
+          "label": "폐경"
+        },
+        {
+          "value": "D",
+          "label": "해당없음"
+        }
+      ],
+      "scoring": {
+        "enabled": false
+      }
+    },
+    {
+      "id": "C05",
+      "number": 5,
+      "prompt": "과거나 현재 진단받은 질환을 모두 선택해주십시오.",
+      "type": "multi_select_with_none",
+      "items": [
+        {
+          "label": "뇌졸중"
+        },
+        {
+          "label": "심장병"
+        },
+        {
+          "label": "고혈압"
+        },
+        {
+          "label": "당뇨병"
+        },
+        {
+          "label": "이상지질혈증"
+        },
+        {
+          "label": "폐결핵"
+        },
+        {
+          "label": "B형 간염"
+        },
+        {
+          "label": "골다공증"
+        },
+        {
+          "label": "신증후군"
+        },
+        {
+          "label": "갑상선 기능 저하증"
+        },
+        {
+          "label": "천식"
+        },
+        {
+          "label": "피부질환(아토피)"
+        },
+        {
+          "label": "대상포진"
+        }
+      ],
+      "noneOption": {
+        "label": "없음"
+      },
+      "scoring": {
+        "enabled": false
+      }
+    },
+    {
+      "id": "C06",
+      "number": 6,
+      "prompt": "관리가 필요하거나 가족력이 있는 항목을 모두 선택해주십시오.",
+      "type": "multi_select_with_none",
+      "items": [
+        {
+          "label": "혈당관리"
+        },
+        {
+          "label": "혈압관리"
+        },
+        {
+          "label": "복부비만관리"
+        },
+        {
+          "label": "콜레스테롤관리"
+        },
+        {
+          "label": "안질환"
+        },
+        {
+          "label": "탈모"
+        },
+        {
+          "label": "천식"
+        },
+        {
+          "label": "골다공증"
+        },
+        {
+          "label": "암"
+        },
+        {
+          "label": "황반변성"
+        }
+      ],
+      "noneOption": {
+        "label": "없음"
+      },
+      "scoring": {
+        "enabled": false
+      }
+    },
+    {
+      "id": "C07",
+      "number": 7,
+      "prompt": "알러지 증상이 있는 것들을 알려주십시오. (예: 우유, 땅콩, 꽃가루 등)",
+      "type": "multi_select_with_none",
+      "items": [
+        {
+          "label": "난류(가금류)"
+        },
+        {
+          "label": "우유"
+        },
+        {
+          "label": "메밀"
+        },
+        {
+          "label": "땅콩"
+        },
+        {
+          "label": "대두"
+        },
+        {
+          "label": "밀"
+        },
+        {
+          "label": "고등어"
+        },
+        {
+          "label": "게"
+        },
+        {
+          "label": "새우"
+        },
+        {
+          "label": "복숭아"
+        },
+        {
+          "label": "토마토"
+        },
+        {
+          "label": "아황산류"
+        },
+        {
+          "label": "호두"
+        },
+        {
+          "label": "닭고기"
+        },
+        {
+          "label": "돼지고기"
+        },
+        {
+          "label": "쇠고기"
+        },
+        {
+          "label": "오징어"
+        },
+        {
+          "label": "조개류(굴/전복/홍합 포함)"
+        },
+        {
+          "label": "강황"
+        },
+        {
+          "label": "프로폴리스"
+        },
+        {
+          "label": "단백질"
+        },
+        {
+          "label": "사과"
+        },
+        {
+          "label": "석류"
+        },
+        {
+          "label": "호박씨"
+        }
+      ],
+      "noneOption": {
+        "label": "없음"
+      },
+      "scoring": {
+        "enabled": false
+      }
+    },
+    {
+      "id": "C08",
+      "number": 8,
+      "prompt": "투약 중인 약물을 모두 선택해주십시오.",
+      "type": "multi_select_with_none",
+      "items": [
+        {
+          "label": "면역억제제"
+        },
+        {
+          "label": "항응고제"
+        },
+        {
+          "label": "항암제"
+        },
+        {
+          "label": "항생제"
+        },
+        {
+          "label": "당뇨병치료제"
+        },
+        {
+          "label": "동맥경화용제"
+        },
+        {
+          "label": "해열·진통소염제"
+        },
+        {
+          "label": "항정신성의약품"
+        },
+        {
+          "label": "혈압약"
+        },
+        {
+          "label": "위산분비억제제"
+        },
+        {
+          "label": "항히스타민제"
+        },
+        {
+          "label": "호르몬제"
+        }
+      ],
+      "noneOption": {
+        "label": "없음"
+      },
+      "scoring": {
+        "enabled": false
+      }
+    },
+    {
+      "id": "C09",
+      "number": 9,
+      "prompt": "복용 중인 건강기능식품을 모두 선택해주십시오.",
+      "type": "multi_select_with_none",
+      "items": [
+        {
+          "label": "기억력/인지능력 향상"
+        },
+        {
+          "label": "수면&피로 개선"
+        },
+        {
+          "label": "스트레스 완화"
+        },
+        {
+          "label": "구강/치아/잇몸 건강"
+        },
+        {
+          "label": "눈 건강"
+        },
+        {
+          "label": "피부 개선"
+        },
+        {
+          "label": "간 건강"
+        },
+        {
+          "label": "위 건강"
+        },
+        {
+          "label": "장 건강"
+        },
+        {
+          "label": "체지방 감소"
+        },
+        {
+          "label": "혈당 조절"
+        },
+        {
+          "label": "갱년기 여성"
+        },
+        {
+          "label": "갱년기 남성"
+        },
+        {
+          "label": "월경전증후군 개선"
+        },
+        {
+          "label": "혈중 콜레스테롤 & 중성지방 개선"
+        },
+        {
+          "label": "혈압 조절"
+        },
+        {
+          "label": "면역 기능 개선"
+        },
+        {
+          "label": "항산화"
+        },
+        {
+          "label": "관절/뼈 건강"
+        },
+        {
+          "label": "근육 증진"
+        },
+        {
+          "label": "전립선 건강"
+        },
+        {
+          "label": "배뇨 기능 개선(방광)"
+        },
+        {
+          "label": "요로 건강(요도염)"
+        },
+        {
+          "label": "호흡기 건강"
+        }
+      ],
+      "noneOption": {
+        "label": "없음"
+      },
+      "scoring": {
+        "enabled": false
+      }
+    },
+    {
+      "id": "C10",
+      "number": 10,
+      "prompt": "식사는 매일 정해진 시간에 규칙적으로 챙겨드시나요?",
+      "type": "single_choice",
+      "optionsPrefix": null,
+      "options": [
+        {
+          "value": "A",
+          "label": "항상 그런 편이다",
+          "score": 0.0
+        },
+        {
+          "value": "B",
+          "label": "보통이다",
+          "score": 0.5
+        },
+        {
+          "value": "C",
+          "label": "아닌 편이다",
+          "score": 1.0
+        }
+      ],
+      "scoring": {
+        "enabled": true,
+        "scoreRange": [
+          0,
+          1
+        ],
+        "higherIsWorse": true,
+        "method": "option_score"
+      }
+    },
+    {
+      "id": "C11",
+      "number": 11,
+      "prompt": "일주일에 외식은 몇 번 정도 하시나요? (직장 식당 제외)",
+      "type": "single_choice",
+      "optionsPrefix": null,
+      "options": [
+        {
+          "value": "A",
+          "label": "주 5 회 이상",
+          "score": 1.0
+        },
+        {
+          "value": "B",
+          "label": "주 2-4 회",
+          "score": 0.5
+        },
+        {
+          "value": "C",
+          "label": "주 1 회 이하",
+          "score": 0.0
+        }
+      ],
+      "scoring": {
+        "enabled": true,
+        "scoreRange": [
+          0,
+          1
+        ],
+        "higherIsWorse": true,
+        "method": "option_score"
+      }
+    },
+    {
+      "id": "C12",
+      "number": 12,
+      "prompt": "우유나 두유 같은 유제품을 매일 한 컵 이상 마시나요?",
+      "type": "single_choice",
+      "optionsPrefix": null,
+      "options": [
+        {
+          "value": "A",
+          "label": "항상 그런 편이다",
+          "score": 0.0
+        },
+        {
+          "value": "B",
+          "label": "보통이다",
+          "score": 0.5
+        },
+        {
+          "value": "C",
+          "label": "아닌 편이다",
+          "score": 1.0
+        }
+      ],
+      "scoring": {
+        "enabled": true,
+        "scoreRange": [
+          0,
+          1
+        ],
+        "higherIsWorse": true,
+        "method": "option_score"
+      }
+    },
+    {
+      "id": "C13",
+      "number": 13,
+      "prompt": "단백질 음식(고기, 두부 등)을 매일 3 번 이상 드시나요?",
+      "type": "single_choice",
+      "optionsPrefix": null,
+      "options": [
+        {
+          "value": "A",
+          "label": "항상 그런 편이다",
+          "score": 0.0
+        },
+        {
+          "value": "B",
+          "label": "보통이다",
+          "score": 0.5
+        },
+        {
+          "value": "C",
+          "label": "아닌 편이다",
+          "score": 1.0
+        }
+      ],
+      "scoring": {
+        "enabled": true,
+        "scoreRange": [
+          0,
+          1
+        ],
+        "higherIsWorse": true,
+        "method": "option_score"
+      }
+    },
+    {
+      "id": "C14",
+      "number": 14,
+      "prompt": "김치 외 다른 채소들도 매일 한 번 이상 챙겨 드시나요?",
+      "type": "single_choice",
+      "optionsPrefix": null,
+      "options": [
+        {
+          "value": "A",
+          "label": "항상 그런 편이다",
+          "score": 0.0
+        },
+        {
+          "value": "B",
+          "label": "보통이다",
+          "score": 0.5
+        },
+        {
+          "value": "C",
+          "label": "아닌 편이다",
+          "score": 1.0
+        }
+      ],
+      "scoring": {
+        "enabled": true,
+        "scoreRange": [
+          0,
+          1
+        ],
+        "higherIsWorse": true,
+        "method": "option_score"
+      }
+    },
+    {
+      "id": "C15",
+      "number": 15,
+      "prompt": "젓갈 같은 짠 음식을 매일 한 번 이상 드시는 편인가요?",
+      "type": "single_choice",
+      "optionsPrefix": null,
+      "options": [
+        {
+          "value": "A",
+          "label": "항상 그런 편이다",
+          "score": 1.0
+        },
+        {
+          "value": "B",
+          "label": "보통이다",
+          "score": 0.5
+        },
+        {
+          "value": "C",
+          "label": "아닌 편이다",
+          "score": 0.0
+        }
+      ],
+      "scoring": {
+        "enabled": true,
+        "scoreRange": [
+          0,
+          1
+        ],
+        "higherIsWorse": true,
+        "method": "option_score"
+      }
+    },
+    {
+      "id": "C16",
+      "number": 16,
+      "prompt": "라면, 과자, 음료수 같은 간식을 매일 한 번 이상 드시나요?",
+      "type": "single_choice",
+      "optionsPrefix": null,
+      "options": [
+        {
+          "value": "A",
+          "label": "항상 그런 편이다",
+          "score": 1.0
+        },
+        {
+          "value": "B",
+          "label": "보통이다",
+          "score": 0.5
+        },
+        {
+          "value": "C",
+          "label": "아닌 편이다",
+          "score": 0.0
+        }
+      ],
+      "scoring": {
+        "enabled": true,
+        "scoreRange": [
+          0,
+          1
+        ],
+        "higherIsWorse": true,
+        "method": "option_score"
+      }
+    },
+    {
+      "id": "C17",
+      "number": 17,
+      "prompt": "일주일에 튀김이나 볶음 요리는 보통 몇 번 정도 드시나요?",
+      "type": "single_choice",
+      "optionsPrefix": null,
+      "options": [
+        {
+          "value": "A",
+          "label": "주 4 회 이상",
+          "score": 1.0
+        },
+        {
+          "value": "B",
+          "label": "주 2-3 회",
+          "score": 0.5
+        },
+        {
+          "value": "C",
+          "label": "주 1 회 이하",
+          "score": 0.0
+        }
+      ],
+      "scoring": {
+        "enabled": true,
+        "scoreRange": [
+          0,
+          1
+        ],
+        "higherIsWorse": true,
+        "method": "option_score"
+      }
+    },
+    {
+      "id": "C18",
+      "number": 18,
+      "prompt": "커피나 에너지 드링크 같은 카페인 음료를 하루에 4 잔 넘게 마시나요?",
+      "type": "single_choice",
+      "optionsPrefix": null,
+      "options": [
+        {
+          "value": "A",
+          "label": "네",
+          "score": 1.0
+        },
+        {
+          "value": "B",
+          "label": "아니오",
+          "score": 0.0
+        }
+      ],
+      "scoring": {
+        "enabled": true,
+        "scoreRange": [
+          0,
+          1
+        ],
+        "higherIsWorse": true,
+        "method": "option_score"
+      }
+    },
+    {
+      "id": "C19",
+      "number": 19,
+      "prompt": "평소 술을 얼마나 자주 드시나요?",
+      "type": "single_choice",
+      "optionsPrefix": null,
+      "options": [
+        {
+          "value": "A",
+          "label": "안 마신다",
+          "score": 0.0
+        },
+        {
+          "value": "B",
+          "label": "월 1 회 이하",
+          "score": 0.25
+        },
+        {
+          "value": "C",
+          "label": "월 2~4 회",
+          "score": 0.5
+        },
+        {
+          "value": "D",
+          "label": "주 2~3 회",
+          "score": 0.75
+        },
+        {
+          "value": "E",
+          "label": "주 4 회 이상",
+          "score": 1.0
+        }
+      ],
+      "scoring": {
+        "enabled": true,
+        "scoreRange": [
+          0,
+          1
+        ],
+        "higherIsWorse": true,
+        "method": "option_score"
+      }
+    },
+    {
+      "id": "C20",
+      "number": 20,
+      "prompt": "한 번 술을 마실 때 보통 어느 정도나 드시나요?",
+      "type": "single_choice",
+      "optionsPrefix": null,
+      "options": [
+        {
+          "value": "A",
+          "label": "반병 이하",
+          "score": 0.0
+        },
+        {
+          "value": "B",
+          "label": "1 병",
+          "score": 0.25
+        },
+        {
+          "value": "C",
+          "label": "1.5 병",
+          "score": 0.5
+        },
+        {
+          "value": "D",
+          "label": "2 병",
+          "score": 0.75
+        },
+        {
+          "value": "E",
+          "label": "2.5 병 이상",
+          "score": 1.0
+        }
+      ],
+      "scoring": {
+        "enabled": true,
+        "scoreRange": [
+          0,
+          1
+        ],
+        "higherIsWorse": true,
+        "method": "option_score"
+      }
+    },
+    {
+      "id": "C21",
+      "number": 21,
+      "prompt": "현재 담배를 피우고 계신가요? (전자담배 포함)",
+      "type": "single_choice",
+      "optionsPrefix": null,
+      "options": [
+        {
+          "value": "A",
+          "label": "안 피움",
+          "score": 0.0
+        },
+        {
+          "value": "B",
+          "label": "금연 10 년 이상",
+          "score": 0.1
+        },
+        {
+          "value": "C",
+          "label": "금연 10 년 미만",
+          "score": 0.5
+        },
+        {
+          "value": "D",
+          "label": "흡연 중",
+          "score": 1.0
+        }
+      ],
+      "scoring": {
+        "enabled": true,
+        "scoreRange": [
+          0,
+          1
+        ],
+        "higherIsWorse": true,
+        "method": "option_score"
+      }
+    },
+    {
+      "id": "C22",
+      "number": 22,
+      "prompt": "하루에 20 분 이상 햇볕을 쬐는 시간이 있으신가요?",
+      "type": "single_choice",
+      "optionsPrefix": null,
+      "options": [
+        {
+          "value": "A",
+          "label": "아니오",
+          "score": 1.0
+        },
+        {
+          "value": "B",
+          "label": "네",
+          "score": 0.0
+        }
+      ],
+      "scoring": {
+        "enabled": true,
+        "scoreRange": [
+          0,
+          1
+        ],
+        "higherIsWorse": true,
+        "method": "option_score"
+      }
+    },
+    {
+      "id": "C23",
+      "number": 23,
+      "prompt": "잠은 매일 6~8 시간 정도 충분히 주무시나요?",
+      "type": "single_choice",
+      "optionsPrefix": null,
+      "options": [
+        {
+          "value": "A",
+          "label": "아니오",
+          "score": 1.0
+        },
+        {
+          "value": "B",
+          "label": "네",
+          "score": 0.0
+        }
+      ],
+      "scoring": {
+        "enabled": true,
+        "scoreRange": [
+          0,
+          1
+        ],
+        "higherIsWorse": true,
+        "method": "option_score"
+      }
+    },
+    {
+      "id": "C24",
+      "number": 24,
+      "prompt": "하루 중 앉아서 보내는 시간이 6 시간을 넘으시나요?",
+      "type": "single_choice",
+      "optionsPrefix": null,
+      "options": [
+        {
+          "value": "A",
+          "label": "아니오",
+          "score": 0.0
+        },
+        {
+          "value": "B",
+          "label": "네",
+          "score": 1.0
+        }
+      ],
+      "scoring": {
+        "enabled": true,
+        "scoreRange": [
+          0,
+          1
+        ],
+        "higherIsWorse": true,
+        "method": "option_score"
+      }
+    },
+    {
+      "id": "C25",
+      "number": 25,
+      "prompt": "일주일에 3 번 이상, 한 번에 30 분 넘게 숨이 찰 정도로 운동하시나요?",
+      "type": "single_choice",
+      "optionsPrefix": null,
+      "options": [
+        {
+          "value": "A",
+          "label": "아니오",
+          "score": 1.0
+        },
+        {
+          "value": "B",
+          "label": "네",
+          "score": 0.0
+        }
+      ],
+      "scoring": {
+        "enabled": true,
+        "scoreRange": [
+          0,
+          1
+        ],
+        "higherIsWorse": true,
+        "method": "option_score"
+      }
+    },
+    {
+      "id": "C26",
+      "number": 26,
+      "prompt": "요즘 일상에서 스트레스를 받고 있다는 느낌을 얼마나 자주 경험하시나요?",
+      "type": "single_choice",
+      "optionsPrefix": null,
+      "options": [
+        {
+          "value": "A",
+          "label": "전혀 없다",
+          "score": 0.0
+        },
+        {
+          "value": "B",
+          "label": "거의 없다",
+          "score": 0.25
+        },
+        {
+          "value": "C",
+          "label": "때때로 있다",
+          "score": 0.5
+        },
+        {
+          "value": "D",
+          "label": "자주 있다",
+          "score": 0.75
+        },
+        {
+          "value": "E",
+          "label": "매우 자주 있다",
+          "score": 1.0
+        }
+      ],
+      "scoring": {
+        "enabled": true,
+        "scoreRange": [
+          0,
+          1
+        ],
+        "higherIsWorse": true,
+        "method": "option_score"
+      }
+    },
+    {
+      "id": "C27",
+      "number": 27,
+      "prompt": "현재 개선하고 싶거나 불편한 증상을 모두 선택해주십시오.",
+      "type": "multi_select_limited",
+      "constraints": {
+        "maxSelections": 5,
+        "recommendedSelectionsRange": [
+          4,
+          5
+        ]
+      },
+      "options": [
+        {
+          "value": "S01",
+          "label": "기억력/인지능력 향상",
+          "aliases": [
+            "기억력/인지능력 향상"
+          ]
+        },
+        {
+          "value": "S02",
+          "label": "수면&피로 개선",
+          "aliases": [
+            "수면&피로 개선",
+            "수면, 피로 개선"
+          ]
+        },
+        {
+          "value": "S03",
+          "label": "스트레스 완화",
+          "aliases": [
+            "스트레스 완화"
+          ]
+        },
+        {
+          "value": "S04",
+          "label": "구강/치아/잇몸 건강",
+          "aliases": [
+            "구강/치아/잇몸 건강",
+            "구강·치아"
+          ]
+        },
+        {
+          "value": "S05",
+          "label": "눈 건강",
+          "aliases": [
+            "눈 건강"
+          ]
+        },
+        {
+          "value": "S06",
+          "label": "피부 개선",
+          "aliases": [
+            "피부 개선"
+          ]
+        },
+        {
+          "value": "S07",
+          "label": "간 건강",
+          "aliases": [
+            "간 건강"
+          ]
+        },
+        {
+          "value": "S08",
+          "label": "위 건강",
+          "aliases": [
+            "위 건강"
+          ]
+        },
+        {
+          "value": "S09",
+          "label": "장 건강",
+          "aliases": [
+            "장 건강"
+          ]
+        },
+        {
+          "value": "S10",
+          "label": "체지방 감소",
+          "aliases": [
+            "체지방 감소",
+            "체지방"
+          ]
+        },
+        {
+          "value": "S11",
+          "label": "혈당 조절",
+          "aliases": [
+            "혈당 조절",
+            "혈당"
+          ]
+        },
+        {
+          "value": "S12",
+          "label": "갱년기 여성",
+          "aliases": [
+            "갱년기 여성"
+          ]
+        },
+        {
+          "value": "S13",
+          "label": "갱년기 남성",
+          "aliases": [
+            "갱년기 남성"
+          ]
+        },
+        {
+          "value": "S14",
+          "label": "월경전증후군 개선",
+          "aliases": [
+            "월경전증후군 개선",
+            "월경전 증후군"
+          ]
+        },
+        {
+          "value": "S15",
+          "label": "혈중 콜레스테롤 & 중성지방 개선",
+          "aliases": [
+            "혈중 콜레스테롤 & 중성지방 개선",
+            "콜레스테롤, 중성지방"
+          ]
+        },
+        {
+          "value": "S16",
+          "label": "혈압 조절",
+          "aliases": [
+            "혈압 조절",
+            "혈압"
+          ]
+        },
+        {
+          "value": "S17",
+          "label": "면역 기능 개선",
+          "aliases": [
+            "면역 기능 개선",
+            "면역력"
+          ]
+        },
+        {
+          "value": "S18",
+          "label": "항산화",
+          "aliases": [
+            "항산화"
+          ]
+        },
+        {
+          "value": "S19",
+          "label": "관절/뼈 건강",
+          "aliases": [
+            "관절/뼈 건강",
+            "관절, 뼈"
+          ]
+        },
+        {
+          "value": "S20",
+          "label": "근육 증진",
+          "aliases": [
+            "근육 증진",
+            "근육"
+          ]
+        },
+        {
+          "value": "S21",
+          "label": "전립선 건강",
+          "aliases": [
+            "전립선 건강",
+            "전립선"
+          ]
+        },
+        {
+          "value": "S22",
+          "label": "배뇨 기능 개선(방광)",
+          "aliases": [
+            "배뇨 기능 개선(방광)",
+            "방광"
+          ]
+        },
+        {
+          "value": "S23",
+          "label": "요로 건강(요도염)",
+          "aliases": [
+            "요로 건강(요도염)",
+            "요로"
+          ]
+        },
+        {
+          "value": "S24",
+          "label": "호흡기 건강",
+          "labelPaper": "호홉기",
+          "aliases": [
+            "호흡기",
+            "호흡기 건강",
+            "호홉기"
+          ]
+        }
+      ],
+      "scoring": {
+        "enabled": false
+      },
+      "notes": "공통 질문지 27번에서 선택한 항목(최대 4~5개)에 해당하는 상세 항목을 추가로 작성합니다."
+    }
+  ]
+}

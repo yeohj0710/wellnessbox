@@ -1,0 +1,194 @@
+{
+  "id": "wellnessbox_health_scoring_rules_v1",
+  "title": "웰니스 설문 점수화 규칙",
+  "version": "1.0.0",
+  "generatedAtUtc": "2026-02-26T10:34:19Z",
+  "scoreConventions": {
+    "questionScoreRange": [
+      0,
+      1
+    ],
+    "higherScoreIsWorse": true,
+    "notes": "설문 문항의 선택지 점수는 0~1 범위. 점수가 높을수록 건강 위험/관리 필요도가 높음(=안 좋음)."
+  },
+  "lifestyleRisk": {
+    "source": "common_questions",
+    "questionIds": {
+      "diet": [
+        "C10",
+        "C11",
+        "C12",
+        "C13",
+        "C14",
+        "C15",
+        "C16",
+        "C17",
+        "C18"
+      ],
+      "immuneManagement": [
+        "C19",
+        "C20",
+        "C21",
+        "C22"
+      ],
+      "sleep": [
+        "C23",
+        "C26"
+      ],
+      "activity": [
+        "C24",
+        "C25"
+      ]
+    },
+    "domains": [
+      {
+        "id": "diet",
+        "name": "식습관",
+        "questionIds": [
+          "C10",
+          "C11",
+          "C12",
+          "C13",
+          "C14",
+          "C15",
+          "C16",
+          "C17",
+          "C18"
+        ],
+        "calc": {
+          "type": "avg",
+          "divideBy": 9
+        }
+      },
+      {
+        "id": "immuneManagement",
+        "name": "면역관리",
+        "questionIds": [
+          "C19",
+          "C20",
+          "C21",
+          "C22"
+        ],
+        "calc": {
+          "type": "avg",
+          "divideBy": 4
+        }
+      },
+      {
+        "id": "sleep",
+        "name": "수면",
+        "questionIds": [
+          "C23",
+          "C26"
+        ],
+        "calc": {
+          "type": "avg",
+          "divideBy": 2
+        }
+      },
+      {
+        "id": "activity",
+        "name": "활동량",
+        "questionIds": [
+          "C24",
+          "C25"
+        ],
+        "calc": {
+          "type": "avg",
+          "divideBy": 2
+        }
+      }
+    ],
+    "overall": {
+      "calc": {
+        "type": "avg_of_domain_scores",
+        "notes": "문서에 전체 합산 방식이 명시되어 있지 않아, 4개 영역 점수(각 영역 평균)를 동일 가중 평균으로 합산하는 방식을 기본값으로 둡니다."
+      },
+      "normalizedRange": [
+        0,
+        1
+      ],
+      "percentRange": [
+        0,
+        100
+      ],
+      "percentTransform": {
+        "type": "multiply",
+        "factor": 100
+      }
+    }
+  },
+  "healthManagementNeed": {
+    "source": "detailed_sections",
+    "selection": "common_question_C27",
+    "sectionScore": {
+      "calc": {
+        "type": "sum_of_question_scores_divided_by_question_count",
+        "notes": "문서 표기: 각 영역별 점수 / 각 영역별 총 문항"
+      },
+      "normalizedRange": [
+        0,
+        1
+      ],
+      "percentRange": [
+        0,
+        100
+      ],
+      "percentTransform": {
+        "type": "multiply",
+        "factor": 100
+      }
+    },
+    "overallAverage": {
+      "calc": {
+        "type": "avg_of_selected_section_scores",
+        "notes": "사용자가 선택한 4~5개 영역의 점수를 평균"
+      },
+      "normalizedRange": [
+        0,
+        1
+      ],
+      "percentRange": [
+        0,
+        100
+      ],
+      "percentTransform": {
+        "type": "multiply",
+        "factor": 100
+      }
+    }
+  },
+  "overallHealthScore": {
+    "calc": {
+      "type": "formula",
+      "formula": "100 - ((lifestyleRiskPercent + healthManagementNeedAveragePercent) / 2)",
+      "clampToRange": [
+        0,
+        100
+      ],
+      "higherIsBetter": true,
+      "notes": "문서 표기: 건강점수 = 100 - {(생활습관 위험도 점수 + 건강 관리 필요도 평균)/2}"
+    }
+  },
+  "reportGeneration": {
+    "sectionAnalysis": {
+      "includeAdviceIfQuestionScoreGte": 0.5,
+      "textSource": "report_texts.sectionAnalysisAdvice"
+    },
+    "lifestyleRoutine": {
+      "questionRange": [
+        10,
+        26
+      ],
+      "primaryScoreToInclude": 1,
+      "fallbackScoreToInclude": 0.5,
+      "textSource": "report_texts.lifestyleRoutineAdviceByCommonQuestionNumber"
+    },
+    "supplementDesign": {
+      "sortBy": "sectionNeedPercentDesc",
+      "textSource": "report_texts.supplementDesignTextBySectionId",
+      "defaultTopN": 5,
+      "notes": "문서에 '점수 높은 순서대로'라고 되어 있어, 점수 내림차순 정렬 후 상위 N개를 노출(기본값 5개). N은 UI 정책에 맞춰 조정 가능."
+    }
+  }
+}

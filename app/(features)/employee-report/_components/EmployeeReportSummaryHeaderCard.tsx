@@ -12,6 +12,7 @@ type EmployeeReportSummaryHeaderCardProps = {
   forceSyncRemainingSec: number;
   onPeriodChange: (nextPeriod: string) => void;
   onDownloadPdf: () => void;
+  onDownloadLegacyPdf: () => void;
   onRestartAuth: () => void;
   onSignAndSync: () => void;
   onLogout: () => void;
@@ -28,6 +29,7 @@ export default function EmployeeReportSummaryHeaderCard({
   forceSyncRemainingSec,
   onPeriodChange,
   onDownloadPdf,
+  onDownloadLegacyPdf,
   onRestartAuth,
   onSignAndSync,
   onLogout,
@@ -35,16 +37,14 @@ export default function EmployeeReportSummaryHeaderCard({
 }: EmployeeReportSummaryHeaderCardProps) {
   if (!reportData.report) return null;
 
+  const employeeName =
+    reportData.report.payload?.meta?.employeeName || reportData.employee?.name || "대상자";
+
   return (
     <section className={styles.sectionCard} data-testid="employee-report-summary-section">
       <div className={styles.sectionHeader}>
         <div className={styles.summaryTitleBlock}>
-          <h2 className={styles.sectionTitle}>
-            {(reportData.report.payload?.meta?.employeeName ||
-              reportData.employee?.name ||
-              "대상자")}
-            님 레포트
-          </h2>
+          <h2 className={styles.sectionTitle}>{employeeName}님 레포트</h2>
           <p className={styles.sectionDescription}>
             마지막 업데이트:{" "}
             {formatRelativeTime(
@@ -84,7 +84,7 @@ export default function EmployeeReportSummaryHeaderCard({
           data-testid="employee-report-download-pdf"
           className={`${styles.buttonPrimary} ${styles.summaryPrimaryButton}`}
         >
-          {busy ? "PDF 생성 중..." : "PDF 다운로드"}
+          {busy ? "PDF 캡처 생성 중..." : "PDF 다운로드"}
         </button>
       </div>
       <div className={`${styles.actionRow} ${styles.summarySecondaryActions}`}>
@@ -130,8 +130,8 @@ export default function EmployeeReportSummaryHeaderCard({
           </summary>
           <div className={styles.optionalBody}>
             <p className={styles.optionalText}>
-              강제 재조회는 캐시를 무시하고 외부 조회를 시도합니다. 비용이 발생할 수
-              있으므로 운영자 점검 시에만 사용하세요.
+              강제 조회는 캐시를 무시하고 외부 API를 다시 호출합니다. 비용이 발생할 수 있으므로
+              필요한 경우에만 사용해 주세요.
             </p>
             <div className={styles.actionRow}>
               <button
@@ -141,17 +141,24 @@ export default function EmployeeReportSummaryHeaderCard({
                 data-testid="employee-report-force-sync-open"
                 className={styles.buttonDanger}
               >
-                {busy ? "강제 재조회 중..." : "강제 재조회 실행"}
+                {busy ? "강제 조회 중..." : "강제 조회 실행"}
+              </button>
+              <button
+                type="button"
+                onClick={onDownloadLegacyPdf}
+                disabled={busy}
+                className={styles.buttonGhost}
+              >
+                {busy ? "기존 PDF 생성 중..." : "기존 PDF 엔진 다운로드"}
               </button>
             </div>
             {forceSyncRemainingSec > 0 ? (
               <p className={styles.inlineHint}>
-                강제 재조회 가능까지 약 {Math.ceil(forceSyncRemainingSec / 60)}분
-                남았습니다.
+                강제 조회 가능까지 약 {Math.ceil(forceSyncRemainingSec / 60)}분 남았습니다.
               </p>
             ) : null}
             <p className={styles.inlineHint}>
-              노출 조건: 관리자 로그인 또는 `?debug=1` 플래그
+              노출 조건: 관리자 로그인 또는 `?debug=1`
             </p>
           </div>
         </details>
@@ -159,3 +166,4 @@ export default function EmployeeReportSummaryHeaderCard({
     </section>
   );
 }
+

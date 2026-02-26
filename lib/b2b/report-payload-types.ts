@@ -114,6 +114,48 @@ export type B2bReportPayload = {
       actionItems: string[];
       caution: string;
     } | null;
+    wellness: {
+      schemaVersion: string;
+      selectedSections: string[];
+      lifestyleRisk: {
+        domainScoresNormalized: Record<string, number>;
+        domainScoresPercent: Record<string, number>;
+        domains: Array<{
+          id: string;
+          name: string;
+          normalized: number;
+          percent: number;
+        }>;
+        overallPercent: number;
+      };
+      healthManagementNeed: {
+        sectionNeedPercentById: Record<string, number>;
+        sections: Array<{
+          sectionId: string;
+          sectionTitle: string;
+          percent: number;
+        }>;
+        averagePercent: number;
+      };
+      overallHealthScore: number;
+      sectionAdvice: Record<
+        string,
+        {
+          sectionTitle: string;
+          items: Array<{ questionNumber: number; text: string }>;
+        }
+      >;
+      lifestyleRoutineAdvice: string[];
+      supplementDesign: Array<{
+        sectionId: string;
+        title: string;
+        paragraphs: string[];
+      }>;
+      perQuestionScores: {
+        common: Record<string, number | null>;
+        sections: Record<string, Record<string, number | null>>;
+      };
+    } | null;
     updatedAt: string | null;
   };
   pharmacist: {

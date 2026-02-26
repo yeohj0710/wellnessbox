@@ -715,6 +715,27 @@
   background: #eef3fa;
 }
 
+.reportCanvasBoardWide {
+  max-width: 1160px;
+  max-height: min(78vh, 980px);
+  padding: 12px;
+}
+
+.reportCaptureSurface {
+  width: min(1080px, 100%);
+  min-width: 0;
+  margin: 0 auto;
+}
+
+.reportLegacyPanel {
+  margin-top: 8px;
+}
+
+.reportLegacyPanel > .optionalBody {
+  display: grid;
+  gap: 10px;
+}
+
 .overviewHeroGrid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 260px;
@@ -2178,6 +2199,226 @@
   transition: width 220ms ease;
 }
 
+.wellnessGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.wellnessCard {
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 12px;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.radarWrap {
+  display: grid;
+  justify-items: center;
+}
+
+.radarSvg {
+  width: min(100%, 260px);
+  height: auto;
+}
+
+.radarGrid {
+  fill: none;
+  stroke: #d7e3f7;
+  stroke-width: 1;
+}
+
+.radarAxis {
+  stroke: #cad8ef;
+  stroke-width: 1;
+}
+
+.radarArea {
+  fill: rgba(49, 130, 246, 0.24);
+  stroke: #2f7df9;
+  stroke-width: 2;
+}
+
+.radarPoint {
+  fill: #ffffff;
+  stroke: #1f6bf1;
+  stroke-width: 2;
+}
+
+.radarLabel {
+  fill: #4f6484;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.needList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.needRow {
+  display: grid;
+  gap: 6px;
+}
+
+.needHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.needHead strong {
+  color: var(--ink-1);
+}
+
+.needTrack {
+  height: 10px;
+  width: 100%;
+  border-radius: 999px;
+  background: #e9edf5;
+  overflow: hidden;
+}
+
+.needFill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #1f62f2 0%, #4ea4ff 100%);
+  transition: width 220ms ease;
+}
+
+.reportTopGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.reportTopCard {
+  border-radius: 18px;
+  border: 1px solid #c7d9f6;
+  background:
+    radial-gradient(circle at 92% -10%, rgba(95, 157, 255, 0.16), transparent 38%),
+    linear-gradient(180deg, #ffffff 0%, #f6faff 100%);
+  padding: 12px;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.reportTopHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.donutWrap {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  margin: 0 auto;
+}
+
+.donutSvg {
+  width: 140px;
+  height: 140px;
+}
+
+.donutTrack {
+  fill: none;
+  stroke: #e4ebf5;
+  stroke-width: 12;
+}
+
+.donutProgress {
+  fill: none;
+  stroke: #16a34a;
+  stroke-width: 12;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  transition: stroke-dashoffset 260ms ease;
+}
+
+.donutCenter {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.donutCenter strong {
+  color: #134081;
+  font-size: 28px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.reportFormula {
+  margin: 0;
+  color: #54729b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.reportNarrativeList {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.58;
+}
+
+.adviceGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.adviceCard {
+  border-radius: 12px;
+  border: 1px solid #d8e4f6;
+  background: linear-gradient(180deg, #fafcff 0%, #f3f8ff 100%);
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.adviceTitle {
+  margin: 0;
+  color: #134084;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.adviceList {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.adviceParagraph {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.58;
+}
+
 .visualGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2417,6 +2658,10 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .reportTopGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .splitLayout {
     grid-template-columns: 1fr;
   }
@@ -2512,7 +2757,10 @@
 
   .metricsGrid,
   .visualGrid,
-  .twoCol {
+  .twoCol,
+  .wellnessGrid,
+  .adviceGrid,
+  .reportTopGrid {
     grid-template-columns: 1fr;
   }
 
@@ -2576,6 +2824,15 @@
     max-height: 62vh;
     border-radius: 14px;
     padding: 6px;
+  }
+
+  .reportCanvasBoardWide {
+    max-width: 100%;
+    padding: 8px;
+  }
+
+  .reportCaptureSurface {
+    width: 100%;
   }
 
   .reportCanvasHeader {

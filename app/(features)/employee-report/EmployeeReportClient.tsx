@@ -6,6 +6,7 @@ import ReportRenderer from "@/components/b2b/ReportRenderer";
 import ReportSummaryCards from "@/components/b2b/ReportSummaryCards";
 import OperationLoadingOverlay from "@/components/common/operationLoadingOverlay";
 import styles from "@/components/b2b/B2bUx.module.css";
+import { captureElementToPdf } from "@/lib/client/capture-pdf";
 import EmployeeReportBootSkeleton from "./_components/EmployeeReportBootSkeleton";
 import EmployeeReportIdentitySection from "./_components/EmployeeReportIdentitySection";
 import EmployeeReportSummaryHeaderCard from "./_components/EmployeeReportSummaryHeaderCard";
@@ -72,6 +73,7 @@ export default function EmployeeReportClient() {
   const [forceConfirmChecked, setForceConfirmChecked] = useState(false);
   const [cooldownNow, setCooldownNow] = useState(() => Date.now());
   const hasTriedStoredLogin = useRef(false);
+  const webReportCaptureRef = useRef<HTMLDivElement | null>(null);
 
   const validIdentity = useMemo(() => {
     return (
@@ -487,7 +489,33 @@ export default function EmployeeReportClient() {
 
   async function handleDownloadPdf() {
     if (!reportData?.report?.id) return;
-    beginBusy("PDF 파일을 생성하고 있어요.");
+    const captureTarget = webReportCaptureRef.current;
+    if (!captureTarget) {
+      setError("레포트 캡처 대상을 찾지 못했습니다. 화면을 새로고침 후 다시 시도해 주세요.");
+      return;
+    }
+
+    beginBusy("웹 레포트를 PDF로 캡처하고 있어요.");
+    setError("");
+    setNotice("");
+    try {
+      const periodLabel = selectedPeriodKey || reportData.periodKey || "latest";
+      await captureElementToPdf({
+        element: captureTarget,
+        fileName: `employee-report-${periodLabel}.pdf`,
+        desktopViewportWidth: 1440,
+      });
+      setNotice("화면 캡처 기반 PDF 다운로드가 완료되었습니다.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "PDF 캡처 다운로드에 실패했습니다.");
+    } finally {
+      endBusy();
+    }
+  }
+
+  async function handleDownloadLegacyPdf() {
+    if (!reportData?.report?.id) return;
+    beginBusy("기존 PDF 엔진으로 파일을 생성하고 있어요.");
     setError("");
     setNotice("");
     try {
@@ -498,9 +526,9 @@ export default function EmployeeReportClient() {
         `/api/b2b/employee/report/export/pdf${periodQuery}`,
         "employee-report.pdf"
       );
-      setNotice("PDF 다운로드가 완료되었습니다.");
+      setNotice("기존 PDF 엔진 다운로드가 완료되었습니다.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "PDF 다운로드에 실패했습니다.");
+      setError(err instanceof Error ? err.message : "기존 PDF 다운로드에 실패했습니다.");
     } finally {
       endBusy();
     }
@@ -620,6 +648,7 @@ export default function EmployeeReportClient() {
               void handleChangePeriod(next);
             }}
             onDownloadPdf={handleDownloadPdf}
+            onDownloadLegacyPdf={handleDownloadLegacyPdf}
             onRestartAuth={handleRestartAuth}
             onSignAndSync={() => void handleSignAndSync(false)}
             onLogout={handleLogout}
@@ -644,22 +673,35 @@ export default function EmployeeReportClient() {
             </div>
           ) : null}
 
+          {/* New default: web-first report + capture PDF */}
+          <section className={styles.reportCanvas}>
+            <div className={styles.reportCanvasHeader}>
+              <div>
+                <h3>레포트 본문 미리보기</h3>
+                <p>화면에서 보는 웹 레포트를 그대로 캡처해 PDF로 저장합니다.</p>
+              </div>
+              <span className={styles.statusOn}>웹/PDF 동일 레이아웃</span>
+            </div>
+            <div className={`${styles.reportCanvasBoard} ${styles.reportCanvasBoardWide}`}>
+              <div ref={webReportCaptureRef} className={styles.reportCaptureSurface}>
+                <ReportSummaryCards payload={reportData.report.payload} viewerMode="employee" />
+              </div>
+            </div>
+          </section>
+
           {previewLayout ? (
-            <section className={styles.reportCanvas}>
-              <div className={styles.reportCanvasHeader}>
-                <div>
-                  <h3>리포트 본문 미리보기</h3>
-                  <p>지금 화면에서 보이는 내용 그대로 PDF가 생성돼요.</p>
+            <details className={`${styles.optionalCard} ${styles.reportLegacyPanel}`}>
+              <summary>현행 엔진 미리보기</summary>
+              <div className={styles.optionalBody}>
+                <p className={styles.optionalText}>
+                  기존 DSL 렌더러 결과입니다. 비교 확인이 필요할 때만 펼쳐서 확인하세요.
+                </p>
+                <div className={styles.reportCanvasBoard}>
+                  <ReportRenderer layout={previewLayout} fitToWidth />
                 </div>
-                <span className={styles.statusOn}>화면/PDF 구성 일치</span>
               </div>
-              <div className={styles.reportCanvasBoard}>
-                <ReportRenderer layout={previewLayout} fitToWidth />
-              </div>
-            </section>
-          ) : (
-            <ReportSummaryCards payload={reportData.report.payload} viewerMode="employee" />
-          )}
+            </details>
+          ) : null}
         </>
       ) : null}
 

@@ -36,6 +36,11 @@ export default function B2bSurveyEditorPanel({
 }: B2bSurveyEditorPanelProps) {
   const selectedSectionCount = selectedSectionSet.size;
   const sectionCatalog = surveyTemplate?.sectionCatalog ?? [];
+  const recommendedRange = surveyTemplate?.rules?.recommendedSelectionsRange;
+  const recommendedText =
+    recommendedRange && recommendedRange.length === 2
+      ? `${recommendedRange[0]}~${recommendedRange[1]}개`
+      : "4~5개";
 
   return (
     <details className={`${styles.optionalCard} ${styles.editorPanel}`}>
@@ -55,6 +60,7 @@ export default function B2bSurveyEditorPanel({
               세부 영역은 최대 {maxSelectedSections}개까지 선택 가능하며, 선택된 영역의 문항만 오른쪽에
               표시돼요.
             </li>
+            <li>권장 선택 수는 {recommendedText}예요. 너무 많거나 적으면 분석 정확도가 낮아질 수 있어요.</li>
             <li>필수 문항을 우선 채운 뒤 저장하면 레포트 품질이 안정적으로 올라가요.</li>
           </ul>
         </div>
@@ -70,7 +76,7 @@ export default function B2bSurveyEditorPanel({
           <div className={styles.editorSectionHead}>
             <h3 className={styles.editorSectionTitle}>세부 영역 선택</h3>
             <p className={styles.editorSectionHint}>
-              선택 {selectedSectionCount}/{Math.max(1, maxSelectedSections)} · 전체 {sectionCatalog.length}개
+              선택 {selectedSectionCount}/{Math.max(1, maxSelectedSections)} · 권장 {recommendedText}
             </p>
           </div>
           <div className={`${styles.actionRow} ${styles.editorChipRow}`}>
