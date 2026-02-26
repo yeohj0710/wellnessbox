@@ -1,15 +1,8 @@
 import { NextResponse } from "next/server";
-import getSession from "@/lib/session";
 import { isNicknameAvailable, normalizeNickname } from "@/lib/nickname";
+import { requireUserSession } from "@/lib/server/route-auth";
 
 export const runtime = "nodejs";
-
-function unauthorized(message = "Unauthorized") {
-  return NextResponse.json(
-    { ok: false, error: message },
-    { status: 401, headers: { "Cache-Control": "no-store" } }
-  );
-}
 
 function badRequest(message = "Invalid input") {
   return NextResponse.json(
@@ -19,12 +12,9 @@ function badRequest(message = "Invalid input") {
 }
 
 export async function POST(req: Request) {
-  const session = await getSession();
-  const user = session.user;
-
-  if (!user?.loggedIn || typeof user.kakaoId !== "number") {
-    return unauthorized();
-  }
+  const auth = await requireUserSession();
+  if (!auth.ok) return auth.response;
+  const { kakaoId } = auth.data;
 
   let body: unknown;
 
@@ -40,7 +30,7 @@ export async function POST(req: Request) {
     return badRequest("닉네임을 입력해 주세요.");
   }
 
-  const available = await isNicknameAvailable(nickname, String(user.kakaoId));
+  const available = await isNicknameAvailable(nickname, kakaoId);
 
   return NextResponse.json(
     { ok: true, available, nickname },

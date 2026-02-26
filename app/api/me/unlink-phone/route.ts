@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import db from "@/lib/db";
-import { requireUserId } from "@/lib/auth";
 import getSession from "@/lib/session";
+import { requireUserSession } from "@/lib/server/route-auth";
 
 export const runtime = "nodejs";
 
@@ -20,18 +20,12 @@ async function clearPhoneFromSession() {
 
 export async function POST() {
   try {
-    const id = await requireUserId();
-    const clientId = typeof id === "string" ? id : String(id);
-
-    if (!clientId) {
-      return NextResponse.json(
-        { ok: false, error: "Unauthorized" },
-        { status: 401, headers: { "Cache-Control": "no-store" } }
-      );
-    }
+    const auth = await requireUserSession();
+    if (!auth.ok) return auth.response;
+    const { kakaoId } = auth.data;
 
     await db.appUser.updateMany({
-      where: { kakaoId: clientId },
+      where: { kakaoId },
       data: { phone: null, phoneLinkedAt: null },
     });
 

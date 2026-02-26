@@ -1,21 +1,14 @@
 import { NextResponse } from "next/server";
 import db from "@/lib/db";
-import getSession from "@/lib/session";
 import { generateOtp, hashEmailOtp, normalizeEmail } from "@/lib/otp";
 import { sendEmailVerificationCode } from "@/lib/mail";
+import { requireUserSession } from "@/lib/server/route-auth";
 
 export const runtime = "nodejs";
 
 const COOLDOWN_MS = 60 * 1000;
 const EXPIRES_MS = 10 * 60 * 1000;
 const DAILY_SEND_LIMIT = 10;
-
-function unauthorized(message = "Unauthorized") {
-  return NextResponse.json(
-    { ok: false, error: message },
-    { status: 401, headers: { "Cache-Control": "no-store" } }
-  );
-}
 
 function badRequest(message = "Invalid input") {
   return NextResponse.json(
@@ -32,12 +25,9 @@ function tooManyRequests(message = "Too many requests") {
 }
 
 export async function POST(req: Request) {
-  const session = await getSession();
-  const user = session.user;
-
-  if (!user?.loggedIn || typeof user.kakaoId !== "number") {
-    return unauthorized();
-  }
+  const auth = await requireUserSession();
+  if (!auth.ok) return auth.response;
+  const { kakaoId } = auth.data;
 
   let body: unknown;
 
@@ -59,8 +49,6 @@ export async function POST(req: Request) {
   }
 
   const now = new Date();
-  const kakaoId = String(user.kakaoId);
-
   try {
     const appUser = await db.appUser.upsert({
       where: { kakaoId },

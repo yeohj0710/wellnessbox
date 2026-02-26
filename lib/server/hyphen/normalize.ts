@@ -134,8 +134,16 @@ function selectLatestCheckupOverviewRows(rows: NhisRow[]): NhisRow[] {
 export function normalizeNhisPayload(input: NormalizeNhisPayloadInput): NormalizedNhisPayload {
   const medical = normalizeTreatmentPayload(input.medical);
   const medicationRaw = normalizeTreatmentPayload(input.medication);
+  const useMedicalMedicationFallback =
+    medicationRaw.list.length === 0 && medical.list.length > 0;
+  const medicationRowsSource = useMedicalMedicationFallback
+    ? medical.list
+    : medicationRaw.list;
+  const medicationSourceTag = useMedicalMedicationFallback
+    ? "medical-fallback"
+    : "medication";
   const medicationRows = limitRecentMedicationRows(
-    medicationRaw.list,
+    medicationRowsSource,
     MEDICATION_RECENT_LIMIT
   );
   const medication = {
@@ -145,6 +153,7 @@ export function normalizeNhisPayload(input: NormalizeNhisPayloadInput): Normaliz
       ...medicationRaw.summary,
       totalCount: medicationRows.length,
       recentLines: extractRecentLines(medicationRows),
+      source: medicationSourceTag,
     },
   };
 

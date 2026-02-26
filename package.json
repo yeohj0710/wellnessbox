@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "postinstall": "npm run prisma:generate",
-    "prisma:generate": "prisma generate",
+    "prisma:generate": "node scripts/prisma-generate-safe.cjs",
     "prepare:assets": "node copy_wasm.js",
     "predev": "node -e \"try{require('fs').rmSync('.next',{recursive:true,force:true})}catch(e){}\" && npm run prisma:generate && npm run prepare:assets && npm run audit:encoding",
     "dev": "next dev --port 3001",

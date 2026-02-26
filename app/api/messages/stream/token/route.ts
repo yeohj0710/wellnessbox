@@ -1,63 +1,114 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
 import db from "@/lib/db";
-import getSession from "@/lib/session";
 import { sign } from "@/lib/jwt";
-import { NextRequest, NextResponse } from "next/server";
+import {
+  requirePharmSession,
+  requireRiderSession,
+} from "@/lib/server/route-auth";
 
 export const runtime = "nodejs";
 
-export async function POST(req: NextRequest) {
+const requestSchema = z.union([
+  z.object({
+    role: z.literal("customer"),
+    orderId: z.coerce.number().int().positive(),
+    phone: z.string().trim().min(1),
+    password: z.string().trim().min(1),
+  }),
+  z.object({
+    role: z.enum(["pharm", "rider"]),
+    orderId: z.coerce.number().int().positive(),
+  }),
+]);
+
+function noStoreJson(payload: unknown, status = 200) {
+  return NextResponse.json(payload, {
+    status,
+    headers: { "Cache-Control": "no-store" },
+  });
+}
+
+async function issueCustomerToken(input: {
+  orderId: number;
+  phone: string;
+  password: string;
+}) {
+  const order = await db.order.findFirst({
+    where: {
+      id: input.orderId,
+      phone: input.phone,
+      password: input.password,
+    },
+    select: { id: true },
+  });
+  if (!order) return noStoreJson({ error: "Unauthorized" }, 403);
+
+  const { token, exp } = sign({
+    role: "customer",
+    orderId: input.orderId,
+  });
+  return noStoreJson({ token, exp });
+}
+
+async function issuePharmToken(orderId: number) {
+  const auth = await requirePharmSession();
+  if (!auth.ok) return auth.response;
+
+  const order = await db.order.findFirst({
+    where: {
+      id: orderId,
+      pharmacyId: auth.data.pharmacyId,
+    },
+    select: { id: true },
+  });
+  if (!order) return noStoreJson({ error: "Unauthorized" }, 403);
+
+  const { token, exp } = sign({
+    role: "pharm",
+    pharmacyId: auth.data.pharmacyId,
+    orderId,
+  });
+  return noStoreJson({ token, exp });
+}
+
+async function issueRiderToken(orderId: number) {
+  const auth = await requireRiderSession();
+  if (!auth.ok) return auth.response;
+
+  const order = await db.order.findFirst({
+    where: {
+      id: orderId,
+      riderId: auth.data.riderId,
+    },
+    select: { id: true },
+  });
+  if (!order) return noStoreJson({ error: "Unauthorized" }, 403);
+
+  const { token, exp } = sign({
+    role: "rider",
+    riderId: auth.data.riderId,
+    orderId,
+  });
+  return noStoreJson({ token, exp });
+}
+
+export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { role } = body;
-    if (role === "customer") {
-      const { orderId, phone, password } = body;
-      const parsedOrderId = Number(orderId);
-      if (!Number.isFinite(parsedOrderId) || !phone || !password)
-        return NextResponse.json({ error: "Missing params" }, { status: 400 });
-      const order = await db.order.findFirst({
-        where: { id: parsedOrderId, phone, password },
-      });
-      if (!order)
-        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-      const { token, exp } = sign({ role: "customer", orderId: parsedOrderId });
-      return NextResponse.json({ token, exp });
+    const body = await req.json().catch(() => null);
+    const parsed = requestSchema.safeParse(body);
+    if (!parsed.success) {
+      return noStoreJson({ error: "Missing params" }, 400);
     }
-    if (role === "pharm") {
-      const { orderId } = body;
-      const parsedOrderId = Number(orderId);
-      const session = await getSession();
-      const pharmId = session.pharm?.id;
-      if (!pharmId || !Number.isFinite(parsedOrderId))
-        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-      const order = await db.order.findFirst({
-        where: { id: parsedOrderId, pharmacyId: pharmId },
-      });
-      if (!order)
-        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-      const { token, exp } = sign({
-        role: "pharm",
-        pharmacyId: pharmId,
-        orderId: parsedOrderId,
-      });
-      return NextResponse.json({ token, exp });
+
+    if (parsed.data.role === "customer") {
+      return issueCustomerToken(parsed.data);
     }
-    if (role === "rider") {
-      const { orderId } = body;
-      const parsedOrderId = Number(orderId);
-      const session = await getSession();
-      const riderId = session.rider?.id;
-      if (!riderId || !Number.isFinite(parsedOrderId))
-        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-      const order = await db.order.findFirst({
-        where: { id: parsedOrderId, riderId },
-      });
-      if (!order)
-        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-      const { token, exp } = sign({ role: "rider", riderId, orderId: parsedOrderId });
-      return NextResponse.json({ token, exp });
+    if (parsed.data.role === "pharm") {
+      return issuePharmToken(parsed.data.orderId);
     }
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    return issueRiderToken(parsed.data.orderId);
   } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    return noStoreJson({ error: "Unauthorized" }, 403);
   }
 }

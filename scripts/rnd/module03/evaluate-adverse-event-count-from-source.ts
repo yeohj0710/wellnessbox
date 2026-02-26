@@ -6,6 +6,12 @@ import {
   evaluateModule03AdverseEventCount,
   type Module03AdverseEventSample,
 } from "../../../lib/rnd/module03-personal-safety/evaluation";
+import {
+  assertNonEmptyString,
+  getArgValue,
+  isPlainObject,
+  readJsonFile,
+} from "./orchestrate-adverse-event-evaluation-monthly-helpers";
 
 type Module03Kpi06OpsSchemaMap = {
   module: "03_personal_safety_validation_engine";
@@ -44,31 +50,18 @@ const DEFAULT_SQL_TEMPLATE_PATH = path.resolve(
 );
 const FALSY_VALUES = new Set(["false", "f", "0", "no", "n", "unlinked"]);
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function assertNonEmptyString(value: unknown, fieldName: string): string {
-  if (typeof value !== "string" || value.trim().length === 0) {
-    throw new Error(`${fieldName} must be a non-empty string.`);
-  }
-  return value.trim();
-}
-
 function parseArgs(argv: string[]): CliArgs {
-  const inputIndex = argv.indexOf("--input");
-  const schemaMapIndex = argv.indexOf("--schema-map");
-  const outIndex = argv.indexOf("--out");
-  const evaluatedAtIndex = argv.indexOf("--evaluated-at");
+  const inputPathValue = getArgValue(argv, "--input");
+  const schemaMapPathValue = getArgValue(argv, "--schema-map");
+  const outPathValue = getArgValue(argv, "--out");
+  const evaluatedAt = getArgValue(argv, "--evaluated-at");
 
-  const inputPath = inputIndex >= 0 ? argv[inputIndex + 1] ?? null : null;
-  const schemaMapPath =
-    schemaMapIndex >= 0 ? argv[schemaMapIndex + 1] ?? null : null;
-  const outPath = outIndex >= 0 ? argv[outIndex + 1] ?? null : null;
-  const evaluatedAt = evaluatedAtIndex >= 0 ? argv[evaluatedAtIndex + 1] ?? null : null;
-
-  if (!inputPath) {
+  if (!inputPathValue) {
     throw new Error("--input is required and must point to a JSON array export.");
+  }
+  const inputPath = path.resolve(inputPathValue);
+  if (!fs.existsSync(inputPath)) {
+    throw new Error(`--input file does not exist: ${inputPath}`);
   }
 
   if (evaluatedAt) {
@@ -78,18 +71,12 @@ function parseArgs(argv: string[]): CliArgs {
     }
   }
 
-  return { inputPath, schemaMapPath, outPath, evaluatedAt };
-}
-
-function readJsonFile(filePath: string): unknown {
-  const absolutePath = path.resolve(filePath);
-  const raw = fs.readFileSync(absolutePath, "utf8").replace(/^\uFEFF/, "");
-  try {
-    return JSON.parse(raw);
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Unknown JSON parse error.";
-    throw new Error(`Failed to parse JSON file ${absolutePath}: ${message}`);
-  }
+  return {
+    inputPath,
+    schemaMapPath: schemaMapPathValue ? path.resolve(schemaMapPathValue) : null,
+    outPath: outPathValue ? path.resolve(outPathValue) : null,
+    evaluatedAt,
+  };
 }
 
 function parseSchemaMap(raw: unknown, schemaMapPath: string): Module03Kpi06OpsSchemaMap {

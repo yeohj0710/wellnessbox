@@ -3,6 +3,7 @@ import db from "@/lib/db";
 import { hashOtp, normalizePhone } from "@/lib/otp";
 import getSession from "@/lib/session";
 import { backfillOrdersForAppUser } from "@/lib/server/app-user-sync";
+import { requireUserSession } from "@/lib/server/route-auth";
 
 export const runtime = "nodejs";
 
@@ -20,23 +21,10 @@ function badRequest(message = "입력값을 다시 확인해 주세요.") {
   );
 }
 
-function resolveSessionKakaoId(raw: unknown) {
-  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
-  if (typeof raw === "string" && /^\d+$/.test(raw.trim())) {
-    const parsed = Number(raw.trim());
-    if (Number.isFinite(parsed)) return parsed;
-  }
-  return null;
-}
-
 export async function POST(req: NextRequest) {
-  const session = await getSession();
-  const user = session.user;
-  const kakaoId = resolveSessionKakaoId(user?.kakaoId);
-
-  if (!user?.loggedIn || !Number.isFinite(kakaoId)) {
-    return unauthorized();
-  }
+  const auth = await requireUserSession();
+  if (!auth.ok) return unauthorized();
+  const { kakaoId } = auth.data;
 
   let body: unknown;
 
@@ -108,15 +96,15 @@ export async function POST(req: NextRequest) {
     const linkedAt = now.toISOString();
     const linkedAtDate = new Date(linkedAt);
     const profile = await db.appUser.findUnique({
-      where: { kakaoId: String(kakaoId) },
+      where: { kakaoId },
       select: { clientId: true },
     });
     const resolvedClientId = profile?.clientId ?? undefined;
 
     const updatedUser = await db.appUser.upsert({
-      where: { kakaoId: String(kakaoId) },
+      where: { kakaoId },
       create: {
-        kakaoId: String(kakaoId),
+        kakaoId,
         clientId: resolvedClientId ?? undefined,
         phone,
         phoneLinkedAt: linkedAtDate,
@@ -130,8 +118,11 @@ export async function POST(req: NextRequest) {
 
     await backfillOrdersForAppUser(updatedUser.id, phone);
 
-    session.user = { ...user, phone, phoneLinkedAt: linkedAt };
-    await session.save();
+    const session = await getSession();
+    if (session.user?.loggedIn) {
+      session.user = { ...session.user, phone, phoneLinkedAt: linkedAt };
+      await session.save();
+    }
 
     const response = NextResponse.json(
       { ok: true, phone, linkedAt },

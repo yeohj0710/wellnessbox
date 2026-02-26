@@ -63,6 +63,7 @@ export type B2bReportPayload = {
       sectionKey: string;
       title: string;
       score: number;
+      reason?: string;
     }>;
     answers: Array<{
       questionKey: string;
@@ -87,6 +88,7 @@ export type B2bReportPayload = {
         sectionKey: string;
         title: string;
         score: number;
+        reason?: string;
       }>;
     };
     scoreDetails: ReportScoreDetailMap;
@@ -118,8 +120,8 @@ export type B2bReportPayload = {
       schemaVersion: string;
       selectedSections: string[];
       lifestyleRisk: {
-        domainScoresNormalized: Record<string, number>;
-        domainScoresPercent: Record<string, number>;
+        domainScoresNormalized: Record<string, unknown>;
+        domainScoresPercent: Record<string, unknown>;
         domains: Array<{
           id: string;
           name: string;
@@ -129,7 +131,7 @@ export type B2bReportPayload = {
         overallPercent: number;
       };
       healthManagementNeed: {
-        sectionNeedPercentById: Record<string, number>;
+        sectionNeedPercentById: Record<string, unknown>;
         sections: Array<{
           sectionId: string;
           sectionTitle: string;
@@ -159,10 +161,7 @@ export type B2bReportPayload = {
         title: string;
         paragraphs: string[];
       }>;
-      perQuestionScores: {
-        common: Record<string, number | null>;
-        sections: Record<string, Record<string, number | null>>;
-      };
+      perQuestionScores: Record<string, unknown>;
     } | null;
     updatedAt: string | null;
   };

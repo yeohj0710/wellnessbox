@@ -3,18 +3,17 @@ import {
   MessagesPlaceholder,
 } from "@langchain/core/prompts";
 import { getChatModel } from "./model";
-import { makeSnippet } from "./snippet";
+import {
+  lastUserText,
+  limitPromptMessages,
+  normalizeHistory,
+  withTimeout,
+} from "./chain-chat-utils";
+import { buildRagContext } from "./chain-rag";
 import { ChatRequestBody } from "@/types/chat";
 import { CATEGORY_LABELS, CategoryKey, KEY_TO_CODE } from "@/lib/categories";
-import { ensureIndexed } from "@/lib/ai/indexer";
-import {
-  getRelevantDocuments,
-  RAG_TOP_K,
-  RAG_MMR,
-  RAG_SCORE_MIN,
-  ragStoreKind,
-} from "@/lib/ai/retriever";
-import { buildUserContextSummary, toPlainText } from "@/lib/chat/context";
+import { ragStoreKind } from "@/lib/ai/retriever";
+import { buildUserContextSummary } from "@/lib/chat/context";
 import { buildMessages as buildChatMessages } from "@/lib/chat/prompts";
 
 const CAT_ALIAS: Record<string, CategoryKey> = Object.fromEntries(
@@ -62,63 +61,6 @@ function labelOf(keyOrCodeOrLabel: string) {
     (item) => item === keyOrCodeOrLabel
   );
   return found ?? keyOrCodeOrLabel;
-}
-
-function withTimeout<T>(
-  promise: Promise<T>,
-  timeoutMs: number,
-  fallback: T
-): Promise<T> {
-  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
-    return promise.catch(() => fallback);
-  }
-
-  return new Promise<T>((resolve) => {
-    let settled = false;
-    const timer = setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      resolve(fallback);
-    }, timeoutMs);
-
-    promise
-      .then((value) => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timer);
-        resolve(value);
-      })
-      .catch(() => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timer);
-        resolve(fallback);
-      });
-  });
-}
-
-function normalizeHistory(messages: unknown) {
-  if (!Array.isArray(messages)) return [] as Array<{ role: string; content: string }>;
-  return messages
-    .filter((message) => {
-      const role = (message as any)?.role;
-      return role === "user" || role === "assistant";
-    })
-    .map((message) => {
-      const role = String((message as any)?.role || "");
-      const content = toPlainText((message as any)?.content).trim();
-      return { role, content };
-    })
-    .filter((message) => Boolean(message.content));
-}
-
-function lastUserText(messages: Array<{ role: string; content: string }>) {
-  for (let index = messages.length - 1; index >= 0; index -= 1) {
-    const message = messages[index];
-    if (message.role !== "user") continue;
-    if (message.content) return message.content;
-  }
-  return "";
 }
 
 async function buildKnownContext(
@@ -440,79 +382,6 @@ async function loadProductBriefCached() {
 // Warm the product brief cache early so init chats are less likely to miss real catalog prices.
 void refreshProductBriefCache();
 
-async function buildRagContext(
-  messages: Array<{ role: string; content: string }>,
-  qOverride?: string
-) {
-  if (!messages.length) {
-    if (RAG_DEBUG) console.debug("[rag] skipped: no messages");
-    return { ragText: "", ragSources: [] as any[] };
-  }
-
-  const query = (qOverride && qOverride.trim()) || lastUserText(messages);
-  if (!query) {
-    if (RAG_DEBUG) {
-      console.debug("[rag] skipped: empty query", { qOverride });
-    }
-    return { ragText: "", ragSources: [] as any[] };
-  }
-
-  try {
-    await ensureIndexed("data");
-    const docs = await getRelevantDocuments(query, RAG_TOP_K, RAG_MMR, RAG_SCORE_MIN);
-
-    if (!docs || docs.length === 0) {
-      if (RAG_DEBUG) console.debug(`[rag] query="${query}" docs=0 rag=0`);
-      return { ragText: "", ragSources: [] as any[] };
-    }
-
-    const chunks = docs.map(
-      (doc: any, index: number) =>
-        `### ${index + 1}. ${doc.metadata?.title || doc.metadata?.source || "doc"}\n` +
-        makeSnippet(String(doc.pageContent || ""), query, 1000)
-    );
-
-    const limit = Math.min(Number(process.env.RAG_CONTEXT_LIMIT) || 4000, 4000);
-    const ragText = chunks.join("\n\n---\n\n").slice(0, limit);
-
-    const ragSources = docs.map((doc: any, index: number) => ({
-      source: doc.metadata?.source ?? "doc",
-      section: doc.metadata?.section ?? "",
-      idx: doc.metadata?.idx ?? 0,
-      score: doc.metadata?.score,
-      rank: doc.metadata?.rank ?? index,
-    }));
-
-    if (RAG_DEBUG) {
-      console.debug(
-        `[rag] query="${query}" docs=${docs.length} rag=${ragText.length}`
-      );
-    }
-
-    return { ragText, ragSources };
-  } catch {
-    if (RAG_DEBUG) console.debug(`[rag] query="${query}" error`);
-    return { ragText: "", ragSources: [] as any[] };
-  }
-}
-
-function limitPromptMessages(
-  messages: Array<{ role: string; content: string }>,
-  maxMessages: number
-) {
-  if (messages.length <= maxMessages) return messages;
-
-  const system = messages.filter((message) => message.role === "system");
-  const convo = messages.filter((message) => message.role !== "system");
-
-  if (system.length >= maxMessages) {
-    return system.slice(0, maxMessages);
-  }
-
-  const roomForConvo = Math.max(1, maxMessages - system.length);
-  return [...system, ...convo.slice(-roomForConvo)];
-}
-
 export async function streamChat(
   body: ChatRequestBody,
   headers: Headers | Record<string, string | null | undefined>
@@ -610,7 +479,7 @@ export async function streamChat(
   const ragPromise = isInit
     ? Promise.resolve({ ragText: "", ragSources: [] as any[] })
     : withTimeout(
-        buildRagContext(history, (body as any)?.ragQuery),
+        buildRagContext(history, (body as any)?.ragQuery, RAG_DEBUG),
         Number.isFinite(ragTimeoutMs) && ragTimeoutMs > 0
           ? ragTimeoutMs
           : DEFAULT_RAG_TIMEOUT_MS,

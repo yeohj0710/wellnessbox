@@ -2,6 +2,14 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import {
+  assertNonEmptyString,
+  getArgValue,
+  normalizeIsoDate,
+  parsePositiveIntegerWithDefault,
+  parseRequiredEnvKeys as parseRequiredEnvKeysOrThrow,
+  toWorkspacePath,
+} from "./orchestrate-adverse-event-evaluation-monthly-helpers";
 
 type CliArgs = {
   outPath: string | null;
@@ -108,49 +116,6 @@ const DEFAULT_FAILURE_ALERT_DIR = path.resolve(
 const DEFAULT_FAILURE_WEBHOOK_ENV_KEY = "RND_MODULE03_FAILURE_WEBHOOK_URL";
 const DEFAULT_FAILURE_WEBHOOK_TIMEOUT_ENV_KEY = "RND_MODULE03_FAILURE_WEBHOOK_TIMEOUT_MS";
 
-function getArgValue(argv: string[], flag: string): string | null {
-  const flagIndex = argv.indexOf(flag);
-  if (flagIndex < 0) {
-    return null;
-  }
-
-  const value = argv[flagIndex + 1];
-  if (!value || value.startsWith("--")) {
-    throw new Error(`${flag} requires a value.`);
-  }
-  return value;
-}
-
-function assertNonEmptyString(value: string | null, fieldName: string): string {
-  if (!value || value.trim().length === 0) {
-    throw new Error(`${fieldName} must be a non-empty string.`);
-  }
-  return value.trim();
-}
-
-function parsePositiveInteger(value: string | null, fieldName: string, fallback: number): number {
-  if (value === null) {
-    return fallback;
-  }
-
-  const parsed = Number.parseInt(value, 10);
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    throw new Error(`${fieldName} must be a positive integer.`);
-  }
-  return parsed;
-}
-
-function normalizeIsoDate(value: string | null): string | null {
-  if (value === null) {
-    return null;
-  }
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.valueOf())) {
-    throw new Error("--generated-at must be a valid ISO-8601 datetime.");
-  }
-  return parsed.toISOString();
-}
-
 function assertCronExpression(value: string): string {
   const tokens = value.trim().split(/\s+/);
   if (tokens.length !== 5) {
@@ -170,12 +135,7 @@ function parseRequiredEnvKeys(value: string | null): string[] {
   if (!value) {
     return [];
   }
-
-  const uniqueKeys = [...new Set(value.split(",").map((token) => token.trim()).filter(Boolean))];
-  for (const key of uniqueKeys) {
-    assertEnvKey(key, "--require-env");
-  }
-  return uniqueKeys;
+  return parseRequiredEnvKeysOrThrow(value, "--require-env");
 }
 
 function assertFileExists(filePath: string, fieldName: string): string {
@@ -185,30 +145,21 @@ function assertFileExists(filePath: string, fieldName: string): string {
   return filePath;
 }
 
-function toPosixPath(value: string): string {
-  return value.split(path.sep).join("/");
-}
-
-function toWorkspacePath(value: string): string {
-  const relativePath = path.relative(process.cwd(), value);
-  if (!relativePath.startsWith("..") && !path.isAbsolute(relativePath)) {
-    return toPosixPath(relativePath);
-  }
-  return toPosixPath(value);
-}
-
 function shellQuote(value: string): string {
   return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
 }
 
 function parseArgs(argv: string[]): CliArgs {
-  const generatedAt = normalizeIsoDate(getArgValue(argv, "--generated-at"));
+  const generatedAtRaw = getArgValue(argv, "--generated-at");
+  const generatedAt = generatedAtRaw
+    ? normalizeIsoDate(generatedAtRaw, "--generated-at")
+    : null;
   const outPath = getArgValue(argv, "--out");
   const cadenceCron = assertCronExpression(
     getArgValue(argv, "--cadence-cron") ?? DEFAULT_CADENCE_CRON
   );
   const timezone = assertNonEmptyString(getArgValue(argv, "--timezone") ?? DEFAULT_TIMEZONE, "--timezone");
-  const retentionMonths = parsePositiveInteger(
+  const retentionMonths = parsePositiveIntegerWithDefault(
     getArgValue(argv, "--retention-months"),
     "--retention-months",
     DEFAULT_RETENTION_MONTHS

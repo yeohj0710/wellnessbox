@@ -1,17 +1,13 @@
 import { NextResponse } from "next/server";
 import db from "@/lib/db";
-import getSession from "@/lib/session";
+import { requireUserSession } from "@/lib/server/route-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const session = await getSession();
-  const user = session.user;
-
-  const loggedIn = user?.loggedIn === true && typeof user?.kakaoId === "number";
-
-  if (!loggedIn) {
+  const auth = await requireUserSession();
+  if (!auth.ok) {
     return NextResponse.json(
       { ok: false, loggedIn: false },
       {
@@ -20,14 +16,12 @@ export async function GET() {
       }
     );
   }
-
-  const clientId = String(user.kakaoId);
-
-  let phone = typeof user.phone === "string" ? user.phone : "";
-  let linkedAt = typeof user.phoneLinkedAt === "string" ? user.phoneLinkedAt : undefined;
+  const { kakaoId, phone: sessionPhone } = auth.data;
+  let phone = sessionPhone ?? "";
+  let linkedAt: string | undefined;
 
   const profile = await db.appUser.findUnique({
-    where: { kakaoId: clientId },
+    where: { kakaoId },
     select: { phone: true, phoneLinkedAt: true },
   });
 

@@ -62,6 +62,42 @@ const CRITICAL_GUARD_CHECKS: GuardCheck[] = [
     file: "app/api/rider-push/subscribe/route.ts",
     requiredTokens: ["requireRiderSession"],
   },
+  {
+    file: "app/api/me/profile/route.ts",
+    requiredTokens: ["requireUserSession"],
+  },
+  {
+    file: "app/api/me/phone-status/route.ts",
+    requiredTokens: ["requireUserSession"],
+  },
+  {
+    file: "app/api/me/link-phone/route.ts",
+    requiredTokens: ["requireUserSession"],
+  },
+  {
+    file: "app/api/me/unlink-phone/route.ts",
+    requiredTokens: ["requireUserSession"],
+  },
+  {
+    file: "app/api/me/nickname/check/route.ts",
+    requiredTokens: ["requireUserSession"],
+  },
+  {
+    file: "app/api/auth/email/send-otp/route.ts",
+    requiredTokens: ["requireUserSession"],
+  },
+  {
+    file: "app/api/auth/email/verify-otp/route.ts",
+    requiredTokens: ["requireUserSession"],
+  },
+  {
+    file: "app/api/messages/stream/token/route.ts",
+    requiredTokens: ["requirePharmSession", "requireRiderSession"],
+  },
+  {
+    file: "app/api/b2b/employee/sync/route.ts",
+    requiredTokens: ["requireNhisSession"],
+  },
 ];
 
 function walkCodeFiles(relativeDir = ""): string[] {

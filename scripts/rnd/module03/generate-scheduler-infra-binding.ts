@@ -2,6 +2,19 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import {
+  assertNonEmptyString,
+  getArgValue,
+  isPlainObject,
+  normalizeIsoDate,
+  readJsonFile,
+  toWorkspacePath,
+} from "./orchestrate-adverse-event-evaluation-monthly-helpers";
+import {
+  assertEnvironmentVariableName,
+  getArgValues,
+  hasFlag,
+} from "./cli-helpers";
 
 type CliArgs = {
   bundlePath: string;
@@ -88,89 +101,6 @@ type SchedulerInfraBindingArtifact = {
 const DEFAULT_SCHEDULER_NAME = "module03-kpi06-adverse-event-monthly";
 const DEFAULT_ENVIRONMENT = "production";
 
-function getArgValue(argv: string[], flag: string): string | null {
-  const index = argv.indexOf(flag);
-  if (index === -1) {
-    return null;
-  }
-
-  const value = argv[index + 1];
-  if (!value || value.startsWith("--")) {
-    throw new Error(`${flag} requires a value.`);
-  }
-
-  return value;
-}
-
-function getArgValues(argv: string[], flag: string): string[] {
-  const values: string[] = [];
-
-  for (let index = 0; index < argv.length; index += 1) {
-    if (argv[index] !== flag) {
-      continue;
-    }
-
-    const value = argv[index + 1];
-    if (!value || value.startsWith("--")) {
-      throw new Error(`${flag} requires a value.`);
-    }
-    values.push(value);
-  }
-
-  return values;
-}
-
-function hasFlag(argv: string[], flag: string): boolean {
-  return argv.includes(flag);
-}
-
-function assertNonEmptyString(value: string | null, fieldName: string): string {
-  if (!value || value.trim().length === 0) {
-    throw new Error(`${fieldName} must be a non-empty string.`);
-  }
-  return value.trim();
-}
-
-function assertEnvironmentVariableName(value: string, fieldName: string): string {
-  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(value)) {
-    throw new Error(`${fieldName} must be a valid environment variable name.`);
-  }
-  return value;
-}
-
-function normalizeIsoDate(value: string | null): string | null {
-  if (value === null) {
-    return null;
-  }
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.valueOf())) {
-    throw new Error("--generated-at must be a valid ISO-8601 datetime.");
-  }
-  return parsed.toISOString();
-}
-
-function readJsonFile(filePath: string): unknown {
-  const raw = fs.readFileSync(filePath, "utf8").replace(/^\uFEFF/, "");
-  try {
-    return JSON.parse(raw);
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Unknown parse error.";
-    throw new Error(`Failed to parse JSON file ${filePath}: ${message}`);
-  }
-}
-
-function toPosixPath(value: string): string {
-  return value.split(path.sep).join("/");
-}
-
-function toWorkspacePath(value: string): string {
-  const relativePath = path.relative(process.cwd(), value);
-  if (!relativePath.startsWith("..") && !path.isAbsolute(relativePath)) {
-    return toPosixPath(relativePath);
-  }
-  return toPosixPath(value);
-}
-
 function parseArgs(argv: string[]): CliArgs {
   const bundlePathValue = getArgValue(argv, "--bundle");
   const bundlePath = path.resolve(assertNonEmptyString(bundlePathValue, "--bundle"));
@@ -179,7 +109,10 @@ function parseArgs(argv: string[]): CliArgs {
   }
 
   const outPath = getArgValue(argv, "--out");
-  const generatedAt = normalizeIsoDate(getArgValue(argv, "--generated-at"));
+  const generatedAtRaw = getArgValue(argv, "--generated-at");
+  const generatedAt = generatedAtRaw
+    ? normalizeIsoDate(generatedAtRaw, "--generated-at")
+    : null;
   const schedulerName = assertNonEmptyString(
     getArgValue(argv, "--scheduler-name") ?? DEFAULT_SCHEDULER_NAME,
     "--scheduler-name"
@@ -207,10 +140,6 @@ function parseArgs(argv: string[]): CliArgs {
     secretBindingPairs: getArgValues(argv, "--secret-binding"),
     allowPlaceholderSecretRefs: hasFlag(argv, "--allow-placeholder-secret-ref"),
   };
-}
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function parseSchedulerDeploymentBundle(raw: unknown, sourcePath: string): SchedulerDeploymentBundle {

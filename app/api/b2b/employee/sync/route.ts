@@ -6,7 +6,6 @@ import {
   buildB2bEmployeeAccessToken,
   getB2bEmployeeCookieOptions,
 } from "@/lib/b2b/employee-token";
-import getSession from "@/lib/session";
 import {
   B2bEmployeeSyncError,
   fetchAndStoreB2bHealthSnapshot,
@@ -18,7 +17,10 @@ import {
   regenerateB2bReport,
 } from "@/lib/b2b/report-service";
 import { resolveCurrentPeriodKey } from "@/lib/b2b/period";
-import { requireNhisSession } from "@/lib/server/route-auth";
+import {
+  requireAdminSession,
+  requireNhisSession,
+} from "@/lib/server/route-auth";
 import { resolveDbRouteError } from "@/lib/server/db-error";
 
 export const runtime = "nodejs";
@@ -105,9 +107,9 @@ export async function POST(req: Request) {
     const ip = readClientIp(req);
     const userAgent = req.headers.get("user-agent");
     const forceRefreshRequested = parsed.data.forceRefresh === true;
-    const session = await getSession();
     const debugForceRefresh = req.headers.get("x-wb-force-refresh-debug") === "1";
-    const canForceRefresh = session.admin?.loggedIn === true || debugForceRefresh;
+    const adminAuth = forceRefreshRequested ? await requireAdminSession() : null;
+    const canForceRefresh = debugForceRefresh || adminAuth?.ok === true;
     const forceRefreshCooldownSeconds = resolveForceRefreshCooldownSeconds();
     const requestedPeriodKey = parsed.data.periodKey ?? resolveCurrentPeriodKey();
 

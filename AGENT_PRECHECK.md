@@ -29,6 +29,11 @@ Or run one command:
 npm run preflight:agent
 ```
 
+If `npm run build` fails at `prisma:generate` with `EPERM ... query_engine ... rename` on Windows:
+- Close processes that may hold Prisma engine files (for example Prisma Studio or other Node processes using Prisma).
+- Re-run `npm run prisma:generate`.
+- The command now auto-retries with backoff and prints a focused lock message.
+
 `audit:encoding` gives:
 - mojibake and suspicious broken-text pattern checks across text/code files
 

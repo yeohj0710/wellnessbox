@@ -1,19 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import getSession from "@/lib/session";
+import { requireUserSession } from "@/lib/server/route-auth";
 import {
   isNicknameAvailable,
   normalizeNickname,
 } from "@/lib/nickname";
 
 export const runtime = "nodejs";
-
-function unauthorized(message = "Unauthorized") {
-  return NextResponse.json(
-    { ok: false, error: message },
-    { status: 401, headers: { "Cache-Control": "no-store" } }
-  );
-}
 
 function badRequest(message = "Invalid input") {
   return NextResponse.json(
@@ -23,12 +17,9 @@ function badRequest(message = "Invalid input") {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getSession();
-  const user = session.user;
-
-  if (!user?.loggedIn || typeof user.kakaoId !== "number") {
-    return unauthorized();
-  }
+  const auth = await requireUserSession();
+  if (!auth.ok) return auth.response;
+  const { kakaoId } = auth.data;
 
   let body: unknown;
 
@@ -45,7 +36,7 @@ export async function POST(req: NextRequest) {
   if (nickname) {
     const available = await isNicknameAvailable(
       nickname,
-      String(user.kakaoId)
+      kakaoId
     );
 
     if (!available) {
@@ -54,7 +45,7 @@ export async function POST(req: NextRequest) {
   }
 
   const profile = await db.appUser.findUnique({
-    where: { kakaoId: String(user.kakaoId) },
+    where: { kakaoId },
     select: {
       id: true,
       kakaoId: true,
@@ -66,13 +57,16 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  const nextKakaoEmail = profile?.kakaoEmail ?? user.kakaoEmail ?? user.email ?? undefined;
+  const session = await getSession();
+  const sessionUser = session.user;
+  const nextKakaoEmail =
+    profile?.kakaoEmail ?? sessionUser?.kakaoEmail ?? sessionUser?.email ?? undefined;
   const clientIdForUpsert = profile?.clientId ?? undefined;
 
   await db.appUser.upsert({
-    where: { kakaoId: String(user.kakaoId) },
+    where: { kakaoId },
     create: {
-      kakaoId: String(user.kakaoId),
+      kakaoId,
       clientId: clientIdForUpsert,
       nickname: nickname || null,
       email: email || null,
@@ -88,14 +82,16 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  session.user = {
-    ...user,
-    nickname: nickname || undefined,
-    email: email || undefined,
-    profileImageUrl: profileImageUrl || undefined,
-    kakaoEmail: nextKakaoEmail,
-  };
-  await session.save();
+  if (session.user?.loggedIn) {
+    session.user = {
+      ...session.user,
+      nickname: nickname || undefined,
+      email: email || undefined,
+      profileImageUrl: profileImageUrl || undefined,
+      kakaoEmail: nextKakaoEmail,
+    };
+    await session.save();
+  }
 
   const response = NextResponse.json(
     {

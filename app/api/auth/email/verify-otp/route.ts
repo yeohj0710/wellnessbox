@@ -2,17 +2,11 @@ import { NextResponse } from "next/server";
 import db from "@/lib/db";
 import getSession from "@/lib/session";
 import { hashEmailOtp, normalizeEmail } from "@/lib/otp";
+import { requireUserSession } from "@/lib/server/route-auth";
 
 export const runtime = "nodejs";
 
 const MAX_ATTEMPTS = 5;
-
-function unauthorized(message = "Unauthorized") {
-  return NextResponse.json(
-    { ok: false, error: message },
-    { status: 401, headers: { "Cache-Control": "no-store" } }
-  );
-}
 
 function badRequest(message = "Invalid input") {
   return NextResponse.json(
@@ -22,12 +16,9 @@ function badRequest(message = "Invalid input") {
 }
 
 export async function POST(req: Request) {
-  const session = await getSession();
-  const user = session.user;
-
-  if (!user?.loggedIn || typeof user.kakaoId !== "number") {
-    return unauthorized();
-  }
+  const auth = await requireUserSession();
+  if (!auth.ok) return auth.response;
+  const { kakaoId } = auth.data;
 
   let body: unknown;
 
@@ -55,8 +46,6 @@ export async function POST(req: Request) {
   }
 
   const now = new Date();
-  const kakaoId = String(user.kakaoId);
-
   try {
     const appUser = await db.appUser.upsert({
       where: { kakaoId },
@@ -128,8 +117,11 @@ export async function POST(req: Request) {
       data: { email },
     });
 
-    session.user = { ...user, email };
-    await session.save();
+    const session = await getSession();
+    if (session.user?.loggedIn) {
+      session.user = { ...session.user, email };
+      await session.save();
+    }
 
     return NextResponse.json(
       { ok: true, email },

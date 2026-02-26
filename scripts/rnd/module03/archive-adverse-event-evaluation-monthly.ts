@@ -3,6 +3,19 @@
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import {
+  assertBoolean,
+  assertFiniteNumber,
+  assertNonEmptyString,
+  getArgValue,
+  isPlainObject,
+  normalizeIsoDate,
+  readJsonFile,
+  toMonthToken,
+  toPathSafeTimestamp,
+  toPosixPath,
+  writeJsonFile,
+} from "./orchestrate-adverse-event-evaluation-monthly-helpers";
 
 type CliArgs = {
   inputPath: string;
@@ -78,28 +91,6 @@ const OPS_RUNNER_PATH = path.resolve(
 );
 const MANIFEST_FILE_NAME = "archive-manifest.json";
 
-function getArgValue(argv: string[], flag: string): string | null {
-  const flagIndex = argv.indexOf(flag);
-  if (flagIndex < 0) {
-    return null;
-  }
-
-  const value = argv[flagIndex + 1];
-  if (!value || value.startsWith("--")) {
-    throw new Error(`${flag} requires a value.`);
-  }
-
-  return value;
-}
-
-function normalizeIsoDate(value: string, label: string): string {
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.valueOf())) {
-    throw new Error(`${label} must be a valid ISO-8601 datetime.`);
-  }
-  return parsed.toISOString();
-}
-
 function parseArgs(argv: string[]): CliArgs {
   const inputPathValue = getArgValue(argv, "--input");
   if (!inputPathValue) {
@@ -137,41 +128,6 @@ function parseArgs(argv: string[]): CliArgs {
     windowEnd: normalizeIsoDate(windowEndValue, "--window-end"),
     retentionMonths,
   };
-}
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function assertNonEmptyString(value: unknown, fieldName: string): string {
-  if (typeof value !== "string" || value.trim().length === 0) {
-    throw new Error(`${fieldName} must be a non-empty string.`);
-  }
-  return value.trim();
-}
-
-function assertFiniteNumber(value: unknown, fieldName: string): number {
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    throw new Error(`${fieldName} must be a finite number.`);
-  }
-  return value;
-}
-
-function assertBoolean(value: unknown, fieldName: string): boolean {
-  if (typeof value !== "boolean") {
-    throw new Error(`${fieldName} must be a boolean.`);
-  }
-  return value;
-}
-
-function readJsonFile(filePath: string): unknown {
-  const raw = fs.readFileSync(filePath, "utf8").replace(/^\uFEFF/, "");
-  try {
-    return JSON.parse(raw);
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Unknown parse error.";
-    throw new Error(`Failed to parse JSON file ${filePath}: ${message}`);
-  }
 }
 
 function readOpsOutput(outputPath: string): Module03Kpi06OpsOutput {
@@ -325,26 +281,6 @@ function readArchiveManifest(
     archiveDir,
     entries,
   };
-}
-
-function writeJsonFile(filePath: string, payload: unknown): void {
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
-}
-
-function toMonthToken(isoDateTime: string): string {
-  const parsed = new Date(isoDateTime);
-  const year = parsed.getUTCFullYear();
-  const month = String(parsed.getUTCMonth() + 1).padStart(2, "0");
-  return `${year}-${month}`;
-}
-
-function toPathSafeTimestamp(isoDateTime: string): string {
-  return isoDateTime.replace(/[:.]/g, "-");
-}
-
-function toPosixPath(value: string): string {
-  return value.split(path.sep).join("/");
 }
 
 function isPathInsideDirectory(filePath: string, directoryPath: string): boolean {

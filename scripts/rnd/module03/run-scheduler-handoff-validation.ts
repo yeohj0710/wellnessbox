@@ -1,8 +1,30 @@
 // RND: Module 03 KPI #6 one-command scheduler handoff validation runner.
 
-import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import {
+  assertNonEmptyString,
+  getArgValue,
+  isPlainObject,
+  normalizeIsoDate,
+  parseRequiredEnvKeys as parseRequiredEnvKeysOrThrow,
+  readJsonFile,
+  toMonthToken,
+  toPathSafeTimestamp,
+  toWorkspacePath,
+  writeJsonFile,
+} from "./orchestrate-adverse-event-evaluation-monthly-helpers";
+import {
+  assertEnvironmentVariableName,
+  getArgValues,
+  hasFlag,
+  parseKeyValuePair,
+  parsePositiveInteger,
+} from "./cli-helpers";
+import {
+  assertRunnerExists,
+  runNodeScript,
+} from "./node-script-runner";
 
 type CliArgs = {
   outDir: string;
@@ -134,93 +156,11 @@ const DRY_RUN_RUNNER_PATH = path.resolve(
   "run-scheduler-dry-run-window.cjs"
 );
 
-function getArgValue(argv: string[], flag: string): string | null {
-  const index = argv.indexOf(flag);
-  if (index < 0) {
-    return null;
-  }
-  const value = argv[index + 1];
-  if (!value || value.startsWith("--")) {
-    throw new Error(`${flag} requires a value.`);
-  }
-  return value;
-}
-
-function getArgValues(argv: string[], flag: string): string[] {
-  const values: string[] = [];
-  for (let index = 0; index < argv.length; index += 1) {
-    if (argv[index] !== flag) {
-      continue;
-    }
-    const value = argv[index + 1];
-    if (!value || value.startsWith("--")) {
-      throw new Error(`${flag} requires a value.`);
-    }
-    values.push(value);
-  }
-  return values;
-}
-
-function hasFlag(argv: string[], flag: string): boolean {
-  return argv.includes(flag);
-}
-
-function assertNonEmptyString(value: unknown, fieldName: string): string {
-  if (typeof value !== "string" || value.trim().length === 0) {
-    throw new Error(`${fieldName} must be a non-empty string.`);
-  }
-  return value.trim();
-}
-
-function assertEnvironmentVariableName(value: string, fieldName: string): string {
-  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(value)) {
-    throw new Error(`${fieldName} must be a valid environment variable name.`);
-  }
-  return value;
-}
-
-function parsePositiveInteger(value: string, fieldName: string): number {
-  const parsed = Number.parseInt(value, 10);
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    throw new Error(`${fieldName} must be a positive integer.`);
-  }
-  return parsed;
-}
-
-function normalizeIsoDateTime(value: string, fieldName: string): string {
-  const parsed = new Date(value);
-  if (!Number.isFinite(parsed.valueOf())) {
-    throw new Error(`${fieldName} must be a valid ISO-8601 datetime.`);
-  }
-  return parsed.toISOString();
-}
-
 function parseRequiredEnvKeys(value: string | null): string[] {
   if (!value) {
     return [...DEFAULT_REQUIRED_ENV_KEYS];
   }
-  const keys = [...new Set(value.split(",").map((entry) => entry.trim()).filter(Boolean))];
-  if (keys.length === 0) {
-    throw new Error("--require-env must include at least one environment variable name.");
-  }
-  for (const key of keys) {
-    assertEnvironmentVariableName(key, "--require-env");
-  }
-  return keys;
-}
-
-function parseKeyValuePair(rawPair: string, flagName: string): { key: string; value: string } {
-  const delimiterIndex = rawPair.indexOf("=");
-  if (delimiterIndex <= 0 || delimiterIndex === rawPair.length - 1) {
-    throw new Error(`${flagName} must follow KEY=value format. Received "${rawPair}".`);
-  }
-  const key = assertEnvironmentVariableName(rawPair.slice(0, delimiterIndex).trim(), flagName);
-  const value = assertNonEmptyString(rawPair.slice(delimiterIndex + 1), `${flagName} value`);
-  return { key, value };
-}
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return parseRequiredEnvKeysOrThrow(value, "--require-env");
 }
 
 function parseStringArray(value: unknown, fieldName: string): string[] {
@@ -235,96 +175,6 @@ function parseInputRows(raw: unknown, sourcePath: string): unknown[] {
     throw new Error(`Input source rows must be a non-empty JSON array: ${sourcePath}`);
   }
   return raw;
-}
-
-function toPathSafeTimestamp(value: string): string {
-  return value.replace(/[:.]/g, "-");
-}
-
-function toMonthToken(isoDateTime: string): string {
-  const parsed = new Date(isoDateTime);
-  const year = parsed.getUTCFullYear();
-  const month = String(parsed.getUTCMonth() + 1).padStart(2, "0");
-  return `${year}-${month}`;
-}
-
-function toPosixPath(value: string): string {
-  return value.split(path.sep).join("/");
-}
-
-function toWorkspacePath(value: string): string {
-  const relativePath = path.relative(process.cwd(), value);
-  if (!relativePath.startsWith("..") && !path.isAbsolute(relativePath)) {
-    return toPosixPath(relativePath);
-  }
-  return toPosixPath(value);
-}
-
-function readJsonFile(filePath: string): unknown {
-  const raw = fs.readFileSync(filePath, "utf8").replace(/^\uFEFF/, "");
-  try {
-    return JSON.parse(raw);
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Unknown parse error.";
-    throw new Error(`Failed to parse JSON file ${filePath}: ${message}`);
-  }
-}
-
-function writeJsonFile(filePath: string, payload: unknown): void {
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
-}
-
-function assertRunnerExists(filePath: string, runnerLabel: string): void {
-  if (!fs.existsSync(filePath)) {
-    throw new Error(`${runnerLabel} runner does not exist: ${filePath}`);
-  }
-}
-
-function runNodeScript(
-  scriptPath: string,
-  args: string[],
-  envOverrides?: Record<string, string>
-): string {
-  try {
-    const stdout = execFileSync(process.execPath, [scriptPath, ...args], {
-      cwd: process.cwd(),
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
-      env: envOverrides ? { ...process.env, ...envOverrides } : process.env,
-    });
-    return typeof stdout === "string" ? stdout.trim() : "";
-  } catch (error: unknown) {
-    const processError = error as NodeJS.ErrnoException & {
-      stdout?: string | Buffer;
-      stderr?: string | Buffer;
-      status?: number | null;
-    };
-    const stdout =
-      typeof processError.stdout === "string"
-        ? processError.stdout.trim()
-        : Buffer.isBuffer(processError.stdout)
-          ? processError.stdout.toString("utf8").trim()
-          : "";
-    const stderr =
-      typeof processError.stderr === "string"
-        ? processError.stderr.trim()
-        : Buffer.isBuffer(processError.stderr)
-          ? processError.stderr.toString("utf8").trim()
-          : "";
-    const exitCode = processError.status ?? null;
-
-    throw new Error(
-      [
-        `Script execution failed: node ${toWorkspacePath(scriptPath)} ${args.join(" ")}`,
-        exitCode === null ? "" : `exitCode: ${String(exitCode)}`,
-        stdout.length > 0 ? `stdout: ${stdout}` : "",
-        stderr.length > 0 ? `stderr: ${stderr}` : "",
-      ]
-        .filter(Boolean)
-        .join("\n")
-    );
-  }
 }
 
 function parseDeploymentBundle(raw: unknown, sourcePath: string): SchedulerDeploymentBundle {
@@ -506,7 +356,7 @@ function buildRuntimeEnvValues(
 }
 
 function parseArgs(argv: string[]): CliArgs {
-  const windowEnd = normalizeIsoDateTime(
+  const windowEnd = normalizeIsoDate(
     getArgValue(argv, "--window-end") ?? new Date().toISOString(),
     "--window-end"
   );
@@ -591,7 +441,7 @@ function main() {
     "--generated-at",
     new Date().toISOString(),
   ];
-  runNodeScript(BUNDLE_RUNNER_PATH, bundleArgs);
+  runNodeScript(BUNDLE_RUNNER_PATH, bundleArgs, { throwOnFailure: true });
 
   const deploymentBundleRaw = readJsonFile(bundlePath);
   const deploymentBundle = parseDeploymentBundle(deploymentBundleRaw, bundlePath);
@@ -614,7 +464,9 @@ function main() {
   for (const envKey of sortedRequiredEnvKeys) {
     infraBindingArgs.push("--secret-binding", `${envKey}=${secretBindingMap.get(envKey) as string}`);
   }
-  runNodeScript(INFRA_BINDING_RUNNER_PATH, infraBindingArgs);
+  runNodeScript(INFRA_BINDING_RUNNER_PATH, infraBindingArgs, {
+    throwOnFailure: true,
+  });
 
   const runtimeEnvValueMap = buildRuntimeEnvValues(deploymentBundle, args.envValuePairs);
   const runtimeEnvOverrides: Record<string, string> = {};
@@ -635,7 +487,10 @@ function main() {
   if (args.strictEnv) {
     dryRunArgs.push("--strict-env");
   }
-  runNodeScript(DRY_RUN_RUNNER_PATH, dryRunArgs, runtimeEnvOverrides);
+  runNodeScript(DRY_RUN_RUNNER_PATH, dryRunArgs, {
+    envOverrides: runtimeEnvOverrides,
+    throwOnFailure: true,
+  });
 
   const dryRunReportRaw = readJsonFile(dryRunReportPath);
   const dryRunReport = parseDryRunReport(dryRunReportRaw, dryRunReportPath);

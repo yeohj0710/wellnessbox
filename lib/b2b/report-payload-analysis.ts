@@ -1,14 +1,8 @@
-type JsonRecord = Record<string, unknown>;
-
-function asRecord(value: unknown): JsonRecord | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  return value as JsonRecord;
-}
-
-function toText(value: unknown): string {
-  if (value == null) return "";
-  return String(value).trim();
-}
+import {
+  asRecord,
+  toText,
+  type JsonRecord,
+} from "@/lib/b2b/report-payload-shared";
 
 export type AnalysisSummary = {
   overallScore: number | null;

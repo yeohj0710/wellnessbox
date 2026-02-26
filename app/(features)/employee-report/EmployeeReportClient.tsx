@@ -310,7 +310,23 @@ export default function EmployeeReportClient() {
     return true;
   }
 
-  async function ensureNhisReadyForSync() {
+  async function ensureNhisReadyForSync(options?: { forceInit?: boolean }) {
+    const forceInit = options?.forceInit === true;
+
+    if (forceInit) {
+      const initResult: NhisInitResponse = await requestNhisInit({
+        identity: getIdentityPayload(),
+        forceInit: true,
+      });
+      if (initResult.linked || initResult.nextStep === "fetch") {
+        return {
+          linked: true,
+          reused: initResult.reused === true || initResult.source === "db-history",
+        };
+      }
+      return { linked: false, reused: false };
+    }
+
     try {
       const signResult: NhisSignResponse = await requestNhisSign();
       return {
@@ -337,22 +353,15 @@ export default function EmployeeReportClient() {
       setError("이름, 생년월일(8자리), 휴대폰 번호를 정확히 입력해 주세요.");
       return;
     }
-    beginBusy("카카오 인증 준비를 진행하고 있어요.");
+    beginBusy("카카오 인증 재요청을 진행하고 있어요.");
     setError("");
     setNotice("");
     setSyncGuidance(null);
     setSyncNextAction(null);
     try {
-      if (!reportData) {
-        const reusedExisting = await tryLoadExistingReport({
-          successNotice:
-            "기존 조회 기록을 먼저 불러왔어요. 외부 API 재조회 없이 바로 확인할 수 있어요.",
-        });
-        if (reusedExisting) return;
-      }
-
       const initResult: NhisInitResponse = await requestNhisInit({
         identity: getIdentityPayload(),
+        forceInit: true,
       });
 
       if (initResult.linked || initResult.nextStep === "fetch") {
@@ -368,7 +377,7 @@ export default function EmployeeReportClient() {
         setNotice(
           reusedFromCache
             ? "기존 연동 데이터를 사용해 레포트를 불러왔습니다."
-            : "카카오 인증이 완료되어 최신 데이터를 불러왔습니다."
+            : "카카오 인증을 재요청하고 최신 데이터를 불러왔습니다."
         );
         return;
       }
@@ -377,7 +386,7 @@ export default function EmployeeReportClient() {
       setSyncGuidance({
         nextAction: "sign",
         message:
-          "카카오 인증 승인 대기 중입니다. 인증을 완료한 뒤 다시 확인해 주세요.",
+          "카카오 인증 확인 대기중입니다. 인증이 완료되면 다시 확인해 주세요.",
       });
     } catch (err) {
       if (err instanceof ApiRequestError) {
@@ -392,7 +401,11 @@ export default function EmployeeReportClient() {
         setNotice(guidance.message);
       } else {
         setSyncNextAction("retry");
-        setError(err instanceof Error ? err.message : "카카오 인증 요청에 실패했습니다.");
+        setError(
+          err instanceof Error
+            ? err.message
+            : "카카오 인증 요청에 실패했습니다."
+        );
       }
     } finally {
       endBusy();
@@ -409,7 +422,9 @@ export default function EmployeeReportClient() {
       return;
     }
     if (forceRefresh && forceSyncRemainingSec > 0) {
-      const availableAtIso = new Date(Date.now() + forceSyncRemainingSec * 1000).toISOString();
+      const availableAtIso = new Date(
+        Date.now() + forceSyncRemainingSec * 1000
+      ).toISOString();
       setNotice(`재연동은 ${formatDateTime(availableAtIso)} 이후 가능합니다.`);
       return;
     }
@@ -417,16 +432,20 @@ export default function EmployeeReportClient() {
     beginBusy(
       forceRefresh
         ? "최신 정보를 강제로 재조회하고 있어요."
-        : "국민건강보험 데이터를 동기화하고 있어요."
+        : "국민건강보험 데이터를 연동하고 있어요."
     );
     setError("");
     setNotice("");
     setSyncGuidance(null);
+
+    const signPendingMessage =
+      "카카오 인증 확인 대기중입니다. 인증이 완료되면 다시 확인해 주세요.";
+
     try {
       if (!forceRefresh && !reportData) {
         const reusedExisting = await tryLoadExistingReport({
           successNotice:
-            "저장된 조회 기록을 불러왔어요. 외부 API 재조회는 실행하지 않았어요.",
+            "등록된 조회 기록을 불러왔고, 외부 API 재조회 없이 바로 확인할 수 있어요.",
         });
         if (reusedExisting) return;
       }
@@ -435,21 +454,50 @@ export default function EmployeeReportClient() {
         linked: true,
         reused: false,
       };
+
       if (!forceRefresh) {
         ready = await ensureNhisReadyForSync();
         if (!ready.linked) {
-        setSyncNextAction("sign");
-        setSyncGuidance({
-          nextAction: "sign",
-          message: "카카오 인증 승인 대기 중입니다. 인증을 완료한 뒤 다시 확인해 주세요.",
-        });
-        return;
-      }
+          setSyncNextAction("sign");
+          setSyncGuidance({
+            nextAction: "sign",
+            message: signPendingMessage,
+          });
+          return;
+        }
       }
 
-      const syncResult = await syncEmployeeReport(forceRefresh, {
-        debugOverride: debugMode,
-      });
+      let syncResult: Awaited<ReturnType<typeof syncEmployeeReport>>;
+      try {
+        syncResult = await syncEmployeeReport(forceRefresh, {
+          debugOverride: debugMode,
+        });
+      } catch (syncError) {
+        const nextAction =
+          syncError instanceof ApiRequestError
+            ? toSyncNextAction(syncError.payload.nextAction)
+            : null;
+        const needsAuthRecovery =
+          forceRefresh && (nextAction === "init" || nextAction === "sign");
+        if (!needsAuthRecovery) {
+          throw syncError;
+        }
+
+        ready = await ensureNhisReadyForSync({ forceInit: true });
+        if (!ready.linked) {
+          setSyncNextAction("sign");
+          setSyncGuidance({
+            nextAction: "sign",
+            message: signPendingMessage,
+          });
+          return;
+        }
+
+        syncResult = await syncEmployeeReport(forceRefresh, {
+          debugOverride: debugMode,
+        });
+      }
+
       if (
         syncResult.sync?.source === "cache-valid" ||
         syncResult.sync?.source === "cache-history" ||
@@ -480,7 +528,11 @@ export default function EmployeeReportClient() {
         setNotice(guidance.message);
       } else {
         setSyncNextAction("retry");
-        setError(err instanceof Error ? err.message : "데이터 연동에 실패했습니다.");
+        setError(
+          err instanceof Error
+            ? err.message
+            : "데이터 연동에 실패했습니다."
+        );
       }
     } finally {
       endBusy();
@@ -598,7 +650,9 @@ export default function EmployeeReportClient() {
       </header>
 
       {error ? <div className={styles.noticeError}>{error}</div> : null}
-      {notice ? <div className={styles.noticeSuccess}>{notice}</div> : null}
+      {notice && !syncGuidance ? (
+        <div className={styles.noticeSuccess}>{notice}</div>
+      ) : null}
       {syncGuidance ? (
         <EmployeeReportSyncGuidanceNotice
           guidance={syncGuidance}

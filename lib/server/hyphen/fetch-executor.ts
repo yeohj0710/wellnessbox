@@ -55,6 +55,26 @@ function emptyPayload(): HyphenApiResponse {
   return { data: {} };
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+function resolvePayloadData(payload: HyphenApiResponse) {
+  const root = asRecord(payload) ?? {};
+  const data = asRecord(root.data);
+  return data ?? root;
+}
+
+function payloadHasAnyRows(payload: HyphenApiResponse) {
+  const data = resolvePayloadData(payload);
+  if (Array.isArray(data.list) && data.list.length > 0) return true;
+  for (const value of Object.values(data)) {
+    if (Array.isArray(value) && value.length > 0) return true;
+  }
+  return false;
+}
+
 export async function executeNhisFetch(
   input: ExecuteNhisFetchInput
 ): Promise<ExecuteNhisFetchOutput> {
@@ -117,8 +137,29 @@ export async function executeNhisFetch(
   );
   runIndependentTarget(
     "medication",
-    // Keep summary flow at one medication API call per fetch to control cost.
-    () => fetchMedicationInfo(input.detailPayload),
+    async () => {
+      let detailPayloadResult: HyphenApiResponse | null = null;
+      try {
+        detailPayloadResult = await fetchMedicationInfo(input.detailPayload);
+        if (payloadHasAnyRows(detailPayloadResult)) {
+          return detailPayloadResult;
+        }
+      } catch {
+        detailPayloadResult = null;
+      }
+
+      try {
+        // Some NHIS accounts return rows only without detail flags.
+        const basePayloadResult = await fetchMedicationInfo(input.basePayload);
+        if (payloadHasAnyRows(basePayloadResult)) {
+          return basePayloadResult;
+        }
+        return detailPayloadResult ?? basePayloadResult;
+      } catch (baseError) {
+        if (detailPayloadResult) return detailPayloadResult;
+        throw baseError;
+      }
+    },
     "\ud22c\uc57d \uc815\ubcf4\ub97c \ubd88\ub7ec\uc624\uc9c0 \ubabb\ud588\uc5b4\uc694."
   );
 

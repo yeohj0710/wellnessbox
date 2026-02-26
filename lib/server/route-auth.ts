@@ -67,6 +67,15 @@ async function resolveLoggedInAppUser() {
   return { session, appUser };
 }
 
+async function ensureAppUserForKakaoId(kakaoId: string) {
+  return db.appUser.upsert({
+    where: { kakaoId },
+    create: { kakaoId },
+    update: {},
+    select: { id: true, phone: true },
+  });
+}
+
 export async function requireAdminSession(): Promise<GuardResult<null>> {
   const session = await getSession();
   if (!session.admin?.loggedIn) return unauthorized();
@@ -112,15 +121,14 @@ export async function requireUserSession(): Promise<
   if (!session.user?.loggedIn || typeof session.user.kakaoId !== "number") {
     return unauthorized();
   }
-  if (!appUser) {
-    return unauthorized();
-  }
+  const kakaoId = String(session.user.kakaoId);
+  const resolvedAppUser = appUser ?? (await ensureAppUserForKakaoId(kakaoId));
   return {
     ok: true,
     data: {
-      appUserId: appUser.id,
-      kakaoId: String(session.user.kakaoId),
-      phone: appUser.phone ?? null,
+      appUserId: resolvedAppUser.id,
+      kakaoId,
+      phone: resolvedAppUser.phone ?? null,
     },
   };
 }

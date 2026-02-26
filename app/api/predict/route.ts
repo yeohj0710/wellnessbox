@@ -1,65 +1,107 @@
-import path from "path";
+import path from "node:path";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import catData from "@/public/assess-model/c-section-scorer-v1.cats.json";
 import { CODE_TO_LABEL } from "@/lib/categories";
 
 const CODES: string[] = catData.cat_order;
-const LABELS: string[] = CODES.map((c) => CODE_TO_LABEL[c] ?? c);
+const LABELS: string[] = CODES.map((code) => CODE_TO_LABEL[code] ?? code);
 
-let session: any = null;
+const requestSchema = z.object({
+  responses: z.array(z.coerce.number()).default([]),
+});
 
-async function getSession() {
-  if (!session) {
-    const ort = await import("onnxruntime-web");
-    ort.env.wasm.numThreads = 1;
-    ort.env.wasm.proxy = false;
+const MIN_SCORE = 1;
+const MAX_SCORE = 5;
+const DEFAULT_SCORE = 3;
 
-    const wasmDir = path.join(process.cwd(), "public", "onnx") + path.sep;
-    ort.env.wasm.wasmPaths = wasmDir;
-    session = await ort.InferenceSession.create(
-      path.join(process.cwd(), "public", "simple_model.onnx")
-    );
-  }
-  return session;
+let ortSession: any = null;
+
+async function getOrtSession() {
+  if (ortSession) return ortSession;
+
+  const ort = await import("onnxruntime-web");
+  ort.env.wasm.numThreads = 1;
+  ort.env.wasm.proxy = false;
+
+  const wasmDir = path.join(process.cwd(), "public", "onnx") + path.sep;
+  ort.env.wasm.wasmPaths = wasmDir;
+
+  ortSession = await ort.InferenceSession.create(
+    path.join(process.cwd(), "public", "simple_model.onnx")
+  );
+  return ortSession;
+}
+
+function normalizeResponses(values: number[]) {
+  return values.map((value) => {
+    const numeric = Number(value);
+    const safeValue = Number.isFinite(numeric) ? numeric : DEFAULT_SCORE;
+    const clamped = Math.max(MIN_SCORE, Math.min(MAX_SCORE, safeValue));
+    return (clamped - MIN_SCORE) / (MAX_SCORE - MIN_SCORE);
+  });
+}
+
+function logistic(value: number) {
+  return 1 / (1 + Math.exp(-value));
+}
+
+function noStoreJson(payload: unknown, status = 200) {
+  return NextResponse.json(payload, {
+    status,
+    headers: { "Cache-Control": "no-store" },
+  });
 }
 
 export async function POST(request: Request) {
   try {
-    const { responses } = await request.json();
+    const body = await request.json().catch(() => null);
+    const parsed = requestSchema.safeParse(body);
+    if (!parsed.success) {
+      return noStoreJson({ error: "Invalid request body" }, 400);
+    }
+
     const ort = await import("onnxruntime-web");
-    const sess = await getSession();
+    const session = await getOrtSession();
+    const normalized = normalizeResponses(parsed.data.responses);
 
-    const vals = Array.isArray(responses) ? responses : [];
-    const norm = vals.map((v: number) => {
-      const x = Number(v);
-      const clamped = Math.max(1, Math.min(5, isFinite(x) ? x : 3));
-      return (clamped - 1) / 4;
-    });
-    const input = new ort.Tensor("float32", Float32Array.from(norm), [
+    const input = new ort.Tensor("float32", Float32Array.from(normalized), [
       1,
-      norm.length,
+      normalized.length,
     ]);
+    const output = await session.run({ input });
+    const outputName = session.outputNames?.[0];
+    if (!outputName || !output[outputName]) {
+      return noStoreJson({ error: "Model output is missing" }, 500);
+    }
 
-    const out = await sess.run({ input });
-    const outName = sess.outputNames[0];
-    const logits = out[outName].data as Float32Array;
-
+    const logits = output[outputName].data as Float32Array;
     if (logits.length !== CODES.length) {
-      throw new Error(
-        `모델의 출력(${logits.length}개)과 영양소 카테고리(${CODES.length}개)가 일치하지 않습니다.`
+      return noStoreJson(
+        {
+          error: `Model output shape mismatch: got ${logits.length}, expected ${CODES.length}`,
+        },
+        500
       );
     }
 
-    const probs = Array.from(logits, (x) => 1 / (1 + Math.exp(-x)));
-    const percents = probs.map((p) => Math.round(p * 1000) / 10);
-
+    const percents = Array.from(logits, (value) =>
+      Math.round(logistic(value) * 1000) / 10
+    );
     const ranked = percents
-      .map((pct, i) => ({ code: CODES[i], label: LABELS[i], percent: pct }))
-      .sort((a, b) => b.percent - a.percent)
+      .map((percent, index) => ({
+        code: CODES[index],
+        label: LABELS[index],
+        percent,
+      }))
+      .sort((left, right) => right.percent - left.percent)
       .slice(0, 3);
 
-    return NextResponse.json(ranked);
-  } catch (e) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+    return noStoreJson(ranked);
+  } catch (error) {
+    return noStoreJson(
+      { error: error instanceof Error ? error.message : String(error) },
+      500
+    );
   }
 }

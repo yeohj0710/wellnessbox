@@ -3,6 +3,22 @@
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import {
+  assertNonEmptyString,
+  getArgValue,
+  isPlainObject,
+  normalizeIsoDate,
+  readJsonFile,
+  toMonthToken,
+  toPathSafeTimestamp,
+  toWorkspacePath,
+  writeJsonFile,
+} from "./orchestrate-adverse-event-evaluation-monthly-helpers";
+import {
+  assertEnvironmentVariableName,
+  hasFlag,
+  parsePositiveInteger,
+} from "./cli-helpers";
 
 type CliArgs = {
   infraBindingPath: string;
@@ -65,67 +81,6 @@ const DEFAULT_DRY_RUN_DIR = path.resolve(
   "kpi06-scheduler-dry-run"
 );
 
-function getArgValue(argv: string[], flag: string): string | null {
-  const index = argv.indexOf(flag);
-  if (index === -1) {
-    return null;
-  }
-
-  const value = argv[index + 1];
-  if (!value || value.startsWith("--")) {
-    throw new Error(`${flag} requires a value.`);
-  }
-  return value;
-}
-
-function hasFlag(argv: string[], flag: string): boolean {
-  return argv.includes(flag);
-}
-
-function assertNonEmptyString(value: unknown, fieldName: string): string {
-  if (typeof value !== "string" || value.trim().length === 0) {
-    throw new Error(`${fieldName} must be a non-empty string.`);
-  }
-  return value.trim();
-}
-
-function assertEnvironmentVariableName(value: string, fieldName: string): string {
-  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(value)) {
-    throw new Error(`${fieldName} must be a valid environment variable name.`);
-  }
-  return value;
-}
-
-function parsePositiveInteger(value: string, fieldName: string): number {
-  const parsed = Number.parseInt(value, 10);
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    throw new Error(`${fieldName} must be a positive integer.`);
-  }
-  return parsed;
-}
-
-function normalizeIsoDateTime(value: string, fieldName: string): string {
-  const parsed = new Date(value);
-  if (!Number.isFinite(parsed.valueOf())) {
-    throw new Error(`${fieldName} must be a valid ISO-8601 datetime.`);
-  }
-  return parsed.toISOString();
-}
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function readJsonFile(filePath: string): unknown {
-  const raw = fs.readFileSync(filePath, "utf8").replace(/^\uFEFF/, "");
-  try {
-    return JSON.parse(raw);
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Unknown parse error.";
-    throw new Error(`Failed to parse JSON file ${filePath}: ${message}`);
-  }
-}
-
 function parseStringArray(value: unknown, fieldName: string): string[] {
   if (!Array.isArray(value) || value.some((entry) => typeof entry !== "string")) {
     throw new Error(`${fieldName} must be a string array.`);
@@ -139,29 +94,6 @@ function resolveArtifactPath(value: string): string {
     return normalized;
   }
   return path.resolve(process.cwd(), normalized);
-}
-
-function toPosixPath(value: string): string {
-  return value.split(path.sep).join("/");
-}
-
-function toWorkspacePath(value: string): string {
-  const relativePath = path.relative(process.cwd(), value);
-  if (!relativePath.startsWith("..") && !path.isAbsolute(relativePath)) {
-    return toPosixPath(relativePath);
-  }
-  return toPosixPath(value);
-}
-
-function toPathSafeTimestamp(isoDateTime: string): string {
-  return isoDateTime.replace(/[:.]/g, "-");
-}
-
-function toMonthToken(isoDateTime: string): string {
-  const parsed = new Date(isoDateTime);
-  const year = parsed.getUTCFullYear();
-  const month = String(parsed.getUTCMonth() + 1).padStart(2, "0");
-  return `${year}-${month}`;
 }
 
 function parseCliArgs(argv: string[]): CliArgs {
@@ -184,7 +116,7 @@ function parseCliArgs(argv: string[]): CliArgs {
   }
 
   const outPathValue = getArgValue(argv, "--out");
-  const windowEnd = normalizeIsoDateTime(
+  const windowEnd = normalizeIsoDate(
     getArgValue(argv, "--window-end") ?? new Date().toISOString(),
     "--window-end"
   );
@@ -449,11 +381,6 @@ function buildDefaultOutPath(windowEnd: string): string {
     toMonthToken(windowEnd),
     `kpi06-scheduler-dry-run-${toPathSafeTimestamp(generatedAt)}.json`
   );
-}
-
-function writeJsonFile(filePath: string, payload: unknown): void {
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
 }
 
 async function main() {
