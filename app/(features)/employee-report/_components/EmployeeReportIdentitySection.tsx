@@ -25,7 +25,7 @@ export default function EmployeeReportIdentitySection({
   onFindExisting,
 }: EmployeeReportIdentitySectionProps) {
   return (
-    <section className={styles.sectionCard}>
+    <section className={styles.sectionCard} aria-busy={busy}>
       <div className={styles.sectionHeader}>
         <div>
           <h2 className={styles.sectionTitle}>1. 본인 정보 입력</h2>
@@ -43,6 +43,7 @@ export default function EmployeeReportIdentitySection({
             value={identity.name}
             onChange={(event) => onNameChange(event.target.value)}
             placeholder="홍길동"
+            disabled={busy}
           />
         </label>
         <label className={styles.field}>
@@ -52,6 +53,7 @@ export default function EmployeeReportIdentitySection({
             value={identity.birthDate}
             onChange={(event) => onBirthDateChange(event.target.value)}
             placeholder="19900101"
+            disabled={busy}
           />
         </label>
         <label className={styles.field}>
@@ -61,6 +63,7 @@ export default function EmployeeReportIdentitySection({
             value={identity.phone}
             onChange={(event) => onPhoneChange(event.target.value)}
             placeholder="01012345678"
+            disabled={busy}
           />
         </label>
       </div>
@@ -73,7 +76,7 @@ export default function EmployeeReportIdentitySection({
           data-testid="employee-report-restart-auth"
           className={styles.buttonPrimary}
         >
-          인증 다시하기
+          {busy ? "처리 중..." : "인증 다시하기"}
         </button>
         {showSignAction ? (
           <button
@@ -83,7 +86,7 @@ export default function EmployeeReportIdentitySection({
             data-testid="employee-report-sign-sync"
             className={styles.buttonSecondary}
           >
-            연동 완료 확인
+            {busy ? "확인 중..." : "연동 완료 확인"}
           </button>
         ) : null}
       </div>
@@ -102,7 +105,7 @@ export default function EmployeeReportIdentitySection({
               disabled={busy}
               className={styles.buttonGhost}
             >
-              기존 조회 정보 불러오기
+              {busy ? "불러오는 중..." : "기존 조회 정보 불러오기"}
             </button>
           </div>
         </div>
@@ -110,4 +113,3 @@ export default function EmployeeReportIdentitySection({
     </section>
   );
 }
-

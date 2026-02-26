@@ -43,6 +43,7 @@ export default function ForceRefreshConfirmDialog({
             onChange={(event) => onConfirmCheckedChange(event.target.checked)}
             data-testid="employee-report-force-sync-checkbox"
             className="mt-1"
+            disabled={busy}
           />
           비용 발생 가능성을 확인했고, 운영 목적에서만 실행합니다.
         </label>
@@ -55,14 +56,16 @@ export default function ForceRefreshConfirmDialog({
           onChange={(event) => onConfirmTextChange(event.target.value)}
           data-testid="employee-report-force-sync-input"
           placeholder="강제 재조회"
-          className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-rose-300"
+          disabled={busy}
+          className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-rose-300 disabled:cursor-not-allowed disabled:bg-slate-100"
         />
         <div className="mt-4 flex justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
             data-testid="employee-report-force-sync-cancel"
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-slate-400"
+            disabled={busy}
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-60"
           >
             취소
           </button>
@@ -71,9 +74,9 @@ export default function ForceRefreshConfirmDialog({
             disabled={!canExecuteForceSync || busy}
             onClick={onConfirm}
             data-testid="employee-report-force-sync-confirm"
-            className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60"
+            className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition-colors hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            강제 재조회 실행
+            {busy ? "실행 중..." : "강제 재조회 실행"}
           </button>
         </div>
       </div>

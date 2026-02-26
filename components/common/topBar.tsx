@@ -52,6 +52,7 @@ function TopBarInner() {
   const { showLoading } = useLoading();
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [logoutPending, setLogoutPending] = useState(false);
   const logoRef = useRef<HTMLImageElement>(null);
 
   const { loginStatus } = useTopBarLoginStatus(pathname, isDrawerOpen);
@@ -136,6 +137,31 @@ function TopBarInner() {
     openCommandPalette();
   }, [openCommandPalette]);
 
+  const requestLogout = useCallback(async () => {
+    if (logoutPending) return;
+    setLogoutPending(true);
+    setIsDrawerOpen(false);
+    closeCartOverlay();
+    showLoading();
+
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        window.location.assign("/api/auth/logout");
+        return;
+      }
+
+      window.location.assign("/");
+    } catch {
+      window.location.assign("/api/auth/logout");
+    }
+  }, [closeCartOverlay, logoutPending, showLoading]);
+
   const sevenDayIntentHandlers = usePrefetchOnIntent({
     href: SEVEN_DAY_HREF,
     router,
@@ -145,6 +171,8 @@ function TopBarInner() {
     <>
       <TopBarHeader
         loginStatus={loginStatus}
+        onRequestLogout={requestLogout}
+        isLogoutPending={logoutPending}
         cartCount={cartCount}
         logoRef={logoRef}
         sevenDayIntentHandlers={sevenDayIntentHandlers}
@@ -158,6 +186,8 @@ function TopBarInner() {
 
       <TopBarDrawer
         loginStatus={loginStatus}
+        onRequestLogout={requestLogout}
+        isLogoutPending={logoutPending}
         isDrawerOpen={isDrawerOpen}
         sevenDayIntentHandlers={sevenDayIntentHandlers}
         onGoSevenDays={goSevenDays}

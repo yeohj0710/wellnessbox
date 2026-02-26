@@ -9,6 +9,7 @@ export type MenuVisibility = {
   showPharmMenus: boolean;
   showRiderMenus: boolean;
   showAdminMenus: boolean;
+  canOperatorLogout: boolean;
 };
 
 export type LinkPressHandlers = {
@@ -30,6 +31,7 @@ export function getMenuVisibility(loginStatus: LoginStatus | null): MenuVisibili
   const isPharmLoggedIn = loginStatus?.isPharmLoggedIn === true;
   const isRiderLoggedIn = loginStatus?.isRiderLoggedIn === true;
   const isAdminLoggedIn = loginStatus?.isAdminLoggedIn === true;
+  const isTestLoggedIn = loginStatus?.isTestLoggedIn === true;
 
   return {
     kakaoLoggedIn,
@@ -37,6 +39,8 @@ export function getMenuVisibility(loginStatus: LoginStatus | null): MenuVisibili
     showPharmMenus: isPharmLoggedIn,
     showRiderMenus: isRiderLoggedIn,
     showAdminMenus: isAdminLoggedIn,
+    canOperatorLogout:
+      isAdminLoggedIn || isPharmLoggedIn || isRiderLoggedIn || isTestLoggedIn,
   };
 }
 
@@ -139,12 +143,18 @@ export function IdentityMenuLinks({
   isAdminLoggedIn,
   showAdminMenus,
   kakaoLoggedIn,
+  showOperatorLogout,
+  onLogout,
+  logoutPending,
   onItemClick,
 }: {
   adminVisible: boolean;
   isAdminLoggedIn: boolean;
   showAdminMenus: boolean;
   kakaoLoggedIn: boolean;
+  showOperatorLogout: boolean;
+  onLogout?: () => void;
+  logoutPending?: boolean;
   onItemClick?: () => void;
 }) {
   return (
@@ -181,6 +191,19 @@ export function IdentityMenuLinks({
         <Link href="/me" className={menuItemClasses()} onClick={onItemClick}>
           내 정보
         </Link>
+      )}
+
+      {showOperatorLogout && (
+        <button
+          type="button"
+          onClick={onLogout}
+          disabled={logoutPending}
+          className={menuItemClasses(
+            "inline-flex items-center text-left text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
+          )}
+        >
+          {logoutPending ? "로그아웃 중..." : "로그아웃"}
+        </button>
       )}
     </>
   );

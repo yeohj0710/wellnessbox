@@ -49,9 +49,14 @@ export default function B2bLayoutValidationPanel({
             disabled={busy || !latestReportId}
             className={`${styles.buttonSecondary} ${styles.editorSecondaryButton}`}
           >
-            레이아웃 검증 실행
+            {busy ? "레이아웃 검증 중..." : "레이아웃 검증 실행"}
           </button>
-          <button type="button" onClick={onTogglePreview} className={styles.buttonGhost}>
+          <button
+            type="button"
+            onClick={onTogglePreview}
+            disabled={busy}
+            className={styles.buttonGhost}
+          >
             {showExportPreview ? "A4 프리뷰 닫기" : "A4 프리뷰 보기"}
           </button>
         </div>

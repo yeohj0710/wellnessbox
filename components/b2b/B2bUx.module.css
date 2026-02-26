@@ -682,6 +682,37 @@
   margin: 0 auto;
   position: relative;
   z-index: 1;
+  max-height: min(78vh, 980px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  border-radius: 20px;
+  border: 1px solid #d1e0f8;
+  background: linear-gradient(180deg, #f6f9ff 0%, #edf3ff 100%);
+  padding: 8px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.reportCanvasBoard::-webkit-scrollbar {
+  width: 10px;
+}
+
+.reportCanvasBoard::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgba(140, 167, 214, 0.18);
+}
+
+.reportCanvasBoard::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  background: linear-gradient(180deg, #7dabff 0%, #4b84f7 100%);
+}
+
+.reportCanvasBoard :global(.wb-report-canvas) {
+  border: 0;
+  border-radius: 14px;
+  background: #eef3fa;
 }
 
 .overviewHeroGrid {
@@ -782,6 +813,12 @@
   text-align: center;
   line-height: 1.2;
   text-decoration: none;
+  transition:
+    transform 160ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease,
+    color 180ms ease;
 }
 
 .buttonPrimary {
@@ -793,6 +830,8 @@
 
 .buttonPrimary:hover:enabled {
   background: linear-gradient(140deg, #1c57d5 0%, #2a70ea 70%, #4592f2 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(37, 98, 229, 0.24);
 }
 
 .buttonSecondary {
@@ -801,10 +840,22 @@
   color: #1f58c0;
 }
 
+.buttonSecondary:hover:enabled {
+  border-color: #9fc2ff;
+  background: linear-gradient(180deg, #ecf4ff 0%, #e1ecff 100%);
+  transform: translateY(-1px);
+}
+
 .buttonGhost {
   border: 1px solid #cfdbeb;
   background: #ffffff;
   color: #25416b;
+}
+
+.buttonGhost:hover:enabled {
+  border-color: #b9cae1;
+  background: #f8fbff;
+  transform: translateY(-1px);
 }
 
 .buttonDanger {
@@ -813,12 +864,36 @@
   color: #b22033;
 }
 
+.buttonDanger:hover:enabled {
+  border-color: #f1aab4;
+  background: linear-gradient(180deg, #fff0f2 0%, #ffe2e6 100%);
+  transform: translateY(-1px);
+}
+
+.buttonPrimary:focus-visible,
+.buttonSecondary:focus-visible,
+.buttonGhost:focus-visible,
+.buttonDanger:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.95),
+    0 0 0 6px rgba(59, 130, 246, 0.34);
+}
+
+.buttonPrimary:active:enabled,
+.buttonSecondary:active:enabled,
+.buttonGhost:active:enabled,
+.buttonDanger:active:enabled {
+  transform: translateY(0);
+}
+
 .buttonPrimary:disabled,
 .buttonSecondary:disabled,
 .buttonGhost:disabled,
 .buttonDanger:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .noticeInfo,
@@ -1757,12 +1832,25 @@
   justify-content: center;
 }
 
-.listButton:hover {
+.listButton:hover:enabled {
   background: #f8faff;
   transform: translateY(-3px);
   box-shadow: 0 12px 22px rgba(30, 99, 255, 0.1);
   border-color: #c4d9ff;
   z-index: 3;
+}
+
+.listButton:focus-visible {
+  outline: none;
+  border-color: #91b6f8;
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.95),
+    0 0 0 6px rgba(64, 131, 247, 0.28);
+}
+
+.listButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .listButtonActive {
@@ -1886,12 +1974,55 @@
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease,
+    transform 140ms ease;
+}
+
+.chip:hover,
+.chipActive:hover {
+  transform: translateY(-1px);
+}
+
+.chip:hover {
+  border-color: #c5d7ef;
+  background: #f7fbff;
+}
+
+.chipActive:hover {
+  border-color: #8fb6f5;
+  background: #e6f1ff;
+}
+
+.chip:focus-visible,
+.chipActive:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.95),
+    0 0 0 4px rgba(64, 131, 247, 0.24);
+}
+
+.chip:disabled,
+.chipActive:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
 }
 
 .chipActive {
   border-color: #9ec3ff;
   background: #edf5ff;
   color: #245ecf;
+}
+
+.input:disabled,
+.select:disabled,
+.textarea:disabled {
+  cursor: not-allowed;
+  background: #f4f7fb;
+  color: #7a8797;
 }
 
 .divider {
@@ -2342,6 +2473,12 @@
   .reportCanvas {
     border-radius: 18px;
     padding: 10px;
+  }
+
+  .reportCanvasBoard {
+    max-height: 62vh;
+    border-radius: 14px;
+    padding: 6px;
   }
 
   .reportCanvasHeader {

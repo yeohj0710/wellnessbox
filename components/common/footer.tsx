@@ -140,6 +140,12 @@ function FooterInner() {
               >
                 라이더로 로그인
               </Link>
+              <Link
+                href="/admin-login"
+                className={`text-sm text-gray-400 ${hoverUnderline}`}
+              >
+                관리자로 로그인
+              </Link>
             </div>
 
             <div className="flex justify-center sm:justify-start gap-4 mt-1.5">

@@ -545,6 +545,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
           <B2bEmployeeSidebar
             employees={employees}
             selectedEmployeeId={selectedEmployeeId}
+            busy={busy}
             onSelectEmployee={(employeeId) => {
               setSelectedEmployeeId(employeeId);
               setSelectedPeriodKey("");

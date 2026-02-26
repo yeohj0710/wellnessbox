@@ -64,7 +64,7 @@ export default function EmployeeReportSummaryHeaderCard({
         <select
           className={`${styles.select} ${styles.summaryPeriodSelect}`}
           value={selectedPeriodKey}
-          disabled={periodOptions.length === 0}
+          disabled={busy || periodOptions.length === 0}
           onChange={(event) => onPeriodChange(event.target.value)}
         >
           {periodOptions.length === 0 ? (
@@ -84,7 +84,7 @@ export default function EmployeeReportSummaryHeaderCard({
           data-testid="employee-report-download-pdf"
           className={`${styles.buttonPrimary} ${styles.summaryPrimaryButton}`}
         >
-          PDF 다운로드
+          {busy ? "PDF 생성 중..." : "PDF 다운로드"}
         </button>
       </div>
       <div className={`${styles.actionRow} ${styles.summarySecondaryActions}`}>
@@ -95,7 +95,7 @@ export default function EmployeeReportSummaryHeaderCard({
           data-testid="employee-report-restart-auth"
           className={styles.buttonSecondary}
         >
-          인증 다시하기
+          {busy ? "처리 중..." : "인증 다시하기"}
         </button>
         {syncNextAction === "sign" ? (
           <button
@@ -105,7 +105,7 @@ export default function EmployeeReportSummaryHeaderCard({
             data-testid="employee-report-sign-sync"
             className={styles.buttonSecondary}
           >
-            연동 완료 확인
+            {busy ? "확인 중..." : "연동 완료 확인"}
           </button>
         ) : null}
         <button
@@ -114,7 +114,7 @@ export default function EmployeeReportSummaryHeaderCard({
           disabled={busy}
           className={styles.buttonGhost}
         >
-          다른 이름 조회
+          {busy ? "세션 해제 중..." : "다른 이름 조회"}
         </button>
       </div>
       {forceSyncRemainingSec > 0 ? (
@@ -141,7 +141,7 @@ export default function EmployeeReportSummaryHeaderCard({
                 data-testid="employee-report-force-sync-open"
                 className={styles.buttonDanger}
               >
-                강제 재조회 실행
+                {busy ? "강제 재조회 중..." : "강제 재조회 실행"}
               </button>
             </div>
             {forceSyncRemainingSec > 0 ? (

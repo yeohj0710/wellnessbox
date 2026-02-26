@@ -79,6 +79,7 @@ export default function B2bSurveyEditorPanel({
                 type="button"
                 onClick={() => onToggleSection(section.key)}
                 className={selectedSectionSet.has(section.key) ? styles.chipActive : styles.chip}
+                disabled={busy}
               >
                 {section.displayName || `${section.key} ${section.title}`}
               </button>
@@ -94,13 +95,14 @@ export default function B2bSurveyEditorPanel({
             </div>
             <div className={styles.stack}>
               {(surveyTemplate?.common ?? []).map((question) => (
-                <SurveyQuestionField
-                  key={question.key}
-                  question={question}
-                  value={surveyAnswers[question.key]}
-                  maxSelectedSections={maxSelectedSections}
-                  onChangeValue={onSetAnswerValue}
-                />
+                  <SurveyQuestionField
+                    key={question.key}
+                    question={question}
+                    value={surveyAnswers[question.key]}
+                    maxSelectedSections={maxSelectedSections}
+                    busy={busy}
+                    onChangeValue={onSetAnswerValue}
+                  />
               ))}
             </div>
           </section>
@@ -128,6 +130,7 @@ export default function B2bSurveyEditorPanel({
                         question={question}
                         value={surveyAnswers[question.key]}
                         maxSelectedSections={maxSelectedSections}
+                        busy={busy}
                         onChangeValue={onSetAnswerValue}
                       />
                     ))}
@@ -145,7 +148,7 @@ export default function B2bSurveyEditorPanel({
             disabled={busy}
             className={`${styles.buttonPrimary} ${styles.editorPrimaryButton}`}
           >
-            설문 저장
+            {busy ? "설문 저장 중..." : "설문 저장"}
           </button>
         </div>
       </div>

@@ -20,6 +20,8 @@ type DesktopMenuContentProps = {
   onToggleAiOpen: () => void;
   onCloseAiOpen: () => void;
   aiRef: RefObject<HTMLDivElement>;
+  onRequestLogout?: () => void;
+  isLogoutPending?: boolean;
   onItemClick?: () => void;
   pressHandlers: LinkPressHandlers;
   loginStatus: LoginStatus | null;
@@ -32,6 +34,8 @@ export function DesktopMenuContent({
   onToggleAiOpen,
   onCloseAiOpen,
   aiRef,
+  onRequestLogout,
+  isLogoutPending = false,
   onItemClick,
   pressHandlers,
   loginStatus,
@@ -146,6 +150,9 @@ export function DesktopMenuContent({
         isAdminLoggedIn={visibility.isAdminLoggedIn}
         showAdminMenus={visibility.showAdminMenus}
         kakaoLoggedIn={visibility.kakaoLoggedIn}
+        showOperatorLogout={visibility.canOperatorLogout}
+        onLogout={onRequestLogout}
+        logoutPending={isLogoutPending}
         onItemClick={onItemClick}
       />
     </>

@@ -43,6 +43,7 @@ export default function B2bNoteEditorPanel({
           <textarea
             className={styles.textarea}
             value={note}
+            disabled={busy}
             onChange={(event) => onNoteChange(event.target.value)}
             placeholder="예) 최근 1개월 복약 누락이 잦고, 수면/식사 패턴 변동이 큽니다."
           />
@@ -54,6 +55,7 @@ export default function B2bNoteEditorPanel({
           <textarea
             className={styles.textarea}
             value={recommendations}
+            disabled={busy}
             onChange={(event) => onRecommendationsChange(event.target.value)}
             placeholder="예) 아침 식후 30분 이내 복용으로 고정하고, 알림을 하루 2회 설정해 주세요."
           />
@@ -65,6 +67,7 @@ export default function B2bNoteEditorPanel({
           <textarea
             className={styles.textarea}
             value={cautions}
+            disabled={busy}
             onChange={(event) => onCautionsChange(event.target.value)}
             placeholder="예) 공복 복용 시 속쓰림 가능성이 있어 반드시 식후 복용을 권장합니다."
           />
@@ -77,7 +80,7 @@ export default function B2bNoteEditorPanel({
             disabled={busy}
             className={`${styles.buttonPrimary} ${styles.editorPrimaryButton}`}
           >
-            코멘트 저장
+            {busy ? "코멘트 저장 중..." : "코멘트 저장"}
           </button>
         </div>
       </div>

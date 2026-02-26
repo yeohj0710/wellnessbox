@@ -13,6 +13,8 @@ export type TopBarIntentHandlers = Pick<
 
 type TopBarHeaderProps = {
   loginStatus: LoginStatus | null;
+  onRequestLogout?: () => void;
+  isLogoutPending?: boolean;
   cartCount: number;
   logoRef: RefObject<HTMLImageElement | null>;
   sevenDayIntentHandlers: TopBarIntentHandlers;
@@ -30,6 +32,8 @@ const menuItemClasses = (additionalClasses = "") => {
 
 export function TopBarHeader({
   loginStatus,
+  onRequestLogout,
+  isLogoutPending = false,
   cartCount,
   logoRef,
   sevenDayIntentHandlers,
@@ -65,7 +69,12 @@ export function TopBarHeader({
           </button>
 
           <nav className="hidden min-[1440px]:flex items-center gap-8 text-[15px] font-medium text-slate-500 [&_a]:text-slate-500 [&_a:hover]:text-slate-900">
-            <MenuLinks loginStatus={loginStatus} onItemClick={onMenuItemClick} />
+            <MenuLinks
+              loginStatus={loginStatus}
+              onRequestLogout={onRequestLogout}
+              isLogoutPending={isLogoutPending}
+              onItemClick={onMenuItemClick}
+            />
           </nav>
         </div>
 

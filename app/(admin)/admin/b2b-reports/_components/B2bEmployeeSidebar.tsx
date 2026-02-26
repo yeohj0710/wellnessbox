@@ -5,12 +5,14 @@ import { normalizeDigits } from "../_lib/client-utils";
 type B2bEmployeeSidebarProps = {
   employees: EmployeeListItem[];
   selectedEmployeeId: string | null;
+  busy: boolean;
   onSelectEmployee: (employeeId: string) => void;
 };
 
 export default function B2bEmployeeSidebar({
   employees,
   selectedEmployeeId,
+  busy,
   onSelectEmployee,
 }: B2bEmployeeSidebarProps) {
   const selectedEmployee =
@@ -44,6 +46,7 @@ export default function B2bEmployeeSidebar({
             key={employee.id}
             type="button"
             onClick={() => onSelectEmployee(employee.id)}
+            disabled={busy}
             className={`${styles.listButton} ${
               selectedEmployeeId === employee.id ? styles.listButtonActive : ""
             }`}

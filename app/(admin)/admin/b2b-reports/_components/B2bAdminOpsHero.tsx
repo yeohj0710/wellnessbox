@@ -30,7 +30,9 @@ export default function B2bAdminOpsHero({
           className={styles.input}
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
+          disabled={busy}
           onKeyDown={(event) => {
+            if (busy) return;
             if (event.key === "Enter") {
               event.preventDefault();
               onSearchSubmit();
@@ -45,7 +47,7 @@ export default function B2bAdminOpsHero({
           disabled={busy}
           className={styles.buttonPrimary}
         >
-          검색
+          {busy ? "검색 중..." : "검색"}
         </button>
         {demoMode ? (
           <button
@@ -54,7 +56,7 @@ export default function B2bAdminOpsHero({
             disabled={busy}
             className={styles.buttonSecondary}
           >
-            데모 생성
+            {busy ? "생성 중..." : "데모 생성"}
           </button>
         ) : null}
       </div>

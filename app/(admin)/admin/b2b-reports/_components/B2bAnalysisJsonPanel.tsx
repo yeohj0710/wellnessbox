@@ -39,6 +39,7 @@ export default function B2bAnalysisJsonPanel({
               className={`${styles.textarea} ${styles.mono}`}
               style={{ minHeight: 300 }}
               value={analysisText}
+              disabled={busy}
               onChange={(event) => onAnalysisTextChange(event.target.value)}
             />
           </div>
@@ -51,7 +52,7 @@ export default function B2bAnalysisJsonPanel({
             disabled={busy}
             className={`${styles.buttonPrimary} ${styles.editorPrimaryButton}`}
           >
-            분석 JSON 저장
+            {busy ? "분석 JSON 저장 중..." : "분석 JSON 저장"}
           </button>
         </div>
       </div>

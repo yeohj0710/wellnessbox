@@ -45,7 +45,7 @@ export default function B2bEmployeeOverviewCard({
         <select
           className={styles.select}
           value={selectedPeriodKey}
-          disabled={periodOptions.length === 0}
+          disabled={busy || periodOptions.length === 0}
           onChange={(event) => onPeriodChange(event.target.value)}
         >
           {periodOptions.length === 0 ? (
@@ -64,7 +64,7 @@ export default function B2bEmployeeOverviewCard({
           disabled={busy || !latestReport?.id}
           className={styles.buttonPrimary}
         >
-          PDF 다운로드
+          {busy ? "PDF 생성 중..." : "PDF 다운로드"}
         </button>
         <button
           type="button"
@@ -72,7 +72,7 @@ export default function B2bEmployeeOverviewCard({
           disabled={busy || !latestReport?.id}
           className={styles.buttonSecondary}
         >
-          PPTX 다운로드
+          {busy ? "PPTX 생성 중..." : "PPTX 다운로드"}
         </button>
       </div>
       <details className={styles.optionalCard}>
@@ -89,6 +89,7 @@ export default function B2bEmployeeOverviewCard({
                 value={reportDisplayPeriodKey}
                 onChange={(event) => onReportDisplayPeriodChange(event.target.value)}
                 maxLength={7}
+                disabled={busy || !latestReport?.id}
               />
               <button
                 type="button"
@@ -96,7 +97,7 @@ export default function B2bEmployeeOverviewCard({
                 disabled={busy || !latestReport?.id || reportDisplayPeriodKey.trim().length === 0}
                 className={styles.buttonSecondary}
               >
-                연월 반영
+                {busy ? "반영 중..." : "연월 반영"}
               </button>
             </div>
             <p className={styles.inlineHint}>
@@ -124,7 +125,7 @@ export default function B2bEmployeeOverviewCard({
               disabled={busy}
               className={styles.buttonGhost}
             >
-              레포트 재생성
+              {busy ? "재생성 중..." : "레포트 재생성"}
             </button>
             <button
               type="button"
@@ -132,7 +133,7 @@ export default function B2bEmployeeOverviewCard({
               disabled={busy}
               className={styles.buttonGhost}
             >
-              분석 재계산
+              {busy ? "재계산 중..." : "분석 재계산"}
             </button>
             <button
               type="button"
@@ -140,7 +141,7 @@ export default function B2bEmployeeOverviewCard({
               disabled={busy}
               className={styles.buttonGhost}
             >
-              AI 재생성
+              {busy ? "재생성 중..." : "AI 재생성"}
             </button>
           </div>
         </div>

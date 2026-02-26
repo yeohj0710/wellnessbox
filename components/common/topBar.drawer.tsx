@@ -7,6 +7,8 @@ import type { TopBarIntentHandlers } from "./topBar.header";
 
 type TopBarDrawerProps = {
   loginStatus: LoginStatus | null;
+  onRequestLogout?: () => void;
+  isLogoutPending?: boolean;
   isDrawerOpen: boolean;
   sevenDayIntentHandlers: TopBarIntentHandlers;
   onGoSevenDays: () => void;
@@ -17,6 +19,8 @@ type TopBarDrawerProps = {
 
 export function TopBarDrawer({
   loginStatus,
+  onRequestLogout,
+  isLogoutPending = false,
   isDrawerOpen,
   sevenDayIntentHandlers,
   onGoSevenDays,
@@ -33,7 +37,13 @@ export function TopBarDrawer({
         style={{ top: "3.5rem" }}
       >
         <div className="flex flex-col p-6 gap-4 text-[15px] font-medium text-slate-600 [&_a]:text-slate-700 [&_a]:hover:text-slate-900">
-          <MenuLinks loginStatus={loginStatus} onItemClick={onMenuItemClick} isDrawer />
+          <MenuLinks
+            loginStatus={loginStatus}
+            onRequestLogout={onRequestLogout}
+            isLogoutPending={isLogoutPending}
+            onItemClick={onMenuItemClick}
+            isDrawer
+          />
 
           {loginStatus !== null && loginStatus.isUserLoggedIn !== true && (
             <KakaoLoginButton fullWidth />

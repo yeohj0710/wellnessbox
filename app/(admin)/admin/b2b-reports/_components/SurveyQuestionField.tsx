@@ -6,6 +6,7 @@ type SurveyQuestionFieldProps = {
   question: SurveyQuestion;
   value: unknown;
   maxSelectedSections: number;
+  busy?: boolean;
   onChangeValue: (question: SurveyQuestion, value: unknown) => void;
 };
 
@@ -28,6 +29,7 @@ export default function SurveyQuestionField({
   question,
   value,
   maxSelectedSections,
+  busy = false,
   onChangeValue,
 }: SurveyQuestionFieldProps) {
   if (question.type === "multi") {
@@ -43,6 +45,7 @@ export default function SurveyQuestionField({
               key={option.value}
               type="button"
               className={selected.has(option.value) ? styles.chipActive : styles.chip}
+              disabled={busy}
               onClick={() => {
                 const next = new Set(selected);
                 if (next.has(option.value)) next.delete(option.value);
@@ -66,6 +69,7 @@ export default function SurveyQuestionField({
         <select
           className={styles.select}
           value={toInputValue(value)}
+          disabled={busy}
           onChange={(event) => onChangeValue(question, event.target.value)}
         >
           <option value="">항목을 선택해 주세요</option>
@@ -86,6 +90,7 @@ export default function SurveyQuestionField({
       <input
         className={styles.input}
         value={toInputValue(value)}
+        disabled={busy}
         onChange={(event) => onChangeValue(question, event.target.value)}
         placeholder={question.placeholder || "응답을 입력해 주세요"}
       />

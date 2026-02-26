@@ -8,12 +8,16 @@ import type { LoginStatus } from "@/lib/useLoginStatus";
 
 interface MenuLinksProps {
   loginStatus: LoginStatus | null;
+  onRequestLogout?: () => void;
+  isLogoutPending?: boolean;
   onItemClick?: () => void;
   isDrawer?: boolean;
 }
 
 export function MenuLinks({
   loginStatus,
+  onRequestLogout,
+  isLogoutPending = false,
   onItemClick,
   isDrawer = false,
 }: MenuLinksProps) {
@@ -69,6 +73,8 @@ export function MenuLinks({
   if (isDrawer) {
     return (
       <DrawerMenuContent
+        onRequestLogout={onRequestLogout}
+        isLogoutPending={isLogoutPending}
         onItemClick={onItemClick}
         pressHandlers={pressHandlers}
         visibility={visibility}
@@ -83,6 +89,8 @@ export function MenuLinks({
       onToggleAiOpen={() => setAiOpen((value) => !value)}
       onCloseAiOpen={() => setAiOpen(false)}
       aiRef={aiRef}
+      onRequestLogout={onRequestLogout}
+      isLogoutPending={isLogoutPending}
       onItemClick={onItemClick}
       pressHandlers={pressHandlers}
       loginStatus={loginStatus}

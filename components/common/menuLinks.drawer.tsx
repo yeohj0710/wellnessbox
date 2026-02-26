@@ -12,6 +12,8 @@ import {
 } from "./menuLinks.shared";
 
 type DrawerMenuContentProps = {
+  onRequestLogout?: () => void;
+  isLogoutPending?: boolean;
   onItemClick?: () => void;
   pressHandlers: LinkPressHandlers;
   visibility: MenuVisibility;
@@ -19,6 +21,8 @@ type DrawerMenuContentProps = {
 };
 
 export function DrawerMenuContent({
+  onRequestLogout,
+  isLogoutPending = false,
   onItemClick,
   pressHandlers,
   visibility,
@@ -100,6 +104,9 @@ export function DrawerMenuContent({
         isAdminLoggedIn={visibility.isAdminLoggedIn}
         showAdminMenus={visibility.showAdminMenus}
         kakaoLoggedIn={visibility.kakaoLoggedIn}
+        showOperatorLogout={visibility.canOperatorLogout}
+        onLogout={onRequestLogout}
+        logoutPending={isLogoutPending}
         onItemClick={onItemClick}
       />
     </>
