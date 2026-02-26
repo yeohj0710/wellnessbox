@@ -938,6 +938,16 @@
   padding: 10px 12px;
   position: relative;
   z-index: 2;
+  transition:
+    border-color 220ms ease,
+    box-shadow 240ms ease,
+    background 240ms ease;
+}
+
+.optionalCard[open] {
+  border-color: #c8d8f1;
+  background: #fdfefe;
+  box-shadow: 0 10px 18px rgba(22, 54, 117, 0.08);
 }
 
 .reportCanvas + .optionalCard {
@@ -950,12 +960,55 @@
   color: var(--ink-2);
   font-size: 12px;
   font-weight: 700;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.optionalCard summary::-webkit-details-marker {
+  display: none;
+}
+
+.optionalCard summary::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  margin-left: auto;
+  border-right: 1.8px solid currentColor;
+  border-bottom: 1.8px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 220ms ease;
+}
+
+.optionalCard[open] summary::after {
+  transform: rotate(225deg) translate(-1px, 1px);
 }
 
 .optionalBody {
-  margin-top: 8px;
+  margin-top: 0;
   display: grid;
   gap: 8px;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transform: translateY(-6px);
+  transition:
+    max-height 280ms ease,
+    opacity 220ms ease,
+    transform 220ms ease,
+    margin-top 220ms ease;
+}
+
+.optionalCard[open] > .optionalBody {
+  margin-top: 8px;
+  max-height: 9999px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.optionalCard:not([open]) > .optionalBody {
+  pointer-events: none;
 }
 
 .optionalText {
@@ -975,6 +1028,12 @@
     0 8px 20px rgba(12, 45, 111, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.85);
   padding: 12px 14px;
+}
+
+.editorPanel[open] {
+  box-shadow:
+    0 14px 28px rgba(12, 45, 111, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .editorPanelSummary {
@@ -999,9 +1058,40 @@
 }
 
 .editorPanelBody {
-  margin-top: 10px;
+  margin-top: 0;
   display: grid;
   gap: 12px;
+}
+
+.editorPanelMotion {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 300ms ease;
+}
+
+.editorPanel[open] > .editorPanelMotion {
+  grid-template-rows: 1fr;
+}
+
+.editorPanelMotion > .editorPanelBody {
+  min-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition:
+    opacity 220ms ease,
+    transform 240ms ease,
+    margin-top 240ms ease;
+}
+
+.editorPanel[open] > .editorPanelMotion > .editorPanelBody {
+  margin-top: 10px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.editorPanel:not([open]) > .editorPanelMotion > .editorPanelBody {
+  pointer-events: none;
 }
 
 .editorGuide {
@@ -1137,6 +1227,13 @@
   border: 1px solid #d4e2f5;
   background: linear-gradient(180deg, #f8fbff 0%, #f1f6ff 100%);
   padding: 8px;
+  display: grid;
+}
+
+.editorCodeTextarea {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .questionCard {

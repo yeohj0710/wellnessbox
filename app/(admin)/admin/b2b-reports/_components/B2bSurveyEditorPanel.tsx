@@ -45,7 +45,8 @@ export default function B2bSurveyEditorPanel({
           {completionStats.answered}/{completionStats.total} 문항 완료 · {completionStats.percent}%
         </span>
       </summary>
-      <div className={styles.editorPanelBody}>
+      <div className={styles.editorPanelMotion}>
+        <div className={styles.editorPanelBody}>
         <div className={styles.editorGuide}>
           <p className={styles.editorGuideTitle}>입력 가이드</p>
           <ul className={styles.editorGuideList}>
@@ -150,6 +151,7 @@ export default function B2bSurveyEditorPanel({
           >
             {busy ? "설문 저장 중..." : "설문 저장"}
           </button>
+        </div>
         </div>
       </div>
     </details>

@@ -27,7 +27,8 @@ export default function B2bNoteEditorPanel({
         <span className={styles.editorPanelSummaryTitle}>약사 코멘트 편집</span>
         <span className={styles.editorPanelSummaryMeta}>환자 안내 문구로 바로 반영</span>
       </summary>
-      <div className={styles.editorPanelBody}>
+      <div className={styles.editorPanelMotion}>
+        <div className={styles.editorPanelBody}>
         <div className={styles.editorGuide}>
           <p className={styles.editorGuideTitle}>입력 가이드</p>
           <ul className={styles.editorGuideList}>
@@ -82,6 +83,7 @@ export default function B2bNoteEditorPanel({
           >
             {busy ? "코멘트 저장 중..." : "코멘트 저장"}
           </button>
+        </div>
         </div>
       </div>
     </details>

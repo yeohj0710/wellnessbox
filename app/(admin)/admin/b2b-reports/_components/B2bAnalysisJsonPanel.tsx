@@ -19,7 +19,8 @@ export default function B2bAnalysisJsonPanel({
         <span className={styles.editorPanelSummaryTitle}>분석 JSON 편집</span>
         <span className={styles.editorPanelSummaryMeta}>고급 편집 · 구조 유지 필수</span>
       </summary>
-      <div className={styles.editorPanelBody}>
+      <div className={styles.editorPanelMotion}>
+        <div className={styles.editorPanelBody}>
         <div className={styles.editorGuide}>
           <p className={styles.editorGuideTitle}>입력 가이드</p>
           <ul className={styles.editorGuideList}>
@@ -36,7 +37,7 @@ export default function B2bAnalysisJsonPanel({
           </p>
           <div className={styles.editorCodeFrame}>
             <textarea
-              className={`${styles.textarea} ${styles.mono}`}
+              className={`${styles.textarea} ${styles.mono} ${styles.editorCodeTextarea}`}
               style={{ minHeight: 300 }}
               value={analysisText}
               disabled={busy}
@@ -54,6 +55,7 @@ export default function B2bAnalysisJsonPanel({
           >
             {busy ? "분석 JSON 저장 중..." : "분석 JSON 저장"}
           </button>
+        </div>
         </div>
       </div>
     </details>

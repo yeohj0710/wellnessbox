@@ -151,12 +151,17 @@ function pickMedicationSamples(normalized: Record<string, unknown>) {
     const medicine = pickFirstText(
       row,
       [
+        "medicineNm",
         "medicine",
         "drugName",
         "drugNm",
         "prodName",
         "medNm",
         "medicineName",
+        "drug_MEDI_PRDC_NM",
+        "MEDI_PRDC_NM",
+        "detail_CMPN_NM",
+        "CMPN_NM",
       ],
       80
     );
@@ -164,7 +169,22 @@ function pickMedicationSamples(normalized: Record<string, unknown>) {
 
     const date = pickFirstText(
       row,
-      ["date", "rxDate", "prescribeDate", "prscDate", "medDate", "takeDate"],
+      [
+        "diagDate",
+        "medDate",
+        "date",
+        "rxDate",
+        "prescribeDate",
+        "prscDate",
+        "takeDate",
+        "TRTM_YMD",
+        "detail_PRSC_YMD",
+        "detail_TRTM_YMD",
+        "drug_PRSC_YMD",
+        "drug_TRTM_YMD",
+        "PRSC_YMD",
+        "medicationDate",
+      ],
       32
     );
     const purpose = pickFirstText(

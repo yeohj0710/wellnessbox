@@ -216,7 +216,16 @@ function resolveMedicationRows(normalizedJson: unknown) {
   if (Array.isArray(medicationRecord.list)) return medicationRecord.list;
   if (Array.isArray(medicationRecord.rows)) return medicationRecord.rows;
   if (Array.isArray(medicationRecord.items)) return medicationRecord.items;
-  return [];
+  if (Array.isArray(medicationRecord.history)) return medicationRecord.history;
+  if (
+    "list" in medicationRecord ||
+    "rows" in medicationRecord ||
+    "items" in medicationRecord ||
+    "history" in medicationRecord
+  ) {
+    return [];
+  }
+  return null;
 }
 
 function resolveCheckupRows(normalizedJson: unknown) {
@@ -227,7 +236,8 @@ function resolveCheckupRows(normalizedJson: unknown) {
   if (!checkupRecord) return null;
   if (Array.isArray(checkupRecord.overview)) return checkupRecord.overview;
   if (Array.isArray(checkupRecord.list)) return checkupRecord.list;
-  return [];
+  if ("overview" in checkupRecord || "list" in checkupRecord) return [];
+  return null;
 }
 
 function resolveMissingSummaryTargets(normalizedJson: unknown) {

@@ -105,6 +105,42 @@ function toNumber(value: unknown) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function parseSortableDateScore(value: unknown) {
+  const text = toText(value);
+  if (!text) return 0;
+  const digits = text.replace(/\D/g, "");
+  if (digits.length >= 8) {
+    const score = Number(digits.slice(0, 8));
+    return Number.isFinite(score) ? score : 0;
+  }
+  if (digits.length >= 6) {
+    const score = Number(`${digits.slice(0, 6)}01`);
+    return Number.isFinite(score) ? score : 0;
+  }
+  if (digits.length >= 4) {
+    const score = Number(`${digits.slice(0, 4)}0101`);
+    return Number.isFinite(score) ? score : 0;
+  }
+  return 0;
+}
+
+function resolveMedicationList(normalizedJson: unknown) {
+  const normalized = asRecord(normalizedJson);
+  const medicationRaw = normalized?.medication;
+  if (Array.isArray(medicationRaw)) {
+    return medicationRaw
+      .map((item) => asRecord(item))
+      .filter((item): item is Record<string, unknown> => Boolean(item));
+  }
+  const medication = asRecord(medicationRaw);
+  const list = asArray(
+    medication?.list ?? medication?.rows ?? medication?.items ?? medication?.history
+  );
+  return list
+    .map((item) => asRecord(item))
+    .filter((item): item is Record<string, unknown> => Boolean(item));
+}
+
 function clampScore(value: number) {
   if (!Number.isFinite(value)) return 0;
   if (value < 0) return 0;
@@ -438,9 +474,7 @@ function resolveMedicationStatus(input: B2bAnalyzerInput): MedicationStatusType 
     .filter(Boolean);
   if (failed.includes("medication")) return "fetch_failed";
 
-  const normalized = asRecord(input.healthSnapshot?.normalizedJson);
-  const medication = asRecord(normalized?.medication);
-  const list = asArray(medication?.list);
+  const list = resolveMedicationList(input.healthSnapshot?.normalizedJson);
   if (list.length > 0) return "available";
 
   if (!input.healthSnapshot) return "unknown";
@@ -449,19 +483,98 @@ function resolveMedicationStatus(input: B2bAnalyzerInput): MedicationStatusType 
 }
 
 function buildMedication(input: B2bAnalyzerInput) {
-  const normalized = asRecord(input.healthSnapshot?.normalizedJson);
-  const medication = asRecord(normalized?.medication);
-  const list = asArray(medication?.list);
+  const list = resolveMedicationList(input.healthSnapshot?.normalizedJson);
 
   const recent = list
+    .slice()
+    .sort((a, b) => {
+      const leftScore = parseSortableDateScore(
+        a.diagDate ??
+          a.medDate ??
+          a.date ??
+          a.rxDate ??
+          a.prescribeDate ??
+          a.prscDate ??
+          a.takeDate ??
+          a.TRTM_YMD ??
+          a.detail_PRSC_YMD ??
+          a.detail_TRTM_YMD ??
+          a.drug_PRSC_YMD ??
+          a.drug_TRTM_YMD ??
+          a.PRSC_YMD ??
+          a.medicationDate
+      );
+      const rightScore = parseSortableDateScore(
+        b.diagDate ??
+          b.medDate ??
+          b.date ??
+          b.rxDate ??
+          b.prescribeDate ??
+          b.prscDate ??
+          b.takeDate ??
+          b.TRTM_YMD ??
+          b.detail_PRSC_YMD ??
+          b.detail_TRTM_YMD ??
+          b.drug_PRSC_YMD ??
+          b.drug_TRTM_YMD ??
+          b.PRSC_YMD ??
+          b.medicationDate
+      );
+      return rightScore - leftScore;
+    })
     .slice(0, 3)
-    .map((item) => asRecord(item))
-    .filter((item): item is Record<string, unknown> => Boolean(item))
     .map((item) => ({
-      medicationName: toText(item.medicineNm ?? item.drug_MEDI_PRDC_NM ?? item.CMPN_NM),
-      date: toText(item.diagDate ?? item.medDate ?? item.PRSC_YMD) || null,
-      period: toText(item.dosageDay ?? item.detail_DOSAGE_DAY ?? item.drug_DOSAGE_DAY) || null,
-      hospitalName: toText(item.hospitalNm ?? item.hspNm ?? item.HSP_NM) || null,
+      medicationName: toText(
+        item.medicineNm ??
+          item.medicine ??
+          item.drugName ??
+          item.drugNm ??
+          item.medNm ??
+          item.medicineName ??
+          item.prodName ??
+          item.drug_MEDI_PRDC_NM ??
+          item.MEDI_PRDC_NM ??
+          item.detail_CMPN_NM ??
+          item.CMPN_NM
+      ),
+      date:
+        toText(
+          item.diagDate ??
+            item.medDate ??
+            item.date ??
+            item.rxDate ??
+            item.prescribeDate ??
+            item.prscDate ??
+            item.takeDate ??
+            item.TRTM_YMD ??
+            item.detail_PRSC_YMD ??
+            item.detail_TRTM_YMD ??
+            item.drug_PRSC_YMD ??
+            item.drug_TRTM_YMD ??
+            item.PRSC_YMD ??
+            item.medicationDate
+        ) || null,
+      period:
+        toText(
+          item.dosageDay ??
+            item.period ??
+            item.takeDay ??
+            item.dayCount ??
+            item.detail_DOSAGE_DAY ??
+            item.drug_DOSAGE_DAY
+        ) || null,
+      hospitalName:
+        toText(
+          item.hospitalNm ??
+            item.hospitalName ??
+            item.hospital ??
+            item.clinicName ??
+            item.hspNm ??
+            item.detail_HSP_NM ??
+            item.drug_HSP_NM ??
+            item.HSP_NM ??
+            item.clinicNm
+        ) || null,
     }))
     .filter((item) => item.medicationName);
 

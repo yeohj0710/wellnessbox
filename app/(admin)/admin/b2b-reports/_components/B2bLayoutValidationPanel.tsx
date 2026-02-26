@@ -32,7 +32,8 @@ export default function B2bLayoutValidationPanel({
         <span className={styles.editorPanelSummaryTitle}>레이아웃 검증 및 디버그</span>
         <span className={styles.editorPanelSummaryMeta}>PDF/PPTX 내보내기 전 최종 확인</span>
       </summary>
-      <div className={styles.editorPanelBody}>
+      <div className={styles.editorPanelMotion}>
+        <div className={styles.editorPanelBody}>
         <div className={styles.editorGuide}>
           <p className={styles.editorGuideTitle}>입력 가이드</p>
           <ul className={styles.editorGuideList}>
@@ -120,6 +121,7 @@ export default function B2bLayoutValidationPanel({
             <p className={styles.inlineHint}>표시할 레이아웃 데이터가 없습니다.</p>
           )
         ) : null}
+        </div>
       </div>
     </details>
   );
