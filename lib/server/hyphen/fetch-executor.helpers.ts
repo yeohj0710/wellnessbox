@@ -2,6 +2,10 @@ import "server-only";
 
 import type { HyphenApiResponse } from "@/lib/server/hyphen/client";
 import {
+  extractCookieData,
+  extractStepData,
+} from "@/lib/server/hyphen/client.runtime";
+import {
   DEFAULT_DETAIL_YEAR_LIMIT,
   MAX_CHECKUP_LIST_YEARS_PER_REQUEST,
 } from "@/lib/server/hyphen/fetch-contract";
@@ -91,6 +95,8 @@ export function collectDetailKeyPairs(
 export function mergeListPayloads(payloads: HyphenApiResponse[]) {
   const mergedList: unknown[] = [];
   const years: string[] = [];
+  let latestCookieData: unknown = undefined;
+  let latestStepData: unknown = undefined;
 
   for (const payload of payloads) {
     const data = (payload.data ?? {}) as Record<string, unknown>;
@@ -99,12 +105,23 @@ export function mergeListPayloads(payloads: HyphenApiResponse[]) {
 
     const yyyy = toNonEmptyText(data.yyyy ?? data.year ?? data.businessYear);
     if (yyyy) years.push(yyyy);
+
+    const cookieData = extractCookieData(payload);
+    if (cookieData != null) {
+      latestCookieData = cookieData;
+    }
+    const stepData = extractStepData(payload);
+    if (stepData != null) {
+      latestStepData = stepData;
+    }
   }
 
   return {
     data: {
       list: mergedList,
       years,
+      ...(latestCookieData !== undefined ? { cookieData: latestCookieData } : {}),
+      ...(latestStepData !== undefined ? { stepData: latestStepData } : {}),
     },
   } as HyphenApiResponse;
 }
@@ -117,7 +134,7 @@ export function normalizeYearLimit(value: number) {
 }
 
 const YMD_PATTERN = /^\d{8}$/;
-const MEDICATION_PROBE_WINDOWS_DAYS = [30, 180, 365] as const;
+const MEDICATION_PROBE_WINDOWS_DAYS = [365, 180, 30] as const;
 
 function parseYmd(value: string | undefined): Date | null {
   if (!value || !YMD_PATTERN.test(value)) return null;
@@ -165,17 +182,18 @@ export function resolveMedicationProbeWindows(
     windows.push({ fromDate, toDate });
   };
 
+  // Keep the first request as the caller's original range to minimize API calls.
+  pushWindow(
+    requestDefaults.fromDate ?? (from ? formatYmdUtc(from) : undefined),
+    requestDefaults.toDate ?? formatYmdUtc(to)
+  );
+
   for (const days of MEDICATION_PROBE_WINDOWS_DAYS) {
     const candidateFrom = shiftDaysUtc(to, -(days - 1));
     const boundedFrom =
       from && candidateFrom.getTime() < from.getTime() ? from : candidateFrom;
     pushWindow(formatYmdUtc(boundedFrom), formatYmdUtc(to));
   }
-
-  pushWindow(
-    requestDefaults.fromDate ?? (from ? formatYmdUtc(from) : undefined),
-    requestDefaults.toDate ?? formatYmdUtc(to)
-  );
 
   return windows;
 }

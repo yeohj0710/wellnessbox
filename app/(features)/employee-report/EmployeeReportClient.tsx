@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import ReportRenderer from "@/components/b2b/ReportRenderer";
 import ReportSummaryCards from "@/components/b2b/ReportSummaryCards";
 import styles from "@/components/b2b/B2bUx.module.css";
 import EmployeeReportBootSkeleton from "./_components/EmployeeReportBootSkeleton";
@@ -36,11 +37,11 @@ import {
   downloadPdf,
   formatDateTime,
   normalizeDigits,
+  parseLayoutDsl,
   readStoredIdentity,
   resolveMedicationStatusMessage,
   resolveCooldownUntilFromPayload,
   saveStoredIdentity,
-  sleep,
   toSyncNextAction,
 } from "./_lib/client-utils";
 
@@ -100,6 +101,10 @@ export default function EmployeeReportClient() {
   const canUseForceSync = useMemo(
     () => debugMode || isAdminLoggedIn,
     [debugMode, isAdminLoggedIn]
+  );
+  const previewLayout = useMemo(
+    () => parseLayoutDsl(reportData?.report?.layoutDsl),
+    [reportData?.report?.layoutDsl]
   );
 
   const canExecuteForceSync = useMemo(
@@ -289,55 +294,6 @@ export default function EmployeeReportClient() {
     }
   }
 
-  async function pollSignAndSyncWithSingleClick() {
-    const maxAttempts = 15;
-    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-      try {
-        const signResult: NhisSignResponse = await requestNhisSign();
-
-        if (signResult.linked) {
-          const syncResult = await syncEmployeeReport(false, {
-            debugOverride: debugMode,
-          });
-          const reusedFromCache =
-            syncResult.sync?.source === "cache-valid" ||
-            syncResult.sync?.source === "cache-history";
-          setNotice(
-            reusedFromCache
-              ? "기존 연동 데이터를 사용해 레포트를 불러왔습니다."
-              : "인증 완료 후 최신 데이터를 불러왔습니다."
-          );
-          setSyncGuidance(null);
-          setSyncNextAction(null);
-          return true;
-        }
-      } catch (err) {
-        if (err instanceof ApiRequestError) {
-          if (
-            err.status === 409 ||
-            err.status === 412 ||
-            err.status === 422 ||
-            err.status === 502
-          ) {
-            await sleep(4000);
-            continue;
-          }
-          throw err;
-        }
-        throw err;
-      }
-
-      await sleep(4000);
-    }
-
-    setSyncNextAction("sign");
-    setSyncGuidance({
-      nextAction: "sign",
-      message: "카카오 인증 승인 후 '연동 완료 확인' 버튼을 눌러 마무리해 주세요.",
-    });
-    return false;
-  }
-
   async function handleRestartAuth() {
     if (!validIdentity) {
       setError("이름, 생년월일(8자리), 휴대폰 번호를 정확히 입력해 주세요.");
@@ -351,7 +307,6 @@ export default function EmployeeReportClient() {
     try {
       const initResult: NhisInitResponse = await requestNhisInit({
         identity: getIdentityPayload(),
-        forceInit: true,
       });
 
       if (initResult.linked || initResult.nextStep === "fetch") {
@@ -374,9 +329,9 @@ export default function EmployeeReportClient() {
       setSyncNextAction("sign");
       setSyncGuidance({
         nextAction: "sign",
-        message: "카카오 인증을 요청했습니다. 카카오톡 승인 후 자동으로 연동을 시도합니다.",
+        message:
+          "카카오 인증 승인 대기 중입니다. 인증을 완료한 뒤 다시 확인해 주세요.",
       });
-      await pollSignAndSyncWithSingleClick();
     } catch (err) {
       if (err instanceof ApiRequestError) {
         applyForceSyncCooldown(err.payload);
@@ -612,7 +567,22 @@ export default function EmployeeReportClient() {
             </div>
           ) : null}
 
-          <ReportSummaryCards payload={reportData.report.payload} viewerMode="employee" />
+          {previewLayout ? (
+            <section className={styles.reportCanvas}>
+              <div className={styles.reportCanvasHeader}>
+                <div>
+                  <h3>리포트 본문 미리보기</h3>
+                  <p>웹 화면과 동일한 레이아웃이 PDF/PPTX로 추출됩니다.</p>
+                </div>
+                <span className={styles.statusOn}>레이아웃 동기화 완료</span>
+              </div>
+              <div className={styles.reportCanvasBoard}>
+                <ReportRenderer layout={previewLayout} fitToWidth />
+              </div>
+            </section>
+          ) : (
+            <ReportSummaryCards payload={reportData.report.payload} viewerMode="employee" />
+          )}
         </>
       ) : null}
 

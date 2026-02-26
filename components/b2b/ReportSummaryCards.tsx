@@ -39,6 +39,7 @@ export default function ReportSummaryCards(props: {
 }) {
   const payload = props.payload;
   const viewerMode = props.viewerMode ?? "admin";
+  const showRichVisuals = false;
 
   if (!payload) {
     return (
@@ -242,7 +243,8 @@ export default function ReportSummaryCards(props: {
         </div>
       </section>
 
-      <section className={styles.visualGrid}>
+      {showRichVisuals ? (
+        <section className={styles.visualGrid}>
         <article className={styles.visualCard}>
           <div className={styles.sectionHeader}>
             <h3 className={styles.sectionTitle}>종합 점수 게이지</h3>
@@ -399,7 +401,8 @@ export default function ReportSummaryCards(props: {
             </>
           )}
         </article>
-      </section>
+        </section>
+      ) : null}
 
       <section className={styles.twoCol}>
         <article className={styles.sectionCard}>
@@ -582,7 +585,7 @@ export default function ReportSummaryCards(props: {
           </div>
           {trendRows.length === 0 ? (
             <p className={styles.inlineHint}>추이 데이터가 없습니다.</p>
-          ) : (
+          ) : showRichVisuals ? (
             <div className={styles.stack}>
               <div className={styles.trendColumns}>
                 {trendRows.map((row) => (
@@ -641,6 +644,18 @@ export default function ReportSummaryCards(props: {
                 </li>
               </ul>
             </div>
+          ) : (
+            <ul className={styles.listPlain}>
+              {trendRows.map((row) => (
+                <li key={`trend-row-${row.periodKey}`}>
+                  <span className="font-semibold">{row.periodKey}</span>
+                  <div className={styles.inlineHint}>
+                    종합 {toScoreLabel(row.overallScore)} / 설문{" "}
+                    {toScoreLabel(row.surveyScore)} / 검진 {toScoreLabel(row.healthScore)}
+                  </div>
+                </li>
+              ))}
+            </ul>
           )}
         </article>
       </section>

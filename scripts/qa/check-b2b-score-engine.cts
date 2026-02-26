@@ -12,12 +12,13 @@ function run() {
     },
   });
 
-  assert.equal(summaryPreferred.summary.overallScore, 78);
+  assert.equal(summaryPreferred.summary.overallScore, 76);
   assert.equal(summaryPreferred.summary.surveyScore, 82);
   assert.equal(summaryPreferred.summary.healthScore, 74);
   assert.equal(summaryPreferred.summary.medicationScore, 69);
   assert.equal(summaryPreferred.summary.riskLevel, "medium");
-  assert.equal(summaryPreferred.details.overall.status, "computed");
+  assert.equal(summaryPreferred.details.overall.status, "estimated");
+  assert.equal(summaryPreferred.details.overall.source, "weighted_components");
   assert.equal(summaryPreferred.hasAnyScore, true);
 
   const fallbackEstimated = resolveReportScores({
@@ -30,11 +31,11 @@ function run() {
     medicationCount: 0,
   });
 
-  assert.equal(fallbackEstimated.summary.surveyScore, 72);
-  assert.equal(fallbackEstimated.summary.healthScore, 60);
-  assert.equal(fallbackEstimated.summary.medicationScore, 60);
-  assert.equal(fallbackEstimated.summary.overallScore, 66);
-  assert.equal(fallbackEstimated.summary.riskLevel, "medium");
+  assert.equal(fallbackEstimated.summary.surveyScore, 40);
+  assert.equal(fallbackEstimated.summary.healthScore, 59);
+  assert.equal(fallbackEstimated.summary.medicationScore, 55);
+  assert.equal(fallbackEstimated.summary.overallScore, 46);
+  assert.equal(fallbackEstimated.summary.riskLevel, "high");
   assert.equal(fallbackEstimated.details.overall.status, "estimated");
   assert.equal(fallbackEstimated.details.survey.source, "survey_sections");
   assert.equal(fallbackEstimated.details.health.source, "health_metrics");
@@ -67,6 +68,9 @@ function run() {
   });
 
   assert.equal(fetchFailedMedication.details.medication.status, "missing");
+  assert.equal(fetchFailedMedication.summary.overallScore, 60);
+  assert.equal(fetchFailedMedication.summary.surveyScore, 50);
+  assert.equal(fetchFailedMedication.summary.healthScore, 88);
   assert.equal(fetchFailedMedication.summary.riskLevel, "high");
   assert.equal(fetchFailedMedication.hasAnyScore, true);
 

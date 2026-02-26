@@ -98,7 +98,7 @@ async function issueDirectUploadUrl() {
 
   const json = (await response.json().catch(() => ({}))) as UploadUrlResponse;
   if (!response.ok || !json.uploadURL) {
-    throw new Error(json.error || "업로드 URL 발급에 실패했습니다.");
+    throw new Error(json.error || "업로드 URL 발급에 실패했어요.");
   }
   return json.uploadURL;
 }
@@ -115,8 +115,7 @@ async function uploadImageToCloudflare(file: File) {
 
   const uploadJson = (await uploadResponse.json().catch(() => ({}))) as CloudflareUploadResponse;
   if (!uploadResponse.ok || !uploadJson.success) {
-    const message =
-      uploadJson.errors?.[0]?.message || "Cloudflare 업로드에 실패했습니다.";
+    const message = uploadJson.errors?.[0]?.message || "Cloudflare 업로드에 실패했어요.";
     throw new Error(message);
   }
 
@@ -124,7 +123,7 @@ async function uploadImageToCloudflare(file: File) {
     /\/public(?:$|[/?#])/.test(url)
   );
   if (!publicVariant) {
-    throw new Error("variants에서 /public URL을 찾지 못했습니다.");
+    throw new Error("variants에서 /public URL을 못 찾았어요.");
   }
 
   return publicVariant;
@@ -181,7 +180,7 @@ export default function EditorClient() {
     if (isUploading) return;
 
     setIsUploading(true);
-    setStatus(`${source} 업로드를 시작합니다.`);
+    setStatus(`${source} 업로드를 시작할게요.`);
 
     try {
       const snippets: string[] = [];
@@ -196,10 +195,10 @@ export default function EditorClient() {
       }
 
       insertSnippetsAtCursor(snippets);
-      setStatus(`${source} 업로드가 완료되었습니다. 마크다운에 삽입했습니다.`);
+      setStatus(`${source} 업로드가 완료됐어요. 마크다운에 삽입했어요.`);
     } catch (error) {
       setStatus(
-        error instanceof Error ? error.message : "이미지 업로드 중 오류가 발생했습니다."
+        error instanceof Error ? error.message : "이미지 업로드 중 오류가 발생했어요."
       );
     } finally {
       setIsUploading(false);
@@ -227,7 +226,7 @@ export default function EditorClient() {
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(fullMarkdown);
-    setStatus("전체 마크다운을 클립보드에 복사했습니다.");
+    setStatus("전체 마크다운을 클립보드에 복사했어요.");
   };
 
   const handleDownload = () => {
@@ -242,7 +241,7 @@ export default function EditorClient() {
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(href);
-    setStatus("마크다운 파일을 다운로드했습니다.");
+    setStatus("마크다운 파일을 다운로드했어요.");
   };
 
   const handleSaveToWorkspace = async () => {
@@ -268,14 +267,14 @@ export default function EditorClient() {
       };
 
       if (!response.ok) {
-        throw new Error(json.error || "로컬 파일 저장에 실패했습니다.");
+        throw new Error(json.error || "로컬 파일 저장에 실패했어요.");
       }
       setStatus(
-        `${json.path || "app/column/_content"}에 저장했습니다. 목록 반영을 위해 /column 페이지를 새로고침하세요.`
+        `${json.path || "app/column/_content"}에 저장했어요. 목록 반영을 위해 /column 페이지를 새로고침하세요.`
       );
     } catch (error) {
       setStatus(
-        error instanceof Error ? error.message : "로컬 파일 저장 중 오류가 발생했습니다."
+        error instanceof Error ? error.message : "로컬 파일 저장 중 오류가 발생했어요."
       );
     } finally {
       setIsSaving(false);
@@ -291,9 +290,9 @@ export default function EditorClient() {
           </p>
           <h1 className="mt-2 text-3xl font-black text-slate-900">칼럼 에디터</h1>
           <p className="mt-3 text-slate-700">
-            마크다운 작성/미리보기와 이미지 붙여넣기 업로드를 지원합니다.
+            마크다운 작성/미리보기와 이미지 붙여넣기 업로드를 지원해요.
             이미지는 Cloudflare Direct Upload로 전송한 뒤 `/public` URL을 본문에
-            자동 삽입합니다.
+            자동으로 삽입해요.
           </p>
           <div className="mt-4 flex flex-wrap gap-2 text-sm">
             <Link href="/column" className="text-emerald-700 hover:underline">
@@ -301,7 +300,7 @@ export default function EditorClient() {
             </Link>
             <span className="text-slate-300">|</span>
             <span className="text-slate-500">
-              기본은 dev 환경 전용이며, 운영에서는 별도 활성화가 필요합니다.
+              기본은 dev 환경 전용이고, 운영에서는 별도 활성화가 필요해요.
             </span>
           </div>
         </header>

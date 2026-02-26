@@ -44,6 +44,7 @@ import { resolveBlockedNhisFetchTargets } from "@/lib/server/hyphen/target-polic
 import { requireNhisSession } from "@/lib/server/route-auth";
 export const runtime = "nodejs";
 const NHIS_LOGIN_SESSION_EXPIRED_ERR_CODE = "LOGIN-999";
+const NHIS_INIT_REQUIRED_ERR_CODE = "C0012-001";
 const targetEnum = z.enum(NHIS_FETCH_TARGETS);
 const fetchSchema = z
   .object({
@@ -141,7 +142,13 @@ export async function POST(req: Request) {
   const requestDefaults = buildNhisRequestDefaults();
   if (!link?.linked) {
     return NextResponse.json(
-      { ok: false, error: "Link is not completed. Run init/sign first." },
+      {
+        ok: false,
+        code: "NHIS_INIT_REQUIRED",
+        reason: "nhis_init_required",
+        nextAction: "init",
+        error: "연동이 완료되지 않았습니다. 카카오 인증 요청(init)부터 진행해 주세요.",
+      },
       { status: 409, headers: NO_STORE_HEADERS }
     );
   }
@@ -215,6 +222,9 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         ok: false,
+        code: "NHIS_AUTH_EXPIRED",
+        reason: "nhis_auth_expired",
+        nextAction: "init",
         error:
           "인증 세션이 만료되어 조회를 진행할 수 없습니다. 인증을 다시 진행해 주세요.",
         errCd: NHIS_LOGIN_SESSION_EXPIRED_ERR_CODE,
@@ -355,6 +365,25 @@ export async function POST(req: Request) {
     }
   });
   if (!freshResult.payload.ok) {
+    const failedCodes = (freshResult.payload.failed ?? [])
+      .map((item) => (item.errCd || "").trim().toUpperCase())
+      .filter((code) => code.length > 0);
+    if (
+      failedCodes.includes(NHIS_LOGIN_SESSION_EXPIRED_ERR_CODE) ||
+      failedCodes.includes(NHIS_INIT_REQUIRED_ERR_CODE)
+    ) {
+      return NextResponse.json(
+        {
+          ...freshResult.payload,
+          code: "NHIS_AUTH_EXPIRED",
+          reason: "nhis_auth_expired",
+          nextAction: "init",
+          error:
+            "인증 세션이 만료되었거나 인증 요청이 유효하지 않습니다. 카카오 인증 요청(init)부터 다시 진행해 주세요.",
+        },
+        { status: 409, headers: NO_STORE_HEADERS }
+      );
+    }
     return NextResponse.json(freshResult.payload, {
       status: freshResult.statusCode,
       headers: NO_STORE_HEADERS,

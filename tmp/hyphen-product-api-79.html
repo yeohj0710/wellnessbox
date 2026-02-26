@@ -1,0 +1,893 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+	<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="하이픈코퍼레이션, HYPHEN">
+<meta name="keywords" content="KSNET, HYPHEN, 펌뱅킹, 뱅킹플러스, 송금, 출금, API마켓, API마켓, 간편결제, 선불, 페이, 신탁, 바로계좌결제, 오픈뱅킹">
+<meta name="format-detection" content="telephone=no">
+<meta name="format-detection" content="address=no">
+<meta name="facebook-domain-verification" content="i9rntsezndnv2b21bvklphxxljpan0" />
+<meta name="author" content="HYPHEN">
+
+<title>하이픈(HYPHEN)- 펌뱅킹, API마켓, 간편결제 전문 기업</title>
+		<meta name="description" content="펌뱅킹, API마켓, 간편결제 전문기업">
+		<meta property="og:type" content="website">
+		<meta property="og:title" content="HYPHEN">
+		<meta property="og:url" content="https://hyphen.im">
+		<meta property="og:description" content="펌뱅킹, API마켓, 간편결제 전문기업">
+		<meta property="og:image" content="https://hyphen.im/assets/images/common/og_image.jpeg">
+	<meta property="og:site_name" content="HYPHEN">
+<meta property="og:locale" content="ko_KR">
+<meta property="article:author" content="HYPHEN">
+
+<link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico">
+
+<script nonce="Y6lf9PvBHmMI5gf2oY8Rmg==">
+	if (/MSIE \d|Trident.*rv:/.test(navigator.userAgent)) {
+		window.location = 'microsoft-edge:' + window.location;
+		setTimeout(function () {
+			window.location = 'https://go.microsoft.com/fwlink/?linkid=2135547';
+		}, 13);
+	}
+</script>
+
+<!-- Google tag (gtag.js)  구글 (Ga4) _ Analytics -->
+<script nonce="Y6lf9PvBHmMI5gf2oY8Rmg==" async src="https://www.googletagmanager.com/gtag/js?id=G-KYZTWHGJC2"></script>
+<script nonce="Y6lf9PvBHmMI5gf2oY8Rmg==">
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+	gtag('config', 'G-KYZTWHGJC2',{
+		cookie_flags: 'max-age=7200;secure;HttpOnly;samesite=none'
+	});
+</script>
+
+<!-- Google Tag Manager -->
+<script nonce="Y6lf9PvBHmMI5gf2oY8Rmg==">(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+			new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+		j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+		'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-KJ67T5Q');</script>
+<!-- End Google Tag Manager -->
+
+<link rel="stylesheet" href="/assets/css/vendors.css">
+<link rel="stylesheet" href="/assets/css/app.css">
+
+<script nonce="Y6lf9PvBHmMI5gf2oY8Rmg==" src="/assets/js/vendors.js"></script>
+<script nonce="Y6lf9PvBHmMI5gf2oY8Rmg==" src="/assets/js/app.js"></script>
+
+<!-- Meta Pixel Code -->
+<script nonce="Y6lf9PvBHmMI5gf2oY8Rmg==">
+	!function (f, b, e, v, n, t, s) {
+		if (f.fbq) return;
+
+		n = f.fbq = function () {
+			n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments)
+		};
+
+		if (!f._fbq) f._fbq = n;
+		n.push = n;
+		n.loaded = !0;
+		n.version = '2.0';
+		n.queue = [];
+		t = b.createElement(e);
+		t.async = !0;
+		t.src = v;
+		s = b.getElementsByTagName(e)[0];
+		s.parentNode.insertBefore(t, s)
+	}(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+
+	fbq('init', '665492888061446');
+	fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=665492888061446&ev=PageView&noscript=1"></noscript>
+<!-- End Meta Pixel Code -->
+
+<!-- ADN Tracker[공통] start -->
+<script nonce="Y6lf9PvBHmMI5gf2oY8Rmg==">
+	var adn_param = adn_param || [];
+	adn_param.push([{
+		ui: '105443',
+		ut: 'Home'
+	}]);
+</script>
+<script nonce="Y6lf9PvBHmMI5gf2oY8Rmg==" src="//fin.rainbownine.net/js/adn_tags_2.1.3.js" defer></script>
+<!-- ADN Tracker[공통] end -->
+<style>
+      #hyphen-product-product-api {
+          min-width: 1425px;
+      }
+
+      .site-header {
+          padding: 0 50px;
+      }
+
+      .site-header__inner {
+          width: auto;
+      }
+
+      .product-product-api__header > div {
+          width: auto;
+          padding: 0 50px;
+      }
+
+      .product-product-api__header--collapse + .product-product-api__content--specification {
+          height: calc(100vh - 260px);
+      }
+	</style>
+	</head>
+<body id="hyphen-product-product-api">
+<!-- Google Tag Manager (noscript) -->
+<noscript>
+    <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KJ67T5Q" height="0" width="0" style="display:none;visibility:hidden"></iframe>
+</noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+<div class="skipnav"><a href="#content">본문 영역으로 바로가기</a></div>
+
+<header class="site-header" >
+    <div class="site-header__inner">
+        <div class="site-header__brand">
+            <h1 class="site-header__logo">
+                <a class="logo logo--hyphen" href="/">
+                    <span class="logo__name">HYPHEN</span>
+                </a>
+            </h1>
+</div>
+
+        <div id="header" style="overflow: hidden; height: 100px;" class="">
+            <nav id="gnb">
+                <ul>
+                    <li class="gnb__item">
+                        <a class="dp1" href="javascript:void(0)">
+                            <span class="">펌뱅킹</span>
+                        </a>
+                        <div class="dp2" style="opacity: 0; top: -20px;">
+                            <ul>
+                                <li>
+                                    <a href="/about/service-firm-banking">
+                                        <span class="">펌뱅킹 소개</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li class="gnb__item">
+                        <a class="dp1" href="javascript:void(0)">
+                            <span class="">API마켓</span>
+                        </a>
+                        <div class="dp2" style="opacity: 0; top: -20px;">
+                            <ul>
+                                <li>
+                                    <a href="/about/service-store">
+                                        <span class="">API마켓 소개</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/product">
+                                        <span class="">APIs</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/use-case/guide">
+                                        <span class="">활용가이드</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="https://partners.hyphen.im" target="_blank">
+                                        <span>입점안내</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <li class="gnb__item">
+                        <a class="dp1" href="javascript:void(0)">
+                            <span class="">간편결제</span>
+                        </a>
+                        <div class="dp2" style="opacity: 0; top: -20px;">
+                            <ul>
+                                <li>
+                                    <a href="/about/service-pay">
+                                        <span class="">선불</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <li class="gnb__item">
+                        <a class="dp1" href="javascript:void(0)">
+                            <span class="">고객센터</span>
+                        </a>
+                        <div class="dp2" style="opacity: 0; top: -20px;">
+                            <ul>
+                                <li>
+                                    <a href="/customer/notice">
+                                        <span class="">공지사항</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/customer/inquire">
+                                        <span class="">문의하기</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/customer/faq">
+                                        <span class="">FAQ</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/benefit">
+                                        <span class="">혜택</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/about/recruit">
+                                        <span class="">인재채용</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    </ul>
+            </nav>
+        </div>
+
+
+        <div class="site-header__menu-service">
+            <div class="site-header__service site-service">
+                <ul class="site-service__menu">
+                            <li class="site-service__menu-item">
+                                <a class="site-service__menu-button site-service__menu-button--login" href="/login">로그인</a>
+                            </li>
+                            <li class="site-service__menu-item">
+                                <a class="site-service__menu-button site-service__menu-button--sign-up" href="/user/sign-up">가입하기</a>
+                            </li>
+                        </ul>
+                    </div>
+        </div>
+    </div>
+</header>
+
+<script>
+    const dp1Elements = document.querySelectorAll('#gnb > ul > li > .dp1');
+    const gnbItem = document.querySelectorAll('#gnb > ul > li.gnb__item');
+    const header = document.getElementById('header');
+    const dp2Elements = document.querySelectorAll('.dp2');
+
+    gnbItem.forEach(function(dp1) {
+        dp1.addEventListener('mouseenter', function () {
+
+            header.style.overflow = 'inherit';
+            header.classList.add('open');
+            // header.style.transition = `height 500ms ease-out`;
+            header.style.height = '370px';
+            dp1.classList.add("list--active");
+
+            dp2Elements.forEach(function(dp2) {
+                dp2.style.top = '0';
+                dp2.style.opacity = '1';
+            });
+        });
+
+        dp1.addEventListener('mouseleave', function () {
+            dp1.classList.remove("list--active");
+        });
+    });
+
+    document.getElementById('gnb').addEventListener('mouseleave', function () {
+        header.style.overflow = 'hidden';
+        // header.style.transition = `height 500ms ease-out`;
+        header.style.height = '100px';
+
+        setTimeout(function () {
+            header.classList.remove('open');
+        }, 500);
+
+        dp2Elements.forEach(function(dp2) {
+            dp2.style.top = '0';
+            dp2.style.opacity = '0';
+        });
+    });
+
+</script>
+<div id="content">
+	<section class="page-content product-product-api">
+		<header class="product-product-api__header">
+			<h2><span data-breadcrumb-current="개발가이드">개발가이드</span></h2>
+			<div>
+				<div>
+					<div>
+						<h3 data-aos="fade" data-aos-delay="150">
+							<a class="product-link" href="/product/view?seq=79">국민건강보험 진료정보</a>
+						</h3>
+						</div>
+					<p class="toggle-button">
+							<button type="button">이용가이드 접기</button>
+						</p>
+					</div>
+				<div>
+					<a class="button" href="/login">신청하기</a>
+								</div>
+			</div>
+			<aside class="bottom-list__wrapper">
+				<ul class="bottom-list">
+					<li class="list_item">
+							<a href="#product-api-specification">
+								<h4>API 명세서</h4>
+								<p>API 사용에 필요한 상세 내용<br>확인과 호출 테스트를<br>진행할 수 있습니다.</p>
+							</a>
+						</li>
+					<li class="list_item">
+							<a href="#product-api-how-to-use">
+								<h4>API 사용방법</h4>
+								<p>상품 신청 부터 API호출까지<br>프로세스를 설명합니다.</p>
+							</a>
+						</li>
+					<li class="list_item">
+							<a href="#product-api-oauth">
+								<h4>OAuth2.0</h4>
+								<p>하이픈은 OAuth2.0 표준<br>프로토콜을 지원합니다.</p>
+							</a>
+						</li>
+					<li class="list_item">
+							<a href="#product-api-code">
+								<h4>코드 리스트</h4>
+								<p>은행, 카드사 등 API에 필요한<br>코드를 모두 확인할 수 있습니다.</p>
+							</a>
+						</li>
+					</ul>
+			</aside>
+		</header>
+
+<div class="product-product-api__content product-product-api__content--swagger" id="product-api-specification">
+				<script id="api-reference" data-url="https://api.hyphen.im/v3/api-docs/국민건강보험 진료정보" type="application/json"></script>
+				<script>
+            var configuration = {
+                hideModels: true,
+                hideDownloadButton: true,
+                defaultHttpClient: {
+                    targetKey: 'js',
+                    clientKey: "fetch"
+                },
+                hideSearch: true,
+                hideClientButton: true,
+            }
+
+            document.getElementById('api-reference').dataset.configuration = JSON.stringify(configuration);
+				</script>
+				<script src="/assets/js/scalar.js"></script>
+			</div>
+		<section class="product-product-api__content product-product-api__content--how-to-use" id="product-api-how-to-use">
+				<div class="flex justify-between how-to-use__wrapper items-center">
+					<div class="flex flex-col">
+						<h3>명세확인가이드</h3>
+						<p style="font-size: 18px;">API명세를 확인하는 방법이 궁금하시다면 가이드를 확인해주세요.</p>
+					</div>
+					<a class="button" target="_blank" href="https://www.hyphen.im/customer/notice-view?seq=30&page=1&search_category=">API 명세 확인 가이드</a>
+				</div>
+				<div class="how-to-use__classification-plan classification-plan">
+					<h3>요금제 구분</h3>
+					<div>
+						<div class="classification-plan__trslim">
+							<h4>TR 슬림<span class="badge badge--tr-slim">TR 슬림</span></h4>
+							<p>하이픈 API마켓의 선불 수단인 ‘비즈머니’를 충전해서 사용하는 방식입니다.</p>
+							<p>계약서작성없이 상품신청 즉시 이용이 가능한 요금제로, 상품신청 또는 API호출 전에 비즈머니를 충전해놓으면 응답 시에 이용요금이 즉시 차감됩니다.</p>
+						</div>
+						<div class="classification-plan__trsignature">
+							<h4>TR 시그니처<span class="badge badge--tr-signature">TR 시그니처</span></h4>
+							<p>하이픈 API마켓 상품 중 원본 계약서가 필요하거나 인증서정보가 <br> 필요한 상품의 경우 해당 요금제로 이용이 가능합니다.</p>
+							<p>상품신청 시 배정된 전문컨설턴트를 통해 상품계약서 작성이후 API<br> 사용이 가능합니다.</p>
+							<p>해당요금은 정액사용량을 제공하며, 약정 사용량 초과 시 건 당과금이<br> 발생하여 후불 요금명세서로 청구됩니다.</p>
+						</div>
+					</div>
+				</div>
+				<div class="how-to-use__example-plan example-plan">
+					<div>
+						<div class="example-plan__title">
+							<h3>신청가능 요금제 예시</h3>
+							<div class="badge-group">
+								<div class="badge badge--tr-slim">TR 슬림</div>
+								<div class="badge badge--tr-signature">TR 시그니처</div>
+							</div>
+							<p>
+								상품정보에 표시된 라벨의 요금제로<br>
+								신청이 가능합니다.
+							</p>
+						</div>
+						<div class="example-plan__product-list"><span></span>
+							<p>상품 리스트</p>
+						</div>
+						<div class="example-plan__product-detail"><span></span>
+							<p>상품 상세페이지</p>
+						</div>
+					</div>
+				</div>
+				<div class="how-to-use__plan-use plan-use">
+					<div>
+						<h3>요금제별 사용방법</h3>
+						<div>
+							<h4>TR슬림</h4>
+							<ol class="plan-use__list tr-slim">
+								<li class="plan-use__item"><span class="plan-use__number-box"><span class="plan-use__number">1</span></span>
+									<p class="plan-use__summary">요금제 라벨 확인</p>
+								</li>
+								<li class="plan-use__item"><span class="plan-use__number-box"><span class="plan-use__number">2</span></span>
+									<p class="plan-use__summary">상품신청 버튼 클릭</p>
+								</li>
+								<li class="plan-use__item"><span class="plan-use__number-box"><span class="plan-use__number">3</span></span>
+									<p class="plan-use__summary">TR슬림 요금제로 신청</p>
+								</li>
+								<li class="plan-use__item plan-use__item--large"><span class="plan-use__play-box"><span
+										class="plan-use__play-icon"></span></span>
+									<p class="plan-use__summary">상품권한 즉시 부여</p>
+								</li>
+								<li class="plan-use__item"><span class="plan-use__number-box"><span class="plan-use__number">4</span></span>
+									<p class="plan-use__summary">비즈머니로 상품사용</p>
+								</li>
+							</ol>
+						</div>
+						<div>
+							<h4>TR시그니처</h4>
+							<ol class="plan-use__list tr-signature">
+								<li class="plan-use__item"><span class="plan-use__number-box"><span class="plan-use__number">1</span></span>
+									<p class="plan-use__summary">요금제 라벨 확인</p>
+								</li>
+								<li class="plan-use__item"><span class="plan-use__number-box"><span class="plan-use__number">2</span></span>
+									<p class="plan-use__summary">상품신청 버튼 클릭</p>
+								</li>
+								<li class="plan-use__item"><span class="plan-use__number-box"><span class="plan-use__number">3</span></span>
+									<p class="plan-use__summary">TR슬림 요금제로 신청<span class="plan-use__summary--detail">(승인 전, 비즈머니로 상품사용)</span></p>
+								</li>
+								<li class="plan-use__item"><span class="plan-use__number-box"><span class="plan-use__number">4</span></span>
+									<p class="plan-use__summary">전문컨설턴트를 통해 계약</p><span class="plan-use__summary--detail plan-use__summary--detail--red">* 상품권한 부여</span>
+								</li>
+								<li class="plan-use__item"><span class="plan-use__number-box"><span class="plan-use__number">5</span></span>
+									<p class="plan-use__summary">계약담당자에게 받은<a class="plan-use__summary--install" href="https://www.infotech.co.kr/hyphen/NxWeb_Guide_HYPHEN.zip" target="_blank">인증서 정보 추출 파일 설치</a><span
+											class="plan-use__summary--detail plan-use__summary--detail--red">* 인증서정보가 필요한 상품만</span></p>
+								</li>
+								<li class="plan-use__item"><span class="plan-use__number-box"><span class="plan-use__number">6</span></span>
+									<p class="plan-use__summary">후불청구로 상품사용</p>
+								</li>
+							</ol>
+						</div>
+					</div>
+				</div>
+			</section>
+		<section class="product-product-api__content product-product-api__content--oauth" id="product-api-oauth">
+				<div class="oauth__oauth-explanation oauth-explanation">
+					<h3>OAuth 2.0</h3>
+					<p>HYPHEN은 공개 API의 인증을 위해서 OAuth 2.0 프로토콜 사용을 권장하고 있습니다.</p>
+					<ul>
+						<li>User_ID(회원계정)와 발급받은 HKey를 사용하여 HYPHEN 서버로 요청하시면, Access_Token을 발급받으실 수 있습니다.</li>
+						<li>발급받은 Access_Token은 HYPHEN API 호출 시, HTTP 헤더에 포함되어야 합니다.</li>
+						<li>만약 제 3자가 HYPHEN 기업고객의 User_ID와 보안키를 획득하면 보안문제가 발생할 수 있습니다. 따라서 Access_Token은 반드시 서버에서 이뤄져야합니다.</li>
+					</ul>
+					<div>
+						<div>
+							<h4>유효기간</h4>
+							<ul>
+								<li>Access_Token은 일주일(7일)간 유효하므로 글로벌변수에 저장하여 재사용하는 것을 권장합니다.</li>
+								<li>Access_Token이 만료되면, User ID, Hkey, 정보를 요청하여 재발급이 필요합니다.</li>
+								<li>API 호출시마다, Access_Token을 새로발급받는 것은 너무 많은 리소스가 사용될 우려가 있습니다.</li>
+							</ul>
+						</div>
+						<div>
+							<h4>OAuth 2.0의 표준 권한 승인 방법</h4>
+							<ul>
+								<li>(a) 서버(Server)와 클라이언트(Client)사이에 인증을 완료하면 권한 부여의 기능을 수행하는 엑세스 토큰*(Access_Token)을 증표로 전달</li>
+								<li>(b) 클라이언트(Clinet)는 이 엑세스 토큰으로 보호된 자원(Protected Resource)에 접근하거나 서비스를 요청할 수 있음</li>
+								<li>(c) 자원 서버(Resource Server)는 엑세스 토큰(Access_Token)을 기반으로 권한을 확인 후, 결과를 클라이언트에게 다시 보냄</li>
+							</ul>
+							<dl>
+								<div>
+									<dt>* 엑세스 토큰(Access Token)</dt>
+									<dd>
+										보호된 자원에 접근하거나 서비스를 요청할 때, 클라이언트의 권한을 대표하여 확인용으로 사용함.<br>
+										엑세스 토큰 하나로 계정 인증에 필요한 모든 것들을 확인할 수 있음
+									</dd>
+								</div>
+							</dl>
+						</div>
+					</div>
+				</div>
+				<div class="oauth__endpoint endpoint">
+					<h3>Endpoint</h3>
+					<p><span>https://api.hyphen.im/oauth/token</span> (post)</p>
+					<div>
+						<h4>Request Header 예시</h4>
+						<p>
+							{<br>
+							&nbsp;&nbsp;"Content-Type": "application/json"<br>
+							}
+						</p>
+						<h4>Request Body 예시</h4>
+						<p>
+							{<br>
+							&nbsp;&nbsp;"user_id": "hyphentest"<br>
+							&nbsp;&nbsp;"hkey": "발급받은 Hkey"<br>
+							}
+						</p>
+						<h4>Response Body 예시 (application/json)</h4>
+						<p>
+							{<br>
+							&nbsp;&nbsp;"access_token": "075a2d84-dab4-983e-a103-efb5d782b874",<br>
+							&nbsp;&nbsp;"token_type": "bearer",<br>
+							&nbsp;&nbsp;"expires_in": 603638,<br>
+							&nbsp;&nbsp;"scope": "read"<br>
+							}
+						</p>
+					</div>
+					<div>
+						<p>
+							Oauth 토큰을 발급받았다면 헤더에 user-id와 Hkey 세팅을 할 필요없이 토큰만으로 API 통신이 가능합니다.<br>
+							<span>Ex) Bearer + 발급받은 토큰</span>
+						</p>
+						<h4>기존(User ID + Hkey 인증)</h4>
+						<h5>Header</h5>
+						<p>
+							{<br>
+							&nbsp;&nbsp;"user-id": "hyphentest",<br>
+							&nbsp;&nbsp;"hkey": "발급받은 Hkey"<br>
+							}
+						</p>
+						<h5>Body</h5>
+						<p>
+							{<br>
+							&nbsp;&nbsp;"data1": "data",<br>
+							&nbsp;&nbsp;"data2": "data"……<br>
+							}
+						</p>
+						<h4>토큰 발급 후 (Oauth 인증)</h4>
+						<h5>Header</h5>
+						<p>
+							{<br>
+							&nbsp;&nbsp;"Authorization": "Bearer 84bde070-f5d8-4cda-b2c5-a0c……"<br>
+							}
+						</p>
+						<h5>Body</h5>
+						<p>
+							{<br>
+							&nbsp;&nbsp;"data1": "data",<br>
+							&nbsp;&nbsp;"data2": "data"……<br>
+							}
+
+						</p>
+					</div>
+				</div>
+			</section>
+		<section class="product-product-api__content product-product-api__content--code" id="product-api-code">
+				<div class="code__summary summary">
+					<h3>개요</h3>
+					<p>API를 사용하면 상품에 따라 엔드 유저의 데이터를 사용할 수 있습니다.</p>
+					<p>API는 2가지 형태로 제공됩니다. 개인 사용자 API와 기업 사용자(개인 사업자, 법인 사업자) API입니다.</p>
+					<p>같은 API임에도 각 기관에서 요구하는 데이터와 제공하는 데이터가 다릅니다. 이 내용을 API문서에 정리했습니다.</p>
+				</div>
+				<div class="code__collection collection">
+					<h3>하이픈 코드집</h3>
+					<p>은행, 시군구, 세목 등 요청에 필요한 기관코드를 모두 확인할 수 있으며, 상품별로 사용가능한 코드도 확인할 수 있습니다.</p>
+					<p>
+						<a class="button" href="https://kr.object.ncloudstorage.com/synctree/datamarket/static/product/codezip/%5BHYPHEN%5D%20%EC%97%85%EB%AC%B4%EB%B3%84%20%EC%9D%91%EB%8B%B5%EC%BD%94%EB%93%9C%EB%AA%A9%EB%A1%9D_v0.5_20230831.xlsx" download="하이픈코드집_전체코드.xlsx">전체 코드 보기</a>
+						<a class="button" href="https://kr.object.ncloudstorage.com/synctree/datamarket/static/product/codezip/%5BHYPHEN%5D%20%EC%97%85%EB%AC%B4%EB%B3%84%20%EC%A0%9C%EA%B3%B5%20%EC%BD%94%EB%93%9C%EC%A7%91_v1.1_250203.xlsx" download="하이픈코드집_상품별기관코드">상품별 기관 코드 보기</a>
+						<a class="button" href="https://kr.object.ncloudstorage.com/synctree/datamarket/static/product/codezip/%5BHYPHEN%5D%20%EC%8B%A4%EC%8B%9C%EA%B0%84%20%ED%8E%8C%EB%B1%85%ED%82%B9%20%EC%9D%80%ED%96%89%EC%9D%91%EB%8B%B5%EC%BD%94%EB%93%9C.xlsx" download="하이픈코드집_펌뱅킹코드">펌뱅킹 코드 보기</a>
+						<a class="button" href="https://kr.object.ncloudstorage.com/synctree/datamarket/static/product/codezip/%EC%A0%9C%ED%9C%B4%EC%82%AC%EB%B3%84%20%EC%9D%91%EB%8B%B5%EB%B6%80.xlsx" download="하이픈코드집_나이스디앤비코드">나이스디앤비 코드 보기</a>
+						
+					</p>
+				</div>
+				<div class="code__application-method application-method">
+					<h3>기관코드 및 호출 예시</h3>
+					<p>Body 입력 값에 기관코드를 입력하여 호출합니다.</p>
+					<div>
+						<table class="table" data-aos="fade-up">
+							<caption>기관코드 및 호출 예시</caption>
+							<colgroup>
+								<col width="130">
+								<col width="*">
+							</colgroup>
+							<thead>
+							<tr>
+								<th scope="col"><span>코드</span></th>
+								<th scope="col"><span>기관명</span></th>
+							</tr>
+							</thead>
+							<tbody>
+							<tr>
+								<td>01</td>
+								<td>한국은행</td>
+							</tr>
+							<tr>
+								<td>03</td>
+								<td>산업은행</td>
+							</tr>
+							<tr>
+								<td>04</td>
+								<td>기업은행</td>
+							</tr>
+							<tr>
+								<td>11</td>
+								<td>국민은행</td>
+							</tr>
+							<tr>
+								<td>12</td>
+								<td>수협은행</td>
+							</tr>
+							<tr>
+								<td>13</td>
+								<td>수출입은행</td>
+							</tr>
+							<tr>
+								<td>18</td>
+								<td>NH농협은행</td>
+							</tr>
+							<tr>
+								<td>19</td>
+								<td>지역 농.축협</td>
+							</tr>
+							<tr>
+								<td>21</td>
+								<td>우리은행</td>
+							</tr>
+							<tr>
+								<td>01</td>
+								<td>제일은행</td>
+							</tr>
+							</tbody>
+						</table>
+						<div class="product-product-api__code">
+							<h4>코드예시</h4>
+							<pre><code class="language-json">{
+    "bank_cd": "011",
+    "acct_no": "110000000000",
+    "acct_nm": “홍길동",
+    "id_no": "900101",
+    "amount": ""
+}</code></pre>
+						</div>
+					</div>
+				</div>
+			</section>
+		</section>
+
+	<div class="modal modal-site-notice">
+	<div class="modal__backdrop"></div>
+	<div class="modal__dialog">
+		<div class="modal__container">
+			<div class="swiper">
+				<div class="swiper-wrapper">
+					<div class="swiper-slide">
+						<div class="modal-site-notice__container modal-site-notice__container--product-20221101">
+							<input class="modal-site-notice__name" type="hidden" value="20221101">
+							<input class="modal-site-notice__start" type="hidden" value="2022-11-01">
+							<input class="modal-site-notice__end" type="hidden" value="2032-10-31">
+							<img src="/assets/images/product/notice/p_20221220.jpg" alt="">
+							<div class="modal-site-notice__content">
+								<h2>하이픈에서만 가능한 API 무료 테스트</h2>
+								<p>일 100건, 월 100건의<br>무료로 테스트를 제공합니다.</p>
+								<p>테스트베드에서 과금없이 API를 마음껏 테스트하여<br>원하는 서비스를 만들어보세요!</p>
+								<p>일부 상품은 별도의 제한이 있을 수 있습니다.</p>
+							</div>
+							<a class="modal-site-notice__link" href="/benefit/view?seq=10"><span>이벤트 자세히 보기</span></a>
+							<div class="modal-site-notice__content">
+								<p>테스트베드 사용법이 궁금하신가요?</p>
+							</div>
+							<a class="modal-site-notice__link" href="/customer/notice-view?seq=30&page=1&search_category=" target="_blank"><span>테스트베드 사용법 보기</span></a>
+						</div>
+					</div>
+				</div>
+				<div class="swiper-pagination"></div>
+			</div>
+			<input class="modal-site-notice__expires" type="hidden" value="1">
+			<div class="modal-site-notice__button-group">
+				<button class="modal-site-notice__button modal-site-notice__button--check" type="button">
+					<span>오늘 하루동안 보지 않기</span>
+				</button>
+				<button class="modal-site-notice__button modal-site-notice__button--close" type="button">
+					<span>닫기</span>
+				</button>
+			</div>
+		</div>
+	</div>
+</div></div>
+<div class="site-top">
+		<a class="site-top__btn site-top__move" href="#">
+        <span>TOP</span> 
+    </a>
+</div>
+<footer class="site-footer">
+	<div>
+<section class="footer__sec1">
+			<div class="footer__sec1__inner">
+				<div class="footer__sec1__item">
+					<p class="footer__sec1__title fs-14">전화 문의</p>
+					<ul class="flex gap-10">
+						<li class="fw-bold fs-16">1600-4173</li>
+						<li>
+							<ul class="fs-14">
+								<li>1번) 펌뱅킹(펌뱅킹, 가상계좌, 뱅킹플러스, 스쿨뱅킹)</li>
+								<li>2번) API마켓</li>
+								<li>3번) 간편결제(선불)</li>
+<li class="color-gray">상담 가능 시간 : 평일 08:30 ~ 17:30 <br/>(공휴일 및 주말 제외)</li>
+							</ul>
+						</li>
+					</ul>
+				</div>
+				<div class="footer__sec1__item">
+					<p class="footer__sec1__title fs-14">이메일 문의</p>
+					<ul class="flex flex-col fs-14">
+						<li>펌뱅킹 : fbs@hyphen.im</li>
+						<li>API마켓 : help@hyphen.im</li>
+						<li>간편결제 : pay@hyphen.im</li>
+					</ul>
+				</div>
+			</div>
+			<div style="display: flex; gap: 15px">
+				<div class="footer__sec1__icon flex items-center">
+					<img src="/assets/images/common/footer_webaward.png" alt="icon">
+					<p>
+						웹어워드 코리아 2022<br>
+						IT솔루션분야 대상
+					</p>
+				</div>
+				<div class="footer__sec1__icon flex items-center tooltip-container">
+					<img src="https://kr.object.ncloudstorage.com/synctree/datamarket/static/common/ISMS%20%282%29.png" alt="icon">
+					<p hover-tooltip="[인증범위] 데이터마켓, 선불결제(바로계좌결제), 펌뱅킹(뱅킹플러스, OK지로, PG) 서비스운영
+					[유효기간] 2025.02.19~2028.02.18" tooltip-position="bottom" >
+						ISMS
+						<br>
+						정보보호 관리체계 인증
+					</p>
+				</div>
+			</div>
+		</section>
+		<section class="footer__sec2">
+			<div class="footer__sec2__inner flex justify-between items-center">
+				<div class="footer__info">
+					<div class="footer__info__item1">
+						<a class="logo logo--hyphen-white" href="/"><span class="logo__name">HYPHEN</span></a>
+						<ul class="footer__info__terms">
+							<li>
+								<div class="footer__terms__box">
+									<button type="button" data-set="terms">이용약관</button>
+									<ul class="footer__terms__list" data-set="terms">
+										<li><a href="/terms/etc/financial" onclick="window.open(this.href, '_blank', 'width=800, height=800'); return false;" target="_blank" title="새 창 열림">하이픈코퍼레이션 전자금융거래 이용약관</a></li>
+										<li><a href='/terms/market/term' onclick="window.open(this.href, '_blank', 'width=800, height=800'); return false;" title="새 창 열림">API마켓 이용약관</a></li>
+										<li><a href="/terms/pay/term" onclick="window.open(this.href, '_blank', 'width=800, height=800'); return false;" target="_blank" title="새 창 열림">하이픈페이 이용약관</a></li>
+										</ul>
+								</div>
+							</li>
+							<li>
+								<div class="footer__terms__box">
+									<button type="button" data-set="privacy">개인정보처리방침</button>
+									<ul class="footer__terms__list" data-set="privacy">
+										<li><a href="/terms/market/privacy" onclick="window.open(this.href, '_blank', 'width=800, height=800'); return false;" title="새 창 열림">API마켓 개인정보처리방침</a></li>
+										<li><a href="/terms/pay/privacy" onclick="window.open(this.href, '_blank', 'width=800, height=800'); return false;" target="_blank" title="새 창 열림">하이픈 간편결제 개인정보처리방침</a></li>
+										<li><a href="/terms/firm/privacy" onclick="window.open(this.href, '_blank', 'width=800, height=800'); return false;" target="_blank" title="새 창 열림">뱅킹플러스 개인정보처리방침</a></li>
+										<li><a href="/terms/okgiro/privacy" onclick="window.open(this.href, '_blank', 'width=800, height=800'); return false;" target="_blank" title="새 창 열림">OK지로 개인정보처리방침</a></li>
+									</ul>
+								</div>
+							<li>
+								<div class="footer__terms__box">
+									<button type="button" data-set="email">이메일 무단 수집 거부</button>
+									<ul class="footer__terms__list" data-set="email">
+										<li><a href="/terms/etc/email" onclick="window.open(this.href, '_blank', 'width=800, height=400'); return false;" title="새 창 열림">이메일 무단 수집 거부</a></li>
+									</ul>
+								</div>
+							</li>
+						</ul>
+					</div>
+					<div>
+						<p>
+							(주)하이픈코퍼레이션 ㅣ 사업자 등록번호 498-81-02543 ㅣ대표자명 김대원 ㅣ 서울특별시 서초구 강남대로 351, 12층(서초동) ㅣ 통신판매업 신고 : 제 2022-서울서초-0211호<br>
+							COPYRIGHT © Hyphen, co. ALL RIGHTS RESERVED
+						</p>
+					</div>
+				</div>
+				<div class="footer__familysite">
+					<div class="footer__familysite__inner">
+						<button type="button">패밀리 사이트</button>
+						<ul class="footer__familysite__list">
+							<li><a href="https://www.payletter.com/ko/" target="_blank" title="새 창 열림">페이레터</a></li>
+							<li><a href="https://www.ksnet.co.kr/" target="_blank" title="새 창 열림">케이에스넷</a></li>
+							<li><a href="https://www.3rdeyesys.com/" target="_blank" title="새 창 열림">써드아이시스템</a></li>
+							<li><a href="https://www.infotech.co.kr/home/main" target="_blank" title="새 창 열림">인포텍코퍼레이션</a></li>
+						</ul>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+</footer>
+
+<script type="text/javascript" src="//wcs.naver.net/wcslog.js"> </script>
+
+<script nonce="Y6lf9PvBHmMI5gf2oY8Rmg=="type="text/javascript">
+
+	if (!wcs_add) var wcs_add={};
+
+	wcs_add["wa"] = "s_37a1e628149e";
+
+	if (!_nasa) var _nasa={};
+
+	if(window.wcs){
+
+		wcs.inflow("hyphen.im");
+
+		
+			wcs_do(_nasa);
+		
+
+	}
+
+	document.addEventListener("DOMContentLoaded", function() {
+		const familySiteBtn = document.querySelector(".footer__familysite button");
+		const familySiteList = document.querySelector(".footer__familysite__list");
+
+		// familySiteList 토글 함수
+    function toggleFamilySiteList(show) {
+        familySiteBtn.classList.toggle("open", show);
+        familySiteList.style.display = show ? "block" : "none";
+    }
+
+    // familySiteBtn 클릭 이벤트
+    familySiteBtn.addEventListener("click", function(e) {
+        e.stopPropagation();
+        toggleFamilySiteList(!familySiteBtn.classList.contains("open"));
+    });
+
+    // 문서 전체에 클릭 이벤트 추가
+    document.addEventListener("click", function(e) {
+        if (!familySiteBtn.contains(e.target)) {
+            toggleFamilySiteList(false);
+        }
+    });
+
+		const buttons = document.querySelectorAll('button[data-set]');
+		const lists = document.querySelectorAll('ul[data-set]');
+
+		function closeAllLists() {
+			buttons.forEach(btn => {
+				btn.classList.remove('open');
+			});
+			lists.forEach(list => {
+				list.style.display = 'none';
+			});
+		}
+
+		function toggleTermList(target, targetList, show) {
+			target.classList.toggle("open", show);
+			targetList.style.display = show ? "block" : "none";
+		}
+
+		buttons.forEach(button => {
+				button.addEventListener('click', function(e) {
+					e.stopPropagation();
+					const set = button.getAttribute('data-set');
+					const targetList = document.querySelector(`ul[data-set='${set}']`);
+					const isListShow = button.classList.contains('open')
+
+					closeAllLists();
+					toggleTermList(button, targetList, !isListShow);
+				});
+		});
+
+		// 문서 전체에 클릭 이벤트 추가
+		document.addEventListener('click', function(e) {
+				if (!e.target.closest('button[data-set]') && !e.target.closest('ul[data-set]')) {
+						closeAllLists();
+				}
+		});
+	});
+
+</script>
+
+
+</body>
+</html>
+

@@ -53,7 +53,9 @@ export type SurveyTemplateSchema = {
 
 export type ReportAudit = {
   selectedStage?: string | null;
+  selectedStylePreset?: string | null;
   validation?: Array<{
+    stylePreset?: string | null;
     stage: string;
     ok: boolean;
     issues?: LayoutValidationIssue[];

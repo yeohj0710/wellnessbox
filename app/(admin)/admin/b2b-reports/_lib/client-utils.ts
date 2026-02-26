@@ -84,8 +84,18 @@ export function toMultiValues(raw: unknown) {
 
 export function extractIssuesFromAudit(audit: ReportAudit | null | undefined) {
   const entries = audit?.validation ?? [];
-  const selected = entries.find((entry) => entry.stage === audit?.selectedStage);
+  const selectedStage = audit?.selectedStage;
+  const selectedStylePreset = audit?.selectedStylePreset;
+  const selected = [...entries].reverse().find((entry) => {
+    if (!selectedStage || entry.stage !== selectedStage) return false;
+    if (!selectedStylePreset) return true;
+    return entry.stylePreset === selectedStylePreset;
+  });
   if (selected?.issues?.length) return selected.issues;
+  const selectedStageOnly = [...entries]
+    .reverse()
+    .find((entry) => selectedStage && entry.stage === selectedStage && entry.issues?.length);
+  if (selectedStageOnly?.issues?.length) return selectedStageOnly.issues;
   const latest = [...entries].reverse().find((entry) => entry.issues?.length);
   return latest?.issues ?? [];
 }

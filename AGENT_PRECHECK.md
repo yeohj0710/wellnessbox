@@ -19,6 +19,8 @@ npm run qa:cde:regression
 npm run qa:cde:regression:local
 # Optional (B2B score-engine safety): missing/fallback/risk derivation checks
 npm run qa:b2b:score-engine
+# Optional (B2B export smoke): validation + PPTX/PDF status
+npm run qa:b2b:export-smoke
 ```
 
 Or run one command:
@@ -231,8 +233,11 @@ When touching these files, prefer block-level extraction over in-place growth:
 - 점수 산출 분리 경계:
   - `lib/b2b/report-score-engine.ts` = 점수 산출 오케스트레이션(우선순위/결측 처리/사유(detail) 구성)
   - `lib/b2b/report-score-profile.ts` = 가중치/상태별 점수/위험도 밴드 정책
-  - `lib/b2b/report-payload.ts` = 원천 데이터 수집 후 엔진 호출 + payload 주입
+  - `lib/b2b/report-payload.ts` = DB 조회 오케스트레이션 + payload 조립
+  - `lib/b2b/report-payload-analysis.ts` = analysis payload 파싱/정규화(요약/설문/검진/추이/AI)
+  - `lib/b2b/report-payload-types.ts` = 최종 payload 계약 타입
 - 점수 정책 교체는 프로파일 파일부터 수정하고, 엔진은 가능한 한 조합만 담당하게 유지.
+- 상세 가이드: `docs/b2b_report_payload_map.md`
 
 ## 18) C~E QA Selector Map
 
@@ -262,6 +267,8 @@ When touching these files, prefer block-level extraction over in-place growth:
 ## 20) B2B Report Summary Map
 
 - `components/b2b/ReportSummaryCards.tsx`는 표현/뷰모델 조합 중심으로 유지.
+- 파생 데이터 계산/정규화는 `components/b2b/report-summary/view-model.ts`에서 처리.
+- 공용 표시 헬퍼는 `components/b2b/report-summary/helpers.ts`에서 유지.
 - payload 계약 변경은 `lib/b2b/report-summary-payload.ts`부터 수정 후 컴파일 에러를 따라 반영.
 - score 정책 변경은 `lib/b2b/report-score-profile.ts`, `lib/b2b/report-score-engine.ts`에서 처리.
 - 상세 가이드: `docs/b2b_report_summary_map.md`

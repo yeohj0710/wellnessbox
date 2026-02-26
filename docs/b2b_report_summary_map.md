@@ -7,6 +7,8 @@
 ## Boundaries
 - Summary UI renderer:
   - `components/b2b/ReportSummaryCards.tsx`
+- Summary view-model builder:
+  - `components/b2b/report-summary/view-model.ts`
 - Summary helper functions (formatting/score view helpers):
   - `components/b2b/report-summary/helpers.ts`
 - Shared payload contract:
@@ -23,6 +25,7 @@
    - update score profile/engine, not renderer first.
 3. If UI cards/charts change:
    - keep `ReportSummaryCards.tsx` focused on presentation and derived view models.
+   - update `report-summary/view-model.ts` first when derived data rules change.
    - move pure helper logic to `components/b2b/report-summary/helpers.ts` to avoid
      page-level runtime regressions.
 

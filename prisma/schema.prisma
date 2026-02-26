@@ -635,10 +635,22 @@ model ColumnPost {
   coverImageUrl   String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @default(now()) @updatedAt
+  slugAliases     ColumnPostSlugAlias[]
 
   @@index([status, publishedAt, updatedAt])
   @@index([publishedAt, updatedAt])
   @@index([updatedAt])
+}
+
+model ColumnPostSlugAlias {
+  id         String     @id @default(cuid())
+  postId     String
+  slug       String     @unique
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @default(now()) @updatedAt
+  post       ColumnPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt])
 }
 
 /// DB에 이미 있는 vector 테이블 유지 (drop 위험 방지)

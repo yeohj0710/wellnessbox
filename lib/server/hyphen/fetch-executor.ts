@@ -23,6 +23,7 @@ import {
   mergeListPayloads,
   normalizeYearLimit,
   parseYears,
+  resolveMedicationProbeWindows,
   type DetailKeyPair,
   type RequestDefaultsLike,
 } from "@/lib/server/hyphen/fetch-executor.helpers";
@@ -54,9 +55,81 @@ function getErrorBody(error: unknown): unknown | null {
 function emptyPayload(): HyphenApiResponse {
   return { data: {} };
 }
+
+const DEFAULT_MEDICATION_PROBE_MAX_WINDOWS = 2;
+
+function resolveMedicationProbeMaxWindows() {
+  const raw = process.env.HYPHEN_NHIS_MEDICATION_PROBE_MAX_WINDOWS;
+  if (!raw) return DEFAULT_MEDICATION_PROBE_MAX_WINDOWS;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed)) return DEFAULT_MEDICATION_PROBE_MAX_WINDOWS;
+  return Math.max(1, Math.min(4, Math.floor(parsed)));
+}
+
+function extractMedicationRows(payload: HyphenApiResponse) {
+  const data =
+    payload && typeof payload === "object" && payload.data && typeof payload.data === "object"
+      ? (payload.data as Record<string, unknown>)
+      : null;
+  if (!data) return [];
+  if (Array.isArray(data.list)) return data.list;
+  if (Array.isArray(data.rows)) return data.rows;
+  if (Array.isArray(data.items)) return data.items;
+  if (Array.isArray(data.history)) return data.history;
+  return [];
+}
+
+function selectMedicationProbeWindows(
+  windows: Array<{ fromDate: string | undefined; toDate: string | undefined }>
+) {
+  const maxWindows = resolveMedicationProbeMaxWindows();
+  if (windows.length <= maxWindows) return windows;
+  const fallbackWindow = windows[windows.length - 1];
+  if (maxWindows === 1) return [fallbackWindow];
+  return [...windows.slice(0, maxWindows - 1), fallbackWindow];
+}
+
 async function fetchLatestMedicationPayload(input: {
   detailPayload: HyphenNhisRequestPayload;
+  requestDefaults: RequestDefaultsLike;
 }) {
+  const windows = selectMedicationProbeWindows(
+    resolveMedicationProbeWindows(input.requestDefaults)
+  );
+  let firstError: unknown = null;
+  let lastSuccessPayload: HyphenApiResponse | null = null;
+
+  for (const window of windows) {
+    try {
+      const payload = await fetchMedicationInfo({
+        ...input.detailPayload,
+        ...(window.fromDate ? { fromDate: window.fromDate } : {}),
+        ...(window.toDate ? { toDate: window.toDate } : {}),
+      });
+      lastSuccessPayload = payload;
+      if (extractMedicationRows(payload).length > 0) {
+        return payload;
+      }
+    } catch (error) {
+      if (firstError == null) firstError = error;
+    }
+  }
+
+  const hasDateRange =
+    typeof input.detailPayload.fromDate === "string" ||
+    typeof input.detailPayload.toDate === "string";
+  if (firstError && hasDateRange) {
+    const { fromDate: _fromDate, toDate: _toDate, ...fallbackPayload } =
+      input.detailPayload;
+    try {
+      return await fetchMedicationInfo(fallbackPayload);
+    } catch (fallbackError) {
+      firstError = firstError ?? fallbackError;
+    }
+  }
+
+  if (lastSuccessPayload) return lastSuccessPayload;
+  if (firstError) throw firstError;
   return fetchMedicationInfo(input.detailPayload);
 }
 
@@ -125,6 +198,7 @@ export async function executeNhisFetch(
     () =>
       fetchLatestMedicationPayload({
         detailPayload: input.detailPayload,
+        requestDefaults: input.requestDefaults,
       }),
     "\ud22c\uc57d \uc815\ubcf4\ub97c \ubd88\ub7ec\uc624\uc9c0 \ubabb\ud588\uc5b4\uc694."
   );

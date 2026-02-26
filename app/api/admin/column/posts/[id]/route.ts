@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import db from "@/lib/db";
 import { normalizeColumnStatus, normalizeColumnTags } from "@/lib/column/content";
 import { resolveDbRouteError } from "@/lib/server/db-error";
@@ -30,6 +31,70 @@ function revalidateColumnPublicPaths() {
   revalidatePath("/column");
   revalidatePath("/column/rss.xml");
   revalidatePath("/sitemap.xml");
+}
+
+function isColumnPostSlugAliasTableMissing(error: unknown) {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    return error.code === "P2021";
+  }
+  const message =
+    error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+  return message.includes("columnpostslugalias") && message.includes("does not exist");
+}
+
+async function preserveOldSlugAlias(input: {
+  postId: string;
+  oldSlug: string;
+  currentSlug: string;
+}) {
+  const oldSlug = input.oldSlug.trim();
+  if (!oldSlug) return;
+  if (oldSlug === input.currentSlug) return;
+
+  try {
+    const aliasClient = (db as unknown as {
+      columnPostSlugAlias?: {
+        deleteMany: (args: unknown) => Promise<unknown>;
+        findUnique: (args: unknown) => Promise<unknown>;
+        create: (args: unknown) => Promise<unknown>;
+      };
+    }).columnPostSlugAlias;
+    if (!aliasClient?.findUnique || !aliasClient?.create || !aliasClient?.deleteMany) return;
+
+    // When a slug returns to a previous value, remove redundant alias rows first.
+    await aliasClient.deleteMany({
+      where: {
+        postId: input.postId,
+        slug: input.currentSlug,
+      },
+    });
+
+    const slugInUse = await db.columnPost.findFirst({
+      where: {
+        slug: oldSlug,
+        id: { not: input.postId },
+      },
+      select: { id: true },
+    });
+    if (slugInUse) return;
+
+    const existingAlias = (await aliasClient.findUnique({
+      where: { slug: oldSlug },
+      select: { id: true, postId: true },
+    })) as { id: string; postId: string } | null;
+    if (existingAlias?.postId === input.postId) return;
+    if (existingAlias) return;
+
+    await aliasClient.create({
+      data: {
+        postId: input.postId,
+        slug: oldSlug,
+      },
+    });
+  } catch (error) {
+    if (isColumnPostSlugAliasTableMissing(error)) return;
+    throw error;
+  }
 }
 
 export async function GET(_req: Request, ctx: RouteContext) {
@@ -129,6 +194,11 @@ export async function PATCH(req: Request, ctx: RouteContext) {
             ? parsed.data.coverImageUrl?.trim() || null
             : existing.coverImageUrl,
       },
+    });
+    await preserveOldSlugAlias({
+      postId: id,
+      oldSlug: existing.slug,
+      currentSlug: updated.slug,
     });
 
     revalidateColumnPublicPaths();

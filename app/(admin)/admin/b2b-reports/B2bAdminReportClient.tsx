@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import ReportRenderer from "@/components/b2b/ReportRenderer";
 import ReportSummaryCards from "@/components/b2b/ReportSummaryCards";
 import styles from "@/components/b2b/B2bUx.module.css";
 import type { LayoutDocument } from "@/lib/b2b/export/layout-types";
@@ -193,7 +194,39 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
   }, []);
 
   useEffect(() => {
+    if (employees.length === 0) {
+      if (selectedEmployeeId !== null) {
+        setSelectedEmployeeId(null);
+        setSelectedPeriodKey("");
+      }
+      return;
+    }
+
+    if (
+      selectedEmployeeId &&
+      employees.some((employee) => employee.id === selectedEmployeeId)
+    ) {
+      return;
+    }
+
+    setSelectedEmployeeId(employees[0].id);
+    setSelectedPeriodKey("");
+  }, [employees, selectedEmployeeId]);
+
+  useEffect(() => {
     if (!selectedEmployeeId) return;
+    if (
+      employees.length > 0 &&
+      !employees.some((employee) => employee.id === selectedEmployeeId)
+    ) {
+      setSelectedEmployeeDetail(null);
+      setLatestReport(null);
+      setValidatedLayout(null);
+      setValidationAudit(null);
+      setValidationIssues([]);
+      setSelectedEmployeeId(employees[0]?.id ?? null);
+      return;
+    }
     void (async () => {
       setBusy(true);
       setError("");
@@ -208,7 +241,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedEmployeeId]);
+  }, [employees, selectedEmployeeId]);
 
   async function reloadCurrentEmployee() {
     if (!selectedEmployeeId) return;
@@ -475,7 +508,22 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
                 }}
               />
 
-              <ReportSummaryCards payload={latestReport?.payload} viewerMode="admin" />
+              {latestLayout ? (
+                <section className={styles.reportCanvas}>
+                  <div className={styles.reportCanvasHeader}>
+                    <div>
+                      <h3>리포트 본문 미리보기</h3>
+                      <p>웹/PDF/PPTX 동일 레이아웃 검증 대상입니다.</p>
+                    </div>
+                    <span className={styles.statusOn}>내보내기 레이아웃 동기화 완료</span>
+                  </div>
+                  <div className={styles.reportCanvasBoard}>
+                    <ReportRenderer layout={latestLayout} fitToWidth />
+                  </div>
+                </section>
+              ) : (
+                <ReportSummaryCards payload={latestReport?.payload} viewerMode="admin" />
+              )}
 
               <B2bSurveyEditorPanel
                 completionStats={completionStats}

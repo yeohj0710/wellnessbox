@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ColumnPost } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import db from "@/lib/db";
 import {
   estimateReadingMinutesFromMarkdown,
@@ -78,6 +79,37 @@ export function resolveSlugInput(input: { title?: string; slug?: string }) {
   return fallbackSlug();
 }
 
+function isColumnPostSlugAliasTableMissing(error: unknown) {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    return error.code === "P2021";
+  }
+  const message =
+    error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+  return message.includes("columnpostslugalias") && message.includes("does not exist");
+}
+
+async function isSlugReservedByAlias(candidate: string, excludeId?: string) {
+  try {
+    const aliasClient = (db as unknown as {
+      columnPostSlugAlias?: {
+        findUnique: (args: unknown) => Promise<unknown>;
+      };
+    }).columnPostSlugAlias;
+    if (!aliasClient?.findUnique) return false;
+
+    const alias = (await aliasClient.findUnique({
+      where: { slug: candidate },
+      select: { postId: true },
+    })) as { postId: string } | null;
+    if (!alias) return false;
+    if (excludeId && alias.postId === excludeId) return false;
+    return true;
+  } catch (error) {
+    if (isColumnPostSlugAliasTableMissing(error)) return false;
+    throw error;
+  }
+}
+
 export async function resolveUniqueSlug(baseSlug: string, excludeId?: string) {
   let index = 0;
   let candidate = baseSlug;
@@ -89,7 +121,8 @@ export async function resolveUniqueSlug(baseSlug: string, excludeId?: string) {
       },
       select: { id: true },
     });
-    if (!existing) return candidate;
+    const aliasReserved = await isSlugReservedByAlias(candidate, excludeId);
+    if (!existing && !aliasReserved) return candidate;
     index += 1;
     candidate = `${baseSlug}-${index + 1}`;
   }

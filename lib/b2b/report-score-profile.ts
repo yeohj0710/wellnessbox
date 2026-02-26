@@ -25,29 +25,29 @@ export type ReportScoreProfile = {
 };
 
 export const DEFAULT_REPORT_SCORE_PROFILE: ReportScoreProfile = {
-  version: "report-score-profile.v1",
+  version: "report-score-profile.v2",
   weights: {
-    survey: 0.5,
-    health: 0.35,
+    survey: 0.35,
+    health: 0.5,
     medication: 0.15,
   },
   riskBands: [
-    { minScoreInclusive: 80, level: "low" },
-    { minScoreInclusive: 60, level: "medium" },
+    { minScoreInclusive: 82, level: "low" },
+    { minScoreInclusive: 64, level: "medium" },
     { minScoreInclusive: 0, level: "high" },
   ],
   healthMetricStatusScores: {
-    normal: 85,
-    high: 35,
-    low: 60,
-    caution: 60,
-    unknown: 50,
+    normal: 88,
+    high: 30,
+    low: 58,
+    caution: 58,
+    unknown: 45,
   },
-  healthMetricFallbackScore: 50,
+  healthMetricFallbackScore: 45,
   medicationScores: {
-    availableWithItems: 85,
-    availableEmpty: 75,
-    none: 60,
+    availableWithItems: 78,
+    availableEmpty: 62,
+    none: 55,
   },
 };
 

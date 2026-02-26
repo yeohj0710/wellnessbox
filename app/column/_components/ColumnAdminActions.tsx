@@ -16,7 +16,7 @@ type ColumnAdminActionsProps = {
 
 async function readDeleteErrorMessage(response: Response) {
   const payload = (await response.json().catch(() => ({}))) as { error?: string };
-  return payload.error || "칼럼 삭제에 실패했습니다.";
+  return payload.error || "칼럼 삭제에 실패했어요.";
 }
 
 export default function ColumnAdminActions({
@@ -52,7 +52,7 @@ export default function ColumnAdminActions({
         throw new Error(message);
       }
 
-      showToast("칼럼을 삭제했습니다.", { type: "success" });
+      showToast("칼럼을 삭제했어요.", { type: "success" });
       onDeleted?.(postId);
       setConfirmOpen(false);
       setConfirmText("");
@@ -63,7 +63,7 @@ export default function ColumnAdminActions({
         router.refresh();
       }
     } catch (error) {
-      showToast(error instanceof Error ? error.message : "칼럼 삭제에 실패했습니다.", {
+      showToast(error instanceof Error ? error.message : "칼럼 삭제에 실패했어요.", {
         type: "error",
       });
     } finally {
@@ -116,8 +116,8 @@ export default function ColumnAdminActions({
           <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
             <h2 className="text-lg font-bold text-slate-900">칼럼 삭제</h2>
             <p className="mt-2 text-sm leading-6 text-slate-700">
-              <span className="font-semibold text-slate-900">{title}</span> 글을 삭제합니다.
-              삭제 후 복구할 수 없습니다.
+              <span className="font-semibold text-slate-900">{title}</span> 글을 삭제해요.
+              삭제 후 복구할 수 없어요.
             </p>
             <p className="mt-3 text-xs text-slate-500">
               확인을 위해 아래 입력창에 <span className="font-semibold">삭제</span>를

@@ -3,9 +3,8 @@ import "server-only";
 import { promises as fs } from "fs";
 import path from "path";
 import { spawn } from "child_process";
-import type { LayoutDocument, LayoutNode } from "@/lib/b2b/export/layout-types";
-
-const MM_TO_PX = 3.7795275591;
+import type { LayoutDocument } from "@/lib/b2b/export/layout-types";
+import { buildLayoutHtml } from "@/lib/b2b/export/layout-html";
 
 function runCommand(command: string, args: string[], timeoutMs: number) {
   return new Promise<{ code: number | null; stdout: string; stderr: string }>(
@@ -96,79 +95,6 @@ function toErrorReason(error: unknown, fallback: string) {
     : fallback;
 }
 
-function escapeHtml(value: string) {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\"/g, "&quot;");
-}
-
-function renderNodeHtml(node: LayoutNode) {
-  const style = [
-    "position:absolute",
-    `left:${node.x * MM_TO_PX}px`,
-    `top:${node.y * MM_TO_PX}px`,
-    `width:${node.w * MM_TO_PX}px`,
-    `height:${node.h * MM_TO_PX}px`,
-    "box-sizing:border-box",
-    "overflow:hidden",
-  ];
-
-  if (node.type === "rect") {
-    style.push(`background:#${node.fill || "FFFFFF"}`);
-    return `<div style="${style.join(";")}"></div>`;
-  }
-
-  style.push(`color:#${node.color || "111827"}`);
-  style.push(`font-size:${node.fontSize ?? 12}px`);
-  style.push(`font-weight:${node.bold ? 700 : 400}`);
-  style.push("line-height:1.28");
-  style.push("white-space:pre-wrap");
-  style.push("word-break:keep-all");
-  return `<div style="${style.join(";")}">${escapeHtml(node.text || "")}</div>`;
-}
-
-function buildLayoutHtml(layout: LayoutDocument) {
-  const pages = layout.pages
-    .map((page) => {
-      const pageNodes = page.nodes.map((node) => renderNodeHtml(node)).join("");
-      return `
-        <section class="page" style="width:${page.widthMm * MM_TO_PX}px;height:${
-          page.heightMm * MM_TO_PX
-        }px;">
-          ${pageNodes}
-        </section>
-      `;
-    })
-    .join("\n");
-
-  return `<!doctype html>
-  <html>
-    <head>
-      <meta charset="utf-8" />
-      <style>
-        html, body {
-          margin: 0;
-          padding: 0;
-          background: #fff;
-        }
-        .page {
-          position: relative;
-          margin: 0 auto;
-          page-break-after: always;
-          break-after: page;
-        }
-        .page:last-child {
-          page-break-after: auto;
-          break-after: auto;
-        }
-      </style>
-    </head>
-    <body>${pages}</body>
-  </html>`;
-}
-
 async function loadPlaywrightModule() {
   try {
     const dynamicImport = new Function("moduleName", "return import(moduleName);") as (
@@ -221,6 +147,13 @@ async function tryConvertByPlaywright(layout: LayoutDocument) {
   }
 }
 
+function allowSofficeFallback() {
+  const value = (process.env.B2B_ALLOW_PDF_SOFFICE_FALLBACK || "")
+    .trim()
+    .toLowerCase();
+  return value === "1" || value === "true" || value === "y";
+}
+
 export async function convertPptxBufferToPdf(input: {
   pptxBuffer: Buffer;
   filename: string;
@@ -234,44 +167,68 @@ export async function convertPptxBufferToPdf(input: {
   await fs.mkdir(tempDir, { recursive: true });
 
   try {
-    let sofficeResult:
-      | { ok: true; pdfBuffer: Buffer }
-      | { ok: false; reason: string; stderr?: string };
-    try {
-      sofficeResult = await tryConvertBySoffice({
-        tempDir,
-        filename: input.filename,
-        pptxBuffer: input.pptxBuffer,
-      });
-    } catch (error) {
-      sofficeResult = {
-        ok: false,
-        reason: toErrorReason(error, "soffice conversion failed"),
-      };
-    }
-    if (sofficeResult.ok) {
-      return { ok: true as const, pdfBuffer: sofficeResult.pdfBuffer, engine: "soffice" as const };
-    }
+    if (input.layout) {
+      const playwrightResult = await tryConvertByPlaywright(input.layout);
+      if (playwrightResult.ok) {
+        return {
+          ok: true as const,
+          pdfBuffer: playwrightResult.pdfBuffer,
+          engine: "playwright" as const,
+        };
+      }
 
-    if (!input.layout) {
+      if (!allowSofficeFallback()) {
+        return {
+          ok: false as const,
+          reason: `${playwrightResult.reason}. Soffice fallback is disabled to keep web/PDF parity.`,
+        };
+      }
+
+      let sofficeFallback:
+        | { ok: true; pdfBuffer: Buffer }
+        | { ok: false; reason: string; stderr?: string };
+      try {
+        sofficeFallback = await tryConvertBySoffice({
+          tempDir,
+          filename: input.filename,
+          pptxBuffer: input.pptxBuffer,
+        });
+      } catch (error) {
+        sofficeFallback = {
+          ok: false,
+          reason: toErrorReason(error, "soffice conversion failed"),
+        };
+      }
+
+      if (sofficeFallback.ok) {
+        return {
+          ok: true as const,
+          pdfBuffer: sofficeFallback.pdfBuffer,
+          engine: "soffice" as const,
+        };
+      }
+
       return {
         ok: false as const,
-        reason: sofficeResult.reason,
+        reason: `${playwrightResult.reason}; soffice=${sofficeFallback.reason}`,
       };
     }
 
-    const playwrightResult = await tryConvertByPlaywright(input.layout);
-    if (playwrightResult.ok) {
+    const sofficeOnly = await tryConvertBySoffice({
+      tempDir,
+      filename: input.filename,
+      pptxBuffer: input.pptxBuffer,
+    });
+    if (sofficeOnly.ok) {
       return {
         ok: true as const,
-        pdfBuffer: playwrightResult.pdfBuffer,
-        engine: "playwright" as const,
+        pdfBuffer: sofficeOnly.pdfBuffer,
+        engine: "soffice" as const,
       };
     }
-
     return {
       ok: false as const,
-      reason: `${sofficeResult.reason}; playwright=${playwrightResult.reason}`,
+      reason: sofficeOnly.reason,
     };
   } catch (error) {
     return {

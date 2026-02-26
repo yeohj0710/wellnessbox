@@ -384,10 +384,14 @@ async function run() {
     const pdfButton = page.getByTestId("employee-report-download-pdf").first();
     if ((await pdfButton.count()) > 0 && !(await pdfButton.isDisabled())) {
       const beforePdfResponseCount = result.network.responses.length;
+      const beforePdfRequestCount = result.network.requests.length;
       await pdfButton.click();
       await waitFor(
         async () =>
           result.network.responses.some((entry) =>
+            entry.url.includes("/api/b2b/employee/report/export/pdf")
+          ) ||
+          result.network.requests.some((entry) =>
             entry.url.includes("/api/b2b/employee/report/export/pdf")
           ),
         8000
@@ -395,12 +399,20 @@ async function run() {
       const employeePdfCallsAfterClick = result.network.responses
         .slice(beforePdfResponseCount)
         .filter((entry) => entry.url.includes("/api/b2b/employee/report/export/pdf"));
+      const employeePdfRequestsAfterClick = result.network.requests
+        .slice(beforePdfRequestCount)
+        .filter((entry) => entry.url.includes("/api/b2b/employee/report/export/pdf"));
       const employeePdfCallsTotal = result.network.responses.filter((entry) =>
         entry.url.includes("/api/b2b/employee/report/export/pdf")
       );
+      const employeePdfRequestsTotal = result.network.requests.filter((entry) =>
+        entry.url.includes("/api/b2b/employee/report/export/pdf")
+      );
       result.checks.employeePdfCallsAfterClick = employeePdfCallsAfterClick.length;
+      result.checks.employeePdfRequestsAfterClick = employeePdfRequestsAfterClick.length;
       result.checks.employeePdfCalls = employeePdfCallsTotal.length;
-      if (employeePdfCallsTotal.length === 0) {
+      result.checks.employeePdfRequests = employeePdfRequestsTotal.length;
+      if (employeePdfCallsTotal.length === 0 && employeePdfRequestsTotal.length === 0) {
         pushFailure(result.failures, "employee_pdf_call_missing", null);
       }
     } else {

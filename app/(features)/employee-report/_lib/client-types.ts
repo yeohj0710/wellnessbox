@@ -37,6 +37,7 @@ export type EmployeeReportResponse = {
     pageSize: string;
     periodKey?: string;
     payload?: ReportSummaryPayload;
+    layoutDsl?: unknown;
     exportAudit?: {
       validation?: Array<{ issues?: LayoutValidationIssue[] }>;
     } | null;

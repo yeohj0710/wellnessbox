@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
+import { getAllColumnSummaries, getColumnBySlug } from "@/app/column/_lib/columns";
 import db from "@/lib/db";
 import { normalizeColumnStatus, normalizeColumnTags } from "@/lib/column/content";
 import { resolveDbRouteError } from "@/lib/server/db-error";
@@ -28,10 +29,42 @@ function revalidateColumnPublicPaths() {
   revalidatePath("/sitemap.xml");
 }
 
+async function syncFileColumnsToDb() {
+  const allColumns = await getAllColumnSummaries();
+  const fileBasedColumns = allColumns.filter((column) => !column.postId);
+  if (fileBasedColumns.length === 0) return;
+
+  for (const summary of fileBasedColumns) {
+    const existing = await db.columnPost.findUnique({
+      where: { slug: summary.slug },
+      select: { id: true },
+    });
+    if (existing) continue;
+
+    const detail = await getColumnBySlug(summary.slug);
+    if (!detail || detail.postId) continue;
+
+    await db.columnPost.create({
+      data: {
+        slug: summary.slug,
+        title: summary.title,
+        excerpt: summary.description,
+        contentMarkdown: detail.content,
+        tags: normalizeColumnTags(detail.tags),
+        status: "published",
+        publishedAt: new Date(summary.publishedAt),
+        authorName: "웰니스박스",
+        coverImageUrl: summary.coverImageUrl,
+      },
+    });
+  }
+}
+
 export async function GET(req: Request) {
   try {
     const auth = await requireAdminSession();
     if (!auth.ok) return auth.response;
+    await syncFileColumnsToDb();
 
     const { searchParams } = new URL(req.url);
     const q = searchParams.get("q")?.trim() || "";

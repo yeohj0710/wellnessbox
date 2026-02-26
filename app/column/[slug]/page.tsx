@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import ColumnMarkdown from "../_components/columnMarkdown";
 import ColumnAdminActions from "../_components/ColumnAdminActions";
 import {
   getAdjacentColumnSummaries,
-  getColumnBySlug,
   getRelatedColumnSummaries,
   normalizeTagSlug,
+  resolveColumnBySlug,
 } from "../_lib/columns";
 import { isColumnAdminSession } from "../_lib/admin-session";
 import { SITE_URL } from "@/lib/constants";
@@ -30,16 +30,15 @@ function formatDate(value: string) {
   }).format(date);
 }
 
-export async function generateMetadata({
-  params,
-}: PageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const column = await getColumnBySlug(slug);
+  const resolved = await resolveColumnBySlug(slug);
+  const column = resolved.column;
 
   if (!column) {
     return {
-      title: "칼럼을 찾을 수 없습니다 | 웰니스박스",
-      description: "요청하신 웰니스박스 칼럼을 찾지 못했습니다.",
+      title: "칼럼을 찾을 수 없어요 | 웰니스박스",
+      description: "요청하신 웰니스박스 칼럼을 찾지 못했어요.",
       robots: {
         index: false,
         follow: false,
@@ -68,10 +67,14 @@ export async function generateMetadata({
 
 export default async function ColumnDetailPage({ params }: PageProps) {
   const { slug } = await params;
-  const column = await getColumnBySlug(slug);
+  const resolved = await resolveColumnBySlug(slug);
+  const column = resolved.column;
 
   if (!column) {
     notFound();
+  }
+  if (resolved.shouldRedirect && resolved.canonicalSlug) {
+    permanentRedirect(`/column/${resolved.canonicalSlug}`);
   }
 
   const [relatedColumns, adjacent, isAdmin] = await Promise.all([
@@ -79,6 +82,7 @@ export default async function ColumnDetailPage({ params }: PageProps) {
     getAdjacentColumnSummaries(column.slug),
     isColumnAdminSession(),
   ]);
+
   const articleUrl = `${SITE_URL}/column/${column.slug}`;
   const articleJsonLd = {
     "@context": "https://schema.org",
@@ -128,7 +132,7 @@ export default async function ColumnDetailPage({ params }: PageProps) {
   };
 
   return (
-    <section className="w-full min-h-[calc(100vh-7rem)] bg-[linear-gradient(180deg,_#f8fafc_0%,_#f0fdf4_36%,_#ffffff_100%)]">
+    <section className="min-h-[calc(100vh-7rem)] w-full bg-[linear-gradient(180deg,_#f8fafc_0%,_#f0fdf4_36%,_#ffffff_100%)]">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
@@ -161,9 +165,7 @@ export default async function ColumnDetailPage({ params }: PageProps) {
           <div>
             <header className="rounded-3xl border border-slate-200 bg-white/95 p-6 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.6)] sm:p-8">
               <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500">
-                <time dateTime={column.publishedAt}>
-                  {formatDate(column.publishedAt)}
-                </time>
+                <time dateTime={column.publishedAt}>{formatDate(column.publishedAt)}</time>
                 <span aria-hidden>·</span>
                 <span>약 {column.readingMinutes}분</span>
               </div>
@@ -223,10 +225,9 @@ export default async function ColumnDetailPage({ params }: PageProps) {
             <section className="mt-6 rounded-2xl border border-amber-200 bg-amber-50/70 p-5 text-sm leading-6 text-amber-900">
               <h2 className="font-semibold">안내 및 면책</h2>
               <p className="mt-2">
-                이 칼럼은 일반적인 건강 정보 제공을 목적으로 작성되었으며,
-                개인의 질병 진단·치료·처방을 대신하지 않습니다. 복용 중인 약이
-                있거나 임신·수유 중인 경우, 또는 기저질환이 있다면 제품 섭취 전
-                의사 또는 약사와 상담하세요.
+                본 칼럼은 웰니스박스의 건강 정보 제공을 위한 콘텐츠이며, 개인별 진단 및
+                치료를 대체하지 않아요. 질환 치료 중이거나 복용 중인 약이 있다면 제품
+                변경 전에 전문가와 상담하세요.
               </p>
             </section>
 
@@ -245,7 +246,7 @@ export default async function ColumnDetailPage({ params }: PageProps) {
                   </Link>
                 ) : (
                   <div className="rounded-2xl border border-dashed border-slate-200 p-4 text-sm text-slate-500">
-                    더 최신 글이 없습니다.
+                    더 최신 글이 없어요.
                   </div>
                 )}
 
@@ -261,7 +262,7 @@ export default async function ColumnDetailPage({ params }: PageProps) {
                   </Link>
                 ) : (
                   <div className="rounded-2xl border border-dashed border-slate-200 p-4 text-sm text-slate-500">
-                    이전 글이 없습니다.
+                    이전 글이 없어요.
                   </div>
                 )}
               </div>
@@ -289,14 +290,21 @@ export default async function ColumnDetailPage({ params }: PageProps) {
                 </ul>
               </section>
             )}
+
+            <div className="mt-6">
+              <Link
+                href="/column"
+                className="inline-flex rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700"
+              >
+                ← 칼럼 목록으로 돌아가기
+              </Link>
+            </div>
           </div>
 
           <aside className="h-fit rounded-3xl border border-slate-200 bg-white p-5 lg:sticky lg:top-24">
-            <h2 className="text-sm font-bold tracking-[0.08em] text-slate-600">
-              목차
-            </h2>
+            <h2 className="text-sm font-bold tracking-[0.08em] text-slate-600">목차</h2>
             {column.toc.length === 0 ? (
-              <p className="mt-3 text-sm text-slate-500">표시할 목차가 없습니다.</p>
+              <p className="mt-3 text-sm text-slate-500">표시할 목차가 없어요.</p>
             ) : (
               <ol className="mt-3 space-y-2 text-sm">
                 {column.toc.map((item) => (

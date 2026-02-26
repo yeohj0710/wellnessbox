@@ -1,6 +1,6 @@
 # Refactor Hotspots (Agent Handoff)
 
-Last validated: 2026-02-23
+Last validated: 2026-02-25
 
 This document tracks large/complex files that are most likely to slow down follow-up sessions.
 
@@ -45,6 +45,11 @@ This document tracks large/complex files that are most likely to slow down follo
      - `recommendedProductActions.resolve.ts`
      - `recommendedProductActions.cart.ts`
    - `recommendedProductActions.utils.ts` now acts as a façade/re-export layer.
+4. `lib/b2b/report-payload.ts`
+   - Refactored into:
+     - `lib/b2b/report-payload-analysis.ts`
+     - `lib/b2b/report-payload-types.ts`
+   - `report-payload.ts` now focuses on DB fetch orchestration and final payload assembly.
 
 ## Guardrails For Any Refactor
 

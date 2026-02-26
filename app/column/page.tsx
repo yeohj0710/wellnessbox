@@ -6,16 +6,16 @@ import ColumnHomeClient from "./_components/ColumnHomeClient";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "웰니스박스 칼럼",
+  title: "웰니스박스 칼럼 | 건강기능식품 복용 가이드",
   description:
-    "영양제 복용 습관과 건강관리 핵심 정보를 짧고 명확하게 정리한 웰니스박스 칼럼입니다.",
+    "웰니스박스 칼럼에서 비타민, 오메가3, 유산균, 철분 등 건강기능식품 복용법을 쉽고 친절하게 확인하세요.",
   alternates: {
     canonical: "/column",
   },
   openGraph: {
-    title: "웰니스박스 칼럼",
+    title: "웰니스박스 칼럼 | 건강기능식품 복용 가이드",
     description:
-      "영양제 복용 습관과 건강관리 핵심 정보를 짧고 명확하게 정리한 웰니스박스 칼럼입니다.",
+      "웰니스박스가 초보자 눈높이로 정리한 건강기능식품 복용 팁과 생활 건강 인사이트를 확인하세요.",
     url: "/column",
     type: "website",
     locale: "ko_KR",
@@ -29,7 +29,5 @@ export default async function ColumnPage() {
     isColumnAdminSession(),
   ]);
 
-  return (
-    <ColumnHomeClient initialColumns={columns} tags={tags} isAdmin={isAdmin} />
-  );
+  return <ColumnHomeClient initialColumns={columns} tags={tags} isAdmin={isAdmin} />;
 }

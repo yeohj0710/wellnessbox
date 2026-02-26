@@ -12,6 +12,7 @@ import {
   readNhisFetchMemoryCache,
   writeNhisFetchMemoryCache,
 } from "@/lib/server/hyphen/fetch-memory-cache";
+import { toPrismaJson } from "@/lib/server/hyphen/json";
 import { upsertNhisLink } from "@/lib/server/hyphen/link";
 import { NO_STORE_HEADERS } from "@/lib/server/hyphen/route-utils";
 import type { NhisFetchRoutePayload } from "./fetch-contract";
@@ -56,6 +57,74 @@ function toFetchRoutePayload(value: unknown): NhisFetchRoutePayload | null {
   const record = value as Record<string, unknown>;
   if (typeof record.ok !== "boolean") return null;
   return record as NhisFetchRoutePayload;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+type SessionArtifacts = {
+  cookieData?: unknown;
+  stepData?: unknown;
+};
+
+function collectSessionArtifacts(
+  value: unknown,
+  found: SessionArtifacts,
+  depth = 0
+) {
+  if (depth > 8) return;
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      collectSessionArtifacts(item, found, depth + 1);
+      if (found.cookieData !== undefined && found.stepData !== undefined) return;
+    }
+    return;
+  }
+
+  const record = asRecord(value);
+  if (!record) return;
+  const data = asRecord(record.data);
+  const cookieData =
+    data?.cookieData ?? data?.cookie_data ?? record.cookieData ?? record.cookie_data;
+  if (found.cookieData === undefined && cookieData != null) {
+    found.cookieData = cookieData;
+  }
+  const stepData =
+    data?.stepData ?? data?.step_data ?? record.stepData ?? record.step_data;
+  if (found.stepData === undefined && stepData != null) {
+    found.stepData = stepData;
+  }
+  if (found.cookieData !== undefined && found.stepData !== undefined) return;
+
+  for (const child of Object.values(record)) {
+    collectSessionArtifacts(child, found, depth + 1);
+    if (found.cookieData !== undefined && found.stepData !== undefined) return;
+  }
+}
+
+function extractSessionArtifactsFromPayload(
+  payload: NhisFetchRoutePayload
+): SessionArtifacts {
+  const data = asRecord(payload.data);
+  const raw = asRecord(data?.raw);
+  if (!raw) return {};
+
+  const orderedCandidates = [
+    raw.medication,
+    raw.medical,
+    raw.checkupOverview,
+    raw.healthAge,
+    raw.checkupYearly,
+    raw.checkupList,
+  ];
+  const found: SessionArtifacts = {};
+  for (const candidate of orderedCandidates) {
+    collectSessionArtifacts(candidate, found);
+    if (found.cookieData !== undefined && found.stepData !== undefined) break;
+  }
+  return found;
 }
 
 export async function tryServeNhisFetchCache(input: TryServeNhisFetchCacheInput) {
@@ -219,6 +288,9 @@ export async function persistNhisFetchResult(input: PersistNhisFetchResultInput)
   const lastErrorMessage = input.payload.ok
     ? null
     : input.firstFailed?.errMsg ?? (input.defaultErrorMessage ?? "Fetch failed");
+  const sessionArtifacts = input.payload.ok
+    ? extractSessionArtifactsFromPayload(input.payload)
+    : {};
 
   const [, savedCache] = await Promise.all([
     upsertNhisLink(input.appUserId, {
@@ -226,6 +298,12 @@ export async function persistNhisFetchResult(input: PersistNhisFetchResultInput)
       ...(input.updateFetchedAt ? { lastFetchedAt: new Date() } : {}),
       lastErrorCode,
       lastErrorMessage,
+      ...(sessionArtifacts.cookieData !== undefined
+        ? { cookieData: toPrismaJson(sessionArtifacts.cookieData) }
+        : {}),
+      ...(sessionArtifacts.stepData !== undefined
+        ? { stepData: toPrismaJson(sessionArtifacts.stepData) }
+        : {}),
     }),
     saveNhisFetchCache({
       appUserId: input.appUserId,

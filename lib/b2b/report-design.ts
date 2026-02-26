@@ -6,6 +6,8 @@ export const REPORT_ACCENT_COLORS = {
   neutral: "#475569",
 };
 
+export const REPORT_STYLE_CANDIDATES = ["fresh", "calm", "focus"] as const;
+
 export function clampScore(value: unknown) {
   if (typeof value !== "number" || !Number.isFinite(value)) return 0;
   return Math.min(100, Math.max(0, Math.round(value)));

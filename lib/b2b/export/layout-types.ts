@@ -39,5 +39,6 @@ export type LayoutDocument = {
   intent: LayoutIntent;
   variantIndex: number;
   stylePreset: StylePreset;
+  layoutVersion?: string;
   pages: LayoutPage[];
 };

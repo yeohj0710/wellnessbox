@@ -45,8 +45,8 @@ export default function B2bLayoutValidationPanel({
         </div>
         {(validationAudit?.validation?.length ?? 0) > 0 ? (
           <ul className={styles.listPlain}>
-            {(validationAudit?.validation ?? []).map((entry) => (
-              <li key={entry.stage}>
+            {(validationAudit?.validation ?? []).map((entry, index) => (
+              <li key={`${entry.stage}-${entry.stylePreset ?? "preset"}-${index}`}>
                 [{entry.stage}] {entry.ok ? "통과" : "실패"} / static{" "}
                 {entry.staticIssueCount ?? 0} / runtime {entry.runtimeIssueCount ?? 0}
               </li>
@@ -83,4 +83,3 @@ export default function B2bLayoutValidationPanel({
     </details>
   );
 }
-

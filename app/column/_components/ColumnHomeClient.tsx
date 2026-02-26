@@ -59,11 +59,7 @@ export default function ColumnHomeClient({
     const keyword = query.trim().toLowerCase();
     if (!keyword) return columns;
     return columns.filter((column) => {
-      const haystack = [
-        column.title,
-        column.summary,
-        column.tags.join(" "),
-      ]
+      const haystack = [column.title, column.summary, column.tags.join(" ")]
         .join(" ")
         .toLowerCase();
       return haystack.includes(keyword);
@@ -71,18 +67,18 @@ export default function ColumnHomeClient({
   }, [columns, query]);
 
   return (
-    <section className="w-full min-h-[calc(100vh-7rem)] bg-[radial-gradient(circle_at_top_left,_#d8f6eb_0%,_#f8fafc_45%,_#ffffff_100%)]">
+    <section className="min-h-[calc(100vh-7rem)] w-full bg-[radial-gradient(circle_at_top_left,_#d8f6eb_0%,_#f8fafc_45%,_#ffffff_100%)]">
       <div className="mx-auto w-full max-w-5xl px-4 pb-20 pt-10 sm:px-6">
         <header className="rounded-3xl border border-emerald-200/70 bg-white/90 p-6 shadow-[0_18px_40px_-28px_rgba(6,95,70,0.55)] sm:p-8">
           <p className="text-xs font-semibold tracking-[0.2em] text-emerald-700">
             웰니스 칼럼
           </p>
           <h1 className="mt-3 text-3xl font-black leading-tight text-slate-900 sm:text-[2.1rem]">
-            건강 칼럼
+            웰니스박스 건강 칼럼
           </h1>
           <p className="mt-4 text-[1rem] leading-7 text-slate-700">
-            복약 습관, 생활 관리, 건강 인사이트를 블로그처럼 빠르게 확인하고
-            저장하세요.
+            안녕하세요, 웰니스박스예요. 복약 습관, 생활 관리, 건강 인사이트를
+            초보자도 이해하기 쉽게 정리해드려요.
           </p>
 
           <div className="mt-5 flex flex-wrap items-center gap-2">
@@ -98,13 +94,13 @@ export default function ColumnHomeClient({
             >
               태그
             </a>
-            <label className="ml-auto flex min-w-[220px] items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 sm:min-w-[260px]">
-              <span className="font-semibold">검색</span>
+            <label className="ml-auto flex min-w-[220px] items-center gap-2 whitespace-nowrap rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 sm:min-w-[260px]">
+              <span className="shrink-0 whitespace-nowrap font-semibold">검색</span>
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="제목/태그/요약"
-                className="w-full border-none bg-transparent text-sm outline-none"
+                className="min-w-0 flex-1 border-none bg-transparent text-sm outline-none"
               />
             </label>
             {isAdmin ? (
@@ -142,8 +138,8 @@ export default function ColumnHomeClient({
         {filteredColumns.length === 0 ? (
           <div className="mt-8 rounded-3xl border border-dashed border-slate-300 bg-white/80 p-8 text-center text-slate-600">
             {columns.length === 0
-              ? "등록된 칼럼이 아직 없습니다."
-              : "검색 조건에 맞는 칼럼이 없습니다."}
+              ? "등록된 칼럼이 아직 없어요."
+              : "검색 조건에 맞는 칼럼이 없어요."}
           </div>
         ) : (
           <ul className="mt-8 grid gap-5">
@@ -194,9 +190,7 @@ export default function ColumnHomeClient({
                     </div>
                   ) : null}
 
-                  <p className="mt-4 text-[1rem] leading-7 text-slate-700">
-                    {column.summary}
-                  </p>
+                  <p className="mt-4 text-[1rem] leading-7 text-slate-700">{column.summary}</p>
                   {column.tags.length > 0 ? (
                     <div className="mt-4 flex flex-wrap gap-2">
                       {column.tags.map((tag) => (

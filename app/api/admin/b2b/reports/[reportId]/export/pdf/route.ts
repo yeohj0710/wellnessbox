@@ -25,6 +25,7 @@ function shouldReturnInstallGuide(reason: string | undefined) {
   const normalized = reason.toLowerCase();
   return (
     normalized.includes("playwright is not available") ||
+    normalized.includes("soffice fallback is disabled") ||
     normalized.includes("enoent") ||
     normalized.includes("not recognized") ||
     normalized.includes("soffice failed")
@@ -97,7 +98,7 @@ export async function GET(_req: Request, ctx: RouteContext) {
           debugId,
           error:
             status === 501
-              ? "PDF 변환 엔진을 찾지 못했습니다. LibreOffice(soffice) 또는 Playwright 설치가 필요합니다."
+              ? "PDF 추출 엔진을 사용할 수 없습니다. 웹/PDF 동일성을 위해 Playwright 경로가 필요하며, 예외적으로 `B2B_ALLOW_PDF_SOFFICE_FALLBACK=1` 설정 시 soffice fallback을 허용할 수 있습니다."
               : "서버에서 PDF 변환에 실패했습니다.",
         },
         status

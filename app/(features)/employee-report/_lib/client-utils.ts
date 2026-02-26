@@ -4,6 +4,7 @@ import type {
   IdentityInput,
   SyncGuidance,
 } from "./client-types";
+import type { LayoutDocument } from "@/lib/b2b/export/layout-types";
 
 const LS_KEY = "wb:b2b:employee:last-input:v2";
 const IDENTITY_TTL_MS = 1000 * 60 * 60 * 24 * 30;
@@ -194,6 +195,15 @@ export function resolveMedicationStatusMessage(reportData: EmployeeReportRespons
     };
   }
   return null;
+}
+
+export function parseLayoutDsl(raw: unknown): LayoutDocument | null {
+  if (!raw || typeof raw !== "object") return null;
+  const layout = raw as LayoutDocument;
+  if (!Array.isArray(layout.pages) || layout.pages.length === 0) return null;
+  if (!layout.pageSizeMm || typeof layout.pageSizeMm.width !== "number") return null;
+  if (typeof layout.pageSizeMm.height !== "number") return null;
+  return layout;
 }
 
 export function buildSyncGuidance(

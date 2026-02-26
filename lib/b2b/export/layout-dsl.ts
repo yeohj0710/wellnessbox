@@ -19,6 +19,7 @@ import {
 } from "@/lib/b2b/export/layout-types";
 
 type TemplateMode = "base" | "fallback";
+export const LAYOUT_TEMPLATE_VERSION = "2026-02-clean-v1";
 
 const STYLE_PRESET_CANDIDATES: StylePreset[] = ["fresh", "calm", "focus"];
 
@@ -593,6 +594,7 @@ export function generateLayoutFromPayload(input: {
     intent: input.intent,
     variantIndex: input.variantIndex,
     stylePreset: input.stylePreset,
+    layoutVersion: LAYOUT_TEMPLATE_VERSION,
     pages: ctx.pages,
   };
 

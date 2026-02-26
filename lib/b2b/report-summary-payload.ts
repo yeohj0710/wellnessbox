@@ -5,6 +5,7 @@ export type ReportSummaryPayload = {
     employeeName?: string;
     generatedAt?: string;
     periodKey?: string;
+    stylePreset?: string;
     isMockData?: boolean;
   };
   analysis?: {

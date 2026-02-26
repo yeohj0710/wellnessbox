@@ -20,7 +20,8 @@ import {
   runWithNhisFetchDedup,
   saveNhisFetchCache,
 } from "@/lib/server/hyphen/fetch-cache";
-import { getNhisLink } from "@/lib/server/hyphen/link";
+import { toPrismaJson } from "@/lib/server/hyphen/json";
+import { getNhisLink, upsertNhisLink } from "@/lib/server/hyphen/link";
 import { buildNhisRequestDefaults } from "@/lib/server/hyphen/request-defaults";
 import type { HyphenNhisRequestPayload } from "@/lib/server/hyphen/client";
 import { HYPHEN_PROVIDER } from "@/lib/server/hyphen/client";
@@ -107,6 +108,103 @@ function asRecord(value: unknown): Record<string, unknown> | null {
 
 function asArray(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
+}
+
+type SessionArtifacts = {
+  cookieData?: unknown;
+  stepData?: unknown;
+};
+
+function collectSessionArtifacts(
+  value: unknown,
+  found: SessionArtifacts,
+  depth = 0
+) {
+  if (depth > 8) return;
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      collectSessionArtifacts(item, found, depth + 1);
+      if (found.cookieData !== undefined && found.stepData !== undefined) return;
+    }
+    return;
+  }
+
+  const record = asRecord(value);
+  if (!record) return;
+  const data = asRecord(record.data);
+  const cookieData =
+    data?.cookieData ?? data?.cookie_data ?? record.cookieData ?? record.cookie_data;
+  if (found.cookieData === undefined && cookieData != null) {
+    found.cookieData = cookieData;
+  }
+  const stepData =
+    data?.stepData ?? data?.step_data ?? record.stepData ?? record.step_data;
+  if (found.stepData === undefined && stepData != null) {
+    found.stepData = stepData;
+  }
+  if (found.cookieData !== undefined && found.stepData !== undefined) return;
+
+  for (const child of Object.values(record)) {
+    collectSessionArtifacts(child, found, depth + 1);
+    if (found.cookieData !== undefined && found.stepData !== undefined) return;
+  }
+}
+
+function extractSessionArtifactsFromPayload(payload: NhisFetchRoutePayload) {
+  const raw = asRecord(asRecord(payload.data)?.raw);
+  if (!raw) return {};
+  const orderedCandidates = [
+    raw.medication,
+    raw.medical,
+    raw.checkupOverview,
+    raw.healthAge,
+    raw.checkupYearly,
+    raw.checkupList,
+  ];
+  const found: SessionArtifacts = {};
+  for (const candidate of orderedCandidates) {
+    collectSessionArtifacts(candidate, found);
+    if (found.cookieData !== undefined && found.stepData !== undefined) break;
+  }
+  return found;
+}
+
+async function persistNhisLinkFromPayload(input: {
+  appUserId: string;
+  identityHash: string;
+  payload: NhisFetchRoutePayload;
+  markFetchedAt?: boolean;
+}) {
+  if (!input.payload.ok) return;
+  const artifacts = extractSessionArtifactsFromPayload(input.payload);
+  const patch: {
+    lastIdentityHash: string;
+    lastErrorCode: null;
+    lastErrorMessage: null;
+    lastFetchedAt?: Date;
+    cookieData?: Prisma.InputJsonValue | Prisma.JsonNullValueInput;
+    stepData?: Prisma.InputJsonValue | Prisma.JsonNullValueInput;
+  } = {
+    lastIdentityHash: input.identityHash,
+    lastErrorCode: null,
+    lastErrorMessage: null,
+    ...(input.markFetchedAt ? { lastFetchedAt: new Date() } : {}),
+  };
+  if (artifacts.cookieData !== undefined) {
+    patch.cookieData = toPrismaJson(artifacts.cookieData);
+  }
+  if (artifacts.stepData !== undefined) {
+    patch.stepData = toPrismaJson(artifacts.stepData);
+  }
+
+  try {
+    await upsertNhisLink(input.appUserId, patch);
+  } catch (error) {
+    console.error("[b2b][employee-sync] failed to update NHIS link session artifacts", {
+      appUserId: input.appUserId,
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
 function resolveMedicationRows(normalizedJson: unknown) {
@@ -517,6 +615,14 @@ export async function fetchAndStoreB2bHealthSnapshot(input: {
               lastSyncedAt: new Date(),
             },
           });
+          if (patched.usedNetwork) {
+            await persistNhisLinkFromPayload({
+              appUserId: input.appUserId,
+              identityHash: identity.identityHash,
+              payload: patched.payload,
+              markFetchedAt: true,
+            });
+          }
           return {
             source,
             payload: patched.payload,
@@ -562,6 +668,14 @@ export async function fetchAndStoreB2bHealthSnapshot(input: {
               lastSyncedAt: new Date(),
             },
           });
+          if (patched.usedNetwork) {
+            await persistNhisLinkFromPayload({
+              appUserId: input.appUserId,
+              identityHash: identity.identityHash,
+              payload: patched.payload,
+              markFetchedAt: true,
+            });
+          }
           return {
             source,
             payload: patched.payload,
@@ -613,7 +727,7 @@ export async function fetchAndStoreB2bHealthSnapshot(input: {
 
     if (!executed.payload.ok) {
       const errCd = executed.firstFailed?.errCd?.trim().toUpperCase() || "";
-      if (errCd === "LOGIN-999") {
+      if (errCd === "LOGIN-999" || errCd === "C0012-001") {
         throw new B2bEmployeeSyncError({
           message: "인증 세션이 만료되었습니다. 카카오 인증을 다시 진행해 주세요.",
           code: "NHIS_AUTH_EXPIRED",
@@ -661,6 +775,12 @@ export async function fetchAndStoreB2bHealthSnapshot(input: {
       data: {
         lastSyncedAt: new Date(),
       },
+    });
+    await persistNhisLinkFromPayload({
+      appUserId: input.appUserId,
+      identityHash: identity.identityHash,
+      payload: patched.payload,
+      markFetchedAt: true,
     });
 
     return {

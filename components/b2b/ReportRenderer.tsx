@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { LayoutDocument, LayoutNode } from "@/lib/b2b/export/layout-types";
 import type { LayoutValidationIssue } from "@/lib/b2b/export/validation-types";
+import {
+  REPORT_FONT_STACK,
+  REPORT_TEXT_LINE_HEIGHT,
+} from "@/lib/b2b/export/render-style";
 
 const MM_TO_PX = 3.7795275591;
 
@@ -42,7 +46,13 @@ function useContainerWidth(ref: React.RefObject<HTMLDivElement>) {
   useEffect(() => {
     const element = ref.current;
     if (!element) return;
-    const update = () => setWidth(element.clientWidth);
+    const update = () => {
+      const style = window.getComputedStyle(element);
+      const paddingLeft = Number.parseFloat(style.paddingLeft) || 0;
+      const paddingRight = Number.parseFloat(style.paddingRight) || 0;
+      const contentWidth = Math.max(0, element.clientWidth - paddingLeft - paddingRight);
+      setWidth(contentWidth);
+    };
     update();
     const observer = new ResizeObserver(update);
     observer.observe(element);
@@ -115,7 +125,13 @@ function renderNode(node: LayoutNode, debugOverlay: boolean) {
         color: `#${node.color || "111827"}`,
         fontSize: `${node.fontSize ?? 12}px`,
         fontWeight: node.bold ? 700 : 400,
-        lineHeight: 1.28,
+        fontFamily: REPORT_FONT_STACK,
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "flex-start",
+        margin: 0,
+        padding: 0,
+        lineHeight: REPORT_TEXT_LINE_HEIGHT,
         whiteSpace: "pre-wrap",
         wordBreak: "keep-all",
       }}
@@ -142,7 +158,7 @@ export default function ReportRenderer(props: ReportRendererProps) {
     return layout.pages.map((page) => {
       if (!fitToWidth || containerWidth <= 0) return 1;
       const widthPx = page.widthMm * MM_TO_PX;
-      const available = Math.max(0, containerWidth - 16);
+      const available = Math.max(0, containerWidth);
       const nextScale = available / widthPx;
       return Number.isFinite(nextScale) ? Math.max(0.45, Math.min(1, nextScale)) : 1;
     });
@@ -211,7 +227,7 @@ export default function ReportRenderer(props: ReportRendererProps) {
 
       <div
         ref={containerRef}
-        className="wb-report-canvas rounded-2xl border border-slate-200 bg-slate-100 p-3 sm:p-4"
+        className="wb-report-canvas overflow-x-auto rounded-2xl border border-slate-200 bg-slate-100 p-3 sm:p-4"
       >
         <div className="space-y-4">
           {layout.pages.map((page, pageIndex) => {
@@ -237,8 +253,11 @@ export default function ReportRenderer(props: ReportRendererProps) {
                   style={{
                     width: `${page.widthMm}mm`,
                     height: `${page.heightMm}mm`,
+                    boxSizing: "border-box",
                     transform: `scale(${scale})`,
                     transformOrigin: "top left",
+                    fontFamily: REPORT_FONT_STACK,
+                    lineHeight: REPORT_TEXT_LINE_HEIGHT,
                   }}
                 >
                   {page.nodes.map((node) => renderNode(node, debugOverlay))}
@@ -280,4 +299,3 @@ export default function ReportRenderer(props: ReportRendererProps) {
     </div>
   );
 }
-

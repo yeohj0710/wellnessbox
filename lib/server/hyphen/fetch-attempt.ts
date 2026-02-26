@@ -46,6 +46,15 @@ type RecordNhisFetchAttemptInput = {
   ok: boolean;
 };
 
+type RecordNhisOperationalAttemptInput = {
+  appUserId: string;
+  action: "init" | "sign";
+  statusCode: number;
+  ok: boolean;
+  reason?: string;
+  identityHash?: string | null;
+};
+
 function envPositiveInt(name: string, fallback: number) {
   const raw = process.env[name];
   if (!raw) return fallback;
@@ -259,6 +268,29 @@ export async function recordNhisFetchAttempt(input: RecordNhisFetchAttemptInput)
       requestKey: input.requestKey,
       forceRefresh: input.forceRefresh,
       cached: input.cached,
+      statusCode: input.statusCode,
+      ok: input.ok,
+    },
+  });
+}
+
+export async function recordNhisOperationalAttempt(
+  input: RecordNhisOperationalAttemptInput
+) {
+  const reason =
+    typeof input.reason === "string" && input.reason.trim().length > 0
+      ? input.reason.trim()
+      : "none";
+
+  return db.healthProviderFetchAttempt.create({
+    data: {
+      appUserId: input.appUserId,
+      provider: HYPHEN_PROVIDER,
+      identityHash: input.identityHash ?? null,
+      requestHash: null,
+      requestKey: `op=${input.action}|reason=${reason}`,
+      forceRefresh: false,
+      cached: true,
       statusCode: input.statusCode,
       ok: input.ok,
     },

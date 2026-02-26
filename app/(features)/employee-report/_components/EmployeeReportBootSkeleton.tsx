@@ -2,7 +2,7 @@ import styles from "@/components/b2b/B2bUx.module.css";
 
 export default function EmployeeReportBootSkeleton() {
   return (
-    <div className={`${styles.page} ${styles.compactPage} ${styles.stack}`}>
+    <div className={`${styles.page} ${styles.reportPage} ${styles.stack}`}>
       <header className={styles.heroCard}>
         <span className={`${styles.skeletonPill} ${styles.skeletonBlock}`} />
         <span className={`${styles.skeletonLine} ${styles.skeletonBlock}`} />
@@ -23,4 +23,3 @@ export default function EmployeeReportBootSkeleton() {
     </div>
   );
 }
-

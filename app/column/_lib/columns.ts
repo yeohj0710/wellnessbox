@@ -36,6 +36,7 @@ export type ColumnSummary = {
 export type ColumnDetail = ColumnSummary & {
   content: string;
   toc: TocItem[];
+  legacySlugs: string[];
 };
 
 export type ColumnTag = {
@@ -220,6 +221,23 @@ function parseTagList(rawTags: string | undefined) {
   return Array.from(new Set(tags));
 }
 
+function parseLegacySlugList(rawLegacySlugs: string | undefined) {
+  if (!rawLegacySlugs) return [];
+  const source = rawLegacySlugs.trim();
+  if (!source) return [];
+  const tokens =
+    source.startsWith("[") && source.endsWith("]")
+      ? source.slice(1, -1).split(",")
+      : source.split(",");
+  return Array.from(
+    new Set(
+      tokens
+        .map((token) => normalizeSlug(stripWrappedQuotes(token)))
+        .filter(Boolean)
+    )
+  );
+}
+
 function normalizeSlug(input: string) {
   return safeDecodeURIComponent(input)
     .trim()
@@ -321,8 +339,15 @@ async function parseColumnFile(absolutePath: string): Promise<ColumnDetail> {
   const description =
     stripWrappedQuotes(frontmatter.description || frontmatter.summary || "") ||
     summarize(plainText, 160) ||
-    "웰니스박스 칼럼입니다.";
+    "웰니스박스 칼럼이에요.";
   const tags = parseTagList(frontmatter.tags);
+  const coverImageRaw = stripWrappedQuotes(
+    frontmatter.coverImageUrl || frontmatter.coverImage || ""
+  );
+  const coverImageUrl = coverImageRaw || null;
+  const legacySlugs = parseLegacySlugList(frontmatter.legacySlugs).filter(
+    (entry) => entry !== slug
+  );
   const draft = parseBoolean(frontmatter.draft);
 
   return {
@@ -333,9 +358,10 @@ async function parseColumnFile(absolutePath: string): Promise<ColumnDetail> {
     summary: description,
     publishedAt,
     tags,
-    coverImageUrl: null,
+    coverImageUrl,
     content,
     toc,
+    legacySlugs,
     draft,
     updatedAt: stat.mtime.toISOString(),
     readingMinutes: estimateReadingMinutes(plainText),
@@ -352,7 +378,7 @@ function sortColumnsByDateDesc(columns: ColumnDetail[]) {
 }
 
 function toSummary(column: ColumnDetail): ColumnSummary {
-  const { content: _content, toc: _toc, ...summary } = column;
+  const { content: _content, toc: _toc, legacySlugs: _legacySlugs, ...summary } = column;
   return summary;
 }
 
@@ -363,6 +389,15 @@ function isColumnPostTableMissing(error: unknown) {
   const message =
     error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
   return message.includes("columnpost") && message.includes("does not exist");
+}
+
+function isColumnPostSlugAliasTableMissing(error: unknown) {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    return error.code === "P2021";
+  }
+  const message =
+    error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+  return message.includes("columnpostslugalias") && message.includes("does not exist");
 }
 
 function mapDbPostToColumnDetail(post: {
@@ -380,7 +415,7 @@ function mapDbPostToColumnDetail(post: {
   const content = post.contentMarkdown;
   const plainText = stripMarkdown(content);
   const description =
-    (post.excerpt || "").trim() || summarize(plainText, 160) || "웰니스박스 칼럼입니다.";
+    (post.excerpt || "").trim() || summarize(plainText, 160) || "웰니스박스 칼럼이에요.";
 
   return {
     postId: post.id,
@@ -393,6 +428,7 @@ function mapDbPostToColumnDetail(post: {
     coverImageUrl: post.coverImageUrl?.trim() || null,
     content,
     toc: buildToc(content),
+    legacySlugs: [],
     draft: post.status !== "published",
     updatedAt: post.updatedAt.toISOString(),
     readingMinutes: estimateReadingMinutes(plainText),
@@ -470,6 +506,61 @@ async function getPublishedDbColumnBySlug(slug: string): Promise<ColumnDetail | 
   }
 }
 
+async function getPublishedDbColumnByAliasSlug(
+  slug: string
+): Promise<ColumnDetail | null> {
+  try {
+    const aliasClient = (db as unknown as {
+      columnPostSlugAlias?: {
+        findUnique: (args: unknown) => Promise<unknown>;
+      };
+    }).columnPostSlugAlias;
+    if (!aliasClient?.findUnique) return null;
+
+    const row = (await aliasClient.findUnique({
+      where: { slug },
+      select: {
+        post: {
+          select: {
+            id: true,
+            slug: true,
+            title: true,
+            excerpt: true,
+            contentMarkdown: true,
+            tags: true,
+            status: true,
+            publishedAt: true,
+            coverImageUrl: true,
+            updatedAt: true,
+          },
+        },
+      },
+    })) as
+      | {
+          post?: {
+            id: string;
+            slug: string;
+            title: string;
+            excerpt: string | null;
+            contentMarkdown: string;
+            tags: string[];
+            status: string;
+            publishedAt: Date | null;
+            coverImageUrl: string | null;
+            updatedAt: Date;
+          } | null;
+        }
+      | null;
+    if (!row?.post || row.post.status !== "published") return null;
+    return mapDbPostToColumnDetail(row.post);
+  } catch (error) {
+    if (isColumnPostSlugAliasTableMissing(error) || isColumnPostTableMissing(error)) {
+      return null;
+    }
+    throw error;
+  }
+}
+
 async function getPublishedColumns(): Promise<ColumnDetail[]> {
   const [dbColumns, fileColumns] = await Promise.all([
     getPublishedDbColumns(),
@@ -488,15 +579,90 @@ export async function getAllColumnSummaries(): Promise<ColumnSummary[]> {
   return columns.map(toSummary);
 }
 
-export async function getColumnBySlug(slug: string): Promise<ColumnDetail | null> {
-  const normalized = normalizeSlug(slug);
-  if (!normalized) return null;
+export type ColumnSlugResolution = {
+  requestedSlug: string;
+  canonicalSlug: string | null;
+  shouldRedirect: boolean;
+  source: "db" | "db-alias" | "file" | "file-legacy" | null;
+  column: ColumnDetail | null;
+};
+
+export async function resolveColumnBySlug(
+  slug: string
+): Promise<ColumnSlugResolution> {
+  const requested = safeDecodeURIComponent(slug)
+    .trim()
+    .replace(/\\/g, "/")
+    .replace(/\/+/g, "/")
+    .replace(/^\/+|\/+$/g, "");
+  const normalized = normalizeSlug(requested);
+  if (!normalized) {
+    return {
+      requestedSlug: requested,
+      canonicalSlug: null,
+      shouldRedirect: false,
+      source: null,
+      column: null,
+    };
+  }
 
   const dbFirst = await getPublishedDbColumnBySlug(normalized);
-  if (dbFirst) return dbFirst;
+  if (dbFirst) {
+    return {
+      requestedSlug: requested,
+      canonicalSlug: dbFirst.slug,
+      shouldRedirect: dbFirst.slug !== requested,
+      source: "db",
+      column: dbFirst,
+    };
+  }
+
+  const dbAlias = await getPublishedDbColumnByAliasSlug(normalized);
+  if (dbAlias) {
+    return {
+      requestedSlug: requested,
+      canonicalSlug: dbAlias.slug,
+      shouldRedirect: dbAlias.slug !== requested,
+      source: "db-alias",
+      column: dbAlias,
+    };
+  }
 
   const fileColumns = await getPublishedFileColumns();
-  return fileColumns.find((column) => column.slug === normalized) ?? null;
+  const direct = fileColumns.find((column) => column.slug === normalized);
+  if (direct) {
+    return {
+      requestedSlug: requested,
+      canonicalSlug: direct.slug,
+      shouldRedirect: direct.slug !== requested,
+      source: "file",
+      column: direct,
+    };
+  }
+
+  const legacy = fileColumns.find((column) => column.legacySlugs.includes(normalized));
+  if (legacy) {
+    return {
+      requestedSlug: requested,
+      canonicalSlug: legacy.slug,
+      shouldRedirect: legacy.slug !== requested,
+      source: "file-legacy",
+      column: legacy,
+    };
+  }
+
+  return {
+    requestedSlug: requested,
+    canonicalSlug: null,
+    shouldRedirect: false,
+    source: null,
+    column: null,
+  };
+}
+
+export async function getColumnBySlug(slug: string): Promise<ColumnDetail | null> {
+  const resolved = await resolveColumnBySlug(slug);
+  return resolved.column;
 }
 
 export async function getAllColumnTags(): Promise<ColumnTag[]> {
