@@ -58,15 +58,27 @@ export type ReportSummaryPayload = {
         string,
         {
           sectionTitle?: string;
-          items?: Array<{ questionNumber?: number; text?: string }>;
+          items?: Array<{ questionNumber?: number; score?: number; text?: string }>;
         }
       >;
+      highRiskHighlights?: Array<{
+        category?: "detailed" | "common" | "domain" | "section";
+        title?: string;
+        score?: number;
+        action?: string;
+        questionNumber?: number;
+        sectionId?: string;
+      }>;
       lifestyleRoutineAdvice?: string[];
       supplementDesign?: Array<{
         sectionId?: string;
         title?: string;
         paragraphs?: string[];
       }>;
+      perQuestionScores?: {
+        common?: Record<string, number | null>;
+        sections?: Record<string, Record<string, number | null>>;
+      };
     } | null;
   };
   survey?: {

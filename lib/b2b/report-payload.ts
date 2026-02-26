@@ -462,12 +462,22 @@ function extractWellnessSectionAdvice(payload: unknown) {
               typeof item.questionNumber === "number"
                 ? item.questionNumber
                 : Number.parseInt(toText(item.questionNumber), 10),
+            score:
+              typeof item.score === "number"
+                ? item.score
+                : Number.parseFloat(toText(item.score) || "0"),
             text: toText(item.text),
           }))
           .filter(
-            (item) => Number.isFinite(item.questionNumber) && Boolean(item.text)
+            (item) =>
+              Number.isFinite(item.questionNumber) &&
+              Number.isFinite(item.score) &&
+              Boolean(item.text)
           )
-          .sort((left, right) => left.questionNumber - right.questionNumber)
+          .sort((left, right) => {
+            if (right.score !== left.score) return right.score - left.score;
+            return left.questionNumber - right.questionNumber;
+          })
       : [];
     return [
       sectionId,
@@ -479,6 +489,34 @@ function extractWellnessSectionAdvice(payload: unknown) {
   });
 
   return Object.fromEntries(entries);
+}
+
+function extractWellnessHighRiskHighlights(payload: unknown) {
+  const rows = Array.isArray(payload) ? payload : [];
+  return rows
+    .map((item) => asRecord(item))
+    .filter((item): item is JsonRecord => Boolean(item))
+    .map((item) => ({
+      category:
+        toText(item.category) === "detailed" ||
+        toText(item.category) === "common" ||
+        toText(item.category) === "domain" ||
+        toText(item.category) === "section"
+          ? (toText(item.category) as "detailed" | "common" | "domain" | "section")
+          : "common",
+      title: toText(item.title) || "-",
+      score:
+        typeof item.score === "number"
+          ? item.score
+          : Number(toText(item.score) || 0),
+      action: toText(item.action) || "",
+      questionNumber:
+        typeof item.questionNumber === "number"
+          ? item.questionNumber
+          : Number.parseInt(toText(item.questionNumber), 10) || undefined,
+      sectionId: toText(item.sectionId) || undefined,
+    }))
+    .filter((item) => Boolean(item.title) && Number.isFinite(item.score));
 }
 
 function extractWellness(payload: unknown) {
@@ -561,6 +599,7 @@ function extractWellness(payload: unknown) {
         ? wellness.overallHealthScore
         : Number(toText(wellness.overallHealthScore) || 0),
     sectionAdvice: extractWellnessSectionAdvice(wellness.sectionAdvice),
+    highRiskHighlights: extractWellnessHighRiskHighlights(wellness.highRiskHighlights),
     lifestyleRoutineAdvice: Array.isArray(wellness.lifestyleRoutineAdvice)
       ? wellness.lifestyleRoutineAdvice
           .map((item) => toText(item))
@@ -917,9 +956,17 @@ export type B2bReportPayload = {
         string,
         {
           sectionTitle: string;
-          items: Array<{ questionNumber: number; text: string }>;
+          items: Array<{ questionNumber: number; score: number; text: string }>;
         }
       >;
+      highRiskHighlights: Array<{
+        category: "detailed" | "common" | "domain" | "section";
+        title: string;
+        score: number;
+        action: string;
+        questionNumber?: number;
+        sectionId?: string;
+      }>;
       lifestyleRoutineAdvice: string[];
       supplementDesign: Array<{
         sectionId: string;

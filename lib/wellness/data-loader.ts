@@ -1,25 +1,41 @@
-import commonSurveyJson from "@/data/b2b_new/survey.common.json";
-import reportTextsJson from "@/data/b2b_new/report.texts.json";
-import scoringRulesJson from "@/data/b2b_new/scoring.rules.json";
-import sectionSurveyJson from "@/data/b2b_new/survey.sections.json";
+import commonSurveyJson from "@/data/b2b/survey.common.json";
+import reportTextsJson from "@/data/b2b/report.texts.json";
+import scoringRulesJson from "@/data/b2b/scoring.rules.json";
+import sectionSurveyJson from "@/data/b2b/survey.sections.json";
 import { z } from "zod";
 
-const optionSchema = z.object({
+const scoredOptionSchema = z.object({
   value: z.string().min(1),
   label: z.string().min(1),
   score: z.number().min(0).max(1).optional(),
+  aliases: z.array(z.string().min(1)).optional(),
+  labelPaper: z.string().min(1).optional(),
+});
+
+const listItemSchema = z.object({
+  value: z.string().min(1).optional(),
+  label: z.string().min(1),
+  aliases: z.array(z.string().min(1)).optional(),
+});
+
+const noneOptionSchema = z.object({
+  value: z.string().min(1).optional(),
+  label: z.string().min(1),
 });
 
 const optionVariantSchema = z.object({
   variantId: z.string().min(1).optional(),
   optionsPrefix: z.string().nullable().optional(),
-  options: z.array(optionSchema).min(1),
+  options: z.array(scoredOptionSchema).min(1),
   notes: z.string().optional(),
 });
 
 const constraintsSchema = z
   .object({
-    maxSelections: z.number().int().min(1).max(10).optional(),
+    min: z.number().optional(),
+    max: z.number().optional(),
+    integer: z.boolean().optional(),
+    maxSelections: z.number().int().min(1).max(24).optional(),
     recommendedSelectionsRange: z
       .tuple([z.number().int().min(0), z.number().int().min(0)])
       .optional(),
@@ -32,6 +48,21 @@ const scoringToggleSchema = z
   })
   .optional();
 
+const displayIfSchema = z
+  .object({
+    field: z.string().min(1),
+    equals: z.union([z.string(), z.number(), z.boolean()]),
+  })
+  .optional();
+
+const groupFieldSchema = z.object({
+  id: z.string().min(1),
+  label: z.string().min(1),
+  type: z.enum(["text", "number"]),
+  unit: z.string().optional(),
+  constraints: constraintsSchema,
+});
+
 const commonQuestionSchema = z.object({
   id: z.string().min(1),
   number: z.number().int().min(1),
@@ -43,9 +74,14 @@ const commonQuestionSchema = z.object({
     "number",
     "group",
   ]),
-  options: z.array(optionSchema.extend({ aliases: z.array(z.string()).optional() })).optional(),
+  options: z.array(scoredOptionSchema).optional(),
+  items: z.array(listItemSchema).optional(),
+  noneOption: noneOptionSchema.optional(),
+  fields: z.array(groupFieldSchema).optional(),
   constraints: constraintsSchema,
   scoring: scoringToggleSchema,
+  displayIf: displayIfSchema,
+  unit: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -55,8 +91,9 @@ const sectionQuestionSchema = z.object({
   prompt: z.string().min(1),
   type: z.enum(["single_choice", "multi_select_with_none", "multi_select_limited"]),
   optionsPrefix: z.string().nullable().optional(),
-  options: z.array(optionSchema).min(1),
+  options: z.array(scoredOptionSchema).min(1),
   variants: z.record(z.string(), optionVariantSchema).optional(),
+  constraints: constraintsSchema,
   scoring: scoringToggleSchema,
 });
 
@@ -78,6 +115,7 @@ const sectionSurveySchema = z.object({
       z.object({
         id: z.string().min(1),
         title: z.string().min(1),
+        questionCount: z.number().int().min(0).optional(),
         questions: z.array(sectionQuestionSchema).min(1),
       })
     )
@@ -189,22 +227,50 @@ export type WellnessSurveyQuestionForTemplate = {
   key: string;
   index: number;
   text: string;
-  type: "text" | "single" | "multi";
+  helpText?: string;
+  type: "text" | "single" | "multi" | "number" | "group";
+  sourceType:
+    | "single_choice"
+    | "multi_select_with_none"
+    | "multi_select_limited"
+    | "number"
+    | "group";
   required: boolean;
   options: Array<{
     value: string;
     label: string;
     score?: number;
     aliases?: string[];
+    isNoneOption?: boolean;
   }>;
   placeholder?: string;
   maxSelect?: number;
   optionsPrefix?: string;
+  unit?: string;
+  fields?: Array<{
+    id: string;
+    label: string;
+    type: "text" | "number";
+    unit?: string;
+    constraints?: {
+      min?: number;
+      max?: number;
+      integer?: boolean;
+    };
+  }>;
+  displayIf?: {
+    field: string;
+    equals: string;
+  };
   constraints?: {
+    min?: number;
+    max?: number;
+    integer?: boolean;
     maxSelections?: number;
     recommendedSelectionsRange?: [number, number];
   };
   scoringEnabled?: boolean;
+  noneOptionValue?: string;
   variants?: Record<
     string,
     {
@@ -257,11 +323,19 @@ let cachedTemplate: WellnessSurveyTemplate | null = null;
 function normalizeTemplateQuestionType(
   type: WellnessCommonSurvey["questions"][number]["type"] | "single_choice"
 ) {
-  if (type === "single_choice") return "single" as const;
-  if (type === "multi_select_limited" || type === "multi_select_with_none") {
-    return "multi" as const;
+  switch (type) {
+    case "single_choice":
+      return "single" as const;
+    case "multi_select_with_none":
+    case "multi_select_limited":
+      return "multi" as const;
+    case "number":
+      return "number" as const;
+    case "group":
+      return "group" as const;
+    default:
+      return "text" as const;
   }
-  return "text" as const;
 }
 
 function majorVersionOf(versionText: string) {
@@ -269,6 +343,94 @@ function majorVersionOf(versionText: string) {
   const major = Number.parseInt(majorToken || "1", 10);
   if (Number.isNaN(major) || major < 1) return 1;
   return major + 1;
+}
+
+function buildGeneratedValue(questionId: string, index: number, tag: string) {
+  const suffix = String(index + 1).padStart(2, "0");
+  return `${questionId}_${tag}_${suffix}`;
+}
+
+function normalizeConstraint(
+  constraints: WellnessCommonSurvey["questions"][number]["constraints"]
+) {
+  if (!constraints) return undefined;
+  const normalized = {
+    min: constraints.min,
+    max: constraints.max,
+    integer: constraints.integer,
+    maxSelections: constraints.maxSelections,
+    recommendedSelectionsRange: constraints.recommendedSelectionsRange,
+  };
+  if (
+    normalized.min == null &&
+    normalized.max == null &&
+    normalized.integer == null &&
+    normalized.maxSelections == null &&
+    !normalized.recommendedSelectionsRange
+  ) {
+    return undefined;
+  }
+  return normalized;
+}
+
+function buildPlaceholder(question: WellnessCommonSurvey["questions"][number]) {
+  if (question.type === "number") {
+    return question.unit
+      ? `숫자를 입력해 주세요 (${question.unit})`
+      : "숫자를 입력해 주세요";
+  }
+  if (question.type === "group") {
+    const labels = (question.fields ?? []).map((field) => field.label).filter(Boolean);
+    return labels.length > 0
+      ? `${labels.join(", ")} 값을 입력해 주세요`
+      : "값을 입력해 주세요";
+  }
+  return undefined;
+}
+
+function toDisplayIf(
+  displayIf: WellnessCommonSurvey["questions"][number]["displayIf"]
+) {
+  if (!displayIf) return undefined;
+  return {
+    field: displayIf.field,
+    equals: String(displayIf.equals),
+  };
+}
+
+function buildQuestionOptions(question: WellnessCommonSurvey["questions"][number]) {
+  const options: WellnessSurveyQuestionForTemplate["options"] = [];
+
+  if (Array.isArray(question.options) && question.options.length > 0) {
+    for (const [index, option] of question.options.entries()) {
+      options.push({
+        value: option.value || buildGeneratedValue(question.id, index, "OPT"),
+        label: option.label,
+        score: option.score,
+        aliases: option.aliases,
+      });
+    }
+  }
+
+  if (Array.isArray(question.items) && question.items.length > 0) {
+    for (const [index, item] of question.items.entries()) {
+      options.push({
+        value: item.value || buildGeneratedValue(question.id, index, "ITEM"),
+        label: item.label,
+        aliases: item.aliases,
+      });
+    }
+  }
+
+  if (question.noneOption) {
+    options.push({
+      value: question.noneOption.value || `${question.id}_NONE`,
+      label: question.noneOption.label,
+      isNoneOption: true,
+    });
+  }
+
+  return options;
 }
 
 export function loadWellnessDataBundle(): WellnessDataBundle {
@@ -293,29 +455,47 @@ export function loadWellnessTemplateForB2b(): WellnessSurveyTemplate {
   const recommendedSelectionsRange = c27?.constraints?.recommendedSelectionsRange;
 
   const common = bundle.common.questions.map((question) => {
-    const variants = question.id.startsWith("S")
-      ? undefined
-      : undefined;
+    const options = buildQuestionOptions(question);
+    const noneOptionValue = options.find((option) => option.isNoneOption)?.value;
+    const constraints = normalizeConstraint(question.constraints);
+
     return {
       key: question.id,
       index: question.number,
       text: question.prompt,
+      helpText: question.notes,
       type: normalizeTemplateQuestionType(question.type),
-      required: false,
-      options: (question.options ?? []).map((option) => ({
-        value: option.value,
-        label: option.label,
-        score: option.score,
-        aliases: option.aliases,
-      })),
+      sourceType: question.type,
+      required: true,
+      options,
+      placeholder: buildPlaceholder(question),
       maxSelect:
-        question.type === "multi_select_limited"
+        question.type === "multi_select_limited" ||
+        question.type === "multi_select_with_none"
           ? question.constraints?.maxSelections ?? maxSelectedSections
           : undefined,
       optionsPrefix: undefined,
-      constraints: question.constraints,
+      unit: question.unit,
+      fields: Array.isArray(question.fields)
+        ? question.fields.map((field) => ({
+            id: field.id,
+            label: field.label,
+            type: field.type,
+            unit: field.unit,
+            constraints: field.constraints
+              ? {
+                  min: field.constraints.min,
+                  max: field.constraints.max,
+                  integer: field.constraints.integer,
+                }
+              : undefined,
+          }))
+        : undefined,
+      displayIf: toDisplayIf(question.displayIf),
+      constraints,
       scoringEnabled: question.scoring?.enabled === true,
-      variants,
+      noneOptionValue,
+      variants: undefined,
     } satisfies WellnessSurveyQuestionForTemplate;
   });
 
@@ -328,19 +508,30 @@ export function loadWellnessTemplateForB2b(): WellnessSurveyTemplate {
       key: question.id,
       index: question.number,
       text: question.prompt,
+      helpText: undefined,
       type: normalizeTemplateQuestionType(question.type),
-      required: false,
+      sourceType: question.type,
+      required: true,
       options: question.options.map((option) => ({
         value: option.value,
         label: option.label,
         score: option.score,
       })),
       maxSelect:
-        question.type === "multi_select_limited"
-          ? question.options.length
+        question.type === "multi_select_limited" ||
+        question.type === "multi_select_with_none"
+          ? question.constraints?.maxSelections ?? question.options.length
           : undefined,
       optionsPrefix: question.optionsPrefix ?? undefined,
+      constraints: question.constraints
+        ? {
+            maxSelections: question.constraints.maxSelections,
+            recommendedSelectionsRange:
+              question.constraints.recommendedSelectionsRange,
+          }
+        : undefined,
       scoringEnabled: question.scoring?.enabled === true,
+      noneOptionValue: undefined,
       variants: Object.fromEntries(
         Object.entries(question.variants ?? {}).map(([variantKey, variant]) => [
           variantKey,

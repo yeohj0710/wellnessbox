@@ -113,6 +113,44 @@ async function refreshReportLayoutIfNeeded(report: Awaited<ReturnType<typeof get
   }
 }
 
+async function hasNewerSourceData(input: {
+  employeeId: string;
+  periodKey: string;
+  reportUpdatedAt: Date;
+}) {
+  const [latestAnalysis, latestSurvey, latestHealth, latestNote] = await Promise.all([
+    db.b2bAnalysisResult.findFirst({
+      where: { employeeId: input.employeeId, periodKey: input.periodKey },
+      orderBy: [{ updatedAt: "desc" }, { version: "desc" }],
+      select: { updatedAt: true },
+    }),
+    db.b2bSurveyResponse.findFirst({
+      where: { employeeId: input.employeeId, periodKey: input.periodKey },
+      orderBy: { updatedAt: "desc" },
+      select: { updatedAt: true },
+    }),
+    db.b2bHealthDataSnapshot.findFirst({
+      where: { employeeId: input.employeeId, periodKey: input.periodKey },
+      orderBy: { fetchedAt: "desc" },
+      select: { fetchedAt: true },
+    }),
+    db.b2bPharmacistNote.findFirst({
+      where: { employeeId: input.employeeId, periodKey: input.periodKey },
+      orderBy: { updatedAt: "desc" },
+      select: { updatedAt: true },
+    }),
+  ]);
+
+  const reportTime = input.reportUpdatedAt.getTime();
+  const latestTimes = [
+    latestAnalysis?.updatedAt?.getTime() ?? 0,
+    latestSurvey?.updatedAt?.getTime() ?? 0,
+    latestHealth?.fetchedAt?.getTime() ?? 0,
+    latestNote?.updatedAt?.getTime() ?? 0,
+  ];
+  return latestTimes.some((value) => value > reportTime);
+}
+
 export async function getNextB2bReportVariantIndex(employeeId: string) {
   const latest = await db.b2bReport.findFirst({
     where: { employeeId },
@@ -203,6 +241,18 @@ export async function ensureLatestB2bReport(employeeId: string, periodKey?: stri
   const targetPeriod = periodKey ?? resolveCurrentPeriodKey();
   const latest = await getLatestB2bReport(employeeId, targetPeriod);
   if (latest) {
+    const stale = await hasNewerSourceData({
+      employeeId,
+      periodKey: targetPeriod,
+      reportUpdatedAt: latest.updatedAt,
+    });
+    if (stale) {
+      return createB2bReportSnapshot({
+        employeeId,
+        periodKey: targetPeriod,
+        recomputeAnalysis: true,
+      });
+    }
     const refreshed = await refreshReportLayoutIfNeeded(latest);
     if (refreshed) return refreshed;
   }

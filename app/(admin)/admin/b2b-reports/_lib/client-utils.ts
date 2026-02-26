@@ -80,6 +80,13 @@ export function toInputValue(raw: unknown) {
     if (Array.isArray(record.values)) {
       return record.values.map((item) => String(item)).join(", ");
     }
+    if (record.fieldValues && typeof record.fieldValues === "object") {
+      const fieldValues = record.fieldValues as Record<string, unknown>;
+      const entries = Object.values(fieldValues)
+        .map((item) => String(item).trim())
+        .filter(Boolean);
+      if (entries.length > 0) return entries.join(", ");
+    }
   }
   return "";
 }

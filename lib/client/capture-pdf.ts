@@ -19,6 +19,24 @@ function resolveScale() {
   return Math.max(2, Math.min(3, ratio));
 }
 
+async function waitForStableCaptureFrame() {
+  if (typeof document === "undefined") return;
+  if (document.fonts?.ready) {
+    try {
+      await document.fonts.ready;
+    } catch {
+      // Ignore font loading failures and continue capture.
+    }
+  }
+
+  await new Promise<void>((resolve) => {
+    requestAnimationFrame(() => resolve());
+  });
+  await new Promise<void>((resolve) => {
+    requestAnimationFrame(() => resolve());
+  });
+}
+
 export async function captureElementToPdf(input: CaptureElementToPdfInput) {
   if (typeof window === "undefined") {
     throw new Error("captureElementToPdf can only run in the browser.");
@@ -32,6 +50,70 @@ export async function captureElementToPdf(input: CaptureElementToPdfInput) {
   const marginMm = input.marginMm ?? 8;
   const quality = clampQuality(input.quality);
   const desktopViewportWidth = Math.max(1280, input.desktopViewportWidth ?? 1440);
+
+  await waitForStableCaptureFrame();
+
+  const pdf = new jsPDF({
+    orientation: "portrait",
+    unit: "mm",
+    format: "a4",
+    compress: true,
+  });
+  const pageWidthMm = pdf.internal.pageSize.getWidth();
+  const pageHeightMm = pdf.internal.pageSize.getHeight();
+  const usableWidthMm = pageWidthMm - marginMm * 2;
+  const usableHeightMm = pageHeightMm - marginMm * 2;
+
+  const pagedTargets = Array.from(
+    input.element.querySelectorAll<HTMLElement>("[data-report-page]")
+  );
+  if (pagedTargets.length > 0) {
+    for (let index = 0; index < pagedTargets.length; index += 1) {
+      const target = pagedTargets[index];
+      await waitForStableCaptureFrame();
+      const canvas = await html2canvas(target, {
+        backgroundColor: "#ffffff",
+        useCORS: true,
+        logging: false,
+        scale: resolveScale(),
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: desktopViewportWidth,
+        windowHeight: Math.max(
+          desktopViewportWidth,
+          target.scrollHeight,
+          target.clientHeight
+        ),
+      });
+
+      const imageData = canvas.toDataURL("image/jpeg", quality);
+      const scaleMmPerPx = Math.min(
+        usableWidthMm / Math.max(1, canvas.width),
+        usableHeightMm / Math.max(1, canvas.height)
+      );
+      const renderWidthMm = canvas.width * scaleMmPerPx;
+      const renderHeightMm = canvas.height * scaleMmPerPx;
+      const offsetX = marginMm + (usableWidthMm - renderWidthMm) / 2;
+      const offsetY = marginMm + (usableHeightMm - renderHeightMm) / 2;
+
+      if (index > 0) {
+        pdf.addPage("a4", "portrait");
+      }
+      pdf.addImage(
+        imageData,
+        "JPEG",
+        offsetX,
+        offsetY,
+        renderWidthMm,
+        renderHeightMm,
+        undefined,
+        "FAST"
+      );
+    }
+
+    pdf.save(input.fileName);
+    return;
+  }
 
   const canvas = await html2canvas(input.element, {
     backgroundColor: "#ffffff",
@@ -48,16 +130,6 @@ export async function captureElementToPdf(input: CaptureElementToPdfInput) {
     ),
   });
 
-  const pdf = new jsPDF({
-    orientation: "portrait",
-    unit: "mm",
-    format: "a4",
-    compress: true,
-  });
-  const pageWidthMm = pdf.internal.pageSize.getWidth();
-  const pageHeightMm = pdf.internal.pageSize.getHeight();
-  const usableWidthMm = pageWidthMm - marginMm * 2;
-  const usableHeightMm = pageHeightMm - marginMm * 2;
   const mmPerPx = usableWidthMm / canvas.width;
   const pageHeightPx = Math.max(1, Math.floor(usableHeightMm / mmPerPx));
 
@@ -109,4 +181,3 @@ export async function captureElementToPdf(input: CaptureElementToPdfInput) {
 
   pdf.save(input.fileName);
 }
-

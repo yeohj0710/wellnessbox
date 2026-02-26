@@ -10,6 +10,7 @@ const surveyOptionSchema = z
     label: z.string().trim().min(1),
     score: z.number().min(0).max(1).optional(),
     aliases: z.array(z.string().trim().min(1)).optional(),
+    isNoneOption: z.boolean().optional(),
   })
   .passthrough();
 
@@ -27,15 +28,52 @@ const surveyQuestionSchema = z
     index: z.number().int().min(1),
     text: z.string().min(1),
     helpText: z.string().optional(),
-    type: z.enum(["text", "single", "multi"]).default("single"),
+    type: z.enum(["text", "single", "multi", "number", "group"]).default("single"),
+    sourceType: z
+      .enum([
+        "single_choice",
+        "multi_select_with_none",
+        "multi_select_limited",
+        "number",
+        "group",
+      ])
+      .optional(),
     required: z.boolean().optional(),
     options: z.array(surveyOptionSchema).optional(),
     placeholder: z.string().optional(),
     maxSelect: z.number().int().min(1).max(24).optional(),
     optionsPrefix: z.string().optional(),
+    unit: z.string().optional(),
+    fields: z
+      .array(
+        z.object({
+          id: z.string().trim().min(1),
+          label: z.string().trim().min(1),
+          type: z.enum(["text", "number"]),
+          unit: z.string().optional(),
+          constraints: z
+            .object({
+              min: z.number().optional(),
+              max: z.number().optional(),
+              integer: z.boolean().optional(),
+            })
+            .optional(),
+        })
+      )
+      .optional(),
+    displayIf: z
+      .object({
+        field: z.string().trim().min(1),
+        equals: z.string().trim().min(1),
+      })
+      .optional(),
     scoringEnabled: z.boolean().optional(),
+    noneOptionValue: z.string().trim().min(1).optional(),
     constraints: z
       .object({
+        min: z.number().optional(),
+        max: z.number().optional(),
+        integer: z.boolean().optional(),
         maxSelections: z.number().int().min(1).max(24).optional(),
         recommendedSelectionsRange: z
           .tuple([z.number().int().min(0), z.number().int().min(0)])
@@ -101,7 +139,11 @@ function normalizeQuestion(
   question: B2bSurveyTemplateSchema["common"][number]
 ): B2bSurveyTemplateSchema["common"][number] {
   const normalizedType =
-    question.type === "single" || question.type === "multi" || question.type === "text"
+    question.type === "single" ||
+    question.type === "multi" ||
+    question.type === "text" ||
+    question.type === "number" ||
+    question.type === "group"
       ? question.type
       : "single";
   return {
@@ -110,6 +152,9 @@ function normalizeQuestion(
     required: question.required ?? false,
     options: question.options ?? [],
     placeholder: question.placeholder ?? "응답 입력",
+    fields: question.fields ?? [],
+    displayIf: question.displayIf,
+    noneOptionValue: question.noneOptionValue,
     maxSelect:
       normalizedType === "multi"
         ? question.maxSelect ?? question.constraints?.maxSelections ?? 5
@@ -156,6 +201,14 @@ function normalizeTemplateSchema(
   };
 }
 
+function loadTemplateFromData() {
+  if (cachedTemplate) return cachedTemplate;
+  const sourceTemplate = loadWellnessTemplateForB2b();
+  const parsed = normalizeTemplateSchema(surveyTemplateSchema.parse(sourceTemplate));
+  cachedTemplate = parsed;
+  return parsed;
+}
+
 function mapJsonValue<T>(value: unknown, fallback: T): T {
   if (value == null) return fallback;
   try {
@@ -165,28 +218,21 @@ function mapJsonValue<T>(value: unknown, fallback: T): T {
   }
 }
 
-function loadTemplateFromData() {
-  if (cachedTemplate) return cachedTemplate;
-  const sourceTemplate = loadWellnessTemplateForB2b();
-  const parsed = normalizeTemplateSchema(surveyTemplateSchema.parse(sourceTemplate));
-  cachedTemplate = parsed;
-  return parsed;
-}
-
 export async function ensureActiveB2bSurveyTemplate() {
-  const active = await db.b2bSurveyTemplate.findFirst({
-    where: { isActive: true },
-    orderBy: [{ version: "desc" }],
+  const fileTemplate = loadTemplateFromData();
+  const stored = await db.b2bSurveyTemplate.findUnique({
+    where: { version: fileTemplate.version },
   });
-
-  if (active) {
-    const schema = mapJsonValue<B2bSurveyTemplateSchema | null>(active.schema, null);
-    if (schema) {
-      return { template: active, schema: normalizeTemplateSchema(schema) };
+  if (stored?.isActive) {
+    const storedSchema = mapJsonValue<B2bSurveyTemplateSchema | null>(stored.schema, null);
+    if (storedSchema) {
+      const normalizedStored = normalizeTemplateSchema(storedSchema);
+      if (JSON.stringify(normalizedStored) === JSON.stringify(fileTemplate)) {
+        return { template: stored, schema: fileTemplate };
+      }
     }
   }
 
-  const fileTemplate = loadTemplateFromData();
   const upserted = await db.b2bSurveyTemplate.upsert({
     where: { version: fileTemplate.version },
     create: {
@@ -290,4 +336,3 @@ export function buildSurveyQuestionMap(templateSchema: B2bSurveyTemplateSchema) 
 
   return { commonMap, sectionMap };
 }
-

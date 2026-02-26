@@ -28,12 +28,42 @@ export type SurveyQuestion = {
   key: string;
   index: number;
   text: string;
-  type: "text" | "single" | "multi";
+  helpText?: string;
+  type: "text" | "single" | "multi" | "number" | "group";
+  sourceType?:
+    | "single_choice"
+    | "multi_select_with_none"
+    | "multi_select_limited"
+    | "number"
+    | "group";
   required?: boolean;
-  options?: Array<{ value: string; label: string; score?: number }>;
+  options?: Array<{
+    value: string;
+    label: string;
+    score?: number;
+    aliases?: string[];
+    isNoneOption?: boolean;
+  }>;
   placeholder?: string;
   maxSelect?: number;
   optionsPrefix?: string;
+  unit?: string;
+  fields?: Array<{
+    id: string;
+    label: string;
+    type: "text" | "number";
+    unit?: string;
+    constraints?: {
+      min?: number;
+      max?: number;
+      integer?: boolean;
+    };
+  }>;
+  displayIf?: {
+    field: string;
+    equals: string;
+  };
+  noneOptionValue?: string;
   variants?: Record<
     string,
     {
@@ -43,6 +73,9 @@ export type SurveyQuestion = {
     }
   >;
   constraints?: {
+    min?: number;
+    max?: number;
+    integer?: boolean;
     maxSelections?: number;
     recommendedSelectionsRange?: [number, number];
   };
@@ -120,7 +153,7 @@ export type SurveyAnswerRow = {
 export type SurveyResponseRecord = {
   id: string;
   periodKey?: string | null;
-  reportCycle?: string | null;
+  reportCycle?: number | null;
   selectedSections: string[];
   answersJson?: Record<string, unknown> | null;
   updatedAt?: string | null;
@@ -131,7 +164,7 @@ export type SurveyGetResponse = {
   ok: boolean;
   template: {
     id: string;
-    version: string;
+    version: number;
     title: string;
     schema: SurveyTemplateSchema;
   };

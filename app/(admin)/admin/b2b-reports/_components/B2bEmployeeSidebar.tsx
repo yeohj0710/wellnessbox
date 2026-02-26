@@ -21,23 +21,21 @@ export default function B2bEmployeeSidebar({
     (sum, employee) => sum + employee.counts.healthSnapshots,
     0
   );
-  const totalReports = employees.reduce(
-    (sum, employee) => sum + employee.counts.reports,
-    0
-  );
+  const totalReports = employees.reduce((sum, employee) => sum + employee.counts.reports, 0);
 
   return (
     <section className={`${styles.sectionCard} ${styles.sidebarCard}`}>
       <div className={styles.sidebarHead}>
-        <h2 className={styles.sectionTitle}>임직원 목록</h2>
-        <div className={styles.sidebarBadgeRow}>
+        <div className={styles.sidebarTitleRow}>
+          <h2 className={styles.sectionTitle}>임직원 목록</h2>
           <span className={styles.sidebarBadge}>총 {employees.length}명</span>
-          <span className={styles.sidebarBadge}>스냅샷 {totalSnapshots}건</span>
-          <span className={styles.sidebarBadge}>레포트 {totalReports}건</span>
-          {selectedEmployee ? (
-            <span className={styles.sidebarBadge}>선택: {selectedEmployee.name}</span>
-          ) : null}
         </div>
+        <p className={styles.sidebarHeadMeta}>
+          스냅샷 {totalSnapshots}건 · 리포트 {totalReports}건
+        </p>
+        {selectedEmployee ? (
+          <p className={styles.sidebarHeadMeta}>선택: {selectedEmployee.name}</p>
+        ) : null}
       </div>
 
       <div className={`${styles.listWrap} ${styles.listWrapGrid}`}>
@@ -52,21 +50,19 @@ export default function B2bEmployeeSidebar({
             }`}
           >
             <span className={styles.listTopRow}>
-              <span className={styles.listAvatar}>
-                {(employee.name || "?").slice(0, 1)}
-              </span>
+              <span className={styles.listAvatar}>{(employee.name || "?").slice(0, 1)}</span>
               <span className={styles.listTitle}>{employee.name}</span>
             </span>
             <span className={styles.listMeta}>
               {employee.birthDate} / {normalizeDigits(employee.phoneNormalized)}
             </span>
             <span className={styles.listMeta}>
-              스냅샷 {employee.counts.healthSnapshots}건 / 레포트 {employee.counts.reports}건
+              스냅샷 {employee.counts.healthSnapshots}건 / 리포트 {employee.counts.reports}건
             </span>
           </button>
         ))}
         {employees.length === 0 ? (
-          <div className={styles.noticeInfo}>조회된 임직원이 없습니다.</div>
+          <div className={styles.noticeInfo}>조회된 임직원 데이터가 없습니다.</div>
         ) : null}
       </div>
     </section>

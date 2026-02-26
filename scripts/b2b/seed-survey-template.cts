@@ -1,18 +1,10 @@
-import fs from "fs";
-import path from "path";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import db from "../../lib/db";
+import { loadWellnessTemplateForB2b } from "../../lib/wellness/data-loader";
 
 async function main() {
-  const filePath = path.join(process.cwd(), "data", "b2b", "survey-template.v1.json");
-  const raw = fs.readFileSync(filePath, "utf8");
-  const parsed = JSON.parse(raw) as {
-    version: number;
-    title: string;
-  };
+  const parsed = loadWellnessTemplateForB2b();
 
-  const template = await prisma.b2bSurveyTemplate.upsert({
+  const template = await db.b2bSurveyTemplate.upsert({
     where: { version: parsed.version },
     create: {
       version: parsed.version,
@@ -27,7 +19,7 @@ async function main() {
     },
   });
 
-  await prisma.b2bSurveyTemplate.updateMany({
+  await db.b2bSurveyTemplate.updateMany({
     where: {
       id: { not: template.id },
       isActive: true,
@@ -42,11 +34,11 @@ async function main() {
 
 main()
   .then(async () => {
-    await prisma.$disconnect();
+    await db.$disconnect();
     process.exit(0);
   })
   .catch(async (error) => {
     console.error("[b2b] failed to seed survey template", error);
-    await prisma.$disconnect();
+    await db.$disconnect();
     process.exit(1);
   });

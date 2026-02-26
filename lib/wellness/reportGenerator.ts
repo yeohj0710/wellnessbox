@@ -20,6 +20,11 @@ function nearEqual(left: number | null | undefined, right: number) {
   return Math.abs(left - right) < 1e-9;
 }
 
+function atLeast(left: number | null | undefined, right: number) {
+  if (typeof left !== "number" || !Number.isFinite(left)) return false;
+  return left + 1e-9 >= right;
+}
+
 export function buildLifestyleRoutineAdvice(
   commonPerQuestionScores: QuestionScoreMap,
   reportTexts: WellnessReportTexts,
@@ -34,9 +39,14 @@ export function buildLifestyleRoutineAdvice(
     nearEqual(commonPerQuestionScores[toQuestionId("C", questionNumber)], primaryTarget)
   );
   const fallback = orderedNumbers.filter((questionNumber) =>
-    nearEqual(commonPerQuestionScores[toQuestionId("C", questionNumber)], fallbackTarget)
+    atLeast(commonPerQuestionScores[toQuestionId("C", questionNumber)], fallbackTarget)
   );
-  const selected = primary.length > 0 ? primary : fallback;
+  const selected = (primary.length > 0 ? primary : fallback).sort((left, right) => {
+    const leftScore = commonPerQuestionScores[toQuestionId("C", left)] ?? 0;
+    const rightScore = commonPerQuestionScores[toQuestionId("C", right)] ?? 0;
+    if (rightScore !== leftScore) return rightScore - leftScore;
+    return left - right;
+  });
 
   return selected
     .map((questionNumber) =>
@@ -60,16 +70,19 @@ export function buildSectionAdvice(
     .filter((value) => Number.isFinite(value))
     .sort((left, right) => left - right);
 
-  const result: Array<{ questionNumber: number; text: string }> = [];
+  const result: Array<{ questionNumber: number; score: number; text: string }> = [];
   for (const questionNumber of orderedQuestionNumbers) {
     const questionId = `${sectionId}_Q${String(questionNumber).padStart(2, "0")}`;
     const score = perQuestionScores[questionId];
     if (typeof score !== "number" || score < threshold) continue;
     const text = sectionAdvice.adviceByQuestionNumber[String(questionNumber)];
     if (!text) continue;
-    result.push({ questionNumber, text });
+    result.push({ questionNumber, score, text });
   }
-  return result;
+  return result.sort((left, right) => {
+    if (right.score !== left.score) return right.score - left.score;
+    return left.questionNumber - right.questionNumber;
+  });
 }
 
 export function buildSupplementDesign(
@@ -95,4 +108,3 @@ export function buildSupplementDesign(
     })
     .filter((item): item is SupplementDesignItem => Boolean(item));
 }
-

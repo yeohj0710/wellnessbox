@@ -37,6 +37,7 @@ const putSchema = z.object({
           value: z.string().optional(),
           values: z.array(z.union([z.string(), z.number(), z.boolean()])).optional(),
           selectedValues: z.array(z.union([z.string(), z.number(), z.boolean()])).optional(),
+          fieldValues: z.record(z.string().trim().min(1), z.union([z.string(), z.number()])).optional(),
           score: z.number().min(0).max(1).optional(),
           variantId: z.string().trim().min(1).optional(),
         }),
@@ -69,14 +70,24 @@ function clampScore01(value: number) {
   return Number(value.toFixed(4));
 }
 
-function normalizeAnswerValue(raw: unknown) {
+type NormalizedAnswerValue = {
+  answerText: string | null;
+  answerValue: string | null;
+  selectedValues: string[];
+  submittedScore: number | null;
+  variantId: string | null;
+  fieldValues: Record<string, string> | null;
+};
+
+function normalizeAnswerValue(raw: unknown): NormalizedAnswerValue {
   if (raw == null) {
     return {
       answerText: null,
       answerValue: null,
-      selectedValues: [] as string[],
-      submittedScore: null as number | null,
-      variantId: null as string | null,
+      selectedValues: [],
+      submittedScore: null,
+      variantId: null,
+      fieldValues: null,
     };
   }
   if (Array.isArray(raw)) {
@@ -86,8 +97,9 @@ function normalizeAnswerValue(raw: unknown) {
       answerText: joined || null,
       answerValue: joined || null,
       selectedValues,
-      submittedScore: null as number | null,
-      variantId: null as string | null,
+      submittedScore: null,
+      variantId: null,
+      fieldValues: null,
     };
   }
   if (typeof raw === "string") {
@@ -96,8 +108,9 @@ function normalizeAnswerValue(raw: unknown) {
       answerText: text.length > 0 ? text : null,
       answerValue: text || null,
       selectedValues: text ? [text] : [],
-      submittedScore: null as number | null,
-      variantId: null as string | null,
+      submittedScore: null,
+      variantId: null,
+      fieldValues: null,
     };
   }
   if (typeof raw === "number" || typeof raw === "boolean") {
@@ -106,8 +119,9 @@ function normalizeAnswerValue(raw: unknown) {
       answerText: text,
       answerValue: text,
       selectedValues: [text],
-      submittedScore: null as number | null,
-      variantId: null as string | null,
+      submittedScore: null,
+      variantId: null,
+      fieldValues: null,
     };
   }
   if (typeof raw === "object") {
@@ -130,6 +144,16 @@ function normalizeAnswerValue(raw: unknown) {
     const selectedValues = Array.isArray(record.selectedValues)
       ? record.selectedValues.map((item) => toText(item)).filter(Boolean)
       : [];
+    const fieldValues: Record<string, string> | null =
+      record.fieldValues && typeof record.fieldValues === "object" && !Array.isArray(record.fieldValues)
+        ? (Object.fromEntries(
+            Object.entries(record.fieldValues as Record<string, unknown>)
+              .map(([fieldKey, fieldValue]) => [fieldKey, toText(fieldValue)])
+              .filter(([, fieldValue]) => fieldValue.length > 0)
+          ) as Record<string, string>)
+        : null;
+    const fieldTokens = fieldValues ? Object.values(fieldValues) : [];
+    const fieldText = fieldTokens.join(", ");
     const normalizedText = text && text.trim().length > 0 ? text.trim() : null;
     const normalizedValue = value && value.trim().length > 0 ? value.trim() : null;
     const submittedScore =
@@ -138,8 +162,8 @@ function normalizeAnswerValue(raw: unknown) {
         : null;
     const variantId = toText(record.variantId) || null;
     return {
-      answerText: normalizedText,
-      answerValue: normalizedValue ?? normalizedText,
+      answerText: normalizedText ?? (fieldText || null),
+      answerValue: normalizedValue ?? normalizedText ?? (fieldText || null),
       selectedValues:
         selectedValues.length > 0
           ? selectedValues
@@ -147,23 +171,27 @@ function normalizeAnswerValue(raw: unknown) {
           ? values
           : normalizedValue
           ? [normalizedValue]
+          : fieldTokens.length > 0
+          ? fieldTokens
           : [],
       submittedScore,
       variantId,
+      fieldValues,
     };
   }
   return {
     answerText: null,
     answerValue: null,
     selectedValues: [],
-    submittedScore: null as number | null,
-    variantId: null as string | null,
+    submittedScore: null,
+    variantId: null,
+    fieldValues: null,
   };
 }
 
 function resolveQuestionScore(
   question: {
-    type: "text" | "single" | "multi";
+    type: "text" | "single" | "multi" | "number" | "group";
     options?: Array<{ value: string; label: string; score?: number }>;
     variants?: Record<
       string,
@@ -175,6 +203,10 @@ function resolveQuestionScore(
   },
   normalizedAnswer: ReturnType<typeof normalizeAnswerValue>
 ) {
+  if (question.type === "text" || question.type === "number" || question.type === "group") {
+    return null;
+  }
+
   if (typeof normalizedAnswer.submittedScore === "number") {
     return normalizedAnswer.submittedScore;
   }
@@ -337,7 +369,9 @@ export async function PUT(req: Request, ctx: RouteContext) {
 
     const q27Value = parsed.data.answers[schema.rules.selectSectionByCommonQuestionKey] ?? null;
     const derivedSections = resolveSectionKeysFromC27Input(schema, q27Value);
-    const selectedSections = [...new Set([...(parsed.data.selectedSections ?? []), ...derivedSections])];
+    const allowedSectionKeys = new Set(schema.sectionCatalog.map((section) => section.key));
+    const selectedSections = [...new Set([...(parsed.data.selectedSections ?? []), ...derivedSections])]
+      .filter((sectionKey) => allowedSectionKeys.has(sectionKey));
     if (selectedSections.length > schema.rules.maxSelectedSections) {
       return noStoreJson(
         {
@@ -395,6 +429,7 @@ export async function PUT(req: Request, ctx: RouteContext) {
           selectedValues: normalized.selectedValues,
           variantId: normalized.variantId ?? "base",
           lockedScore: score,
+          fieldValues: normalized.fieldValues,
         };
         return {
           responseId: response.id,

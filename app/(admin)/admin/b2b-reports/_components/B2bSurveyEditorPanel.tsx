@@ -5,7 +5,17 @@ import type {
   SurveyQuestion,
   SurveyTemplateSchema,
 } from "../_lib/client-types";
-import { formatDateTime } from "../_lib/client-utils";
+import { formatDateTime, toInputValue, toMultiValues } from "../_lib/client-utils";
+
+function isQuestionVisible(question: SurveyQuestion, answers: Record<string, unknown>) {
+  if (!question.displayIf?.field || !question.displayIf.equals) return true;
+  const target = question.displayIf.equals.trim().toLowerCase();
+  if (!target) return true;
+  const raw = answers[question.displayIf.field];
+  const scalar = toInputValue(raw).trim().toLowerCase();
+  if (scalar === target) return true;
+  return toMultiValues(raw).some((value) => value.trim().toLowerCase() === target);
+}
 
 type B2bSurveyEditorPanelProps = {
   completionStats: CompletionStats;
@@ -101,7 +111,9 @@ export default function B2bSurveyEditorPanel({
               <p className={styles.editorSectionHint}>모든 직원에게 공통 적용</p>
             </div>
             <div className={styles.stack}>
-              {(surveyTemplate?.common ?? []).map((question) => (
+              {(surveyTemplate?.common ?? [])
+                .filter((question) => isQuestionVisible(question, surveyAnswers))
+                .map((question) => (
                   <SurveyQuestionField
                     key={question.key}
                     question={question}
@@ -110,7 +122,7 @@ export default function B2bSurveyEditorPanel({
                     busy={busy}
                     onChangeValue={onSetAnswerValue}
                   />
-              ))}
+                ))}
             </div>
           </section>
 
@@ -131,16 +143,18 @@ export default function B2bSurveyEditorPanel({
                     {section.displayName || `${section.key} ${section.title}`}
                   </h4>
                   <div className={styles.stack}>
-                    {section.questions.map((question) => (
-                      <SurveyQuestionField
-                        key={question.key}
-                        question={question}
-                        value={surveyAnswers[question.key]}
-                        maxSelectedSections={maxSelectedSections}
-                        busy={busy}
-                        onChangeValue={onSetAnswerValue}
-                      />
-                    ))}
+                    {section.questions
+                      .filter((question) => isQuestionVisible(question, surveyAnswers))
+                      .map((question) => (
+                        <SurveyQuestionField
+                          key={question.key}
+                          question={question}
+                          value={surveyAnswers[question.key]}
+                          maxSelectedSections={maxSelectedSections}
+                          busy={busy}
+                          onChangeValue={onSetAnswerValue}
+                        />
+                      ))}
                   </div>
                 </section>
               ))}
