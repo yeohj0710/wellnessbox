@@ -7,8 +7,8 @@ export default function EmployeeReportShowcase() {
         <p className={styles.showcaseKicker}>리포트 미리보기</p>
         <h2 className={styles.showcaseTitle}>인증이 끝나면 월간 건강 브리핑이 즉시 열립니다</h2>
         <p className={styles.showcaseDescription}>
-          점수, 위험도, 실천 가이드, 코멘트를 한 화면에서 확인하고 같은 구성으로 PDF/PPTX를
-          바로 내려받을 수 있습니다.
+          점수, 위험도, 실천 가이드, 코멘트를 한 번에 확인하고 같은 내용으로 PDF를 바로
+          내려받을 수 있어요.
         </p>
       </header>
 

@@ -10,6 +10,7 @@ import {
   type ClipboardEvent,
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import OperationLoadingOverlay from "@/components/common/operationLoadingOverlay";
 import {
   deleteAdminColumnPost,
   fetchAdminColumnPost,
@@ -76,6 +77,16 @@ export default function EditorAdminClient({ allowDevFileSave }: EditorAdminClien
   );
 
   const canMutate = !saving && !publishing && !deleting && !loadingDetail;
+  const busyOverlayMessage = useMemo(() => {
+    if (deleting) return "게시글을 삭제하고 있어요.";
+    if (publishing) return "게시글 발행 상태를 변경하고 있어요.";
+    if (saving) return "게시글을 저장하고 있어요.";
+    if (uploading) return "이미지를 업로드하고 있어요.";
+    if (devSaving) return "개발용 파일을 저장하고 있어요.";
+    if (loadingDetail) return "게시글 상세 내용을 불러오고 있어요.";
+    if (loadingList) return "게시글 목록을 불러오고 있어요.";
+    return "";
+  }, [deleting, publishing, saving, uploading, devSaving, loadingDetail, loadingList]);
 
   const loadPosts = useCallback(
     async (opts?: { keepSelection?: boolean }) => {
@@ -345,6 +356,13 @@ export default function EditorAdminClient({ allowDevFileSave }: EditorAdminClien
 
   return (
     <section className="w-full min-h-[calc(100vh-7rem)] bg-[linear-gradient(180deg,_#f8fafc_0%,_#ecfeff_36%,_#ffffff_100%)]">
+      <OperationLoadingOverlay
+        visible={
+          deleting || publishing || saving || uploading || devSaving || loadingDetail || loadingList
+        }
+        title={busyOverlayMessage || "작업을 처리하고 있어요"}
+        description="완료되면 편집 화면이 최신 상태로 갱신됩니다."
+      />
       <div className="mx-auto w-full max-w-[1240px] px-4 pb-20 pt-10 sm:px-6">
         <ColumnEditorHeader />
 

@@ -10,6 +10,7 @@ import {
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import OperationLoadingOverlay from "@/components/common/operationLoadingOverlay";
 
 type EditorForm = {
   title: string;
@@ -141,6 +142,11 @@ export default function EditorClient() {
     () => `${buildFrontmatter(form)}${form.markdown.trim()}\n`,
     [form]
   );
+  const busyOverlayMessage = isUploading
+    ? "이미지를 업로드하고 있어요."
+    : isSaving
+    ? "마크다운 파일을 저장하고 있어요."
+    : "";
 
   const updateField = <K extends keyof EditorForm>(key: K, value: EditorForm[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -283,6 +289,11 @@ export default function EditorClient() {
 
   return (
     <section className="w-full min-h-[calc(100vh-7rem)] bg-[linear-gradient(180deg,_#f8fafc_0%,_#f0fdf4_36%,_#ffffff_100%)]">
+      <OperationLoadingOverlay
+        visible={isUploading || isSaving}
+        title={busyOverlayMessage || "작업을 처리하고 있어요"}
+        description="완료되면 자동으로 에디터에 반영됩니다."
+      />
       <div className="mx-auto w-full max-w-6xl px-4 pb-20 pt-10 sm:px-6">
         <header className="rounded-3xl border border-slate-200 bg-white/95 p-6 sm:p-8">
           <p className="text-xs font-semibold tracking-[0.2em] text-slate-600">

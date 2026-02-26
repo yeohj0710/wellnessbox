@@ -22,8 +22,8 @@ export default function B2bAdminOpsHero({
       <p className={styles.kicker}>B2B REPORT OPS</p>
       <h1 className={styles.title}>임직원 건강 레포트 운영</h1>
       <p className={styles.description}>
-        핵심 흐름은 임직원 선택 → 레포트 확인 → PDF/PPTX 다운로드입니다. 편집/검증은
-        고급 섹션에서 선택적으로 사용하세요.
+        임직원을 선택하면 해당 기간 레포트가 바로 열려요. 필요한 경우에만 설문, 코멘트,
+        레이아웃을 수정한 뒤 PDF/PPTX로 내려받아 전달해 주세요.
       </p>
       <div className={styles.actionRow}>
         <input
@@ -61,4 +61,3 @@ export default function B2bAdminOpsHero({
     </header>
   );
 }
-

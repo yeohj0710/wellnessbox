@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import OperationLoadingOverlay from "@/components/common/operationLoadingOverlay";
 import { useToast } from "@/components/common/toastContext.client";
 
 type ColumnAdminActionsProps = {
@@ -75,6 +76,11 @@ export default function ColumnAdminActions({
 
   return (
     <>
+      <OperationLoadingOverlay
+        visible={isDeleting}
+        title="칼럼을 삭제하고 있어요."
+        description="잠시만 기다려 주세요. 삭제 후 목록이 갱신됩니다."
+      />
       <div className={`flex flex-wrap items-center gap-2 ${className}`}>
         {showListLink ? (
           <Link

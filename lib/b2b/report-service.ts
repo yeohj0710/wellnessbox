@@ -19,6 +19,10 @@ import type {
   StylePreset,
 } from "@/lib/b2b/export/layout-types";
 
+const MIN_REPORT_HISTORY_PER_PERIOD = 1;
+const MAX_REPORT_HISTORY_PER_PERIOD = 20;
+const DEFAULT_REPORT_HISTORY_PER_PERIOD = 5;
+
 function asJsonValue(value: unknown) {
   return JSON.parse(JSON.stringify(value));
 }
@@ -35,6 +39,38 @@ function parseStoredLayout(raw: unknown): LayoutDocument | null {
 function isCurrentLayoutVersion(layout: LayoutDocument | null) {
   if (!layout) return false;
   return layout.layoutVersion === LAYOUT_TEMPLATE_VERSION;
+}
+
+function resolveReportHistoryPerPeriodLimit() {
+  const raw = Number(process.env.B2B_REPORT_HISTORY_PER_PERIOD);
+  if (!Number.isFinite(raw)) return DEFAULT_REPORT_HISTORY_PER_PERIOD;
+  const rounded = Math.round(raw);
+  return Math.min(
+    MAX_REPORT_HISTORY_PER_PERIOD,
+    Math.max(MIN_REPORT_HISTORY_PER_PERIOD, rounded)
+  );
+}
+
+async function trimOldReportsForEmployeePeriod(
+  employeeId: string,
+  periodKey: string | null | undefined
+) {
+  const limit = resolveReportHistoryPerPeriodLimit();
+  const where = periodKey ? { employeeId, periodKey } : { employeeId, periodKey: null };
+  const rows = await db.b2bReport.findMany({
+    where,
+    orderBy: [{ variantIndex: "desc" }, { createdAt: "desc" }],
+    select: { id: true },
+  });
+
+  if (rows.length <= limit) return;
+
+  const removeIds = rows.slice(limit).map((row) => row.id);
+  if (removeIds.length === 0) return;
+
+  await db.b2bReport.deleteMany({
+    where: { id: { in: removeIds } },
+  });
 }
 
 async function refreshReportLayoutIfNeeded(report: Awaited<ReturnType<typeof getLatestB2bReport>>) {
@@ -134,7 +170,7 @@ export async function createB2bReportSnapshot(input: {
   const layoutDsl = previewLayoutResult.ok ? previewLayoutResult.layout : null;
   const exportAudit = previewLayoutResult.audit;
 
-  return db.b2bReport.create({
+  const created = await db.b2bReport.create({
     data: {
       employeeId: input.employeeId,
       variantIndex,
@@ -148,6 +184,9 @@ export async function createB2bReportSnapshot(input: {
       reportCycle: reportCycle ?? null,
     },
   });
+
+  await trimOldReportsForEmployeePeriod(input.employeeId, periodKey);
+  return created;
 }
 
 export async function getLatestB2bReport(employeeId: string, periodKey?: string | null) {

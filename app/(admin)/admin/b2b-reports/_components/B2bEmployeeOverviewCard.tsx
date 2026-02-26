@@ -7,8 +7,11 @@ type B2bEmployeeOverviewCardProps = {
   latestReport: LatestReport | null;
   selectedPeriodKey: string;
   periodOptions: string[];
+  reportDisplayPeriodKey: string;
   busy: boolean;
   onPeriodChange: (periodKey: string) => void;
+  onReportDisplayPeriodChange: (value: string) => void;
+  onSaveReportDisplayPeriod: () => void;
   onExportPdf: () => void;
   onExportPptx: () => void;
   onRegenerateReport: () => void;
@@ -20,8 +23,11 @@ export default function B2bEmployeeOverviewCard({
   latestReport,
   selectedPeriodKey,
   periodOptions,
+  reportDisplayPeriodKey,
   busy,
   onPeriodChange,
+  onReportDisplayPeriodChange,
+  onSaveReportDisplayPeriod,
   onExportPdf,
   onExportPptx,
   onRegenerateReport,
@@ -74,6 +80,31 @@ export default function B2bEmployeeOverviewCard({
         <div className={styles.optionalBody}>
           <div className={styles.optionalCard}>
             <p className={styles.optionalText}>
+              레포트 표기 연월 (배부월): 웹/PDF/PPTX 상단 표기에 동일 반영됩니다.
+            </p>
+            <div className={styles.actionRow}>
+              <input
+                type="month"
+                className={styles.input}
+                value={reportDisplayPeriodKey}
+                onChange={(event) => onReportDisplayPeriodChange(event.target.value)}
+                maxLength={7}
+              />
+              <button
+                type="button"
+                onClick={onSaveReportDisplayPeriod}
+                disabled={busy || !latestReport?.id || reportDisplayPeriodKey.trim().length === 0}
+                className={styles.buttonSecondary}
+              >
+                연월 반영
+              </button>
+            </div>
+            <p className={styles.inlineHint}>
+              조회용 기간 선택과 별개로 표기 연월만 수정합니다.
+            </p>
+          </div>
+          <div className={styles.optionalCard}>
+            <p className={styles.optionalText}>
               최근 연동 시각: {formatDateTime(detail.lastSyncedAt)}
             </p>
             <p className={styles.optionalText}>
@@ -117,4 +148,3 @@ export default function B2bEmployeeOverviewCard({
     </section>
   );
 }
-

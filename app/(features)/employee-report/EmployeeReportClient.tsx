@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import ReportRenderer from "@/components/b2b/ReportRenderer";
 import ReportSummaryCards from "@/components/b2b/ReportSummaryCards";
+import OperationLoadingOverlay from "@/components/common/operationLoadingOverlay";
 import styles from "@/components/b2b/B2bUx.module.css";
 import EmployeeReportBootSkeleton from "./_components/EmployeeReportBootSkeleton";
 import EmployeeReportIdentitySection from "./_components/EmployeeReportIdentitySection";
@@ -55,6 +56,7 @@ export default function EmployeeReportClient() {
   });
   const [booting, setBooting] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [busyMessage, setBusyMessage] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [reportData, setReportData] = useState<EmployeeReportResponse | null>(null);
@@ -160,6 +162,16 @@ export default function EmployeeReportClient() {
     }
   }
 
+  function beginBusy(message: string) {
+    setBusyMessage(message);
+    setBusy(true);
+  }
+
+  function endBusy() {
+    setBusy(false);
+    setBusyMessage("");
+  }
+
   async function loadReport(periodKey?: string) {
     const data = await fetchEmployeeReport(periodKey);
     if (!data.ok) throw new Error(data.error || "레포트 조회에 실패했습니다.");
@@ -245,7 +257,7 @@ export default function EmployeeReportClient() {
       setError("이름, 생년월일(8자리), 휴대폰 번호를 정확히 입력해 주세요.");
       return;
     }
-    setBusy(true);
+    beginBusy("기존 조회 기록을 확인하고 있어요.");
     setError("");
     setNotice("");
     try {
@@ -268,8 +280,32 @@ export default function EmployeeReportClient() {
         err instanceof Error ? err.message : "기존 정보 조회에 실패했습니다."
       );
     } finally {
-      setBusy(false);
+      endBusy();
     }
+  }
+
+  async function tryLoadExistingReport(options?: {
+    successNotice?: string;
+    showNotFoundNotice?: boolean;
+  }) {
+    const payload = getIdentityPayload();
+    const result: EmployeeSessionUpsertResponse = await upsertEmployeeSession(payload);
+    if (!result.found) {
+      if (options?.showNotFoundNotice) {
+        setNotice(
+          result.message ||
+            "조회 가능한 기록이 없어요. 카카오 인증 후 연동을 진행해 주세요."
+        );
+      }
+      return false;
+    }
+
+    saveStoredIdentity(payload);
+    setSyncNextAction(null);
+    setSyncGuidance(null);
+    await loadReport();
+    setNotice(options?.successNotice || "기존 레포트를 불러왔어요.");
+    return true;
   }
 
   async function ensureNhisReadyForSync() {
@@ -299,12 +335,20 @@ export default function EmployeeReportClient() {
       setError("이름, 생년월일(8자리), 휴대폰 번호를 정확히 입력해 주세요.");
       return;
     }
-    setBusy(true);
+    beginBusy("카카오 인증 준비를 진행하고 있어요.");
     setError("");
     setNotice("");
     setSyncGuidance(null);
     setSyncNextAction(null);
     try {
+      if (!reportData) {
+        const reusedExisting = await tryLoadExistingReport({
+          successNotice:
+            "기존 조회 기록을 먼저 불러왔어요. 외부 API 재조회 없이 바로 확인할 수 있어요.",
+        });
+        if (reusedExisting) return;
+      }
+
       const initResult: NhisInitResponse = await requestNhisInit({
         identity: getIdentityPayload(),
       });
@@ -317,7 +361,8 @@ export default function EmployeeReportClient() {
           initResult.reused ||
           initResult.source === "db-history" ||
           syncResult.sync?.source === "cache-valid" ||
-          syncResult.sync?.source === "cache-history";
+          syncResult.sync?.source === "cache-history" ||
+          syncResult.sync?.source === "snapshot-history";
         setNotice(
           reusedFromCache
             ? "기존 연동 데이터를 사용해 레포트를 불러왔습니다."
@@ -348,7 +393,7 @@ export default function EmployeeReportClient() {
         setError(err instanceof Error ? err.message : "카카오 인증 요청에 실패했습니다.");
       }
     } finally {
-      setBusy(false);
+      endBusy();
     }
   }
 
@@ -367,11 +412,23 @@ export default function EmployeeReportClient() {
       return;
     }
 
-    setBusy(true);
+    beginBusy(
+      forceRefresh
+        ? "최신 정보를 강제로 재조회하고 있어요."
+        : "국민건강보험 데이터를 동기화하고 있어요."
+    );
     setError("");
     setNotice("");
     setSyncGuidance(null);
     try {
+      if (!forceRefresh && !reportData) {
+        const reusedExisting = await tryLoadExistingReport({
+          successNotice:
+            "저장된 조회 기록을 불러왔어요. 외부 API 재조회는 실행하지 않았어요.",
+        });
+        if (reusedExisting) return;
+      }
+
       let ready: { linked: boolean; reused: boolean } = {
         linked: true,
         reused: false,
@@ -393,7 +450,8 @@ export default function EmployeeReportClient() {
       });
       if (
         syncResult.sync?.source === "cache-valid" ||
-        syncResult.sync?.source === "cache-history"
+        syncResult.sync?.source === "cache-history" ||
+        syncResult.sync?.source === "snapshot-history"
       ) {
         setNotice("캐시 데이터를 사용해 레포트를 갱신했습니다.");
       } else if (ready.reused) {
@@ -423,13 +481,13 @@ export default function EmployeeReportClient() {
         setError(err instanceof Error ? err.message : "데이터 연동에 실패했습니다.");
       }
     } finally {
-      setBusy(false);
+      endBusy();
     }
   }
 
   async function handleDownloadPdf() {
     if (!reportData?.report?.id) return;
-    setBusy(true);
+    beginBusy("PDF 파일을 생성하고 있어요.");
     setError("");
     setNotice("");
     try {
@@ -444,12 +502,12 @@ export default function EmployeeReportClient() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "PDF 다운로드에 실패했습니다.");
     } finally {
-      setBusy(false);
+      endBusy();
     }
   }
 
   async function handleLogout() {
-    setBusy(true);
+    beginBusy("연동 세션을 해제하고 있어요.");
     setError("");
     try {
       await deleteEmployeeSession();
@@ -465,7 +523,20 @@ export default function EmployeeReportClient() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "세션 해제에 실패했습니다.");
     } finally {
-      setBusy(false);
+      endBusy();
+    }
+  }
+
+  async function handleChangePeriod(nextPeriod: string) {
+    setSelectedPeriodKey(nextPeriod);
+    beginBusy("선택한 기간 레포트를 불러오고 있어요.");
+    setError("");
+    try {
+      await loadReport(nextPeriod);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "선택한 기간 조회에 실패했습니다.");
+    } finally {
+      endBusy();
     }
   }
 
@@ -474,12 +545,19 @@ export default function EmployeeReportClient() {
   }
 
   return (
-    <div className={`${styles.page} ${styles.compactPage} ${styles.stack}`}>
+    <div className={styles.pageBackdrop}>
+      <OperationLoadingOverlay
+        visible={busy}
+        title={busyMessage || "작업을 처리하고 있어요"}
+        description="완료되면 화면이 자동으로 갱신됩니다."
+      />
+      <div className={`${styles.page} ${styles.pageNoBg} ${styles.compactPage} ${styles.stack}`}>
       <header className={styles.heroCard}>
         <p className={styles.kicker}>EMPLOYEE REPORT</p>
         <h1 className={styles.title}>임직원 건강 레포트</h1>
         <p className={styles.description}>
-          레포트는 화면에서 읽기 쉽게 제공되며, 공식 제출은 PDF 다운로드로 진행합니다.
+          본인 확인을 마치면 선택한 기간의 건강 레포트를 바로 볼 수 있어요. 화면에서 확인한
+          내용을 그대로 PDF로 내려받아 제출하거나 공유하면 돼요.
         </p>
         <div className={styles.statusRow}>
           {reportData?.report ? (
@@ -539,8 +617,7 @@ export default function EmployeeReportClient() {
             canUseForceSync={canUseForceSync}
             forceSyncRemainingSec={forceSyncRemainingSec}
             onPeriodChange={(next) => {
-              setSelectedPeriodKey(next);
-              void loadReport(next);
+              void handleChangePeriod(next);
             }}
             onDownloadPdf={handleDownloadPdf}
             onRestartAuth={handleRestartAuth}
@@ -572,9 +649,9 @@ export default function EmployeeReportClient() {
               <div className={styles.reportCanvasHeader}>
                 <div>
                   <h3>리포트 본문 미리보기</h3>
-                  <p>웹 화면과 동일한 레이아웃이 PDF/PPTX로 추출됩니다.</p>
+                  <p>지금 화면에서 보이는 내용 그대로 PDF가 생성돼요.</p>
                 </div>
-                <span className={styles.statusOn}>레이아웃 동기화 완료</span>
+                <span className={styles.statusOn}>화면/PDF 구성 일치</span>
               </div>
               <div className={styles.reportCanvasBoard}>
                 <ReportRenderer layout={previewLayout} fitToWidth />
@@ -586,27 +663,28 @@ export default function EmployeeReportClient() {
         </>
       ) : null}
 
-      <ForceRefreshConfirmDialog
-        open={forceConfirmOpen}
-        busy={busy}
-        confirmChecked={forceConfirmChecked}
-        confirmText={forceConfirmText}
-        canExecuteForceSync={canExecuteForceSync}
-        onConfirmCheckedChange={setForceConfirmChecked}
-        onConfirmTextChange={setForceConfirmText}
-        onClose={() => {
-          if (busy) return;
-          setForceConfirmOpen(false);
-          setForceConfirmText("");
-          setForceConfirmChecked(false);
-        }}
-        onConfirm={() => {
-          setForceConfirmOpen(false);
-          setForceConfirmText("");
-          setForceConfirmChecked(false);
-          void handleSignAndSync(true);
-        }}
-      />
+        <ForceRefreshConfirmDialog
+          open={forceConfirmOpen}
+          busy={busy}
+          confirmChecked={forceConfirmChecked}
+          confirmText={forceConfirmText}
+          canExecuteForceSync={canExecuteForceSync}
+          onConfirmCheckedChange={setForceConfirmChecked}
+          onConfirmTextChange={setForceConfirmText}
+          onClose={() => {
+            if (busy) return;
+            setForceConfirmOpen(false);
+            setForceConfirmText("");
+            setForceConfirmChecked(false);
+          }}
+          onConfirm={() => {
+            setForceConfirmOpen(false);
+            setForceConfirmText("");
+            setForceConfirmChecked(false);
+            void handleSignAndSync(true);
+          }}
+        />
+      </div>
     </div>
   );
 }

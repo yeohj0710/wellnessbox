@@ -65,7 +65,7 @@ export type NhisSignResponse = {
 export type EmployeeSyncResponse = {
   ok: boolean;
   sync?: {
-    source?: "fresh" | "cache-valid" | "cache-history";
+    source?: "fresh" | "cache-valid" | "cache-history" | "snapshot-history";
     forceRefresh?: boolean;
     cooldown?: {
       cooldownSeconds: number;

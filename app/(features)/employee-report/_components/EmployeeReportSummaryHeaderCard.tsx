@@ -38,7 +38,7 @@ export default function EmployeeReportSummaryHeaderCard({
   return (
     <section className={styles.sectionCard} data-testid="employee-report-summary-section">
       <div className={styles.sectionHeader}>
-        <div>
+        <div className={styles.summaryTitleBlock}>
           <h2 className={styles.sectionTitle}>
             {(reportData.report.payload?.meta?.employeeName ||
               reportData.employee?.name ||
@@ -52,7 +52,7 @@ export default function EmployeeReportSummaryHeaderCard({
             )}
           </p>
         </div>
-        <div className={styles.statusRow}>
+        <div className={`${styles.statusRow} ${styles.summaryStatusRow}`}>
           {selectedPeriodKey ? <span className={styles.pill}>{selectedPeriodKey}</span> : null}
           {reportData.report.payload?.meta?.isMockData ? (
             <span className={styles.statusWarn}>데모 데이터</span>
@@ -60,9 +60,9 @@ export default function EmployeeReportSummaryHeaderCard({
         </div>
       </div>
 
-      <div className={styles.toolbarRow}>
+      <div className={styles.summaryControlPanel}>
         <select
-          className={`${styles.select} ${styles.toolbarControl}`}
+          className={`${styles.select} ${styles.summaryPeriodSelect}`}
           value={selectedPeriodKey}
           disabled={periodOptions.length === 0}
           onChange={(event) => onPeriodChange(event.target.value)}
@@ -82,12 +82,12 @@ export default function EmployeeReportSummaryHeaderCard({
           onClick={onDownloadPdf}
           disabled={busy}
           data-testid="employee-report-download-pdf"
-          className={`${styles.buttonPrimary} ${styles.toolbarControl}`}
+          className={`${styles.buttonPrimary} ${styles.summaryPrimaryButton}`}
         >
           PDF 다운로드
         </button>
       </div>
-      <div className={styles.actionRow}>
+      <div className={`${styles.actionRow} ${styles.summarySecondaryActions}`}>
         <button
           type="button"
           onClick={onRestartAuth}

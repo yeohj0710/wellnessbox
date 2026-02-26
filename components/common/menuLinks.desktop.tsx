@@ -121,6 +121,14 @@ export function DesktopMenuContent({
         건강 칼럼
       </IntentPrefetchLink>
 
+      <IntentPrefetchLink
+        href="/employee-report"
+        className={menuItemClasses()}
+        onClick={onItemClick}
+      >
+        임직원 레포트
+      </IntentPrefetchLink>
+
       <DesktopOperatorLinks
         showPharmMenus={visibility.showPharmMenus}
         showRiderMenus={visibility.showRiderMenus}

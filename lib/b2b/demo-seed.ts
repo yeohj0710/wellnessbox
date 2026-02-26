@@ -4,7 +4,7 @@ import db from "@/lib/db";
 import { computeAndSaveB2bAnalysis } from "@/lib/b2b/analysis-service";
 import { resolveB2bEmployeeIdentity } from "@/lib/b2b/identity";
 import { listRecentPeriodKeys, monthRangeFromPeriodKey, periodKeyToCycle, resolveCurrentPeriodKey } from "@/lib/b2b/period";
-import { regenerateB2bReport } from "@/lib/b2b/report-service";
+import { ensureLatestB2bReport, regenerateB2bReport } from "@/lib/b2b/report-service";
 import {
   buildSurveyQuestionMap,
   ensureActiveB2bSurveyTemplate,
@@ -404,13 +404,22 @@ export async function seedB2bDemoData() {
         generateAiEvaluation: false,
       });
 
-      await regenerateB2bReport({
-        employeeId: employee.id,
-        periodKey,
-        pageSize: "A4",
-        recomputeAnalysis: false,
-        generateAiEvaluation: false,
+      const existingReport = await db.b2bReport.findFirst({
+        where: { employeeId: employee.id, periodKey },
+        orderBy: [{ variantIndex: "desc" }, { createdAt: "desc" }],
+        select: { id: true },
       });
+      if (existingReport) {
+        await ensureLatestB2bReport(employee.id, periodKey);
+      } else {
+        await regenerateB2bReport({
+          employeeId: employee.id,
+          periodKey,
+          pageSize: "A4",
+          recomputeAnalysis: false,
+          generateAiEvaluation: false,
+        });
+      }
     }
 
     await db.b2bEmployee.update({

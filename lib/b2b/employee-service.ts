@@ -235,10 +235,12 @@ function resolveMissingSummaryTargets(normalizedJson: unknown) {
   const medicationRows = resolveMedicationRows(normalizedJson);
   const checkupRows = resolveCheckupRows(normalizedJson);
 
-  if (!medicationRows || medicationRows.length === 0) {
+  // Empty arrays are valid "no history" results and should not trigger
+  // additional network fetches.
+  if (medicationRows == null) {
     missing.add("medication");
   }
-  if (!checkupRows || checkupRows.length === 0) {
+  if (checkupRows == null) {
     missing.add("checkupOverview");
   }
   return [...missing];

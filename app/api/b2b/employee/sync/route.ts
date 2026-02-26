@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import db from "@/lib/db";
 import {
   B2B_EMPLOYEE_TOKEN_COOKIE,
   buildB2bEmployeeAccessToken,
@@ -12,7 +13,10 @@ import {
   logB2bEmployeeAccess,
   upsertB2bEmployee,
 } from "@/lib/b2b/employee-service";
-import { regenerateB2bReport } from "@/lib/b2b/report-service";
+import {
+  ensureLatestB2bReport,
+  regenerateB2bReport,
+} from "@/lib/b2b/report-service";
 import { resolveCurrentPeriodKey } from "@/lib/b2b/period";
 import { requireNhisSession } from "@/lib/server/route-auth";
 import { resolveDbRouteError } from "@/lib/server/db-error";
@@ -105,6 +109,7 @@ export async function POST(req: Request) {
     const debugForceRefresh = req.headers.get("x-wb-force-refresh-debug") === "1";
     const canForceRefresh = session.admin?.loggedIn === true || debugForceRefresh;
     const forceRefreshCooldownSeconds = resolveForceRefreshCooldownSeconds();
+    const requestedPeriodKey = parsed.data.periodKey ?? resolveCurrentPeriodKey();
 
     if (forceRefreshRequested && !canForceRefresh) {
       return noStoreJson(
@@ -135,6 +140,73 @@ export async function POST(req: Request) {
       userAgent,
       payload: { guest: auth.data.guest },
     });
+
+    if (!forceRefreshRequested) {
+      const latestSnapshot = await db.b2bHealthDataSnapshot.findFirst({
+        where: { employeeId: upserted.employee.id, provider: "HYPHEN_NHIS" },
+        orderBy: [{ fetchedAt: "desc" }, { createdAt: "desc" }],
+        select: {
+          id: true,
+          fetchedAt: true,
+          periodKey: true,
+        },
+      });
+
+      if (latestSnapshot) {
+        const reusePeriodKey =
+          parsed.data.periodKey ?? latestSnapshot.periodKey ?? requestedPeriodKey;
+        const report = await ensureLatestB2bReport(upserted.employee.id, reusePeriodKey);
+        const token = buildB2bEmployeeAccessToken({
+          employeeId: upserted.employee.id,
+          identityHash: upserted.identity.identityHash,
+        });
+
+        const response = noStoreJson({
+          ok: true,
+          employee: {
+            id: upserted.employee.id,
+            name: upserted.employee.name,
+          },
+          sync: {
+            source: "snapshot-history",
+            snapshotId: latestSnapshot.id,
+            forceRefresh: false,
+            cooldown: {
+              cooldownSeconds: forceRefreshCooldownSeconds,
+              remainingSeconds: 0,
+              availableAt: null,
+            },
+          },
+          report: {
+            id: report.id,
+            variantIndex: report.variantIndex,
+            status: report.status,
+            periodKey: report.periodKey ?? reusePeriodKey,
+          },
+        });
+        response.cookies.set(
+          B2B_EMPLOYEE_TOKEN_COOKIE,
+          token,
+          getB2bEmployeeCookieOptions()
+        );
+
+        await logB2bEmployeeAccess({
+          employeeId: upserted.employee.id,
+          appUserId: auth.data.appUserId,
+          action: "sync_reused_snapshot",
+          route: "/api/b2b/employee/sync",
+          ip,
+          userAgent,
+          payload: {
+            reportId: report.id,
+            snapshotId: latestSnapshot.id,
+            periodKey: report.periodKey ?? reusePeriodKey,
+          },
+        });
+
+        return response;
+      }
+    }
 
     if (forceRefreshRequested) {
       const cooldown = computeForceRefreshCooldown(
@@ -183,7 +255,7 @@ export async function POST(req: Request) {
         forceRefresh: forceRefreshRequested,
       });
 
-      const periodKey = parsed.data.periodKey ?? resolveCurrentPeriodKey();
+      const periodKey = requestedPeriodKey;
       const report = await regenerateB2bReport({
         employeeId: upserted.employee.id,
         pageSize: "A4",

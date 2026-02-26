@@ -9,6 +9,7 @@ import {
 } from "@/lib/b2b/export/render-style";
 
 const MM_TO_PX = 3.7795275591;
+const SCALE_MIN = 0.25;
 
 type ReportRendererProps = {
   layout: LayoutDocument | null | undefined;
@@ -40,26 +41,60 @@ function issueColor(tone: "warn" | "danger") {
     : { border: "#D97706", bg: "rgba(217, 119, 6, 0.08)", text: "#92400E" };
 }
 
-function useContainerWidth(ref: React.RefObject<HTMLDivElement>) {
-  const [width, setWidth] = useState(0);
+function useContainerMetrics(ref: React.RefObject<HTMLDivElement>) {
+  const [metrics, setMetrics] = useState({
+    width: 0,
+    mmToPx: MM_TO_PX,
+  });
 
   useEffect(() => {
     const element = ref.current;
     if (!element) return;
+    const probe = document.createElement("div");
+    probe.style.position = "fixed";
+    probe.style.left = "-1000mm";
+    probe.style.top = "-1000mm";
+    probe.style.width = "100mm";
+    probe.style.height = "1px";
+    probe.style.visibility = "hidden";
+    probe.style.pointerEvents = "none";
+    probe.style.padding = "0";
+    probe.style.border = "0";
+    document.body.appendChild(probe);
+
     const update = () => {
       const style = window.getComputedStyle(element);
       const paddingLeft = Number.parseFloat(style.paddingLeft) || 0;
       const paddingRight = Number.parseFloat(style.paddingRight) || 0;
       const contentWidth = Math.max(0, element.clientWidth - paddingLeft - paddingRight);
-      setWidth(contentWidth);
+      const measuredMmToPx = probe.getBoundingClientRect().width / 100;
+      const nextMmToPx =
+        Number.isFinite(measuredMmToPx) && measuredMmToPx > 0 ? measuredMmToPx : MM_TO_PX;
+      setMetrics((prev) => {
+        if (
+          Math.abs(prev.width - contentWidth) < 0.1 &&
+          Math.abs(prev.mmToPx - nextMmToPx) < 0.01
+        ) {
+          return prev;
+        }
+        return {
+          width: contentWidth,
+          mmToPx: nextMmToPx,
+        };
+      });
     };
     update();
     const observer = new ResizeObserver(update);
     observer.observe(element);
-    return () => observer.disconnect();
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("resize", update);
+      observer.disconnect();
+      probe.remove();
+    };
   }, [ref]);
 
-  return width;
+  return metrics;
 }
 
 function resolveIssueBoxes(pageId: string, issues: LayoutValidationIssue[]) {
@@ -151,18 +186,18 @@ export default function ReportRenderer(props: ReportRendererProps) {
     className = "",
   } = props;
   const containerRef = useRef<HTMLDivElement>(null);
-  const containerWidth = useContainerWidth(containerRef);
+  const { width: containerWidth, mmToPx } = useContainerMetrics(containerRef);
 
   const scalesByPage = useMemo(() => {
     if (!layout) return [];
     return layout.pages.map((page) => {
       if (!fitToWidth || containerWidth <= 0) return 1;
-      const widthPx = page.widthMm * MM_TO_PX;
-      const available = Math.max(0, containerWidth);
+      const widthPx = page.widthMm * mmToPx;
+      const available = Math.max(0, containerWidth - 2);
       const nextScale = available / widthPx;
-      return Number.isFinite(nextScale) ? Math.max(0.45, Math.min(1, nextScale)) : 1;
+      return Number.isFinite(nextScale) ? Math.max(SCALE_MIN, Math.min(1, nextScale)) : 1;
     });
-  }, [containerWidth, fitToWidth, layout]);
+  }, [containerWidth, fitToWidth, layout, mmToPx]);
 
   if (!layout) {
     return (
@@ -202,6 +237,10 @@ export default function ReportRenderer(props: ReportRendererProps) {
             padding: 0 !important;
             border: 0 !important;
           }
+          .wb-report-pages {
+            display: block !important;
+            gap: 0 !important;
+          }
           .wb-report-page-wrap {
             margin: 0 auto !important;
             width: auto !important;
@@ -229,11 +268,11 @@ export default function ReportRenderer(props: ReportRendererProps) {
         ref={containerRef}
         className="wb-report-canvas overflow-x-auto rounded-2xl border border-slate-200 bg-slate-100 p-3 sm:p-4"
       >
-        <div className="space-y-4">
+        <div className="wb-report-pages grid gap-8">
           {layout.pages.map((page, pageIndex) => {
             const scale = scalesByPage[pageIndex] ?? 1;
-            const pageWidthPx = page.widthMm * MM_TO_PX;
-            const pageHeightPx = page.heightMm * MM_TO_PX;
+            const pageWidthPx = page.widthMm * mmToPx;
+            const pageHeightPx = page.heightMm * mmToPx;
             const scaledWidthPx = pageWidthPx * scale;
             const scaledHeightPx = pageHeightPx * scale;
             const issueBoxes = resolveIssueBoxes(page.id, issues);

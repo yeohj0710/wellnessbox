@@ -126,6 +126,18 @@ export async function regenerateReport(input: { employeeId: string; periodKey?: 
   });
 }
 
+export async function saveReportDisplayPeriod(input: {
+  reportId: string;
+  displayPeriodKey: string;
+}) {
+  return requestJson(`/api/admin/b2b/reports/${input.reportId}/meta`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      displayPeriodKey: input.displayPeriodKey,
+    }),
+  });
+}
+
 export async function runLayoutValidation(reportId: string) {
   return requestJson<ValidationResponse>(`/api/admin/b2b/reports/${reportId}/validation`);
 }

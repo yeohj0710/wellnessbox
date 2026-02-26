@@ -81,6 +81,14 @@ export function DrawerMenuContent({
         건강 칼럼
       </IntentPrefetchLink>
 
+      <IntentPrefetchLink
+        href="/employee-report"
+        className={menuItemClasses()}
+        onClick={onItemClick}
+      >
+        임직원 레포트
+      </IntentPrefetchLink>
+
       <DrawerOperatorLinks
         showPharmMenus={visibility.showPharmMenus}
         showRiderMenus={visibility.showRiderMenus}

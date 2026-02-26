@@ -13,10 +13,32 @@ export default function B2bEmployeeSidebar({
   selectedEmployeeId,
   onSelectEmployee,
 }: B2bEmployeeSidebarProps) {
+  const selectedEmployee =
+    employees.find((employee) => employee.id === selectedEmployeeId) ?? null;
+  const totalSnapshots = employees.reduce(
+    (sum, employee) => sum + employee.counts.healthSnapshots,
+    0
+  );
+  const totalReports = employees.reduce(
+    (sum, employee) => sum + employee.counts.reports,
+    0
+  );
+
   return (
     <section className={`${styles.sectionCard} ${styles.sidebarCard}`}>
-      <h2 className={styles.sectionTitle}>임직원 목록</h2>
-      <div className={styles.listWrap}>
+      <div className={styles.sidebarHead}>
+        <h2 className={styles.sectionTitle}>임직원 목록</h2>
+        <div className={styles.sidebarBadgeRow}>
+          <span className={styles.sidebarBadge}>총 {employees.length}명</span>
+          <span className={styles.sidebarBadge}>스냅샷 {totalSnapshots}건</span>
+          <span className={styles.sidebarBadge}>레포트 {totalReports}건</span>
+          {selectedEmployee ? (
+            <span className={styles.sidebarBadge}>선택: {selectedEmployee.name}</span>
+          ) : null}
+        </div>
+      </div>
+
+      <div className={`${styles.listWrap} ${styles.listWrapGrid}`}>
         {employees.map((employee) => (
           <button
             key={employee.id}
@@ -26,7 +48,12 @@ export default function B2bEmployeeSidebar({
               selectedEmployeeId === employee.id ? styles.listButtonActive : ""
             }`}
           >
-            <span className={styles.listTitle}>{employee.name}</span>
+            <span className={styles.listTopRow}>
+              <span className={styles.listAvatar}>
+                {(employee.name || "?").slice(0, 1)}
+              </span>
+              <span className={styles.listTitle}>{employee.name}</span>
+            </span>
             <span className={styles.listMeta}>
               {employee.birthDate} / {normalizeDigits(employee.phoneNormalized)}
             </span>
@@ -42,4 +69,3 @@ export default function B2bEmployeeSidebar({
     </section>
   );
 }
-

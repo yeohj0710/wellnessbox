@@ -14,17 +14,22 @@ import {
 } from "@heroicons/react/24/outline";
 import { buildPageAgentContext } from "@/lib/chat/page-agent-context";
 import {
+  DOCK_NUDGE_AUTO_HIDE_COOLDOWN_MS,
+  DOCK_NUDGE_MANUAL_HIDE_COOLDOWN_MS,
   FOOTER_CART_BAR_LAYOUT_EVENT,
   MOBILE_TRIGGER_BREAKPOINT,
   MOBILE_TRIGGER_EXTRA_GAP,
   dismissDockNudge,
   emitChatDockLayout,
   isDockNudgeDismissed,
+  isDockNudgeGloballySuppressed,
   isFooterCartBarLayoutDetail,
   queueDockPrompt,
   readFooterCartBarOffsetPx,
+  suppressDockNudgeGlobally,
 } from "./DesktopChatDock.layout";
 import DesktopChatDockPanel from "./DesktopChatDockPanel";
+const ROUTE_NUDGE_AUTO_HIDE_MS = 4800;
 const DOCK_NUDGE_TEXT_MAP: Record<string, string> = {
   "agent assist": "AI 에이전트",
   "home product browsing": "홈 상품 탐색",
@@ -76,6 +81,9 @@ export default function DesktopChatDock() {
     .map((prompt) => prompt.trim())
     .filter(Boolean)
     .slice(0, 2);
+  const hasViewportMeasurement = viewportWidth > 0;
+  const isMobileViewport =
+    hasViewportMeasurement && viewportWidth < MOBILE_TRIGGER_BREAKPOINT;
 
   const requestOpenDock = useCallback(() => {
     if (isChatRoute) return;
@@ -98,12 +106,38 @@ export default function DesktopChatDock() {
   }, [hasBooted, isChatRoute, pendingOpen]);
 
   useEffect(() => {
-    if (isChatRoute || isOpen || pendingOpen || nudgePrompts.length === 0) {
+    if (
+      isChatRoute ||
+      isOpen ||
+      pendingOpen ||
+      nudgePrompts.length === 0 ||
+      !hasViewportMeasurement ||
+      isMobileViewport
+    ) {
       setShowRouteNudge(false);
       return;
     }
-    setShowRouteNudge(!isDockNudgeDismissed(routeKey));
-  }, [isChatRoute, isOpen, nudgePrompts.length, pendingOpen, routeKey]);
+    const routeDismissed = isDockNudgeDismissed(routeKey);
+    const globallySuppressed = isDockNudgeGloballySuppressed();
+    setShowRouteNudge(!routeDismissed && !globallySuppressed);
+  }, [
+    hasViewportMeasurement,
+    isChatRoute,
+    isMobileViewport,
+    isOpen,
+    nudgePrompts.length,
+    pendingOpen,
+    routeKey,
+  ]);
+
+  useEffect(() => {
+    if (isMobileViewport || !showRouteNudge) return;
+    const timer = window.setTimeout(() => {
+      suppressDockNudgeGlobally(DOCK_NUDGE_AUTO_HIDE_COOLDOWN_MS);
+      setShowRouteNudge(false);
+    }, ROUTE_NUDGE_AUTO_HIDE_MS);
+    return () => window.clearTimeout(timer);
+  }, [isMobileViewport, showRouteNudge]);
 
   useEffect(() => {
     if (isChatRoute) return;
@@ -200,16 +234,19 @@ export default function DesktopChatDock() {
 
   const handleDismissRouteNudge = useCallback(() => {
     dismissDockNudge(routeKey);
+    suppressDockNudgeGlobally(DOCK_NUDGE_MANUAL_HIDE_COOLDOWN_MS);
     setShowRouteNudge(false);
   }, [routeKey]);
 
   const openDockWithPrompt = useCallback(
     (prompt: string) => {
       queueDockPrompt(prompt);
+      dismissDockNudge(routeKey);
+      suppressDockNudgeGlobally(DOCK_NUDGE_AUTO_HIDE_COOLDOWN_MS);
       setShowRouteNudge(false);
       requestOpenDock();
     },
-    [requestOpenDock]
+    [requestOpenDock, routeKey]
   );
 
   useEffect(() => {
@@ -239,7 +276,6 @@ export default function DesktopChatDock() {
     return null;
   }
 
-  const isMobileViewport = viewportWidth > 0 && viewportWidth < MOBILE_TRIGGER_BREAKPOINT;
   const mobileTriggerOffset = isMobileViewport
     ? mobileFooterCartBarHeight
     : 0;
@@ -256,7 +292,7 @@ export default function DesktopChatDock() {
           : undefined
       }
     >
-      {showRouteNudge && (
+      {!isMobileViewport && showRouteNudge && (
         <div className="pointer-events-auto absolute bottom-[calc(100%+10px)] right-0 w-[min(88vw,330px)] rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-[0_16px_34px_rgba(15,23,42,0.18)] backdrop-blur">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
