@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { type KeyboardEvent, type MouseEvent, useMemo, useState } from "react";
 import ColumnAdminActions from "./ColumnAdminActions";
 
 type ColumnSummary = {
@@ -47,13 +48,44 @@ function normalizeTagSlugClient(input: string) {
     .replace(/^-+|-+$/g, "");
 }
 
+function isCardInteractiveTarget(target: EventTarget | null) {
+  if (!(target instanceof Element)) return false;
+  return Boolean(
+    target.closest(
+      "a,button,input,textarea,select,label,[role='button']"
+    )
+  );
+}
+
 export default function ColumnHomeClient({
   initialColumns,
   tags,
   isAdmin,
 }: ColumnHomeClientProps) {
+  const router = useRouter();
   const [columns, setColumns] = useState(initialColumns);
   const [query, setQuery] = useState("");
+
+  const openColumn = (slug: string) => {
+    router.push(`/column/${slug}`);
+  };
+
+  const handleCardClick = (event: MouseEvent<HTMLElement>, slug: string) => {
+    if (event.defaultPrevented) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (isCardInteractiveTarget(event.target)) return;
+    openColumn(slug);
+  };
+
+  const handleCardKeyDown = (
+    event: KeyboardEvent<HTMLElement>,
+    slug: string
+  ) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    if (isCardInteractiveTarget(event.target)) return;
+    event.preventDefault();
+    openColumn(slug);
+  };
 
   const filteredColumns = useMemo(() => {
     const keyword = query.trim().toLowerCase();
@@ -148,7 +180,11 @@ export default function ColumnHomeClient({
                 <article
                   data-testid="column-card"
                   data-post-id={column.postId ?? ""}
-                  className="rounded-3xl border border-slate-200/90 bg-white/95 p-6 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-[0_14px_30px_-26px_rgba(15,23,42,0.65)]"
+                  role="link"
+                  tabIndex={0}
+                  onClick={(event) => handleCardClick(event, column.slug)}
+                  onKeyDown={(event) => handleCardKeyDown(event, column.slug)}
+                  className="cursor-pointer rounded-3xl border border-slate-200/90 bg-white/95 p-6 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-[0_14px_30px_-26px_rgba(15,23,42,0.65)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2"
                 >
                   <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500">
                     <time dateTime={column.publishedAt}>{formatDate(column.publishedAt)}</time>

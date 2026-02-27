@@ -37,25 +37,19 @@ export function ManualLookupSection({
   return (
     <section
       id="manual-form"
-      className="mt-8 rounded-2xl bg-white ring-1 ring-gray-200 p-5 sm:p-6"
+      className="mt-6 rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-sm sm:p-6"
     >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-base font-bold text-gray-900">
-            다른 전화번호로 주문 조회
-          </h2>
-          <p className="mt-1 text-sm text-gray-600">
-            결제 시 입력한 전화번호와 주문 조회 비밀번호를 입력해주세요.
-          </p>
-        </div>
+      <div>
+        <h2 className="text-base font-bold text-slate-900">다른 전화번호로 조회</h2>
+        <p className="mt-1 text-sm leading-relaxed text-slate-600">
+          결제 시 입력한 전화번호와 주문 조회 비밀번호를 입력해 주세요.
+        </p>
       </div>
 
       <form className="mt-6 space-y-5" onSubmit={onSubmitManual}>
         <div>
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-900">전화번호</h3>
-          </div>
-          <div className="mt-2 flex gap-2 items-center">
+          <h3 className="text-sm font-semibold text-slate-900">전화번호</h3>
+          <div className="mt-2 flex items-center gap-2">
             <input
               type="text"
               autoComplete="tel"
@@ -68,11 +62,13 @@ export function ManualLookupSection({
                   document.getElementById("phonePart2")?.focus();
                 }
               }}
-              className={`focus:outline-none focus:ring-2 focus:ring-sky-400 w-14 border rounded-md px-2 py-2 text-center text-sm transition-colors ${
-                phonePart1.length === 3 ? "bg-gray-100 text-gray-500" : ""
+              className={`h-11 w-14 rounded-xl border border-slate-300 px-2 text-center text-sm transition focus:outline-none focus:ring-2 focus:ring-sky-300 ${
+                phonePart1.length === 3
+                  ? "bg-slate-100 text-slate-500"
+                  : "text-slate-800"
               }`}
             />
-            <span className="text-gray-500">-</span>
+            <span className="text-slate-400">-</span>
             <input
               id="phonePart2"
               type="text"
@@ -86,11 +82,13 @@ export function ManualLookupSection({
                   document.getElementById("phonePart3")?.focus();
                 }
               }}
-              className={`focus:outline-none focus:ring-2 focus:ring-sky-400 w-20 border rounded-md px-2 py-2 text-center text-sm transition-colors ${
-                phonePart2.length === 4 ? "bg-gray-100 text-gray-500" : ""
+              className={`h-11 w-20 rounded-xl border border-slate-300 px-2 text-center text-sm transition focus:outline-none focus:ring-2 focus:ring-sky-300 ${
+                phonePart2.length === 4
+                  ? "bg-slate-100 text-slate-500"
+                  : "text-slate-800"
               }`}
             />
-            <span className="text-gray-500">-</span>
+            <span className="text-slate-400">-</span>
             <input
               id="phonePart3"
               type="text"
@@ -101,19 +99,20 @@ export function ManualLookupSection({
                 const newValue = e.target.value.replace(/\D/g, "");
                 onChangePhonePart3(newValue);
               }}
-              className={`focus:outline-none focus:ring-2 focus:ring-sky-400 w-20 border rounded-md px-2 py-2 text-center text-sm transition-colors ${
-                phonePart3.length === 4 ? "bg-gray-100 text-gray-500" : ""
+              className={`h-11 w-20 rounded-xl border border-slate-300 px-2 text-center text-sm transition focus:outline-none focus:ring-2 focus:ring-sky-300 ${
+                phonePart3.length === 4
+                  ? "bg-slate-100 text-slate-500"
+                  : "text-slate-800"
               }`}
             />
           </div>
+          {manualPhoneDisplay ? (
+            <p className="mt-1 text-xs text-slate-500">입력값: {manualPhoneDisplay}</p>
+          ) : null}
         </div>
 
         <div>
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-900">
-              주문 조회 비밀번호
-            </h3>
-          </div>
+          <h3 className="text-sm font-semibold text-slate-900">주문 조회 비밀번호</h3>
           <div className="relative mt-2">
             <input
               type={showPw ? "text" : "password"}
@@ -121,20 +120,20 @@ export function ManualLookupSection({
               value={password}
               onChange={(e) => onChangePassword(e.target.value)}
               placeholder="주문 시 입력한 비밀번호"
-              className="w-full border rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-sky-400"
+              className="h-11 w-full rounded-xl border border-slate-300 px-3 pr-10 text-slate-800 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
               disabled={loading}
             />
             <button
               type="button"
               onClick={onToggleShowPw}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-gray-100"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 hover:bg-slate-100"
               aria-label={showPw ? "비밀번호 숨기기" : "비밀번호 보기"}
               tabIndex={-1}
             >
               {showPw ? (
-                <EyeSlashIcon className="w-5 h-5 text-gray-600" />
+                <EyeSlashIcon className="h-5 w-5 text-slate-600" />
               ) : (
-                <EyeIcon className="w-5 h-5 text-gray-600" />
+                <EyeIcon className="h-5 w-5 text-slate-600" />
               )}
             </button>
           </div>
@@ -143,27 +142,27 @@ export function ManualLookupSection({
         <div className="pt-1">
           <button
             type="submit"
-            className={`w-full h-11 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 transition ${
-              loading ? "opacity-60 cursor-not-allowed" : ""
+            className={`h-11 w-full rounded-xl bg-slate-900 text-sm font-semibold text-white transition hover:bg-slate-800 ${
+              loading ? "cursor-not-allowed opacity-60" : ""
             }`}
             disabled={loading}
           >
             {loading ? (
-              <div className="flex items-center justify-center gap-2 text-sm">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <span className="inline-flex items-center gap-2">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                 주문 조회 중...
-              </div>
+              </span>
             ) : (
               "해당 정보로 주문 조회"
             )}
           </button>
         </div>
 
-        {error && (
-          <p className="text-red-500 text-sm mt-2" role="alert">
+        {error ? (
+          <p className="text-sm text-rose-600" role="alert">
             {error}
           </p>
-        )}
+        ) : null}
       </form>
     </section>
   );

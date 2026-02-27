@@ -28,7 +28,8 @@
 
 .pageBackdrop {
   width: 100%;
-  min-height: calc(100vh - 3.5rem);
+  min-height: calc(105vh - 3.5rem);
+  min-height: calc(105dvh - 3.5rem);
   background:
     radial-gradient(circle at 95% -8%, rgba(49, 130, 246, 0.12), transparent 38%),
     radial-gradient(circle at -6% 108%, rgba(16, 185, 129, 0.1), transparent 32%),

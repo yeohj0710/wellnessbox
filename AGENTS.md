@@ -131,6 +131,11 @@ Do NOT load all R&D docs at once unless explicitly required.
   - token issued in `/api/verify-password`; middleware verifies token on protected paths
   - protected roots currently `"/features"` and `"/admin"` in `isProtectedPath`
 
+### Agent guard audit config
+
+- `scripts/lib/api-route-guard-config.cts`
+  - single source for guard tokens, critical guard checks, and expected session-managed API routes used by audit scripts
+
 ---
 
 ## Mini flow sketches (quick orientation)
@@ -222,7 +227,13 @@ Do NOT load all R&D docs at once unless explicitly required.
 - Agent preflight: `npm run preflight:agent`
 - Prisma generate: `npm run predev` or `npx prisma generate`
 - Client audit helper: `npm run audit:clients`
+- Route scroll/card QA: `npm run qa:route-scroll`
+- B2B export smoke QA: `npm run qa:b2b:export-smoke`
+- QA script syntax check: `npm run qa:syntax`
+- QA smoke suite: `npm run qa:smoke`
 - Hotspot + guard audit: `npm run audit:hotspots`
+- Function hotspot report: `npm run agent:function-hotspots`
+- Route method export audit: `npm run audit:route-method-exports`
 - Encoding audit: `npm run audit:encoding`
 
 ---
@@ -235,5 +246,6 @@ Do NOT load all R&D docs at once unless explicitly required.
 - Reverting admin auth to plaintext cookie equality checks
 - Instantiating new `PrismaClient` per import location
 - Re-introducing dev/build script duplication by manually calling pre hooks inside script bodies
+- Importing route handlers as `GET/POST/...` aliases without exporting them in `app/api/**/route.ts` (causes 405 at runtime)
 - Editing Korean/non-ASCII files with shell overwrite commands that can change encoding
 - Shipping English-only user-facing UI copy on Korean-first surfaces without explicit requirement

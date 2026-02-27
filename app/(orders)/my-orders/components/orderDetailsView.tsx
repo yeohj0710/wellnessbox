@@ -38,8 +38,8 @@ export function OrderDetailsView({
   onOtherNumber,
 }: OrderDetailsViewProps) {
   return (
-    <div className="w-full mt-8 mb-12 flex justify-center px-3 sm:px-4">
-      <div className="w-full sm:w-[640px]">
+    <div className="w-full px-3 pb-14 pt-8 sm:px-4">
+      <div className="mx-auto w-full max-w-[720px]">
         <OrderPhoneContext
           isPhoneLinked={isPhoneLinked}
           linkedPhoneDisplay={linkedPhoneDisplay}

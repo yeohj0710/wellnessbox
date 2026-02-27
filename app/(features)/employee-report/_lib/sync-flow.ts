@@ -7,6 +7,7 @@ import type {
 import {
   ApiRequestError,
   saveStoredIdentity,
+  toIdentityPayload,
   toSyncNextAction,
 } from "./client-utils";
 
@@ -84,7 +85,7 @@ export async function syncEmployeeReportAndReload(params: {
   applyForceSyncCooldown: (payload: ApiErrorPayload | null | undefined) => void;
   persistIdentity?: (identity: IdentityInput) => void;
 }): Promise<EmployeeSyncResponse> {
-  const payload = params.getIdentityPayload();
+  const payload = toIdentityPayload(params.getIdentityPayload());
   const syncResult = await postEmployeeSync({
     identity: payload,
     forceRefresh: params.forceRefresh === true,

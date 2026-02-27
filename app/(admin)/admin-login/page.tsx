@@ -1,7 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import styles from "@/components/b2b/B2bUx.module.css";
+import { useEffect, useMemo, useState } from "react";
+import styles from "./adminLogin.module.css";
+
+function resolveSafeRedirectPath(raw: string | null) {
+  if (!raw) return "/admin";
+  if (!raw.startsWith("/")) return "/admin";
+  if (raw.startsWith("//")) return "/admin";
+  return raw;
+}
 
 export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
@@ -12,23 +19,33 @@ export default function AdminLoginPage() {
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const redirect = searchParams.get("redirect");
-    if (redirect) setRedirectPath(redirect);
+    setRedirectPath(resolveSafeRedirectPath(redirect));
   }, []);
 
-  const handleSubmit = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+  const isSubmitDisabled = useMemo(
+    () => isLoading || password.trim().length === 0,
+    [isLoading, password]
+  );
+
+  const handleSubmit = async (event?: React.FormEvent) => {
+    if (event) event.preventDefault();
+    if (isSubmitDisabled) return;
+
     setIsLoading(true);
     setError("");
+
     try {
-      const res = await fetch("/api/verify-password", {
+      const response = await fetch("/api/verify-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password, loginType: "admin" }),
       });
-      if (res.ok) {
-        window.location.href = redirectPath;
+
+      if (response.ok) {
+        window.location.assign(redirectPath);
         return;
       }
+
       setError("비밀번호가 올바르지 않습니다.");
     } catch {
       setError("로그인 요청 처리 중 오류가 발생했습니다.");
@@ -38,41 +55,64 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className={`${styles.page} ${styles.compactPage} ${styles.stack}`}>
-      <header className={styles.heroCard}>
-        <p className={styles.kicker}>ADMIN ACCESS</p>
-        <h1 className={styles.title}>관리자 로그인</h1>
-        <p className={styles.description}>
-          관리자 비밀번호를 입력하면 운영 대시보드로 이동합니다.
-        </p>
-      </header>
+    <div className={styles.pageShell}>
+      <div className={styles.pageInner}>
+        <section className={styles.loginCard}>
+          <header className={styles.hero}>
+            <span className={styles.badge}>관리자 전용</span>
+            <h1 className={styles.title}>관리자 로그인</h1>
+            <p className={styles.description}>
+              관리자 비밀번호를 입력하면 운영 페이지로 이동합니다.
+            </p>
+          </header>
 
-      <section className={styles.sectionCard}>
-        <form onSubmit={handleSubmit} className={styles.stack}>
-          <label className={styles.field}>
-            <span className={styles.fieldLabel}>관리자 비밀번호</span>
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="비밀번호 입력"
-              className={styles.input}
-            />
-          </label>
+          <form onSubmit={handleSubmit} className={styles.formBody}>
+            <label className={styles.field}>
+              <span className={styles.label}>관리자 비밀번호</span>
+              <input
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="비밀번호 입력"
+                className={styles.input}
+                disabled={isLoading}
+                autoFocus
+              />
+            </label>
 
-          {error ? <div className={styles.noticeError}>{error}</div> : null}
+            {error ? (
+              <div className={styles.error} role="alert">
+                {error}
+              </div>
+            ) : null}
 
-          <div className={styles.actionRow}>
             <button
               type="submit"
-              disabled={isLoading || password.trim().length === 0}
-              className={styles.buttonPrimary}
+              disabled={isSubmitDisabled}
+              className={styles.submitButton}
             >
-              {isLoading ? "로그인 중..." : "로그인"}
+              {isLoading ? (
+                <span className={styles.loadingContent}>
+                  <span className={styles.spinner} aria-hidden />
+                  인증 중
+                </span>
+              ) : (
+                "로그인"
+              )}
             </button>
-          </div>
-        </form>
-      </section>
+
+            {isLoading ? (
+              <div className={styles.loadingRail} aria-hidden>
+                <div className={styles.loadingBar} />
+              </div>
+            ) : null}
+
+            <p className={styles.footerText}>
+              인증이 완료되면 관리자 화면으로 자동 이동합니다.
+            </p>
+          </form>
+        </section>
+      </div>
     </div>
   );
 }

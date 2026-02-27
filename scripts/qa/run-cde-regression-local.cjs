@@ -1,8 +1,15 @@
 /* eslint-disable no-console */
 const { spawn } = require("child_process");
-const net = require("net");
 const path = require("path");
 const fs = require("fs");
+const {
+  waitForServerReady,
+  resolveNextDevCommand,
+  spawnNextDev,
+  findAvailablePort,
+  stopProcessTree,
+} = require("./lib/dev-server.cjs");
+const { acquireQaLock } = require("./lib/qa-lock.cjs");
 require("dotenv").config({ path: path.join(process.cwd(), ".env"), quiet: true });
 
 const ROOT = process.cwd();
@@ -10,92 +17,6 @@ const QA_PORT = Number(process.env.QA_PORT || "3107");
 const EXPLICIT_BASE_URL = process.env.BASE_URL || "";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
 const START_TIMEOUT_MS = Number(process.env.QA_START_TIMEOUT_MS || "150000");
-
-function wait(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function waitForServerReady(baseUrl, timeoutMs) {
-  const startedAt = Date.now();
-  while (Date.now() - startedAt < timeoutMs) {
-    try {
-      const response = await fetch(`${baseUrl}/column`, {
-        redirect: "manual",
-        cache: "no-store",
-      });
-      if (response.status >= 200 && response.status < 500) {
-        return true;
-      }
-    } catch {
-      // no-op
-    }
-    await wait(1000);
-  }
-  return false;
-}
-
-function resolveNextDevCommand() {
-  const binName = process.platform === "win32" ? "next.cmd" : "next";
-  return path.join(ROOT, "node_modules", ".bin", binName);
-}
-
-function spawnNextDev(nextDevBin, qaPort, env) {
-  if (process.platform === "win32") {
-    return spawn("cmd.exe", ["/d", "/s", "/c", nextDevBin, "dev", "--port", String(qaPort)], {
-      cwd: ROOT,
-      env,
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-  }
-  return spawn(nextDevBin, ["dev", "--port", String(qaPort)], {
-    cwd: ROOT,
-    env,
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-}
-
-async function isPortAvailable(port) {
-  return new Promise((resolve) => {
-    const server = net.createServer();
-    server.once("error", () => resolve(false));
-    server.once("listening", () => {
-      server.close(() => resolve(true));
-    });
-    server.listen(port);
-  });
-}
-
-async function findAvailablePort(startPort, maxScan = 30) {
-  for (let offset = 0; offset <= maxScan; offset += 1) {
-    const candidate = startPort + offset;
-    // eslint-disable-next-line no-await-in-loop
-    const available = await isPortAvailable(candidate);
-    if (available) return candidate;
-  }
-  throw new Error(`no available port from ${startPort} to ${startPort + maxScan}`);
-}
-
-function stopProcessTree(proc) {
-  if (!proc || proc.killed) return Promise.resolve();
-  return new Promise((resolve) => {
-    if (process.platform === "win32") {
-      const killer = spawn("taskkill", ["/pid", String(proc.pid), "/T", "/F"], {
-        stdio: "ignore",
-      });
-      killer.on("exit", () => resolve());
-      killer.on("error", () => resolve());
-      return;
-    }
-    proc.kill("SIGTERM");
-    proc.on("exit", () => resolve());
-    setTimeout(() => {
-      if (!proc.killed) {
-        proc.kill("SIGKILL");
-      }
-      resolve();
-    }, 3000);
-  });
-}
 
 function clearNextBuildArtifacts() {
   const nextDir = path.join(ROOT, ".next");
@@ -120,13 +41,24 @@ async function run() {
     ...(targetPort ? { PORT: String(targetPort) } : {}),
   };
   let devProc = null;
+  const releaseQaLock = useExisting
+    ? () => {}
+    : await acquireQaLock({
+        lockName: "qa-dev-server",
+        owner: "qa:cde:regression:local",
+      });
 
   if (useExisting) {
     console.log(`[qa] using existing server: ${baseUrl}`);
   } else {
     clearNextBuildArtifacts();
     console.log(`[qa] starting isolated dev server: ${nextDevBin} dev --port ${targetPort}`);
-    devProc = spawnNextDev(nextDevBin, targetPort, devEnv);
+    devProc = spawnNextDev({
+      rootDir: ROOT,
+      nextDevBin,
+      port: targetPort,
+      env: devEnv,
+    });
 
     devProc.stdout.on("data", (chunk) => {
       process.stdout.write(`[dev] ${chunk.toString()}`);
@@ -167,6 +99,7 @@ async function run() {
     if (devProc) {
       await stopProcessTree(devProc);
     }
+    releaseQaLock();
   }
 }
 

@@ -10,12 +10,7 @@ import { OrderDetailsView } from "./components/orderDetailsView";
 import { useMyOrdersController } from "./hooks/useMyOrdersController";
 
 export default function MyOrdersPage() {
-  const {
-    manualLookup,
-    linkedState,
-    viewConfig,
-    actions,
-  } = useMyOrdersController();
+  const { manualLookup, linkedState, viewConfig, actions } = useMyOrdersController();
 
   const scrollToManual = useCallback(() => {
     document.getElementById("manual-form")?.scrollIntoView({ behavior: "smooth" });
@@ -54,14 +49,16 @@ export default function MyOrdersPage() {
   }
 
   return (
-    <div className="w-full mt-8 mb-12 flex justify-center px-3 sm:px-4">
-      <div className="w-full sm:w-[640px]">
-        <div className="w-full px-6 py-8 bg-white sm:shadow-md sm:rounded-2xl border border-gray-100">
+    <div className="w-full px-3 pb-14 pt-8 sm:px-4">
+      <div className="mx-auto w-full max-w-[720px]">
+        <div className="w-full rounded-[1.75rem] border border-slate-200 bg-gradient-to-b from-white to-slate-50/70 px-4 py-6 shadow-[0_14px_40px_-28px_rgba(15,23,42,0.45)] sm:px-6 sm:py-7">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">내 주문 조회</h1>
-              <p className="mt-2 text-sm text-gray-600">
-                전화번호 인증과 주문 비밀번호로 더 쉽고 빠르게 주문을 확인해요.
+              <h1 className="text-2xl font-black tracking-tight text-slate-900">
+                내 주문 조회
+              </h1>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                전화번호 인증 또는 주문 조회 비밀번호로 주문 내역을 빠르게 확인할 수 있어요.
               </p>
             </div>
           </div>

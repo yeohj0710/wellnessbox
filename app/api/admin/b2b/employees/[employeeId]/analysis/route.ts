@@ -1,4 +1,4 @@
-import {
+export {
   handleAdminAnalysisGet as GET,
   handleAdminAnalysisPost as POST,
   handleAdminAnalysisPut as PUT,

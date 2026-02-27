@@ -32,6 +32,23 @@ export function normalizeDigits(value: string) {
   return value.replace(/\D/g, "");
 }
 
+export function toIdentityPayload(identity: IdentityInput): IdentityInput {
+  return {
+    name: identity.name.trim(),
+    birthDate: normalizeDigits(identity.birthDate),
+    phone: normalizeDigits(identity.phone),
+  };
+}
+
+export function isValidIdentityInput(identity: IdentityInput) {
+  const normalized = toIdentityPayload(identity);
+  return (
+    normalized.name.length > 0 &&
+    /^\d{8}$/.test(normalized.birthDate) &&
+    /^\d{10,11}$/.test(normalized.phone)
+  );
+}
+
 export function sleep(ms: number) {
   return new Promise<void>((resolve) => window.setTimeout(resolve, ms));
 }

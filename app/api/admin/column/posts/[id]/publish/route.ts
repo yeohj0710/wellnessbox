@@ -1,4 +1,4 @@
-import {
+export {
   runAdminColumnPostPublishEntry as POST,
 } from "./route-handler";
 

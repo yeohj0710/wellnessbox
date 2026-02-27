@@ -26,11 +26,15 @@ const CommandPalette = dynamic(() => import("./commandPalette"), {
 const RouteChangeLoading = dynamic(() => import("./routeChangeLoading"), {
   ssr: false,
 });
+const RouteScrollPolicy = dynamic(() => import("./routeScrollPolicy"), {
+  ssr: false,
+});
 
 export default function RootLayoutEnhancers() {
   return (
     <>
       <RouteChangeLoading />
+      <RouteScrollPolicy />
       <AppBackHandler />
       <TopBar />
       <GlobalCartHost />

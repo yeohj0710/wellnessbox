@@ -1,23 +1,51 @@
-const { readFileSync, readdirSync, statSync } = require("node:fs");
+const { readFileSync, statSync } = require("node:fs");
 const path = require("node:path") as typeof import("node:path");
+const {
+  countFileLines,
+  listFilesRecursively,
+  toPosixRelative,
+} = require("./lib/code-file-scan.cts") as {
+  countFileLines: (filePath: string) => number;
+  listFilesRecursively: (
+    rootDir: string,
+    options?: {
+      excludeDirs?: string[] | Set<string>;
+      includeExtensions?: string[] | Set<string>;
+      ignoreDotEntries?: boolean;
+    }
+  ) => string[];
+  toPosixRelative: (rootDir: string, filePath: string) => string;
+};
+const {
+  CRITICAL_GUARD_CHECKS,
+  EXPECTED_SESSION_ROUTE_ENTRIES,
+  ROUTE_GUARD_TOKENS,
+} = require("./lib/api-route-guard-config.cts") as {
+  CRITICAL_GUARD_CHECKS: Array<{ file: string; requiredTokens: string[] }>;
+  EXPECTED_SESSION_ROUTE_ENTRIES: Array<{
+    route: string;
+    routeFile: string;
+    note: string;
+  }>;
+  ROUTE_GUARD_TOKENS: string[];
+};
+const {
+  extractExportedHttpMethods,
+  extractImportedMethodAliases,
+  walkRouteFiles: walkApiRouteFiles,
+} = require("./lib/route-method-audit.cts") as {
+  extractExportedHttpMethods: (source: string) => string[];
+  extractImportedMethodAliases: (source: string) => string[];
+  walkRouteFiles: (dir: string) => string[];
+};
 
 type FileStat = {
   file: string;
   lines: number;
 };
 
-type GuardCheck = {
-  file: string;
-  requiredTokens: string[];
-};
-
-type SessionRouteCheck = {
-  routeFile: string;
-  note?: string;
-};
-
 const ROOT = process.cwd();
-const CODE_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".mjs", ".cjs"]);
+const CODE_EXTENSIONS = [".ts", ".tsx", ".js", ".mjs", ".cjs"];
 const EXCLUDED_DIRS = new Set([
   ".git",
   ".next",
@@ -29,160 +57,26 @@ const EXCLUDED_DIRS = new Set([
   "resources",
   "tmp",
 ]);
-
-const CRITICAL_GUARD_CHECKS: GuardCheck[] = [
-  {
-    file: "app/api/admin/model/route.ts",
-    requiredTokens: ["requireAdminSession"],
-  },
-  {
-    file: "app/api/agent-playground/run/route.ts",
-    requiredTokens: ["requireAdminSession"],
-  },
-  {
-    file: "app/api/rag/debug/route.ts",
-    requiredTokens: ["requireAdminSession"],
-  },
-  {
-    file: "app/api/rag/ingest/route.ts",
-    requiredTokens: ["requireAdminSession"],
-  },
-  {
-    file: "app/api/rag/reindex/route.ts",
-    requiredTokens: ["requireAdminSession"],
-  },
-  {
-    file: "app/api/push/subscribe/route.ts",
-    requiredTokens: ["requireCustomerOrderAccess"],
-  },
-  {
-    file: "app/api/push/send/route.ts",
-    requiredTokens: ["requireCustomerOrderAccess"],
-  },
-  {
-    file: "app/api/pharm-push/subscribe/route.ts",
-    requiredTokens: ["requirePharmSession"],
-  },
-  {
-    file: "app/api/rider-push/subscribe/route.ts",
-    requiredTokens: ["requireRiderSession"],
-  },
-  {
-    file: "app/api/me/profile/route.ts",
-    requiredTokens: ["requireUserSession"],
-  },
-  {
-    file: "app/api/me/phone-status/route.ts",
-    requiredTokens: ["requireUserSession"],
-  },
-  {
-    file: "app/api/me/link-phone/route.ts",
-    requiredTokens: ["requireUserSession"],
-  },
-  {
-    file: "app/api/me/unlink-phone/route.ts",
-    requiredTokens: ["requireUserSession"],
-  },
-  {
-    file: "app/api/me/nickname/check/route.ts",
-    requiredTokens: ["requireUserSession"],
-  },
-  {
-    file: "app/api/auth/email/send-otp/route.ts",
-    requiredTokens: ["requireUserSession"],
-  },
-  {
-    file: "app/api/auth/email/verify-otp/route.ts",
-    requiredTokens: ["requireUserSession"],
-  },
-  {
-    file: "app/api/messages/stream/token/route.ts",
-    requiredTokens: ["requirePharmSession", "requireRiderSession"],
-  },
-  {
-    file: "app/api/b2b/employee/sync/route.ts",
-    requiredTokens: ["requireNhisSession"],
-  },
-];
-
-const ROUTE_GUARD_TOKENS = [
-  "requireAdminSession",
-  "requireAnySession",
-  "requireUserSession",
-  "requireNhisSession",
-  "requirePharmSession",
-  "requireRiderSession",
-  "requireCustomerOrderAccess",
-  "requireB2bEmployeeToken",
-  "requireCronSecret",
-];
-
-const EXPECTED_SESSION_ROUTE_CHECKS: SessionRouteCheck[] = [
-  {
-    routeFile: "app/api/auth/kakao/callback/route.ts",
-    note: "OAuth callback sets session after provider redirect.",
-  },
-  {
-    routeFile: "app/api/auth/kakao/complete/[token]/route.ts",
-    note: "One-time complete route finalizes session.",
-  },
-  {
-    routeFile: "app/api/auth/login-status/route.ts",
-    note: "Session state read endpoint for UI.",
-  },
-  {
-    routeFile: "app/api/auth/logout/route.ts",
-    note: "Session clear endpoint.",
-  },
-  {
-    routeFile: "app/api/logout/route.ts",
-    note: "Legacy session clear endpoint.",
-  },
-  {
-    routeFile: "app/api/verify-password/route.ts",
-    note: "Admin/test session issue endpoint.",
-  },
-];
-
-function walkCodeFiles(relativeDir = ""): string[] {
-  const currentDir = path.join(ROOT, relativeDir);
-  const entries = readdirSync(currentDir, { withFileTypes: true });
-  const files: string[] = [];
-
-  for (const entry of entries) {
-    if (entry.isDirectory()) {
-      if (entry.name.startsWith(".") || EXCLUDED_DIRS.has(entry.name)) continue;
-      files.push(...walkCodeFiles(path.join(relativeDir, entry.name)));
-      continue;
-    }
-    if (entry.name.startsWith(".")) continue;
-
-    const ext = path.extname(entry.name).toLowerCase();
-    if (!CODE_EXTENSIONS.has(ext)) continue;
-    files.push(path.join(relativeDir, entry.name));
-  }
-
-  return files;
-}
-
-function countLines(filePath: string): number {
-  const absPath = path.join(ROOT, filePath);
-  const source = readFileSync(absPath, "utf8");
-  if (source.length === 0) return 0;
-  return source.split(/\r?\n/).length;
-}
-
-function toPosix(filePath: string): string {
-  return filePath.split(path.sep).join("/");
-}
+const CODE_FILE_ROWS = listFilesRecursively(ROOT, {
+  excludeDirs: [...EXCLUDED_DIRS],
+  includeExtensions: CODE_EXTENSIONS,
+  ignoreDotEntries: true,
+})
+  .map((abs) => ({
+    abs,
+    file: toPosixRelative(ROOT, abs),
+    lines: countFileLines(abs),
+  }))
+  .sort((a, b) => a.file.localeCompare(b.file));
 
 function buildHotspotReport(
   limit: number,
   predicate?: (file: string) => boolean
 ): FileStat[] {
-  const files = walkCodeFiles();
-  const filtered = predicate ? files.filter((file) => predicate(toPosix(file))) : files;
-  const stats = filtered.map((file) => ({ file: toPosix(file), lines: countLines(file) }));
+  const filtered = predicate
+    ? CODE_FILE_ROWS.filter((row) => predicate(row.file))
+    : CODE_FILE_ROWS;
+  const stats = filtered.map((row) => ({ file: row.file, lines: row.lines }));
   return stats.sort((a, b) => b.lines - a.lines).slice(0, limit);
 }
 
@@ -249,15 +143,15 @@ function runGuardChecks(): { passed: number; failed: number } {
 
 function runUnexpectedSessionRouteChecks(): { expected: number; unexpected: number } {
   const expectedRoutes = new Map(
-    EXPECTED_SESSION_ROUTE_CHECKS.map((item) => [item.routeFile, item.note ?? ""])
+    EXPECTED_SESSION_ROUTE_ENTRIES.map((item) => [item.routeFile, item.note])
   );
   let expected = 0;
   let unexpected = 0;
-  const routeFiles = walkCodeFiles().map(toPosix).filter((file) => isApiRouteFile(file));
+  const routeRows = CODE_FILE_ROWS.filter((row) => isApiRouteFile(row.file));
 
-  for (const routeFile of routeFiles) {
-    const absPath = path.join(ROOT, routeFile);
-    const source = readFileSync(absPath, "utf8");
+  for (const routeRow of routeRows) {
+    const routeFile = routeRow.file;
+    const source = readFileSync(routeRow.abs, "utf8");
     const guardCalls = extractGuardCalls(source);
     const usesSession = source.includes("getSession(") || hasRouteAuthImport(source);
     const needsReview = usesSession && guardCalls.length === 0;
@@ -277,6 +171,38 @@ function runUnexpectedSessionRouteChecks(): { expected: number; unexpected: numb
   }
 
   return { expected, unexpected };
+}
+
+function runRouteMethodExportChecks(): {
+  checked: number;
+  failed: number;
+} {
+  const apiRoot = path.join(ROOT, "app", "api");
+  const routeFiles = walkApiRouteFiles(apiRoot);
+  let checked = routeFiles.length;
+  let failed = 0;
+
+  for (const routeFile of routeFiles) {
+    const source = readFileSync(routeFile, "utf8");
+    const exportedMethods = extractExportedHttpMethods(source);
+    const rel = toPosixRelative(ROOT, routeFile);
+    if (exportedMethods.length === 0) {
+      failed += 1;
+      console.log(`[FAIL] ${rel} (no exported HTTP method handler found)`);
+      continue;
+    }
+
+    const importedMethods = extractImportedMethodAliases(source);
+    if (importedMethods.length === 0) continue;
+    const exportedSet = new Set(exportedMethods);
+    const missingMethods = importedMethods.filter((method) => !exportedSet.has(method));
+    if (missingMethods.length === 0) continue;
+
+    failed += 1;
+    console.log(`[FAIL] ${rel} (missing method exports: ${missingMethods.join(", ")})`);
+  }
+
+  return { checked, failed };
 }
 
 function statSafe(absPath: string): boolean {
@@ -333,7 +259,19 @@ function main() {
     `Session route summary: ${sessionResult.expected} expected, ${sessionResult.unexpected} unexpected`
   );
 
-  if (guardResult.failed > 0 || sessionResult.unexpected > 0) {
+  console.log("");
+  console.log("== Route Method Export Checks ==");
+  const routeMethodResult = runRouteMethodExportChecks();
+  const routeMethodPassed = routeMethodResult.checked - routeMethodResult.failed;
+  console.log(
+    `Route method export summary: ${routeMethodPassed} passed, ${routeMethodResult.failed} failed (checked ${routeMethodResult.checked})`
+  );
+
+  if (
+    guardResult.failed > 0 ||
+    sessionResult.unexpected > 0 ||
+    routeMethodResult.failed > 0
+  ) {
     process.exitCode = 1;
   }
 }

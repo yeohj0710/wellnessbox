@@ -8,7 +8,7 @@ import type {
   NhisInitResponse,
   NhisSignResponse,
 } from "./client-types";
-import { requestJson } from "./client-utils";
+import { requestJson, toIdentityPayload } from "./client-utils";
 
 function buildEmployeeSyncHeaders(debugOverride?: boolean) {
   if (!debugOverride) return undefined;
@@ -30,9 +30,10 @@ export async function fetchEmployeeSession() {
 }
 
 export async function upsertEmployeeSession(identity: IdentityInput) {
+  const payload = toIdentityPayload(identity);
   return requestJson<EmployeeSessionUpsertResponse>("/api/b2b/employee/session", {
     method: "POST",
-    body: JSON.stringify(identity),
+    body: JSON.stringify(payload),
   });
 }
 
@@ -45,11 +46,12 @@ export async function postEmployeeSync(input: {
   forceRefresh: boolean;
   debugOverride?: boolean;
 }) {
+  const payload = toIdentityPayload(input.identity);
   return requestJson<EmployeeSyncResponse>("/api/b2b/employee/sync", {
     method: "POST",
     headers: buildEmployeeSyncHeaders(input.debugOverride),
     body: JSON.stringify({
-      ...input.identity,
+      ...payload,
       forceRefresh: input.forceRefresh,
     }),
   });
@@ -59,14 +61,15 @@ export async function requestNhisInit(input: {
   identity: IdentityInput;
   forceInit?: boolean;
 }) {
+  const payload = toIdentityPayload(input.identity);
   return requestJson<NhisInitResponse>("/api/health/nhis/init", {
     method: "POST",
     body: JSON.stringify({
       loginMethod: "EASY",
       loginOrgCd: "kakao",
-      resNm: input.identity.name.trim(),
-      resNo: input.identity.birthDate,
-      mobileNo: input.identity.phone,
+      resNm: payload.name,
+      resNo: payload.birthDate,
+      mobileNo: payload.phone,
       ...(input.forceInit ? { forceInit: true } : {}),
     }),
   });

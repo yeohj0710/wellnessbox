@@ -104,6 +104,21 @@ export function queueCartScrollRestore(
   );
 }
 
+export function hasPendingCartScrollRestoreForPath(pathWithSearch: string) {
+  if (!isStorageAvailable()) return false;
+  const state = parseState<CartScrollRestoreState>(
+    window.sessionStorage.getItem(CART_SCROLL_RESTORE_STATE_KEY)
+  );
+  if (!state || !isFresh(state.ts)) {
+    window.sessionStorage.removeItem(CART_SCROLL_RESTORE_STATE_KEY);
+    return false;
+  }
+
+  const normalizedCurrent = normalizePathWithSearch(pathWithSearch);
+  const normalizedTarget = normalizePathWithSearch(state.pathWithSearch);
+  return normalizedCurrent === normalizedTarget;
+}
+
 export function consumeCartScrollRestoreForPath(pathWithSearch: string) {
   if (!isStorageAvailable()) return null;
   const state = parseState<CartScrollRestoreState>(

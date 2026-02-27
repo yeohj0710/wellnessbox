@@ -1,4 +1,4 @@
-import {
+export {
   runAdminColumnPostDeleteEntry as DELETE,
   runAdminColumnPostGetEntry as GET,
   runAdminColumnPostPatchEntry as PATCH,

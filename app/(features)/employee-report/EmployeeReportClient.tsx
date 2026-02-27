@@ -16,12 +16,10 @@ import {
   deleteEmployeeSession,
   fetchEmployeeReport,
   fetchEmployeeSession,
-  fetchLoginStatus,
   requestNhisUnlink,
   upsertEmployeeSession,
 } from "./_lib/api";
 import type {
-  ApiErrorPayload,
   EmployeeReportResponse,
   EmployeeSessionGetResponse,
   EmployeeSessionUpsertResponse,
@@ -33,12 +31,13 @@ import {
   buildSyncGuidance,
   downloadPdf,
   formatDateTime,
+  isValidIdentityInput,
   normalizeDigits,
   parseLayoutDsl,
   readStoredIdentity,
   resolveMedicationStatusMessage,
-  resolveCooldownUntilFromPayload,
   saveStoredIdentity,
+  toIdentityPayload,
   toSyncNextAction,
 } from "./_lib/client-utils";
 import {
@@ -48,6 +47,9 @@ import {
   runSyncFlowWithRecovery,
   syncEmployeeReportAndReload as syncEmployeeReportAndReloadFlow,
 } from "./_lib/sync-flow";
+import { useAdminLoginStatus } from "./_lib/use-admin-login-status";
+import { useBusyState } from "./_lib/use-busy-state";
+import { useForceSyncCooldown } from "./_lib/use-force-sync-cooldown";
 
 export default function EmployeeReportClient() {
   const searchParams = useSearchParams();
@@ -58,8 +60,6 @@ export default function EmployeeReportClient() {
     phone: "",
   });
   const [booting, setBooting] = useState(true);
-  const [busy, setBusy] = useState(false);
-  const [busyMessage, setBusyMessage] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [reportData, setReportData] = useState<EmployeeReportResponse | null>(null);
@@ -68,33 +68,26 @@ export default function EmployeeReportClient() {
     "init" | "sign" | "retry" | null
   >(null);
   const [syncGuidance, setSyncGuidance] = useState<SyncGuidance | null>(null);
-  const [forceSyncCooldownUntil, setForceSyncCooldownUntil] = useState<number | null>(null);
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [forceConfirmOpen, setForceConfirmOpen] = useState(false);
   const [forceConfirmText, setForceConfirmText] = useState("");
   const [forceConfirmChecked, setForceConfirmChecked] = useState(false);
-  const [cooldownNow, setCooldownNow] = useState(() => Date.now());
   const hasTriedStoredLogin = useRef(false);
   const webReportCaptureRef = useRef<HTMLDivElement | null>(null);
+  const isAdminLoggedIn = useAdminLoginStatus();
+  const { busy, busyMessage, beginBusy, endBusy } = useBusyState();
+  const { forceSyncRemainingSec, applyForceSyncCooldown } = useForceSyncCooldown();
 
-  const validIdentity = useMemo(() => {
-    return (
-      identity.name.trim().length > 0 &&
-      /^\d{8}$/.test(normalizeDigits(identity.birthDate)) &&
-      /^\d{10,11}$/.test(normalizeDigits(identity.phone))
-    );
-  }, [identity]);
+  const identityPayload = useMemo(() => toIdentityPayload(identity), [identity]);
+
+  const validIdentity = useMemo(
+    () => isValidIdentityInput(identityPayload),
+    [identityPayload]
+  );
 
   const medicationStatus = useMemo(
     () => resolveMedicationStatusMessage(reportData),
     [reportData]
   );
-
-  const forceSyncRemainingSec = useMemo(() => {
-    if (!forceSyncCooldownUntil) return 0;
-    const remainingMs = forceSyncCooldownUntil - cooldownNow;
-    return remainingMs > 0 ? Math.ceil(remainingMs / 1000) : 0;
-  }, [cooldownNow, forceSyncCooldownUntil]);
 
   const periodOptions = useMemo(() => {
     const options = reportData?.availablePeriods ?? [];
@@ -118,52 +111,8 @@ export default function EmployeeReportClient() {
     [forceConfirmChecked, forceConfirmText]
   );
 
-  useEffect(() => {
-    if (!forceSyncCooldownUntil) return;
-    if (forceSyncCooldownUntil <= Date.now()) {
-      setForceSyncCooldownUntil(null);
-      return;
-    }
-    const timer = window.setInterval(() => {
-      setCooldownNow(Date.now());
-    }, 1000);
-    return () => window.clearInterval(timer);
-  }, [forceSyncCooldownUntil]);
-
-  useEffect(() => {
-    if (forceSyncRemainingSec <= 0 && forceSyncCooldownUntil) {
-      setForceSyncCooldownUntil(null);
-    }
-  }, [forceSyncCooldownUntil, forceSyncRemainingSec]);
-
   function getIdentityPayload() {
-    return {
-      name: identity.name.trim(),
-      birthDate: normalizeDigits(identity.birthDate),
-      phone: normalizeDigits(identity.phone),
-    };
-  }
-
-  useEffect(() => {
-    let mounted = true;
-    void fetchLoginStatus()
-      .then((status) => {
-        if (!mounted) return;
-        setIsAdminLoggedIn(status.isAdminLoggedIn === true);
-      })
-      .catch(() => undefined);
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  function applyForceSyncCooldown(payload: ApiErrorPayload | null | undefined) {
-    if (!payload) return;
-    const until = resolveCooldownUntilFromPayload(payload);
-    if (until) {
-      setForceSyncCooldownUntil(until);
-      setCooldownNow(Date.now());
-    }
+    return identityPayload;
   }
 
   function setPendingSignGuidance(message: string) {
@@ -174,16 +123,6 @@ export default function EmployeeReportClient() {
     });
   }
 
-  function beginBusy(message: string) {
-    setBusyMessage(message);
-    setBusy(true);
-  }
-
-  function endBusy() {
-    setBusy(false);
-    setBusyMessage("");
-  }
-
   async function loadReport(periodKey?: string) {
     const data = await fetchEmployeeReport(periodKey);
     if (!data.ok) throw new Error(data.error || "레포트 조회에 실패했습니다.");
@@ -191,11 +130,7 @@ export default function EmployeeReportClient() {
     setSelectedPeriodKey(data.periodKey || periodKey || "");
     setError("");
     if (validIdentity) {
-      saveStoredIdentity({
-        name: identity.name.trim(),
-        birthDate: normalizeDigits(identity.birthDate),
-        phone: normalizeDigits(identity.phone),
-      });
+      saveStoredIdentity(identityPayload);
     }
   }
 
