@@ -27,11 +27,13 @@ import {
 import type { B2bReportPayload } from "@/lib/b2b/report-payload-types";
 import { extractWellness } from "@/lib/b2b/report-payload-wellness";
 import { resolveReportScores } from "@/lib/b2b/report-score-engine";
+import { normalizeTreatmentPayload } from "@/lib/server/hyphen/normalize-treatment";
 
-export const B2B_REPORT_PAYLOAD_VERSION = 6;
+export const B2B_REPORT_PAYLOAD_VERSION = 9;
 const MEDICATION_RECENT_LIMIT = 3;
 const MEDICATION_HISTORY_LOOKBACK = 8;
-const MEDICATION_NAME_FALLBACK_PREFIX = "약품명 미제공";
+const MEDICATION_DERIVED_PHARMACY_LABEL = "약국 조제";
+const MEDICATION_DERIVED_VISIT_SUFFIX = " 진료";
 
 type ReportMedicationRow = {
   medicationName: string;
@@ -50,6 +52,26 @@ async function findLatestByPeriodOrFallback<T>(input: {
   const range = monthRangeFromPeriodKey(input.periodKey);
   if (!range) return null;
   return input.fallbackFinder(range.to);
+}
+
+function extractMedicationRowsFromRaw(rawJson: unknown): ReportMedicationRow[] {
+  const root = asRecord(rawJson);
+  const data = asRecord(root?.data) ?? root;
+  const raw = asRecord(data?.raw);
+  const medicationPayload = raw?.medication;
+  if (!medicationPayload) return [];
+
+  const treatment = normalizeTreatmentPayload(
+    medicationPayload as Record<string, unknown>
+  );
+  if (!Array.isArray(treatment.list) || treatment.list.length === 0) return [];
+
+  const pseudoNormalized = {
+    medication: {
+      list: treatment.list,
+    },
+  };
+  return extractMedicationRows(pseudoNormalized).rows;
 }
 
 function parseMedicationDateScore(value: string | null | undefined) {
@@ -74,10 +96,19 @@ function medicationVisitKey(row: ReportMedicationRow, fallbackIndex: number) {
   return `${date}|${hospital}`;
 }
 
+function isDerivedMedicationLabel(name: string | null | undefined) {
+  const text = (name ?? "").trim();
+  if (!text) return true;
+  return (
+    text === MEDICATION_DERIVED_PHARMACY_LABEL ||
+    text.endsWith(MEDICATION_DERIVED_VISIT_SUFFIX)
+  );
+}
+
 function medicationNameQuality(name: string | null | undefined) {
   const text = (name ?? "").trim();
   if (!text) return 0;
-  if (text.startsWith(MEDICATION_NAME_FALLBACK_PREFIX)) return 1;
+  if (isDerivedMedicationLabel(text)) return 1;
   return 2;
 }
 
@@ -252,15 +283,20 @@ export async function buildB2bReportPayload(input: {
 
   const metrics = extractHealthMetrics(latestHealth?.normalizedJson);
   const medicationExtraction = extractMedicationRows(latestHealth?.normalizedJson);
+  const medicationRowsFromRaw = extractMedicationRowsFromRaw(latestHealth?.rawJson);
+  const primaryMedicationRows =
+    medicationRowsFromRaw.length > 0
+      ? medicationRowsFromRaw
+      : medicationExtraction.rows;
   const medications =
-    latestHealth && medicationExtraction.rows.length < MEDICATION_RECENT_LIMIT
+    latestHealth && primaryMedicationRows.length < MEDICATION_RECENT_LIMIT
       ? await resolveRecentMedicationRows({
           employeeId: input.employeeId,
           periodKey: input.periodKey,
           latestSnapshotId: latestHealth.id,
-          primaryRows: medicationExtraction.rows,
+          primaryRows: primaryMedicationRows,
         })
-      : medicationExtraction.rows;
+      : primaryMedicationRows;
   const fetchStatus = parseFetchFlags(latestHealth?.rawJson);
   const medicationStatus = resolveMedicationStatus({
     medications,

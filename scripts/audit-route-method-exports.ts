@@ -1,14 +1,15 @@
-const { existsSync, readFileSync } = require("node:fs");
-const path = require("node:path") as typeof import("node:path");
-const {
-  extractExportedHttpMethods,
-  extractImportedMethodAliases,
-  walkRouteFiles,
-} = require("./lib/route-method-audit.cts") as {
-  extractExportedHttpMethods: (source: string) => string[];
-  extractImportedMethodAliases: (source: string) => string[];
-  walkRouteFiles: (dir: string) => string[];
-};
+(function runRouteMethodExportAudit() {
+  const { existsSync, readFileSync } = require("node:fs");
+  const path = require("node:path") as typeof import("node:path");
+  const {
+    extractExportedHttpMethods,
+    extractImportedMethodAliases,
+    walkRouteFiles,
+  } = require("./lib/route-method-audit.cts") as {
+    extractExportedHttpMethods: (source: string) => string[];
+    extractImportedMethodAliases: (source: string) => string[];
+    walkRouteFiles: (dir: string) => string[];
+  };
 
 const ROOT = process.cwd();
 const API_ROOT = path.join(ROOT, "app", "api");
@@ -92,4 +93,5 @@ function main() {
   process.exitCode = 1;
 }
 
-main();
+  main();
+})();

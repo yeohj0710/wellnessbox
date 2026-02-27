@@ -15,12 +15,14 @@ function escapeHtml(value: string) {
 }
 
 function renderNodeHtml(node: LayoutNode) {
+  const topPx = node.y * MM_TO_PX;
+  const heightPx = node.h * MM_TO_PX;
   const style = [
     "position:absolute",
     `left:${node.x * MM_TO_PX}px`,
-    `top:${node.y * MM_TO_PX}px`,
+    `top:${topPx}px`,
     `width:${node.w * MM_TO_PX}px`,
-    `height:${node.h * MM_TO_PX}px`,
+    `height:${heightPx}px`,
     "box-sizing:border-box",
     "overflow:hidden",
   ];
@@ -34,14 +36,21 @@ function renderNodeHtml(node: LayoutNode) {
   style.push(`font-size:${node.fontSize ?? 12}px`);
   style.push(`font-weight:${node.bold ? 700 : 400}`);
   style.push(`font-family:${REPORT_FONT_STACK}`);
-  style.push("display:flex");
-  style.push("align-items:flex-start");
-  style.push("justify-content:flex-start");
+  const verticalBleedPx = Math.max(1, Math.min(2, (node.fontSize ?? 12) * 0.08));
+  const topLiftPx = Math.min(topPx, verticalBleedPx);
+  style.push(`top:${Math.max(0, topPx - topLiftPx)}px`);
+  style.push(`height:${heightPx + topLiftPx + verticalBleedPx}px`);
+  style.push("display:block");
   style.push("margin:0");
   style.push("padding:0");
   style.push(`line-height:${REPORT_TEXT_LINE_HEIGHT}`);
   style.push("white-space:pre-wrap");
   style.push("word-break:keep-all");
+  style.push("overflow-x:hidden");
+  style.push("overflow-y:visible");
+  style.push("text-rendering:geometricPrecision");
+  style.push("-webkit-font-smoothing:antialiased");
+  style.push("font-kerning:normal");
   return `<div style="${style.join(";")}">${escapeHtml(node.text || "")}</div>`;
 }
 

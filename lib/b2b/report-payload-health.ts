@@ -13,7 +13,7 @@ export type MedicationContainerState = "present" | "missing" | "unrecognized";
 
 const MEDICATION_VISIT_LIMIT = 3;
 const MEDICATION_NAMES_PER_VISIT_LIMIT = 8;
-const MEDICATION_NAME_FALLBACK_PREFIX = "\uc57d\ud488\uba85 \ubbf8\uc81c\uacf5";
+const MEDICATION_DERIVED_PHARMACY_LABEL = "\uc57d\uad6d \uc870\uc81c";
 const MEDICATION_NAME_KEYS = [
   "medicineNm",
   "medicine",
@@ -163,8 +163,31 @@ function hasPositiveSignal(value: string | null) {
   return numeric > 0;
 }
 
-function resolveMedicationFallbackName(row: Record<string, unknown>) {
-  const diagType = pickFirstText(
+function normalizeVisitTypeLabel(value: string | null) {
+  const text = (value ?? "").trim();
+  return text.length > 0 ? text : "\uc77c\ubc18\uc678\ub798";
+}
+
+function isLikelyPharmacyVisit(input: {
+  visitType: string | null;
+  hospitalName: string | null;
+}) {
+  const visitType = (input.visitType ?? "").trim();
+  const hospitalName = (input.hospitalName ?? "").trim();
+  return visitType.includes("\uc57d\uad6d") || hospitalName.includes("\uc57d\uad6d");
+}
+
+function isDerivedMedicationLabel(name: string | null | undefined) {
+  const text = (name ?? "").trim();
+  if (!text) return true;
+  return text === MEDICATION_DERIVED_PHARMACY_LABEL || text.endsWith(" \uc9c4\ub8cc");
+}
+
+function resolveMedicationFallbackName(
+  row: Record<string, unknown>,
+  pharmacyVisit: boolean
+) {
+  const visitType = pickFirstText(
     row.diagType ?? row.detail_diagType ?? row.drug_diagType ?? row.visitType
   );
   const presCnt = pickFirstText(row.presCnt ?? row.medCnt ?? row.count);
@@ -173,18 +196,14 @@ function resolveMedicationFallbackName(row: Record<string, unknown>) {
   );
   const hasCountSignal = hasPositiveSignal(presCnt) || hasPositiveSignal(dosageDay);
   const hasTypeSignal =
-    !!diagType &&
-    (diagType.includes("\ucc98\ubc29") ||
-      diagType.includes("\ud22c\uc57d") ||
-      diagType.includes("\uc870\uc81c"));
+    !!visitType &&
+    (visitType.includes("\ucc98\ubc29") ||
+      visitType.includes("\ud22c\uc57d") ||
+      visitType.includes("\uc870\uc81c") ||
+      visitType.includes("\uc678\ub798"));
   if (!hasCountSignal && !hasTypeSignal) return null;
-  return `${MEDICATION_NAME_FALLBACK_PREFIX} (${diagType || "\ucc98\ubc29 \uc870\uc81c"})`;
-}
-
-function extractMedicationName(row: Record<string, unknown>) {
-  const name = pickFirstByKeys(row, MEDICATION_NAME_KEYS);
-  if (name) return name;
-  return resolveMedicationFallbackName(row);
+  if (pharmacyVisit) return MEDICATION_DERIVED_PHARMACY_LABEL;
+  return `${normalizeVisitTypeLabel(visitType)} \uc9c4\ub8cc`;
 }
 
 function resolveMedicationDateScore(row: Record<string, unknown>) {
@@ -276,12 +295,18 @@ export function extractMedicationRows(normalizedJson: unknown): {
   >();
 
   for (const [index, row] of medicationRows.entries()) {
-    const medicationName = extractMedicationName(row);
+    const hospitalName = pickFirstByKeys(row, MEDICATION_HOSPITAL_KEYS) || null;
+    const visitType = pickFirstByKeys(row, MEDICATION_VISIT_TYPE_KEYS);
+    const pharmacyVisit = isLikelyPharmacyVisit({ visitType, hospitalName });
+    const medicationName = pharmacyVisit
+      ? pickFirstByKeys(row, MEDICATION_NAME_KEYS) ??
+        resolveMedicationFallbackName(row, true)
+      : resolveMedicationFallbackName(row, false);
     if (!medicationName) continue;
 
     const entry: MedicationRow = {
       medicationName,
-      hospitalName: pickFirstByKeys(row, MEDICATION_HOSPITAL_KEYS) || null,
+      hospitalName,
       date: pickFirstByKeys(row, MEDICATION_DATE_KEYS) || null,
       dosageDay: pickFirstByKeys(row, MEDICATION_DOSAGE_KEYS) || null,
     };
@@ -308,7 +333,13 @@ export function extractMedicationRows(normalizedJson: unknown): {
       const visitKey = resolveMedicationVisitKey(row, mergedIndex);
       if (byVisit.has(visitKey)) continue;
 
-      const medicationName = extractMedicationName(row);
+      const hospitalName = pickFirstByKeys(row, MEDICATION_HOSPITAL_KEYS) || null;
+      const visitType = pickFirstByKeys(row, MEDICATION_VISIT_TYPE_KEYS);
+      const pharmacyVisit = isLikelyPharmacyVisit({ visitType, hospitalName });
+      const medicationName = pharmacyVisit
+        ? pickFirstByKeys(row, MEDICATION_NAME_KEYS) ??
+          resolveMedicationFallbackName(row, true)
+        : resolveMedicationFallbackName(row, false);
       if (!medicationName) continue;
 
       const score = resolveMedicationDateScore(row);
@@ -316,7 +347,7 @@ export function extractMedicationRows(normalizedJson: unknown): {
         entries: [
           {
             medicationName,
-            hospitalName: pickFirstByKeys(row, MEDICATION_HOSPITAL_KEYS) || null,
+            hospitalName,
             date: pickFirstByKeys(row, MEDICATION_DATE_KEYS) || null,
             dosageDay: pickFirstByKeys(row, MEDICATION_DOSAGE_KEYS) || null,
           },
@@ -337,7 +368,7 @@ export function extractMedicationRows(normalizedJson: unknown): {
     .map((group) => {
       const representative =
         group.entries.find(
-          (item) => !item.medicationName.startsWith(MEDICATION_NAME_FALLBACK_PREFIX)
+          (item) => !isDerivedMedicationLabel(item.medicationName)
         ) ?? group.entries[0];
       if (!representative) {
         return {

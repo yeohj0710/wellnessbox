@@ -1,43 +1,44 @@
-const { readFileSync, statSync } = require("node:fs");
-const path = require("node:path") as typeof import("node:path");
-const {
-  countFileLines,
-  listFilesRecursively,
-  toPosixRelative,
-} = require("./lib/code-file-scan.cts") as {
-  countFileLines: (filePath: string) => number;
-  listFilesRecursively: (
-    rootDir: string,
-    options?: {
-      excludeDirs?: string[] | Set<string>;
-      includeExtensions?: string[] | Set<string>;
-      ignoreDotEntries?: boolean;
-    }
-  ) => string[];
-  toPosixRelative: (rootDir: string, filePath: string) => string;
-};
-const {
-  CRITICAL_GUARD_CHECKS,
-  EXPECTED_SESSION_ROUTE_ENTRIES,
-  ROUTE_GUARD_TOKENS,
-} = require("./lib/api-route-guard-config.cts") as {
-  CRITICAL_GUARD_CHECKS: Array<{ file: string; requiredTokens: string[] }>;
-  EXPECTED_SESSION_ROUTE_ENTRIES: Array<{
-    route: string;
-    routeFile: string;
-    note: string;
-  }>;
-  ROUTE_GUARD_TOKENS: string[];
-};
-const {
-  extractExportedHttpMethods,
-  extractImportedMethodAliases,
-  walkRouteFiles: walkApiRouteFiles,
-} = require("./lib/route-method-audit.cts") as {
-  extractExportedHttpMethods: (source: string) => string[];
-  extractImportedMethodAliases: (source: string) => string[];
-  walkRouteFiles: (dir: string) => string[];
-};
+(function runHotspotAudit() {
+  const { readFileSync, statSync } = require("node:fs");
+  const path = require("node:path") as typeof import("node:path");
+  const {
+    countFileLines,
+    listFilesRecursively,
+    toPosixRelative,
+  } = require("./lib/code-file-scan.cts") as {
+    countFileLines: (filePath: string) => number;
+    listFilesRecursively: (
+      rootDir: string,
+      options?: {
+        excludeDirs?: string[] | Set<string>;
+        includeExtensions?: string[] | Set<string>;
+        ignoreDotEntries?: boolean;
+      }
+    ) => string[];
+    toPosixRelative: (rootDir: string, filePath: string) => string;
+  };
+  const {
+    CRITICAL_GUARD_CHECKS,
+    EXPECTED_SESSION_ROUTE_ENTRIES,
+    ROUTE_GUARD_TOKENS,
+  } = require("./lib/api-route-guard-config.cts") as {
+    CRITICAL_GUARD_CHECKS: Array<{ file: string; requiredTokens: string[] }>;
+    EXPECTED_SESSION_ROUTE_ENTRIES: Array<{
+      route: string;
+      routeFile: string;
+      note: string;
+    }>;
+    ROUTE_GUARD_TOKENS: string[];
+  };
+  const {
+    extractExportedHttpMethods,
+    extractImportedMethodAliases,
+    walkRouteFiles: walkApiRouteFiles,
+  } = require("./lib/route-method-audit.cts") as {
+    extractExportedHttpMethods: (source: string) => string[];
+    extractImportedMethodAliases: (source: string) => string[];
+    walkRouteFiles: (dir: string) => string[];
+  };
 
 type FileStat = {
   file: string;
@@ -276,4 +277,5 @@ function main() {
   }
 }
 
-main();
+  main();
+})();

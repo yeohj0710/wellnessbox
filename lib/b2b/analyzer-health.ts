@@ -198,7 +198,24 @@ function hasPositiveSignal(value: string | null) {
   return numeric > 0;
 }
 
-function resolveMedicationFallbackName(row: Record<string, unknown>) {
+function normalizeVisitTypeLabel(value: string | null) {
+  const text = (value ?? "").trim();
+  return text.length > 0 ? text : "일반외래";
+}
+
+function isLikelyPharmacyVisit(input: {
+  diagType: string | null;
+  hospitalName: string | null;
+}) {
+  const diagType = (input.diagType ?? "").trim();
+  const hospitalName = (input.hospitalName ?? "").trim();
+  return diagType.includes("약국") || hospitalName.includes("약국");
+}
+
+function resolveMedicationFallbackName(
+  row: Record<string, unknown>,
+  pharmacyVisit: boolean
+) {
   const diagType = pickFirstText(
     row.diagType ??
       row.detail_diagType ??
@@ -213,10 +230,14 @@ function resolveMedicationFallbackName(row: Record<string, unknown>) {
   const hasTypeSignal =
     !!diagType &&
     (diagType.includes("처방") ||
+      diagType.includes("투약") ||
       diagType.includes("약국") ||
-      diagType.includes("조제"));
+      diagType.includes("조제") ||
+      diagType.includes("외래") ||
+      diagType.includes("입원"));
   if (!hasCountSignal && !hasTypeSignal) return null;
-  return `약품명 미제공 (${diagType || "처방 조제"})`;
+  if (pharmacyVisit) return "약국 조제";
+  return `${normalizeVisitTypeLabel(diagType)} 진료`;
 }
 
 export function buildMedication(input: B2bAnalyzerInput) {
@@ -260,71 +281,11 @@ export function buildMedication(input: B2bAnalyzerInput) {
       return rightScore - leftScore;
     })
     .slice(0, 3)
-    .map((item) => ({
-      medicationName:
-        pickFirstText(
-          item.medicineNm ??
-            item.medicine ??
-            item.drugName ??
-            item.drugNm ??
-            item.medNm ??
-            item.medicineName ??
-            item.prodName ??
-            item.drug_MEDI_PRDC_NM ??
-            item.MEDI_PRDC_NM ??
-            item.drug_CMPN_NM ??
-            item.detail_CMPN_NM ??
-            item.CMPN_NM ??
-            item.drug_CMPN_NM_2 ??
-            item.detail_CMPN_NM_2 ??
-            item.CMPN_NM_2 ??
-            item.mediPrdcNm ??
-            item.drugMediPrdcNm ??
-            item.cmpnNm ??
-            item.drugCmpnNm ??
-            item.detailCmpnNm ??
-            item.cmpnNm2 ??
-            item.drugCmpnNm2 ??
-            item.detailCmpnNm2 ??
-            item["복용약"] ??
-            item["약품명"] ??
-            item["약품"] ??
-            item["성분"]
-        ) || resolveMedicationFallbackName(item),
-      date:
-        pickFirstText(
-          item.diagDate ??
-            item.medDate ??
-            item.date ??
-            item.rxDate ??
-            item.prescribeDate ??
-            item.prscDate ??
-            item.takeDate ??
-            item.TRTM_YMD ??
-            item.detail_PRSC_YMD ??
-            item.detail_TRTM_YMD ??
-            item.drug_PRSC_YMD ??
-            item.drug_TRTM_YMD ??
-            item.PRSC_YMD ??
-            item.diagSdate ??
-            item.medicationDate
-        ) || null,
-      period:
-        pickFirstText(
-          item.dosageDay ??
-            item.period ??
-            item.takeDay ??
-            item.dayCount ??
-            item.admDay ??
-            item.medCnt ??
-            item.presCnt ??
-            item.detail_DOSAGE_DAY ??
-            item.drug_DOSAGE_DAY
-        ) || null,
-      hospitalName:
+    .map((item) => {
+      const hospitalName =
         pickFirstText(
           item.pharmNm ??
-          item.hospitalNm ??
+            item.hospitalNm ??
             item.hospitalName ??
             item.hospital ??
             item.clinicName ??
@@ -333,8 +294,81 @@ export function buildMedication(input: B2bAnalyzerInput) {
             item.drug_HSP_NM ??
             item.HSP_NM ??
             item.clinicNm
-        ) || null,
-    }))
+        ) || null;
+      const diagType = pickFirstText(
+        item.diagType ??
+          item.detail_diagType ??
+          item.drug_diagType ??
+          item.visitType
+      );
+      const pharmacyVisit = isLikelyPharmacyVisit({ diagType, hospitalName });
+      const medicationName = pharmacyVisit
+        ? pickFirstText(
+            item.medicineNm ??
+              item.medicine ??
+              item.drugName ??
+              item.drugNm ??
+              item.medNm ??
+              item.medicineName ??
+              item.prodName ??
+              item.drug_MEDI_PRDC_NM ??
+              item.MEDI_PRDC_NM ??
+              item.drug_CMPN_NM ??
+              item.detail_CMPN_NM ??
+              item.CMPN_NM ??
+              item.drug_CMPN_NM_2 ??
+              item.detail_CMPN_NM_2 ??
+              item.CMPN_NM_2 ??
+              item.mediPrdcNm ??
+              item.drugMediPrdcNm ??
+              item.cmpnNm ??
+              item.drugCmpnNm ??
+              item.detailCmpnNm ??
+              item.cmpnNm2 ??
+              item.drugCmpnNm2 ??
+              item.detailCmpnNm2 ??
+              item["복용약"] ??
+              item["약품명"] ??
+              item["약품"] ??
+              item["성분"]
+          ) ?? resolveMedicationFallbackName(item, true)
+        : resolveMedicationFallbackName(item, false);
+
+      return {
+        medicationName,
+        date:
+          pickFirstText(
+            item.diagDate ??
+              item.medDate ??
+              item.date ??
+              item.rxDate ??
+              item.prescribeDate ??
+              item.prscDate ??
+              item.takeDate ??
+              item.TRTM_YMD ??
+              item.detail_PRSC_YMD ??
+              item.detail_TRTM_YMD ??
+              item.drug_PRSC_YMD ??
+              item.drug_TRTM_YMD ??
+              item.PRSC_YMD ??
+              item.diagSdate ??
+              item.medicationDate
+          ) || null,
+        period:
+          pickFirstText(
+            item.dosageDay ??
+              item.period ??
+              item.takeDay ??
+              item.dayCount ??
+              item.admDay ??
+              item.medCnt ??
+              item.presCnt ??
+              item.detail_DOSAGE_DAY ??
+              item.drug_DOSAGE_DAY
+          ) || null,
+        hospitalName,
+      };
+    })
     .filter((item) => item.medicationName);
 
   let status = resolveMedicationStatus(input);

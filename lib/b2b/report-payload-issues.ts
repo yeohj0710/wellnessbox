@@ -22,6 +22,9 @@ export type CredibleTopIssue = {
   reason: string;
 };
 
+const MEDICATION_DERIVED_PHARMACY_LABEL = "약국 조제";
+const MEDICATION_DERIVED_VISIT_SUFFIX = " 진료";
+
 function clampIssueScore(value: number) {
   if (!Number.isFinite(value)) return 0;
   if (value < 0) return 0;
@@ -52,6 +55,15 @@ function pushCredibleIssue(list: CredibleTopIssue[], issue: CredibleTopIssue) {
   }
 }
 
+function isDerivedMedicationLabel(name: string | null | undefined) {
+  const text = (name ?? "").trim();
+  if (!text) return true;
+  return (
+    text === MEDICATION_DERIVED_PHARMACY_LABEL ||
+    text.endsWith(MEDICATION_DERIVED_VISIT_SUFFIX)
+  );
+}
+
 export function resolveMedicationStatus(input: {
   medications: Array<{
     medicationName: string;
@@ -76,13 +88,12 @@ export function resolveMedicationStatus(input: {
     const hasNamedMedication = input.medications.some((item) => {
       const name = toText(item.medicationName);
       if (!name) return false;
-      return !name.startsWith("약품명 미제공");
+      return !isDerivedMedicationLabel(name);
     });
     if (!hasNamedMedication) {
       return {
-        type: "unknown",
-        message:
-          "건보공단 응답에 약품명/성분 필드가 없어 병원·처방일 기준으로만 표시됩니다. 인증 다시하기 후 연동 완료 확인으로 재조회해 주세요.",
+        type: "available",
+        message: "최근 3건은 약품명 대신 진료유형 기준으로 표시됩니다.",
         failedTargets,
       };
     }
