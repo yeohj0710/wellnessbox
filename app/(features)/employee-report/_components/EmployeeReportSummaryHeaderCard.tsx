@@ -92,7 +92,7 @@ export default function EmployeeReportSummaryHeaderCard({
       </div>
 
       <p className={styles.inlineHint}>
-        복약 리포트는 최근 3건 진료/처방 이력만 반영합니다.
+        이 리포트는 최근 3건 진료/조제 이력만 반영합니다.
       </p>
 
       {isSignPending ? (

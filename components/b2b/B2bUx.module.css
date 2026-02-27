@@ -2311,7 +2311,8 @@
 }
 
 .needHead strong {
-  color: var(--ink-1);
+  color: #c43245;
+  font-weight: 800;
 }
 
 .needTrack {
@@ -2325,7 +2326,7 @@
 .needFill {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #1f62f2 0%, #4ea4ff 100%);
+  background: linear-gradient(90deg, #f97316 0%, #dc2626 100%);
   transition: width 220ms ease;
 }
 
@@ -2447,10 +2448,9 @@
 
 .reportFriendlyItem {
   margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  display: block;
+  overflow: visible;
+  line-height: 1.55;
 }
 
 .reportFooterNote {
@@ -2500,7 +2500,7 @@
   margin: 0;
   color: #445d7f;
   font-size: 11px;
-  line-height: 1.45;
+  line-height: 1.55;
   display: grid;
   gap: 2px;
 }
@@ -2515,6 +2515,12 @@
   color: #253f66;
   font-size: 11px;
   font-weight: 700;
+  line-height: 1.5;
+}
+
+.riskScoreText {
+  color: #c43245;
+  font-weight: 800;
 }
 
 .reportInsightBadge {

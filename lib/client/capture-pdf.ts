@@ -14,9 +14,9 @@ function clampQuality(value: number | undefined) {
 }
 
 function resolveScale() {
-  if (typeof window === "undefined") return 2;
+  if (typeof window === "undefined") return 3;
   const ratio = window.devicePixelRatio || 1;
-  return Math.max(2, Math.min(3, ratio));
+  return Math.max(3, Math.min(4, ratio));
 }
 
 async function waitForStableCaptureFrame() {
@@ -86,7 +86,7 @@ export async function captureElementToPdf(input: CaptureElementToPdfInput) {
         ),
       });
 
-      const imageData = canvas.toDataURL("image/jpeg", quality);
+      const imageData = canvas.toDataURL("image/png", quality);
       const scaleMmPerPx = Math.min(
         usableWidthMm / Math.max(1, canvas.width),
         usableHeightMm / Math.max(1, canvas.height)
@@ -101,13 +101,13 @@ export async function captureElementToPdf(input: CaptureElementToPdfInput) {
       }
       pdf.addImage(
         imageData,
-        "JPEG",
+        "PNG",
         offsetX,
         offsetY,
         renderWidthMm,
         renderHeightMm,
         undefined,
-        "FAST"
+        "MEDIUM"
       );
     }
 
@@ -158,7 +158,7 @@ export async function captureElementToPdf(input: CaptureElementToPdfInput) {
       currentHeightPx
     );
 
-    const imageData = sliceCanvas.toDataURL("image/jpeg", quality);
+    const imageData = sliceCanvas.toDataURL("image/png", quality);
     const renderHeightMm = currentHeightPx * mmPerPx;
 
     if (pageIndex > 0) {
@@ -166,13 +166,13 @@ export async function captureElementToPdf(input: CaptureElementToPdfInput) {
     }
     pdf.addImage(
       imageData,
-      "JPEG",
+      "PNG",
       marginMm,
       marginMm,
       usableWidthMm,
       renderHeightMm,
       undefined,
-      "FAST"
+      "MEDIUM"
     );
 
     offsetY += currentHeightPx;

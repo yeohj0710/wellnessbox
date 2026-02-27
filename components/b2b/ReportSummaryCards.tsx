@@ -194,7 +194,6 @@ export default function ReportSummaryCards(props: {
           <article className={styles.reportTopCard}>
             <div className={styles.reportTopHead}>
               <h3 className={styles.sectionTitle}>건강점수</h3>
-              <p className={styles.inlineHint}>점수 높을수록 좋음</p>
             </div>
             <div className={styles.donutWrap}>
               <svg
@@ -225,14 +224,13 @@ export default function ReportSummaryCards(props: {
               </div>
             </div>
             <p className={styles.reportFormula}>
-              건강점수 = 100 - ((생활습관 위험도 + 건강관리 필요도 평균) / 2)
+              건강점수 = 100 - ((생활습관 위험도 + 건강관리 위험도 평균) / 2)
             </p>
           </article>
 
           <article className={styles.reportTopCard}>
             <div className={styles.reportTopHead}>
               <h3 className={styles.sectionTitle}>생활습관 위험도</h3>
-              <p className={styles.inlineHint}>점수 높을수록 안 좋음</p>
             </div>
             <div className={styles.radarWrap}>
               <svg
@@ -293,13 +291,15 @@ export default function ReportSummaryCards(props: {
                 })}
               </svg>
             </div>
-            <p className={styles.inlineHint}>종합 위험도: {toScoreLabel(lifestyleOverall)}</p>
+            <p className={styles.inlineHint}>
+              종합 위험도:{" "}
+              <span className={styles.riskScoreText}>{toScoreLabel(lifestyleOverall)}</span>
+            </p>
           </article>
 
           <article className={styles.reportTopCard}>
             <div className={styles.reportTopHead}>
-              <h3 className={styles.sectionTitle}>건강관리 필요도</h3>
-              <p className={styles.inlineHint}>점수 높을수록 안 좋음</p>
+              <h3 className={styles.sectionTitle}>건강관리 위험도</h3>
             </div>
             {sectionNeedsForPage1.length === 0 ? (
               <p className={styles.inlineHint}>선택 영역 데이터가 없습니다.</p>
@@ -321,7 +321,10 @@ export default function ReportSummaryCards(props: {
                 ))}
               </ul>
             )}
-            <p className={styles.inlineHint}>평균 필요도: {toScoreLabel(healthNeedAverage)}</p>
+            <p className={styles.inlineHint}>
+              평균 위험도:{" "}
+              <span className={styles.riskScoreText}>{toScoreLabel(healthNeedAverage)}</span>
+            </p>
             {hiddenSectionNeedCount > 0 ? (
               <p className={styles.inlineHint}>추가 영역 {hiddenSectionNeedCount}개는 2페이지에서 확인 가능</p>
             ) : null}
@@ -334,7 +337,7 @@ export default function ReportSummaryCards(props: {
             <p className={styles.reportDataEmpty}>
               {hasWellnessScoringData
                 ? "현재 기준으로는 강조할 핵심 문장을 만들 정보가 충분하지 않습니다."
-                : "점수 계산 가능한 설문 응답이 부족해 분석 멘트를 생성하지 않았습니다."}
+                : "분석 멘트를 보여줄 데이터가 아직 부족합니다."}
             </p>
           ) : (
             <ul className={styles.reportFriendlyList}>
@@ -353,7 +356,7 @@ export default function ReportSummaryCards(props: {
             <p className={styles.reportDataEmpty}>
               {hasWellnessScoringData
                 ? "현재 기준에서 우선 조정이 필요한 고위험 항목은 뚜렷하지 않습니다."
-                : "점수 계산 가능한 설문 응답이 부족해 고위험 항목을 생성하지 않았습니다."}
+                : "고위험 항목을 안내할 데이터가 아직 부족합니다."}
             </p>
           ) : (
             <ul className={styles.reportFriendlyList}>
@@ -366,17 +369,14 @@ export default function ReportSummaryCards(props: {
           )}
         </section>
 
-        <p className={styles.reportFooterNote}>
-          위 항목은 오늘부터 바로 적용 가능한 변화 중심으로 정리되어 있습니다.
-        </p>
       </section>
 
       <section className={`${styles.reportSheet} ${styles.reportSheetSecond}`} data-report-page="2">
         <header className={styles.reportPageHeader}>
           <p className={styles.reportPageKicker}>2페이지 상세 데이터</p>
-          <h2 className={styles.reportPageTitle}>건강검진 데이터 · 최근 3건 복약 이력 · 약사 코멘트</h2>
+          <h2 className={styles.reportPageTitle}>건강검진 데이터 · 최근 3건 진료/조제 이력 · 약사 코멘트</h2>
           <p className={styles.reportPageSubtitle}>
-            건강검진 수치, 복약 상태, 약사 의견을 함께 보고 다음 관리 방향을 정리합니다.
+            건강검진 수치, 진료/조제 이력, 약사 의견을 함께 보고 다음 관리 방향을 정리합니다.
           </p>
         </header>
 
@@ -414,12 +414,12 @@ export default function ReportSummaryCards(props: {
           </article>
 
           <article className={styles.reportDataCard}>
-            <h3 className={styles.reportDataTitle}>최근 3건 복약 이력 분석</h3>
+            <h3 className={styles.reportDataTitle}>최근 3건 진료/조제 이력 분석</h3>
             {medicationStatusMessage ? (
               <p className={styles.reportBlockLead}>{ensureSentence(medicationStatusMessage)}</p>
             ) : null}
             {medications.length === 0 ? (
-              <p className={styles.reportDataEmpty}>최근 3건 복약 이력이 없습니다.</p>
+              <p className={styles.reportDataEmpty}>최근 3건 진료/조제 이력이 없습니다.</p>
             ) : (
               <ul className={styles.reportDataList}>
                 {medications.map((medication, index) => (
@@ -452,9 +452,6 @@ export default function ReportSummaryCards(props: {
                 <strong>주의사항</strong> {pharmacistCautions}
               </p>
             ) : null}
-            <p className={styles.inlineHint}>
-              다음 버전에서는 추천 영양제의 성분/제품 정보가 이 페이지에 추가될 예정입니다.
-            </p>
           </article>
         </div>
 

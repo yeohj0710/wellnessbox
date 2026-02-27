@@ -211,7 +211,7 @@ export function resolveMedicationStatusMessage(reportData: EmployeeReportRespons
   if (status.type === "none") {
     return {
       tone: "warn" as const,
-      text: "최근 3건 복약 이력이 없습니다.",
+      text: "최근 3건 진료/조제 이력이 없습니다.",
     };
   }
   if (status.type === "unknown") {
