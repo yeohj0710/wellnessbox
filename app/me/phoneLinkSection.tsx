@@ -1,206 +1,45 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { resolvePhoneOtpError } from "@/lib/client/phone-otp-error";
+import ModalSpinner from "./modalSpinner";
+import { usePhoneLinkSectionState } from "./usePhoneLinkSectionState";
 
-type ApiResponse = {
-  ok?: boolean;
-  error?: string;
-  message?: string;
-  retryAfterSec?: number;
+type PhoneLinkSectionProps = {
+  initialPhone?: string;
+  initialLinkedAt?: string;
+  onLinked?: (phone: string, linkedAt?: string) => void;
+  onBusyChange?: (busy: boolean) => void;
 };
-
-function Spinner({ className = "" }: { className?: string }) {
-  return (
-    <svg
-      className={`h-4 w-4 animate-spin ${className}`}
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4z"
-      />
-    </svg>
-  );
-}
-
-function formatPhoneKR(digits: string) {
-  const d = digits.replace(/\D/g, "").slice(0, 11);
-
-  if (d.length <= 3) return d;
-
-  if (d.startsWith("02")) {
-    if (d.length <= 2) return d;
-    if (d.length <= 5) return `${d.slice(0, 2)}-${d.slice(2)}`;
-    if (d.length <= 9) return `${d.slice(0, 2)}-${d.slice(2, 5)}-${d.slice(5)}`;
-    return `${d.slice(0, 2)}-${d.slice(2, 6)}-${d.slice(6)}`;
-  }
-
-  if (d.length <= 6) return `${d.slice(0, 3)}-${d.slice(3)}`;
-  if (d.length <= 10) return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
-  return `${d.slice(0, 3)}-${d.slice(3, 7)}-${d.slice(7)}`;
-}
 
 export default function PhoneLinkSection({
   initialPhone,
   initialLinkedAt,
   onLinked,
   onBusyChange,
-}: {
-  initialPhone?: string;
-  initialLinkedAt?: string;
-  onLinked?: (phone: string, linkedAt?: string) => void;
-  onBusyChange?: (busy: boolean) => void;
-}) {
-  const [phoneDigits, setPhoneDigits] = useState(() =>
-    (initialPhone ?? "").replace(/\D/g, "").slice(0, 11)
-  );
-  const [code, setCode] = useState("");
-  const [sendLoading, setSendLoading] = useState(false);
-  const [verifyLoading, setVerifyLoading] = useState(false);
-  const [sendError, setSendError] = useState<string | null>(null);
-  const [verifyError, setVerifyError] = useState<string | null>(null);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [otpSent, setOtpSent] = useState(false);
-  const [phoneLocked, setPhoneLocked] = useState(Boolean(initialPhone));
-
-  const normalizedPhone = phoneDigits;
-  const phoneDisplay = useMemo(() => formatPhoneKR(phoneDigits), [phoneDigits]);
-
-  const isPhoneValid =
-    normalizedPhone.length >= 9 && normalizedPhone.length <= 11;
-
-  const busy = sendLoading || verifyLoading;
-
-  useEffect(() => {
-    onBusyChange?.(busy);
-  }, [busy, onBusyChange]);
-
-  useEffect(() => {
-    setPhoneDigits((initialPhone ?? "").replace(/\D/g, "").slice(0, 11));
-    setCode("");
-    setSendError(null);
-    setVerifyError(null);
-    setStatusMessage(null);
-    setOtpSent(false);
-    setPhoneLocked(Boolean(initialPhone));
-  }, [initialPhone, initialLinkedAt]);
-
-  const handleSendOtp = useCallback(async () => {
-    if (!isPhoneValid || busy) return;
-
-    setSendLoading(true);
-    setSendError(null);
-    setVerifyError(null);
-    setStatusMessage(null);
-
-    try {
-      const res = await fetch("/api/auth/phone/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: normalizedPhone }),
-      });
-
-      const raw = await res.text();
-      let data: ApiResponse;
-
-      try {
-        data = raw ? (JSON.parse(raw) as ApiResponse) : {};
-      } catch {
-        data = { ok: false, error: raw || `HTTP ${res.status}` };
-      }
-
-      if (!res.ok || data.ok === false) {
-        setSendError(
-          resolvePhoneOtpError({
-            status: res.status,
-            error: data?.error,
-            retryAfterSec: data?.retryAfterSec,
-            fallback: "인증번호 발송에 실패했어요.",
-          })
-        );
-        return;
-      }
-
-      setOtpSent(true);
-      setPhoneLocked(true);
-      setStatusMessage("인증번호를 전송했어요. 문자 메시지를 확인해 주세요.");
-    } catch {
-      setSendError("네트워크 오류로 인증번호를 보내지 못했어요. 다시 시도해 주세요.");
-    } finally {
-      setSendLoading(false);
-    }
-  }, [isPhoneValid, normalizedPhone, busy]);
-
-  const handleVerify = useCallback(async () => {
-    if (!isPhoneValid || code.length === 0 || busy) return;
-
-    setVerifyLoading(true);
-    setVerifyError(null);
-    setSendError(null);
-    setStatusMessage(null);
-
-    try {
-      const res = await fetch("/api/me/link-phone", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: normalizedPhone, code }),
-      });
-
-      const raw = await res.text();
-      let data: ApiResponse & { phone?: string; linkedAt?: string };
-
-      try {
-        data = raw ? (JSON.parse(raw) as typeof data) : {};
-      } catch {
-        data = { ok: false, error: raw || `HTTP ${res.status}` };
-      }
-
-      if (!res.ok || data.ok === false || !data.phone) {
-        setVerifyError(
-          resolvePhoneOtpError({
-            status: res.status,
-            error: data?.error,
-            retryAfterSec: data?.retryAfterSec,
-            fallback: "전화번호 인증에 실패했어요.",
-          })
-        );
-        return;
-      }
-
-      onLinked?.(data.phone, data.linkedAt);
-      setCode("");
-      setStatusMessage("전화번호 인증이 완료됐어요.");
-    } catch {
-      setVerifyError("네트워크 오류로 인증을 완료하지 못했어요. 다시 시도해 주세요.");
-    } finally {
-      setVerifyLoading(false);
-    }
-  }, [code, isPhoneValid, normalizedPhone, onLinked, busy]);
-
-  const handleEditPhone = useCallback(() => {
-    if (busy) return;
-    setPhoneLocked(false);
-    setOtpSent(false);
-    setCode("");
-    setStatusMessage(null);
-    setSendError(null);
-    setVerifyError(null);
-  }, [busy]);
-
-  const sendDisabled = busy || !isPhoneValid;
-  const verifyDisabled = busy || !isPhoneValid || code.length === 0 || !otpSent;
+}: PhoneLinkSectionProps) {
+  const {
+    phoneDisplay,
+    code,
+    sendLoading,
+    verifyLoading,
+    sendError,
+    verifyError,
+    statusMessage,
+    otpSent,
+    phoneLocked,
+    busy,
+    sendDisabled,
+    verifyDisabled,
+    handlePhoneChange,
+    handleCodeChange,
+    handleSendOtp,
+    handleVerify,
+    handleEditPhone,
+  } = usePhoneLinkSectionState({
+    initialPhone,
+    initialLinkedAt,
+    onLinked,
+    onBusyChange,
+  });
 
   return (
     <div className="space-y-4">
@@ -214,10 +53,7 @@ export default function PhoneLinkSection({
             autoComplete="tel"
             value={phoneDisplay}
             disabled={busy || phoneLocked}
-            onChange={(e) => {
-              const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
-              setPhoneDigits(digits);
-            }}
+            onChange={(event) => handlePhoneChange(event.target.value)}
             placeholder="010-1234-5678"
             className="min-w-0 flex-1 h-10 rounded-lg border border-gray-300 px-3 text-gray-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/25 disabled:bg-gray-100 disabled:text-gray-500"
           />
@@ -242,7 +78,7 @@ export default function PhoneLinkSection({
           >
             <span className="grid h-full w-full place-items-center">
               {sendLoading ? (
-                <Spinner className="text-white" />
+                <ModalSpinner className="text-white" />
               ) : otpSent ? (
                 "재발송"
               ) : (
@@ -264,9 +100,7 @@ export default function PhoneLinkSection({
             value={code}
             disabled={busy || !otpSent}
             maxLength={6}
-            onChange={(e) =>
-              setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
-            }
+            onChange={(event) => handleCodeChange(event.target.value)}
             placeholder="6자리 번호"
             className="min-w-0 flex-1 h-10 rounded-lg border border-gray-300 px-3 text-gray-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/25 disabled:bg-gray-100 disabled:text-gray-500"
           />
@@ -279,10 +113,11 @@ export default function PhoneLinkSection({
             className="shrink-0 w-16 h-8 rounded-lg bg-sky-400 text-sm font-semibold text-white hover:bg-sky-500 disabled:cursor-not-allowed disabled:bg-sky-200"
           >
             <span className="grid h-full w-full place-items-center">
-              {verifyLoading ? <Spinner className="text-white" /> : "인증"}
+              {verifyLoading ? <ModalSpinner className="text-white" /> : "인증"}
             </span>
           </button>
         </div>
+
         {!otpSent ? (
           <p className="text-xs text-gray-600">
             먼저 인증번호를 발송하고, 문자로 받은 6자리 번호를 입력해 주세요.

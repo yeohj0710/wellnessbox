@@ -1,4 +1,4 @@
-﻿// RND: Module 03 KPI #5 reproducible evaluation command.
+// RND: Module 03 KPI #5 reproducible evaluation command.
 
 import fs from "node:fs";
 import path from "node:path";

@@ -4,6 +4,20 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import {
+  buildKpiBundle,
+  buildRollupSummary,
+  type KpiBundle,
+  type Module02EvaluationOutput,
+  type Module03EvaluationOutput,
+  type Module04EvaluationOutput,
+  type Module05EvaluationOutput,
+  type Module06EvaluationOutput,
+  type Module07EvaluationOutput,
+  type ModuleEvaluationOutputs,
+  type ModuleId,
+  type ModuleRunResult,
+} from "./kpi-rollup-artifacts";
 
 type CliArgs = {
   outPath: string | null;
@@ -12,154 +26,16 @@ type CliArgs = {
   evaluatedAt: string | null;
 };
 
-type ModuleId =
-  | "02_data_lake"
-  | "03_personal_safety_validation_engine"
-  | "04_efficacy_quantification_model"
-  | "05_optimization_engine"
-  | "06_closed_loop_ai"
-  | "07_biosensor_and_genetic_data_integration";
-
 type ModuleRunner = {
   moduleId: ModuleId;
   runnerPath: string;
   outputFileName: string;
 };
 
-type Module02EvaluationOutput = {
-  module: "02_data_lake";
-  phase: "EVALUATION";
-  generatedAt: string;
-  report: {
-    evaluatedAt: string;
-    ruleCount: number;
-    minRuleCount: number;
-    accuracyPercent: number;
-    targetPercent: number;
-    targetSatisfied: boolean;
-    minRuleCountSatisfied: boolean;
-  };
-};
-
-type Module03EvaluationOutput = {
-  module: "03_personal_safety_validation_engine";
-  phase: "EVALUATION";
-  generatedAt: string;
-  report: {
-    evaluatedAt: string;
-    ruleCount: number;
-    minRuleCount: number;
-    accuracyPercent: number;
-    targetPercent: number;
-    targetSatisfied: boolean;
-    minRuleCountSatisfied: boolean;
-  };
-  kpi06Report: {
-    evaluatedAt: string;
-    windowStart: string;
-    windowEnd: string;
-    eventCount: number;
-    countedEventCount: number;
-    targetMaxCountPerYear: number;
-    targetSatisfied: boolean;
-  };
-};
-
-type Module04EvaluationOutput = {
-  module: "04_efficacy_quantification_model";
-  phase: "EVALUATION";
-  generatedAt: string;
-  report: {
-    evaluatedAt: string;
-    caseCount: number;
-    scgiPp: number;
-    targetPpThreshold: number;
-    targetSatisfied: boolean;
-  };
-};
-
-type Module05EvaluationOutput = {
-  module: "05_optimization_engine";
-  phase: "EVALUATION";
-  generatedAt: string;
-  report: {
-    evaluatedAt: string;
-    caseCount: number;
-    minCaseCount: number;
-    meanScorePercent: number;
-    targetPercent: number;
-    targetSatisfied: boolean;
-    minCaseCountSatisfied: boolean;
-  };
-};
-
-type Module06EvaluationOutput = {
-  module: "06_closed_loop_ai";
-  phase: "EVALUATION";
-  generatedAt: string;
-  report: {
-    evaluatedAt: string;
-    actionAccuracyReport: {
-      caseCount: number;
-      minCaseCount: number;
-      accuracyPercent: number;
-      targetPercent: number;
-      targetSatisfied: boolean;
-      minCaseCountSatisfied: boolean;
-    };
-    llmAccuracyReport: {
-      promptCount: number;
-      minPromptCount: number;
-      accuracyPercent: number;
-      targetPercent: number;
-      targetSatisfied: boolean;
-      minPromptCountSatisfied: boolean;
-    };
-  };
-};
-
-type Module07EvaluationOutput = {
-  module: "07_biosensor_and_genetic_data_integration";
-  phase: "EVALUATION";
-  generatedAt: string;
-  report: {
-    evaluatedAt: string;
-    integrationRateReport: {
-      sampleCount: number;
-      minSampleCount: number;
-      overallIntegrationRatePercent: number;
-      targetPercent: number;
-      targetSatisfied: boolean;
-      sampleCountSatisfied: boolean;
-      sourceCoverageSatisfied: boolean;
-      perSourceMinSampleCountSatisfied: boolean;
-    };
-    interfaceWiringReport: {
-      ruleCount: number;
-      minRuleCount: number;
-      accuracyPercent: number;
-      targetPercent: number;
-      targetSatisfied: boolean;
-      minRuleCountSatisfied: boolean;
-    };
-  };
-};
-
-type KpiMeasurement = {
-  kpiId:
-    | "kpi-01"
-    | "kpi-02"
-    | "kpi-03"
-    | "kpi-04"
-    | "kpi-05"
-    | "kpi-06"
-    | "kpi-07";
-  metric: string;
-  unit: "%" | "pp" | "count/year";
-  measuredValue: number;
-  targetValue: number;
-  targetSatisfied: boolean;
-  dataRequirementSatisfied: boolean;
+type RollupPaths = {
+  rollupBaseDir: string;
+  rollupOutputPath: string;
+  moduleOutDir: string;
 };
 
 const MODULE_RUNNERS: readonly ModuleRunner[] = [
@@ -244,6 +120,28 @@ function toPathSafeTimestamp(timestamp: string): string {
   return timestamp.replace(/[:.]/g, "-");
 }
 
+function formatModuleRunError(
+  moduleId: ModuleId,
+  runnerPath: string,
+  error: unknown
+): string {
+  const processError = error as NodeJS.ErrnoException & {
+    stdout?: string;
+    stderr?: string;
+  };
+  const stdout = typeof processError.stdout === "string" ? processError.stdout.trim() : "";
+  const stderr = typeof processError.stderr === "string" ? processError.stderr.trim() : "";
+
+  return [
+    `Failed to execute ${moduleId} evaluation.`,
+    `Command: node ${runnerPath}`,
+    stdout.length > 0 ? `stdout: ${stdout}` : "",
+    stderr.length > 0 ? `stderr: ${stderr}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
 function runModuleEvaluation(
   repoRoot: string,
   runner: ModuleRunner,
@@ -270,22 +168,7 @@ function runModuleEvaluation(
       stdio: ["ignore", "pipe", "pipe"],
     });
   } catch (error) {
-    const processError = error as NodeJS.ErrnoException & {
-      stdout?: string;
-      stderr?: string;
-    };
-    const stdout = typeof processError.stdout === "string" ? processError.stdout.trim() : "";
-    const stderr = typeof processError.stderr === "string" ? processError.stderr.trim() : "";
-    throw new Error(
-      [
-        `Failed to execute ${runner.moduleId} evaluation.`,
-        `Command: node ${runner.runnerPath}`,
-        stdout.length > 0 ? `stdout: ${stdout}` : "",
-        stderr.length > 0 ? `stderr: ${stderr}` : "",
-      ]
-        .filter(Boolean)
-        .join("\n")
-    );
+    throw new Error(formatModuleRunError(runner.moduleId, runner.runnerPath, error));
   }
 
   return {
@@ -294,19 +177,13 @@ function runModuleEvaluation(
   };
 }
 
-function main() {
-  const args = parseArgs(process.argv.slice(2));
-  const repoRoot = process.cwd();
-  const evaluatedAt = args.evaluatedAt ?? new Date().toISOString();
-  const generatedAt = args.generatedAt ?? evaluatedAt;
-  const timestampToken = toPathSafeTimestamp(evaluatedAt);
-
-  const resolvedOutPath = args.outPath
-    ? path.resolve(repoRoot, args.outPath)
-    : null;
-  const resolvedOutDir = args.outDir
-    ? path.resolve(repoRoot, args.outDir)
-    : null;
+function resolveRollupPaths(
+  repoRoot: string,
+  args: CliArgs,
+  timestampToken: string
+): RollupPaths {
+  const resolvedOutPath = args.outPath ? path.resolve(repoRoot, args.outPath) : null;
+  const resolvedOutDir = args.outDir ? path.resolve(repoRoot, args.outDir) : null;
 
   const rollupBaseDir =
     resolvedOutDir ??
@@ -321,189 +198,154 @@ function main() {
     resolvedOutPath ?? path.join(rollupBaseDir, `kpi-rollup-${timestampToken}.json`);
   const moduleOutDir = path.join(rollupBaseDir, "module-evaluations");
 
-  fs.mkdirSync(path.dirname(rollupOutputPath), { recursive: true });
-  fs.mkdirSync(moduleOutDir, { recursive: true });
+  return {
+    rollupBaseDir,
+    rollupOutputPath,
+    moduleOutDir,
+  };
+}
 
-  const moduleRuns = MODULE_RUNNERS.map((runner) => {
-    const run = runModuleEvaluation(repoRoot, runner, moduleOutDir, generatedAt, evaluatedAt);
+function ensureOutputDirs(paths: RollupPaths): void {
+  fs.mkdirSync(path.dirname(paths.rollupOutputPath), { recursive: true });
+  fs.mkdirSync(paths.moduleOutDir, { recursive: true });
+}
+
+function runAllModuleEvaluations(
+  repoRoot: string,
+  moduleOutDir: string,
+  generatedAt: string,
+  evaluatedAt: string
+): ModuleRunResult[] {
+  return MODULE_RUNNERS.map((runner) => {
+    const run = runModuleEvaluation(
+      repoRoot,
+      runner,
+      moduleOutDir,
+      generatedAt,
+      evaluatedAt
+    );
     return {
       moduleId: runner.moduleId,
       outputPath: run.outputPath,
       command: run.command,
     };
   });
+}
 
-  const module02 = readJsonFile<Module02EvaluationOutput>(moduleRuns[0].outputPath);
-  const module03 = readJsonFile<Module03EvaluationOutput>(moduleRuns[1].outputPath);
-  const module04 = readJsonFile<Module04EvaluationOutput>(moduleRuns[2].outputPath);
-  const module05 = readJsonFile<Module05EvaluationOutput>(moduleRuns[3].outputPath);
-  const module06 = readJsonFile<Module06EvaluationOutput>(moduleRuns[4].outputPath);
-  const module07 = readJsonFile<Module07EvaluationOutput>(moduleRuns[5].outputPath);
+function readModuleEvaluationOutputs(
+  moduleRuns: ModuleRunResult[]
+): ModuleEvaluationOutputs {
+  return {
+    module02: readJsonFile<Module02EvaluationOutput>(moduleRuns[0].outputPath),
+    module03: readJsonFile<Module03EvaluationOutput>(moduleRuns[1].outputPath),
+    module04: readJsonFile<Module04EvaluationOutput>(moduleRuns[2].outputPath),
+    module05: readJsonFile<Module05EvaluationOutput>(moduleRuns[3].outputPath),
+    module06: readJsonFile<Module06EvaluationOutput>(moduleRuns[4].outputPath),
+    module07: readJsonFile<Module07EvaluationOutput>(moduleRuns[5].outputPath),
+  };
+}
 
-  const kpi01: KpiMeasurement = {
-    kpiId: "kpi-01",
-    metric: "Recommendation accuracy",
-    unit: "%",
-    measuredValue: module05.report.meanScorePercent,
-    targetValue: module05.report.targetPercent,
-    targetSatisfied: module05.report.targetSatisfied,
-    dataRequirementSatisfied: module05.report.minCaseCountSatisfied,
+function resolveRunTimestamps(args: CliArgs): {
+  evaluatedAt: string;
+  generatedAt: string;
+  timestampToken: string;
+} {
+  const evaluatedAt = args.evaluatedAt ?? new Date().toISOString();
+  const generatedAt = args.generatedAt ?? evaluatedAt;
+  return {
+    evaluatedAt,
+    generatedAt,
+    timestampToken: toPathSafeTimestamp(evaluatedAt),
   };
-  const kpi02: KpiMeasurement = {
-    kpiId: "kpi-02",
-    metric: "Measured efficacy improvement (SCGI)",
-    unit: "pp",
-    measuredValue: module04.report.scgiPp,
-    targetValue: module04.report.targetPpThreshold,
-    targetSatisfied: module04.report.targetSatisfied,
-    dataRequirementSatisfied: module04.report.caseCount > 0,
-  };
-  const kpi03: KpiMeasurement = {
-    kpiId: "kpi-03",
-    metric: "Closed-loop action execution accuracy",
-    unit: "%",
-    measuredValue: module06.report.actionAccuracyReport.accuracyPercent,
-    targetValue: module06.report.actionAccuracyReport.targetPercent,
-    targetSatisfied: module06.report.actionAccuracyReport.targetSatisfied,
-    dataRequirementSatisfied: module06.report.actionAccuracyReport.minCaseCountSatisfied,
-  };
-  const kpi04: KpiMeasurement = {
-    kpiId: "kpi-04",
-    metric: "Closed-loop consultation response accuracy",
-    unit: "%",
-    measuredValue: module06.report.llmAccuracyReport.accuracyPercent,
-    targetValue: module06.report.llmAccuracyReport.targetPercent,
-    targetSatisfied: module06.report.llmAccuracyReport.targetSatisfied,
-    dataRequirementSatisfied: module06.report.llmAccuracyReport.minPromptCountSatisfied,
-  };
-  const kpi07: KpiMeasurement = {
-    kpiId: "kpi-07",
-    metric: "Biosensor and genetic integration rate",
-    unit: "%",
-    measuredValue: module07.report.integrationRateReport.overallIntegrationRatePercent,
-    targetValue: module07.report.integrationRateReport.targetPercent,
-    targetSatisfied: module07.report.integrationRateReport.targetSatisfied,
-    dataRequirementSatisfied:
-      module07.report.integrationRateReport.sampleCountSatisfied &&
-      module07.report.integrationRateReport.sourceCoverageSatisfied &&
-      module07.report.integrationRateReport.perSourceMinSampleCountSatisfied,
-  };
+}
 
-  const kpi05Breakdown = [
-    {
-      moduleId: module02.module,
-      accuracyPercent: module02.report.accuracyPercent,
-      targetPercent: module02.report.targetPercent,
-      targetSatisfied: module02.report.targetSatisfied,
-      ruleCount: module02.report.ruleCount,
-      minRuleCount: module02.report.minRuleCount,
-      minRuleCountSatisfied: module02.report.minRuleCountSatisfied,
-    },
-    {
-      moduleId: module03.module,
-      accuracyPercent: module03.report.accuracyPercent,
-      targetPercent: module03.report.targetPercent,
-      targetSatisfied: module03.report.targetSatisfied,
-      ruleCount: module03.report.ruleCount,
-      minRuleCount: module03.report.minRuleCount,
-      minRuleCountSatisfied: module03.report.minRuleCountSatisfied,
-    },
-    {
-      moduleId: module07.module,
-      accuracyPercent: module07.report.interfaceWiringReport.accuracyPercent,
-      targetPercent: module07.report.interfaceWiringReport.targetPercent,
-      targetSatisfied: module07.report.interfaceWiringReport.targetSatisfied,
-      ruleCount: module07.report.interfaceWiringReport.ruleCount,
-      minRuleCount: module07.report.interfaceWiringReport.minRuleCount,
-      minRuleCountSatisfied: module07.report.interfaceWiringReport.minRuleCountSatisfied,
-    },
-  ];
-  const kpi05: KpiMeasurement = {
-    kpiId: "kpi-05",
-    metric: "Safety/data-lake reference accuracy",
-    unit: "%",
-    measuredValue: Number(
-      (
-        kpi05Breakdown.reduce((sum, result) => sum + result.accuracyPercent, 0) /
-        kpi05Breakdown.length
-      ).toFixed(2)
-    ),
-    targetValue: kpi05Breakdown[0].targetPercent,
-    targetSatisfied: kpi05Breakdown.every((result) => result.targetSatisfied),
-    dataRequirementSatisfied: kpi05Breakdown.every(
-      (result) => result.minRuleCountSatisfied
-    ),
+function buildEnvironmentSnapshot() {
+  return {
+    nodeVersion: process.version,
+    platform: process.platform,
+    arch: process.arch,
+    cpuCount: os.cpus().length,
   };
-  const kpi06: KpiMeasurement = {
-    kpiId: "kpi-06",
-    metric: "Adverse event annual report count",
-    unit: "count/year",
-    measuredValue: module03.kpi06Report.countedEventCount,
-    targetValue: module03.kpi06Report.targetMaxCountPerYear,
-    targetSatisfied: module03.kpi06Report.targetSatisfied,
-    dataRequirementSatisfied: module03.kpi06Report.eventCount > 0,
-  };
+}
 
-  const measuredKpis: KpiMeasurement[] = [
-    kpi01,
-    kpi02,
-    kpi03,
-    kpi04,
-    kpi05,
-    kpi06,
-    kpi07,
-  ];
-  const targetSatisfiedCount = measuredKpis.filter((kpi) => kpi.targetSatisfied).length;
-  const dataRequirementSatisfiedCount = measuredKpis.filter(
-    (kpi) => kpi.dataRequirementSatisfied
-  ).length;
+function buildModuleArtifactEntries(
+  moduleRuns: ModuleRunResult[],
+  rollupOutputPath: string
+): Array<{ moduleId: ModuleId; outputPath: string }> {
+  return moduleRuns.map((run) => ({
+    moduleId: run.moduleId,
+    outputPath: path.relative(path.dirname(rollupOutputPath), run.outputPath),
+  }));
+}
 
-  const rollup = {
+function buildRollupReport(
+  generatedAt: string,
+  evaluatedAt: string,
+  paths: RollupPaths,
+  moduleRuns: ModuleRunResult[],
+  outputs: ModuleEvaluationOutputs,
+  kpis: KpiBundle
+) {
+  return {
     module: "02_data_lake",
     phase: "EVALUATION",
     artifact: "kpi_rollup",
     generatedAt,
     evaluatedAt,
-    environment: {
-      nodeVersion: process.version,
-      platform: process.platform,
-      arch: process.arch,
-      cpuCount: os.cpus().length,
-    },
+    environment: buildEnvironmentSnapshot(),
     commands: moduleRuns.map((run) => run.command),
-    moduleArtifacts: moduleRuns.map((run) => ({
-      moduleId: run.moduleId,
-      outputPath: path.relative(path.dirname(rollupOutputPath), run.outputPath),
-    })),
+    moduleArtifacts: buildModuleArtifactEntries(moduleRuns, paths.rollupOutputPath),
     kpiRollup: {
-      kpi01,
-      kpi02,
-      kpi03,
-      kpi04,
+      kpi01: kpis.kpi01,
+      kpi02: kpis.kpi02,
+      kpi03: kpis.kpi03,
+      kpi04: kpis.kpi04,
       kpi05: {
-        ...kpi05,
-        moduleBreakdown: kpi05Breakdown,
+        ...kpis.kpi05,
+        moduleBreakdown: kpis.kpi05Breakdown,
       },
       kpi06: {
-        ...kpi06,
-        evaluatedAt: module03.kpi06Report.evaluatedAt,
-        windowStart: module03.kpi06Report.windowStart,
-        windowEnd: module03.kpi06Report.windowEnd,
+        ...kpis.kpi06,
+        evaluatedAt: outputs.module03.kpi06Report.evaluatedAt,
+        windowStart: outputs.module03.kpi06Report.windowStart,
+        windowEnd: outputs.module03.kpi06Report.windowEnd,
       },
-      kpi07,
+      kpi07: kpis.kpi07,
     },
-    summary: {
-      measuredKpiCount: measuredKpis.length,
-      targetSatisfiedCount,
-      dataRequirementSatisfiedCount,
-      allTargetsSatisfied: targetSatisfiedCount === measuredKpis.length,
-      allDataRequirementsSatisfied:
-        dataRequirementSatisfiedCount === measuredKpis.length,
-    },
+    summary: buildRollupSummary(kpis),
   };
+}
 
-  fs.writeFileSync(rollupOutputPath, `${JSON.stringify(rollup, null, 2)}\n`, "utf8");
-  console.log(`Wrote Module 02 KPI rollup report: ${rollupOutputPath}`);
+function main() {
+  const args = parseArgs(process.argv.slice(2));
+  const repoRoot = process.cwd();
+  const timing = resolveRunTimestamps(args);
+  const paths = resolveRollupPaths(repoRoot, args, timing.timestampToken);
+  ensureOutputDirs(paths);
+
+  const moduleRuns = runAllModuleEvaluations(
+    repoRoot,
+    paths.moduleOutDir,
+    timing.generatedAt,
+    timing.evaluatedAt
+  );
+  const outputs = readModuleEvaluationOutputs(moduleRuns);
+  const kpis = buildKpiBundle(outputs);
+  const rollup = buildRollupReport(
+    timing.generatedAt,
+    timing.evaluatedAt,
+    paths,
+    moduleRuns,
+    outputs,
+    kpis
+  );
+
+  fs.writeFileSync(
+    paths.rollupOutputPath,
+    `${JSON.stringify(rollup, null, 2)}\n`,
+    "utf8"
+  );
+  console.log(`Wrote Module 02 KPI rollup report: ${paths.rollupOutputPath}`);
 }
 
 main();

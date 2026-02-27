@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { RefObject } from "react";
 import { useDraggableModal } from "@/components/common/useDraggableModal";

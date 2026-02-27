@@ -7,31 +7,31 @@ Run `npm run agent:refactor-report` to refresh this report.
 
 | Lines | File |
 |---:|---|
+| 782 | `app/(features)/employee-report/EmployeeReportClient.tsx` |
 | 709 | `app/(components)/landingSection2.tsx` |
-| 686 | `app/test/page.tsx` |
-| 669 | `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx` |
-| 652 | `app/(features)/employee-report/EmployeeReportClient.tsx` |
+| 706 | `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx` |
 | 551 | `lib/ai/chain.ts` |
 | 535 | `app/(components)/homeProductSection.tsx` |
 | 512 | `lib/b2b/export/layout-dsl.ts` |
-| 490 | `app/assess/components/CSection.tsx` |
-| 489 | `app/me/meClient.tsx` |
-| 489 | `app/me/profileImageEditor.tsx` |
-| 480 | `components/b2b/ReportSummaryCards.tsx` |
-| 476 | `app/my-data/page.tsx` |
-| 474 | `components/common/GoogleTranslateGate.tsx` |
+| 489 | `app/my-data/myDataPageSections.tsx` |
+| 487 | `public/scripts/google-translate-orchestrator.js` |
+| 477 | `components/b2b/ReportSummaryCards.tsx` |
 | 469 | `lib/agent-playground/patterns.ts` |
 | 466 | `app/agent-playground/page.tsx` |
 | 463 | `app/column/editor/EditorClient.tsx` |
-| 451 | `lib/server/hyphen/fetch-ai-summary-core.ts` |
 | 443 | `app/(admin)/admin/column/editor/EditorAdminClient.tsx` |
 | 440 | `app/(features)/health-link/components/HealthLinkResultSection.helpers.tsx` |
 | 423 | `components/order/cart.tsx` |
-| 422 | `app/assess/page.tsx` |
-| 421 | `lib/rnd/module04-efficacy-quantification/contracts.ts` |
-| 404 | `lib/rnd/module05-optimization/scaffold.ts` |
-| 401 | `lib/rnd/module07-biosensor-genetic-integration/contracts.ts` |
+| 408 | `lib/b2b/analyzer-health.ts` |
 | 400 | `app/chat/components/RecommendedProductActions.tsx` |
+| 394 | `app/assess/useAssessFlow.ts` |
+| 392 | `app/chat/components/recommendedProductActions.resolve.ts` |
+| 392 | `components/order/globalCartHost.tsx` |
+| 391 | `lib/chat/prompts.ts` |
+| 386 | `app/(orders)/order-complete/page.tsx` |
+| 385 | `components/pharm/orderAccordionItem.tsx` |
+| 383 | `lib/order/queries.ts` |
+| 383 | `lib/rnd/module06-closed-loop-ai/mvp-engine.ts` |
 
 ## API Route Top 20
 
@@ -62,46 +62,46 @@ Run `npm run agent:refactor-report` to refresh this report.
 
 | Lines | File |
 |---:|---|
+| 782 | `app/(features)/employee-report/EmployeeReportClient.tsx` |
 | 709 | `app/(components)/landingSection2.tsx` |
-| 686 | `app/test/page.tsx` |
-| 669 | `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx` |
-| 652 | `app/(features)/employee-report/EmployeeReportClient.tsx` |
+| 706 | `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx` |
 | 535 | `app/(components)/homeProductSection.tsx` |
-| 490 | `app/assess/components/CSection.tsx` |
-| 489 | `app/me/meClient.tsx` |
-| 489 | `app/me/profileImageEditor.tsx` |
-| 480 | `components/b2b/ReportSummaryCards.tsx` |
-| 476 | `app/my-data/page.tsx` |
-| 474 | `components/common/GoogleTranslateGate.tsx` |
+| 489 | `app/my-data/myDataPageSections.tsx` |
+| 477 | `components/b2b/ReportSummaryCards.tsx` |
 | 466 | `app/agent-playground/page.tsx` |
 | 463 | `app/column/editor/EditorClient.tsx` |
 | 443 | `app/(admin)/admin/column/editor/EditorAdminClient.tsx` |
 | 440 | `app/(features)/health-link/components/HealthLinkResultSection.helpers.tsx` |
 | 423 | `components/order/cart.tsx` |
-| 422 | `app/assess/page.tsx` |
 | 400 | `app/chat/components/RecommendedProductActions.tsx` |
+| 394 | `app/assess/useAssessFlow.ts` |
 | 392 | `app/chat/components/recommendedProductActions.resolve.ts` |
 | 392 | `components/order/globalCartHost.tsx` |
+| 386 | `app/(orders)/order-complete/page.tsx` |
+| 385 | `components/pharm/orderAccordionItem.tsx` |
+| 382 | `app/assess/logic/algorithm.ts` |
+| 379 | `app/chat/hooks/useChat.ts` |
+| 374 | `components/chat/DesktopChatDock.tsx` |
 
 ## Scripts Top 15
 
 | Lines | File |
 |---:|---|
-| 546 | `scripts/rnd/module03/run-scheduler-handoff-validation.ts` |
-| 512 | `scripts/rnd/module03/archive-adverse-event-evaluation-monthly.ts` |
-| 510 | `scripts/rnd/module02/evaluate-kpi-rollup.ts` |
-| 508 | `scripts/rnd/module03/generate-scheduler-infra-binding.ts` |
-| 439 | `scripts/rnd/module03/run-scheduler-dry-run-window.ts` |
 | 387 | `scripts/b2b/generate-survey-template-v1.ts` |
-| 341 | `scripts/rnd/module03/run-scheduler-production-gate.ts` |
-| 324 | `scripts/rnd/module03/generate-scheduler-deployment-bundle.ts` |
-| 280 | `scripts/audit-hotspots.ts` |
-| 279 | `scripts/rnd/module03/evaluate-adverse-event-count-from-source.ts` |
-| 274 | `scripts/rnd/module03/orchestrate-adverse-event-evaluation-monthly-export.ts` |
-| 273 | `scripts/rnd/module03/scheduler-readiness-artifacts.ts` |
+| 375 | `scripts/rnd/module02/kpi-rollup-artifacts.ts` |
+| 352 | `scripts/rnd/module02/evaluate-kpi-rollup.ts` |
 | 269 | `scripts/rnd/module03/orchestrate-adverse-event-evaluation-monthly-helpers.ts` |
-| 246 | `scripts/rnd/module03/orchestrate-adverse-event-evaluation-monthly.ts` |
 | 240 | `scripts/rnd/module07/evaluate-integration-rate.ts` |
+| 219 | `scripts/rnd/module03/scheduler-infra-binding-parsers.ts` |
+| 178 | `scripts/rnd/module03/monthly-archive-parsers.ts` |
+| 176 | `scripts/rnd/module03/scheduler-dry-run-infra-parser.ts` |
+| 162 | `scripts/rnd/module03/evaluate-adverse-event-count-from-source-schema.ts` |
+| 162 | `scripts/rnd/module03/orchestrate-adverse-event-evaluation-monthly-export-runtime.ts` |
+| 159 | `scripts/smoke-scope.ts` |
+| 155 | `scripts/rnd/module03/evaluate-reference-accuracy.ts` |
+| 154 | `scripts/rnd/module03/orchestrate-adverse-event-evaluation-monthly-failure-alert.ts` |
+| 154 | `scripts/rnd/module03/scheduler-dry-run-plan-args.ts` |
+| 154 | `scripts/rnd/module06/evaluate-closed-loop-accuracy.ts` |
 
 ## Notes
 

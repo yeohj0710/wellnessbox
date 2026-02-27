@@ -1,4 +1,4 @@
-﻿import "server-only";
+import "server-only";
 
 import { createHash } from "crypto";
 import db from "@/lib/db";

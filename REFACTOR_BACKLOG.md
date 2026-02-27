@@ -203,6 +203,651 @@ Base input: `npm run audit:hotspots`
    - Added `lib/rnd/module07-biosensor-genetic-integration/mvp-engine.shared.ts` for deterministic run-id/source-map/group/sort/source-summary helpers.
    - Added `lib/rnd/module07-biosensor-genetic-integration/mvp-engine.artifacts.ts` for session artifact payload/evidence/lineage construction.
    - Reduced `mvp-engine.ts` to input validation + wiring/orchestration loop while preserving deterministic output contracts.
+50. Agent/audit script boundary split + encoding guard hardening
+   - Added `scripts/lib/encoding-audit.cts` to centralize encoding/mojibake/BOM/line-ending checks used by `audit:encoding`.
+   - Added `scripts/lib/route-method-export-audit.cts` so `audit:route-method-exports` and `audit:hotspots` share one method-export audit path.
+   - Added `scripts/lib/route-guard-scan.cts` to share route-auth import and guard-token scan logic across `audit-hotspots` and `generate-api-guard-map`.
+   - Added `scripts/lib/hotspot-paths.cts` to share hotspot file include/classification rules across hotspot reports.
+   - Normalized BOM/CRLF remnants detected by the hardened encoding audit, so the repo returns to UTF-8 (no BOM) + LF baseline.
+51. `lib/b2b/employee-sync-summary.ts` responsibility split
+   - Moved NHIS summary patch fetch/cache/network orchestration into:
+     - `lib/b2b/employee-sync-summary.fetch-patch.ts`
+   - Moved medication/checkup normalized-data parser + patch-merge helpers into:
+     - `lib/b2b/employee-sync-summary.normalizer.ts`
+   - Kept `employee-sync-summary.ts` as public facade (`patchSummaryTargetsIfNeeded` + compatibility re-exports), preserving call sites while shrinking file size.
+52. Agent report script write-flow normalization + hotspot audit flattening
+   - Added `scripts/lib/write-if-changed.cts` to centralize idempotent UTF-8 report writes and stable relative-path logging.
+   - Switched `generate-skill-catalog`, `generate-refactor-report`, `generate-function-hotspots`, and `generate-api-guard-map` to shared write helper.
+   - Flattened `scripts/audit-hotspots.ts` by removing monolithic IIFE and reusing shared `hotspot-paths` + `route-guard-scan` + `route-method-export-audit` helpers.
+   - Reduced script-level function hotspot pressure while preserving audit output and strict failure semantics.
+53. Phone auth/link client API boundary consolidation
+   - Added `lib/client/api-json.ts` for safe JSON response parsing (`ok/error` fallback) and HTTP result normalization.
+   - Added `lib/client/phone-api.ts` for shared phone-domain client calls:
+     - OTP send/verify (`/api/auth/phone/*`)
+     - phone link (`/api/me/link-phone`)
+     - phone status/unlink (`/api/me/phone-status`, `/api/me/unlink-phone`)
+   - Replaced duplicated `fetch + text + JSON.parse + fallback` blocks in:
+     - `components/order/hooks/usePhoneAndPassword.ts`
+     - `app/me/phoneLinkSection.tsx`
+     - `components/order/hooks/usePhoneStatus.ts`
+     - `app/(orders)/my-orders/hooks/useLinkedPhoneStatus.ts`
+     - `app/auth/phone/page.tsx`
+   - Standardized response handling/error-shape assumptions for future session maintainability and safer endpoint change rollouts.
+54. Phone profile surface deduplication + me client transport cleanup
+   - Added shared phone display formatter `lib/client/phone-format.ts`.
+   - Replaced duplicated phone display format implementations in:
+     - `app/me/meClient.tsx`
+     - `components/order/hooks/usePhoneStatus.ts`
+     - `app/(orders)/my-orders/utils/formatPhoneDisplay.ts` (now re-exporting shared formatter)
+   - Refactored `app/me/meClient.tsx` profile-save response handling to use `readApiHttpResult` instead of inline text/JSON parse branches.
+   - Refactored `app/me/meClient.tsx` phone unlink flow to use shared `unlinkMyPhoneRequest` client API.
+55. Role push subscription hook consolidation (`pharm` / `rider`)
+   - Added `components/push/useRolePushSubscription.ts` as a shared hook for:
+     - SW registration + VAPID mismatch handling
+     - subscribe/status/unsubscribe orchestration
+     - localStorage notify-off + `vapidKey` state sync
+   - Replaced duplicated logic in:
+     - `components/pharm/usePharmPushSubscription.ts`
+     - `components/rider/useRiderPushSubscription.ts`
+     with thin role-specific wrappers that inject endpoint/id-key config only.
+   - Consolidated phone display formatting in `app/me/phoneLinkSection.tsx` to shared `lib/client/phone-format.ts` helper.
+56. `app/me/meClient.tsx` profile mutation boundary split
+   - Added `app/me/useMeProfileMutations.ts` to isolate:
+     - profile image upload URL fetch + upload
+     - profile save request/optimistic merge state
+     - linked phone unlink request + loading/error state
+   - Reduced `meClient.tsx` to page composition/state orchestration while preserving existing modal and section UI behavior.
+   - Kept Korean-first user-facing error/loading messages in the extracted hook.
+57. Hotspot report signal cleanup (`tmp/` exclusion)
+   - Updated `scripts/lib/hotspot-paths.cts` to exclude `tmp/` from hotspot scans.
+   - Prevented temporary/dev scratch files from polluting `FUNCTION_HOTSPOTS.md` and `audit:hotspots` ranking outputs.
+58. `app/me/profileImageEditor.tsx` editor-core helper split
+   - Added `app/me/profileImageEditor.helpers.ts` for reusable/pure editor internals:
+     - zoom clamp + base-scale calculation
+     - drag boundary clamp
+     - editor/live preview style builders
+     - image decode + canvas crop/render pipeline
+   - Updated `profileImageEditor.tsx` to orchestrate UI/state only while delegating math/canvas logic to helpers.
+   - Preserved existing crop behavior and modal UX while reducing single-component complexity for future sessions.
+59. `components/push/useRolePushSubscription.ts` transport/check-flow split
+   - Added `components/push/useRolePushSubscription.helpers.ts` and moved reusable blocks:
+     - role payload + notify-off key/flag helpers
+     - VAPID key read/store/mismatch logic
+     - role subscribe/status/unsubscribe POST wrappers
+     - permission gate helper + subscription status check runner
+   - Reduced `useRolePushSubscription.ts` from monolithic transport+state flow to hook orchestration/state wiring.
+   - Preserved existing route contracts and role ownership payload semantics (`pharm`/`rider`).
+60. Push subscription runtime-safety + alert constant dedup
+   - Added runtime capability guard (`isPushRuntimeAvailable`) in push helper flow to fail-safe when Notification/Push APIs are unavailable.
+   - Applied runtime guard in subscribe/unsubscribe/check paths within `useRolePushSubscription`.
+   - Moved duplicated Korean push alert messages to shared constant:
+     - `DEFAULT_PUSH_ALERT_MESSAGES_KO` in `components/push/useRolePushSubscription.helpers.ts`
+   - Updated role wrappers to reuse shared alerts:
+     - `components/pharm/usePharmPushSubscription.ts`
+     - `components/rider/useRiderPushSubscription.ts`
+61. Hotspot script file-discovery dedup
+   - Added `scripts/lib/hotspot-code-files.cts` to centralize hotspot 대상 코드 파일 수집/라인 집계 로직.
+   - Updated `scripts/agent/generate-function-hotspots.cts` to reuse shared `listHotspotCodeFiles`.
+   - Updated `scripts/agent/generate-refactor-report.cts` to reuse shared `buildHotspotCodeRows`.
+   - Reduced duplicate scan/filter boilerplate so future report rule changes can be done in one module.
+62. `lib/notification/subscriptions.ts` push subscription storage boundary split
+   - Added `lib/notification/subscriptions.shared.ts` and moved shared DB/log orchestration:
+     - role-scope where builders (`orderId` / `pharmacyId` / `riderId`)
+     - scoped save/remove/status helpers
+     - upsert/delete + status logging primitives
+   - Reduced `subscriptions.ts` to role-specific public facade wrappers only (existing export API preserved).
+   - Removed repeated role-specific Prisma where/upsert boilerplate, lowering future maintenance risk when push subscription schema/telemetry changes.
+63. `scripts/audit-hotspots.ts` audit boundary split
+   - Added `scripts/lib/hotspot-report.cts` for reusable hotspot section construction/printing.
+   - Added `scripts/lib/hotspot-audit-checks.cts` for:
+     - critical guard token checks
+     - unexpected session-route checks
+     - route-method export audit result rendering
+   - Reduced `scripts/audit-hotspots.ts` to scanning + orchestration shell, preserving output format and fail-on-violation semantics.
+64. `scripts/agent/generate-api-guard-map.cts` generation boundary split
+   - Added `scripts/lib/guard-map.cts` for route entry scan/classification grouping and markdown section rendering.
+   - Reduced `generate-api-guard-map.cts` to strict-mode policy + file write orchestration.
+   - Preserved existing guard-map summary/section format and strict failure conditions while lowering entry-script complexity.
+65. `scripts/agent/generate-skill-catalog.cts` generation boundary split
+   - Added `scripts/lib/skill-catalog.cts` for recursive skill file scan, frontmatter parsing, and markdown row rendering.
+   - Reduced `generate-skill-catalog.cts` to root validation + write orchestration only.
+   - Preserved existing catalog format/output while lowering entry-script complexity for future maintenance.
+66. `lib/b2b/report-payload.ts` medication history boundary split
+   - Added `lib/b2b/report-payload-medication.ts` for:
+     - raw-treatment to normalized medication row bridge
+     - medication row quality/date ranking and visit dedupe
+     - recent history backfill query orchestration (`b2bHealthDataSnapshot`)
+   - Reduced `report-payload.ts` to source loading + payload assembly orchestration by delegating medication fallback logic.
+   - Preserved payload contract while shrinking main report-payload runtime surface.
+67. `lib/b2b/report-payload-health.ts` boundary split (facade + domain modules)
+   - Added `lib/b2b/report-payload-health-metrics.ts` for metric/unit normalization and health metric extraction.
+   - Added `lib/b2b/report-payload-health-medication.ts` for medication container parsing + visit-level consolidation.
+   - Added `lib/b2b/report-payload-health-fetch.ts` for fetch partial/failed-target parsing.
+   - Reduced `report-payload-health.ts` to stable re-export facade to preserve call sites while clarifying module responsibilities.
+68. Push subscribe route boundary split (`lib/server/push-subscribe-route.ts`)
+   - Added `lib/server/push-subscribe-parse.ts`:
+     - role-specific request body schemas (`customer` / `pharm` / `rider`) with explicit `zod` validation
+     - reusable parse helpers and payload types shared across subscribe/status/unsubscribe routes.
+   - Added `lib/server/push-subscribe-auth.ts`:
+     - shared auth wrappers for `requireCustomerOrderAccess` / `requirePharmSession` / `requireRiderSession`
+     - generic parse+authorize+execute route runner (`runParsedRoute`) for consistent error flow.
+   - Reduced `push-subscribe-route.ts` to route orchestration + role action handlers while preserving existing response contracts and guard usage.
+69. Push detach role-scope safety hardening (`lib/server/push-detach-route.ts`)
+   - Removed ambiguous branch where `pharm`/`rider` requests with `orderId` could enter order-scoped delete flow.
+   - Enforced explicit role handling:
+     - `customer`: `orderId` required + ownership guard + scoped remove
+     - `pharm`/`rider`: role guard + endpoint+role scoped remove
+     - empty role: endpoint all-role detach
+   - Simplified nested condition tree into early-return role blocks to reduce future regression risk.
+70. NHIS fetch-route helper boundary split (`lib/server/hyphen/fetch-route-helpers.ts`)
+   - Added `lib/server/hyphen/fetch-route-constants.ts` for stable NHIS auth/session error-code constants.
+   - Added `lib/server/hyphen/fetch-route-types.ts` for fetch-route orchestration/persist type contracts.
+   - Added `lib/server/hyphen/fetch-route-persist.ts` for:
+     - AI summary enrichment safe wrapper
+     - fetch-attempt logging safe wrapper
+     - failed-code normalization + failed-status derivation
+     - execute+persist orchestration under fetch dedupe key
+   - Reduced `fetch-route-helpers.ts` to request parsing/context preparation + failed-response shaping while preserving existing exports.
+71. Module05 optimization contracts boundary split (`lib/rnd/module05-optimization/contracts.ts`)
+   - Added `lib/rnd/module05-optimization/contracts.model.ts` for constants + all type contracts.
+   - Added `lib/rnd/module05-optimization/contracts.guards.ts` for runtime validation/assert guards.
+   - Reduced `contracts.ts` to stable re-export surface to preserve existing imports.
+   - Preserved all public validator/type exports while isolating model vs guard responsibilities.
+72. Module04 efficacy contracts boundary split (`lib/rnd/module04-efficacy-quantification/contracts.ts`)
+   - Added `lib/rnd/module04-efficacy-quantification/contracts.model.ts` for constants + all type contracts.
+   - Added `lib/rnd/module04-efficacy-quantification/contracts.guards.ts` for runtime validation/assert guards.
+   - Reduced `contracts.ts` to stable re-export surface to preserve existing imports.
+   - Preserved all public validator/type exports while isolating model vs guard responsibilities.
+73. Module07 biosensor/genetic contracts boundary split (`lib/rnd/module07-biosensor-genetic-integration/contracts.ts`)
+   - Added `lib/rnd/module07-biosensor-genetic-integration/contracts.model.ts` for constants + all type contracts.
+   - Added `lib/rnd/module07-biosensor-genetic-integration/contracts.guards.ts` for runtime validation/assert guards.
+   - Reduced `contracts.ts` to stable re-export surface to preserve existing imports.
+   - Preserved all public validator/type exports while isolating model vs guard responsibilities.
+74. Module03 personal-safety contracts boundary split (`lib/rnd/module03-personal-safety/contracts.ts`)
+   - Added `lib/rnd/module03-personal-safety/contracts.model.ts` for constants + all type contracts.
+   - Added `lib/rnd/module03-personal-safety/contracts.guards.ts` for runtime validation/assert guards.
+   - Reduced `contracts.ts` to stable re-export surface to preserve existing imports.
+   - Preserved all public validator/type exports while isolating model vs guard responsibilities.
+75. Module02 data-lake contracts boundary split (`lib/rnd/module02-data-lake/contracts.ts`)
+   - Added `lib/rnd/module02-data-lake/contracts.model.ts` for constants + type contracts + record-id builder utilities.
+   - Added `lib/rnd/module02-data-lake/contracts.guards.ts` for runtime validation/assert guards.
+   - Reduced `contracts.ts` to stable re-export surface to preserve existing imports.
+   - Preserved all public validator/type exports while isolating model vs guard responsibilities.
+76. Module06 closed-loop contracts validators boundary split (`lib/rnd/module06-closed-loop-ai/contracts-validators.ts`)
+   - Added `lib/rnd/module06-closed-loop-ai/contracts-validators-loop-input.ts` for loop-input payload guards and assert helpers.
+   - Added `lib/rnd/module06-closed-loop-ai/contracts-validators-loop-output.ts` for loop-output payload guards and assert helpers.
+   - Reduced `contracts-validators.ts` to stable re-export surface while preserving public validator exports.
+   - Kept primitive/enum validators in `contracts-validators-primitives.ts` and clarified validator module responsibilities for future sessions.
+77. Module05 optimization scaffold boundary split (`lib/rnd/module05-optimization/scaffold.ts`)
+   - Added `lib/rnd/module05-optimization/scaffold.fixture-data.ts` for deterministic scaffold fixture construction (input/output/trace logs).
+   - Added `lib/rnd/module05-optimization/scaffold.assert.ts` for cross-payload integrity assertions and shared ISO datetime guard.
+   - Added `lib/rnd/module05-optimization/scaffold.types.ts` for scaffold bundle contract type.
+   - Reduced `scaffold.ts` to orchestration-only entry surface while preserving existing exports (`buildModule05ScaffoldBundle`, `assertModule05ScaffoldBundle`).
+78. Wellness data-loader boundary split (`lib/wellness/data-loader.ts`)
+   - Added `lib/wellness/data-loader-template.ts` for B2B survey template projection logic (common/section/question catalog mapping).
+   - Added `lib/wellness/data-template-types.ts` for reusable survey template contracts.
+   - Reduced `data-loader.ts` to JSON schema parse/cache orchestration + template loader entry while preserving public APIs.
+   - Replaced broken mojibake placeholders/description copy in template assembly with Korean-first user-facing messages.
+79. Wellness template mapper boundary split (`lib/wellness/data-loader-template.ts`)
+   - Added `lib/wellness/data-loader-template.mappers.ts` for isolated common question/section/catalog mapping helpers.
+   - Reduced `data-loader-template.ts` to template assembly orchestration (`C27` 정책값 + version/rules wiring) only.
+   - Preserved `buildWellnessTemplateForB2b` public API and mapping behavior while making change impact points explicit.
+80. Wellness template mapper submodule split (`lib/wellness/data-loader-template.mappers.ts`)
+   - Added `lib/wellness/data-loader-template.common.ts` for common question option/field/placeholder/constraint mapping.
+   - Added `lib/wellness/data-loader-template.sections.ts` for section question variant mapping and section catalog projection.
+   - Added `lib/wellness/data-loader-template.version.ts` and `data-loader-template.shared.ts` for version policy + shared question type normalization.
+   - Reduced `data-loader-template.mappers.ts` to barrel export surface so mapper composition changes can be localized.
+81. Profile image editor UI block split (`app/me/profileImageEditor.tsx`)
+   - Added `app/me/profileImageEditor.previewPane.tsx` for crop-preview and live-preview UI rendering.
+   - Added `app/me/profileImageEditor.controls.tsx` for zoom/reset/cancel/apply control block rendering.
+   - Reduced `profileImageEditor.tsx` to interaction/state orchestration while preserving drag/zoom/crop behavior.
+   - Normalized user-facing editor copy in Korean for clearer interaction hints and loading/apply states.
+82. Me profile section UI boundary split (`app/me/meClient.tsx`)
+   - Added `app/me/meProfileSection.tsx` to isolate profile card rendering (image picker + nickname/email/phone rows).
+   - Replaced direct DOM id click with local ref-driven image file input trigger for clearer component ownership.
+   - Reduced `meClient.tsx` to page-level state/mutation/modal orchestration while preserving existing profile-edit flow.
+   - Normalized top-level me-page/profile labels to Korean-first copy.
+83. Profile image editor controller boundary split (`app/me/profileImageEditor.tsx`)
+   - Added `app/me/useProfileImageEditorController.ts` for crop state, wheel/gesture zoom, drag movement, and apply pipeline orchestration.
+   - Reduced `profileImageEditor.tsx` to modal shell + draggable container wiring + section composition.
+   - Kept crop math and canvas output logic in `profileImageEditor.helpers.ts` and UI rendering in preview/controls components.
+   - Preserved editor behavior while making state-transition and gesture logic easier to test/patch in isolation.
+84. Assess C-section boundary split (`app/assess/components/CSection.tsx`)
+   - Added `app/assess/components/cSection.helpers.ts` for:
+     - C-section result payload normalization
+     - question-type lookup + answer normalization by question type
+     - option-grid column policy helper
+   - Added `app/assess/components/CSectionOptionGrid.tsx` to isolate option button list rendering and selection UI states.
+   - Reduced `CSection.tsx` to state/submission orchestration and replaced duplicated overlay markup with shared `LoadingOverlay`.
+   - Normalized C-section loading/error/skip user-facing copy to Korean-first text for consistent UX.
+85. Google translate gate script boundary split (`components/common/GoogleTranslateGate.tsx`)
+   - Moved long inline translator orchestrator script into `public/scripts/google-translate-orchestrator.js`.
+   - Reduced `GoogleTranslateGate.tsx` to route gate + script loader shell only.
+   - Preserved disabled route policy (`/en/check-ai`) and existing runtime translation behavior.
+   - Improved maintainability by isolating large imperative browser/runtime logic from React component render flow.
+86. Test report page visual block split (`app/test/page.tsx`)
+   - Added `app/test/reportBlocks.tsx` to isolate reusable report visual blocks:
+     - `Gauge`, `BarRow`, `Donut`, `Legend`, `BigChip`, `PlanCard`, `MiniStat`
+   - Reduced `app/test/page.tsx` to A4 report fixture/layout orchestration and section composition.
+   - Removed unused in-file helpers (`Sparkline`, `Badge`) and icon imports to lower maintenance noise.
+   - Normalized report fixture/user-facing copy to Korean-first text for clearer QA review context.
+87. Chat profile modal form boundary split (`app/chat/components/ProfileModal.tsx`)
+   - Added `app/chat/components/ProfileModalForm.tsx` to isolate profile field UI composition:
+     - base fields (name/age/sex/height/weight)
+     - boolean selects (임신/수유, 카페인 민감)
+     - chip sections (복용 약/질환/알레르기/목표/식이 제한)
+   - Reduced `ProfileModal.tsx` to modal shell + drag/reset/save orchestration and portal handling.
+   - Kept state ownership in `useProfileModalState.ts` and passed typed `setField` callback to form section.
+   - Normalized modal/reset/action labels to Korean-first copy.
+88. Testimonials carousel boundary split (`app/(components)/testimonialsSection.tsx`)
+   - Added `app/(components)/useTestimonialsCarousel.ts` for:
+     - infinite-loop translate track state
+     - resize/font/visibility sync and progress computation
+     - pointer drag and wheel interaction orchestration
+   - Added `app/(components)/testimonialsCarouselViewport.tsx` to isolate viewport/track/progress composition.
+   - Added `app/(components)/testimonialCard.tsx`, `testimonialsProgressBar.tsx`, and `testimonials.types.ts` to separate card/progress/type concerns.
+   - Reduced `testimonialsSection.tsx` to section shell + heading + hook wiring, lowering future UI/policy change impact radius.
+89. Assess C-section controller split + Korean copy recovery (`app/assess/components/CSection.tsx`)
+   - Added `app/assess/components/useCSectionController.ts` to isolate C-section state machine:
+     - persisted state hydration/save/bookmark handling
+     - progress emission + previous-step registration
+     - transition/submit orchestration and loading notifier integration
+   - Reduced `CSection.tsx` to UI shell + option grid composition only.
+   - Verified Korean copy source consistency in `app/assess/data/c-options.ts` and `app/assess/data/c-bank.ts`, and centralized C-section loading/error/skip labels in the controller copy map.
+   - Preserved existing result normalization and submit endpoint contract (`/api/c-section-score`).
+90. Google translate orchestrator de-IIFE split (`public/scripts/google-translate-orchestrator.js`)
+   - Replaced monolithic anonymous IIFE block with top-level named function boundaries.
+   - Added idempotency guards for boot/history patch/observer registration (`__wbTranslateOrchestratorBooted`, `__wbTranslateHistoryPatched`, `__wbTranslateObserversStarted`).
+   - Kept existing translate trigger flow, route mode sync, and observer-driven retranslate behavior.
+   - Removed single 441-line anonymous runtime hotspot to improve future debugging and incremental edits.
+91. Me account modal state boundary split + locale copy recovery (`app/me/*`)
+   - Added `app/me/useEmailChangeModalState.ts`:
+     - 이메일 OTP 발송/검증 요청 흐름
+     - 쿨다운 타이머/입력 검증/ESC 닫기 제어
+   - Added `app/me/useNicknameChangeModalState.ts`:
+     - 닉네임 중복검사/저장 요청 흐름
+     - 입력 유효성/저장 가능 상태/ESC 닫기 제어
+   - Added `app/me/modalSpinner.tsx` and reused in `emailChangeModal.tsx`/`nicknameChangeModal.tsx` to remove duplicated spinner SVG blocks.
+   - Added `app/me/usePhoneLinkSectionState.ts` and reduced `phoneLinkSection.tsx` to UI shell + field wiring only.
+   - Updated `app/me/phoneLinkSection.tsx` to reuse `modalSpinner` and restore Korean OTP UX copy/messages.
+   - Reduced `emailChangeModal.tsx` and `nicknameChangeModal.tsx` to modal shell + form composition while moving mutation state into hooks.
+   - Restored Korean-first user-facing copy on me profile/account modal surfaces (`meClient.tsx`, `emailChangeModal.tsx`, `nicknameChangeModal.tsx`) for readability and locale consistency.
+92. Assess flow hook boundary split (`app/assess/page.tsx`)
+   - Added `app/assess/useAssessFlow.ts` and moved assess flow state machine:
+     - section(A/B/C/DONE) transition and go-back/reset policy
+     - answer progression + next-question selection + progress/loading copy
+     - persisted snapshot hydrate/save + category fetch + C-section submit wiring
+   - Reduced `app/assess/page.tsx` to route-level render composition (`IntroSection`, `QuestionSection`, `CSectionWrapper`, `DoneSection`, `ConfirmResetModal`).
+   - Preserved existing C-section persistence key usage (`ASSESS_C_PERSIST_KEY`) and `/api/assess/save` payload contract.
+   - Lowered future change impact by isolating flow control from presentation layout.
+93. My-data page section composition split (`app/my-data/page.tsx`)
+   - Added `app/my-data/myDataPageSections.tsx` and extracted major view blocks:
+     - lock notice, header/status pills, metrics
+     - account/session-profile/orders/assessment/check-ai/chat sections
+   - Reduced `app/my-data/page.tsx` to route-level guard + data load + section composition only.
+   - Preserved existing collection query path (`loadMyDataCollections`) and normalization usage (`normalizeAssessmentResult`, `normalizeCheckAiResult`) through section module wiring.
+   - Improved follow-up change safety by separating data orchestration from large UI detail blocks.
+94. Module02 KPI rollup runner orchestration split (`scripts/rnd/module02/evaluate-kpi-rollup.ts`)
+   - Extracted path/output resolution and module execution flow into dedicated helpers:
+     - `resolveRollupPaths`, `ensureOutputDirs`, `runAllModuleEvaluations`
+   - Extracted evaluation artifact parsing and KPI derivation into:
+     - `readModuleEvaluationOutputs`, `buildKpiBundle`
+   - Reduced `main` from monolithic orchestration to high-level wiring (args -> paths -> module runs -> KPI bundle -> rollup emit).
+   - Preserved output schema/command trace semantics while making KPI mapping updates easier to review in future sessions.
+95. Module03 scheduler handoff validation orchestration split (`scripts/rnd/module03/run-scheduler-handoff-validation.ts`)
+   - Added explicit helper boundaries:
+     - `assertSchedulerRunnersAvailable`, `buildValidationPaths`, `resolveValidationInput`
+     - `runDeploymentBundleGeneration`, `runInfraBindingGeneration`
+     - `toRuntimeEnvOverrides`, `runDryRunValidation`, `buildValidationSummary`
+   - Reduced `main` to high-level wiring (parse -> path/input resolve -> bundle/infra/dry-run -> summary emit).
+   - Preserved strict-env behavior, required env binding flow, and summary JSON schema while making each execution phase independently reviewable.
+   - Function hotspot impact: `main` dropped below script top hotspot threshold in `FUNCTION_HOTSPOTS.md`.
+96. Module03 scheduler production gate orchestration split (`scripts/rnd/module03/run-scheduler-production-gate.ts`)
+   - Added orchestration helper boundaries:
+     - `assertProductionGateRunnersAvailable`, `buildProductionGatePaths`
+     - `buildHandoffArgs`, `runHandoffValidation`
+     - `buildReadinessArgs`, `runReadinessValidation`
+     - `buildProductionGateArtifact`
+   - Split argument parsing sub-helpers:
+     - `parseInputPath`, `parseSchedulerName`, `parseEnvironmentArgs`
+     - `parseOptionalSampleRowCount`, `parseValidatedKeyValuePairs`
+   - Reduced `main` to high-level gate flow wiring and preserved existing fail/pass semantics and artifact schema.
+   - Function hotspot impact: `main`/`parseArgs` dropped out of `FUNCTION_HOTSPOTS.md` Top script function list.
+97. Module03 scheduler readiness check builder split (`scripts/rnd/module03/scheduler-readiness-checks.ts`)
+   - Added explicit check-group helpers:
+     - `addExecutionChecks`, `addInputAndEnvironmentChecks`
+     - `addRequiredEnvCoverageChecks`, `addSecretRefChecks`
+     - `addSchedulerTemplateCheck`
+   - Introduced shared `ReadinessCheckContext` so precomputed sets/maps are reused across check groups.
+   - Reduced `buildReadinessChecks` to orchestration-only composition while preserving readiness check IDs/detail text and pass/fail semantics.
+   - Function hotspot impact: monolithic `buildReadinessChecks` replaced by smaller grouped functions in `FUNCTION_HOTSPOTS.md`.
+98. Module03 infra-binding bundle parser split (`scripts/rnd/module03/generate-scheduler-infra-binding.ts`)
+   - Split monolithic `parseSchedulerDeploymentBundle` into explicit helper boundaries:
+     - identity/object guards (`assertBundleIdentity`, `requireBundleObject`)
+     - array/template parsers (`parseStringArrayOrThrow`, `parseBindingsTemplateOrThrow`)
+     - section parsers (`parseSchedulerSection`, `parseWarehouseSection`, `parseSecretsSection`, `parseArtifactsSection`, `parseVerificationSection`)
+   - Reduced parse function responsibility to high-level bundle composition while preserving identity checks and existing error semantics.
+   - Function hotspot impact: `parseSchedulerDeploymentBundle` dropped out of the script hotspot list in `FUNCTION_HOTSPOTS.md`.
+99. Module03 dry-run infra parser + scheduler arg builder split (`scripts/rnd/module03/run-scheduler-dry-run-window.ts`)
+   - Split monolithic infra-binding parser into explicit helpers:
+     - identity/object guards (`assertInfraBindingIdentity`, `requireInfraSectionObject`)
+     - section parsers (`parseInfraSchedulerSection`, `parseInfraSecretsSection`, `parseInfraWarehouseSection`, `parseInfraArtifactsSection`, `parseInfraVerificationSection`)
+   - Split scheduler argument assembly into explicit helpers:
+     - artifact path resolution (`resolveSchedulerArtifactPaths`)
+     - base args + optional policy args (`buildBaseSchedulerArgs`, `applyRetentionMonthsArg`, `applyRequiredEnvArg`, `applyFailureWebhookArgs`)
+   - Reduced `parseInfraBindingArtifact` and `buildSchedulerArgs` to orchestration-only composition while preserving strict-env, retention-months, and failure-webhook behavior.
+   - Function hotspot impact: both functions dropped out of `FUNCTION_HOTSPOTS.md`; file now shows only smaller `main` function entry.
+100. Module03 deployment bundle builder split (`scripts/rnd/module03/generate-scheduler-deployment-bundle.ts`)
+   - Split monolithic `buildBundle` into explicit helper boundaries:
+     - command derivation (`buildCommandTemplate`, `resolveDeploymentRequiredEnvKeys`)
+     - section builders (`buildWarehouseSection`, `buildSecretsSection`, `buildArtifactsSection`, `buildVerificationSection`)
+   - Reduced `buildBundle` to orchestration-only composition while preserving command template semantics and bundle output schema.
+   - Function hotspot impact: `buildBundle` dropped out of `FUNCTION_HOTSPOTS.md`; script now retains only `parseArgs` as top function hotspot.
+101. Module03 handoff validation parser/summary split (`scripts/rnd/module03/run-scheduler-handoff-validation.ts`)
+   - Split parser responsibilities into explicit validation helpers:
+     - bundle identity/sections (`assertDeploymentBundleIdentity`, `parseDeploymentBundleSecrets`, `parseDeploymentBundleVerification`)
+     - dry-run identity/sections (`assertDryRunReportIdentity`, `parseDryRunExpectedOutputs`, `parseDryRunVerificationSection`, `parseDryRunSection`)
+   - Split argument parsing and summary assembly boundaries:
+     - arg helpers (`parseWindowEndArg`, `parseOutDirArg`, `parseInputPathArg`, `parseSampleRowCountArg`, `parseSchedulerNameArg`, `parseEnvironmentArg`)
+     - summary section helpers (`buildSummaryInputSection`, `buildSummarySecretsSection`, `buildSummaryArtifactsSection`, `buildSummaryVerificationSection`)
+   - Function hotspot impact: `parseArgs` and `buildValidationSummary` dropped out of `FUNCTION_HOTSPOTS.md`.
+102. Module03 deployment bundle parseArgs split (`scripts/rnd/module03/generate-scheduler-deployment-bundle.ts`)
+   - Split `parseArgs` into arg-specific helpers:
+     - `parseGeneratedAtArg`, `parseCadenceCronArg`, `parseTimezoneArg`, `parseRetentionMonthsArg`
+     - `parseSchemaMapPathArg`, `parseSqlTemplatePathArg`
+     - `parseFailureWebhookEnvKeyArg`, `parseFailureWebhookTimeoutEnvKeyArg`
+   - Preserved file-existence validation, default fallback behavior, and env-key validation semantics.
+   - Function hotspot impact: `parseArgs` dropped out of `FUNCTION_HOTSPOTS.md`.
+103. Module03 scheduler orchestration flow split (`scripts/rnd/module03/orchestrate-adverse-event-evaluation-monthly.ts`)
+   - Split argument parsing into reusable validators:
+     - `assertInputSourceProvided`, `parseOptionalExistingFileArg`, `parseRequiredExistingFileArg`
+     - `parseFailureWebhookUrlArg`, `parseFailureWebhookTimeoutArg`
+   - Split runtime orchestration boundaries:
+     - execution helpers (`warnWhenInputTakesPrecedence`, `runArchiveAndReadResults`)
+     - handoff builders (`buildHandoffArtifact`, `buildHandoffLatestPointer`, `buildHandoffOutputs`)
+     - output helpers (`writeHandoffOutputs`, `printSchedulerSummary`)
+   - Function hotspot impact: `parseArgs`, `runScheduler`, and `buildHandoffOutputs` dropped out of `FUNCTION_HOTSPOTS.md`.
+104. Module03 dry-run runner execution error split (`scripts/rnd/module03/run-scheduler-dry-run-window.ts`)
+   - Split `runSchedulerDryRun` internals into explicit execution/error helpers:
+     - runner precheck (`assertSchedulerRunnerExists`)
+     - process output normalization (`toProcessOutput`)
+     - failure formatting (`buildDryRunExecutionError`)
+   - Preserved dry-run command execution semantics and error detail payload (command, exitCode, stdout, stderr).
+   - Function hotspot impact: `runSchedulerDryRun` dropped out of `FUNCTION_HOTSPOTS.md`; only small `main` remains for this script.
+105. Module02 KPI rollup KPI/build orchestration split (`scripts/rnd/module02/evaluate-kpi-rollup.ts`)
+   - Split monolithic KPI builder into explicit per-KPI helpers:
+     - `buildKpi01`, `buildKpi02`, `buildKpi03`, `buildKpi04`, `buildKpi07`
+     - `buildKpi05Breakdown`, `buildKpi05Measurement`, `buildKpi06`, `buildMeasuredKpis`
+   - Split rollup assembly boundaries:
+     - run timing (`resolveRunTimestamps`)
+     - artifact sections (`buildEnvironmentSnapshot`, `buildModuleArtifactEntries`, `buildRollupSummary`, `buildRollupReport`)
+   - Split module runner error formatting (`formatModuleRunError`) from execution flow.
+   - Function hotspot impact: `buildKpiBundle`/`main`/`runModuleEvaluation` dropped out of `FUNCTION_HOTSPOTS.md` for this file.
+106. Module03 monthly archive orchestration + retention split (`scripts/rnd/module03/archive-adverse-event-evaluation-monthly.ts`)
+   - Split monolithic archive flow into explicit stages:
+     - execution paths + entry/build/write/log (`buildArchiveExecutionPaths`, `buildArchiveEntry`, `buildNextManifest`, `writeArchiveOutputs`, `logArchiveResults`)
+   - Split retention policy internals:
+     - cutoff calculation + partition + prune + empty-dir cleanup (`cutoffMonthStartUtcMs`, `partitionEntriesByCutoffMonth`, `pruneArchivedReports`, `pruneEmptyMonthDirectories`)
+   - Split ops output parsing and runner failure formatting:
+     - identity/report parsing (`assertOpsOutputIdentity`, `parseOpsOutputReport`)
+     - runner precheck/args/error (`assertOpsRunnerExists`, `buildOpsRunnerArgs`, `formatOpsEvaluationError`)
+   - Function hotspot impact: `main`, `applyRetentionPolicy`, `readOpsOutput`, `parseArchiveEntry`, `runOpsEvaluation` dropped out of `FUNCTION_HOTSPOTS.md`.
+107. Module03 handoff validation artifact module extraction (`scripts/rnd/module03/run-scheduler-handoff-validation.ts`)
+   - Extracted deployment/dry-run artifact parsing and summary section builders into:
+     - `scripts/rnd/module03/scheduler-handoff-validation-artifacts.ts`
+   - Kept runner orchestration file focused on:
+     - args/path/input resolution
+     - deployment/infra/dry-run execution wiring
+     - final summary assembly/write
+   - Preserved output schema and parser validation semantics by passing expected identity (`moduleId`, `kpiId`) into extracted parsers.
+   - Hotspot impact: script line size reduced from 769 to 492 (`audit:hotspots`), improving follow-up session navigation.
+108. Module03 infra-binding artifact module extraction (`scripts/rnd/module03/generate-scheduler-infra-binding.ts`)
+   - Extracted deployment-bundle parser, binding-source loaders/merge, and infra-artifact builders into:
+     - `scripts/rnd/module03/scheduler-infra-binding-artifacts.ts`
+   - Kept orchestration file focused on:
+     - args parsing
+     - bundle load + parser invocation
+     - file/CLI binding merge wiring
+     - artifact serialization/output routing
+   - Preserved validation/error semantics for bundle identity, env-key hygiene, duplicate binding conflicts, and placeholder-secret policy.
+   - Hotspot impact: `generate-scheduler-infra-binding.ts` dropped out of function hotspot list; file size reduced from 596 to 189 lines (`audit:hotspots`).
+109. Module02 KPI rollup artifact module extraction (`scripts/rnd/module02/evaluate-kpi-rollup.ts`)
+   - Extracted KPI contracts and KPI computation helpers into:
+     - `scripts/rnd/module02/kpi-rollup-artifacts.ts`
+   - Kept orchestration file focused on:
+     - CLI parsing and output path resolution
+     - module evaluation runner execution
+     - rollup artifact assembly/write
+   - Preserved KPI semantics by reusing existing builder logic and importing `buildKpiBundle` / `buildRollupSummary`.
+   - Hotspot impact: `evaluate-kpi-rollup.ts` file size reduced from 714 to 352 lines (`audit:hotspots`).
+110. Module03 production-readiness validator main split (`scripts/rnd/module03/validate-scheduler-production-readiness.ts`)
+   - Split monolithic `main` into explicit stage helpers:
+     - source load (`loadReadinessSource`)
+     - check computation (`computeReadinessChecks`)
+     - report assembly (`buildReadinessReport`)
+     - output/exit policy (`handleReadinessExit`)
+   - Preserved pass/fail semantics, report schema, and failing-check exit code behavior.
+   - Function hotspot impact: `validate-scheduler-production-readiness.ts` `main` dropped out of `FUNCTION_HOTSPOTS.md`.
+111. Module03 dry-run artifact helper extraction (`scripts/rnd/module03/run-scheduler-dry-run-window.ts`)
+   - Extracted infra-binding parser, scheduler arg-composition, and output helper logic into:
+     - `scripts/rnd/module03/scheduler-dry-run-artifacts.ts`
+   - Kept dry-run runner file focused on:
+     - scheduler process execution and error formatting
+     - orchestration/report write flow
+   - Preserved strict-env and required-env behavior, retention-months propagation, failure-webhook env handling, and dry-run report schema.
+   - Hotspot impact: `run-scheduler-dry-run-window.ts` file size reduced and follow-up navigation now centers on one orchestration file + one artifact helper module.
+112. Module03 infra-binding secret-binding module extraction (`scripts/rnd/module03/scheduler-infra-binding-artifacts.ts`)
+   - Extracted secret-binding parse/merge/conflict logic into:
+     - `scripts/rnd/module03/scheduler-secret-bindings.ts`
+   - Kept infra-binding artifact file focused on:
+     - deployment-bundle parsing
+     - required-binding validation and infra artifact composition
+   - Preserved secret-binding file schema support (object map or array), duplicate/conflict validation, CLI `KEY=secretRef` parsing, and merge precedence behavior.
+   - Hotspot impact: `scheduler-infra-binding-artifacts.ts` line count reduced; binding workflow is now isolated for follow-up changes.
+113. Module03 monthly archive artifact module extraction (`scripts/rnd/module03/archive-adverse-event-evaluation-monthly.ts`)
+   - Extracted monthly archive parser/build/retention logic into:
+     - `scripts/rnd/module03/monthly-archive-artifacts.ts`
+   - Kept archive runner file focused on:
+     - CLI argument parsing + ops runner execution
+     - artifact orchestration + result logging
+   - Preserved archive semantics for:
+     - ops output identity/report parsing
+     - entry upsert and retention pruning
+     - manifest/latest artifact write schema
+   - Hotspot impact: `archive-adverse-event-evaluation-monthly.ts` line count reduced, so follow-up edits can target orchestration vs artifact-policy modules independently.
+114. Module03 monthly archive retention/type split (`scripts/rnd/module03/monthly-archive-artifacts.ts`)
+   - Extracted retention policy and prune helpers into:
+     - `scripts/rnd/module03/monthly-archive-retention.ts`
+   - Extracted archive contract types/constants into:
+     - `scripts/rnd/module03/monthly-archive-types.ts`
+   - Kept artifact helper file focused on:
+     - ops output + manifest parse
+     - archive path/entry/next-manifest/latest write composition
+   - Preserved retention behavior (cutoff month calculation, safe in-directory prune, empty month dir cleanup, entry upsert ordering) via dedicated retention module.
+   - Hotspot impact: archive policy responsibilities are now split into parser/build (`monthly-archive-artifacts.ts`) and retention policy (`monthly-archive-retention.ts`) for faster follow-up navigation.
+115. Module03 dry-run artifact module layered split (`scripts/rnd/module03/scheduler-dry-run-artifacts.ts`)
+   - Extracted dry-run contract types/constants into:
+     - `scripts/rnd/module03/scheduler-dry-run-types.ts`
+   - Extracted CLI/infra parser helpers into:
+     - `scripts/rnd/module03/scheduler-dry-run-infra.ts`
+   - Extracted scheduler arg planning/output helpers into:
+     - `scripts/rnd/module03/scheduler-dry-run-plan.ts`
+   - Converted `scheduler-dry-run-artifacts.ts` into stable export surface so existing callers keep the same import path.
+   - Preserved strict-env validation, retention-months propagation, failure-webhook env mapping, and expected-output verification behavior while improving follow-up session navigation.
+116. Module03 handoff summary builder extraction (`scripts/rnd/module03/run-scheduler-handoff-validation.ts`)
+   - Moved handoff summary assembly from runner file into:
+     - `scripts/rnd/module03/scheduler-handoff-validation-artifacts.ts` (`buildValidationSummary`)
+   - Kept runner file focused on:
+     - args/path/input resolution
+     - bundle/infra/dry-run execution orchestration
+     - summary write/log
+   - Preserved summary schema fields (`input`, `secrets`, `artifacts`, `verification`) and workspace-path normalization behavior while reducing orchestration-file complexity.
+117. Module03 handoff artifact module layered split (`scripts/rnd/module03/scheduler-handoff-validation-artifacts.ts`)
+   - Extracted handoff contract types into:
+     - `scripts/rnd/module03/scheduler-handoff-validation-types.ts`
+   - Extracted parser helpers into:
+     - `scripts/rnd/module03/scheduler-handoff-validation-parsers.ts`
+   - Extracted summary composition helpers into:
+     - `scripts/rnd/module03/scheduler-handoff-validation-summary.ts`
+   - Converted `scheduler-handoff-validation-artifacts.ts` into stable export surface to preserve existing caller imports.
+   - Preserved deployment/dry-run identity checks and handoff summary output schema while making parser and summary changes independently maintainable.
+118. Module03 handoff runner CLI/runtime split (`scripts/rnd/module03/run-scheduler-handoff-validation.ts`)
+   - Extracted CLI parsing/default policy helpers into:
+     - `scripts/rnd/module03/scheduler-handoff-validation-cli.ts`
+   - Extracted runtime flow helpers (runner availability, path/input resolution, deployment/infra/dry-run execution, env override shaping) into:
+     - `scripts/rnd/module03/scheduler-handoff-validation-runtime.ts`
+   - Reduced `run-scheduler-handoff-validation.ts` to high-level orchestration + summary write.
+   - Preserved runtime behavior for strict-env propagation, secret-binding/env-value injection, and summary schema generation while improving follow-up navigation of execution stages.
+119. Module03 production-gate layered split (`scripts/rnd/module03/run-scheduler-production-gate.ts`)
+   - Extracted CLI parsing/default policy helpers into:
+     - `scripts/rnd/module03/scheduler-production-gate-cli.ts`
+   - Extracted runtime execution/path helpers into:
+     - `scripts/rnd/module03/scheduler-production-gate-runtime.ts`
+   - Extracted readiness parser + gate artifact builder into:
+     - `scripts/rnd/module03/scheduler-production-gate-artifacts.ts`
+   - Added shared production-gate contracts/constants in:
+     - `scripts/rnd/module03/scheduler-production-gate-types.ts`
+   - Reduced `run-scheduler-production-gate.ts` to orchestration-only flow while preserving handoff/readiness gate semantics and fail/pass artifact output behavior.
+120. Module03 infra-binding artifact module layered split (`scripts/rnd/module03/scheduler-infra-binding-artifacts.ts`)
+   - Extracted infra-binding contract types into:
+     - `scripts/rnd/module03/scheduler-infra-binding-types.ts`
+   - Extracted deployment-bundle parser helpers into:
+     - `scripts/rnd/module03/scheduler-infra-binding-parsers.ts`
+   - Extracted infra artifact builders into:
+     - `scripts/rnd/module03/scheduler-infra-binding-builders.ts`
+   - Kept `scheduler-infra-binding-artifacts.ts` as stable export surface and preserved existing caller import paths.
+   - Preserved identity validation, secret binding requirement checks, placeholder-secret policy, and generated artifact schema while making parser vs builder modifications independently maintainable.
+121. Module03 deployment-bundle layered split (`scripts/rnd/module03/generate-scheduler-deployment-bundle.ts`)
+   - Extracted deployment-bundle contract types/constants into:
+     - `scripts/rnd/module03/scheduler-deployment-bundle-types.ts`
+   - Extracted CLI/default parser and validation helpers into:
+     - `scripts/rnd/module03/scheduler-deployment-bundle-cli.ts`
+   - Extracted command/section artifact builders into:
+     - `scripts/rnd/module03/scheduler-deployment-bundle-artifacts.ts`
+   - Reduced `generate-scheduler-deployment-bundle.ts` to orchestration-only flow (`parseArgs` -> `buildBundle` -> output write/stdout).
+   - Preserved scheduler command-template composition, required env-key resolution, secret-binding template policy, and verification artifact schema while making CLI-policy and bundle-shape changes independently maintainable.
+122. Module03 scheduler-orchestrator layered split (`scripts/rnd/module03/orchestrate-adverse-event-evaluation-monthly.ts`)
+   - Extracted scheduler CLI/default parser and validation helpers into:
+     - `scripts/rnd/module03/orchestrate-adverse-event-evaluation-monthly-cli.ts`
+   - Extracted handoff artifact/latest pointer builders and output helpers into:
+     - `scripts/rnd/module03/orchestrate-adverse-event-evaluation-monthly-artifacts.ts`
+   - Extracted runtime orchestration helpers (input precedence warning, export/archive execution, env guard, output flow) into:
+     - `scripts/rnd/module03/orchestrate-adverse-event-evaluation-monthly-runtime.ts`
+   - Extended shared scheduler types/constants in:
+     - `scripts/rnd/module03/orchestrate-adverse-event-evaluation-monthly-types.ts`
+   - Reduced `orchestrate-adverse-event-evaluation-monthly.ts` to entry + failure-alert wrapping while preserving warehouse export resolution, archive evaluation invocation, handoff artifact schema, and failure alert behavior.
+123. Module03 readiness-check layered split (`scripts/rnd/module03/scheduler-readiness-checks.ts`)
+   - Extracted readiness contracts/options/context types into:
+     - `scripts/rnd/module03/scheduler-readiness-checks.types.ts`
+   - Extracted shared check helpers/context builder into:
+     - `scripts/rnd/module03/scheduler-readiness-checks.shared.ts`
+   - Extracted execution/input/environment check groups into:
+     - `scripts/rnd/module03/scheduler-readiness-checks.execution.ts`
+   - Extracted env coverage/secret hygiene/scheduler-template check groups into:
+     - `scripts/rnd/module03/scheduler-readiness-checks.integrity.ts`
+   - Reduced `scheduler-readiness-checks.ts` to orchestration entry + stable type export while preserving all readiness check IDs/messages and evaluation order.
+124. Module03 export/archive reader layered split (`scripts/rnd/module03/orchestrate-adverse-event-evaluation-monthly-export.ts`)
+   - Extracted export runtime helpers into:
+     - `scripts/rnd/module03/orchestrate-adverse-event-evaluation-monthly-export-runtime.ts`
+   - Extracted archive artifact reader/parser helpers into:
+     - `scripts/rnd/module03/orchestrate-adverse-event-evaluation-monthly-archive-readers.ts`
+   - Converted `orchestrate-adverse-event-evaluation-monthly-export.ts` into stable export surface to preserve existing caller imports.
+   - Preserved export command template rendering, warehouse export command execution semantics, archive runner invocation/error formatting, and latest/manifest identity checks while making runtime vs parser changes independently maintainable.
+125. Module03 monthly-archive artifact layered split (`scripts/rnd/module03/monthly-archive-artifacts.ts`)
+   - Extracted ops output and archive manifest parser helpers into:
+     - `scripts/rnd/module03/monthly-archive-parsers.ts`
+   - Extracted archive path/entry/manifest/latest builder helpers into:
+     - `scripts/rnd/module03/monthly-archive-builders.ts`
+   - Converted `monthly-archive-artifacts.ts` into stable export surface to preserve existing caller imports.
+   - Preserved ops output identity parsing, archive manifest validation, retention-policy integration, and latest/manifest write schema while making parser vs builder changes independently maintainable.
+126. Module03 ops-source evaluator layered split (`scripts/rnd/module03/evaluate-adverse-event-count-from-source.ts`)
+   - Extracted ops-schema/cli contracts/constants into:
+     - `scripts/rnd/module03/evaluate-adverse-event-count-from-source-types.ts`
+   - Extracted CLI/default parser and input/date validation into:
+     - `scripts/rnd/module03/evaluate-adverse-event-count-from-source-cli.ts`
+   - Extracted schema-map parser and row-to-sample mapper into:
+     - `scripts/rnd/module03/evaluate-adverse-event-count-from-source-schema.ts`
+   - Extracted output payload composition into:
+     - `scripts/rnd/module03/evaluate-adverse-event-count-from-source-artifacts.ts`
+   - Reduced `evaluate-adverse-event-count-from-source.ts` to orchestration-only flow while preserving schema identity checks, boolean-like mapping policy, sample-id generation, and output payload schema.
+127. Module03 handoff runtime input/exec layered split (`scripts/rnd/module03/scheduler-handoff-validation-runtime.ts`)
+   - Extracted handoff runtime constants/contracts into:
+     - `scripts/rnd/module03/scheduler-handoff-validation-runtime-types.ts`
+   - Extracted handoff input/path resolution helpers into:
+     - `scripts/rnd/module03/scheduler-handoff-validation-runtime-input.ts`
+   - Extracted runner invocation/runtime env override helpers into:
+     - `scripts/rnd/module03/scheduler-handoff-validation-runtime-exec.ts`
+   - Converted `scheduler-handoff-validation-runtime.ts` into stable export surface to preserve existing caller imports.
+   - Preserved representative input generation, secret-binding/env-value precedence, deployment/infra/dry-run invocation semantics, and dry-run expected-output guard while isolating runtime stages for faster follow-up edits.
+128. Module03 readiness-artifact parser/types layered split (`scripts/rnd/module03/scheduler-readiness-artifacts.ts`)
+   - Extracted readiness artifact contracts/constants into:
+     - `scripts/rnd/module03/scheduler-readiness-artifacts.types.ts`
+   - Extracted handoff/infra parser and path resolver helpers into:
+     - `scripts/rnd/module03/scheduler-readiness-artifacts.parsers.ts`
+   - Converted `scheduler-readiness-artifacts.ts` into stable export surface to preserve existing caller imports.
+   - Preserved handoff/infra identity validation, env-key/binding normalization rules, duplicate binding detection, and artifact path resolution policy while separating contracts from parser logic.
+129. Module03 readiness-validator layered split (`scripts/rnd/module03/validate-scheduler-production-readiness.ts`)
+   - Extracted validator contracts/constants into:
+     - `scripts/rnd/module03/validate-scheduler-production-readiness-types.ts`
+   - Extracted CLI/default parser and argument validation into:
+     - `scripts/rnd/module03/validate-scheduler-production-readiness-cli.ts`
+   - Extracted source loader and readiness-check computation into:
+     - `scripts/rnd/module03/validate-scheduler-production-readiness-runtime.ts`
+   - Extracted report builder and pass/fail exit policy into:
+     - `scripts/rnd/module03/validate-scheduler-production-readiness-artifacts.ts`
+   - Reduced `validate-scheduler-production-readiness.ts` to orchestration-only flow while preserving report schema, failing-check exit semantics, and output path policy.
+130. Module03 archive-runner CLI/runtime layered split (`scripts/rnd/module03/archive-adverse-event-evaluation-monthly.ts`)
+   - Extracted archive runner contracts/constants into:
+     - `scripts/rnd/module03/archive-adverse-event-evaluation-monthly-types.ts`
+   - Extracted CLI/default parser and argument/path validation into:
+     - `scripts/rnd/module03/archive-adverse-event-evaluation-monthly-cli.ts`
+   - Extracted ops runner invocation and archive result logging helpers into:
+     - `scripts/rnd/module03/archive-adverse-event-evaluation-monthly-runtime.ts`
+   - Reduced `archive-adverse-event-evaluation-monthly.ts` to orchestration-only flow while preserving runner command semantics, archive artifact schema, and retention log output behavior.
+131. Module03 handoff-runtime exec env/runner layered split (`scripts/rnd/module03/scheduler-handoff-validation-runtime-exec.ts`)
+   - Extracted handoff runtime env/secret-binding helpers into:
+     - `scripts/rnd/module03/scheduler-handoff-validation-runtime-exec-env.ts`
+   - Extracted handoff deployment/infra/dry-run runner helpers into:
+     - `scripts/rnd/module03/scheduler-handoff-validation-runtime-exec-runners.ts`
+   - Converted `scheduler-handoff-validation-runtime-exec.ts` into stable export surface to preserve existing caller imports.
+   - Preserved default secret-ref mapping, explicit env/secret pair override precedence, runner invocation args, and dry-run expected-output guard while separating policy vs execution responsibilities.
+132. Module03 dry-run infra CLI/parser layered split (`scripts/rnd/module03/scheduler-dry-run-infra.ts`)
+   - Extracted dry-run CLI/default parser into:
+     - `scripts/rnd/module03/scheduler-dry-run-infra-cli.ts`
+   - Extracted infra-binding parser/path resolver helpers into:
+     - `scripts/rnd/module03/scheduler-dry-run-infra-parser.ts`
+   - Converted `scheduler-dry-run-infra.ts` into stable export surface to preserve existing caller imports.
+   - Preserved infra artifact identity checks, env-key validation policy, CLI input/window validation, and relative artifact-path resolution behavior while separating parser vs CLI responsibilities.
+133. Module03 handoff parser deployment/dry-run layered split (`scripts/rnd/module03/scheduler-handoff-validation-parsers.ts`)
+   - Extracted deployment-bundle parser helpers into:
+     - `scripts/rnd/module03/scheduler-handoff-validation-parse-deployment.ts`
+   - Extracted dry-run report parser helpers into:
+     - `scripts/rnd/module03/scheduler-handoff-validation-parse-dry-run.ts`
+   - Converted `scheduler-handoff-validation-parsers.ts` into stable export surface to preserve existing caller imports.
+   - Preserved identity validation, env-key validation, verification output schema checks, and parser error semantics while separating deployment vs dry-run parser responsibilities.
+134. Module03 dry-run plan args/output layered split (`scripts/rnd/module03/scheduler-dry-run-plan.ts`)
+   - Extracted scheduler arg composition helpers into:
+     - `scripts/rnd/module03/scheduler-dry-run-plan-args.ts`
+   - Extracted expected output verification/default out-path helpers into:
+     - `scripts/rnd/module03/scheduler-dry-run-plan-output.ts`
+   - Converted `scheduler-dry-run-plan.ts` into stable export surface to preserve existing caller imports.
+   - Preserved schema-map path existence checks, retention/strict-env/failure-webhook flag composition, expected-output existence verification, and default report path policy while separating arg vs output responsibilities.
+135. Module03 readiness parser handoff/infra layered split (`scripts/rnd/module03/scheduler-readiness-artifacts.parsers.ts`)
+   - Extracted shared readiness parser helpers into:
+     - `scripts/rnd/module03/scheduler-readiness-parse-common.ts`
+   - Extracted handoff summary parser helpers into:
+     - `scripts/rnd/module03/scheduler-readiness-parse-handoff.ts`
+   - Extracted infra-binding parser helpers into:
+     - `scripts/rnd/module03/scheduler-readiness-parse-infra.ts`
+   - Converted `scheduler-readiness-artifacts.parsers.ts` into stable export surface while keeping artifact-path resolver there.
+   - Preserved readiness identity validation, env-key and secret-binding validation policy, and parser error semantics while separating handoff vs infra parser responsibilities.
+136. Module03 deployment-bundle CLI defaults/fields layered split (`scripts/rnd/module03/scheduler-deployment-bundle-cli.ts`)
+   - Extracted deployment-bundle CLI default constants into:
+     - `scripts/rnd/module03/scheduler-deployment-bundle-cli-defaults.ts`
+   - Extracted deployment-bundle CLI field parser/validation helpers into:
+     - `scripts/rnd/module03/scheduler-deployment-bundle-cli-fields.ts`
+   - Reduced `scheduler-deployment-bundle-cli.ts` to CLI arg wiring/orchestration (`field parser results -> CliArgs`).
+   - Preserved cron/timezone/retention default policy, schema/sql file existence checks, required-env parsing, and failure-webhook env-key validation while separating defaults vs field parsing responsibilities.
 
 ## Priority 1 (next)
 

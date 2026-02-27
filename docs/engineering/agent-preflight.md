@@ -13,6 +13,17 @@ npm run lint
 npm run build
 ```
 
+If `npm run build` fails at `prisma:generate` with Windows `EPERM rename` on
+`node_modules/.prisma/client/query_engine-windows.dll.node`:
+
+1. Close processes that may hold Prisma engine files (for example Prisma Studio or other Node dev servers).
+2. Re-run `npm run build`.
+3. For code-level regression verification while the lock persists, run:
+
+```bash
+npx next build
+```
+
 `audit:hotspots` gives:
 - top long files by line count (refactor candidates)
 - critical route guard checks for admin/rag/push endpoints

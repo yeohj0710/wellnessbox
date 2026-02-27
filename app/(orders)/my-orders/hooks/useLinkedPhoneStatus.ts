@@ -1,6 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  fetchMyPhoneStatusRequest,
+  unlinkMyPhoneRequest,
+} from "@/lib/client/phone-api";
 
 import { formatPhoneDisplay } from "../utils/formatPhoneDisplay";
 
@@ -33,34 +37,29 @@ export function useLinkedPhoneStatus() {
     setPhoneStatusError(null);
 
     try {
-      const res = await fetch("/api/me/phone-status", {
-        headers: { "Cache-Control": "no-store" },
-      });
+      const result = await fetchMyPhoneStatusRequest();
 
-      const raw = await res.text();
-      let data: { ok?: boolean; phone?: string; linkedAt?: string } = {};
-
-      try {
-        data = raw ? (JSON.parse(raw) as typeof data) : {};
-      } catch {
-        data = { ok: false };
-      }
-
-      if (!res.ok || data.ok === false) {
+      if (!result.ok) {
         setLinkedPhone("");
         setLinkedAt(undefined);
-        if (res.status !== 401) {
+        if (result.status !== 401) {
           setPhoneStatusError(
-            data?.ok === false
+            result.data?.ok === false
               ? "전화번호 정보를 불러오지 못했어요."
-              : raw || `HTTP ${res.status}`
+              : result.data?.error || `HTTP ${result.status}`
           );
         }
         return;
       }
 
-      setLinkedPhone(typeof data.phone === "string" ? data.phone : "");
-      setLinkedAt(typeof data.linkedAt === "string" ? data.linkedAt : undefined);
+      setLinkedPhone(
+        typeof result.data.phone === "string" ? result.data.phone : ""
+      );
+      setLinkedAt(
+        typeof result.data.linkedAt === "string"
+          ? result.data.linkedAt
+          : undefined
+      );
     } catch (err) {
       setPhoneStatusError(err instanceof Error ? err.message : String(err));
       setLinkedPhone("");
@@ -91,19 +90,10 @@ export function useLinkedPhoneStatus() {
     setUnlinkError(null);
 
     try {
-      const res = await fetch("/api/me/unlink-phone", {
-        method: "POST",
-        headers: { "Cache-Control": "no-store" },
-      });
-      const raw = await res.text();
-      let data: { ok?: boolean; error?: string } = {};
-      try {
-        data = raw ? (JSON.parse(raw) as typeof data) : {};
-      } catch {
-        data = { ok: false, error: raw || `HTTP ${res.status}` };
-      }
+      const result = await unlinkMyPhoneRequest();
+      const data = result.data;
 
-      if (!res.ok || data.ok === false) {
+      if (!result.ok) {
         setUnlinkError(data.error || "전화번호 연결 해제에 실패했어요.");
         return;
       }

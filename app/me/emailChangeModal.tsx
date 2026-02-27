@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import { useDraggableModal } from "@/components/common/useDraggableModal";
-
-type ApiResponse = { ok?: boolean; error?: string; email?: string };
+import ModalSpinner from "./modalSpinner";
+import { useEmailChangeModalState } from "./useEmailChangeModalState";
 
 type EmailChangeModalProps = {
   open: boolean;
@@ -12,174 +11,38 @@ type EmailChangeModalProps = {
   onChanged: (email: string) => void;
 };
 
-function Spinner({ className = "" }: { className?: string }) {
-  return (
-    <svg
-      className={`h-4 w-4 animate-spin ${className}`}
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4z"
-      />
-    </svg>
-  );
-}
-
-function isEmailValid(value: string) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(value.trim()) && value.trim().length <= 120;
-}
-
 export default function EmailChangeModal({
   open,
   onClose,
   initialEmail,
   onChanged,
 }: EmailChangeModalProps) {
-  const [email, setEmail] = useState(initialEmail ?? "");
-  const [code, setCode] = useState("");
-  const [sendLoading, setSendLoading] = useState(false);
-  const [verifyLoading, setVerifyLoading] = useState(false);
-  const [sendError, setSendError] = useState<string | null>(null);
-  const [verifyError, setVerifyError] = useState<string | null>(null);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [otpSent, setOtpSent] = useState(false);
-  const [cooldownEndsAt, setCooldownEndsAt] = useState<number | null>(null);
-  const [now, setNow] = useState(Date.now());
+  const {
+    email,
+    code,
+    sendLoading,
+    verifyLoading,
+    sendError,
+    verifyError,
+    statusMessage,
+    otpSent,
+    busy,
+    cooldownRemaining,
+    sendDisabled,
+    verifyDisabled,
+    setEmail,
+    setCode,
+    handleSend,
+    handleVerify,
+  } = useEmailChangeModalState({
+    open,
+    initialEmail,
+    onClose,
+    onChanged,
+  });
 
-  const busy = useMemo(() => sendLoading || verifyLoading, [sendLoading, verifyLoading]);
-  const cooldownRemaining = useMemo(
-    () => (cooldownEndsAt ? Math.max(0, cooldownEndsAt - now) : 0),
-    [cooldownEndsAt, now]
-  );
   const { panelRef, panelStyle, handleDragPointerDown, isDragging } =
     useDraggableModal(open, { resetOnOpen: true });
-
-  useEffect(() => {
-    if (!open) return;
-    const id = window.setInterval(() => setNow(Date.now()), 500);
-    return () => window.clearInterval(id);
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      if (busy) return;
-      onClose();
-    };
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose, busy]);
-
-  useEffect(() => {
-    if (!open) return;
-    setEmail(initialEmail ?? "");
-    setCode("");
-    setSendError(null);
-    setVerifyError(null);
-    setStatusMessage(null);
-    setOtpSent(false);
-    setCooldownEndsAt(null);
-  }, [open, initialEmail]);
-
-  const sendDisabled =
-    !isEmailValid(email) || busy || cooldownRemaining > 0;
-  const verifyDisabled = busy || !otpSent || code.trim().length === 0;
-
-  const handleSend = async () => {
-    if (sendDisabled) return;
-
-    setSendLoading(true);
-    setSendError(null);
-    setVerifyError(null);
-    setStatusMessage(null);
-
-    try {
-      const res = await fetch("/api/auth/email/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      const raw = await res.text();
-      let data: ApiResponse;
-
-      try {
-        data = raw ? (JSON.parse(raw) as ApiResponse) : {};
-      } catch {
-        data = { ok: false, error: raw || `HTTP ${res.status}` };
-      }
-
-      if (!res.ok || data.ok === false) {
-        setSendError(data?.error || "인증번호 발송에 실패했어요.");
-        return;
-      }
-
-      setOtpSent(true);
-      setStatusMessage("인증번호를 전송했어요. 메일함을 확인해 주세요.");
-      setCooldownEndsAt(Date.now() + 60_000);
-    } catch (error) {
-      setSendError(error instanceof Error ? error.message : String(error));
-    } finally {
-      setSendLoading(false);
-    }
-  };
-
-  const handleVerify = async () => {
-    if (verifyDisabled) return;
-
-    setVerifyLoading(true);
-    setVerifyError(null);
-    setSendError(null);
-    setStatusMessage(null);
-
-    try {
-      const res = await fetch("/api/auth/email/verify-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code }),
-      });
-
-      const raw = await res.text();
-      let data: ApiResponse;
-
-      try {
-        data = raw ? (JSON.parse(raw) as ApiResponse) : {};
-      } catch {
-        data = { ok: false, error: raw || `HTTP ${res.status}` };
-      }
-
-      if (!res.ok || data.ok === false || !data.email) {
-        setVerifyError(data?.error || "이메일 인증에 실패했어요.");
-        return;
-      }
-
-      onChanged(data.email);
-      setStatusMessage("이메일이 변경되었어요.");
-      setOtpSent(false);
-      setCode("");
-      onClose();
-    } catch (error) {
-      setVerifyError(error instanceof Error ? error.message : String(error));
-    } finally {
-      setVerifyLoading(false);
-    }
-  };
 
   if (!open) return null;
 
@@ -198,8 +61,8 @@ export default function EmailChangeModal({
         className="relative w-full max-w-[560px] overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5"
         ref={panelRef}
         style={panelStyle}
-        onMouseDown={(e) => e.stopPropagation()}
-        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(event) => event.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
       >
         <div className="px-6 sm:px-7 py-5">
           <div
@@ -228,7 +91,7 @@ export default function EmailChangeModal({
           </div>
         </div>
 
-        <div className="border-t border-gray-200 px-6 sm:px-7 py-5 space-y-4">
+        <div className="space-y-4 border-t border-gray-200 px-6 py-5 sm:px-7">
           <div className="space-y-2">
             <div className="text-sm font-semibold text-gray-900">이메일</div>
             <div className="flex items-center gap-3">
@@ -237,20 +100,20 @@ export default function EmailChangeModal({
                 autoComplete="email"
                 value={email}
                 disabled={busy}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(event) => setEmail(event.target.value)}
                 placeholder="example@email.com"
-                className="min-w-0 flex-1 h-10 rounded-lg border border-gray-300 px-3 text-gray-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/25 disabled:bg-gray-100 disabled:text-gray-500"
+                className="min-w-0 h-10 flex-1 rounded-lg border border-gray-300 px-3 text-gray-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/25 disabled:bg-gray-100 disabled:text-gray-500"
               />
               <button
                 type="button"
                 onClick={handleSend}
                 disabled={sendDisabled}
                 aria-busy={sendLoading}
-                className="shrink-0 w-24 h-10 rounded-lg bg-sky-400 text-sm font-semibold text-white hover:bg-sky-500 disabled:cursor-not-allowed disabled:bg-sky-200"
+                className="h-10 w-24 shrink-0 rounded-lg bg-sky-400 text-sm font-semibold text-white hover:bg-sky-500 disabled:cursor-not-allowed disabled:bg-sky-200"
               >
                 <span className="grid h-full w-full place-items-center">
                   {sendLoading ? (
-                    <Spinner className="text-white" />
+                    <ModalSpinner className="text-white" />
                   ) : cooldownRemaining > 0 ? (
                     `${Math.ceil(cooldownRemaining / 1000)}초 후`
                   ) : otpSent ? (
@@ -273,19 +136,21 @@ export default function EmailChangeModal({
                 value={code}
                 disabled={busy || !otpSent}
                 maxLength={6}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                onChange={(event) =>
+                  setCode(event.target.value.replace(/\D/g, "").slice(0, 6))
+                }
                 placeholder="6자리 번호"
-                className="min-w-0 flex-1 h-10 rounded-lg border border-gray-300 px-3 text-gray-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/25 disabled:bg-gray-100 disabled:text-gray-500"
+                className="min-w-0 h-10 flex-1 rounded-lg border border-gray-300 px-3 text-gray-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/25 disabled:bg-gray-100 disabled:text-gray-500"
               />
               <button
                 type="button"
                 onClick={handleVerify}
                 disabled={verifyDisabled}
                 aria-busy={verifyLoading}
-                className="shrink-0 w-24 h-10 rounded-lg bg-sky-400 text-sm font-semibold text-white hover:bg-sky-500 disabled:cursor-not-allowed disabled:bg-sky-200"
+                className="h-10 w-24 shrink-0 rounded-lg bg-sky-400 text-sm font-semibold text-white hover:bg-sky-500 disabled:cursor-not-allowed disabled:bg-sky-200"
               >
                 <span className="grid h-full w-full place-items-center">
-                  {verifyLoading ? <Spinner className="text-white" /> : "인증"}
+                  {verifyLoading ? <ModalSpinner className="text-white" /> : "인증"}
                 </span>
               </button>
             </div>

@@ -3,27 +3,35 @@ import {
   NHIS_TARGET_POLICY_BLOCKED_ERR_CODE,
 } from "@/lib/shared/hyphen-fetch";
 import type { HyphenNhisRequestPayload } from "@/lib/server/hyphen/client";
-import { enrichNhisPayloadWithAiSummary } from "@/lib/server/hyphen/fetch-ai-summary";
 import {
   evaluateNhisFetchBudget,
-  recordNhisFetchAttempt,
 } from "@/lib/server/hyphen/fetch-attempt";
 import {
   buildNhisFetchRequestHash,
   getLatestNhisFetchAttemptAt,
   resolveNhisIdentityHash,
-  runWithNhisFetchDedup,
 } from "@/lib/server/hyphen/fetch-cache";
 import {
   NHIS_FETCH_TARGETS,
   type NhisFetchTarget,
 } from "@/lib/server/hyphen/fetch-contract";
-import { executeNhisFetch } from "@/lib/server/hyphen/fetch-executor";
+import {
+  NHIS_INIT_REQUIRED_ERR_CODE,
+  NHIS_LOGIN_SESSION_EXPIRED_ERR_CODE,
+} from "@/lib/server/hyphen/fetch-route-constants";
+import {
+  normalizeFailedCodes,
+} from "@/lib/server/hyphen/fetch-route-persist";
+import type {
+  NhisFetchPayload,
+  NhisRequestDefaults,
+  ResolveFetchExecutionContext,
+  ResolveFetchExecutionInput,
+} from "@/lib/server/hyphen/fetch-route-types";
 import {
   buildFetchBudgetBlockedResponse,
   tryServeFetchGateCache,
 } from "@/lib/server/hyphen/fetch-route-gate";
-import { persistNhisFetchResult } from "@/lib/server/hyphen/fetch-route-cache";
 import { dedupeNhisFetchTargets } from "@/lib/server/hyphen/fetch-request-policy";
 import { getNhisLink } from "@/lib/server/hyphen/link";
 import {
@@ -32,11 +40,18 @@ import {
   nhisNoStoreJson,
 } from "@/lib/server/hyphen/nhis-route-responses";
 import { buildNhisRequestDefaults } from "@/lib/server/hyphen/request-defaults";
-import { logHyphenError } from "@/lib/server/hyphen/route-utils";
 import { resolveBlockedNhisFetchTargets } from "@/lib/server/hyphen/target-policy";
-
-export const NHIS_LOGIN_SESSION_EXPIRED_ERR_CODE = "LOGIN-999";
-export const NHIS_INIT_REQUIRED_ERR_CODE = "C0012-001";
+export {
+  NHIS_INIT_REQUIRED_ERR_CODE,
+  NHIS_LOGIN_SESSION_EXPIRED_ERR_CODE,
+} from "@/lib/server/hyphen/fetch-route-constants";
+export {
+  executeAndPersistNhisFetch,
+  enrichNhisPayloadWithAiSummarySafe,
+  normalizeFailedCodes,
+  recordNhisFetchAttemptSafe,
+  resolveNhisFetchFailedStatusCode,
+} from "@/lib/server/hyphen/fetch-route-persist";
 
 const targetEnum = z.enum(NHIS_FETCH_TARGETS);
 
@@ -48,36 +63,6 @@ export const fetchSchema = z
   })
   .optional();
 
-type NhisFetchPayload = Awaited<ReturnType<typeof executeNhisFetch>>["payload"];
-type NhisFetchFirstFailed = Awaited<
-  ReturnType<typeof executeNhisFetch>
->["firstFailed"];
-
-type RequestHashMeta = {
-  requestHash: string;
-  requestKey: string;
-  normalizedTargets: string[];
-};
-
-type ResolveFetchExecutionInput = {
-  appUserId: string;
-  targets: NhisFetchTarget[];
-  effectiveYearLimit: number;
-  forceRefresh: boolean;
-};
-
-type ResolveFetchExecutionContext = {
-  appUserId: string;
-  identityHash: string;
-  requestHashMeta: RequestHashMeta;
-  targets: NhisFetchTarget[];
-  effectiveYearLimit: number;
-  requestDefaults: ReturnType<typeof buildNhisRequestDefaults>;
-  forceRefresh: boolean;
-  basePayload: HyphenNhisRequestPayload;
-  detailPayload: HyphenNhisRequestPayload;
-};
-
 export function dedupeTargets(input?: NhisFetchTarget[]) {
   return dedupeNhisFetchTargets(input);
 }
@@ -86,7 +71,7 @@ export function buildBasePayload(options: {
   linkLoginMethod: string | null | undefined;
   linkLoginOrgCd: string | null | undefined;
   linkCookieData: unknown;
-  requestDefaults: ReturnType<typeof buildNhisRequestDefaults>;
+  requestDefaults: NhisRequestDefaults;
 }): HyphenNhisRequestPayload {
   return {
     loginMethod: (options.linkLoginMethod as "EASY" | "CERT" | null) ?? "EASY",
@@ -224,63 +209,6 @@ export async function resolveFetchExecutionContext(
   };
 }
 
-export async function recordNhisFetchAttemptSafe(input: {
-  appUserId: string;
-  identityHash: string;
-  requestHash: string;
-  requestKey: string;
-  forceRefresh: boolean;
-  statusCode: number;
-  ok: boolean;
-}) {
-  try {
-    await recordNhisFetchAttempt({ ...input, cached: false });
-  } catch (error) {
-    logHyphenError("[hyphen][fetch] failed to record fetch attempt", error);
-  }
-}
-
-export async function enrichNhisPayloadWithAiSummarySafe(payload: NhisFetchPayload) {
-  if (!payload.ok) return payload;
-  try {
-    return await enrichNhisPayloadWithAiSummary(payload);
-  } catch (error) {
-    logHyphenError("[hyphen][fetch] ai summary enrichment failed", error);
-    return payload;
-  }
-}
-
-function normalizeFailureCode(value: string | null | undefined) {
-  return (value || "").trim().toUpperCase();
-}
-
-export function resolveNhisFetchFailedStatusCode(input: {
-  firstFailed: NhisFetchFirstFailed;
-  payload: NhisFetchPayload;
-}) {
-  const failedErrCode =
-    typeof input.firstFailed?.errCd === "string"
-      ? normalizeFailureCode(input.firstFailed.errCd)
-      : "";
-  const hasSessionExpiredFailure = (input.payload.failed ?? []).some(
-    (failure) =>
-      normalizeFailureCode(failure.errCd) === NHIS_LOGIN_SESSION_EXPIRED_ERR_CODE
-  );
-  if (
-    failedErrCode === NHIS_LOGIN_SESSION_EXPIRED_ERR_CODE ||
-    hasSessionExpiredFailure
-  ) {
-    return 401;
-  }
-  return 502;
-}
-
-export function normalizeFailedCodes(payload: NhisFetchPayload) {
-  return (payload.failed ?? [])
-    .map((item) => normalizeFailureCode(item.errCd))
-    .filter((code) => code.length > 0);
-}
-
 export function resolveFailedNhisFetchResponse(input: {
   payload: NhisFetchPayload;
   statusCode: number;
@@ -303,96 +231,4 @@ export function resolveFailedNhisFetchResponse(input: {
     );
   }
   return nhisNoStoreJson(input.payload, input.statusCode);
-}
-
-export async function executeAndPersistNhisFetch(input: {
-  appUserId: string;
-  identityHash: string;
-  requestHashMeta: RequestHashMeta;
-  targets: NhisFetchTarget[];
-  effectiveYearLimit: number;
-  basePayload: HyphenNhisRequestPayload;
-  detailPayload: HyphenNhisRequestPayload;
-  requestDefaults: ReturnType<typeof buildNhisRequestDefaults>;
-  forceRefresh: boolean;
-}) {
-  const dedupKey = `${input.appUserId}|${input.requestHashMeta.requestHash}`;
-  return runWithNhisFetchDedup(dedupKey, async () => {
-    try {
-      const executed = await executeNhisFetch({
-        targets: input.targets,
-        effectiveYearLimit: input.effectiveYearLimit,
-        basePayload: input.basePayload,
-        detailPayload: input.detailPayload,
-        requestDefaults: input.requestDefaults,
-      });
-      const payloadWithAiSummary = await enrichNhisPayloadWithAiSummarySafe(
-        executed.payload
-      );
-      if (!payloadWithAiSummary.ok) {
-        const failedStatusCode = resolveNhisFetchFailedStatusCode({
-          firstFailed: executed.firstFailed,
-          payload: payloadWithAiSummary,
-        });
-        await persistNhisFetchResult({
-          appUserId: input.appUserId,
-          identityHash: input.identityHash,
-          requestHash: input.requestHashMeta.requestHash,
-          requestKey: input.requestHashMeta.requestKey,
-          targets: input.requestHashMeta.normalizedTargets,
-          yearLimit: input.effectiveYearLimit,
-          requestDefaults: input.requestDefaults,
-          statusCode: failedStatusCode,
-          payload: payloadWithAiSummary,
-          firstFailed: executed.firstFailed,
-          updateFetchedAt: false,
-        });
-        await recordNhisFetchAttemptSafe({
-          appUserId: input.appUserId,
-          identityHash: input.identityHash,
-          requestHash: input.requestHashMeta.requestHash,
-          requestKey: input.requestHashMeta.requestKey,
-          forceRefresh: input.forceRefresh,
-          statusCode: failedStatusCode,
-          ok: false,
-        });
-        return { statusCode: failedStatusCode, payload: payloadWithAiSummary };
-      }
-
-      await persistNhisFetchResult({
-        appUserId: input.appUserId,
-        identityHash: input.identityHash,
-        requestHash: input.requestHashMeta.requestHash,
-        requestKey: input.requestHashMeta.requestKey,
-        targets: input.requestHashMeta.normalizedTargets,
-        yearLimit: input.effectiveYearLimit,
-        requestDefaults: input.requestDefaults,
-        statusCode: 200,
-        payload: payloadWithAiSummary,
-        firstFailed: executed.firstFailed,
-        updateFetchedAt: true,
-      });
-      await recordNhisFetchAttemptSafe({
-        appUserId: input.appUserId,
-        identityHash: input.identityHash,
-        requestHash: input.requestHashMeta.requestHash,
-        requestKey: input.requestHashMeta.requestKey,
-        forceRefresh: input.forceRefresh,
-        statusCode: 200,
-        ok: true,
-      });
-      return { statusCode: 200, payload: payloadWithAiSummary };
-    } catch (error) {
-      await recordNhisFetchAttemptSafe({
-        appUserId: input.appUserId,
-        identityHash: input.identityHash,
-        requestHash: input.requestHashMeta.requestHash,
-        requestKey: input.requestHashMeta.requestKey,
-        forceRefresh: input.forceRefresh,
-        statusCode: 500,
-        ok: false,
-      });
-      throw error;
-    }
-  });
 }

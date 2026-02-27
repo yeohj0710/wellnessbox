@@ -8,6 +8,10 @@ import {
   useState,
 } from "react";
 import { resolvePhoneOtpError } from "@/lib/client/phone-otp-error";
+import {
+  sendPhoneOtpRequest,
+  verifyPhoneOtpRequest,
+} from "@/lib/client/phone-api";
 
 export function usePhoneAndPassword() {
   const [phonePart1, setPhonePart1] = useState("010");
@@ -139,27 +143,14 @@ export function usePhoneAndPassword() {
     setOtpStatusMessage(null);
 
     try {
-      const res = await fetch("/api/auth/phone/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: userContact }),
-      });
+      const result = await sendPhoneOtpRequest(userContact);
 
-      const raw = await res.text();
-      let data: { ok?: boolean; error?: string; retryAfterSec?: number };
-
-      try {
-        data = raw ? JSON.parse(raw) : {};
-      } catch {
-        data = { ok: false, error: raw || `HTTP ${res.status}` };
-      }
-
-      if (!res.ok || data.ok === false) {
+      if (!result.ok) {
         setOtpErrorMessage(
           resolvePhoneOtpError({
-            status: res.status,
-            error: data?.error,
-            retryAfterSec: data?.retryAfterSec,
+            status: result.status,
+            error: result.data?.error,
+            retryAfterSec: result.data?.retryAfterSec,
             fallback: "인증번호를 발송하지 못했어요.",
           })
         );
@@ -190,29 +181,16 @@ export function usePhoneAndPassword() {
     setOtpStatusMessage(null);
 
     try {
-      const res = await fetch("/api/auth/phone/verify-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: userContact, code: otpCode }),
-      });
+      const result = await verifyPhoneOtpRequest(userContact, otpCode);
 
-      const raw = await res.text();
-      let data: { ok?: boolean; error?: string; retryAfterSec?: number };
-
-      try {
-        data = raw ? JSON.parse(raw) : {};
-      } catch {
-        data = { ok: false, error: raw || `HTTP ${res.status}` };
-      }
-
-      if (!res.ok || data.ok === false) {
+      if (!result.ok) {
         setVerifiedPhone(null);
         localStorage.removeItem("verifiedPhone");
         setOtpErrorMessage(
           resolvePhoneOtpError({
-            status: res.status,
-            error: data?.error,
-            retryAfterSec: data?.retryAfterSec,
+            status: result.status,
+            error: result.data?.error,
+            retryAfterSec: result.data?.retryAfterSec,
             fallback: "인증번호 확인에 실패했어요.",
           })
         );

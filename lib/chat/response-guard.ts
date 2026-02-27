@@ -1,4 +1,4 @@
-﻿import type { UserContextSummary } from "@/lib/chat/context";
+import type { UserContextSummary } from "@/lib/chat/context";
 
 type EnforcePersonalizedResponseInput = {
   rawText: string;

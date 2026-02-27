@@ -1,18 +1,17 @@
 const fs = require("node:fs") as typeof import("node:fs");
 const pathUtil = require("node:path") as typeof import("node:path");
+const { listHotspotCodeFiles } = require("../lib/hotspot-code-files.cts") as {
+  listHotspotCodeFiles: (
+    rootDir: string
+  ) => Array<{
+    abs: string;
+    rel: string;
+  }>;
+};
 const {
-  listFilesRecursively,
-  toPosixRelative,
-} = require("../lib/code-file-scan.cts") as {
-  listFilesRecursively: (
-    rootDir: string,
-    options?: {
-      excludeDirs?: string[] | Set<string>;
-      includeExtensions?: string[] | Set<string>;
-      ignoreDotEntries?: boolean;
-    }
-  ) => string[];
-  toPosixRelative: (rootDir: string, filePath: string) => string;
+  isScriptFile,
+} = require("../lib/hotspot-paths.cts") as {
+  isScriptFile: (file: string) => boolean;
 };
 const { scanFunctionHotspots } = require("../lib/function-hotspot-scan.cts") as {
   scanFunctionHotspots: (
@@ -27,6 +26,18 @@ const { scanFunctionHotspots } = require("../lib/function-hotspot-scan.cts") as 
     lines: number;
   }>;
 };
+const { writeIfChanged } = require("../lib/write-if-changed.cts") as {
+  writeIfChanged: (options: {
+    outputPath: string;
+    content: string;
+    rootDir?: string;
+    encoding?: BufferEncoding;
+  }) => {
+    changed: boolean;
+    outputPath: string;
+    relativePath: string;
+  };
+};
 
 type HotspotRow = {
   file: string;
@@ -39,21 +50,6 @@ type HotspotRow = {
 const REPO_ROOT = process.cwd();
 const OUTPUT_PATH = pathUtil.join(REPO_ROOT, "FUNCTION_HOTSPOTS.md");
 const MIN_LINES = 30;
-
-function shouldInclude(rel: string) {
-  if (rel.startsWith("docs/")) return false;
-  if (rel.startsWith("prisma/migrations/")) return false;
-  if (rel.startsWith("android/app/build/")) return false;
-  if (rel.startsWith("ios/build/")) return false;
-  if (rel.startsWith(".next/")) return false;
-  if (rel.endsWith(".md")) return false;
-  return (
-    rel.endsWith(".ts") ||
-    rel.endsWith(".tsx") ||
-    rel.endsWith(".js") ||
-    rel.endsWith(".jsx")
-  );
-}
 
 function topRows(rows: HotspotRow[], size: number) {
   return [...rows]
@@ -81,16 +77,7 @@ function section(title: string, rows: HotspotRow[]) {
 }
 
 function main() {
-  const files = listFilesRecursively(REPO_ROOT, {
-    excludeDirs: [".git", "node_modules", ".next"],
-    ignoreDotEntries: true,
-    includeExtensions: [".ts", ".tsx", ".js", ".jsx"],
-  })
-    .map((absPath) => ({
-      abs: absPath,
-      rel: toPosixRelative(REPO_ROOT, absPath),
-    }))
-    .filter((item) => shouldInclude(item.rel));
+  const files = listHotspotCodeFiles(REPO_ROOT);
 
   const runtimeRows: HotspotRow[] = [];
   const scriptRows: HotspotRow[] = [];
@@ -108,7 +95,7 @@ function main() {
         startLine: hotspot.startLine,
         lines: hotspot.lines,
       };
-      if (file.rel.startsWith("scripts/")) {
+      if (isScriptFile(file.rel)) {
         scriptRows.push(row);
       } else {
         runtimeRows.push(row);
@@ -143,19 +130,15 @@ function main() {
   doc.push("");
 
   const nextContent = doc.join("\n");
-  const currentContent = fs.existsSync(OUTPUT_PATH)
-    ? fs.readFileSync(OUTPUT_PATH, "utf8")
-    : null;
-
-  if (currentContent !== nextContent) {
-    fs.writeFileSync(OUTPUT_PATH, nextContent, "utf8");
-    console.log(
-      `Wrote function hotspot report: ${toPosixRelative(REPO_ROOT, OUTPUT_PATH)}`
-    );
+  const writeResult = writeIfChanged({
+    outputPath: OUTPUT_PATH,
+    content: nextContent,
+    rootDir: REPO_ROOT,
+  });
+  if (writeResult.changed) {
+    console.log(`Wrote function hotspot report: ${writeResult.relativePath}`);
   } else {
-    console.log(
-      `Function hotspot report unchanged: ${toPosixRelative(REPO_ROOT, OUTPUT_PATH)}`
-    );
+    console.log(`Function hotspot report unchanged: ${writeResult.relativePath}`);
   }
 }
 

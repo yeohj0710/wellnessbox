@@ -1,6 +1,10 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import {
+  sendPhoneOtpRequest,
+  verifyPhoneOtpRequest,
+} from "@/lib/client/phone-api";
 
 interface ApiResponse {
   ok?: boolean;
@@ -26,25 +30,12 @@ export default function PhoneAuthPage() {
     setSendResponse(null);
 
     try {
-      const res = await fetch("/api/auth/phone/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone }),
-      });
-
-      const raw = await res.text();
-      let data: ApiResponse;
-
-      try {
-        data = raw ? (JSON.parse(raw) as ApiResponse) : {};
-      } catch {
-        data = { ok: false, error: raw || `HTTP ${res.status}` };
-      }
+      const result = await sendPhoneOtpRequest(phone);
 
       setSendResponse({
-        status: res.status,
-        ...data,
-        ok: res.ok && data.ok !== false,
+        status: result.status,
+        ...result.data,
+        ok: result.ok,
       });
     } catch (error) {
       setSendResponse({ ok: false, error: (error as Error).message });
@@ -60,27 +51,14 @@ export default function PhoneAuthPage() {
     setVerifyStatusCode(null);
 
     try {
-      const res = await fetch("/api/auth/phone/verify-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, code }),
-      });
-
-      const raw = await res.text();
-      let data: ApiResponse;
-
-      try {
-        data = raw ? (JSON.parse(raw) as ApiResponse) : {};
-      } catch {
-        data = { ok: false, error: raw || `HTTP ${res.status}` };
-      }
+      const result = await verifyPhoneOtpRequest(phone, code);
 
       setVerifyResponse({
-        status: res.status,
-        ...data,
-        ok: res.ok && data.ok !== false,
+        status: result.status,
+        ...result.data,
+        ok: result.ok,
       });
-      setVerifyStatusCode(res.status);
+      setVerifyStatusCode(result.status);
     } catch (error) {
       setVerifyResponse({ ok: false, error: (error as Error).message });
     } finally {

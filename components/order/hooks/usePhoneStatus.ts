@@ -1,17 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { LoginStatus } from "@/lib/useLoginStatus";
-
-export function formatPhoneDisplay(phone?: string | null) {
-  if (!phone) return "";
-  const digits = phone.replace(/\D/g, "");
-  if (digits.length === 10) {
-    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
-  }
-  if (digits.length === 11) {
-    return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
-  }
-  return phone;
-}
+import {
+  fetchMyPhoneStatusRequest,
+  unlinkMyPhoneRequest,
+} from "@/lib/client/phone-api";
+import { formatPhoneDisplay } from "@/lib/client/phone-format";
 
 export function usePhoneStatus(loginStatus: LoginStatus | null) {
   const phoneStatusRequestRef = useRef<Promise<void> | null>(null);
@@ -33,34 +26,29 @@ export function usePhoneStatus(loginStatus: LoginStatus | null) {
       setPhoneStatusError(null);
 
       try {
-        const res = await fetch("/api/me/phone-status", {
-          headers: { "Cache-Control": "no-store" },
-        });
+        const result = await fetchMyPhoneStatusRequest();
 
-        const raw = await res.text();
-        let data: { ok?: boolean; phone?: string; linkedAt?: string } = {};
-
-        try {
-          data = raw ? (JSON.parse(raw) as typeof data) : {};
-        } catch {
-          data = { ok: false };
-        }
-
-        if (!res.ok || data.ok === false) {
+        if (!result.ok) {
           setPhone("");
           setLinkedAt(undefined);
-          if (res.status !== 401) {
+          if (result.status !== 401) {
             setPhoneStatusError(
-              data?.ok === false
+              result.data?.ok === false
                 ? "전화번호 정보를 불러오지 못했어요."
-                : raw || `HTTP ${res.status}`
+                : result.data?.error || `HTTP ${result.status}`
             );
           }
           return;
         }
 
-        setPhone(typeof data.phone === "string" ? data.phone : "");
-        setLinkedAt(typeof data.linkedAt === "string" ? data.linkedAt : undefined);
+        setPhone(
+          typeof result.data.phone === "string" ? result.data.phone : ""
+        );
+        setLinkedAt(
+          typeof result.data.linkedAt === "string"
+            ? result.data.linkedAt
+            : undefined
+        );
       } catch (error) {
         setPhoneStatusError(error instanceof Error ? error.message : String(error));
         setPhone("");
@@ -84,19 +72,10 @@ export function usePhoneStatus(loginStatus: LoginStatus | null) {
     setUnlinkError(null);
 
     try {
-      const res = await fetch("/api/me/unlink-phone", {
-        method: "POST",
-        headers: { "Cache-Control": "no-store" },
-      });
-      const raw = await res.text();
-      let data: { ok?: boolean; error?: string } = {};
-      try {
-        data = raw ? (JSON.parse(raw) as typeof data) : {};
-      } catch {
-        data = { ok: false, error: raw || `HTTP ${res.status}` };
-      }
+      const result = await unlinkMyPhoneRequest();
+      const data = result.data;
 
-      if (!res.ok || data.ok === false) {
+      if (!result.ok) {
         setUnlinkError(data.error || "전화번호 연결 해제에 실패했어요.");
         return false;
       }

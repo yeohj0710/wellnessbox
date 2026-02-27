@@ -16,143 +16,34 @@ import {
   saveSubscription,
 } from "@/lib/notification";
 import {
-  requireCustomerOrderAccess,
-  requirePharmSession,
-  requireRiderSession,
-} from "@/lib/server/route-auth";
+  authorizeCustomerOrder,
+  authorizePharm,
+  authorizeRider,
+  runParsedRoute,
+} from "@/lib/server/push-subscribe-auth";
+import {
+  parseCustomerPushSubscribeBody,
+  parseCustomerPushTargetBody,
+  parsePharmPushSubscribeBody,
+  parsePharmPushTargetBody,
+  parseRiderPushSubscribeBody,
+  parseRiderPushTargetBody,
+  type CustomerPushSubscribePayload,
+  type CustomerPushTargetPayload,
+  type PharmPushSubscribePayload,
+  type PharmPushTargetPayload,
+  type RiderPushSubscribePayload,
+  type RiderPushTargetPayload,
+} from "@/lib/server/push-subscribe-parse";
 
-type PushSubscriptionPayload = {
-  endpoint: string;
-  keys?: {
-    auth?: string;
-    p256dh?: string;
-  };
-};
-
-type CustomerPushSubscribePayload = {
-  orderId: number;
-  subscription: PushSubscriptionPayload;
-  role: "customer";
-};
-
-type PharmPushSubscribePayload = {
-  pharmacyId: number;
-  subscription: PushSubscriptionPayload;
-  role: "pharm";
-};
-
-type RiderPushSubscribePayload = {
-  riderId: number;
-  subscription: PushSubscriptionPayload;
-  role: "rider";
-};
-
-type CustomerPushTargetPayload = {
-  orderId: number;
-  endpoint: string;
-  role: "customer";
-};
-
-type PharmPushTargetPayload = {
-  pharmacyId: number;
-  endpoint: string;
-  role: "pharm";
-};
-
-type RiderPushTargetPayload = {
-  riderId: number;
-  endpoint: string;
-  role: "rider";
-};
-
-function parseSubscription(input: unknown): PushSubscriptionPayload | null {
-  if (!input || typeof input !== "object") return null;
-  const endpoint = (input as { endpoint?: unknown }).endpoint;
-  if (typeof endpoint !== "string") return null;
-  return input as PushSubscriptionPayload;
-}
-
-function parseEndpoint(input: unknown) {
-  return typeof input === "string" ? input : null;
-}
-
-export function parseCustomerPushSubscribeBody(
-  raw: unknown
-): CustomerPushSubscribePayload | null {
-  const orderId = Number((raw as { orderId?: unknown })?.orderId);
-  const role = (raw as { role?: unknown })?.role;
-  const subscription = parseSubscription((raw as { subscription?: unknown })?.subscription);
-  if (!Number.isFinite(orderId) || role !== "customer" || !subscription) return null;
-
-  return {
-    orderId,
-    role,
-    subscription,
-  };
-}
-
-export function parsePharmPushSubscribeBody(
-  raw: unknown
-): PharmPushSubscribePayload | null {
-  const pharmacyId = Number((raw as { pharmacyId?: unknown })?.pharmacyId);
-  const role = (raw as { role?: unknown })?.role;
-  const subscription = parseSubscription((raw as { subscription?: unknown })?.subscription);
-  if (!Number.isFinite(pharmacyId) || role !== "pharm" || !subscription) return null;
-
-  return {
-    pharmacyId,
-    role,
-    subscription,
-  };
-}
-
-export function parseRiderPushSubscribeBody(
-  raw: unknown
-): RiderPushSubscribePayload | null {
-  const riderId = Number((raw as { riderId?: unknown })?.riderId);
-  const role = (raw as { role?: unknown })?.role;
-  const subscription = parseSubscription((raw as { subscription?: unknown })?.subscription);
-  if (!Number.isFinite(riderId) || role !== "rider" || !subscription) return null;
-
-  return {
-    riderId,
-    role,
-    subscription,
-  };
-}
-
-export function parseCustomerPushTargetBody(
-  raw: unknown
-): CustomerPushTargetPayload | null {
-  const orderId = Number((raw as { orderId?: unknown })?.orderId);
-  const endpoint = parseEndpoint((raw as { endpoint?: unknown })?.endpoint);
-  const role = (raw as { role?: unknown })?.role;
-  if (!Number.isFinite(orderId) || !endpoint || role !== "customer") return null;
-
-  return { orderId, endpoint, role };
-}
-
-export function parsePharmPushTargetBody(
-  raw: unknown
-): PharmPushTargetPayload | null {
-  const pharmacyId = Number((raw as { pharmacyId?: unknown })?.pharmacyId);
-  const endpoint = parseEndpoint((raw as { endpoint?: unknown })?.endpoint);
-  const role = (raw as { role?: unknown })?.role;
-  if (!Number.isFinite(pharmacyId) || !endpoint || role !== "pharm") return null;
-
-  return { pharmacyId, endpoint, role };
-}
-
-export function parseRiderPushTargetBody(
-  raw: unknown
-): RiderPushTargetPayload | null {
-  const riderId = Number((raw as { riderId?: unknown })?.riderId);
-  const endpoint = parseEndpoint((raw as { endpoint?: unknown })?.endpoint);
-  const role = (raw as { role?: unknown })?.role;
-  if (!Number.isFinite(riderId) || !endpoint || role !== "rider") return null;
-
-  return { riderId, endpoint, role };
-}
+export {
+  parseCustomerPushSubscribeBody,
+  parseCustomerPushTargetBody,
+  parsePharmPushSubscribeBody,
+  parsePharmPushTargetBody,
+  parseRiderPushSubscribeBody,
+  parseRiderPushTargetBody,
+} from "@/lib/server/push-subscribe-parse";
 
 export async function runCustomerPushSubscribeAuthorized(
   payload: CustomerPushSubscribePayload
@@ -195,49 +86,85 @@ export async function runRiderPushSubscribeAuthorized(
   return NextResponse.json({ ok: true });
 }
 
-export async function runCustomerPushSubscribePostRoute(req: Request) {
-  try {
-    const parsed = parseCustomerPushSubscribeBody(await req.json());
-    if (!parsed) return buildPushSubscribeBadRequestResponse();
+async function runCustomerPushStatusAuthorized(
+  payload: CustomerPushTargetPayload
+) {
+  const status = await getSubscriptionStatus(
+    payload.orderId,
+    payload.endpoint,
+    payload.role
+  );
+  return NextResponse.json(status);
+}
 
-    const auth = await requireCustomerOrderAccess(parsed.orderId);
-    if (!auth.ok) return auth.response;
-    return runCustomerPushSubscribeAuthorized(parsed);
-  } catch (error) {
-    return buildPushSubscribeServerErrorResponse(error);
-  }
+async function runCustomerPushUnsubscribeAuthorized(
+  payload: CustomerPushTargetPayload
+) {
+  await removeSubscription(payload.endpoint, payload.orderId, payload.role);
+  return NextResponse.json({ ok: true });
+}
+
+async function runPharmPushStatusAuthorized(payload: PharmPushTargetPayload) {
+  const status = await getPharmacySubscriptionStatus(
+    payload.pharmacyId,
+    payload.endpoint
+  );
+  return NextResponse.json(status);
+}
+
+async function runPharmPushUnsubscribeAuthorized(
+  payload: PharmPushTargetPayload
+) {
+  await removePharmacySubscription(payload.endpoint, payload.pharmacyId);
+  return NextResponse.json({ ok: true });
+}
+
+async function runRiderPushStatusAuthorized(payload: RiderPushTargetPayload) {
+  const status = await getRiderSubscriptionStatus(
+    payload.riderId,
+    payload.endpoint
+  );
+  return NextResponse.json(status);
+}
+
+async function runRiderPushUnsubscribeAuthorized(
+  payload: RiderPushTargetPayload
+) {
+  await removeRiderSubscription(payload.endpoint, payload.riderId);
+  return NextResponse.json({ ok: true });
+}
+
+export async function runCustomerPushSubscribePostRoute(req: Request) {
+  return runParsedRoute({
+    req,
+    parseBody: parseCustomerPushSubscribeBody,
+    authorize: authorizeCustomerOrder,
+    runAuthorized: runCustomerPushSubscribeAuthorized,
+    onBadRequest: buildPushSubscribeBadRequestResponse,
+    onError: buildPushSubscribeServerErrorResponse,
+  });
 }
 
 export async function runPharmPushSubscribePostRoute(req: Request) {
-  try {
-    const parsed = parsePharmPushSubscribeBody(await req.json());
-    if (!parsed) return buildPushSubscribeBadRequestResponse();
-
-    const auth = await requirePharmSession(parsed.pharmacyId);
-    if (!auth.ok) return auth.response;
-    return runPharmPushSubscribeAuthorized({
-      ...parsed,
-      pharmacyId: auth.data.pharmacyId,
-    });
-  } catch (error) {
-    return buildPushSubscribeServerErrorResponse(error);
-  }
+  return runParsedRoute({
+    req,
+    parseBody: parsePharmPushSubscribeBody,
+    authorize: authorizePharm,
+    runAuthorized: runPharmPushSubscribeAuthorized,
+    onBadRequest: buildPushSubscribeBadRequestResponse,
+    onError: buildPushSubscribeServerErrorResponse,
+  });
 }
 
 export async function runRiderPushSubscribePostRoute(req: Request) {
-  try {
-    const parsed = parseRiderPushSubscribeBody(await req.json());
-    if (!parsed) return buildPushSubscribeBadRequestResponse();
-
-    const auth = await requireRiderSession(parsed.riderId);
-    if (!auth.ok) return auth.response;
-    return runRiderPushSubscribeAuthorized({
-      ...parsed,
-      riderId: auth.data.riderId,
-    });
-  } catch (error) {
-    return buildPushSubscribeServerErrorResponse(error);
-  }
+  return runParsedRoute({
+    req,
+    parseBody: parseRiderPushSubscribeBody,
+    authorize: authorizeRider,
+    runAuthorized: runRiderPushSubscribeAuthorized,
+    onBadRequest: buildPushSubscribeBadRequestResponse,
+    onError: buildPushSubscribeServerErrorResponse,
+  });
 }
 
 export function buildPushSubscribeBadRequestResponse() {
@@ -269,104 +196,67 @@ export function buildPushUnsubscribeServerErrorResponse(error: unknown) {
 }
 
 export async function runCustomerPushStatusPostRoute(req: Request) {
-  try {
-    const body = await req.json();
-    const parsed = parseCustomerPushTargetBody(body);
-    if (!parsed) return buildPushSubscribeBadRequestResponse();
-
-    const auth = await requireCustomerOrderAccess(parsed.orderId);
-    if (!auth.ok) return auth.response;
-
-    const status = await getSubscriptionStatus(
-      parsed.orderId,
-      parsed.endpoint,
-      parsed.role
-    );
-    return NextResponse.json(status);
-  } catch (error) {
-    return buildPushStatusServerErrorResponse(error);
-  }
+  return runParsedRoute({
+    req,
+    parseBody: parseCustomerPushTargetBody,
+    authorize: authorizeCustomerOrder,
+    runAuthorized: runCustomerPushStatusAuthorized,
+    onBadRequest: buildPushSubscribeBadRequestResponse,
+    onError: buildPushStatusServerErrorResponse,
+  });
 }
 
 export async function runCustomerPushUnsubscribePostRoute(req: Request) {
-  try {
-    const body = await req.json();
-    const parsed = parseCustomerPushTargetBody(body);
-    if (!parsed) return buildPushSubscribeBadRequestResponse();
-
-    const auth = await requireCustomerOrderAccess(parsed.orderId);
-    if (!auth.ok) return auth.response;
-
-    await removeSubscription(parsed.endpoint, parsed.orderId, parsed.role);
-    return NextResponse.json({ ok: true });
-  } catch (error) {
-    return buildPushUnsubscribeServerErrorResponse(error);
-  }
+  return runParsedRoute({
+    req,
+    parseBody: parseCustomerPushTargetBody,
+    authorize: authorizeCustomerOrder,
+    runAuthorized: runCustomerPushUnsubscribeAuthorized,
+    onBadRequest: buildPushSubscribeBadRequestResponse,
+    onError: buildPushUnsubscribeServerErrorResponse,
+  });
 }
 
 export async function runPharmPushStatusPostRoute(req: Request) {
-  try {
-    const body = await req.json();
-    const parsed = parsePharmPushTargetBody(body);
-    if (!parsed) return buildPushSubscribeBadRequestResponse();
-
-    const auth = await requirePharmSession(parsed.pharmacyId);
-    if (!auth.ok) return auth.response;
-
-    const status = await getPharmacySubscriptionStatus(
-      auth.data.pharmacyId,
-      parsed.endpoint
-    );
-    return NextResponse.json(status);
-  } catch (error) {
-    return buildPushStatusServerErrorResponse(error);
-  }
+  return runParsedRoute({
+    req,
+    parseBody: parsePharmPushTargetBody,
+    authorize: authorizePharm,
+    runAuthorized: runPharmPushStatusAuthorized,
+    onBadRequest: buildPushSubscribeBadRequestResponse,
+    onError: buildPushStatusServerErrorResponse,
+  });
 }
 
 export async function runPharmPushUnsubscribePostRoute(req: Request) {
-  try {
-    const body = await req.json();
-    const parsed = parsePharmPushTargetBody(body);
-    if (!parsed) return buildPushSubscribeBadRequestResponse();
-
-    const auth = await requirePharmSession(parsed.pharmacyId);
-    if (!auth.ok) return auth.response;
-
-    await removePharmacySubscription(parsed.endpoint, auth.data.pharmacyId);
-    return NextResponse.json({ ok: true });
-  } catch (error) {
-    return buildPushUnsubscribeServerErrorResponse(error);
-  }
+  return runParsedRoute({
+    req,
+    parseBody: parsePharmPushTargetBody,
+    authorize: authorizePharm,
+    runAuthorized: runPharmPushUnsubscribeAuthorized,
+    onBadRequest: buildPushSubscribeBadRequestResponse,
+    onError: buildPushUnsubscribeServerErrorResponse,
+  });
 }
 
 export async function runRiderPushStatusPostRoute(req: Request) {
-  try {
-    const body = await req.json();
-    const parsed = parseRiderPushTargetBody(body);
-    if (!parsed) return buildPushSubscribeBadRequestResponse();
-
-    const auth = await requireRiderSession(parsed.riderId);
-    if (!auth.ok) return auth.response;
-
-    const status = await getRiderSubscriptionStatus(auth.data.riderId, parsed.endpoint);
-    return NextResponse.json(status);
-  } catch (error) {
-    return buildPushStatusServerErrorResponse(error);
-  }
+  return runParsedRoute({
+    req,
+    parseBody: parseRiderPushTargetBody,
+    authorize: authorizeRider,
+    runAuthorized: runRiderPushStatusAuthorized,
+    onBadRequest: buildPushSubscribeBadRequestResponse,
+    onError: buildPushStatusServerErrorResponse,
+  });
 }
 
 export async function runRiderPushUnsubscribePostRoute(req: Request) {
-  try {
-    const body = await req.json();
-    const parsed = parseRiderPushTargetBody(body);
-    if (!parsed) return buildPushSubscribeBadRequestResponse();
-
-    const auth = await requireRiderSession(parsed.riderId);
-    if (!auth.ok) return auth.response;
-
-    await removeRiderSubscription(parsed.endpoint, auth.data.riderId);
-    return NextResponse.json({ ok: true });
-  } catch (error) {
-    return buildPushUnsubscribeServerErrorResponse(error);
-  }
+  return runParsedRoute({
+    req,
+    parseBody: parseRiderPushTargetBody,
+    authorize: authorizeRider,
+    runAuthorized: runRiderPushUnsubscribeAuthorized,
+    onBadRequest: buildPushSubscribeBadRequestResponse,
+    onError: buildPushUnsubscribeServerErrorResponse,
+  });
 }

@@ -9,20 +9,15 @@ Only function-like blocks with at least 30 lines are included.
 
 | Lines | Kind | Function | Location |
 |---:|---|---|---|
+| 727 | `function` | `EmployeeReportClient` | `app/(features)/employee-report/EmployeeReportClient.tsx:55` |
 | 680 | `function` | `LandingSection2` | `app/(components)/landingSection2.tsx:29` |
-| 616 | `function` | `B2bAdminReportClient` | `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx:53` |
-| 598 | `function` | `EmployeeReportClient` | `app/(features)/employee-report/EmployeeReportClient.tsx:54` |
-| 473 | `function` | `ProfileImageEditor` | `app/me/profileImageEditor.tsx:16` |
-| 459 | `function` | `GoogleTranslateGate` | `components/common/GoogleTranslateGate.tsx:15` |
-| 453 | `function` | `MeClient` | `app/me/meClient.tsx:36` |
+| 653 | `function` | `B2bAdminReportClient` | `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx:53` |
 | 451 | `function` | `HomeProductSection` | `app/(components)/homeProductSection.tsx:84` |
-| 451 | `function` | `MyDataPage` | `app/my-data/page.tsx:25` |
-| 420 | `function` | `ReportSummaryCards` | `components/b2b/ReportSummaryCards.tsx:60` |
-| 414 | `function` | `CSection` | `app/assess/components/CSection.tsx:76` |
+| 417 | `function` | `ReportSummaryCards` | `components/b2b/ReportSummaryCards.tsx:60` |
 | 399 | `function` | `EditorAdminClient` | `app/(admin)/admin/column/editor/EditorAdminClient.tsx:44` |
-| 389 | `function` | `Assess` | `app/assess/page.tsx:33` |
 | 385 | `function` | `Cart` | `components/order/cart.tsx:38` |
 | 374 | `function` | `RecommendedProductActions` | `app/chat/components/RecommendedProductActions.tsx:26` |
+| 365 | `function` | `useAssessFlow` | `app/assess/useAssessFlow.ts:29` |
 | 355 | `function` | `ProductManager` | `components/manager/productManager.tsx:14` |
 | 350 | `function` | `PharmacyProductManager` | `components/manager/pharmacyProductManager.tsx:18` |
 | 343 | `function` | `OrderComplete` | `app/(orders)/order-complete/page.tsx:43` |
@@ -36,20 +31,15 @@ Only function-like blocks with at least 30 lines are included.
 | 327 | `function` | `EnglishCheckAI` | `app/en/check-ai/page.tsx:45` |
 | 324 | `function` | `DesktopChatDock` | `components/chat/DesktopChatDock.tsx:50` |
 | 324 | `function` | `ProductDetail` | `components/product/productDetail.tsx:24` |
-| 312 | `function` | `TestimonialsSection` | `app/(components)/testimonialsSection.tsx:65` |
 | 307 | `function` | `CheckAI` | `app/check-ai/page.tsx:32` |
-| 307 | `function` | `PersonalHealthReportA4` | `app/test/page.tsx:16` |
 | 307 | `function` | `CartItemsSection` | `components/order/cartItemsSection.tsx:15` |
 | 304 | `function` | `KakaoExternalBridge` | `components/common/kakaoExternalBridge.tsx:29` |
-| 301 | `function` | `usePharmPushSubscription` | `components/pharm/usePharmPushSubscription.ts:18` |
-| 301 | `function` | `useRiderPushSubscription` | `components/rider/useRiderPushSubscription.ts:18` |
+| 302 | `function` | `executeNhisFetch` | `lib/server/hyphen/fetch-executor.ts:78` |
 | 297 | `function` | `runModule05OptimizationMvp` | `lib/rnd/module05-optimization/mvp-engine.ts:77` |
 | 287 | `function` | `DesktopChatDockPanel` | `components/chat/DesktopChatDockPanel.tsx:29` |
 | 287 | `function` | `CommandPalette` | `components/common/commandPalette.tsx:26` |
 | 284 | `function` | `AgentPlaygroundPage` | `app/agent-playground/page.tsx:182` |
-| 281 | `function` | `executeNhisFetch` | `lib/server/hyphen/fetch-executor.ts:78` |
 | 279 | `function` | `runModule06ClosedLoopMvp` | `lib/rnd/module06-closed-loop-ai/mvp-engine.ts:104` |
-| 276 | `function` | `EmailChangeModal` | `app/me/emailChangeModal.tsx:45` |
 | 275 | `function` | `AddressModal` | `components/modal/addressModal.tsx:39` |
 | 270 | `function` | `buildModule06FixtureRecords` | `lib/rnd/module06-closed-loop-ai/scaffold-fixtures.ts:18` |
 | 269 | `function` | `CategoryManager` | `components/manager/categoryManager.tsx:14` |
@@ -57,43 +47,53 @@ Only function-like blocks with at least 30 lines are included.
 | 261 | `function` | `ColumnEditorWorkspace` | `app/(admin)/admin/column/editor/_components/ColumnEditorWorkspace.tsx:47` |
 | 261 | `function` | `CustomerOrderAccordionItem` | `components/order/customerOrderAccordionItem.tsx:43` |
 | 260 | `function` | `ColumnDetailPage` | `app/column/[slug]/page.tsx:68` |
-| 260 | `function` | `usePhoneAndPassword` | `components/order/hooks/usePhoneAndPassword.ts:12` |
-| 258 | `function` | `PhoneLinkSection` | `app/me/phoneLinkSection.tsx:55` |
+| 256 | `function` | `buildFallbackExecuteDecision` | `lib/chat/actions/fallback.ts:64` |
+| 253 | `function` | `Terms` | `app/about/terms/page.tsx:3` |
+| 252 | `function` | `useProfileImageEditorController` | `app/me/useProfileImageEditorController.ts:28` |
+| 250 | `function` | `MeClient` | `app/me/meClient.tsx:25` |
+| 247 | `function` | `useDesktopChatDockLayout` | `components/chat/useDesktopChatDockLayout.ts:63` |
+| 246 | `function` | `ChatPage` | `app/chat/page.tsx:35` |
+| 245 | `function` | `SurveyQuestionField` | `app/(admin)/admin/b2b-reports/_components/SurveyQuestionField.tsx:38` |
+| 244 | `function` | `useDesktopChatDockPointer` | `components/chat/useDesktopChatDockPointer.ts:53` |
+| 234 | `function` | `usePhoneAndPassword` | `components/order/hooks/usePhoneAndPassword.ts:16` |
+| 233 | `function` | `useCustomerOrderPushState` | `components/order/useCustomerOrderPushState.ts:11` |
+| 232 | `function` | `useRolePushSubscription` | `components/push/useRolePushSubscription.ts:31` |
+| 230 | `function` | `Pharm` | `app/(pharm)/pharm/page.tsx:18` |
 
 ## Scripts Top 30
 
 | Lines | Kind | Function | Location |
 |---:|---|---|---|
-| 238 | `function-expression` | `runEncodingAudit` | `scripts/audit-encoding.ts:1` |
-| 211 | `function` | `main` | `scripts/rnd/module02/evaluate-kpi-rollup.ts:297` |
-| 164 | `function` | `buildReadinessChecks` | `scripts/rnd/module03/scheduler-readiness-checks.ts:73` |
-| 160 | `function` | `parseSchedulerDeploymentBundle` | `scripts/rnd/module03/generate-scheduler-infra-binding.ts:145` |
-| 140 | `function` | `main` | `scripts/rnd/module03/run-scheduler-handoff-validation.ts:404` |
-| 120 | `function` | `main` | `scripts/rnd/module03/run-scheduler-production-gate.ts:219` |
-| 94 | `function` | `findLineIssues` | `scripts/audit-encoding.ts:124` |
-| 89 | `function` | `parseInfraBindingArtifact` | `scripts/rnd/module03/run-scheduler-dry-run-window.ts:133` |
-| 85 | `function` | `parseHandoffSummary` | `scripts/rnd/module03/scheduler-readiness-artifacts.ts:132` |
-| 79 | `function` | `applyRetentionPolicy` | `scripts/rnd/module03/archive-adverse-event-evaluation-monthly.ts:300` |
+| 85 | `function` | `parseHandoffSummary` | `scripts/rnd/module03/scheduler-readiness-parse-handoff.ts:32` |
 | 76 | `function` | `emitFailureAlert` | `scripts/rnd/module03/orchestrate-adverse-event-evaluation-monthly-failure-alert.ts:78` |
-| 76 | `function` | `runScheduler` | `scripts/rnd/module03/orchestrate-adverse-event-evaluation-monthly.ts:136` |
-| 73 | `function` | `main` | `scripts/rnd/module03/archive-adverse-event-evaluation-monthly.ts:437` |
-| 72 | `function` | `buildSchedulerArgs` | `scripts/rnd/module03/run-scheduler-dry-run-window.ts:244` |
-| 72 | `function` | `parseArgs` | `scripts/rnd/module03/run-scheduler-production-gate.ts:146` |
-| 67 | `function` | `parseArgs` | `scripts/rnd/module03/orchestrate-adverse-event-evaluation-monthly.ts:68` |
-| 67 | `function` | `main` | `scripts/rnd/module03/validate-scheduler-production-readiness.ts:92` |
-| 65 | `function` | `parseSchemaMap` | `scripts/rnd/module03/evaluate-adverse-event-count-from-source.ts:82` |
-| 62 | `function` | `main` | `scripts/audit-hotspots.ts:216` |
-| 62 | `function` | `main` | `scripts/audit-route-method-exports.ts:32` |
-| 62 | `function` | `buildBundle` | `scripts/rnd/module03/generate-scheduler-deployment-bundle.ts:241` |
+| 67 | `function` | `main` | `scripts/audit-hotspots.ts:79` |
+| 66 | `function` | `parseSchemaMap` | `scripts/rnd/module03/evaluate-adverse-event-count-from-source-schema.ts:11` |
+| 64 | `function` | `addRequiredEnvCoverageChecks` | `scripts/rnd/module03/scheduler-readiness-checks.integrity.ts:9` |
 | 61 | `function` | `main` | `scripts/backfill-app-user-results.ts:5` |
 | 60 | `function` | `buildIntegrationSamples` | `scripts/rnd/module07/evaluate-integration-rate.ts:83` |
-| 59 | `function` | `parseDryRunReport` | `scripts/rnd/module03/run-scheduler-handoff-validation.ts:237` |
 | 58 | `function` | `scenarioFirstVisit` | `scripts/smoke-scope.ts:46` |
-| 57 | `function` | `readOpsOutput` | `scripts/rnd/module03/archive-adverse-event-evaluation-monthly.ts:133` |
-| 57 | `function` | `parseArgs` | `scripts/rnd/module03/generate-scheduler-deployment-bundle.ts:152` |
-| 56 | `function` | `parseDeploymentBundle` | `scripts/rnd/module03/run-scheduler-handoff-validation.ts:180` |
-| 55 | `function` | `buildInfraBindingArtifact` | `scripts/rnd/module03/generate-scheduler-infra-binding.ts:423` |
 | 54 | `function` | `deliverFailureWebhook` | `scripts/rnd/module03/orchestrate-adverse-event-evaluation-monthly-failure-alert.ts:23` |
+| 53 | `function` | `main` | `scripts/rnd/module06/run-mvp-closed-loop.ts:30` |
+| 52 | `function` | `main` | `scripts/rnd/module07/evaluate-integration-rate.ts:183` |
+| 50 | `function` | `main` | `scripts/rnd/module03/run-scheduler-handoff-validation.ts:20` |
+| 49 | `function` | `runWarehouseExport` | `scripts/rnd/module03/orchestrate-adverse-event-evaluation-monthly-export-runtime.ts:36` |
+| 49 | `function` | `main` | `scripts/rnd/module07/run-mvp-integration.ts:20` |
+| 48 | `function` | `readArchiveLatest` | `scripts/rnd/module03/orchestrate-adverse-event-evaluation-monthly-archive-readers.ts:55` |
+| 48 | `function` | `main` | `scripts/rnd/module03/run-scheduler-dry-run-window.ts:98` |
+| 48 | `function` | `parseInfraBinding` | `scripts/rnd/module03/scheduler-readiness-parse-infra.ts:15` |
+| 45 | `function` | `buildOpsEvaluationOutput` | `scripts/rnd/module03/evaluate-adverse-event-count-from-source-artifacts.ts:8` |
+| 45 | `function` | `main` | `scripts/rnd/module06/evaluate-closed-loop-accuracy.ts:104` |
+| 44 | `function-expression` | `runRouteMethodExportAudit` | `scripts/audit-route-method-exports.ts:1` |
+| 44 | `function` | `toSamples` | `scripts/rnd/module03/evaluate-adverse-event-count-from-source-schema.ts:118` |
+| 44 | `function` | `main` | `scripts/rnd/module03/evaluate-reference-accuracy.ts:106` |
+| 44 | `function` | `buildProductionGateArtifact` | `scripts/rnd/module03/scheduler-production-gate-artifacts.ts:44` |
+| 44 | `function` | `parseArgs` | `scripts/rnd/module03/scheduler-production-gate-cli.ts:78` |
+| 42 | `function` | `runNodeScript` | `scripts/rnd/module03/node-script-runner.ts:45` |
+| 42 | `function` | `parseInfraBindingArtifact` | `scripts/rnd/module03/scheduler-dry-run-infra-parser.ts:134` |
+| 42 | `function` | `loadBindingsFromFile` | `scripts/rnd/module03/scheduler-secret-bindings.ts:44` |
+| 41 | `function` | `parseArchiveLatestEntry` | `scripts/rnd/module03/orchestrate-adverse-event-evaluation-monthly-archive-readers.ts:13` |
+| 41 | `function` | `main` | `scripts/rnd/module04/evaluate-improvement-pp.ts:42` |
+| 41 | `function` | `main` | `scripts/rnd/module05/run-mvp-optimization.ts:59` |
 
 ## Notes
 

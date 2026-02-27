@@ -1,20 +1,33 @@
-const fs = require("node:fs") as typeof import("node:fs");
 const pathUtil = require("node:path") as typeof import("node:path");
+const { buildHotspotCodeRows } = require("../lib/hotspot-code-files.cts") as {
+  buildHotspotCodeRows: (
+    rootDir: string
+  ) => Array<{
+    abs: string;
+    file: string;
+    lines: number;
+  }>;
+};
 const {
-  countFileLines,
-  listFilesRecursively,
-  toPosixRelative,
-} = require("../lib/code-file-scan.cts") as {
-  countFileLines: (filePath: string) => number;
-  listFilesRecursively: (
-    rootDir: string,
-    options?: {
-      excludeDirs?: string[] | Set<string>;
-      includeExtensions?: string[] | Set<string>;
-      ignoreDotEntries?: boolean;
-    }
-  ) => string[];
-  toPosixRelative: (rootDir: string, filePath: string) => string;
+  isScriptFile,
+  isApiRouteFile,
+  isFrontendSurfaceFile,
+} = require("../lib/hotspot-paths.cts") as {
+  isScriptFile: (file: string) => boolean;
+  isApiRouteFile: (file: string) => boolean;
+  isFrontendSurfaceFile: (file: string) => boolean;
+};
+const { writeIfChanged } = require("../lib/write-if-changed.cts") as {
+  writeIfChanged: (options: {
+    outputPath: string;
+    content: string;
+    rootDir?: string;
+    encoding?: BufferEncoding;
+  }) => {
+    changed: boolean;
+    outputPath: string;
+    relativePath: string;
+  };
 };
 
 type Row = {
@@ -24,21 +37,6 @@ type Row = {
 
 const REPO_ROOT = process.cwd();
 const OUTPUT_PATH = pathUtil.join(REPO_ROOT, "REFACTOR_HOTSPOTS.md");
-
-function shouldInclude(rel: string) {
-  if (rel.startsWith("docs/")) return false;
-  if (rel.startsWith("prisma/migrations/")) return false;
-  if (rel.startsWith("android/app/build/")) return false;
-  if (rel.startsWith("ios/build/")) return false;
-  if (rel.startsWith(".next/")) return false;
-  if (rel.endsWith(".md")) return false;
-  return (
-    rel.endsWith(".ts") ||
-    rel.endsWith(".tsx") ||
-    rel.endsWith(".js") ||
-    rel.endsWith(".jsx")
-  );
-}
 
 function topRows(rows: Row[], size: number) {
   return [...rows]
@@ -52,17 +50,6 @@ function topRowsByFilter(
   predicate: (row: Row) => boolean
 ) {
   return topRows(rows.filter(predicate), size);
-}
-
-function isApiRouteFile(file: string) {
-  return file.startsWith("app/api/") && file.endsWith("/route.ts");
-}
-
-function isFrontendSurfaceFile(file: string) {
-  if (file.startsWith("app/api/")) return false;
-  if (file.startsWith("app/")) return true;
-  if (file.startsWith("components/")) return true;
-  return false;
 }
 
 function section(title: string, rows: Row[]) {
@@ -79,26 +66,17 @@ function section(title: string, rows: Row[]) {
 }
 
 function main() {
-  const files = listFilesRecursively(REPO_ROOT, {
-    excludeDirs: [".git", "node_modules", ".next"],
-    ignoreDotEntries: true,
-  })
-    .map((filePath) => ({
-      abs: filePath,
-      rel: toPosixRelative(REPO_ROOT, filePath),
-    }))
-    .filter((item) => shouldInclude(item.rel));
+  const files = buildHotspotCodeRows(REPO_ROOT);
 
   const runtimeRows: Row[] = [];
   const scriptRows: Row[] = [];
 
   for (const item of files) {
-    const lines = countFileLines(item.abs);
-    if (item.rel.startsWith("scripts/")) {
-      scriptRows.push({ file: item.rel, lines });
+    if (isScriptFile(item.file)) {
+      scriptRows.push({ file: item.file, lines: item.lines });
       continue;
     }
-    runtimeRows.push({ file: item.rel, lines });
+    runtimeRows.push({ file: item.file, lines: item.lines });
   }
 
   const topRuntime = topRows(runtimeRows, 25);
@@ -129,14 +107,15 @@ function main() {
   doc.push("");
 
   const nextContent = doc.join("\n");
-  const currentContent = fs.existsSync(OUTPUT_PATH)
-    ? fs.readFileSync(OUTPUT_PATH, "utf8")
-    : null;
-  if (currentContent !== nextContent) {
-    fs.writeFileSync(OUTPUT_PATH, nextContent, "utf8");
-    console.log(`Wrote hotspot report: ${toPosixRelative(REPO_ROOT, OUTPUT_PATH)}`);
+  const writeResult = writeIfChanged({
+    outputPath: OUTPUT_PATH,
+    content: nextContent,
+    rootDir: REPO_ROOT,
+  });
+  if (writeResult.changed) {
+    console.log(`Wrote hotspot report: ${writeResult.relativePath}`);
   } else {
-    console.log(`Hotspot report unchanged: ${toPosixRelative(REPO_ROOT, OUTPUT_PATH)}`);
+    console.log(`Hotspot report unchanged: ${writeResult.relativePath}`);
   }
 }
 

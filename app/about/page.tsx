@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useFooter } from "@/components/common/footerContext";
 import { useEffect, useRef } from "react";

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import KakaoLoginButton from "@/components/common/kakaoLoginButton";
 import { MenuLinks } from "./menuLinks";

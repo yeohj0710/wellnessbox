@@ -13,13 +13,13 @@ import {
 } from "@/lib/b2b/report-payload-analysis";
 import {
   extractHealthMetrics,
-  extractMedicationRows,
   parseFetchFlags,
 } from "@/lib/b2b/report-payload-health";
 import {
   buildCredibleTopIssues,
   resolveMedicationStatus,
 } from "@/lib/b2b/report-payload-issues";
+import { resolveReportMedicationRows } from "@/lib/b2b/report-payload-medication";
 import {
   asRecord,
   toText,
@@ -27,20 +27,8 @@ import {
 import type { B2bReportPayload } from "@/lib/b2b/report-payload-types";
 import { extractWellness } from "@/lib/b2b/report-payload-wellness";
 import { resolveReportScores } from "@/lib/b2b/report-score-engine";
-import { normalizeTreatmentPayload } from "@/lib/server/hyphen/normalize-treatment";
 
 export const B2B_REPORT_PAYLOAD_VERSION = 9;
-const MEDICATION_RECENT_LIMIT = 3;
-const MEDICATION_HISTORY_LOOKBACK = 8;
-const MEDICATION_DERIVED_PHARMACY_LABEL = "약국 조제";
-const MEDICATION_DERIVED_VISIT_SUFFIX = " 진료";
-
-type ReportMedicationRow = {
-  medicationName: string;
-  hospitalName: string | null;
-  date: string | null;
-  dosageDay: string | null;
-};
 
 async function findLatestByPeriodOrFallback<T>(input: {
   periodKey: string;
@@ -52,151 +40,6 @@ async function findLatestByPeriodOrFallback<T>(input: {
   const range = monthRangeFromPeriodKey(input.periodKey);
   if (!range) return null;
   return input.fallbackFinder(range.to);
-}
-
-function extractMedicationRowsFromRaw(rawJson: unknown): ReportMedicationRow[] {
-  const root = asRecord(rawJson);
-  const data = asRecord(root?.data) ?? root;
-  const raw = asRecord(data?.raw);
-  const medicationPayload = raw?.medication;
-  if (!medicationPayload) return [];
-
-  const treatment = normalizeTreatmentPayload(
-    medicationPayload as Record<string, unknown>
-  );
-  if (!Array.isArray(treatment.list) || treatment.list.length === 0) return [];
-
-  const pseudoNormalized = {
-    medication: {
-      list: treatment.list,
-    },
-  };
-  return extractMedicationRows(pseudoNormalized).rows;
-}
-
-function parseMedicationDateScore(value: string | null | undefined) {
-  const text = (value ?? "").trim();
-  if (!text) return 0;
-  const digits = text.replace(/\D/g, "");
-  if (digits.length >= 8) {
-    const score = Number(digits.slice(0, 8));
-    return Number.isFinite(score) ? score : 0;
-  }
-  if (digits.length >= 6) {
-    const score = Number(`${digits.slice(0, 6)}01`);
-    return Number.isFinite(score) ? score : 0;
-  }
-  return 0;
-}
-
-function medicationVisitKey(row: ReportMedicationRow, fallbackIndex: number) {
-  const date = (row.date ?? "").trim();
-  const hospital = (row.hospitalName ?? "").trim();
-  if (!date && !hospital) return `unknown-${fallbackIndex}`;
-  return `${date}|${hospital}`;
-}
-
-function isDerivedMedicationLabel(name: string | null | undefined) {
-  const text = (name ?? "").trim();
-  if (!text) return true;
-  return (
-    text === MEDICATION_DERIVED_PHARMACY_LABEL ||
-    text.endsWith(MEDICATION_DERIVED_VISIT_SUFFIX)
-  );
-}
-
-function medicationNameQuality(name: string | null | undefined) {
-  const text = (name ?? "").trim();
-  if (!text) return 0;
-  if (isDerivedMedicationLabel(text)) return 1;
-  return 2;
-}
-
-function pickPreferredMedicationRow(
-  left: ReportMedicationRow,
-  right: ReportMedicationRow
-) {
-  const leftQuality = medicationNameQuality(left.medicationName);
-  const rightQuality = medicationNameQuality(right.medicationName);
-  if (rightQuality > leftQuality) return right;
-  if (leftQuality > rightQuality) return left;
-
-  const leftDate = parseMedicationDateScore(left.date);
-  const rightDate = parseMedicationDateScore(right.date);
-  if (rightDate > leftDate) return right;
-  if (leftDate > rightDate) return left;
-
-  const leftNameLength = (left.medicationName ?? "").trim().length;
-  const rightNameLength = (right.medicationName ?? "").trim().length;
-  if (rightNameLength > leftNameLength) return right;
-  return left;
-}
-
-async function resolveRecentMedicationRows(input: {
-  employeeId: string;
-  periodKey: string;
-  latestSnapshotId: string | null;
-  primaryRows: ReportMedicationRow[];
-}) {
-  const byVisit = new Map<string, { row: ReportMedicationRow; order: number }>();
-  let order = 0;
-
-  const appendRows = (rows: ReportMedicationRow[]) => {
-    for (const row of rows) {
-      const key = medicationVisitKey(row, order);
-      const existing = byVisit.get(key);
-      if (!existing) {
-        byVisit.set(key, { row, order });
-        order += 1;
-        continue;
-      }
-      existing.row = pickPreferredMedicationRow(existing.row, row);
-    }
-  };
-
-  appendRows(input.primaryRows);
-  if (byVisit.size >= MEDICATION_RECENT_LIMIT) {
-    return [...byVisit.values()]
-      .sort((left, right) => {
-        const scoreDiff =
-          parseMedicationDateScore(right.row.date) -
-          parseMedicationDateScore(left.row.date);
-        if (scoreDiff !== 0) return scoreDiff;
-        return left.order - right.order;
-      })
-      .slice(0, MEDICATION_RECENT_LIMIT)
-      .map((item) => item.row);
-  }
-
-  const historySnapshots = await db.b2bHealthDataSnapshot.findMany({
-    where: {
-      employeeId: input.employeeId,
-      periodKey: input.periodKey,
-      sourceMode: "hyphen",
-      ...(input.latestSnapshotId ? { id: { not: input.latestSnapshotId } } : {}),
-    },
-    orderBy: { fetchedAt: "desc" },
-    select: { normalizedJson: true },
-    take: MEDICATION_HISTORY_LOOKBACK,
-  });
-
-  for (const snapshot of historySnapshots) {
-    const rows = extractMedicationRows(snapshot.normalizedJson).rows;
-    if (rows.length === 0) continue;
-    appendRows(rows);
-    if (byVisit.size >= MEDICATION_RECENT_LIMIT) break;
-  }
-
-  return [...byVisit.values()]
-    .sort((left, right) => {
-      const scoreDiff =
-        parseMedicationDateScore(right.row.date) -
-        parseMedicationDateScore(left.row.date);
-      if (scoreDiff !== 0) return scoreDiff;
-      return left.order - right.order;
-    })
-    .slice(0, MEDICATION_RECENT_LIMIT)
-    .map((item) => item.row);
 }
 
 export type { B2bReportPayload } from "@/lib/b2b/report-payload-types";
@@ -282,25 +125,18 @@ export async function buildB2bReportPayload(input: {
   ]);
 
   const metrics = extractHealthMetrics(latestHealth?.normalizedJson);
-  const medicationExtraction = extractMedicationRows(latestHealth?.normalizedJson);
-  const medicationRowsFromRaw = extractMedicationRowsFromRaw(latestHealth?.rawJson);
-  const primaryMedicationRows =
-    medicationRowsFromRaw.length > 0
-      ? medicationRowsFromRaw
-      : medicationExtraction.rows;
-  const medications =
-    latestHealth && primaryMedicationRows.length < MEDICATION_RECENT_LIMIT
-      ? await resolveRecentMedicationRows({
-          employeeId: input.employeeId,
-          periodKey: input.periodKey,
-          latestSnapshotId: latestHealth.id,
-          primaryRows: primaryMedicationRows,
-        })
-      : primaryMedicationRows;
+  const medicationResolution = await resolveReportMedicationRows({
+    employeeId: input.employeeId,
+    periodKey: input.periodKey,
+    latestSnapshotId: latestHealth?.id ?? null,
+    normalizedJson: latestHealth?.normalizedJson,
+    rawJson: latestHealth?.rawJson,
+  });
+  const medications = medicationResolution.rows;
   const fetchStatus = parseFetchFlags(latestHealth?.rawJson);
   const medicationStatus = resolveMedicationStatus({
     medications,
-    containerState: medicationExtraction.containerState,
+    containerState: medicationResolution.containerState,
     sourceMode: latestHealth?.sourceMode ?? null,
     rawJson: latestHealth?.rawJson,
   });

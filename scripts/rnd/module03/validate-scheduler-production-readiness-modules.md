@@ -5,23 +5,41 @@
 ## File Roles
 
 - `validate-scheduler-production-readiness.ts`
-  - Parses CLI arguments and orchestrates readiness validation output generation.
-  - Builds PASS/FAIL report artifact from parsed inputs and check results.
+  - Readiness validator orchestration entry (`args -> source load -> check compute -> report write -> exit policy`).
+- `validate-scheduler-production-readiness-types.ts`
+  - Shared validator contracts/constants for CLI/source/computation/report wiring.
+- `validate-scheduler-production-readiness-cli.ts`
+  - CLI/default parser and summary-path/output-path/environment flag validation.
+- `validate-scheduler-production-readiness-runtime.ts`
+  - Source loader and readiness-check computation helpers.
+- `validate-scheduler-production-readiness-artifacts.ts`
+  - PASS/FAIL readiness report builder and exit-message/exit-code policy.
 - `scheduler-readiness-artifacts.ts`
-  - Shared schema/type definitions for handoff and infra-binding artifacts.
-  - Artifact parsing and path resolution utilities used by readiness validation.
+  - Stable export surface for readiness artifact parser/type modules.
+- `scheduler-readiness-artifacts.parsers.ts`
+  - Stable export surface for readiness parser/path helper modules.
+- `scheduler-readiness-parse-common.ts`
+  - Shared readiness parser helpers (section guard, env-key array parser, secret-binding parser).
+- `scheduler-readiness-parse-handoff.ts`
+  - Handoff summary parser helpers and identity/section validation.
+- `scheduler-readiness-parse-infra.ts`
+  - Infra-binding parser helpers and identity/section validation.
 - `scheduler-readiness-checks.ts`
-  - Encapsulates readiness check rules and detail message construction.
-  - Handles environment, input-source, and secret-binding consistency checks.
+  - Readiness check orchestration entry and check-group composition.
 - `orchestrate-adverse-event-evaluation-monthly-helpers.ts`
   - Shared utility functions for JSON I/O and workspace path formatting.
   - Imported to avoid duplicate helper implementations.
 
 ## Edit Guide
 
-- Change top-level CLI/report wiring in `validate-scheduler-production-readiness.ts`.
-- Change artifact schema parsing in `scheduler-readiness-artifacts.ts`.
-- Change readiness rule definitions in `scheduler-readiness-checks.ts`.
+- Change CLI/default policy in `validate-scheduler-production-readiness-cli.ts`.
+- Change source-load/check-computation flow in `validate-scheduler-production-readiness-runtime.ts`.
+- Change report shape or exit behavior in `validate-scheduler-production-readiness-artifacts.ts`.
+- Change readiness handoff parser behavior in `scheduler-readiness-parse-handoff.ts`.
+- Change readiness infra parser behavior in `scheduler-readiness-parse-infra.ts`.
+- Change readiness parser helper behavior in `scheduler-readiness-parse-common.ts`.
+- Change readiness artifact path resolver behavior in `scheduler-readiness-artifacts.parsers.ts`.
+- Change readiness rule definitions in readiness-check modules.
 - Change shared utility behavior in `orchestrate-adverse-event-evaluation-monthly-helpers.ts`.
 
 ## Minimum Validation

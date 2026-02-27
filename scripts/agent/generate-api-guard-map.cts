@@ -1,12 +1,4 @@
-const fs = require("node:fs") as typeof import("node:fs");
 const pathUtil = require("node:path") as typeof import("node:path");
-const {
-  extractExportedHttpMethods,
-  walkRouteFiles: walkApiRouteFiles,
-} = require("../lib/route-method-audit.cts") as {
-  extractExportedHttpMethods: (source: string) => string[];
-  walkRouteFiles: (dir: string) => string[];
-};
 const {
   EXPECTED_SESSION_ROUTE_ENTRIES,
   ROUTE_GUARD_TOKENS,
@@ -18,20 +10,87 @@ const {
   }>;
   ROUTE_GUARD_TOKENS: string[];
 };
-
-type RouteEntry = {
-  file: string;
-  route: string;
-  methods: string[];
-  guards: string[];
-  importsRouteAuth: boolean;
-  usesGetSession: boolean;
-  note: string | null;
-  classification:
-    | "guarded"
-    | "review_expected"
-    | "review_unexpected"
-    | "public_or_internal";
+const {
+  buildGuardMapMarkdown,
+  groupRouteEntries,
+  scanApiGuardEntries,
+} = require("../lib/guard-map.cts") as {
+  buildGuardMapMarkdown: (input: {
+    entries: Array<{
+      file: string;
+      route: string;
+      methods: string[];
+      guards: string[];
+      importsRouteAuth: boolean;
+      usesGetSession: boolean;
+      note: string | null;
+      classification:
+        | "guarded"
+        | "review_expected"
+        | "review_unexpected"
+        | "public_or_internal";
+    }>;
+    groups: {
+      guarded: Array<{ route: string }>;
+      expectedReview: Array<{ route: string }>;
+      unexpectedReview: Array<{ route: string }>;
+      publicOrInternal: Array<{ route: string }>;
+      missingMethodExports: Array<{ route: string }>;
+    };
+  }) => string;
+  groupRouteEntries: (
+    entries: Array<{
+      file: string;
+      route: string;
+      methods: string[];
+      guards: string[];
+      importsRouteAuth: boolean;
+      usesGetSession: boolean;
+      note: string | null;
+      classification:
+        | "guarded"
+        | "review_expected"
+        | "review_unexpected"
+        | "public_or_internal";
+    }>
+  ) => {
+    guarded: Array<{ route: string }>;
+    expectedReview: Array<{ route: string }>;
+    unexpectedReview: Array<{ route: string }>;
+    publicOrInternal: Array<{ route: string }>;
+    missingMethodExports: Array<{ route: string }>;
+  };
+  scanApiGuardEntries: (input: {
+    repoRoot: string;
+    apiRoot: string;
+    routeGuardTokens: string[];
+    expectedSessionRouteNotes: Record<string, string>;
+  }) => Array<{
+    file: string;
+    route: string;
+    methods: string[];
+    guards: string[];
+    importsRouteAuth: boolean;
+    usesGetSession: boolean;
+    note: string | null;
+    classification:
+      | "guarded"
+      | "review_expected"
+      | "review_unexpected"
+      | "public_or_internal";
+  }>;
+};
+const { writeIfChanged } = require("../lib/write-if-changed.cts") as {
+  writeIfChanged: (options: {
+    outputPath: string;
+    content: string;
+    rootDir?: string;
+    encoding?: BufferEncoding;
+  }) => {
+    changed: boolean;
+    outputPath: string;
+    relativePath: string;
+  };
 };
 
 const REPO_ROOT = process.cwd();
@@ -42,169 +101,43 @@ const EXPECTED_SESSION_ROUTES: Record<string, string> = Object.fromEntries(
   EXPECTED_SESSION_ROUTE_ENTRIES.map((item) => [item.route, item.note])
 );
 
-function toRel(filePath: string) {
-  return pathUtil.relative(REPO_ROOT, filePath).replace(/\\/g, "/");
-}
-
-function toRoutePath(relativeRouteFile: string) {
-  return (
-    "/" +
-    relativeRouteFile
-      .replace(/^app\/api\//, "api/")
-      .replace(/\/route\.ts$/, "")
-  );
-}
-
-function hasRouteAuthImport(source: string) {
-  return (
-    source.includes('from "@/lib/server/route-auth"') ||
-    source.includes("from '@/lib/server/route-auth'")
-  );
-}
-
-function escapeRegex(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function extractGuardCalls(source: string) {
-  return ROUTE_GUARD_TOKENS.filter((token) => {
-    const pattern = new RegExp(`\\b${escapeRegex(token)}\\s*\\(`);
-    return pattern.test(source);
-  });
-}
-
-function resolveClassification(input: {
-  route: string;
-  guards: string[];
-  importsRouteAuth: boolean;
-  usesGetSession: boolean;
-}): RouteEntry["classification"] {
-  if (input.guards.length > 0) return "guarded";
-  if (input.usesGetSession || input.importsRouteAuth) {
-    return EXPECTED_SESSION_ROUTES[input.route]
-      ? "review_expected"
-      : "review_unexpected";
-  }
-  return "public_or_internal";
-}
-
-function resolveSessionAccessLabel(entry: RouteEntry) {
-  if (entry.usesGetSession) return "getSession";
-  if (entry.importsRouteAuth) return "route-auth-import";
-  return "none";
-}
-
-function section(title: string, rows: RouteEntry[]) {
-  const lines: string[] = [];
-  lines.push(`## ${title}`);
-  lines.push("");
-  lines.push("| Route | Methods | Guards | Session Access | Note | File |");
-  lines.push("|---|---|---|---|---|---|");
-  for (const row of rows) {
-    lines.push(
-      `| \`${row.route}\` | ${
-        row.methods.length > 0 ? `\`${row.methods.join(", ")}\`` : "-"
-      } | ${
-        row.guards.length > 0 ? `\`${row.guards.join(", ")}\`` : "-"
-      } | \`${resolveSessionAccessLabel(row)}\` | ${
-        row.note ? row.note.replace(/\|/g, "\\|") : "-"
-      } | \`${row.file}\` |`
-    );
-  }
-  lines.push("");
-  return lines.join("\n");
-}
-
 function main() {
   const strict = process.argv.includes("--strict");
-  const files = walkApiRouteFiles(API_ROOT);
-  const entries: RouteEntry[] = files
-    .map((filePath) => {
-      const file = toRel(filePath);
-      const source = fs.readFileSync(filePath, "utf8");
-      const route = toRoutePath(file);
-      const guards = extractGuardCalls(source);
-      const importsRouteAuth = hasRouteAuthImport(source);
-      const usesGetSession = source.includes("getSession(");
-      const classification = resolveClassification({
-        route,
-        guards,
-        importsRouteAuth,
-        usesGetSession,
-      });
-      return {
-        file,
-        route,
-        methods: extractExportedHttpMethods(source),
-        guards,
-        importsRouteAuth,
-        usesGetSession,
-        note: EXPECTED_SESSION_ROUTES[route] ?? null,
-        classification,
-      };
-    })
-    .sort((a, b) => a.route.localeCompare(b.route));
+  const entries = scanApiGuardEntries({
+    repoRoot: REPO_ROOT,
+    apiRoot: API_ROOT,
+    routeGuardTokens: ROUTE_GUARD_TOKENS,
+    expectedSessionRouteNotes: EXPECTED_SESSION_ROUTES,
+  });
+  const groups = groupRouteEntries(entries);
 
-  const guarded = entries.filter((entry) => entry.classification === "guarded");
-  const expectedReview = entries.filter(
-    (entry) => entry.classification === "review_expected"
-  );
-  const unexpectedReview = entries.filter(
-    (entry) => entry.classification === "review_unexpected"
-  );
-  const publicOrInternal = entries.filter(
-    (entry) => entry.classification === "public_or_internal"
-  );
-  const missingMethodExports = entries.filter((entry) => entry.methods.length === 0);
-
-  const doc: string[] = [];
-  doc.push("# API Guard Map");
-  doc.push("");
-  doc.push("Auto-generated by `scripts/agent/generate-api-guard-map.cts`.");
-  doc.push("Run `npm run agent:guard-map` to refresh this report.");
-  doc.push("");
-  doc.push("## Summary");
-  doc.push("");
-  doc.push(`- Total routes: **${entries.length}**`);
-  doc.push(`- Guarded routes: **${guarded.length}**`);
-  doc.push(`- Expected session-managed routes: **${expectedReview.length}**`);
-  doc.push(`- Unexpected review needed: **${unexpectedReview.length}**`);
-  doc.push(`- Missing method exports: **${missingMethodExports.length}**`);
-  doc.push(`- Public/Internal candidate routes: **${publicOrInternal.length}**`);
-  doc.push("");
-  doc.push(
-    "- `Unexpected review needed` means route-auth import or direct `getSession()` is present but route policy does not explain the route yet."
-  );
-  doc.push(
-    "- `Missing method exports` means a route file does not expose any HTTP method handler (`GET/POST/...`)."
-  );
-  doc.push("");
-  doc.push(section("Missing Method Exports", missingMethodExports));
-  doc.push(section("Unexpected Review Needed", unexpectedReview));
-  doc.push(section("Expected Session-Managed Routes", expectedReview));
-  doc.push(section("Public Or Internal Candidates", publicOrInternal));
-  doc.push(section("Guarded Routes", guarded));
-
-  const nextContent = doc.join("\n");
-  const currentContent = fs.existsSync(OUTPUT_PATH)
-    ? fs.readFileSync(OUTPUT_PATH, "utf8")
-    : null;
-  if (currentContent !== nextContent) {
-    fs.writeFileSync(OUTPUT_PATH, nextContent, "utf8");
-    console.log(`Wrote guard map: ${toRel(OUTPUT_PATH)}`);
+  const nextContent = buildGuardMapMarkdown({
+    entries,
+    groups,
+  });
+  const writeResult = writeIfChanged({
+    outputPath: OUTPUT_PATH,
+    content: nextContent,
+    rootDir: REPO_ROOT,
+  });
+  if (writeResult.changed) {
+    console.log(`Wrote guard map: ${writeResult.relativePath}`);
   } else {
-    console.log(`Guard map unchanged: ${toRel(OUTPUT_PATH)}`);
+    console.log(`Guard map unchanged: ${writeResult.relativePath}`);
   }
 
-  if (strict && (unexpectedReview.length > 0 || missingMethodExports.length > 0)) {
-    if (missingMethodExports.length > 0) {
+  if (
+    strict &&
+    (groups.unexpectedReview.length > 0 || groups.missingMethodExports.length > 0)
+  ) {
+    if (groups.missingMethodExports.length > 0) {
       console.error(
-        `[guard-map] routes missing method exports detected: ${missingMethodExports.length}`
+        `[guard-map] routes missing method exports detected: ${groups.missingMethodExports.length}`
       );
     }
-    if (unexpectedReview.length > 0) {
+    if (groups.unexpectedReview.length > 0) {
       console.error(
-        `[guard-map] unexpected review routes detected: ${unexpectedReview.length}`
+        `[guard-map] unexpected review routes detected: ${groups.unexpectedReview.length}`
       );
     }
     process.exitCode = 1;

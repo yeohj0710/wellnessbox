@@ -1,4 +1,4 @@
-﻿// RND: Module 03 KPI #5 safety-rule/reference accuracy evaluation helpers.
+// RND: Module 03 KPI #5 safety-rule/reference accuracy evaluation helpers.
 
 import {
   isRndModule03Decision,

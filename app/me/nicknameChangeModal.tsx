@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import { useDraggableModal } from "@/components/common/useDraggableModal";
-
-type ApiResponse = { ok?: boolean; error?: string; nickname?: string; available?: boolean };
+import ModalSpinner from "./modalSpinner";
+import { useNicknameChangeModalState } from "./useNicknameChangeModalState";
 
 type NicknameChangeModalProps = {
   open: boolean;
@@ -13,36 +12,6 @@ type NicknameChangeModalProps = {
   onSaveNickname: (nickname: string) => Promise<void>;
 };
 
-function Spinner({ className = "" }: { className?: string }) {
-  return (
-    <svg
-      className={`h-4 w-4 animate-spin ${className}`}
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4z"
-      />
-    </svg>
-  );
-}
-
-function isNicknameValid(value: string) {
-  const trimmed = value.trim();
-  return trimmed.length >= 2 && trimmed.length <= 60;
-}
-
 export default function NicknameChangeModal({
   open,
   onClose,
@@ -50,112 +19,28 @@ export default function NicknameChangeModal({
   onChanged,
   onSaveNickname,
 }: NicknameChangeModalProps) {
-  const [nickname, setNickname] = useState(initialNickname ?? "");
-  const [checking, setChecking] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [available, setAvailable] = useState(false);
+  const {
+    nickname,
+    checking,
+    saving,
+    statusMessage,
+    error,
+    busy,
+    checkDisabled,
+    saveDisabled,
+    handleNicknameChange,
+    handleCheck,
+    handleSave,
+  } = useNicknameChangeModalState({
+    open,
+    initialNickname,
+    onClose,
+    onChanged,
+    onSaveNickname,
+  });
 
-  const busy = useMemo(() => checking || saving, [checking, saving]);
-  const checkDisabled = useMemo(
-    () => !isNicknameValid(nickname) || busy,
-    [nickname, busy]
-  );
-  const saveDisabled = useMemo(
-    () => !available || !isNicknameValid(nickname) || busy,
-    [available, nickname, busy]
-  );
   const { panelRef, panelStyle, handleDragPointerDown, isDragging } =
     useDraggableModal(open, { resetOnOpen: true });
-
-  useEffect(() => {
-    if (!open) return;
-
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      if (busy) return;
-      onClose();
-    };
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose, busy]);
-
-  useEffect(() => {
-    if (!open) return;
-    setNickname(initialNickname ?? "");
-    setChecking(false);
-    setSaving(false);
-    setStatusMessage(null);
-    setError(null);
-    setAvailable(false);
-  }, [open, initialNickname]);
-
-  const handleCheck = async () => {
-    if (checkDisabled) return;
-
-    setChecking(true);
-    setStatusMessage(null);
-    setError(null);
-    setAvailable(false);
-
-    try {
-      const res = await fetch("/api/me/nickname/check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nickname }),
-      });
-
-      const raw = await res.text();
-      let data: ApiResponse = {};
-
-      try {
-        data = raw ? (JSON.parse(raw) as ApiResponse) : {};
-      } catch {
-        data = { ok: false, error: raw || `HTTP ${res.status}` };
-      }
-
-      if (!res.ok || data.ok === false) {
-        setError(data?.error || "중복 확인에 실패했어요.");
-        return;
-      }
-
-      if (data.available) {
-        setAvailable(true);
-        setStatusMessage("사용할 수 있는 닉네임이에요.");
-      } else {
-        setAvailable(false);
-        setError("이미 사용 중인 닉네임이에요.");
-      }
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "중복 확인에 실패했어요."
-      );
-    } finally {
-      setChecking(false);
-    }
-  };
-
-  const handleSave = async () => {
-    if (saveDisabled) return;
-
-    setSaving(true);
-    setError(null);
-    setStatusMessage(null);
-
-    try {
-      await onSaveNickname(nickname.trim());
-      setStatusMessage("닉네임이 변경되었어요.");
-      setAvailable(false);
-      onChanged(nickname.trim());
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "변경에 실패했어요.");
-    } finally {
-      setSaving(false);
-    }
-  };
 
   if (!open) return null;
 
@@ -174,8 +59,8 @@ export default function NicknameChangeModal({
         className="relative w-full max-w-[560px] overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5"
         ref={panelRef}
         style={panelStyle}
-        onMouseDown={(e) => e.stopPropagation()}
-        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(event) => event.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
       >
         <div className="px-6 sm:px-7 py-5">
           <div
@@ -204,7 +89,7 @@ export default function NicknameChangeModal({
           </div>
         </div>
 
-        <div className="border-t border-gray-200 px-6 sm:px-7 py-5 space-y-4">
+        <div className="space-y-4 border-t border-gray-200 px-6 py-5 sm:px-7">
           <div className="space-y-2">
             <div className="text-sm font-semibold text-gray-900">닉네임</div>
             <div className="flex items-center gap-3">
@@ -212,25 +97,24 @@ export default function NicknameChangeModal({
                 type="text"
                 value={nickname}
                 disabled={busy}
-                onChange={(e) => {
-                  setNickname(e.target.value);
-                  setAvailable(false);
-                  setError(null);
-                  setStatusMessage(null);
-                }}
+                onChange={(event) => handleNicknameChange(event.target.value)}
                 placeholder="예: 상큼한 수달"
                 maxLength={60}
-                className="min-w-0 flex-1 h-10 rounded-lg border border-gray-300 px-3 text-gray-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/25 disabled:bg-gray-100 disabled:text-gray-500"
+                className="min-w-0 h-10 flex-1 rounded-lg border border-gray-300 px-3 text-gray-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/25 disabled:bg-gray-100 disabled:text-gray-500"
               />
               <button
                 type="button"
                 onClick={handleCheck}
                 disabled={checkDisabled}
                 aria-busy={checking}
-                className="shrink-0 w-28 h-10 rounded-lg bg-sky-100 text-sm font-semibold text-sky-700 hover:bg-sky-200 disabled:cursor-not-allowed disabled:bg-sky-50"
+                className="h-10 w-28 shrink-0 rounded-lg bg-sky-100 text-sm font-semibold text-sky-700 hover:bg-sky-200 disabled:cursor-not-allowed disabled:bg-sky-50"
               >
                 <span className="grid h-full w-full place-items-center">
-                  {checking ? <Spinner className="text-sky-700" /> : "중복 검사"}
+                  {checking ? (
+                    <ModalSpinner className="text-sky-700" />
+                  ) : (
+                    "중복 검사"
+                  )}
                 </span>
               </button>
             </div>
@@ -271,7 +155,7 @@ export default function NicknameChangeModal({
               className="inline-flex h-10 min-w-[120px] items-center justify-center whitespace-nowrap rounded-lg bg-sky-400 px-4 text-sm font-semibold text-white hover:bg-sky-500 disabled:cursor-not-allowed disabled:bg-sky-200"
             >
               <span className="grid h-full w-full place-items-center">
-                {saving ? <Spinner className="text-white" /> : "변경"}
+                {saving ? <ModalSpinner className="text-white" /> : "변경"}
               </span>
             </button>
           </div>

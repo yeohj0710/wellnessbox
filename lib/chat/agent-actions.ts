@@ -1,4 +1,4 @@
-﻿export const CHAT_ACTION_TYPES = [
+export const CHAT_ACTION_TYPES = [
   "add_recommended_all",
   "buy_recommended_all",
   "clear_cart",
