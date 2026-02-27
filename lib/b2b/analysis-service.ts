@@ -6,6 +6,7 @@ import { generateB2bAiEvaluation } from "@/lib/b2b/ai-evaluation";
 import { computeWellnessResult } from "@/lib/wellness/analysis";
 import {
   monthRangeFromPeriodKey,
+  normalizePeriodKey,
   periodKeyToCycle,
   resolveCurrentPeriodKey,
 } from "@/lib/b2b/period";
@@ -52,9 +53,7 @@ function extractExternalAnalysisPayload(payload: unknown) {
 }
 
 function normalizePeriodKeyOrCurrent(periodKey?: string | null) {
-  const text = typeof periodKey === "string" ? periodKey.trim() : "";
-  if (/^\d{4}-(0[1-9]|1[0-2])$/.test(text)) return text;
-  return resolveCurrentPeriodKey();
+  return normalizePeriodKey(periodKey) ?? resolveCurrentPeriodKey();
 }
 
 async function findLatestSurveyForPeriod(employeeId: string, periodKey: string) {

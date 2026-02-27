@@ -3,6 +3,21 @@ import { cookies } from "next/headers";
 import getSession from "./session";
 import db from "@/lib/db";
 
+export type PharmacyProductLookupInput = {
+  productId: number;
+  optionType: string;
+  quantity: number;
+};
+
+export type PharmacySummary = {
+  id: number;
+  name: string | null;
+  address: string | null;
+  phone: string | null;
+  representativeName: string | null;
+  registrationNumber: string | null;
+};
+
 export async function pharmacyLogin(userId: string, password: string) {
   const pharmacy = await db.pharmacy.findFirst({
     where: { userId },
@@ -44,7 +59,9 @@ export async function getPharmaciesIdName() {
   });
 }
 
-export async function getPharmaciesByProduct(cartItem: any) {
+export async function getPharmaciesByProduct(
+  cartItem: PharmacyProductLookupInput
+): Promise<PharmacySummary[]> {
   const pharmacies = await db.pharmacy.findMany({
     where: {
       pharmacyProducts: {

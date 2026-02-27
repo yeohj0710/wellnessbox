@@ -1,6 +1,7 @@
+import { DEFAULT_CHAT_TITLE } from "@/lib/chat/constants";
 import type { ChatSession } from "@/types/chat";
 
-export const DEFAULT_CHAT_TITLE = "새 상담";
+export { DEFAULT_CHAT_TITLE };
 
 type ActorState = {
   loggedIn: boolean;

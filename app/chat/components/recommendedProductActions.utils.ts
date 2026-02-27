@@ -15,3 +15,8 @@ export {
 export { parseRecommendationLines } from "./recommendedProductActions.parse";
 export { resolveRecommendations } from "./recommendedProductActions.resolve";
 export { hasSavedRoadAddress, updateCartItems } from "./recommendedProductActions.cart";
+export {
+  applyPendingCartActionAfterAddressSave,
+  runCartActionWithAddressGuard,
+  type PendingCartAction,
+} from "./recommendedProductActions.flow";

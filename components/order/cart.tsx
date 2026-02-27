@@ -107,6 +107,20 @@ export default function Cart({
     [loginStatus]
   );
 
+  const persistCartItems = useCallback(
+    (nextItems: any[]) => {
+      onUpdateCart(nextItems);
+      writeClientCartItems(nextItems);
+      window.dispatchEvent(new Event("cartUpdated"));
+    },
+    [onUpdateCart]
+  );
+
+  const openPhoneModal = useCallback(() => {
+    setUnlinkError(null);
+    setPhoneModalOpen(true);
+  }, [setUnlinkError]);
+
   useEffect(() => {
     const onClose = () => onBack();
     window.addEventListener("closeCart", onClose);
@@ -168,6 +182,7 @@ export default function Cart({
       }
     };
   }, [onBack, detailProduct]);
+
   const deliveryFee = 3000;
   const totalPriceWithDelivery = totalPrice + deliveryFee;
 
@@ -215,9 +230,7 @@ export default function Cart({
     }
 
     const updatedItems = mergeClientCartItems(cartItems, [cartItem]);
-    onUpdateCart(updatedItems);
-    writeClientCartItems(updatedItems);
-    window.dispatchEvent(new Event("cartUpdated"));
+    persistCartItems(updatedItems);
   };
 
   const handleUnlinkPhone = useCallback(async () => {
@@ -247,17 +260,16 @@ export default function Cart({
         price: newOption.price,
       };
     });
-    onUpdateCart(updatedItems);
-    writeClientCartItems(updatedItems);
-    window.dispatchEvent(new Event("cartUpdated"));
+    persistCartItems(updatedItems);
     if (unavailable.length) {
       alert(
         `${unavailable.join(
           ", "
-        )} 상품은 재고가 없어 제외하고 다른 상품들의 재고만 ${target}치로 바꾸었어요.`
+        )} 상품은 재고가 없어 변경하지 않고, 나머지 상품만 ${target}로 바꿨어요.`
       );
     }
   };
+
   const { handleRequestPayment, handlePayment } = useCartPayment({
     router,
     selectedPaymentMethod,
@@ -273,14 +285,12 @@ export default function Cart({
     roadAddress,
     detailAddress,
     cartItems,
-    onOpenPhoneModal: () => {
-      setUnlinkError(null);
-      setPhoneModalOpen(true);
-    },
+    onOpenPhoneModal: openPhoneModal,
     onOpenConfirmModal: () => {
       setShowModal(true);
     },
   });
+
   return (
     <div className="w-full pt-12 sm:pt-14 mb-8 max-w-[640px] mx-auto bg-white min-h-[100vh]">
       <Script
@@ -327,10 +337,7 @@ export default function Cart({
         setDirections={setDirections}
         phoneDisplay={phoneDisplay}
         linkedAt={linkedAt}
-        onOpenPhoneModal={() => {
-          setUnlinkError(null);
-          setPhoneModalOpen(true);
-        }}
+        onOpenPhoneModal={openPhoneModal}
         phoneStatusLoading={phoneStatusLoading}
         phoneStatusError={phoneStatusError}
         isUserLoggedIn={safeLoginStatus.isUserLoggedIn}

@@ -13,6 +13,7 @@ import {
 type GuardSuccess<T> = { ok: true; data: T };
 type GuardFailure = { ok: false; response: NextResponse };
 type GuardResult<T> = GuardSuccess<T> | GuardFailure;
+type AppUserIdentity = { id: string; phone: string | null };
 
 function jsonError(status: number, message: string) {
   return NextResponse.json(
@@ -55,16 +56,21 @@ async function ensureGuestAppUser(clientId: string) {
   });
 }
 
-async function resolveLoggedInAppUser() {
+async function resolveLoggedInAppUser(): Promise<{
+  kakaoId: string | null;
+  appUser: AppUserIdentity | null;
+}> {
   const session = await getSession();
   if (!session.user?.loggedIn || typeof session.user.kakaoId !== "number") {
-    return { session, appUser: null };
+    return { kakaoId: null, appUser: null };
   }
+
+  const kakaoId = String(session.user.kakaoId);
   const appUser = await db.appUser.findUnique({
-    where: { kakaoId: String(session.user.kakaoId) },
+    where: { kakaoId },
     select: { id: true, phone: true },
   });
-  return { session, appUser };
+  return { kakaoId, appUser };
 }
 
 async function ensureAppUserForKakaoId(kakaoId: string) {
@@ -74,6 +80,16 @@ async function ensureAppUserForKakaoId(kakaoId: string) {
     update: {},
     select: { id: true, phone: true },
   });
+}
+
+async function resolveOrCreateLoggedInAppUser() {
+  const resolved = await resolveLoggedInAppUser();
+  if (!resolved.kakaoId) return null;
+
+  return {
+    kakaoId: resolved.kakaoId,
+    appUser: resolved.appUser ?? (await ensureAppUserForKakaoId(resolved.kakaoId)),
+  };
 }
 
 export async function requireAdminSession(): Promise<GuardResult<null>> {
@@ -117,18 +133,15 @@ export async function requireAnySession(): Promise<GuardResult<null>> {
 export async function requireUserSession(): Promise<
   GuardResult<{ appUserId: string; kakaoId: string; phone: string | null }>
 > {
-  const { session, appUser } = await resolveLoggedInAppUser();
-  if (!session.user?.loggedIn || typeof session.user.kakaoId !== "number") {
-    return unauthorized();
-  }
-  const kakaoId = String(session.user.kakaoId);
-  const resolvedAppUser = appUser ?? (await ensureAppUserForKakaoId(kakaoId));
+  const resolved = await resolveOrCreateLoggedInAppUser();
+  if (!resolved) return unauthorized();
+
   return {
     ok: true,
     data: {
-      appUserId: resolvedAppUser.id,
-      kakaoId,
-      phone: resolvedAppUser.phone ?? null,
+      appUserId: resolved.appUser.id,
+      kakaoId: resolved.kakaoId,
+      phone: resolved.appUser.phone ?? null,
     },
   };
 }
@@ -143,24 +156,15 @@ export async function requireNhisSession(): Promise<
     clientId: string | null;
   }>
 > {
-  const { session, appUser } = await resolveLoggedInAppUser();
-  if (session.user?.loggedIn && typeof session.user.kakaoId === "number") {
-    const kakaoId = String(session.user.kakaoId);
-    const resolvedAppUser =
-      appUser ??
-      (await db.appUser.upsert({
-        where: { kakaoId },
-        create: { kakaoId },
-        update: {},
-        select: { id: true, phone: true },
-      }));
+  const resolved = await resolveOrCreateLoggedInAppUser();
+  if (resolved) {
 
     return {
       ok: true,
       data: {
-        appUserId: resolvedAppUser.id,
-        kakaoId,
-        phone: resolvedAppUser.phone ?? null,
+        appUserId: resolved.appUser.id,
+        kakaoId: resolved.kakaoId,
+        phone: resolved.appUser.phone ?? null,
         loggedIn: true,
         guest: false,
         clientId: null,

@@ -1,7 +1,5 @@
 import "server-only";
 
-import { mkdirSync, readdirSync, rmSync, writeFileSync } from "fs";
-import path from "path";
 import type { B2bReportPayload } from "@/lib/b2b/report-payload";
 import {
   medicationStatusLabel,
@@ -12,72 +10,36 @@ import {
   PAGE_SIZE_MM,
   type LayoutDocument,
   type LayoutIntent,
-  type LayoutNode,
   type LayoutPage,
   type PageSizeKey,
   type StylePreset,
 } from "@/lib/b2b/export/layout-types";
+import {
+  STYLE_COLORS,
+  pickStylePreset as pickStylePresetFromConfig,
+  type LayoutStyleColorTokens,
+} from "@/lib/b2b/export/layout-dsl-config";
+import {
+  addNode,
+  ensurePageSpace,
+  maybeAppendUnit,
+  type FlowContext,
+  wrapLine,
+} from "@/lib/b2b/export/layout-dsl-flow";
+import {
+  clearGeneratedLayoutArtifacts as clearGeneratedLayoutArtifactsFromFile,
+  persistGeneratedLayout as persistGeneratedLayoutFromFile,
+} from "@/lib/b2b/export/layout-dsl-artifacts";
 
 type TemplateMode = "base" | "fallback";
 export const LAYOUT_TEMPLATE_VERSION = "2026-02-clean-v1";
-
-const STYLE_PRESET_CANDIDATES: StylePreset[] = ["fresh", "calm", "focus"];
-
-const STYLE_COLORS: Record<
-  StylePreset,
-  {
-    accent: string;
-    accentSoft: string;
-    text: string;
-    muted: string;
-    card: string;
-    cardBorder: string;
-    danger: string;
-  }
-> = {
-  fresh: {
-    accent: "1D4ED8",
-    accentSoft: "EAF2FF",
-    text: "0F172A",
-    muted: "475569",
-    card: "F8FAFC",
-    cardBorder: "D8E5FF",
-    danger: "B91C1C",
-  },
-  calm: {
-    accent: "0F766E",
-    accentSoft: "E6F6F4",
-    text: "0F172A",
-    muted: "475569",
-    card: "F8FAFC",
-    cardBorder: "BEE7DF",
-    danger: "B91C1C",
-  },
-  focus: {
-    accent: "9A3412",
-    accentSoft: "FFF3E8",
-    text: "0F172A",
-    muted: "475569",
-    card: "FFFBF5",
-    cardBorder: "F7D7B5",
-    danger: "B91C1C",
-  },
-};
-
-type FlowContext = {
-  pages: LayoutPage[];
-  cursorY: number;
-  margin: number;
-  widthMm: number;
-  heightMm: number;
-};
 
 type SectionInput = {
   ctx: FlowContext;
   sectionId: string;
   title: string;
   lines: string[];
-  colors: (typeof STYLE_COLORS)[StylePreset];
+  colors: LayoutStyleColorTokens;
   compact: boolean;
   maxChars: number;
 };
@@ -100,71 +62,10 @@ function toDisplayText(value: string | null | undefined, fallback = "미측정/�
   return trimmed.length > 0 ? trimmed : fallback;
 }
 
-function normalizeCompact(text: string) {
-  return text.replace(/\s+/g, "").trim();
-}
-
-function maybeAppendUnit(value: string, unit: string | null) {
-  if (!unit) return value;
-  const valueCompact = normalizeCompact(value).toLowerCase();
-  const unitCompact = normalizeCompact(unit).toLowerCase();
-  if (valueCompact.includes(unitCompact)) return value;
-  return `${value} ${unit}`.trim();
-}
-
-function wrapLine(line: string, maxChars: number) {
-  const compact = line.replace(/\s+/g, " ").trim();
-  if (!compact) return [];
-  if (compact.length <= maxChars) return [compact];
-  const chunks: string[] = [];
-  let current = "";
-  for (const token of compact.split(" ")) {
-    if (!token) continue;
-    const candidate = current ? `${current} ${token}` : token;
-    if (candidate.length <= maxChars) {
-      current = candidate;
-      continue;
-    }
-    if (current) chunks.push(current);
-    if (token.length <= maxChars) {
-      current = token;
-      continue;
-    }
-    for (let index = 0; index < token.length; index += maxChars) {
-      chunks.push(token.slice(index, index + maxChars));
-    }
-    current = "";
-  }
-  if (current) chunks.push(current);
-  return chunks;
-}
-
-function addNode(ctx: FlowContext, node: LayoutNode) {
-  const page = ctx.pages[ctx.pages.length - 1];
-  page.nodes.push(node);
-}
-
-function addPage(ctx: FlowContext) {
-  const nextId = ctx.pages.length + 1;
-  ctx.pages.push({
-    id: `page-${nextId}`,
-    widthMm: ctx.widthMm,
-    heightMm: ctx.heightMm,
-    nodes: [],
-  });
-  ctx.cursorY = ctx.margin;
-}
-
-function ensurePageSpace(ctx: FlowContext, requiredHeight: number) {
-  const maxBottom = ctx.heightMm - ctx.margin;
-  if (ctx.cursorY + requiredHeight <= maxBottom) return;
-  addPage(ctx);
-}
-
 function addHeader(input: {
   ctx: FlowContext;
   payload: B2bReportPayload;
-  colors: (typeof STYLE_COLORS)[StylePreset];
+  colors: LayoutStyleColorTokens;
   compact: boolean;
 }) {
   const { ctx, payload, colors, compact } = input;
@@ -469,7 +370,7 @@ function buildTrendLines(payload: B2bReportPayload) {
 }
 
 export function pickStylePreset(variantIndex: number) {
-  return STYLE_PRESET_CANDIDATES[Math.abs(variantIndex) % STYLE_PRESET_CANDIDATES.length];
+  return pickStylePresetFromConfig(variantIndex);
 }
 
 export function generateLayoutFromPayload(input: {
@@ -602,23 +503,9 @@ export function generateLayoutFromPayload(input: {
 }
 
 export function persistGeneratedLayout(layout: LayoutDocument) {
-  const generatedDir = path.join(process.cwd(), "src", "generated");
-  mkdirSync(generatedDir, { recursive: true });
-
-  clearGeneratedLayoutArtifacts(generatedDir);
-
-  const outputPath = path.join(generatedDir, "layout.json");
-  writeFileSync(outputPath, `${JSON.stringify(layout, null, 2)}\n`, "utf8");
-  return outputPath;
+  return persistGeneratedLayoutFromFile(layout);
 }
 
 export function clearGeneratedLayoutArtifacts(existingGeneratedDir?: string) {
-  const generatedDir =
-    existingGeneratedDir ?? path.join(process.cwd(), "src", "generated");
-  mkdirSync(generatedDir, { recursive: true });
-  for (const entry of readdirSync(generatedDir)) {
-    if (entry.startsWith("layout.")) {
-      rmSync(path.join(generatedDir, entry), { force: true });
-    }
-  }
+  return clearGeneratedLayoutArtifactsFromFile(existingGeneratedDir);
 }

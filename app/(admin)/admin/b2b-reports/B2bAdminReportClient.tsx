@@ -17,12 +17,10 @@ import B2bNoteEditorPanel from "./_components/B2bNoteEditorPanel";
 import B2bSurveyEditorPanel from "./_components/B2bSurveyEditorPanel";
 import type {
   AdminClientProps,
-  CompletionStats,
   EmployeeDetail,
   EmployeeListItem,
   LatestReport,
   ReportAudit,
-  SurveyAnswerRow,
   SurveyQuestion,
   SurveyTemplateSchema,
 } from "./_lib/client-types";
@@ -47,53 +45,10 @@ import {
   toInputValue,
   toMultiValues,
 } from "./_lib/client-utils";
-
-function toAnswerRecord(raw: unknown) {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
-  return raw as Record<string, unknown>;
-}
-
-function isQuestionVisible(question: SurveyQuestion, answers: Record<string, unknown>) {
-  if (!question.displayIf?.field || !question.displayIf.equals) return true;
-  const target = question.displayIf.equals.trim().toLowerCase();
-  if (!target) return true;
-  const raw = answers[question.displayIf.field];
-  const candidateTokens = new Set<string>();
-  const scalar = toInputValue(raw).trim().toLowerCase();
-  if (scalar) candidateTokens.add(scalar);
-  for (const item of toMultiValues(raw)) {
-    const normalized = item.trim().toLowerCase();
-    if (normalized) candidateTokens.add(normalized);
-  }
-  const record = toAnswerRecord(raw);
-  if (record) {
-    const answerValue = typeof record.answerValue === "string" ? record.answerValue : "";
-    const answerText = typeof record.answerText === "string" ? record.answerText : "";
-    const valueToken = answerValue.trim().toLowerCase();
-    const textToken = answerText.trim().toLowerCase();
-    if (valueToken) candidateTokens.add(valueToken);
-    if (textToken) candidateTokens.add(textToken);
-  }
-  return candidateTokens.has(target);
-}
-
-function hasAnswer(question: SurveyQuestion, rawValue: unknown) {
-  if (question.type === "multi") {
-    return toMultiValues(rawValue).length > 0;
-  }
-  if (question.type === "group") {
-    const record = toAnswerRecord(rawValue);
-    if (record?.fieldValues && typeof record.fieldValues === "object") {
-      const fieldValues = record.fieldValues as Record<string, unknown>;
-      const hasFilledField = Object.values(fieldValues).some(
-        (value) => String(value ?? "").trim().length > 0
-      );
-      if (hasFilledField) return true;
-    }
-    return toInputValue(rawValue).trim().length > 0;
-  }
-  return toInputValue(rawValue).trim().length > 0;
-}
+import {
+  buildCompletionStats,
+  mergeSurveyAnswers,
+} from "./_lib/survey-progress";
 
 export default function B2bAdminReportClient({ demoMode = false }: AdminClientProps) {
   const MONTH_KEY_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -146,34 +101,10 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     return [];
   }, [availablePeriods, selectedPeriodKey]);
 
-  const completionStats = useMemo<CompletionStats>(() => {
-    if (!surveyTemplate) {
-      return { total: 0, answered: 0, requiredTotal: 0, requiredAnswered: 0, percent: 0 };
-    }
-    const activeQuestions = [
-      ...surveyTemplate.common.filter((question) => isQuestionVisible(question, surveyAnswers)),
-      ...surveyTemplate.sections
-        .filter((section) => selectedSectionSet.has(section.key))
-        .flatMap((section) =>
-          section.questions.filter((question) => isQuestionVisible(question, surveyAnswers))
-        ),
-    ];
-    const total = activeQuestions.length;
-    const required = activeQuestions.filter((q) => q.required);
-    const answered = activeQuestions.filter((question) =>
-      hasAnswer(question, surveyAnswers[question.key])
-    ).length;
-    const requiredAnswered = required.filter((question) =>
-      hasAnswer(question, surveyAnswers[question.key])
-    ).length;
-    return {
-      total,
-      answered,
-      requiredTotal: required.length,
-      requiredAnswered,
-      percent: total > 0 ? Math.round((answered / total) * 100) : 0,
-    };
-  }, [surveyTemplate, selectedSectionSet, surveyAnswers]);
+  const completionStats = useMemo(
+    () => buildCompletionStats({ surveyTemplate, selectedSectionSet, surveyAnswers }),
+    [surveyTemplate, selectedSectionSet, surveyAnswers]
+  );
 
   function applyExportFailure(err: unknown, fallbackMessage: string) {
     if (err instanceof ExportApiError) {
@@ -218,45 +149,12 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     setSurveyUpdatedAt(survey.response?.updatedAt ?? null);
 
     const answersFromJson = survey.response?.answersJson || {};
-    const answersFromRows =
-      survey.response?.answers?.reduce(
-        (acc: Record<string, unknown>, row: SurveyAnswerRow) => {
-          const base = toAnswerRecord(answersFromJson[row.questionKey]) ?? {};
-          const selectedValues = Array.isArray(row.meta?.selectedValues)
-            ? row.meta?.selectedValues
-                .map((item) => (typeof item === "string" ? item : String(item)))
-                .filter(Boolean)
-            : [];
-          const variantId =
-            typeof row.meta?.variantId === "string" ? row.meta?.variantId : undefined;
-          acc[row.questionKey] = {
-            ...base,
-            answerText: row.answerText ?? undefined,
-            answerValue: row.answerValue ?? undefined,
-            selectedValues:
-              selectedValues.length > 0
-                ? selectedValues
-                : Array.isArray(base.selectedValues)
-                ? base.selectedValues
-                    .map((item) => (typeof item === "string" ? item : String(item)))
-                    .filter(Boolean)
-                : undefined,
-            variantId,
-            score:
-              typeof row.score === "number"
-                ? row.score
-                : typeof base.score === "number"
-                ? base.score
-                : undefined,
-          };
-          return acc;
-        },
-        {}
-      ) ?? {};
-    setSurveyAnswers({
-      ...answersFromJson,
-      ...answersFromRows,
-    });
+    setSurveyAnswers(
+      mergeSurveyAnswers({
+        answersFromJson,
+        answerRows: survey.response?.answers,
+      })
+    );
 
     setAnalysisText(JSON.stringify(analysis.analysis?.payload ?? {}, null, 2));
     setNote(noteData.note?.note ?? "");

@@ -7,6 +7,7 @@ Purpose: speed up new coding sessions by checking structural risks first, before
 Run these in order:
 
 ```bash
+npm run agent:context-refresh
 npm run audit:hotspots
 npm run lint
 npm run build
@@ -15,6 +16,19 @@ npm run build
 `audit:hotspots` gives:
 - top long files by line count (refactor candidates)
 - critical route guard checks for admin/rag/push endpoints
+
+`agent:context-refresh` also refreshes:
+- `REFACTOR_HOTSPOTS.md`
+- `API_GUARD_MAP.md`
+- `AGENT_SKILLS_CATALOG.md`
+
+Guard policy strict check:
+
+```bash
+npm run agent:guard-check
+```
+
+This fails when a route uses session access (`getSession` / `route-auth` import) without matching guard policy notes.
 
 ## 2) Non-Negotiable Invariants
 
@@ -49,3 +63,4 @@ When touching these files, prefer block-level extraction over in-place growth:
 ## 5) Quick Domain Maps
 
 - Check AI maintenance map: `docs/engineering/check-ai-maintenance-map.md`
+- Check API auth/guard coverage map: `API_GUARD_MAP.md`

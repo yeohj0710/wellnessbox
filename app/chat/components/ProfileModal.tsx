@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import type { UserProfile } from "@/types/chat";
-import { useDraggableModal } from "@/components/common/useDraggableModal";
+import { useProfileModalState } from "./useProfileModalState";
 
 export default function ProfileModal({
   profile,
@@ -15,44 +15,18 @@ export default function ProfileModal({
   onClose: () => void;
   onChange: (p?: UserProfile) => void;
 }) {
-  const [local, setLocal] = useState<UserProfile>({ ...(profile || {}) });
-  const [confirmReset, setConfirmReset] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-  const modalDrag = useDraggableModal(isMounted, { resetOnOpen: true });
-  const resetDialogDrag = useDraggableModal(confirmReset, { resetOnOpen: true });
-
-  useEffect(() => {
-    setLocal({ ...(profile || {}) });
-  }, [profile]);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        if (confirmReset) setConfirmReset(false);
-        else onClose();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [confirmReset, onClose]);
-
-  useEffect(() => {
-    if (!isMounted) return;
-
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prevOverflow;
-    };
-  }, [isMounted]);
-
-  function set<K extends keyof UserProfile>(k: K, v: UserProfile[K]) {
-    setLocal((p) => ({ ...(p || {}), [k]: v }));
-  }
+  const {
+    local,
+    setField,
+    confirmReset,
+    setConfirmReset,
+    isMounted,
+    modalDrag,
+    resetDialogDrag,
+  } = useProfileModalState({
+    profile,
+    onClose,
+  });
   const modal = (
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 p-3 sm:p-4"
@@ -89,19 +63,19 @@ export default function ProfileModal({
               label="이름"
               placeholder="김웰니"
               value={local.name || ""}
-              onChange={(v) => set("name", v)}
+              onChange={(v) => setField("name", v)}
             />
             <LabeledInput
               label="나이"
               type="number"
               placeholder="34"
               value={local.age?.toString() || ""}
-              onChange={(v) => set("age", v ? Number(v) : undefined)}
+              onChange={(v) => setField("age", v ? Number(v) : undefined)}
             />
             <LabeledSelect
               label="성별"
               value={local.sex || ""}
-              onChange={(v) => set("sex", v as any)}
+              onChange={(v) => setField("sex", v as any)}
               options={[
                 { label: "선택 안함", value: "" },
                 { label: "남성", value: "male" },
@@ -114,14 +88,14 @@ export default function ProfileModal({
               type="number"
               placeholder="170"
               value={local.heightCm?.toString() || ""}
-              onChange={(v) => set("heightCm", v ? Number(v) : undefined)}
+              onChange={(v) => setField("heightCm", v ? Number(v) : undefined)}
             />
             <LabeledInput
               label="몸무게(kg)"
               type="number"
               placeholder="65"
               value={local.weightKg?.toString() || ""}
-              onChange={(v) => set("weightKg", v ? Number(v) : undefined)}
+              onChange={(v) => setField("weightKg", v ? Number(v) : undefined)}
             />
             <LabeledSelect
               label="임신/수유"
@@ -133,7 +107,7 @@ export default function ProfileModal({
                   : ""
               }
               onChange={(v) =>
-                set(
+                setField(
                   "pregnantOrBreastfeeding",
                   v === "yes" ? true : v === "no" ? false : undefined
                 )
@@ -154,7 +128,7 @@ export default function ProfileModal({
                   : ""
               }
               onChange={(v) =>
-                set(
+                setField(
                   "caffeineSensitivity",
                   v === "yes" ? true : v === "no" ? false : undefined
                 )
@@ -170,31 +144,31 @@ export default function ProfileModal({
                 label="복용 중인 약"
                 placeholder="예: 메트포르민"
                 values={local.medications || []}
-                onChange={(vals) => set("medications", vals)}
+                onChange={(vals) => setField("medications", vals)}
               />
               <LabeledChips
                 label="질환/증상"
                 placeholder="예: 고혈압"
                 values={local.conditions || []}
-                onChange={(vals) => set("conditions", vals)}
+                onChange={(vals) => setField("conditions", vals)}
               />
               <LabeledChips
                 label="알레르기"
                 placeholder="예: 갑각류"
                 values={local.allergies || []}
-                onChange={(vals) => set("allergies", vals)}
+                onChange={(vals) => setField("allergies", vals)}
               />
               <LabeledChips
                 label="목표"
                 placeholder="예: 수면, 스트레스"
                 values={local.goals || []}
-                onChange={(vals) => set("goals", vals)}
+                onChange={(vals) => setField("goals", vals)}
               />
               <LabeledChips
                 label="식이 제한"
                 placeholder="예: 채식, 글루텐"
                 values={local.dietaryRestrictions || []}
-                onChange={(vals) => set("dietaryRestrictions", vals)}
+                onChange={(vals) => setField("dietaryRestrictions", vals)}
               />
             </div>
           </div>

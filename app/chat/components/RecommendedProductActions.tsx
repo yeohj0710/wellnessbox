@@ -4,20 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import AddressModal from "@/components/modal/addressModal";
 import { useDraggableModal } from "@/components/common/useDraggableModal";
 import {
+  applyPendingCartActionAfterAddressSave,
   type ActionableRecommendation,
-  hasSavedRoadAddress,
+  type PendingCartAction,
   normalizeKey,
   parseRecommendationLines,
   resolveRecommendations,
+  runCartActionWithAddressGuard,
   toKrw,
-  updateCartItems,
 } from "./recommendedProductActions.utils";
-
-type PendingCartAction = {
-  items: ActionableRecommendation[];
-  openCartAfterSave: boolean;
-  successFeedback?: string;
-} | null;
 
 type ConfirmDialogState = {
   title: string;
@@ -44,7 +39,7 @@ export default function RecommendedProductActions({ content }: { content: string
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [showAddressGuideModal, setShowAddressGuideModal] = useState(false);
   const [pendingCartAction, setPendingCartAction] =
-    useState<PendingCartAction>(null);
+    useState<PendingCartAction | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>(null);
   const guideModalDrag = useDraggableModal(showAddressGuideModal, {
     resetOnOpen: true,
@@ -101,32 +96,13 @@ export default function RecommendedProductActions({ content }: { content: string
       successFeedback?: string;
     }
   ) => {
-    if (!targets.length) return;
-
-    const openCartAfterSave = options?.openCartAfterSave === true;
-    if (!hasSavedRoadAddress()) {
-      setPendingCartAction({
-        items: targets,
-        openCartAfterSave,
-        successFeedback: options?.successFeedback,
-      });
-      setShowAddressGuideModal(true);
-      return;
-    }
-
-    updateCartItems(targets);
-    if (openCartAfterSave) {
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("wbGlobalCartOpen", "1");
-        localStorage.setItem("openCart", "true");
-        window.dispatchEvent(new Event("openCart"));
-      }
-      return;
-    }
-
-    if (options?.successFeedback) {
-      setFeedback(options.successFeedback);
-    }
+    runCartActionWithAddressGuard({
+      targets,
+      options,
+      setPendingCartAction,
+      setShowAddressGuideModal,
+      setFeedback,
+    });
   };
 
   const addSingle = (item: ActionableRecommendation) => {
@@ -404,14 +380,10 @@ export default function RecommendedProductActions({ content }: { content: string
 
             if (!pending || pending.items.length === 0) return;
 
-            updateCartItems(pending.items);
-            if (pending.openCartAfterSave) {
-              sessionStorage.setItem("wbGlobalCartOpen", "1");
-              localStorage.setItem("openCart", "true");
-              window.dispatchEvent(new Event("openCart"));
-              return;
-            }
-
+            const openedCart = applyPendingCartActionAfterAddressSave({
+              pending,
+            });
+            if (openedCart) return;
             if (pending.successFeedback) {
               setFeedback(pending.successFeedback);
             } else if (pending.items.length === 1) {

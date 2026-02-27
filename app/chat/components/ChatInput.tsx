@@ -9,26 +9,12 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import type { ChatActionType } from "@/lib/chat/agent-actions";
-
-type ChatQuickAction = {
-  type: ChatActionType;
-  label: string;
-  reason?: string;
-};
-
-type ChatAgentExample = {
-  id: string;
-  label: string;
-  prompt: string;
-};
-
-type UnifiedAction = {
-  id: string;
-  label: string;
-  title?: string;
-  kind: "quick" | "agent" | "suggestion";
-  run: () => void;
-};
+import {
+  buildUnifiedActions,
+  type ChatAgentExample,
+  type ChatQuickAction,
+  type UnifiedAction,
+} from "./chatInput.actions";
 
 interface ChatInputProps {
   input: string;
@@ -49,10 +35,6 @@ interface ChatInputProps {
 }
 
 const AGENT_COACHMARK_DISMISS_KEY = "wb_chat_agent_coachmark_dismissed_v1";
-
-function normalizeActionKey(text: string) {
-  return text.trim().toLowerCase().replace(/\s+/g, " ");
-}
 
 export default function ChatInput({
   input,
@@ -92,46 +74,14 @@ export default function ChatInput({
   const quickActionDisabled = loading || disabled || quickActionLoading;
 
   const unifiedActions = useMemo<UnifiedAction[]>(() => {
-    const rows: UnifiedAction[] = [];
-    const seen = new Set<string>();
-    const pushUnique = (item: UnifiedAction) => {
-      const key = normalizeActionKey(item.label);
-      if (!key || seen.has(key)) return;
-      seen.add(key);
-      rows.push(item);
-    };
-
-    quickActions.slice(0, 4).forEach((action) => {
-      pushUnique({
-        id: `quick-${action.type}`,
-        label: action.label,
-        title: action.reason || action.label,
-        kind: "quick",
-        run: () => onSelectQuickAction?.(action.type),
-      });
+    return buildUnifiedActions({
+      quickActions,
+      agentExamples,
+      suggestions,
+      onSelectQuickAction,
+      onSelectAgentExample,
+      onSelectSuggestion,
     });
-
-    agentExamples.slice(0, 4).forEach((example) => {
-      pushUnique({
-        id: `agent-${example.id}`,
-        label: example.label,
-        title: example.prompt,
-        kind: "agent",
-        run: () => onSelectAgentExample?.(example.prompt),
-      });
-    });
-
-    suggestions.slice(0, 2).forEach((suggestion, index) => {
-      pushUnique({
-        id: `suggest-${index}-${suggestion}`,
-        label: suggestion,
-        title: suggestion,
-        kind: "suggestion",
-        run: () => onSelectSuggestion?.(suggestion),
-      });
-    });
-
-    return rows.slice(0, 8);
   }, [
     quickActions,
     agentExamples,

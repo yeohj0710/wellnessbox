@@ -1,100 +1,12 @@
-import { randomUUID } from "crypto";
-import { NextResponse } from "next/server";
-import db from "@/lib/db";
-import { runB2bLayoutPipeline } from "@/lib/b2b/export/pipeline";
-import { resolveDbRouteError } from "@/lib/server/db-error";
-import { requireAdminSession } from "@/lib/server/route-auth";
+import {
+  runAdminReportValidationGetRoute,
+  type B2bReportRouteContext,
+} from "@/lib/b2b/admin-report-validation-route";
 
 export const runtime = "nodejs";
 
-type RouteContext = {
-  params: Promise<{ reportId: string }>;
-};
-
-function noStoreJson(payload: unknown, status = 200) {
-  return NextResponse.json(payload, {
-    status,
-    headers: { "Cache-Control": "no-store" },
-  });
-}
+type RouteContext = B2bReportRouteContext;
 
 export async function GET(_req: Request, ctx: RouteContext) {
-  try {
-    const auth = await requireAdminSession();
-    if (!auth.ok) return auth.response;
-
-    const { reportId } = await ctx.params;
-    const report = await db.b2bReport.findUnique({
-      where: { id: reportId },
-      select: {
-        id: true,
-        employeeId: true,
-        variantIndex: true,
-        pageSize: true,
-        stylePreset: true,
-        reportPayload: true,
-      },
-    });
-    if (!report) {
-      return noStoreJson({ ok: false, error: "리포트를 찾을 수 없습니다." }, 404);
-    }
-
-    const pageSize = (report.pageSize || "A4") as "A4" | "LETTER";
-    const stylePreset = report.stylePreset || undefined;
-    const payload = JSON.parse(JSON.stringify(report.reportPayload));
-
-    const validationResult = await runB2bLayoutPipeline({
-      payload,
-      intent: "export",
-      pageSize,
-      variantIndex: report.variantIndex,
-      stylePreset: stylePreset as "fresh" | "calm" | "focus" | undefined,
-    });
-
-    await db.b2bReport.update({
-      where: { id: report.id },
-      data: {
-        status: validationResult.ok ? "ready" : "validation_failed",
-        layoutDsl: validationResult.ok
-          ? JSON.parse(JSON.stringify(validationResult.layout))
-          : null,
-        exportAudit: JSON.parse(JSON.stringify(validationResult.audit)),
-      },
-    });
-
-    if (!validationResult.ok) {
-      const debugId = randomUUID();
-      return noStoreJson({
-        ok: false,
-        code: "LAYOUT_VALIDATION_FAILED",
-        reason: "layout_validation_failed",
-        debugId,
-        audit: validationResult.audit,
-        issues: validationResult.issues,
-      });
-    }
-
-    return noStoreJson({
-      ok: true,
-      audit: validationResult.audit,
-      layout: validationResult.layout,
-      issues: [],
-    });
-  } catch (error) {
-    const debugId = randomUUID();
-    const dbError = resolveDbRouteError(
-      error,
-      "레이아웃 검증 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."
-    );
-    return noStoreJson(
-      {
-        ok: false,
-        code: dbError.code,
-        reason: "layout_validation_failed",
-        debugId,
-        error: dbError.message,
-      },
-      dbError.status
-    );
-  }
+  return runAdminReportValidationGetRoute(ctx);
 }

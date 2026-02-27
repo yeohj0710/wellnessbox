@@ -1,103 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
-import getSession from "@/lib/session";
-import db from "@/lib/db";
-import { ensureClient, resolveOrCreateClientId } from "@/lib/server/client";
-import { consumeAppTransferToken } from "@/lib/auth/kakao/appBridge";
-import { publicOrigin, resolveRequestOrigin } from "@/lib/server/origin";
-import { attachClientToAppUser } from "@/lib/server/client-link";
+import { NextRequest } from "next/server";
+import {
+  runKakaoCompleteGetRoute,
+  type KakaoCompleteRouteContext,
+} from "./route-service";
 
 export const runtime = "nodejs";
 
-type RouteContext = {
-  params: Promise<{ token: string }>;
-};
+type RouteContext = KakaoCompleteRouteContext;
 
 export async function GET(req: NextRequest, ctx: RouteContext) {
-  const h = await headers();
-  const requestOrigin = resolveRequestOrigin(h, req.url);
-  const origin = publicOrigin(requestOrigin);
-
-  const { token } = await ctx.params;
-
-  const payload = await consumeAppTransferToken(token);
-
-  if (!payload) {
-    return NextResponse.redirect(new URL("/?login=invalid_transfer", origin));
-  }
-
-  const kakaoIdStr = String(payload.kakaoId);
-  const profile = await db.appUser.findUnique({
-    where: { kakaoId: kakaoIdStr },
-    select: {
-      kakaoId: true,
-      nickname: true,
-      email: true,
-      profileImageUrl: true,
-      kakaoEmail: true,
-      clientId: true,
-    },
-  });
-
-  const nextNickname = profile?.nickname ?? payload.nickname ?? undefined;
-  const nextEmail = profile?.email ?? payload.email ?? undefined;
-  const nextProfileImage =
-    profile?.profileImageUrl ?? payload.profileImageUrl ?? undefined;
-  const nextKakaoEmail = profile?.kakaoEmail ?? payload.kakaoEmail ?? undefined;
-
-  const appClientId = profile?.clientId ?? resolveOrCreateClientId(null);
-
-  if (!profile) {
-    await ensureClient(appClientId, {
-      userAgent: req.headers.get("user-agent"),
-    });
-    await db.appUser.create({
-      data: {
-        kakaoId: kakaoIdStr,
-        clientId: appClientId,
-        nickname: nextNickname ?? null,
-        email: nextEmail ?? null,
-        profileImageUrl: nextProfileImage ?? null,
-        kakaoEmail: nextKakaoEmail ?? null,
-      },
-    });
-  } else if (!profile.clientId) {
-    await ensureClient(appClientId, {
-      userAgent: req.headers.get("user-agent"),
-    });
-    await db.appUser.update({
-      where: { kakaoId: kakaoIdStr },
-      data: { clientId: appClientId },
-    });
-  }
-
-  const attachResult = await attachClientToAppUser({
-    req,
-    kakaoId: kakaoIdStr,
-    source: "kakao-login",
-    allowMerge: true,
-    userAgent: req.headers.get("user-agent"),
-  });
-
-  const session = await getSession();
-  session.user = {
-    kakaoId: payload.kakaoId,
-    loggedIn: true,
-    nickname: nextNickname,
-    profileImageUrl: nextProfileImage,
-    email: nextEmail,
-    kakaoEmail: nextKakaoEmail,
-  };
-  await session.save();
-
-  const response = NextResponse.redirect(new URL("/", origin));
-  if (attachResult.cookieToSet) {
-    response.cookies.set(
-      attachResult.cookieToSet.name,
-      attachResult.cookieToSet.value,
-      attachResult.cookieToSet.options
-    );
-  }
-
-  return response;
+  return runKakaoCompleteGetRoute(req, ctx);
 }

@@ -59,12 +59,23 @@ export const publishPostSchema = z.object({
   publish: z.boolean().default(true),
 });
 
+export type CreatePostInput = z.infer<typeof createPostSchema>;
+export type UpdatePostInput = z.infer<typeof updatePostSchema>;
+
 export function normalizeExcerpt(
   excerpt: string | null | undefined,
   contentMarkdown: string
 ) {
   const trimmed = excerpt?.trim() || "";
   return trimmed.length > 0 ? trimmed : summarizeMarkdown(contentMarkdown, 160);
+}
+
+export function resolveCreatePostPublishedAt(
+  status: "draft" | "published",
+  publishedAt?: string
+) {
+  if (status !== "published") return null;
+  return publishedAt ? new Date(publishedAt) : new Date();
 }
 
 function fallbackSlug() {
@@ -127,6 +138,65 @@ export async function resolveUniqueSlug(baseSlug: string, excludeId?: string) {
     candidate = `${baseSlug}-${index + 1}`;
   }
   return `${baseSlug}-${Date.now()}`;
+}
+
+type ResolvePatchDataInput = {
+  id: string;
+  existing: ColumnPost;
+  patch: UpdatePostInput;
+};
+
+export async function resolveColumnPostPatchData(input: ResolvePatchDataInput) {
+  let nextSlug = input.existing.slug;
+  if (input.patch.slug !== undefined) {
+    const baseSlug = resolveSlugInput({
+      slug: input.patch.slug,
+      title: input.patch.title ?? input.existing.title,
+    });
+    nextSlug = await resolveUniqueSlug(baseSlug, input.id);
+  }
+
+  const nextStatus = input.patch.status
+    ? normalizeColumnStatus(input.patch.status)
+    : normalizeColumnStatus(input.existing.status);
+
+  let nextPublishedAt = input.existing.publishedAt;
+  if (input.patch.publishedAt !== undefined) {
+    nextPublishedAt = input.patch.publishedAt ? new Date(input.patch.publishedAt) : null;
+  }
+  if (nextStatus === "published" && !nextPublishedAt) {
+    nextPublishedAt = new Date();
+  }
+  if (nextStatus !== "published") {
+    nextPublishedAt = null;
+  }
+
+  const contentMarkdown = input.patch.contentMarkdown ?? input.existing.contentMarkdown;
+  const excerptInput =
+    input.patch.excerpt === undefined
+      ? input.existing.excerpt
+      : input.patch.excerpt ?? null;
+
+  return {
+    slug: nextSlug,
+    title: input.patch.title?.trim() ?? input.existing.title,
+    excerpt: normalizeExcerpt(excerptInput, contentMarkdown),
+    contentMarkdown,
+    tags:
+      input.patch.tags !== undefined
+        ? normalizeColumnTags(input.patch.tags)
+        : input.existing.tags,
+    status: nextStatus,
+    publishedAt: nextPublishedAt,
+    authorName:
+      input.patch.authorName !== undefined
+        ? input.patch.authorName?.trim() || null
+        : input.existing.authorName,
+    coverImageUrl:
+      input.patch.coverImageUrl !== undefined
+        ? input.patch.coverImageUrl?.trim() || null
+        : input.existing.coverImageUrl,
+  };
 }
 
 export function toColumnPostDto(post: ColumnPost) {

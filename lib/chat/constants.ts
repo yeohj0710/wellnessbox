@@ -1,0 +1,6 @@
+export const DEFAULT_CHAT_TITLE = "새 상담";
+
+export const CHAT_TITLE_MAX_LENGTH = 80;
+export const CHAT_SAVE_MESSAGE_LIMIT = 400;
+export const CHAT_MESSAGE_CONTENT_MAX_LENGTH = 12000;
+export const CHAT_SESSION_ID_MAX_LENGTH = 191;

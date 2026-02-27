@@ -1,59 +1,16 @@
 ﻿"use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useFooter } from "@/components/common/footerContext";
-import type { ChatSession, UserProfile } from "@/types/chat";
-import {
-  getClientIdLocal,
-  getTzOffsetMinutes,
-  saveSessions,
-} from "../utils";
-import {
-  readLocalAssessCats,
-  readLocalCheckAiTopLabels,
-  type NormalizedAssessResult,
-  type NormalizedCheckAiResult,
-  type NormalizedOrderSummary,
-} from "./useChat.results";
-import { DEFAULT_CHAT_TITLE } from "./useChat.session";
-import {
-  readActionMemory,
-  rememberActionMemoryList,
-  type ActionMemoryMap,
-} from "./useChat.actionMemory";
+import { useMemo } from "react";
+import { getTzOffsetMinutes } from "../utils";
+import { rememberActionMemoryList } from "./useChat.actionMemory";
 import { isBrowserOnline } from "./useChat.browser";
-import {
-  type ChatActionType,
-  type ChatAgentSuggestedAction,
-} from "@/lib/chat/agent-actions";
-import {
-  buildInChatAssessmentPrompt,
-  type InChatAssessmentState,
-} from "./useChat.assessment";
-import {
-  requestActionExecutionDecision,
-  requestChatTitle,
-} from "./useChat.api";
-import { filterPersistableSessions, saveChatOnce } from "./useChat.persistence";
-import {
-  replaceSessionMessageContent,
-  updateSessionTitle,
-} from "./useChat.sessionState";
-import {
-  finalizeAssistantTurnFlow,
-  generateTitleFlow,
-  type FinalizeAssistantTurnInput,
-} from "./useChat.finalizeFlow";
+import type { ChatActionType } from "@/lib/chat/agent-actions";
+import { buildInChatAssessmentPrompt } from "./useChat.assessment";
+import { requestActionExecutionDecision } from "./useChat.api";
+import { replaceSessionMessageContent } from "./useChat.sessionState";
 import { CHAT_COPY, toAssistantErrorText } from "./useChat.copy";
-import {
-  closeChatDrawer,
-  openChatDrawer,
-} from "./useChat.ui";
-import { type LastInteractiveAction } from "./useChat.interactionGuard";
-import {
-  useAllResultsBootstrap,
-  useSessionAndProfileBootstrap,
-} from "./useChat.bootstrap";
+import { closeChatDrawer, openChatDrawer } from "./useChat.ui";
+import { useAllResultsBootstrap, useSessionAndProfileBootstrap } from "./useChat.bootstrap";
 import { useChatDerivedState } from "./useChat.derived";
 import type { ChatPageAgentContext } from "@/lib/chat/page-agent-context";
 import { createInteractiveCommands } from "./useChat.interactiveCommands";
@@ -65,8 +22,11 @@ import {
 } from "./useChat.scrollEffects";
 import { useChatFollowupActions } from "./useChat.followupActions";
 import { createInChatAssessmentHandlers } from "./useChat.assessmentHandlers";
-import { runSendMessageFlow } from "./useChat.sendMessageHandler";
-import { runInitialAssistantMessageHandler } from "./useChat.initialMessageHandler";
+import { createAssistantTurnHandlers } from "./useChat.assistantTurnHandlers";
+import { createMessageFlowHandlers } from "./useChat.messageFlowHandlers";
+import { useChatLocalEffects } from "./useChat.localEffects";
+import { useChatState } from "./useChat.state";
+import { useChatRefs } from "./useChat.refs";
 
 type UseChatOptions = {
   manageFooter?: boolean;
@@ -80,60 +40,24 @@ export default function useChat(options: UseChatOptions = {}) {
   const remoteBootstrap = options.remoteBootstrap ?? true;
   const enableAutoInit = options.enableAutoInit ?? true;
   const pageContext = options.pageContext ?? null;
-  const [sessions, setSessions] = useState<ChatSession[]>([]);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [profile, setProfile] = useState<UserProfile | undefined>(undefined);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [showProfileBanner, setShowProfileBanner] = useState(false);
-  const [profileLoaded, setProfileLoaded] = useState(false);
-  const [drawerVisible, setDrawerVisible] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [localCheckAi, setLocalCheckAi] = useState<string[]>([]);
-  const [localAssessCats, setLocalAssessCats] = useState<string[]>([]);
-  const [assessResult, setAssessResult] =
-    useState<NormalizedAssessResult | null>(null);
-  const [checkAiResult, setCheckAiResult] =
-    useState<NormalizedCheckAiResult | null>(null);
-  const [orders, setOrders] = useState<NormalizedOrderSummary[]>([]);
-  const [resultsLoaded, setResultsLoaded] = useState(false);
-  const [titleHighlightId, setTitleHighlightId] = useState<string | null>(null);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [interactiveActions, setInteractiveActions] = useState<
-    ChatAgentSuggestedAction[]
-  >([]);
-  const [inChatAssessment, setInChatAssessment] =
-    useState<InChatAssessmentState | null>(null);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [titleLoading, setTitleLoading] = useState(false);
-  const [titleError, setTitleError] = useState(false);
-  const [topTitleHighlight, setTopTitleHighlight] = useState(false);
-  const [actionMemory, setActionMemory] = useState<ActionMemoryMap>(() =>
-    readActionMemory()
-  );
+  const {
+    sessions, setSessions, activeId, setActiveId, profile, setProfile, input, setInput,
+    loading, setLoading, showSettings, setShowSettings, showProfileBanner, setShowProfileBanner,
+    profileLoaded, setProfileLoaded, drawerVisible, setDrawerVisible, drawerOpen, setDrawerOpen,
+    localCheckAi, setLocalCheckAi, localAssessCats, setLocalAssessCats, assessResult, setAssessResult,
+    checkAiResult, setCheckAiResult, orders, setOrders, resultsLoaded, setResultsLoaded,
+    titleHighlightId, setTitleHighlightId, suggestions, setSuggestions, interactiveActions,
+    setInteractiveActions, inChatAssessment, setInChatAssessment, actionLoading, setActionLoading,
+    titleLoading, setTitleLoading, titleError, setTitleError, topTitleHighlight,
+    setTopTitleHighlight, actionMemory, setActionMemory,
+  } = useChatState();
 
-  useEffect(() => {
-    setActionMemory(readActionMemory());
-  }, []);
-
-  const firstUserMessageRef = useRef<string>("");
-  const firstAssistantMessageRef = useRef<string>("");
-  const firstAssistantReplyRef = useRef<string>("");
-  const activeIdRef = useRef<string | null>(null);
-
-  const messagesContainerRef = useRef<HTMLDivElement | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const stickToBottomRef = useRef(true);
-  const initStartedRef = useRef<Record<string, boolean>>({});
-  const abortRef = useRef<AbortController | null>(null);
-  const savedKeysRef = useRef<Set<string>>(new Set());
-  const readyToPersistRef = useRef<Record<string, boolean>>({});
-  const actorAppUserIdRef = useRef<string | null>(null);
-  const actorLoggedInRef = useRef(false);
-  const actorPhoneLinkedRef = useRef(false);
-  const suggestionHistoryRef = useRef<Record<string, string[]>>({});
-  const lastInteractiveActionRef = useRef<LastInteractiveAction>(null);
+  const {
+    firstUserMessageRef, firstAssistantMessageRef, firstAssistantReplyRef, activeIdRef,
+    messagesContainerRef, messagesEndRef, stickToBottomRef, initStartedRef, abortRef,
+    savedKeysRef, readyToPersistRef, actorAppUserIdRef, actorLoggedInRef, actorPhoneLinkedRef,
+    suggestionHistoryRef, lastInteractiveActionRef,
+  } = useChatRefs();
 
   function openDrawer() {
     openChatDrawer(setDrawerVisible, setDrawerOpen);
@@ -167,36 +91,18 @@ export default function useChat(options: UseChatOptions = {}) {
     setProfileLoaded,
   });
 
-  useEffect(() => {
-    activeIdRef.current = activeId;
-  }, [activeId]);
-
-  useEffect(() => {
-    clearFollowups();
-  }, [activeId]);
-
-  useEffect(() => {
-    if (!sessions.length) return;
-
-    saveSessions(filterPersistableSessions(sessions, readyToPersistRef.current));
-  }, [sessions]);
-
-  const { hideFooter, showFooter } = useFooter();
-  useEffect(() => {
-    if (!manageFooter) return;
-    hideFooter();
-    return () => showFooter();
-  }, [hideFooter, manageFooter, showFooter]);
-
-  useEffect(() => {
-    const labels = readLocalCheckAiTopLabels();
-    if (labels.length) setLocalCheckAi(labels);
-  }, []);
-
-  useEffect(() => {
-    const cats = readLocalAssessCats();
-    if (cats.length) setLocalAssessCats(cats);
-  }, []);
+  useChatLocalEffects({
+    manageFooter,
+    activeId,
+    sessions,
+    readyToPersistRef,
+    activeIdRef,
+    setActionMemory,
+    setSuggestions,
+    setInteractiveActions,
+    setLocalCheckAi,
+    setLocalAssessCats,
+  });
 
   useAllResultsBootstrap({
     remoteBootstrap,
@@ -264,52 +170,21 @@ export default function useChat(options: UseChatOptions = {}) {
     );
   }
 
-  async function finalizeAssistantTurn(input: FinalizeAssistantTurnInput) {
-    await finalizeAssistantTurnFlow({
-      turn: input,
-      onFirstTurn: async (content) => {
-        firstAssistantReplyRef.current = content;
-        await generateTitle();
-      },
-      fetchSuggestions,
-      fetchInteractiveActions,
-      persistTurn: async (turn) => {
-        const clientId = getClientIdLocal();
-        const tzOffsetMinutes = getTzOffsetMinutes();
-        const persistedMessages = turn.userMessage
-          ? [turn.userMessage, { ...turn.assistantMessage, content: turn.content }]
-          : [{ ...turn.assistantMessage, content: turn.content }];
-
-        await saveChatOnce({
-          savedKeys: savedKeysRef.current,
-          clientId,
-          sessionId: turn.sessionId,
-          title:
-            sessions.find((session) => session.id === turn.sessionId)?.title ||
-            DEFAULT_CHAT_TITLE,
-          messages: persistedMessages,
-          tzOffsetMinutes,
-        });
-      },
-    });
-  }
-
-  async function generateTitle() {
-    await generateTitleFlow({
-      activeId,
-      firstUserMessage: firstUserMessageRef.current,
-      firstAssistantMessage: firstAssistantMessageRef.current,
-      firstAssistantReply: firstAssistantReplyRef.current,
-      setTitleLoading,
-      setTitleError,
-      requestTitle: requestChatTitle,
-      applyTitle: (sessionId, title) => {
-        setSessions((prev) => updateSessionTitle(prev, sessionId, title));
-      },
-      setTitleHighlightId,
-      setTopTitleHighlight,
-    });
-  }
+  const { finalizeAssistantTurn, generateTitle } = createAssistantTurnHandlers({
+    activeId,
+    sessions,
+    setSessions,
+    fetchSuggestions,
+    fetchInteractiveActions,
+    savedKeysRef,
+    firstUserMessageRef,
+    firstAssistantMessageRef,
+    firstAssistantReplyRef,
+    setTitleLoading,
+    setTitleError,
+    setTitleHighlightId,
+    setTopTitleHighlight,
+  });
 
   const { initializeInChatAssessment, tryHandleInChatAssessmentInput } =
     createInChatAssessmentHandlers({
@@ -349,57 +224,38 @@ export default function useChat(options: UseChatOptions = {}) {
     handleInteractiveAction,
   } = interactiveCommands;
 
-  async function sendMessage(overrideText?: string) {
-    await runSendMessageFlow(overrideText, {
-      loading,
-      active,
-      input,
-      setInput,
-      clearFollowups,
-      firstUserMessageRef,
-      setSessions,
-      stickToBottomRef,
-      messagesContainerRef,
-      tryHandleInChatAssessmentInput,
-      isBrowserOnline,
-      tryHandleAgentActionDecision,
-      tryHandleCartCommand,
-      updateAssistantMessage,
-      offlineChatMessage: CHAT_COPY.offlineChat,
-      setLoading,
-      buildContextPayload,
-      buildRuntimeContextPayload,
-      setAbortController: (controller) => {
-        abortRef.current = controller;
-      },
-      finalizeAssistantTurn,
-      toAssistantErrorText,
-    });
-  }
-
-  async function startInitialAssistantMessage(sessionId: string) {
-    await runInitialAssistantMessageHandler({
-      sessionId,
-      sessions,
-      resultsLoaded,
-      initStartedMap: initStartedRef.current,
-      isOnline: isBrowserOnline,
-      offlineMessage: CHAT_COPY.offlineInit,
-      setSessions,
-      setLoading,
-      setAbortController: (controller) => {
-        abortRef.current = controller;
-      },
-      buildContextPayload,
-      buildRuntimeContextPayload,
-      updateAssistantMessage,
-      fetchSuggestions,
-      fetchInteractiveActions,
-      firstAssistantMessageRef,
-      savedKeysRef,
-      readyToPersistRef,
-    });
-  }
+  const { sendMessage, startInitialAssistantMessage } = createMessageFlowHandlers({
+    loading,
+    active,
+    input,
+    setInput,
+    clearFollowups,
+    firstUserMessageRef,
+    setSessions,
+    stickToBottomRef,
+    messagesContainerRef,
+    tryHandleInChatAssessmentInput,
+    isBrowserOnline,
+    tryHandleAgentActionDecision,
+    tryHandleCartCommand,
+    updateAssistantMessage,
+    setLoading,
+    buildContextPayload,
+    buildRuntimeContextPayload,
+    abortRef,
+    finalizeAssistantTurn,
+    toAssistantErrorText,
+    sessions,
+    resultsLoaded,
+    initStartedRef,
+    fetchSuggestions,
+    fetchInteractiveActions,
+    firstAssistantMessageRef,
+    savedKeysRef,
+    readyToPersistRef,
+    offlineChatMessage: CHAT_COPY.offlineChat,
+    offlineInitMessage: CHAT_COPY.offlineInit,
+  });
 
   useActiveSessionScrollEffect({
     active,

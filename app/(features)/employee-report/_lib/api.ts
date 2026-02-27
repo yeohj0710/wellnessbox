@@ -10,6 +10,12 @@ import type {
 } from "./client-types";
 import { requestJson } from "./client-utils";
 
+function buildEmployeeSyncHeaders(debugOverride?: boolean) {
+  if (!debugOverride) return undefined;
+  if (process.env.NODE_ENV === "production") return undefined;
+  return { "x-wb-force-refresh-debug": "1" };
+}
+
 export async function fetchLoginStatus() {
   return requestJson<LoginStatusResponse>("/api/auth/login-status");
 }
@@ -41,7 +47,7 @@ export async function postEmployeeSync(input: {
 }) {
   return requestJson<EmployeeSyncResponse>("/api/b2b/employee/sync", {
     method: "POST",
-    headers: input.debugOverride ? { "x-wb-force-refresh-debug": "1" } : undefined,
+    headers: buildEmployeeSyncHeaders(input.debugOverride),
     body: JSON.stringify({
       ...input.identity,
       forceRefresh: input.forceRefresh,

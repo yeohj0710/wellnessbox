@@ -17,9 +17,6 @@ import {
   fetchEmployeeReport,
   fetchEmployeeSession,
   fetchLoginStatus,
-  postEmployeeSync,
-  requestNhisInit,
-  requestNhisSign,
   requestNhisUnlink,
   upsertEmployeeSession,
 } from "./_lib/api";
@@ -29,8 +26,6 @@ import type {
   EmployeeSessionGetResponse,
   EmployeeSessionUpsertResponse,
   IdentityInput,
-  NhisInitResponse,
-  NhisSignResponse,
   SyncGuidance,
 } from "./_lib/client-types";
 import {
@@ -46,6 +41,13 @@ import {
   saveStoredIdentity,
   toSyncNextAction,
 } from "./_lib/client-utils";
+import {
+  ensureNhisReadyForSync as ensureNhisReadyForSyncFlow,
+  isCachedSyncSource,
+  runRestartAuthFlow,
+  runSyncFlowWithRecovery,
+  syncEmployeeReportAndReload as syncEmployeeReportAndReloadFlow,
+} from "./_lib/sync-flow";
 
 export default function EmployeeReportClient() {
   const searchParams = useSearchParams();
@@ -164,6 +166,14 @@ export default function EmployeeReportClient() {
     }
   }
 
+  function setPendingSignGuidance(message: string) {
+    setSyncNextAction("sign");
+    setSyncGuidance({
+      nextAction: "sign",
+      message,
+    });
+  }
+
   function beginBusy(message: string) {
     setBusyMessage(message);
     setBusy(true);
@@ -193,18 +203,15 @@ export default function EmployeeReportClient() {
     forceRefresh = false,
     options?: { debugOverride?: boolean }
   ) {
-    const payload = getIdentityPayload();
-    const syncResult = await postEmployeeSync({
-      identity: payload,
+    return syncEmployeeReportAndReloadFlow({
+      getIdentityPayload,
       forceRefresh,
       debugOverride: options?.debugOverride,
+      selectedPeriodKey,
+      loadReport,
+      applyForceSyncCooldown,
+      persistIdentity: saveStoredIdentity,
     });
-    saveStoredIdentity(payload);
-    if (syncResult.sync?.cooldown) {
-      applyForceSyncCooldown({ cooldown: syncResult.sync.cooldown });
-    }
-    await loadReport(selectedPeriodKey || undefined);
-    return syncResult;
   }
 
   async function checkSessionAndMaybeAutoLogin() {
@@ -311,41 +318,10 @@ export default function EmployeeReportClient() {
   }
 
   async function ensureNhisReadyForSync(options?: { forceInit?: boolean }) {
-    const forceInit = options?.forceInit === true;
-
-    if (forceInit) {
-      const initResult: NhisInitResponse = await requestNhisInit({
-        identity: getIdentityPayload(),
-        forceInit: true,
-      });
-      if (initResult.linked || initResult.nextStep === "fetch") {
-        return {
-          linked: true,
-          reused: initResult.reused === true || initResult.source === "db-history",
-        };
-      }
-      return { linked: false, reused: false };
-    }
-
-    try {
-      const signResult: NhisSignResponse = await requestNhisSign();
-      return {
-        linked: signResult.linked === true,
-        reused: signResult.reused === true,
-      };
-    } catch (err) {
-      if (!(err instanceof ApiRequestError) || err.status !== 409) throw err;
-      const initResult: NhisInitResponse = await requestNhisInit({
-        identity: getIdentityPayload(),
-      });
-      if (initResult.linked || initResult.nextStep === "fetch") {
-        return {
-          linked: true,
-          reused: initResult.reused === true || initResult.source === "db-history",
-        };
-      }
-      return { linked: false, reused: false };
-    }
+    return ensureNhisReadyForSyncFlow({
+      getIdentityPayload,
+      forceInit: options?.forceInit,
+    });
   }
 
   async function handleRestartAuth() {
@@ -359,21 +335,14 @@ export default function EmployeeReportClient() {
     setSyncGuidance(null);
     setSyncNextAction(null);
     try {
-      const initResult: NhisInitResponse = await requestNhisInit({
-        identity: getIdentityPayload(),
-        forceInit: true,
+      const restartResult = await runRestartAuthFlow({
+        getIdentityPayload,
+        syncEmployeeReport,
+        debugOverride: debugMode,
       });
 
-      if (initResult.linked || initResult.nextStep === "fetch") {
-        const syncResult = await syncEmployeeReport(false, {
-          debugOverride: debugMode,
-        });
-        const reusedFromCache =
-          initResult.reused ||
-          initResult.source === "db-history" ||
-          syncResult.sync?.source === "cache-valid" ||
-          syncResult.sync?.source === "cache-history" ||
-          syncResult.sync?.source === "snapshot-history";
+      if (restartResult.status === "ready") {
+        const reusedFromCache = restartResult.reusedFromCache;
         setNotice(
           reusedFromCache
             ? "기존 연동 데이터를 사용해 레포트를 불러왔습니다."
@@ -450,59 +419,20 @@ export default function EmployeeReportClient() {
         if (reusedExisting) return;
       }
 
-      let ready: { linked: boolean; reused: boolean } = {
-        linked: true,
-        reused: false,
-      };
-
-      if (!forceRefresh) {
-        ready = await ensureNhisReadyForSync();
-        if (!ready.linked) {
-          setSyncNextAction("sign");
-          setSyncGuidance({
-            nextAction: "sign",
-            message: signPendingMessage,
-          });
-          return;
-        }
+      const syncFlowResult = await runSyncFlowWithRecovery({
+        forceRefresh,
+        debugOverride: debugMode,
+        ensureNhisReadyForSync,
+        syncEmployeeReport,
+      });
+      if (syncFlowResult.status === "pending-sign") {
+        setPendingSignGuidance(signPendingMessage);
+        return;
       }
 
-      let syncResult: Awaited<ReturnType<typeof syncEmployeeReport>>;
-      try {
-        syncResult = await syncEmployeeReport(forceRefresh, {
-          debugOverride: debugMode,
-        });
-      } catch (syncError) {
-        const nextAction =
-          syncError instanceof ApiRequestError
-            ? toSyncNextAction(syncError.payload.nextAction)
-            : null;
-        const needsAuthRecovery =
-          forceRefresh && (nextAction === "init" || nextAction === "sign");
-        if (!needsAuthRecovery) {
-          throw syncError;
-        }
+      const { syncResult, ready } = syncFlowResult;
 
-        ready = await ensureNhisReadyForSync({ forceInit: true });
-        if (!ready.linked) {
-          setSyncNextAction("sign");
-          setSyncGuidance({
-            nextAction: "sign",
-            message: signPendingMessage,
-          });
-          return;
-        }
-
-        syncResult = await syncEmployeeReport(forceRefresh, {
-          debugOverride: debugMode,
-        });
-      }
-
-      if (
-        syncResult.sync?.source === "cache-valid" ||
-        syncResult.sync?.source === "cache-history" ||
-        syncResult.sync?.source === "snapshot-history"
-      ) {
+      if (isCachedSyncSource(syncResult.sync?.source)) {
         setNotice("캐시 데이터를 사용해 레포트를 갱신했습니다.");
       } else if (ready.reused) {
         setNotice("기존 인증 상태를 사용해 레포트를 갱신했습니다.");

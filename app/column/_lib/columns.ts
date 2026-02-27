@@ -2,326 +2,35 @@ import "server-only";
 
 import { promises as fs } from "fs";
 import path from "path";
-import { Prisma } from "@prisma/client";
-import db from "@/lib/db";
+import {
+  MARKDOWN_EXTENSION,
+  buildHeadingAnchorId,
+  buildToc,
+  estimateReadingMinutes,
+  humanizeSlug,
+  normalizeSlug,
+  normalizeTagSlug,
+  parseBoolean,
+  parseLegacySlugList,
+  parseTagList,
+  safeDecodeURIComponent,
+  splitFrontmatter,
+  stripMarkdown,
+  stripWrappedQuotes,
+  summarize,
+  toIsoDate,
+} from "./columns-content-utils";
+import { fetchPublishedDbAliasRowBySlug, fetchPublishedDbRowBySlug, fetchPublishedDbRows } from "./columns-db-source";
+import { collectMarkdownFiles } from "./columns-file-source";
+import type { ColumnDetail, ColumnSummary, ColumnTag, TocItem } from "./columns-types";
+export type { ColumnDetail, ColumnSummary, ColumnTag, TocItem } from "./columns-types";
+
+export { buildHeadingAnchorId, normalizeTagSlug };
 
 const CONTENT_ROOT = path.join(process.cwd(), "app", "column", "_content");
-const MARKDOWN_EXTENSION = /\.md$/i;
-const HEADING_PATTERN = /^(#{2,3})\s+(.+)$/;
-const TAG_SLUG_INVALID_PATTERN = /[^\p{L}\p{N}_-]+/gu;
-const HEADING_CLEAN_PATTERN = /[`*_~[\]()<>#+!?.,:;'"\\/]/g;
-
-type FrontmatterMap = Record<string, string>;
-
-export type TocItem = {
-  id: string;
-  text: string;
-  level: 2 | 3;
-};
-
-export type ColumnSummary = {
-  postId: string | null;
-  slug: string;
-  title: string;
-  description: string;
-  summary: string;
-  publishedAt: string;
-  tags: string[];
-  coverImageUrl: string | null;
-  updatedAt: string;
-  readingMinutes: number;
-  draft: boolean;
-};
-
-export type ColumnDetail = ColumnSummary & {
-  content: string;
-  toc: TocItem[];
-  legacySlugs: string[];
-};
-
-export type ColumnTag = {
-  label: string;
-  slug: string;
-  count: number;
-};
-
-function safeDecodeURIComponent(input: string) {
-  try {
-    return decodeURIComponent(input);
-  } catch {
-    return input;
-  }
-}
-
-function normalizeLineEndings(value: string) {
-  return value.replace(/\r\n?/g, "\n");
-}
-
-function stripWrappedQuotes(value: string) {
-  const trimmed = value.trim();
-  if (
-    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
-    (trimmed.startsWith("'") && trimmed.endsWith("'"))
-  ) {
-    return trimmed.slice(1, -1).trim();
-  }
-  return trimmed;
-}
-
-function stripInlineMarkdown(value: string) {
-  return value
-    .replace(/!\[[^\]]*]\([^)]+\)/g, " ")
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-    .replace(/`[^`]*`/g, " ")
-    .replace(/[*_~]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function parseBoolean(value: string | undefined) {
-  if (!value) return false;
-  const normalized = value.trim().toLowerCase();
-  return ["true", "1", "yes", "y"].includes(normalized);
-}
-
-export function normalizeTagSlug(input: string) {
-  return safeDecodeURIComponent(input)
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(TAG_SLUG_INVALID_PATTERN, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-export function buildHeadingAnchorId(input: string) {
-  return stripInlineMarkdown(input)
-    .toLowerCase()
-    .replace(HEADING_CLEAN_PATTERN, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-function buildToc(markdown: string): TocItem[] {
-  const toc: TocItem[] = [];
-  const counts = new Map<string, number>();
-  const lines = normalizeLineEndings(markdown).split("\n");
-
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
-    const match = line.match(HEADING_PATTERN);
-    if (!match) continue;
-
-    const hashes = match[1] || "";
-    const rawTitle = match[2] || "";
-    const level = hashes.length === 2 ? 2 : 3;
-    const text = stripInlineMarkdown(rawTitle);
-    if (!text) continue;
-
-    const baseId = buildHeadingAnchorId(text) || `section-${toc.length + 1}`;
-    const seen = counts.get(baseId) ?? 0;
-    counts.set(baseId, seen + 1);
-    const id = seen === 0 ? baseId : `${baseId}-${seen}`;
-
-    toc.push({
-      id,
-      text,
-      level,
-    });
-  }
-
-  return toc;
-}
-
-function parseFrontmatter(raw: string): FrontmatterMap {
-  const parsed: FrontmatterMap = {};
-  let pendingListKey: string | null = null;
-
-  for (const rawLine of normalizeLineEndings(raw).split("\n")) {
-    const line = rawLine.trimEnd();
-    if (!line.trim() || line.trimStart().startsWith("#")) {
-      continue;
-    }
-
-    if (pendingListKey) {
-      const listMatch = line.match(/^\s*-\s*(.+)\s*$/);
-      if (listMatch) {
-        const listValue = stripWrappedQuotes(listMatch[1] || "");
-        parsed[pendingListKey] = parsed[pendingListKey]
-          ? `${parsed[pendingListKey]},${listValue}`
-          : listValue;
-        continue;
-      }
-      pendingListKey = null;
-    }
-
-    const kvMatch = line.match(/^([A-Za-z0-9_-]+)\s*:\s*(.*)$/);
-    if (!kvMatch) {
-      continue;
-    }
-
-    const [, key, rawValue] = kvMatch;
-    const value = rawValue.trim();
-    if (!value) {
-      pendingListKey = key;
-      parsed[key] = "";
-      continue;
-    }
-
-    parsed[key] = stripWrappedQuotes(value);
-  }
-
-  return parsed;
-}
-
-function splitFrontmatter(markdown: string) {
-  const normalized = normalizeLineEndings(markdown).trim();
-  if (!normalized.startsWith("---\n")) {
-    return {
-      frontmatter: {} as FrontmatterMap,
-      content: normalized,
-    };
-  }
-
-  const closingToken = "\n---\n";
-  const closingIndex = normalized.indexOf(closingToken, 4);
-  if (closingIndex < 0) {
-    return {
-      frontmatter: {} as FrontmatterMap,
-      content: normalized,
-    };
-  }
-
-  const frontmatterText = normalized.slice(4, closingIndex);
-  const content = normalized.slice(closingIndex + closingToken.length).trim();
-
-  return {
-    frontmatter: parseFrontmatter(frontmatterText),
-    content,
-  };
-}
-
-function parseTagList(rawTags: string | undefined) {
-  if (!rawTags) {
-    return [];
-  }
-
-  const value = rawTags.trim();
-  const source =
-    value.startsWith("[") && value.endsWith("]")
-      ? value.slice(1, -1).split(",")
-      : value.split(",");
-
-  const tags = source
-    .map((tag) => stripWrappedQuotes(tag))
-    .map((tag) => tag.trim())
-    .filter(Boolean);
-
-  return Array.from(new Set(tags));
-}
-
-function parseLegacySlugList(rawLegacySlugs: string | undefined) {
-  if (!rawLegacySlugs) return [];
-  const source = rawLegacySlugs.trim();
-  if (!source) return [];
-  const tokens =
-    source.startsWith("[") && source.endsWith("]")
-      ? source.slice(1, -1).split(",")
-      : source.split(",");
-  return Array.from(
-    new Set(
-      tokens
-        .map((token) => normalizeSlug(stripWrappedQuotes(token)))
-        .filter(Boolean)
-    )
-  );
-}
-
-function normalizeSlug(input: string) {
-  return safeDecodeURIComponent(input)
-    .trim()
-    .toLowerCase()
-    .replace(/\\/g, "/")
-    .replace(/\s+/g, "-")
-    .replace(/[^\p{L}\p{N}/_-]+/gu, "-")
-    .replace(/\/+/g, "/")
-    .replace(/-+/g, "-")
-    .replace(/^[-/]+|[-/]+$/g, "");
-}
-
-function humanizeSlug(input: string) {
-  return input
-    .split("/")
-    .pop()
-    ?.replace(/[-_]+/g, " ")
-    .trim();
-}
-
-function stripMarkdown(markdown: string) {
-  return markdown
-    .replace(/```[\s\S]*?```/g, " ")
-    .replace(/`[^`]*`/g, " ")
-    .replace(/!\[[^\]]*]\([^)]+\)/g, " ")
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-    .replace(/^#{1,6}\s+/gm, "")
-    .replace(/[>*_~|]/g, " ")
-    .replace(/\n+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function summarize(text: string, maxLength = 140) {
-  if (text.length <= maxLength) {
-    return text;
-  }
-  return `${text.slice(0, maxLength).trimEnd()}...`;
-}
-
-function estimateReadingMinutes(text: string) {
-  const chars = text.replace(/\s+/g, "").length;
-  return Math.max(1, Math.ceil(chars / 450));
-}
-
-function toIsoDate(rawDate: string | undefined, fallbackDate: Date) {
-  if (rawDate) {
-    const parsed = new Date(rawDate);
-    if (!Number.isNaN(parsed.getTime())) {
-      return parsed.toISOString();
-    }
-  }
-  return fallbackDate.toISOString();
-}
-
-async function collectMarkdownFiles(dir: string): Promise<string[]> {
-  let entries;
-  try {
-    entries = await fs.readdir(dir, { withFileTypes: true });
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      return [];
-    }
-    throw error;
-  }
-
-  const paths = await Promise.all(
-    entries.map(async (entry) => {
-      const absolutePath = path.join(dir, entry.name);
-      if (entry.isDirectory()) {
-        return collectMarkdownFiles(absolutePath);
-      }
-      return MARKDOWN_EXTENSION.test(entry.name) ? [absolutePath] : [];
-    })
-  );
-
-  return paths.flat().sort();
-}
 
 async function parseColumnFile(absolutePath: string): Promise<ColumnDetail> {
-  const [raw, stat] = await Promise.all([
-    fs.readFile(absolutePath, "utf8"),
-    fs.stat(absolutePath),
-  ]);
+  const [raw, stat] = await Promise.all([fs.readFile(absolutePath, "utf8"), fs.stat(absolutePath)]);
   const { frontmatter, content } = splitFrontmatter(raw);
   const plainText = stripMarkdown(content);
   const toc = buildToc(content);
@@ -382,24 +91,6 @@ function toSummary(column: ColumnDetail): ColumnSummary {
   return summary;
 }
 
-function isColumnPostTableMissing(error: unknown) {
-  if (error instanceof Prisma.PrismaClientKnownRequestError) {
-    return error.code === "P2021";
-  }
-  const message =
-    error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
-  return message.includes("columnpost") && message.includes("does not exist");
-}
-
-function isColumnPostSlugAliasTableMissing(error: unknown) {
-  if (error instanceof Prisma.PrismaClientKnownRequestError) {
-    return error.code === "P2021";
-  }
-  const message =
-    error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
-  return message.includes("columnpostslugalias") && message.includes("does not exist");
-}
-
 function mapDbPostToColumnDetail(post: {
   id: string;
   slug: string;
@@ -447,118 +138,24 @@ async function getPublishedFileColumns() {
 }
 
 async function getPublishedDbColumns(): Promise<ColumnDetail[]> {
-  try {
-    const rows = await db.columnPost.findMany({
-      where: { status: "published" },
-      orderBy: [{ publishedAt: "desc" }, { updatedAt: "desc" }],
-      select: {
-        id: true,
-        slug: true,
-        title: true,
-        excerpt: true,
-        contentMarkdown: true,
-        tags: true,
-        status: true,
-        publishedAt: true,
-        coverImageUrl: true,
-        updatedAt: true,
-      },
-    });
-    return sortColumnsByDateDesc(
-      rows
-        .map(mapDbPostToColumnDetail)
-        .filter((column) => Boolean(column.slug) && !column.draft)
-    );
-  } catch (error) {
-    if (isColumnPostTableMissing(error)) {
-      return [];
-    }
-    throw error;
-  }
+  const rows = await fetchPublishedDbRows();
+  return sortColumnsByDateDesc(
+    rows
+      .map(mapDbPostToColumnDetail)
+      .filter((column) => Boolean(column.slug) && !column.draft)
+  );
 }
 
 async function getPublishedDbColumnBySlug(slug: string): Promise<ColumnDetail | null> {
-  try {
-    const row = await db.columnPost.findFirst({
-      where: {
-        slug,
-        status: "published",
-      },
-      select: {
-        id: true,
-        slug: true,
-        title: true,
-        excerpt: true,
-        contentMarkdown: true,
-        tags: true,
-        status: true,
-        publishedAt: true,
-        coverImageUrl: true,
-        updatedAt: true,
-      },
-    });
-    return row ? mapDbPostToColumnDetail(row) : null;
-  } catch (error) {
-    if (isColumnPostTableMissing(error)) {
-      return null;
-    }
-    throw error;
-  }
+  const row = await fetchPublishedDbRowBySlug(slug);
+  return row ? mapDbPostToColumnDetail(row) : null;
 }
 
 async function getPublishedDbColumnByAliasSlug(
   slug: string
 ): Promise<ColumnDetail | null> {
-  try {
-    const aliasClient = (db as unknown as {
-      columnPostSlugAlias?: {
-        findUnique: (args: unknown) => Promise<unknown>;
-      };
-    }).columnPostSlugAlias;
-    if (!aliasClient?.findUnique) return null;
-
-    const row = (await aliasClient.findUnique({
-      where: { slug },
-      select: {
-        post: {
-          select: {
-            id: true,
-            slug: true,
-            title: true,
-            excerpt: true,
-            contentMarkdown: true,
-            tags: true,
-            status: true,
-            publishedAt: true,
-            coverImageUrl: true,
-            updatedAt: true,
-          },
-        },
-      },
-    })) as
-      | {
-          post?: {
-            id: string;
-            slug: string;
-            title: string;
-            excerpt: string | null;
-            contentMarkdown: string;
-            tags: string[];
-            status: string;
-            publishedAt: Date | null;
-            coverImageUrl: string | null;
-            updatedAt: Date;
-          } | null;
-        }
-      | null;
-    if (!row?.post || row.post.status !== "published") return null;
-    return mapDbPostToColumnDetail(row.post);
-  } catch (error) {
-    if (isColumnPostSlugAliasTableMissing(error) || isColumnPostTableMissing(error)) {
-      return null;
-    }
-    throw error;
-  }
+  const row = await fetchPublishedDbAliasRowBySlug(slug);
+  return row ? mapDbPostToColumnDetail(row) : null;
 }
 
 async function getPublishedColumns(): Promise<ColumnDetail[]> {

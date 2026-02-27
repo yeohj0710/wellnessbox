@@ -49,25 +49,6 @@ const PRESERVED_SOURCE_KEYS = [
 
 export type CheckupMetricTone = "normal" | "caution" | "unknown";
 
-export type LatestCheckupMeta = {
-  year: string | null;
-  checkupDate: string | null;
-  agency: string | null;
-  overallResult: string | null;
-};
-
-export type MedicationDigest = {
-  totalRows: number;
-  uniqueMedicineCount: number;
-  topMedicines: Array<{ label: string; count: number }>;
-  topConditions: Array<{ label: string; count: number }>;
-  recentMedications: Array<{
-    date: string;
-    medicine: string;
-    effect: string | null;
-  }>;
-};
-
 function isFilledPrimitive(value: NhisPrimitive | undefined) {
   if (value == null) return false;
   if (typeof value === "string") return value.trim().length > 0;
@@ -239,44 +220,6 @@ function pickFirstText(row: NhisDataRow, keys: string[]) {
   return null;
 }
 
-function parseYearValue(value: string | null) {
-  if (!value) return 0;
-  const match = value.match(/(20\d{2}|19\d{2})/);
-  if (!match) return 0;
-  const year = Number(match[1]);
-  return Number.isFinite(year) ? year : 0;
-}
-
-function parseMonthDayValue(value: string | null) {
-  if (!value) return { month: 0, day: 0 };
-  const match = value.match(/(\d{1,2})[./-](\d{1,2})/);
-  if (!match) return { month: 0, day: 0 };
-  const month = Number(match[1]);
-  const day = Number(match[2]);
-  if (!Number.isFinite(month) || !Number.isFinite(day)) {
-    return { month: 0, day: 0 };
-  }
-  return { month, day };
-}
-
-function compareCheckupKey(
-  left: { year: number; month: number; day: number },
-  right: { year: number; month: number; day: number }
-) {
-  if (left.year !== right.year) return left.year - right.year;
-  if (left.month !== right.month) return left.month - right.month;
-  return left.day - right.day;
-}
-
-function resolveCheckupSortKey(row: NhisDataRow) {
-  const yearText = pickFirstText(row, ["year", "checkupDate", "date"]);
-  const dateText = pickFirstText(row, ["checkupDate", "date"]);
-  const year = parseYearValue(yearText);
-  const { month, day } = parseMonthDayValue(dateText);
-  return { year, month, day };
-}
-
-
 export function filterCheckupMetricRows(rows: NhisDataRow[]): NhisDataRow[] {
   const out: NhisDataRow[] = [];
   const seen = new Set<string>();
@@ -347,51 +290,6 @@ export function filterCheckupMetricRows(rows: NhisDataRow[]): NhisDataRow[] {
   return out;
 }
 
-export function selectLatestCheckupRows(rows: NhisDataRow[]) {
-  if (rows.length === 0) return [];
-
-  let bestKey = resolveCheckupSortKey(rows[0]);
-  for (let index = 1; index < rows.length; index += 1) {
-    const nextKey = resolveCheckupSortKey(rows[index]);
-    if (compareCheckupKey(nextKey, bestKey) > 0) {
-      bestKey = nextKey;
-    }
-  }
-
-  return rows.filter((row) => {
-    const key = resolveCheckupSortKey(row);
-    if (key.year !== bestKey.year) return false;
-    if (bestKey.month === 0 && bestKey.day === 0) return true;
-    return key.month === bestKey.month && key.day === bestKey.day;
-  });
-}
-
-export function extractLatestCheckupMeta(rows: NhisDataRow[]): LatestCheckupMeta {
-  const year =
-    rows
-      .map((row) => pickFirstText(row, ["year"]))
-      .find((value): value is string => Boolean(value)) ?? null;
-  const checkupDate =
-    rows
-      .map((row) => pickFirstText(row, ["checkupDate", "date"]))
-      .find((value): value is string => Boolean(value)) ?? null;
-  const agency =
-    rows
-      .map((row) => pickFirstText(row, ["chkAgency", "agency", "hospitalNm"]))
-      .find((value): value is string => Boolean(value)) ?? null;
-  const overallResult =
-    rows
-      .map((row) => pickFirstText(row, ["overallResult", "result"]))
-      .find((value): value is string => Boolean(value)) ?? null;
-
-  return {
-    year,
-    checkupDate,
-    agency,
-    overallResult,
-  };
-}
-
 export function resolveCheckupMetricTone(row: NhisDataRow): CheckupMetricTone {
   const metricText =
     pickFirstText(row, ["metric", "itemName", "inspectItem", "type"]) ?? "";
@@ -432,84 +330,10 @@ export function resolveCheckupMetricTone(row: NhisDataRow): CheckupMetricTone {
   return "normal";
 }
 
-function parseSortableDateScore(value: string | null) {
-  if (!value) return 0;
-  const digits = value.replace(/\D/g, "");
-  if (digits.length >= 8) {
-    const score = Number(digits.slice(0, 8));
-    return Number.isFinite(score) ? score : 0;
-  }
-  return 0;
-}
-
-function toTopCountItems(source: Map<string, number>, maxItems: number) {
-  return [...source.entries()]
-    .sort(
-      (left, right) => right[1] - left[1] || left[0].localeCompare(right[0], "ko")
-    )
-    .slice(0, maxItems)
-    .map(([label, count]) => ({ label, count }));
-}
-
-function incrementCount(source: Map<string, number>, value: string | null) {
-  if (!value) return;
-  source.set(value, (source.get(value) ?? 0) + 1);
-}
-
-export function summarizeMedicationRows(rows: NhisDataRow[]): MedicationDigest {
-  const medicineCount = new Map<string, number>();
-  const conditionCount = new Map<string, number>();
-  const recentItems = new Map<
-    string,
-    { date: string; medicine: string; effect: string | null }
-  >();
-
-  for (const row of rows) {
-    const medicine = pickFirstText(row, [
-      "medicineNm",
-      "drug_MEDI_PRDC_NM",
-      "MEDI_PRDC_NM",
-    ]);
-    const condition = pickFirstText(row, [
-      "diagType",
-      "drug_MOHW_CLSF",
-      "detail_MOHW_CLSF",
-      "medicineEffect",
-    ]);
-    const date = pickFirstText(row, ["diagDate", "medDate"]);
-    const effect = pickFirstText(row, [
-      "medicineEffect",
-      "drug_EFFT_EFT_CNT",
-      "EFFT_EFT_CNT",
-    ]);
-
-    incrementCount(medicineCount, medicine);
-    incrementCount(conditionCount, condition);
-
-    if (!medicine || !date) continue;
-    const signature = `${date}|${medicine}`;
-    if (!recentItems.has(signature)) {
-      recentItems.set(signature, {
-        date,
-        medicine,
-        effect: effect ?? null,
-      });
-    }
-  }
-
-  const recentMedications = [...recentItems.values()]
-    .sort(
-      (left, right) =>
-        parseSortableDateScore(right.date) - parseSortableDateScore(left.date) ||
-        left.medicine.localeCompare(right.medicine, "ko")
-    )
-    .slice(0, 3);
-
-  return {
-    totalRows: rows.length,
-    uniqueMedicineCount: medicineCount.size,
-    topMedicines: toTopCountItems(medicineCount, 5),
-    topConditions: toTopCountItems(conditionCount, 5),
-    recentMedications,
-  };
-}
+export {
+  extractLatestCheckupMeta,
+  selectLatestCheckupRows,
+} from "./utils-checkup-meta";
+export type { LatestCheckupMeta } from "./utils-checkup-meta";
+export { summarizeMedicationRows } from "./utils-medication-digest";
+export type { MedicationDigest } from "./utils-medication-digest";
