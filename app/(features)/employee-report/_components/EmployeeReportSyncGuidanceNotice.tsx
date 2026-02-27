@@ -5,6 +5,7 @@ import { formatDateTime } from "../_lib/client-utils";
 type EmployeeReportSyncGuidanceNoticeProps = {
   guidance: SyncGuidance;
   busy: boolean;
+  showActions?: boolean;
   onRestartAuth: () => void;
   onSignAndSync: () => void;
 };
@@ -12,27 +13,52 @@ type EmployeeReportSyncGuidanceNoticeProps = {
 export default function EmployeeReportSyncGuidanceNotice({
   guidance,
   busy,
+  showActions = true,
   onRestartAuth,
   onSignAndSync,
 }: EmployeeReportSyncGuidanceNoticeProps) {
   return (
     <section className={styles.noticeInfo}>
       <p className={styles.optionalText}>{guidance.message}</p>
-      <div className={`${styles.actionRow} ${styles.mt8}`}>
-        {guidance.nextAction === "init" ? (
-          <button
-            type="button"
-            onClick={onRestartAuth}
-            disabled={busy}
-            data-testid="employee-report-restart-auth"
-            className={styles.buttonPrimary}
-          >
-            {busy ? "처리 중..." : "인증 다시하기"}
-          </button>
-        ) : null}
 
-        {guidance.nextAction === "sign" ? (
-          <>
+      {showActions ? (
+        <div className={`${styles.actionRow} ${styles.mt8}`}>
+          {guidance.nextAction === "init" ? (
+            <button
+              type="button"
+              onClick={onRestartAuth}
+              disabled={busy}
+              data-testid="employee-report-restart-auth"
+              className={styles.buttonPrimary}
+            >
+              {busy ? "처리 중..." : "인증 다시하기"}
+            </button>
+          ) : null}
+
+          {guidance.nextAction === "sign" ? (
+            <>
+              <button
+                type="button"
+                onClick={onSignAndSync}
+                disabled={busy}
+                data-testid="employee-report-sign-sync"
+                className={styles.buttonSecondary}
+              >
+                {busy ? "확인 중..." : "연동 완료 확인"}
+              </button>
+              <button
+                type="button"
+                onClick={onRestartAuth}
+                disabled={busy}
+                data-testid="employee-report-restart-auth-from-sign"
+                className={styles.buttonGhost}
+              >
+                {busy ? "요청 중..." : "인증 다시 요청"}
+              </button>
+            </>
+          ) : null}
+
+          {guidance.nextAction === "retry" ? (
             <button
               type="button"
               onClick={onSignAndSync}
@@ -40,32 +66,11 @@ export default function EmployeeReportSyncGuidanceNotice({
               data-testid="employee-report-sign-sync"
               className={styles.buttonSecondary}
             >
-              {busy ? "확인 중..." : "연동 완료 확인"}
+              {busy ? "재시도 중..." : "다시 시도"}
             </button>
-            <button
-              type="button"
-              onClick={onRestartAuth}
-              disabled={busy}
-              data-testid="employee-report-restart-auth-from-sign"
-              className={styles.buttonGhost}
-            >
-              {busy ? "요청 중..." : "인증 다시 요청"}
-            </button>
-          </>
-        ) : null}
-
-        {guidance.nextAction === "retry" ? (
-          <button
-            type="button"
-            onClick={onSignAndSync}
-            disabled={busy}
-            data-testid="employee-report-sign-sync"
-            className={styles.buttonSecondary}
-          >
-            {busy ? "재시도 중..." : "다시 시도"}
-          </button>
-        ) : null}
-      </div>
+          ) : null}
+        </div>
+      ) : null}
 
       {guidance.availableAt ? (
         <p className={styles.inlineHint}>

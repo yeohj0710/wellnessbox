@@ -374,7 +374,7 @@ export default function ReportSummaryCards(props: {
       <section className={`${styles.reportSheet} ${styles.reportSheetSecond}`} data-report-page="2">
         <header className={styles.reportPageHeader}>
           <p className={styles.reportPageKicker}>2페이지 상세 데이터</p>
-          <h2 className={styles.reportPageTitle}>건강검진 데이터 · 복약 이력 · 약사 코멘트</h2>
+          <h2 className={styles.reportPageTitle}>건강검진 데이터 · 최근 3건 복약 이력 · 약사 코멘트</h2>
           <p className={styles.reportPageSubtitle}>
             건강검진 수치, 복약 상태, 약사 의견을 함께 보고 다음 관리 방향을 정리합니다.
           </p>
@@ -414,12 +414,12 @@ export default function ReportSummaryCards(props: {
           </article>
 
           <article className={styles.reportDataCard}>
-            <h3 className={styles.reportDataTitle}>복약 이력 분석</h3>
+            <h3 className={styles.reportDataTitle}>최근 3건 복약 이력 분석</h3>
             {medicationStatusMessage ? (
               <p className={styles.reportBlockLead}>{ensureSentence(medicationStatusMessage)}</p>
             ) : null}
             {medications.length === 0 ? (
-              <p className={styles.reportDataEmpty}>최근 복약 이력이 없습니다.</p>
+              <p className={styles.reportDataEmpty}>최근 3건 복약 이력이 없습니다.</p>
             ) : (
               <ul className={styles.reportDataList}>
                 {medications.map((medication, index) => (

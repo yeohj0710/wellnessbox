@@ -5,6 +5,7 @@ type EmployeeReportIdentitySectionProps = {
   identity: IdentityInput;
   busy: boolean;
   showSignAction: boolean;
+  hideActionRow?: boolean;
   onNameChange: (value: string) => void;
   onBirthDateChange: (value: string) => void;
   onPhoneChange: (value: string) => void;
@@ -17,6 +18,7 @@ export default function EmployeeReportIdentitySection({
   identity,
   busy,
   showSignAction,
+  hideActionRow = false,
   onNameChange,
   onBirthDateChange,
   onPhoneChange,
@@ -30,7 +32,7 @@ export default function EmployeeReportIdentitySection({
         <div>
           <h2 className={styles.sectionTitle}>1. 본인 정보 입력</h2>
           <p className={styles.sectionDescription}>
-            레포트 조회를 위해 이름, 생년월일, 휴대폰 번호를 입력해 주세요.
+            리포트 조회를 위해 이름, 생년월일, 휴대폰 번호를 입력해 주세요.
           </p>
         </div>
       </div>
@@ -68,35 +70,37 @@ export default function EmployeeReportIdentitySection({
         </label>
       </div>
 
-      <div className={styles.actionRow}>
-        <button
-          type="button"
-          onClick={onRestartAuth}
-          disabled={busy}
-          data-testid="employee-report-restart-auth"
-          className={styles.buttonPrimary}
-        >
-          {busy ? "처리 중..." : "인증 다시하기"}
-        </button>
-        {showSignAction ? (
+      {!hideActionRow ? (
+        <div className={styles.actionRow}>
           <button
             type="button"
-            onClick={onSignAndSync}
+            onClick={onRestartAuth}
             disabled={busy}
-            data-testid="employee-report-sign-sync"
-            className={styles.buttonSecondary}
+            data-testid="employee-report-restart-auth"
+            className={styles.buttonPrimary}
           >
-            {busy ? "확인 중..." : "연동 완료 확인"}
+            {busy ? "처리 중..." : "인증 다시하기"}
           </button>
-        ) : null}
-      </div>
+          {showSignAction ? (
+            <button
+              type="button"
+              onClick={onSignAndSync}
+              disabled={busy}
+              data-testid="employee-report-sign-sync"
+              className={styles.buttonSecondary}
+            >
+              {busy ? "확인 중..." : "연동 완료 확인"}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       <details className={styles.optionalCard}>
         <summary>기존 조회 기록이 있으면 바로 불러오기</summary>
         <div className={styles.optionalBody}>
           <p className={styles.optionalText}>
             이전에 같은 이름/생년월일/휴대폰 번호로 조회한 기록이 있으면 인증 없이
-            레포트를 바로 불러올 수 있습니다.
+            리포트를 바로 불러올 수 있습니다.
           </p>
           <div className={styles.actionRow}>
             <button

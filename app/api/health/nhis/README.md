@@ -49,7 +49,7 @@
 - Summary default fanout is fixed to low-cost pair:
   - one checkup overview call
   - one medication call
-  - no `medical` call in the default path.
+  - optional recovery fallback: if medication rows are empty, one `medical` call may run once.
 
 ## Fetch Cost Guardrails
 

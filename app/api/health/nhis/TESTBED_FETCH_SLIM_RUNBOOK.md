@@ -27,9 +27,11 @@
   - summary fetch path executes:
     - one `checkupOverview` call
     - one `medication` call
+    - if `medication` returns empty rows, one fallback `medical` call (same session, same date-window) may run once
   - removed multi-window medication probe fanout (single medication call).
 - `lib/server/hyphen/normalize.ts`
   - trims normalized medication rows to latest 3.
+  - when mixed rows include non-medication summary entries, prioritizes rows with medication names before trimming to 3.
   - trims checkup overview rows to latest checkup batch.
 
 ## Local Smoke Test (No External API Required)
@@ -49,7 +51,8 @@
    - `data.normalized.checkup.overview` belongs to latest checkup batch only.
    - `data.normalized.medication.list.length <= 3`.
 4. Validate call policy:
-   - no call for `medical` target in default flow.
+   - default flow should call `checkupOverview` + `medication`.
+   - optional fallback: if `medication` response is empty, one `medical` call may appear.
    - no call for `checkupList` / `checkupYearly` unless explicitly requested in high-cost mode.
 5. Validate cache/cost behavior:
    - repeated same request should return cached response (`cached: true`) when available.

@@ -10,6 +10,7 @@ import {
 import { executeNhisFetch } from "@/lib/server/hyphen/fetch-executor";
 import {
   buildNhisFetchRequestHash,
+  clearNhisFetchCaches,
   getLatestNhisFetchCacheByIdentity,
   getValidNhisFetchCache,
   markNhisFetchCacheHit,
@@ -200,6 +201,15 @@ export async function fetchAndStoreB2bHealthSnapshot(input: {
       linkLoginOrgCd: link.loginOrgCd,
       linkCookieData: link.cookieData,
     };
+
+    if (input.forceRefresh) {
+      await clearNhisFetchCaches(input.appUserId).catch((error) => {
+        console.error("[b2b][employee-sync] failed to clear NHIS cache before force refresh", {
+          appUserId: input.appUserId,
+          message: error instanceof Error ? error.message : String(error),
+        });
+      });
+    }
 
     if (!input.forceRefresh) {
       const cached = await getValidNhisFetchCache(

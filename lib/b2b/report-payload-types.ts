@@ -7,6 +7,7 @@ export type B2bReportPayload = {
     birthDateMasked: string;
     phoneMasked: string;
     generatedAt: string;
+    payloadVersion: number;
     periodKey: string;
     reportCycle: number | null;
     variantIndex: number;

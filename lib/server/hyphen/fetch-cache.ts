@@ -57,6 +57,14 @@ type IdentityCacheLookupInput = {
   subjectType?: string;
 };
 
+type IdentityGlobalCacheLookupInput = {
+  identityHash: string;
+  targets: string[];
+  yearLimit?: number;
+  subjectType?: string;
+  excludeAppUserId?: string;
+};
+
 type IdentityCacheQueryMode = {
   includeExpired: boolean;
   okOnly: boolean;
@@ -200,6 +208,31 @@ export async function getLatestNhisFetchCacheByIdentity(input: IdentityCacheLook
   return findNhisFetchCacheByIdentity(input, {
     includeExpired: true,
     okOnly: true,
+  });
+}
+
+export async function getLatestNhisFetchCacheByIdentityGlobal(
+  input: IdentityGlobalCacheLookupInput
+) {
+  const normalizedTargets = [
+    ...new Set(input.targets.map((target) => target.trim()).filter(Boolean)),
+  ].sort((left, right) => left.localeCompare(right));
+
+  const where: Prisma.HealthProviderFetchCacheWhereInput = {
+    provider: HYPHEN_PROVIDER,
+    identityHash: input.identityHash,
+    targets: { equals: normalizedTargets },
+    yearLimit: input.yearLimit ?? null,
+    subjectType: input.subjectType ?? null,
+    ok: true,
+    ...(input.excludeAppUserId
+      ? { appUserId: { not: input.excludeAppUserId } }
+      : {}),
+  };
+
+  return db.healthProviderFetchCache.findFirst({
+    where,
+    orderBy: { fetchedAt: "desc" },
   });
 }
 

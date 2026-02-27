@@ -25,6 +25,7 @@ export type {
 };
 
 const MEDICATION_RECENT_LIMIT = 3;
+const MEDICATION_NAMES_PER_VISIT_LIMIT = 8;
 const MEDICATION_DATE_KEYS = [
   "diagDate",
   "medDate",
@@ -38,6 +39,54 @@ const MEDICATION_DATE_KEYS = [
   "prescribedDate",
   "prescDate",
   "medicationDate",
+  "diagSdate",
+] as const;
+const MEDICATION_HOSPITAL_KEYS = [
+  "pharmNm",
+  "hospitalNm",
+  "hospitalName",
+  "hospital",
+  "clinicName",
+  "hspNm",
+  "detail_HSP_NM",
+  "drug_HSP_NM",
+  "HSP_NM",
+  "clinicNm",
+] as const;
+const MEDICATION_VISIT_TYPE_KEYS = [
+  "diagType",
+  "detail_diagType",
+  "drug_diagType",
+  "visitType",
+] as const;
+const MEDICATION_NAME_KEYS = [
+  "medicineNm",
+  "medicine",
+  "drugName",
+  "drugNm",
+  "medNm",
+  "medicineName",
+  "prodName",
+  "drug_MEDI_PRDC_NM",
+  "MEDI_PRDC_NM",
+  "drug_CMPN_NM",
+  "detail_CMPN_NM",
+  "CMPN_NM",
+  "drug_CMPN_NM_2",
+  "detail_CMPN_NM_2",
+  "CMPN_NM_2",
+  "mediPrdcNm",
+  "drugMediPrdcNm",
+  "cmpnNm",
+  "drugCmpnNm",
+  "detailCmpnNm",
+  "cmpnNm2",
+  "drugCmpnNm2",
+  "detailCmpnNm2",
+  "복용약",
+  "약품명",
+  "약품",
+  "성분",
 ] as const;
 
 function toText(value: unknown): string | null {
@@ -73,15 +122,101 @@ function resolveMedicationDateScore(row: NhisRow): number {
   return 0;
 }
 
+function resolveMedicationDateText(row: NhisRow): string | null {
+  for (const key of MEDICATION_DATE_KEYS) {
+    const text = toText(row[key]);
+    if (text) return text;
+  }
+  return null;
+}
+
+function pickFirstText(row: NhisRow, keys: readonly string[]): string | null {
+  for (const key of keys) {
+    const text = toText(row[key]);
+    if (text) return text;
+  }
+  return null;
+}
+
+function extractMedicationName(row: NhisRow): string | null {
+  for (const key of MEDICATION_NAME_KEYS) {
+    const text = toText(row[key]);
+    if (text) return text;
+  }
+  return null;
+}
+
+function hasMedicationName(row: NhisRow): boolean {
+  return !!extractMedicationName(row);
+}
+
+function compareMedicationRows(left: NhisRow, right: NhisRow) {
+  const leftHasMedication = hasMedicationName(left);
+  const rightHasMedication = hasMedicationName(right);
+  if (leftHasMedication !== rightHasMedication) {
+    return rightHasMedication ? 1 : -1;
+  }
+
+  const dateDiff =
+    resolveMedicationDateScore(right) - resolveMedicationDateScore(left);
+  if (dateDiff !== 0) return dateDiff;
+  return JSON.stringify(left).localeCompare(JSON.stringify(right), "ko");
+}
+
+function resolveMedicationVisitKey(row: NhisRow, fallbackIndex: number): string {
+  const date = resolveMedicationDateText(row) ?? "";
+  const hospital = pickFirstText(row, MEDICATION_HOSPITAL_KEYS) ?? "";
+  const visitType = pickFirstText(row, MEDICATION_VISIT_TYPE_KEYS) ?? "";
+  if (!date && !hospital && !visitType) {
+    return `unknown-${fallbackIndex}`;
+  }
+  return `${date}|${hospital}|${visitType}`;
+}
+
 function limitRecentMedicationRows(rows: NhisRow[], maxRows: number): NhisRow[] {
-  if (rows.length <= maxRows) return rows;
-  const sorted = [...rows].sort((left, right) => {
-    const dateDiff =
-      resolveMedicationDateScore(right) - resolveMedicationDateScore(left);
-    if (dateDiff !== 0) return dateDiff;
-    return JSON.stringify(left).localeCompare(JSON.stringify(right), "ko");
+  if (rows.length === 0) return rows;
+  const byVisit = new Map<
+    string,
+    { rows: NhisRow[]; score: number; firstIndex: number }
+  >();
+  rows.forEach((row, index) => {
+    const visitKey = resolveMedicationVisitKey(row, index);
+    const current = byVisit.get(visitKey);
+    const score = resolveMedicationDateScore(row);
+    if (!current) {
+      byVisit.set(visitKey, {
+        rows: [row],
+        score,
+        firstIndex: index,
+      });
+      return;
+    }
+    current.rows.push(row);
+    if (score > current.score) current.score = score;
   });
-  return sorted.slice(0, maxRows);
+
+  const selectedVisits = [...byVisit.entries()]
+    .sort((left, right) => {
+      const scoreDiff = right[1].score - left[1].score;
+      if (scoreDiff !== 0) return scoreDiff;
+      return left[1].firstIndex - right[1].firstIndex;
+    })
+    .slice(0, maxRows);
+
+  return selectedVisits.map(([, group]) => {
+    const representative = [...group.rows].sort(compareMedicationRows)[0] ?? {};
+    const names = [...new Set(group.rows.map(extractMedicationName).filter(Boolean))];
+    if (names.length === 0) return representative;
+    const previewNames = names.slice(0, MEDICATION_NAMES_PER_VISIT_LIMIT);
+    const suffix =
+      names.length > MEDICATION_NAMES_PER_VISIT_LIMIT
+        ? ` 외 ${names.length - MEDICATION_NAMES_PER_VISIT_LIMIT}`
+        : "";
+    return {
+      ...representative,
+      medicineNm: `${previewNames.join(", ")}${suffix}`.trim(),
+    };
+  });
 }
 
 function parseCheckupYear(value: unknown): number {

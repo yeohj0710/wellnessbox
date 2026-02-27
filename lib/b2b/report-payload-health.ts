@@ -1,8 +1,4 @@
-import {
-  asArray,
-  asRecord,
-  toText,
-} from "@/lib/b2b/report-payload-shared";
+import { asArray, asRecord, toText } from "@/lib/b2b/report-payload-shared";
 
 type HealthMetric = { metric: string; value: string; unit: string | null };
 
@@ -14,6 +10,85 @@ type MedicationRow = {
 };
 
 export type MedicationContainerState = "present" | "missing" | "unrecognized";
+
+const MEDICATION_VISIT_LIMIT = 3;
+const MEDICATION_NAMES_PER_VISIT_LIMIT = 8;
+const MEDICATION_NAME_FALLBACK_PREFIX = "\uc57d\ud488\uba85 \ubbf8\uc81c\uacf5";
+const MEDICATION_NAME_KEYS = [
+  "medicineNm",
+  "medicine",
+  "drugName",
+  "drugNm",
+  "medNm",
+  "medicineName",
+  "prodName",
+  "drug_MEDI_PRDC_NM",
+  "MEDI_PRDC_NM",
+  "drug_CMPN_NM",
+  "detail_CMPN_NM",
+  "CMPN_NM",
+  "drug_CMPN_NM_2",
+  "detail_CMPN_NM_2",
+  "CMPN_NM_2",
+  "mediPrdcNm",
+  "drugMediPrdcNm",
+  "cmpnNm",
+  "drugCmpnNm",
+  "detailCmpnNm",
+  "cmpnNm2",
+  "drugCmpnNm2",
+  "detailCmpnNm2",
+  "\ubcf5\uc6a9\uc57d",
+  "\uc57d\ud488\uba85",
+  "\uc57d\ud488",
+  "\uc131\ubd84",
+] as const;
+const MEDICATION_HOSPITAL_KEYS = [
+  "pharmNm",
+  "hospitalNm",
+  "hospitalName",
+  "hospital",
+  "clinicName",
+  "hspNm",
+  "detail_HSP_NM",
+  "drug_HSP_NM",
+  "HSP_NM",
+  "clinicNm",
+] as const;
+const MEDICATION_VISIT_TYPE_KEYS = [
+  "diagType",
+  "detail_diagType",
+  "drug_diagType",
+  "visitType",
+] as const;
+const MEDICATION_DATE_KEYS = [
+  "diagDate",
+  "medDate",
+  "date",
+  "rxDate",
+  "prescribeDate",
+  "prscDate",
+  "takeDate",
+  "TRTM_YMD",
+  "detail_PRSC_YMD",
+  "detail_TRTM_YMD",
+  "drug_PRSC_YMD",
+  "drug_TRTM_YMD",
+  "PRSC_YMD",
+  "diagSdate",
+  "medicationDate",
+] as const;
+const MEDICATION_DOSAGE_KEYS = [
+  "dosageDay",
+  "period",
+  "takeDay",
+  "dayCount",
+  "admDay",
+  "medCnt",
+  "presCnt",
+  "detail_DOSAGE_DAY",
+  "drug_DOSAGE_DAY",
+] as const;
 
 function normalizeCompact(text: string) {
   return text.replace(/\s+/g, "").trim();
@@ -28,7 +103,7 @@ function normalizeUnit(unit: string | null | undefined) {
     "mg/dl": "mg/dL",
     "g/dl": "g/dL",
     "kg/m2": "kg/m2",
-    "kg/m짼": "kg/m2",
+    "kg/m\u00b2": "kg/m2",
     cm: "cm",
     kg: "kg",
     bpm: "bpm",
@@ -58,6 +133,91 @@ function parseSortableDateScore(value: unknown) {
     return Number.isFinite(score) ? score : 0;
   }
   return 0;
+}
+
+function pickFirstText(...values: unknown[]) {
+  for (const value of values) {
+    const text = toText(value);
+    if (text) return text;
+  }
+  return null;
+}
+
+function pickFirstByKeys(
+  row: Record<string, unknown>,
+  keys: readonly string[]
+) {
+  for (const key of keys) {
+    const text = toText(row[key]);
+    if (text) return text;
+  }
+  return null;
+}
+
+function hasPositiveSignal(value: string | null) {
+  if (!value) return false;
+  const digits = value.replace(/[^\d.-]/g, "");
+  if (!digits) return true;
+  const numeric = Number(digits);
+  if (!Number.isFinite(numeric)) return true;
+  return numeric > 0;
+}
+
+function resolveMedicationFallbackName(row: Record<string, unknown>) {
+  const diagType = pickFirstText(
+    row.diagType ?? row.detail_diagType ?? row.drug_diagType ?? row.visitType
+  );
+  const presCnt = pickFirstText(row.presCnt ?? row.medCnt ?? row.count);
+  const dosageDay = pickFirstText(
+    row.dosageDay ?? row.dayCount ?? row.takeDay ?? row.admDay
+  );
+  const hasCountSignal = hasPositiveSignal(presCnt) || hasPositiveSignal(dosageDay);
+  const hasTypeSignal =
+    !!diagType &&
+    (diagType.includes("\ucc98\ubc29") ||
+      diagType.includes("\ud22c\uc57d") ||
+      diagType.includes("\uc870\uc81c"));
+  if (!hasCountSignal && !hasTypeSignal) return null;
+  return `${MEDICATION_NAME_FALLBACK_PREFIX} (${diagType || "\ucc98\ubc29 \uc870\uc81c"})`;
+}
+
+function extractMedicationName(row: Record<string, unknown>) {
+  const name = pickFirstByKeys(row, MEDICATION_NAME_KEYS);
+  if (name) return name;
+  return resolveMedicationFallbackName(row);
+}
+
+function resolveMedicationDateScore(row: Record<string, unknown>) {
+  for (const key of MEDICATION_DATE_KEYS) {
+    const score = parseSortableDateScore(row[key]);
+    if (score > 0) return score;
+  }
+  return 0;
+}
+
+function resolveMedicationVisitKey(
+  row: Record<string, unknown>,
+  fallbackIndex: number
+) {
+  const date = pickFirstByKeys(row, MEDICATION_DATE_KEYS) ?? "";
+  const hospital = pickFirstByKeys(row, MEDICATION_HOSPITAL_KEYS) ?? "";
+  const visitType = pickFirstByKeys(row, MEDICATION_VISIT_TYPE_KEYS) ?? "";
+  if (!date && !hospital && !visitType) return `unknown-${fallbackIndex}`;
+  return `${date}|${hospital}|${visitType}`;
+}
+
+function resolveRowsFromContainer(value: unknown): Record<string, unknown>[] {
+  const record = asRecord(value);
+  const rows = Array.isArray(value)
+    ? value
+    : asArray(record?.list ?? record?.rows ?? record?.items ?? record?.history);
+  const resolved: Record<string, unknown>[] = [];
+  for (const item of rows) {
+    const row = asRecord(item);
+    if (!row) continue;
+    resolved.push(row);
+  }
+  return resolved;
 }
 
 export function extractHealthMetrics(normalizedJson: unknown): HealthMetric[] {
@@ -93,16 +253,12 @@ export function extractMedicationRows(normalizedJson: unknown): {
   if (!normalized || !("medication" in normalized)) {
     return { rows: [], containerState: "missing" };
   }
+
   const medicationRaw = normalized.medication;
   const medicationRecord = asRecord(medicationRaw);
-  const list = Array.isArray(medicationRaw)
-    ? medicationRaw
-    : asArray(
-        medicationRecord?.list ??
-          medicationRecord?.rows ??
-          medicationRecord?.items ??
-          medicationRecord?.history
-      );
+  const medicationRows = resolveRowsFromContainer(medicationRaw);
+  const medicalRows = resolveRowsFromContainer(normalized.medical);
+
   const containerState: MedicationContainerState =
     Array.isArray(medicationRaw) ||
     Array.isArray(medicationRecord?.list) ||
@@ -113,85 +269,110 @@ export function extractMedicationRows(normalizedJson: unknown): {
       : medicationRecord
         ? "unrecognized"
         : "missing";
-  const rows: MedicationRow[] = [];
-  const seen = new Set<string>();
 
-  for (const item of list) {
-    const row = asRecord(item);
-    if (!row) continue;
-    const medicationName = toText(
-      row.medicineNm ??
-        row.medicine ??
-        row.drugName ??
-        row.drugNm ??
-        row.medNm ??
-        row.medicineName ??
-        row.prodName ??
-        row.drug_MEDI_PRDC_NM ??
-        row.MEDI_PRDC_NM ??
-        row.detail_CMPN_NM ??
-        row.CMPN_NM
-    );
+  const byVisit = new Map<
+    string,
+    { entries: MedicationRow[]; score: number; firstIndex: number }
+  >();
+
+  for (const [index, row] of medicationRows.entries()) {
+    const medicationName = extractMedicationName(row);
     if (!medicationName) continue;
 
-    const hospitalName =
-      toText(
-        row.hospitalNm ??
-          row.hospitalName ??
-          row.hospital ??
-          row.clinicName ??
-          row.hspNm ??
-          row.detail_HSP_NM ??
-          row.drug_HSP_NM ??
-          row.clinicNm
-      ) || null;
-
-    const date =
-      toText(
-        row.diagDate ??
-          row.medDate ??
-          row.date ??
-          row.rxDate ??
-          row.prescribeDate ??
-          row.prscDate ??
-          row.takeDate ??
-          row.TRTM_YMD ??
-          row.detail_PRSC_YMD ??
-          row.detail_TRTM_YMD ??
-          row.drug_PRSC_YMD ??
-          row.drug_TRTM_YMD ??
-          row.PRSC_YMD ??
-          row.medicationDate
-      ) || null;
-
-    const dosageDay =
-      toText(
-        row.dosageDay ??
-          row.period ??
-          row.takeDay ??
-          row.dayCount ??
-          row.detail_DOSAGE_DAY ??
-          row.drug_DOSAGE_DAY
-      ) || null;
-
-    const uniqueKey = `${medicationName}|${date ?? ""}|${hospitalName ?? ""}`;
-    if (seen.has(uniqueKey)) continue;
-    seen.add(uniqueKey);
-
-    rows.push({
+    const entry: MedicationRow = {
       medicationName,
-      hospitalName,
-      date,
-      dosageDay,
-    });
+      hospitalName: pickFirstByKeys(row, MEDICATION_HOSPITAL_KEYS) || null,
+      date: pickFirstByKeys(row, MEDICATION_DATE_KEYS) || null,
+      dosageDay: pickFirstByKeys(row, MEDICATION_DOSAGE_KEYS) || null,
+    };
+
+    const visitKey = resolveMedicationVisitKey(row, index);
+    const score = resolveMedicationDateScore(row);
+    const group = byVisit.get(visitKey);
+    if (!group) {
+      byVisit.set(visitKey, {
+        entries: [entry],
+        score,
+        firstIndex: index,
+      });
+      continue;
+    }
+    group.entries.push(entry);
+    if (score > group.score) group.score = score;
   }
 
-  return {
-    rows: rows
-      .sort((a, b) => parseSortableDateScore(b.date) - parseSortableDateScore(a.date))
-      .slice(0, 3),
-    containerState,
-  };
+  if (byVisit.size < MEDICATION_VISIT_LIMIT && medicalRows.length > 0) {
+    const offset = medicationRows.length;
+    for (const [index, row] of medicalRows.entries()) {
+      const mergedIndex = offset + index;
+      const visitKey = resolveMedicationVisitKey(row, mergedIndex);
+      if (byVisit.has(visitKey)) continue;
+
+      const medicationName = extractMedicationName(row);
+      if (!medicationName) continue;
+
+      const score = resolveMedicationDateScore(row);
+      byVisit.set(visitKey, {
+        entries: [
+          {
+            medicationName,
+            hospitalName: pickFirstByKeys(row, MEDICATION_HOSPITAL_KEYS) || null,
+            date: pickFirstByKeys(row, MEDICATION_DATE_KEYS) || null,
+            dosageDay: pickFirstByKeys(row, MEDICATION_DOSAGE_KEYS) || null,
+          },
+        ],
+        score,
+        firstIndex: mergedIndex,
+      });
+    }
+  }
+
+  const rows = [...byVisit.values()]
+    .sort((left, right) => {
+      const scoreDiff = right.score - left.score;
+      if (scoreDiff !== 0) return scoreDiff;
+      return left.firstIndex - right.firstIndex;
+    })
+    .slice(0, MEDICATION_VISIT_LIMIT)
+    .map((group) => {
+      const representative =
+        group.entries.find(
+          (item) => !item.medicationName.startsWith(MEDICATION_NAME_FALLBACK_PREFIX)
+        ) ?? group.entries[0];
+      if (!representative) {
+        return {
+          medicationName: "-",
+          hospitalName: null,
+          date: null,
+          dosageDay: null,
+        };
+      }
+
+      const names: string[] = [];
+      const seenNames = new Set<string>();
+      for (const item of group.entries) {
+        const name = item.medicationName.trim();
+        if (!name || seenNames.has(name)) continue;
+        seenNames.add(name);
+        names.push(name);
+      }
+
+      const previewNames = names.slice(0, MEDICATION_NAMES_PER_VISIT_LIMIT);
+      const suffix =
+        names.length > MEDICATION_NAMES_PER_VISIT_LIMIT
+          ? ` \uc678 ${names.length - MEDICATION_NAMES_PER_VISIT_LIMIT}`
+          : "";
+
+      return {
+        ...representative,
+        medicationName:
+          previewNames.length > 0
+            ? `${previewNames.join(", ")}${suffix}`.trim()
+            : representative.medicationName,
+      };
+    });
+
+  return { rows, containerState };
 }
 
 export function extractFailedTargets(rawJson: unknown) {

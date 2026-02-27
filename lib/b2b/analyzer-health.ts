@@ -181,6 +181,44 @@ function resolveMedicationStatus(input: B2bAnalyzerInput): MedicationStatusType 
   return "none";
 }
 
+function pickFirstText(...values: unknown[]) {
+  for (const value of values) {
+    const text = toText(value);
+    if (text) return text;
+  }
+  return null;
+}
+
+function hasPositiveSignal(value: string | null) {
+  if (!value) return false;
+  const digits = value.replace(/[^\d.-]/g, "");
+  if (!digits) return true;
+  const numeric = Number(digits);
+  if (!Number.isFinite(numeric)) return true;
+  return numeric > 0;
+}
+
+function resolveMedicationFallbackName(row: Record<string, unknown>) {
+  const diagType = pickFirstText(
+    row.diagType ??
+      row.detail_diagType ??
+      row.drug_diagType ??
+      row.visitType
+  );
+  const presCnt = pickFirstText(row.presCnt ?? row.medCnt ?? row.count);
+  const dosageDay = pickFirstText(
+    row.dosageDay ?? row.dayCount ?? row.takeDay ?? row.admDay
+  );
+  const hasCountSignal = hasPositiveSignal(presCnt) || hasPositiveSignal(dosageDay);
+  const hasTypeSignal =
+    !!diagType &&
+    (diagType.includes("처방") ||
+      diagType.includes("약국") ||
+      diagType.includes("조제"));
+  if (!hasCountSignal && !hasTypeSignal) return null;
+  return `약품명 미제공 (${diagType || "처방 조제"})`;
+}
+
 export function buildMedication(input: B2bAnalyzerInput) {
   const list = resolveMedicationList(input.healthSnapshot?.normalizedJson);
 
@@ -223,21 +261,38 @@ export function buildMedication(input: B2bAnalyzerInput) {
     })
     .slice(0, 3)
     .map((item) => ({
-      medicationName: toText(
-        item.medicineNm ??
-          item.medicine ??
-          item.drugName ??
-          item.drugNm ??
-          item.medNm ??
-          item.medicineName ??
-          item.prodName ??
-          item.drug_MEDI_PRDC_NM ??
-          item.MEDI_PRDC_NM ??
-          item.detail_CMPN_NM ??
-          item.CMPN_NM
-      ),
+      medicationName:
+        pickFirstText(
+          item.medicineNm ??
+            item.medicine ??
+            item.drugName ??
+            item.drugNm ??
+            item.medNm ??
+            item.medicineName ??
+            item.prodName ??
+            item.drug_MEDI_PRDC_NM ??
+            item.MEDI_PRDC_NM ??
+            item.drug_CMPN_NM ??
+            item.detail_CMPN_NM ??
+            item.CMPN_NM ??
+            item.drug_CMPN_NM_2 ??
+            item.detail_CMPN_NM_2 ??
+            item.CMPN_NM_2 ??
+            item.mediPrdcNm ??
+            item.drugMediPrdcNm ??
+            item.cmpnNm ??
+            item.drugCmpnNm ??
+            item.detailCmpnNm ??
+            item.cmpnNm2 ??
+            item.drugCmpnNm2 ??
+            item.detailCmpnNm2 ??
+            item["복용약"] ??
+            item["약품명"] ??
+            item["약품"] ??
+            item["성분"]
+        ) || resolveMedicationFallbackName(item),
       date:
-        toText(
+        pickFirstText(
           item.diagDate ??
             item.medDate ??
             item.date ??
@@ -251,19 +306,24 @@ export function buildMedication(input: B2bAnalyzerInput) {
             item.drug_PRSC_YMD ??
             item.drug_TRTM_YMD ??
             item.PRSC_YMD ??
+            item.diagSdate ??
             item.medicationDate
         ) || null,
       period:
-        toText(
+        pickFirstText(
           item.dosageDay ??
             item.period ??
             item.takeDay ??
             item.dayCount ??
+            item.admDay ??
+            item.medCnt ??
+            item.presCnt ??
             item.detail_DOSAGE_DAY ??
             item.drug_DOSAGE_DAY
         ) || null,
       hospitalName:
-        toText(
+        pickFirstText(
+          item.pharmNm ??
           item.hospitalNm ??
             item.hospitalName ??
             item.hospital ??
@@ -277,9 +337,13 @@ export function buildMedication(input: B2bAnalyzerInput) {
     }))
     .filter((item) => item.medicationName);
 
-  const status = resolveMedicationStatus(input);
+  let status = resolveMedicationStatus(input);
+  if (status === "available" && recent.length === 0) {
+    status = "none";
+  }
   const cautions: string[] = [];
   for (const row of recent) {
+    if (!row.medicationName) continue;
     const lowered = row.medicationName.toLowerCase();
     if (lowered.includes("steroid") || lowered.includes("스테로이드")) {
       cautions.push("스테로이드 계열 여부를 약사와 확인해 주세요.");

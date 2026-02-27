@@ -2,7 +2,10 @@ import "server-only";
 
 import db from "@/lib/db";
 import { computeAndSaveB2bAnalysis } from "@/lib/b2b/analysis-service";
-import { buildB2bReportPayload } from "@/lib/b2b/report-payload";
+import {
+  B2B_REPORT_PAYLOAD_VERSION,
+  buildB2bReportPayload,
+} from "@/lib/b2b/report-payload";
 import type { B2bReportPayload } from "@/lib/b2b/report-payload";
 import {
   LAYOUT_TEMPLATE_VERSION,
@@ -49,6 +52,14 @@ function resolveReportHistoryPerPeriodLimit() {
     MAX_REPORT_HISTORY_PER_PERIOD,
     Math.max(MIN_REPORT_HISTORY_PER_PERIOD, rounded)
   );
+}
+
+function resolvePayloadVersion(reportPayload: unknown) {
+  if (!reportPayload || typeof reportPayload !== "object") return null;
+  const payload = reportPayload as { meta?: { payloadVersion?: unknown } };
+  const raw = payload.meta?.payloadVersion;
+  if (typeof raw !== "number" || !Number.isFinite(raw)) return null;
+  return Math.round(raw);
 }
 
 async function trimOldReportsForEmployeePeriod(
@@ -241,6 +252,14 @@ export async function ensureLatestB2bReport(employeeId: string, periodKey?: stri
   const targetPeriod = periodKey ?? resolveCurrentPeriodKey();
   const latest = await getLatestB2bReport(employeeId, targetPeriod);
   if (latest) {
+    const payloadVersion = resolvePayloadVersion(latest.reportPayload);
+    if (payloadVersion !== B2B_REPORT_PAYLOAD_VERSION) {
+      return createB2bReportSnapshot({
+        employeeId,
+        periodKey: targetPeriod,
+      });
+    }
+
     const stale = await hasNewerSourceData({
       employeeId,
       periodKey: targetPeriod,

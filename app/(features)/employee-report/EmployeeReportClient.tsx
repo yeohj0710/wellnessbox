@@ -29,6 +29,7 @@ import type {
 import {
   ApiRequestError,
   buildSyncGuidance,
+  clearStoredIdentity,
   downloadPdf,
   formatDateTime,
   isValidIdentityInput,
@@ -68,13 +69,22 @@ export default function EmployeeReportClient() {
     "init" | "sign" | "retry" | null
   >(null);
   const [syncGuidance, setSyncGuidance] = useState<SyncGuidance | null>(null);
+  const [pendingSignForceRefresh, setPendingSignForceRefresh] = useState(false);
   const [forceConfirmOpen, setForceConfirmOpen] = useState(false);
   const [forceConfirmText, setForceConfirmText] = useState("");
   const [forceConfirmChecked, setForceConfirmChecked] = useState(false);
   const hasTriedStoredLogin = useRef(false);
   const webReportCaptureRef = useRef<HTMLDivElement | null>(null);
   const isAdminLoggedIn = useAdminLoginStatus();
-  const { busy, busyMessage, beginBusy, endBusy } = useBusyState();
+  const {
+    busy,
+    busyMessage,
+    busyElapsedSec,
+    busyHint,
+    beginBusy,
+    updateBusy,
+    endBusy,
+  } = useBusyState();
   const { forceSyncRemainingSec, applyForceSyncCooldown } = useForceSyncCooldown();
 
   const identityPayload = useMemo(() => toIdentityPayload(identity), [identity]);
@@ -111,11 +121,53 @@ export default function EmployeeReportClient() {
     [forceConfirmChecked, forceConfirmText]
   );
 
+  const overlayDescription = useMemo(() => {
+    if (busyHint === "force-preflight" || busyHint === "sync-preflight") {
+      return "세션/캐시 상태를 먼저 확인하고 있어요. 이 단계는 비용이 발생하지 않습니다.";
+    }
+    if (busyHint === "force-remote") {
+      return "지금부터 실제 건보공단/하이픈 조회를 수행합니다. 2~3분 정도 걸릴 수 있습니다.";
+    }
+    if (busyHint === "sync-remote") {
+      return "캐시 미적중으로 외부 연동을 수행합니다. 2~3분 정도 걸릴 수 있습니다.";
+    }
+    return "완료되면 화면이 자동으로 갱신됩니다.";
+  }, [busyHint]);
+
+  const overlayDetailLines = useMemo(() => {
+    if (busyHint === "sync-preflight" || busyHint === "force-preflight") {
+      return [
+        "1단계: 저장된 스냅샷/리포트 캐시를 우선 조회하고 있어요.",
+        "캐시 적중 시 외부 API를 다시 호출하지 않습니다.",
+      ];
+    }
+    if (busyHint !== "sync-remote" && busyHint !== "force-remote") {
+      return [] as string[];
+    }
+    if (busyElapsedSec < 45) {
+      return [
+        "2단계: 인증 세션과 요청 정보를 확인하고 있어요.",
+        "브라우저를 닫지 말고 잠시만 기다려 주세요.",
+      ];
+    }
+    if (busyElapsedSec < 120) {
+      return [
+        "3단계: 하이픈을 통해 건보공단 원천 데이터를 조회 중이에요.",
+        "외부 응답 시간에 따라 2~3분이 소요될 수 있어요.",
+      ];
+    }
+    return [
+      "4단계: 받은 데이터를 정리하고 리포트/DB를 갱신하고 있어요.",
+      "완료 후 최근 3건 기준으로 화면이 자동 갱신됩니다.",
+    ];
+  }, [busyElapsedSec, busyHint]);
+
   function getIdentityPayload() {
     return identityPayload;
   }
 
-  function setPendingSignGuidance(message: string) {
+  function setPendingSignGuidance(message: string, forceRefresh = false) {
+    setPendingSignForceRefresh(forceRefresh);
     setSyncNextAction("sign");
     setSyncGuidance({
       nextAction: "sign",
@@ -218,6 +270,7 @@ export default function EmployeeReportClient() {
       setNotice("기존 레포트를 불러왔습니다.");
       setSyncNextAction(null);
       setSyncGuidance(null);
+      setPendingSignForceRefresh(false);
       await loadReport();
     } catch (err) {
       setError(
@@ -247,6 +300,7 @@ export default function EmployeeReportClient() {
     saveStoredIdentity(payload);
     setSyncNextAction(null);
     setSyncGuidance(null);
+    setPendingSignForceRefresh(false);
     await loadReport();
     setNotice(options?.successNotice || "기존 레포트를 불러왔어요.");
     return true;
@@ -269,6 +323,7 @@ export default function EmployeeReportClient() {
     setNotice("");
     setSyncGuidance(null);
     setSyncNextAction(null);
+    setPendingSignForceRefresh(false);
     try {
       const restartResult = await runRestartAuthFlow({
         getIdentityPayload,
@@ -277,6 +332,7 @@ export default function EmployeeReportClient() {
       });
 
       if (restartResult.status === "ready") {
+        setPendingSignForceRefresh(false);
         const reusedFromCache = restartResult.reusedFromCache;
         setNotice(
           reusedFromCache
@@ -287,6 +343,7 @@ export default function EmployeeReportClient() {
       }
 
       setSyncNextAction("sign");
+      setPendingSignForceRefresh(false);
       setSyncGuidance({
         nextAction: "sign",
         message:
@@ -301,10 +358,13 @@ export default function EmployeeReportClient() {
           "카카오 인증 요청에 실패했습니다."
         );
         setSyncGuidance(guidance);
-        setSyncNextAction(toSyncNextAction(guidance.nextAction) ?? "retry");
+        const nextAction = toSyncNextAction(guidance.nextAction) ?? "retry";
+        setSyncNextAction(nextAction);
+        setPendingSignForceRefresh(false);
         setNotice(guidance.message);
       } else {
         setSyncNextAction("retry");
+        setPendingSignForceRefresh(false);
         setError(
           err instanceof Error
             ? err.message
@@ -333,10 +393,15 @@ export default function EmployeeReportClient() {
       return;
     }
 
+    if (forceRefresh) {
+      clearStoredIdentity();
+    }
+
     beginBusy(
       forceRefresh
-        ? "최신 정보를 강제로 재조회하고 있어요."
-        : "국민건강보험 데이터를 연동하고 있어요."
+        ? "강제 재조회를 준비하고 있어요."
+        : "국민건강보험 연동을 준비하고 있어요.",
+      forceRefresh ? "force-preflight" : "sync-preflight"
     );
     setError("");
     setNotice("");
@@ -354,14 +419,28 @@ export default function EmployeeReportClient() {
         if (reusedExisting) return;
       }
 
+      const syncEmployeeReportWithBusy: typeof syncEmployeeReport = async (
+        nextForceRefresh,
+        options
+      ) => {
+        updateBusy({
+          message: nextForceRefresh
+            ? "강제 재조회로 건보공단 데이터를 불러오고 있어요."
+            : "건보공단 데이터를 불러오고 있어요.",
+          hint: nextForceRefresh ? "force-remote" : "sync-remote",
+        });
+        return syncEmployeeReport(nextForceRefresh, options);
+      };
+
       const syncFlowResult = await runSyncFlowWithRecovery({
         forceRefresh,
+        preflightForceInit: forceRefresh && !pendingSignForceRefresh,
         debugOverride: debugMode,
         ensureNhisReadyForSync,
-        syncEmployeeReport,
+        syncEmployeeReport: syncEmployeeReportWithBusy,
       });
       if (syncFlowResult.status === "pending-sign") {
-        setPendingSignGuidance(signPendingMessage);
+        setPendingSignGuidance(signPendingMessage, forceRefresh);
         return;
       }
 
@@ -380,6 +459,7 @@ export default function EmployeeReportClient() {
       }
       setSyncNextAction(null);
       setSyncGuidance(null);
+      setPendingSignForceRefresh(false);
     } catch (err) {
       if (err instanceof ApiRequestError) {
         applyForceSyncCooldown(err.payload);
@@ -389,10 +469,17 @@ export default function EmployeeReportClient() {
           "데이터 연동에 실패했습니다."
         );
         setSyncGuidance(guidance);
-        setSyncNextAction(toSyncNextAction(guidance.nextAction) ?? "retry");
+        const nextAction = toSyncNextAction(guidance.nextAction) ?? "retry";
+        setSyncNextAction(nextAction);
+        if (nextAction === "sign") {
+          setPendingSignForceRefresh(forceRefresh);
+        } else {
+          setPendingSignForceRefresh(false);
+        }
         setNotice(guidance.message);
       } else {
         setSyncNextAction("retry");
+        setPendingSignForceRefresh(false);
         setError(
           err instanceof Error
             ? err.message
@@ -461,6 +548,7 @@ export default function EmployeeReportClient() {
       setSelectedPeriodKey("");
       setSyncNextAction(null);
       setSyncGuidance(null);
+      setPendingSignForceRefresh(false);
       setForceConfirmOpen(false);
       setForceConfirmText("");
       setForceConfirmChecked(false);
@@ -493,8 +581,11 @@ export default function EmployeeReportClient() {
     <div className={styles.pageBackdrop}>
       <OperationLoadingOverlay
         visible={busy}
-        title={busyMessage || "작업을 처리하고 있어요"}
-        description="완료되면 화면이 자동으로 갱신됩니다."
+        title={busyMessage || "\uC791\uC5C5\uC744 \uCC98\uB9AC\uD558\uACE0 \uC788\uC5B4\uC694."}
+        description={overlayDescription}
+        detailLines={overlayDetailLines}
+        elapsedSec={busyElapsedSec}
+        position="top"
       />
       <div className={`${styles.page} ${styles.pageNoBg} ${styles.compactPage} ${styles.stack}`}>
       <header className={styles.heroCard}>
@@ -518,12 +609,13 @@ export default function EmployeeReportClient() {
       {notice && !syncGuidance ? (
         <div className={styles.noticeSuccess}>{notice}</div>
       ) : null}
-      {syncGuidance ? (
+      {syncGuidance && !reportData?.report ? (
         <EmployeeReportSyncGuidanceNotice
           guidance={syncGuidance}
           busy={busy}
+          showActions={!reportData?.report}
           onRestartAuth={handleRestartAuth}
-          onSignAndSync={() => void handleSignAndSync(false)}
+          onSignAndSync={() => void handleSignAndSync(pendingSignForceRefresh)}
         />
       ) : null}
 
@@ -531,7 +623,8 @@ export default function EmployeeReportClient() {
         <EmployeeReportIdentitySection
           identity={identity}
           busy={busy}
-          showSignAction={syncNextAction === "sign"}
+          showSignAction={!syncGuidance && syncNextAction === "sign"}
+          hideActionRow={!!syncGuidance}
           onNameChange={(value) => {
             setIdentity((prev) => ({ ...prev, name: value }));
           }}
@@ -548,7 +641,7 @@ export default function EmployeeReportClient() {
             }));
           }}
           onRestartAuth={handleRestartAuth}
-          onSignAndSync={() => void handleSignAndSync(false)}
+          onSignAndSync={() => void handleSignAndSync(pendingSignForceRefresh)}
           onFindExisting={handleFindExisting}
         />
       ) : null}
@@ -569,7 +662,7 @@ export default function EmployeeReportClient() {
             onDownloadPdf={handleDownloadPdf}
             onDownloadLegacyPdf={handleDownloadLegacyPdf}
             onRestartAuth={handleRestartAuth}
-            onSignAndSync={() => void handleSignAndSync(false)}
+            onSignAndSync={() => void handleSignAndSync(pendingSignForceRefresh)}
             onLogout={handleLogout}
             onOpenForceSync={() => setForceConfirmOpen(true)}
           />

@@ -138,27 +138,48 @@ export async function executeNhisFetch(
   runIndependentTarget(
     "medication",
     async () => {
+      const shouldProbeMedicalFallback =
+        !input.targets.includes("medical") && !successful.has("medical");
+
+      const tryMedicalFallback = async () => {
+        if (!shouldProbeMedicalFallback) return false;
+        try {
+          // Prefer detail payload so medication names/ingredients can be included
+          // when provider returns detailed prescription rows.
+          const medicalFallback = await fetchMedicalInfo(input.detailPayload);
+          if (!payloadHasAnyRows(medicalFallback)) return false;
+          successful.set("medical", medicalFallback);
+          return true;
+        } catch (fallbackError) {
+          logHyphenError(
+            "[hyphen][fetch] medication empty; medical fallback failed",
+            fallbackError
+          );
+          return false;
+        }
+      };
+
       let detailPayloadResult: HyphenApiResponse | null = null;
+      let detailPayloadError: unknown = null;
       try {
         detailPayloadResult = await fetchMedicationInfo(input.detailPayload);
         if (payloadHasAnyRows(detailPayloadResult)) {
           return detailPayloadResult;
         }
-      } catch {
+      } catch (detailError) {
         detailPayloadResult = null;
+        detailPayloadError = detailError;
       }
 
-      try {
-        // Some NHIS accounts return rows only without detail flags.
-        const basePayloadResult = await fetchMedicationInfo(input.basePayload);
-        if (payloadHasAnyRows(basePayloadResult)) {
-          return basePayloadResult;
-        }
-        return detailPayloadResult ?? basePayloadResult;
-      } catch (baseError) {
-        if (detailPayloadResult) return detailPayloadResult;
-        throw baseError;
+      const recovered = await tryMedicalFallback();
+      if (recovered) {
+        return detailPayloadResult ?? emptyPayload();
       }
+
+      if (detailPayloadError) {
+        throw detailPayloadError;
+      }
+      return detailPayloadResult ?? emptyPayload();
     },
     "\ud22c\uc57d \uc815\ubcf4\ub97c \ubd88\ub7ec\uc624\uc9c0 \ubabb\ud588\uc5b4\uc694."
   );

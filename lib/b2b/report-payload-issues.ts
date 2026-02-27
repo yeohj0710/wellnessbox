@@ -73,6 +73,19 @@ export function resolveMedicationStatus(input: {
     };
   }
   if (input.medications.length > 0) {
+    const hasNamedMedication = input.medications.some((item) => {
+      const name = toText(item.medicationName);
+      if (!name) return false;
+      return !name.startsWith("약품명 미제공");
+    });
+    if (!hasNamedMedication) {
+      return {
+        type: "unknown",
+        message:
+          "건보공단 응답에 약품명/성분 필드가 없어 병원·처방일 기준으로만 표시됩니다. 인증 다시하기 후 연동 완료 확인으로 재조회해 주세요.",
+        failedTargets,
+      };
+    }
     return {
       type: "available",
       message: null,
@@ -102,7 +115,7 @@ export function resolveMedicationStatus(input: {
   }
   return {
     type: "none",
-    message: "최근 3회 복약 이력이 없습니다.",
+    message: "최근 3건 복약 이력이 없습니다.",
     failedTargets,
   };
 }

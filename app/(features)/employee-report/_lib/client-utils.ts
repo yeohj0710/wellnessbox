@@ -100,6 +100,11 @@ export function saveStoredIdentity(identity: IdentityInput) {
   );
 }
 
+export function clearStoredIdentity() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(LS_KEY);
+}
+
 export async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, {
     ...init,
@@ -189,6 +194,12 @@ export function resolveCooldownUntilFromPayload(payload: ApiErrorPayload) {
 export function resolveMedicationStatusMessage(reportData: EmployeeReportResponse | null) {
   const status = reportData?.report?.payload?.health?.medicationStatus;
   if (!status) return null;
+  if (status.type === "available" && status.message) {
+    return {
+      tone: "warn" as const,
+      text: status.message,
+    };
+  }
   if (status.type === "fetch_failed") {
     return {
       tone: "error" as const,
@@ -200,7 +211,7 @@ export function resolveMedicationStatusMessage(reportData: EmployeeReportRespons
   if (status.type === "none") {
     return {
       tone: "warn" as const,
-      text: "최근 3년 복약 이력이 없습니다.",
+      text: "최근 3건 복약 이력이 없습니다.",
     };
   }
   if (status.type === "unknown") {

@@ -145,6 +145,7 @@ export async function runRestartAuthFlow(params: {
 
 export async function runSyncFlowWithRecovery(params: {
   forceRefresh: boolean;
+  preflightForceInit?: boolean;
   debugOverride?: boolean;
   ensureNhisReadyForSync: (options?: { forceInit?: boolean }) => Promise<NhisReadyResult>;
   syncEmployeeReport: (
@@ -152,13 +153,13 @@ export async function runSyncFlowWithRecovery(params: {
     options?: { debugOverride?: boolean }
   ) => Promise<EmployeeSyncResponse>;
 }): Promise<SyncFlowResult> {
-  let ready: NhisReadyResult = { linked: true, reused: false };
-
-  if (!params.forceRefresh) {
-    ready = await params.ensureNhisReadyForSync();
-    if (!ready.linked) {
-      return { status: "pending-sign" };
-    }
+  const shouldForceInitPreflight =
+    params.forceRefresh && params.preflightForceInit === true;
+  let ready = await params.ensureNhisReadyForSync(
+    shouldForceInitPreflight ? { forceInit: true } : undefined
+  );
+  if (!ready.linked) {
+    return { status: "pending-sign" };
   }
 
   let syncResult: EmployeeSyncResponse;
@@ -171,8 +172,7 @@ export async function runSyncFlowWithRecovery(params: {
       syncError instanceof ApiRequestError
         ? toSyncNextAction(syncError.payload.nextAction)
         : null;
-    const needsAuthRecovery =
-      params.forceRefresh && (nextAction === "init" || nextAction === "sign");
+    const needsAuthRecovery = nextAction === "init" || nextAction === "sign";
     if (!needsAuthRecovery) {
       throw syncError;
     }
