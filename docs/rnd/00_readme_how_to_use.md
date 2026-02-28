@@ -2,6 +2,12 @@
 
 이 폴더(docs/rnd)는 TIPS 연구개발계획서의 “기술개발(II-2. 기술개발 내용 및 목표)”을 기반으로, 구현 방식과 무관하게 반드시 충족해야 하는 요구사항(특히 성능지표/평가방법/평가환경)을 정리한 문서 모음이다. 기술개발은 계획서 목차상 II장에 포함되며, II-2가 기술개발 내용 및 목표로 명시되어 있다.
 
+# 빠른 진입 문서
+
+- 새 세션 인수인계: `docs/rnd/SESSION_HANDOFF.md`
+- R&D 문서/코드 위치 인덱스: `docs/rnd/RND_DOCS_INDEX.md`
+- 통합 학습 실행 가이드: `docs/rnd/ai_training_pipeline.md`
+
 # 문서 계층
 
 - docs/rnd/\*
@@ -42,7 +48,7 @@ Codex는 “한 번에 한 작업(한 모듈)”만 수행한다. 따라서 문�
 - 04_efficacy_quantification_model.md: 효과(효능) 정량화/수치화 모델 요구사항
 - 05_optimization_engine.md: 최적화(조합/선택) 엔진 요구사항
 - 06_closed_loop_ai.md: Closed-loop AI(지속 개선/피드백 루프) 요구사항
-- 07_biosensor_genetic_integration.md: 바이오센서/유전 데이터 연동 요구사항
+- 07_biosensor_and_genetic_data_integration.md: 바이오센서/유전 데이터 연동 요구사항
 
 # 요구사항(객관 스펙) 작성 규칙
 

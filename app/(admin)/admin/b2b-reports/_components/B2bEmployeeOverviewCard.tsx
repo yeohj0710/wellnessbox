@@ -65,6 +65,7 @@ export default function B2bEmployeeOverviewCard({
           onClick={onExportPdf}
           disabled={busy || !latestReport?.id}
           className={styles.buttonPrimary}
+          data-testid="admin-report-download-pdf"
         >
           {busy ? "PDF 캡처 생성 중..." : "PDF 다운로드"}
         </button>
@@ -159,4 +160,3 @@ export default function B2bEmployeeOverviewCard({
     </section>
   );
 }
-

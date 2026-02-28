@@ -8,6 +8,7 @@ import {
 export const MODULE03_REFERENCE_ACCURACY_MIN_RULE_COUNT = 100;
 export const MODULE03_REFERENCE_ACCURACY_TARGET_PERCENT = 95;
 export const MODULE03_ADVERSE_EVENT_TARGET_MAX_COUNT_PER_YEAR = 5;
+export const MODULE03_ADVERSE_EVENT_MIN_WINDOW_COVERAGE_DAYS = 300;
 
 export type Module03ReferenceExpectation = {
   ruleId: string;
@@ -83,6 +84,11 @@ export type Module03AdverseEventEvaluationReport = {
   windowEnd: string;
   eventCount: number;
   countedEventCount: number;
+  windowCoverageDays: number;
+  minWindowCoverageDays: number;
+  windowCoverageSatisfied: boolean;
+  earliestIncludedReportedAt: string | null;
+  latestIncludedReportedAt: string | null;
   targetMaxCountPerYear: number;
   targetSatisfied: boolean;
   caseResults: Module03AdverseEventCaseResult[];
@@ -290,6 +296,27 @@ export function evaluateModule03AdverseEventCount(
   });
 
   const countedEventCount = caseResults.filter((result) => result.counted).length;
+  const includedDates = caseResults
+    .filter((result) => result.includedInWindow)
+    .map((result) => Date.parse(result.reportedAt))
+    .sort((left, right) => left - right);
+  const earliestIncluded =
+    includedDates.length > 0 ? new Date(includedDates[0]).toISOString() : null;
+  const latestIncluded =
+    includedDates.length > 0
+      ? new Date(includedDates[includedDates.length - 1]).toISOString()
+      : null;
+  const windowCoverageDays =
+    includedDates.length > 1
+      ? Math.round(
+          (includedDates[includedDates.length - 1] - includedDates[0]) /
+            (24 * 60 * 60 * 1000)
+        ) + 1
+      : includedDates.length === 1
+        ? 1
+        : 0;
+  const windowCoverageSatisfied =
+    windowCoverageDays >= MODULE03_ADVERSE_EVENT_MIN_WINDOW_COVERAGE_DAYS;
   const targetSatisfied =
     countedEventCount <= MODULE03_ADVERSE_EVENT_TARGET_MAX_COUNT_PER_YEAR;
 
@@ -304,6 +331,11 @@ export function evaluateModule03AdverseEventCount(
     windowEnd,
     eventCount: caseResults.length,
     countedEventCount,
+    windowCoverageDays,
+    minWindowCoverageDays: MODULE03_ADVERSE_EVENT_MIN_WINDOW_COVERAGE_DAYS,
+    windowCoverageSatisfied,
+    earliestIncludedReportedAt: earliestIncluded,
+    latestIncludedReportedAt: latestIncluded,
     targetMaxCountPerYear: MODULE03_ADVERSE_EVENT_TARGET_MAX_COUNT_PER_YEAR,
     targetSatisfied,
     caseResults,

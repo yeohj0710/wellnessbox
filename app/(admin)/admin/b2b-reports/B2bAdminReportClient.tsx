@@ -465,6 +465,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
         element: captureTarget,
         fileName: downloadFileName,
         desktopViewportWidth: 1440,
+        scale: 4,
       });
       setNotice("화면 캡처 기반 PDF 다운로드가 완료되었습니다.");
     } catch (err) {
@@ -633,7 +634,11 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
                     <span className={styles.statusOn}>웹/PDF/PPTX 동일 레이아웃 지향</span>
                   </div>
                   <div className={`${styles.reportCanvasBoard} ${styles.reportCanvasBoardWide}`}>
-                    <div ref={webReportCaptureRef} className={styles.reportCaptureSurface}>
+                    <div
+                      ref={webReportCaptureRef}
+                      className={styles.reportCaptureSurface}
+                      data-testid="report-capture-surface"
+                    >
                       <ReportSummaryCards payload={latestReport?.payload} viewerMode="admin" />
                     </div>
                   </div>

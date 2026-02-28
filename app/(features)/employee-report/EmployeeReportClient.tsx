@@ -526,6 +526,7 @@ export default function EmployeeReportClient() {
         element: captureTarget,
         fileName: downloadFileName,
         desktopViewportWidth: 1440,
+        scale: 4,
       });
       setNotice("화면 캡처 기반 PDF 다운로드가 완료되었습니다.");
     } catch (err) {
@@ -732,7 +733,11 @@ export default function EmployeeReportClient() {
               <span className={styles.statusOn}>웹/PDF 동일 레이아웃</span>
             </div>
             <div className={`${styles.reportCanvasBoard} ${styles.reportCanvasBoardWide}`}>
-              <div ref={webReportCaptureRef} className={styles.reportCaptureSurface}>
+              <div
+                ref={webReportCaptureRef}
+                className={styles.reportCaptureSurface}
+                data-testid="report-capture-surface"
+              >
                 <ReportSummaryCards payload={reportData.report.payload} viewerMode="employee" />
               </div>
             </div>

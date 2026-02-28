@@ -1,6 +1,7 @@
 // RND: Module 04 KPI #2 efficacy-improvement (pp) evaluation helpers.
 
 export const MODULE04_IMPROVEMENT_TARGET_PP = 0;
+export const MODULE04_IMPROVEMENT_MIN_CASE_COUNT = 100;
 
 export type Module04ImprovementSample = {
   sampleId: string;
@@ -27,6 +28,8 @@ export type Module04ImprovementEvaluationReport = {
   formula: "p_i = 100 * (Phi(z_post_i) - Phi(z_pre_i)); SCGI = (1/N) * sum(p_i)";
   evaluatedAt: string;
   caseCount: number;
+  minCaseCount: number;
+  minCaseCountSatisfied: boolean;
   scgiPp: number;
   meanDeltaZScore: number;
   targetPpThreshold: number;
@@ -134,6 +137,9 @@ export function evaluateModule04ImprovementPp(
     formula: "p_i = 100 * (Phi(z_post_i) - Phi(z_pre_i)); SCGI = (1/N) * sum(p_i)",
     evaluatedAt,
     caseCount: caseResults.length,
+    minCaseCount: MODULE04_IMPROVEMENT_MIN_CASE_COUNT,
+    minCaseCountSatisfied:
+      caseResults.length >= MODULE04_IMPROVEMENT_MIN_CASE_COUNT,
     scgiPp,
     meanDeltaZScore,
     targetPpThreshold: MODULE04_IMPROVEMENT_TARGET_PP,

@@ -1,2 +1,5 @@
 .next/
 .git/
+tmp/
+tmp/rnd/
+tmp/pdfs/
