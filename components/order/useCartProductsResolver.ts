@@ -6,11 +6,12 @@ import {
   FetchTimeoutError,
 } from "@/lib/client/fetch-utils";
 import { replaceCartWithPersistedNormalization } from "./cartItemsSection.actions";
+import type { CartLineItem, CartProduct } from "./cart.types";
 
 type UseCartProductsResolverInput = {
-  cartItems: any[];
-  allProducts: any[];
-  onUpdateCart: (items: any[]) => void;
+  cartItems: CartLineItem[];
+  allProducts: CartProduct[];
+  onUpdateCart: (items: CartLineItem[]) => void;
 };
 
 export function useCartProductsResolver({
@@ -18,7 +19,7 @@ export function useCartProductsResolver({
   allProducts,
   onUpdateCart,
 }: UseCartProductsResolverInput) {
-  const [products, setProducts] = useState<any[]>(allProducts);
+  const [products, setProducts] = useState<CartProduct[]>(allProducts);
   const [cartProductsError, setCartProductsError] = useState<string | null>(
     null
   );
@@ -42,7 +43,7 @@ export function useCartProductsResolver({
       ? Array.from(
           new Set(
             cartItems
-              .map((item: any) => Number(item?.productId))
+              .map((item) => Number(item?.productId))
               .filter((id) => Number.isFinite(id) && id > 0)
           )
         )
@@ -63,7 +64,7 @@ export function useCartProductsResolver({
     (async () => {
       try {
         const { response, payload } = await fetchJsonWithTimeout<{
-          products?: any[];
+          products?: CartProduct[];
         }>(
           "/api/cart-products",
           {
@@ -86,13 +87,13 @@ export function useCartProductsResolver({
 
         const resolvedProductIds = new Set<number>(
           payload.products
-            .map((product: any) => Number(product?.id))
+            .map((product) => Number(product?.id))
             .filter((id: number) => Number.isFinite(id) && id > 0)
         );
 
         if (resolvedProductIds.size === ids.length) return;
 
-        const cleanedItems = cartItems.filter((item: any) =>
+        const cleanedItems = cartItems.filter((item) =>
           resolvedProductIds.has(Number(item?.productId))
         );
 

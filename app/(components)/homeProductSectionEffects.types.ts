@@ -1,8 +1,11 @@
+import type { MutableRefObject } from "react";
 import type {
-  Dispatch,
-  MutableRefObject,
-  SetStateAction,
-} from "react";
+  HomeCartItem,
+  HomeCategory,
+  HomePharmacy,
+  HomeProduct,
+  SetState,
+} from "./homeProductSection.types";
 
 export type SearchParamReader = {
   get: (key: string) => string | null;
@@ -12,16 +15,22 @@ export type HomeDataReason = "initial" | "recovery";
 
 export type FetchHomeData = (reason?: HomeDataReason) => Promise<void>;
 
-export type SetAnyArray = Dispatch<SetStateAction<any[]>>;
+export type SetBoolean = SetState<boolean>;
 
-export type SetBoolean = Dispatch<SetStateAction<boolean>>;
-
-export type SetString = Dispatch<SetStateAction<string>>;
-
-export type SetNullableAny = Dispatch<SetStateAction<any>>;
+export type SetString = SetState<string>;
 
 export type NumberRef = MutableRefObject<number>;
 
-export type SetNumber = Dispatch<SetStateAction<number>>;
+export type SetNumber = SetState<number>;
 
-export type SetNumberArray = Dispatch<SetStateAction<number[]>>;
+export type SetNumberArray = SetState<number[]>;
+
+export type SetHomeCategoryArray = SetState<HomeCategory[]>;
+
+export type SetHomeProductArray = SetState<HomeProduct[]>;
+
+export type SetHomeCartItemArray = SetState<HomeCartItem[]>;
+
+export type SetNullableHomeProduct = SetState<HomeProduct | null>;
+
+export type SetNullableHomePharmacy = SetState<HomePharmacy | null>;

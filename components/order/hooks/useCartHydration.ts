@@ -2,29 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
+  buildClientCartSignature,
+  type ClientCartItem,
   parseClientCartItems,
   writeClientCartItems,
 } from "@/lib/client/cart-storage";
 
-function toCartSignature(items: any[]) {
-  if (!Array.isArray(items) || items.length === 0) return "";
-  return items
-    .map((item) => {
-      const productId = Number(item?.productId);
-      const optionType =
-        typeof item?.optionType === "string" ? item.optionType.trim() : "";
-      const quantity = Number(item?.quantity);
-      return `${Number.isFinite(productId) ? productId : 0}:${optionType}:${
-        Number.isFinite(quantity) ? quantity : 0
-      }`;
-    })
-    .sort()
-    .join("|");
-}
-
 export function useCartHydration(
-  cartItems: any[],
-  onUpdateCart: (items: any[]) => void
+  cartItems: ClientCartItem[],
+  onUpdateCart: (items: ClientCartItem[]) => void
 ) {
   const [hydrated, setHydrated] = useState(false);
 
@@ -77,7 +63,7 @@ export function useCartHydration(
       return;
     }
 
-    const nextSignature = toCartSignature(cartItems);
+    const nextSignature = buildClientCartSignature(cartItems);
     if (nextSignature === persistedSignatureRef.current) return;
     persistedSignatureRef.current = nextSignature;
 

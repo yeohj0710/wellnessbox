@@ -31,11 +31,13 @@ import {
   runWithRetry,
 } from "@/lib/client/fetch-utils";
 import {
+  buildClientCartSignature,
   mergeClientCartItems,
   readClientCartItems,
   writeClientCartItems,
 } from "@/lib/client/cart-storage";
 import {
+  calculateCartTotalForPharmacy,
   HOME_CACHE_TTL_MS,
   HOME_FETCH_RETRIES,
   HOME_FETCH_TIMEOUT_MS,
@@ -59,26 +61,16 @@ import {
   useHomeProductUiSyncEffects,
 } from "./useHomeProductSectionEffects";
 import { useHomeProductActions } from "./useHomeProductActions";
+import type {
+  HomeCartItem,
+  HomeCategory,
+  HomePharmacy,
+  HomeProduct,
+} from "./homeProductSection.types";
 
 interface HomeProductSectionProps {
-  initialCategories?: any[];
-  initialProducts?: any[];
-}
-
-function toCartSignature(items: any[]) {
-  if (!Array.isArray(items) || items.length === 0) return "";
-  return items
-    .map((item) => {
-      const productId = Number(item?.productId);
-      const optionType =
-        typeof item?.optionType === "string" ? item.optionType.trim() : "";
-      const quantity = Number(item?.quantity);
-      return `${Number.isFinite(productId) ? productId : 0}:${optionType}:${
-        Number.isFinite(quantity) ? quantity : 0
-      }`;
-    })
-    .sort()
-    .join("|");
+  initialCategories?: HomeCategory[];
+  initialProducts?: HomeProduct[];
 }
 
 export default function HomeProductSection({
@@ -88,17 +80,19 @@ export default function HomeProductSection({
   const router = useRouter();
   const searchParams = useSearchParams();
   const { hideFooter, showFooter } = useFooter();
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [selectedProduct, setSelectedProduct] = useState<HomeProduct | null>(
+    null
+  );
   const [isCartVisible, setIsCartVisible] = useState(false);
-  const [categories, setCategories] = useState<any[]>(() =>
+  const [categories, setCategories] = useState<HomeCategory[]>(() =>
     sortByImportanceDesc(initialCategories)
   );
-  const [products, setProducts] = useState<any[]>(() =>
+  const [products, setProducts] = useState<HomeProduct[]>(() =>
     sortByImportanceDesc(initialProducts)
   );
   const [isLoading, setIsLoading] = useState(initialProducts.length === 0);
   const [error, setError] = useState<string | null>(null);
-  const [allProducts, setAllProducts] = useState<any[]>(() =>
+  const [allProducts, setAllProducts] = useState<HomeProduct[]>(() =>
     sortByImportanceDesc(initialProducts)
   );
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
@@ -111,9 +105,11 @@ export default function HomeProductSection({
   const [totalPrice, setTotalPrice] = useState(0);
   const [isCartBarLoading, setIsCartBarLoading] = useState(false);
   const [roadAddress, setRoadAddress] = useState("");
-  const [selectedPharmacy, setSelectedPharmacy] = useState<any>(null);
+  const [selectedPharmacy, setSelectedPharmacy] = useState<HomePharmacy | null>(
+    null
+  );
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
-  const [cartItems, setCartItems] = useState<any[]>(() =>
+  const [cartItems, setCartItems] = useState<HomeCartItem[]>(() =>
     typeof window !== "undefined" ? readClientCartItems() : []
   );
   const {
@@ -132,7 +128,9 @@ export default function HomeProductSection({
   const syncCartItemsFromStorage = useCallback(() => {
     const next = readClientCartItems();
     setCartItems((prev) =>
-      toCartSignature(prev) === toCartSignature(next) ? prev : next
+      buildClientCartSignature(prev) === buildClientCartSignature(next)
+        ? prev
+        : next
     );
   }, []);
 
@@ -142,8 +140,8 @@ export default function HomeProductSection({
 
   const applyHomeData = useCallback(
     (
-      nextCategories: any[],
-      nextProducts: any[],
+      nextCategories: HomeCategory[],
+      nextProducts: HomeProduct[],
       cacheTimestamp = Date.now()
     ) => {
       const sortedCategories = sortByImportanceDesc(nextCategories);
@@ -387,13 +385,17 @@ export default function HomeProductSection({
     setProducts,
   });
 
-  const handleAddToCart = (cartItem: any) => {
+  const persistCartItems = useCallback((nextItems: HomeCartItem[]) => {
+    const normalized = writeClientCartItems(nextItems);
+    window.dispatchEvent(new Event("cartUpdated"));
+    return normalized;
+  }, []);
+
+  const handleAddToCart = (cartItem: HomeCartItem) => {
     setIsCartBarLoading(true);
     setCartItems((prev) => {
       const updated = mergeClientCartItems(prev, [cartItem]);
-      writeClientCartItems(updated);
-      window.dispatchEvent(new Event("cartUpdated"));
-      return updated;
+      return persistCartItems(updated);
     });
   };
   return (
@@ -486,7 +488,7 @@ export default function HomeProductSection({
           }
           pharmacy={selectedPharmacy}
           onClose={closeProductDetail}
-          onAddToCart={(cartItem: any) => {
+          onAddToCart={(cartItem: HomeCartItem) => {
             handleAddToCart(cartItem);
           }}
           onAddressSaved={(addr: string) => {
@@ -514,16 +516,15 @@ export default function HomeProductSection({
               setSelectedPharmacy={setSelectedPharmacy}
               containerRef={cartContainerRef}
               onBack={closeCart}
-              onUpdateCart={(updatedItems: any) => {
-                const normalized = writeClientCartItems(updatedItems);
+              onUpdateCart={(updatedItems: HomeCartItem[]) => {
+                const normalized = persistCartItems(updatedItems);
                 setCartItems(normalized);
-                const updatedTotalPrice = normalized.reduce(
-                  (acc: number, item: any) =>
-                    acc + (Number(item.price) || 0) * item.quantity,
-                  0
-                );
+                const updatedTotalPrice = calculateCartTotalForPharmacy({
+                  cartItems: normalized,
+                  allProducts,
+                  selectedPharmacy,
+                });
                 setTotalPrice(updatedTotalPrice);
-                window.dispatchEvent(new Event("cartUpdated"));
               }}
             />
           </div>

@@ -10,26 +10,33 @@ import {
 } from "./homeProductSection.helpers";
 import { writeClientCartItems } from "@/lib/client/cart-storage";
 import type {
-  SetAnyArray,
+  HomeCartItem,
+  HomeCategory,
+  HomePharmacy,
+  HomeProduct,
+} from "./homeProductSection.types";
+import type {
   SetBoolean,
+  SetHomeCartItemArray,
+  SetHomeProductArray,
   SetNumber,
   SetNumberArray,
 } from "./homeProductSectionEffects.types";
 
 export function useHomeProductComputationEffects(input: {
-  selectedPharmacy: any;
-  cartItems: any[];
-  allProducts: any[];
+  selectedPharmacy: HomePharmacy | null;
+  cartItems: HomeCartItem[];
+  allProducts: HomeProduct[];
   setTotalPrice: SetNumber;
   setIsCartBarLoading: SetBoolean;
   selectedSymptoms: string[];
-  categories: any[];
+  categories: HomeCategory[];
   setSelectedCategories: SetNumberArray;
   isLoading: boolean;
-  setCartItems: SetAnyArray;
+  setCartItems: SetHomeCartItemArray;
   deferredSelectedPackage: string;
   deferredSelectedCategories: number[];
-  setProducts: SetAnyArray;
+  setProducts: SetHomeProductArray;
 }) {
   const {
     selectedPharmacy,

@@ -9,6 +9,12 @@ type ExpectedSessionRouteEntry = {
   note: string;
 };
 
+type RouteGuardPolicyEntry = {
+  routePrefix: string;
+  requiredTokens: string[];
+  note: string;
+};
+
 const ROUTE_GUARD_TOKENS = [
   "requireAdminSession",
   "requireAnySession",
@@ -129,8 +135,17 @@ const EXPECTED_SESSION_ROUTE_ENTRIES: ExpectedSessionRouteEntry[] = [
   },
 ];
 
+const ROUTE_GUARD_POLICIES: RouteGuardPolicyEntry[] = [
+  {
+    routePrefix: "/api/admin",
+    requiredTokens: ["requireAdminSession"],
+    note: "Admin API routes must require admin session guard.",
+  },
+];
+
 module.exports = {
   CRITICAL_GUARD_CHECKS,
   EXPECTED_SESSION_ROUTE_ENTRIES,
+  ROUTE_GUARD_POLICIES,
   ROUTE_GUARD_TOKENS,
 };

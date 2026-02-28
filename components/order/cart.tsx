@@ -14,6 +14,13 @@ import { useCartHydration } from "./hooks/useCartHydration";
 import { useAddressFields } from "./hooks/useAddressFields";
 import { useCartPayment } from "./hooks/useCartPayment";
 import { usePhoneStatus } from "./hooks/usePhoneStatus";
+import { buildBulkChangedCartItems, filterRegisteredPharmacies } from "./cart.helpers";
+import type {
+  CartDetailProduct,
+  CartLineItem,
+  CartProduct,
+  CartProps,
+} from "./cart.types";
 import {
   mergeClientCartItems,
   writeClientCartItems,
@@ -49,7 +56,7 @@ export default function Cart({
   containerRef,
   onBack,
   onUpdateCart,
-}: any) {
+}: CartProps) {
   const router = useRouter();
   const [loginStatus, setLoginStatus] = useState<LoginStatus | null>(null);
   const [showPharmacyDetail, setShowPharmacyDetail] = useState(false);
@@ -59,7 +66,9 @@ export default function Cart({
     Number(process.env.NEXT_PUBLIC_TEST_PAYMENT_AMOUNT) || 1
   );
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
-  const [detailProduct, setDetailProduct] = useState<any>(null);
+  const [detailProduct, setDetailProduct] = useState<CartDetailProduct | null>(
+    null
+  );
   const cartScrollRef = useRef(0);
 
   const hydrated = useCartHydration(cartItems, onUpdateCart);
@@ -108,7 +117,7 @@ export default function Cart({
   );
 
   const persistCartItems = useCallback(
-    (nextItems: any[]) => {
+    (nextItems: CartLineItem[]) => {
       onUpdateCart(nextItems);
       writeClientCartItems(nextItems);
       window.dispatchEvent(new Event("cartUpdated"));
@@ -156,7 +165,11 @@ export default function Cart({
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("selectedPharmacyId", selectedPharmacy?.id);
+    if (selectedPharmacy?.id) {
+      localStorage.setItem("selectedPharmacyId", String(selectedPharmacy.id));
+      return;
+    }
+    localStorage.removeItem("selectedPharmacyId");
   }, [selectedPharmacy]);
 
   useEffect(() => {
@@ -198,9 +211,7 @@ export default function Cart({
           cartItem: cartItems[0],
           roadAddress: newRoadAddress,
         });
-        const sorted = response.data.pharmacies.filter(
-          (pharmacy: any) => pharmacy.registrationNumber !== null
-        );
+        const sorted = filterRegisteredPharmacies(response.data?.pharmacies);
         if (sorted.length > 0) {
           setSelectedPharmacy(sorted[0]);
         }
@@ -210,7 +221,7 @@ export default function Cart({
     }
   };
 
-  const handleProductClick = (product: any, optionType: string) => {
+  const handleProductClick = (product: CartProduct, optionType: string) => {
     if (containerRef.current) {
       cartScrollRef.current = containerRef.current.scrollTop;
     }
@@ -224,7 +235,7 @@ export default function Cart({
     }
   };
 
-  const handleAddToCart = (cartItem: any) => {
+  const handleAddToCart = (cartItem: CartLineItem) => {
     if (localStorage.getItem("restoreCartFromBackup") === "1") {
       localStorage.removeItem("restoreCartFromBackup");
     }
@@ -241,25 +252,13 @@ export default function Cart({
   }, [unlinkPhone]);
 
   const handleBulkChange = (target: string) => {
-    const unavailable: string[] = [];
-    const updatedItems = cartItems.map((item: any) => {
-      const product = allProducts.find((p: any) => p.id === item.productId);
-      const newOption = product?.pharmacyProducts.find(
-        (pp: any) =>
-          pp.pharmacy.id === selectedPharmacy?.id &&
-          pp.optionType?.includes(target) &&
-          pp.stock >= item.quantity
-      );
-      if (!newOption) {
-        if (product?.name) unavailable.push(product.name);
-        return item;
-      }
-      return {
-        ...item,
-        optionType: newOption.optionType,
-        price: newOption.price,
-      };
-    });
+    const { updatedItems, unavailableProductNames: unavailable } =
+      buildBulkChangedCartItems({
+        cartItems,
+        allProducts,
+        selectedPharmacyId: selectedPharmacy?.id,
+        targetOptionType: target,
+      });
     persistCartItems(updatedItems);
     if (unavailable.length) {
       alert(

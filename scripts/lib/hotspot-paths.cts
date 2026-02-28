@@ -15,8 +15,12 @@ function shouldIncludeHotspotCodeFile(rel: string) {
   return (
     rel.endsWith(".ts") ||
     rel.endsWith(".tsx") ||
+    rel.endsWith(".mts") ||
+    rel.endsWith(".cts") ||
     rel.endsWith(".js") ||
-    rel.endsWith(".jsx")
+    rel.endsWith(".jsx") ||
+    rel.endsWith(".mjs") ||
+    rel.endsWith(".cjs")
   );
 }
 

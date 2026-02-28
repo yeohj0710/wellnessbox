@@ -7,25 +7,32 @@ import {
   writeClientCartItems,
 } from "@/lib/client/cart-storage";
 import type {
+  HomeCartItem,
+  HomeCategory,
+  HomeProduct,
+} from "./homeProductSection.types";
+import type {
   FetchHomeData,
-  SetAnyArray,
   SetBoolean,
+  SetHomeCartItemArray,
+  SetHomeCategoryArray,
+  SetHomeProductArray,
   SetNumber,
   SetString,
 } from "./homeProductSectionEffects.types";
 
 export function useHomeProductLifecycleEffects(input: {
-  initialCategories: any[];
-  initialProducts: any[];
+  initialCategories: HomeCategory[];
+  initialProducts: HomeProduct[];
   setRoadAddress: SetString;
-  setCategories: SetAnyArray;
-  setAllProducts: SetAnyArray;
-  setProducts: SetAnyArray;
+  setCategories: SetHomeCategoryArray;
+  setAllProducts: SetHomeProductArray;
+  setProducts: SetHomeProductArray;
   setIsLoading: SetBoolean;
   setIsRecovering: SetBoolean;
   fetchData: FetchHomeData;
   resetPharmacyState: () => void;
-  setCartItems: SetAnyArray;
+  setCartItems: SetHomeCartItemArray;
   setIsCartVisible: SetBoolean;
   setTotalPrice: SetNumber;
   roadAddress: string;

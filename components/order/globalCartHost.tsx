@@ -4,11 +4,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import { usePathname } from "next/navigation";
 import Cart from "@/components/order/cart";
+import { filterRegisteredPharmacies } from "@/components/order/cart.helpers";
+import type {
+  CartLineItem,
+  CartPharmacy,
+  CartProduct,
+} from "@/components/order/cart.types";
 import {
   clearCartReturnState,
   isCartHostPath,
 } from "@/lib/client/cart-navigation";
 import {
+  buildClientCartSignature,
   readClientCartItems,
   writeClientCartItems,
 } from "@/lib/client/cart-storage";
@@ -17,22 +24,6 @@ const MISSING_ADDRESS_ERROR =
   "주소를 설정해 주세요. 해당 상품을 주문할 수 있는 약국을 보여드릴게요.";
 const GLOBAL_CART_OPEN_KEY = "wbGlobalCartOpen";
 const GLOBAL_CART_VISIBILITY_EVENT = "wb:global-cart-visibility";
-
-function toCartSignature(items: any[]) {
-  if (!Array.isArray(items) || items.length === 0) return "";
-  return items
-    .map((item) => {
-      const productId = Number(item?.productId);
-      const optionType =
-        typeof item?.optionType === "string" ? item.optionType.trim() : "";
-      const quantity = Number(item?.quantity);
-      return `${Number.isFinite(productId) ? productId : 0}:${optionType}:${
-        Number.isFinite(quantity) ? quantity : 0
-      }`;
-    })
-    .sort()
-    .join("|");
-}
 
 function readRoadAddress() {
   if (typeof window === "undefined") return "";
@@ -53,26 +44,29 @@ export default function GlobalCartHost() {
   const canRenderGlobalCart = !isCartHostPath(pathname);
 
   const [isVisible, setIsVisible] = useState(false);
-  const [cartItems, setCartItems] = useState<any[]>(() =>
+  const [cartItems, setCartItems] = useState<CartLineItem[]>(() =>
     typeof window !== "undefined" ? readClientCartItems() : []
   );
-  const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [allProducts, setAllProducts] = useState<CartProduct[]>([]);
   const [totalPrice, setTotalPrice] = useState(0);
   const [roadAddress, setRoadAddressState] = useState("");
-  const [selectedPharmacy, setSelectedPharmacyState] = useState<any>(null);
+  const [selectedPharmacy, setSelectedPharmacyState] =
+    useState<CartPharmacy | null>(null);
   const [isPharmacyLoading, setIsPharmacyLoading] = useState(false);
   const [pharmacyError, setPharmacyError] = useState<string | null>(null);
   const [pharmacyResolveToken, setPharmacyResolveToken] = useState(0);
 
   const cartSignatureRef = useRef(
-    typeof window !== "undefined" ? toCartSignature(readClientCartItems()) : ""
+    typeof window !== "undefined"
+      ? buildClientCartSignature(readClientCartItems())
+      : ""
   );
   const openScrollYRef = useRef(0);
   const openedPathRef = useRef<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const setCartItemsIfChanged = useCallback((nextItems: any[]) => {
-    const nextSignature = toCartSignature(nextItems);
+  const setCartItemsIfChanged = useCallback((nextItems: CartLineItem[]) => {
+    const nextSignature = buildClientCartSignature(nextItems);
     if (nextSignature === cartSignatureRef.current) {
       return false;
     }
@@ -81,7 +75,7 @@ export default function GlobalCartHost() {
     return true;
   }, []);
 
-  const setSelectedPharmacy = useCallback((pharmacy: any) => {
+  const setSelectedPharmacy = useCallback((pharmacy: CartPharmacy | null) => {
     setSelectedPharmacyState(pharmacy);
     if (typeof window === "undefined") return;
     if (pharmacy?.id) {
@@ -270,9 +264,8 @@ export default function GlobalCartHost() {
           { cartItem: cartItems[0], roadAddress },
           { signal: controller.signal, timeout: 9000 }
         );
-        const sortedPharmacies = response.data?.pharmacies || [];
-        const availablePharmacies = sortedPharmacies.filter(
-          (pharmacy: any) => pharmacy.registrationNumber !== null
+        const availablePharmacies = filterRegisteredPharmacies(
+          response.data?.pharmacies
         );
         if (!alive) return;
 
@@ -284,10 +277,10 @@ export default function GlobalCartHost() {
 
         const storedPharmacyIdRaw = localStorage.getItem("selectedPharmacyId");
         const storedPharmacyId = Number(storedPharmacyIdRaw);
-        setSelectedPharmacyState((previous: any) => {
+        setSelectedPharmacyState((previous) => {
           const preferredId = previous?.id ?? storedPharmacyId;
           const matched = availablePharmacies.find(
-            (pharmacy: any) => pharmacy.id === preferredId
+            (pharmacy) => pharmacy.id === preferredId
           );
           const nextPharmacy = matched || availablePharmacies[0];
           if (nextPharmacy?.id) {
@@ -295,8 +288,8 @@ export default function GlobalCartHost() {
           }
           return nextPharmacy;
         });
-      } catch (error: any) {
-        if (error?.name === "CanceledError") return;
+      } catch (error) {
+        if (error instanceof Error && error.name === "CanceledError") return;
         if (!alive) return;
         setSelectedPharmacy(null);
         setPharmacyError("Failed to load nearby pharmacies. Retry.");
@@ -319,9 +312,9 @@ export default function GlobalCartHost() {
     }
 
     const total = cartItems.reduce((acc, item) => {
-      const product = allProducts.find((p: any) => p.id === item.productId);
+      const product = allProducts.find((p) => p.id === item.productId);
       const pharmacyProduct = product?.pharmacyProducts?.find(
-        (pp: any) =>
+        (pp) =>
           (pp.pharmacyId ?? pp.pharmacy?.id) === selectedPharmacy.id &&
           pp.optionType === item.optionType
       );
@@ -337,10 +330,10 @@ export default function GlobalCartHost() {
     if (!selectedPharmacy || allProducts.length === 0) return;
 
     const filteredCartItems = cartItems.filter((item) => {
-      const product = allProducts.find((p: any) => p.id === item.productId);
+      const product = allProducts.find((p) => p.id === item.productId);
       if (!product) return false;
       return product.pharmacyProducts?.some(
-        (pp: any) =>
+        (pp) =>
           (pp.pharmacyId ?? pp.pharmacy?.id) === selectedPharmacy.id &&
           pp.optionType === item.optionType
       );
@@ -354,7 +347,7 @@ export default function GlobalCartHost() {
     }
   }, [isVisible, selectedPharmacy, allProducts, cartItems, setCartItemsIfChanged]);
 
-  const handleUpdateCart = useCallback((updatedItems: any[]) => {
+  const handleUpdateCart = useCallback((updatedItems: CartLineItem[]) => {
     const normalized = writeClientCartItems(updatedItems);
     if (setCartItemsIfChanged(normalized)) {
       window.dispatchEvent(new Event("cartUpdated"));

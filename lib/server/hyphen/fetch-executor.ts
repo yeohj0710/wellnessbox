@@ -75,6 +75,84 @@ function payloadHasAnyRows(payload: HyphenApiResponse) {
   return false;
 }
 
+type FetchSuccessMap = Map<NhisFetchTarget, unknown>;
+type FetchRawFailureMap = Map<NhisFetchTarget, unknown>;
+
+function getTargetPayload<T>(
+  successful: FetchSuccessMap,
+  target: NhisFetchTarget
+): T | undefined {
+  return successful.get(target) as T | undefined;
+}
+
+function buildSuccessfulFetchPayload(input: {
+  successful: FetchSuccessMap;
+  rawFailures: FetchRawFailureMap;
+  failed: NhisFetchFailedItem[];
+  checkupListRawByYear: Record<string, unknown>;
+}): NhisFetchRoutePayload {
+  const checkupListPayload =
+    getTargetPayload<HyphenApiResponse[]>(input.successful, "checkupList") ?? [];
+  const checkupYearlyPayload =
+    getTargetPayload<HyphenApiResponse[]>(input.successful, "checkupYearly") ??
+    [];
+  const medicalPayload =
+    getTargetPayload<HyphenApiResponse>(input.successful, "medical") ??
+    emptyPayload();
+  const medicationPayload =
+    getTargetPayload<HyphenApiResponse>(input.successful, "medication") ??
+    emptyPayload();
+  const checkupOverviewPayload =
+    getTargetPayload<HyphenApiResponse>(input.successful, "checkupOverview") ??
+    emptyPayload();
+  const healthAgePayload =
+    getTargetPayload<HyphenApiResponse>(input.successful, "healthAge") ??
+    emptyPayload();
+
+  const normalized = normalizeNhisPayload({
+    medical: medicalPayload,
+    medication: medicationPayload,
+    checkupList: checkupListPayload,
+    checkupYearly: checkupYearlyPayload,
+    checkupOverview: checkupOverviewPayload,
+    healthAge: healthAgePayload,
+  });
+
+  return {
+    ok: true,
+    partial: input.failed.length > 0,
+    failed: input.failed,
+    data: {
+      normalized,
+      raw: {
+        medical:
+          input.successful.get("medical") ?? input.rawFailures.get("medical") ?? null,
+        medication:
+          input.successful.get("medication") ??
+          input.rawFailures.get("medication") ??
+          null,
+        checkupList:
+          (checkupListPayload.length > 0
+            ? mergeListPayloads(checkupListPayload)
+            : input.rawFailures.get("checkupList")) ?? null,
+        checkupYearly:
+          (checkupYearlyPayload.length > 0
+            ? checkupYearlyPayload
+            : input.rawFailures.get("checkupYearly")) ?? null,
+        checkupOverview:
+          input.successful.get("checkupOverview") ??
+          input.rawFailures.get("checkupOverview") ??
+          null,
+        healthAge:
+          input.successful.get("healthAge") ??
+          input.rawFailures.get("healthAge") ??
+          null,
+        checkupListByYear: input.checkupListRawByYear,
+      },
+    },
+  };
+}
+
 export async function executeNhisFetch(
   input: ExecuteNhisFetchInput
 ): Promise<ExecuteNhisFetchOutput> {
@@ -324,56 +402,12 @@ export async function executeNhisFetch(
     return { payload, firstFailed: firstFailure };
   }
 
-  const checkupListPayload =
-    (successful.get("checkupList") as HyphenApiResponse[] | undefined) ?? [];
-  const checkupYearlyPayload =
-    (successful.get("checkupYearly") as HyphenApiResponse[] | undefined) ?? [];
-
-  const normalized = normalizeNhisPayload({
-    medical:
-      (successful.get("medical") as HyphenApiResponse | undefined) ??
-      emptyPayload(),
-    medication:
-      (successful.get("medication") as HyphenApiResponse | undefined) ??
-      emptyPayload(),
-    checkupList: checkupListPayload,
-    checkupYearly: checkupYearlyPayload,
-    checkupOverview:
-      (successful.get("checkupOverview") as HyphenApiResponse | undefined) ??
-      emptyPayload(),
-    healthAge:
-      (successful.get("healthAge") as HyphenApiResponse | undefined) ??
-      emptyPayload(),
-  });
-
-  const payload: NhisFetchRoutePayload = {
-    ok: true,
-    partial: failed.length > 0,
+  const payload = buildSuccessfulFetchPayload({
+    successful,
+    rawFailures,
     failed,
-    data: {
-      normalized,
-      raw: {
-        medical: successful.get("medical") ?? rawFailures.get("medical") ?? null,
-        medication:
-          successful.get("medication") ?? rawFailures.get("medication") ?? null,
-        checkupList:
-          (checkupListPayload.length > 0
-            ? mergeListPayloads(checkupListPayload)
-            : rawFailures.get("checkupList")) ?? null,
-        checkupYearly:
-          (checkupYearlyPayload.length > 0
-            ? checkupYearlyPayload
-            : rawFailures.get("checkupYearly")) ?? null,
-        checkupOverview:
-          successful.get("checkupOverview") ??
-          rawFailures.get("checkupOverview") ??
-          null,
-        healthAge:
-          successful.get("healthAge") ?? rawFailures.get("healthAge") ?? null,
-        checkupListByYear: checkupListRawByYear,
-      },
-    },
-  };
+    checkupListRawByYear,
+  });
 
   return { payload, firstFailed: failed[0] };
 }

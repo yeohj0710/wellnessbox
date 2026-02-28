@@ -3,23 +3,24 @@
 import { useEffect, useRef } from "react";
 import { buildCategoryRecommendationToast } from "./homeProductSection.helpers";
 import { resolvePackageFromQueryParam } from "./homeProductSection.copy";
+import type { HomeCategory, HomeProduct } from "./homeProductSection.types";
 import type {
   NumberRef,
   SearchParamReader,
   SetBoolean,
   SetNumberArray,
-  SetNullableAny,
+  SetNullableHomeProduct,
   SetString,
 } from "./homeProductSectionEffects.types";
 
 export function useHomeProductQuerySyncEffects(input: {
   searchParams: SearchParamReader;
   setSelectedPackage: SetString;
-  categories: any[];
+  categories: HomeCategory[];
   showToast: (message: string) => void;
   setSelectedCategories: SetNumberArray;
-  allProducts: any[];
-  setSelectedProduct: SetNullableAny;
+  allProducts: HomeProduct[];
+  setSelectedProduct: SetNullableHomeProduct;
   hideLoading: () => void;
   scrollPositionRef: NumberRef;
   syncCartItemsFromStorage: () => void;

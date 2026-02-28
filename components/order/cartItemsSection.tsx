@@ -11,6 +11,34 @@ import {
   updateCartAndPersist,
 } from "./cartItemsSection.actions";
 import { useCartProductsResolver } from "./useCartProductsResolver";
+import type {
+  CartLineItem,
+  CartPharmacy,
+  CartPharmacyProduct,
+  CartProduct,
+} from "./cart.types";
+
+type ResolvedCartItemRow = {
+  key: number;
+  item: CartLineItem;
+  product: CartProduct;
+  pharmacyProduct: CartPharmacyProduct;
+};
+
+type CartItemsSectionProps = {
+  cartItems: CartLineItem[];
+  allProducts?: CartProduct[];
+  selectedPharmacy: CartPharmacy | null;
+  onUpdateCart: (items: CartLineItem[]) => void;
+  onProductClick: (product: CartProduct, optionType: string) => void;
+  handleBulkChange: (target: string) => void;
+  isLoading?: boolean;
+  isPharmacyLoading?: boolean;
+  pharmacyError?: string | null;
+  onRetryResolve?: () => void;
+  isAddressMissing?: boolean;
+  onOpenAddressModal?: () => void;
+};
 
 export default function CartItemsSection({
   cartItems,
@@ -25,7 +53,7 @@ export default function CartItemsSection({
   onRetryResolve,
   isAddressMissing = false,
   onOpenAddressModal,
-}: any) {
+}: CartItemsSectionProps) {
   const [confirmType, setConfirmType] = useState<string | null>(null);
   const {
     products,
@@ -45,10 +73,10 @@ export default function CartItemsSection({
   const items = useMemo(() => {
     if (!Array.isArray(cartItems) || !Array.isArray(products)) return [];
     return cartItems
-      .map((item: any) => {
-        const product = products.find((p: any) => p.id === item.productId);
+      .map((item) => {
+        const product = products.find((p) => p.id === item.productId);
         const pharmacyProduct = product?.pharmacyProducts?.find(
-          (pp: any) =>
+          (pp) =>
             pp.optionType === item.optionType &&
             pp.pharmacy?.id === selectedPharmacy?.id
         );
@@ -56,7 +84,7 @@ export default function CartItemsSection({
           ? { key: pharmacyProduct.id, item, product, pharmacyProduct }
           : null;
       })
-      .filter(Boolean) as any[];
+      .filter((row): row is ResolvedCartItemRow => row !== null);
   }, [cartItems, products, selectedPharmacy]);
 
   const hasCartItems = Array.isArray(cartItems) && cartItems.length > 0;
@@ -146,7 +174,7 @@ export default function CartItemsSection({
             </button>
           </div>
         ) : items.length > 0 ? (
-          items.map(({ key, item, product, pharmacyProduct }: any) => (
+          items.map(({ key, item, product, pharmacyProduct }) => (
             <div key={key} className="flex items-center gap-4 border-b pb-4">
               {product.images && product.images.length > 0 ? (
                 <div
@@ -178,7 +206,7 @@ export default function CartItemsSection({
                   {product.name} ({pharmacyProduct?.optionType || ""})
                 </h2>
                 <p className="mt-1 text-sm text-gray-500">
-                  {product.categories?.map((c: any) => c.name).join(", ") ||
+                  {product.categories?.map((c) => c.name).join(", ") ||
                     "카테고리 없음"}
                 </p>
                 <p className="mt-1 font-bold text-sky-500">

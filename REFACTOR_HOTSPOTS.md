@@ -7,11 +7,12 @@ Run `npm run agent:refactor-report` to refresh this report.
 
 | Lines | File |
 |---:|---|
-| 782 | `app/(features)/employee-report/EmployeeReportClient.tsx` |
+| 3729 | `lib/rnd/ai-training/pipeline.ts` |
+| 787 | `app/(features)/employee-report/EmployeeReportClient.tsx` |
+| 711 | `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx` |
 | 709 | `app/(components)/landingSection2.tsx` |
-| 706 | `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx` |
 | 551 | `lib/ai/chain.ts` |
-| 535 | `app/(components)/homeProductSection.tsx` |
+| 536 | `app/(components)/homeProductSection.tsx` |
 | 512 | `lib/b2b/export/layout-dsl.ts` |
 | 489 | `app/my-data/myDataPageSections.tsx` |
 | 487 | `public/scripts/google-translate-orchestrator.js` |
@@ -21,17 +22,16 @@ Run `npm run agent:refactor-report` to refresh this report.
 | 463 | `app/column/editor/EditorClient.tsx` |
 | 443 | `app/(admin)/admin/column/editor/EditorAdminClient.tsx` |
 | 440 | `app/(features)/health-link/components/HealthLinkResultSection.helpers.tsx` |
-| 423 | `components/order/cart.tsx` |
+| 422 | `components/order/cart.tsx` |
+| 414 | `lib/server/hyphen/fetch-executor.ts` |
 | 408 | `lib/b2b/analyzer-health.ts` |
 | 400 | `app/chat/components/RecommendedProductActions.tsx` |
 | 394 | `app/assess/useAssessFlow.ts` |
 | 392 | `app/chat/components/recommendedProductActions.resolve.ts` |
-| 392 | `components/order/globalCartHost.tsx` |
 | 391 | `lib/chat/prompts.ts` |
 | 386 | `app/(orders)/order-complete/page.tsx` |
+| 385 | `components/order/globalCartHost.tsx` |
 | 385 | `components/pharm/orderAccordionItem.tsx` |
-| 383 | `lib/order/queries.ts` |
-| 383 | `lib/rnd/module06-closed-loop-ai/mvp-engine.ts` |
 
 ## API Route Top 20
 
@@ -62,22 +62,22 @@ Run `npm run agent:refactor-report` to refresh this report.
 
 | Lines | File |
 |---:|---|
-| 782 | `app/(features)/employee-report/EmployeeReportClient.tsx` |
+| 787 | `app/(features)/employee-report/EmployeeReportClient.tsx` |
+| 711 | `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx` |
 | 709 | `app/(components)/landingSection2.tsx` |
-| 706 | `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx` |
-| 535 | `app/(components)/homeProductSection.tsx` |
+| 536 | `app/(components)/homeProductSection.tsx` |
 | 489 | `app/my-data/myDataPageSections.tsx` |
 | 477 | `components/b2b/ReportSummaryCards.tsx` |
 | 466 | `app/agent-playground/page.tsx` |
 | 463 | `app/column/editor/EditorClient.tsx` |
 | 443 | `app/(admin)/admin/column/editor/EditorAdminClient.tsx` |
 | 440 | `app/(features)/health-link/components/HealthLinkResultSection.helpers.tsx` |
-| 423 | `components/order/cart.tsx` |
+| 422 | `components/order/cart.tsx` |
 | 400 | `app/chat/components/RecommendedProductActions.tsx` |
 | 394 | `app/assess/useAssessFlow.ts` |
 | 392 | `app/chat/components/recommendedProductActions.resolve.ts` |
-| 392 | `components/order/globalCartHost.tsx` |
 | 386 | `app/(orders)/order-complete/page.tsx` |
+| 385 | `components/order/globalCartHost.tsx` |
 | 385 | `components/pharm/orderAccordionItem.tsx` |
 | 382 | `app/assess/logic/algorithm.ts` |
 | 379 | `app/chat/hooks/useChat.ts` |
@@ -87,21 +87,21 @@ Run `npm run agent:refactor-report` to refresh this report.
 
 | Lines | File |
 |---:|---|
+| 1708 | `scripts/rnd/train-all-ai.ts` |
+| 699 | `scripts/qa/check-b2b-capture-pdf-visual.cjs` |
+| 519 | `scripts/perf/push-notification-benchmark.cjs` |
+| 465 | `scripts/perf/navigation-prefetch-benchmark.cjs` |
 | 387 | `scripts/b2b/generate-survey-template-v1.ts` |
 | 375 | `scripts/rnd/module02/kpi-rollup-artifacts.ts` |
+| 352 | `scripts/perf/measure-navigation-prefetch.cjs` |
 | 352 | `scripts/rnd/module02/evaluate-kpi-rollup.ts` |
+| 283 | `scripts/lib/guard-map.scan.cts` |
 | 269 | `scripts/rnd/module03/orchestrate-adverse-event-evaluation-monthly-helpers.ts` |
+| 240 | `scripts/lib/hotspot-audit-checks.cts` |
 | 240 | `scripts/rnd/module07/evaluate-integration-rate.ts` |
-| 219 | `scripts/rnd/module03/scheduler-infra-binding-parsers.ts` |
-| 178 | `scripts/rnd/module03/monthly-archive-parsers.ts` |
-| 176 | `scripts/rnd/module03/scheduler-dry-run-infra-parser.ts` |
-| 162 | `scripts/rnd/module03/evaluate-adverse-event-count-from-source-schema.ts` |
-| 162 | `scripts/rnd/module03/orchestrate-adverse-event-evaluation-monthly-export-runtime.ts` |
-| 159 | `scripts/smoke-scope.ts` |
-| 155 | `scripts/rnd/module03/evaluate-reference-accuracy.ts` |
-| 154 | `scripts/rnd/module03/orchestrate-adverse-event-evaluation-monthly-failure-alert.ts` |
-| 154 | `scripts/rnd/module03/scheduler-dry-run-plan-args.ts` |
-| 154 | `scripts/rnd/module06/evaluate-closed-loop-accuracy.ts` |
+| 238 | `scripts/agent/generate-session-primer.cts` |
+| 229 | `scripts/lib/encoding-audit.cts` |
+| 226 | `scripts/qa/lib/cde-regression/column-admin-scenario.cjs` |
 
 ## Notes
 

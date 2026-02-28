@@ -66,6 +66,16 @@ export function parseClientCartItems(value: unknown): ClientCartItem[] {
   return Array.from(merged.values());
 }
 
+export function buildClientCartSignature(items: unknown): string {
+  const normalized = parseClientCartItems(items);
+  if (normalized.length === 0) return "";
+
+  return normalized
+    .map((item) => `${item.productId}:${item.optionType}:${item.quantity}`)
+    .sort()
+    .join("|");
+}
+
 function getStorage(storage?: Storage | null): Storage | null {
   if (storage !== undefined) return storage;
   if (typeof window === "undefined") return null;

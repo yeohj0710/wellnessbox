@@ -1,10 +1,22 @@
 import { CATEGORY_LABELS } from "@/lib/categories";
 import { HOME_PACKAGE_LABELS } from "./homeProductSection.copy";
+import type {
+  HomeCartItem,
+  HomeCategory,
+  HomeDataResponse as HomeDataResponsePayload,
+  HomePharmacy,
+  HomePharmacyProduct,
+  HomeProduct,
+} from "./homeProductSection.types";
 
 type SymptomCategoryPair = {
   symptom: string;
   categories: string[];
 };
+
+function resolvePharmacyId(option: Pick<HomePharmacyProduct, "pharmacyId" | "pharmacy">) {
+  return option.pharmacyId ?? option.pharmacy?.id;
+}
 
 export function parseCachedArray<T = unknown>(raw: string | null): T[] | null {
   if (!raw) return null;
@@ -79,10 +91,7 @@ export const HOME_SYMPTOM_CATEGORY_PAIRS: SymptomCategoryPair[] = [
   },
 ];
 
-export type HomeDataResponse = {
-  categories?: any[];
-  products?: any[];
-};
+export type HomeDataResponse = HomeDataResponsePayload;
 
 export function readCachedHomeData(maxAgeMs: number) {
   const cachedCategories = localStorage.getItem("categories");
@@ -101,8 +110,8 @@ export function readCachedHomeData(maxAgeMs: number) {
   const ageMs = Date.now() - cacheTimestamp;
   if (ageMs < 0 || ageMs > maxAgeMs) return null;
 
-  const parsedCategories = parseCachedArray(cachedCategories);
-  const parsedProducts = parseCachedArray(cachedProducts);
+  const parsedCategories = parseCachedArray<HomeCategory>(cachedCategories);
+  const parsedProducts = parseCachedArray<HomeProduct>(cachedProducts);
   if (!parsedCategories || !parsedProducts || parsedProducts.length === 0) {
     return null;
   }
@@ -115,60 +124,56 @@ export function readCachedHomeData(maxAgeMs: number) {
 }
 
 export function filterHomeProducts(input: {
-  allProducts: any[];
-  selectedPharmacy: any;
+  allProducts: HomeProduct[];
+  selectedPharmacy: HomePharmacy | null;
   selectedPackage: string;
   selectedCategoryIds: number[];
 }) {
-  let filtered = [...input.allProducts];
+  const { allProducts, selectedPharmacy, selectedPackage, selectedCategoryIds } =
+    input;
+  let filtered = [...allProducts];
 
-  if (
-    input.selectedPharmacy &&
-    input.selectedPackage !== HOME_PACKAGE_LABELS.all
-  ) {
+  if (selectedPharmacy && selectedPackage !== HOME_PACKAGE_LABELS.all) {
     filtered = filtered.filter((product) =>
       product.pharmacyProducts.some(
-        (pharmacyProduct: any) =>
-          pharmacyProduct.pharmacy.id === input.selectedPharmacy.id &&
-          pharmacyProduct.optionType === input.selectedPackage
+        (pharmacyProduct) =>
+          resolvePharmacyId(pharmacyProduct) === selectedPharmacy.id &&
+          pharmacyProduct.optionType === selectedPackage
       )
     );
   }
 
-  if (input.selectedPharmacy) {
+  if (selectedPharmacy) {
     filtered = filtered.filter((product) =>
       product.pharmacyProducts.some(
-        (pharmacyProduct: any) =>
-          pharmacyProduct.pharmacy.id === input.selectedPharmacy.id
+        (pharmacyProduct) =>
+          resolvePharmacyId(pharmacyProduct) === selectedPharmacy.id
       )
     );
   }
 
-  if (input.selectedCategoryIds.length > 0) {
+  if (selectedCategoryIds.length > 0) {
     filtered = filtered.filter((product) =>
-      product.categories.some((category: any) =>
-        input.selectedCategoryIds.includes(category.id)
-      )
+      product.categories.some((category) => selectedCategoryIds.includes(category.id))
     );
   }
 
-  if (input.selectedPackage === HOME_PACKAGE_LABELS.days7) {
-    filtered = filtered.filter((product: any) =>
-      product.pharmacyProducts.some((pharmacyProduct: any) =>
+  if (selectedPackage === HOME_PACKAGE_LABELS.days7) {
+    filtered = filtered.filter((product) =>
+      product.pharmacyProducts.some((pharmacyProduct) =>
         pharmacyProduct.optionType?.includes("7")
       )
     );
-  } else if (input.selectedPackage === HOME_PACKAGE_LABELS.days30) {
-    filtered = filtered.filter((product: any) =>
-      product.pharmacyProducts.some((pharmacyProduct: any) =>
+  } else if (selectedPackage === HOME_PACKAGE_LABELS.days30) {
+    filtered = filtered.filter((product) =>
+      product.pharmacyProducts.some((pharmacyProduct) =>
         pharmacyProduct.optionType?.includes("30")
       )
     );
-  } else if (input.selectedPackage === HOME_PACKAGE_LABELS.normal) {
-    filtered = filtered.filter((product: any) =>
+  } else if (selectedPackage === HOME_PACKAGE_LABELS.normal) {
+    filtered = filtered.filter((product) =>
       product.pharmacyProducts.some(
-        (pharmacyProduct: any) =>
-          pharmacyProduct.optionType === HOME_PACKAGE_LABELS.normal
+        (pharmacyProduct) => pharmacyProduct.optionType === HOME_PACKAGE_LABELS.normal
       )
     );
   }
@@ -177,31 +182,33 @@ export function filterHomeProducts(input: {
 }
 
 export function calculateCartTotalForPharmacy(input: {
-  cartItems: any[];
-  allProducts: any[];
-  selectedPharmacy: any;
+  cartItems: HomeCartItem[];
+  allProducts: HomeProduct[];
+  selectedPharmacy: HomePharmacy | null;
 }) {
-  if (!input.selectedPharmacy) return 0;
+  const { cartItems, allProducts, selectedPharmacy } = input;
+  if (!selectedPharmacy) return 0;
 
-  return input.cartItems.reduce((acc, item) => {
-    const matchingProduct = input.allProducts.find(
-      (product) => product.id === item.productId
-    );
+  return cartItems.reduce((acc, item) => {
+    const matchingProduct = allProducts.find((product) => product.id === item.productId);
     const matchingPharmacyProduct = matchingProduct?.pharmacyProducts.find(
-      (pharmacyProduct: any) =>
-        pharmacyProduct.pharmacy.id === input.selectedPharmacy.id &&
+      (pharmacyProduct) =>
+        resolvePharmacyId(pharmacyProduct) === selectedPharmacy.id &&
         pharmacyProduct.optionType === item.optionType
     );
-    if (matchingPharmacyProduct) {
-      return acc + matchingPharmacyProduct.price * item.quantity;
-    }
-    return acc;
+
+    if (!matchingPharmacyProduct) return acc;
+
+    const price = Number(matchingPharmacyProduct.price);
+    const quantity = Number(item.quantity);
+    if (!Number.isFinite(price) || !Number.isFinite(quantity)) return acc;
+    return acc + price * quantity;
   }, 0);
 }
 
 export function resolveCategoryIdsFromSymptoms(input: {
   selectedSymptoms: string[];
-  categories: any[];
+  categories: HomeCategory[];
   symptomCategoryPairs?: SymptomCategoryPair[];
 }) {
   if (
@@ -225,40 +232,39 @@ export function resolveCategoryIdsFromSymptoms(input: {
 
   const categoryNameSet = new Set(mappedCategoryNames);
   return input.categories
-    .filter((category: any) => categoryNameSet.has(category.name))
-    .map((category: any) => category.id);
+    .filter((category) => categoryNameSet.has(category.name))
+    .map((category) => category.id);
 }
 
 export function filterCartItemsByPharmacyStock(input: {
-  cartItems: any[];
-  allProducts: any[];
-  selectedPharmacy: any;
+  cartItems: HomeCartItem[];
+  allProducts: HomeProduct[];
+  selectedPharmacy: HomePharmacy | null;
 }) {
-  if (!input.selectedPharmacy || !Array.isArray(input.cartItems)) {
-    return input.cartItems ?? [];
+  const { cartItems, allProducts, selectedPharmacy } = input;
+  if (!selectedPharmacy || !Array.isArray(cartItems)) {
+    return cartItems ?? [];
   }
 
-  return input.cartItems.filter((item) => {
-    const product = input.allProducts.find((p) => p.id === item.productId);
+  return cartItems.filter((item) => {
+    const product = allProducts.find((candidate) => candidate.id === item.productId);
     if (!product) return false;
 
-    const hasMatch = product.pharmacyProducts?.some(
-      (pharmacyProduct: any) =>
-        (pharmacyProduct.pharmacyId ?? pharmacyProduct.pharmacy?.id) ===
-          input.selectedPharmacy.id &&
+    return product.pharmacyProducts?.some(
+      (pharmacyProduct) =>
+        resolvePharmacyId(pharmacyProduct) === selectedPharmacy.id &&
         pharmacyProduct.optionType === item.optionType
     );
-    return !!hasMatch;
   });
 }
 
 export function buildCategoryRecommendationToast(input: {
   categoryIds: number[];
-  categories: any[];
+  categories: HomeCategory[];
 }) {
   const names = input.categories
-    .filter((category: any) => input.categoryIds.includes(category.id))
-    .map((category: any) => category.name);
+    .filter((category) => input.categoryIds.includes(category.id))
+    .map((category) => category.name);
 
   if (names.length > 0) {
     return `\uAC80\uC0AC \uACB0\uACFC\uB85C \uCD94\uCC9C\uB41C ${names.join(

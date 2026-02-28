@@ -35,24 +35,96 @@ const basicOrderSelection = {
   },
 };
 
+const basicOperatorOrderSelection = {
+  id: true,
+  status: true,
+  createdAt: true,
+  orderItems: {
+    select: {
+      quantity: true,
+      pharmacyProduct: {
+        select: {
+          optionType: true,
+          product: { select: { name: true } },
+        },
+      },
+    },
+  },
+} satisfies Prisma.OrderSelect;
+
+type BasicOperatorOrder = Prisma.OrderGetPayload<{
+  select: typeof basicOperatorOrderSelection;
+}>;
+
+type BasicOperatorOrderPage = {
+  orders: BasicOperatorOrder[];
+  totalPages: number;
+};
+
+const DEFAULT_PAGE = 1;
+const DEFAULT_TAKE = 10;
+const MAX_TAKE = 100;
+
+function normalizePagination(page = DEFAULT_PAGE, take = DEFAULT_TAKE) {
+  const safePage =
+    Number.isFinite(page) && page > 0 ? Math.floor(page) : DEFAULT_PAGE;
+  const safeTakeRaw =
+    Number.isFinite(take) && take > 0 ? Math.floor(take) : DEFAULT_TAKE;
+  const safeTake = Math.min(safeTakeRaw, MAX_TAKE);
+  return { page: safePage, take: safeTake };
+}
+
+function formatPhoneWithHyphens(digitsOnly: string) {
+  if (digitsOnly.length === 10) {
+    return `${digitsOnly.slice(0, 3)}-${digitsOnly.slice(
+      3,
+      6
+    )}-${digitsOnly.slice(6)}`;
+  }
+  if (digitsOnly.length === 11) {
+    return `${digitsOnly.slice(0, 3)}-${digitsOnly.slice(
+      3,
+      7
+    )}-${digitsOnly.slice(7)}`;
+  }
+  return "";
+}
+
+function buildPhoneCandidates(phone: string) {
+  const normalizedPhone = normalizePhone(phone);
+  const digitsOnly = normalizedPhone.replace(/\D/g, "");
+  const formattedWithHyphens = formatPhoneWithHyphens(digitsOnly);
+
+  return Array.from(
+    new Set(
+      [phone, normalizedPhone, formattedWithHyphens].filter(
+        (value): value is string => !!value && value.trim().length > 0
+      )
+    )
+  );
+}
+
 async function getPaginatedOrders(
   where: Prisma.OrderWhereInput,
-  page = 1,
-  take = 10
+  page = DEFAULT_PAGE,
+  take = DEFAULT_TAKE
 ) {
-  const skip = (page - 1) * take;
+  const pagination = normalizePagination(page, take);
+  const safePage = pagination.page;
+  const safeTake = pagination.take;
+  const skip = (safePage - 1) * safeTake;
 
-  if (page === 1) {
+  if (safePage === 1) {
     const rows = await db.order.findMany({
       where,
       select: basicOrderSelection,
       orderBy: { createdAt: "desc" },
       skip: 0,
-      take: take + 1,
+      take: safeTake + 1,
     });
 
-    const hasNextPage = rows.length > take;
-    const orders = hasNextPage ? rows.slice(0, take) : rows;
+    const hasNextPage = rows.length > safeTake;
+    const orders = hasNextPage ? rows.slice(0, safeTake) : rows;
 
     if (!hasNextPage) {
       return { orders, totalPages: orders.length > 0 ? 1 : 0 };
@@ -61,7 +133,7 @@ async function getPaginatedOrders(
     const totalCount = await db.order.count({ where });
     return {
       orders,
-      totalPages: Math.ceil(totalCount / take),
+      totalPages: Math.ceil(totalCount / safeTake),
     };
   }
 
@@ -72,11 +144,11 @@ async function getPaginatedOrders(
       select: basicOrderSelection,
       orderBy: { createdAt: "desc" },
       skip,
-      take,
+      take: safeTake,
     }),
   ]);
 
-  const totalPages = Math.ceil(totalCount / take);
+  const totalPages = Math.ceil(totalCount / safeTake);
   return { orders, totalPages };
 }
 
@@ -98,8 +170,8 @@ export async function getOrdersWithItemsAndStatus(
 export async function getOrdersWithItemsAndStatusPaginated(
   phone: string,
   password: string,
-  page = 1,
-  take = 10
+  page = DEFAULT_PAGE,
+  take = DEFAULT_TAKE
 ) {
   const result = await getPaginatedOrders({ phone, password }, page, take);
   if (result.totalPages === 0) {
@@ -109,32 +181,7 @@ export async function getOrdersWithItemsAndStatusPaginated(
 }
 
 export async function getOrdersWithItemsByPhone(phone: string) {
-  const normalizedPhone = normalizePhone(phone);
-  const digitsOnly = normalizedPhone.replace(/\D/g, "");
-
-  const formattedWithHyphens = (() => {
-    if (digitsOnly.length === 10) {
-      return `${digitsOnly.slice(0, 3)}-${digitsOnly.slice(
-        3,
-        6
-      )}-${digitsOnly.slice(6)}`;
-    }
-    if (digitsOnly.length === 11) {
-      return `${digitsOnly.slice(0, 3)}-${digitsOnly.slice(
-        3,
-        7
-      )}-${digitsOnly.slice(7)}`;
-    }
-    return "";
-  })();
-
-  const phoneCandidates = Array.from(
-    new Set(
-      [phone, normalizedPhone, formattedWithHyphens].filter(
-        (value) => value && value.trim().length > 0
-      )
-    )
-  );
+  const phoneCandidates = buildPhoneCandidates(phone);
 
   const orders = await db.order.findMany({
     where: {
@@ -153,35 +200,10 @@ export async function getOrdersWithItemsByPhone(phone: string) {
 
 export async function getOrdersWithItemsByPhonePaginated(
   phone: string,
-  page = 1,
-  take = 10
+  page = DEFAULT_PAGE,
+  take = DEFAULT_TAKE
 ) {
-  const normalizedPhone = normalizePhone(phone);
-  const digitsOnly = normalizedPhone.replace(/\D/g, "");
-
-  const formattedWithHyphens = (() => {
-    if (digitsOnly.length === 10) {
-      return `${digitsOnly.slice(0, 3)}-${digitsOnly.slice(
-        3,
-        6
-      )}-${digitsOnly.slice(6)}`;
-    }
-    if (digitsOnly.length === 11) {
-      return `${digitsOnly.slice(0, 3)}-${digitsOnly.slice(
-        3,
-        7
-      )}-${digitsOnly.slice(7)}`;
-    }
-    return "";
-  })();
-
-  const phoneCandidates = Array.from(
-    new Set(
-      [phone, normalizedPhone, formattedWithHyphens].filter(
-        (value) => value && value.trim().length > 0
-      )
-    )
-  );
+  const phoneCandidates = buildPhoneCandidates(phone);
 
   if (phoneCandidates.length === 0) {
     throw new Error("연동된 전화번호로 조회된 주문이 없습니다.");
@@ -272,43 +294,34 @@ export async function getOrderStatusById(orderid: number) {
 
 export async function getBasicOrdersByPharmacy(
   pharmacyId: number,
-  page = 1,
-  take = 10
-): Promise<{ orders: any[]; totalPages: number }> {
+  page = DEFAULT_PAGE,
+  take = DEFAULT_TAKE
+): Promise<BasicOperatorOrderPage> {
+  const pagination = normalizePagination(page, take);
+  const safePage = pagination.page;
+  const safeTake = pagination.take;
   const [totalCount, orders] = await db.$transaction([
     db.order.count({ where: { pharmacyId } }),
     db.order.findMany({
       where: { pharmacyId },
-      select: {
-        id: true,
-        status: true,
-        createdAt: true,
-        orderItems: {
-          select: {
-            quantity: true,
-            pharmacyProduct: {
-              select: {
-                optionType: true,
-                product: { select: { name: true } },
-              },
-            },
-          },
-        },
-      },
+      select: basicOperatorOrderSelection,
       orderBy: { id: "desc" },
-      skip: (page - 1) * take,
-      take,
+      skip: (safePage - 1) * safeTake,
+      take: safeTake,
     }),
   ]);
 
-  const totalPages = Math.ceil(totalCount / take);
+  const totalPages = Math.ceil(totalCount / safeTake);
   return { orders, totalPages };
 }
 
 export async function getBasicOrdersByRider(
-  page = 1,
-  take = 10
-): Promise<{ orders: any[]; totalPages: number }> {
+  page = DEFAULT_PAGE,
+  take = DEFAULT_TAKE
+): Promise<BasicOperatorOrderPage> {
+  const pagination = normalizePagination(page, take);
+  const safePage = pagination.page;
+  const safeTake = pagination.take;
   const where: Prisma.OrderWhereInput = {
     NOT: [
       { status: ORDER_STATUS.PAYMENT_COMPLETE },
@@ -321,29 +334,14 @@ export async function getBasicOrdersByRider(
     db.order.count({ where }),
     db.order.findMany({
       where,
-      select: {
-        id: true,
-        status: true,
-        createdAt: true,
-        orderItems: {
-          select: {
-            quantity: true,
-            pharmacyProduct: {
-              select: {
-                optionType: true,
-                product: { select: { name: true } },
-              },
-            },
-          },
-        },
-      },
+      select: basicOperatorOrderSelection,
       orderBy: { id: "desc" },
-      skip: (page - 1) * take,
-      take,
+      skip: (safePage - 1) * safeTake,
+      take: safeTake,
     }),
   ]);
 
-  const totalPages = Math.ceil(totalCount / take);
+  const totalPages = Math.ceil(totalCount / safeTake);
   return { orders, totalPages };
 }
 

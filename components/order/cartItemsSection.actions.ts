@@ -1,10 +1,7 @@
 import { writeClientCartItems } from "@/lib/client/cart-storage";
+import type { CartLineItem } from "./cart.types";
 
-type CartItemLike = {
-  productId: number;
-  optionType: string;
-  quantity: number;
-};
+type CartItemLike = CartLineItem;
 
 function isSameLineItem(left: CartItemLike, right: CartItemLike) {
   return left.productId === right.productId && left.optionType === right.optionType;

@@ -3,12 +3,18 @@ const path = require("node:path") as typeof import("node:path");
 const {
   CRITICAL_GUARD_CHECKS,
   EXPECTED_SESSION_ROUTE_ENTRIES,
+  ROUTE_GUARD_POLICIES,
   ROUTE_GUARD_TOKENS,
 } = require("./api-route-guard-config.cts") as {
   CRITICAL_GUARD_CHECKS: Array<{ file: string; requiredTokens: string[] }>;
   EXPECTED_SESSION_ROUTE_ENTRIES: Array<{
     route: string;
     routeFile: string;
+    note: string;
+  }>;
+  ROUTE_GUARD_POLICIES: Array<{
+    routePrefix: string;
+    requiredTokens: string[];
     note: string;
   }>;
   ROUTE_GUARD_TOKENS: string[];
@@ -32,6 +38,60 @@ const {
 } = require("./route-guard-scan.cts") as {
   extractGuardCalls: (source: string, guardTokens: string[]) => string[];
   hasRouteAuthImport: (source: string) => boolean;
+};
+const {
+  evaluateRouteGuardPolicies,
+  scanApiGuardEntries,
+} = require("./guard-map.cts") as {
+  evaluateRouteGuardPolicies: (
+    entries: Array<{
+      file: string;
+      route: string;
+      methods: string[];
+      guards: string[];
+      directGuards: string[];
+      importsRouteAuth: boolean;
+      usesGetSession: boolean;
+      note: string | null;
+      classification:
+        | "guarded"
+        | "review_expected"
+        | "review_unexpected"
+        | "public_or_internal";
+    }>,
+    policies: Array<{
+      routePrefix: string;
+      requiredTokens: string[];
+      note: string;
+    }>
+  ) => Array<{
+    route: string;
+    file: string;
+    guards: string[];
+    requiredTokens: string[];
+    missingTokens: string[];
+    note: string;
+  }>;
+  scanApiGuardEntries: (input: {
+    repoRoot: string;
+    apiRoot: string;
+    routeGuardTokens: string[];
+    expectedSessionRouteNotes: Record<string, string>;
+  }) => Array<{
+    file: string;
+    route: string;
+    methods: string[];
+    guards: string[];
+    directGuards: string[];
+    importsRouteAuth: boolean;
+    usesGetSession: boolean;
+    note: string | null;
+    classification:
+      | "guarded"
+      | "review_expected"
+      | "review_unexpected"
+      | "public_or_internal";
+  }>;
 };
 
 type CodeFileRow = {
@@ -135,8 +195,45 @@ function runRouteMethodExportChecks(rootDir: string): {
   return { checked: audit.checked, failed };
 }
 
+function runRoutePolicyChecks(rootDir: string): {
+  checked: number;
+  failed: number;
+} {
+  const apiRoot = path.join(rootDir, "app", "api");
+  const expectedSessionRouteNotes = Object.fromEntries(
+    EXPECTED_SESSION_ROUTE_ENTRIES.map((item) => [item.route, item.note])
+  );
+
+  const entries = scanApiGuardEntries({
+    repoRoot: rootDir,
+    apiRoot,
+    routeGuardTokens: ROUTE_GUARD_TOKENS,
+    expectedSessionRouteNotes,
+  });
+  const violations = evaluateRouteGuardPolicies(entries, ROUTE_GUARD_POLICIES);
+  const checked = entries.filter((entry) =>
+    ROUTE_GUARD_POLICIES.some(
+      (policy) =>
+        entry.route === policy.routePrefix ||
+        entry.route.startsWith(`${policy.routePrefix}/`)
+    )
+  ).length;
+
+  for (const violation of violations) {
+    console.log(
+      `[FAIL] ${violation.file} (missing policy guards: ${violation.missingTokens.join(", ")})`
+    );
+  }
+
+  return {
+    checked,
+    failed: violations.length,
+  };
+}
+
 module.exports = {
   runGuardChecks,
+  runRoutePolicyChecks,
   runRouteMethodExportChecks,
   runUnexpectedSessionRouteChecks,
 };

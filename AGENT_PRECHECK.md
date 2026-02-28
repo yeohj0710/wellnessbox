@@ -40,6 +40,7 @@ If `npm run build` fails at `prisma:generate` with `EPERM ... query_engine ... r
 `audit:hotspots` gives:
 - runtime code hotspots + script hotspots by line count (refactor candidates)
 - critical route guard checks for admin/rag/push endpoints
+- route guard policy checks (for example `/api/admin/**` must include `requireAdminSession`)
 - implementation map:
   - `scripts/audit-hotspots.ts` = scan + orchestration shell
   - `scripts/lib/hotspot-report.cts` = hotspot section build/print helpers
@@ -47,7 +48,7 @@ If `npm run build` fails at `prisma:generate` with `EPERM ... query_engine ... r
 
 `agent:guard-map` map:
 - `scripts/agent/generate-api-guard-map.cts` = orchestration + strict failure policy
-- `scripts/lib/guard-map.cts` = route scan/classification/grouping + markdown rendering
+- `scripts/lib/guard-map.cts` = route scan/classification/grouping + delegated guard trace + policy-violation rendering
 
 `agent:skills-catalog` map:
 - `scripts/agent/generate-skill-catalog.cts` = orchestration shell (root validation + write)

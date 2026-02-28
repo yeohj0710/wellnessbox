@@ -25,10 +25,12 @@ const {
 };
 const {
   runGuardChecks,
+  runRoutePolicyChecks,
   runRouteMethodExportChecks,
   runUnexpectedSessionRouteChecks,
 } = require("./lib/hotspot-audit-checks.cts") as {
   runGuardChecks: (rootDir: string) => { passed: number; failed: number };
+  runRoutePolicyChecks: (rootDir: string) => { checked: number; failed: number };
   runUnexpectedSessionRouteChecks: (routeRows: Array<{
     abs: string;
     file: string;
@@ -52,7 +54,16 @@ const {
 };
 
 const ROOT = process.cwd();
-const CODE_EXTENSIONS = [".ts", ".tsx", ".js", ".mjs", ".cjs"];
+const CODE_EXTENSIONS = [
+  ".ts",
+  ".tsx",
+  ".mts",
+  ".cts",
+  ".js",
+  ".jsx",
+  ".mjs",
+  ".cjs",
+];
 const EXCLUDED_DIRS = new Set([
   ".git",
   ".next",
@@ -119,6 +130,13 @@ function main() {
   );
 
   console.log("");
+  console.log("== Route Guard Policy Checks ==");
+  const policyResult = runRoutePolicyChecks(ROOT);
+  console.log(
+    `Route guard policy summary: ${policyResult.checked - policyResult.failed} passed, ${policyResult.failed} failed (checked ${policyResult.checked})`
+  );
+
+  console.log("");
   console.log("== Unexpected Session Route Checks ==");
   const sessionResult = runUnexpectedSessionRouteChecks(
     CODE_FILE_ROWS.filter((row) => isApiRouteFile(row.file))
@@ -137,6 +155,7 @@ function main() {
 
   if (
     guardResult.failed > 0 ||
+    policyResult.failed > 0 ||
     sessionResult.unexpected > 0 ||
     routeMethodResult.failed > 0
   ) {

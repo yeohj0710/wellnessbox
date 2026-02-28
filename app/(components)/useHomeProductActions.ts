@@ -7,12 +7,13 @@ import {
   getCurrentPathWithSearchFromWindow,
   queueCartScrollRestore,
 } from "@/lib/client/cart-navigation";
+import type { HomeProduct } from "./homeProductSection.types";
 
 type UseHomeProductActionsInput = {
   hideLoading: () => void;
   syncCartItemsFromStorage: () => void;
   scrollPositionRef: MutableRefObject<number>;
-  setSelectedProduct: Dispatch<SetStateAction<any>>;
+  setSelectedProduct: Dispatch<SetStateAction<HomeProduct | null>>;
   setIsCartVisible: Dispatch<SetStateAction<boolean>>;
   replaceRoute: (pathWithSearch: string) => void;
 };
@@ -37,7 +38,7 @@ export function useHomeProductActions(input: UseHomeProductActionsInput) {
   }, []);
 
   const openProductDetail = useCallback(
-    (product: any) => {
+    (product: HomeProduct) => {
       if (typeof window !== "undefined") {
         const y = window.scrollY;
         scrollPositionRef.current = y;

@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import type { LoginStatus } from "@/lib/useLoginStatus";
+import type { CartLineItem } from "../cart.types";
 
 type RouterLike = {
   push: (href: string) => void;
@@ -19,7 +20,7 @@ type UseCartPaymentParams = {
   userContact: string;
   roadAddress: string;
   detailAddress: string;
-  cartItems: any[];
+  cartItems: CartLineItem[];
   onOpenPhoneModal: () => void;
   onOpenConfirmModal: () => void;
 };

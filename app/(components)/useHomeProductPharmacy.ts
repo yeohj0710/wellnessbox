@@ -8,19 +8,24 @@ import {
   type SetStateAction,
 } from "react";
 import axios from "axios";
+import { filterRegisteredPharmacies } from "@/components/order/cart.helpers";
 import { writeClientCartItems } from "@/lib/client/cart-storage";
 import { HOME_PRODUCT_COPY } from "./homeProductSection.copy";
+import type {
+  HomeCartItem,
+  HomePharmacy,
+} from "./homeProductSection.types";
 
 type UseHomeProductPharmacyOptions = {
-  cartItems: any[];
+  cartItems: HomeCartItem[];
   roadAddress: string;
-  selectedPharmacy: any;
-  setSelectedPharmacy: (pharmacy: any) => void;
-  setCartItems: Dispatch<SetStateAction<any[]>>;
+  selectedPharmacy: HomePharmacy | null;
+  setSelectedPharmacy: (pharmacy: HomePharmacy | null) => void;
+  setCartItems: Dispatch<SetStateAction<HomeCartItem[]>>;
 };
 
 type UseHomeProductPharmacyResult = {
-  pharmacies: any[];
+  pharmacies: HomePharmacy[];
   pharmacyError: string | null;
   isPharmacyLoading: boolean;
   retryPharmacyResolve: () => void;
@@ -34,7 +39,7 @@ export function useHomeProductPharmacy({
   setSelectedPharmacy,
   setCartItems,
 }: UseHomeProductPharmacyOptions): UseHomeProductPharmacyResult {
-  const [pharmacies, setPharmacies] = useState<any[]>([]);
+  const [pharmacies, setPharmacies] = useState<HomePharmacy[]>([]);
   const [pharmacyError, setPharmacyError] = useState<string | null>(null);
   const [isPharmacyLoading, setIsPharmacyLoading] = useState(false);
   const [pharmacyResolveToken, setPharmacyResolveToken] = useState(0);
@@ -76,9 +81,8 @@ export function useHomeProductPharmacy({
           { cartItem: cartItems[0], roadAddress },
           { signal: controller.signal, timeout: 9000 }
         );
-        const sortedPharmacies = response.data?.pharmacies || [];
-        const filteredPharmacies = sortedPharmacies.filter(
-          (pharmacy: any) => pharmacy.registrationNumber !== null
+        const filteredPharmacies = filterRegisteredPharmacies(
+          response.data?.pharmacies
         );
         if (!alive) return;
 
@@ -96,12 +100,14 @@ export function useHomeProductPharmacy({
         setPharmacies(filteredPharmacies);
         if (
           !selectedPharmacy ||
-          !filteredPharmacies.some((pharmacy: any) => pharmacy.id === selectedPharmacy.id)
+          !filteredPharmacies.some(
+            (pharmacy) => pharmacy.id === selectedPharmacy.id
+          )
         ) {
           setSelectedPharmacy(filteredPharmacies[0]);
         }
-      } catch (error: any) {
-        if (error?.name === "CanceledError") return;
+      } catch (error) {
+        if (error instanceof Error && error.name === "CanceledError") return;
         if (alive) {
           setPharmacyError(HOME_PRODUCT_COPY.pharmacyLoadFailed);
         }

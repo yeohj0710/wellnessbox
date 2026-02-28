@@ -30,7 +30,16 @@ type HotspotCodeRow = {
 };
 
 const DEFAULT_EXCLUDE_DIRS = [".git", "node_modules", ".next"] as const;
-const DEFAULT_INCLUDE_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"] as const;
+const DEFAULT_INCLUDE_EXTENSIONS = [
+  ".ts",
+  ".tsx",
+  ".mts",
+  ".cts",
+  ".js",
+  ".jsx",
+  ".mjs",
+  ".cjs",
+] as const;
 
 function listHotspotCodeFiles(rootDir: string): HotspotCodeFile[] {
   return listFilesRecursively(rootDir, {
