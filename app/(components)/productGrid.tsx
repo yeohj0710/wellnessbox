@@ -4,23 +4,14 @@ import { formatPriceRange, getLowestAverageOptionType } from "@/lib/utils";
 import Skeleton from "./skeleton";
 import Image from "next/image";
 import { shouldBypassNextImageOptimizer } from "@/lib/shared/image";
-
-interface Product {
-  id: number;
-  name: string;
-  images: string[];
-  categories: { name: string }[];
-  pharmacyProducts: any[];
-  rating: number;
-  reviewCount: number;
-}
+import type { HomePharmacy, HomeProduct } from "./homeProductSection.types";
 
 interface ProductGridProps {
   isLoading: boolean;
-  products: Product[];
+  products: HomeProduct[];
   selectedPackage: string;
-  selectedPharmacy: any;
-  setSelectedProduct: (product: Product | null) => void;
+  selectedPharmacy: HomePharmacy | null;
+  setSelectedProduct: (product: HomeProduct) => void;
   isUpdating?: boolean;
 }
 
@@ -48,9 +39,13 @@ export default function ProductGrid({
                     pharmacy: selectedPharmacy,
                   })
                 : selectedPackage;
-            const capacity = product.pharmacyProducts.find(
+            const capacityRaw = product.pharmacyProducts.find(
               (p: any) => p.optionType === optionType
             )?.capacity;
+            const capacity =
+              typeof capacityRaw === "string" || typeof capacityRaw === "number"
+                ? String(capacityRaw)
+                : null;
             const imageSrc = product.images?.[0] ?? null;
 
             return (

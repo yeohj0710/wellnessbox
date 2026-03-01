@@ -55,14 +55,20 @@ export const getLowestAverageOptionType = ({ product, pharmacy }: any) => {
   return lowestAverage.optionType || null;
 };
 
-export const sortByImportanceDesc = <T extends { importance?: number | null }>(
-  items: T[]
-) => {
+const normalizeImportance = (value: unknown): number | null => {
+  return typeof value === "number" ? value : null;
+};
+
+const readImportance = <T>(item: T): number | null => {
+  return normalizeImportance((item as { importance?: unknown }).importance);
+};
+
+export const sortByImportanceDesc = <T>(items: T[]): T[] => {
   return items
-    .filter((item) => item.importance !== 0)
+    .filter((item) => readImportance(item) !== 0)
     .sort((a, b) => {
-      const aVal = a.importance ?? null;
-      const bVal = b.importance ?? null;
+      const aVal = readImportance(a);
+      const bVal = readImportance(b);
       if (aVal === null && bVal === null) return 0;
       if (aVal === null) return 1;
       if (bVal === null) return -1;
