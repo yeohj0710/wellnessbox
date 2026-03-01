@@ -175,7 +175,7 @@ export default function ReportSummaryCards(props: {
   const pharmacistCautions = softenAdviceTone(toTrimmedText(payload.pharmacist?.cautions));
 
   return (
-    <div className={styles.reportDocument}>
+    <div className={styles.reportDocument} data-report-document="1">
       <section className={`${styles.reportSheet} ${styles.reportSheetFirst}`} data-report-page="1">
         <header className={styles.reportPageHeader}>
           <p className={styles.reportPageKicker}>WellnessBox 개인 건강 리포트</p>

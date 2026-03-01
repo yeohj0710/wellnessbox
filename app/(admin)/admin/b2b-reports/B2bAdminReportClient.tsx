@@ -5,7 +5,6 @@ import ReportRenderer from "@/components/b2b/ReportRenderer";
 import ReportSummaryCards from "@/components/b2b/ReportSummaryCards";
 import OperationLoadingOverlay from "@/components/common/operationLoadingOverlay";
 import styles from "@/components/b2b/B2bUx.module.css";
-import { captureElementToPdf } from "@/lib/client/capture-pdf";
 import type { LayoutDocument } from "@/lib/b2b/export/layout-types";
 import type { LayoutValidationIssue } from "@/lib/b2b/export/validation-types";
 import B2bAnalysisJsonPanel from "./_components/B2bAnalysisJsonPanel";
@@ -432,27 +431,22 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
 
   async function handleExportPdf() {
     if (!latestReport?.id) return;
-    const captureTarget = webReportCaptureRef.current;
-    if (!captureTarget) {
-      setError("레포트 캡처 대상을 찾지 못했습니다. 화면을 새로고침 후 다시 시도해 주세요.");
-      return;
-    }
 
-    beginBusy("웹 레포트를 PDF로 캡처하고 있어요.");
+    beginBusy("PDF 파일을 생성하고 있어요.");
     setError("");
     setNotice("");
     try {
       const normalizeFilenameToken = (value: string | null | undefined, fallback: string) => {
         const text = (value ?? "")
           .trim()
-          .replace(/[\\/:*?"<>|]+/g, " ")
+          .replace(/[\/:*?"<>|]+/g, " ")
           .replace(/\s+/g, " ")
           .trim();
         return text.length > 0 ? text : fallback;
       };
       const employeeLabel = normalizeFilenameToken(
         selectedEmployeeDetail?.name ?? latestReport.payload?.meta?.employeeName,
-        "임직원"
+        "직원"
       );
       const periodLabel = normalizeFilenameToken(
         selectedPeriodKey ||
@@ -460,16 +454,37 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
           latestReport.payload?.meta?.periodKey,
         "최근"
       );
-      const downloadFileName = `웰니스박스_건강레포트_${employeeLabel}_${periodLabel}.pdf`;
-      await captureElementToPdf({
-        element: captureTarget,
-        fileName: downloadFileName,
-        desktopViewportWidth: 1440,
-        scale: 4,
-      });
-      setNotice("화면 캡처 기반 PDF 다운로드가 완료되었습니다.");
+      const downloadFileName =
+        "웰니스박스_건강리포트_" +
+        employeeLabel +
+        "_" +
+        periodLabel +
+        ".pdf";
+      const query = new URLSearchParams();
+      const captureWidthPx = Math.round(
+        webReportCaptureRef.current?.getBoundingClientRect().width ?? 0
+      );
+      if (captureWidthPx > 0) {
+        query.set("w", String(captureWidthPx));
+      }
+      const viewportWidthPx = Math.round(
+        window.innerWidth || document.documentElement?.clientWidth || 0
+      );
+      if (viewportWidthPx > 0) {
+        query.set("vw", String(viewportWidthPx));
+      }
+      const queryString = query.toString();
+
+      await downloadFromApi(
+        "/api/admin/b2b/reports/" +
+          latestReport.id +
+          "/export/pdf" +
+          (queryString.length > 0 ? `?${queryString}` : ""),
+        downloadFileName
+      );
+      setNotice("PDF 다운로드가 완료되었습니다.");
     } catch (err) {
-      applyExportFailure(err, "PDF 캡처 다운로드에 실패했습니다.");
+      applyExportFailure(err, "PDF 다운로드에 실패했습니다.");
     } finally {
       endBusy();
     }
@@ -484,14 +499,14 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
       const normalizeFilenameToken = (value: string | null | undefined, fallback: string) => {
         const text = (value ?? "")
           .trim()
-          .replace(/[\\/:*?"<>|]+/g, " ")
+          .replace(/[\/:*?"<>|]+/g, " ")
           .replace(/\s+/g, " ")
           .trim();
         return text.length > 0 ? text : fallback;
       };
       const employeeLabel = normalizeFilenameToken(
         selectedEmployeeDetail?.name ?? latestReport.payload?.meta?.employeeName,
-        "임직원"
+        "직원"
       );
       const periodLabel = normalizeFilenameToken(
         selectedPeriodKey ||
@@ -499,9 +514,14 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
           latestReport.payload?.meta?.periodKey,
         "최근"
       );
-      const fallbackPdfName = `웰니스박스_건강레포트_${employeeLabel}_${periodLabel}.pdf`;
+      const fallbackPdfName =
+        "웰니스박스_건강리포트_" +
+        employeeLabel +
+        "_" +
+        periodLabel +
+        ".pdf";
       await downloadFromApi(
-        `/api/admin/b2b/reports/${latestReport.id}/export/pdf`,
+        "/api/admin/b2b/reports/" + latestReport.id + "/export/pdf?mode=legacy",
         fallbackPdfName
       );
       setNotice("기존 PDF 엔진 다운로드가 완료되었습니다.");
@@ -638,6 +658,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
                       ref={webReportCaptureRef}
                       className={styles.reportCaptureSurface}
                       data-testid="report-capture-surface"
+                      data-report-pdf-parity="1"
                     >
                       <ReportSummaryCards payload={latestReport?.payload} viewerMode="admin" />
                     </div>

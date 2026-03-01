@@ -6,7 +6,6 @@ import ReportRenderer from "@/components/b2b/ReportRenderer";
 import ReportSummaryCards from "@/components/b2b/ReportSummaryCards";
 import OperationLoadingOverlay from "@/components/common/operationLoadingOverlay";
 import styles from "@/components/b2b/B2bUx.module.css";
-import { captureElementToPdf } from "@/lib/client/capture-pdf";
 import EmployeeReportBootSkeleton from "./_components/EmployeeReportBootSkeleton";
 import EmployeeReportIdentitySection from "./_components/EmployeeReportIdentitySection";
 import EmployeeReportSummaryHeaderCard from "./_components/EmployeeReportSummaryHeaderCard";
@@ -493,27 +492,22 @@ export default function EmployeeReportClient() {
 
   async function handleDownloadPdf() {
     if (!reportData?.report?.id) return;
-    const captureTarget = webReportCaptureRef.current;
-    if (!captureTarget) {
-      setError("레포트 캡처 대상을 찾지 못했습니다. 화면을 새로고침 후 다시 시도해 주세요.");
-      return;
-    }
 
-    beginBusy("웹 레포트를 PDF로 캡처하고 있어요.");
+    beginBusy("PDF 파일을 생성하고 있어요.");
     setError("");
     setNotice("");
     try {
       const normalizeFilenameToken = (value: string | null | undefined, fallback: string) => {
         const text = (value ?? "")
           .trim()
-          .replace(/[\\/:*?"<>|]+/g, " ")
+          .replace(/[\/:*?"<>|]+/g, " ")
           .replace(/\s+/g, " ")
           .trim();
         return text.length > 0 ? text : fallback;
       };
       const employeeLabel = normalizeFilenameToken(
         reportData.employee?.name ?? reportData.report?.payload?.meta?.employeeName,
-        "임직원"
+        "직원"
       );
       const periodLabel = normalizeFilenameToken(
         selectedPeriodKey ||
@@ -521,16 +515,41 @@ export default function EmployeeReportClient() {
           reportData.report?.payload?.meta?.periodKey,
         "최근"
       );
-      const downloadFileName = `웰니스박스_건강레포트_${employeeLabel}_${periodLabel}.pdf`;
-      await captureElementToPdf({
-        element: captureTarget,
-        fileName: downloadFileName,
-        desktopViewportWidth: 1440,
-        scale: 4,
-      });
-      setNotice("화면 캡처 기반 PDF 다운로드가 완료되었습니다.");
+      const downloadFileName =
+        "웰니스박스_건강리포트_" +
+        employeeLabel +
+        "_" +
+        periodLabel +
+        ".pdf";
+      const query = new URLSearchParams();
+      if (selectedPeriodKey) {
+        query.set("period", selectedPeriodKey);
+      }
+      const captureWidthPx = Math.round(
+        webReportCaptureRef.current?.getBoundingClientRect().width ?? 0
+      );
+      if (captureWidthPx > 0) {
+        query.set("w", String(captureWidthPx));
+      }
+      const viewportWidthPx = Math.round(
+        window.innerWidth || document.documentElement?.clientWidth || 0
+      );
+      if (viewportWidthPx > 0) {
+        query.set("vw", String(viewportWidthPx));
+      }
+      const queryString = query.toString();
+      await downloadPdf(
+        "/api/b2b/employee/report/export/pdf" +
+          (queryString.length > 0 ? `?${queryString}` : ""),
+        downloadFileName
+      );
+      setNotice("PDF 다운로드가 완료되었습니다.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "PDF 캡처 다운로드에 실패했습니다.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "PDF 다운로드에 실패했습니다."
+      );
     } finally {
       endBusy();
     }
@@ -542,20 +561,23 @@ export default function EmployeeReportClient() {
     setError("");
     setNotice("");
     try {
-      const periodQuery = selectedPeriodKey
-        ? `?period=${encodeURIComponent(selectedPeriodKey)}`
-        : "";
+      const query = new URLSearchParams();
+      query.set("mode", "legacy");
+      if (selectedPeriodKey) {
+        query.set("period", selectedPeriodKey);
+      }
+
       const normalizeFilenameToken = (value: string | null | undefined, fallback: string) => {
         const text = (value ?? "")
           .trim()
-          .replace(/[\\/:*?"<>|]+/g, " ")
+          .replace(/[\/:*?"<>|]+/g, " ")
           .replace(/\s+/g, " ")
           .trim();
         return text.length > 0 ? text : fallback;
       };
       const employeeLabel = normalizeFilenameToken(
         reportData.employee?.name ?? reportData.report?.payload?.meta?.employeeName,
-        "임직원"
+        "직원"
       );
       const periodLabel = normalizeFilenameToken(
         selectedPeriodKey ||
@@ -563,14 +585,23 @@ export default function EmployeeReportClient() {
           reportData.report?.payload?.meta?.periodKey,
         "최근"
       );
-      const fallbackPdfName = `웰니스박스_건강레포트_${employeeLabel}_${periodLabel}.pdf`;
+      const fallbackPdfName =
+        "웰니스박스_건강리포트_" +
+        employeeLabel +
+        "_" +
+        periodLabel +
+        ".pdf";
       await downloadPdf(
-        `/api/b2b/employee/report/export/pdf${periodQuery}`,
+        "/api/b2b/employee/report/export/pdf?" + query.toString(),
         fallbackPdfName
       );
       setNotice("기존 PDF 엔진 다운로드가 완료되었습니다.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "기존 PDF 다운로드에 실패했습니다.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "기존 PDF 다운로드에 실패했습니다."
+      );
     } finally {
       endBusy();
     }
@@ -737,6 +768,7 @@ export default function EmployeeReportClient() {
                 ref={webReportCaptureRef}
                 className={styles.reportCaptureSurface}
                 data-testid="report-capture-surface"
+                data-report-pdf-parity="1"
               >
                 <ReportSummaryCards payload={reportData.report.payload} viewerMode="employee" />
               </div>

@@ -18,8 +18,7 @@
   margin: 0 auto;
   padding: 22px 16px 72px;
   color: var(--ink-1);
-  font-family: "Pretendard Variable", "Noto Sans KR", "Apple SD Gothic Neo",
-    sans-serif;
+  font-family: inherit;
   background:
     radial-gradient(circle at 95% -8%, rgba(49, 130, 246, 0.12), transparent 38%),
     radial-gradient(circle at -6% 108%, rgba(16, 185, 129, 0.1), transparent 32%),
@@ -2070,6 +2069,12 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.skeletonRow > * {
+  max-width: 100%;
 }
 
 .skeletonBlock {
@@ -2101,18 +2106,19 @@
 
 .skeletonLine {
   height: 14px;
-  width: min(520px, 74%);
+  width: min(100%, 420px);
 }
 
 .skeletonLineShort {
   height: 12px;
-  width: min(360px, 48%);
+  width: min(100%, 280px);
 }
 
 .skeletonPill {
   height: 24px;
-  width: 96px;
+  width: min(100%, 96px);
   border-radius: 999px;
+  flex: 0 1 auto;
 }
 
 .chip,
@@ -2333,6 +2339,15 @@
 .reportDocument {
   display: grid;
   gap: 0;
+  font-family:
+    "Malgun Gothic",
+    "Apple SD Gothic Neo",
+    "Segoe UI",
+    "Noto Sans KR",
+    sans-serif;
+  font-kerning: normal;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
 }
 
 .reportSheet {
@@ -3118,6 +3133,34 @@
 
   .reportCaptureSurface {
     width: 100%;
+  }
+
+  [data-report-pdf-parity="1"] .reportTopGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  [data-report-pdf-parity="1"] .reportSecondGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  [data-report-pdf-parity="1"] .reportSheet {
+    aspect-ratio: 194 / 281;
+    border-radius: 0;
+    padding: 16px 16px 14px;
+  }
+
+  [data-report-pdf-parity="1"] .reportSheetFirst {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  [data-report-pdf-parity="1"] .reportSheetSecond {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+  [data-report-pdf-parity="1"] .reportBlockTitle {
+    font-size: 16px;
   }
 
   .reportCanvasHeader {

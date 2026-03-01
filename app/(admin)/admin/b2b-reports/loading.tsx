@@ -13,18 +13,18 @@ export default function AdminB2bReportsLoading() {
             className={`${styles.skeletonLineShort} ${styles.skeletonBlock}`}
             style={{ width: "68%" }}
           />
-          <div className={styles.skeletonRow}>
+          <div className={styles.reportHeroSearchRow}>
             <span
               className={`${styles.skeletonBlock}`}
-              style={{ width: "min(340px, 100%)", height: 44, borderRadius: 12 }}
+              style={{ width: "100%", height: 44, borderRadius: 12 }}
             />
             <span
               className={`${styles.skeletonPill} ${styles.skeletonBlock}`}
-              style={{ width: 86, height: 38 }}
+              style={{ width: "100%", maxWidth: 90, height: 38 }}
             />
             <span
               className={`${styles.skeletonPill} ${styles.skeletonBlock}`}
-              style={{ width: 102, height: 38 }}
+              style={{ width: "100%", maxWidth: 116, height: 38 }}
             />
           </div>
         </header>

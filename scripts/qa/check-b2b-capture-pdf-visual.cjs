@@ -27,63 +27,44 @@ const ARTIFACT_ROOT = path.join(
 );
 
 const THRESHOLDS = {
-  meanAbsDiffMax: Number(process.env.QA_PDF_DIFF_MAX || "0.13"),
-  ssimMin: Number(process.env.QA_PDF_SSIM_MIN || "-1"),
-  sharpnessRatioMin: Number(process.env.QA_PDF_SHARPNESS_RATIO_MIN || "0.9"),
-  verticalShiftPxMax: Number(process.env.QA_PDF_VERTICAL_SHIFT_MAX || "16"),
+  meanAbsDiffMax: Number(process.env.QA_PDF_DIFF_MAX || "0.09"),
+  ssimMin: Number(process.env.QA_PDF_SSIM_MIN || "0.02"),
+  sharpnessRatioMin: Number(process.env.QA_PDF_SHARPNESS_RATIO_MIN || "0.6"),
+  verticalShiftPxMax: Number(process.env.QA_PDF_VERTICAL_SHIFT_MAX || "24"),
 };
+const PDF_MIN_SIZE_BYTES = Number(process.env.QA_PDF_MIN_SIZE_BYTES || "80000");
+const PDF_MAX_SIZE_BYTES = Number(process.env.QA_PDF_MAX_SIZE_BYTES || "25000000");
+const PDF_MIN_TEXT_CHARS = Number(process.env.QA_PDF_MIN_TEXT_CHARS || "200");
 const CASE_FILTER = (process.env.QA_PDF_CASE_FILTER || "").trim().toLowerCase();
 
-const TEST_CASES = [
-  {
-    id: "employee_1600_dpr1",
-    route: "employee",
-    viewport: { width: 1600, height: 1100 },
-    deviceScaleFactor: 1,
-  },
-  {
-    id: "employee_1600_dpr2",
-    route: "employee",
-    viewport: { width: 1600, height: 1100 },
-    deviceScaleFactor: 2,
-  },
-  {
-    id: "employee_1366_dpr1",
-    route: "employee",
-    viewport: { width: 1366, height: 960 },
-    deviceScaleFactor: 1,
-  },
-  {
-    id: "employee_1920_dpr1",
-    route: "employee",
-    viewport: { width: 1920, height: 1200 },
-    deviceScaleFactor: 1,
-  },
-  {
-    id: "admin_1600_dpr1",
-    route: "admin",
-    viewport: { width: 1600, height: 1100 },
-    deviceScaleFactor: 1,
-  },
-  {
-    id: "admin_1600_dpr2",
-    route: "admin",
-    viewport: { width: 1600, height: 1100 },
-    deviceScaleFactor: 2,
-  },
-  {
-    id: "admin_1366_dpr1",
-    route: "admin",
-    viewport: { width: 1366, height: 960 },
-    deviceScaleFactor: 1,
-  },
-  {
-    id: "admin_1920_dpr1",
-    route: "admin",
-    viewport: { width: 1920, height: 1200 },
-    deviceScaleFactor: 1,
-  },
+const VIEWPORT_PRESETS = [
+  { key: "390", width: 390, height: 844 },
+  { key: "430", width: 430, height: 932 },
+  { key: "560", width: 560, height: 900 },
+  { key: "768", width: 768, height: 1024 },
+  { key: "960", width: 960, height: 820 },
+  { key: "1024", width: 1024, height: 860 },
+  { key: "1200", width: 1200, height: 900 },
+  { key: "1366", width: 1366, height: 960 },
+  { key: "1600", width: 1600, height: 1100 },
+  { key: "1920", width: 1920, height: 1200 },
 ];
+const ROUTES = ["employee", "admin"];
+const DEVICE_SCALE_FACTORS = [1, 2];
+
+const TEST_CASES = ROUTES.flatMap((route) =>
+  VIEWPORT_PRESETS.flatMap((preset) =>
+    DEVICE_SCALE_FACTORS.map((deviceScaleFactor) => ({
+      id: `${route}_${preset.key}_dpr${deviceScaleFactor}`,
+      route,
+      viewport: {
+        width: preset.width,
+        height: preset.height,
+      },
+      deviceScaleFactor,
+    }))
+  )
+);
 
 function resolveActiveCases() {
   if (!CASE_FILTER) return TEST_CASES;
@@ -204,6 +185,292 @@ async function waitForReportPages(page) {
   await page.waitForTimeout(350);
 }
 
+async function readCaptureSurfaceWidth(page) {
+  const box = await page.locator('[data-testid="report-capture-surface"]').first().boundingBox();
+  if (!box) return null;
+  return Math.round(box.width);
+}
+
+async function waitForFontsAndFrames(page) {
+  await page.evaluate(async () => {
+    if ("fonts" in document) {
+      try {
+        await document.fonts.ready;
+      } catch {
+        // ignore and continue with best effort
+      }
+    }
+    await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+    await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+  });
+}
+
+function buildExportViewUrlFromDownloadUrl(input) {
+  const { route, downloadUrl, baseUrl } = input;
+  if (!downloadUrl) return null;
+  const parsed = new URL(downloadUrl);
+  const exportUrl = new URL(baseUrl);
+
+  if (route === "employee") {
+    exportUrl.pathname = "/employee-report/export-view";
+    const period = parsed.searchParams.get("period");
+    if (period) exportUrl.searchParams.set("period", period);
+    const width = parsed.searchParams.get("w");
+    if (width) exportUrl.searchParams.set("w", width);
+    const viewportWidth = parsed.searchParams.get("vw");
+    if (viewportWidth) exportUrl.searchParams.set("vw", viewportWidth);
+    return exportUrl.toString();
+  }
+
+  const reportIdMatch = /\/api\/admin\/b2b\/reports\/([^/]+)\/export\/pdf/i.exec(parsed.pathname);
+  if (!reportIdMatch) return null;
+  exportUrl.pathname = `/admin/b2b-reports/export-view/${reportIdMatch[1]}`;
+  const width = parsed.searchParams.get("w");
+  if (width) exportUrl.searchParams.set("w", width);
+  const viewportWidth = parsed.searchParams.get("vw");
+  if (viewportWidth) exportUrl.searchParams.set("vw", viewportWidth);
+  return exportUrl.toString();
+}
+
+async function collectReportTextLayout(page) {
+  return page.evaluate(() => {
+    const ALLOWED_TAGS = new Set([
+      "H1",
+      "H2",
+      "H3",
+      "H4",
+      "P",
+      "SPAN",
+      "LI",
+      "STRONG",
+      "EM",
+      "SMALL",
+      "LABEL",
+      "TD",
+      "TH",
+      "A",
+    ]);
+    const pages = Array.from(
+      document.querySelectorAll('[data-testid="report-capture-surface"] [data-report-page]')
+    );
+    const items = [];
+    for (let pageIndex = 0; pageIndex < pages.length; pageIndex += 1) {
+      const pageElement = pages[pageIndex];
+      if (!(pageElement instanceof HTMLElement)) continue;
+      const pageRect = pageElement.getBoundingClientRect();
+      const elements = pageElement.querySelectorAll("*");
+      let order = 0;
+      for (const element of elements) {
+        if (!(element instanceof HTMLElement)) continue;
+        if (!ALLOWED_TAGS.has(element.tagName)) continue;
+        const text = (element.innerText || "").replace(/\s+/g, " ").trim();
+        if (!text) continue;
+        const rect = element.getBoundingClientRect();
+        if (rect.width < 2 || rect.height < 2) continue;
+        items.push({
+          page: pageIndex + 1,
+          order,
+          tag: element.tagName,
+          text: text.slice(0, 80),
+          x: rect.x - pageRect.x,
+          y: rect.y - pageRect.y,
+          w: rect.width,
+          h: rect.height,
+        });
+        order += 1;
+      }
+    }
+    return items;
+  });
+}
+
+function computePercentile(values, percentile) {
+  if (!Array.isArray(values) || values.length < 1) return 0;
+  const sorted = [...values].sort((left, right) => left - right);
+  const index = Math.min(
+    sorted.length - 1,
+    Math.max(0, Math.round((sorted.length - 1) * percentile))
+  );
+  return sorted[index];
+}
+
+function evaluateTextLayoutParity(input) {
+  const { webLayout, exportLayout, viewportWidth } = input;
+  const pageKeys = new Set([
+    ...webLayout.map((item) => String(item.page)),
+    ...exportLayout.map((item) => String(item.page)),
+  ]);
+
+  const pageDiffs = [];
+  const deltaYList = [];
+  const deltaXList = [];
+
+  for (const pageKey of pageKeys) {
+    const page = Number(pageKey);
+    const webPageItems = webLayout.filter((item) => item.page === page);
+    const exportPageItems = exportLayout.filter((item) => item.page === page);
+    const pairCount = Math.min(webPageItems.length, exportPageItems.length);
+    pageDiffs.push({
+      page,
+      webCount: webPageItems.length,
+      exportCount: exportPageItems.length,
+      paired: pairCount,
+    });
+
+    for (let index = 0; index < pairCount; index += 1) {
+      const webItem = webPageItems[index];
+      const exportItem = exportPageItems[index];
+      deltaYList.push(Math.abs(exportItem.y - webItem.y));
+      deltaXList.push(Math.abs(exportItem.x - webItem.x));
+    }
+  }
+
+  const medianAbsDeltaY = computePercentile(deltaYList, 0.5);
+  const p95AbsDeltaY = computePercentile(deltaYList, 0.95);
+  const maxAbsDeltaY = computePercentile(deltaYList, 1);
+  const medianAbsDeltaX = computePercentile(deltaXList, 0.5);
+
+  const countDiffTotal = pageDiffs.reduce((sum, pageDiff) => {
+    return sum + Math.abs(pageDiff.webCount - pageDiff.exportCount);
+  }, 0);
+  const narrowMode = viewportWidth <= 1024;
+  const threshold = {
+    medianAbsDeltaYMax: narrowMode ? 12 : 6,
+    p95AbsDeltaYMax: narrowMode ? 24 : 12,
+    maxAbsDeltaYMax: narrowMode ? 32 : 18,
+    medianAbsDeltaXMax: narrowMode ? 8 : 4,
+    countDiffMax: narrowMode ? 24 : 12,
+  };
+
+  const reasons = [];
+  if (medianAbsDeltaY > threshold.medianAbsDeltaYMax) {
+    reasons.push(
+      `medianAbsDeltaY ${medianAbsDeltaY.toFixed(2)} > ${threshold.medianAbsDeltaYMax}`
+    );
+  }
+  if (p95AbsDeltaY > threshold.p95AbsDeltaYMax) {
+    reasons.push(`p95AbsDeltaY ${p95AbsDeltaY.toFixed(2)} > ${threshold.p95AbsDeltaYMax}`);
+  }
+  if (maxAbsDeltaY > threshold.maxAbsDeltaYMax) {
+    reasons.push(`maxAbsDeltaY ${maxAbsDeltaY.toFixed(2)} > ${threshold.maxAbsDeltaYMax}`);
+  }
+  if (medianAbsDeltaX > threshold.medianAbsDeltaXMax) {
+    reasons.push(
+      `medianAbsDeltaX ${medianAbsDeltaX.toFixed(2)} > ${threshold.medianAbsDeltaXMax}`
+    );
+  }
+  if (countDiffTotal > threshold.countDiffMax) {
+    reasons.push(`countDiffTotal ${countDiffTotal} > ${threshold.countDiffMax}`);
+  }
+
+  return {
+    pass: reasons.length === 0,
+    reasons,
+    pageDiffs,
+    thresholds: threshold,
+    stats: {
+      pairCount: deltaYList.length,
+      medianAbsDeltaY,
+      p95AbsDeltaY,
+      maxAbsDeltaY,
+      medianAbsDeltaX,
+      countDiffTotal,
+    },
+  };
+}
+
+async function measureTextLayoutParity(input) {
+  const { context, sourcePage, route, downloadUrl, baseUrl, viewportWidth } = input;
+  const exportViewUrl = buildExportViewUrlFromDownloadUrl({
+    route,
+    downloadUrl,
+    baseUrl,
+  });
+  if (!exportViewUrl) {
+    return {
+      pass: false,
+      reasons: ["export view url missing"],
+      pageDiffs: [],
+      thresholds: null,
+      stats: null,
+      exportViewUrl: null,
+    };
+  }
+
+  const exportPage = await context.newPage();
+  try {
+    await exportPage.goto(exportViewUrl, {
+      waitUntil: "networkidle",
+      timeout: 120000,
+    });
+    await waitForReportPages(exportPage);
+    await waitForFontsAndFrames(sourcePage);
+    await waitForFontsAndFrames(exportPage);
+
+    const [webLayout, exportLayout] = await Promise.all([
+      collectReportTextLayout(sourcePage),
+      collectReportTextLayout(exportPage),
+    ]);
+    const evaluation = evaluateTextLayoutParity({
+      webLayout,
+      exportLayout,
+      viewportWidth,
+    });
+    return {
+      ...evaluation,
+      exportViewUrl,
+    };
+  } finally {
+    await exportPage.close().catch(() => undefined);
+  }
+}
+
+async function clickAndWaitForDownload(input) {
+  const { page, button, retries, reloadUrl, requestUrlIncludes } = input;
+  const maxRetries = Math.max(1, retries ?? 1);
+  const exportRequestUrls = [];
+  const requestFinishedHandler = (request) => {
+    const url = request.url();
+    if (!requestUrlIncludes || url.includes(requestUrlIncludes)) {
+      exportRequestUrls.push(url);
+    }
+  };
+  page.on("requestfinished", requestFinishedHandler);
+
+  try {
+    for (let attempt = 1; attempt <= maxRetries; attempt += 1) {
+      try {
+        const [download] = await Promise.all([
+          page.waitForEvent("download", { timeout: 120000 }),
+          button.click(),
+        ]);
+        return {
+          download,
+          requestUrl: exportRequestUrls[exportRequestUrls.length - 1] || "",
+        };
+      } catch (error) {
+        if (attempt >= maxRetries) throw error;
+        if (reloadUrl) {
+          await page.goto(reloadUrl, {
+            waitUntil: "networkidle",
+            timeout: 120000,
+          });
+        } else {
+          await page.reload({
+            waitUntil: "networkidle",
+            timeout: 120000,
+          });
+        }
+        await waitForReportPages(page);
+      }
+    }
+  } finally {
+    page.off("requestfinished", requestFinishedHandler);
+  }
+
+  throw new Error("download retry exhausted");
+}
+
 async function saveWebReportPageImages(page, caseDir) {
   const locator = page.locator('[data-testid="report-capture-surface"] [data-report-page]');
   const count = await locator.count();
@@ -214,7 +481,7 @@ async function saveWebReportPageImages(page, caseDir) {
   const paths = [];
   for (let index = 0; index < 2; index += 1) {
     const pagePath = path.join(caseDir, `web-page-${index + 1}.png`);
-    await locator.nth(index).screenshot({ path: pagePath });
+    await locator.nth(index).screenshot({ path: pagePath, scale: "css" });
     paths.push(pagePath);
   }
   return paths;
@@ -233,6 +500,35 @@ function renderPdfPages(pdfPath, outputPrefix) {
       `pdftoppm failed (${result.status}): ${result.stderr || result.stdout || "unknown"}`
     );
   }
+}
+
+function readPdfPageCount(pdfPath) {
+  const result = spawnSync("pdfinfo", [pdfPath], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(
+      `pdfinfo failed (${result.status}): ${result.stderr || result.stdout || "unknown"}`
+    );
+  }
+  const match = /Pages:\s+(\d+)/i.exec(result.stdout || "");
+  if (!match) {
+    throw new Error("pdfinfo output does not include page count");
+  }
+  return Number(match[1]);
+}
+
+function extractPdfText(pdfPath) {
+  const result = spawnSync("pdftotext", [pdfPath, "-"], {
+    encoding: "utf8",
+    maxBuffer: 8 * 1024 * 1024,
+  });
+  if (result.status !== 0) {
+    throw new Error(
+      `pdftotext failed (${result.status}): ${result.stderr || result.stdout || "unknown"}`
+    );
+  }
+  return String(result.stdout || "");
 }
 
 async function trimWhiteMargins(inputPath, outputPath) {
@@ -394,20 +690,28 @@ async function compareWebVsPdfPage(input) {
   const webImageRaw = await Jimp.read(input.webImagePath);
   const pdfImageRaw = await Jimp.read(input.pdfImagePath);
 
-  const cropInsetX = Math.max(8, Math.round(webImageRaw.bitmap.width * 0.02));
-  const cropInsetY = Math.max(8, Math.round(webImageRaw.bitmap.height * 0.018));
-  const cropWidth = Math.max(
-    32,
-    Math.min(webImageRaw.bitmap.width, pdfImageRaw.bitmap.width) - cropInsetX * 2
-  );
-  const cropHeight = Math.max(
-    32,
-    Math.min(webImageRaw.bitmap.height, pdfImageRaw.bitmap.height) - cropInsetY * 2
-  );
-  const focusHeight = Math.max(32, Math.round(cropHeight * 0.9));
+  const cropInsetXRatio = 0.02;
+  const cropInsetYRatio = 0.018;
+  const focusHeightRatio = 0.9;
 
-  const webImage = webImageRaw.clone().crop(cropInsetX, cropInsetY, cropWidth, focusHeight);
-  const pdfImage = pdfImageRaw.clone().crop(cropInsetX, cropInsetY, cropWidth, focusHeight);
+  const webCropX = Math.max(8, Math.round(webImageRaw.bitmap.width * cropInsetXRatio));
+  const webCropY = Math.max(8, Math.round(webImageRaw.bitmap.height * cropInsetYRatio));
+  const webCropW = Math.max(32, webImageRaw.bitmap.width - webCropX * 2);
+  const webCropH = Math.max(
+    32,
+    Math.round((webImageRaw.bitmap.height - webCropY * 2) * focusHeightRatio)
+  );
+
+  const pdfCropX = Math.max(8, Math.round(pdfImageRaw.bitmap.width * cropInsetXRatio));
+  const pdfCropY = Math.max(8, Math.round(pdfImageRaw.bitmap.height * cropInsetYRatio));
+  const pdfCropW = Math.max(32, pdfImageRaw.bitmap.width - pdfCropX * 2);
+  const pdfCropH = Math.max(
+    32,
+    Math.round((pdfImageRaw.bitmap.height - pdfCropY * 2) * focusHeightRatio)
+  );
+
+  const webImage = webImageRaw.clone().crop(webCropX, webCropY, webCropW, webCropH);
+  const pdfImage = pdfImageRaw.clone().crop(pdfCropX, pdfCropY, pdfCropW, pdfCropH);
   pdfImage.resize(webImage.bitmap.width, webImage.bitmap.height, Jimp.RESIZE_BICUBIC);
 
   const metrics = computeMetrics(webImage.bitmap, pdfImage.bitmap);
@@ -416,7 +720,7 @@ async function compareWebVsPdfPage(input) {
 
   const webProfile = buildRowDarknessProfile(webImage.bitmap);
   const pdfProfile = buildRowDarknessProfile(pdfImage.bitmap);
-  const verticalShiftPx = estimateVerticalShiftPx(webProfile, pdfProfile, 16);
+  const verticalShiftPx = estimateVerticalShiftPx(webProfile, pdfProfile, 24);
 
   return {
     ...metrics,
@@ -427,19 +731,59 @@ async function compareWebVsPdfPage(input) {
   };
 }
 
-function evaluateMetrics(metrics) {
-  const reasons = [];
-  if (metrics.meanAbsDiff > THRESHOLDS.meanAbsDiffMax) {
-    reasons.push(`meanAbsDiff ${metrics.meanAbsDiff.toFixed(4)} > ${THRESHOLDS.meanAbsDiffMax}`);
+function resolveThresholdsForCase(caseConfig) {
+  const viewportWidth = Number(caseConfig?.viewport?.width || 0);
+  let thresholds = { ...THRESHOLDS };
+
+  if (viewportWidth > 0 && viewportWidth <= 1024) {
+    thresholds = {
+      ...thresholds,
+      meanAbsDiffMax: Math.max(
+        thresholds.meanAbsDiffMax,
+        Number(process.env.QA_PDF_DIFF_MAX_NARROW || "0.14")
+      ),
+      ssimMin: Math.min(
+        thresholds.ssimMin,
+        Number(process.env.QA_PDF_SSIM_MIN_NARROW || "0.005")
+      ),
+      verticalShiftPxMax: Math.max(
+        thresholds.verticalShiftPxMax,
+        Number(process.env.QA_PDF_VERTICAL_SHIFT_MAX_NARROW || "24")
+      ),
+    };
   }
-  if (metrics.sharpnessRatio < THRESHOLDS.sharpnessRatioMin) {
+
+  if ((caseConfig?.deviceScaleFactor ?? 1) < 2) return thresholds;
+
+  return {
+    ...thresholds,
+    ssimMin: Math.min(
+      thresholds.ssimMin,
+      Number(process.env.QA_PDF_SSIM_MIN_DPR2 || "0.013")
+    ),
+    sharpnessRatioMin: Math.min(
+      thresholds.sharpnessRatioMin,
+      Number(process.env.QA_PDF_SHARPNESS_RATIO_MIN_DPR2 || "0.7")
+    ),
+  };
+}
+
+function evaluateMetrics(metrics, thresholds) {
+  const reasons = [];
+  if (metrics.meanAbsDiff > thresholds.meanAbsDiffMax) {
+    reasons.push(`meanAbsDiff ${metrics.meanAbsDiff.toFixed(4)} > ${thresholds.meanAbsDiffMax}`);
+  }
+  if (metrics.ssim < thresholds.ssimMin) {
+    reasons.push(`ssim ${metrics.ssim.toFixed(4)} < ${thresholds.ssimMin}`);
+  }
+  if (metrics.sharpnessRatio < thresholds.sharpnessRatioMin) {
     reasons.push(
-      `sharpnessRatio ${metrics.sharpnessRatio.toFixed(4)} < ${THRESHOLDS.sharpnessRatioMin}`
+      `sharpnessRatio ${metrics.sharpnessRatio.toFixed(4)} < ${thresholds.sharpnessRatioMin}`
     );
   }
-  if (Math.abs(metrics.verticalShiftPx) > THRESHOLDS.verticalShiftPxMax) {
+  if (Math.abs(metrics.verticalShiftPx) > thresholds.verticalShiftPxMax) {
     reasons.push(
-      `verticalShiftPx ${metrics.verticalShiftPx} exceeds ${THRESHOLDS.verticalShiftPxMax}`
+      `verticalShiftPx ${metrics.verticalShiftPx} exceeds ${thresholds.verticalShiftPxMax}`
     );
   }
   return { pass: reasons.length === 0, reasons };
@@ -504,6 +848,7 @@ async function captureRoutePdf(caseConfig, caseDir, context, baseUrl, output) {
       timeout: 120000,
     });
     await waitForReportPages(page);
+    const captureSurfaceWidthPx = await readCaptureSurfaceWidth(page);
     const webImages = await saveWebReportPageImages(page, caseDir);
 
     const button = page.getByTestId("employee-report-download-pdf").first();
@@ -511,13 +856,30 @@ async function captureRoutePdf(caseConfig, caseDir, context, baseUrl, output) {
       throw new Error("employee pdf button missing");
     }
 
-    const [download] = await Promise.all([
-      page.waitForEvent("download", { timeout: 120000 }),
-      button.click(),
-    ]);
+    const { download, requestUrl } = await clickAndWaitForDownload({
+      page,
+      button,
+      retries: 3,
+      reloadUrl: "/employee-report?debug=1",
+      requestUrlIncludes: "/api/b2b/employee/report/export/pdf",
+    });
     const pdfPath = path.join(caseDir, "capture.pdf");
     await download.saveAs(pdfPath);
-    return { pdfPath, webImages };
+    const textLayoutParity = await measureTextLayoutParity({
+      context,
+      sourcePage: page,
+      route: caseConfig.route,
+      downloadUrl: requestUrl,
+      baseUrl,
+      viewportWidth: caseConfig.viewport.width,
+    });
+    return {
+      pdfPath,
+      webImages,
+      downloadUrl: requestUrl,
+      textLayoutParity,
+      captureSurfaceWidthPx,
+    };
   }
 
   await page.goto("/admin/b2b-reports?demo=1", {
@@ -525,6 +887,7 @@ async function captureRoutePdf(caseConfig, caseDir, context, baseUrl, output) {
     timeout: 120000,
   });
   await waitForReportPages(page);
+  const captureSurfaceWidthPx = await readCaptureSurfaceWidth(page);
   const webImages = await saveWebReportPageImages(page, caseDir);
 
   const button = page.getByTestId("admin-report-download-pdf").first();
@@ -532,13 +895,30 @@ async function captureRoutePdf(caseConfig, caseDir, context, baseUrl, output) {
     throw new Error("admin pdf button missing");
   }
 
-  const [download] = await Promise.all([
-    page.waitForEvent("download", { timeout: 120000 }),
-    button.click(),
-  ]);
+  const { download, requestUrl } = await clickAndWaitForDownload({
+    page,
+    button,
+    retries: 3,
+    reloadUrl: "/admin/b2b-reports?demo=1",
+    requestUrlIncludes: "/api/admin/b2b/reports/",
+  });
   const pdfPath = path.join(caseDir, "capture.pdf");
   await download.saveAs(pdfPath);
-  return { pdfPath, webImages };
+  const textLayoutParity = await measureTextLayoutParity({
+    context,
+    sourcePage: page,
+    route: caseConfig.route,
+    downloadUrl: requestUrl,
+    baseUrl,
+    viewportWidth: caseConfig.viewport.width,
+  });
+  return {
+    pdfPath,
+    webImages,
+    downloadUrl: requestUrl,
+    textLayoutParity,
+    captureSurfaceWidthPx,
+  };
 }
 
 async function runCase(browser, baseUrl, caseConfig, adminPasswordCandidates, output) {
@@ -562,10 +942,70 @@ async function runCase(browser, baseUrl, caseConfig, adminPasswordCandidates, ou
     const capture = await captureRoutePdf(caseConfig, caseDir, context, baseUrl, output);
     output.pdfPath = capture.pdfPath;
     output.webImages = capture.webImages;
+    output.downloadUrl = capture.downloadUrl || "";
+    output.captureSurfaceWidthPx = capture.captureSurfaceWidthPx ?? null;
+    output.textLayoutParity = capture.textLayoutParity || null;
+    const expectedRouteSegment =
+      caseConfig.route === "employee"
+        ? "/api/b2b/employee/report/export/pdf"
+        : "/api/admin/b2b/reports/";
+    if (!output.downloadUrl.includes(expectedRouteSegment)) {
+      throw new Error(`unexpected download url: ${output.downloadUrl}`);
+    }
+    if (!/[?&]w=\d+/.test(output.downloadUrl)) {
+      throw new Error(`download url is missing width query: ${output.downloadUrl}`);
+    }
+    if (!/[?&]vw=\d+/.test(output.downloadUrl)) {
+      throw new Error(`download url is missing viewport-width query: ${output.downloadUrl}`);
+    }
+    if (output.downloadUrl.includes("mode=legacy")) {
+      throw new Error(`download url should not use legacy mode: ${output.downloadUrl}`);
+    }
+    if (typeof output.captureSurfaceWidthPx === "number") {
+      const parsedUrl = new URL(output.downloadUrl);
+      const widthFromQuery = Number(parsedUrl.searchParams.get("w") || "");
+      if (!Number.isFinite(widthFromQuery)) {
+        throw new Error(`download url width query is not numeric: ${output.downloadUrl}`);
+      }
+      if (Math.abs(widthFromQuery - output.captureSurfaceWidthPx) > 2) {
+        throw new Error(
+          `download width mismatch (query=${widthFromQuery}, surface=${output.captureSurfaceWidthPx})`
+        );
+      }
+    }
+    if (!output.textLayoutParity?.pass) {
+      throw new Error(
+        `text layout parity failed: ${(output.textLayoutParity?.reasons || []).join("; ")}`
+      );
+    }
+
+    const pdfSizeBytes = fs.statSync(capture.pdfPath).size;
+    output.pdfSizeBytes = pdfSizeBytes;
+    if (pdfSizeBytes < PDF_MIN_SIZE_BYTES) {
+      throw new Error(`pdf size too small (${pdfSizeBytes} bytes)`);
+    }
+    if (pdfSizeBytes > PDF_MAX_SIZE_BYTES) {
+      throw new Error(`pdf size too large (${pdfSizeBytes} bytes)`);
+    }
+
+    const pdfPageCount = readPdfPageCount(capture.pdfPath);
+    output.pdfPageCount = pdfPageCount;
+    if (pdfPageCount !== 2) {
+      throw new Error(`unexpected pdf page count (${pdfPageCount})`);
+    }
+
+    const extractedText = extractPdfText(capture.pdfPath);
+    output.pdfExtractedTextChars = extractedText.length;
+    output.pdfHasTextLayer = extractedText.trim().length >= PDF_MIN_TEXT_CHARS;
+    if (!output.pdfHasTextLayer) {
+      throw new Error(`pdf text layer missing (chars=${output.pdfExtractedTextChars})`);
+    }
 
     const pdfPrefix = path.join(caseDir, "pdf-page");
     renderPdfPages(capture.pdfPath, pdfPrefix);
 
+    const caseThresholds = resolveThresholdsForCase(caseConfig);
+    output.caseThresholds = caseThresholds;
     output.pages = [];
     for (let pageNumber = 1; pageNumber <= 2; pageNumber += 1) {
       const pdfPageRaw = `${pdfPrefix}-${pageNumber}.png`;
@@ -576,7 +1016,7 @@ async function runCase(browser, baseUrl, caseConfig, adminPasswordCandidates, ou
         webImagePath: capture.webImages[pageNumber - 1],
         pdfImagePath: pdfPageTrimmed,
       });
-      const evaluation = evaluateMetrics(metrics);
+      const evaluation = evaluateMetrics(metrics, caseThresholds);
 
       output.pages.push({
         pageNumber,

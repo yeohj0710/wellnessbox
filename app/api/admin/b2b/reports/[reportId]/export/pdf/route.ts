@@ -7,6 +7,6 @@ export const runtime = "nodejs";
 
 type RouteContext = B2bReportRouteContext;
 
-export async function GET(_req: Request, ctx: RouteContext) {
-  return runAdminReportPdfGetRoute(ctx);
+export async function GET(req: Request, ctx: RouteContext) {
+  return runAdminReportPdfGetRoute(req, ctx);
 }
