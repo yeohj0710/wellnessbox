@@ -15,6 +15,9 @@ const MAX_PDF_DEVICE_SCALE_FACTOR = 2;
 const DEFAULT_PDF_MAX_BYTES = 15 * 1024 * 1024;
 const MIN_PDF_MAX_BYTES = 2 * 1024 * 1024;
 const MAX_PDF_MAX_BYTES = 80 * 1024 * 1024;
+const DEFAULT_PDF_PAGE_MARGIN_PX = 40;
+const MIN_PDF_PAGE_MARGIN_PX = 0;
+const MAX_PDF_PAGE_MARGIN_PX = 160;
 const MIN_REPORT_PAGE_SIZE_PX = 240;
 const MAX_REPORT_PAGE_SIZE_PX = 8192;
 const REPORT_PAGE_SIZE_PADDING_PX = 2;
@@ -89,6 +92,14 @@ function resolvePdfMaxBytes() {
   return Math.min(MAX_PDF_MAX_BYTES, Math.max(MIN_PDF_MAX_BYTES, Math.round(parsed)));
 }
 
+function resolvePdfPageMarginPx() {
+  const raw = (process.env.B2B_PDF_PAGE_MARGIN_PX || "").trim();
+  if (!/^\d{1,3}$/.test(raw)) return DEFAULT_PDF_PAGE_MARGIN_PX;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed)) return DEFAULT_PDF_PAGE_MARGIN_PX;
+  return Math.min(MAX_PDF_PAGE_MARGIN_PX, Math.max(MIN_PDF_PAGE_MARGIN_PX, Math.round(parsed)));
+}
+
 function clampReportPageSizePx(value: number, fallback: number) {
   if (!Number.isFinite(value)) return fallback;
   const rounded = Math.round(value);
@@ -152,8 +163,18 @@ async function resolveReportPageSize(page: any) {
 
 async function applyPdfRenderOverrides(
   page: any,
-  reportPageSize: { widthPx: number; heightPx: number }
+  reportPageSize: { widthPx: number; heightPx: number },
+  pageMarginPx: number
 ) {
+  const pageWidthPx = clampReportPageSizePx(
+    reportPageSize.widthPx + pageMarginPx * 2,
+    reportPageSize.widthPx
+  );
+  const pageHeightPx = clampReportPageSizePx(
+    reportPageSize.heightPx + pageMarginPx * 2,
+    reportPageSize.heightPx
+  );
+
   await page.evaluate(() => {
     const exportRoot = document.querySelector<HTMLElement>('[data-report-export-root="1"]');
     if (!exportRoot) return;
@@ -164,13 +185,13 @@ async function applyPdfRenderOverrides(
   await page.addStyleTag({
     content: `
       @page {
-        size: ${reportPageSize.widthPx}px ${reportPageSize.heightPx}px;
+        size: ${pageWidthPx}px ${pageHeightPx}px;
         margin: 0;
       }
 
       html, body {
-        width: ${reportPageSize.widthPx}px !important;
-        min-width: ${reportPageSize.widthPx}px !important;
+        width: ${pageWidthPx}px !important;
+        min-width: ${pageWidthPx}px !important;
         margin: 0 !important;
         padding: 0 !important;
         background: #ffffff !important;
@@ -182,22 +203,23 @@ async function applyPdfRenderOverrides(
       }
 
       [data-report-export-root="1"] {
-        width: ${reportPageSize.widthPx}px !important;
-        min-width: ${reportPageSize.widthPx}px !important;
+        width: ${pageWidthPx}px !important;
+        min-width: ${pageWidthPx}px !important;
         min-height: 0 !important;
         margin: 0 !important;
         padding: 0 !important;
       }
 
       [data-testid="report-capture-surface"] {
-        width: ${reportPageSize.widthPx}px !important;
-        max-width: ${reportPageSize.widthPx}px !important;
+        width: ${pageWidthPx}px !important;
+        max-width: ${pageWidthPx}px !important;
         margin: 0 !important;
       }
 
       [data-report-export-root="1"] [data-testid="report-capture-surface"] [data-report-page] {
         width: ${reportPageSize.widthPx}px !important;
         max-width: ${reportPageSize.widthPx}px !important;
+        margin: ${pageMarginPx}px auto !important;
         break-before: auto !important;
         page-break-before: auto !important;
         break-after: auto !important;
@@ -287,7 +309,8 @@ async function capturePdfFromWebRoute(input: {
       });
       await page.emulateMedia({ media: "screen" });
       const reportPageSize = await resolveReportPageSize(page);
-      await applyPdfRenderOverrides(page, reportPageSize);
+      const pageMarginPx = resolvePdfPageMarginPx();
+      await applyPdfRenderOverrides(page, reportPageSize, pageMarginPx);
       await waitForFontsAndFrames(page);
       const pdfBuffer = await buildPdfFromWebPage(page);
       return {
