@@ -38,10 +38,7 @@ function nodeToText(slide: PptxGenJS.Slide, node: LayoutNode) {
 
 async function loadPlaywrightModule() {
   try {
-    const dynamicImport = new Function("moduleName", "return import(moduleName);") as (
-      moduleName: string
-    ) => Promise<any>;
-    return await dynamicImport("playwright");
+    return await import("playwright");
   } catch {
     return null;
   }

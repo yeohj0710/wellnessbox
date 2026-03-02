@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { usePathname } from "next/navigation";
 
 const AppBackHandler = dynamic(() => import("./appBackHandler"), {
   ssr: false,
@@ -30,7 +31,18 @@ const RouteScrollPolicy = dynamic(() => import("./routeScrollPolicy"), {
   ssr: false,
 });
 
+function isPdfExportViewPath(pathname: string | null) {
+  if (!pathname) return false;
+  if (pathname === "/employee-report/export-view") return true;
+  return pathname.startsWith("/admin/b2b-reports/export-view/");
+}
+
 export default function RootLayoutEnhancers() {
+  const pathname = usePathname();
+  if (isPdfExportViewPath(pathname)) {
+    return null;
+  }
+
   return (
     <>
       <RouteChangeLoading />
