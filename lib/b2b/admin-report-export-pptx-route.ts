@@ -5,6 +5,7 @@ import {
   requireAdminReport,
   type B2bReportRouteContext,
 } from "@/lib/b2b/admin-report-route";
+import { isReportExportEngineUnavailableReason } from "@/lib/b2b/export/engine-error";
 import { logB2bAdminAction } from "@/lib/b2b/employee-service";
 import { runB2bReportExport } from "@/lib/b2b/report-service";
 import { resolveDbRouteError } from "@/lib/server/db-error";
@@ -14,6 +15,15 @@ const LAYOUT_VALIDATION_FAILED_ERROR =
   "\uB808\uC774\uC544\uC6C3 \uAC80\uC99D\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.";
 const PPTX_EXPORT_FAILED_ERROR =
   "PPTX \uC0DD\uC131 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694.";
+const PPTX_ENGINE_MISSING_ERROR =
+  "PPTX \uCD94\uCD9C \uC5D4\uC9C4\uC744 \uC0AC\uC6A9\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. Playwright \uD658\uACBD\uC744 \uD655\uC778\uD574 \uC8FC\uC138\uC694.";
+
+function toErrorReason(error: unknown) {
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+  return String(error ?? "");
+}
 
 export async function runAdminReportPptxExport(input: {
   reportId: string;
@@ -68,6 +78,32 @@ export async function runAdminReportPptxExport(input: {
     });
   } catch (error) {
     const debugId = randomUUID();
+    const reason = toErrorReason(error);
+
+    await logB2bAdminAction({
+      employeeId: input.employeeId,
+      action: "report_export_pptx_failed",
+      actorTag: "admin",
+      payload: {
+        debugId,
+        reportId: input.reportId,
+        reason,
+      },
+    }).catch(() => undefined);
+
+    if (isReportExportEngineUnavailableReason(reason)) {
+      return noStoreJson(
+        {
+          ok: false,
+          code: "PPTX_ENGINE_MISSING",
+          reason: reason || "pptx_engine_missing",
+          debugId,
+          error: PPTX_ENGINE_MISSING_ERROR,
+        },
+        501
+      );
+    }
+
     const dbError = resolveDbRouteError(error, PPTX_EXPORT_FAILED_ERROR);
     return noStoreJson(
       {

@@ -44,15 +44,39 @@ async function loadPlaywrightModule() {
   }
 }
 
+function toErrorReason(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+  return fallback;
+}
+
 function toPngDataUri(buffer: Buffer) {
   return `data:image/png;base64,${buffer.toString("base64")}`;
 }
 
-async function renderLayoutToPngDataUris(layout: LayoutDocument) {
-  const playwright = await loadPlaywrightModule();
-  if (!playwright?.chromium) return null;
+type RasterizedPagesResult =
+  | { ok: true; images: string[] }
+  | { ok: false; reason: string };
 
-  const browser = await playwright.chromium.launch({ headless: true });
+async function renderLayoutToPngDataUris(layout: LayoutDocument): Promise<RasterizedPagesResult> {
+  const playwright = await loadPlaywrightModule();
+  if (!playwright?.chromium) {
+    return {
+      ok: false,
+      reason: "Playwright is not available",
+    };
+  }
+
+  let browser: any;
+  try {
+    browser = await playwright.chromium.launch({ headless: true });
+  } catch (error) {
+    return {
+      ok: false,
+      reason: toErrorReason(error, "Playwright browser launch failed"),
+    };
+  }
   try {
     const viewportWidth = Math.max(
       1,
@@ -71,7 +95,12 @@ async function renderLayoutToPngDataUris(layout: LayoutDocument) {
     });
 
     const pageHandles = await page.$$(".page");
-    if (pageHandles.length === 0) return null;
+    if (pageHandles.length === 0) {
+      return {
+        ok: false,
+        reason: "Layout page elements are missing",
+      };
+    }
 
     const images: string[] = [];
     for (const pageHandle of pageHandles) {
@@ -79,11 +108,17 @@ async function renderLayoutToPngDataUris(layout: LayoutDocument) {
       images.push(toPngDataUri(Buffer.from(screenshot)));
     }
 
-    return images;
-  } catch {
-    return null;
+    return {
+      ok: true,
+      images,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      reason: toErrorReason(error, "Playwright layout rasterization failed"),
+    };
   } finally {
-    await browser.close();
+    await browser.close().catch(() => undefined);
   }
 }
 
@@ -108,12 +143,12 @@ export async function renderLayoutToPptxBuffer(layout: LayoutDocument) {
   pptx.layout = layoutName;
 
   const rasterizedPages = await renderLayoutToPngDataUris(layout);
-  if (rasterizedPages && rasterizedPages.length === layout.pages.length) {
+  if (rasterizedPages.ok && rasterizedPages.images.length === layout.pages.length) {
     for (let index = 0; index < layout.pages.length; index += 1) {
       const pageDef = layout.pages[index];
       const slide = pptx.addSlide();
       slide.addImage({
-        data: rasterizedPages[index],
+        data: rasterizedPages.images[index],
         x: 0,
         y: 0,
         w: mmToInch(pageDef.widthMm),
@@ -121,9 +156,12 @@ export async function renderLayoutToPptxBuffer(layout: LayoutDocument) {
       });
     }
   } else {
+    const rasterizeReason = rasterizedPages.ok
+      ? `Rasterized page count mismatch (${rasterizedPages.images.length}/${layout.pages.length})`
+      : rasterizedPages.reason;
     if (!allowVectorFallback()) {
       throw new Error(
-        "Playwright HTML renderer is unavailable for PPTX export. Vector fallback is disabled to keep web/PPTX parity."
+        `${rasterizeReason}. Vector fallback is disabled to keep web/PPTX parity.`
       );
     }
     for (const pageDef of layout.pages) {

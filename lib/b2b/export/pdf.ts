@@ -115,7 +115,15 @@ async function tryConvertByPlaywright(layout: LayoutDocument) {
     };
   }
 
-  const browser = await playwright.chromium.launch({ headless: true });
+  let browser: any;
+  try {
+    browser = await playwright.chromium.launch({ headless: true });
+  } catch (error) {
+    return {
+      ok: false as const,
+      reason: toErrorReason(error, "Playwright browser launch failed"),
+    };
+  }
   try {
     const page = await browser.newPage();
     await page.setViewportSize({
@@ -153,7 +161,7 @@ async function tryConvertByPlaywright(layout: LayoutDocument) {
       reason: error instanceof Error ? error.message : "Playwright PDF conversion failed",
     };
   } finally {
-    await browser.close();
+    await browser.close().catch(() => undefined);
   }
 }
 

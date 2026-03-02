@@ -340,7 +340,15 @@ export async function exportPdfFromWebRoute(
     };
   }
 
-  const browser = await playwright.chromium.launch({ headless: true });
+  let browser: any;
+  try {
+    browser = await playwright.chromium.launch({ headless: true });
+  } catch (error) {
+    return {
+      ok: false,
+      reason: toErrorReason(error, "Playwright browser launch failed"),
+    };
+  }
 
   try {
     const viewportWidth = normalizeViewportWidthPx(input.viewportWidthPx);
@@ -395,6 +403,6 @@ export async function exportPdfFromWebRoute(
           : primary.pdfBuffer,
     };
   } finally {
-    await browser.close();
+    await browser.close().catch(() => undefined);
   }
 }

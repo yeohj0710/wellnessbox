@@ -6,6 +6,7 @@ import {
   normalizePdfCaptureViewportWidthPx,
   normalizePdfCaptureWidthPx,
 } from "@/lib/b2b/export/pdf-capture-settings";
+import { isReportExportEngineUnavailableReason } from "@/lib/b2b/export/engine-error";
 import { exportPdfFromWebRoute } from "@/lib/b2b/export/web-route-pdf";
 import { logB2bAdminAction } from "@/lib/b2b/employee-service";
 import type { ReportSummaryPayload } from "@/lib/b2b/report-summary-payload";
@@ -27,15 +28,7 @@ function allowLegacyPdfMode() {
 }
 
 function shouldReturnInstallGuide(reason: string | undefined) {
-  if (!reason) return false;
-  const normalized = reason.toLowerCase();
-  return (
-    normalized.includes("playwright is not available") ||
-    normalized.includes("soffice fallback is disabled") ||
-    normalized.includes("enoent") ||
-    normalized.includes("not recognized") ||
-    normalized.includes("soffice failed")
-  );
+  return isReportExportEngineUnavailableReason(reason);
 }
 
 function resolvePdfMode(req: Request): AdminReportPdfMode {
