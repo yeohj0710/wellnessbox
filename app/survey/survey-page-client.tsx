@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   buildPublicSurveyQuestionList,
   buildWellnessAnalysisInputFromSurvey,
   computeSurveyProgress,
+  isSurveyQuestionAnswered,
   normalizeSurveyAnswersByTemplate,
-  pruneSurveyAnswersByVisibility,
   resolveGroupFieldValues,
   resolveSelectedSectionsFromC27,
   sanitizeSurveyAnswerValue,
@@ -21,14 +21,22 @@ import { computeWellnessResult, type WellnessComputedResult } from "@/lib/wellne
 import { loadWellnessTemplateForB2b } from "@/lib/wellness/data-loader";
 import type { WellnessSurveyQuestionForTemplate } from "@/lib/wellness/data-template-types";
 
-const STORAGE_KEY = "b2b-public-survey-state.v1";
+const STORAGE_KEY = "b2b-public-survey-state.v2";
+const CALCULATING_MESSAGES = [
+  "응답 데이터를 정리하고 있어요.",
+  "생활습관 위험도를 계산하고 있어요.",
+  "건강관리 필요도를 분석하고 있어요.",
+  "결과 리포트를 준비하고 있어요.",
+];
 
-type SurveyPhase = "intro" | "survey" | "result";
+type SurveyPhase = "intro" | "survey" | "calculating" | "result";
+type PersistedSurveyPhase = Exclude<SurveyPhase, "calculating">;
 
 type PersistedSurveyState = {
-  phase: SurveyPhase;
+  phase: PersistedSurveyPhase;
   currentIndex: number;
   answers: PublicSurveyAnswers;
+  selectedSections: string[];
 };
 
 function resolveProgressMessage(percent: number) {
@@ -41,8 +49,8 @@ function resolveProgressMessage(percent: number) {
 }
 
 function optionGridClass(optionCount: number) {
-  if (optionCount <= 2) return "grid-cols-1 sm:grid-cols-2";
-  if (optionCount <= 4) return "grid-cols-1 sm:grid-cols-2";
+  if (optionCount <= 1) return "grid-cols-1";
+  if (optionCount === 2) return "grid-cols-1 sm:grid-cols-2";
   return "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3";
 }
 
@@ -54,8 +62,54 @@ function scoreBadgeClass(score: number | null) {
   return "bg-emerald-100 text-emerald-700";
 }
 
+function isSelectionQuestion(question: WellnessSurveyQuestionForTemplate) {
+  return question.type === "single" || question.type === "multi";
+}
+
+function toWebFriendlyCopy(text: string | undefined) {
+  if (!text) return "";
+  return text
+    .replace(/체크하고\s*모두\s*동그라미\s*표시해\s*주십시오\.?/g, "해당되는 항목을 모두 선택해 주세요.")
+    .replace(/모두\s*동그라미\s*표시해\s*주십시오\.?/g, "해당되는 항목을 모두 선택해 주세요.")
+    .replace(/선택해주십시오/g, "선택해 주세요")
+    .replace(/선택해 주십시오/g, "선택해 주세요")
+    .replace(/기재해주십시오/g, "입력해 주세요")
+    .replace(/기재해 주십시오/g, "입력해 주세요")
+    .replace(/‘/g, "'")
+    .replace(/’/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function toDisplayErrorText(error: string | null | undefined) {
+  if (!error) return null;
+  const hasHangul = /[가-힣]/.test(error);
+  const hasReplacementChar = /\uFFFD/.test(error);
+  if (!hasHangul || hasReplacementChar) {
+    return "응답값을 다시 확인해 주세요.";
+  }
+  return error;
+}
+
+function computeEffectiveRequiredProgress(
+  questionList: Array<{ question: WellnessSurveyQuestionForTemplate }>,
+  answers: PublicSurveyAnswers
+) {
+  const requiredNodes = questionList.filter(
+    (node) => node.question.required && !isSelectionQuestion(node.question)
+  );
+  const requiredAnswered = requiredNodes.filter((node) =>
+    isSurveyQuestionAnswered(node.question, answers[node.question.key])
+  ).length;
+  return {
+    requiredTotal: requiredNodes.length,
+    requiredAnswered,
+  };
+}
+
 export default function SurveyPageClient() {
   const template = useMemo(() => loadWellnessTemplateForB2b(), []);
+  const c27Key = template.rules.selectSectionByCommonQuestionKey || "C27";
   const sectionTitleMap = useMemo(
     () =>
       new Map(
@@ -66,35 +120,101 @@ export default function SurveyPageClient() {
       ),
     [template]
   );
+  const sectionQuestionKeyMap = useMemo(
+    () =>
+      new Map(
+        template.sections.map((section) => [
+          section.key,
+          section.questions.map((question) => question.key),
+        ])
+      ),
+    [template]
+  );
   const maxSelectedSections = Math.max(1, template.rules.maxSelectedSections || 5);
 
   const [phase, setPhase] = useState<SurveyPhase>("intro");
   const [answers, setAnswers] = useState<PublicSurveyAnswers>({});
+  const [selectedSectionsCommitted, setSelectedSectionsCommitted] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [result, setResult] = useState<WellnessComputedResult | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [calcPercent, setCalcPercent] = useState(8);
+  const [calcMessageIndex, setCalcMessageIndex] = useState(0);
   const restoredRef = useRef(false);
+  const calcTickerRef = useRef<number | null>(null);
+  const calcTimeoutRef = useRef<number | null>(null);
 
-  const selectedSections = useMemo(
-    () => resolveSelectedSectionsFromC27(template, answers),
+  const pruneAnswersByVisibility = useCallback(
+    (inputAnswers: PublicSurveyAnswers, selectedSections: string[]) => {
+      const visibleKeys = new Set(
+        buildPublicSurveyQuestionList(template, inputAnswers, selectedSections, {
+          deriveSelectedSections: false,
+        }).map((item) => item.question.key)
+      );
+      const pruned: PublicSurveyAnswers = {};
+      for (const [questionKey, rawValue] of Object.entries(inputAnswers)) {
+        if (!visibleKeys.has(questionKey)) continue;
+        pruned[questionKey] = rawValue;
+      }
+      return pruned;
+    },
+    [template]
+  );
+
+  const draftSelectedSections = useMemo(
+    () => resolveSelectedSectionsFromC27(template, answers, []),
     [template, answers]
   );
   const questionList = useMemo(
-    () => buildPublicSurveyQuestionList(template, answers, selectedSections),
-    [template, answers, selectedSections]
+    () =>
+      buildPublicSurveyQuestionList(template, answers, selectedSectionsCommitted, {
+        deriveSelectedSections: false,
+      }),
+    [template, answers, selectedSectionsCommitted]
   );
   const progress = useMemo(
     () => computeSurveyProgress(questionList, answers),
     [questionList, answers]
   );
+  const effectiveRequired = useMemo(
+    () => computeEffectiveRequiredProgress(questionList, answers),
+    [questionList, answers]
+  );
   const selectedSectionTitles = useMemo(
     () =>
-      selectedSections
+      selectedSectionsCommitted
         .map((sectionKey) => sectionTitleMap.get(sectionKey) || sectionKey)
         .filter(Boolean),
-    [sectionTitleMap, selectedSections]
+    [sectionTitleMap, selectedSectionsCommitted]
   );
+  const draftSectionTitles = useMemo(
+    () =>
+      draftSelectedSections
+        .map((sectionKey) => sectionTitleMap.get(sectionKey) || sectionKey)
+        .filter(Boolean),
+    [sectionTitleMap, draftSelectedSections]
+  );
+  const stableQuestionKeys = useMemo(() => {
+    const keys: string[] = template.common.map((question) => question.key);
+    for (const section of template.sectionCatalog) {
+      if (!selectedSectionsCommitted.includes(section.key)) continue;
+      keys.push(...(sectionQuestionKeyMap.get(section.key) ?? []));
+    }
+    return keys;
+  }, [template, selectedSectionsCommitted, sectionQuestionKeyMap]);
+  const current = questionList[currentIndex] ?? null;
+  const displayStep = useMemo(() => {
+    if (!current) return 0;
+    const stableIndex = stableQuestionKeys.indexOf(current.question.key);
+    return stableIndex >= 0 ? stableIndex + 1 : currentIndex + 1;
+  }, [current, currentIndex, stableQuestionKeys]);
+  const displayTotal = Math.max(stableQuestionKeys.length, questionList.length, 1);
+  const visibleSectionTitles =
+    current?.question.key === c27Key ? draftSectionTitles : selectedSectionTitles;
+  const currentSectionTitle = current?.sectionKey
+    ? sectionTitleMap.get(current.sectionKey) || current.sectionTitle || current.sectionKey
+    : "공통 설문";
 
   useEffect(() => {
     setCurrentIndex((prev) => {
@@ -102,6 +222,17 @@ export default function SurveyPageClient() {
       return Math.max(0, Math.min(prev, questionList.length - 1));
     });
   }, [questionList.length]);
+
+  useEffect(() => {
+    return () => {
+      if (calcTickerRef.current != null) {
+        window.clearInterval(calcTickerRef.current);
+      }
+      if (calcTimeoutRef.current != null) {
+        window.clearTimeout(calcTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (restoredRef.current) return;
@@ -121,18 +252,24 @@ export default function SurveyPageClient() {
         parsed.answers && typeof parsed.answers === "object"
           ? normalizeSurveyAnswersByTemplate(template, parsed.answers as PublicSurveyAnswers)
           : {};
-      const nextSelectedSections = resolveSelectedSectionsFromC27(template, loadedAnswers);
-      const prunedAnswers = pruneSurveyAnswersByVisibility(
-        template,
-        loadedAnswers,
-        nextSelectedSections
-      );
+      const seededSections = Array.isArray(parsed.selectedSections)
+        ? parsed.selectedSections.filter(
+            (sectionKey): sectionKey is string => typeof sectionKey === "string"
+          )
+        : [];
+      const nextSelectedSections =
+        seededSections.length > 0
+          ? resolveSelectedSectionsFromC27(template, {}, seededSections)
+          : resolveSelectedSectionsFromC27(template, loadedAnswers, []);
+      const prunedAnswers = pruneAnswersByVisibility(loadedAnswers, nextSelectedSections);
       const restoredList = buildPublicSurveyQuestionList(
         template,
         prunedAnswers,
-        nextSelectedSections
+        nextSelectedSections,
+        { deriveSelectedSections: false }
       );
       setAnswers(prunedAnswers);
+      setSelectedSectionsCommitted(nextSelectedSections);
       if (typeof parsed.currentIndex === "number" && Number.isFinite(parsed.currentIndex)) {
         const clamped =
           restoredList.length > 0
@@ -157,26 +294,33 @@ export default function SurveyPageClient() {
     } finally {
       setHydrated(true);
     }
-  }, [template]);
+  }, [pruneAnswersByVisibility, template]);
 
   useEffect(() => {
     if (!hydrated) return;
-    if (phase === "intro" && Object.keys(answers).length === 0) {
+    if (
+      phase === "intro" &&
+      Object.keys(answers).length === 0 &&
+      selectedSectionsCommitted.length === 0
+    ) {
       window.localStorage.removeItem(STORAGE_KEY);
       return;
     }
-    const snapshot: PersistedSurveyState = { phase, currentIndex, answers };
+    const persistedPhase: PersistedSurveyPhase = phase === "calculating" ? "survey" : phase;
+    const snapshot: PersistedSurveyState = {
+      phase: persistedPhase,
+      currentIndex,
+      answers,
+      selectedSections: selectedSectionsCommitted,
+    };
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
-  }, [answers, currentIndex, hydrated, phase]);
-
-  const current = questionList[currentIndex] ?? null;
+  }, [answers, currentIndex, hydrated, phase, selectedSectionsCommitted]);
 
   function applyAnswer(question: WellnessSurveyQuestionForTemplate, rawValue: unknown) {
     setAnswers((prev) => {
       const sanitized = sanitizeSurveyAnswerValue(question, rawValue, maxSelectedSections);
       const next = { ...prev, [question.key]: sanitized };
-      const nextSelectedSections = resolveSelectedSectionsFromC27(template, next);
-      return pruneSurveyAnswersByVisibility(template, next, nextSelectedSections);
+      return pruneAnswersByVisibility(next, selectedSectionsCommitted);
     });
     setErrorText(null);
     if (phase === "result") {
@@ -193,62 +337,131 @@ export default function SurveyPageClient() {
 
   function handleReset() {
     setAnswers({});
+    setSelectedSectionsCommitted([]);
     setCurrentIndex(0);
     setErrorText(null);
     setResult(null);
     setPhase("intro");
+    setCalcPercent(8);
+    setCalcMessageIndex(0);
+    if (calcTickerRef.current != null) {
+      window.clearInterval(calcTickerRef.current);
+      calcTickerRef.current = null;
+    }
+    if (calcTimeoutRef.current != null) {
+      window.clearTimeout(calcTimeoutRef.current);
+      calcTimeoutRef.current = null;
+    }
     window.localStorage.removeItem(STORAGE_KEY);
+  }
+
+  function startCalculation(finalAnswers: PublicSurveyAnswers, finalSelectedSections: string[]) {
+    if (calcTickerRef.current != null) {
+      window.clearInterval(calcTickerRef.current);
+    }
+    if (calcTimeoutRef.current != null) {
+      window.clearTimeout(calcTimeoutRef.current);
+    }
+
+    setPhase("calculating");
+    setResult(null);
+    setErrorText(null);
+    setCalcPercent(8);
+    setCalcMessageIndex(0);
+
+    calcTickerRef.current = window.setInterval(() => {
+      setCalcPercent((prev) => {
+        if (prev >= 92) return prev;
+        if (prev < 40) return Math.min(92, prev + 14);
+        if (prev < 70) return Math.min(92, prev + 8);
+        return Math.min(92, prev + 4);
+      });
+      setCalcMessageIndex((prev) => (prev + 1) % CALCULATING_MESSAGES.length);
+    }, 420);
+
+    calcTimeoutRef.current = window.setTimeout(() => {
+      try {
+        const analysisInput = buildWellnessAnalysisInputFromSurvey({
+          template,
+          answers: finalAnswers,
+          selectedSections: finalSelectedSections,
+        });
+        setResult(computeWellnessResult(analysisInput));
+        setCalcPercent(100);
+        setPhase("result");
+      } catch {
+        setPhase("survey");
+        setErrorText("결과를 계산하는 중 오류가 발생했습니다. 입력값을 다시 확인해 주세요.");
+      } finally {
+        if (calcTickerRef.current != null) {
+          window.clearInterval(calcTickerRef.current);
+          calcTickerRef.current = null;
+        }
+        if (calcTimeoutRef.current != null) {
+          window.clearTimeout(calcTimeoutRef.current);
+          calcTimeoutRef.current = null;
+        }
+      }
+    }, 1700);
   }
 
   function handleNext() {
     if (!current) return;
-    const currentError = validateSurveyQuestionAnswer(
-      current.question,
-      answers[current.question.key]
-    );
+    const currentError = validateSurveyQuestionAnswer(current.question, answers[current.question.key], {
+      treatSelectionAsOptional: true,
+    });
     if (currentError) {
-      setErrorText(currentError);
+      setErrorText(toDisplayErrorText(currentError));
       return;
     }
-    if (currentIndex < questionList.length - 1) {
-      setCurrentIndex((prev) => prev + 1);
+
+    let nextAnswers = answers;
+    let nextSelectedSections = selectedSectionsCommitted;
+    if (current.question.key === c27Key) {
+      nextSelectedSections = resolveSelectedSectionsFromC27(template, answers, []);
+      setSelectedSectionsCommitted(nextSelectedSections);
+      nextAnswers = pruneAnswersByVisibility(answers, nextSelectedSections);
+      setAnswers(nextAnswers);
+    }
+
+    const effectiveList = buildPublicSurveyQuestionList(
+      template,
+      nextAnswers,
+      nextSelectedSections,
+      { deriveSelectedSections: false }
+    );
+    if (currentIndex < effectiveList.length - 1) {
+      setCurrentIndex((prev) => Math.min(prev + 1, effectiveList.length - 1));
       setErrorText(null);
       return;
     }
 
-    const invalidIndex = questionList.findIndex((node) => {
-      const error = validateSurveyQuestionAnswer(node.question, answers[node.question.key]);
+    const invalidIndex = effectiveList.findIndex((node) => {
+      const error = validateSurveyQuestionAnswer(node.question, nextAnswers[node.question.key], {
+        treatSelectionAsOptional: true,
+      });
       return Boolean(error);
     });
     if (invalidIndex >= 0) {
-      const invalid = questionList[invalidIndex];
+      const invalid = effectiveList[invalidIndex];
       setCurrentIndex(invalidIndex);
       setErrorText(
-        validateSurveyQuestionAnswer(invalid.question, answers[invalid.question.key]) ||
-          "필수 문항을 확인해 주세요."
+        toDisplayErrorText(
+          validateSurveyQuestionAnswer(invalid.question, nextAnswers[invalid.question.key], {
+            treatSelectionAsOptional: true,
+          })
+        ) || "응답값을 다시 확인해 주세요."
       );
       return;
     }
-
-    try {
-      const analysisInput = buildWellnessAnalysisInputFromSurvey({
-        template,
-        answers,
-        selectedSections,
-      });
-      setResult(computeWellnessResult(analysisInput));
-      setPhase("result");
-      setErrorText(null);
-    } catch {
-      setErrorText("결과를 계산하는 중 오류가 발생했습니다. 입력값을 다시 확인해 주세요.");
-    }
+    startCalculation(nextAnswers, nextSelectedSections);
   }
 
   function renderQuestionInput(question: WellnessSurveyQuestionForTemplate) {
     if (question.type === "single") {
       const currentValue = toInputValue(answers[question.key]).trim();
       return (
-        <div className={`grid gap-2 ${optionGridClass((question.options ?? []).length)}`}>
+        <div className={`grid gap-2.5 ${optionGridClass((question.options ?? []).length)}`}>
           {(question.options ?? []).map((option) => {
             const active = currentValue === option.value;
             return (
@@ -256,15 +469,16 @@ export default function SurveyPageClient() {
                 key={`${question.key}-${option.value}`}
                 type="button"
                 data-testid="survey-option"
-                onClick={() => applyAnswer(question, option.value)}
+                aria-pressed={active}
+                onClick={() => applyAnswer(question, active ? "" : option.value)}
                 className={[
-                  "rounded-xl border px-4 py-3 text-left text-sm transition-colors",
+                  "min-h-[52px] rounded-xl border px-4 py-3 text-left text-[15px] leading-snug transition-colors",
                   active
                     ? "border-sky-400 bg-sky-50 text-sky-900 ring-1 ring-sky-300"
                     : "border-gray-200 bg-white text-gray-700 hover:border-sky-200 hover:bg-sky-50",
                 ].join(" ")}
               >
-                {option.label}
+                {toWebFriendlyCopy(option.label)}
               </button>
             );
           })}
@@ -278,12 +492,17 @@ export default function SurveyPageClient() {
         question.maxSelect ||
         question.constraints?.maxSelections ||
         Math.max(1, maxSelectedSections);
+      const noneOptionLabel =
+        question.options?.find((option) => option.isNoneOption)?.label ||
+        question.options?.find((option) => option.value === question.noneOptionValue)?.label ||
+        "";
       return (
         <div className="space-y-3">
           <p className="text-xs text-gray-500">
             최대 {maxSelect}개까지 선택할 수 있습니다. 현재 {selectedValues.size}개 선택됨
+            {noneOptionLabel ? ` (${toWebFriendlyCopy(noneOptionLabel)} 항목은 단독 선택)` : ""}
           </p>
-          <div className={`grid gap-2 ${optionGridClass((question.options ?? []).length)}`}>
+          <div className={`grid gap-2.5 ${optionGridClass((question.options ?? []).length)}`}>
             {(question.options ?? []).map((option) => {
               const active = selectedValues.has(option.value);
               return (
@@ -291,6 +510,7 @@ export default function SurveyPageClient() {
                   key={`${question.key}-${option.value}`}
                   type="button"
                   data-testid="survey-multi-option"
+                  aria-pressed={active}
                   onClick={() =>
                     applyAnswer(
                       question,
@@ -303,13 +523,13 @@ export default function SurveyPageClient() {
                     )
                   }
                   className={[
-                    "rounded-xl border px-4 py-3 text-left text-sm transition-colors",
+                    "min-h-[52px] rounded-xl border px-4 py-3 text-left text-[15px] leading-snug transition-colors",
                     active
                       ? "border-sky-400 bg-sky-50 text-sky-900 ring-1 ring-sky-300"
                       : "border-gray-200 bg-white text-gray-700 hover:border-sky-200 hover:bg-sky-50",
                   ].join(" ")}
                 >
-                  {option.label}
+                  {toWebFriendlyCopy(option.label)}
                 </button>
               );
             })}
@@ -324,7 +544,7 @@ export default function SurveyPageClient() {
         <div className="space-y-2">
           <input
             data-testid="survey-number-input"
-            className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-200"
+            className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-[15px] outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-200"
             type="number"
             inputMode="decimal"
             min={question.constraints?.min}
@@ -332,7 +552,7 @@ export default function SurveyPageClient() {
             step={question.constraints?.integer ? 1 : "any"}
             value={value}
             onChange={(event) => applyAnswer(question, event.target.value)}
-            placeholder={question.placeholder || "숫자를 입력해 주세요."}
+            placeholder={toWebFriendlyCopy(question.placeholder) || "숫자를 입력해 주세요."}
           />
         </div>
       );
@@ -345,12 +565,12 @@ export default function SurveyPageClient() {
           {(question.fields ?? []).map((field) => (
             <label key={`${question.key}-${field.id}`} className="block space-y-1">
               <span className="text-sm font-medium text-gray-700">
-                {field.label}
+                {toWebFriendlyCopy(field.label)}
                 {field.unit ? ` (${field.unit})` : ""}
               </span>
               <input
                 data-testid={`survey-group-input-${field.id}`}
-                className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-200"
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-[15px] outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-200"
                 type={field.type === "number" ? "number" : "text"}
                 inputMode={field.type === "number" ? "decimal" : undefined}
                 min={field.constraints?.min}
@@ -365,7 +585,7 @@ export default function SurveyPageClient() {
                   const baseRecord = toAnswerRecord(answers[question.key]) ?? {};
                   applyAnswer(question, { ...baseRecord, fieldValues: nextFieldValues });
                 }}
-                placeholder={`${field.label} 입력`}
+                placeholder={`${toWebFriendlyCopy(field.label)} 입력`}
               />
             </label>
           ))}
@@ -376,40 +596,40 @@ export default function SurveyPageClient() {
     const value = toInputValue(answers[question.key]);
     return (
       <input
-        className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-200"
+        className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-[15px] outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-200"
         value={value}
         onChange={(event) => applyAnswer(question, event.target.value)}
-        placeholder={question.placeholder || "응답을 입력해 주세요."}
+        placeholder={toWebFriendlyCopy(question.placeholder) || "응답을 입력해 주세요."}
       />
     );
   }
 
   if (phase === "intro") {
     return (
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(186,230,253,0.45),transparent_45%),radial-gradient(circle_at_top_right,rgba(199,210,254,0.35),transparent_40%),linear-gradient(180deg,#f8fbff_0%,#eef4fb_100%)]">
-        <div className="w-full sm:w-[680px] lg:w-[860px] mx-auto px-4 pb-24">
-          <section className="relative mt-8 overflow-hidden rounded-3xl bg-white/85 p-6 sm:p-10 shadow-[0_10px_40px_rgba(2,6,23,0.08)] ring-1 ring-black/5 backdrop-blur">
-            <div className="pointer-events-none absolute -top-28 -right-20 h-80 w-80 rounded-full bg-gradient-to-br from-sky-200 to-indigo-200 opacity-60 blur-3xl" />
+      <div className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 bg-[radial-gradient(circle_at_15%_0%,rgba(186,230,253,0.75),transparent_42%),radial-gradient(circle_at_90%_8%,rgba(199,210,254,0.55),transparent_35%),linear-gradient(180deg,#f5f9ff_0%,#e9f0fa_100%)]">
+        <div className="mx-auto w-full max-w-[1040px] px-4 pb-24 pt-12 sm:px-6 sm:pt-16">
+          <section className="relative overflow-hidden rounded-3xl border border-sky-100/80 bg-white/80 p-7 shadow-[0_18px_60px_rgba(15,23,42,0.10)] backdrop-blur sm:p-10">
+            <div className="pointer-events-none absolute -top-20 -right-16 h-72 w-72 rounded-full bg-gradient-to-br from-sky-200/80 to-indigo-200/60 blur-3xl" />
             <div className="relative space-y-6">
-              <div className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600 ring-1 ring-gray-200">
-                <span>B2B HEALTH SURVEY</span>
+              <div className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700 ring-1 ring-sky-100">
+                <span>B2B 건강 설문</span>
                 <span className="h-1.5 w-1.5 rounded-full bg-sky-500" />
-                <span>공통 27문항 + 상세 섹션</span>
+                <span>공통 + 맞춤 상세 문항</span>
               </div>
               <div className="space-y-2">
-                <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-gray-900">
-                  B2B 건강 설문
+                <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                  건강 설문을 웹에서 바로 진행하세요
                 </h1>
-                <p className="text-sm sm:text-base leading-6 text-gray-600">
-                  공통 설문을 완료한 뒤 27번 문항에서 선택한 분야(최대 {maxSelectedSections}개)에 따라
-                  상세 문항이 자동으로 이어집니다.
+                <p className="max-w-2xl text-sm leading-6 text-gray-600 sm:text-base">
+                  공통 문항을 완료한 뒤 27번 문항에서 선택한 분야(최대 {maxSelectedSections}개)에 따라
+                  상세 문항이 이어집니다. 진행 중인 응답은 자동 저장됩니다.
                 </p>
               </div>
               <button
                 type="button"
                 data-testid="survey-start-button"
                 onClick={handleStart}
-                className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 px-6 py-3 text-sm font-semibold text-white shadow transition hover:brightness-110"
+                className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 px-6 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(59,130,246,0.35)] transition hover:brightness-110"
               >
                 설문 시작하기
               </button>
@@ -420,40 +640,83 @@ export default function SurveyPageClient() {
     );
   }
 
+  if (phase === "calculating") {
+    return (
+      <div
+        className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 bg-[radial-gradient(circle_at_15%_0%,rgba(186,230,253,0.75),transparent_42%),radial-gradient(circle_at_90%_8%,rgba(199,210,254,0.55),transparent_35%),linear-gradient(180deg,#f5f9ff_0%,#e9f0fa_100%)]"
+        data-testid="survey-calculating"
+      >
+        <div className="mx-auto w-full max-w-[1040px] px-4 pb-24 pt-12 sm:px-6 sm:pt-16">
+          <section className="relative overflow-hidden rounded-3xl border border-sky-100/80 bg-white/85 p-7 shadow-[0_18px_60px_rgba(15,23,42,0.10)] backdrop-blur sm:p-10">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(14,165,233,0.12),transparent_45%),radial-gradient(circle_at_80%_10%,rgba(99,102,241,0.12),transparent_38%)]" />
+            <div className="relative space-y-7">
+              <div className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700 ring-1 ring-sky-100">
+                <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-sky-500" />
+                <span>연산 진행 중</span>
+              </div>
+              <h2 className="text-2xl font-extrabold text-gray-900 sm:text-3xl">
+                건강 설문 결과를 계산하고 있습니다
+              </h2>
+              <div className="flex items-center gap-3">
+                <div className="relative h-11 w-11">
+                  <span className="absolute inset-0 rounded-full border-2 border-sky-200" />
+                  <span className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-sky-500 border-r-indigo-500" />
+                </div>
+                <p className="text-sm text-gray-600">{CALCULATING_MESSAGES[calcMessageIndex]}</p>
+              </div>
+              <div>
+                <div className="flex items-center justify-between text-xs text-gray-600">
+                  <span>진행률</span>
+                  <span>{calcPercent}%</span>
+                </div>
+                <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-sky-100/70">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-500 transition-[width] duration-300"
+                    style={{ width: `${calcPercent}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    );
+  }
+
   if (phase === "result") {
     return (
       <div
-        className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(186,230,253,0.45),transparent_45%),radial-gradient(circle_at_top_right,rgba(199,210,254,0.35),transparent_40%),linear-gradient(180deg,#f8fbff_0%,#eef4fb_100%)]"
+        className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 bg-[radial-gradient(circle_at_15%_0%,rgba(186,230,253,0.75),transparent_42%),radial-gradient(circle_at_90%_8%,rgba(199,210,254,0.55),transparent_35%),linear-gradient(180deg,#f5f9ff_0%,#e9f0fa_100%)]"
         data-testid="survey-result"
       >
-        <div className="w-full sm:w-[720px] lg:w-[920px] mx-auto px-4 pb-24">
-          <section className="relative mt-8 overflow-hidden rounded-3xl bg-white/90 p-6 sm:p-8 shadow-[0_10px_40px_rgba(2,6,23,0.08)] ring-1 ring-black/5 backdrop-blur">
-            <div className="pointer-events-none absolute -top-24 -right-20 h-80 w-80 rounded-full bg-gradient-to-br from-sky-200 to-indigo-200 opacity-60 blur-3xl" />
+        <div className="mx-auto w-full max-w-[1040px] px-4 pb-24 pt-12 sm:px-6 sm:pt-16">
+          <section className="relative overflow-hidden rounded-3xl border border-sky-100/80 bg-white/85 p-7 shadow-[0_18px_60px_rgba(15,23,42,0.10)] backdrop-blur sm:p-9">
+            <div className="pointer-events-none absolute -top-24 -right-20 h-80 w-80 rounded-full bg-gradient-to-br from-sky-200/70 to-indigo-200/60 blur-3xl" />
             <div className="relative space-y-6">
               <header className="space-y-2">
                 <p className="text-xs font-semibold tracking-wide text-sky-700">설문 결과 요약</p>
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
+                <h2 className="text-3xl font-extrabold text-gray-900 sm:text-[40px] sm:leading-[1.15]">
                   건강 설문 결과가 계산되었습니다
                 </h2>
               </header>
               {result ? (
                 <>
                   <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-2xl bg-white p-4 ring-1 ring-gray-200">
+                    <div className="rounded-2xl border border-gray-200 bg-white p-4">
                       <p className="text-xs text-gray-500">건강점수</p>
-                      <p className="mt-2 text-2xl font-bold text-gray-900">
+                      <p className="mt-2 text-4xl font-extrabold tracking-tight text-gray-900">
                         {Math.round(result.overallHealthScore)}
                       </p>
                     </div>
-                    <div className="rounded-2xl bg-white p-4 ring-1 ring-gray-200">
+                    <div className="rounded-2xl border border-gray-200 bg-white p-4">
                       <p className="text-xs text-gray-500">생활습관 위험도</p>
-                      <p className="mt-2 text-2xl font-bold text-gray-900">
+                      <p className="mt-2 text-4xl font-extrabold tracking-tight text-gray-900">
                         {Math.round(result.lifestyleRisk.overallPercent)}
                       </p>
                     </div>
-                    <div className="rounded-2xl bg-white p-4 ring-1 ring-gray-200">
+                    <div className="rounded-2xl border border-gray-200 bg-white p-4">
                       <p className="text-xs text-gray-500">건강관리 필요도 평균</p>
-                      <p className="mt-2 text-2xl font-bold text-gray-900">
+                      <p className="mt-2 text-4xl font-extrabold tracking-tight text-gray-900">
                         {Math.round(result.healthManagementNeed.averagePercent)}
                       </p>
                     </div>
@@ -464,7 +727,7 @@ export default function SurveyPageClient() {
                       {result.highRiskHighlights.map((item, index) => (
                         <li
                           key={`${item.category}-${item.title}-${index}`}
-                          className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2"
+                          className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5"
                         >
                           <div className="flex items-center justify-between gap-2">
                             <p className="text-sm font-medium text-gray-900">{item.title}</p>
@@ -488,6 +751,7 @@ export default function SurveyPageClient() {
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
+                  data-testid="survey-result-edit-button"
                   onClick={() => {
                     setPhase("survey");
                     setResult(null);
@@ -500,6 +764,7 @@ export default function SurveyPageClient() {
                 </button>
                 <button
                   type="button"
+                  data-testid="survey-result-reset-button"
                   onClick={handleReset}
                   className="rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 px-5 py-2 text-sm font-semibold text-white shadow transition hover:brightness-110"
                 >
@@ -514,65 +779,77 @@ export default function SurveyPageClient() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(186,230,253,0.45),transparent_45%),radial-gradient(circle_at_top_right,rgba(199,210,254,0.35),transparent_40%),linear-gradient(180deg,#f8fbff_0%,#eef4fb_100%)]">
-      <div className="w-full sm:w-[680px] lg:w-[860px] mx-auto px-4 pb-24">
-        <section className="relative mt-6 sm:mt-8 overflow-hidden rounded-3xl bg-white/85 p-6 sm:p-8 shadow-[0_10px_40px_rgba(2,6,23,0.08)] ring-1 ring-black/5 backdrop-blur">
-          <div className="pointer-events-none absolute -top-24 -right-16 h-72 w-72 rounded-full bg-gradient-to-br from-sky-100 to-indigo-100 opacity-70 blur-3xl" />
-          <div className="relative space-y-6">
-            <header className="flex flex-wrap items-center justify-between gap-3">
+    <div className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 bg-[radial-gradient(circle_at_15%_0%,rgba(186,230,253,0.75),transparent_42%),radial-gradient(circle_at_90%_8%,rgba(199,210,254,0.55),transparent_35%),linear-gradient(180deg,#f5f9ff_0%,#e9f0fa_100%)]">
+      <div className="mx-auto w-full max-w-[1040px] px-4 pb-24 pt-10 sm:px-6 sm:pt-14">
+        <section className="relative overflow-hidden rounded-3xl border border-sky-100/80 bg-white/85 p-6 shadow-[0_18px_60px_rgba(15,23,42,0.10)] backdrop-blur sm:p-10">
+          <div className="pointer-events-none absolute -top-24 -right-20 h-72 w-72 rounded-full bg-gradient-to-br from-sky-100/90 to-indigo-100/80 blur-3xl" />
+          <button
+            type="button"
+            data-testid="survey-reset-button"
+            onClick={handleReset}
+            className="absolute right-6 top-6 z-10 rounded-full px-2 py-1 text-[12px] text-gray-500 underline underline-offset-2 transition hover:text-gray-700"
+          >
+            처음부터 다시 시작
+          </button>
+
+          <div className="relative space-y-5">
+            <header className="grid gap-3 pr-28 sm:grid-cols-[minmax(0,1fr)_240px] sm:items-end sm:gap-6">
               <div>
                 <p className="text-xs font-semibold tracking-wide text-sky-700">B2B 설문 진행</p>
-                <h2 className="mt-1 text-xl sm:text-2xl font-bold text-gray-900">
-                  {current ? `${currentIndex + 1}/${questionList.length} 문항` : "문항 준비 중"}
+                <h2 className="mt-1 text-4xl font-extrabold tracking-tight text-gray-900 sm:text-[46px] sm:leading-[1.1]">
+                  {current ? `${displayStep}/${displayTotal} 문항` : "문항 준비 중"}
                 </h2>
-                <p className="mt-1 text-xs text-gray-500">{resolveProgressMessage(progress.percent)}</p>
+                <p className="mt-1 text-sm text-gray-500">{resolveProgressMessage(progress.percent)}</p>
               </div>
               <div className="min-w-[180px]">
                 <div className="flex items-center justify-between text-xs text-gray-600">
                   <span>진행률</span>
                   <span>{progress.percent}%</span>
                 </div>
-                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-sky-100/70">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 transition-[width] duration-300"
                     style={{ width: `${progress.percent}%` }}
                   />
                 </div>
                 <p className="mt-1 text-[11px] text-gray-500">
-                  필수 {progress.requiredAnswered}/{progress.requiredTotal}
+                  필수 {effectiveRequired.requiredAnswered}/{effectiveRequired.requiredTotal}
                 </p>
               </div>
             </header>
 
-            <div className="rounded-2xl bg-sky-50/70 p-3 ring-1 ring-sky-100">
-              <p className="text-xs text-sky-700">
-                선택 섹션:{" "}
-                {selectedSectionTitles.length > 0 ? selectedSectionTitles.join(", ") : "아직 선택되지 않음"}
-              </p>
-            </div>
+            {visibleSectionTitles.length > 0 ? (
+              <div className="rounded-2xl bg-sky-50/75 p-3 ring-1 ring-sky-100">
+                <p className="text-xs font-medium text-sky-700">
+                  선택 섹션: {visibleSectionTitles.join(", ")}
+                </p>
+              </div>
+            ) : null}
 
             {current ? (
               <article
-                className="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6"
+                className="rounded-2xl border border-gray-200 bg-white p-5 sm:p-7"
                 data-testid="survey-question"
                 data-question-key={current.question.key}
                 data-question-type={current.question.type}
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700">
-                    {current.sectionTitle}
+                    {currentSectionTitle}
                   </span>
-                  {current.question.required ? (
+                  {current.question.required && !isSelectionQuestion(current.question) ? (
                     <span className="inline-flex items-center rounded-full bg-rose-50 px-2.5 py-1 text-[11px] font-semibold text-rose-700">
                       필수
                     </span>
                   ) : null}
                 </div>
-                <h3 className="mt-3 text-lg sm:text-xl font-semibold text-gray-900">
-                  {current.question.index}. {current.question.text}
+                <h3 className="mt-3 text-2xl font-semibold leading-snug text-gray-900 sm:text-[38px] sm:leading-[1.25]">
+                  {current.question.index}. {toWebFriendlyCopy(current.question.text)}
                 </h3>
                 {current.question.helpText ? (
-                  <p className="mt-2 text-sm text-gray-500">{current.question.helpText}</p>
+                  <p className="mt-2 text-sm leading-6 text-gray-500">
+                    {toWebFriendlyCopy(current.question.helpText)}
+                  </p>
                 ) : null}
                 <div className="mt-4">{renderQuestionInput(current.question)}</div>
                 {errorText ? (
@@ -583,7 +860,7 @@ export default function SurveyPageClient() {
               </article>
             ) : null}
 
-            <footer className="flex flex-wrap items-center justify-between gap-2">
+            <footer className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -597,23 +874,15 @@ export default function SurveyPageClient() {
                 >
                   이전
                 </button>
-                <button
-                  type="button"
-                  data-testid="survey-reset-button"
-                  onClick={handleReset}
-                  className="rounded-full border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
-                >
-                  처음부터
-                </button>
               </div>
               <button
                 type="button"
                 data-testid="survey-next-button"
                 onClick={handleNext}
                 disabled={!current}
-                className="rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 px-5 py-2 text-sm font-semibold text-white shadow transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 px-6 py-2.5 text-sm font-semibold text-white shadow transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {currentIndex >= questionList.length - 1 ? "설문 완료" : "다음 문항"}
+                {currentIndex >= questionList.length - 1 ? "결과 확인" : "다음 문항"}
               </button>
             </footer>
           </div>
@@ -622,3 +891,4 @@ export default function SurveyPageClient() {
     </div>
   );
 }
+

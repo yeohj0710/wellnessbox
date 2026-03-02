@@ -62,6 +62,18 @@ export async function runEmployeeSyncAuthedPostRoute(input: {
     });
   } catch (error) {
     const dbError = resolveDbRouteError(error, SYNC_FAILED_ERROR);
+    console.error("[b2b][employee-sync] route handler failed", {
+      appUserId: input.appUserId,
+      guest: input.guest,
+      errorName: error instanceof Error ? error.name : typeof error,
+      errorCode:
+        typeof (error as { code?: unknown })?.code === "string"
+          ? (error as { code: string }).code
+          : null,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      mappedCode: dbError.code,
+      mappedStatus: dbError.status,
+    });
     return noStoreJson(
       { ok: false, code: dbError.code, error: dbError.message },
       dbError.status

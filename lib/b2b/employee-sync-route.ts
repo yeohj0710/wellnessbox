@@ -40,6 +40,27 @@ export {
 };
 export { noStoreJson };
 
+function describeSyncError(error: unknown) {
+  if (error instanceof Error) {
+    const errorCode =
+      typeof (error as { code?: unknown }).code === "string"
+        ? (error as { code?: string }).code ?? null
+        : null;
+    return {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      code: errorCode,
+    };
+  }
+  return {
+    name: typeof error,
+    message: String(error),
+    stack: undefined,
+    code: null,
+  };
+}
+
 export async function resolveForceRefreshAccess(input: {
   req: Request;
   forceRefreshRequested: boolean;
@@ -129,15 +150,27 @@ export async function logSyncAccess(
   action: string,
   payload?: Record<string, unknown>
 ) {
-  await logB2bEmployeeAccess({
-    employeeId: context.employeeId,
-    appUserId: context.appUserId,
-    action,
-    route: SYNC_ROUTE,
-    ip: context.ip,
-    userAgent: context.userAgent,
-    payload,
-  });
+  try {
+    await logB2bEmployeeAccess({
+      employeeId: context.employeeId,
+      appUserId: context.appUserId,
+      action,
+      route: SYNC_ROUTE,
+      ip: context.ip,
+      userAgent: context.userAgent,
+      payload,
+    });
+  } catch (error) {
+    const details = describeSyncError(error);
+    console.error("[b2b][employee-sync] access log failed", {
+      employeeId: context.employeeId,
+      appUserId: context.appUserId,
+      action,
+      errorName: details.name,
+      errorCode: details.code,
+      errorMessage: details.message,
+    });
+  }
 }
 
 export async function tryReuseLatestSnapshot(input: {
@@ -273,8 +306,21 @@ export async function executeSyncAndBuildResponse(input: {
       error,
       "\uAC74\uAC15 \uB370\uC774\uD130 \uB3D9\uAE30\uD654 \uCC98\uB9AC \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC5B4\uC694. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."
     );
+    const details = describeSyncError(error);
+    console.error("[b2b][employee-sync] execute sync failed", {
+      employeeId: input.upserted.employee.id,
+      appUserId: input.appUserId,
+      periodKey: input.requestedPeriodKey,
+      forceRefresh: input.forceRefreshRequested,
+      errorName: details.name,
+      errorCode: details.code,
+      errorMessage: details.message,
+      mappedCode: dbError.code,
+      mappedStatus: dbError.status,
+    });
     await logSyncAccess(input.accessContext, "sync_failed", {
       error: dbError.message,
+      code: dbError.code,
     });
 
     return noStoreJson(

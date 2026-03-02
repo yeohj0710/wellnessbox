@@ -71,13 +71,13 @@ function buildDefaultRawAnswer(question: WellnessSurveyQuestionForTemplate): unk
           if (field.constraints?.integer) value = Math.round(value);
           return [field.id, String(value)];
         }
-        return [field.id, "테스트"];
+        return [field.id, "test"];
       })
     );
     return { fieldValues };
   }
 
-  return "테스트";
+  return "test";
 }
 
 function buildAutoAnsweredSurvey(
@@ -88,7 +88,7 @@ function buildAutoAnsweredSurvey(
   const answers: PublicSurveyAnswers = { ...seedAnswers };
   let guard = 0;
 
-  while (guard < 2000) {
+  while (guard < 2400) {
     guard += 1;
     const selectedSections = resolveSelectedSectionsFromC27(template, answers);
     const questionList = buildPublicSurveyQuestionList(template, answers, selectedSections);
@@ -104,7 +104,7 @@ function buildAutoAnsweredSurvey(
     );
   }
 
-  assert.ok(guard < 2000, "auto answer guard overflow");
+  assert.ok(guard < 2400, "auto answer guard overflow");
   const selectedSections = resolveSelectedSectionsFromC27(template, answers);
   const pruned = pruneSurveyAnswersByVisibility(template, answers, selectedSections);
   return {
@@ -112,6 +112,20 @@ function buildAutoAnsweredSurvey(
     selectedSections,
     questionList: buildPublicSurveyQuestionList(template, pruned, selectedSections),
   };
+}
+
+function createRng(seed: number) {
+  let state = seed >>> 0;
+  return () => {
+    state = (state * 1664525 + 1013904223) >>> 0;
+    return state / 0xffffffff;
+  };
+}
+
+function pickOne<T>(items: T[], random: () => number) {
+  if (items.length === 0) throw new Error("pickOne requires at least one item");
+  const index = Math.floor(random() * items.length);
+  return items[Math.max(0, Math.min(index, items.length - 1))];
 }
 
 function run() {
@@ -126,7 +140,7 @@ function run() {
   const c05 = findQuestion(template, "C05");
   const c27 = findQuestion(template, "C27");
 
-  // case 1) base visibility and displayIf branch
+  // case 1) displayIf visibility branch
   const initialQuestionList = buildPublicSurveyQuestionList(template, {}, []);
   assert.ok(initialQuestionList.some((item) => item.question.key === "C01"));
   assert.ok(!initialQuestionList.some((item) => item.question.key === "C04"));
@@ -165,7 +179,14 @@ function run() {
   );
   checks.push("c27_resolution_and_max_selection");
 
-  // case 3) multi-select none-option exclusivity + maxSelect cap
+  // case 3) unknown C27 tokens should not add section keys
+  const unresolvedSections = resolveSelectedSectionsFromC27(template, {
+    C27: ["UNKNOWN_X", "zzz", "123123"],
+  });
+  assert.equal(unresolvedSections.length, 0);
+  checks.push("c27_unknown_tokens_guard");
+
+  // case 4) multi-select none-option exclusivity + maxSelect cap
   assert.equal(c05.type, "multi");
   assert.ok(c05.noneOptionValue, "C05 should define noneOptionValue");
   const firstRegularOption =
@@ -197,13 +218,19 @@ function run() {
   );
   checks.push("multi_none_exclusive_and_max_cap");
 
-  // case 4) number/group validation guard
+  // case 5) single validation invalid option should fail
+  assert.ok(validateSurveyQuestionAnswer(c01, "__INVALID__") !== null);
+  assert.equal(validateSurveyQuestionAnswer(c01, c01.options[0]?.value ?? ""), null);
+  checks.push("single_validation_guard");
+
+  // case 6) number/group validation guard
   assert.equal(c02.type, "number");
   assert.ok(validateSurveyQuestionAnswer(c02, "") !== null);
   assert.ok(validateSurveyQuestionAnswer(c02, "-1") !== null);
   assert.ok(validateSurveyQuestionAnswer(c02, "121") !== null);
   assert.ok(validateSurveyQuestionAnswer(c02, "10.5") !== null);
-  assert.equal(validateSurveyQuestionAnswer(c02, "35"), null);
+  assert.equal(validateSurveyQuestionAnswer(c02, "0"), null);
+  assert.equal(validateSurveyQuestionAnswer(c02, "120"), null);
 
   assert.equal(c03.type, "group");
   assert.ok(validateSurveyQuestionAnswer(c03, { fieldValues: { heightCm: "", weightKg: "" } }) !== null);
@@ -219,7 +246,7 @@ function run() {
   );
   checks.push("number_and_group_validation_guard");
 
-  // case 5) normalize/prune should remove hidden + unknown keys
+  // case 7) normalize/prune should remove hidden + unknown keys
   const normalized = normalizeSurveyAnswersByTemplate(template, {
     C01: nonB ?? "",
     C04: "A",
@@ -230,7 +257,7 @@ function run() {
   assert.ok(!Object.prototype.hasOwnProperty.call(normalized, "UNKNOWN_KEY"));
   checks.push("normalize_and_prune_hidden_keys");
 
-  // case 6) selected section question visibility list consistency
+  // case 8) selected section question visibility list consistency
   const selectedTwo = [c27.options[0].value, c27.options[1].value];
   const sectionAnswers: PublicSurveyAnswers = {
     C27: sanitizeSurveyAnswerValue(c27, selectedTwo, maxSelectedSections),
@@ -252,7 +279,7 @@ function run() {
   }
   checks.push("selected_section_visibility_consistency");
 
-  // case 7) progress computation sanity
+  // case 9) progress computation sanity
   const progressSeed: PublicSurveyAnswers = {};
   for (const item of sectionQuestionList.slice(0, 2)) {
     progressSeed[item.question.key] = sanitizeSurveyAnswerValue(
@@ -267,7 +294,7 @@ function run() {
   assert.ok(progress.requiredTotal >= progress.requiredAnswered);
   checks.push("progress_computation_sanity");
 
-  // case 8) full auto-answer => validation clean + analysis input + compute result
+  // case 10) full auto-answer => validation clean + analysis input + compute result
   const auto = buildAutoAnsweredSurvey(template, {
     C01: sanitizeSurveyAnswerValue(c01, "B", maxSelectedSections),
     C27: sanitizeSurveyAnswerValue(c27, selectedTwo, maxSelectedSections),
@@ -278,6 +305,10 @@ function run() {
     const error = validateSurveyQuestionAnswer(node.question, auto.answers[node.question.key]);
     assert.equal(error, null, `auto answer invalid for ${node.question.key}: ${error}`);
   }
+
+  const fullProgress = computeSurveyProgress(auto.questionList, auto.answers);
+  assert.equal(fullProgress.percent, 100);
+  assert.equal(fullProgress.requiredAnswered, fullProgress.requiredTotal);
 
   const analysisInput = buildWellnessAnalysisInputFromSurvey({
     template,
@@ -296,7 +327,7 @@ function run() {
   assert.ok(result.highRiskHighlights.length > 0);
   checks.push("auto_answer_to_analysis_integration");
 
-  // case 9) section deselection should prune orphan section answers
+  // case 11) section deselection should prune orphan section answers
   const reducedAnswers = {
     ...auto.answers,
     C27: sanitizeSurveyAnswerValue(c27, [selectedTwo[0]], maxSelectedSections),
@@ -327,7 +358,7 @@ function run() {
   }
   checks.push("deselection_prunes_orphan_answers");
 
-  // case 10) malformed payload normalization should not throw and should remain bounded
+  // case 12) malformed payload normalization should not throw and should remain bounded
   const malformed = normalizeSurveyAnswersByTemplate(template, {
     C02: { answerValue: "abc" },
     C03: { fieldValues: { heightCm: "170", weightKg: "x" } },
@@ -338,6 +369,104 @@ function run() {
   assert.ok(malformedSelected.length <= maxSelectedSections);
   assert.ok(toMultiValues(malformed.C05).length <= (c05.maxSelect || maxSelectedSections));
   checks.push("malformed_payload_normalization_guard");
+
+  // case 13) explicit selected-section seed should ignore unknown ids
+  const withSeed = resolveSelectedSectionsFromC27(
+    template,
+    {},
+    [c27.options[0].value, "S99", c27.options[1].value]
+  );
+  assert.deepEqual(withSeed, [c27.options[0].value, c27.options[1].value]);
+  checks.push("selected_section_seed_guard");
+
+  // case 14) empty analysis input should stay safe
+  const emptyAnalysisInput = buildWellnessAnalysisInputFromSurvey({
+    template,
+    answers: {},
+    selectedSections: [],
+  });
+  assert.equal(emptyAnalysisInput.selectedSections.length, 0);
+  assert.equal(emptyAnalysisInput.answers.length, 0);
+  const emptyResult = computeWellnessResult(emptyAnalysisInput);
+  assert.ok(Number.isFinite(emptyResult.overallHealthScore));
+  checks.push("empty_analysis_input_safe");
+
+  // case 15) randomized fuzz stability across full survey shape
+  const random = createRng(20260302);
+  const allQuestions = [...template.common, ...template.sections.flatMap((section) => section.questions)];
+  for (let runIndex = 0; runIndex < 120; runIndex += 1) {
+    const fuzzAnswers: PublicSurveyAnswers = {};
+
+    for (const question of allQuestions) {
+      if (random() < 0.52) continue;
+
+      if (question.type === "single") {
+        if (random() < 0.75 && question.options.length > 0) {
+          fuzzAnswers[question.key] = pickOne(question.options, random).value;
+        } else {
+          fuzzAnswers[question.key] = random() < 0.5 ? "__INVALID__" : "";
+        }
+        continue;
+      }
+
+      if (question.type === "multi") {
+        const rawTokens: unknown[] = [];
+        const count = Math.floor(random() * 5);
+        for (let i = 0; i < count; i += 1) {
+          if (random() < 0.75 && question.options.length > 0) {
+            rawTokens.push(pickOne(question.options, random).value);
+          } else {
+            rawTokens.push(`INVALID_${i}`);
+          }
+        }
+        fuzzAnswers[question.key] = random() < 0.35 ? { selectedValues: rawTokens } : rawTokens;
+        continue;
+      }
+
+      if (question.type === "number") {
+        const randomNumber = Math.floor(random() * 200) - 20;
+        fuzzAnswers[question.key] = random() < 0.4 ? `${randomNumber}abc` : String(randomNumber);
+        continue;
+      }
+
+      if (question.type === "group") {
+        const fieldValues = Object.fromEntries(
+          (question.fields ?? []).map((field, fieldIndex) => {
+            if (random() < 0.45) return [field.id, ""];
+            if (field.type === "number") return [field.id, String(Math.floor(random() * 260))];
+            return [field.id, `txt-${fieldIndex}`];
+          })
+        );
+        fuzzAnswers[question.key] = random() < 0.5 ? { fieldValues } : fieldValues;
+        continue;
+      }
+
+      fuzzAnswers[question.key] = random() < 0.5 ? "test" : "";
+    }
+
+    const normalizedFuzz = normalizeSurveyAnswersByTemplate(template, fuzzAnswers);
+    const selectedFuzz = resolveSelectedSectionsFromC27(template, normalizedFuzz);
+    assert.ok(selectedFuzz.length <= maxSelectedSections);
+
+    const visibleList = buildPublicSurveyQuestionList(template, normalizedFuzz, selectedFuzz);
+    const visibleKeySet = new Set(visibleList.map((item) => item.question.key));
+    for (const key of Object.keys(normalizedFuzz)) {
+      assert.ok(visibleKeySet.has(key), `fuzz produced hidden key: ${key}`);
+    }
+
+    const progressFuzz = computeSurveyProgress(visibleList, normalizedFuzz);
+    assert.ok(progressFuzz.percent >= 0 && progressFuzz.percent <= 100);
+
+    const analysisFuzz = buildWellnessAnalysisInputFromSurvey({
+      template,
+      answers: normalizedFuzz,
+      selectedSections: selectedFuzz,
+    });
+    assert.ok(analysisFuzz.selectedSections.length <= maxSelectedSections);
+    const fuzzResult = computeWellnessResult(analysisFuzz);
+    assert.ok(Number.isFinite(fuzzResult.overallHealthScore));
+  }
+  checks.push("randomized_fuzz_stability");
 
   console.log(
     JSON.stringify(

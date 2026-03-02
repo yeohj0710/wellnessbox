@@ -8,13 +8,28 @@ import {
 
 export type DbRouteError = {
   status: number;
-  code: "DB_ENV_INVALID" | "DB_QUERY_FAILED";
+  code: "DB_ENV_INVALID" | "DB_SCHEMA_MISMATCH" | "DB_QUERY_FAILED";
   message: string;
 };
+
+const DB_SCHEMA_MISMATCH_MESSAGE =
+  "데이터베이스 스키마가 현재 서버 코드와 맞지 않습니다. 운영 환경의 DB URL 설정과 prisma migrate deploy 적용 여부를 확인해 주세요.";
 
 function normalizeErrorMessage(value: unknown) {
   if (value instanceof Error) return value.message;
   return "";
+}
+
+function isSchemaMismatchKnownError(error: unknown) {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    (error.code === "P2021" || error.code === "P2022")
+  );
+}
+
+function hasSchemaMismatchSignature(message: string) {
+  const normalized = message.toLowerCase();
+  return normalized.includes("p2021") || normalized.includes("p2022");
 }
 
 export function resolveDbRouteError(
@@ -43,7 +58,15 @@ export function resolveDbRouteError(
       status: 503,
       code: "DB_ENV_INVALID",
       message:
-        "데이터베이스 초기화에 실패했습니다. DB 연결 환경변수(DATABASE_URL/DIRECT_URL)를 확인해 주세요.",
+        "데이터베이스 초기화에 실패했습니다. DB 연결 환경변수(DATABASE_URL/DIRECT_URL 또는 WELLNESSBOX_*)를 확인해 주세요.",
+    };
+  }
+
+  if (isSchemaMismatchKnownError(error)) {
+    return {
+      status: 503,
+      code: "DB_SCHEMA_MISMATCH",
+      message: DB_SCHEMA_MISMATCH_MESSAGE,
     };
   }
 
@@ -61,6 +84,14 @@ export function resolveDbRouteError(
   }
 
   const rawMessage = normalizeErrorMessage(error).toLowerCase();
+  if (hasSchemaMismatchSignature(rawMessage)) {
+    return {
+      status: 503,
+      code: "DB_SCHEMA_MISMATCH",
+      message: DB_SCHEMA_MISMATCH_MESSAGE,
+    };
+  }
+
   if (rawMessage.includes("p6001") && !isEngineModeMismatch) {
     return {
       status: 503,

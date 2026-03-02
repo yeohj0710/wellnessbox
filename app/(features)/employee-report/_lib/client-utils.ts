@@ -239,6 +239,16 @@ export function buildSyncGuidance(
   status: number,
   fallbackMessage: string
 ): SyncGuidance {
+  if (payload.code === "DB_SCHEMA_MISMATCH") {
+    return {
+      code: payload.code,
+      reason: payload.reason,
+      nextAction: "retry",
+      message:
+        "서버 데이터베이스 점검이 필요한 상태입니다. 잠시 후 다시 시도하거나 운영팀에 문의해 주세요.",
+    };
+  }
+
   const nextAction = payload.nextAction;
   if (nextAction === "init") {
     return {

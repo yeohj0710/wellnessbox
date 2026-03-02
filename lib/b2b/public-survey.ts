@@ -23,6 +23,10 @@ export type PublicSurveyProgress = {
   percent: number;
 };
 
+export type BuildPublicSurveyQuestionListOptions = {
+  deriveSelectedSections?: boolean;
+};
+
 const TOKEN_SPLIT_REGEX = /[,\n/|]/g;
 
 function normalizeToken(value: string) {
@@ -278,13 +282,13 @@ export function isSurveyQuestionAnswered(
 export function buildPublicSurveyQuestionList(
   template: WellnessSurveyTemplate,
   answers: PublicSurveyAnswers,
-  selectedSectionsInput?: string[]
+  selectedSectionsInput?: string[],
+  options?: BuildPublicSurveyQuestionListOptions
 ) {
-  const selectedSections = resolveSelectedSectionsFromC27(
-    template,
-    answers,
-    selectedSectionsInput
-  );
+  const selectedSections =
+    options?.deriveSelectedSections === false
+      ? resolveSelectedSectionsFromC27(template, {}, selectedSectionsInput ?? [])
+      : resolveSelectedSectionsFromC27(template, answers, selectedSectionsInput);
   const selectedSectionSet = new Set(selectedSections);
   const sectionByKey = new Map(template.sections.map((section) => [section.key, section]));
   const list: PublicSurveyQuestionNode[] = [];
@@ -480,9 +484,17 @@ function validateNumberInRange(input: {
 
 export function validateSurveyQuestionAnswer(
   question: WellnessSurveyQuestionForTemplate,
-  rawValue: unknown
+  rawValue: unknown,
+  options?: {
+    treatSelectionAsOptional?: boolean;
+  }
 ) {
-  const required = question.required === true;
+  const required =
+    question.required === true &&
+    !(
+      options?.treatSelectionAsOptional &&
+      (question.type === "single" || question.type === "multi")
+    );
   const answered = isSurveyQuestionAnswered(question, rawValue);
   if (!answered) {
     return required ? "필수 문항입니다. 응답을 입력해 주세요." : null;

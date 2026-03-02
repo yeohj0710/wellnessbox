@@ -36,7 +36,12 @@ async function answerCurrentQuestion(page, output) {
     const options = question.locator('[data-testid="survey-option"]');
     const optionCount = await options.count();
     if (optionCount === 0) throw new Error(`single option missing: ${key}`);
-    await options.first().click();
+    if (key === "C01" && optionCount > 1) {
+      // C04(displayIf) 분기 검증을 위해 C01 두 번째 보기를 선택한다.
+      await options.nth(1).click();
+    } else {
+      await options.first().click();
+    }
     return key;
   }
 
@@ -80,7 +85,7 @@ async function answerCurrentQuestion(page, output) {
         };
         await input.fill(chooseNumericInputValue(attrs));
       } else {
-        await input.fill(`테스트-${index + 1}`);
+        await input.fill(`test-${index + 1}`);
       }
     }
     return key;
@@ -89,7 +94,7 @@ async function answerCurrentQuestion(page, output) {
   const fallbackInput = question.locator("input, textarea").first();
   const fallbackCount = await fallbackInput.count();
   if (fallbackCount > 0) {
-    await fallbackInput.fill("테스트");
+    await fallbackInput.fill("test");
   }
   return key;
 }
@@ -126,6 +131,7 @@ async function run() {
     checks: {
       serverReady: false,
       resultVisible: false,
+      resultResetToIntro: false,
       visitedQuestions: [],
       steps: 0,
       uniqueQuestionCount: 0,
@@ -182,6 +188,13 @@ async function run() {
         break;
       }
 
+      const hasCalculating =
+        (await page.locator('[data-testid="survey-calculating"]').count()) > 0;
+      if (hasCalculating) {
+        await page.waitForTimeout(120);
+        continue;
+      }
+
       const questionKey = await answerCurrentQuestion(page, output);
       const next = (keyVisitCount.get(questionKey) || 0) + 1;
       keyVisitCount.set(questionKey, next);
@@ -197,9 +210,19 @@ async function run() {
       throw new Error("result screen not reached within max steps");
     }
 
-    output.checks.uniqueQuestionCount = new Set(
-      output.checks.visitedQuestions.map((item) => item.key)
-    ).size;
+    const visitedKeySet = new Set(output.checks.visitedQuestions.map((item) => item.key));
+    if (!visitedKeySet.has("C04")) {
+      throw new Error("displayIf branch verification failed: C04 was not visited");
+    }
+
+    output.checks.uniqueQuestionCount = visitedKeySet.size;
+
+    await page.locator('[data-testid="survey-result-reset-button"]').click();
+    await page
+      .locator('[data-testid="survey-start-button"]')
+      .waitFor({ state: "visible", timeout: 8000 });
+    output.checks.resultResetToIntro = true;
+
     output.ok = true;
   } catch (error) {
     output.ok = false;
