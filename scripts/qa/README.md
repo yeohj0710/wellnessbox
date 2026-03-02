@@ -19,6 +19,8 @@
 - `npm run qa:b2b:export-smoke`
   - B2B 리포트 validation/PPTX/PDF export 기본 동작을 검증합니다.
   - 실행 중 `src/generated/layout.json`이 변경될 수 있어, 스크립트가 실행 전 스냅샷으로 복원합니다.
+- `npm run qa:b2b:survey-readiness`
+  - 최신 설문 데이터(`data/b2b/*`) 정합성, C27-섹션 매핑, 점수 규칙/문구 커버리지, 계산 엔진 핵심 시나리오를 검증합니다.
 - `npm run qa:syntax`
   - `scripts/qa` 하위 `.cjs` 스크립트에 대해 `node --check` 문법 점검을 일괄 실행합니다.
 - `npm run qa:smoke`

@@ -30,8 +30,8 @@ const RADAR_CENTER = RADAR_SIZE / 2;
 const RADAR_RADIUS = 70;
 
 const MAX_PAGE1_SECTION_BARS = 3;
-const MAX_METRICS_LINES = 6;
-const MAX_MEDICATION_LINES = 4;
+const MAX_PAGE2_METRIC_ITEMS = 12;
+const MAX_PAGE2_MEDICATION_ITEMS = 6;
 
 type AxisItem = {
   id: string;
@@ -147,24 +147,26 @@ export default function ReportSummaryCards(props: {
   const analysisLines = hasWellnessScoringData ? buildFriendlyAnalysisLines(payload) : [];
   const riskLines = hasWellnessScoringData ? buildFriendlyRiskLines(payload) : [];
 
-  const healthMetrics = ensureArray(payload.health?.coreMetrics)
+  const healthMetricsAll = ensureArray(payload.health?.coreMetrics)
     .map((row) => ({
       label: sanitizeTitle(firstOrDash(row?.label)),
       value: formatMetricValue(row?.value, row?.unit),
       statusLabel: resolveMetricStatusLabel(row?.status),
-    }))
-    .slice(0, MAX_METRICS_LINES);
+    }));
+  const healthMetrics = healthMetricsAll.slice(0, MAX_PAGE2_METRIC_ITEMS);
+  const hiddenHealthMetricCount = Math.max(0, healthMetricsAll.length - healthMetrics.length);
 
   const healthInsightLines = buildHealthInsightLines(payload);
 
-  const medications = ensureArray(payload.health?.medications)
+  const medicationsAll = ensureArray(payload.health?.medications)
     .map((row) => ({
       medicationName: sanitizeTitle(firstOrDash(row?.medicationName)),
       hospitalName: sanitizeTitle(firstOrDash(row?.hospitalName)),
       date: firstOrDash(row?.date),
       dosageDay: firstOrDash(row?.dosageDay),
-    }))
-    .slice(0, MAX_MEDICATION_LINES);
+    }));
+  const medications = medicationsAll.slice(0, MAX_PAGE2_MEDICATION_ITEMS);
+  const hiddenMedicationCount = Math.max(0, medicationsAll.length - medications.length);
 
   const medicationStatusMessage = toTrimmedText(payload.health?.medicationStatus?.message);
 
@@ -380,18 +382,25 @@ export default function ReportSummaryCards(props: {
           </p>
         </header>
 
-        <div className={styles.reportSecondGrid}>
+        <div className={styles.reportSecondStack}>
           <article className={styles.reportDataCard}>
-            <h3 className={styles.reportDataTitle}>건강검진 핵심 수치</h3>
+            <div className={styles.reportDataHeadRow}>
+              <h3 className={styles.reportDataTitle}>건강검진 핵심 수치</h3>
+              {hiddenHealthMetricCount > 0 ? (
+                <span className={styles.inlineHint}>추가 {hiddenHealthMetricCount}개 수치는 원본에서 확인</span>
+              ) : null}
+            </div>
             {healthMetrics.length === 0 ? (
               <p className={styles.reportDataEmpty}>확인 가능한 건강검진 핵심 수치가 없습니다.</p>
             ) : (
-              <ul className={styles.reportDataList}>
+              <ul className={styles.reportMetricGrid}>
                 {healthMetrics.map((metric, index) => (
-                  <li key={`metric-${index}`} className={styles.reportDataBody}>
-                    <span className={styles.reportDataLabel}>{metric.label}</span>
-                    <span className={styles.reportDataValue}>{metric.value}</span>
-                    <span className={styles.reportInsightBadge}>{metric.statusLabel}</span>
+                  <li key={`metric-${index}`} className={styles.reportMetricItem}>
+                    <div className={styles.reportMetricHead}>
+                      <span className={styles.reportMetricLabel}>{metric.label}</span>
+                      <span className={styles.reportInsightBadge}>{metric.statusLabel}</span>
+                    </div>
+                    <span className={styles.reportMetricValue}>{metric.value}</span>
                   </li>
                 ))}
               </ul>
@@ -414,21 +423,25 @@ export default function ReportSummaryCards(props: {
           </article>
 
           <article className={styles.reportDataCard}>
-            <h3 className={styles.reportDataTitle}>최근 3건 진료/조제 이력 분석</h3>
+            <div className={styles.reportDataHeadRow}>
+              <h3 className={styles.reportDataTitle}>최근 진료·조제 이력 상세</h3>
+              {hiddenMedicationCount > 0 ? (
+                <span className={styles.inlineHint}>추가 {hiddenMedicationCount}건은 관리자 화면에서 확인</span>
+              ) : null}
+            </div>
             {medicationStatusMessage ? (
               <p className={styles.reportBlockLead}>{ensureSentence(medicationStatusMessage)}</p>
             ) : null}
             {medications.length === 0 ? (
-              <p className={styles.reportDataEmpty}>최근 3건 진료/조제 이력이 없습니다.</p>
+              <p className={styles.reportDataEmpty}>최근 진료/조제 이력이 없습니다.</p>
             ) : (
-              <ul className={styles.reportDataList}>
+              <ul className={styles.reportMedicationList}>
                 {medications.map((medication, index) => (
-                  <li key={`medication-${index}`} className={styles.reportDataBody}>
-                    <span className={styles.reportDataLabel}>{medication.medicationName}</span>
-                    <span className={styles.reportDataValue}>
-                      {medication.date} / {medication.dosageDay}
-                    </span>
-                    <span className={styles.inlineHint}>{medication.hospitalName}</span>
+                  <li key={`medication-${index}`} className={styles.reportMedicationItem}>
+                    <p className={styles.reportMedicationName}>{medication.medicationName}</p>
+                    <p className={styles.reportMedicationMeta}>
+                      {medication.date} / {medication.dosageDay} / {medication.hospitalName}
+                    </p>
                   </li>
                 ))}
               </ul>

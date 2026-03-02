@@ -1,8 +1,8 @@
 {
   "id": "wellnessbox_health_scoring_rules_v1",
   "title": "웰니스 설문 점수화 규칙",
-  "version": "1.0.0",
-  "generatedAtUtc": "2026-02-26T10:34:19Z",
+  "version": "1.1.0",
+  "generatedAtUtc": "2026-03-02T11:20:31Z",
   "scoreConventions": {
     "questionScoreRange": [
       0,

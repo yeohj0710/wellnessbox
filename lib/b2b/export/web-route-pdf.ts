@@ -15,7 +15,7 @@ const MAX_PDF_DEVICE_SCALE_FACTOR = 2;
 const DEFAULT_PDF_MAX_BYTES = 15 * 1024 * 1024;
 const MIN_PDF_MAX_BYTES = 2 * 1024 * 1024;
 const MAX_PDF_MAX_BYTES = 80 * 1024 * 1024;
-const DEFAULT_PDF_PAGE_MARGIN_PX = 40;
+const DEFAULT_PDF_PAGE_MARGIN_PX = 48;
 const MIN_PDF_PAGE_MARGIN_PX = 0;
 const MAX_PDF_PAGE_MARGIN_PX = 160;
 const MIN_REPORT_PAGE_SIZE_PX = 240;
@@ -178,8 +178,22 @@ async function applyPdfRenderOverrides(
   await page.evaluate(() => {
     const exportRoot = document.querySelector<HTMLElement>('[data-report-export-root="1"]');
     if (!exportRoot) return;
-    const clonedRoot = exportRoot.cloneNode(true);
+    const clonedRoot = exportRoot.cloneNode(true) as HTMLElement;
     document.body.replaceChildren(clonedRoot);
+
+    const surface = clonedRoot.querySelector<HTMLElement>('[data-testid="report-capture-surface"]');
+    if (!surface) return;
+
+    const reportPages = Array.from(surface.querySelectorAll<HTMLElement>("[data-report-page]"));
+    for (const reportPage of reportPages) {
+      if (reportPage.parentElement?.getAttribute("data-report-page-frame") === "1") continue;
+      const parent = reportPage.parentElement;
+      if (!parent) continue;
+      const frame = document.createElement("div");
+      frame.setAttribute("data-report-page-frame", "1");
+      parent.insertBefore(frame, reportPage);
+      frame.appendChild(reportPage);
+    }
   });
 
   await page.addStyleTag({
@@ -214,12 +228,22 @@ async function applyPdfRenderOverrides(
         width: ${pageWidthPx}px !important;
         max-width: ${pageWidthPx}px !important;
         margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
       }
 
-      [data-report-export-root="1"] [data-testid="report-capture-surface"] [data-report-page] {
-        width: ${reportPageSize.widthPx}px !important;
-        max-width: ${reportPageSize.widthPx}px !important;
-        margin: ${pageMarginPx}px auto !important;
+      [data-report-export-root="1"] [data-testid="report-capture-surface"] [data-report-page-frame="1"] {
+        width: ${pageWidthPx}px !important;
+        min-height: ${pageHeightPx}px !important;
+        height: ${pageHeightPx}px !important;
+        max-height: ${pageHeightPx}px !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+        padding: ${pageMarginPx}px 0 !important;
+        display: flex !important;
+        align-items: flex-start !important;
+        justify-content: center !important;
+        overflow: hidden !important;
         break-before: auto !important;
         page-break-before: auto !important;
         break-after: auto !important;
@@ -228,12 +252,22 @@ async function applyPdfRenderOverrides(
         page-break-inside: avoid !important;
       }
 
-      [data-report-export-root="1"] [data-testid="report-capture-surface"] [data-report-page] + [data-report-page] {
+      [data-report-export-root="1"] [data-testid="report-capture-surface"] [data-report-page-frame="1"] [data-report-page] {
+        width: ${reportPageSize.widthPx}px !important;
+        max-width: ${reportPageSize.widthPx}px !important;
+        min-height: ${reportPageSize.heightPx}px !important;
+        height: ${reportPageSize.heightPx}px !important;
+        max-height: ${reportPageSize.heightPx}px !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+      }
+
+      [data-report-export-root="1"] [data-testid="report-capture-surface"] [data-report-page-frame="1"] + [data-report-page-frame="1"] {
         break-before: page !important;
         page-break-before: always !important;
       }
 
-      [data-report-export-root="1"] [data-testid="report-capture-surface"] [data-report-page]:last-child {
+      [data-report-export-root="1"] [data-testid="report-capture-surface"] [data-report-page-frame="1"]:last-child {
         break-after: auto !important;
         page-break-after: auto !important;
       }

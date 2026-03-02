@@ -1,8 +1,8 @@
 {
   "id": "wellnessbox_wellness_survey_common_v1",
   "title": "웰니스 설문지 - 공통 질문지",
-  "version": "1.0.0",
-  "generatedAtUtc": "2026-02-26T10:34:19Z",
+  "version": "1.1.0",
+  "generatedAtUtc": "2026-03-02T11:20:31Z",
   "questions": [
     {
       "id": "C01",
@@ -26,7 +26,7 @@
     {
       "id": "C02",
       "number": 2,
-      "prompt": "귀하의 만 나이를 알려주십시오.",
+      "prompt": "귀하의 만 나이를 기재해주십시오.  만 (      )세",
       "type": "number",
       "unit": "세",
       "constraints": {
@@ -41,7 +41,7 @@
     {
       "id": "C03",
       "number": 3,
-      "prompt": "귀하의 키, 몸무게를 알려주십시오.",
+      "prompt": "귀하의 키, 몸무게를 기재해주십시오.  키 (      )cm   몸무게 (      )kg",
       "type": "group",
       "fields": [
         {
@@ -74,7 +74,7 @@
     {
       "id": "C04",
       "number": 4,
-      "prompt": "귀하가 여성일 경우 해당되는 것을 선택해주십시오.",
+      "prompt": "귀하가 여성일 경우 해당되는 사항을 선택해주십시오.",
       "type": "single_choice",
       "displayIf": {
         "field": "C01",
@@ -105,7 +105,7 @@
     {
       "id": "C05",
       "number": 5,
-      "prompt": "과거나 현재 진단받은 질환을 모두 선택해주십시오.",
+      "prompt": "과거나 현재 진단받은 질환이 있을 경우 ‘있음’에 체크하고 모두 동그라미 표시해 주십시오.",
       "type": "multi_select_with_none",
       "items": [
         {
@@ -146,6 +146,9 @@
         },
         {
           "label": "대상포진"
+        },
+        {
+          "label": "기타 (             )"
         }
       ],
       "noneOption": {
@@ -158,7 +161,7 @@
     {
       "id": "C06",
       "number": 6,
-      "prompt": "관리가 필요하거나 가족력이 있는 항목을 모두 선택해주십시오.",
+      "prompt": "관리가 필요하거나 가족력이 있는 항목이 있을 경우 ‘있음’에 체크하고 모두 동그라미 표시해 주십시오.",
       "type": "multi_select_with_none",
       "items": [
         {
@@ -189,7 +192,7 @@
           "label": "암"
         },
         {
-          "label": "황반변성"
+          "label": "기타 (             )"
         }
       ],
       "noneOption": {
@@ -202,7 +205,7 @@
     {
       "id": "C07",
       "number": 7,
-      "prompt": "알러지 증상이 있는 것들을 알려주십시오. (예: 우유, 땅콩, 꽃가루 등)",
+      "prompt": "알러지 증상이 있는 것들에 모두 동그라미 표시해 주십시오. (예: 우유, 땅콩, 꽃가루 등)",
       "type": "multi_select_with_none",
       "items": [
         {
@@ -263,19 +266,13 @@
           "label": "강황"
         },
         {
-          "label": "프로폴리스"
-        },
-        {
-          "label": "단백질"
+          "label": "프로폴리스 단백질"
         },
         {
           "label": "사과"
         },
         {
-          "label": "석류"
-        },
-        {
-          "label": "호박씨"
+          "label": "기타 (             )"
         }
       ],
       "noneOption": {
@@ -288,7 +285,7 @@
     {
       "id": "C08",
       "number": 8,
-      "prompt": "투약 중인 약물을 모두 선택해주십시오.",
+      "prompt": "투약 중인 약물이 있을 경우 ‘있음’에 체크하고 모두 동그라미 표시해 주십시오.",
       "type": "multi_select_with_none",
       "items": [
         {
@@ -313,7 +310,7 @@
           "label": "해열·진통소염제"
         },
         {
-          "label": "항정신성의약품"
+          "label": "향정신성의약품"
         },
         {
           "label": "혈압약"
@@ -326,6 +323,9 @@
         },
         {
           "label": "호르몬제"
+        },
+        {
+          "label": "기타 (             )"
         }
       ],
       "noneOption": {
@@ -338,7 +338,7 @@
     {
       "id": "C09",
       "number": 9,
-      "prompt": "복용 중인 건강기능식품을 모두 선택해주십시오.",
+      "prompt": "복용 중인 건강기능식품 관련 항목을 모두 체크해 주십시오.",
       "type": "multi_select_with_none",
       "items": [
         {
@@ -378,6 +378,9 @@
           "label": "갱년기 여성"
         },
         {
+          "label": "호홉기"
+        },
+        {
           "label": "갱년기 남성"
         },
         {
@@ -409,14 +412,8 @@
         },
         {
           "label": "요로 건강(요도염)"
-        },
-        {
-          "label": "호흡기 건강"
         }
       ],
-      "noneOption": {
-        "label": "없음"
-      },
       "scoring": {
         "enabled": false
       }
@@ -463,17 +460,17 @@
       "options": [
         {
           "value": "A",
-          "label": "주 5 회 이상",
+          "label": "주 5회 이상",
           "score": 1.0
         },
         {
           "value": "B",
-          "label": "주 2-4 회",
+          "label": "주 2-4회",
           "score": 0.5
         },
         {
           "value": "C",
-          "label": "주 1 회 이하",
+          "label": "주 1회 이하",
           "score": 0.0
         }
       ],
@@ -523,7 +520,7 @@
     {
       "id": "C13",
       "number": 13,
-      "prompt": "단백질 음식(고기, 두부 등)을 매일 3 번 이상 드시나요?",
+      "prompt": "단백질 음식(고기, 두부 등)을 매일 3번 이상 드시나요?",
       "type": "single_choice",
       "optionsPrefix": null,
       "options": [
@@ -589,7 +586,7 @@
     {
       "id": "C15",
       "number": 15,
-      "prompt": "젓갈 같은 짠 음식을 매일 한 번 이상 드시는 편인가요?",
+      "prompt": "젓갈과 같은 짠 음식을 매일 한 번 이상 드시는 편인가요?",
       "type": "single_choice",
       "optionsPrefix": null,
       "options": [
@@ -622,7 +619,7 @@
     {
       "id": "C16",
       "number": 16,
-      "prompt": "라면, 과자, 음료수 같은 간식을 매일 한 번 이상 드시나요?",
+      "prompt": "라면, 과자, 음료수 등의 간식을 매일 한 번 이상 드시나요?",
       "type": "single_choice",
       "optionsPrefix": null,
       "options": [
@@ -661,17 +658,17 @@
       "options": [
         {
           "value": "A",
-          "label": "주 4 회 이상",
+          "label": "주 4회 이상",
           "score": 1.0
         },
         {
           "value": "B",
-          "label": "주 2-3 회",
+          "label": "주 2-3회",
           "score": 0.5
         },
         {
           "value": "C",
-          "label": "주 1 회 이하",
+          "label": "주 1회 이하",
           "score": 0.0
         }
       ],
@@ -688,7 +685,7 @@
     {
       "id": "C18",
       "number": 18,
-      "prompt": "커피나 에너지 드링크 같은 카페인 음료를 하루에 4 잔 넘게 마시나요?",
+      "prompt": "커피나 에너지 드링크 같은 카페인 음료를 하루에 4잔 넘게 마시나요?",
       "type": "single_choice",
       "optionsPrefix": null,
       "options": [
@@ -727,22 +724,22 @@
         },
         {
           "value": "B",
-          "label": "월 1 회 이하",
+          "label": "월 1회 이하",
           "score": 0.25
         },
         {
           "value": "C",
-          "label": "월 2~4 회",
+          "label": "월 2~4회",
           "score": 0.5
         },
         {
           "value": "D",
-          "label": "주 2~3 회",
+          "label": "주 2~3회",
           "score": 0.75
         },
         {
           "value": "E",
-          "label": "주 4 회 이상",
+          "label": "주 4회 이상",
           "score": 1.0
         }
       ],
@@ -770,22 +767,22 @@
         },
         {
           "value": "B",
-          "label": "1 병",
+          "label": "1병",
           "score": 0.25
         },
         {
           "value": "C",
-          "label": "1.5 병",
+          "label": "1.5병",
           "score": 0.5
         },
         {
           "value": "D",
-          "label": "2 병",
+          "label": "2병",
           "score": 0.75
         },
         {
           "value": "E",
-          "label": "2.5 병 이상",
+          "label": "2.5병 이상",
           "score": 1.0
         }
       ],
@@ -802,23 +799,23 @@
     {
       "id": "C21",
       "number": 21,
-      "prompt": "현재 담배를 피우고 계신가요? (전자담배 포함)",
+      "prompt": "현재 흡연 중이신가요? (전자담배 포함)",
       "type": "single_choice",
       "optionsPrefix": null,
       "options": [
         {
           "value": "A",
-          "label": "안 피움",
+          "label": "아니오",
           "score": 0.0
         },
         {
           "value": "B",
-          "label": "금연 10 년 이상",
+          "label": "흡연했었으나 10년 이상 금연 중",
           "score": 0.1
         },
         {
           "value": "C",
-          "label": "금연 10 년 미만",
+          "label": "흡연했었으나 10년 미만 금연 중",
           "score": 0.5
         },
         {
@@ -840,19 +837,19 @@
     {
       "id": "C22",
       "number": 22,
-      "prompt": "하루에 20 분 이상 햇볕을 쬐는 시간이 있으신가요?",
+      "prompt": "하루에 20분 이상 햇볕을 쬐는 시간이 있으신가요?",
       "type": "single_choice",
       "optionsPrefix": null,
       "options": [
         {
           "value": "A",
-          "label": "아니오",
-          "score": 1.0
+          "label": "네",
+          "score": 0.0
         },
         {
           "value": "B",
-          "label": "네",
-          "score": 0.0
+          "label": "아니오",
+          "score": 1.0
         }
       ],
       "scoring": {
@@ -868,19 +865,19 @@
     {
       "id": "C23",
       "number": 23,
-      "prompt": "잠은 매일 6~8 시간 정도 충분히 주무시나요?",
+      "prompt": "잠은 매일 6~8시간 정도 충분히 주무시나요?",
       "type": "single_choice",
       "optionsPrefix": null,
       "options": [
         {
           "value": "A",
-          "label": "아니오",
-          "score": 1.0
+          "label": "네",
+          "score": 0.0
         },
         {
           "value": "B",
-          "label": "네",
-          "score": 0.0
+          "label": "아니오",
+          "score": 1.0
         }
       ],
       "scoring": {
@@ -896,19 +893,19 @@
     {
       "id": "C24",
       "number": 24,
-      "prompt": "하루 중 앉아서 보내는 시간이 6 시간을 넘으시나요?",
+      "prompt": "하루 중 앉아서 보내는 시간이 6시간을 넘으시나요?",
       "type": "single_choice",
       "optionsPrefix": null,
       "options": [
         {
           "value": "A",
-          "label": "아니오",
-          "score": 0.0
+          "label": "네",
+          "score": 1.0
         },
         {
           "value": "B",
-          "label": "네",
-          "score": 1.0
+          "label": "아니오",
+          "score": 0.0
         }
       ],
       "scoring": {
@@ -924,19 +921,19 @@
     {
       "id": "C25",
       "number": 25,
-      "prompt": "일주일에 3 번 이상, 한 번에 30 분 넘게 숨이 찰 정도로 운동하시나요?",
+      "prompt": "일주일에 3번 이상, 한 번에 30분 넘게 숨이 찰 정도로 운동하시나요?",
       "type": "single_choice",
       "optionsPrefix": null,
       "options": [
         {
           "value": "A",
-          "label": "아니오",
-          "score": 1.0
+          "label": "네",
+          "score": 0.0
         },
         {
           "value": "B",
-          "label": "네",
-          "score": 0.0
+          "label": "아니오",
+          "score": 1.0
         }
       ],
       "scoring": {
@@ -952,7 +949,7 @@
     {
       "id": "C26",
       "number": 26,
-      "prompt": "요즘 일상에서 스트레스를 받고 있다는 느낌을 얼마나 자주 경험하시나요?",
+      "prompt": "일상생활 중 스트레스를 어느 정도 경험하십니까?",
       "type": "single_choice",
       "optionsPrefix": null,
       "options": [
@@ -995,7 +992,7 @@
     {
       "id": "C27",
       "number": 27,
-      "prompt": "현재 개선하고 싶거나 불편한 증상을 모두 선택해주십시오.",
+      "prompt": "현재 개선하고 싶거나 불편한 증상을 모두 선택해주십시오. (최대 4~5개 분야)",
       "type": "multi_select_limited",
       "constraints": {
         "maxSelections": 5,
@@ -1094,6 +1091,16 @@
           ]
         },
         {
+          "value": "S24",
+          "label": "호홉기",
+          "aliases": [
+            "호흡기",
+            "호흡기 건강",
+            "호홉기"
+          ],
+          "labelPaper": "호홉기"
+        },
+        {
           "value": "S13",
           "label": "갱년기 남성",
           "aliases": [
@@ -1178,22 +1185,12 @@
             "요로 건강(요도염)",
             "요로"
           ]
-        },
-        {
-          "value": "S24",
-          "label": "호흡기 건강",
-          "labelPaper": "호홉기",
-          "aliases": [
-            "호흡기",
-            "호흡기 건강",
-            "호홉기"
-          ]
         }
       ],
       "scoring": {
         "enabled": false
       },
-      "notes": "공통 질문지 27번에서 선택한 항목(최대 4~5개)에 해당하는 상세 항목을 추가로 작성합니다."
+      "notes": "공통 질문지 27번에서 선택한 분야(최대 4~5개)에 해당하는 상세 문항을 추가로 작성합니다."
     }
   ]
 }

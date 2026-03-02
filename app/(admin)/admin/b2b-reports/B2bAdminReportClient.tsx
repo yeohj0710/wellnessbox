@@ -614,8 +614,8 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
 
           <div className={styles.stack}>
             {!selectedEmployeeId ? (
-              <section className={styles.sectionCard}>
-                <p className={styles.inlineHint}>
+              <section className={`${styles.sectionCard} ${styles.reportSelectionPlaceholder}`}>
+                <p className={styles.reportSelectionPlaceholderText}>
                   임직원을 선택하면 레포트 미리보기와 편집 도구가 함께 열려요.
                 </p>
               </section>

@@ -2065,6 +2065,22 @@
   font-size: 12px;
 }
 
+.reportSelectionPlaceholder {
+  min-height: 144px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.reportSelectionPlaceholderText {
+  margin: 0;
+  max-width: 760px;
+  color: #446287;
+  font-size: 18px;
+  line-height: 1.6;
+  font-weight: 700;
+}
+
 .skeletonRow {
   display: flex;
   align-items: center;
@@ -2485,6 +2501,12 @@
   gap: 9px;
 }
 
+.reportSecondStack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
 .reportDataCard {
   border-radius: 14px;
   border: 1px solid #d6e2f5;
@@ -2493,6 +2515,15 @@
   display: grid;
   align-content: start;
   gap: 7px;
+  overflow: hidden;
+}
+
+.reportDataHeadRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .reportDataTitle {
@@ -2509,6 +2540,80 @@
   list-style: none;
   display: grid;
   gap: 6px;
+}
+
+.reportMetricGrid {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.reportMetricItem {
+  border-radius: 10px;
+  border: 1px solid #dbe5f6;
+  background: #f9fbff;
+  padding: 7px 8px;
+  display: grid;
+  gap: 4px;
+}
+
+.reportMetricHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.reportMetricLabel {
+  color: #214170;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.reportMetricValue {
+  color: #0f3368;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.reportMedicationList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.reportMedicationItem {
+  border-radius: 10px;
+  border: 1px solid #dbe5f6;
+  background: #f9fbff;
+  padding: 7px 8px;
+  display: grid;
+  gap: 3px;
+}
+
+.reportMedicationName {
+  margin: 0;
+  color: #183d73;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.reportMedicationMeta {
+  margin: 0;
+  color: #587599;
+  font-size: 10px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 .reportDataBody {
@@ -2643,6 +2748,104 @@
   color: #54729b;
   font-size: 10px;
   line-height: 1.4;
+}
+
+[data-report-pdf-parity="1"] .reportSheet {
+  padding: 18px 18px 16px;
+  gap: 10px;
+}
+
+[data-report-pdf-parity="1"] .reportPageHeader {
+  gap: 5px;
+  padding-bottom: 8px;
+}
+
+[data-report-pdf-parity="1"] .reportPageKicker {
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+[data-report-pdf-parity="1"] .reportPageTitle {
+  font-size: 20px;
+}
+
+[data-report-pdf-parity="1"] .reportPageSubtitle {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+[data-report-pdf-parity="1"] .reportMetaRow {
+  gap: 6px;
+}
+
+[data-report-pdf-parity="1"] .reportMetaItem {
+  padding: 3px 8px;
+  font-size: 10px;
+}
+
+[data-report-pdf-parity="1"] .sectionTitle {
+  font-size: 18px;
+}
+
+[data-report-pdf-parity="1"] .reportFormula {
+  font-size: 10px;
+}
+
+[data-report-pdf-parity="1"] .reportTopGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+[data-report-pdf-parity="1"] .reportTopCard {
+  padding: 10px;
+  gap: 7px;
+}
+
+[data-report-pdf-parity="1"] .reportBlock {
+  padding: 10px;
+  gap: 6px;
+}
+
+[data-report-pdf-parity="1"] .reportBlockTitle {
+  font-size: 17px;
+}
+
+[data-report-pdf-parity="1"] .reportBlockLead {
+  font-size: 12px;
+}
+
+[data-report-pdf-parity="1"] .reportFriendlyList {
+  gap: 5px;
+  font-size: 12px;
+}
+
+[data-report-pdf-parity="1"] .reportDataCard {
+  padding: 10px;
+}
+
+[data-report-pdf-parity="1"] .reportDataTitle {
+  font-size: 14px;
+}
+
+[data-report-pdf-parity="1"] .reportDataBody,
+[data-report-pdf-parity="1"] .reportDataLabel,
+[data-report-pdf-parity="1"] .reportDataValue,
+[data-report-pdf-parity="1"] .reportDataEmpty {
+  font-size: 11px;
+}
+
+[data-report-pdf-parity="1"] .reportInsightBadge {
+  padding: 2px 8px;
+  font-size: 10px;
+}
+
+[data-report-pdf-parity="1"] .metaFooter {
+  padding: 11px 12px;
+  font-size: 12px;
+}
+
+[data-report-pdf-parity="1"] .inlineHint {
+  font-size: 11px;
 }
 
 .reportNarrativeList {
@@ -2937,6 +3140,10 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  [data-report-pdf-parity="1"] .reportTopGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .reportSecondGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -3028,6 +3235,16 @@
 
   .sectionCard {
     padding: 16px;
+  }
+
+  .reportSelectionPlaceholder {
+    min-height: 120px;
+    padding: 18px;
+  }
+
+  .reportSelectionPlaceholderText {
+    font-size: 15px;
+    line-height: 1.55;
   }
 
   .heroCard {

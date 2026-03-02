@@ -1,8 +1,8 @@
 {
   "id": "wellnessbox_wellness_survey_sections_v1",
   "title": "웰니스 설문지 - 상세 질문지",
-  "version": "1.0.0",
-  "generatedAtUtc": "2026-02-26T10:34:19Z",
+  "version": "1.1.0",
+  "generatedAtUtc": "2026-03-02T11:20:31Z",
   "sections": [
     {
       "id": "S01",
@@ -12,7 +12,7 @@
         {
           "id": "S01_Q01",
           "number": 1,
-          "prompt": "현재 연령이 만 50 세 이상이십니까?",
+          "prompt": "현재 만 50세 이상이십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -68,7 +68,7 @@
         {
           "id": "S01_Q03",
           "number": 3,
-          "prompt": "하루 평균 수면 시간이 6~8 시간 정도로 충분하신 편입니까?",
+          "prompt": "하루 평균 수면 시간이 6~8시간 정도로 충분하신 편입니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -102,27 +102,27 @@
           "options": [
             {
               "value": "A",
-              "label": "안 마심",
+              "label": "0회",
               "score": 0.0
             },
             {
               "value": "B",
-              "label": "월 1 회 이하",
+              "label": "월1회 이하",
               "score": 0.25
             },
             {
               "value": "C",
-              "label": "월 2~4 회",
+              "label": "월2~4회",
               "score": 0.5
             },
             {
               "value": "D",
-              "label": "주 2~3 회",
+              "label": "주2~3회",
               "score": 0.75
             },
             {
               "value": "E",
-              "label": "주 4 회 이상",
+              "label": "주4회 이상",
               "score": 1.0
             }
           ],
@@ -139,7 +139,7 @@
         {
           "id": "S01_Q05",
           "number": 5,
-          "prompt": "평소 1 회 음주량은 어느 정도이십니까?",
+          "prompt": "평소 1회 음주량은 어느 정도이십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -150,22 +150,22 @@
             },
             {
               "value": "B",
-              "label": "1 병",
+              "label": "1병",
               "score": 0.25
             },
             {
               "value": "C",
-              "label": "1.5 병",
+              "label": "1.5병",
               "score": 0.5
             },
             {
               "value": "D",
-              "label": "2 병",
+              "label": "2병",
               "score": 0.75
             },
             {
               "value": "E",
-              "label": "2.5 병 이상",
+              "label": "2.5병 이상",
               "score": 1.0
             }
           ],
@@ -253,7 +253,7 @@
         {
           "id": "S01_Q08",
           "number": 8,
-          "prompt": "1 년 전과 비교하여 현재 날짜나 요일을 기억하는 데 어려움이 있으십니까?",
+          "prompt": "1년 전과 비교하여 현재 날짜나 요일을 기억하는 데 어려움이 있으십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -286,7 +286,7 @@
         {
           "id": "S01_Q09",
           "number": 9,
-          "prompt": "1 년 전과 비교하여 대화 내용을 이해하기 어려워 되묻는 경우가 많아지셨습니까?",
+          "prompt": "1년 전과 비교하여 대화 내용을 이해하기 어려워 되묻는 경우가 많아지셨습니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -319,7 +319,7 @@
         {
           "id": "S01_Q10",
           "number": 10,
-          "prompt": "1 년 전과 비교하여 일상생활에 필요한 계산 능력이 저하되었다고 느끼십니까?",
+          "prompt": "1년 전과 비교하여 일상생활에 필요한 계산 능력이 저하되었다고 느끼십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -359,7 +359,7 @@
         {
           "id": "S02_Q01",
           "number": 1,
-          "prompt": "하루 평균 4 잔 이상의 카페인 음료를 섭취하십니까?",
+          "prompt": "하루 평균 4잔 이상의 카페인 음료를 섭취하십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -387,7 +387,7 @@
         {
           "id": "S02_Q02",
           "number": 2,
-          "prompt": "하루 평균 수면 시간이 6~8 시간 정도 되십니까?",
+          "prompt": "하루 평균 수면 시간이 6~8시간 정도 되십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -415,33 +415,33 @@
         {
           "id": "S02_Q03",
           "number": 3,
-          "prompt": "평소 음주 빈도는 어느 정도이십니까?",
+          "prompt": "평소 음주 횟수는 어느 정도이십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
             {
               "value": "A",
-              "label": "안 마심",
+              "label": "0회",
               "score": 0.0
             },
             {
               "value": "B",
-              "label": "월 1 회 이하",
+              "label": "월1회 이하",
               "score": 0.25
             },
             {
               "value": "C",
-              "label": "월 2~4 회",
+              "label": "월2~4회",
               "score": 0.5
             },
             {
               "value": "D",
-              "label": "주 2~3 회",
+              "label": "주2~3회",
               "score": 0.75
             },
             {
               "value": "E",
-              "label": "주 4 회 이상",
+              "label": "주4회 이상",
               "score": 1.0
             }
           ],
@@ -469,22 +469,22 @@
             },
             {
               "value": "B",
-              "label": "1 병",
+              "label": "1병",
               "score": 0.25
             },
             {
               "value": "C",
-              "label": "1.5 병",
+              "label": "1.5병",
               "score": 0.5
             },
             {
               "value": "D",
-              "label": "2 병",
+              "label": "2병",
               "score": 0.75
             },
             {
               "value": "E",
-              "label": "2.5 병 이상",
+              "label": "2.5병 이상",
               "score": 1.0
             }
           ],
@@ -567,23 +567,28 @@
         {
           "id": "S02_Q07",
           "number": 7,
-          "prompt": "지난 한 달 동안 일상 활동 중 졸음을 느끼신 적이 얼마나 자주 있습니까? (0)",
+          "prompt": "지난 한 달 동안 일상 활동 중 졸음을 느끼신 적이 얼마나 자주 있습니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
             {
               "value": "A",
-              "label": "주 1 회 이하",
+              "label": "없음",
               "score": 0.3
             },
             {
               "value": "B",
-              "label": "주 1-2 회",
-              "score": 0.6
+              "label": "주 1회 이하",
+              "score": 0.3
             },
             {
               "value": "C",
-              "label": "주 3 회 이상",
+              "label": "주 1~2회",
+              "score": 1.0
+            },
+            {
+              "value": "D",
+              "label": "주 3회 이상",
               "score": 1.0
             }
           ],
@@ -600,23 +605,23 @@
         {
           "id": "S02_Q08",
           "number": 8,
-          "prompt": "현재 전자담배를 포함한 흡연을 하고 계십니까?",
+          "prompt": "현재 흡연 중이십니까? (전자담배 포함)",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
             {
               "value": "A",
-              "label": "전혀 안 피움",
+              "label": "아니오",
               "score": 0.0
             },
             {
               "value": "B",
-              "label": "금연 10 년 이상",
+              "label": "흡연했었으나 10년 이상 금연 중",
               "score": 0.1
             },
             {
               "value": "C",
-              "label": "금연 10 년 미만",
+              "label": "흡연했었으나 10년 미만 금연 중",
               "score": 0.5
             },
             {
@@ -1022,7 +1027,7 @@
     },
     {
       "id": "S04",
-      "title": "구강.치아",
+      "title": "구강·치아",
       "questionCount": 11,
       "questions": [
         {
@@ -1151,17 +1156,17 @@
             },
             {
               "value": "B",
-              "label": "1 번",
+              "label": "1번",
               "score": 0.3
             },
             {
               "value": "C",
-              "label": "2-3 번",
+              "label": "2-3번",
               "score": 0.6
             },
             {
               "value": "D",
-              "label": "4 번 이상",
+              "label": "4번 이상",
               "score": 1.0
             }
           ],
@@ -1189,17 +1194,17 @@
             },
             {
               "value": "B",
-              "label": "1 번",
+              "label": "1번",
               "score": 0.3
             },
             {
               "value": "C",
-              "label": "2-3 번",
+              "label": "2-3번",
               "score": 0.6
             },
             {
               "value": "D",
-              "label": "4 번 이상",
+              "label": "4번 이상",
               "score": 1.0
             }
           ],
@@ -1282,23 +1287,23 @@
         {
           "id": "S04_Q09",
           "number": 9,
-          "prompt": "현재 전자담배를 포함한 흡연을 하고 계십니까?",
+          "prompt": "현재 흡연 중이십니까? (전자담배 포함)",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
             {
               "value": "A",
-              "label": "전혀 안 피움",
+              "label": "아니오",
               "score": 0.0
             },
             {
               "value": "B",
-              "label": "금연 10 년 이상",
+              "label": "흡연했었으나 10년 이상 금연 중",
               "score": 0.1
             },
             {
               "value": "C",
-              "label": "금연 10 년 미만",
+              "label": "흡연했었으나 10년 미만 금연 중",
               "score": 0.5
             },
             {
@@ -1320,7 +1325,7 @@
         {
           "id": "S04_Q10",
           "number": 10,
-          "prompt": "최근 3 개월 이내에 치아 통증을 경험하신 적이 있습니까?",
+          "prompt": "최근 3개월 이내에 치아 통증을 경험하신 적이 있습니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -1348,7 +1353,7 @@
         {
           "id": "S04_Q11",
           "number": 11,
-          "prompt": "평소 잇몸 통증을 자주 느끼시는 편입니까?",
+          "prompt": "평소 잇몸 통증을 자주 느끼시는 편이십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -1411,7 +1416,7 @@
         {
           "id": "S05_Q02",
           "number": 2,
-          "prompt": "현재 연령이 만 60 세 이상이십니까?",
+          "prompt": "현재 만 60세 이상이십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -1551,7 +1556,7 @@
         {
           "id": "S05_Q07",
           "number": 7,
-          "prompt": "하루 평균 영상 기기(모니터, TV 등)를 6 시간 이상 연속 시청하십니까?",
+          "prompt": "하루 평균 영상 기기(모니터, TV 등)를 6시간 이상 연속 시청하십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -1579,23 +1584,23 @@
         {
           "id": "S05_Q08",
           "number": 8,
-          "prompt": "현재 전자담배를 포함한 흡연을 하고 계십니까?",
+          "prompt": "현재 흡연 중이십니까? (전자담배 포함)",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
             {
               "value": "A",
-              "label": "전혀 안 피움",
+              "label": "아니오",
               "score": 0.0
             },
             {
               "value": "B",
-              "label": "금연 10 년 이상",
+              "label": "흡연했었으나 10년 이상 금연 중",
               "score": 0.1
             },
             {
               "value": "C",
-              "label": "금연 10 년 미만",
+              "label": "흡연했었으나 10년 미만 금연 중",
               "score": 0.5
             },
             {
@@ -1736,7 +1741,7 @@
         {
           "id": "S06_Q01",
           "number": 1,
-          "prompt": "현재 연령이 만 40 세 이상이십니까?",
+          "prompt": "현재 만 40세 이상이십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -1904,7 +1909,7 @@
         {
           "id": "S06_Q07",
           "number": 7,
-          "prompt": "최근 3 일 이내에 가려움증으로 인해 일상생활이나 수면에 방해를 받으신 적이 있습니까?",
+          "prompt": "최근 3일 이내에 가려움증으로 인해 일상생활이나 수면에 방해를 받으신 적이 있습니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -1915,7 +1920,7 @@
             },
             {
               "value": "B",
-              "label": "무의식중 긁음",
+              "label": "무의식 중 긁음",
               "score": 0.25
             },
             {
@@ -1967,6 +1972,10 @@
               "value": "B",
               "label": "아니오",
               "score": 0.0
+            },
+            {
+              "value": "C",
+              "label": "모른다"
             }
           ],
           "scoring": {
@@ -2133,27 +2142,27 @@
           "options": [
             {
               "value": "A",
-              "label": "안 마심",
+              "label": "0회",
               "score": 0.0
             },
             {
               "value": "B",
-              "label": "월 1 회 이하",
+              "label": "월1회 이하",
               "score": 0.25
             },
             {
               "value": "C",
-              "label": "월 2~4 회",
+              "label": "월2~4회",
               "score": 0.5
             },
             {
               "value": "D",
-              "label": "주 2~3 회",
+              "label": "주2~3회",
               "score": 0.75
             },
             {
               "value": "E",
-              "label": "주 4 회 이상",
+              "label": "주4회 이상",
               "score": 1.0
             }
           ],
@@ -2170,7 +2179,7 @@
         {
           "id": "S07_Q08",
           "number": 8,
-          "prompt": "평소 1 회 음주량은 어느 정도이십니까?",
+          "prompt": "평소 1회 음주량은 어느 정도이십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -2181,22 +2190,22 @@
             },
             {
               "value": "B",
-              "label": "1 병",
+              "label": "1병",
               "score": 0.25
             },
             {
               "value": "C",
-              "label": "1.5 병",
+              "label": "1.5병",
               "score": 0.5
             },
             {
               "value": "D",
-              "label": "2 병",
+              "label": "2병",
               "score": 0.75
             },
             {
               "value": "E",
-              "label": "2.5 병 이상",
+              "label": "2.5병 이상",
               "score": 1.0
             }
           ],
@@ -2276,7 +2285,7 @@
         {
           "id": "S08_Q01",
           "number": 1,
-          "prompt": "현재 연령이 만 50 세 이상이십니까?",
+          "prompt": "현재 만 50세 이상이십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -2358,22 +2367,22 @@
             },
             {
               "value": "B",
-              "label": "월 1 회 이하",
+              "label": "월 1회 이하",
               "score": 0.25
             },
             {
               "value": "C",
-              "label": "월 2~4 회",
+              "label": "월 2~4회",
               "score": 0.5
             },
             {
               "value": "D",
-              "label": "주 2~3 회",
+              "label": "주 2~3회",
               "score": 0.75
             },
             {
               "value": "E",
-              "label": "주 4 회 이상",
+              "label": "주 4회 이상",
               "score": 1.0
             }
           ],
@@ -2401,22 +2410,22 @@
             },
             {
               "value": "B",
-              "label": "1 병",
+              "label": "1병",
               "score": 0.25
             },
             {
               "value": "C",
-              "label": "1.5 병",
+              "label": "1.5병",
               "score": 0.5
             },
             {
               "value": "D",
-              "label": "2 병",
+              "label": "2병",
               "score": 0.75
             },
             {
               "value": "E",
-              "label": "2.5 병 이상",
+              "label": "2.5병 이상",
               "score": 1.0
             }
           ],
@@ -2664,7 +2673,7 @@
         {
           "id": "S09_Q02",
           "number": 2,
-          "prompt": "인스턴트나 가공식품 등을 매일 1 회 이상 섭취하십니까?",
+          "prompt": "인스턴트나 가공식품 등을 매일 1회 이상 섭취하십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -2774,27 +2783,27 @@
           "options": [
             {
               "value": "A",
-              "label": "안 마심",
+              "label": "0회",
               "score": 0.0
             },
             {
               "value": "B",
-              "label": "월 1 회 이하",
+              "label": "월1회 이하",
               "score": 0.25
             },
             {
               "value": "C",
-              "label": "월 2~4 회",
+              "label": "월2~4회",
               "score": 0.5
             },
             {
               "value": "D",
-              "label": "주 2~3 회",
+              "label": "주2~3회",
               "score": 0.75
             },
             {
               "value": "E",
-              "label": "주 4 회 이상",
+              "label": "주4회 이상",
               "score": 1.0
             }
           ],
@@ -2822,22 +2831,22 @@
             },
             {
               "value": "B",
-              "label": "1 병",
+              "label": "1병",
               "score": 0.25
             },
             {
               "value": "C",
-              "label": "1.5 병",
+              "label": "1.5병",
               "score": 0.5
             },
             {
               "value": "D",
-              "label": "2 병",
+              "label": "2병",
               "score": 0.75
             },
             {
               "value": "E",
-              "label": "2.5 병 이상",
+              "label": "2.5병 이상",
               "score": 1.0
             }
           ],
@@ -2854,23 +2863,23 @@
         {
           "id": "S09_Q07",
           "number": 7,
-          "prompt": "현재 전자담배를 포함한 흡연을 하고 계십니까?",
+          "prompt": "현재 흡연 중이십니까? (전자담배 포함)",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
             {
               "value": "A",
-              "label": "전혀 피우지 않음",
+              "label": "아니오",
               "score": 0.0
             },
             {
               "value": "B",
-              "label": "피웠지만 금연 10 년 이상",
+              "label": "흡연했었으나 10년 이상 금연 중",
               "score": 0.1
             },
             {
               "value": "C",
-              "label": "10 년 미만",
+              "label": "흡연했었으나 10년 미만 금연 중",
               "score": 0.5
             },
             {
@@ -2892,18 +2901,18 @@
         {
           "id": "S09_Q08",
           "number": 8,
-          "prompt": "최근 3 개월 이내에 변비 관련 증상이 있었습니까?",
+          "prompt": "최근 3개월 이내에 변비 관련 증상이 있었습니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
             {
               "value": "A",
-              "label": "2 가지 이상 선택 시",
+              "label": "네",
               "score": 1.0
             },
             {
               "value": "B",
-              "label": "아닌 경우",
+              "label": "아니오",
               "score": 0.0
             }
           ],
@@ -2968,6 +2977,10 @@
               "value": "B",
               "label": "아니오",
               "score": 0.0
+            },
+            {
+              "value": "C",
+              "label": "모른다"
             }
           ],
           "scoring": {
@@ -2983,7 +2996,7 @@
         {
           "id": "S10_Q02",
           "number": 2,
-          "prompt": "당분이 높은 간식이나 음료를 매일 1 회 이상 섭취하십니까?",
+          "prompt": "당분이 높은 간식이나 음료를 매일 1회 이상 섭취하십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -3050,17 +3063,17 @@
           "options": [
             {
               "value": "A",
-              "label": "주 4 회 이상",
+              "label": "주 4회 이상",
               "score": 1.0
             },
             {
               "value": "B",
-              "label": "주 2-3 회",
+              "label": "주 2-3회",
               "score": 0.5
             },
             {
               "value": "C",
-              "label": "주 1 회 이하",
+              "label": "주 1회 이하",
               "score": 0.0
             }
           ],
@@ -3077,7 +3090,7 @@
         {
           "id": "S10_Q05",
           "number": 5,
-          "prompt": "평소 식사 속도가 10 분 이내로 빠른 편이십니까?",
+          "prompt": "평소 식사 속도가 10분 이내로 빠른 편이십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -3105,7 +3118,7 @@
         {
           "id": "S10_Q06",
           "number": 6,
-          "prompt": "일주일에 3 회 이상, 1 회 30 분 이상 운동하십니까?",
+          "prompt": "일주일에 3회 이상, 1회 30분 이상 운동하십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -3133,7 +3146,7 @@
         {
           "id": "S10_Q07",
           "number": 7,
-          "prompt": "하루 평균 앉아서 보내는 시간이 6 시간 이상이십니까?",
+          "prompt": "하루 평균 앉아서 보내는 시간이 6시간 이상이십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -3161,7 +3174,7 @@
         {
           "id": "S10_Q08",
           "number": 8,
-          "prompt": "하루 평균 수면 시간이 6~8 시간 정도 되십니까?",
+          "prompt": "하루 평균 수면 시간이 6~8시간 정도 되십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -3275,6 +3288,10 @@
               "value": "B",
               "label": "아니오",
               "score": 0.0
+            },
+            {
+              "value": "C",
+              "label": "모른다"
             }
           ],
           "scoring": {
@@ -3290,7 +3307,7 @@
         {
           "id": "S11_Q02",
           "number": 2,
-          "prompt": "일주일에 평균 3 회 이상 운동을 수행하십니까?",
+          "prompt": "일주일에 평균 3회 이상 운동을 수행하십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -3457,7 +3474,7 @@
         {
           "id": "S12_Q01",
           "number": 1,
-          "prompt": "현재 연령이 만 50 세 이상이십니까?",
+          "prompt": "현재 만 50세 이상이십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -3561,7 +3578,7 @@
         {
           "id": "S12_Q04",
           "number": 4,
-          "prompt": "평소 입면이 어렵거나 수면 중 자주 깨는 편이십니까?",
+          "prompt": "평소 잠에 들기 어렵거나 수면 중 자주 깨는 편이십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -3796,7 +3813,7 @@
         {
           "id": "S13_Q01",
           "number": 1,
-          "prompt": "현재 연령이 만 40 세 이상이십니까?",
+          "prompt": "현재 만 40세 이상이십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -4314,6 +4331,10 @@
               "value": "B",
               "label": "아니오",
               "score": 0.0
+            },
+            {
+              "value": "C",
+              "label": "모른다"
             }
           ],
           "scoring": {
@@ -4363,17 +4384,17 @@
           "options": [
             {
               "value": "A",
-              "label": "주 4 회 이상",
+              "label": "주 4회 이상",
               "score": 1.0
             },
             {
               "value": "B",
-              "label": "주 2-3 회",
+              "label": "주 2-3회",
               "score": 0.5
             },
             {
               "value": "C",
-              "label": "주 1 회 이하",
+              "label": "주 1회 이하",
               "score": 0.0
             }
           ],
@@ -4401,22 +4422,22 @@
             },
             {
               "value": "B",
-              "label": "월 1 회 이하",
+              "label": "월 1회 이하",
               "score": 0.25
             },
             {
               "value": "C",
-              "label": "월 2~4 회",
+              "label": "월 2~4회",
               "score": 0.5
             },
             {
               "value": "D",
-              "label": "주 2~3 회",
+              "label": "주 2~3회",
               "score": 0.75
             },
             {
               "value": "E",
-              "label": "주 4 회 이상",
+              "label": "주 4회 이상",
               "score": 1.0
             }
           ],
@@ -4433,7 +4454,7 @@
         {
           "id": "S15_Q06",
           "number": 6,
-          "prompt": "평소 1 회 음주량은 어느 정도이십니까?",
+          "prompt": "평소 1회 음주량은 어느 정도이십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -4444,22 +4465,22 @@
             },
             {
               "value": "B",
-              "label": "1 병",
+              "label": "1병",
               "score": 0.25
             },
             {
               "value": "C",
-              "label": "1.5 병",
+              "label": "1.5병",
               "score": 0.5
             },
             {
               "value": "D",
-              "label": "2 병",
+              "label": "2병",
               "score": 0.75
             },
             {
               "value": "E",
-              "label": "2.5 병 이상",
+              "label": "2.5병 이상",
               "score": 1.0
             }
           ],
@@ -4665,17 +4686,17 @@
           "options": [
             {
               "value": "A",
-              "label": "주 4 회 이상",
+              "label": "주 4회 이상",
               "score": 1.0
             },
             {
               "value": "B",
-              "label": "주 2-3 회",
+              "label": "주 2-3회",
               "score": 0.5
             },
             {
               "value": "C",
-              "label": "주 1 회 이하",
+              "label": "주 1회 이하",
               "score": 0.0
             }
           ],
@@ -4692,7 +4713,7 @@
         {
           "id": "S15_Q14",
           "number": 14,
-          "prompt": "일주일에 평균 3 회 이상, 1 회 30 분 이상 운동을 수행하십니까?",
+          "prompt": "일주일에 평균 3회 이상, 1회 30분 이상 운동을 수행하십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -4720,23 +4741,23 @@
         {
           "id": "S15_Q15",
           "number": 15,
-          "prompt": "현재 전자담배를 포함한 흡연을 하고 계십니까?",
+          "prompt": "현재 흡연 중이십니까? (전자담배 포함)",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
             {
               "value": "A",
-              "label": "전혀 피우지 않음",
+              "label": "아니오",
               "score": 0.0
             },
             {
               "value": "B",
-              "label": "피웠지만 금연 10 년 이상",
+              "label": "흡연했었으나 10년 이상 금연 중",
               "score": 0.1
             },
             {
               "value": "C",
-              "label": "10 년 미만",
+              "label": "흡연했었으나 10년 미만 금연 중",
               "score": 0.5
             },
             {
@@ -4765,7 +4786,7 @@
         {
           "id": "S16_Q01",
           "number": 1,
-          "prompt": "현재 연령이 만 60 세 이상이십니까?",
+          "prompt": "현재 만 60세 이상이십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -4806,6 +4827,10 @@
               "value": "B",
               "label": "아니오",
               "score": 0.0
+            },
+            {
+              "value": "C",
+              "label": "모른다"
             }
           ],
           "scoring": {
@@ -4821,7 +4846,7 @@
         {
           "id": "S16_Q03",
           "number": 3,
-          "prompt": "염분이 높은 식품(젓갈, 장아찌 등)을 매일 1 회 이상 섭취하십니까?",
+          "prompt": "염분이 높은 식품(젓갈, 장아찌 등)을 매일 1회 이상 섭취하십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -4854,7 +4879,7 @@
         {
           "id": "S16_Q04",
           "number": 4,
-          "prompt": "일주일에 평균 3 회 이상, 1 회 30 분 이상 운동을 수행하십니까?",
+          "prompt": "일주일에 평균 3회 이상, 1회 30분 이상 운동을 수행하십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -4893,22 +4918,22 @@
             },
             {
               "value": "B",
-              "label": "월 1 회 이하",
+              "label": "월 1회 이하",
               "score": 0.25
             },
             {
               "value": "C",
-              "label": "월 2~4 회",
+              "label": "월 2~4회",
               "score": 0.5
             },
             {
               "value": "D",
-              "label": "주 2~3 회",
+              "label": "주 2~3회",
               "score": 0.75
             },
             {
               "value": "E",
-              "label": "주 4 회 이상",
+              "label": "주 4회 이상",
               "score": 1.0
             }
           ],
@@ -4925,7 +4950,7 @@
         {
           "id": "S16_Q06",
           "number": 6,
-          "prompt": "평소 1 회 음주량은 어느 정도이십니까?",
+          "prompt": "평소 1회 음주량은 어느 정도이십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -4936,22 +4961,22 @@
             },
             {
               "value": "B",
-              "label": "1 병",
+              "label": "1병",
               "score": 0.25
             },
             {
               "value": "C",
-              "label": "1.5 병",
+              "label": "1.5병",
               "score": 0.5
             },
             {
               "value": "D",
-              "label": "2 병",
+              "label": "2병",
               "score": 0.75
             },
             {
               "value": "E",
-              "label": "2.5 병 이상",
+              "label": "2.5병 이상",
               "score": 1.0
             }
           ],
@@ -4968,23 +4993,23 @@
         {
           "id": "S16_Q07",
           "number": 7,
-          "prompt": "현재 전자담배를 포함한 흡연을 하고 계십니까?",
+          "prompt": "현재 흡연 중이십니까? (전자담배 포함)",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
             {
               "value": "A",
-              "label": "전혀 피우지 않음",
+              "label": "아니오",
               "score": 0.0
             },
             {
               "value": "B",
-              "label": "피웠지만 금연 10 년 이상",
+              "label": "흡연했었으나 10년 이상 금연 중",
               "score": 0.1
             },
             {
               "value": "C",
-              "label": "10 년 미만",
+              "label": "흡연했었으나 10년 미만 금연 중",
               "score": 0.5
             },
             {
@@ -5056,7 +5081,7 @@
         {
           "id": "S17_Q01",
           "number": 1,
-          "prompt": "당분이 높은 간식이나 음료를 매일 1 회 이상 섭취하십니까?",
+          "prompt": "당분이 높은 간식이나 음료를 매일 1회 이상 섭취하십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -5095,27 +5120,27 @@
           "options": [
             {
               "value": "A",
-              "label": "안 마심",
+              "label": "0회",
               "score": 0.0
             },
             {
               "value": "B",
-              "label": "월 1 회 이하",
+              "label": "월1회 이하",
               "score": 0.25
             },
             {
               "value": "C",
-              "label": "월 2~4 회",
+              "label": "월2~4회",
               "score": 0.5
             },
             {
               "value": "D",
-              "label": "주 2~3 회",
+              "label": "주2~3회",
               "score": 0.75
             },
             {
               "value": "E",
-              "label": "주 4 회 이상",
+              "label": "주4회 이상",
               "score": 1.0
             }
           ],
@@ -5143,22 +5168,22 @@
             },
             {
               "value": "B",
-              "label": "1 병",
+              "label": "1병",
               "score": 0.25
             },
             {
               "value": "C",
-              "label": "1.5 병",
+              "label": "1.5병",
               "score": 0.5
             },
             {
               "value": "D",
-              "label": "2 병",
+              "label": "2병",
               "score": 0.75
             },
             {
               "value": "E",
-              "label": "2.5 병 이상",
+              "label": "2.5병 이상",
               "score": 1.0
             }
           ],
@@ -5175,23 +5200,23 @@
         {
           "id": "S17_Q04",
           "number": 4,
-          "prompt": "현재 흡연을 하고 계십니까?",
+          "prompt": "현재 흡연 중이십니까? (전자담배 포함)",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
             {
               "value": "A",
-              "label": "전혀 피우지 않음",
+              "label": "아니오",
               "score": 0.0
             },
             {
               "value": "B",
-              "label": "금연한 지 10 년 이상",
+              "label": "흡연했었으나 10년 이상 금연 중",
               "score": 0.1
             },
             {
               "value": "C",
-              "label": "금연한 지 10 년 미만",
+              "label": "흡연했었으나 10년 미만 금연 중",
               "score": 0.5
             },
             {
@@ -5256,7 +5281,7 @@
         {
           "id": "S17_Q06",
           "number": 6,
-          "prompt": "최근 1 년 이내에 호흡기 질환(감기, 편도염 등) 증상을 2 회 이상 경험하셨습니까?",
+          "prompt": "최근 1년 이내에 호흡기 질환(감기, 편도염 등) 증상을 2회 이상 경험하셨습니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -5319,7 +5344,7 @@
         {
           "id": "S18_Q01",
           "number": 1,
-          "prompt": "현재 연령이 만 60 세 이상이십니까?",
+          "prompt": "현재 만 60세 이상이십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -5391,22 +5416,22 @@
             },
             {
               "value": "B",
-              "label": "월 1 회 이하",
+              "label": "월 1회 이하",
               "score": 0.25
             },
             {
               "value": "C",
-              "label": "월 2~4 회",
+              "label": "월 2~4회",
               "score": 0.5
             },
             {
               "value": "D",
-              "label": "주 2~3 회",
+              "label": "주 2~3회",
               "score": 0.75
             },
             {
               "value": "E",
-              "label": "주 4 회 이상",
+              "label": "주 4회 이상",
               "score": 1.0
             }
           ],
@@ -5434,22 +5459,22 @@
             },
             {
               "value": "B",
-              "label": "1 병",
+              "label": "1병",
               "score": 0.25
             },
             {
               "value": "C",
-              "label": "1.5 병",
+              "label": "1.5병",
               "score": 0.5
             },
             {
               "value": "D",
-              "label": "2 병",
+              "label": "2병",
               "score": 0.75
             },
             {
               "value": "E",
-              "label": "2.5 병 이상",
+              "label": "2.5병 이상",
               "score": 1.0
             }
           ],
@@ -5466,23 +5491,23 @@
         {
           "id": "S18_Q05",
           "number": 5,
-          "prompt": "현재 전자담배를 포함한 흡연을 하고 계십니까?",
+          "prompt": "현재 흡연 중이십니까? (전자담배 포함)",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
             {
               "value": "A",
-              "label": "전혀 피우지 않음",
+              "label": "아니오",
               "score": 0.0
             },
             {
               "value": "B",
-              "label": "피웠지만 금연 10 년 이상",
+              "label": "흡연했었으나 10년 이상 금연 중",
               "score": 0.1
             },
             {
               "value": "C",
-              "label": "10 년 미만",
+              "label": "흡연했었으나 10년 미만 금연 중",
               "score": 0.5
             },
             {
@@ -5628,6 +5653,10 @@
               "value": "C",
               "label": "18.5 이하",
               "score": 1.0
+            },
+            {
+              "value": "D",
+              "label": "모른다"
             }
           ],
           "scoring": {
@@ -5654,12 +5683,12 @@
             },
             {
               "value": "B",
-              "label": "1 개",
+              "label": "1개",
               "score": 0.5
             },
             {
               "value": "C",
-              "label": "2 개",
+              "label": "2개",
               "score": 1.0
             }
           ],
@@ -5676,7 +5705,7 @@
         {
           "id": "S19_Q04",
           "number": 4,
-          "prompt": "인스턴트나 당분 함유 식품을 매일 1 회 이상 섭취하십니까?",
+          "prompt": "인스턴트나 당분 함유 식품을 매일 1회 이상 섭취하십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -5709,7 +5738,7 @@
         {
           "id": "S19_Q05",
           "number": 5,
-          "prompt": "일주일에 평균 3 회 이상 운동을 수행하십니까?",
+          "prompt": "일주일에 평균 3회 이상 운동을 수행하십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -5748,22 +5777,22 @@
             },
             {
               "value": "B",
-              "label": "월 1 회 이하",
+              "label": "월 1회 이하",
               "score": 0.25
             },
             {
               "value": "C",
-              "label": "월 2~4 회",
+              "label": "월 2~4회",
               "score": 0.5
             },
             {
               "value": "D",
-              "label": "주 2~3 회",
+              "label": "주 2~3회",
               "score": 0.75
             },
             {
               "value": "E",
-              "label": "주 4 회 이상",
+              "label": "주 4회 이상",
               "score": 1.0
             }
           ],
@@ -5791,22 +5820,22 @@
             },
             {
               "value": "B",
-              "label": "1 병",
+              "label": "1병",
               "score": 0.25
             },
             {
               "value": "C",
-              "label": "1.5 병",
+              "label": "1.5병",
               "score": 0.5
             },
             {
               "value": "D",
-              "label": "2 병",
+              "label": "2병",
               "score": 0.75
             },
             {
               "value": "E",
-              "label": "2.5 병 이상",
+              "label": "2.5병 이상",
               "score": 1.0
             }
           ],
@@ -5823,23 +5852,23 @@
         {
           "id": "S19_Q08",
           "number": 8,
-          "prompt": "현재 흡연을 하고 계십니까?",
+          "prompt": "현재 흡연 중이십니까? (전자담배 포함)",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
             {
               "value": "A",
-              "label": "전혀 피우지 않음",
+              "label": "아니오",
               "score": 0.0
             },
             {
               "value": "B",
-              "label": "피웠지만 금연 10 년 이상",
+              "label": "흡연했었으나 10년 이상 금연 중",
               "score": 0.1
             },
             {
               "value": "C",
-              "label": "10 년 미만",
+              "label": "흡연했었으나 10년 미만 금연 중",
               "score": 0.5
             },
             {
@@ -5977,7 +6006,7 @@
         {
           "id": "S20_Q01",
           "number": 1,
-          "prompt": "일주일에 평균 3 회 이상, 1 회 30 분 이상 운동을 수행하십니까?",
+          "prompt": "일주일에 평균 3회 이상, 1회 30분 이상 운동을 수행하십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -6048,23 +6077,23 @@
         {
           "id": "S20_Q03",
           "number": 3,
-          "prompt": "하루에 5 대 영양군을 얼마나 고루 포함하여 섭취하십니까?",
+          "prompt": "하루에 5대 영양군을 얼마나 고루 포함하여 섭취하십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
             {
               "value": "A",
-              "label": "5 종류",
+              "label": "5종류",
               "score": 0.0
             },
             {
               "value": "B",
-              "label": "4 종류",
+              "label": "4종류",
               "score": 0.5
             },
             {
               "value": "C",
-              "label": "3 종류 이하",
+              "label": "3종류 이하",
               "score": 1.0
             }
           ],
@@ -6081,7 +6110,7 @@
         {
           "id": "S20_Q04",
           "number": 4,
-          "prompt": "현재 연령이 만 50 세 이상이십니까?",
+          "prompt": "현재 만 50세 이상이십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -6122,6 +6151,10 @@
               "value": "B",
               "label": "아니오",
               "score": 0.0
+            },
+            {
+              "value": "C",
+              "label": "모른다"
             }
           ],
           "scoring": {
@@ -6148,22 +6181,22 @@
             },
             {
               "value": "B",
-              "label": "월 1 회 이하",
+              "label": "월 1회 이하",
               "score": 0.25
             },
             {
               "value": "C",
-              "label": "월 2~4 회",
+              "label": "월 2~4회",
               "score": 0.5
             },
             {
               "value": "D",
-              "label": "주 2~3 회",
+              "label": "주 2~3회",
               "score": 0.75
             },
             {
               "value": "E",
-              "label": "주 4 회 이상",
+              "label": "주 4회 이상",
               "score": 1.0
             }
           ],
@@ -6180,7 +6213,7 @@
         {
           "id": "S20_Q07",
           "number": 7,
-          "prompt": "평소 1 회 음주량은 어느 정도이십니까?",
+          "prompt": "평소 1회 음주량은 어느 정도이십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -6191,22 +6224,22 @@
             },
             {
               "value": "B",
-              "label": "1 병",
+              "label": "1병",
               "score": 0.25
             },
             {
               "value": "C",
-              "label": "1.5 병",
+              "label": "1.5병",
               "score": 0.5
             },
             {
               "value": "D",
-              "label": "2 병",
+              "label": "2병",
               "score": 0.75
             },
             {
               "value": "E",
-              "label": "2.5 병 이상",
+              "label": "2.5병 이상",
               "score": 1.0
             }
           ],
@@ -6223,23 +6256,23 @@
         {
           "id": "S20_Q08",
           "number": 8,
-          "prompt": "현재 전자담배를 포함한 흡연을 하고 계십니까?",
+          "prompt": "현재 흡연 중이십니까? (전자담배 포함)",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
             {
               "value": "A",
-              "label": "전혀 피우지 않음",
+              "label": "아니오",
               "score": 0.0
             },
             {
               "value": "B",
-              "label": "피웠지만 금연 10 년 이상",
+              "label": "흡연했었으나 10년 이상 금연 중",
               "score": 0.1
             },
             {
               "value": "C",
-              "label": "10 년 미만",
+              "label": "흡연했었으나 10년 미만 금연 중",
               "score": 0.5
             },
             {
@@ -6317,7 +6350,7 @@
         {
           "id": "S20_Q11",
           "number": 11,
-          "prompt": "평소 30 분 이상 운동할 때 급격한 피로감을 느끼십니까?",
+          "prompt": "평소 30분 이상 운동할 때 급격한 피로감을 느끼십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -6352,7 +6385,7 @@
         {
           "id": "S21_Q01",
           "number": 1,
-          "prompt": "현재 연령이 만 60 세 이상이십니까?",
+          "prompt": "현재 만 60세 이상이십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -6408,38 +6441,33 @@
         {
           "id": "S21_Q03",
           "number": 3,
-          "prompt": "배뇨 후에도 소변이 남은 듯한 잔뇨감을 느끼십니까?",
+          "prompt": "배뇨 후에도 소변이 남은 듯한 잔뇨감을 느끼십니까? 5번 중",
           "type": "single_choice",
-          "optionsPrefix": "5 번 중",
+          "optionsPrefix": "5? ?",
           "options": [
             {
               "value": "A",
-              "label": "0 번",
+              "label": "0번",
               "score": 0.0
             },
             {
               "value": "B",
-              "label": "1 번",
+              "label": "1번",
               "score": 0.2
             },
             {
               "value": "C",
-              "label": "1~2 번",
+              "label": "1~2번",
               "score": 0.4
             },
             {
-              "value": "D",
-              "label": "2~3 번",
-              "score": 0.6
-            },
-            {
               "value": "E",
-              "label": "3~4 번",
+              "label": "3~4번",
               "score": 0.8
             },
             {
               "value": "F",
-              "label": "5 번",
+              "label": "5번",
               "score": 1.0
             }
           ],
@@ -6451,76 +6479,38 @@
             ],
             "higherIsWorse": true,
             "method": "option_score"
-          },
-          "variants": {
-            "paperPdf_웰니스_설문지.pdf": {
-              "optionsPrefix": "5 번 중",
-              "options": [
-                {
-                  "value": "A",
-                  "label": "0 번",
-                  "score": 0.0
-                },
-                {
-                  "value": "B",
-                  "label": "1 번",
-                  "score": 0.2
-                },
-                {
-                  "value": "C",
-                  "label": "1~2 번",
-                  "score": 0.4
-                },
-                {
-                  "value": "D",
-                  "label": "3~4 번",
-                  "score": 0.8
-                },
-                {
-                  "value": "E",
-                  "label": "5 번",
-                  "score": 1.0
-                }
-              ],
-              "notes": "원본 설문지 PDF에는 '2~3번' 선택지가 없어서(답지 PDF에는 존재) 실제 종이 설문 응답을 입력할 경우 이 옵션 세트를 사용할 수 있습니다."
-            }
           }
         },
         {
           "id": "S21_Q04",
           "number": 4,
-          "prompt": "배뇨 후 2 시간 이내에 다시 소변을 보는 빈뇨 증상이 있으십니까?",
+          "prompt": "배뇨 후 2시간 이내에 다시 소변을 보는 빈뇨 증상이 있으십니까? 5번 중",
           "type": "single_choice",
-          "optionsPrefix": "5 번 중",
+          "optionsPrefix": "5? ?",
           "options": [
             {
               "value": "A",
-              "label": "0 번",
+              "label": "0번",
               "score": 0.0
             },
             {
               "value": "B",
-              "label": "1 번",
+              "label": "1번",
               "score": 0.2
             },
             {
               "value": "C",
-              "label": "1~2 번",
+              "label": "1~2번",
               "score": 0.4
             },
             {
-              "value": "D",
-              "label": "2~3 번",
-              "score": 0.6
-            },
-            {
               "value": "E",
-              "label": "3~4 번",
+              "label": "3~4번",
               "score": 0.8
             },
             {
               "value": "F",
-              "label": "5 번",
+              "label": "5번",
               "score": 1.0
             }
           ],
@@ -6532,76 +6522,38 @@
             ],
             "higherIsWorse": true,
             "method": "option_score"
-          },
-          "variants": {
-            "paperPdf_웰니스_설문지.pdf": {
-              "optionsPrefix": "5 번 중",
-              "options": [
-                {
-                  "value": "A",
-                  "label": "0 번",
-                  "score": 0.0
-                },
-                {
-                  "value": "B",
-                  "label": "1 번",
-                  "score": 0.2
-                },
-                {
-                  "value": "C",
-                  "label": "1~2 번",
-                  "score": 0.4
-                },
-                {
-                  "value": "D",
-                  "label": "3~4 번",
-                  "score": 0.8
-                },
-                {
-                  "value": "E",
-                  "label": "5 번",
-                  "score": 1.0
-                }
-              ],
-              "notes": "원본 설문지 PDF에는 '2~3번' 선택지가 없어서(답지 PDF에는 존재) 실제 종이 설문 응답을 입력할 경우 이 옵션 세트를 사용할 수 있습니다."
-            }
           }
         },
         {
           "id": "S21_Q05",
           "number": 5,
-          "prompt": "배뇨 중 소변줄기가 끊기거나 다시 힘을 주어야 하는 경우가 있습니까?",
+          "prompt": "배뇨 중 소변줄기가 끊기거나 다시 힘을 주어야 하는 경우가 있습니까? 5번 중",
           "type": "single_choice",
-          "optionsPrefix": "5 번중",
+          "optionsPrefix": "5? ?",
           "options": [
             {
               "value": "A",
-              "label": "0 번",
+              "label": "0번",
               "score": 0.0
             },
             {
               "value": "B",
-              "label": "1 번",
+              "label": "1번",
               "score": 0.2
             },
             {
               "value": "C",
-              "label": "1~2 번",
+              "label": "1~2번",
               "score": 0.4
             },
             {
-              "value": "D",
-              "label": "2~3 번",
-              "score": 0.6
-            },
-            {
               "value": "E",
-              "label": "3~4 번",
+              "label": "3~4번",
               "score": 0.8
             },
             {
               "value": "F",
-              "label": "5 번",
+              "label": "5번",
               "score": 1.0
             }
           ],
@@ -6613,76 +6565,38 @@
             ],
             "higherIsWorse": true,
             "method": "option_score"
-          },
-          "variants": {
-            "paperPdf_웰니스_설문지.pdf": {
-              "optionsPrefix": "5 번 중",
-              "options": [
-                {
-                  "value": "A",
-                  "label": "0 번",
-                  "score": 0.0
-                },
-                {
-                  "value": "B",
-                  "label": "1 번",
-                  "score": 0.2
-                },
-                {
-                  "value": "C",
-                  "label": "1~2 번",
-                  "score": 0.4
-                },
-                {
-                  "value": "D",
-                  "label": "3~4 번",
-                  "score": 0.8
-                },
-                {
-                  "value": "E",
-                  "label": "5 번",
-                  "score": 1.0
-                }
-              ],
-              "notes": "원본 설문지 PDF에는 '2~3번' 선택지가 없어서(답지 PDF에는 존재) 실제 종이 설문 응답을 입력할 경우 이 옵션 세트를 사용할 수 있습니다."
-            }
           }
         },
         {
           "id": "S21_Q06",
           "number": 6,
-          "prompt": "평소 소변을 참기 어려운 급박뇨 증상이 있으십니까?",
+          "prompt": "평소 소변을 참기 어려운 급박뇨 증상이 있으십니까?  5번 중",
           "type": "single_choice",
-          "optionsPrefix": "5 번 중",
+          "optionsPrefix": "5? ?",
           "options": [
             {
               "value": "A",
-              "label": "0 번",
+              "label": "0번",
               "score": 0.0
             },
             {
               "value": "B",
-              "label": "1 번",
+              "label": "1번",
               "score": 0.2
             },
             {
               "value": "C",
-              "label": "1~2 번",
+              "label": "1~2번",
               "score": 0.4
             },
             {
-              "value": "D",
-              "label": "2~3 번",
-              "score": 0.6
-            },
-            {
               "value": "E",
-              "label": "3~4 번",
+              "label": "3~4번",
               "score": 0.8
             },
             {
               "value": "F",
-              "label": "5 번",
+              "label": "5번",
               "score": 1.0
             }
           ],
@@ -6694,76 +6608,38 @@
             ],
             "higherIsWorse": true,
             "method": "option_score"
-          },
-          "variants": {
-            "paperPdf_웰니스_설문지.pdf": {
-              "optionsPrefix": "5 번 중",
-              "options": [
-                {
-                  "value": "A",
-                  "label": "0 번",
-                  "score": 0.0
-                },
-                {
-                  "value": "B",
-                  "label": "1 번",
-                  "score": 0.2
-                },
-                {
-                  "value": "C",
-                  "label": "1~2 번",
-                  "score": 0.4
-                },
-                {
-                  "value": "D",
-                  "label": "3~4 번",
-                  "score": 0.8
-                },
-                {
-                  "value": "E",
-                  "label": "5 번",
-                  "score": 1.0
-                }
-              ],
-              "notes": "원본 설문지 PDF에는 '2~3번' 선택지가 없어서(답지 PDF에는 존재) 실제 종이 설문 응답을 입력할 경우 이 옵션 세트를 사용할 수 있습니다."
-            }
           }
         },
         {
           "id": "S21_Q07",
           "number": 7,
-          "prompt": "평소 소변줄기가 약하거나 가늘어졌다고 느끼십니까?",
+          "prompt": "평소 소변줄기가 약하거나 가늘어졌다고 느끼십니까? 5번 중",
           "type": "single_choice",
-          "optionsPrefix": "5 번 중",
+          "optionsPrefix": "5? ?",
           "options": [
             {
               "value": "A",
-              "label": "0 번",
+              "label": "0번",
               "score": 0.0
             },
             {
               "value": "B",
-              "label": "1 번",
+              "label": "1번",
               "score": 0.2
             },
             {
               "value": "C",
-              "label": "1~2 번",
+              "label": "1~2번",
               "score": 0.4
             },
             {
-              "value": "D",
-              "label": "2~3 번",
-              "score": 0.6
-            },
-            {
               "value": "E",
-              "label": "3~4 번",
+              "label": "3~4번",
               "score": 0.8
             },
             {
               "value": "F",
-              "label": "5 번",
+              "label": "5번",
               "score": 1.0
             }
           ],
@@ -6775,39 +6651,6 @@
             ],
             "higherIsWorse": true,
             "method": "option_score"
-          },
-          "variants": {
-            "paperPdf_웰니스_설문지.pdf": {
-              "optionsPrefix": "5 번 중",
-              "options": [
-                {
-                  "value": "A",
-                  "label": "0 번",
-                  "score": 0.0
-                },
-                {
-                  "value": "B",
-                  "label": "1 번",
-                  "score": 0.2
-                },
-                {
-                  "value": "C",
-                  "label": "1~2 번",
-                  "score": 0.4
-                },
-                {
-                  "value": "D",
-                  "label": "3~4 번",
-                  "score": 0.8
-                },
-                {
-                  "value": "E",
-                  "label": "5 번",
-                  "score": 1.0
-                }
-              ],
-              "notes": "원본 설문지 PDF에는 '2~3번' 선택지가 없어서(답지 PDF에는 존재) 실제 종이 설문 응답을 입력할 경우 이 옵션 세트를 사용할 수 있습니다."
-            }
           }
         }
       ]
@@ -6820,7 +6663,7 @@
         {
           "id": "S22_Q01",
           "number": 1,
-          "prompt": "현재 연령이 만 30 세 이상이십니까?",
+          "prompt": "현재 만 30세 이상이십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -6882,17 +6725,17 @@
           "options": [
             {
               "value": "A",
-              "label": "7 회 이하",
+              "label": "7회 이하",
               "score": 0.0
             },
             {
               "value": "B",
-              "label": "8~14 회",
+              "label": "8~14회",
               "score": 0.5
             },
             {
               "value": "C",
-              "label": "15 회 이상",
+              "label": "15회 이상",
               "score": 1.0
             }
           ],
@@ -6915,22 +6758,22 @@
           "options": [
             {
               "value": "A",
-              "label": "1 회 미만",
+              "label": "1회 미만",
               "score": 0.0
             },
             {
               "value": "B",
-              "label": "1 회",
+              "label": "1회",
               "score": 0.3
             },
             {
               "value": "C",
-              "label": "2 회",
+              "label": "2회",
               "score": 0.6
             },
             {
               "value": "D",
-              "label": "3 회 이상",
+              "label": "3회 이상",
               "score": 1.0
             }
           ],
@@ -6947,7 +6790,7 @@
         {
           "id": "S22_Q05",
           "number": 5,
-          "prompt": "갑작스러운 요의로 배뇨를 참기 어려우십니까?",
+          "prompt": "갑작스러운 요의로 배뇨를 참기 어려우신 적 있나요?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -6958,27 +6801,27 @@
             },
             {
               "value": "B",
-              "label": "주1 회이하",
+              "label": "주1회 이하",
               "score": 0.2
             },
             {
               "value": "C",
-              "label": "주1 회이상",
+              "label": "주1회 이상",
               "score": 0.4
             },
             {
               "value": "D",
-              "label": "1 일1 회",
+              "label": "1일1회",
               "score": 0.6
             },
             {
               "value": "E",
-              "label": "1 일2~4 회",
+              "label": "1일 2~4회",
               "score": 0.8
             },
             {
               "value": "F",
-              "label": "1 일5 회 이상",
+              "label": "1일 5회 이상",
               "score": 1.0
             }
           ],
@@ -7006,27 +6849,27 @@
             },
             {
               "value": "B",
-              "label": "주1 회이하",
+              "label": "주1회 이하",
               "score": 0.2
             },
             {
               "value": "C",
-              "label": "주1 회이상",
+              "label": "주1회 이상",
               "score": 0.4
             },
             {
               "value": "D",
-              "label": "1 일1 회",
+              "label": "1일 1회",
               "score": 0.6
             },
             {
               "value": "E",
-              "label": "1 일2~4 회",
+              "label": "1일 2~4회",
               "score": 0.8
             },
             {
               "value": "F",
-              "label": "1 일5 회 이상",
+              "label": "1일5회 이상",
               "score": 1.0
             }
           ],
@@ -7106,7 +6949,7 @@
         {
           "id": "S23_Q03",
           "number": 3,
-          "prompt": "배뇨 후 2 시간 이내에 재배뇨가 필요한 경우가 잦으십니까?",
+          "prompt": "배뇨 후 2시간 이내에 재배뇨가 필요한 경우가 잦으십니까?",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
@@ -7140,27 +6983,27 @@
           "options": [
             {
               "value": "A",
-              "label": "0 회",
+              "label": "0회",
               "score": 0.0
             },
             {
               "value": "B",
-              "label": "1 회",
+              "label": "1회",
               "score": 0.2
             },
             {
               "value": "C",
-              "label": "3 회",
+              "label": "3회",
               "score": 0.6
             },
             {
               "value": "D",
-              "label": "4 회",
+              "label": "4회",
               "score": 0.8
             },
             {
               "value": "E",
-              "label": "5 회 또는 그 이상",
+              "label": "5회 또는 그 이상",
               "score": 1.0
             }
           ],
@@ -7188,7 +7031,7 @@
             },
             {
               "value": "B",
-              "label": "없는편이다",
+              "label": "없는 편이다",
               "score": 0.25
             },
             {
@@ -7198,7 +7041,7 @@
             },
             {
               "value": "D",
-              "label": "있는편이다",
+              "label": "있는 편이다",
               "score": 0.75
             },
             {
@@ -7255,23 +7098,23 @@
         {
           "id": "S24_Q02",
           "number": 2,
-          "prompt": "현재 전자담배를 포함한 흡연을 하고 계십니까?",
+          "prompt": "현재 흡연 중이십니까? (전자담배 포함)",
           "type": "single_choice",
           "optionsPrefix": null,
           "options": [
             {
               "value": "A",
-              "label": "전혀 안 피움",
+              "label": "아니오",
               "score": 0.0
             },
             {
               "value": "B",
-              "label": "금연 10 년 이상",
+              "label": "흡연했었으나 10년 이상 금연 중",
               "score": 0.1
             },
             {
               "value": "C",
-              "label": "금연 10 년 미만",
+              "label": "흡연했었으나 10년 미만 금연 중",
               "score": 0.5
             },
             {
@@ -7357,12 +7200,12 @@
             },
             {
               "value": "D",
-              "label": "있는편이다",
+              "label": "있는 편이다",
               "score": 0.75
             },
             {
               "value": "E",
-              "label": "항상 그런편이다",
+              "label": "항상 그런 편이다",
               "score": 1.0
             }
           ],
