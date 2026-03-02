@@ -20,6 +20,7 @@
     "audit:hotspots": "ts-node scripts/audit-hotspots.ts",
     "audit:route-method-exports": "ts-node scripts/audit-route-method-exports.ts",
     "check:db-env": "ts-node scripts/check-db-env.ts",
+    "vercel:env:sync": "node scripts/sync-vercel-env-from-dotenv.cjs --file=.env --targets=production,preview",
     "maintenance:nhis-prune-attempts": "ts-node scripts/maintenance/prune-hyphen-fetch-attempts.cts",
     "maintenance:nhis-prune-cache": "ts-node scripts/maintenance/prune-hyphen-fetch-cache.cts",
     "maintenance:nhis-report-attempts": "ts-node scripts/maintenance/report-hyphen-fetch-attempts.cts",
