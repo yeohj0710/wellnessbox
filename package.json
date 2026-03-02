@@ -44,6 +44,8 @@
     "qa:b2b:score-engine": "node scripts/qa/check-b2b-score-engine-runner.cjs",
     "qa:b2b:survey-readiness": "node scripts/qa/check-b2b-survey-readiness-runner.cjs",
     "qa:b2b:wellness-scoring": "node scripts/qa/check-wellness-scoring-runner.cjs",
+    "qa:b2b:public-survey-flow": "node scripts/qa/check-b2b-public-survey-flow-runner.cjs",
+    "qa:b2b:public-survey-smoke": "node scripts/qa/check-b2b-public-survey-smoke.cjs",
     "qa:b2b:export-smoke": "node scripts/qa/check-b2b-export-smoke.cjs",
     "qa:b2b:capture-pdf-visual": "node scripts/qa/check-b2b-capture-pdf-visual.cjs",
     "preflight:agent": "npm run audit:encoding && npm run audit:hotspots && npm run agent:guard-check && npm run lint && npm run build",
