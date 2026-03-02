@@ -1,6 +1,10 @@
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { convertPptxBufferToPdf } from "@/lib/b2b/export/pdf";
+import {
+  normalizePdfCaptureViewportWidthPx,
+  normalizePdfCaptureWidthPx,
+} from "@/lib/b2b/export/pdf-capture-settings";
 import { exportPdfFromWebRoute } from "@/lib/b2b/export/web-route-pdf";
 import { logB2bEmployeeAccess } from "@/lib/b2b/employee-service";
 import { resolveCurrentPeriodKey } from "@/lib/b2b/period";
@@ -39,19 +43,11 @@ function resolvePdfMode(req: Request): EmployeeReportPdfMode {
 }
 
 function resolveCaptureWidth(req: Request) {
-  const raw = new URL(req.url).searchParams.get("w")?.trim();
-  if (!raw || !/^\d{3,4}$/.test(raw)) return null;
-  const width = Number(raw);
-  if (!Number.isFinite(width)) return null;
-  return Math.min(1400, Math.max(280, Math.round(width)));
+  return normalizePdfCaptureWidthPx(new URL(req.url).searchParams.get("w"));
 }
 
 function resolveCaptureViewportWidth(req: Request) {
-  const raw = new URL(req.url).searchParams.get("vw")?.trim();
-  if (!raw || !/^\d{3,4}$/.test(raw)) return null;
-  const width = Number(raw);
-  if (!Number.isFinite(width)) return null;
-  return Math.min(2560, Math.max(280, Math.round(width)));
+  return normalizePdfCaptureViewportWidthPx(new URL(req.url).searchParams.get("vw"));
 }
 
 function resolveRequestOrigin(req: Request) {

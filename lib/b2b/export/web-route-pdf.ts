@@ -7,11 +7,14 @@ const DEFAULT_VIEWPORT = {
 
 const NAV_TIMEOUT_MS = 120_000;
 const RENDER_TIMEOUT_MS = 60_000;
-const DEFAULT_PDF_DEVICE_SCALE_FACTOR = 2;
-const NARROW_VIEWPORT_PDF_DEVICE_SCALE_FACTOR = 1.8;
+const DEFAULT_PDF_DEVICE_SCALE_FACTOR = 1.35;
+const NARROW_VIEWPORT_PDF_DEVICE_SCALE_FACTOR = 1.2;
 const NARROW_VIEWPORT_BREAKPOINT_PX = 1024;
 const MIN_PDF_DEVICE_SCALE_FACTOR = 1;
-const MAX_PDF_DEVICE_SCALE_FACTOR = 3;
+const MAX_PDF_DEVICE_SCALE_FACTOR = 2;
+const DEFAULT_PDF_MAX_BYTES = 15 * 1024 * 1024;
+const MIN_PDF_MAX_BYTES = 2 * 1024 * 1024;
+const MAX_PDF_MAX_BYTES = 80 * 1024 * 1024;
 const MIN_REPORT_PAGE_SIZE_PX = 240;
 const MAX_REPORT_PAGE_SIZE_PX = 8192;
 const REPORT_PAGE_SIZE_PADDING_PX = 2;
@@ -76,6 +79,14 @@ function resolvePdfDeviceScaleFactor(viewportWidthPx: number) {
   if (parsed < MIN_PDF_DEVICE_SCALE_FACTOR) return MIN_PDF_DEVICE_SCALE_FACTOR;
   if (parsed > MAX_PDF_DEVICE_SCALE_FACTOR) return MAX_PDF_DEVICE_SCALE_FACTOR;
   return Math.round(parsed * 100) / 100;
+}
+
+function resolvePdfMaxBytes() {
+  const raw = (process.env.B2B_PDF_MAX_BYTES || "").trim();
+  if (!/^\d+$/.test(raw)) return DEFAULT_PDF_MAX_BYTES;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed)) return DEFAULT_PDF_MAX_BYTES;
+  return Math.min(MAX_PDF_MAX_BYTES, Math.max(MIN_PDF_MAX_BYTES, Math.round(parsed)));
 }
 
 function clampReportPageSizePx(value: number, fallback: number) {
@@ -224,32 +235,30 @@ async function buildPdfFromWebPage(page: any) {
   return Buffer.from(pdfBuffer);
 }
 
-export async function exportPdfFromWebRoute(
-  input: ExportPdfFromWebRouteInput
-): Promise<ExportPdfFromWebRouteResult> {
-  const playwright = await loadPlaywrightModule();
-  if (!playwright?.chromium) {
-    return {
-      ok: false,
-      reason: "Playwright is not available",
-    };
-  }
+type CapturePdfFromWebRouteResult =
+  | { ok: true; pdfBuffer: Buffer; deviceScaleFactor: number }
+  | { ok: false; reason: string };
 
-  const browser = await playwright.chromium.launch({ headless: true });
-
+async function capturePdfFromWebRoute(input: {
+  browser: any;
+  url: string;
+  cookieHeader: string | null;
+  waitForTestId?: string;
+  viewportWidthPx?: number | null;
+  deviceScaleFactor: number;
+}): Promise<CapturePdfFromWebRouteResult> {
   try {
     const extraHTTPHeaders =
       typeof input.cookieHeader === "string" && input.cookieHeader.trim().length > 0
         ? { cookie: input.cookieHeader }
         : undefined;
     const viewportWidth = normalizeViewportWidthPx(input.viewportWidthPx);
-    const pdfDeviceScaleFactor = resolvePdfDeviceScaleFactor(viewportWidth);
-    const context = await browser.newContext({
+    const context = await input.browser.newContext({
       viewport: {
         width: viewportWidth,
         height: DEFAULT_VIEWPORT.height,
       },
-      deviceScaleFactor: pdfDeviceScaleFactor,
+      deviceScaleFactor: input.deviceScaleFactor,
       colorScheme: "light",
       locale: "ko-KR",
       extraHTTPHeaders,
@@ -281,10 +290,10 @@ export async function exportPdfFromWebRoute(
       await applyPdfRenderOverrides(page, reportPageSize);
       await waitForFontsAndFrames(page);
       const pdfBuffer = await buildPdfFromWebPage(page);
-
       return {
         ok: true,
         pdfBuffer,
+        deviceScaleFactor: input.deviceScaleFactor,
       };
     } finally {
       await context.close().catch(() => undefined);
@@ -293,6 +302,74 @@ export async function exportPdfFromWebRoute(
     return {
       ok: false,
       reason: toErrorReason(error, "Web route PDF conversion failed"),
+    };
+  }
+}
+
+export async function exportPdfFromWebRoute(
+  input: ExportPdfFromWebRouteInput
+): Promise<ExportPdfFromWebRouteResult> {
+  const playwright = await loadPlaywrightModule();
+  if (!playwright?.chromium) {
+    return {
+      ok: false,
+      reason: "Playwright is not available",
+    };
+  }
+
+  const browser = await playwright.chromium.launch({ headless: true });
+
+  try {
+    const viewportWidth = normalizeViewportWidthPx(input.viewportWidthPx);
+    const primaryScaleFactor = resolvePdfDeviceScaleFactor(viewportWidth);
+    const primary = await capturePdfFromWebRoute({
+      browser,
+      url: input.url,
+      cookieHeader: input.cookieHeader,
+      waitForTestId: input.waitForTestId,
+      viewportWidthPx: viewportWidth,
+      deviceScaleFactor: primaryScaleFactor,
+    });
+    if (!primary.ok) {
+      return {
+        ok: false,
+        reason: primary.reason,
+      };
+    }
+
+    const maxPdfBytes = resolvePdfMaxBytes();
+    const needsCompactRetry =
+      primaryScaleFactor > MIN_PDF_DEVICE_SCALE_FACTOR &&
+      primary.pdfBuffer.byteLength > maxPdfBytes;
+
+    if (!needsCompactRetry) {
+      return {
+        ok: true,
+        pdfBuffer: primary.pdfBuffer,
+      };
+    }
+
+    const compact = await capturePdfFromWebRoute({
+      browser,
+      url: input.url,
+      cookieHeader: input.cookieHeader,
+      waitForTestId: input.waitForTestId,
+      viewportWidthPx: viewportWidth,
+      deviceScaleFactor: MIN_PDF_DEVICE_SCALE_FACTOR,
+    });
+    if (!compact.ok) {
+      return {
+        ok: true,
+        pdfBuffer: primary.pdfBuffer,
+      };
+    }
+
+    return {
+      ok: true,
+      pdfBuffer:
+        compact.pdfBuffer.byteLength <= primary.pdfBuffer.byteLength
+          ? compact.pdfBuffer
+          : primary.pdfBuffer,
     };
   } finally {
     await browser.close();

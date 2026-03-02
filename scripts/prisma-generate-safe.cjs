@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-const { spawn } = require("node:child_process");
+const { spawn, spawnSync } = require("node:child_process");
+const path = require("node:path");
 
 function parsePositiveInt(rawValue, fallbackValue) {
   const parsed = Number(rawValue);
@@ -13,6 +14,9 @@ const BASE_DELAY_MS = parsePositiveInt(
   process.env.PRISMA_GENERATE_RETRY_DELAY_MS,
   1500
 );
+const AUTO_UNLOCK_ENABLED =
+  process.env.PRISMA_GENERATE_AUTO_UNLOCK !== "0" &&
+  process.env.PRISMA_GENERATE_AUTO_UNLOCK !== "false";
 
 function isPrismaEngineLockError(output) {
   return (
@@ -60,6 +64,100 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function parseTaskListCsvLine(line) {
+  const match = /^"([^"]+)","([^"]+)"/.exec(line.trim());
+  if (!match) return null;
+  const imageName = match[1];
+  const pid = Number(match[2]);
+  if (!Number.isFinite(pid) || pid <= 0) return null;
+  return { imageName, pid };
+}
+
+function listWindowsEngineLockHolders() {
+  const tasklist = spawnSync(
+    "tasklist",
+    ["/m", "query_engine-windows.dll.node", "/fo", "csv", "/nh"],
+    {
+      cwd: process.cwd(),
+      env: process.env,
+      encoding: "utf8",
+      windowsHide: true,
+    }
+  );
+  const stdout = String(tasklist.stdout || "");
+  if (!stdout.trim() || /no tasks are running/i.test(stdout)) return [];
+
+  const rows = stdout
+    .split(/\r?\n/)
+    .map((line) => parseTaskListCsvLine(line))
+    .filter(Boolean);
+
+  return rows.map((row) => {
+    const commandInfo = spawnSync(
+      "powershell",
+      [
+        "-NoProfile",
+        "-Command",
+        `(Get-CimInstance Win32_Process -Filter "ProcessId = ${row.pid}" | Select-Object -ExpandProperty CommandLine)`,
+      ],
+      {
+        cwd: process.cwd(),
+        env: process.env,
+        encoding: "utf8",
+        windowsHide: true,
+      }
+    );
+    return {
+      imageName: row.imageName,
+      pid: row.pid,
+      commandLine: String(commandInfo.stdout || "").trim(),
+    };
+  });
+}
+
+function isWorkspacePrismaLockCandidate(holder) {
+  const commandLine = String(holder.commandLine || "");
+  if (!commandLine) return false;
+
+  const normalizedCommand = commandLine.replace(/\//g, "\\").toLowerCase();
+  const normalizedCwd = path.resolve(process.cwd()).replace(/\//g, "\\").toLowerCase();
+  const inWorkspace = normalizedCommand.includes(normalizedCwd);
+  if (!inWorkspace) return false;
+
+  const isNodeProcess = String(holder.imageName || "").toLowerCase() === "node.exe";
+  if (!isNodeProcess) return false;
+
+  return (
+    normalizedCommand.includes("\\next\\dist\\") ||
+    normalizedCommand.includes(" prisma ") ||
+    normalizedCommand.includes("\\prisma\\")
+  );
+}
+
+function tryAutoReleaseWindowsEngineLock() {
+  if (process.platform !== "win32" || !AUTO_UNLOCK_ENABLED) {
+    return { holders: [], killed: [] };
+  }
+
+  const holders = listWindowsEngineLockHolders();
+  const killTargets = holders.filter((holder) => isWorkspacePrismaLockCandidate(holder));
+  const killed = [];
+
+  for (const target of killTargets) {
+    const result = spawnSync("taskkill", ["/PID", String(target.pid), "/T", "/F"], {
+      cwd: process.cwd(),
+      env: process.env,
+      encoding: "utf8",
+      windowsHide: true,
+    });
+    if (result.status === 0) {
+      killed.push(target);
+    }
+  }
+
+  return { holders, killed };
+}
+
 async function main() {
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
     if (attempt > 1) {
@@ -91,6 +189,21 @@ async function main() {
     }
 
     const waitMs = BASE_DELAY_MS * attempt;
+    const unlockResult = tryAutoReleaseWindowsEngineLock();
+    if (unlockResult.killed.length > 0) {
+      console.warn(
+        `[prisma:generate] released engine lock by stopping ${unlockResult.killed.length} process(es): ${unlockResult.killed
+          .map((row) => `${row.imageName}#${row.pid}`)
+          .join(", ")}`
+      );
+      await sleep(400);
+    } else if (process.platform === "win32" && unlockResult.holders.length > 0) {
+      console.warn(
+        `[prisma:generate] engine lock holders detected: ${unlockResult.holders
+          .map((row) => `${row.imageName}#${row.pid}`)
+          .join(", ")}`
+      );
+    }
     console.warn(
       `[prisma:generate] detected engine lock (EPERM rename). waiting ${waitMs}ms before retry...`
     );

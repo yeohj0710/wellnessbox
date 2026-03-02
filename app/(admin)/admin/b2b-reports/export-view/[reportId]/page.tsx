@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import ReportPdfPage from "@/components/b2b/ReportPdfPage";
+import { normalizePdfCaptureWidthPx } from "@/lib/b2b/export/pdf-capture-settings";
 import db from "@/lib/db";
 import type { ReportSummaryPayload } from "@/lib/b2b/report-summary-payload";
 import { requireAdminSession } from "@/lib/server/route-auth";
@@ -17,11 +18,7 @@ function resolveReportPayload(raw: unknown): ReportSummaryPayload | null {
 }
 
 function resolveReportWidth(rawWidth: string | undefined) {
-  const normalized = (rawWidth || "").trim();
-  if (!/^\d{3,4}$/.test(normalized)) return null;
-  const parsed = Number(normalized);
-  if (!Number.isFinite(parsed)) return null;
-  return Math.min(1400, Math.max(280, Math.round(parsed)));
+  return normalizePdfCaptureWidthPx(rawWidth);
 }
 
 export default async function AdminB2bReportPdfExportViewPage(props: PageProps) {
