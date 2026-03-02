@@ -7,9 +7,11 @@ function isTruthy(value) {
   return normalized === "1" || normalized === "true" || normalized === "y";
 }
 
-const shouldInstall = isTruthy(process.env.B2B_INSTALL_PLAYWRIGHT_CHROMIUM) || process.env.VERCEL === "1";
+const shouldInstall = isTruthy(process.env.B2B_INSTALL_PLAYWRIGHT_CHROMIUM);
 if (!shouldInstall) {
-  console.log("[playwright:install] skipped (set B2B_INSTALL_PLAYWRIGHT_CHROMIUM=1 to force)");
+  console.log(
+    "[playwright:install] skipped (set B2B_INSTALL_PLAYWRIGHT_CHROMIUM=1 to enable browser install)"
+  );
   process.exit(0);
 }
 
