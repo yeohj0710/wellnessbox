@@ -12,6 +12,7 @@ export type BuildSyncSuccessResponseInput = {
   employeeName: string;
   identityHash: string;
   source: string;
+  networkFetched: boolean;
   snapshotId: string;
   forceRefresh: boolean;
   cooldownSeconds: number;
@@ -49,6 +50,7 @@ export function buildSyncSuccessResponse(input: BuildSyncSuccessResponseInput) {
     },
     sync: {
       source: input.source,
+      networkFetched: input.networkFetched,
       snapshotId: input.snapshotId,
       forceRefresh: input.forceRefresh,
       cooldown: buildCooldownPayload(

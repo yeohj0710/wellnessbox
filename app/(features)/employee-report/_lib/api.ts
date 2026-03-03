@@ -10,6 +10,11 @@ import type {
 } from "./client-types";
 import { requestJson, toIdentityPayload } from "./client-utils";
 
+const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
+const NHIS_INIT_TIMEOUT_MS = 45_000;
+const NHIS_SIGN_TIMEOUT_MS = 45_000;
+const EMPLOYEE_SYNC_TIMEOUT_MS = 210_000;
+
 function buildEmployeeSyncHeaders(debugOverride?: boolean) {
   if (!debugOverride) return undefined;
   if (process.env.NODE_ENV === "production") return undefined;
@@ -17,16 +22,22 @@ function buildEmployeeSyncHeaders(debugOverride?: boolean) {
 }
 
 export async function fetchLoginStatus() {
-  return requestJson<LoginStatusResponse>("/api/auth/login-status");
+  return requestJson<LoginStatusResponse>("/api/auth/login-status", undefined, {
+    timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
+  });
 }
 
 export async function fetchEmployeeReport(periodKey?: string) {
   const query = periodKey ? `?period=${encodeURIComponent(periodKey)}` : "";
-  return requestJson<EmployeeReportResponse>(`/api/b2b/employee/report${query}`);
+  return requestJson<EmployeeReportResponse>(`/api/b2b/employee/report${query}`, undefined, {
+    timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
+  });
 }
 
 export async function fetchEmployeeSession() {
-  return requestJson<EmployeeSessionGetResponse>("/api/b2b/employee/session");
+  return requestJson<EmployeeSessionGetResponse>("/api/b2b/employee/session", undefined, {
+    timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
+  });
 }
 
 export async function upsertEmployeeSession(identity: IdentityInput) {
@@ -34,11 +45,15 @@ export async function upsertEmployeeSession(identity: IdentityInput) {
   return requestJson<EmployeeSessionUpsertResponse>("/api/b2b/employee/session", {
     method: "POST",
     body: JSON.stringify(payload),
+  }, {
+    timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
   });
 }
 
 export async function deleteEmployeeSession() {
-  return requestJson("/api/b2b/employee/session", { method: "DELETE" });
+  return requestJson("/api/b2b/employee/session", { method: "DELETE" }, {
+    timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
+  });
 }
 
 export async function postEmployeeSync(input: {
@@ -54,6 +69,10 @@ export async function postEmployeeSync(input: {
       ...payload,
       forceRefresh: input.forceRefresh,
     }),
+  }, {
+    timeoutMs: EMPLOYEE_SYNC_TIMEOUT_MS,
+    timeoutMessage:
+      "건강데이터 연동 응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.",
   });
 }
 
@@ -72,6 +91,9 @@ export async function requestNhisInit(input: {
       mobileNo: payload.phone,
       ...(input.forceInit ? { forceInit: true } : {}),
     }),
+  }, {
+    timeoutMs: NHIS_INIT_TIMEOUT_MS,
+    timeoutMessage: "카카오 인증 준비 응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.",
   });
 }
 
@@ -79,6 +101,9 @@ export async function requestNhisSign() {
   return requestJson<NhisSignResponse>("/api/health/nhis/sign", {
     method: "POST",
     body: JSON.stringify({}),
+  }, {
+    timeoutMs: NHIS_SIGN_TIMEOUT_MS,
+    timeoutMessage: "카카오 인증 확인 응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.",
   });
 }
 

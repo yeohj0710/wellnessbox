@@ -35,6 +35,7 @@ import {
   normalizeDigits,
   parseLayoutDsl,
   readStoredIdentityWithSource,
+  resolveSyncCompletionNotice,
   resolveIdentityPrimaryActionLabel,
   resolveMedicationStatusMessage,
   saveStoredIdentity,
@@ -43,7 +44,6 @@ import {
 } from "./_lib/client-utils";
 import {
   ensureNhisReadyForSync as ensureNhisReadyForSyncFlow,
-  isCachedSyncSource,
   runRestartAuthFlow,
   runSyncFlowWithRecovery,
   syncEmployeeReportAndReload as syncEmployeeReportAndReloadFlow,
@@ -533,17 +533,13 @@ export default function EmployeeReportClient() {
 
       const { syncResult, ready } = syncFlowResult;
 
-      if (isCachedSyncSource(syncResult.sync?.source)) {
-        setNotice("캐시 데이터를 사용해 레포트를 갱신했습니다.");
-      } else if (ready.reused) {
-        setNotice("기존 인증 상태를 사용해 레포트를 갱신했습니다.");
-      } else {
-        setNotice(
-          forceRefresh
-            ? "강제 재조회로 최신 정보를 반영했습니다."
-            : "최신 정보를 연동해 레포트를 갱신했습니다."
-        );
-      }
+      setNotice(
+        resolveSyncCompletionNotice({
+          sync: syncResult.sync,
+          forceRefresh,
+          authReused: ready.reused,
+        })
+      );
       setSyncNextAction(null);
       setSyncGuidance(null);
       setPendingSignForceRefresh(false);

@@ -1,5 +1,6 @@
 import type {
   ApiErrorPayload,
+  EmployeeSyncResponse,
   EmployeeReportResponse,
   IdentityInput,
   SyncGuidance,
@@ -57,6 +58,60 @@ export class ApiRequestError extends Error {
     this.status = status;
     this.payload = payload;
   }
+}
+
+type EmployeeSyncSource =
+  | "fresh"
+  | "cache-valid"
+  | "cache-history"
+  | "snapshot-history"
+  | undefined;
+
+function normalizeSyncSource(source: EmployeeSyncSource) {
+  if (
+    source === "fresh" ||
+    source === "cache-valid" ||
+    source === "cache-history" ||
+    source === "snapshot-history"
+  ) {
+    return source;
+  }
+  return undefined;
+}
+
+export function resolveSyncCompletionNotice(input: {
+  sync: EmployeeSyncResponse["sync"] | undefined;
+  forceRefresh: boolean;
+  authReused: boolean;
+}) {
+  const source = normalizeSyncSource(input.sync?.source);
+  const networkFetched = input.sync?.networkFetched === true || source === "fresh";
+
+  if (networkFetched) {
+    return input.forceRefresh
+      ? "강제 조회로 최신 건강데이터를 새로 연동했습니다."
+      : "최신 건강데이터를 새로 조회해 레포트를 갱신했습니다.";
+  }
+
+  if (source === "snapshot-history") {
+    return "DB에 저장된 최신 스냅샷으로 레포트를 갱신했습니다.";
+  }
+
+  if (source === "cache-valid") {
+    return "동일 조건의 저장 데이터를 사용해 레포트를 갱신했습니다. (인증/세션 확인 요청은 별도로 발생할 수 있습니다.)";
+  }
+
+  if (source === "cache-history") {
+    return "이전 연동 이력의 저장 데이터를 사용해 레포트를 갱신했습니다. (인증/세션 확인 요청은 별도로 발생할 수 있습니다.)";
+  }
+
+  if (input.authReused) {
+    return "기존 인증 상태를 사용해 레포트를 갱신했습니다.";
+  }
+
+  return input.forceRefresh
+    ? "강제 조회로 최신 건강데이터를 반영했습니다."
+    : "최신 건강데이터를 반영해 레포트를 갱신했습니다.";
 }
 
 export function normalizeDigits(value: string) {
@@ -253,15 +308,108 @@ export function clearStoredIdentity() {
   }
 }
 
-export async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(url, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers || {}),
+function isAbortError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  return (error as { name?: string }).name === "AbortError";
+}
+
+function resolveAbortSignal(input: {
+  timeoutMs?: number;
+  upstreamSignal?: AbortSignal | null;
+}) {
+  const timeoutMs =
+    typeof input.timeoutMs === "number" && Number.isFinite(input.timeoutMs)
+      ? input.timeoutMs
+      : 0;
+  if (timeoutMs <= 0 && !input.upstreamSignal) {
+    return {
+      signal: undefined as AbortSignal | undefined,
+      clear: () => undefined,
+    };
+  }
+
+  const controller = new AbortController();
+  const onAbort = () => {
+    if (!controller.signal.aborted) controller.abort();
+  };
+
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  if (timeoutMs > 0) {
+    timeout = setTimeout(onAbort, timeoutMs);
+  }
+
+  if (input.upstreamSignal) {
+    if (input.upstreamSignal.aborted) {
+      onAbort();
+    } else {
+      input.upstreamSignal.addEventListener("abort", onAbort, { once: true });
+    }
+  }
+
+  return {
+    signal: controller.signal,
+    clear: () => {
+      if (timeout) clearTimeout(timeout);
+      if (input.upstreamSignal) {
+        input.upstreamSignal.removeEventListener("abort", onAbort);
+      }
     },
-    cache: "no-store",
+  };
+}
+
+type RequestJsonOptions = {
+  timeoutMs?: number;
+  timeoutMessage?: string;
+  networkErrorMessage?: string;
+};
+
+export async function requestJson<T>(
+  url: string,
+  init?: RequestInit,
+  options?: RequestJsonOptions
+): Promise<T> {
+  const timeoutMessage =
+    options?.timeoutMessage ||
+    "요청 시간이 길어 응답을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.";
+  const networkErrorMessage =
+    options?.networkErrorMessage ||
+    "네트워크 연결이 불안정합니다. 와이파이/모바일 데이터 상태를 확인한 뒤 다시 시도해 주세요.";
+
+  const { signal, clear } = resolveAbortSignal({
+    timeoutMs: options?.timeoutMs,
+    upstreamSignal: init?.signal,
   });
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...init,
+      headers: {
+        "Content-Type": "application/json",
+        ...(init?.headers || {}),
+      },
+      cache: "no-store",
+      signal,
+    });
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw new ApiRequestError(0, {
+        code: "CLIENT_TIMEOUT",
+        reason: "client_timeout",
+        nextAction: "retry",
+        error: timeoutMessage,
+      });
+    }
+    throw new ApiRequestError(0, {
+      code: "NETWORK_ERROR",
+      reason: "network_unreachable",
+      nextAction: "retry",
+      error: networkErrorMessage,
+    });
+  } finally {
+    clear();
+  }
+
   const data = (await response.json().catch(() => ({}))) as T;
   if (!response.ok) {
     throw new ApiRequestError(response.status, data as ApiErrorPayload);
@@ -387,6 +535,39 @@ export function buildSyncGuidance(
   status: number,
   fallbackMessage: string
 ): SyncGuidance {
+  if (payload.code === "NETWORK_ERROR") {
+    return {
+      code: payload.code,
+      reason: payload.reason || "network_unreachable",
+      nextAction: "retry",
+      message:
+        payload.error ||
+        "네트워크 연결이 불안정합니다. 와이파이/모바일 데이터 상태를 확인한 뒤 다시 시도해 주세요.",
+    };
+  }
+
+  if (payload.code === "CLIENT_TIMEOUT") {
+    return {
+      code: payload.code,
+      reason: payload.reason || "client_timeout",
+      nextAction: "retry",
+      message:
+        payload.error ||
+        "응답 시간이 길어 요청이 중단되었습니다. 잠시 후 다시 시도해 주세요.",
+    };
+  }
+
+  if (status === 524 || status === 504) {
+    return {
+      code: payload.code,
+      reason: payload.reason || "upstream_timeout",
+      nextAction: "retry",
+      message:
+        payload.error ||
+        "외부 건강데이터 연동 응답이 지연되어 시간 초과가 발생했습니다. 잠시 후 다시 시도해 주세요.",
+    };
+  }
+
   if (payload.code === "DB_SCHEMA_MISMATCH") {
     return {
       code: payload.code,

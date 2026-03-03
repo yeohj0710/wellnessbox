@@ -78,6 +78,7 @@ export type EmployeeSyncResponse = {
   ok: boolean;
   sync?: {
     source?: "fresh" | "cache-valid" | "cache-history" | "snapshot-history";
+    networkFetched?: boolean;
     forceRefresh?: boolean;
     cooldown?: {
       cooldownSeconds: number;
