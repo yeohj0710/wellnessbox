@@ -483,7 +483,7 @@ export default function EmployeeReportClient() {
       return;
     }
     setHasAuthAttempt(true);
-    beginBusy("카카오 인증을 진행하고 있어요.");
+    beginBusy("카카오톡으로 인증 요청을 보내고 있어요.");
     setError("");
     setNotice("");
     setSyncGuidance(null);
@@ -502,7 +502,7 @@ export default function EmployeeReportClient() {
         setNotice(
           reusedFromCache
             ? "기존 연동 데이터를 사용해 레포트를 불러왔습니다."
-            : "카카오 인증 후 최신 데이터를 불러왔습니다."
+            : "카카오톡 인증 확인 후 최신 데이터를 불러왔습니다."
         );
         return;
       }
@@ -511,7 +511,8 @@ export default function EmployeeReportClient() {
       setPendingSignForceRefresh(false);
       setSyncGuidance({
         nextAction: "sign",
-        message: "카카오 인증을 완료한 뒤 '인증 완료 확인'을 눌러 주세요.",
+        message:
+          "카카오톡으로 인증을 보냈어요. 카카오톡에서 인증을 완료한 뒤 '카카오톡 인증 완료 후 확인'을 눌러 주세요.",
       });
     } catch (err) {
       if (err instanceof ApiRequestError) {
@@ -519,7 +520,7 @@ export default function EmployeeReportClient() {
         const guidance = buildSyncGuidance(
           err.payload,
           err.status,
-          "카카오 인증 요청에 실패했습니다."
+          "카카오톡 인증 요청에 실패했습니다."
         );
         setSyncGuidance(guidance);
         const nextAction = toSyncNextAction(guidance.nextAction) ?? "retry";
@@ -532,7 +533,7 @@ export default function EmployeeReportClient() {
         setError(
           err instanceof Error
             ? err.message
-            : "카카오 인증 요청에 실패했습니다."
+            : "카카오톡 인증 요청에 실패했습니다."
         );
       }
     } finally {
@@ -574,7 +575,7 @@ export default function EmployeeReportClient() {
     setSyncGuidance(null);
 
     const signPendingMessage =
-      "카카오 인증을 완료한 뒤 '인증 완료 확인'을 눌러 주세요.";
+      "카카오톡으로 인증을 보냈어요. 카카오톡에서 인증을 완료한 뒤 '카카오톡 인증 완료 후 확인'을 눌러 주세요.";
 
     try {
       if (!forceRefresh && !reportData) {
@@ -845,18 +846,6 @@ export default function EmployeeReportClient() {
 
         {!reportData ? (
           <>
-            {syncGuidance ? (
-              <EmployeeReportSyncGuidanceNotice
-                guidance={syncGuidance}
-                busy={busy}
-                showActions
-                onRestartAuth={handleRestartAuth}
-                onSignAndSync={() =>
-                  void handleSignAndSync(pendingSignForceRefresh)
-                }
-              />
-            ) : null}
-
             <EmployeeReportIdentitySection
               identity={identity}
               busy={busy}
@@ -884,6 +873,18 @@ export default function EmployeeReportClient() {
               }
               onFindExisting={handleFindExisting}
             />
+
+            {syncGuidance ? (
+              <EmployeeReportSyncGuidanceNotice
+                guidance={syncGuidance}
+                busy={busy}
+                showActions
+                onRestartAuth={handleRestartAuth}
+                onSignAndSync={() =>
+                  void handleSignAndSync(pendingSignForceRefresh)
+                }
+              />
+            ) : null}
           </>
         ) : null}
 

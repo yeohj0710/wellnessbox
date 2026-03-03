@@ -317,7 +317,8 @@ export async function fetchAndStoreB2bHealthSnapshot(input: {
   const link = await getNhisLink(input.appUserId);
   if (!link?.linked) {
     throw new B2bEmployeeSyncError({
-      message: "연동 초기화가 필요합니다. 카카오 인증 요청을 먼저 진행해 주세요.",
+      message:
+        "연동 초기화가 필요합니다. 카카오톡 인증 요청을 먼저 진행해 주세요.",
       code: "NHIS_INIT_REQUIRED",
       reason: "nhis_init_required",
       status: 409,
@@ -466,7 +467,8 @@ export async function fetchAndStoreB2bHealthSnapshot(input: {
       const errCd = executed.firstFailed?.errCd?.trim().toUpperCase() || "";
       if (errCd === "LOGIN-999" || errCd === "C0012-001") {
         throw new B2bEmployeeSyncError({
-          message: "인증 세션이 만료되었습니다. 카카오 인증을 다시 진행해 주세요.",
+          message:
+            "인증 세션이 만료되었습니다. 카카오톡 인증을 다시 진행해 주세요.",
           code: "NHIS_AUTH_EXPIRED",
           reason: "nhis_auth_expired",
           status: 409,

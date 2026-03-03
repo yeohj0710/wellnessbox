@@ -53,7 +53,9 @@ export class ApiRequestError extends Error {
   payload: ApiErrorPayload;
 
   constructor(status: number, payload: ApiErrorPayload) {
-    super(payload.error || "요청 처리에 실패했습니다.");
+    super(
+      payload.error || "요청 처리에 실패했습니다. '다시 시도'를 눌러 한 번 더 진행해 주세요."
+    );
     this.name = "ApiRequestError";
     this.status = status;
     this.payload = payload;
@@ -258,8 +260,8 @@ export function resolveIdentityPrimaryActionLabel(input: {
 }) {
   void input.hasAuthAttempt;
   void input.storedIdentitySource;
-  if (input.syncNextAction === "sign") return "인증 완료 확인";
-  return "인증 시작";
+  if (input.syncNextAction === "sign") return "카카오톡 인증 완료 후 확인";
+  return "카카오톡으로 인증 보내기";
 }
 
 export function saveStoredIdentity(identity: IdentityInput) {
@@ -484,7 +486,7 @@ export function resolveMedicationStatusMessage(reportData: EmployeeReportRespons
   if (status.type === "none") {
     return {
       tone: "warn" as const,
-      text: "최근 3건 진료/조제 이력이 없습니다.",
+      text: "진료/조제 이력이 없습니다.",
     };
   }
   if (status.type === "unknown") {
@@ -566,7 +568,7 @@ export function buildSyncGuidance(
       nextAction,
       message:
         payload.error ||
-        "연동 초기화가 필요합니다. '인증 시작'을 눌러 카카오 인증을 진행해 주세요.",
+        "연동 초기화가 필요합니다. '카카오톡으로 인증 보내기'를 눌러 인증 요청을 시작해 주세요.",
     };
   }
   if (
@@ -579,7 +581,8 @@ export function buildSyncGuidance(
       reason: payload.reason,
       nextAction: "sign",
       message:
-        payload.error || "카카오 인증을 완료한 뒤 '인증 완료 확인'을 눌러 주세요.",
+        payload.error ||
+        "카카오톡으로 인증을 보냈어요. 카카오톡에서 인증을 완료한 뒤 '카카오톡 인증 완료 후 확인' 버튼을 눌러 주세요.",
     };
   }
   if (nextAction === "wait" || status === 429) {

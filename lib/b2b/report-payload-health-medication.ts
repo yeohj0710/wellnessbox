@@ -9,8 +9,10 @@ type MedicationRow = {
 
 export type MedicationContainerState = "present" | "missing" | "unrecognized";
 
-const MEDICATION_VISIT_LIMIT = 3;
-const MEDICATION_NAMES_PER_VISIT_LIMIT = 8;
+type ExtractMedicationRowsOptions = {
+  maxVisits?: number | null;
+};
+
 const MEDICATION_DERIVED_PHARMACY_LABEL = "\uc57d\uad6d \uc870\uc81c";
 const MEDICATION_NAME_KEYS = [
   "medicineNm",
@@ -207,7 +209,21 @@ function resolveRowsFromContainer(value: unknown): Record<string, unknown>[] {
   return resolved;
 }
 
-export function extractMedicationRows(normalizedJson: unknown): {
+function resolveVisitLimit(value: number | null | undefined) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  const normalized = Math.floor(value);
+  if (normalized <= 0) return null;
+  return normalized;
+}
+
+function hasNamedEntry(rows: MedicationRow[]) {
+  return rows.some((row) => !isDerivedMedicationLabel(row.medicationName));
+}
+
+export function extractMedicationRows(
+  normalizedJson: unknown,
+  options?: ExtractMedicationRowsOptions
+): {
   rows: MedicationRow[];
   containerState: MedicationContainerState;
 } {
@@ -268,7 +284,10 @@ export function extractMedicationRows(normalizedJson: unknown): {
     if (score > group.score) group.score = score;
   }
 
-  if (byVisit.size < MEDICATION_VISIT_LIMIT && medicalRows.length > 0) {
+  const hasNamedFromMedication = [...byVisit.values()].some((group) =>
+    hasNamedEntry(group.entries)
+  );
+  if ((!hasNamedFromMedication || byVisit.size === 0) && medicalRows.length > 0) {
     const offset = medicationRows.length;
     for (const [index, row] of medicalRows.entries()) {
       const mergedIndex = offset + index;
@@ -299,13 +318,14 @@ export function extractMedicationRows(normalizedJson: unknown): {
     }
   }
 
+  const visitLimit = resolveVisitLimit(options?.maxVisits);
   const rows = [...byVisit.values()]
     .sort((left, right) => {
       const scoreDiff = right.score - left.score;
       if (scoreDiff !== 0) return scoreDiff;
       return left.firstIndex - right.firstIndex;
     })
-    .slice(0, MEDICATION_VISIT_LIMIT)
+    .slice(0, visitLimit ?? undefined)
     .map((group) => {
       const representative =
         group.entries.find(
@@ -329,20 +349,21 @@ export function extractMedicationRows(normalizedJson: unknown): {
         names.push(name);
       }
 
-      const previewNames = names.slice(0, MEDICATION_NAMES_PER_VISIT_LIMIT);
-      const suffix =
-        names.length > MEDICATION_NAMES_PER_VISIT_LIMIT
-          ? ` \uc678 ${names.length - MEDICATION_NAMES_PER_VISIT_LIMIT}`
-          : "";
-
       return {
         ...representative,
         medicationName:
-          previewNames.length > 0
-            ? `${previewNames.join(", ")}${suffix}`.trim()
+          names.length > 0
+            ? names.join(", ")
             : representative.medicationName,
       };
     });
 
-  return { rows, containerState };
+  const namedRows = rows.filter(
+    (row) => !isDerivedMedicationLabel(row.medicationName)
+  );
+
+  return {
+    rows: namedRows.length > 0 ? namedRows : rows,
+    containerState,
+  };
 }

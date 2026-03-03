@@ -137,13 +137,13 @@ function runGuidanceCases() {
       reason: "nhis_sign_pending",
       nextAction: "sign",
       error:
-        "인증 응답이 지연되고 있습니다. 카카오 인증 완료 후 '인증 완료 확인'을 눌러 다시 확인해 주세요.",
+        "인증 응답이 지연되고 있습니다. 카카오톡에서 인증을 완료한 뒤 '카카오톡 인증 완료 후 확인'을 눌러 다시 확인해 주세요.",
     },
     504,
     "fallback"
   );
   assert.equal(signTimeoutGuidance.nextAction, "sign");
-  assert.ok(signTimeoutGuidance.message.includes("인증 완료 확인"));
+  assert.ok(signTimeoutGuidance.message.includes("카카오톡 인증 완료 후 확인"));
   assert.equal(signTimeoutGuidance.message.includes("시간 초과"), false);
   console.log("[qa:employee-report-sync-notice] PASS sign-timeout guidance");
 
@@ -170,7 +170,7 @@ function runGuidanceCases() {
     "fallback"
   );
   assert.equal(signGuidance.nextAction, "sign");
-  assert.ok(signGuidance.message.includes("인증 완료 확인"));
+  assert.ok(signGuidance.message.includes("카카오톡 인증 완료 후 확인"));
   console.log("[qa:employee-report-sync-notice] PASS sign guidance wording");
 
   const initGuidance = buildSyncGuidance(
@@ -183,7 +183,7 @@ function runGuidanceCases() {
     "fallback"
   );
   assert.equal(initGuidance.nextAction, "init");
-  assert.ok(initGuidance.message.includes("인증 시작"));
+  assert.ok(initGuidance.message.includes("카카오톡으로 인증 보내기"));
   assert.equal(initGuidance.message.includes("다시하기"), false);
   console.log("[qa:employee-report-sync-notice] PASS init guidance wording");
 }

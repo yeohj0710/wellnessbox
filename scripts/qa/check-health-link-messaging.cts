@@ -73,8 +73,16 @@ function runPrimaryButtonLabelCases() {
 }
 
 function runInitSignNoticeCases() {
-  assert.ok(HEALTH_LINK_COPY.hook.initNoticeCreated.includes("인증 요청"));
-  assert.ok(HEALTH_LINK_COPY.hook.initNoticeReused.includes("인증 완료 확인"));
+  assert.ok(
+    HEALTH_LINK_COPY.hook.initNoticeCreated.includes(
+      "카카오톡으로 인증을 보냈습니다."
+    )
+  );
+  assert.ok(
+    HEALTH_LINK_COPY.hook.initNoticeReused.includes(
+      "카카오톡 인증 완료 후 확인"
+    )
+  );
   assert.ok(HEALTH_LINK_COPY.hook.initNoticeDbReused.includes("저장된 정보"));
   assert.equal(
     HEALTH_LINK_COPY.hook.signNoticeCompleted,
@@ -82,7 +90,7 @@ function runInitSignNoticeCases() {
   );
   assert.equal(
     HEALTH_LINK_COPY.hook.signNoticeCompleted,
-    "인증 확인이 완료되었습니다."
+    "카카오톡 인증 확인이 완료되었습니다."
   );
   assert.equal(
     HEALTH_LINK_COPY.hook.autoFetchAfterSignNotice,
@@ -117,11 +125,11 @@ function runFetchMessageCases() {
 function runStaticRegressionChecks() {
   const copySource = read("app/(features)/health-link/copy.ts");
   assert.ok(
-    copySource.includes('next: "인증 시작"'),
+    copySource.includes('next: "카카오톡으로 인증 보내기"'),
     "health-link primary next action should use generalized wording"
   );
   assert.ok(
-    copySource.includes('confirmAuth: "인증 완료 확인"'),
+    copySource.includes('confirmAuth: "카카오톡 인증 완료 후 확인"'),
     "health-link sign action should use an explicit auth-complete wording"
   );
   assert.ok(
@@ -129,11 +137,11 @@ function runStaticRegressionChecks() {
     "health-link reload action should use generalized wording"
   );
   assert.ok(
-    copySource.includes('retryAuth: "인증 시작"'),
+    copySource.includes('retryAuth: "카카오톡으로 인증 보내기"'),
     "health-link retry action should use generalized wording"
   );
   assert.ok(
-    copySource.includes('title: "인증 시작"'),
+    copySource.includes('title: "카카오톡 인증 보내기"'),
     "health-link reauth step should reuse unified auth-start wording"
   );
   assert.equal(

@@ -272,7 +272,7 @@ function buildMedicationLines(payload: B2bReportPayload) {
   }
   return [
     ...base,
-    ...payload.health.medications.slice(0, 3).map((item) => {
+    ...payload.health.medications.map((item) => {
       const dateText = item.date ? ` / ${item.date}` : "";
       const hospText = item.hospitalName ? ` / ${item.hospitalName}` : "";
       return `${item.medicationName}${dateText}${hospText}`;
@@ -444,7 +444,7 @@ export function generateLayoutFromPayload(input: {
   addSection({
     ctx,
     sectionId: "medication",
-    title: "복약 연동 요약 (최신 3건)",
+    title: "복약 연동 요약",
     lines: buildMedicationLines(payload),
     colors,
     compact,

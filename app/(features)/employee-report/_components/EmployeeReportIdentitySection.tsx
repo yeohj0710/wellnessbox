@@ -91,7 +91,7 @@ export default function EmployeeReportIdentitySection({
               data-testid="employee-report-sign-sync"
               className={styles.buttonSecondary}
             >
-              {busy ? "확인 중..." : "인증 완료 확인"}
+              {busy ? "확인 중..." : "카카오톡 인증 완료 후 확인"}
             </button>
           ) : null}
         </div>

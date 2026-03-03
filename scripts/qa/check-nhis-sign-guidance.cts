@@ -57,7 +57,7 @@ function runGuidanceCases() {
   });
   assert.equal(timeoutCodeGuidance?.nextAction, "sign");
   assert.equal(timeoutCodeGuidance?.reason, "nhis_sign_pending");
-  assert.ok(timeoutCodeGuidance?.error.includes("인증 완료 확인"));
+  assert.ok(timeoutCodeGuidance?.error.includes("카카오톡 인증 완료 후 확인"));
   console.log("[qa:nhis-sign-guidance] PASS timeout-code guidance");
 
   const timeoutMessageGuidance = resolveSignGuidance({

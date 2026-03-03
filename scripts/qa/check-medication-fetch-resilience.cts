@@ -42,6 +42,18 @@ function runStaticRegressionChecks() {
     fetchExecutorSource.includes("const recovered = await tryMedicalFallback();"),
     "medication fetch should still support medical fallback for sparse accounts"
   );
+  assert.ok(
+    fetchExecutorSource.includes("tryMedicationNameBackfill"),
+    "medication fetch should run a name-backfill retry when rows exist without medication names"
+  );
+  assert.ok(
+    fetchExecutorSource.includes("buildMedicationBackfillDateRanges"),
+    "medication fetch should derive narrowed date ranges for medication-name backfill"
+  );
+  assert.ok(
+    fetchExecutorSource.includes("inspectMedicationPayload"),
+    "medication fetch should inspect rows for medication-name presence before fallback decisions"
+  );
 
   const medicationSource = read("lib/b2b/report-payload-medication.ts");
   assert.ok(
@@ -53,7 +65,7 @@ function runStaticRegressionChecks() {
     "medication history fallback should run when current rows are present but unnamed"
   );
   assert.ok(
-    medicationSource.includes("mergeRecentMedicationRows"),
+    medicationSource.includes("mergeMedicationRows"),
     "medication rows should merge raw and normalized sources with quality preference"
   );
 
@@ -80,6 +92,10 @@ function runStaticRegressionChecks() {
   );
 
   const reportSummarySource = read("components/b2b/ReportSummaryCards.tsx");
+  assert.ok(
+    reportSummarySource.includes("const medications = medicationsAll;"),
+    "report summary should render the full medication list without client-side top-N trimming"
+  );
   assert.ok(
     reportSummarySource.includes("buildMedicationMetaLine"),
     "report summary should build medication meta from date/hospital only"

@@ -31,7 +31,6 @@ const RADAR_RADIUS = 70;
 
 const MAX_PAGE1_SECTION_BARS = 3;
 const MAX_PAGE2_METRIC_ITEMS = 12;
-const MAX_PAGE2_MEDICATION_ITEMS = 6;
 
 type AxisItem = {
   id: string;
@@ -176,8 +175,7 @@ export default function ReportSummaryCards(props: {
       hospitalName: sanitizeTitle(toTrimmedText(row?.hospitalName)),
       date: toMedicationMetaDate(row?.date),
     }));
-  const medications = medicationsAll.slice(0, MAX_PAGE2_MEDICATION_ITEMS);
-  const hiddenMedicationCount = Math.max(0, medicationsAll.length - medications.length);
+  const medications = medicationsAll;
 
   const medicationStatusMessage = toTrimmedText(payload.health?.medicationStatus?.message);
 
@@ -387,7 +385,7 @@ export default function ReportSummaryCards(props: {
       <section className={`${styles.reportSheet} ${styles.reportSheetSecond}`} data-report-page="2">
         <header className={styles.reportPageHeader}>
           <p className={styles.reportPageKicker}>2페이지 상세 데이터</p>
-          <h2 className={styles.reportPageTitle}>건강검진 데이터 · 최근 3건 진료/조제 이력 · 약사 코멘트</h2>
+          <h2 className={styles.reportPageTitle}>건강검진 데이터 · 진료/조제 이력 · 약사 코멘트</h2>
           <p className={styles.reportPageSubtitle}>
             건강검진 수치, 진료/조제 이력, 약사 의견을 함께 보고 다음 관리 방향을 정리합니다.
           </p>
@@ -436,9 +434,6 @@ export default function ReportSummaryCards(props: {
           <article className={styles.reportDataCard}>
             <div className={styles.reportDataHeadRow}>
               <h3 className={styles.reportDataTitle}>최근 진료·조제 이력 상세</h3>
-              {hiddenMedicationCount > 0 ? (
-                <span className={styles.inlineHint}>추가 {hiddenMedicationCount}건은 관리자 화면에서 확인</span>
-              ) : null}
             </div>
             {medicationStatusMessage ? (
               <p className={styles.reportBlockLead}>{ensureSentence(medicationStatusMessage)}</p>

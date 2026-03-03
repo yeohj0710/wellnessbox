@@ -93,7 +93,7 @@ export async function requestNhisInit(input: {
     }),
   }, {
     timeoutMs: NHIS_INIT_TIMEOUT_MS,
-    timeoutMessage: "카카오 인증 준비 응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.",
+    timeoutMessage: "카카오톡 인증 준비 응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.",
   });
 }
 
@@ -103,7 +103,7 @@ export async function requestNhisSign() {
     body: JSON.stringify({}),
   }, {
     timeoutMs: NHIS_SIGN_TIMEOUT_MS,
-    timeoutMessage: "카카오 인증 확인 응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.",
+    timeoutMessage: "카카오톡 인증 확인 응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.",
   });
 }
 

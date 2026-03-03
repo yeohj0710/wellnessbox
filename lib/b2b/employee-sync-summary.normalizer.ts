@@ -158,6 +158,10 @@ function compareMedicationRows(
   return JSON.stringify(leftRecord).localeCompare(JSON.stringify(rightRecord), "ko");
 }
 
+function visitGroupHasMedicationName(rows: Record<string, unknown>[]) {
+  return rows.some((row) => rowHasMedicationName(row));
+}
+
 function resolveMedicationVisitKey(
   row: Record<string, unknown>,
   fallbackIndex: number
@@ -196,6 +200,9 @@ function limitRecentMedicationRows(rows: unknown[], maxRows: number) {
 
   const selectedVisits = [...byVisit.entries()]
     .sort((left, right) => {
+      const leftHasName = visitGroupHasMedicationName(left[1].rows);
+      const rightHasName = visitGroupHasMedicationName(right[1].rows);
+      if (leftHasName !== rightHasName) return rightHasName ? 1 : -1;
       const scoreDiff = right[1].score - left[1].score;
       if (scoreDiff !== 0) return scoreDiff;
       return left[1].firstIndex - right[1].firstIndex;

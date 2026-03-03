@@ -52,7 +52,7 @@ export function resolveSignGuidance(input: {
       reason: "nhis_auth_expired",
       status: 409,
       error:
-        "인증 세션이 만료되었습니다. 카카오 인증 요청(init)부터 다시 진행해 주세요.",
+        "인증 세션이 만료되었습니다. 카카오톡 인증 요청(init)부터 다시 진행해 주세요.",
     };
   }
 
@@ -65,7 +65,7 @@ export function resolveSignGuidance(input: {
       reason: "nhis_sign_init_required",
       status: 409,
       error:
-        "인증 요청 정보가 없거나 만료되었습니다. 카카오 인증 요청(init)을 다시 진행해 주세요.",
+        "인증 요청 정보가 없거나 만료되었습니다. 카카오톡 인증 요청(init)을 다시 진행해 주세요.",
     };
   }
 
@@ -75,7 +75,7 @@ export function resolveSignGuidance(input: {
       reason: "nhis_sign_pending",
       status: 409,
       error:
-        "인증 응답이 지연되고 있습니다. 카카오 인증 완료 후 '인증 완료 확인'을 눌러 다시 확인해 주세요.",
+        "인증 응답이 지연되고 있습니다. 카카오톡에서 인증을 완료한 뒤 '카카오톡 인증 완료 후 확인'을 눌러 다시 확인해 주세요.",
     };
   }
 
@@ -89,7 +89,7 @@ export function resolveSignGuidance(input: {
       reason: "nhis_sign_pending",
       status: 409,
       error:
-        "카카오톡 인증 승인 대기 중입니다. 승인 후 '연동 완료 확인'을 다시 진행해 주세요.",
+        "카카오톡 인증 승인 대기 중입니다. 승인 후 '카카오톡 인증 완료 후 확인'을 눌러 주세요.",
     };
   }
 

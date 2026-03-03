@@ -123,7 +123,7 @@ export async function resolveFetchExecutionContext(
     return {
       ready: false,
       response: nhisInitRequiredJson(
-        "연동이 완료되지 않았습니다. 카카오 인증 요청(init)부터 진행해 주세요."
+        "연동이 완료되지 않았습니다. 카카오톡 인증 요청(init)부터 진행해 주세요."
       ),
     };
   }
@@ -225,7 +225,7 @@ export function resolveFailedNhisFetchResponse(input: {
         reason: "nhis_auth_expired",
         nextAction: "init",
         error:
-          "인증 세션이 만료됐거나 인증 요청이 유효하지 않습니다. 카카오 인증 요청(init)부터 다시 진행해 주세요.",
+          "인증 세션이 만료됐거나 인증 요청이 유효하지 않습니다. 카카오톡 인증 요청(init)부터 다시 진행해 주세요.",
       },
       409
     );

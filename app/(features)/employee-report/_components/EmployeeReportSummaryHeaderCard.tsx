@@ -45,7 +45,7 @@ export default function EmployeeReportSummaryHeaderCard({
   const defaultPrimarySyncActionLabel =
     primarySyncActionLabel?.trim() || "최신 정보 확인";
   const syncRetryButtonLabel =
-    syncNextAction === "sign" ? "인증 완료 확인" : "다시 시도";
+    syncNextAction === "sign" ? "카카오톡 인증 완료 후 확인" : "다시 시도";
   const syncRetryBusyLabel =
     syncNextAction === "sign" ? "확인 중..." : "재시도 중...";
 
@@ -98,7 +98,7 @@ export default function EmployeeReportSummaryHeaderCard({
       </div>
 
       <p className={styles.inlineHint}>
-        이 리포트는 최근 3건 진료/조제 이력을 반영합니다.
+        이 리포트는 진료/조제 이력을 반영합니다.
       </p>
 
       <div className={`${styles.actionRow} ${styles.summarySecondaryActions}`}>

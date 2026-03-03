@@ -17,9 +17,17 @@ export default function EmployeeReportSyncGuidanceNotice({
   onRestartAuth,
   onSignAndSync,
 }: EmployeeReportSyncGuidanceNoticeProps) {
+  const isSignGuidance = guidance.nextAction === "sign";
+
   return (
     <section className={styles.sectionCard}>
-      <p className={styles.optionalText}>{guidance.message}</p>
+      <p
+        className={`${styles.syncGuidanceMessage} ${
+          isSignGuidance ? styles.syncGuidanceMessageSign : ""
+        }`}
+      >
+        {guidance.message}
+      </p>
 
       {showActions ? (
         <div className={`${styles.actionRow} ${styles.mt8}`}>
@@ -31,7 +39,7 @@ export default function EmployeeReportSyncGuidanceNotice({
               data-testid="employee-report-restart-auth"
               className={styles.buttonPrimary}
             >
-              {busy ? "처리 중..." : "인증 시작"}
+              {busy ? "요청 중..." : "카카오톡으로 인증 보내기"}
             </button>
           ) : null}
 
@@ -44,7 +52,7 @@ export default function EmployeeReportSyncGuidanceNotice({
                 data-testid="employee-report-sign-sync"
                 className={styles.buttonSecondary}
               >
-                {busy ? "확인 중..." : "인증 완료 확인"}
+                {busy ? "확인 중..." : "카카오톡 인증 완료 후 확인"}
               </button>
               <button
                 type="button"
@@ -53,7 +61,7 @@ export default function EmployeeReportSyncGuidanceNotice({
                 data-testid="employee-report-restart-auth-from-sign"
                 className={styles.buttonGhost}
               >
-                {busy ? "요청 중..." : "인증 시작"}
+                {busy ? "요청 중..." : "카카오톡으로 인증 다시 보내기"}
               </button>
             </>
           ) : null}

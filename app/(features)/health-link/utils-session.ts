@@ -26,7 +26,7 @@ export function describeFetchFailure(failure: {
   errMsg?: string | null;
 }) {
   if (isNhisSessionExpiredError(failure.errCd, failure.errMsg)) {
-    return "검진 서비스 세션이 만료되었습니다. 카카오 인증을 다시 시도해 주세요.";
+    return "검진 서비스 세션이 만료되었습니다. 카카오톡 인증을 다시 시도해 주세요.";
   }
   if (
     failure.target === "healthAge" &&

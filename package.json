@@ -50,6 +50,7 @@
     "qa:b2b:log-throttle": "ts-node scripts/qa/check-b2b-log-throttle.cts",
     "qa:b2b:sync-db-resilience": "ts-node scripts/qa/check-b2b-sync-db-resilience.cts",
     "qa:medication:resilience": "ts-node scripts/qa/check-medication-fetch-resilience.cts",
+    "qa:b2b:report-medication-all-rows": "npx tsx scripts/qa/check-report-medication-all-rows.cts",
     "qa:employee-report:db-priority": "ts-node scripts/qa/check-employee-report-db-priority.cts",
     "qa:employee-report:auth-ux": "ts-node scripts/qa/check-employee-report-auth-ux.cts",
     "qa:employee-report:sync-notice": "ts-node scripts/qa/check-employee-report-sync-notice.cts",

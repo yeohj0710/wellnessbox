@@ -150,6 +150,10 @@ function hasMedicationName(row: NhisRow): boolean {
   return !!extractMedicationName(row);
 }
 
+function rowsHaveMedicationName(rows: NhisRow[]) {
+  return rows.some((row) => hasMedicationName(row));
+}
+
 function compareMedicationRows(left: NhisRow, right: NhisRow) {
   const leftHasMedication = hasMedicationName(left);
   const rightHasMedication = hasMedicationName(right);
@@ -269,8 +273,11 @@ function selectLatestCheckupOverviewRows(rows: NhisRow[]): NhisRow[] {
 export function normalizeNhisPayload(input: NormalizeNhisPayloadInput): NormalizedNhisPayload {
   const medical = normalizeTreatmentPayload(input.medical);
   const medicationRaw = normalizeTreatmentPayload(input.medication);
+  const medicationHasName = rowsHaveMedicationName(medicationRaw.list);
+  const medicalHasName = rowsHaveMedicationName(medical.list);
   const useMedicalMedicationFallback =
-    medicationRaw.list.length === 0 && medical.list.length > 0;
+    (medicationRaw.list.length === 0 && medical.list.length > 0) ||
+    (!medicationHasName && medicalHasName);
   const medicationRowsSource = useMedicalMedicationFallback
     ? medical.list
     : medicationRaw.list;

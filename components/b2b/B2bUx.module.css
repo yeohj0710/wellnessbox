@@ -1039,6 +1039,24 @@
   line-height: 1.5;
 }
 
+.syncGuidanceMessage {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.syncGuidanceMessageSign {
+  border: 1px solid #98d8b2;
+  border-radius: 12px;
+  background: #ecfff3;
+  color: #1f7a45;
+  font-weight: 800;
+  font-size: 16px;
+  line-height: 1.5;
+  padding: 10px 12px;
+}
+
 .editorPanel {
   border-radius: 16px;
   border-color: #d6e3f8;

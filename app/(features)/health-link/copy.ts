@@ -10,24 +10,26 @@ export const HEALTH_LINK_COPY = {
       guide: "저장된 정보와 최신 정보를 순서대로 확인합니다.",
     },
     reauth: {
-      title: "인증 시작",
-      guide: "세션이 만료되었습니다. 아래 버튼을 눌러 인증을 진행해 주세요.",
+      title: "카카오톡 인증 보내기",
+      guide:
+        "세션이 만료되었습니다. 아래 버튼으로 카카오톡 인증을 다시 보내 주세요.",
     },
     sign: {
-      title: "인증 확인",
-      guide: "카카오 인증 후 `인증 완료 확인`을 눌러 주세요.",
+      title: "인증 완료 확인",
+      guide:
+        "카카오톡에서 인증을 완료한 뒤 `카카오톡 인증 완료 후 확인`을 눌러 주세요.",
     },
     init: {
-      title: "인증 시작",
-      guide: "본인정보를 입력하고 인증을 시작해 주세요.",
+      title: "카카오톡 인증 보내기",
+      guide: "본인정보를 입력하고 카카오톡으로 인증을 보내 주세요.",
     },
   },
   action: {
-    next: "인증 시작",
-    confirmAuth: "인증 완료 확인",
+    next: "카카오톡으로 인증 보내기",
+    confirmAuth: "카카오톡 인증 완료 후 확인",
     fetchNow: "최신 정보 확인",
     reload: "최신 정보 확인",
-    retryAuth: "인증 시작",
+    retryAuth: "카카오톡으로 인증 보내기",
     moreOptions: "추가 옵션",
     switchIdentity: "다른 사람 조회",
     switchIdentityConfirm:
@@ -44,16 +46,17 @@ export const HEALTH_LINK_COPY = {
   },
   auth: {
     title: "인증 및 연동",
-    channelTitle: "카카오 인증",
-    channelDescription: "인증 채널은 카카오를 사용합니다.",
+    channelTitle: "카카오톡 인증",
+    channelDescription: "인증 채널은 카카오톡을 사용합니다.",
     requiredInitTitle: "필수 단계 1. 본인정보 입력",
     requiredInitDescription:
       "이름, 생년월일, 휴대폰 번호를 정확히 입력한 뒤 진행해 주세요.",
-    requiredSignTitle: "필수 단계 2. 카카오 인증 확인",
+    requiredSignTitle: "필수 단계 2. 카카오톡 인증 완료 확인",
     requiredSignDescription:
-      "카카오에서 인증을 승인한 뒤 `인증 완료 확인`을 눌러 주세요.",
-    requiredActionHintInit: "필수: 입력 후 `인증 시작`을 눌러 인증 요청",
-    requiredActionHintSign: "필수: 카카오 승인 후 `인증 완료 확인`을 눌러 완료",
+      "카카오톡에서 인증을 완료한 뒤 `카카오톡 인증 완료 후 확인`을 눌러 주세요.",
+    requiredActionHintInit: "필수: 입력 후 `카카오톡으로 인증 보내기`를 눌러 요청",
+    requiredActionHintSign:
+      "필수: 카카오톡 완료 후 `카카오톡 인증 완료 후 확인`을 눌러 완료",
     optionalLoginSummary: "선택 옵션: 카카오 로그인 연동",
     optionalLoginDescription:
       "로그인하면 기기 변경 후에도 기록을 더 안정적으로 이어볼 수 있습니다.",
@@ -66,9 +69,9 @@ export const HEALTH_LINK_COPY = {
     phoneLabel: "휴대폰 번호",
     phonePlaceholder: "01012345678",
     currentStepPrefix: "현재 단계",
-    pendingTitle: "카카오 인증을 완료해 주세요",
+    pendingTitle: "카카오톡 인증을 완료해 주세요",
     pendingDescription:
-      "카카오 인증 승인 후 `인증 완료 확인`을 누르면 결과를 자동으로 불러옵니다.",
+      "카카오톡에서 인증을 완료한 뒤 `카카오톡 인증 완료 후 확인`을 누르면 결과를 자동으로 불러옵니다.",
     prerequisiteTitle: "사전 준비가 필요합니다",
     prerequisiteDescription:
       "건강iN에서 건강검진 서비스를 먼저 활성화한 뒤 다시 시도해 주세요.",
@@ -97,16 +100,16 @@ export const HEALTH_LINK_COPY = {
     initTimeout:
       "인증 요청 응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.",
     initNoticeReused:
-      "인증 요청 상태를 확인했습니다. 카카오 인증 후 `인증 완료 확인`을 눌러 주세요.",
+      "카카오톡으로 인증을 보냈습니다. 카카오톡에서 인증을 완료한 뒤 `카카오톡 인증 완료 후 확인`을 눌러 주세요.",
     initNoticeDbReused:
       "저장된 정보를 확인했습니다. 필요 시 최신 정보 확인을 진행해 주세요.",
     initNoticeCreated:
-      "인증 요청을 보냈습니다. 카카오 인증 후 `인증 완료 확인`을 눌러 주세요.",
-    signFallback: "인증 확인 처리에 실패했습니다.",
+      "카카오톡으로 인증을 보냈습니다. 카카오톡에서 인증을 완료한 뒤 `카카오톡 인증 완료 후 확인`을 눌러 주세요.",
+    signFallback: "인증 완료 확인 처리에 실패했습니다.",
     signTimeout:
-      "인증 확인 응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.",
-    signNoticeReused: "인증 확인이 완료되었습니다.",
-    signNoticeCompleted: "인증 확인이 완료되었습니다.",
+      "인증 완료 확인 응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.",
+    signNoticeReused: "카카오톡 인증 확인이 완료되었습니다.",
+    signNoticeCompleted: "카카오톡 인증 확인이 완료되었습니다.",
     autoFetchAfterSignNotice: "건강정보를 불러오고 있어요.",
     autoFetchOnEntryNotice: "건강정보를 불러오고 있어요.",
     fetchTimeout: "응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.",
@@ -119,15 +122,15 @@ export const HEALTH_LINK_COPY = {
     detailAlreadyLoadedNotice:
       "상세 수치를 이미 불러왔습니다. 현재 결과를 재사용합니다.",
     sessionExpiredDetected:
-      "세션이 만료되었습니다. 카카오 인증 후 다시 시도해 주세요.",
+      "세션이 만료되었습니다. 카카오톡 인증 후 다시 시도해 주세요.",
     unlinkFallback: "연동 해제에 실패했습니다.",
     unlinkNotice: "연동을 해제했습니다.",
   },
   workflow: {
     statusTitle: "연동 준비",
     statusSubtitle: "본인정보 입력 후 인증 요청",
-    authTitle: "인증 확인",
-    authSubtitle: "카카오 인증 후 상태 확인",
+    authTitle: "인증 완료 확인",
+    authSubtitle: "카카오톡 인증 후 상태 확인",
     syncTitle: "건강정보 조회",
     syncSubtitle: "저장 데이터 우선 확인 후 최신 정보 반영",
   },
@@ -158,7 +161,7 @@ export const HEALTH_LINK_COPY = {
     partialFailureDetailSummary: "실패 항목 상세 보기",
     sessionExpiredTitle: "세션이 만료되었습니다",
     sessionExpiredGuide:
-      "상단에서 인증 시작 버튼을 눌러 인증을 진행해 주세요.",
+      "상단에서 `카카오톡으로 인증 보내기` 버튼을 눌러 인증을 진행해 주세요.",
     switchIdentityHint: "새 인증이 필요할 때만 사용하세요.",
     summaryTitle: "핵심 요약",
     summaryFallbackHeadline: "결과를 간단히 정리했어요",
