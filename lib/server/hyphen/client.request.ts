@@ -57,6 +57,7 @@ const TRANSIENT_HYPHEN_ERROR_CODES = new Set([
   "HYF-0002",
   "HYF-9999",
 ]);
+const DEFAULT_HYPHEN_REQUEST_DEADLINE_MS = 55_000;
 
 function envInt(name: string, fallback: number, min = 0, max = 10) {
   const raw = process.env[name];
@@ -72,6 +73,14 @@ function resolveHyphenMaxRetries() {
 
 function resolveHyphenRetryBaseDelayMs() {
   return envInt("HYPHEN_HTTP_RETRY_BASE_DELAY_MS", 600, 200, 5000);
+}
+
+function resolveHyphenRequestDeadlineMs() {
+  const raw = process.env.HYPHEN_HTTP_REQUEST_DEADLINE_MS;
+  if (!raw) return DEFAULT_HYPHEN_REQUEST_DEADLINE_MS;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed)) return DEFAULT_HYPHEN_REQUEST_DEADLINE_MS;
+  return Math.min(180_000, Math.max(10_000, Math.floor(parsed)));
 }
 
 function shouldRetryHyphenError(error: unknown) {
@@ -100,6 +109,25 @@ function sleep(ms: number) {
 function resolveRetryDelayMs(attempt: number) {
   const base = resolveHyphenRetryBaseDelayMs();
   return Math.min(6_000, base * Math.pow(2, attempt));
+}
+
+function buildHyphenDeadlineError(
+  endpoint: HyphenEndpointPath,
+  deadlineMs: number,
+  lastError?: unknown
+) {
+  const lastMessage =
+    lastError instanceof Error && lastError.message.trim().length > 0
+      ? ` (last error: ${lastError.message.trim()})`
+      : "";
+  return new HyphenApiError({
+    status: 504,
+    endpoint,
+    errCd: "HYPHEN_TIMEOUT",
+    errMsg: `Hyphen API request exceeded deadline ${Math.ceil(
+      deadlineMs / 1000
+    )}s${lastMessage}`,
+  });
 }
 
 async function hyphenPostOnce<TData = Record<string, unknown>>(input: {
@@ -187,19 +215,38 @@ export async function hyphenPost<TData = Record<string, unknown>>(
   }
 
   const timeoutMs = resolveHyphenTimeoutMs();
+  const requestDeadlineMs = resolveHyphenRequestDeadlineMs();
   const maxRetries = resolveHyphenMaxRetries();
+  const startedAtMs = Date.now();
   let attempt = 0;
   let lastError: unknown;
 
   while (attempt <= maxRetries) {
+    const elapsedMs = Date.now() - startedAtMs;
+    const remainingMs = requestDeadlineMs - elapsedMs;
+    if (remainingMs <= 0) {
+      throw buildHyphenDeadlineError(endpoint, requestDeadlineMs, lastError);
+    }
+    const attemptTimeoutMs = Math.min(timeoutMs, Math.max(1, remainingMs));
+
     try {
-      return await hyphenPostOnce<TData>({ endpoint, body, headers, timeoutMs });
+      return await hyphenPostOnce<TData>({
+        endpoint,
+        body,
+        headers,
+        timeoutMs: attemptTimeoutMs,
+      });
     } catch (error) {
       lastError = error;
       if (attempt >= maxRetries || !shouldRetryHyphenError(error)) {
         throw error;
       }
-      await sleep(resolveRetryDelayMs(attempt));
+      const delayMs = resolveRetryDelayMs(attempt);
+      const retryRemainingMs = requestDeadlineMs - (Date.now() - startedAtMs);
+      if (retryRemainingMs <= delayMs) {
+        throw buildHyphenDeadlineError(endpoint, requestDeadlineMs, error);
+      }
+      await sleep(delayMs);
     }
     attempt += 1;
   }

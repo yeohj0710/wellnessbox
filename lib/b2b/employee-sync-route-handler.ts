@@ -176,7 +176,7 @@ export async function runEmployeeSyncFlow(input: {
     requestedPeriodKey,
     forceRefreshRequested,
     forceRefreshCooldownSeconds,
-    generateAiEvaluation: input.payload.generateAiEvaluation,
+    generateAiEvaluation: input.payload.generateAiEvaluation === true,
     accessContext,
   });
 }

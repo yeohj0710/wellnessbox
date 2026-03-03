@@ -432,7 +432,7 @@ export default function EmployeeReportClient() {
       setSyncGuidance({
         nextAction: "sign",
         message:
-          "카카오 인증 확인 대기중입니다. 인증이 완료되면 다시 확인해 주세요.",
+          "카카오 인증을 완료한 뒤 '인증 완료 확인'을 눌러 주세요.",
       });
     } catch (err) {
       if (err instanceof ApiRequestError) {
@@ -495,7 +495,7 @@ export default function EmployeeReportClient() {
     setSyncGuidance(null);
 
     const signPendingMessage =
-      "카카오 인증 확인 대기중입니다. 인증이 완료되면 다시 확인해 주세요.";
+      "카카오 인증을 완료한 뒤 '인증 완료 확인'을 눌러 주세요.";
 
     try {
       if (!forceRefresh && !reportData) {

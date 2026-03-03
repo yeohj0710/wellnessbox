@@ -77,6 +77,24 @@ function hashIp(value: string | null | undefined) {
   return createHash("sha256").update(normalized).digest("hex");
 }
 
+const HYPHEN_TIMEOUT_CODES = new Set(["HYPHEN_TIMEOUT", "HYF-0002", "HYF-9999"]);
+const HYPHEN_TIMEOUT_MESSAGE_PATTERN =
+  /(timeout|timed out|시간\s*초과|응답\s*지연|지연되고\s*있습니다)/i;
+
+function isHyphenTimeoutFailure(input: {
+  errCd?: string | null;
+  errMsg?: string | null;
+  payloadError?: string | null;
+}) {
+  const errCd = (input.errCd || "").trim().toUpperCase();
+  if (errCd && HYPHEN_TIMEOUT_CODES.has(errCd)) return true;
+  const message = [input.errMsg, input.payloadError]
+    .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+    .join(" ");
+  if (!message) return false;
+  return HYPHEN_TIMEOUT_MESSAGE_PATTERN.test(message);
+}
+
 async function shouldSkipEmployeeAccessLogWrite(input: {
   employeeId?: string | null;
   appUserId?: string | null;
@@ -453,6 +471,22 @@ export async function fetchAndStoreB2bHealthSnapshot(input: {
           reason: "nhis_auth_expired",
           status: 409,
           nextAction: "init",
+        });
+      }
+      if (
+        isHyphenTimeoutFailure({
+          errCd,
+          errMsg: executed.firstFailed?.errMsg,
+          payloadError: executed.payload.error,
+        })
+      ) {
+        throw new B2bEmployeeSyncError({
+          message:
+            "외부 건강데이터 연동 응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.",
+          code: "HYPHEN_FETCH_TIMEOUT",
+          reason: "hyphen_fetch_timeout",
+          status: 504,
+          nextAction: "retry",
         });
       }
       throw new B2bEmployeeSyncError({

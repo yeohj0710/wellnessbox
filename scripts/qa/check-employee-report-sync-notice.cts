@@ -143,6 +143,19 @@ function runGuidanceCases() {
   assert.equal(waitGuidance.nextAction, "wait");
   assert.equal(waitGuidance.retryAfterSec, 18);
   console.log("[qa:employee-report-sync-notice] PASS wait guidance");
+
+  const signGuidance = buildSyncGuidance(
+    {
+      code: "NHIS_SIGN_REQUIRED",
+      reason: "nhis_sign_required",
+      nextAction: "sign",
+    },
+    409,
+    "fallback"
+  );
+  assert.equal(signGuidance.nextAction, "sign");
+  assert.ok(signGuidance.message.includes("인증 완료 확인"));
+  console.log("[qa:employee-report-sync-notice] PASS sign guidance wording");
 }
 
 async function runRequestJsonResilienceCases() {

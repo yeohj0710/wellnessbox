@@ -45,6 +45,10 @@ export default function EmployeeReportSummaryHeaderCard({
   const showSyncRetryButton = syncNextAction === "sign" || syncNextAction === "retry";
   const defaultPrimarySyncActionLabel =
     primarySyncActionLabel?.trim() || "최신 정보 확인";
+  const syncRetryButtonLabel =
+    syncNextAction === "sign" ? "인증 완료 확인" : "다시 시도";
+  const syncRetryBusyLabel =
+    syncNextAction === "sign" ? "확인 중..." : "재시도 중...";
 
   return (
     <section className={styles.sectionCard} data-testid="employee-report-summary-section">
@@ -100,7 +104,7 @@ export default function EmployeeReportSummaryHeaderCard({
 
       {isSignPending ? (
         <div className={styles.noticeSuccess}>
-          카카오 인증 후 `진행 상태 확인`을 눌러 주세요.
+          카카오 인증 후 `인증 완료 확인`을 눌러 주세요.
         </div>
       ) : null}
 
@@ -113,7 +117,7 @@ export default function EmployeeReportSummaryHeaderCard({
             data-testid="employee-report-sign-sync"
             className={styles.buttonSecondary}
           >
-            {busy ? "확인 중..." : "다시 진행"}
+            {busy ? syncRetryBusyLabel : syncRetryButtonLabel}
           </button>
         ) : (
           <button

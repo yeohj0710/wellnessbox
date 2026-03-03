@@ -31,7 +31,7 @@ export default function EmployeeReportSyncGuidanceNotice({
               data-testid="employee-report-restart-auth"
               className={styles.buttonPrimary}
             >
-              {busy ? "처리 중..." : "다시 진행"}
+              {busy ? "처리 중..." : "인증 다시하기"}
             </button>
           ) : null}
 
@@ -44,7 +44,7 @@ export default function EmployeeReportSyncGuidanceNotice({
                 data-testid="employee-report-sign-sync"
                 className={styles.buttonSecondary}
               >
-                {busy ? "확인 중..." : "진행 상태 확인"}
+                {busy ? "확인 중..." : "인증 완료 확인"}
               </button>
               <button
                 type="button"
@@ -53,7 +53,7 @@ export default function EmployeeReportSyncGuidanceNotice({
                 data-testid="employee-report-restart-auth-from-sign"
                 className={styles.buttonGhost}
               >
-                {busy ? "요청 중..." : "다시 진행"}
+                {busy ? "요청 중..." : "인증 다시하기"}
               </button>
             </>
           ) : null}
@@ -66,7 +66,7 @@ export default function EmployeeReportSyncGuidanceNotice({
               data-testid="employee-report-sign-sync"
               className={styles.buttonSecondary}
             >
-              {busy ? "재시도 중..." : "다시 진행"}
+              {busy ? "재시도 중..." : "다시 시도"}
             </button>
           ) : null}
         </div>

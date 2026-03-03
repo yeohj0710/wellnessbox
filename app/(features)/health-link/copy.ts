@@ -10,12 +10,12 @@ export const HEALTH_LINK_COPY = {
       guide: "저장된 정보와 최신 정보를 순서대로 확인합니다.",
     },
     reauth: {
-      title: "인증 다시 진행",
-      guide: "세션이 만료되어 인증을 다시 진행해야 합니다.",
+      title: "인증 다시하기",
+      guide: "세션이 만료되어 인증이 필요합니다. 아래 버튼으로 다시 시작해 주세요.",
     },
     sign: {
       title: "인증 확인",
-      guide: "카카오 인증 후 진행 상태를 확인해 주세요.",
+      guide: "카카오 인증 후 `인증 완료 확인`을 눌러 주세요.",
     },
     init: {
       title: "인증 시작",
@@ -23,10 +23,11 @@ export const HEALTH_LINK_COPY = {
     },
   },
   action: {
-    next: "진행하기",
+    next: "인증 시작",
+    confirmAuth: "인증 완료 확인",
     fetchNow: "최신 정보 확인",
     reload: "최신 정보 확인",
-    retryAuth: "다시 진행",
+    retryAuth: "인증 다시하기",
     moreOptions: "추가 옵션",
     switchIdentity: "다른 사람 조회",
     switchIdentityConfirm:
@@ -50,9 +51,9 @@ export const HEALTH_LINK_COPY = {
       "이름, 생년월일, 휴대폰 번호를 정확히 입력한 뒤 진행해 주세요.",
     requiredSignTitle: "필수 단계 2. 카카오 인증 확인",
     requiredSignDescription:
-      "카카오에서 인증을 승인한 뒤 진행 상태를 확인해 주세요.",
-    requiredActionHintInit: "필수: 입력 후 `진행하기`를 눌러 인증 요청",
-    requiredActionHintSign: "필수: 카카오 승인 후 `진행하기`를 눌러 완료",
+      "카카오에서 인증을 승인한 뒤 `인증 완료 확인`을 눌러 주세요.",
+    requiredActionHintInit: "필수: 입력 후 `인증 시작`을 눌러 인증 요청",
+    requiredActionHintSign: "필수: 카카오 승인 후 `인증 완료 확인`을 눌러 완료",
     optionalLoginSummary: "선택 옵션: 카카오 로그인 연동",
     optionalLoginDescription:
       "로그인하면 기기 변경 후에도 기록을 더 안정적으로 이어볼 수 있습니다.",
@@ -67,16 +68,16 @@ export const HEALTH_LINK_COPY = {
     currentStepPrefix: "현재 단계",
     pendingTitle: "카카오 인증을 완료해 주세요",
     pendingDescription:
-      "카카오 인증 승인 후 진행 상태를 확인하면 결과를 자동으로 불러옵니다.",
+      "카카오 인증 승인 후 `인증 완료 확인`을 누르면 결과를 자동으로 불러옵니다.",
     prerequisiteTitle: "사전 준비가 필요합니다",
     prerequisiteDescription:
-      "건강iN에서 건강검진 서비스를 먼저 활성화한 뒤 다시 진행해 주세요.",
+      "건강iN에서 건강검진 서비스를 먼저 활성화한 뒤 다시 시도해 주세요.",
     prerequisiteLinkLabel: "건강iN 열기",
     statusLoadFallback: "연동 상태를 불러오지 못했습니다.",
   },
   hook: {
     forceRefreshCooldownFallback:
-      "비용 보호 정책으로 강제 새로고침이 잠시 제한되었습니다. 잠시 후 다시 진행해 주세요.",
+      "비용 보호 정책으로 강제 새로고침이 잠시 제한되었습니다. 잠시 후 다시 시도해 주세요.",
     targetPolicyBlockedPrefix:
       "현재 정책에서 일부 조회 항목이 제한되었습니다.",
     targetPolicyBlockedDefault:
@@ -94,31 +95,31 @@ export const HEALTH_LINK_COPY = {
     inputPhoneInvalid: "휴대폰 번호는 숫자 10~11자리여야 합니다.",
     initFallback: "인증 요청에 실패했습니다.",
     initTimeout:
-      "인증 요청 응답이 지연되고 있습니다. 잠시 후 다시 진행해 주세요.",
+      "인증 요청 응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.",
     initNoticeReused:
-      "인증 요청 상태를 확인했습니다. 카카오 인증 후 다시 진행해 주세요.",
+      "인증 요청 상태를 확인했습니다. 카카오 인증 후 `인증 완료 확인`을 눌러 주세요.",
     initNoticeDbReused:
       "저장된 정보를 확인했습니다. 필요 시 최신 정보 확인을 진행해 주세요.",
     initNoticeCreated:
-      "인증 요청을 보냈습니다. 카카오 인증 후 다시 진행해 주세요.",
+      "인증 요청을 보냈습니다. 카카오 인증 후 `인증 완료 확인`을 눌러 주세요.",
     signFallback: "인증 확인 처리에 실패했습니다.",
     signTimeout:
-      "인증 확인 응답이 지연되고 있습니다. 잠시 후 다시 진행해 주세요.",
+      "인증 확인 응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.",
     signNoticeReused: "인증 확인이 완료되었습니다.",
     signNoticeCompleted: "인증 확인이 완료되었습니다.",
     autoFetchAfterSignNotice: "건강정보를 불러오고 있어요.",
     autoFetchOnEntryNotice: "건강정보를 불러오고 있어요.",
-    fetchTimeout: "응답이 지연되고 있습니다. 잠시 후 다시 진행해 주세요.",
+    fetchTimeout: "응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.",
     fetchDetailTimeout:
-      "응답이 지연되고 있습니다. 잠시 후 다시 진행해 주세요.",
+      "응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.",
     requestTimeoutFallback:
-      "응답이 지연되고 있습니다. 잠시 후 다시 진행해 주세요.",
+      "응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.",
     networkErrorFallback:
-      "네트워크 연결이 불안정합니다. 연결 상태를 확인한 뒤 다시 진행해 주세요.",
+      "네트워크 연결이 불안정합니다. 연결 상태를 확인한 뒤 다시 시도해 주세요.",
     detailAlreadyLoadedNotice:
       "상세 수치를 이미 불러왔습니다. 현재 결과를 재사용합니다.",
     sessionExpiredDetected:
-      "세션이 만료되었습니다. 카카오 인증 후 다시 진행해 주세요.",
+      "세션이 만료되었습니다. 카카오 인증 후 다시 시도해 주세요.",
     unlinkFallback: "연동 해제에 실패했습니다.",
     unlinkNotice: "연동을 해제했습니다.",
   },
@@ -149,15 +150,15 @@ export const HEALTH_LINK_COPY = {
     loadingStageFetch: "건강정보를 조회하고 있어요. 잠시만 기다려 주세요.",
     loadingStageSlow: "응답이 지연되고 있어요. 완료되면 자동으로 보여드릴게요.",
     loadingElapsedUnit: "초 경과",
-    loadingHint: "응답이 오래 걸리면 잠시 후 다시 진행해 주세요.",
-    linkRequired: "먼저 인증/연동을 완료한 뒤 데이터를 조회해 주세요.",
+    loadingHint: "응답이 오래 걸리면 잠시 후 다시 시도해 주세요.",
+    linkRequired: "먼저 인증을 완료한 뒤 데이터를 조회해 주세요.",
     partialFailureTitle: "일부 조회 실패",
     partialFailureHint:
       "일부 항목은 불러오지 못했지만 가능한 데이터부터 먼저 표시합니다.",
     partialFailureDetailSummary: "실패 항목 상세 보기",
     sessionExpiredTitle: "세션이 만료되었습니다",
     sessionExpiredGuide:
-      "상단에서 다시 진행 버튼을 눌러 재인증을 시작해 주세요.",
+      "상단에서 인증 다시하기 버튼을 눌러 재인증을 시작해 주세요.",
     switchIdentityHint: "새 인증이 필요할 때만 사용하세요.",
     summaryTitle: "핵심 요약",
     summaryFallbackHeadline: "결과를 간단히 정리했어요",

@@ -104,11 +104,23 @@ function runStaticRegressionChecks() {
     employeeServiceSource.includes("runBestEffortDbWrite"),
     "employee-service logs should use best-effort DB writes"
   );
+  assert.ok(
+    employeeServiceSource.includes("HYPHEN_FETCH_TIMEOUT"),
+    "employee sync should classify upstream timeout failures explicitly"
+  );
+  assert.ok(
+    employeeServiceSource.includes("status: 504"),
+    "employee sync timeout failures should map to HTTP 504"
+  );
 
   const syncHandlerSource = read("lib/b2b/employee-sync-route-handler.ts");
   assert.ok(
     syncHandlerSource.includes("runWithHyphenInFlightDedup(\"b2b-employee-sync\""),
     "employee sync handler should dedupe in-flight duplicate requests"
+  );
+  assert.ok(
+    syncHandlerSource.includes("generateAiEvaluation: input.payload.generateAiEvaluation === true"),
+    "employee sync should not trigger AI evaluation unless explicitly requested"
   );
 
   const syncRouteSource = read("lib/b2b/employee-sync-route.ts");
@@ -131,6 +143,16 @@ function runStaticRegressionChecks() {
   assert.ok(
     clientUtilsSource.includes("DB_POOL_TIMEOUT"),
     "employee-report client guidance should handle DB pool timeout"
+  );
+
+  const hyphenRequestSource = read("lib/server/hyphen/client.request.ts");
+  assert.ok(
+    hyphenRequestSource.includes("resolveHyphenRequestDeadlineMs"),
+    "hyphen requests should use per-request deadline guard"
+  );
+  assert.ok(
+    hyphenRequestSource.includes("buildHyphenDeadlineError"),
+    "hyphen request deadline should map to explicit timeout error"
   );
 
   console.log("[qa:b2b-sync-db-resilience] PASS static regression checks");

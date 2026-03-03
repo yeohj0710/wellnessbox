@@ -95,7 +95,7 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
   const primaryLoading = actionLoading === primaryFlow.kind;
   const primaryButtonLabel = shouldForceReauth
     ? HEALTH_LINK_COPY.action.retryAuth
-    : resolvePrimaryButtonLabel(primaryFlow.kind === "fetch", hasFetchResult);
+    : resolvePrimaryButtonLabel(primaryFlow.kind, hasFetchResult);
   const primaryDisabled =
     !canRequest ||
     (primaryFlow.kind === "sign" && !canSign) ||

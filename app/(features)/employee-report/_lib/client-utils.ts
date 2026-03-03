@@ -256,14 +256,16 @@ export function resolveIdentityPrimaryActionLabel(input: {
   syncNextAction: "init" | "sign" | "retry" | null;
   storedIdentitySource: StoredIdentitySource;
 }) {
-  if (input.syncNextAction === "init" || input.syncNextAction === "retry" || input.hasAuthAttempt) {
-    return "인증/연동 다시 진행";
+  if (input.syncNextAction === "sign") return "인증 완료 확인";
+  if (
+    input.syncNextAction === "init" ||
+    input.syncNextAction === "retry" ||
+    input.hasAuthAttempt
+  ) {
+    return "인증 다시하기";
   }
-  if (input.syncNextAction === "sign") return "인증 상태 확인";
-  if (input.storedIdentitySource === "v2" || input.storedIdentitySource === "legacy") {
-    return "인증/연동 진행";
-  }
-  return "인증/연동 시작";
+  void input.storedIdentitySource;
+  return "인증 시작";
 }
 
 export function saveStoredIdentity(identity: IdentityInput) {
@@ -587,7 +589,7 @@ export function buildSyncGuidance(
       code: payload.code,
       reason: payload.reason,
       nextAction,
-      message: "카카오 인증 확인 대기 중입니다. 확인 후 '연동 완료 확인'을 눌러 주세요.",
+      message: "카카오 인증을 완료한 뒤 '인증 완료 확인'을 눌러 주세요.",
     };
   }
   if (nextAction === "wait" || status === 429) {

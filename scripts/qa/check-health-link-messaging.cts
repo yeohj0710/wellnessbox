@@ -58,8 +58,12 @@ const { HEALTH_LINK_COPY } = require(path.join(
 function runPrimaryButtonLabelCases() {
   const viewModelSource = read("app/(features)/health-link/view-model.ts");
   assert.ok(
-    viewModelSource.includes("if (isFetchStep) return HEALTH_LINK_COPY.action.fetchNow;"),
+    viewModelSource.includes("if (flowKind === \"fetch\") return HEALTH_LINK_COPY.action.fetchNow;"),
     "fetch step button should use a single generalized label"
+  );
+  assert.ok(
+    viewModelSource.includes("if (flowKind === \"sign\") return HEALTH_LINK_COPY.action.confirmAuth;"),
+    "sign step button should use an explicit auth-complete label"
   );
   assert.ok(
     viewModelSource.includes("return HEALTH_LINK_COPY.action.next;"),
@@ -70,7 +74,7 @@ function runPrimaryButtonLabelCases() {
 
 function runInitSignNoticeCases() {
   assert.ok(HEALTH_LINK_COPY.hook.initNoticeCreated.includes("인증 요청"));
-  assert.ok(HEALTH_LINK_COPY.hook.initNoticeReused.includes("다시 진행"));
+  assert.ok(HEALTH_LINK_COPY.hook.initNoticeReused.includes("인증 완료 확인"));
   assert.ok(HEALTH_LINK_COPY.hook.initNoticeDbReused.includes("저장된 정보"));
   assert.equal(
     HEALTH_LINK_COPY.hook.signNoticeCompleted,
@@ -113,16 +117,25 @@ function runFetchMessageCases() {
 function runStaticRegressionChecks() {
   const copySource = read("app/(features)/health-link/copy.ts");
   assert.ok(
-    copySource.includes('next: "진행하기"'),
+    copySource.includes('next: "인증 시작"'),
     "health-link primary next action should use generalized wording"
+  );
+  assert.ok(
+    copySource.includes('confirmAuth: "인증 완료 확인"'),
+    "health-link sign action should use an explicit auth-complete wording"
   );
   assert.ok(
     copySource.includes('reload: "최신 정보 확인"'),
     "health-link reload action should use generalized wording"
   );
   assert.ok(
-    copySource.includes('retryAuth: "다시 진행"'),
+    copySource.includes('retryAuth: "인증 다시하기"'),
     "health-link retry action should use generalized wording"
+  );
+  assert.equal(
+    copySource.includes("다시 진행"),
+    false,
+    "health-link copy should avoid ambiguous '다시 진행' wording"
   );
   assert.ok(
     copySource.includes("networkErrorFallback"),

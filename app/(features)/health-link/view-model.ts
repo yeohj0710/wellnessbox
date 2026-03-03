@@ -32,10 +32,11 @@ export function resolvePrimaryFlow(
 }
 
 export function resolvePrimaryButtonLabel(
-  isFetchStep: boolean,
+  flowKind: PrimaryFlow["kind"],
   hasFetchResult: boolean
 ) {
   void hasFetchResult;
-  if (isFetchStep) return HEALTH_LINK_COPY.action.fetchNow;
+  if (flowKind === "fetch") return HEALTH_LINK_COPY.action.fetchNow;
+  if (flowKind === "sign") return HEALTH_LINK_COPY.action.confirmAuth;
   return HEALTH_LINK_COPY.action.next;
 }
