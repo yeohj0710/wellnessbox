@@ -131,6 +131,22 @@ function runGuidanceCases() {
   assert.ok(upstreamTimeoutGuidance.message.includes("시간 초과"));
   console.log("[qa:employee-report-sync-notice] PASS 524 guidance");
 
+  const signTimeoutGuidance = buildSyncGuidance(
+    {
+      code: "HYPHEN_TIMEOUT",
+      reason: "nhis_sign_pending",
+      nextAction: "sign",
+      error:
+        "인증 응답이 지연되고 있습니다. 카카오 인증 완료 후 '인증 완료 확인'을 눌러 다시 확인해 주세요.",
+    },
+    504,
+    "fallback"
+  );
+  assert.equal(signTimeoutGuidance.nextAction, "sign");
+  assert.ok(signTimeoutGuidance.message.includes("인증 완료 확인"));
+  assert.equal(signTimeoutGuidance.message.includes("시간 초과"), false);
+  console.log("[qa:employee-report-sync-notice] PASS sign-timeout guidance");
+
   const waitGuidance = buildSyncGuidance(
     {
       code: "SYNC_COOLDOWN",

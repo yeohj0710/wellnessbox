@@ -534,17 +534,6 @@ export function buildSyncGuidance(
     };
   }
 
-  if (status === 524 || status === 504) {
-    return {
-      code: payload.code,
-      reason: payload.reason || "upstream_timeout",
-      nextAction: "retry",
-      message:
-        payload.error ||
-        "외부 건강데이터 연동 응답이 지연되어 시간 초과가 발생했습니다. 잠시 후 다시 시도해 주세요.",
-    };
-  }
-
   if (payload.code === "DB_SCHEMA_MISMATCH") {
     return {
       code: payload.code,
@@ -569,21 +558,28 @@ export function buildSyncGuidance(
   }
 
   const nextAction = payload.nextAction;
+  const reason = (payload.reason || "").trim().toLowerCase();
   if (nextAction === "init") {
     return {
       code: payload.code,
       reason: payload.reason,
       nextAction,
       message:
+        payload.error ||
         "연동 초기화가 필요합니다. '인증 시작'을 눌러 카카오 인증을 진행해 주세요.",
     };
   }
-  if (nextAction === "sign") {
+  if (
+    nextAction === "sign" ||
+    reason === "nhis_sign_pending" ||
+    reason === "nhis_sign_response_delayed"
+  ) {
     return {
       code: payload.code,
       reason: payload.reason,
-      nextAction,
-      message: "카카오 인증을 완료한 뒤 '인증 완료 확인'을 눌러 주세요.",
+      nextAction: "sign",
+      message:
+        payload.error || "카카오 인증을 완료한 뒤 '인증 완료 확인'을 눌러 주세요.",
     };
   }
   if (nextAction === "wait" || status === 429) {
@@ -596,6 +592,18 @@ export function buildSyncGuidance(
       message: "재연동 대기 시간이 남아 있습니다. 안내된 시각 이후 다시 시도해 주세요.",
     };
   }
+
+  if (status === 524 || status === 504) {
+    return {
+      code: payload.code,
+      reason: payload.reason || "upstream_timeout",
+      nextAction: "retry",
+      message:
+        payload.error ||
+        "외부 건강데이터 연동 응답이 지연되어 시간 초과가 발생했습니다. 잠시 후 다시 시도해 주세요.",
+    };
+  }
+
   return {
     code: payload.code,
     reason: payload.reason,

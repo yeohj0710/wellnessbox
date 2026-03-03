@@ -53,6 +53,7 @@
     "qa:employee-report:db-priority": "ts-node scripts/qa/check-employee-report-db-priority.cts",
     "qa:employee-report:auth-ux": "ts-node scripts/qa/check-employee-report-auth-ux.cts",
     "qa:employee-report:sync-notice": "ts-node scripts/qa/check-employee-report-sync-notice.cts",
+    "qa:nhis:sign-guidance": "ts-node scripts/qa/check-nhis-sign-guidance.cts",
     "qa:health-link:messaging": "ts-node scripts/qa/check-health-link-messaging.cts",
     "qa:nhis:resilience": "node scripts/qa/check-nhis-fetch-resilience-runner.cjs",
     "qa:b2b:public-survey-flow": "node scripts/qa/check-b2b-public-survey-flow-runner.cjs",

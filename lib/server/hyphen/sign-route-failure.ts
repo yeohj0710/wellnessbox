@@ -38,14 +38,20 @@ export async function handleNhisSignFailure(input: {
     }
   }
 
-  await saveNhisLinkError(input.appUserId, {
-    code: errorInfo.code,
-    message: errorInfo.message,
-  });
   const guidance = resolveSignGuidance({
     code: errorInfo.code,
     message: errorInfo.message,
   });
+  if (!guidance || guidance.nextAction !== "sign") {
+    try {
+      await saveNhisLinkError(input.appUserId, {
+        code: errorInfo.code,
+        message: errorInfo.message,
+      });
+    } catch (persistError) {
+      logHyphenError("[hyphen][sign] failed to persist link error", persistError);
+    }
+  }
   const guidanceResponse = buildSignGuidanceResponse({
     appUserId: input.appUserId,
     identityHash: input.identityHash,

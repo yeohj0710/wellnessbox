@@ -7,6 +7,10 @@ import {
   buildNhisRequestDefaults,
 } from "@/lib/server/hyphen/request-defaults";
 import {
+  isStaleSignErrorCode,
+  resolveSignGuidance,
+} from "@/lib/server/hyphen/sign-guidance";
+import {
   evaluateAndRecordSignAttempt,
   getPendingEasyAuth,
 } from "@/lib/server/hyphen/session";
@@ -24,8 +28,6 @@ export const signSchema = z.object({ otpOrAuthResult: z.unknown().optional() });
 export const SIGN_REINIT_REQUIRED_CODE = "NHIS_SIGN_REINIT_REQUIRED";
 export const SIGN_RATE_LIMIT_CODE = "NHIS_SIGN_RATE_LIMIT";
 
-const STALE_SIGN_ERROR_CODES = new Set(["LOGIN-999", "C0012-001"]);
-
 export function isSignAutoReinitEnabled() {
   const raw = (process.env.HYPHEN_NHIS_SIGN_AUTO_REINIT || "")
     .trim()
@@ -37,58 +39,7 @@ export function badSignRequest(message: string) {
   return nhisNoStoreJson({ ok: false, error: message }, 400);
 }
 
-export function isStaleSignErrorCode(code: string | null | undefined) {
-  const normalized = (code || "").trim().toUpperCase();
-  if (!normalized) return false;
-  return STALE_SIGN_ERROR_CODES.has(normalized);
-}
-
-export function resolveSignGuidance(input: {
-  code: string | null | undefined;
-  message: string | null | undefined;
-}) {
-  const code = (input.code || "").trim().toUpperCase();
-  const message = (input.message || "").trim().toLowerCase();
-
-  if (isStaleSignErrorCode(code)) {
-    return {
-      nextAction: "init" as const,
-      reason: "nhis_auth_expired",
-      status: 409,
-      error:
-        "인증 세션이 만료되었습니다. 카카오 인증 요청(init)부터 다시 진행해 주세요.",
-    };
-  }
-
-  if (
-    message.includes("요청") &&
-    (message.includes("없") || message.includes("만료"))
-  ) {
-    return {
-      nextAction: "init" as const,
-      reason: "nhis_sign_init_required",
-      status: 409,
-      error:
-        "인증 요청 정보가 없거나 만료되었습니다. 카카오 인증 요청(init)을 다시 진행해 주세요.",
-    };
-  }
-
-  if (
-    message.includes("승인") ||
-    message.includes("대기") ||
-    message.includes("카카오톡")
-  ) {
-    return {
-      nextAction: "sign" as const,
-      reason: "nhis_sign_pending",
-      status: 409,
-      error:
-        "카카오톡 인증 승인 대기 중입니다. 승인 후 '연동 완료 확인'을 다시 진행해 주세요.",
-    };
-  }
-
-  return null;
-}
+export { isStaleSignErrorCode, resolveSignGuidance };
 
 export function recordSignOperationalAttemptSafe(input: {
   appUserId: string;
