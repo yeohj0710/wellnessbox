@@ -45,6 +45,9 @@ export default function AdminPage() {
           <Link href="/admin/b2b-reports" className={styles.buttonPrimary}>
             B2B 임직원 레포트 관리
           </Link>
+          <Link href="/admin/b2b-employee-data" className={styles.buttonSecondary}>
+            {"B2B \uC784\uC9C1\uC6D0 \uB370\uC774\uD130 \uC6B4\uC601"}
+          </Link>
         </div>
       </section>
 

@@ -1,6 +1,7 @@
 import "server-only";
 
 import db from "@/lib/db";
+import { runBestEffortDbWrite } from "@/lib/server/db-resilience";
 import { HYPHEN_PROVIDER } from "@/lib/server/hyphen/client";
 
 const DEFAULT_BUDGET_WINDOW_HOURS = 24;
@@ -259,18 +260,22 @@ export async function evaluateNhisFetchBudget(input: {
 }
 
 export async function recordNhisFetchAttempt(input: RecordNhisFetchAttemptInput) {
-  return db.healthProviderFetchAttempt.create({
-    data: {
-      appUserId: input.appUserId,
-      provider: HYPHEN_PROVIDER,
-      identityHash: input.identityHash,
-      requestHash: input.requestHash,
-      requestKey: input.requestKey,
-      forceRefresh: input.forceRefresh,
-      cached: input.cached,
-      statusCode: input.statusCode,
-      ok: input.ok,
-    },
+  return runBestEffortDbWrite({
+    label: "nhis-fetch-attempt",
+    task: () =>
+      db.healthProviderFetchAttempt.create({
+        data: {
+          appUserId: input.appUserId,
+          provider: HYPHEN_PROVIDER,
+          identityHash: input.identityHash,
+          requestHash: input.requestHash,
+          requestKey: input.requestKey,
+          forceRefresh: input.forceRefresh,
+          cached: input.cached,
+          statusCode: input.statusCode,
+          ok: input.ok,
+        },
+      }),
   });
 }
 
@@ -282,17 +287,21 @@ export async function recordNhisOperationalAttempt(
       ? input.reason.trim()
       : "none";
 
-  return db.healthProviderFetchAttempt.create({
-    data: {
-      appUserId: input.appUserId,
-      provider: HYPHEN_PROVIDER,
-      identityHash: input.identityHash ?? null,
-      requestHash: null,
-      requestKey: `op=${input.action}|reason=${reason}`,
-      forceRefresh: false,
-      cached: true,
-      statusCode: input.statusCode,
-      ok: input.ok,
-    },
+  return runBestEffortDbWrite({
+    label: "nhis-operational-attempt",
+    task: () =>
+      db.healthProviderFetchAttempt.create({
+        data: {
+          appUserId: input.appUserId,
+          provider: HYPHEN_PROVIDER,
+          identityHash: input.identityHash ?? null,
+          requestHash: null,
+          requestKey: `op=${input.action}|reason=${reason}`,
+          forceRefresh: false,
+          cached: true,
+          statusCode: input.statusCode,
+          ok: input.ok,
+        },
+      }),
   });
 }

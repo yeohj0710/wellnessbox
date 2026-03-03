@@ -67,11 +67,11 @@ function envInt(name: string, fallback: number, min = 0, max = 10) {
 }
 
 function resolveHyphenMaxRetries() {
-  return envInt("HYPHEN_HTTP_MAX_RETRIES", 1, 0, 4);
+  return envInt("HYPHEN_HTTP_MAX_RETRIES", 0, 0, 4);
 }
 
 function resolveHyphenRetryBaseDelayMs() {
-  return envInt("HYPHEN_HTTP_RETRY_BASE_DELAY_MS", 700, 200, 5000);
+  return envInt("HYPHEN_HTTP_RETRY_BASE_DELAY_MS", 600, 200, 5000);
 }
 
 function shouldRetryHyphenError(error: unknown) {

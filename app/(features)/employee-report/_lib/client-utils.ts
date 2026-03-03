@@ -7,7 +7,38 @@ import type {
 import type { LayoutDocument } from "@/lib/b2b/export/layout-types";
 
 const LS_KEY = "wb:b2b:employee:last-input:v2";
+const LEGACY_LS_KEYS = [
+  "wb:b2b:employee:last-input:v1",
+  "wb:b2b:employee:last-input",
+] as const;
 const IDENTITY_TTL_MS = 1000 * 60 * 60 * 24 * 30;
+
+export type StoredIdentitySource =
+  | "none"
+  | "v2"
+  | "legacy"
+  | "expired"
+  | "invalid";
+
+type StoredIdentityCandidate = {
+  schemaVersion?: number;
+  savedAt?: string;
+  identity?: IdentityInput;
+  name?: string;
+  birthDate?: string;
+  phone?: string;
+};
+
+export type ParsedStoredIdentityResult = {
+  source: StoredIdentitySource;
+  identity: IdentityInput | null;
+  shouldClear: boolean;
+};
+
+type StoredIdentityReadResult = {
+  source: StoredIdentitySource;
+  identity: IdentityInput | null;
+};
 
 export function toSyncNextAction(
   value: SyncGuidance["nextAction"]
@@ -53,39 +84,150 @@ export function sleep(ms: number) {
   return new Promise<void>((resolve) => window.setTimeout(resolve, ms));
 }
 
-export function readStoredIdentity(): IdentityInput | null {
-  if (typeof window === "undefined") return null;
+function isStoredIdentityCandidate(
+  value: unknown
+): value is StoredIdentityCandidate {
+  return typeof value === "object" && value !== null;
+}
+
+export function parseStoredIdentitySnapshot(
+  raw: string | null | undefined,
+  nowMs = Date.now()
+): ParsedStoredIdentityResult {
+  if (!raw) {
+    return {
+      source: "none",
+      identity: null,
+      shouldClear: false,
+    };
+  }
+
   try {
-    const parsed = JSON.parse(localStorage.getItem(LS_KEY) || "null") as
-      | {
-          schemaVersion?: number;
-          savedAt?: string;
-          identity?: IdentityInput;
-          name?: string;
-          birthDate?: string;
-          phone?: string;
-        }
-      | null;
-    if (!parsed) return null;
-    const savedAtMs = parsed.savedAt ? new Date(parsed.savedAt).getTime() : Date.now();
-    if (!Number.isFinite(savedAtMs) || Date.now() - savedAtMs > IDENTITY_TTL_MS) {
-      localStorage.removeItem(LS_KEY);
-      return null;
+    const parsed = JSON.parse(raw) as unknown;
+    if (!isStoredIdentityCandidate(parsed)) {
+      return {
+        source: "invalid",
+        identity: null,
+        shouldClear: true,
+      };
     }
+
+    const savedAtMs = parsed.savedAt ? new Date(parsed.savedAt).getTime() : nowMs;
+    if (!Number.isFinite(savedAtMs) || nowMs - savedAtMs > IDENTITY_TTL_MS) {
+      return {
+        source: "expired",
+        identity: null,
+        shouldClear: true,
+      };
+    }
+
     const candidate = parsed.identity ?? {
       name: parsed.name || "",
       birthDate: parsed.birthDate || "",
       phone: parsed.phone || "",
     };
-    if (!candidate.name || !candidate.birthDate || !candidate.phone) return null;
-    return {
+
+    if (!candidate.name || !candidate.birthDate || !candidate.phone) {
+      return {
+        source: "invalid",
+        identity: null,
+        shouldClear: true,
+      };
+    }
+
+    const identity = {
       name: candidate.name,
       birthDate: normalizeDigits(candidate.birthDate),
       phone: normalizeDigits(candidate.phone),
     };
+
+    if (
+      identity.name.length < 1 ||
+      !/^\d{8}$/.test(identity.birthDate) ||
+      !/^\d{10,11}$/.test(identity.phone)
+    ) {
+      return {
+        source: "invalid",
+        identity: null,
+        shouldClear: true,
+      };
+    }
+
+    return {
+      source: parsed.schemaVersion === 2 ? "v2" : "legacy",
+      identity,
+      shouldClear: false,
+    };
   } catch {
-    return null;
+    return {
+      source: "invalid",
+      identity: null,
+      shouldClear: true,
+    };
   }
+}
+
+export function readStoredIdentityWithSource(): StoredIdentityReadResult {
+  if (typeof window === "undefined") {
+    return {
+      source: "none",
+      identity: null,
+    };
+  }
+
+  const keys = [LS_KEY, ...LEGACY_LS_KEYS];
+  let fallbackSource: StoredIdentitySource = "none";
+
+  for (const key of keys) {
+    const raw = window.localStorage.getItem(key);
+    const parsed = parseStoredIdentitySnapshot(raw, Date.now());
+    if (parsed.shouldClear) {
+      window.localStorage.removeItem(key);
+    }
+    if (parsed.identity) {
+      // Canonicalize to v2 key and purge legacy keys when a valid identity is restored.
+      if (key !== LS_KEY) {
+        saveStoredIdentity(parsed.identity);
+      }
+      return {
+        source: parsed.source,
+        identity: parsed.identity,
+      };
+    }
+    if (fallbackSource === "none" && parsed.source !== "none") {
+      fallbackSource = parsed.source;
+    }
+  }
+
+  return {
+    source: fallbackSource,
+    identity: null,
+  };
+}
+
+export function readStoredIdentity(): IdentityInput | null {
+  return readStoredIdentityWithSource().identity;
+}
+
+export function resolveIdentityPrimaryActionLabel(input: {
+  hasAuthAttempt: boolean;
+  syncNextAction: "init" | "sign" | "retry" | null;
+  storedIdentitySource: StoredIdentitySource;
+}) {
+  if (
+    input.syncNextAction === "init" ||
+    input.syncNextAction === "retry" ||
+    input.hasAuthAttempt
+  ) {
+    return "인증 다시하기";
+  }
+  if (input.storedIdentitySource === "legacy") {
+    return "저장된 이전 정보로 인증 시작하기";
+  }
+  if (input.storedIdentitySource === "v2") {
+    return "저장된 정보로 인증 시작하기";
+  }
+  return "인증 시작하기";
 }
 
 export function saveStoredIdentity(identity: IdentityInput) {
@@ -98,11 +240,17 @@ export function saveStoredIdentity(identity: IdentityInput) {
       identity,
     })
   );
+  for (const key of LEGACY_LS_KEYS) {
+    localStorage.removeItem(key);
+  }
 }
 
 export function clearStoredIdentity() {
   if (typeof window === "undefined") return;
   localStorage.removeItem(LS_KEY);
+  for (const key of LEGACY_LS_KEYS) {
+    localStorage.removeItem(key);
+  }
 }
 
 export async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
@@ -246,6 +394,19 @@ export function buildSyncGuidance(
       nextAction: "retry",
       message:
         "서버 데이터베이스 점검이 필요한 상태입니다. 잠시 후 다시 시도하거나 운영팀에 문의해 주세요.",
+    };
+  }
+
+  if (payload.code === "DB_POOL_TIMEOUT") {
+    return {
+      code: payload.code,
+      reason: payload.reason || "db_pool_busy",
+      nextAction: "wait",
+      retryAfterSec: payload.retryAfterSec ?? 20,
+      availableAt: payload.availableAt ?? null,
+      message:
+        payload.error ||
+        "요청이 몰려 DB 연결이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.",
     };
   }
 

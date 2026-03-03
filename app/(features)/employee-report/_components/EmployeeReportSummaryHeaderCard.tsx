@@ -8,6 +8,7 @@ type EmployeeReportSummaryHeaderCardProps = {
   periodOptions: string[];
   busy: boolean;
   syncNextAction: "init" | "sign" | "retry" | null;
+  primarySyncActionLabel?: string;
   canUseForceSync: boolean;
   forceSyncRemainingSec: number;
   onPeriodChange: (nextPeriod: string) => void;
@@ -25,6 +26,7 @@ export default function EmployeeReportSummaryHeaderCard({
   periodOptions,
   busy,
   syncNextAction,
+  primarySyncActionLabel,
   canUseForceSync,
   forceSyncRemainingSec,
   onPeriodChange,
@@ -42,6 +44,8 @@ export default function EmployeeReportSummaryHeaderCard({
   const isSignPending = syncNextAction === "sign";
   const isRetry = syncNextAction === "retry";
   const showSyncRetryButton = isSignPending || isRetry;
+  const defaultPrimarySyncActionLabel =
+    primarySyncActionLabel?.trim() || "최신 데이터 다시 조회";
 
   return (
     <section className={styles.sectionCard} data-testid="employee-report-summary-section">
@@ -124,7 +128,7 @@ export default function EmployeeReportSummaryHeaderCard({
             data-testid="employee-report-restart-auth"
             className={styles.buttonSecondary}
           >
-            {busy ? "처리 중..." : "인증 다시하기"}
+            {busy ? "처리 중..." : defaultPrimarySyncActionLabel}
           </button>
         )}
 

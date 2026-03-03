@@ -28,6 +28,16 @@ const DETAIL_OBJECT_KEYS = [
   "detailObject",
 ] as const;
 
+const DEFAULT_TREATMENT_MAX_ROWS = 1500;
+
+function resolveTreatmentMaxRows() {
+  const raw = process.env.HYPHEN_NHIS_NORMALIZE_TREATMENT_MAX_ROWS;
+  if (!raw) return DEFAULT_TREATMENT_MAX_ROWS;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed)) return DEFAULT_TREATMENT_MAX_ROWS;
+  return Math.max(100, Math.floor(parsed));
+}
+
 function pickFirstArray(
   source: Record<string, unknown> | null,
   keys: readonly string[]
@@ -55,8 +65,16 @@ export function normalizeTreatmentPayload(payload: HyphenApiResponse) {
   const rows: NhisRow[] = [];
   let peopleCount = 0;
   let detailCount = 0;
+  const maxRows = resolveTreatmentMaxRows();
 
-  for (const personItem of list) {
+  const pushRow = (row: NhisRow) => {
+    if (rows.length >= maxRows) return false;
+    rows.push(row);
+    return true;
+  };
+
+  outer: for (const personItem of list) {
+    if (rows.length >= maxRows) break;
     const person = asRecord(personItem);
     if (!person) continue;
     peopleCount += 1;
@@ -77,20 +95,22 @@ export function normalizeTreatmentPayload(payload: HyphenApiResponse) {
       mergeAllDetailObjects(row, person, "detail_");
       const medList = pickFirstArray(person, MED_LIST_KEYS);
       if (medList.length === 0) {
-        rows.push(row);
+        if (!pushRow(row)) break outer;
         continue;
       }
       for (const medicineItem of medList) {
+        if (rows.length >= maxRows) break outer;
         const medicine = asRecord(medicineItem);
         const withMedicine: NhisRow = { ...row };
         mergePrimitiveFields(withMedicine, medicine, new Set(DETAIL_OBJECT_KEYS));
         mergeAllDetailObjects(withMedicine, medicine, "drug_");
-        rows.push(withMedicine);
+        if (!pushRow(withMedicine)) break outer;
       }
       continue;
     }
 
     for (const detailItem of sublist) {
+      if (rows.length >= maxRows) break outer;
       const detail = asRecord(detailItem);
       if (!detail) continue;
       detailCount += 1;
@@ -107,16 +127,17 @@ export function normalizeTreatmentPayload(payload: HyphenApiResponse) {
 
       const medList = pickFirstArray(detail, MED_LIST_KEYS);
       if (medList.length === 0) {
-        rows.push(baseRow);
+        if (!pushRow(baseRow)) break outer;
         continue;
       }
 
       for (const medicineItem of medList) {
+        if (rows.length >= maxRows) break outer;
         const medicine = asRecord(medicineItem);
         const row: NhisRow = { ...baseRow };
         mergePrimitiveFields(row, medicine, new Set(DETAIL_OBJECT_KEYS));
         mergeAllDetailObjects(row, medicine, "drug_");
-        rows.push(row);
+        if (!pushRow(row)) break outer;
       }
     }
   }

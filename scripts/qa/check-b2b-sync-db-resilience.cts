@@ -1,0 +1,149 @@
+/* eslint-disable no-console */
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+
+const ROOT = process.cwd();
+
+const {
+  __resetDbPoolShedStateForTest,
+  isDbPoolShedActive,
+  isPrismaPoolTimeoutError,
+  runBestEffortDbWrite,
+} = require(path.join(ROOT, "lib/server/db-resilience.ts")) as {
+  __resetDbPoolShedStateForTest: () => void;
+  isDbPoolShedActive: (nowMs?: number) => boolean;
+  isPrismaPoolTimeoutError: (error: unknown) => boolean;
+  runBestEffortDbWrite: (input: {
+    label: string;
+    task: () => Promise<unknown>;
+    timeoutMs?: number;
+    skipIfShed?: boolean;
+  }) => Promise<{
+    ok: boolean;
+    skipped: boolean;
+    reason: "ok" | "shed" | "timeout" | "error";
+  }>;
+};
+
+function read(filePath: string) {
+  return fs.readFileSync(path.join(ROOT, filePath), "utf8");
+}
+
+function delay(ms: number) {
+  return new Promise<void>((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+function runPoolTimeoutSignatureCases() {
+  assert.equal(
+    isPrismaPoolTimeoutError(
+      new Error(
+        "Timed out fetching a new connection from the connection pool. (Current connection pool timeout: 10, connection limit: 7)"
+      )
+    ),
+    true
+  );
+  assert.equal(
+    isPrismaPoolTimeoutError(new Error("connection pool timeout reached")),
+    true
+  );
+  assert.equal(
+    isPrismaPoolTimeoutError(new Error("unique constraint failed")),
+    false
+  );
+  console.log("[qa:b2b-sync-db-resilience] PASS pool-timeout signature");
+}
+
+async function runBestEffortWriteCases() {
+  __resetDbPoolShedStateForTest();
+
+  const success = await runBestEffortDbWrite({
+    label: "qa-success",
+    timeoutMs: 50,
+    task: async () => "ok",
+  });
+  assert.equal(success.ok, true);
+  assert.equal(success.reason, "ok");
+
+  const timedOut = await runBestEffortDbWrite({
+    label: "qa-timeout",
+    timeoutMs: 10,
+    task: () => new Promise(() => undefined),
+  });
+  assert.equal(timedOut.ok, false);
+  assert.equal(timedOut.reason, "timeout");
+  assert.equal(isDbPoolShedActive(), true);
+
+  let invoked = false;
+  const skipped = await runBestEffortDbWrite({
+    label: "qa-shed",
+    task: async () => {
+      invoked = true;
+    },
+  });
+  assert.equal(skipped.ok, false);
+  assert.equal(skipped.reason, "shed");
+  assert.equal(invoked, false);
+
+  // Wait a short moment to ensure timer-based paths settle in CI.
+  await delay(5);
+  console.log("[qa:b2b-sync-db-resilience] PASS best-effort shed behavior");
+}
+
+function runStaticRegressionChecks() {
+  const fetchAttemptSource = read("lib/server/hyphen/fetch-attempt.ts");
+  assert.ok(
+    fetchAttemptSource.includes("runBestEffortDbWrite"),
+    "fetch-attempt should use best-effort DB writes"
+  );
+
+  const employeeServiceSource = read("lib/b2b/employee-service.ts");
+  assert.ok(
+    employeeServiceSource.includes("runBestEffortDbWrite"),
+    "employee-service logs should use best-effort DB writes"
+  );
+
+  const syncHandlerSource = read("lib/b2b/employee-sync-route-handler.ts");
+  assert.ok(
+    syncHandlerSource.includes("runWithHyphenInFlightDedup(\"b2b-employee-sync\""),
+    "employee sync handler should dedupe in-flight duplicate requests"
+  );
+
+  const syncRouteSource = read("lib/b2b/employee-sync-route.ts");
+  assert.ok(
+    syncRouteSource.includes("buildDbPoolBusySyncResponse"),
+    "employee sync route should map DB pool busy responses"
+  );
+  assert.ok(
+    syncRouteSource.includes("nextAction: \"wait\""),
+    "employee sync DB busy payload should guide wait action"
+  );
+
+  const dbErrorSource = read("lib/server/db-error.ts");
+  assert.ok(
+    dbErrorSource.includes("DB_POOL_TIMEOUT"),
+    "db-error should classify DB pool timeout separately"
+  );
+
+  const clientUtilsSource = read("app/(features)/employee-report/_lib/client-utils.ts");
+  assert.ok(
+    clientUtilsSource.includes("DB_POOL_TIMEOUT"),
+    "employee-report client guidance should handle DB pool timeout"
+  );
+
+  console.log("[qa:b2b-sync-db-resilience] PASS static regression checks");
+}
+
+async function run() {
+  runPoolTimeoutSignatureCases();
+  await runBestEffortWriteCases();
+  runStaticRegressionChecks();
+  console.log("[qa:b2b-sync-db-resilience] ALL PASS");
+}
+
+run().catch((error) => {
+  console.error("[qa:b2b-sync-db-resilience] FAIL", error);
+  process.exit(1);
+});

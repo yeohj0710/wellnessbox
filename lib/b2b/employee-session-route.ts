@@ -108,19 +108,19 @@ export async function resolveEmployeeSessionStatus(
     return { authenticated: false };
   }
 
-  await Promise.all([
-    db.b2bEmployee.update({
+  void db.b2bEmployee
+    .update({
       where: { id: employee.id },
       data: { lastViewedAt: new Date() },
-    }),
-    logB2bEmployeeSessionAccess({
-      employeeId: employee.id,
-      action: "session_status",
-      payload: {
-        reportId: latestReport?.id ?? null,
-      },
-    }),
-  ]);
+    })
+    .catch(() => undefined);
+  void logB2bEmployeeSessionAccess({
+    employeeId: employee.id,
+    action: "session_status",
+    payload: {
+      reportId: latestReport?.id ?? null,
+    },
+  });
 
   return {
     authenticated: true,
@@ -149,7 +149,7 @@ export async function resolveEmployeeSessionLogin(
     },
   });
 
-  await logB2bEmployeeSessionAccess({
+  void logB2bEmployeeSessionAccess({
     employeeId: employee?.id ?? null,
     appUserId: employee?.appUserId ?? null,
     action: "session_login_attempt",
@@ -167,18 +167,18 @@ export async function resolveEmployeeSessionLogin(
 
   const report = await ensureLatestB2bReport(employee.id);
 
-  await Promise.all([
-    db.b2bEmployee.update({
+  void db.b2bEmployee
+    .update({
       where: { id: employee.id },
       data: { lastViewedAt: new Date() },
-    }),
-    logB2bEmployeeSessionAccess({
-      employeeId: employee.id,
-      appUserId: employee.appUserId ?? null,
-      action: "session_login_success",
-      payload: { reportId: report.id },
-    }),
-  ]);
+    })
+    .catch(() => undefined);
+  void logB2bEmployeeSessionAccess({
+    employeeId: employee.id,
+    appUserId: employee.appUserId ?? null,
+    action: "session_login_success",
+    payload: { reportId: report.id },
+  });
 
   return {
     found: true,

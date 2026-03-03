@@ -8,12 +8,18 @@ import {
 
 export type DbRouteError = {
   status: number;
-  code: "DB_ENV_INVALID" | "DB_SCHEMA_MISMATCH" | "DB_QUERY_FAILED";
+  code:
+    | "DB_ENV_INVALID"
+    | "DB_SCHEMA_MISMATCH"
+    | "DB_POOL_TIMEOUT"
+    | "DB_QUERY_FAILED";
   message: string;
 };
 
 const DB_SCHEMA_MISMATCH_MESSAGE =
   "데이터베이스 스키마가 현재 서버 코드와 맞지 않습니다. 운영 환경의 DB URL 설정과 prisma migrate deploy 적용 여부를 확인해 주세요.";
+const DB_POOL_TIMEOUT_MESSAGE =
+  "서버 DB 연결이 일시적으로 혼잡합니다. 잠시 후 다시 시도해 주세요.";
 
 function normalizeErrorMessage(value: unknown) {
   if (value instanceof Error) return value.message;
@@ -30,6 +36,14 @@ function isSchemaMismatchKnownError(error: unknown) {
 function hasSchemaMismatchSignature(message: string) {
   const normalized = message.toLowerCase();
   return normalized.includes("p2021") || normalized.includes("p2022");
+}
+
+function hasPoolTimeoutSignature(message: string) {
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes("timed out fetching a new connection from the connection pool") ||
+    normalized.includes("connection pool timeout")
+  );
 }
 
 export function resolveDbRouteError(
@@ -98,6 +112,14 @@ export function resolveDbRouteError(
       code: "DB_ENV_INVALID",
       message:
         "데이터베이스 연결 문자열 형식이 올바르지 않습니다. DATABASE_URL/DIRECT_URL 값을 확인해 주세요.",
+    };
+  }
+
+  if (hasPoolTimeoutSignature(rawMessage)) {
+    return {
+      status: 503,
+      code: "DB_POOL_TIMEOUT",
+      message: DB_POOL_TIMEOUT_MESSAGE,
     };
   }
 

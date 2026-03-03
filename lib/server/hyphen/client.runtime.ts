@@ -22,12 +22,12 @@ function parseYesNoFlag(value: string | undefined): boolean {
 }
 
 export function resolveHyphenTimeoutMs() {
-  const fallbackMs = 45_000;
+  const fallbackMs = 25_000;
   const raw = process.env.HYPHEN_HTTP_TIMEOUT_MS;
   if (!raw) return fallbackMs;
   const parsed = Number(raw);
   if (!Number.isFinite(parsed)) return fallbackMs;
-  return Math.min(180_000, Math.max(10_000, Math.floor(parsed)));
+  return Math.min(120_000, Math.max(8_000, Math.floor(parsed)));
 }
 
 export function resolveHyphenAuthHeaders(): Record<string, string> {

@@ -59,6 +59,11 @@ function toFetchRoutePayload(value: unknown): NhisFetchRoutePayload | null {
   return record as NhisFetchRoutePayload;
 }
 
+export function isServeableNhisCachedPayload(value: unknown) {
+  const parsed = toFetchRoutePayload(value);
+  return parsed?.ok === true;
+}
+
 function asRecord(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   return value as Record<string, unknown>;
@@ -140,53 +145,64 @@ export async function tryServeNhisFetchCache(input: TryServeNhisFetchCacheInput)
   });
   if (memoryCached) {
     const cachedPayload = memoryCached.entry.payload;
-    const linkPatch: {
-      lastIdentityHash?: string;
-      lastErrorCode?: null;
-      lastErrorMessage?: null;
-    } = {};
-    if (input.shouldUpdateIdentityHash) {
-      linkPatch.lastIdentityHash = input.identityHash;
-    }
-    if (cachedPayload.ok) {
-      linkPatch.lastErrorCode = null;
-      linkPatch.lastErrorMessage = null;
-    }
+    if (!isServeableNhisCachedPayload(cachedPayload)) {
+      // Do not serve failed payloads from memory cache; allow identity/history fallback.
+    } else {
+      const linkPatch: {
+        lastIdentityHash?: string;
+        lastErrorCode?: null;
+        lastErrorMessage?: null;
+      } = {};
+      if (input.shouldUpdateIdentityHash) {
+        linkPatch.lastIdentityHash = input.identityHash;
+      }
+      if (cachedPayload.ok) {
+        linkPatch.lastErrorCode = null;
+        linkPatch.lastErrorMessage = null;
+      }
 
-    await Promise.all([
-      ...(memoryCached.entry.cacheId
-        ? [markNhisFetchCacheHit(memoryCached.entry.cacheId)]
-        : []),
-      ...(Object.keys(linkPatch).length > 0
-        ? [upsertNhisLink(input.appUserId, linkPatch)]
-        : []),
-    ]);
+      await Promise.all([
+        ...(memoryCached.entry.cacheId
+          ? [markNhisFetchCacheHit(memoryCached.entry.cacheId)]
+          : []),
+        ...(Object.keys(linkPatch).length > 0
+          ? [upsertNhisLink(input.appUserId, linkPatch)]
+          : []),
+      ]);
 
-    const resolvedSource = input.sourceOverride || memoryCached.source;
-    return NextResponse.json(
-      {
-        ...cachedPayload,
-        cached: true,
-        ...(input.forceRefreshGuarded
-          ? {
-              forceRefreshGuarded: true,
-              forceRefreshAgeSeconds: memoryCached.ageSeconds,
-              forceRefreshGuardSeconds: input.maxAgeSeconds ?? null,
-            }
-          : {}),
-        cache: {
-          source: resolvedSource,
-          stale: memoryCached.stale,
-          fetchedAt: new Date(memoryCached.entry.fetchedAtMs).toISOString(),
-          expiresAt: new Date(memoryCached.entry.expiresAtMs).toISOString(),
+      const resolvedSource = input.sourceOverride || memoryCached.source;
+      return NextResponse.json(
+        {
+          ...cachedPayload,
+          cached: true,
+          ...(input.forceRefreshGuarded
+            ? {
+                forceRefreshGuarded: true,
+                forceRefreshAgeSeconds: memoryCached.ageSeconds,
+                forceRefreshGuardSeconds: input.maxAgeSeconds ?? null,
+              }
+            : {}),
+          cache: {
+            source: resolvedSource,
+            stale: memoryCached.stale,
+            fetchedAt: new Date(memoryCached.entry.fetchedAtMs).toISOString(),
+            expiresAt: new Date(memoryCached.entry.expiresAtMs).toISOString(),
+          },
         },
-      },
-      { status: memoryCached.entry.statusCode, headers: NO_STORE_HEADERS }
-    );
+        { status: memoryCached.entry.statusCode, headers: NO_STORE_HEADERS }
+      );
+    }
   }
 
-  const directCached = await getValidNhisFetchCache(input.appUserId, input.requestHash);
-  const identityCached =
+  const directCachedRaw = await getValidNhisFetchCache(
+    input.appUserId,
+    input.requestHash
+  );
+  const directCached =
+    directCachedRaw && isServeableNhisCachedPayload(directCachedRaw.payload)
+      ? directCachedRaw
+      : null;
+  const identityCachedRaw =
     directCached ??
     (await getValidNhisFetchCacheByIdentity({
       appUserId: input.appUserId,
@@ -195,7 +211,11 @@ export async function tryServeNhisFetchCache(input: TryServeNhisFetchCacheInput)
       yearLimit: input.yearLimit,
       subjectType: input.subjectType,
     }));
-  const historyCached =
+  const identityCached =
+    identityCachedRaw && isServeableNhisCachedPayload(identityCachedRaw.payload)
+      ? identityCachedRaw
+      : null;
+  const historyCachedRaw =
     !identityCached && input.allowHistoryFallback
       ? await getLatestNhisFetchCacheByIdentity({
           appUserId: input.appUserId,
@@ -204,6 +224,10 @@ export async function tryServeNhisFetchCache(input: TryServeNhisFetchCacheInput)
           yearLimit: input.yearLimit,
           subjectType: input.subjectType,
         })
+      : null;
+  const historyCached =
+    historyCachedRaw && isServeableNhisCachedPayload(historyCachedRaw.payload)
+      ? historyCachedRaw
       : null;
   const selectedCache = identityCached ?? historyCached;
   if (!selectedCache) return null;
@@ -218,7 +242,7 @@ export async function tryServeNhisFetchCache(input: TryServeNhisFetchCacheInput)
   }
 
   const cachedPayload = toFetchRoutePayload(selectedCache.payload);
-  if (!cachedPayload) return null;
+  if (!cachedPayload || !cachedPayload.ok) return null;
   const stale = selectedCache.expiresAt.getTime() <= Date.now();
   const resolvedSource =
     input.sourceOverride ||

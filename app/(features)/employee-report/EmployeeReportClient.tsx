@@ -34,7 +34,8 @@ import {
   isValidIdentityInput,
   normalizeDigits,
   parseLayoutDsl,
-  readStoredIdentity,
+  readStoredIdentityWithSource,
+  resolveIdentityPrimaryActionLabel,
   resolveMedicationStatusMessage,
   saveStoredIdentity,
   toIdentityPayload,
@@ -72,6 +73,10 @@ export default function EmployeeReportClient() {
   const [forceConfirmOpen, setForceConfirmOpen] = useState(false);
   const [forceConfirmText, setForceConfirmText] = useState("");
   const [forceConfirmChecked, setForceConfirmChecked] = useState(false);
+  const [storedIdentitySource, setStoredIdentitySource] = useState<
+    "none" | "v2" | "legacy" | "expired" | "invalid"
+  >("none");
+  const [hasAuthAttempt, setHasAuthAttempt] = useState(false);
   const hasTriedStoredLogin = useRef(false);
   const webReportCaptureRef = useRef<HTMLDivElement | null>(null);
   const isAdminLoggedIn = useAdminLoginStatus();
@@ -118,6 +123,15 @@ export default function EmployeeReportClient() {
   const canExecuteForceSync = useMemo(
     () => forceConfirmChecked && forceConfirmText.trim() === "강제 재조회",
     [forceConfirmChecked, forceConfirmText]
+  );
+  const identityPrimaryActionLabel = useMemo(
+    () =>
+      resolveIdentityPrimaryActionLabel({
+        hasAuthAttempt,
+        syncNextAction,
+        storedIdentitySource,
+      }),
+    [hasAuthAttempt, storedIdentitySource, syncNextAction]
   );
 
   const overlayDescription = useMemo(() => {
@@ -182,6 +196,7 @@ export default function EmployeeReportClient() {
     setError("");
     if (validIdentity) {
       saveStoredIdentity(identityPayload);
+      setStoredIdentitySource("v2");
     }
   }
 
@@ -219,7 +234,9 @@ export default function EmployeeReportClient() {
 
       if (!hasTriedStoredLogin.current) {
         hasTriedStoredLogin.current = true;
-        const stored = readStoredIdentity();
+        const storedResult = readStoredIdentityWithSource();
+        setStoredIdentitySource(storedResult.source);
+        const stored = storedResult.identity;
         if (stored) {
           setIdentity(stored);
           const loginResult: EmployeeSessionUpsertResponse = await upsertEmployeeSession(
@@ -266,6 +283,7 @@ export default function EmployeeReportClient() {
         return;
       }
       saveStoredIdentity(payload);
+      setStoredIdentitySource("v2");
       setNotice("기존 레포트를 불러왔습니다.");
       setSyncNextAction(null);
       setSyncGuidance(null);
@@ -297,6 +315,7 @@ export default function EmployeeReportClient() {
     }
 
     saveStoredIdentity(payload);
+    setStoredIdentitySource("v2");
     setSyncNextAction(null);
     setSyncGuidance(null);
     setPendingSignForceRefresh(false);
@@ -317,6 +336,7 @@ export default function EmployeeReportClient() {
       setError("이름, 생년월일(8자리), 휴대폰 번호를 정확히 입력해 주세요.");
       return;
     }
+    setHasAuthAttempt(true);
     beginBusy("카카오 인증 재요청을 진행하고 있어요.");
     setError("");
     setNotice("");
@@ -380,6 +400,7 @@ export default function EmployeeReportClient() {
       setError("이름, 생년월일(8자리), 휴대폰 번호를 정확히 입력해 주세요.");
       return;
     }
+    setHasAuthAttempt(true);
     if (forceRefresh && !canUseForceSync) {
       setError("강제 재조회는 운영자 도구에서만 사용할 수 있습니다.");
       return;
@@ -394,6 +415,7 @@ export default function EmployeeReportClient() {
 
     if (forceRefresh) {
       clearStoredIdentity();
+      setStoredIdentitySource("none");
     }
 
     beginBusy(
@@ -693,6 +715,7 @@ export default function EmployeeReportClient() {
           identity={identity}
           busy={busy}
           showSignAction={!syncGuidance && syncNextAction === "sign"}
+          primaryActionLabel={identityPrimaryActionLabel}
           hideActionRow={!!syncGuidance}
           onNameChange={(value) => {
             setIdentity((prev) => ({ ...prev, name: value }));
@@ -723,6 +746,7 @@ export default function EmployeeReportClient() {
             periodOptions={periodOptions}
             busy={busy}
             syncNextAction={syncNextAction}
+            primarySyncActionLabel="최신 데이터 다시 조회"
             canUseForceSync={canUseForceSync}
             forceSyncRemainingSec={forceSyncRemainingSec}
             onPeriodChange={(next) => {

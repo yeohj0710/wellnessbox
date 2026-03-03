@@ -3,6 +3,7 @@ import { upsertB2bEmployee } from "@/lib/b2b/employee-service";
 import { b2bEmployeeIdentityInputSchema } from "@/lib/b2b/employee-route-schema";
 import { B2B_PERIOD_KEY_REGEX, resolveCurrentPeriodKey } from "@/lib/b2b/period";
 import {
+  buildDbPoolBusySyncResponse,
   ensureForceRefreshCooldown,
   executeSyncAndBuildResponse,
   logSyncAccess,
@@ -13,6 +14,7 @@ import {
 } from "@/lib/b2b/employee-sync-route";
 import { noStoreJson } from "@/lib/b2b/employee-sync-route";
 import { resolveDbRouteError } from "@/lib/server/db-error";
+import { runWithHyphenInFlightDedup } from "@/lib/server/hyphen/inflight-dedup";
 import { requireNhisSession } from "@/lib/server/route-auth";
 
 export const employeeSyncRequestSchema = b2bEmployeeIdentityInputSchema.extend({
@@ -27,6 +29,23 @@ const INPUT_INVALID_ERROR =
   "\uC785\uB825\uAC12\uC744 \uD655\uC778\uD574 \uC8FC\uC138\uC694.";
 const SYNC_FAILED_ERROR =
   "\uAC74\uAC15 \uB370\uC774\uD130 \uB3D9\uAE30\uD654 \uCC98\uB9AC \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC5B4\uC694. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694.";
+
+function buildEmployeeSyncDedupKey(input: {
+  appUserId: string;
+  guest: boolean;
+  payload: EmployeeSyncPayload;
+}) {
+  return [
+    input.appUserId,
+    input.guest ? "guest" : "member",
+    input.payload.name.trim(),
+    input.payload.birthDate.trim(),
+    input.payload.phone.trim(),
+    input.payload.periodKey?.trim() || "-",
+    input.payload.forceRefresh === true ? "force" : "normal",
+    input.payload.generateAiEvaluation === true ? "ai" : "no-ai",
+  ].join("|");
+}
 
 export async function runEmployeeSyncPostRoute(req: Request) {
   const auth = await requireNhisSession();
@@ -54,12 +73,19 @@ export async function runEmployeeSyncAuthedPostRoute(input: {
       );
     }
 
-    return runEmployeeSyncFlow({
-      req: input.req,
+    const dedupKey = buildEmployeeSyncDedupKey({
       appUserId: input.appUserId,
       guest: input.guest,
       payload: parsed.data,
     });
+    return runWithHyphenInFlightDedup("b2b-employee-sync", dedupKey, () =>
+      runEmployeeSyncFlow({
+        req: input.req,
+        appUserId: input.appUserId,
+        guest: input.guest,
+        payload: parsed.data,
+      })
+    );
   } catch (error) {
     const dbError = resolveDbRouteError(error, SYNC_FAILED_ERROR);
     console.error("[b2b][employee-sync] route handler failed", {
@@ -74,6 +100,11 @@ export async function runEmployeeSyncAuthedPostRoute(input: {
       mappedCode: dbError.code,
       mappedStatus: dbError.status,
     });
+
+    if (dbError.code === "DB_POOL_TIMEOUT") {
+      return buildDbPoolBusySyncResponse(dbError.message);
+    }
+
     return noStoreJson(
       { ok: false, code: dbError.code, error: dbError.message },
       dbError.status
@@ -110,7 +141,7 @@ export async function runEmployeeSyncFlow(input: {
     ip: readClientIp(input.req),
     userAgent: input.req.headers.get("user-agent"),
   };
-  await logSyncAccess(accessContext, "sync_start", { guest: input.guest });
+  void logSyncAccess(accessContext, "sync_start", { guest: input.guest });
 
   if (!forceRefreshRequested) {
     const reusedResponse = await tryReuseLatestSnapshot({

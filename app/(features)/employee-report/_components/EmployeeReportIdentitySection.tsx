@@ -5,6 +5,7 @@ type EmployeeReportIdentitySectionProps = {
   identity: IdentityInput;
   busy: boolean;
   showSignAction: boolean;
+  primaryActionLabel: string;
   hideActionRow?: boolean;
   onNameChange: (value: string) => void;
   onBirthDateChange: (value: string) => void;
@@ -18,6 +19,7 @@ export default function EmployeeReportIdentitySection({
   identity,
   busy,
   showSignAction,
+  primaryActionLabel,
   hideActionRow = false,
   onNameChange,
   onBirthDateChange,
@@ -79,7 +81,7 @@ export default function EmployeeReportIdentitySection({
             data-testid="employee-report-restart-auth"
             className={styles.buttonPrimary}
           >
-            {busy ? "처리 중..." : "인증 다시하기"}
+            {busy ? "처리 중..." : primaryActionLabel}
           </button>
           {showSignAction ? (
             <button

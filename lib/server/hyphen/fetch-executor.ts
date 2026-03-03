@@ -45,6 +45,23 @@ export type ExecuteNhisFetchOutput = {
   firstFailed?: NhisFetchFailedItem;
 };
 
+const NO_DATA_ERR_CODES = new Set([
+  "C0009-001", // 건강나이 미제공/비대상
+  "NO_DATA",
+  "NO-DATA",
+]);
+
+const FATAL_AUTH_ERR_CODES = new Set([
+  "LOGIN-999",
+  "C0012-001",
+]);
+
+const NO_DATA_MESSAGE_PATTERN =
+  /(조회\s*결과|조회결과|결과|데이터|내역|기록|정보).*(없|없음)|no\s*data|no\s*records?/i;
+
+const AUTH_OR_PRECONDITION_MESSAGE_PATTERN =
+  /(세션|만료|로그인|인증|token|auth|healthin|권한|초기화|step)/i;
+
 function getErrorBody(error: unknown): unknown | null {
   if (!error || typeof error !== "object") return null;
   const candidate = (error as { body?: unknown }).body;
@@ -73,6 +90,24 @@ function payloadHasAnyRows(payload: HyphenApiResponse) {
     if (Array.isArray(value) && value.length > 0) return true;
   }
   return false;
+}
+
+function normalizeErrCode(value: string | null | undefined) {
+  return (value || "").trim().toUpperCase();
+}
+
+export function isNonFatalNhisNoDataFailure(reason: unknown) {
+  const errorInfo = getErrorCodeMessage(reason);
+  const errCode = normalizeErrCode(errorInfo.code);
+  const errMessage = (errorInfo.message || "").trim();
+  if (!errCode && !errMessage) return false;
+
+  if (FATAL_AUTH_ERR_CODES.has(errCode)) return false;
+  if (NO_DATA_ERR_CODES.has(errCode)) return true;
+
+  if (!errMessage) return false;
+  if (AUTH_OR_PRECONDITION_MESSAGE_PATTERN.test(errMessage)) return false;
+  return NO_DATA_MESSAGE_PATTERN.test(errMessage);
 }
 
 type FetchSuccessMap = Map<NhisFetchTarget, unknown>;
@@ -192,6 +227,10 @@ export async function executeNhisFetch(
           const result = await runner();
           successful.set(target, result);
         } catch (error) {
+          if (isNonFatalNhisNoDataFailure(error)) {
+            successful.set(target, emptyPayload());
+            return;
+          }
           markFailure(target, error, fallbackMessage);
         }
       })()
@@ -276,6 +315,7 @@ export async function executeNhisFetch(
       effectiveYearLimit
     );
     const yearFailures: string[] = [];
+    let yearNoDataCount = 0;
     checkupListRawByYear = {};
     const shouldSeekDetailKey = input.targets.includes("checkupYearly");
 
@@ -302,6 +342,10 @@ export async function executeNhisFetch(
           }
         }
       } catch (reason) {
+        if (isNonFatalNhisNoDataFailure(reason)) {
+          yearNoDataCount += 1;
+          continue;
+        }
         const errorInfo = getErrorCodeMessage(reason);
         yearFailures.push(`${year}: ${errorInfo.message || "조회 실패"}`);
         const errorBody = getErrorBody(reason);
@@ -321,6 +365,8 @@ export async function executeNhisFetch(
             .join(", ")})`,
         });
       }
+    } else if (yearNoDataCount > 0) {
+      successful.set("checkupList", []);
     } else {
       failed.push({
         target: "checkupList",
@@ -334,6 +380,7 @@ export async function executeNhisFetch(
     const yearlyPayloads: HyphenApiResponse[] = [];
     const yearlyRaw: unknown[] = [];
     const yearlyFailures: Array<{ errCd?: string; errMsg?: string }> = [];
+    let yearlyNoDataCount = 0;
 
     const keyPairs =
       checkupDetailKeyPairs.length > 0
@@ -361,6 +408,10 @@ export async function executeNhisFetch(
           return;
         }
         const reason = result.reason;
+        if (isNonFatalNhisNoDataFailure(reason)) {
+          yearlyNoDataCount += 1;
+          return;
+        }
         const errorInfo = getErrorCodeMessage(reason);
         yearlyFailures.push({
           errCd: errorInfo.code,
@@ -376,6 +427,8 @@ export async function executeNhisFetch(
     if (yearlyPayloads.length > 0) {
       successful.set("checkupYearly", yearlyPayloads);
     } else if (keyPairs.length === 0) {
+      successful.set("checkupYearly", []);
+    } else if (yearlyNoDataCount >= keyPairs.length) {
       successful.set("checkupYearly", []);
     } else {
       const firstFailure = yearlyFailures[0];

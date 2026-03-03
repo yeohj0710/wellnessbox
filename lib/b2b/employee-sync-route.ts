@@ -40,6 +40,33 @@ export {
 };
 export { noStoreJson };
 
+const DEFAULT_DB_POOL_BUSY_RETRY_AFTER_SEC = 20;
+
+function resolveDbPoolBusyRetryAfterSec() {
+  const raw = Number(process.env.B2B_SYNC_DB_POOL_BUSY_RETRY_AFTER_SEC);
+  if (!Number.isFinite(raw)) return DEFAULT_DB_POOL_BUSY_RETRY_AFTER_SEC;
+  return Math.max(5, Math.min(120, Math.floor(raw)));
+}
+
+export function buildDbPoolBusySyncResponse(errorMessage?: string) {
+  const retryAfterSec = resolveDbPoolBusyRetryAfterSec();
+  const availableAt = new Date(Date.now() + retryAfterSec * 1000).toISOString();
+  return noStoreJson(
+    {
+      ok: false,
+      code: "DB_POOL_TIMEOUT",
+      reason: "db_pool_busy",
+      nextAction: "wait",
+      retryAfterSec,
+      availableAt,
+      error:
+        errorMessage ||
+        "서버 요청이 많아 처리 대기 중입니다. 잠시 후 다시 시도해 주세요.",
+    },
+    503
+  );
+}
+
 function describeSyncError(error: unknown) {
   if (error instanceof Error) {
     const errorCode =
@@ -117,7 +144,7 @@ export async function ensureForceRefreshCooldown(input: {
     return { ok: true as const };
   }
 
-  await logSyncAccess(input.accessContext, "sync_force_refresh_cooldown", {
+  void logSyncAccess(input.accessContext, "sync_force_refresh_cooldown", {
     retryAfterSec: cooldown.remainingSeconds,
     availableAt: cooldown.availableAt,
     cooldownSeconds: input.forceRefreshCooldownSeconds,
@@ -212,7 +239,7 @@ export async function tryReuseLatestSnapshot(input: {
     reportPeriodKey: report.periodKey ?? reusePeriodKey,
   });
 
-  await logSyncAccess(input.accessContext, "sync_reused_snapshot", {
+  void logSyncAccess(input.accessContext, "sync_reused_snapshot", {
     reportId: report.id,
     snapshotId: latestSnapshot.id,
     periodKey: report.periodKey ?? reusePeriodKey,
@@ -274,7 +301,7 @@ export async function executeSyncAndBuildResponse(input: {
       reportPeriodKey: report.periodKey ?? input.requestedPeriodKey,
     });
 
-    await logSyncAccess(input.accessContext, "sync_success", {
+    void logSyncAccess(input.accessContext, "sync_success", {
       reportId: report.id,
       source: syncResult.source,
       periodKey: input.requestedPeriodKey,
@@ -284,7 +311,7 @@ export async function executeSyncAndBuildResponse(input: {
     return response;
   } catch (error) {
     if (error instanceof B2bEmployeeSyncError) {
-      await logSyncAccess(input.accessContext, "sync_blocked", {
+      void logSyncAccess(input.accessContext, "sync_blocked", {
         code: error.code,
         reason: error.reason,
         nextAction: error.nextAction,
@@ -318,10 +345,14 @@ export async function executeSyncAndBuildResponse(input: {
       mappedCode: dbError.code,
       mappedStatus: dbError.status,
     });
-    await logSyncAccess(input.accessContext, "sync_failed", {
+    void logSyncAccess(input.accessContext, "sync_failed", {
       error: dbError.message,
       code: dbError.code,
     });
+
+    if (dbError.code === "DB_POOL_TIMEOUT") {
+      return buildDbPoolBusySyncResponse(dbError.message);
+    }
 
     return noStoreJson(
       { ok: false, code: dbError.code, error: dbError.message },

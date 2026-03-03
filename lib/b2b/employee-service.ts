@@ -3,6 +3,7 @@ import "server-only";
 import { createHash } from "crypto";
 import db from "@/lib/db";
 import { resolveB2bEmployeeIdentity } from "@/lib/b2b/identity";
+import { runBestEffortDbWrite } from "@/lib/server/db-resilience";
 import {
   DEFAULT_DETAIL_YEAR_LIMIT,
   DEFAULT_NHIS_FETCH_TARGETS,
@@ -115,16 +116,20 @@ export async function logB2bEmployeeAccess(input: {
   userAgent?: string | null;
   payload?: unknown;
 }) {
-  await db.b2bEmployeeAccessLog.create({
-    data: {
-      employeeId: input.employeeId ?? null,
-      appUserId: input.appUserId ?? null,
-      action: input.action,
-      route: input.route ?? null,
-      ipHash: hashIp(input.ip),
-      userAgent: input.userAgent ?? null,
-      payload: asJsonValue(input.payload),
-    },
+  await runBestEffortDbWrite({
+    label: "b2b-employee-access-log",
+    task: () =>
+      db.b2bEmployeeAccessLog.create({
+        data: {
+          employeeId: input.employeeId ?? null,
+          appUserId: input.appUserId ?? null,
+          action: input.action,
+          route: input.route ?? null,
+          ipHash: hashIp(input.ip),
+          userAgent: input.userAgent ?? null,
+          payload: asJsonValue(input.payload),
+        },
+      }),
   });
 }
 
@@ -134,13 +139,17 @@ export async function logB2bAdminAction(input: {
   actorTag?: string | null;
   payload?: unknown;
 }) {
-  await db.b2bAdminActionLog.create({
-    data: {
-      employeeId: input.employeeId ?? null,
-      action: input.action,
-      actorTag: input.actorTag ?? null,
-      payload: asJsonValue(input.payload),
-    },
+  await runBestEffortDbWrite({
+    label: "b2b-admin-action-log",
+    task: () =>
+      db.b2bAdminActionLog.create({
+        data: {
+          employeeId: input.employeeId ?? null,
+          action: input.action,
+          actorTag: input.actorTag ?? null,
+          payload: asJsonValue(input.payload),
+        },
+      }),
   });
 }
 

@@ -10,18 +10,36 @@ import {
   toText,
 } from "@/lib/server/hyphen/normalize-shared";
 
+const DEFAULT_CHECKUP_LIST_MAX_ROWS = 1800;
+const DEFAULT_CHECKUP_YEARLY_MAX_ROWS = 2200;
+const DEFAULT_CHECKUP_OVERVIEW_MAX_ROWS = 900;
+
+function resolveNormalizeRowCap(envName: string, fallback: number) {
+  const raw = process.env[envName];
+  if (!raw) return fallback;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(100, Math.floor(parsed));
+}
+
 export function normalizeCheckupListPayload(payloads: HyphenApiResponse[]) {
   const rows: NhisRow[] = [];
   const people = new Set<string>();
   const years = new Set<string>();
+  const maxRows = resolveNormalizeRowCap(
+    "HYPHEN_NHIS_NORMALIZE_CHECKUP_LIST_MAX_ROWS",
+    DEFAULT_CHECKUP_LIST_MAX_ROWS
+  );
 
-  for (const payload of payloads) {
+  outer: for (const payload of payloads) {
+    if (rows.length >= maxRows) break;
     const data = getPayloadData(payload);
     const guessedYear = toText(asPrimitive(data.yyyy ?? data.year ?? data.businessYear));
     if (guessedYear) years.add(guessedYear);
 
     const list = asArray(data.list);
     for (const personItem of list) {
+      if (rows.length >= maxRows) break outer;
       const person = asRecord(personItem);
       if (!person) continue;
 
@@ -35,10 +53,12 @@ export function normalizeCheckupListPayload(payloads: HyphenApiResponse[]) {
         if (guessedYear) row.year = guessedYear;
         mergePrimitiveFields(row, person, new Set(["inqryResList"]));
         rows.push(row);
+        if (rows.length >= maxRows) break outer;
         continue;
       }
 
       for (const resultItem of inqryResList) {
+        if (rows.length >= maxRows) break outer;
         const result = asRecord(resultItem);
         const row: NhisRow = {};
         if (guessedYear) row.year = guessedYear;
@@ -54,14 +74,20 @@ export function normalizeCheckupListPayload(payloads: HyphenApiResponse[]) {
 
 export function normalizeCheckupYearlyPayload(payloads: HyphenApiResponse[]) {
   const rows: NhisRow[] = [];
+  const maxRows = resolveNormalizeRowCap(
+    "HYPHEN_NHIS_NORMALIZE_CHECKUP_YEARLY_MAX_ROWS",
+    DEFAULT_CHECKUP_YEARLY_MAX_ROWS
+  );
 
-  for (const payload of payloads) {
+  outer: for (const payload of payloads) {
+    if (rows.length >= maxRows) break;
     const data = getPayloadData(payload);
     const detailKey = asPrimitive(data.detailKey);
     const detailKey2 = asPrimitive(data.detailKey2);
 
     const infoList = asArray(data.list);
     for (const infoItem of infoList) {
+      if (rows.length >= maxRows) break outer;
       const info = asRecord(infoItem);
       if (!info) continue;
 
@@ -73,10 +99,12 @@ export function normalizeCheckupYearlyPayload(payloads: HyphenApiResponse[]) {
         if (detailKey !== undefined) row.detailKey = detailKey;
         if (detailKey2 !== undefined) row.detailKey2 = detailKey2;
         rows.push(row);
+        if (rows.length >= maxRows) break outer;
         continue;
       }
 
       for (const checkItem of checkList) {
+        if (rows.length >= maxRows) break outer;
         const check = asRecord(checkItem);
         if (!check) continue;
         const qtitle = asPrimitive(check.qtitle);
@@ -89,10 +117,12 @@ export function normalizeCheckupYearlyPayload(payloads: HyphenApiResponse[]) {
           if (detailKey !== undefined) row.detailKey = detailKey;
           if (detailKey2 !== undefined) row.detailKey2 = detailKey2;
           rows.push(row);
+          if (rows.length >= maxRows) break outer;
           continue;
         }
 
         for (const item of itemList) {
+          if (rows.length >= maxRows) break outer;
           const itemRecord = asRecord(item);
           const row: NhisRow = {};
           if (title !== undefined) row.title = title;
@@ -111,8 +141,13 @@ export function normalizeCheckupYearlyPayload(payloads: HyphenApiResponse[]) {
 
 export function normalizeCheckupOverviewPayload(payload: HyphenApiResponse) {
   const rows: NhisRow[] = [];
+  const maxRows = resolveNormalizeRowCap(
+    "HYPHEN_NHIS_NORMALIZE_CHECKUP_OVERVIEW_MAX_ROWS",
+    DEFAULT_CHECKUP_OVERVIEW_MAX_ROWS
+  );
   const list = getListFromPayload(payload);
-  for (const item of list) {
+  outer: for (const item of list) {
+    if (rows.length >= maxRows) break;
     const summary = asRecord(item);
     if (!summary) continue;
 
@@ -139,10 +174,12 @@ export function normalizeCheckupOverviewPayload(payload: HyphenApiResponse) {
       const row: NhisRow = {};
       mergePrimitiveFields(row, summary, new Set(["chkResult"]));
       rows.push(row);
+      if (rows.length >= maxRows) break;
       continue;
     }
 
     for (const detailItem of detailItems) {
+      if (rows.length >= maxRows) break outer;
       const detail = asRecord(detailItem);
       if (!detail) continue;
 
