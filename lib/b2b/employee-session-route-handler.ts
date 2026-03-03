@@ -70,6 +70,7 @@ export async function runEmployeeSessionLoginRoute(
     ok: true,
     found: true,
     employee: loginResult.employee,
+    hasReport: loginResult.hasReport,
     report: loginResult.report,
   });
   attachB2bEmployeeSessionToken(

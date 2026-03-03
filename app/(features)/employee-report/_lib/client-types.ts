@@ -15,11 +15,23 @@ export type EmployeeSessionGetResponse = {
     birthDate: string;
     phoneNormalized: string;
   };
+  latestReport?: {
+    id: string;
+    variantIndex: number;
+    status: string;
+    updatedAt: string;
+  } | null;
 };
 
 export type EmployeeSessionUpsertResponse = {
   ok: boolean;
   found: boolean;
+  hasReport?: boolean;
+  report?: {
+    id: string;
+    variantIndex: number;
+    status: string;
+  } | null;
   message?: string;
 };
 

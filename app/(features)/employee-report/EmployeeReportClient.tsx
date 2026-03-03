@@ -179,6 +179,16 @@ export default function EmployeeReportClient() {
     return identityPayload;
   }
 
+  function clearLocalIdentityCache() {
+    clearStoredIdentity();
+    setStoredIdentitySource("none");
+  }
+
+  function resetReportState() {
+    setReportData(null);
+    setSelectedPeriodKey("");
+  }
+
   function setPendingSignGuidance(message: string, forceRefresh = false) {
     setPendingSignForceRefresh(forceRefresh);
     setSyncNextAction("sign");
@@ -189,14 +199,27 @@ export default function EmployeeReportClient() {
   }
 
   async function loadReport(periodKey?: string) {
-    const data = await fetchEmployeeReport(periodKey);
-    if (!data.ok) throw new Error(data.error || "레포트 조회에 실패했습니다.");
-    setReportData(data);
-    setSelectedPeriodKey(data.periodKey || periodKey || "");
-    setError("");
-    if (validIdentity) {
-      saveStoredIdentity(identityPayload);
-      setStoredIdentitySource("v2");
+    try {
+      const data = await fetchEmployeeReport(periodKey);
+      if (!data.ok) throw new Error(data.error || "\uB808\uD3EC\uD2B8 \uC870\uD68C\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.");
+      if (!data.report) {
+        resetReportState();
+        return;
+      }
+      setReportData(data);
+      setSelectedPeriodKey(data.periodKey || periodKey || "");
+      setError("");
+      if (validIdentity) {
+        saveStoredIdentity(identityPayload);
+        setStoredIdentitySource("v2");
+      }
+    } catch (err) {
+      if (err instanceof ApiRequestError && (err.status === 401 || err.status === 404)) {
+        await deleteEmployeeSession().catch(() => null);
+        clearLocalIdentityCache();
+        resetReportState();
+      }
+      throw err;
     }
   }
 
@@ -228,6 +251,14 @@ export default function EmployeeReportClient() {
             phone: session.employee.phoneNormalized,
           });
         }
+        if (!session.latestReport) {
+          resetReportState();
+          setSyncNextAction("init");
+          setSyncGuidance(null);
+          setPendingSignForceRefresh(false);
+          setNotice("\uC800\uC7A5\uB41C \uB9AC\uD3EC\uD2B8\uAC00 \uC5C6\uC5B4 \uB2E4\uC2DC \uC778\uC99D \uD6C4 \uC5F0\uB3D9\uC774 \uD544\uC694\uD569\uB2C8\uB2E4.");
+          return;
+        }
         await loadReport();
         return;
       }
@@ -243,16 +274,29 @@ export default function EmployeeReportClient() {
             stored
           );
           if (loginResult.found) {
-            setNotice("이전에 조회한 정보로 자동 로그인했습니다.");
+            saveStoredIdentity(stored);
+            setStoredIdentitySource("v2");
+            if (!loginResult.hasReport) {
+              resetReportState();
+              setSyncNextAction("init");
+              setSyncGuidance(null);
+              setPendingSignForceRefresh(false);
+              setNotice(
+                loginResult.message || "\uC800\uC7A5\uB41C \uB9AC\uD3EC\uD2B8\uAC00 \uC5C6\uC5B4 \uB2E4\uC2DC \uC778\uC99D \uD6C4 \uC5F0\uB3D9\uC774 \uD544\uC694\uD569\uB2C8\uB2E4."
+              );
+              return;
+            }
+            setNotice("\uC774\uC804\uC5D0 \uC870\uD68C\uD55C \uC815\uBCF4\uB85C \uC790\uB3D9 \uB85C\uADF8\uC778\uD588\uC2B5\uB2C8\uB2E4.");
             setSyncGuidance(null);
             await loadReport();
             return;
           }
+          clearLocalIdentityCache();
         }
       }
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "세션 확인 중 오류가 발생했습니다.";
+        err instanceof Error ? err.message : "\uC138\uC158 \uD655\uC778 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.";
       setError(message);
     } finally {
       setBooting(false);
@@ -266,32 +310,42 @@ export default function EmployeeReportClient() {
 
   async function handleFindExisting() {
     if (!validIdentity) {
-      setError("이름, 생년월일(8자리), 휴대폰 번호를 정확히 입력해 주세요.");
+      setError("\uC774\uB984, \uC0DD\uB144\uC6D4\uC77C(8\uC790\uB9AC), \uD734\uB300\uD3F0 \uBC88\uD638\uB97C \uC815\uD655\uD788 \uC785\uB825\uD574 \uC8FC\uC138\uC694.");
       return;
     }
-    beginBusy("기존 조회 기록을 확인하고 있어요.");
+    beginBusy("\uAE30\uC874 \uC870\uD68C \uAE30\uB85D\uC744 \uD655\uC778\uD558\uACE0 \uC788\uC5B4\uC694.");
     setError("");
     setNotice("");
     try {
       const payload = getIdentityPayload();
       const result: EmployeeSessionUpsertResponse = await upsertEmployeeSession(payload);
       if (!result.found) {
+        clearLocalIdentityCache();
+        resetReportState();
         setNotice(
           result.message ||
-            "조회 가능한 기록이 없습니다. 카카오 인증 후 연동해 주세요."
+            "\uC870\uD68C \uAC00\uB2A5\uD55C \uAE30\uB85D\uC774 \uC5C6\uC2B5\uB2C8\uB2E4. \uCE74\uCE74\uC624 \uC778\uC99D \uD6C4 \uC5F0\uB3D9\uC744 \uC9C4\uD589\uD574 \uC8FC\uC138\uC694."
         );
         return;
       }
       saveStoredIdentity(payload);
       setStoredIdentitySource("v2");
-      setNotice("기존 레포트를 불러왔습니다.");
+      if (!result.hasReport) {
+        resetReportState();
+        setSyncNextAction("init");
+        setSyncGuidance(null);
+        setPendingSignForceRefresh(false);
+        setNotice(result.message || "\uC800\uC7A5\uB41C \uB9AC\uD3EC\uD2B8\uAC00 \uC5C6\uC5B4 \uB2E4\uC2DC \uC778\uC99D \uD6C4 \uC5F0\uB3D9\uC774 \uD544\uC694\uD569\uB2C8\uB2E4.");
+        return;
+      }
+      setNotice("\uAE30\uC874 \uB9AC\uD3EC\uD2B8\uB97C \uBD88\uB7EC\uC654\uC2B5\uB2C8\uB2E4.");
       setSyncNextAction(null);
       setSyncGuidance(null);
       setPendingSignForceRefresh(false);
       await loadReport();
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "기존 정보 조회에 실패했습니다."
+        err instanceof Error ? err.message : "\uAE30\uC874 \uC815\uBCF4 \uC870\uD68C\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."
       );
     } finally {
       endBusy();
@@ -305,10 +359,12 @@ export default function EmployeeReportClient() {
     const payload = getIdentityPayload();
     const result: EmployeeSessionUpsertResponse = await upsertEmployeeSession(payload);
     if (!result.found) {
+      clearLocalIdentityCache();
+      resetReportState();
       if (options?.showNotFoundNotice) {
         setNotice(
           result.message ||
-            "조회 가능한 기록이 없어요. 카카오 인증 후 연동을 진행해 주세요."
+            "\uC870\uD68C \uAC00\uB2A5\uD55C \uAE30\uB85D\uC774 \uC5C6\uC5B4 \uCE74\uCE74\uC624 \uC778\uC99D \uD6C4 \uC5F0\uB3D9\uC774 \uD544\uC694\uD569\uB2C8\uB2E4."
         );
       }
       return false;
@@ -316,11 +372,21 @@ export default function EmployeeReportClient() {
 
     saveStoredIdentity(payload);
     setStoredIdentitySource("v2");
+    if (!result.hasReport) {
+      resetReportState();
+      setSyncNextAction("init");
+      setSyncGuidance(null);
+      setPendingSignForceRefresh(false);
+      if (options?.showNotFoundNotice) {
+        setNotice(result.message || "\uC800\uC7A5\uB41C \uB9AC\uD3EC\uD2B8\uAC00 \uC5C6\uC5B4 \uB2E4\uC2DC \uC778\uC99D \uD6C4 \uC5F0\uB3D9\uC774 \uD544\uC694\uD569\uB2C8\uB2E4.");
+      }
+      return false;
+    }
     setSyncNextAction(null);
     setSyncGuidance(null);
     setPendingSignForceRefresh(false);
     await loadReport();
-    setNotice(options?.successNotice || "기존 레포트를 불러왔어요.");
+    setNotice(options?.successNotice || "\uAE30\uC874 \uB9AC\uD3EC\uD2B8\uB97C \uBD88\uB7EC\uC654\uC5B4\uC694.");
     return true;
   }
 

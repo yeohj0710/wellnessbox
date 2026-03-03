@@ -28,6 +28,7 @@ type ResolveReportMedicationRowsResult = {
 
 const MEDICATION_RECENT_LIMIT = 3;
 const MEDICATION_HISTORY_LOOKBACK = 8;
+const MEDICATION_CROSS_PERIOD_HISTORY_LOOKBACK = 12;
 const MEDICATION_DERIVED_PHARMACY_LABEL = "\uc57d\uad6d \uc870\uc81c";
 const MEDICATION_DERIVED_VISIT_SUFFIX = " \uc9c4\ub8cc";
 
@@ -145,7 +146,7 @@ async function resolveRecentMedicationRows(input: {
       .map((item) => item.row);
   }
 
-  const historySnapshots = await db.b2bHealthDataSnapshot.findMany({
+  const samePeriodHistorySnapshots = await db.b2bHealthDataSnapshot.findMany({
     where: {
       employeeId: input.employeeId,
       periodKey: input.periodKey,
@@ -157,11 +158,32 @@ async function resolveRecentMedicationRows(input: {
     take: MEDICATION_HISTORY_LOOKBACK,
   });
 
-  for (const snapshot of historySnapshots) {
+  for (const snapshot of samePeriodHistorySnapshots) {
     const rows = extractMedicationRows(snapshot.normalizedJson).rows;
     if (rows.length === 0) continue;
     appendRows(rows);
     if (byVisit.size >= MEDICATION_RECENT_LIMIT) break;
+  }
+
+  if (byVisit.size < MEDICATION_RECENT_LIMIT) {
+    const crossPeriodHistorySnapshots = await db.b2bHealthDataSnapshot.findMany({
+      where: {
+        employeeId: input.employeeId,
+        sourceMode: "hyphen",
+        periodKey: { not: input.periodKey },
+        ...(input.latestSnapshotId ? { id: { not: input.latestSnapshotId } } : {}),
+      },
+      orderBy: { fetchedAt: "desc" },
+      select: { normalizedJson: true },
+      take: MEDICATION_CROSS_PERIOD_HISTORY_LOOKBACK,
+    });
+
+    for (const snapshot of crossPeriodHistorySnapshots) {
+      const rows = extractMedicationRows(snapshot.normalizedJson).rows;
+      if (rows.length === 0) continue;
+      appendRows(rows);
+      if (byVisit.size >= MEDICATION_RECENT_LIMIT) break;
+    }
   }
 
   return [...byVisit.values()]

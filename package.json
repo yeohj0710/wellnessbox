@@ -49,6 +49,8 @@
     "qa:b2b:admin-employee-data": "node scripts/qa/check-b2b-admin-employee-data-ops.cjs",
     "qa:b2b:log-throttle": "ts-node scripts/qa/check-b2b-log-throttle.cts",
     "qa:b2b:sync-db-resilience": "ts-node scripts/qa/check-b2b-sync-db-resilience.cts",
+    "qa:medication:resilience": "ts-node scripts/qa/check-medication-fetch-resilience.cts",
+    "qa:employee-report:db-priority": "ts-node scripts/qa/check-employee-report-db-priority.cts",
     "qa:employee-report:auth-ux": "ts-node scripts/qa/check-employee-report-auth-ux.cts",
     "qa:nhis:resilience": "node scripts/qa/check-nhis-fetch-resilience-runner.cjs",
     "qa:b2b:public-survey-flow": "node scripts/qa/check-b2b-public-survey-flow-runner.cjs",

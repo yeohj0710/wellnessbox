@@ -292,15 +292,38 @@ export async function executeNhisFetch(
         detailPayloadError = detailError;
       }
 
+      let basePayloadResult: HyphenApiResponse | null = null;
+      let basePayloadError: unknown = null;
+      try {
+        basePayloadResult = await fetchMedicationInfo(input.basePayload);
+        if (payloadHasAnyRows(basePayloadResult)) {
+          return basePayloadResult;
+        }
+      } catch (baseError) {
+        basePayloadResult = null;
+        basePayloadError = baseError;
+      }
+
       const recovered = await tryMedicalFallback();
       if (recovered) {
-        return detailPayloadResult ?? emptyPayload();
+        return detailPayloadResult ?? basePayloadResult ?? emptyPayload();
+      }
+
+      if (detailPayloadError && !basePayloadError && basePayloadResult) {
+        return basePayloadResult;
+      }
+      if (basePayloadError && !detailPayloadError && detailPayloadResult) {
+        return detailPayloadResult;
       }
 
       if (detailPayloadError) {
         throw detailPayloadError;
       }
-      return detailPayloadResult ?? emptyPayload();
+      if (basePayloadError) {
+        throw basePayloadError;
+      }
+
+      return detailPayloadResult ?? basePayloadResult ?? emptyPayload();
     },
     "\ud22c\uc57d \uc815\ubcf4\ub97c \ubd88\ub7ec\uc624\uc9c0 \ubabb\ud588\uc5b4\uc694."
   );

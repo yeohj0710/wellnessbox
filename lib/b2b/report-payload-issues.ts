@@ -77,19 +77,21 @@ export function resolveMedicationStatus(input: {
 }): MedicationStatus {
   const failedTargets = extractFailedTargets(input.rawJson);
   const medicationFailed = failedTargets.includes("medication");
-  if (medicationFailed) {
-    return {
-      type: "fetch_failed",
-      message: "복약 정보를 불러오지 못했습니다.",
-      failedTargets,
-    };
-  }
   if (input.medications.length > 0) {
     const hasNamedMedication = input.medications.some((item) => {
       const name = toText(item.medicationName);
       if (!name) return false;
       return !isDerivedMedicationLabel(name);
     });
+    if (medicationFailed) {
+      return {
+        type: "available",
+        message: hasNamedMedication
+          ? "최신 복약 연동에 일부 실패가 있어 직전 연동 이력으로 표시합니다."
+          : "최신 복약 연동에 일부 실패가 있어 진료유형 기준 이력으로 표시합니다.",
+        failedTargets,
+      };
+    }
     if (!hasNamedMedication) {
       return {
         type: "available",
@@ -100,6 +102,13 @@ export function resolveMedicationStatus(input: {
     return {
       type: "available",
       message: null,
+      failedTargets,
+    };
+  }
+  if (medicationFailed) {
+    return {
+      type: "fetch_failed",
+      message: "복약 정보를 불러오지 못했습니다.",
       failedTargets,
     };
   }

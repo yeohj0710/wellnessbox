@@ -7,7 +7,6 @@ import {
 } from "@/lib/b2b/employee-token";
 import { logB2bEmployeeAccess } from "@/lib/b2b/employee-service";
 import {
-  ensureLatestB2bReport,
   getLatestB2bReport,
 } from "@/lib/b2b/report-service";
 import {
@@ -20,6 +19,8 @@ export { noStoreJson } from "@/lib/server/no-store";
 export const B2B_EMPLOYEE_SESSION_ROUTE = "/api/b2b/employee/session";
 export const B2B_EMPLOYEE_LOGIN_NOT_FOUND_MESSAGE =
   "기존 리포트가 없어 인증 연동이 필요합니다.";
+export const B2B_EMPLOYEE_REPORT_NOT_FOUND_MESSAGE =
+  "저장된 리포트가 없어 인증 연동이 필요합니다.";
 
 export type EmployeeSessionStatusResult =
   | { authenticated: false }
@@ -47,7 +48,9 @@ export type EmployeeSessionLoginResult =
         id: string;
         name: string;
       };
-      report: ReturnType<typeof serializeB2bReportCompact>;
+      hasReport: boolean;
+      report: ReturnType<typeof serializeB2bReportCompact> | null;
+      message?: string;
       token: {
         employeeId: string;
         identityHash: string;
@@ -165,7 +168,7 @@ export async function resolveEmployeeSessionLogin(
     };
   }
 
-  const report = await ensureLatestB2bReport(employee.id);
+  const report = await getLatestB2bReport(employee.id);
 
   void db.b2bEmployee
     .update({
@@ -177,7 +180,7 @@ export async function resolveEmployeeSessionLogin(
     employeeId: employee.id,
     appUserId: employee.appUserId ?? null,
     action: "session_login_success",
-    payload: { reportId: report.id },
+    payload: { reportId: report?.id ?? null, hasReport: !!report },
   });
 
   return {
@@ -186,7 +189,13 @@ export async function resolveEmployeeSessionLogin(
       id: employee.id,
       name: employee.name,
     },
-    report: serializeB2bReportCompact(report),
+    hasReport: !!report,
+    report: report ? serializeB2bReportCompact(report) : null,
+    ...(report
+      ? {}
+      : {
+          message: B2B_EMPLOYEE_REPORT_NOT_FOUND_MESSAGE,
+        }),
     token: {
       employeeId: employee.id,
       identityHash: employee.identityHash,
