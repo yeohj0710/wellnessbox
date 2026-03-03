@@ -279,10 +279,19 @@ export function buildFriendlyRiskLines(payload: ReportSummaryPayload) {
   });
 }
 
+function stripHtmlToPlainText(value: string) {
+  return value
+    .replace(/<sup>\s*([0-9]+)\s*<\/sup>/gi, "$1")
+    .replace(/&sup2;/gi, "2")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function formatMetricValue(value?: string, unit?: string | null) {
-  const base = toTrimmedText(value);
+  const base = stripHtmlToPlainText(toTrimmedText(value));
   if (!base) return "-";
-  const normalizedUnit = toTrimmedText(unit);
+  const normalizedUnit = stripHtmlToPlainText(toTrimmedText(unit));
   if (!normalizedUnit) return base;
   if (base.toLowerCase().includes(normalizedUnit.toLowerCase())) return base;
   return `${base} ${normalizedUnit}`;

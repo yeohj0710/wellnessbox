@@ -274,9 +274,8 @@ function buildMedicationLines(payload: B2bReportPayload) {
     ...base,
     ...payload.health.medications.slice(0, 3).map((item) => {
       const dateText = item.date ? ` / ${item.date}` : "";
-      const dayText = item.dosageDay ? ` / ${item.dosageDay}` : "";
       const hospText = item.hospitalName ? ` / ${item.hospitalName}` : "";
-      return `${item.medicationName}${dateText}${dayText}${hospText}`;
+      return `${item.medicationName}${dateText}${hospText}`;
     }),
   ];
 }

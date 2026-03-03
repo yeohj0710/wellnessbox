@@ -39,6 +39,18 @@ type AxisItem = {
   score: number;
 };
 
+function toMedicationMetaDate(value: unknown) {
+  if (typeof value !== "string") return "";
+  return value.trim();
+}
+
+function buildMedicationMetaLine(input: {
+  date: string;
+  hospitalName: string;
+}) {
+  const parts = [input.date, input.hospitalName].filter((part) => part.length > 0);
+  return parts.length > 0 ? parts.join(" / ") : "-";
+}
 
 function radarPoint(index: number, total: number, scale: number) {
   const angle = -Math.PI / 2 + (Math.PI * 2 * index) / Math.max(1, total);
@@ -161,9 +173,8 @@ export default function ReportSummaryCards(props: {
   const medicationsAll = ensureArray(payload.health?.medications)
     .map((row) => ({
       medicationName: sanitizeTitle(firstOrDash(row?.medicationName)),
-      hospitalName: sanitizeTitle(firstOrDash(row?.hospitalName)),
-      date: firstOrDash(row?.date),
-      dosageDay: firstOrDash(row?.dosageDay),
+      hospitalName: sanitizeTitle(toTrimmedText(row?.hospitalName)),
+      date: toMedicationMetaDate(row?.date),
     }));
   const medications = medicationsAll.slice(0, MAX_PAGE2_MEDICATION_ITEMS);
   const hiddenMedicationCount = Math.max(0, medicationsAll.length - medications.length);
@@ -440,7 +451,10 @@ export default function ReportSummaryCards(props: {
                   <li key={`medication-${index}`} className={styles.reportMedicationItem}>
                     <p className={styles.reportMedicationName}>{medication.medicationName}</p>
                     <p className={styles.reportMedicationMeta}>
-                      {medication.date} / {medication.dosageDay} / {medication.hospitalName}
+                      {buildMedicationMetaLine({
+                        date: medication.date,
+                        hospitalName: medication.hospitalName,
+                      })}
                     </p>
                   </li>
                 ))}

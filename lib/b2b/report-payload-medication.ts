@@ -90,6 +90,51 @@ function medicationNameQuality(name: string | null | undefined) {
   return 2;
 }
 
+function hasNamedMedicationRows(rows: ReportMedicationRow[]) {
+  return rows.some((row) => medicationNameQuality(row.medicationName) >= 2);
+}
+
+function selectRecentRowsFromVisitMap(
+  byVisit: Map<string, { row: ReportMedicationRow; order: number }>
+) {
+  return [...byVisit.values()]
+    .sort((left, right) => {
+      const scoreDiff =
+        parseMedicationDateScore(right.row.date) -
+        parseMedicationDateScore(left.row.date);
+      if (scoreDiff !== 0) return scoreDiff;
+      return left.order - right.order;
+    })
+    .slice(0, MEDICATION_RECENT_LIMIT)
+    .map((item) => item.row);
+}
+
+function mergeRecentMedicationRows(input: {
+  primaryRows: ReportMedicationRow[];
+  fallbackRows: ReportMedicationRow[];
+}) {
+  const byVisit = new Map<string, { row: ReportMedicationRow; order: number }>();
+  let order = 0;
+
+  const appendRows = (rows: ReportMedicationRow[]) => {
+    for (const row of rows) {
+      const key = medicationVisitKey(row, order);
+      const existing = byVisit.get(key);
+      if (!existing) {
+        byVisit.set(key, { row, order });
+        order += 1;
+        continue;
+      }
+      existing.row = pickPreferredMedicationRow(existing.row, row);
+    }
+  };
+
+  appendRows(input.primaryRows);
+  appendRows(input.fallbackRows);
+
+  return selectRecentRowsFromVisitMap(byVisit);
+}
+
 function pickPreferredMedicationRow(
   left: ReportMedicationRow,
   right: ReportMedicationRow
@@ -134,16 +179,7 @@ async function resolveRecentMedicationRows(input: {
 
   appendRows(input.primaryRows);
   if (byVisit.size >= MEDICATION_RECENT_LIMIT) {
-    return [...byVisit.values()]
-      .sort((left, right) => {
-        const scoreDiff =
-          parseMedicationDateScore(right.row.date) -
-          parseMedicationDateScore(left.row.date);
-        if (scoreDiff !== 0) return scoreDiff;
-        return left.order - right.order;
-      })
-      .slice(0, MEDICATION_RECENT_LIMIT)
-      .map((item) => item.row);
+    return selectRecentRowsFromVisitMap(byVisit);
   }
 
   const samePeriodHistorySnapshots = await db.b2bHealthDataSnapshot.findMany({
@@ -186,16 +222,7 @@ async function resolveRecentMedicationRows(input: {
     }
   }
 
-  return [...byVisit.values()]
-    .sort((left, right) => {
-      const scoreDiff =
-        parseMedicationDateScore(right.row.date) -
-        parseMedicationDateScore(left.row.date);
-      if (scoreDiff !== 0) return scoreDiff;
-      return left.order - right.order;
-    })
-    .slice(0, MEDICATION_RECENT_LIMIT)
-    .map((item) => item.row);
+  return selectRecentRowsFromVisitMap(byVisit);
 }
 
 export async function resolveReportMedicationRows(
@@ -203,12 +230,20 @@ export async function resolveReportMedicationRows(
 ): Promise<ResolveReportMedicationRowsResult> {
   const medicationExtraction = extractMedicationRows(input.normalizedJson);
   const medicationRowsFromRaw = extractMedicationRowsFromRaw(input.rawJson);
-  const primaryRows =
-    medicationRowsFromRaw.length > 0
-      ? medicationRowsFromRaw
-      : medicationExtraction.rows;
+  const primaryRows = mergeRecentMedicationRows({
+    primaryRows:
+      medicationRowsFromRaw.length > 0
+        ? medicationRowsFromRaw
+        : medicationExtraction.rows,
+    fallbackRows:
+      medicationRowsFromRaw.length > 0
+        ? medicationExtraction.rows
+        : medicationRowsFromRaw,
+  });
+  const primaryNeedsNameBackfill = !hasNamedMedicationRows(primaryRows);
   const rows =
-    input.latestSnapshotId && primaryRows.length < MEDICATION_RECENT_LIMIT
+    input.latestSnapshotId &&
+    (primaryRows.length < MEDICATION_RECENT_LIMIT || primaryNeedsNameBackfill)
       ? await resolveRecentMedicationRows({
           employeeId: input.employeeId,
           periodKey: input.periodKey,

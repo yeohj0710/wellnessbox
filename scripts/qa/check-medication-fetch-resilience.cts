@@ -42,6 +42,14 @@ function runStaticRegressionChecks() {
     medicationSource.includes("periodKey: { not: input.periodKey }"),
     "medication history fallback should include cross-period snapshots"
   );
+  assert.ok(
+    medicationSource.includes("primaryNeedsNameBackfill"),
+    "medication history fallback should run when current rows are present but unnamed"
+  );
+  assert.ok(
+    medicationSource.includes("mergeRecentMedicationRows"),
+    "medication rows should merge raw and normalized sources with quality preference"
+  );
 
   const medicationExtractSource = read("lib/b2b/report-payload-health-medication.ts");
   assert.ok(
@@ -49,6 +57,32 @@ function runStaticRegressionChecks() {
       "pickFirstByKeys(row, MEDICATION_NAME_KEYS) ??\n      resolveMedicationFallbackName(row, pharmacyVisit)"
     ),
     "medication extraction should prioritize named medication rows for all visit types before fallback labels"
+  );
+
+  const reportSummarySource = read("components/b2b/ReportSummaryCards.tsx");
+  assert.ok(
+    reportSummarySource.includes("buildMedicationMetaLine"),
+    "report summary should build medication meta from date/hospital only"
+  );
+  assert.ok(
+    !reportSummarySource.includes("medication.dosageDay"),
+    "report summary medication meta should not include dosage day count"
+  );
+
+  const layoutSource = read("lib/b2b/export/layout-dsl.ts");
+  assert.ok(
+    !layoutSource.includes("const dayText = item.dosageDay"),
+    "legacy layout medication lines should not append dosage day count"
+  );
+
+  const insightSource = read("components/b2b/report-summary/card-insights.ts");
+  assert.ok(
+    insightSource.includes("stripHtmlToPlainText"),
+    "metric formatter should sanitize legacy HTML unit strings"
+  );
+  assert.ok(
+    insightSource.includes("replace(/<sup>\\s*([0-9]+)\\s*<\\/sup>/gi, \"$1\")"),
+    "metric formatter should normalize <sup> unit notation to plain text"
   );
   console.log("[qa:medication-fetch-resilience] PASS static regression checks");
 }
