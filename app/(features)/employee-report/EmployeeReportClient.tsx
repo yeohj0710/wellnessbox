@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import ReportRenderer from "@/components/b2b/ReportRenderer";
 import ReportSummaryCards from "@/components/b2b/ReportSummaryCards";
 import OperationLoadingOverlay from "@/components/common/operationLoadingOverlay";
+import { useToast } from "@/components/common/toastContext.client";
 import styles from "@/components/b2b/B2bUx.module.css";
 import EmployeeReportBootSkeleton from "./_components/EmployeeReportBootSkeleton";
 import EmployeeReportIdentitySection from "./_components/EmployeeReportIdentitySection";
@@ -33,7 +33,6 @@ import {
   formatDateTime,
   isValidIdentityInput,
   normalizeDigits,
-  parseLayoutDsl,
   readStoredIdentityWithSource,
   resolveSyncCompletionNotice,
   resolveIdentityPrimaryActionLabel,
@@ -53,6 +52,7 @@ import { useBusyState } from "./_lib/use-busy-state";
 import { useForceSyncCooldown } from "./_lib/use-force-sync-cooldown";
 
 export default function EmployeeReportClient() {
+  const { showToast } = useToast();
   const searchParams = useSearchParams();
   const debugMode = searchParams.get("debug") === "1";
   const [identity, setIdentity] = useState<IdentityInput>({
@@ -63,7 +63,9 @@ export default function EmployeeReportClient() {
   const [booting, setBooting] = useState(true);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
-  const [reportData, setReportData] = useState<EmployeeReportResponse | null>(null);
+  const [reportData, setReportData] = useState<EmployeeReportResponse | null>(
+    null
+  );
   const [selectedPeriodKey, setSelectedPeriodKey] = useState("");
   const [syncNextAction, setSyncNextAction] = useState<
     "init" | "sign" | "retry" | null
@@ -78,6 +80,8 @@ export default function EmployeeReportClient() {
   >("none");
   const [hasAuthAttempt, setHasAuthAttempt] = useState(false);
   const hasTriedStoredLogin = useRef(false);
+  const lastMockNoticeKeyRef = useRef<string | null>(null);
+  const lastMedicationStatusKeyRef = useRef<string | null>(null);
   const webReportCaptureRef = useRef<HTMLDivElement | null>(null);
   const isAdminLoggedIn = useAdminLoginStatus();
   const {
@@ -89,9 +93,13 @@ export default function EmployeeReportClient() {
     updateBusy,
     endBusy,
   } = useBusyState();
-  const { forceSyncRemainingSec, applyForceSyncCooldown } = useForceSyncCooldown();
+  const { forceSyncRemainingSec, applyForceSyncCooldown } =
+    useForceSyncCooldown();
 
-  const identityPayload = useMemo(() => toIdentityPayload(identity), [identity]);
+  const identityPayload = useMemo(
+    () => toIdentityPayload(identity),
+    [identity]
+  );
 
   const validIdentity = useMemo(
     () => isValidIdentityInput(identityPayload),
@@ -114,10 +122,6 @@ export default function EmployeeReportClient() {
   const canUseForceSync = useMemo(
     () => debugMode || isAdminLoggedIn,
     [debugMode, isAdminLoggedIn]
-  );
-  const previewLayout = useMemo(
-    () => parseLayoutDsl(reportData?.report?.layoutDsl),
-    [reportData?.report?.layoutDsl]
   );
 
   const canExecuteForceSync = useMemo(
@@ -201,7 +205,11 @@ export default function EmployeeReportClient() {
   async function loadReport(periodKey?: string) {
     try {
       const data = await fetchEmployeeReport(periodKey);
-      if (!data.ok) throw new Error(data.error || "\uB808\uD3EC\uD2B8 \uC870\uD68C\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.");
+      if (!data.ok)
+        throw new Error(
+          data.error ||
+            "\uB808\uD3EC\uD2B8 \uC870\uD68C\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."
+        );
       if (!data.report) {
         resetReportState();
         return;
@@ -214,7 +222,10 @@ export default function EmployeeReportClient() {
         setStoredIdentitySource("v2");
       }
     } catch (err) {
-      if (err instanceof ApiRequestError && (err.status === 401 || err.status === 404)) {
+      if (
+        err instanceof ApiRequestError &&
+        (err.status === 401 || err.status === 404)
+      ) {
         await deleteEmployeeSession().catch(() => null);
         clearLocalIdentityCache();
         resetReportState();
@@ -256,7 +267,9 @@ export default function EmployeeReportClient() {
           setSyncNextAction("init");
           setSyncGuidance(null);
           setPendingSignForceRefresh(false);
-          setNotice("\uC800\uC7A5\uB41C \uB9AC\uD3EC\uD2B8\uAC00 \uC5C6\uC5B4 \uB2E4\uC2DC \uC778\uC99D \uD6C4 \uC5F0\uB3D9\uC774 \uD544\uC694\uD569\uB2C8\uB2E4.");
+          setNotice(
+            "\uC800\uC7A5\uB41C \uB9AC\uD3EC\uD2B8\uAC00 \uC5C6\uC5B4 \uB2E4\uC2DC \uC778\uC99D \uD6C4 \uC5F0\uB3D9\uC774 \uD544\uC694\uD569\uB2C8\uB2E4."
+          );
           return;
         }
         await loadReport();
@@ -270,9 +283,8 @@ export default function EmployeeReportClient() {
         const stored = storedResult.identity;
         if (stored) {
           setIdentity(stored);
-          const loginResult: EmployeeSessionUpsertResponse = await upsertEmployeeSession(
-            stored
-          );
+          const loginResult: EmployeeSessionUpsertResponse =
+            await upsertEmployeeSession(stored);
           if (loginResult.found) {
             saveStoredIdentity(stored);
             setStoredIdentitySource("v2");
@@ -282,11 +294,14 @@ export default function EmployeeReportClient() {
               setSyncGuidance(null);
               setPendingSignForceRefresh(false);
               setNotice(
-                loginResult.message || "\uC800\uC7A5\uB41C \uB9AC\uD3EC\uD2B8\uAC00 \uC5C6\uC5B4 \uB2E4\uC2DC \uC778\uC99D \uD6C4 \uC5F0\uB3D9\uC774 \uD544\uC694\uD569\uB2C8\uB2E4."
+                loginResult.message ||
+                  "\uC800\uC7A5\uB41C \uB9AC\uD3EC\uD2B8\uAC00 \uC5C6\uC5B4 \uB2E4\uC2DC \uC778\uC99D \uD6C4 \uC5F0\uB3D9\uC774 \uD544\uC694\uD569\uB2C8\uB2E4."
               );
               return;
             }
-            setNotice("\uC774\uC804\uC5D0 \uC870\uD68C\uD55C \uC815\uBCF4\uB85C \uC790\uB3D9 \uB85C\uADF8\uC778\uD588\uC2B5\uB2C8\uB2E4.");
+            setNotice(
+              "\uC774\uC804\uC5D0 \uC870\uD68C\uD55C \uC815\uBCF4\uB85C \uC790\uB3D9 \uB85C\uADF8\uC778\uD588\uC2B5\uB2C8\uB2E4."
+            );
             setSyncGuidance(null);
             await loadReport();
             return;
@@ -296,7 +311,9 @@ export default function EmployeeReportClient() {
       }
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "\uC138\uC158 \uD655\uC778 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.";
+        err instanceof Error
+          ? err.message
+          : "\uC138\uC158 \uD655\uC778 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.";
       setError(message);
     } finally {
       setBooting(false);
@@ -308,17 +325,65 @@ export default function EmployeeReportClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function handleFindExisting() {
-    if (!validIdentity) {
-      setError("\uC774\uB984, \uC0DD\uB144\uC6D4\uC77C(8\uC790\uB9AC), \uD734\uB300\uD3F0 \uBC88\uD638\uB97C \uC815\uD655\uD788 \uC785\uB825\uD574 \uC8FC\uC138\uC694.");
+  useEffect(() => {
+    const text = notice.trim();
+    if (!text) return;
+    showToast(text, { type: "success", duration: 3200 });
+    setNotice("");
+  }, [notice, showToast]);
+
+  useEffect(() => {
+    const text = error.trim();
+    if (!text) return;
+    showToast(text, { type: "error", duration: 4600 });
+    setError("");
+  }, [error, showToast]);
+
+  useEffect(() => {
+    if (!reportData?.report?.id) {
+      lastMockNoticeKeyRef.current = null;
       return;
     }
-    beginBusy("\uAE30\uC874 \uC870\uD68C \uAE30\uB85D\uC744 \uD655\uC778\uD558\uACE0 \uC788\uC5B4\uC694.");
+    const isMock = reportData.report.payload?.meta?.isMockData === true;
+    if (!isMock) return;
+    const key = `${reportData.report.id}:mock`;
+    if (lastMockNoticeKeyRef.current === key) return;
+    lastMockNoticeKeyRef.current = key;
+    showToast("현재 레포트는 데모 데이터 기반으로 생성되었습니다.", {
+      type: "info",
+      duration: 3600,
+    });
+  }, [reportData?.report?.id, reportData?.report?.payload?.meta?.isMockData, showToast]);
+
+  useEffect(() => {
+    if (!medicationStatus?.text) return;
+    const reportId = reportData?.report?.id ?? "no-report";
+    const key = `${reportId}:${medicationStatus.tone}:${medicationStatus.text}`;
+    if (lastMedicationStatusKeyRef.current === key) return;
+    lastMedicationStatusKeyRef.current = key;
+    showToast(medicationStatus.text, {
+      type: medicationStatus.tone === "error" ? "error" : "info",
+      duration: medicationStatus.tone === "error" ? 5000 : 3400,
+    });
+  }, [medicationStatus, reportData?.report?.id, showToast]);
+
+  async function handleFindExisting() {
+    if (!validIdentity) {
+      setError(
+        "\uC774\uB984, \uC0DD\uB144\uC6D4\uC77C(8\uC790\uB9AC), \uD734\uB300\uD3F0 \uBC88\uD638\uB97C \uC815\uD655\uD788 \uC785\uB825\uD574 \uC8FC\uC138\uC694."
+      );
+      return;
+    }
+    beginBusy(
+      "\uAE30\uC874 \uC870\uD68C \uAE30\uB85D\uC744 \uD655\uC778\uD558\uACE0 \uC788\uC5B4\uC694."
+    );
     setError("");
     setNotice("");
     try {
       const payload = getIdentityPayload();
-      const result: EmployeeSessionUpsertResponse = await upsertEmployeeSession(payload);
+      const result: EmployeeSessionUpsertResponse = await upsertEmployeeSession(
+        payload
+      );
       if (!result.found) {
         clearLocalIdentityCache();
         resetReportState();
@@ -335,17 +400,24 @@ export default function EmployeeReportClient() {
         setSyncNextAction("init");
         setSyncGuidance(null);
         setPendingSignForceRefresh(false);
-        setNotice(result.message || "\uC800\uC7A5\uB41C \uB9AC\uD3EC\uD2B8\uAC00 \uC5C6\uC5B4 \uB2E4\uC2DC \uC778\uC99D \uD6C4 \uC5F0\uB3D9\uC774 \uD544\uC694\uD569\uB2C8\uB2E4.");
+        setNotice(
+          result.message ||
+            "\uC800\uC7A5\uB41C \uB9AC\uD3EC\uD2B8\uAC00 \uC5C6\uC5B4 \uB2E4\uC2DC \uC778\uC99D \uD6C4 \uC5F0\uB3D9\uC774 \uD544\uC694\uD569\uB2C8\uB2E4."
+        );
         return;
       }
-      setNotice("\uAE30\uC874 \uB9AC\uD3EC\uD2B8\uB97C \uBD88\uB7EC\uC654\uC2B5\uB2C8\uB2E4.");
+      setNotice(
+        "\uAE30\uC874 \uB9AC\uD3EC\uD2B8\uB97C \uBD88\uB7EC\uC654\uC2B5\uB2C8\uB2E4."
+      );
       setSyncNextAction(null);
       setSyncGuidance(null);
       setPendingSignForceRefresh(false);
       await loadReport();
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "\uAE30\uC874 \uC815\uBCF4 \uC870\uD68C\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."
+        err instanceof Error
+          ? err.message
+          : "\uAE30\uC874 \uC815\uBCF4 \uC870\uD68C\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."
       );
     } finally {
       endBusy();
@@ -357,7 +429,9 @@ export default function EmployeeReportClient() {
     showNotFoundNotice?: boolean;
   }) {
     const payload = getIdentityPayload();
-    const result: EmployeeSessionUpsertResponse = await upsertEmployeeSession(payload);
+    const result: EmployeeSessionUpsertResponse = await upsertEmployeeSession(
+      payload
+    );
     if (!result.found) {
       clearLocalIdentityCache();
       resetReportState();
@@ -378,7 +452,10 @@ export default function EmployeeReportClient() {
       setSyncGuidance(null);
       setPendingSignForceRefresh(false);
       if (options?.showNotFoundNotice) {
-        setNotice(result.message || "\uC800\uC7A5\uB41C \uB9AC\uD3EC\uD2B8\uAC00 \uC5C6\uC5B4 \uB2E4\uC2DC \uC778\uC99D \uD6C4 \uC5F0\uB3D9\uC774 \uD544\uC694\uD569\uB2C8\uB2E4.");
+        setNotice(
+          result.message ||
+            "\uC800\uC7A5\uB41C \uB9AC\uD3EC\uD2B8\uAC00 \uC5C6\uC5B4 \uB2E4\uC2DC \uC778\uC99D \uD6C4 \uC5F0\uB3D9\uC774 \uD544\uC694\uD569\uB2C8\uB2E4."
+        );
       }
       return false;
     }
@@ -386,7 +463,10 @@ export default function EmployeeReportClient() {
     setSyncGuidance(null);
     setPendingSignForceRefresh(false);
     await loadReport();
-    setNotice(options?.successNotice || "\uAE30\uC874 \uB9AC\uD3EC\uD2B8\uB97C \uBD88\uB7EC\uC654\uC5B4\uC694.");
+    setNotice(
+      options?.successNotice ||
+        "\uAE30\uC874 \uB9AC\uD3EC\uD2B8\uB97C \uBD88\uB7EC\uC654\uC5B4\uC694."
+    );
     return true;
   }
 
@@ -431,8 +511,7 @@ export default function EmployeeReportClient() {
       setPendingSignForceRefresh(false);
       setSyncGuidance({
         nextAction: "sign",
-        message:
-          "카카오 인증을 완료한 뒤 '인증 완료 확인'을 눌러 주세요.",
+        message: "카카오 인증을 완료한 뒤 '인증 완료 확인'을 눌러 주세요.",
       });
     } catch (err) {
       if (err instanceof ApiRequestError) {
@@ -512,8 +591,8 @@ export default function EmployeeReportClient() {
       ) => {
         updateBusy({
           message: nextForceRefresh
-            ? "강제 재조회로 건보공단 데이터를 불러오고 있어요."
-            : "건보공단 데이터를 불러오고 있어요.",
+            ? "강제 재조회로 국민건강보험공단 데이터를 불러오고 있어요."
+            : "국민건강보험공단 데이터를 불러오고 있어요.",
           hint: nextForceRefresh ? "force-remote" : "sync-remote",
         });
         return syncEmployeeReport(nextForceRefresh, options);
@@ -564,9 +643,7 @@ export default function EmployeeReportClient() {
         setSyncNextAction("retry");
         setPendingSignForceRefresh(false);
         setError(
-          err instanceof Error
-            ? err.message
-            : "데이터 연동에 실패했습니다."
+          err instanceof Error ? err.message : "데이터 연동에 실패했습니다."
         );
       }
     } finally {
@@ -581,7 +658,10 @@ export default function EmployeeReportClient() {
     setError("");
     setNotice("");
     try {
-      const normalizeFilenameToken = (value: string | null | undefined, fallback: string) => {
+      const normalizeFilenameToken = (
+        value: string | null | undefined,
+        fallback: string
+      ) => {
         const text = (value ?? "")
           .trim()
           .replace(/[\/:*?"<>|]+/g, " ")
@@ -590,7 +670,8 @@ export default function EmployeeReportClient() {
         return text.length > 0 ? text : fallback;
       };
       const employeeLabel = normalizeFilenameToken(
-        reportData.employee?.name ?? reportData.report?.payload?.meta?.employeeName,
+        reportData.employee?.name ??
+          reportData.report?.payload?.meta?.employeeName,
         "직원"
       );
       const periodLabel = normalizeFilenameToken(
@@ -600,11 +681,7 @@ export default function EmployeeReportClient() {
         "최근"
       );
       const downloadFileName =
-        "웰니스박스_건강리포트_" +
-        employeeLabel +
-        "_" +
-        periodLabel +
-        ".pdf";
+        "웰니스박스_건강리포트_" + employeeLabel + "_" + periodLabel + ".pdf";
       const query = new URLSearchParams();
       if (selectedPeriodKey) {
         query.set("period", selectedPeriodKey);
@@ -630,9 +707,7 @@ export default function EmployeeReportClient() {
       setNotice("PDF 다운로드가 완료되었습니다.");
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : "PDF 다운로드에 실패했습니다."
+        err instanceof Error ? err.message : "PDF 다운로드에 실패했습니다."
       );
     } finally {
       endBusy();
@@ -651,7 +726,10 @@ export default function EmployeeReportClient() {
         query.set("period", selectedPeriodKey);
       }
 
-      const normalizeFilenameToken = (value: string | null | undefined, fallback: string) => {
+      const normalizeFilenameToken = (
+        value: string | null | undefined,
+        fallback: string
+      ) => {
         const text = (value ?? "")
           .trim()
           .replace(/[\/:*?"<>|]+/g, " ")
@@ -660,7 +738,8 @@ export default function EmployeeReportClient() {
         return text.length > 0 ? text : fallback;
       };
       const employeeLabel = normalizeFilenameToken(
-        reportData.employee?.name ?? reportData.report?.payload?.meta?.employeeName,
+        reportData.employee?.name ??
+          reportData.report?.payload?.meta?.employeeName,
         "직원"
       );
       const periodLabel = normalizeFilenameToken(
@@ -670,11 +749,7 @@ export default function EmployeeReportClient() {
         "최근"
       );
       const fallbackPdfName =
-        "웰니스박스_건강리포트_" +
-        employeeLabel +
-        "_" +
-        periodLabel +
-        ".pdf";
+        "웰니스박스_건강리포트_" + employeeLabel + "_" + periodLabel + ".pdf";
       await downloadPdf(
         "/api/b2b/employee/report/export/pdf?" + query.toString(),
         fallbackPdfName
@@ -682,9 +757,7 @@ export default function EmployeeReportClient() {
       setNotice("기존 PDF 엔진 다운로드가 완료되었습니다.");
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : "기존 PDF 다운로드에 실패했습니다."
+        err instanceof Error ? err.message : "기존 PDF 다운로드에 실패했습니다."
       );
     } finally {
       endBusy();
@@ -707,7 +780,9 @@ export default function EmployeeReportClient() {
       setForceConfirmChecked(false);
       setNotice("현재 연결된 조회 세션을 해제했습니다.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "세션 해제에 실패했습니다.");
+      setError(
+        err instanceof Error ? err.message : "세션 해제에 실패했습니다."
+      );
     } finally {
       endBusy();
     }
@@ -720,7 +795,9 @@ export default function EmployeeReportClient() {
     try {
       await loadReport(nextPeriod);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "선택한 기간 조회에 실패했습니다.");
+      setError(
+        err instanceof Error ? err.message : "선택한 기간 조회에 실패했습니다."
+      );
     } finally {
       endBusy();
     }
@@ -734,162 +811,146 @@ export default function EmployeeReportClient() {
     <div className={styles.pageBackdrop}>
       <OperationLoadingOverlay
         visible={busy}
-        title={busyMessage || "\uC791\uC5C5\uC744 \uCC98\uB9AC\uD558\uACE0 \uC788\uC5B4\uC694."}
+        title={
+          busyMessage ||
+          "\uC791\uC5C5\uC744 \uCC98\uB9AC\uD558\uACE0 \uC788\uC5B4\uC694."
+        }
         description={overlayDescription}
         detailLines={overlayDetailLines}
         elapsedSec={busyElapsedSec}
         position="top"
       />
-      <div className={`${styles.page} ${styles.pageNoBg} ${styles.compactPage} ${styles.stack}`}>
-      <header className={styles.heroCard}>
-        <p className={styles.kicker}>EMPLOYEE REPORT</p>
-        <h1 className={styles.title}>임직원 건강 레포트</h1>
-        <p className={styles.description}>
-          본인 확인을 마치면 선택한 기간의 건강 레포트를 바로 볼 수 있어요. 화면에서 확인한
-          내용을 그대로 PDF로 내려받아 제출하거나 공유하면 돼요.
-        </p>
-        <div className={styles.statusRow}>
-          {reportData?.report ? (
-            <span className={styles.statusOn}>레포트 준비 완료</span>
-          ) : (
-            <span className={styles.statusOff}>본인 확인 필요</span>
-          )}
-          {selectedPeriodKey ? <span className={styles.pill}>{selectedPeriodKey}</span> : null}
-        </div>
-      </header>
+      <div
+        className={`${styles.page} ${styles.pageNoBg} ${styles.compactPage} ${styles.stack}`}
+      >
+        <header className={styles.heroCard}>
+          <p className={styles.kicker}>EMPLOYEE REPORT</p>
+          <h1 className={styles.title}>임직원 건강 레포트</h1>
+          <p className={styles.description}>
+            본인 확인을 마치면 선택한 기간의 건강 레포트를 바로 볼 수 있어요.
+            화면에서 확인한 내용을 그대로 PDF로 내려받아 제출하거나 공유하면
+            돼요.
+          </p>
+          <div className={styles.statusRow}>
+            {reportData?.report ? (
+              <span className={styles.statusOn}>레포트 준비 완료</span>
+            ) : (
+              <span className={styles.statusOff}>본인 확인 필요</span>
+            )}
+            {selectedPeriodKey ? (
+              <span className={styles.pill}>{selectedPeriodKey}</span>
+            ) : null}
+          </div>
+        </header>
 
-      {!reportData ? (
-        <>
-          {error ? <div className={styles.noticeError}>{error}</div> : null}
-          {notice && !syncGuidance ? (
-            <div className={styles.noticeSuccess}>{notice}</div>
-          ) : null}
-          {syncGuidance ? (
-            <EmployeeReportSyncGuidanceNotice
-              guidance={syncGuidance}
+        {!reportData ? (
+          <>
+            {syncGuidance ? (
+              <EmployeeReportSyncGuidanceNotice
+                guidance={syncGuidance}
+                busy={busy}
+                showActions
+                onRestartAuth={handleRestartAuth}
+                onSignAndSync={() =>
+                  void handleSignAndSync(pendingSignForceRefresh)
+                }
+              />
+            ) : null}
+
+            <EmployeeReportIdentitySection
+              identity={identity}
               busy={busy}
-              showActions
+              showSignAction={!syncGuidance && syncNextAction === "sign"}
+              primaryActionLabel={identityPrimaryActionLabel}
+              hideActionRow={!!syncGuidance}
+              onNameChange={(value) => {
+                setIdentity((prev) => ({ ...prev, name: value }));
+              }}
+              onBirthDateChange={(value) => {
+                setIdentity((prev) => ({
+                  ...prev,
+                  birthDate: normalizeDigits(value).slice(0, 8),
+                }));
+              }}
+              onPhoneChange={(value) => {
+                setIdentity((prev) => ({
+                  ...prev,
+                  phone: normalizeDigits(value).slice(0, 11),
+                }));
+              }}
               onRestartAuth={handleRestartAuth}
-              onSignAndSync={() => void handleSignAndSync(pendingSignForceRefresh)}
-            />
-          ) : null}
-
-          <EmployeeReportIdentitySection
-            identity={identity}
-            busy={busy}
-            showSignAction={!syncGuidance && syncNextAction === "sign"}
-            primaryActionLabel={identityPrimaryActionLabel}
-            hideActionRow={!!syncGuidance}
-            onNameChange={(value) => {
-              setIdentity((prev) => ({ ...prev, name: value }));
-            }}
-            onBirthDateChange={(value) => {
-              setIdentity((prev) => ({
-                ...prev,
-                birthDate: normalizeDigits(value).slice(0, 8),
-              }));
-            }}
-            onPhoneChange={(value) => {
-              setIdentity((prev) => ({
-                ...prev,
-                phone: normalizeDigits(value).slice(0, 11),
-              }));
-            }}
-            onRestartAuth={handleRestartAuth}
-            onSignAndSync={() => void handleSignAndSync(pendingSignForceRefresh)}
-            onFindExisting={handleFindExisting}
-          />
-        </>
-      ) : null}
-
-      {reportData?.report ? (
-        <>
-          <EmployeeReportSummaryHeaderCard
-            reportData={reportData}
-            selectedPeriodKey={selectedPeriodKey}
-            periodOptions={periodOptions}
-            busy={busy}
-            syncNextAction={syncNextAction}
-            primarySyncActionLabel="최신 정보 확인"
-            canUseForceSync={canUseForceSync}
-            forceSyncRemainingSec={forceSyncRemainingSec}
-            onPeriodChange={(next) => {
-              void handleChangePeriod(next);
-            }}
-            onDownloadPdf={handleDownloadPdf}
-            onDownloadLegacyPdf={handleDownloadLegacyPdf}
-            onRestartAuth={handleRestartAuth}
-            onSignAndSync={() => void handleSignAndSync(pendingSignForceRefresh)}
-            onLogout={handleLogout}
-            onOpenForceSync={() => setForceConfirmOpen(true)}
-          />
-          {error ? <div className={styles.noticeError}>{error}</div> : null}
-          {syncGuidance ? (
-            <EmployeeReportSyncGuidanceNotice
-              guidance={syncGuidance}
-              busy={busy}
-              showActions
-              onRestartAuth={handleRestartAuth}
-              onSignAndSync={() => void handleSignAndSync(pendingSignForceRefresh)}
-            />
-          ) : notice ? (
-            <div className={styles.noticeSuccess}>{notice}</div>
-          ) : null}
-
-          {reportData.report.payload?.meta?.isMockData ? (
-            <div className={styles.noticeWarn}>
-              현재 레포트는 데모 데이터 기반으로 생성되었습니다.
-            </div>
-          ) : null}
-
-          {medicationStatus ? (
-            <div
-              className={
-                medicationStatus.tone === "error"
-                  ? styles.noticeError
-                  : styles.noticeWarn
+              onSignAndSync={() =>
+                void handleSignAndSync(pendingSignForceRefresh)
               }
-            >
-              {medicationStatus.text}
-            </div>
-          ) : null}
+              onFindExisting={handleFindExisting}
+            />
+          </>
+        ) : null}
 
-          {/* New default: web-first report + capture PDF */}
-          <section className={styles.reportCanvas}>
-            <div className={styles.reportCanvasHeader}>
-              <div>
-                <h3>레포트 본문 미리보기</h3>
-                <p>화면에서 보는 웹 레포트를 그대로 캡처해 PDF로 저장합니다.</p>
+        {reportData?.report ? (
+          <>
+            <EmployeeReportSummaryHeaderCard
+              reportData={reportData}
+              selectedPeriodKey={selectedPeriodKey}
+              periodOptions={periodOptions}
+              busy={busy}
+              syncNextAction={syncNextAction}
+              primarySyncActionLabel="최신 정보 확인"
+              canUseForceSync={canUseForceSync}
+              forceSyncRemainingSec={forceSyncRemainingSec}
+              onPeriodChange={(next) => {
+                void handleChangePeriod(next);
+              }}
+              onDownloadPdf={handleDownloadPdf}
+              onDownloadLegacyPdf={handleDownloadLegacyPdf}
+              onRestartAuth={handleRestartAuth}
+              onSignAndSync={() =>
+                void handleSignAndSync(pendingSignForceRefresh)
+              }
+              onLogout={handleLogout}
+              onOpenForceSync={() => setForceConfirmOpen(true)}
+            />
+            {syncGuidance ? (
+              <EmployeeReportSyncGuidanceNotice
+                guidance={syncGuidance}
+                busy={busy}
+                showActions
+                onRestartAuth={handleRestartAuth}
+                onSignAndSync={() =>
+                  void handleSignAndSync(pendingSignForceRefresh)
+                }
+              />
+            ) : null}
+
+            {/* New default: web-first report + capture PDF */}
+            <section className={styles.reportCanvas}>
+              <div className={styles.reportCanvasHeader}>
+                <div>
+                  <h3>레포트 본문 미리보기</h3>
+                  <p>
+                    화면에서 보는 웹 레포트를 그대로 캡처해 PDF로 저장합니다.
+                  </p>
+                </div>
+                <span className={styles.statusOn}>웹/PDF 동일 레이아웃</span>
               </div>
-              <span className={styles.statusOn}>웹/PDF 동일 레이아웃</span>
-            </div>
-            <div className={`${styles.reportCanvasBoard} ${styles.reportCanvasBoardWide}`}>
               <div
-                ref={webReportCaptureRef}
-                className={styles.reportCaptureSurface}
-                data-testid="report-capture-surface"
-                data-report-pdf-parity="1"
+                className={`${styles.reportCanvasBoard} ${styles.reportCanvasBoardWide}`}
               >
-                <ReportSummaryCards payload={reportData.report.payload} viewerMode="employee" />
-              </div>
-            </div>
-          </section>
-
-          {previewLayout ? (
-            <details className={`${styles.optionalCard} ${styles.reportLegacyPanel}`}>
-              <summary>현행 엔진 미리보기</summary>
-              <div className={styles.optionalBody}>
-                <p className={styles.optionalText}>
-                  기존 DSL 렌더러 결과입니다. 비교 확인이 필요할 때만 펼쳐서 확인하세요.
-                </p>
-                <div className={styles.reportCanvasBoard}>
-                  <ReportRenderer layout={previewLayout} fitToWidth />
+                <div
+                  ref={webReportCaptureRef}
+                  className={styles.reportCaptureSurface}
+                  data-testid="report-capture-surface"
+                  data-report-pdf-parity="1"
+                >
+                  <ReportSummaryCards
+                    payload={reportData.report.payload}
+                    viewerMode="employee"
+                  />
                 </div>
               </div>
-            </details>
-          ) : null}
-        </>
-      ) : null}
+            </section>
+          </>
+        ) : null}
 
         <ForceRefreshConfirmDialog
           open={forceConfirmOpen}

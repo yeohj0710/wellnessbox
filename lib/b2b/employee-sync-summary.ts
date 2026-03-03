@@ -24,6 +24,36 @@ export type SummaryPatchResult = {
   patchedTargets: NhisFetchTarget[];
 };
 
+const RAW_TARGET_KEY_MAP: Record<NhisFetchTarget, string> = {
+  medical: "medical",
+  medication: "medication",
+  checkupList: "checkupList",
+  checkupYearly: "checkupYearly",
+  checkupOverview: "checkupOverview",
+  healthAge: "healthAge",
+};
+
+function mergeRawPayloadByTargets(input: {
+  baseRaw: unknown;
+  patchRaw: unknown;
+  targets: NhisFetchTarget[];
+}) {
+  const base = asRecord(input.baseRaw);
+  const patch = asRecord(input.patchRaw);
+  if (!base && !patch) return null;
+
+  const merged: Record<string, unknown> = { ...(base ?? {}) };
+  for (const target of input.targets) {
+    const rawKey = RAW_TARGET_KEY_MAP[target];
+    if (!rawKey) continue;
+    if (patch && Object.prototype.hasOwnProperty.call(patch, rawKey)) {
+      merged[rawKey] = patch[rawKey];
+    }
+  }
+
+  return merged;
+}
+
 export async function patchSummaryTargetsIfNeeded(input: {
   appUserId: string;
   identityHash: string;
@@ -41,11 +71,6 @@ export async function patchSummaryTargetsIfNeeded(input: {
     return { payload: input.payload, usedNetwork: false, patchedTargets: [] };
   }
 
-  const skipNetworkFetchForMedicationBackfillOnly =
-    summaryPatchNeeds.medicationNeedsNameBackfill &&
-    missingTargets.length === 1 &&
-    missingTargets[0] === "medication";
-
   const patch = await resolveSummaryPatchPayload({
     appUserId: input.appUserId,
     identityHash: input.identityHash,
@@ -55,7 +80,7 @@ export async function patchSummaryTargetsIfNeeded(input: {
     linkLoginMethod: input.linkLoginMethod,
     linkLoginOrgCd: input.linkLoginOrgCd,
     linkCookieData: input.linkCookieData,
-    allowNetwork: !skipNetworkFetchForMedicationBackfillOnly,
+    allowNetwork: true,
     requireMedicationNames: summaryPatchNeeds.medicationNeedsNameBackfill,
     hasRequiredMedicationNames: payloadHasMedicationNames,
   });
@@ -79,7 +104,11 @@ export async function patchSummaryTargetsIfNeeded(input: {
     data: {
       ...asRecord(input.payload.data),
       normalized: patchedNormalized,
-      raw: input.payload.data?.raw ?? patch.payload.data?.raw ?? null,
+      raw: mergeRawPayloadByTargets({
+        baseRaw: input.payload.data?.raw,
+        patchRaw: patch.payload.data?.raw,
+        targets: missingTargets,
+      }),
     },
   };
 

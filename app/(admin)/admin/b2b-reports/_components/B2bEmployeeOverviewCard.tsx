@@ -14,7 +14,6 @@ type B2bEmployeeOverviewCardProps = {
   onSaveReportDisplayPeriod: () => void;
   onExportPdf: () => void;
   onExportLegacyPdf: () => void;
-  onExportPptx: () => void;
   onRegenerateReport: () => void;
   onRecomputeAnalysis: (generateAiEvaluation: boolean) => void;
 };
@@ -31,7 +30,6 @@ export default function B2bEmployeeOverviewCard({
   onSaveReportDisplayPeriod,
   onExportPdf,
   onExportLegacyPdf,
-  onExportPptx,
   onRegenerateReport,
   onRecomputeAnalysis,
 }: B2bEmployeeOverviewCardProps) {
@@ -69,21 +67,13 @@ export default function B2bEmployeeOverviewCard({
         >
           {busy ? "PDF 캡처 생성 중..." : "PDF 다운로드"}
         </button>
-        <button
-          type="button"
-          onClick={onExportPptx}
-          disabled={busy || !latestReport?.id}
-          className={styles.buttonSecondary}
-        >
-          {busy ? "PPTX 생성 중..." : "PPTX 다운로드"}
-        </button>
       </div>
       <details className={styles.optionalCard}>
         <summary>고급 작업</summary>
         <div className={styles.optionalBody}>
           <div className={styles.optionalCard}>
             <p className={styles.optionalText}>
-              레포트 표기 연월 (반영 후 PDF/PPTX 상단 표기와 동일하게 반영됩니다)
+              레포트 표기 연월 (반영 후 PDF 상단 표기와 동일하게 반영됩니다)
             </p>
             <div className={styles.actionRow}>
               <input

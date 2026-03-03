@@ -203,8 +203,17 @@ function runUiIntegrationChecks() {
     "EmployeeReportClient should render guidance near both identity and report sections."
   );
   assert.ok(
-    clientSource.includes("{error ? <div className={styles.noticeError}>{error}</div> : null}"),
-    "EmployeeReportClient should show error notices inline within each active section."
+    clientSource.includes("useToast"),
+    "EmployeeReportClient should use toast UX for transient notices."
+  );
+  assert.ok(
+    clientSource.includes("showToast("),
+    "EmployeeReportClient should trigger toast messages instead of fixed banners."
+  );
+  assert.equal(
+    clientSource.includes("styles.noticeError"),
+    false,
+    "EmployeeReportClient should avoid fixed full-width notice banner blocks."
   );
 
   const identitySectionSource = read(

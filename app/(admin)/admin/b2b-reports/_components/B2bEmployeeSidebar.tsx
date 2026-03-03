@@ -21,20 +21,31 @@ export default function B2bEmployeeSidebar({
     (sum, employee) => sum + employee.counts.healthSnapshots,
     0
   );
-  const totalReports = employees.reduce((sum, employee) => sum + employee.counts.reports, 0);
+  const totalReports = employees.reduce(
+    (sum, employee) => sum + employee.counts.reports,
+    0
+  );
 
   return (
     <section className={`${styles.sectionCard} ${styles.sidebarCard}`}>
       <div className={styles.sidebarHead}>
         <div className={styles.sidebarTitleRow}>
-          <h2 className={styles.sectionTitle}>임직원 목록</h2>
-          <span className={styles.sidebarBadge}>총 {employees.length}명</span>
+          <h2 className={styles.sectionTitle}>{"\uc784\uc9c1\uc6d0 \ubaa9\ub85d"}</h2>
+          <span className={styles.sidebarBadge}>
+            {"\ucd1d " + employees.length.toLocaleString("ko-KR") + "\uba85"}
+          </span>
         </div>
         <p className={styles.sidebarHeadMeta}>
-          스냅샷 {totalSnapshots}건 · 리포트 {totalReports}건
+          {"\uc2a4\ub0c5\uc0f7 " +
+            totalSnapshots.toLocaleString("ko-KR") +
+            "\uac74 \u00b7 \ub9ac\ud3ec\ud2b8 " +
+            totalReports.toLocaleString("ko-KR") +
+            "\uac74"}
         </p>
         {selectedEmployee ? (
-          <p className={styles.sidebarHeadMeta}>선택: {selectedEmployee.name}</p>
+          <p className={styles.sidebarHeadMeta}>
+            {"\uc120\ud0dd: " + selectedEmployee.name}
+          </p>
         ) : null}
       </div>
 
@@ -57,12 +68,18 @@ export default function B2bEmployeeSidebar({
               {employee.birthDate} / {normalizeDigits(employee.phoneNormalized)}
             </span>
             <span className={styles.listMeta}>
-              스냅샷 {employee.counts.healthSnapshots}건 / 리포트 {employee.counts.reports}건
+              {"\uc2a4\ub0c5\uc0f7 " +
+                employee.counts.healthSnapshots.toLocaleString("ko-KR") +
+                "\uac74 / \ub9ac\ud3ec\ud2b8 " +
+                employee.counts.reports.toLocaleString("ko-KR") +
+                "\uac74"}
             </span>
           </button>
         ))}
         {employees.length === 0 ? (
-          <div className={styles.noticeInfo}>조회된 임직원 데이터가 없습니다.</div>
+          <p className={styles.inlineHint}>
+            {"\uc870\ud68c\ub41c \uc784\uc9c1\uc6d0 \ub370\uc774\ud130\uac00 \uc5c6\uc2b5\ub2c8\ub2e4."}
+          </p>
         ) : null}
       </div>
     </section>

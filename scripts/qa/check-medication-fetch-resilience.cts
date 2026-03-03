@@ -20,8 +20,14 @@ function runMedicationStatusCases() {
     "available medication rows should be evaluated before fetch_failed fallback"
   );
   assert.ok(
-    source.includes("최신 복약 연동에 일부 실패가 있어"),
-    "recovered medication status should include degraded-data guidance"
+    source.includes("message: null"),
+    "medication rows should not emit an extra warning banner message"
+  );
+  assert.ok(
+    !source.includes(
+      "\ucd5c\uadfc 3\uac74\uc740 \uc57d\ud488\uba85 \ub300\uc2e0 \uc9c4\ub8cc\uc720\ud615 \uae30\uc900\uc73c\ub85c \ud45c\uc2dc\ub429\ub2c8\ub2e4."
+    ),
+    "legacy visit-type fallback warning copy should be removed"
   );
   console.log("[qa:medication-fetch-resilience] PASS medication status checks");
 }
@@ -49,6 +55,20 @@ function runStaticRegressionChecks() {
   assert.ok(
     medicationSource.includes("mergeRecentMedicationRows"),
     "medication rows should merge raw and normalized sources with quality preference"
+  );
+
+  const summaryPatchSource = read("lib/b2b/employee-sync-summary.ts");
+  assert.ok(
+    summaryPatchSource.includes("allowNetwork: true"),
+    "summary patch should allow network retry for medication name backfill"
+  );
+  assert.ok(
+    !summaryPatchSource.includes("skipNetworkFetchForMedicationBackfillOnly"),
+    "summary patch should not suppress network retry for medication backfill-only cases"
+  );
+  assert.ok(
+    summaryPatchSource.includes("mergeRawPayloadByTargets"),
+    "summary patch should merge patched raw payload for updated targets"
   );
 
   const medicationExtractSource = read("lib/b2b/report-payload-health-medication.ts");

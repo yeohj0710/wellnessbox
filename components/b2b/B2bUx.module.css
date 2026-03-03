@@ -2354,7 +2354,7 @@
 
 .reportDocument {
   display: grid;
-  gap: 0;
+  gap: 14px;
   font-family:
     "Malgun Gothic",
     "Apple SD Gothic Neo",
@@ -2384,13 +2384,13 @@
 }
 
 .reportSheetFirst {
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
 }
 
 .reportSheetSecond {
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
 }
 
 .reportPageHeader {
@@ -3225,6 +3225,10 @@
 }
 
 @media (max-width: 768px) {
+  .reportDocument {
+    gap: 10px;
+  }
+
   .formGrid {
     grid-template-columns: 1fr;
   }
@@ -3358,6 +3362,10 @@
 
   [data-report-pdf-parity="1"] .reportSecondGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  [data-report-pdf-parity="1"] .reportDocument {
+    gap: 10px;
   }
 
   [data-report-pdf-parity="1"] .reportSheet {

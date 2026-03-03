@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useToast } from "@/components/common/toastContext.client";
 import type { NhisAiSummary, NhisFetchFailure } from "../types";
 import { hasNhisSessionExpiredFailure, type LatestCheckupMeta, type MedicationDigest } from "../utils";
 import { HEALTH_LINK_COPY } from "../copy";
@@ -46,6 +47,7 @@ export function HealthLinkResultSection({
   onSummaryFetch,
   onSwitchIdentity,
 }: HealthLinkResultSectionProps) {
+  const { showToast } = useToast();
   const hasCheckupRows = latestCheckupRows.length > 0;
   const hasMedicationRows = medicationDigest.totalRows > 0;
   const sessionExpiredFailure = hasNhisSessionExpiredFailure(fetchFailures);
@@ -60,6 +62,9 @@ export function HealthLinkResultSection({
       })
   );
   const showFailureNotice = visibleFailures.length > 0 && !sessionExpiredBlocking;
+  const lastSummaryBlockedMessageRef = React.useRef<string | null>(null);
+  const sessionExpiredNotifiedRef = React.useRef(false);
+  const lastFailureDigestRef = React.useRef<string | null>(null);
 
   const [fetchLoadingElapsedSec, setFetchLoadingElapsedSec] = React.useState(0);
 
@@ -76,6 +81,39 @@ export function HealthLinkResultSection({
     }, 1_000);
     return () => window.clearInterval(timer);
   }, [fetchLoading]);
+
+  React.useEffect(() => {
+    if (!summaryFetchBlocked || !summaryFetchBlockedMessage) return;
+    if (lastSummaryBlockedMessageRef.current === summaryFetchBlockedMessage) return;
+    lastSummaryBlockedMessageRef.current = summaryFetchBlockedMessage;
+    showToast(summaryFetchBlockedMessage, { type: "info", duration: 3600 });
+  }, [showToast, summaryFetchBlocked, summaryFetchBlockedMessage]);
+
+  React.useEffect(() => {
+    if (sessionExpiredBlocking) {
+      if (sessionExpiredNotifiedRef.current) return;
+      sessionExpiredNotifiedRef.current = true;
+      showToast(HEALTH_LINK_COPY.result.sessionExpiredGuide, {
+        type: "error",
+        duration: 5200,
+      });
+      return;
+    }
+    sessionExpiredNotifiedRef.current = false;
+  }, [sessionExpiredBlocking, showToast]);
+
+  React.useEffect(() => {
+    if (!showFailureNotice || visibleFailures.length === 0) return;
+    const digest = visibleFailures
+      .map((failure) => `${failure.target}:${failure.errCd ?? ""}:${failure.errMsg ?? ""}`)
+      .join("|");
+    if (!digest || lastFailureDigestRef.current === digest) return;
+    lastFailureDigestRef.current = digest;
+    showToast("일부 항목 결과는 준비 중입니다. 상세 안내를 확인해 주세요.", {
+      type: "info",
+      duration: 3600,
+    });
+  }, [showFailureNotice, showToast, visibleFailures]);
 
   const loadingProgressPercent = Math.min(
     92,
@@ -99,7 +137,7 @@ export function HealthLinkResultSection({
         <div className={styles.sectionHeader}>
           <h2>{HEALTH_LINK_COPY.result.title}</h2>
         </div>
-        <div className={styles.noticeInfo}>{HEALTH_LINK_COPY.result.linkRequired}</div>
+        <div className={styles.emptyPanel}>{HEALTH_LINK_COPY.result.linkRequired}</div>
       </article>
     );
   }
@@ -127,21 +165,6 @@ export function HealthLinkResultSection({
           loadingStageMessage={loadingStageMessage}
           loadingProgressPercent={loadingProgressPercent}
         />
-      ) : null}
-
-      {summaryFetchBlocked && summaryFetchBlockedMessage ? (
-        <div className={styles.noticeWarn} role="status">
-          {summaryFetchBlockedMessage}
-        </div>
-      ) : null}
-
-      {sessionExpiredBlocking ? (
-        <div className={styles.noticeError} role="alert">
-          {HEALTH_LINK_COPY.result.sessionExpiredTitle}
-          <div className={styles.noticeLine}>
-            {HEALTH_LINK_COPY.result.sessionExpiredGuide}
-          </div>
-        </div>
       ) : null}
 
       {showFailureNotice ? (

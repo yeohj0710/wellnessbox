@@ -36,7 +36,7 @@ export default function AdminPage() {
           <div>
             <h2 className={styles.sectionTitle}>핵심 업무 바로가기</h2>
             <p className={styles.sectionDescription}>
-              임직원 목록 조회, 설문 입력, 분석/약사 코멘트 반영, PDF/PPTX 다운로드를
+              임직원 목록 조회, 설문 입력, 분석/약사 코멘트 반영, PDF 다운로드를
               한 화면에서 처리합니다.
             </p>
           </div>

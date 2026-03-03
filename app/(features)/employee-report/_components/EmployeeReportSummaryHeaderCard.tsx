@@ -41,7 +41,6 @@ export default function EmployeeReportSummaryHeaderCard({
 
   const employeeName =
     reportData.report.payload?.meta?.employeeName || reportData.employee?.name || "대상자";
-  const isSignPending = syncNextAction === "sign";
   const showSyncRetryButton = syncNextAction === "sign" || syncNextAction === "retry";
   const defaultPrimarySyncActionLabel =
     primarySyncActionLabel?.trim() || "최신 정보 확인";
@@ -101,12 +100,6 @@ export default function EmployeeReportSummaryHeaderCard({
       <p className={styles.inlineHint}>
         이 리포트는 최근 3건 진료/조제 이력을 반영합니다.
       </p>
-
-      {isSignPending ? (
-        <div className={styles.noticeSuccess}>
-          카카오 인증 후 `인증 완료 확인`을 눌러 주세요.
-        </div>
-      ) : null}
 
       <div className={`${styles.actionRow} ${styles.summarySecondaryActions}`}>
         {showSyncRetryButton ? (

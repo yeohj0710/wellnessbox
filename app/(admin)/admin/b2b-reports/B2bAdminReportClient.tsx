@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import ReportRenderer from "@/components/b2b/ReportRenderer";
 import ReportSummaryCards from "@/components/b2b/ReportSummaryCards";
 import OperationLoadingOverlay from "@/components/common/operationLoadingOverlay";
+import { useToast } from "@/components/common/toastContext.client";
 import styles from "@/components/b2b/B2bUx.module.css";
 import type { LayoutDocument } from "@/lib/b2b/export/layout-types";
 import type { LayoutValidationIssue } from "@/lib/b2b/export/validation-types";
@@ -50,6 +51,7 @@ import {
 } from "./_lib/survey-progress";
 
 export default function B2bAdminReportClient({ demoMode = false }: AdminClientProps) {
+  const { showToast } = useToast();
   const MONTH_KEY_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
 
   const [employees, setEmployees] = useState<EmployeeListItem[]>([]);
@@ -241,6 +243,20 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [employees, selectedEmployeeId]);
 
+  useEffect(() => {
+    const text = notice.trim();
+    if (!text) return;
+    showToast(text, { type: "success", duration: 3200 });
+    setNotice("");
+  }, [notice, showToast]);
+
+  useEffect(() => {
+    const text = error.trim();
+    if (!text) return;
+    showToast(text, { type: "error", duration: 5000 });
+    setError("");
+  }, [error, showToast]);
+
   async function reloadCurrentEmployee() {
     if (!selectedEmployeeId) return;
     await loadEmployeeDetail(selectedEmployeeId, selectedPeriodKey || undefined);
@@ -406,24 +422,6 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
       await reloadCurrentEmployee();
     } catch (err) {
       setError(err instanceof Error ? err.message : "표기 연월 저장에 실패했습니다.");
-    } finally {
-      endBusy();
-    }
-  }
-
-  async function handleExportPptx() {
-    if (!latestReport?.id) return;
-    beginBusy("PPTX 파일을 생성하고 있어요.");
-    setError("");
-    setNotice("");
-    try {
-      await downloadFromApi(
-        `/api/admin/b2b/reports/${latestReport.id}/export/pptx`,
-        "employee-report.pptx"
-      );
-      setNotice("PPTX 다운로드가 완료되었습니다.");
-    } catch (err) {
-      applyExportFailure(err, "PPTX 다운로드에 실패했습니다.");
     } finally {
       endBusy();
     }
@@ -597,9 +595,6 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
           onSeedDemo={() => void handleSeedDemo()}
         />
 
-        {error ? <div className={styles.noticeError}>{error}</div> : null}
-        {notice ? <div className={styles.noticeSuccess}>{notice}</div> : null}
-
         <div className={styles.splitLayout}>
           <B2bEmployeeSidebar
             employees={employees}
@@ -637,7 +632,6 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
                   onSaveReportDisplayPeriod={() => void handleSaveDisplayPeriod()}
                   onExportPdf={() => void handleExportPdf()}
                   onExportLegacyPdf={() => void handleExportLegacyPdf()}
-                  onExportPptx={() => void handleExportPptx()}
                   onRegenerateReport={() => void handleRegenerateReport()}
                   onRecomputeAnalysis={(generateAiEvaluation) => {
                     void handleRecomputeAnalysis(generateAiEvaluation);
@@ -651,7 +645,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
                       <h3>레포트 본문 미리보기</h3>
                       <p>화면에서 보는 웹 레포트를 그대로 캡처해 PDF로 저장합니다.</p>
                     </div>
-                    <span className={styles.statusOn}>웹/PDF/PPTX 동일 레이아웃 지향</span>
+                    <span className={styles.statusOn}>웹/PDF 동일 레이아웃 지향</span>
                   </div>
                   <div className={`${styles.reportCanvasBoard} ${styles.reportCanvasBoardWide}`}>
                     <div

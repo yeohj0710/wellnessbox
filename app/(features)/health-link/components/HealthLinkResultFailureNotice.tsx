@@ -13,23 +13,18 @@ export function HealthLinkResultFailureNotice({
   failures,
 }: HealthLinkResultFailureNoticeProps) {
   return (
-    <>
-      <div className={styles.noticeInfo} role="status">
-        일부 항목은 아직 준비 중이에요. 핵심 결과는 먼저 보여드렸어요.
-      </div>
-      <details className={styles.statusDetails}>
-        <summary>안내 자세히 보기</summary>
-        <div className={styles.detailsBody}>
-          <div className={styles.detailHint}>
-            {failures.map((failure, index) => (
-              <div key={`${failure.target}-${index}`}>
-                {mapTargetLabel(failure.target)} -{" "}
-                {toFriendlyFailureMessage(failure)}
-              </div>
-            ))}
-          </div>
+    <details className={styles.statusDetails}>
+      <summary>{"\uc77c\ubd80 \ud56d\ubaa9 \uc548\ub0b4 \ubcf4\uae30"}</summary>
+      <div className={styles.detailsBody}>
+        <div className={styles.detailHint}>
+          {failures.map((failure, index) => (
+            <div key={`${failure.target}-${index}`}>
+              {mapTargetLabel(failure.target)} -{" "}
+              {toFriendlyFailureMessage(failure)}
+            </div>
+          ))}
         </div>
-      </details>
-    </>
+      </div>
+    </details>
   );
 }

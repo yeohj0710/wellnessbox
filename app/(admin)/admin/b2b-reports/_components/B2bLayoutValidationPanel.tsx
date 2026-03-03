@@ -30,7 +30,7 @@ export default function B2bLayoutValidationPanel({
     <details className={`${styles.optionalCard} ${styles.editorPanel}`}>
       <summary className={styles.editorPanelSummary}>
         <span className={styles.editorPanelSummaryTitle}>레이아웃 검증 및 디버그</span>
-        <span className={styles.editorPanelSummaryMeta}>PDF/PPTX 내보내기 전 최종 확인</span>
+        <span className={styles.editorPanelSummaryMeta}>PDF 내보내기 전 최종 확인</span>
       </summary>
       <div className={styles.editorPanelMotion}>
         <div className={styles.editorPanelBody}>
@@ -39,7 +39,7 @@ export default function B2bLayoutValidationPanel({
           <ul className={styles.editorGuideList}>
             <li>레이아웃 검증 실행을 누르면 페이지 넘침/겹침/경계 이슈를 자동 점검합니다.</li>
             <li>A4 프리뷰를 열면 실제 출력 기준과 동일한 배치로 확인할 수 있어요.</li>
-            <li>검증 이슈가 있으면 먼저 수정한 뒤 PDF/PPTX를 내보내 주세요.</li>
+            <li>검증 이슈가 있으면 먼저 수정한 뒤 PDF를 내보내 주세요.</li>
           </ul>
         </div>
 

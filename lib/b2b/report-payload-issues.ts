@@ -22,8 +22,6 @@ export type CredibleTopIssue = {
   reason: string;
 };
 
-const MEDICATION_DERIVED_PHARMACY_LABEL = "약국 조제";
-const MEDICATION_DERIVED_VISIT_SUFFIX = " 진료";
 
 function clampIssueScore(value: number) {
   if (!Number.isFinite(value)) return 0;
@@ -55,15 +53,6 @@ function pushCredibleIssue(list: CredibleTopIssue[], issue: CredibleTopIssue) {
   }
 }
 
-function isDerivedMedicationLabel(name: string | null | undefined) {
-  const text = (name ?? "").trim();
-  if (!text) return true;
-  return (
-    text === MEDICATION_DERIVED_PHARMACY_LABEL ||
-    text.endsWith(MEDICATION_DERIVED_VISIT_SUFFIX)
-  );
-}
-
 export function resolveMedicationStatus(input: {
   medications: Array<{
     medicationName: string;
@@ -78,27 +67,6 @@ export function resolveMedicationStatus(input: {
   const failedTargets = extractFailedTargets(input.rawJson);
   const medicationFailed = failedTargets.includes("medication");
   if (input.medications.length > 0) {
-    const hasNamedMedication = input.medications.some((item) => {
-      const name = toText(item.medicationName);
-      if (!name) return false;
-      return !isDerivedMedicationLabel(name);
-    });
-    if (medicationFailed) {
-      return {
-        type: "available",
-        message: hasNamedMedication
-          ? "최신 복약 연동에 일부 실패가 있어 직전 연동 이력으로 표시합니다."
-          : "최신 복약 연동에 일부 실패가 있어 진료유형 기준 이력으로 표시합니다.",
-        failedTargets,
-      };
-    }
-    if (!hasNamedMedication) {
-      return {
-        type: "available",
-        message: "최근 3건은 약품명 대신 진료유형 기준으로 표시됩니다.",
-        failedTargets,
-      };
-    }
     return {
       type: "available",
       message: null,

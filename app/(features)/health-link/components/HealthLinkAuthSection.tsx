@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Image from "next/image";
 import KakaoLoginButton from "@/components/common/kakaoLoginButton";
+import { useToast } from "@/components/common/toastContext.client";
 import { NHIS_ERR_CODE_LOGIN_SESSION_EXPIRED } from "../constants";
 import { SpinnerLabel } from "./HealthLinkCommon";
 import { HEALTH_LINK_COPY } from "../copy";
@@ -54,6 +56,11 @@ export function HealthLinkAuthSection({
   onPrimaryAction,
   onUnlink,
 }: HealthLinkAuthSectionProps) {
+  const { showToast } = useToast();
+  const lastStatusErrorRef = useRef<string | null>(null);
+  const lastActionNoticeRef = useRef<string | null>(null);
+  const lastActionErrorRef = useRef<string | null>(null);
+  const sessionExpiredNotifiedRef = useRef(false);
   const isSessionExpired =
     sessionExpired || actionErrorCode === NHIS_ERR_CODE_LOGIN_SESSION_EXPIRED;
   const showIdentityForm = primaryFlow.kind === "init";
@@ -67,6 +74,43 @@ export function HealthLinkAuthSection({
     ? HEALTH_LINK_COPY.auth.requiredActionHintInit
     : HEALTH_LINK_COPY.auth.requiredActionHintSign;
   const showOptionalLogin = !loggedIn && showIdentityForm;
+
+  useEffect(() => {
+    const message = statusError
+      ? parseErrorMessage(statusError, HEALTH_LINK_COPY.auth.statusLoadFallback)
+      : "";
+    if (!message || lastStatusErrorRef.current === message) return;
+    lastStatusErrorRef.current = message;
+    showToast(message, { type: "error", duration: 4500 });
+  }, [showToast, statusError]);
+
+  useEffect(() => {
+    const message = actionNotice?.trim() ?? "";
+    if (!message || lastActionNoticeRef.current === message) return;
+    lastActionNoticeRef.current = message;
+    showToast(message, { type: "success", duration: 3200 });
+  }, [actionNotice, showToast]);
+
+  useEffect(() => {
+    if (isSessionExpired) {
+      if (sessionExpiredNotifiedRef.current) return;
+      sessionExpiredNotifiedRef.current = true;
+      showToast(HEALTH_LINK_COPY.result.sessionExpiredGuide, {
+        type: "error",
+        duration: 5200,
+      });
+      return;
+    }
+    sessionExpiredNotifiedRef.current = false;
+  }, [isSessionExpired, showToast]);
+
+  useEffect(() => {
+    if (isSessionExpired) return;
+    const message = actionError?.trim() ?? "";
+    if (!message || lastActionErrorRef.current === message) return;
+    lastActionErrorRef.current = message;
+    showToast(message, { type: "error", duration: 4800 });
+  }, [actionError, isSessionExpired, showToast]);
 
   return (
     <article className={styles.sectionCard}>
@@ -189,33 +233,8 @@ export function HealthLinkAuthSection({
         <p className={styles.mandatoryHint}>{mandatoryActionHint}</p>
       </div>
 
-      <div className={styles.noticeStack} aria-live="polite" role="status">
-        {statusError ? (
-          <div className={styles.noticeError} role="alert">
-            {parseErrorMessage(
-              statusError,
-              HEALTH_LINK_COPY.auth.statusLoadFallback
-            )}
-          </div>
-        ) : null}
-        {actionNotice ? (
-          <div className={styles.noticeSuccess}>{actionNotice}</div>
-        ) : null}
-        {isSessionExpired ? (
-          <div className={styles.noticeWarn}>
-            <strong>{HEALTH_LINK_COPY.result.sessionExpiredTitle}</strong>
-            <div className={styles.noticeLine}>
-              {HEALTH_LINK_COPY.result.sessionExpiredGuide}
-            </div>
-          </div>
-        ) : null}
-        {actionError && !isSessionExpired ? (
-          <div className={styles.noticeError} role="alert">
-            {actionError}
-          </div>
-        ) : null}
-
-        {showHealthInPrereqGuide ? (
+      {showHealthInPrereqGuide ? (
+        <div className={styles.noticeStack} aria-live="polite" role="status">
           <div className={styles.prereqCard}>
             <strong>{HEALTH_LINK_COPY.auth.prerequisiteTitle}</strong>
             <p>{HEALTH_LINK_COPY.auth.prerequisiteDescription}</p>
@@ -228,8 +247,8 @@ export function HealthLinkAuthSection({
               {HEALTH_LINK_COPY.auth.prerequisiteLinkLabel}
             </a>
           </div>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </article>
   );
 }

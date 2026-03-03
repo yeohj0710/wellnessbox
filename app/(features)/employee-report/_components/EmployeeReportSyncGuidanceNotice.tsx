@@ -18,7 +18,7 @@ export default function EmployeeReportSyncGuidanceNotice({
   onSignAndSync,
 }: EmployeeReportSyncGuidanceNoticeProps) {
   return (
-    <section className={styles.noticeInfo}>
+    <section className={styles.sectionCard}>
       <p className={styles.optionalText}>{guidance.message}</p>
 
       {showActions ? (

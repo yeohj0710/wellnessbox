@@ -23,7 +23,7 @@ export default function B2bAdminOpsHero({
       <h1 className={styles.title}>임직원 건강 레포트 운영</h1>
       <p className={styles.description}>
         임직원을 선택하면 해당 기간 레포트가 바로 열려요. 필요한 경우에만 설문, 코멘트,
-        레이아웃을 수정한 뒤 PDF/PPTX로 내려받아 전달해 주세요.
+        레이아웃을 수정한 뒤 PDF로 내려받아 전달해 주세요.
       </p>
       <div className={styles.actionRow}>
         <input
