@@ -151,7 +151,7 @@ function runPrimaryActionLabelCases() {
     syncNextAction: null,
     storedIdentitySource: "none",
   });
-  assert.equal(retryLabel, "인증 다시하기");
+  assert.equal(retryLabel, "인증 시작");
   console.log("[qa:employee-report-auth-ux] PASS retry CTA");
 
   const initGuidanceLabel = resolveIdentityPrimaryActionLabel({
@@ -159,7 +159,7 @@ function runPrimaryActionLabelCases() {
     syncNextAction: "init",
     storedIdentitySource: "none",
   });
-  assert.equal(initGuidanceLabel, "인증 다시하기");
+  assert.equal(initGuidanceLabel, "인증 시작");
   console.log("[qa:employee-report-auth-ux] PASS init guidance CTA");
 
   const signGuidanceLabel = resolveIdentityPrimaryActionLabel({
@@ -180,6 +180,11 @@ function runUiIntegrationChecks() {
   assert.ok(
     clientSource.includes("primaryActionLabel={identityPrimaryActionLabel}"),
     "EmployeeReportClient should pass context-aware primaryActionLabel."
+  );
+  assert.equal(
+    clientSource.includes("재요청"),
+    false,
+    "EmployeeReportClient should avoid re-request wording for first-time auth."
   );
   assert.ok(
     clientSource.includes("primarySyncActionLabel=\"최신 정보 확인\""),
@@ -222,6 +227,11 @@ function runUiIntegrationChecks() {
     guidanceSource.includes("진행 상태 확인"),
     false,
     "EmployeeReportSyncGuidanceNotice should avoid ambiguous status-check wording."
+  );
+  assert.equal(
+    guidanceSource.includes("인증 다시하기"),
+    false,
+    "EmployeeReportSyncGuidanceNotice should keep restart CTA wording unified."
   );
 
   console.log("[qa:employee-report-auth-ux] PASS UI integration checks");

@@ -129,13 +129,27 @@ function runStaticRegressionChecks() {
     "health-link reload action should use generalized wording"
   );
   assert.ok(
-    copySource.includes('retryAuth: "인증 다시하기"'),
+    copySource.includes('retryAuth: "인증 시작"'),
     "health-link retry action should use generalized wording"
+  );
+  assert.ok(
+    copySource.includes('title: "인증 시작"'),
+    "health-link reauth step should reuse unified auth-start wording"
   );
   assert.equal(
     copySource.includes("다시 진행"),
     false,
     "health-link copy should avoid ambiguous '다시 진행' wording"
+  );
+  assert.equal(
+    copySource.includes("인증 다시하기"),
+    false,
+    "health-link copy should avoid split retry wording"
+  );
+  assert.equal(
+    copySource.includes("재요청"),
+    false,
+    "health-link copy should avoid re-request wording"
   );
   assert.ok(
     copySource.includes("networkErrorFallback"),

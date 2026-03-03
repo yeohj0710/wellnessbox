@@ -156,6 +156,20 @@ function runGuidanceCases() {
   assert.equal(signGuidance.nextAction, "sign");
   assert.ok(signGuidance.message.includes("인증 완료 확인"));
   console.log("[qa:employee-report-sync-notice] PASS sign guidance wording");
+
+  const initGuidance = buildSyncGuidance(
+    {
+      code: "NHIS_INIT_REQUIRED",
+      reason: "nhis_init_required",
+      nextAction: "init",
+    },
+    409,
+    "fallback"
+  );
+  assert.equal(initGuidance.nextAction, "init");
+  assert.ok(initGuidance.message.includes("인증 시작"));
+  assert.equal(initGuidance.message.includes("다시하기"), false);
+  console.log("[qa:employee-report-sync-notice] PASS init guidance wording");
 }
 
 async function runRequestJsonResilienceCases() {

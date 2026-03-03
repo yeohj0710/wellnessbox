@@ -10,8 +10,8 @@ export const HEALTH_LINK_COPY = {
       guide: "저장된 정보와 최신 정보를 순서대로 확인합니다.",
     },
     reauth: {
-      title: "인증 다시하기",
-      guide: "세션이 만료되어 인증이 필요합니다. 아래 버튼으로 다시 시작해 주세요.",
+      title: "인증 시작",
+      guide: "세션이 만료되었습니다. 아래 버튼을 눌러 인증을 진행해 주세요.",
     },
     sign: {
       title: "인증 확인",
@@ -27,7 +27,7 @@ export const HEALTH_LINK_COPY = {
     confirmAuth: "인증 완료 확인",
     fetchNow: "최신 정보 확인",
     reload: "최신 정보 확인",
-    retryAuth: "인증 다시하기",
+    retryAuth: "인증 시작",
     moreOptions: "추가 옵션",
     switchIdentity: "다른 사람 조회",
     switchIdentityConfirm:
@@ -158,7 +158,7 @@ export const HEALTH_LINK_COPY = {
     partialFailureDetailSummary: "실패 항목 상세 보기",
     sessionExpiredTitle: "세션이 만료되었습니다",
     sessionExpiredGuide:
-      "상단에서 인증 다시하기 버튼을 눌러 재인증을 시작해 주세요.",
+      "상단에서 인증 시작 버튼을 눌러 인증을 진행해 주세요.",
     switchIdentityHint: "새 인증이 필요할 때만 사용하세요.",
     summaryTitle: "핵심 요약",
     summaryFallbackHeadline: "결과를 간단히 정리했어요",

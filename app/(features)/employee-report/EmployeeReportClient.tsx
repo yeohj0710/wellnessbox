@@ -403,7 +403,7 @@ export default function EmployeeReportClient() {
       return;
     }
     setHasAuthAttempt(true);
-    beginBusy("카카오 인증 재요청을 진행하고 있어요.");
+    beginBusy("카카오 인증을 진행하고 있어요.");
     setError("");
     setNotice("");
     setSyncGuidance(null);
@@ -422,7 +422,7 @@ export default function EmployeeReportClient() {
         setNotice(
           reusedFromCache
             ? "기존 연동 데이터를 사용해 레포트를 불러왔습니다."
-            : "카카오 인증을 재요청하고 최신 데이터를 불러왔습니다."
+            : "카카오 인증 후 최신 데이터를 불러왔습니다."
         );
         return;
       }

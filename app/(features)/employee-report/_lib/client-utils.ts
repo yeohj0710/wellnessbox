@@ -256,15 +256,9 @@ export function resolveIdentityPrimaryActionLabel(input: {
   syncNextAction: "init" | "sign" | "retry" | null;
   storedIdentitySource: StoredIdentitySource;
 }) {
-  if (input.syncNextAction === "sign") return "인증 완료 확인";
-  if (
-    input.syncNextAction === "init" ||
-    input.syncNextAction === "retry" ||
-    input.hasAuthAttempt
-  ) {
-    return "인증 다시하기";
-  }
+  void input.hasAuthAttempt;
   void input.storedIdentitySource;
+  if (input.syncNextAction === "sign") return "인증 완료 확인";
   return "인증 시작";
 }
 
@@ -581,7 +575,7 @@ export function buildSyncGuidance(
       reason: payload.reason,
       nextAction,
       message:
-        "연동 초기화가 필요합니다. 인증 다시하기를 눌러 카카오 인증을 시작해 주세요.",
+        "연동 초기화가 필요합니다. '인증 시작'을 눌러 카카오 인증을 진행해 주세요.",
     };
   }
   if (nextAction === "sign") {
