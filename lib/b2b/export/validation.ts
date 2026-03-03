@@ -4,6 +4,7 @@ import type { LayoutDocument, LayoutNode } from "@/lib/b2b/export/layout-types";
 import type {
   LayoutValidationIssue,
 } from "@/lib/b2b/export/validation-types";
+import { isReportExportEngineUnavailableReason } from "@/lib/b2b/export/engine-error";
 import {
   MM_TO_PX,
   buildBoundsIssue,
@@ -200,11 +201,29 @@ async function loadPlaywrightModule() {
   }
 }
 
+function toErrorReason(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+  return fallback;
+}
+
 async function runtimeValidateByPlaywright(layout: LayoutDocument) {
   const playwright = await loadPlaywrightModule();
   if (!playwright?.chromium) return null;
 
-  const browser = await playwright.chromium.launch({ headless: true });
+  let browser: any;
+  try {
+    browser = await playwright.chromium.launch({ headless: true });
+  } catch (error) {
+    const reason = toErrorReason(error, "Playwright browser launch failed");
+    console.warn("[b2b][layout-validation] playwright runtime validation skipped", {
+      reason,
+      fallback: "heuristic",
+    });
+    return null;
+  }
+
   try {
     const page = await browser.newPage();
     await page.setContent(buildRuntimeHtml(layout), { waitUntil: "domcontentloaded" });
@@ -327,8 +346,22 @@ async function runtimeValidateByPlaywright(layout: LayoutDocument) {
     })) as LayoutValidationIssue[];
 
     return issues;
+  } catch (error) {
+    const reason = toErrorReason(error, "Playwright runtime validation failed");
+    if (isReportExportEngineUnavailableReason(reason)) {
+      console.warn("[b2b][layout-validation] playwright runtime validation unavailable", {
+        reason,
+        fallback: "heuristic",
+      });
+      return null;
+    }
+    console.error("[b2b][layout-validation] playwright runtime validation error", {
+      reason,
+      fallback: "heuristic",
+    });
+    return null;
   } finally {
-    await browser.close();
+    await browser.close().catch(() => undefined);
   }
 }
 

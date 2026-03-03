@@ -19,6 +19,7 @@ const {
     task: () => Promise<unknown>;
     timeoutMs?: number;
     skipIfShed?: boolean;
+    warnOnShed?: boolean;
   }) => Promise<{
     ok: boolean;
     skipped: boolean;
@@ -98,6 +99,10 @@ function runStaticRegressionChecks() {
     fetchAttemptSource.includes("runBestEffortDbWrite"),
     "fetch-attempt should use best-effort DB writes"
   );
+  assert.ok(
+    fetchAttemptSource.includes("warnOnShed: false"),
+    "operational attempt logging should suppress shed warning noise"
+  );
 
   const employeeServiceSource = read("lib/b2b/employee-service.ts");
   assert.ok(
@@ -153,6 +158,20 @@ function runStaticRegressionChecks() {
   assert.ok(
     hyphenRequestSource.includes("buildHyphenDeadlineError"),
     "hyphen request deadline should map to explicit timeout error"
+  );
+
+  const validationSource = read("lib/b2b/export/validation.ts");
+  assert.ok(
+    validationSource.includes("isReportExportEngineUnavailableReason"),
+    "layout validation should classify export engine unavailable errors"
+  );
+  assert.ok(
+    validationSource.includes("playwright runtime validation skipped"),
+    "layout validation should log and skip when Playwright browser launch fails"
+  );
+  assert.ok(
+    validationSource.includes("fallback: \"heuristic\""),
+    "layout validation should fall back to heuristic runtime checks when Playwright is unavailable"
   );
 
   console.log("[qa:b2b-sync-db-resilience] PASS static regression checks");

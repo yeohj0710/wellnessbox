@@ -86,11 +86,6 @@ function maybeWarnShed(label: string, message: string, nowMs = Date.now()) {
   });
 }
 
-function activateShed(label: string, reason: string, nowMs = Date.now()) {
-  shedUntilMs = Math.max(shedUntilMs, nowMs + resolvePoolShedWindowMs());
-  maybeWarnShed(label, reason, nowMs);
-}
-
 function withTimeout<T>(task: Promise<T>, timeoutMs: number) {
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) return task;
 
@@ -115,6 +110,7 @@ export async function runBestEffortDbWrite(input: {
   task: () => Promise<unknown>;
   timeoutMs?: number;
   skipIfShed?: boolean;
+  warnOnShed?: boolean;
 }): Promise<BestEffortDbWriteResult> {
   const nowMs = Date.now();
   const skipIfShed = input.skipIfShed !== false;
@@ -139,7 +135,11 @@ export async function runBestEffortDbWrite(input: {
     const timeout = isWriteTimeoutError(error);
     const poolTimeout = isPrismaPoolTimeoutError(error);
     if (timeout || poolTimeout) {
-      activateShed(input.label, timeout ? "timeout" : "pool-timeout");
+      const nowMs = Date.now();
+      shedUntilMs = Math.max(shedUntilMs, nowMs + resolvePoolShedWindowMs());
+      if (input.warnOnShed !== false) {
+        maybeWarnShed(input.label, timeout ? "timeout" : "pool-timeout", nowMs);
+      }
     } else {
       console.warn("[db][best-effort] write failed", {
         label: input.label,

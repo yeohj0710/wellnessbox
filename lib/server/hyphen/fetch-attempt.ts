@@ -289,6 +289,7 @@ export async function recordNhisOperationalAttempt(
 
   return runBestEffortDbWrite({
     label: "nhis-operational-attempt",
+    warnOnShed: false,
     task: () =>
       db.healthProviderFetchAttempt.create({
         data: {
