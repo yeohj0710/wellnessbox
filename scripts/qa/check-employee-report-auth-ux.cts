@@ -127,7 +127,7 @@ function runPrimaryActionLabelCases() {
     syncNextAction: null,
     storedIdentitySource: "none",
   });
-  assert.equal(firstTimeLabel, "인증 시작하기");
+  assert.equal(firstTimeLabel, "인증/연동 시작");
   console.log("[qa:employee-report-auth-ux] PASS first-time CTA");
 
   const cachedLabel = resolveIdentityPrimaryActionLabel({
@@ -135,7 +135,7 @@ function runPrimaryActionLabelCases() {
     syncNextAction: null,
     storedIdentitySource: "v2",
   });
-  assert.equal(cachedLabel, "저장된 정보로 인증 시작하기");
+  assert.equal(cachedLabel, "인증/연동 진행");
   console.log("[qa:employee-report-auth-ux] PASS cached CTA");
 
   const legacyCachedLabel = resolveIdentityPrimaryActionLabel({
@@ -143,7 +143,7 @@ function runPrimaryActionLabelCases() {
     syncNextAction: null,
     storedIdentitySource: "legacy",
   });
-  assert.equal(legacyCachedLabel, "저장된 이전 정보로 인증 시작하기");
+  assert.equal(legacyCachedLabel, "인증/연동 진행");
   console.log("[qa:employee-report-auth-ux] PASS legacy cached CTA");
 
   const retryLabel = resolveIdentityPrimaryActionLabel({
@@ -151,7 +151,7 @@ function runPrimaryActionLabelCases() {
     syncNextAction: null,
     storedIdentitySource: "none",
   });
-  assert.equal(retryLabel, "인증 다시하기");
+  assert.equal(retryLabel, "인증/연동 다시 진행");
   console.log("[qa:employee-report-auth-ux] PASS retry CTA");
 
   const initGuidanceLabel = resolveIdentityPrimaryActionLabel({
@@ -159,8 +159,16 @@ function runPrimaryActionLabelCases() {
     syncNextAction: "init",
     storedIdentitySource: "none",
   });
-  assert.equal(initGuidanceLabel, "인증 다시하기");
+  assert.equal(initGuidanceLabel, "인증/연동 다시 진행");
   console.log("[qa:employee-report-auth-ux] PASS init guidance CTA");
+
+  const signGuidanceLabel = resolveIdentityPrimaryActionLabel({
+    hasAuthAttempt: false,
+    syncNextAction: "sign",
+    storedIdentitySource: "none",
+  });
+  assert.equal(signGuidanceLabel, "인증 상태 확인");
+  console.log("[qa:employee-report-auth-ux] PASS sign guidance CTA");
 }
 
 function runUiIntegrationChecks() {
@@ -174,8 +182,8 @@ function runUiIntegrationChecks() {
     "EmployeeReportClient should pass context-aware primaryActionLabel."
   );
   assert.ok(
-    clientSource.includes("primarySyncActionLabel=\"최신 데이터 다시 조회\""),
-    "EmployeeReportClient should set summary CTA for existing DB report users."
+    clientSource.includes("primarySyncActionLabel=\"최신 정보 확인\""),
+    "EmployeeReportClient should set generalized summary CTA for existing DB report users."
   );
 
   const identitySectionSource = read(
@@ -190,8 +198,8 @@ function runUiIntegrationChecks() {
     "app/(features)/employee-report/_components/EmployeeReportSummaryHeaderCard.tsx"
   );
   assert.ok(
-    summarySource.includes("최신 데이터 다시 조회"),
-    "EmployeeReportSummaryHeaderCard should default to '최신 데이터 다시 조회'."
+    summarySource.includes("최신 정보 확인"),
+    "EmployeeReportSummaryHeaderCard should default to '최신 정보 확인'."
   );
 
   console.log("[qa:employee-report-auth-ux] PASS UI integration checks");
@@ -210,4 +218,3 @@ try {
   console.error("[qa:employee-report-auth-ux] FAIL", error);
   process.exit(1);
 }
-

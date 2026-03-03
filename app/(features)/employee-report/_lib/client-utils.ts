@@ -89,29 +89,16 @@ export function resolveSyncCompletionNotice(input: {
 
   if (networkFetched) {
     return input.forceRefresh
-      ? "강제 조회로 최신 건강데이터를 새로 연동했습니다."
-      : "최신 건강데이터를 새로 조회해 레포트를 갱신했습니다.";
+      ? "최신 건강정보를 다시 불러왔습니다."
+      : "최신 건강정보를 불러왔습니다.";
   }
 
-  if (source === "snapshot-history") {
-    return "DB에 저장된 최신 스냅샷으로 레포트를 갱신했습니다.";
+  if (source === "snapshot-history" || source === "cache-valid" || source === "cache-history") {
+    return "저장된 건강정보를 반영했습니다.";
   }
 
-  if (source === "cache-valid") {
-    return "동일 조건의 저장 데이터를 사용해 레포트를 갱신했습니다. (인증/세션 확인 요청은 별도로 발생할 수 있습니다.)";
-  }
-
-  if (source === "cache-history") {
-    return "이전 연동 이력의 저장 데이터를 사용해 레포트를 갱신했습니다. (인증/세션 확인 요청은 별도로 발생할 수 있습니다.)";
-  }
-
-  if (input.authReused) {
-    return "기존 인증 상태를 사용해 레포트를 갱신했습니다.";
-  }
-
-  return input.forceRefresh
-    ? "강제 조회로 최신 건강데이터를 반영했습니다."
-    : "최신 건강데이터를 반영해 레포트를 갱신했습니다.";
+  if (input.authReused) return "저장된 인증 상태를 확인했습니다.";
+  return "건강정보를 갱신했습니다.";
 }
 
 export function normalizeDigits(value: string) {
@@ -269,20 +256,14 @@ export function resolveIdentityPrimaryActionLabel(input: {
   syncNextAction: "init" | "sign" | "retry" | null;
   storedIdentitySource: StoredIdentitySource;
 }) {
-  if (
-    input.syncNextAction === "init" ||
-    input.syncNextAction === "retry" ||
-    input.hasAuthAttempt
-  ) {
-    return "인증 다시하기";
+  if (input.syncNextAction === "init" || input.syncNextAction === "retry" || input.hasAuthAttempt) {
+    return "인증/연동 다시 진행";
   }
-  if (input.storedIdentitySource === "legacy") {
-    return "저장된 이전 정보로 인증 시작하기";
+  if (input.syncNextAction === "sign") return "인증 상태 확인";
+  if (input.storedIdentitySource === "v2" || input.storedIdentitySource === "legacy") {
+    return "인증/연동 진행";
   }
-  if (input.storedIdentitySource === "v2") {
-    return "저장된 정보로 인증 시작하기";
-  }
-  return "인증 시작하기";
+  return "인증/연동 시작";
 }
 
 export function saveStoredIdentity(identity: IdentityInput) {

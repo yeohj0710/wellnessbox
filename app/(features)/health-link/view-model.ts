@@ -35,6 +35,7 @@ export function resolvePrimaryButtonLabel(
   isFetchStep: boolean,
   hasFetchResult: boolean
 ) {
-  if (isFetchStep && hasFetchResult) return HEALTH_LINK_COPY.action.reload;
+  void hasFetchResult;
+  if (isFetchStep) return HEALTH_LINK_COPY.action.fetchNow;
   return HEALTH_LINK_COPY.action.next;
 }

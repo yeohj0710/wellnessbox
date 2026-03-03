@@ -55,7 +55,7 @@ function runSyncNoticeCases() {
     forceRefresh: false,
     authReused: false,
   });
-  assert.ok(fresh.includes("새로 조회"));
+  assert.equal(fresh, "최신 건강정보를 불러왔습니다.");
   console.log("[qa:employee-report-sync-notice] PASS fresh notice");
 
   const forceFresh = resolveSyncCompletionNotice({
@@ -63,7 +63,7 @@ function runSyncNoticeCases() {
     forceRefresh: true,
     authReused: false,
   });
-  assert.ok(forceFresh.includes("강제 조회"));
+  assert.equal(forceFresh, "최신 건강정보를 다시 불러왔습니다.");
   console.log("[qa:employee-report-sync-notice] PASS force fresh notice");
 
   const cacheValid = resolveSyncCompletionNotice({
@@ -71,7 +71,7 @@ function runSyncNoticeCases() {
     forceRefresh: false,
     authReused: false,
   });
-  assert.ok(cacheValid.includes("동일 조건의 저장 데이터"));
+  assert.equal(cacheValid, "저장된 건강정보를 반영했습니다.");
   console.log("[qa:employee-report-sync-notice] PASS cache-valid notice");
 
   const cacheHistory = resolveSyncCompletionNotice({
@@ -79,7 +79,7 @@ function runSyncNoticeCases() {
     forceRefresh: false,
     authReused: false,
   });
-  assert.ok(cacheHistory.includes("이전 연동 이력"));
+  assert.equal(cacheHistory, "저장된 건강정보를 반영했습니다.");
   console.log("[qa:employee-report-sync-notice] PASS cache-history notice");
 
   const snapshotHistory = resolveSyncCompletionNotice({
@@ -87,7 +87,7 @@ function runSyncNoticeCases() {
     forceRefresh: false,
     authReused: false,
   });
-  assert.ok(snapshotHistory.includes("최신 스냅샷"));
+  assert.equal(snapshotHistory, "저장된 건강정보를 반영했습니다.");
   console.log("[qa:employee-report-sync-notice] PASS snapshot-history notice");
 
   const reusedAuth = resolveSyncCompletionNotice({
@@ -95,7 +95,7 @@ function runSyncNoticeCases() {
     forceRefresh: false,
     authReused: true,
   });
-  assert.ok(reusedAuth.includes("기존 인증 상태"));
+  assert.equal(reusedAuth, "저장된 인증 상태를 확인했습니다.");
   console.log("[qa:employee-report-sync-notice] PASS auth reused notice");
 }
 
@@ -208,6 +208,10 @@ function runStaticRegressionChecks() {
     clientSource.includes("authReused: ready.reused"),
     "sync notice helper should receive auth reuse context"
   );
+  assert.ok(
+    clientSource.includes("primarySyncActionLabel=\"최신 정보 확인\""),
+    "EmployeeReportClient should use generalized summary CTA text"
+  );
 
   const responseSource = read("lib/b2b/employee-sync-response.ts");
   assert.ok(
@@ -235,12 +239,7 @@ async function run() {
   console.log("[qa:employee-report-sync-notice] ALL PASS");
 }
 
-try {
-  run().catch((error) => {
-    console.error("[qa:employee-report-sync-notice] FAIL", error);
-    process.exit(1);
-  });
-} catch (error) {
+run().catch((error) => {
   console.error("[qa:employee-report-sync-notice] FAIL", error);
   process.exit(1);
-}
+});

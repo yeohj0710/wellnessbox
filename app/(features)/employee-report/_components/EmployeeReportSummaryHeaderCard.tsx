@@ -42,10 +42,9 @@ export default function EmployeeReportSummaryHeaderCard({
   const employeeName =
     reportData.report.payload?.meta?.employeeName || reportData.employee?.name || "대상자";
   const isSignPending = syncNextAction === "sign";
-  const isRetry = syncNextAction === "retry";
-  const showSyncRetryButton = isSignPending || isRetry;
+  const showSyncRetryButton = syncNextAction === "sign" || syncNextAction === "retry";
   const defaultPrimarySyncActionLabel =
-    primarySyncActionLabel?.trim() || "최신 데이터 다시 조회";
+    primarySyncActionLabel?.trim() || "최신 정보 확인";
 
   return (
     <section className={styles.sectionCard} data-testid="employee-report-summary-section">
@@ -91,17 +90,17 @@ export default function EmployeeReportSummaryHeaderCard({
           data-testid="employee-report-download-pdf"
           className={`${styles.buttonPrimary} ${styles.summaryPrimaryButton}`}
         >
-          {busy ? "PDF 캡처 생성 중..." : "PDF 다운로드"}
+          {busy ? "PDF 생성 중..." : "PDF 다운로드"}
         </button>
       </div>
 
       <p className={styles.inlineHint}>
-        이 리포트는 최근 3건 진료/조제 이력만 반영합니다.
+        이 리포트는 최근 3건 진료/조제 이력을 반영합니다.
       </p>
 
       {isSignPending ? (
         <div className={styles.noticeSuccess}>
-          카카오 인증 요청 완료. 카카오 앱에서 승인한 뒤 아래 `연동 완료 확인`을 눌러 주세요.
+          카카오 인증 후 `진행 상태 확인`을 눌러 주세요.
         </div>
       ) : null}
 
@@ -114,11 +113,7 @@ export default function EmployeeReportSummaryHeaderCard({
             data-testid="employee-report-sign-sync"
             className={styles.buttonSecondary}
           >
-            {busy
-              ? "확인 중..."
-              : isRetry
-                ? "다시 시도"
-                : "연동 완료 확인"}
+            {busy ? "확인 중..." : "다시 진행"}
           </button>
         ) : (
           <button
@@ -156,7 +151,7 @@ export default function EmployeeReportSummaryHeaderCard({
           <div className={styles.optionalBody}>
             <p className={styles.optionalText}>
               강제 조회는 로컬/서버 캐시를 초기화한 뒤 외부 API를 다시 호출합니다. 비용이
-              발생할 수 있으므로 필요한 경우에만 사용해 주세요.
+              발생하므로 필요한 경우에만 사용해 주세요.
             </p>
             <div className={styles.actionRow}>
               <button

@@ -136,13 +136,13 @@ export default function EmployeeReportClient() {
 
   const overlayDescription = useMemo(() => {
     if (busyHint === "force-preflight" || busyHint === "sync-preflight") {
-      return "세션/캐시 상태를 먼저 확인하고 있어요. 이 단계는 비용이 발생하지 않습니다.";
+      return "연동 상태를 확인하고 있어요.";
     }
     if (busyHint === "force-remote") {
-      return "지금부터 실제 건보공단/하이픈 조회를 수행합니다. 2~3분 정도 걸릴 수 있습니다.";
+      return "건강정보를 다시 불러오고 있어요. 잠시만 기다려 주세요.";
     }
     if (busyHint === "sync-remote") {
-      return "캐시 미적중으로 외부 연동을 수행합니다. 2~3분 정도 걸릴 수 있습니다.";
+      return "건강정보를 불러오고 있어요. 잠시만 기다려 주세요.";
     }
     return "완료되면 화면이 자동으로 갱신됩니다.";
   }, [busyHint]);
@@ -150,8 +150,8 @@ export default function EmployeeReportClient() {
   const overlayDetailLines = useMemo(() => {
     if (busyHint === "sync-preflight" || busyHint === "force-preflight") {
       return [
-        "1단계: 저장된 스냅샷/리포트 캐시를 우선 조회하고 있어요.",
-        "캐시 적중 시 외부 API를 다시 호출하지 않습니다.",
+        "저장된 정보가 있는지 먼저 확인합니다.",
+        "필요한 경우에만 외부 연동을 진행합니다.",
       ];
     }
     if (busyHint !== "sync-remote" && busyHint !== "force-remote") {
@@ -159,19 +159,19 @@ export default function EmployeeReportClient() {
     }
     if (busyElapsedSec < 45) {
       return [
-        "2단계: 인증 세션과 요청 정보를 확인하고 있어요.",
+        "인증 상태와 요청 정보를 확인하고 있어요.",
         "브라우저를 닫지 말고 잠시만 기다려 주세요.",
       ];
     }
     if (busyElapsedSec < 120) {
       return [
-        "3단계: 하이픈을 통해 건보공단 원천 데이터를 조회 중이에요.",
-        "외부 응답 시간에 따라 2~3분이 소요될 수 있어요.",
+        "외부 건강정보를 조회하고 있어요.",
+        "응답 시간에 따라 몇 분 정도 걸릴 수 있어요.",
       ];
     }
     return [
-      "4단계: 받은 데이터를 정리하고 리포트/DB를 갱신하고 있어요.",
-      "완료 후 최근 3건 기준으로 화면이 자동 갱신됩니다.",
+      "받은 데이터를 정리하고 레포트를 갱신하고 있어요.",
+      "완료 후 화면이 자동으로 갱신됩니다.",
     ];
   }, [busyElapsedSec, busyHint]);
 
@@ -808,7 +808,7 @@ export default function EmployeeReportClient() {
             periodOptions={periodOptions}
             busy={busy}
             syncNextAction={syncNextAction}
-            primarySyncActionLabel="최신 데이터 다시 조회"
+            primarySyncActionLabel="최신 정보 확인"
             canUseForceSync={canUseForceSync}
             forceSyncRemainingSec={forceSyncRemainingSec}
             onPeriodChange={(next) => {
