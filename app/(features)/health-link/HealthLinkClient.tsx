@@ -20,6 +20,7 @@ import {
   resolvePrimaryButtonLabel,
   resolvePrimaryFlow,
 } from "./view-model";
+import { isNhisSignReady } from "./useNhisHealthLink.helpers";
 import styles from "./HealthLinkClient.module.css";
 
 export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
@@ -50,7 +51,7 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
     handleUnlink,
   } = useNhisHealthLink();
 
-  const hasAuthRequested = !!(status?.pendingAuthReady || status?.hasStepData);
+  const hasAuthRequested = isNhisSignReady(status);
   const statusLinked = !!status?.linked;
 
   const basePrimaryFlow = resolvePrimaryFlow(statusLinked, hasAuthRequested);

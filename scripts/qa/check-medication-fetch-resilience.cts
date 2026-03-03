@@ -42,6 +42,14 @@ function runStaticRegressionChecks() {
     medicationSource.includes("periodKey: { not: input.periodKey }"),
     "medication history fallback should include cross-period snapshots"
   );
+
+  const medicationExtractSource = read("lib/b2b/report-payload-health-medication.ts");
+  assert.ok(
+    medicationExtractSource.includes(
+      "pickFirstByKeys(row, MEDICATION_NAME_KEYS) ??\n      resolveMedicationFallbackName(row, pharmacyVisit)"
+    ),
+    "medication extraction should prioritize named medication rows for all visit types before fallback labels"
+  );
   console.log("[qa:medication-fetch-resilience] PASS static regression checks");
 }
 

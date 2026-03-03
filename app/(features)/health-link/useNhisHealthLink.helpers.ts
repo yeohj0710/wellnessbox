@@ -41,6 +41,10 @@ export function applySummaryBudgetBlockedState(
   setters.setActionError(resolveSummaryFetchBlockedMessage(status));
 }
 
+export function isNhisSignReady(status: NhisStatusResponse["status"] | undefined) {
+  return !!(status?.pendingAuthReady && status?.hasStepData);
+}
+
 export function validateInitIdentityInput(input: {
   resNm: string;
   resNo: string;
@@ -72,4 +76,3 @@ export function resolveSignSuccessNotice(payload: NhisActionResponse) {
     ? HEALTH_LINK_COPY.hook.signNoticeReused
     : HEALTH_LINK_COPY.hook.signNoticeCompleted;
 }
-

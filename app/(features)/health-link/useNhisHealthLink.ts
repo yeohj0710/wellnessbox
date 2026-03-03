@@ -12,6 +12,7 @@ import type {
 } from "./types";
 import {
   resolveInitSuccessNotice,
+  isNhisSignReady,
   resolveSignSuccessNotice,
   validateInitIdentityInput,
 } from "./useNhisHealthLink.helpers";
@@ -36,7 +37,7 @@ export function useNhisHealthLink() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionErrorCode, setActionErrorCode] = useState<string | null>(null);
   const canRequest = actionLoading === null;
-  const canSign = canRequest && !!(status?.pendingAuthReady || status?.hasStepData);
+  const canSign = canRequest && isNhisSignReady(status);
 
   const { runRequest } = useNhisActionRequest({
     canRequest,

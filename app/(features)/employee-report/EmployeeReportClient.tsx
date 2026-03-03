@@ -758,46 +758,48 @@ export default function EmployeeReportClient() {
         </div>
       </header>
 
-      {error ? <div className={styles.noticeError}>{error}</div> : null}
-      {notice && !syncGuidance ? (
-        <div className={styles.noticeSuccess}>{notice}</div>
-      ) : null}
-      {syncGuidance && !reportData?.report ? (
-        <EmployeeReportSyncGuidanceNotice
-          guidance={syncGuidance}
-          busy={busy}
-          showActions={!reportData?.report}
-          onRestartAuth={handleRestartAuth}
-          onSignAndSync={() => void handleSignAndSync(pendingSignForceRefresh)}
-        />
-      ) : null}
-
       {!reportData ? (
-        <EmployeeReportIdentitySection
-          identity={identity}
-          busy={busy}
-          showSignAction={!syncGuidance && syncNextAction === "sign"}
-          primaryActionLabel={identityPrimaryActionLabel}
-          hideActionRow={!!syncGuidance}
-          onNameChange={(value) => {
-            setIdentity((prev) => ({ ...prev, name: value }));
-          }}
-          onBirthDateChange={(value) => {
-            setIdentity((prev) => ({
-              ...prev,
-              birthDate: normalizeDigits(value).slice(0, 8),
-            }));
-          }}
-          onPhoneChange={(value) => {
-            setIdentity((prev) => ({
-              ...prev,
-              phone: normalizeDigits(value).slice(0, 11),
-            }));
-          }}
-          onRestartAuth={handleRestartAuth}
-          onSignAndSync={() => void handleSignAndSync(pendingSignForceRefresh)}
-          onFindExisting={handleFindExisting}
-        />
+        <>
+          {error ? <div className={styles.noticeError}>{error}</div> : null}
+          {notice && !syncGuidance ? (
+            <div className={styles.noticeSuccess}>{notice}</div>
+          ) : null}
+          {syncGuidance ? (
+            <EmployeeReportSyncGuidanceNotice
+              guidance={syncGuidance}
+              busy={busy}
+              showActions
+              onRestartAuth={handleRestartAuth}
+              onSignAndSync={() => void handleSignAndSync(pendingSignForceRefresh)}
+            />
+          ) : null}
+
+          <EmployeeReportIdentitySection
+            identity={identity}
+            busy={busy}
+            showSignAction={!syncGuidance && syncNextAction === "sign"}
+            primaryActionLabel={identityPrimaryActionLabel}
+            hideActionRow={!!syncGuidance}
+            onNameChange={(value) => {
+              setIdentity((prev) => ({ ...prev, name: value }));
+            }}
+            onBirthDateChange={(value) => {
+              setIdentity((prev) => ({
+                ...prev,
+                birthDate: normalizeDigits(value).slice(0, 8),
+              }));
+            }}
+            onPhoneChange={(value) => {
+              setIdentity((prev) => ({
+                ...prev,
+                phone: normalizeDigits(value).slice(0, 11),
+              }));
+            }}
+            onRestartAuth={handleRestartAuth}
+            onSignAndSync={() => void handleSignAndSync(pendingSignForceRefresh)}
+            onFindExisting={handleFindExisting}
+          />
+        </>
       ) : null}
 
       {reportData?.report ? (
@@ -821,6 +823,18 @@ export default function EmployeeReportClient() {
             onLogout={handleLogout}
             onOpenForceSync={() => setForceConfirmOpen(true)}
           />
+          {error ? <div className={styles.noticeError}>{error}</div> : null}
+          {syncGuidance ? (
+            <EmployeeReportSyncGuidanceNotice
+              guidance={syncGuidance}
+              busy={busy}
+              showActions
+              onRestartAuth={handleRestartAuth}
+              onSignAndSync={() => void handleSignAndSync(pendingSignForceRefresh)}
+            />
+          ) : notice ? (
+            <div className={styles.noticeSuccess}>{notice}</div>
+          ) : null}
 
           {reportData.report.payload?.meta?.isMockData ? (
             <div className={styles.noticeWarn}>

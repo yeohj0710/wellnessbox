@@ -190,6 +190,22 @@ function runUiIntegrationChecks() {
     clientSource.includes("primarySyncActionLabel=\"최신 정보 확인\""),
     "EmployeeReportClient should set generalized summary CTA for existing DB report users."
   );
+  assert.equal(
+    clientSource.includes("syncGuidance && !reportData?.report"),
+    false,
+    "EmployeeReportClient should avoid top-level guidance placement detached from active section."
+  );
+  const guidanceRenderCount = (
+    clientSource.match(/<EmployeeReportSyncGuidanceNotice/g) ?? []
+  ).length;
+  assert.ok(
+    guidanceRenderCount >= 2,
+    "EmployeeReportClient should render guidance near both identity and report sections."
+  );
+  assert.ok(
+    clientSource.includes("{error ? <div className={styles.noticeError}>{error}</div> : null}"),
+    "EmployeeReportClient should show error notices inline within each active section."
+  );
 
   const identitySectionSource = read(
     "app/(features)/employee-report/_components/EmployeeReportIdentitySection.tsx"

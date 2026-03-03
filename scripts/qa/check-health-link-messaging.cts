@@ -179,6 +179,22 @@ function runStaticRegressionChecks() {
     helperSource.includes("resolveSignSuccessNotice"),
     "health-link sign success notice helper should exist"
   );
+  assert.ok(
+    helperSource.includes("isNhisSignReady"),
+    "health-link helper should provide explicit sign-ready guard"
+  );
+
+  const hookSource = read("app/(features)/health-link/useNhisHealthLink.ts");
+  assert.ok(
+    hookSource.includes("const canSign = canRequest && isNhisSignReady(status);"),
+    "health-link hook should allow sign action only when pending auth + step data are both ready"
+  );
+
+  const clientSource = read("app/(features)/health-link/HealthLinkClient.tsx");
+  assert.ok(
+    clientSource.includes("const hasAuthRequested = isNhisSignReady(status);"),
+    "health-link client should enter sign step only when sign-ready status is true"
+  );
 
   const policySource = read("app/(features)/health-link/fetchClientPolicy.ts");
   assert.ok(

@@ -241,10 +241,9 @@ export function extractMedicationRows(normalizedJson: unknown): {
     const hospitalName = pickFirstByKeys(row, MEDICATION_HOSPITAL_KEYS) || null;
     const visitType = pickFirstByKeys(row, MEDICATION_VISIT_TYPE_KEYS);
     const pharmacyVisit = isLikelyPharmacyVisit({ visitType, hospitalName });
-    const medicationName = pharmacyVisit
-      ? pickFirstByKeys(row, MEDICATION_NAME_KEYS) ??
-        resolveMedicationFallbackName(row, true)
-      : resolveMedicationFallbackName(row, false);
+    const medicationName =
+      pickFirstByKeys(row, MEDICATION_NAME_KEYS) ??
+      resolveMedicationFallbackName(row, pharmacyVisit);
     if (!medicationName) continue;
 
     const entry: MedicationRow = {
@@ -279,10 +278,9 @@ export function extractMedicationRows(normalizedJson: unknown): {
       const hospitalName = pickFirstByKeys(row, MEDICATION_HOSPITAL_KEYS) || null;
       const visitType = pickFirstByKeys(row, MEDICATION_VISIT_TYPE_KEYS);
       const pharmacyVisit = isLikelyPharmacyVisit({ visitType, hospitalName });
-      const medicationName = pharmacyVisit
-        ? pickFirstByKeys(row, MEDICATION_NAME_KEYS) ??
-          resolveMedicationFallbackName(row, true)
-        : resolveMedicationFallbackName(row, false);
+      const medicationName =
+        pickFirstByKeys(row, MEDICATION_NAME_KEYS) ??
+        resolveMedicationFallbackName(row, pharmacyVisit);
       if (!medicationName) continue;
 
       const score = resolveMedicationDateScore(row);
