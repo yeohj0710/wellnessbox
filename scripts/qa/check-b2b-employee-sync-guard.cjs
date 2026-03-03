@@ -118,8 +118,7 @@ function runDbEnvChecks() {
     }
   );
 
-  runDbEnvCase(
-    "case-D production mismatch blocked",
+  withEnv(
     {
       NODE_ENV: "production",
       WELLNESSBOX_PRISMA_URL: URL_A_POOL,
@@ -127,19 +126,28 @@ function runDbEnvChecks() {
       WELLNESSBOX_URL_NON_POOLING: URL_A_DIRECT,
       DIRECT_URL: URL_B_DIRECT,
     },
-    (result) => {
-      assert.equal(result.ok, false);
-      assert.equal(result.databaseKey, "WELLNESSBOX_PRISMA_URL");
-      assert.equal(result.directKey, "WELLNESSBOX_URL_NON_POOLING");
-      assert.ok(result.conflicts.length >= 1);
-      assert.ok(
-        result.errors.some(
-          (message) =>
-            message.includes("host mismatch") || message.includes("DB URL")
-        )
-      );
+    () => {
+      const warnings = [];
+      const originalWarn = console.warn;
+      console.warn = (...args) => {
+        warnings.push(args);
+      };
+      try {
+        const { ensurePrismaEnvConfigured } = freshDbEnvModule();
+        const result = ensurePrismaEnvConfigured(true);
+        assert.equal(result.ok, true);
+        assert.equal(result.databaseKey, "WELLNESSBOX_PRISMA_URL");
+        assert.equal(result.directKey, "WELLNESSBOX_URL_NON_POOLING");
+        assert.ok(result.conflicts.length >= 1);
+        assert.equal(process.env.DATABASE_URL, URL_A_POOL);
+        assert.equal(process.env.DIRECT_URL, URL_A_DIRECT);
+        assert.ok(warnings.length >= 1);
+      } finally {
+        console.warn = originalWarn;
+      }
     }
   );
+  console.log("[qa:b2b-sync-guard] PASS case-D production mismatch warns");
 
   withEnv(
     {

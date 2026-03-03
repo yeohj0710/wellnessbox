@@ -75,12 +75,14 @@ function resolveUrlHost(value: string) {
   }
 }
 
-function setEnvIfEmpty(key: string, value: string | null | undefined) {
+function setEnvValue(key: string, value: string | null | undefined) {
   if (!value) return false;
+  const normalized = value.trim();
+  if (!normalized) return false;
   const existing =
     typeof process.env[key] === "string" ? process.env[key]!.trim() : "";
-  if (existing) return false;
-  process.env[key] = value;
+  if (existing === normalized) return false;
+  process.env[key] = normalized;
   return true;
 }
 
@@ -154,12 +156,12 @@ function buildValidationResult(): PrismaEnvValidation {
   const direct = pickEnvValue(DIRECT_URL_KEYS) ?? database;
 
   if (database?.value) {
-    setEnvIfEmpty("DATABASE_URL", database.value);
-    setEnvIfEmpty("WELLNESSBOX_PRISMA_URL", database.value);
+    setEnvValue("DATABASE_URL", database.value);
+    setEnvValue("WELLNESSBOX_PRISMA_URL", database.value);
   }
   if (direct?.value) {
-    setEnvIfEmpty("DIRECT_URL", direct.value);
-    setEnvIfEmpty("WELLNESSBOX_URL_NON_POOLING", direct.value);
+    setEnvValue("DIRECT_URL", direct.value);
+    setEnvValue("WELLNESSBOX_URL_NON_POOLING", direct.value);
   }
 
   const normalizedDatabase = pickEnvValue(DATABASE_URL_KEYS);
@@ -168,13 +170,13 @@ function buildValidationResult(): PrismaEnvValidation {
   const errors: string[] = [];
   const conflictMessages = conflicts.map(formatPrismaEnvConflict);
   if (conflictMessages.length > 0) {
-    if (process.env.NODE_ENV === "production") {
-      errors.push(`DB URL 설정이 충돌합니다. ${conflictMessages.join(" ")}`);
-    } else {
-      console.warn("[db-env] conflicting db url env detected", {
-        conflicts: conflictMessages,
-      });
-    }
+    console.warn("[db-env] conflicting db url env detected", {
+      conflicts: conflictMessages,
+      selected: {
+        databaseKey: database?.key ?? null,
+        directKey: direct?.key ?? null,
+      },
+    });
   }
 
   if (!normalizedDatabase?.value) {
