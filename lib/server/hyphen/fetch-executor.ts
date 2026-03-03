@@ -57,10 +57,13 @@ const FATAL_AUTH_ERR_CODES = new Set([
 ]);
 
 const NO_DATA_MESSAGE_PATTERN =
-  /(조회\s*결과|조회결과|결과|데이터|내역|기록|정보).*(없|없음)|no\s*data|no\s*records?/i;
+  /(조회\s*결과|조회결과|데이터(?:\s*내역)?|진료\s*내역|복약\s*내역|기록).*(없|없음)|no\s*data|no\s*records?/i;
 
 const AUTH_OR_PRECONDITION_MESSAGE_PATTERN =
   /(세션|만료|로그인|인증|token|auth|healthin|권한|초기화|step)/i;
+
+const HARD_FAILURE_MESSAGE_PATTERN =
+  /(불러오지\s*못|불러올\s*수\s*없|연동\s*실패|실패|오류|error|exception|timeout|forbidden|denied|not\s*allowed|unable\s*to)/i;
 
 function getErrorBody(error: unknown): unknown | null {
   if (!error || typeof error !== "object") return null;
@@ -107,6 +110,7 @@ export function isNonFatalNhisNoDataFailure(reason: unknown) {
 
   if (!errMessage) return false;
   if (AUTH_OR_PRECONDITION_MESSAGE_PATTERN.test(errMessage)) return false;
+  if (HARD_FAILURE_MESSAGE_PATTERN.test(errMessage)) return false;
   return NO_DATA_MESSAGE_PATTERN.test(errMessage);
 }
 

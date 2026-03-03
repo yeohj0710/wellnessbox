@@ -68,6 +68,12 @@ function runNoDataFailureClassifierCases() {
   assert.equal(isNonFatalNhisNoDataFailure(noDataByMessage), true);
   console.log("[qa:nhis-fetch-resilience] PASS no-data by message");
 
+  const noDataByKoreanMessage = hyphenFailureFixture({
+    errMsg: "조회 결과가 없습니다.",
+  });
+  assert.equal(isNonFatalNhisNoDataFailure(noDataByKoreanMessage), true);
+  console.log("[qa:nhis-fetch-resilience] PASS no-data by korean message");
+
   const sessionExpired = hyphenFailureFixture({
     errCd: "LOGIN-999",
     errMsg: "Session expired. Please login again.",
@@ -81,6 +87,12 @@ function runNoDataFailureClassifierCases() {
   });
   assert.equal(isNonFatalNhisNoDataFailure(reauthRequired), false);
   console.log("[qa:nhis-fetch-resilience] PASS reauth-required is fatal");
+
+  const hardFailureByMessage = hyphenFailureFixture({
+    errMsg: "복약 정보를 불러오지 못했습니다.",
+  });
+  assert.equal(isNonFatalNhisNoDataFailure(hardFailureByMessage), false);
+  console.log("[qa:nhis-fetch-resilience] PASS hard-failure message is fatal");
 }
 
 function runCachePayloadGuards() {
