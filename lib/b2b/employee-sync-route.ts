@@ -313,6 +313,49 @@ export async function executeSyncAndBuildResponse(input: {
     return response;
   } catch (error) {
     if (error instanceof B2bEmployeeSyncError) {
+      if (error.reason === "hyphen_fetch_timeout") {
+        const latestSnapshot = await db.b2bHealthDataSnapshot.findFirst({
+          where: { employeeId: input.upserted.employee.id },
+          orderBy: { fetchedAt: "desc" },
+          select: { id: true },
+        });
+        if (latestSnapshot) {
+          const report = await ensureLatestB2bReport(
+            input.upserted.employee.id,
+            input.requestedPeriodKey
+          );
+          const successCooldown = input.forceRefreshRequested
+            ? resolvePostForceRefreshCooldown(input.forceRefreshCooldownSeconds)
+            : { remainingSeconds: 0, availableAt: null as string | null };
+
+          void logSyncAccess(input.accessContext, "sync_timeout_reused_snapshot", {
+            code: error.code,
+            reason: error.reason,
+            reportId: report.id,
+            snapshotId: latestSnapshot.id,
+            periodKey: report.periodKey ?? input.requestedPeriodKey,
+            forceRefresh: input.forceRefreshRequested,
+          });
+
+          return buildSyncSuccessResponse({
+            employeeId: input.upserted.employee.id,
+            employeeName: input.upserted.employee.name,
+            identityHash: input.upserted.identity.identityHash,
+            source: "snapshot-history",
+            networkFetched: false,
+            snapshotId: latestSnapshot.id,
+            forceRefresh: input.forceRefreshRequested,
+            cooldownSeconds: input.forceRefreshCooldownSeconds,
+            remainingCooldownSeconds: successCooldown.remainingSeconds,
+            cooldownAvailableAt: successCooldown.availableAt,
+            reportId: report.id,
+            reportVariantIndex: report.variantIndex,
+            reportStatus: report.status,
+            reportPeriodKey: report.periodKey ?? input.requestedPeriodKey,
+          });
+        }
+      }
+
       void logSyncAccess(input.accessContext, "sync_blocked", {
         code: error.code,
         reason: error.reason,

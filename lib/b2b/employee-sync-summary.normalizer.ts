@@ -12,7 +12,6 @@ function asArray(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
 }
 
-const MEDICATION_RECENT_LIMIT = 3;
 const MEDICATION_NAMES_PER_VISIT_LIMIT = 8;
 const MEDICATION_NAME_KEYS = [
   "medicineNm",
@@ -173,7 +172,7 @@ function resolveMedicationVisitKey(
   return `${date}|${hospital}|${visitType}`;
 }
 
-function limitRecentMedicationRows(rows: unknown[], maxRows: number) {
+function mergeMedicationRowsByVisit(rows: unknown[]) {
   if (rows.length === 0) return rows;
   const byVisit = new Map<
     string,
@@ -206,8 +205,7 @@ function limitRecentMedicationRows(rows: unknown[], maxRows: number) {
       const scoreDiff = right[1].score - left[1].score;
       if (scoreDiff !== 0) return scoreDiff;
       return left[1].firstIndex - right[1].firstIndex;
-    })
-    .slice(0, maxRows);
+    });
 
   return selectedVisits.map(([, group]) => {
     const representative = [...group.rows].sort(compareMedicationRows)[0] ?? {};
@@ -227,13 +225,13 @@ function limitRecentMedicationRows(rows: unknown[], maxRows: number) {
 
 function normalizeMedicationContainer(value: unknown) {
   if (Array.isArray(value)) {
-    return limitRecentMedicationRows(value, MEDICATION_RECENT_LIMIT);
+    return mergeMedicationRowsByVisit(value);
   }
   const record = asRecord(value);
   if (!record) return value;
   const rows = asArray(record.list ?? record.rows ?? record.items ?? record.history);
   if (rows.length === 0) return value;
-  const limitedRows = limitRecentMedicationRows(rows, MEDICATION_RECENT_LIMIT);
+  const limitedRows = mergeMedicationRowsByVisit(rows);
   const summary = asRecord(record.summary) ?? {};
   return {
     ...record,

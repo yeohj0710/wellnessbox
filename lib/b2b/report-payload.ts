@@ -28,7 +28,7 @@ import type { B2bReportPayload } from "@/lib/b2b/report-payload-types";
 import { extractWellness } from "@/lib/b2b/report-payload-wellness";
 import { resolveReportScores } from "@/lib/b2b/report-score-engine";
 
-export const B2B_REPORT_PAYLOAD_VERSION = 9;
+export const B2B_REPORT_PAYLOAD_VERSION = 10;
 
 async function findLatestByPeriodOrFallback<T>(input: {
   periodKey: string;

@@ -1051,10 +1051,10 @@
   border-radius: 12px;
   background: #ecfff3;
   color: #1f7a45;
-  font-weight: 800;
-  font-size: 16px;
+  font-weight: 700;
+  font-size: 14px;
   line-height: 1.5;
-  padding: 10px 12px;
+  padding: 8px 10px;
 }
 
 .editorPanel {

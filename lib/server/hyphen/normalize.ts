@@ -24,7 +24,6 @@ export type {
   NormalizedNhisPayload,
 };
 
-const MEDICATION_RECENT_LIMIT = 3;
 const MEDICATION_NAMES_PER_VISIT_LIMIT = 8;
 const MEDICATION_DATE_KEYS = [
   "diagDate",
@@ -177,7 +176,7 @@ function resolveMedicationVisitKey(row: NhisRow, fallbackIndex: number): string 
   return `${date}|${hospital}|${visitType}`;
 }
 
-function limitRecentMedicationRows(rows: NhisRow[], maxRows: number): NhisRow[] {
+function mergeMedicationRowsByVisit(rows: NhisRow[]): NhisRow[] {
   if (rows.length === 0) return rows;
   const byVisit = new Map<
     string,
@@ -204,8 +203,7 @@ function limitRecentMedicationRows(rows: NhisRow[], maxRows: number): NhisRow[] 
       const scoreDiff = right[1].score - left[1].score;
       if (scoreDiff !== 0) return scoreDiff;
       return left[1].firstIndex - right[1].firstIndex;
-    })
-    .slice(0, maxRows);
+    });
 
   return selectedVisits.map(([, group]) => {
     const representative = [...group.rows].sort(compareMedicationRows)[0] ?? {};
@@ -284,10 +282,7 @@ export function normalizeNhisPayload(input: NormalizeNhisPayloadInput): Normaliz
   const medicationSourceTag = useMedicalMedicationFallback
     ? "medical-fallback"
     : "medication";
-  const medicationRows = limitRecentMedicationRows(
-    medicationRowsSource,
-    MEDICATION_RECENT_LIMIT
-  );
+  const medicationRows = mergeMedicationRowsByVisit(medicationRowsSource);
   const medication = {
     ...medicationRaw,
     list: medicationRows,

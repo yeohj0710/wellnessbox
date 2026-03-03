@@ -64,8 +64,8 @@ function run() {
   );
 
   assert(
-    /MEDICATION_RECENT_LIMIT\s*=\s*3/.test(normalize),
-    "normalize.ts must keep medication row limit at 3"
+    /mergeMedicationRowsByVisit/.test(normalize),
+    "normalize.ts must preserve all medication visits while merging names by visit"
   );
   assert(
     /selectLatestCheckupOverviewRows/.test(normalize),

@@ -12,7 +12,6 @@ import {
 import {
   buildFriendlyAnalysisLines,
   buildFriendlyRiskLines,
-  buildHealthInsightLines,
   clampPercent,
   ensureSentence,
   formatMetricValue,
@@ -167,7 +166,7 @@ export default function ReportSummaryCards(props: {
   const healthMetrics = healthMetricsAll.slice(0, MAX_PAGE2_METRIC_ITEMS);
   const hiddenHealthMetricCount = Math.max(0, healthMetricsAll.length - healthMetrics.length);
 
-  const healthInsightLines = buildHealthInsightLines(payload);
+  const healthInsightEmptyMessage = "내용이 없습니다.";
 
   const medicationsAll = ensureArray(payload.health?.medications)
     .map((row) => ({
@@ -418,17 +417,7 @@ export default function ReportSummaryCards(props: {
 
           <article className={styles.reportDataCard}>
             <h3 className={styles.reportDataTitle}>건강검진 데이터 해석</h3>
-            {healthInsightLines.length === 0 ? (
-              <p className={styles.reportDataEmpty}>해석 가능한 건강검진 데이터가 충분하지 않습니다.</p>
-            ) : (
-              <ul className={styles.reportFriendlyList}>
-                {healthInsightLines.map((line, index) => (
-                  <li key={`insight-${index}`} className={styles.reportFriendlyItem}>
-                    {line}
-                  </li>
-                ))}
-              </ul>
-            )}
+            <p className={styles.reportDataEmpty}>{healthInsightEmptyMessage}</p>
           </article>
 
           <article className={styles.reportDataCard}>
