@@ -39,20 +39,20 @@ function runStaticRegressionChecks() {
     "medication fetch should retry using base payload when detail payload fails"
   );
   assert.ok(
-    fetchExecutorSource.includes("const recovered = await tryMedicalFallback();"),
-    "medication fetch should still support medical fallback for sparse accounts"
+    !fetchExecutorSource.includes("tryMedicalFallback"),
+    "medication fetch should not invoke extra medical fallback calls (cost guard)"
   );
   assert.ok(
-    fetchExecutorSource.includes("tryMedicationNameBackfill"),
-    "medication fetch should run a name-backfill retry when rows exist without medication names"
+    !fetchExecutorSource.includes("tryMedicationNameBackfill"),
+    "medication fetch should not invoke extra medication-name backfill retries (cost guard)"
   );
   assert.ok(
-    fetchExecutorSource.includes("buildMedicationBackfillDateRanges"),
-    "medication fetch should derive narrowed date ranges for medication-name backfill"
+    !fetchExecutorSource.includes("buildMedicationBackfillDateRanges"),
+    "medication fetch should not derive extra backfill date windows (cost guard)"
   );
   assert.ok(
-    fetchExecutorSource.includes("inspectMedicationPayload"),
-    "medication fetch should inspect rows for medication-name presence before fallback decisions"
+    fetchExecutorSource.includes("payloadHasAnyRows(detailPayloadResult)"),
+    "medication fetch should return detail payload when rows exist"
   );
 
   const medicationSource = read("lib/b2b/report-payload-medication.ts");
@@ -61,12 +61,26 @@ function runStaticRegressionChecks() {
     "medication history fallback should include cross-period snapshots"
   );
   assert.ok(
-    medicationSource.includes("primaryNeedsNameBackfill"),
-    "medication history fallback should run when current rows are present but unnamed"
+    medicationSource.includes("rows: rows.slice(0, REPORT_MEDICATION_VISIT_LIMIT)"),
+    "report payload medication rows should be capped to the most recent 3 visits"
   );
   assert.ok(
     medicationSource.includes("mergeMedicationRows"),
     "medication rows should merge raw and normalized sources with quality preference"
+  );
+  assert.ok(
+    medicationSource.includes("asRecord(root.raw)"),
+    "report payload medication resolver should parse snapshot raw envelope shape (`raw`)"
+  );
+  assert.ok(
+    medicationSource.includes("asRecord(data?.raw)"),
+    "report payload medication resolver should parse legacy envelope shape (`data.raw`)"
+  );
+  assert.ok(
+    medicationSource.includes(
+      "(primaryRows.length === 0 || !hasNamedMedicationRows(primaryRows))"
+    ),
+    "history fallback should run when latest rows are missing or contain only derived labels"
   );
 
   const summaryPatchSource = read("lib/b2b/employee-sync-summary.ts");
@@ -86,15 +100,15 @@ function runStaticRegressionChecks() {
   const medicationExtractSource = read("lib/b2b/report-payload-health-medication.ts");
   assert.ok(
     medicationExtractSource.includes(
-      "pickFirstByKeys(row, MEDICATION_NAME_KEYS) ??\n      resolveMedicationFallbackName(row, pharmacyVisit)"
+      "collectMedicationNamesByKeys(row, MEDICATION_NAME_KEYS)"
     ),
-    "medication extraction should prioritize named medication rows for all visit types before fallback labels"
+    "medication extraction should gather all available medication/ingredient name fields"
   );
 
   const reportSummarySource = read("components/b2b/ReportSummaryCards.tsx");
   assert.ok(
-    reportSummarySource.includes("const medications = medicationsAll;"),
-    "report summary should render the full medication list without client-side top-N trimming"
+    reportSummarySource.includes("const medications = medicationsAll.slice(0, 3);"),
+    "report summary should render only the most recent 3 medication visits"
   );
   assert.ok(
     reportSummarySource.includes("buildMedicationMetaLine"),

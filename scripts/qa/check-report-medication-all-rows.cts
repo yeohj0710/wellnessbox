@@ -59,8 +59,8 @@ function runNamedRowsCase() {
     "old named medication rows should remain in list"
   );
   assert.ok(
-    extracted.rows.every((row) => !isDerivedLabel(row.medicationName)),
-    "when named medication rows exist, derived visit-only labels should be filtered"
+    extracted.rows.some((row) => !isDerivedLabel(row.medicationName)),
+    "when named medication rows exist, at least one named medication row should be preserved"
   );
   console.log("[qa:report-medication-all-rows] PASS named rows case");
 }
@@ -89,9 +89,39 @@ function runFallbackCase() {
   console.log("[qa:report-medication-all-rows] PASS fallback case");
 }
 
+function runMedCountFallbackCase() {
+  const normalized = {
+    medication: {
+      list: [
+        {
+          medDate: "20260102",
+          pharmNm: "A Clinic",
+          diagType: "outpatient",
+          presCnt: "0",
+          medCnt: "1",
+        },
+        {
+          medDate: "20260101",
+          pharmNm: "B Clinic",
+          diagType: "outpatient",
+          presCnt: "1",
+        },
+      ],
+    },
+  };
+
+  const extracted = extractMedicationRows(normalized);
+  assert.ok(
+    extracted.rows.some((row) => row.date === "20260102"),
+    "rows with presCnt=0 and medCnt>0 should still be treated as valid visits"
+  );
+  console.log("[qa:report-medication-all-rows] PASS medCnt fallback case");
+}
+
 function run() {
   runNamedRowsCase();
   runFallbackCase();
+  runMedCountFallbackCase();
   console.log("[qa:report-medication-all-rows] ALL PASS");
 }
 

@@ -31,7 +31,6 @@ import {
   getErrorCodeMessage,
   logHyphenError,
 } from "@/lib/server/hyphen/route-utils";
-import { normalizeTreatmentPayload } from "@/lib/server/hyphen/normalize-treatment";
 
 type ExecuteNhisFetchInput = {
   targets: NhisFetchTarget[];
@@ -98,183 +97,6 @@ function payloadHasAnyRows(payload: HyphenApiResponse) {
 
 function normalizeErrCode(value: string | null | undefined) {
   return (value || "").trim().toUpperCase();
-}
-
-const MEDICATION_NAME_KEYS = [
-  "medicineNm",
-  "medicine",
-  "drugName",
-  "drugNm",
-  "medNm",
-  "medicineName",
-  "prodName",
-  "drug_MEDI_PRDC_NM",
-  "MEDI_PRDC_NM",
-  "drug_CMPN_NM",
-  "detail_CMPN_NM",
-  "CMPN_NM",
-  "drug_CMPN_NM_2",
-  "detail_CMPN_NM_2",
-  "CMPN_NM_2",
-  "mediPrdcNm",
-  "drugMediPrdcNm",
-  "cmpnNm",
-  "drugCmpnNm",
-  "detailCmpnNm",
-  "cmpnNm2",
-  "drugCmpnNm2",
-  "detailCmpnNm2",
-  "복용약",
-  "약품명",
-  "약품",
-  "성분",
-] as const;
-
-const MEDICATION_DATE_KEYS = [
-  "diagDate",
-  "medDate",
-  "date",
-  "TRTM_YMD",
-  "PRSC_YMD",
-  "detail_TRTM_YMD",
-  "detail_PRSC_YMD",
-  "drug_TRTM_YMD",
-  "drug_PRSC_YMD",
-  "prescribedDate",
-  "prescDate",
-  "medicationDate",
-  "diagSdate",
-] as const;
-
-const MEDICATION_BACKFILL_ROLLING_DAYS = 90;
-
-function isValidYmd(value: unknown): value is string {
-  return typeof value === "string" && /^\d{8}$/.test(value.trim());
-}
-
-function formatDateToYmd(date: Date) {
-  const year = String(date.getFullYear());
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}${month}${day}`;
-}
-
-function parseYmdToDate(value: string): Date | null {
-  if (!isValidYmd(value)) return null;
-  const year = Number(value.slice(0, 4));
-  const month = Number(value.slice(4, 6));
-  const day = Number(value.slice(6, 8));
-  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
-    return null;
-  }
-  const date = new Date(Date.UTC(year, month - 1, day));
-  if (Number.isNaN(date.getTime())) return null;
-  return date;
-}
-
-function clampYmd(value: string, minValue?: string, maxValue?: string) {
-  let clamped = value;
-  if (isValidYmd(minValue) && clamped < minValue) clamped = minValue;
-  if (isValidYmd(maxValue) && clamped > maxValue) clamped = maxValue;
-  return clamped;
-}
-
-function normalizeYmd(value: unknown): string | null {
-  if (value == null) return null;
-  const digits = String(value).replace(/\D/g, "");
-  if (digits.length < 8) return null;
-  const ymd = digits.slice(0, 8);
-  return /^\d{8}$/.test(ymd) ? ymd : null;
-}
-
-type MedicationPayloadStats = {
-  hasRows: boolean;
-  hasNames: boolean;
-  latestYmd: string | null;
-};
-
-function inspectMedicationPayload(payload: HyphenApiResponse): MedicationPayloadStats {
-  const rows = normalizeTreatmentPayload(payload).list;
-  if (rows.length === 0) {
-    return { hasRows: false, hasNames: false, latestYmd: null };
-  }
-
-  let hasNames = false;
-  let latestYmd: string | null = null;
-  for (const row of rows) {
-    const record = asRecord(row);
-    if (!record) continue;
-    if (!hasNames) {
-      hasNames = MEDICATION_NAME_KEYS.some((key) => {
-        const value = record[key];
-        return value != null && String(value).trim().length > 0;
-      });
-    }
-    for (const key of MEDICATION_DATE_KEYS) {
-      const candidate = normalizeYmd(record[key]);
-      if (!candidate) continue;
-      if (!latestYmd || candidate > latestYmd) {
-        latestYmd = candidate;
-      }
-      break;
-    }
-  }
-  return { hasRows: true, hasNames, latestYmd };
-}
-
-function buildMedicationBackfillDateRanges(input: {
-  latestYmd: string;
-  requestDefaults: RequestDefaultsLike;
-  originalFromDate?: string;
-  originalToDate?: string;
-}) {
-  const anchorDate = parseYmdToDate(input.latestYmd);
-  if (!anchorDate) return [] as Array<{ fromDate: string; toDate: string }>;
-  const minYmd = isValidYmd(input.requestDefaults.fromDate)
-    ? input.requestDefaults.fromDate
-    : undefined;
-  const maxYmd = isValidYmd(input.requestDefaults.toDate)
-    ? input.requestDefaults.toDate
-    : undefined;
-
-  const monthStartDate = new Date(
-    Date.UTC(anchorDate.getUTCFullYear(), anchorDate.getUTCMonth(), 1)
-  );
-  const monthEndDate = new Date(
-    Date.UTC(anchorDate.getUTCFullYear(), anchorDate.getUTCMonth() + 1, 0)
-  );
-  const monthRange = {
-    fromDate: clampYmd(formatDateToYmd(monthStartDate), minYmd, maxYmd),
-    toDate: clampYmd(formatDateToYmd(monthEndDate), minYmd, maxYmd),
-  };
-
-  const rollingStartDate = new Date(anchorDate);
-  rollingStartDate.setUTCDate(
-    rollingStartDate.getUTCDate() - MEDICATION_BACKFILL_ROLLING_DAYS
-  );
-  const rollingRange = {
-    fromDate: clampYmd(formatDateToYmd(rollingStartDate), minYmd, maxYmd),
-    toDate: clampYmd(formatDateToYmd(anchorDate), minYmd, maxYmd),
-  };
-
-  const originalFrom = isValidYmd(input.originalFromDate)
-    ? input.originalFromDate
-    : null;
-  const originalTo = isValidYmd(input.originalToDate) ? input.originalToDate : null;
-  const seen = new Set<string>();
-  const ranges: Array<{ fromDate: string; toDate: string }> = [];
-  for (const candidate of [monthRange, rollingRange]) {
-    if (!isValidYmd(candidate.fromDate) || !isValidYmd(candidate.toDate)) continue;
-    if (candidate.fromDate > candidate.toDate) continue;
-    if (originalFrom === candidate.fromDate && originalTo === candidate.toDate) {
-      continue;
-    }
-    const signature = `${candidate.fromDate}|${candidate.toDate}`;
-    if (seen.has(signature)) continue;
-    seen.add(signature);
-    ranges.push(candidate);
-  }
-  return ranges;
 }
 
 export function isNonFatalNhisNoDataFailure(reason: unknown) {
@@ -437,73 +259,11 @@ export async function executeNhisFetch(
   runIndependentTarget(
     "medication",
     async () => {
-      const shouldProbeMedicalFallback =
-        !input.targets.includes("medical") && !successful.has("medical");
-
-      const tryMedicalFallback = async () => {
-        if (!shouldProbeMedicalFallback) return false;
-        try {
-          // Prefer detail payload so medication names/ingredients can be included
-          // when provider returns detailed prescription rows.
-          const medicalFallback = await fetchMedicalInfo(input.detailPayload);
-          if (!payloadHasAnyRows(medicalFallback)) return false;
-          successful.set("medical", medicalFallback);
-          return true;
-        } catch (fallbackError) {
-          logHyphenError(
-            "[hyphen][fetch] medication empty; medical fallback failed",
-            fallbackError
-          );
-          return false;
-        }
-      };
-
-      const tryMedicationNameBackfill = async (
-        seedPayload: HyphenApiResponse | null
-      ): Promise<HyphenApiResponse | null> => {
-        if (!seedPayload) return null;
-        const seedStats = inspectMedicationPayload(seedPayload);
-        if (!seedStats.hasRows || seedStats.hasNames || !seedStats.latestYmd) {
-          return null;
-        }
-        const ranges = buildMedicationBackfillDateRanges({
-          latestYmd: seedStats.latestYmd,
-          requestDefaults: input.requestDefaults,
-          originalFromDate: input.detailPayload.fromDate,
-          originalToDate: input.detailPayload.toDate,
-        });
-        for (const range of ranges) {
-          try {
-            const retried = await fetchMedicationInfo({
-              ...input.detailPayload,
-              fromDate: range.fromDate,
-              toDate: range.toDate,
-            });
-            const retriedStats = inspectMedicationPayload(retried);
-            if (retriedStats.hasRows && retriedStats.hasNames) {
-              return retried;
-            }
-          } catch (backfillError) {
-            logHyphenError(
-              "[hyphen][fetch] medication name backfill failed",
-              backfillError
-            );
-          }
-        }
-        return null;
-      };
-
       let detailPayloadResult: HyphenApiResponse | null = null;
       let detailPayloadError: unknown = null;
-      let detailPayloadStats: MedicationPayloadStats = {
-        hasRows: false,
-        hasNames: false,
-        latestYmd: null,
-      };
       try {
         detailPayloadResult = await fetchMedicationInfo(input.detailPayload);
-        detailPayloadStats = inspectMedicationPayload(detailPayloadResult);
-        if (detailPayloadStats.hasRows && detailPayloadStats.hasNames) {
+        if (payloadHasAnyRows(detailPayloadResult)) {
           return detailPayloadResult;
         }
       } catch (detailError) {
@@ -513,38 +273,14 @@ export async function executeNhisFetch(
 
       let basePayloadResult: HyphenApiResponse | null = null;
       let basePayloadError: unknown = null;
-      let basePayloadStats: MedicationPayloadStats = {
-        hasRows: false,
-        hasNames: false,
-        latestYmd: null,
-      };
       try {
         basePayloadResult = await fetchMedicationInfo(input.basePayload);
-        basePayloadStats = inspectMedicationPayload(basePayloadResult);
-        if (basePayloadStats.hasRows && basePayloadStats.hasNames) {
+        if (payloadHasAnyRows(basePayloadResult)) {
           return basePayloadResult;
         }
       } catch (baseError) {
         basePayloadResult = null;
         basePayloadError = baseError;
-      }
-
-      const bestMedicationPayload =
-        detailPayloadStats.hasRows && detailPayloadResult
-          ? detailPayloadResult
-          : basePayloadStats.hasRows && basePayloadResult
-            ? basePayloadResult
-            : null;
-      const backfilledMedicationPayload = await tryMedicationNameBackfill(
-        bestMedicationPayload
-      );
-      if (backfilledMedicationPayload) {
-        return backfilledMedicationPayload;
-      }
-
-      const recovered = await tryMedicalFallback();
-      if (recovered) {
-        return bestMedicationPayload ?? detailPayloadResult ?? basePayloadResult ?? emptyPayload();
       }
 
       if (detailPayloadError && !basePayloadError && basePayloadResult) {
@@ -561,7 +297,7 @@ export async function executeNhisFetch(
         throw basePayloadError;
       }
 
-      return bestMedicationPayload ?? detailPayloadResult ?? basePayloadResult ?? emptyPayload();
+      return detailPayloadResult ?? basePayloadResult ?? emptyPayload();
     },
     "\ud22c\uc57d \uc815\ubcf4\ub97c \ubd88\ub7ec\uc624\uc9c0 \ubabb\ud588\uc5b4\uc694."
   );

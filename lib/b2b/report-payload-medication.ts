@@ -28,18 +28,16 @@ type ResolveReportMedicationRowsResult = {
 
 const MEDICATION_HISTORY_LOOKBACK = 8;
 const MEDICATION_CROSS_PERIOD_HISTORY_LOOKBACK = 12;
+const REPORT_MEDICATION_VISIT_LIMIT = 3;
 const MEDICATION_DERIVED_PHARMACY_LABEL = "\uc57d\uad6d \uc870\uc81c";
 const MEDICATION_DERIVED_VISIT_SUFFIX = " \uc9c4\ub8cc";
 
-function extractMedicationRowsFromRaw(rawJson: unknown): ReportMedicationRow[] {
-  const root = asRecord(rawJson);
-  const data = asRecord(root?.data) ?? root;
-  const raw = asRecord(data?.raw);
-  const medicationPayload = raw?.medication;
-  if (!medicationPayload) return [];
+function extractMedicationRowsFromRawPayload(payload: unknown): ReportMedicationRow[] {
+  const record = asRecord(payload);
+  if (!record) return [];
 
   const treatment = normalizeTreatmentPayload(
-    medicationPayload as Record<string, unknown>
+    record as Record<string, unknown>
   );
   if (!Array.isArray(treatment.list) || treatment.list.length === 0) return [];
 
@@ -49,6 +47,42 @@ function extractMedicationRowsFromRaw(rawJson: unknown): ReportMedicationRow[] {
     },
   };
   return extractMedicationRows(pseudoNormalized).rows;
+}
+
+function resolveRawPayloadByKey(rawJson: unknown, key: "medication" | "medical") {
+  const root = asRecord(rawJson);
+  if (!root) return null;
+
+  const rootRaw = asRecord(root.raw);
+  if (rootRaw && rootRaw[key] !== undefined) {
+    return rootRaw[key];
+  }
+
+  const data = asRecord(root.data);
+  const dataRaw = asRecord(data?.raw);
+  if (dataRaw && dataRaw[key] !== undefined) {
+    return dataRaw[key];
+  }
+
+  if (root[key] !== undefined) {
+    return root[key];
+  }
+
+  return null;
+}
+
+function extractMedicationRowsFromRaw(rawJson: unknown): ReportMedicationRow[] {
+  const medicationPayload = resolveRawPayloadByKey(rawJson, "medication");
+  const medicalPayload = resolveRawPayloadByKey(rawJson, "medical");
+
+  const medicationRows = extractMedicationRowsFromRawPayload(medicationPayload);
+  const medicalRows = extractMedicationRowsFromRawPayload(medicalPayload);
+  if (medicationRows.length === 0 && medicalRows.length === 0) return [];
+
+  return mergeMedicationRows({
+    primaryRows: medicationRows.length > 0 ? medicationRows : medicalRows,
+    fallbackRows: medicationRows.length > 0 ? medicalRows : [],
+  });
 }
 
 function parseMedicationDateScore(value: string | null | undefined) {
@@ -91,13 +125,6 @@ function medicationNameQuality(name: string | null | undefined) {
 
 function hasNamedMedicationRows(rows: ReportMedicationRow[]) {
   return rows.some((row) => medicationNameQuality(row.medicationName) >= 2);
-}
-
-function keepNamedRowsWhenAvailable(rows: ReportMedicationRow[]) {
-  const namedRows = rows.filter(
-    (row) => medicationNameQuality(row.medicationName) >= 2
-  );
-  return namedRows.length > 0 ? namedRows : rows;
 }
 
 function selectSortedRowsFromVisitMap(
@@ -247,21 +274,19 @@ export async function resolveReportMedicationRows(
 ): Promise<ResolveReportMedicationRowsResult> {
   const medicationExtraction = extractMedicationRows(input.normalizedJson);
   const medicationRowsFromRaw = extractMedicationRowsFromRaw(input.rawJson);
-  const rawRows = keepNamedRowsWhenAvailable(medicationRowsFromRaw);
-  const normalizedRows = keepNamedRowsWhenAvailable(medicationExtraction.rows);
-
-  const primaryRows = hasNamedMedicationRows(rawRows)
-    ? mergeMedicationRows({
-        primaryRows: rawRows,
-        fallbackRows: [],
-      })
-    : mergeMedicationRows({
-        primaryRows: normalizedRows.length > 0 ? normalizedRows : rawRows,
-        fallbackRows: normalizedRows.length > 0 ? rawRows : [],
-      });
-  const primaryNeedsNameBackfill = !hasNamedMedicationRows(primaryRows);
+  const primaryRows = mergeMedicationRows({
+    primaryRows:
+      medicationRowsFromRaw.length > 0
+        ? medicationRowsFromRaw
+        : medicationExtraction.rows,
+    fallbackRows:
+      medicationRowsFromRaw.length > 0 ? medicationExtraction.rows : [],
+  });
+  const shouldBackfillFromHistory =
+    Boolean(input.latestSnapshotId) &&
+    (primaryRows.length === 0 || !hasNamedMedicationRows(primaryRows));
   const rows =
-    input.latestSnapshotId && (primaryRows.length === 0 || primaryNeedsNameBackfill)
+    shouldBackfillFromHistory
       ? await resolveMedicationRowsFromHistory({
           employeeId: input.employeeId,
           periodKey: input.periodKey,
@@ -271,7 +296,7 @@ export async function resolveReportMedicationRows(
       : primaryRows;
 
   return {
-    rows,
+    rows: rows.slice(0, REPORT_MEDICATION_VISIT_LIMIT),
     containerState: medicationExtraction.containerState,
   };
 }

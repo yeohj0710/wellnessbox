@@ -287,13 +287,9 @@ function resolveSummaryPatchNeeds(normalizedJson: unknown) {
   const missing = new Set<NhisFetchTarget>();
   const medicationRows = resolveMedicationRows(normalizedJson);
   const checkupRows = resolveCheckupRows(normalizedJson);
-  const medicationNeedsNameBackfill =
-    medicationRows != null &&
-    (medicationRows.length === 0 || !hasMedicationNameInRows(medicationRows));
+  const medicationNeedsNameBackfill = false;
 
   if (medicationRows == null) {
-    missing.add("medication");
-  } else if (medicationNeedsNameBackfill) {
     missing.add("medication");
   }
   if (checkupRows == null) {

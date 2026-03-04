@@ -174,7 +174,7 @@ export default function ReportSummaryCards(props: {
       hospitalName: sanitizeTitle(toTrimmedText(row?.hospitalName)),
       date: toMedicationMetaDate(row?.date),
     }));
-  const medications = medicationsAll;
+  const medications = medicationsAll.slice(0, 3);
 
   const medicationStatusMessage = toTrimmedText(payload.health?.medicationStatus?.message);
 
