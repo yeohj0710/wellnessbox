@@ -38,7 +38,12 @@ type AxisItem = {
 
 function toMedicationMetaDate(value: unknown) {
   if (typeof value !== "string") return "";
-  return value.trim();
+  const text = value.trim();
+  const digits = text.replace(/\D/g, "");
+  if (digits.length >= 8) {
+    return `${digits.slice(0, 4)}.${digits.slice(4, 6)}.${digits.slice(6, 8)}`;
+  }
+  return text;
 }
 
 function buildMedicationMetaLine(input: {
@@ -190,7 +195,7 @@ export default function ReportSummaryCards(props: {
       hospitalName: sanitizeTitle(toTrimmedText(row?.hospitalName)),
       date: toMedicationMetaDate(row?.date),
     }));
-  const medications = medicationsAll.slice(0, 3);
+  const medications = medicationsAll;
 
   const medicationStatusMessage = toTrimmedText(payload.health?.medicationStatus?.message);
 
@@ -438,22 +443,22 @@ export default function ReportSummaryCards(props: {
       <section className={`${styles.reportSheet} ${styles.reportSheetThird}`} data-report-page="3">
         <header className={styles.reportPageHeader}>
           <p className={styles.reportPageKicker}>3페이지 상세 데이터</p>
-          <h2 className={styles.reportPageTitle}>최근 진료·조제 이력 · 약사 코멘트</h2>
+          <h2 className={styles.reportPageTitle}>복약 이력 · 약사 코멘트</h2>
           <p className={styles.reportPageSubtitle}>
-            최근 3건 진료/조제 이력을 확인하고, 복약 관련 코멘트를 함께 확인합니다.
+            복약 이력을 기준으로 언제 어떤 약물을 처방·조제받았는지 확인합니다.
           </p>
         </header>
 
         <div className={styles.reportSecondStack}>
           <article className={styles.reportDataCard}>
             <div className={styles.reportDataHeadRow}>
-              <h3 className={styles.reportDataTitle}>최근 진료·조제 이력 상세</h3>
+              <h3 className={styles.reportDataTitle}>복약 이력 상세</h3>
             </div>
             {medicationStatusMessage ? (
               <p className={styles.reportBlockLead}>{ensureSentence(medicationStatusMessage)}</p>
             ) : null}
             {medications.length === 0 ? (
-              <p className={styles.reportDataEmpty}>최근 진료/조제 이력이 없습니다.</p>
+              <p className={styles.reportDataEmpty}>복약 이력이 없습니다.</p>
             ) : (
               <ul className={styles.reportMedicationList}>
                 {medications.map((medication, index) => (

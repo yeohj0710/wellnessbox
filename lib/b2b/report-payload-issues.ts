@@ -103,7 +103,7 @@ export function resolveMedicationStatus(input: {
   }
   return {
     type: "none",
-    message: "진료/조제 이력이 없습니다.",
+    message: "복약 이력이 없습니다.",
     failedTargets,
   };
 }

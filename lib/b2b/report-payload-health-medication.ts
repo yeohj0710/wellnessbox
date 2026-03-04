@@ -5,6 +5,7 @@ type MedicationRow = {
   hospitalName: string | null;
   date: string | null;
   dosageDay: string | null;
+  medicationEffects: string[];
 };
 
 export type MedicationContainerState = "present" | "missing" | "unrecognized";
@@ -89,6 +90,20 @@ const MEDICATION_DOSAGE_KEYS = [
   "detail_DOSAGE_DAY",
   "drug_DOSAGE_DAY",
 ] as const;
+const MEDICATION_EFFECT_KEYS = [
+  "medicineEffect",
+  "effect",
+  "effectNm",
+  "drug_KPIC_EFMD",
+  "detail_KPIC_EFMD",
+  "KPIC_EFMD",
+  "drug_EFFT_EFT_CNT",
+  "detail_EFFT_EFT_CNT",
+  "EFFT_EFT_CNT",
+  "efftEftCnt",
+  "\ud6a8\ub2a5",
+  "\ud6a8\uacfc",
+] as const;
 
 function parseSortableDateScore(value: unknown) {
   const text = toText(value);
@@ -144,6 +159,28 @@ function collectMedicationNamesByKeys(
     names.push(text);
   }
   return names;
+}
+
+function normalizeMedicationEffectText(value: string | null) {
+  const text = (value ?? "").trim();
+  if (!text) return null;
+  if (text === "-" || text === "\uc5c6\uc74c" || text === "null") return null;
+  return text;
+}
+
+function collectMedicationEffectsByKeys(
+  row: Record<string, unknown>,
+  keys: readonly string[]
+) {
+  const effects: string[] = [];
+  const seen = new Set<string>();
+  for (const key of keys) {
+    const text = normalizeMedicationEffectText(toText(row[key]));
+    if (!text || seen.has(text)) continue;
+    seen.add(text);
+    effects.push(text);
+  }
+  return effects;
 }
 
 function hasPositiveSignal(value: string | null) {
@@ -288,12 +325,17 @@ export function extractMedicationRows(
       (medicationNames.length > 0 ? medicationNames.join(", ") : null) ??
       resolveMedicationFallbackName(row, pharmacyVisit);
     if (!medicationName) continue;
+    const medicationEffects = collectMedicationEffectsByKeys(
+      row,
+      MEDICATION_EFFECT_KEYS
+    );
 
     const entry: MedicationRow = {
       medicationName,
       hospitalName,
       date: pickFirstByKeys(row, MEDICATION_DATE_KEYS) || null,
       dosageDay: pickFirstByKeys(row, MEDICATION_DOSAGE_KEYS) || null,
+      medicationEffects,
     };
 
     const visitKey = resolveMedicationVisitKey(row, index);
@@ -329,6 +371,10 @@ export function extractMedicationRows(
         (medicationNames.length > 0 ? medicationNames.join(", ") : null) ??
         resolveMedicationFallbackName(row, pharmacyVisit);
       if (!medicationName) continue;
+      const medicationEffects = collectMedicationEffectsByKeys(
+        row,
+        MEDICATION_EFFECT_KEYS
+      );
 
       const score = resolveMedicationDateScore(row);
       byVisit.set(visitKey, {
@@ -338,6 +384,7 @@ export function extractMedicationRows(
             hospitalName,
             date: pickFirstByKeys(row, MEDICATION_DATE_KEYS) || null,
             dosageDay: pickFirstByKeys(row, MEDICATION_DOSAGE_KEYS) || null,
+            medicationEffects,
           },
         ],
         score,
@@ -365,6 +412,7 @@ export function extractMedicationRows(
           hospitalName: null,
           date: null,
           dosageDay: null,
+          medicationEffects: [],
         };
       }
 
@@ -376,6 +424,16 @@ export function extractMedicationRows(
         seenNames.add(name);
         names.push(name);
       }
+      const effects: string[] = [];
+      const seenEffects = new Set<string>();
+      for (const item of group.entries) {
+        for (const effect of item.medicationEffects) {
+          const normalized = effect.trim();
+          if (!normalized || seenEffects.has(normalized)) continue;
+          seenEffects.add(normalized);
+          effects.push(normalized);
+        }
+      }
 
       return {
         ...representative,
@@ -383,6 +441,7 @@ export function extractMedicationRows(
           names.length > 0
             ? names.join(", ")
             : representative.medicationName,
+        medicationEffects: effects,
       };
     });
 

@@ -71,7 +71,11 @@ async function runRootRawEnvelopeCase() {
     },
   });
 
-  assert.equal(result.rows.length, 3, "report medication rows must be capped to 3");
+  assert.equal(
+    result.rows.length,
+    3,
+    "report medication rows should prioritize named rows when derived rows coexist"
+  );
   assert.equal(result.rows[0]?.date, "20251201");
   assert.ok(
     result.rows[0]?.medicationName.includes("drug-a"),
@@ -83,8 +87,8 @@ async function runRootRawEnvelopeCase() {
   );
   assert.equal(
     result.rows.some((row) => row.medicationName.includes("drug-d")),
-    false,
-    "older 4th visit should be excluded by recent-3 cap"
+    true,
+    "named medication rows should include older entries when they contain medicine names"
   );
   console.log("[qa:report-medication-raw-envelope] PASS root.raw envelope case");
 }
@@ -202,10 +206,10 @@ async function runSameDateNamedPriorityCase() {
     },
   });
 
-  assert.equal(result.rows.length, 3);
+  assert.equal(result.rows.length, 1);
   assert.ok(
     result.rows.some((row) => row.medicationName.includes("drug-z")),
-    "recent rows with same date should prioritize named medication visits"
+    "when named rows exist, derived visit rows should be filtered out"
   );
   console.log("[qa:report-medication-raw-envelope] PASS same-date named priority case");
 }

@@ -91,8 +91,12 @@ function runStaticRegressionChecks() {
     "medication history fallback should include cross-period snapshots"
   );
   assert.ok(
-    medicationSource.includes("rows: rows.slice(0, REPORT_MEDICATION_VISIT_LIMIT)"),
-    "report payload medication rows should be capped to the most recent 3 visits"
+    medicationSource.includes("const prioritizedRows = prioritizeMedicationRows(rows);"),
+    "report payload medication rows should prioritize named medication rows before display capping"
+  );
+  assert.ok(
+    medicationSource.includes("rows: prioritizedRows.slice(0, REPORT_MEDICATION_VISIT_LIMIT)"),
+    "report payload medication rows should be capped after named-row prioritization"
   );
   assert.ok(
     medicationSource.includes("mergeMedicationRows"),
@@ -173,8 +177,12 @@ function runStaticRegressionChecks() {
     "report summary should render health metric grid from full health.metrics payload"
   );
   assert.ok(
-    reportSummarySource.includes("const medications = medicationsAll.slice(0, 3);"),
-    "report summary should render only the most recent 3 medication visits"
+    reportSummarySource.includes("const medications = medicationsAll;"),
+    "report summary should render full medication-focused rows from payload"
+  );
+  assert.ok(
+    !reportSummarySource.includes("최근 3건 진료/조제 이력을 확인하고"),
+    "report summary copy should no longer force recent-3 visit framing"
   );
   assert.ok(
     reportSummarySource.includes("data-report-page=\"3\""),

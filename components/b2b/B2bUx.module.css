@@ -2611,6 +2611,18 @@
   list-style: none;
   display: grid;
   gap: 6px;
+  max-height: 360px;
+  overflow-y: auto;
+  padding-right: 3px;
+}
+
+.reportMedicationList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.reportMedicationList::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #ccdaee;
 }
 
 .reportMedicationItem {
@@ -3307,6 +3319,10 @@
 
   .reportBlockTitle {
     font-size: 17px;
+  }
+
+  .reportMedicationList {
+    max-height: 300px;
   }
 
   .toolbarRow {

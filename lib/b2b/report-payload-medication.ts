@@ -28,7 +28,7 @@ type ResolveReportMedicationRowsResult = {
 
 const MEDICATION_HISTORY_LOOKBACK = 8;
 const MEDICATION_CROSS_PERIOD_HISTORY_LOOKBACK = 12;
-const REPORT_MEDICATION_VISIT_LIMIT = 3;
+const REPORT_MEDICATION_VISIT_LIMIT = 120;
 const MEDICATION_DERIVED_PHARMACY_LABEL = "\uc57d\uad6d \uc870\uc81c";
 const MEDICATION_DERIVED_VISIT_SUFFIX = " \uc9c4\ub8cc";
 
@@ -187,6 +187,17 @@ function medicationNameQuality(name: string | null | undefined) {
 
 function hasNamedMedicationRows(rows: ReportMedicationRow[]) {
   return rows.some((row) => medicationNameQuality(row.medicationName) >= 2);
+}
+
+function prioritizeMedicationRows(rows: ReportMedicationRow[]) {
+  if (rows.length === 0) return rows;
+  const namedRows = rows.filter(
+    (row) => medicationNameQuality(row.medicationName) >= 2
+  );
+  if (namedRows.length > 0) {
+    return namedRows;
+  }
+  return rows;
 }
 
 function selectSortedRowsFromVisitMap(
@@ -360,9 +371,10 @@ export async function resolveReportMedicationRows(
           primaryRows,
         })
       : primaryRows;
+  const prioritizedRows = prioritizeMedicationRows(rows);
 
   return {
-    rows: rows.slice(0, REPORT_MEDICATION_VISIT_LIMIT),
+    rows: prioritizedRows.slice(0, REPORT_MEDICATION_VISIT_LIMIT),
     containerState: medicationExtraction.containerState,
   };
 }
