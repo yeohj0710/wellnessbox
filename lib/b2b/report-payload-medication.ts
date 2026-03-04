@@ -32,42 +32,104 @@ const REPORT_MEDICATION_VISIT_LIMIT = 3;
 const MEDICATION_DERIVED_PHARMACY_LABEL = "\uc57d\uad6d \uc870\uc81c";
 const MEDICATION_DERIVED_VISIT_SUFFIX = " \uc9c4\ub8cc";
 
+function parseMaybeJson(value: unknown) {
+  if (typeof value !== "string") return value;
+  const text = value.trim();
+  if (!text) return value;
+  if (
+    !text.startsWith("{") &&
+    !text.startsWith("[")
+  ) {
+    return value;
+  }
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return value;
+  }
+}
+
+function asParsedRecord(value: unknown) {
+  return asRecord(parseMaybeJson(value));
+}
+
 function extractMedicationRowsFromRawPayload(payload: unknown): ReportMedicationRow[] {
-  const record = asRecord(payload);
-  if (!record) return [];
-
-  const treatment = normalizeTreatmentPayload(
-    record as Record<string, unknown>
-  );
-  if (!Array.isArray(treatment.list) || treatment.list.length === 0) return [];
-
-  const pseudoNormalized = {
-    medication: {
-      list: treatment.list,
-    },
+  const candidates: unknown[] = [];
+  const seen = new Set<unknown>();
+  const appendCandidate = (value: unknown) => {
+    const parsed = parseMaybeJson(value);
+    if (!parsed || seen.has(parsed)) return;
+    seen.add(parsed);
+    candidates.push(parsed);
   };
-  return extractMedicationRows(pseudoNormalized).rows;
+
+  appendCandidate(payload);
+
+  const root = asParsedRecord(payload);
+  if (root) {
+    appendCandidate(root.raw);
+    appendCandidate(root.data);
+    appendCandidate(asParsedRecord(root.data)?.raw);
+    appendCandidate(root.payload);
+    appendCandidate(asParsedRecord(root.payload)?.data);
+    appendCandidate(asParsedRecord(asParsedRecord(root.payload)?.data)?.raw);
+  }
+
+  for (const candidate of candidates) {
+    const record = asParsedRecord(candidate);
+    if (!record) continue;
+    const treatment = normalizeTreatmentPayload(record as Record<string, unknown>);
+    if (!Array.isArray(treatment.list) || treatment.list.length === 0) continue;
+
+    const pseudoNormalized = {
+      medication: {
+        list: treatment.list,
+      },
+    };
+    const rows = extractMedicationRows(pseudoNormalized).rows;
+    if (rows.length > 0) {
+      return rows;
+    }
+  }
+
+  return [];
 }
 
 function resolveRawPayloadByKey(rawJson: unknown, key: "medication" | "medical") {
-  const root = asRecord(rawJson);
+  const root = asParsedRecord(rawJson);
   if (!root) return null;
 
-  const rootRaw = asRecord(root.raw);
-  if (rootRaw && rootRaw[key] !== undefined) {
-    return rootRaw[key];
-  }
+  const rootRaw = asParsedRecord(root.raw);
+  const rootRawRaw = asParsedRecord(rootRaw?.raw);
+  const rootRawData = asParsedRecord(rootRaw?.data);
+  const rootRawDataRaw = asParsedRecord(rootRawData?.raw);
+  const rootData = asParsedRecord(root.data);
+  const rootDataRaw = asParsedRecord(rootData?.raw);
+  const rootPayload = asParsedRecord(root.payload);
+  const rootPayloadRaw = asParsedRecord(rootPayload?.raw);
+  const rootPayloadData = asParsedRecord(rootPayload?.data);
+  const rootPayloadDataRaw = asParsedRecord(rootPayloadData?.raw);
 
-  const data = asRecord(root.data);
-  const dataRaw = asRecord(data?.raw);
-  if (dataRaw && dataRaw[key] !== undefined) {
-    return dataRaw[key];
-  }
+  const candidates = [
+    rootRaw?.[key],
+    rootRawRaw?.[key],
+    rootRawData?.[key],
+    rootRawDataRaw?.[key],
+    rootDataRaw?.[key],
+    rootData?.[key],
+    rootPayloadDataRaw?.[key],
+    rootPayloadRaw?.[key],
+    rootPayloadData?.[key],
+    root[key],
+  ];
 
-  if (root[key] !== undefined) {
-    return root[key];
+  for (const candidate of candidates) {
+    if (candidate === undefined) continue;
+    const parsedCandidate = parseMaybeJson(candidate);
+    if (parsedCandidate !== undefined) {
+      return parsedCandidate;
+    }
   }
-
   return null;
 }
 

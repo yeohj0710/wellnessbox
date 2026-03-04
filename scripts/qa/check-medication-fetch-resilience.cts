@@ -99,12 +99,16 @@ function runStaticRegressionChecks() {
     "medication rows should merge raw and normalized sources with quality preference"
   );
   assert.ok(
-    medicationSource.includes("asRecord(root.raw)"),
+    medicationSource.includes("asParsedRecord(root.raw)"),
     "report payload medication resolver should parse snapshot raw envelope shape (`raw`)"
   );
   assert.ok(
-    medicationSource.includes("asRecord(data?.raw)"),
+    medicationSource.includes("asParsedRecord(rootData?.raw)"),
     "report payload medication resolver should parse legacy envelope shape (`data.raw`)"
+  );
+  assert.ok(
+    medicationSource.includes("parseMaybeJson"),
+    "report payload medication resolver should parse stringified raw envelope payloads"
   );
   assert.ok(
     medicationSource.includes(
@@ -205,6 +209,16 @@ function runStaticRegressionChecks() {
   assert.ok(
     !metricsSource.includes("if (metrics.length >= 16) break;"),
     "health metric extraction should not truncate measured indicators at 16"
+  );
+
+  const reportServiceSource = read("lib/b2b/report-service.ts");
+  assert.ok(
+    reportServiceSource.includes("shouldRegenerateEmptyMedicationReport"),
+    "report service should recover stale empty-medication reports when snapshot treatment rows exist"
+  );
+  assert.ok(
+    reportServiceSource.includes("needsMedicationRecovery"),
+    "ensureLatestB2bReport should trigger medication recovery regeneration check"
   );
   console.log("[qa:medication-fetch-resilience] PASS static regression checks");
 }

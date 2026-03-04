@@ -210,11 +210,96 @@ async function runSameDateNamedPriorityCase() {
   console.log("[qa:report-medication-raw-envelope] PASS same-date named priority case");
 }
 
+async function runNestedRawEnvelopeCase() {
+  const rows = [
+    {
+      medDate: "20251201",
+      pharmNm: "A Clinic",
+      diagType: "일반외래",
+      presCnt: "1",
+    },
+    {
+      medDate: "20251031",
+      pharmNm: "B Clinic",
+      diagType: "일반외래",
+      presCnt: "1",
+    },
+    {
+      medDate: "20250522",
+      pharmNm: "C Pharmacy",
+      diagType: "처방조제",
+      presCnt: "1",
+    },
+  ];
+
+  const result = await resolveReportMedicationRows!({
+    employeeId: "qa-employee",
+    periodKey: "2026-03",
+    latestSnapshotId: null,
+    normalizedJson: {
+      medication: { list: [] },
+    },
+    rawJson: {
+      raw: {
+        raw: {
+          medical: buildMedicationPayload(rows),
+        },
+      },
+    },
+  });
+
+  assert.equal(
+    result.rows.length,
+    3,
+    "resolver should support nested raw.raw envelope shape"
+  );
+  assert.equal(
+    result.rows[0]?.date,
+    "20251201",
+    "nested raw envelope should preserve the latest visit ordering"
+  );
+  console.log("[qa:report-medication-raw-envelope] PASS nested raw envelope case");
+}
+
+async function runStringifiedRawEnvelopeCase() {
+  const rows = [
+    {
+      medDate: "20260301",
+      pharmNm: "F Pharmacy",
+      medicineNm: "drug-f",
+      CMPN_NM: "ingredient-f",
+    },
+  ];
+
+  const rawJson = JSON.stringify({
+    raw: {
+      medication: buildMedicationPayload(rows),
+    },
+  });
+
+  const result = await resolveReportMedicationRows!({
+    employeeId: "qa-employee",
+    periodKey: "2026-03",
+    latestSnapshotId: null,
+    normalizedJson: { medication: { list: [] } },
+    rawJson,
+  });
+
+  assert.equal(result.rows.length, 1);
+  assert.ok(
+    result.rows[0]?.medicationName.includes("drug-f"),
+    "resolver should parse stringified rawJson envelope payloads"
+  );
+  console.log("[qa:report-medication-raw-envelope] PASS stringified raw envelope case");
+}
+
 async function run() {
   await runRootRawEnvelopeCase();
   await runDataRawEnvelopeCase();
   await runMedicalFallbackEnvelopeCase();
   await runSameDateNamedPriorityCase();
+  await runNestedRawEnvelopeCase();
+  await runStringifiedRawEnvelopeCase();
   console.log("[qa:report-medication-raw-envelope] ALL PASS");
 }
 

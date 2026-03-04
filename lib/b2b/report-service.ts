@@ -62,6 +62,107 @@ function resolvePayloadVersion(reportPayload: unknown) {
   return Math.round(raw);
 }
 
+function parseMaybeJsonRecord(value: unknown): Record<string, unknown> | null {
+  if (!value) return null;
+  if (typeof value === "string") {
+    const text = value.trim();
+    if (!text || (!text.startsWith("{") && !text.startsWith("["))) return null;
+    try {
+      const parsed = JSON.parse(text) as unknown;
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+      return parsed as Record<string, unknown>;
+    } catch {
+      return null;
+    }
+  }
+  if (typeof value !== "object" || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+function resolveRowsLengthFromContainer(value: unknown) {
+  if (Array.isArray(value)) return value.length;
+  const record = parseMaybeJsonRecord(value);
+  if (!record) return 0;
+  const listLike = record.list ?? record.rows ?? record.items ?? record.history;
+  if (Array.isArray(listLike)) return listLike.length;
+  const dataRecord = parseMaybeJsonRecord(record.data);
+  if (Array.isArray(dataRecord?.list)) return dataRecord.list.length;
+  return 0;
+}
+
+function hasAnyTreatmentRows(input: {
+  normalizedJson: unknown;
+  rawJson: unknown;
+}) {
+  const normalized = parseMaybeJsonRecord(input.normalizedJson);
+  const normalizedMedicationLen = resolveRowsLengthFromContainer(normalized?.medication);
+  const normalizedMedicalLen = resolveRowsLengthFromContainer(normalized?.medical);
+  if (normalizedMedicationLen > 0 || normalizedMedicalLen > 0) return true;
+
+  const root = parseMaybeJsonRecord(input.rawJson);
+  if (!root) return false;
+  const rootRaw = parseMaybeJsonRecord(root.raw);
+  const rootRawRaw = parseMaybeJsonRecord(rootRaw?.raw);
+  const rootData = parseMaybeJsonRecord(root.data);
+  const rootDataRaw = parseMaybeJsonRecord(rootData?.raw);
+  const rootPayload = parseMaybeJsonRecord(root.payload);
+  const rootPayloadRaw = parseMaybeJsonRecord(rootPayload?.raw);
+  const rootPayloadData = parseMaybeJsonRecord(rootPayload?.data);
+  const rootPayloadDataRaw = parseMaybeJsonRecord(rootPayloadData?.raw);
+
+  const rawCandidates = [
+    rootRaw?.medical,
+    rootRaw?.medication,
+    rootRawRaw?.medical,
+    rootRawRaw?.medication,
+    rootDataRaw?.medical,
+    rootDataRaw?.medication,
+    rootData?.medical,
+    rootData?.medication,
+    rootPayloadDataRaw?.medical,
+    rootPayloadDataRaw?.medication,
+    rootPayloadRaw?.medical,
+    rootPayloadRaw?.medication,
+    rootPayloadData?.medical,
+    rootPayloadData?.medication,
+    root.medical,
+    root.medication,
+  ];
+
+  return rawCandidates.some((candidate) => resolveRowsLengthFromContainer(candidate) > 0);
+}
+
+function resolveMedicationRowsLengthFromReportPayload(reportPayload: unknown) {
+  const payload = parseMaybeJsonRecord(reportPayload);
+  const health = parseMaybeJsonRecord(payload?.health);
+  const medications = health?.medications;
+  return Array.isArray(medications) ? medications.length : 0;
+}
+
+async function shouldRegenerateEmptyMedicationReport(input: {
+  employeeId: string;
+  periodKey: string;
+  reportPayload: unknown;
+}) {
+  if (resolveMedicationRowsLengthFromReportPayload(input.reportPayload) > 0) {
+    return false;
+  }
+
+  const latestHealth = await db.b2bHealthDataSnapshot.findFirst({
+    where: { employeeId: input.employeeId, periodKey: input.periodKey },
+    orderBy: { fetchedAt: "desc" },
+    select: {
+      normalizedJson: true,
+      rawJson: true,
+    },
+  });
+  if (!latestHealth) return false;
+  return hasAnyTreatmentRows({
+    normalizedJson: latestHealth.normalizedJson,
+    rawJson: latestHealth.rawJson,
+  });
+}
+
 async function trimOldReportsForEmployeePeriod(
   employeeId: string,
   periodKey: string | null | undefined
@@ -272,6 +373,19 @@ export async function ensureLatestB2bReport(employeeId: string, periodKey?: stri
         recomputeAnalysis: true,
       });
     }
+
+    const needsMedicationRecovery = await shouldRegenerateEmptyMedicationReport({
+      employeeId,
+      periodKey: targetPeriod,
+      reportPayload: latest.reportPayload,
+    });
+    if (needsMedicationRecovery) {
+      return createB2bReportSnapshot({
+        employeeId,
+        periodKey: targetPeriod,
+      });
+    }
+
     const refreshed = await refreshReportLayoutIfNeeded(latest);
     if (refreshed) return refreshed;
   }
