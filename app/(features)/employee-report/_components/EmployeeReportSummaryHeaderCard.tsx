@@ -48,6 +48,8 @@ export default function EmployeeReportSummaryHeaderCard({
     syncNextAction === "sign" ? "카카오톡 인증 완료 후 확인" : "다시 시도";
   const syncRetryBusyLabel =
     syncNextAction === "sign" ? "확인 중..." : "재시도 중...";
+  // NOTE: PDF 다운로드 장애 대응 임시 숨김. 복구 시 true로 바꿔 버튼을 다시 노출하세요.
+  const showPdfDownloadButton = false;
 
   return (
     <section className={styles.sectionCard} data-testid="employee-report-summary-section">
@@ -86,15 +88,17 @@ export default function EmployeeReportSummaryHeaderCard({
             ))
           )}
         </select>
-        <button
-          type="button"
-          onClick={onDownloadPdf}
-          disabled={busy}
-          data-testid="employee-report-download-pdf"
-          className={`${styles.buttonPrimary} ${styles.summaryPrimaryButton}`}
-        >
-          {busy ? "PDF 생성 중..." : "PDF 다운로드"}
-        </button>
+        {showPdfDownloadButton ? (
+          <button
+            type="button"
+            onClick={onDownloadPdf}
+            disabled={busy}
+            data-testid="employee-report-download-pdf"
+            className={`${styles.buttonPrimary} ${styles.summaryPrimaryButton}`}
+          >
+            {busy ? "PDF 생성 중..." : "PDF 다운로드"}
+          </button>
+        ) : null}
       </div>
 
       <p className={styles.inlineHint}>
