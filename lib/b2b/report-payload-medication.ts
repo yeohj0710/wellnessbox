@@ -136,6 +136,10 @@ function selectSortedRowsFromVisitMap(
         parseMedicationDateScore(right.row.date) -
         parseMedicationDateScore(left.row.date);
       if (scoreDiff !== 0) return scoreDiff;
+      const qualityDiff =
+        medicationNameQuality(right.row.medicationName) -
+        medicationNameQuality(left.row.medicationName);
+      if (qualityDiff !== 0) return qualityDiff;
       return left.order - right.order;
     })
     .map((item) => item.row);

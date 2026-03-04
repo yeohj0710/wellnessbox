@@ -119,6 +119,10 @@ function runStaticRegressionChecks() {
     "summary patch should allow network retry for medication name backfill"
   );
   assert.ok(
+    summaryPatchSource.includes("identity: input.identity"),
+    "summary patch should propagate employee identity to network backfill payloads"
+  );
+  assert.ok(
     !summaryPatchSource.includes("skipNetworkFetchForMedicationBackfillOnly"),
     "summary patch should not suppress network retry for medication backfill-only cases"
   );
@@ -135,6 +139,20 @@ function runStaticRegressionChecks() {
   assert.ok(
     summaryNormalizerSource.includes("medicationRows.length === 0"),
     "summary patch planner should treat empty medication rows as recoverable when medical hints exist"
+  );
+
+  const summaryPatchFetchSource = read(
+    "lib/b2b/employee-sync-summary.fetch-patch.ts"
+  );
+  assert.ok(
+    summaryPatchFetchSource.includes("resNm: input.identity?.name ?? undefined"),
+    "summary patch network payload should include employee name for API compatibility"
+  );
+  assert.ok(
+    summaryPatchFetchSource.includes(
+      "mobileNo: input.identity?.phoneNormalized ?? undefined"
+    ),
+    "summary patch network payload should include employee phone for API compatibility"
   );
 
   const medicationExtractSource = read("lib/b2b/report-payload-health-medication.ts");

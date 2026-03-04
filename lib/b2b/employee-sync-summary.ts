@@ -57,6 +57,11 @@ function mergeRawPayloadByTargets(input: {
 export async function patchSummaryTargetsIfNeeded(input: {
   appUserId: string;
   identityHash: string;
+  identity?: {
+    name: string;
+    birthDate: string;
+    phoneNormalized: string;
+  } | null;
   payload: NhisFetchRoutePayload;
   effectiveYearLimit: number;
   requestDefaults: ReturnType<typeof buildNhisRequestDefaults>;
@@ -80,6 +85,7 @@ export async function patchSummaryTargetsIfNeeded(input: {
     linkLoginMethod: input.linkLoginMethod,
     linkLoginOrgCd: input.linkLoginOrgCd,
     linkCookieData: input.linkCookieData,
+    identity: input.identity,
     allowNetwork: true,
     requireMedicationNames: summaryPatchNeeds.medicationNeedsNameBackfill,
     hasRequiredMedicationNames: payloadHasMedicationNames,

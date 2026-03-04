@@ -161,10 +161,60 @@ async function runMedicalFallbackEnvelopeCase() {
   console.log("[qa:report-medication-raw-envelope] PASS raw medical fallback case");
 }
 
+async function runSameDateNamedPriorityCase() {
+  const rows = [
+    {
+      medDate: "20251201",
+      pharmNm: "A Clinic",
+      diagType: "outpatient",
+      presCnt: "1",
+    },
+    {
+      medDate: "20251031",
+      pharmNm: "B Clinic",
+      diagType: "outpatient",
+      presCnt: "1",
+    },
+    {
+      medDate: "20250522",
+      pharmNm: "C Clinic",
+      diagType: "outpatient",
+      presCnt: "1",
+    },
+    {
+      medDate: "20250522",
+      pharmNm: "C Pharmacy",
+      medicineNm: "drug-z",
+      CMPN_NM: "ingredient-z",
+      presCnt: "1",
+    },
+  ];
+
+  const result = await resolveReportMedicationRows!({
+    employeeId: "qa-employee",
+    periodKey: "2026-03",
+    latestSnapshotId: null,
+    normalizedJson: { medication: { list: [] } },
+    rawJson: {
+      raw: {
+        medication: buildMedicationPayload(rows),
+      },
+    },
+  });
+
+  assert.equal(result.rows.length, 3);
+  assert.ok(
+    result.rows.some((row) => row.medicationName.includes("drug-z")),
+    "recent rows with same date should prioritize named medication visits"
+  );
+  console.log("[qa:report-medication-raw-envelope] PASS same-date named priority case");
+}
+
 async function run() {
   await runRootRawEnvelopeCase();
   await runDataRawEnvelopeCase();
   await runMedicalFallbackEnvelopeCase();
+  await runSameDateNamedPriorityCase();
   console.log("[qa:report-medication-raw-envelope] ALL PASS");
 }
 

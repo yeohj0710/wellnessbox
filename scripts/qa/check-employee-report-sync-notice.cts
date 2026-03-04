@@ -12,6 +12,7 @@ function read(filePath: string) {
 const {
   ApiRequestError,
   buildSyncGuidance,
+  isPdfEngineUnavailableFailure,
   requestJson,
   resolveSyncCompletionNotice,
 } = require(path.join(
@@ -39,6 +40,11 @@ const {
       networkErrorMessage?: string;
     }
   ) => Promise<T>;
+  isPdfEngineUnavailableFailure: (input: {
+    code?: string | null;
+    reason?: string | null;
+    error?: string | null;
+  }) => boolean;
   resolveSyncCompletionNotice: (input: {
     sync?: {
       source?: "fresh" | "cache-valid" | "cache-history" | "snapshot-history";
@@ -50,12 +56,15 @@ const {
 };
 
 function runSyncNoticeCases() {
+  const expectedCompletionNotice =
+    "건강정보 연동이 완료되었습니다. 이어서 설문을 진행해 주세요.";
+
   const fresh = resolveSyncCompletionNotice({
     sync: { source: "fresh", networkFetched: true },
     forceRefresh: false,
     authReused: false,
   });
-  assert.equal(fresh, "최신 건강정보를 불러왔습니다.");
+  assert.equal(fresh, expectedCompletionNotice);
   console.log("[qa:employee-report-sync-notice] PASS fresh notice");
 
   const forceFresh = resolveSyncCompletionNotice({
@@ -63,7 +72,7 @@ function runSyncNoticeCases() {
     forceRefresh: true,
     authReused: false,
   });
-  assert.equal(forceFresh, "최신 건강정보를 다시 불러왔습니다.");
+  assert.equal(forceFresh, expectedCompletionNotice);
   console.log("[qa:employee-report-sync-notice] PASS force fresh notice");
 
   const cacheValid = resolveSyncCompletionNotice({
@@ -71,7 +80,7 @@ function runSyncNoticeCases() {
     forceRefresh: false,
     authReused: false,
   });
-  assert.equal(cacheValid, "저장된 건강정보를 반영했습니다.");
+  assert.equal(cacheValid, expectedCompletionNotice);
   console.log("[qa:employee-report-sync-notice] PASS cache-valid notice");
 
   const cacheHistory = resolveSyncCompletionNotice({
@@ -79,7 +88,7 @@ function runSyncNoticeCases() {
     forceRefresh: false,
     authReused: false,
   });
-  assert.equal(cacheHistory, "저장된 건강정보를 반영했습니다.");
+  assert.equal(cacheHistory, expectedCompletionNotice);
   console.log("[qa:employee-report-sync-notice] PASS cache-history notice");
 
   const snapshotHistory = resolveSyncCompletionNotice({
@@ -87,7 +96,7 @@ function runSyncNoticeCases() {
     forceRefresh: false,
     authReused: false,
   });
-  assert.equal(snapshotHistory, "저장된 건강정보를 반영했습니다.");
+  assert.equal(snapshotHistory, expectedCompletionNotice);
   console.log("[qa:employee-report-sync-notice] PASS snapshot-history notice");
 
   const reusedAuth = resolveSyncCompletionNotice({
@@ -95,7 +104,7 @@ function runSyncNoticeCases() {
     forceRefresh: false,
     authReused: true,
   });
-  assert.equal(reusedAuth, "저장된 인증 상태를 확인했습니다.");
+  assert.equal(reusedAuth, expectedCompletionNotice);
   console.log("[qa:employee-report-sync-notice] PASS auth reused notice");
 }
 
@@ -241,6 +250,24 @@ async function runRequestJsonResilienceCases() {
   }
 }
 
+function runPdfEngineFallbackCases() {
+  assert.equal(
+    isPdfEngineUnavailableFailure({ code: "PDF_ENGINE_MISSING" }),
+    true
+  );
+  assert.equal(
+    isPdfEngineUnavailableFailure({
+      reason: "browserType.launch: Executable doesn't exist",
+    }),
+    true
+  );
+  assert.equal(
+    isPdfEngineUnavailableFailure({ reason: "unknown_pdf_error" }),
+    false
+  );
+  console.log("[qa:employee-report-sync-notice] PASS pdf fallback detection");
+}
+
 function runStaticRegressionChecks() {
   const clientSource = read("app/(features)/employee-report/EmployeeReportClient.tsx");
   assert.ok(
@@ -254,6 +281,18 @@ function runStaticRegressionChecks() {
   assert.ok(
     clientSource.includes("primarySyncActionLabel=\"최신 정보 확인\""),
     "EmployeeReportClient should use generalized summary CTA text"
+  );
+  assert.ok(
+    clientSource.includes("captureElementToPdf"),
+    "EmployeeReportClient should include browser PDF capture fallback"
+  );
+  assert.ok(
+    clientSource.includes("isPdfEngineUnavailableFailure"),
+    "EmployeeReportClient should detect server PDF engine unavailability"
+  );
+  assert.ok(
+    clientSource.includes("브라우저 화면 캡처로 PDF를 저장했습니다."),
+    "EmployeeReportClient should show explicit browser PDF fallback notice"
   );
 
   const responseSource = read("lib/b2b/employee-sync-response.ts");
@@ -278,6 +317,7 @@ async function run() {
   runSyncNoticeCases();
   runGuidanceCases();
   await runRequestJsonResilienceCases();
+  runPdfEngineFallbackCases();
   runStaticRegressionChecks();
   console.log("[qa:employee-report-sync-notice] ALL PASS");
 }

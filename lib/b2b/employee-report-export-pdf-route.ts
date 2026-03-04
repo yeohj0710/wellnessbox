@@ -185,8 +185,18 @@ async function runWebEmployeeReportPdfExport(input: {
     viewportWidthPx: input.captureViewportWidthPx,
   });
   if (!conversion.ok) {
+    const engineUnavailable = shouldReturnInstallGuide(conversion.reason);
+    if (engineUnavailable && allowLegacyPdfMode()) {
+      return runLegacyEmployeeReportPdfExport({
+        employeeId: input.employeeId,
+        reportId: input.reportId,
+        periodKey: input.periodKey,
+        ip: input.ip,
+        userAgent: input.userAgent,
+      });
+    }
     const debugId = randomUUID();
-    const status = shouldReturnInstallGuide(conversion.reason) ? 501 : 500;
+    const status = engineUnavailable ? 501 : 500;
     return noStoreJson(
       {
         ok: false,

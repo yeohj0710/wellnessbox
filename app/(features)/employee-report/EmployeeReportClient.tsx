@@ -31,6 +31,7 @@ import {
   clearStoredIdentity,
   downloadPdf,
   formatDateTime,
+  isPdfEngineUnavailableFailure,
   isValidIdentityInput,
   normalizeDigits,
   readStoredIdentityWithSource,
@@ -41,6 +42,7 @@ import {
   toIdentityPayload,
   toSyncNextAction,
 } from "./_lib/client-utils";
+import { captureElementToPdf } from "@/lib/client/capture-pdf";
 import {
   ensureNhisReadyForSync as ensureNhisReadyForSyncFlow,
   runRestartAuthFlow,
@@ -498,11 +500,8 @@ export default function EmployeeReportClient() {
 
       if (restartResult.status === "ready") {
         setPendingSignForceRefresh(false);
-        const reusedFromCache = restartResult.reusedFromCache;
         setNotice(
-          reusedFromCache
-            ? "기존 연동 데이터를 사용해 레포트를 불러왔습니다."
-            : "카카오톡 인증 확인 후 최신 데이터를 불러왔습니다."
+          "건강정보 연동이 완료되었습니다. 이어서 설문을 진행해 주세요."
         );
         return;
       }
@@ -658,6 +657,8 @@ export default function EmployeeReportClient() {
     beginBusy("PDF 파일을 생성하고 있어요.");
     setError("");
     setNotice("");
+    let downloadFileName = "웰니스박스_건강리포트.pdf";
+    let viewportWidthPx = 0;
     try {
       const normalizeFilenameToken = (
         value: string | null | undefined,
@@ -681,7 +682,7 @@ export default function EmployeeReportClient() {
           reportData.report?.payload?.meta?.periodKey,
         "최근"
       );
-      const downloadFileName =
+      downloadFileName =
         "웰니스박스_건강리포트_" + employeeLabel + "_" + periodLabel + ".pdf";
       const query = new URLSearchParams();
       if (selectedPeriodKey) {
@@ -693,7 +694,7 @@ export default function EmployeeReportClient() {
       if (captureWidthPx > 0) {
         query.set("w", String(captureWidthPx));
       }
-      const viewportWidthPx = Math.round(
+      viewportWidthPx = Math.round(
         window.innerWidth || document.documentElement?.clientWidth || 0
       );
       if (viewportWidthPx > 0) {
@@ -707,6 +708,46 @@ export default function EmployeeReportClient() {
       );
       setNotice("PDF 다운로드가 완료되었습니다.");
     } catch (err) {
+      const fallbackTarget = webReportCaptureRef.current;
+      const pdfErrorPayload =
+        err && typeof err === "object" && "payload" in err
+          ? ((err as {
+              payload?: {
+                code?: string;
+                reason?: string;
+                error?: string;
+              };
+            }).payload ?? {})
+          : {
+              error: err instanceof Error ? err.message : null,
+            };
+
+      if (
+        fallbackTarget &&
+        isPdfEngineUnavailableFailure(pdfErrorPayload)
+      ) {
+        try {
+          updateBusy({
+            message: "서버 PDF 엔진을 사용할 수 없어 화면 캡처로 저장하고 있어요.",
+            hint: "sync-remote",
+          });
+          await captureElementToPdf({
+            element: fallbackTarget,
+            fileName: downloadFileName,
+            desktopViewportWidth: viewportWidthPx > 0 ? viewportWidthPx : undefined,
+          });
+          setNotice("브라우저 화면 캡처로 PDF를 저장했습니다.");
+          return;
+        } catch (captureError) {
+          setError(
+            captureError instanceof Error
+              ? captureError.message
+              : "PDF 다운로드에 실패했습니다."
+          );
+          return;
+        }
+      }
+
       setError(
         err instanceof Error ? err.message : "PDF 다운로드에 실패했습니다."
       );

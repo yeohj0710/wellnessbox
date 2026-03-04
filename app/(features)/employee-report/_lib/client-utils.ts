@@ -86,21 +86,24 @@ export function resolveSyncCompletionNotice(input: {
   forceRefresh: boolean;
   authReused: boolean;
 }) {
+  void input.forceRefresh;
   const source = normalizeSyncSource(input.sync?.source);
   const networkFetched = input.sync?.networkFetched === true || source === "fresh";
+  const completionMessage =
+    "건강정보 연동이 완료되었습니다. 이어서 설문을 진행해 주세요.";
 
   if (networkFetched) {
-    return input.forceRefresh
-      ? "최신 건강정보를 다시 불러왔습니다."
-      : "최신 건강정보를 불러왔습니다.";
+    return completionMessage;
   }
 
   if (source === "snapshot-history" || source === "cache-valid" || source === "cache-history") {
-    return "저장된 건강정보를 반영했습니다.";
+    return completionMessage;
   }
 
-  if (input.authReused) return "저장된 인증 상태를 확인했습니다.";
-  return "건강정보를 갱신했습니다.";
+  if (input.authReused) {
+    return completionMessage;
+  }
+  return completionMessage;
 }
 
 export function normalizeDigits(value: string) {
@@ -413,8 +416,15 @@ function filenameFromDisposition(header: string | null, fallback: string) {
 export async function downloadPdf(url: string, fallbackName: string) {
   const response = await fetch(url, { cache: "no-store" });
   if (!response.ok) {
-    const data = await response.json().catch(() => ({}));
-    throw new Error(data?.error || "PDF 다운로드에 실패했습니다.");
+    const data = (await response.json().catch(() => ({}))) as
+      | {
+          code?: string;
+          reason?: string;
+          error?: string;
+          debugId?: string;
+        }
+      | null;
+    throw new PdfDownloadError(response.status, data ?? {});
   }
   const blob = await response.blob();
   const filename = filenameFromDisposition(
@@ -429,6 +439,52 @@ export async function downloadPdf(url: string, fallbackName: string) {
   anchor.click();
   anchor.remove();
   URL.revokeObjectURL(objectUrl);
+}
+
+export class PdfDownloadError extends Error {
+  status: number;
+  payload: {
+    code?: string;
+    reason?: string;
+    error?: string;
+    debugId?: string;
+  };
+
+  constructor(
+    status: number,
+    payload: {
+      code?: string;
+      reason?: string;
+      error?: string;
+      debugId?: string;
+    }
+  ) {
+    super(payload.error || "PDF 다운로드에 실패했습니다.");
+    this.name = "PdfDownloadError";
+    this.status = status;
+    this.payload = payload;
+  }
+}
+
+export function isPdfEngineUnavailableFailure(input: {
+  code?: string | null;
+  reason?: string | null;
+  error?: string | null;
+}) {
+  const code = (input.code || "").trim().toUpperCase();
+  if (code === "PDF_ENGINE_MISSING") return true;
+
+  const text = [input.reason, input.error]
+    .map((value) => (value || "").toLowerCase())
+    .join(" ");
+  if (!text) return false;
+
+  return (
+    text.includes("playwright") ||
+    text.includes("browsertype.launch") ||
+    text.includes("executable doesn't exist") ||
+    text.includes("download new browsers")
+  );
 }
 
 export function formatDateTime(value: string | null | undefined) {

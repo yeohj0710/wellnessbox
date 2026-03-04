@@ -355,6 +355,11 @@ export async function fetchAndStoreB2bHealthSnapshot(input: {
     const summaryPatchContext = {
       appUserId: input.appUserId,
       identityHash: identity.identityHash,
+      identity: {
+        name: input.identity.name,
+        birthDate: input.identity.birthDate,
+        phoneNormalized: input.identity.phoneNormalized,
+      },
       effectiveYearLimit,
       requestDefaults,
       linkLoginMethod: link.loginMethod,
@@ -437,6 +442,11 @@ export async function fetchAndStoreB2bHealthSnapshot(input: {
       linkLoginMethod: link.loginMethod,
       linkLoginOrgCd: link.loginOrgCd,
       linkCookieData: link.cookieData,
+      identity: {
+        name: input.identity.name,
+        birthDate: input.identity.birthDate,
+        phoneNormalized: input.identity.phoneNormalized,
+      },
       requestDefaults,
     });
     const detailPayload = buildDetailPayload(basePayload);

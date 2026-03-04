@@ -276,6 +276,7 @@ function mergeHyphenPayloadList(payloads: HyphenApiResponse[]) {
 
 async function fetchMedicationBackfillPayloads(input: {
   dates: string[];
+  basePayload: HyphenNhisRequestPayload;
   detailPayload: HyphenNhisRequestPayload;
   payloadBuilder: (
     base: HyphenNhisRequestPayload,
@@ -284,15 +285,55 @@ async function fetchMedicationBackfillPayloads(input: {
 }) {
   if (input.dates.length === 0) return [];
   const settled = await Promise.allSettled(
-    input.dates.map((date) =>
-      fetchMedicationInfo(input.payloadBuilder(input.detailPayload, date))
-    )
+    input.dates.map(async (date) => {
+      const detailRequestPayload = input.payloadBuilder(input.detailPayload, date);
+      const baseRequestPayload = input.payloadBuilder(input.basePayload, date);
+
+      let detailResult: HyphenApiResponse | null = null;
+      let detailError: unknown = null;
+      try {
+        detailResult = await fetchMedicationInfo(detailRequestPayload);
+      } catch (error) {
+        detailError = error;
+      }
+
+      const detailHasRows = detailResult ? payloadHasAnyRows(detailResult) : false;
+      const detailHasNames = detailResult
+        ? payloadHasMedicationNames(detailResult)
+        : false;
+
+      let baseResult: HyphenApiResponse | null = null;
+      let baseError: unknown = null;
+      if (!detailHasNames) {
+        try {
+          baseResult = await fetchMedicationInfo(baseRequestPayload);
+        } catch (error) {
+          baseError = error;
+        }
+      }
+
+      const baseHasRows = baseResult ? payloadHasAnyRows(baseResult) : false;
+      const baseHasNames = baseResult ? payloadHasMedicationNames(baseResult) : false;
+
+      if (detailHasNames) return detailResult;
+      if (baseHasNames) return baseResult;
+      if (detailHasRows) return detailResult;
+      if (baseHasRows) return baseResult;
+
+      if (detailError && !isNonFatalNhisNoDataFailure(detailError)) {
+        throw detailError;
+      }
+      if (baseError && !isNonFatalNhisNoDataFailure(baseError)) {
+        throw baseError;
+      }
+      return null;
+    })
   );
   const payloads: HyphenApiResponse[] = [];
 
   for (const result of settled) {
     if (result.status === "fulfilled") {
-      if (payloadHasAnyRows(result.value)) {
+      if (result.value && payloadHasAnyRows(result.value)) {
         payloads.push(result.value);
       }
       continue;
@@ -305,6 +346,7 @@ async function fetchMedicationBackfillPayloads(input: {
 
 async function fetchMedicationByRecentVisitsBackfill(input: {
   dateSourcePayloads: Array<HyphenApiResponse | null | undefined>;
+  basePayload: HyphenNhisRequestPayload;
   detailPayload: HyphenNhisRequestPayload;
 }) {
   const recentDates: string[] = [];
@@ -327,6 +369,7 @@ async function fetchMedicationByRecentVisitsBackfill(input: {
 
   const exactPayloads = await fetchMedicationBackfillPayloads({
     dates: recentDates,
+    basePayload: input.basePayload,
     detailPayload: input.detailPayload,
     payloadBuilder: buildExactDateMedicationPayload,
   });
@@ -340,6 +383,7 @@ async function fetchMedicationByRecentVisitsBackfill(input: {
   );
   const monthPayloads = await fetchMedicationBackfillPayloads({
     dates: monthProbeDates,
+    basePayload: input.basePayload,
     detailPayload: input.detailPayload,
     payloadBuilder: buildMonthRangeMedicationPayload,
   });
@@ -737,6 +781,7 @@ export async function executeNhisFetch(
 
       const backfilledMedicationPayload = await fetchMedicationByRecentVisitsBackfill({
         dateSourcePayloads,
+        basePayload: input.basePayload,
         detailPayload: input.detailPayload,
       });
 

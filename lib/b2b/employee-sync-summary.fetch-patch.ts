@@ -19,11 +19,19 @@ export function buildBasePayload(input: {
   linkLoginMethod: string | null | undefined;
   linkLoginOrgCd: string | null | undefined;
   linkCookieData: unknown;
+  identity?: {
+    name: string;
+    birthDate: string;
+    phoneNormalized: string;
+  } | null;
   requestDefaults: ReturnType<typeof buildNhisRequestDefaults>;
 }): HyphenNhisRequestPayload {
   return {
     loginMethod: (input.linkLoginMethod as "EASY" | "CERT" | null) ?? "EASY",
     loginOrgCd: input.linkLoginOrgCd ?? undefined,
+    resNm: input.identity?.name ?? undefined,
+    resNo: input.identity?.birthDate ?? undefined,
+    mobileNo: input.identity?.phoneNormalized ?? undefined,
     ...input.requestDefaults,
     cookieData: input.linkCookieData ?? undefined,
     showCookie: "Y" as const,
@@ -55,6 +63,11 @@ export async function resolveSummaryPatchPayload(input: {
   linkLoginMethod: string | null | undefined;
   linkLoginOrgCd: string | null | undefined;
   linkCookieData: unknown;
+  identity?: {
+    name: string;
+    birthDate: string;
+    phoneNormalized: string;
+  } | null;
   allowNetwork: boolean;
   requireMedicationNames: boolean;
   hasRequiredMedicationNames: (payload: NhisFetchRoutePayload) => boolean;
@@ -126,6 +139,7 @@ export async function resolveSummaryPatchPayload(input: {
     linkLoginMethod: input.linkLoginMethod,
     linkLoginOrgCd: input.linkLoginOrgCd,
     linkCookieData: input.linkCookieData,
+    identity: input.identity,
     requestDefaults: input.requestDefaults,
   });
   const detailPayload = buildDetailPayload(basePayload);
