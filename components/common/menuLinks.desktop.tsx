@@ -139,12 +139,6 @@ export function DesktopMenuContent({
         onItemClick={onItemClick}
       />
 
-      {loginStatus !== null && !visibility.kakaoLoggedIn && (
-        <div className="hidden md:block">
-          <KakaoLoginButton />
-        </div>
-      )}
-
       <IdentityMenuLinks
         adminVisible={adminVisible}
         isAdminLoggedIn={visibility.isAdminLoggedIn}
@@ -155,6 +149,12 @@ export function DesktopMenuContent({
         logoutPending={isLogoutPending}
         onItemClick={onItemClick}
       />
+
+      {loginStatus !== null && !visibility.kakaoLoggedIn && (
+        <div className="hidden md:block">
+          <KakaoLoginButton />
+        </div>
+      )}
     </>
   );
 }

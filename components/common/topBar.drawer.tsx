@@ -45,10 +45,6 @@ export function TopBarDrawer({
             isDrawer
           />
 
-          {loginStatus !== null && loginStatus.isUserLoggedIn !== true && (
-            <KakaoLoginButton fullWidth />
-          )}
-
           <div className="mt-2 h-px bg-slate-100" />
 
           <button
@@ -74,6 +70,10 @@ export function TopBarDrawer({
           >
             시작하기
           </button>
+
+          {loginStatus !== null && loginStatus.isUserLoggedIn !== true && (
+            <KakaoLoginButton fullWidth />
+          )}
         </div>
       </div>
 

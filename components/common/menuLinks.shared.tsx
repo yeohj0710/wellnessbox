@@ -168,21 +168,7 @@ export function IdentityMenuLinks({
       {showAdminMenus && (
         <>
           <Link href="/admin" className={menuItemClasses()} onClick={onItemClick}>
-            사이트 관리
-          </Link>
-          <Link
-            href="/admin/b2b-reports"
-            className={menuItemClasses()}
-            onClick={onItemClick}
-          >
-            B2B 레포트 운영
-          </Link>
-          <Link
-            href="/admin/column/editor"
-            className={menuItemClasses()}
-            onClick={onItemClick}
-          >
-            글쓰기
+            관리자 페이지
           </Link>
         </>
       )}

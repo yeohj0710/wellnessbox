@@ -21,7 +21,8 @@ function OptionalPanel(props: { title: string; description: string; children: Re
 
 export default function AdminPage() {
   return (
-    <div className={`${styles.page} ${styles.compactPage} ${styles.stack}`}>
+    <div className="relative left-1/2 right-1/2 min-h-screen w-screen -translate-x-1/2 bg-[radial-gradient(circle_at_15%_0%,rgba(186,230,253,0.75),transparent_42%),radial-gradient(circle_at_90%_8%,rgba(199,210,254,0.55),transparent_35%),linear-gradient(180deg,#f5f9ff_0%,#e9f0fa_100%)]">
+      <div className={`${styles.page} ${styles.compactPage} ${styles.stack}`}>
       <header className={styles.heroCard}>
         <p className={styles.kicker}>ADMIN DASHBOARD</p>
         <h1 className={styles.title}>운영 대시보드</h1>
@@ -90,6 +91,7 @@ export default function AdminPage() {
           <CategoryManager />
         </OptionalPanel>
       </section>
+      </div>
     </div>
   );
 }

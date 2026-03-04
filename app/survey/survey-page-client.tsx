@@ -147,6 +147,8 @@ export default function SurveyPageClient() {
   const restoredRef = useRef(false);
   const calcTickerRef = useRef<number | null>(null);
   const calcTimeoutRef = useRef<number | null>(null);
+  const renewalBypassHoldTimerRef = useRef<number | null>(null);
+  const renewalBypassTriggeredRef = useRef(false);
 
   const pruneAnswersByVisibility = useCallback(
     (inputAnswers: PublicSurveyAnswers, selectedSections: string[]) => {
@@ -233,6 +235,9 @@ export default function SurveyPageClient() {
       }
       if (calcTimeoutRef.current != null) {
         window.clearTimeout(calcTimeoutRef.current);
+      }
+      if (renewalBypassHoldTimerRef.current != null) {
+        window.clearTimeout(renewalBypassHoldTimerRef.current);
       }
     };
   }, []);
@@ -332,18 +337,52 @@ export default function SurveyPageClient() {
     }
   }
 
-  function handleStart() {
-    if (BLOCK_SURVEY_START_TEMPORARILY) {
-      setIsRenewalModalOpen(true);
-      return;
+  function clearRenewalBypassHoldTimer() {
+    if (renewalBypassHoldTimerRef.current != null) {
+      window.clearTimeout(renewalBypassHoldTimerRef.current);
+      renewalBypassHoldTimerRef.current = null;
     }
+  }
+
+  function enterSurvey() {
     setPhase("survey");
     setCurrentIndex(0);
     setErrorText(null);
     setIsRenewalModalOpen(false);
   }
 
+  function handleRenewalBypassHoldStart() {
+    clearRenewalBypassHoldTimer();
+    renewalBypassTriggeredRef.current = false;
+    renewalBypassHoldTimerRef.current = window.setTimeout(() => {
+      renewalBypassTriggeredRef.current = true;
+      enterSurvey();
+    }, 2000);
+  }
+
+  function handleRenewalBypassHoldEnd() {
+    clearRenewalBypassHoldTimer();
+  }
+
+  function handleRenewalConfirmClick() {
+    if (renewalBypassTriggeredRef.current) {
+      renewalBypassTriggeredRef.current = false;
+      return;
+    }
+    setIsRenewalModalOpen(false);
+  }
+
+  function handleStart() {
+    if (BLOCK_SURVEY_START_TEMPORARILY) {
+      setIsRenewalModalOpen(true);
+      return;
+    }
+    enterSurvey();
+  }
+
   function handleReset() {
+    clearRenewalBypassHoldTimer();
+    renewalBypassTriggeredRef.current = false;
     setAnswers({});
     setSelectedSectionsCommitted([]);
     setCurrentIndex(0);
@@ -650,7 +689,10 @@ export default function SurveyPageClient() {
               role="dialog"
               aria-modal="true"
               aria-labelledby="survey-renewal-modal-title"
-              onClick={() => setIsRenewalModalOpen(false)}
+              onClick={() => {
+                handleRenewalBypassHoldEnd();
+                setIsRenewalModalOpen(false);
+              }}
             >
               <div
                 className="w-full max-w-md overflow-hidden rounded-3xl border border-sky-100 bg-white shadow-[0_22px_64px_rgba(15,23,42,0.28)]"
@@ -675,14 +717,33 @@ export default function SurveyPageClient() {
                   <div className="mt-6 flex items-center justify-end gap-2">
                     <button
                       type="button"
-                      onClick={() => setIsRenewalModalOpen(false)}
+                      onClick={() => {
+                        handleRenewalBypassHoldEnd();
+                        setIsRenewalModalOpen(false);
+                      }}
                       className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                     >
                       닫기
                     </button>
                     <button
                       type="button"
-                      onClick={() => setIsRenewalModalOpen(false)}
+                      onPointerDown={handleRenewalBypassHoldStart}
+                      onPointerUp={handleRenewalBypassHoldEnd}
+                      onPointerCancel={handleRenewalBypassHoldEnd}
+                      onPointerLeave={handleRenewalBypassHoldEnd}
+                      onKeyDown={(event) => {
+                        if (event.repeat) return;
+                        if (event.key === "Enter" || event.key === " ") {
+                          handleRenewalBypassHoldStart();
+                        }
+                      }}
+                      onKeyUp={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          handleRenewalBypassHoldEnd();
+                        }
+                      }}
+                      onBlur={handleRenewalBypassHoldEnd}
+                      onClick={handleRenewalConfirmClick}
                       className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(59,130,246,0.35)] transition hover:brightness-110"
                     >
                       확인
