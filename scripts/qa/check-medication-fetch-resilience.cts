@@ -63,6 +63,16 @@ function runStaticRegressionChecks() {
     "medication fetch should try targeted recent-visit backfill when names are missing"
   );
   assert.ok(
+    fetchExecutorSource.includes("fetchedMedicalForMedicationBackfill"),
+    "medication name backfill should fetch a medical date-source when summary targets omit medical"
+  );
+  assert.ok(
+    fetchExecutorSource.includes(
+      "[hyphen][fetch] medication backfill medical-source failed"
+    ),
+    "medication backfill medical-source fallback should log non-fatal failures"
+  );
+  assert.ok(
     fetchExecutorSource.includes("fromDate: date"),
     "targeted medication backfill should narrow date range per recent visit"
   );

@@ -159,6 +159,13 @@ function resolveMedicationDateText(row: Record<string, unknown>) {
   return null;
 }
 
+function normalizeMedicationDateToYmd(text: string | null) {
+  if (!text) return null;
+  const digits = text.replace(/\D/g, "");
+  if (digits.length < 8) return null;
+  return digits.slice(0, 8);
+}
+
 function resolveMedicationDateScore(text: string | null) {
   if (!text) return 0;
   const digits = text.replace(/\D/g, "");
@@ -196,7 +203,7 @@ function collectRecentMedicalVisitDates(payload: HyphenApiResponse, limit: numbe
   const rows = collectTreatmentRows(payload);
   const scored = rows
     .map((row, index) => {
-      const date = resolveMedicationDateText(row);
+      const date = normalizeMedicationDateToYmd(resolveMedicationDateText(row));
       return {
         date,
         score: resolveMedicationDateScore(date),
@@ -232,13 +239,25 @@ function buildExactDateMedicationPayload(
 }
 
 async function fetchMedicationByRecentVisitsBackfill(input: {
-  medicalPayload: HyphenApiResponse;
+  dateSourcePayloads: Array<HyphenApiResponse | null | undefined>;
   detailPayload: HyphenNhisRequestPayload;
 }) {
-  const recentDates = collectRecentMedicalVisitDates(
-    input.medicalPayload,
-    MEDICATION_RECENT_VISIT_BACKFILL_LIMIT
-  );
+  const recentDates: string[] = [];
+  const seen = new Set<string>();
+  for (const payload of input.dateSourcePayloads) {
+    if (!payload) continue;
+    const dates = collectRecentMedicalVisitDates(
+      payload,
+      MEDICATION_RECENT_VISIT_BACKFILL_LIMIT
+    );
+    for (const date of dates) {
+      if (seen.has(date)) continue;
+      seen.add(date);
+      recentDates.push(date);
+      if (recentDates.length >= MEDICATION_RECENT_VISIT_BACKFILL_LIMIT) break;
+    }
+    if (recentDates.length >= MEDICATION_RECENT_VISIT_BACKFILL_LIMIT) break;
+  }
   if (recentDates.length === 0) return null;
 
   const settled = await Promise.allSettled(
@@ -620,14 +639,39 @@ export async function executeNhisFetch(
     );
     const medicalPayload = getTargetPayload<HyphenApiResponse>(successful, "medical");
     const shouldBackfillMedicationNames =
-      !!medicalPayload &&
       (!medicationPayload ||
         !payloadHasAnyRows(medicationPayload) ||
         !payloadHasMedicationNames(medicationPayload));
 
     if (shouldBackfillMedicationNames) {
+      const dateSourcePayloads: Array<HyphenApiResponse | null | undefined> = [];
+      if (medicationPayload && payloadHasAnyRows(medicationPayload)) {
+        dateSourcePayloads.push(medicationPayload);
+      }
+      if (medicalPayload && payloadHasAnyRows(medicalPayload)) {
+        dateSourcePayloads.push(medicalPayload);
+      }
+
+      if (dateSourcePayloads.length === 0) {
+        try {
+          const fetchedMedicalForMedicationBackfill = await fetchMedicalInfo(
+            input.detailPayload
+          );
+          if (payloadHasAnyRows(fetchedMedicalForMedicationBackfill)) {
+            dateSourcePayloads.push(fetchedMedicalForMedicationBackfill);
+          }
+        } catch (error) {
+          if (!isNonFatalNhisNoDataFailure(error)) {
+            logHyphenError(
+              "[hyphen][fetch] medication backfill medical-source failed",
+              error
+            );
+          }
+        }
+      }
+
       const backfilledMedicationPayload = await fetchMedicationByRecentVisitsBackfill({
-        medicalPayload,
+        dateSourcePayloads,
         detailPayload: input.detailPayload,
       });
 
