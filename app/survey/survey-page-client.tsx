@@ -139,7 +139,7 @@ export default function SurveyPageClient() {
   const [selectedSectionsCommitted, setSelectedSectionsCommitted] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [errorText, setErrorText] = useState<string | null>(null);
-  const [introNotice, setIntroNotice] = useState<string | null>(null);
+  const [isRenewalModalOpen, setIsRenewalModalOpen] = useState(false);
   const [result, setResult] = useState<WellnessComputedResult | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [calcPercent, setCalcPercent] = useState(8);
@@ -334,13 +334,13 @@ export default function SurveyPageClient() {
 
   function handleStart() {
     if (BLOCK_SURVEY_START_TEMPORARILY) {
-      setIntroNotice("건강 설문은 현재 작업 중입니다. 잠시 후 다시 시도해 주세요.");
+      setIsRenewalModalOpen(true);
       return;
     }
     setPhase("survey");
     setCurrentIndex(0);
     setErrorText(null);
-    setIntroNotice(null);
+    setIsRenewalModalOpen(false);
   }
 
   function handleReset() {
@@ -348,7 +348,7 @@ export default function SurveyPageClient() {
     setSelectedSectionsCommitted([]);
     setCurrentIndex(0);
     setErrorText(null);
-    setIntroNotice(null);
+    setIsRenewalModalOpen(false);
     setResult(null);
     setPhase("intro");
     setCalcPercent(8);
@@ -615,7 +615,7 @@ export default function SurveyPageClient() {
 
   if (phase === "intro") {
     return (
-      <div className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 bg-[radial-gradient(circle_at_15%_0%,rgba(186,230,253,0.75),transparent_42%),radial-gradient(circle_at_90%_8%,rgba(199,210,254,0.55),transparent_35%),linear-gradient(180deg,#f5f9ff_0%,#e9f0fa_100%)]">
+      <div className="relative left-1/2 right-1/2 min-h-screen w-screen -translate-x-1/2 bg-[radial-gradient(circle_at_15%_0%,rgba(186,230,253,0.75),transparent_42%),radial-gradient(circle_at_90%_8%,rgba(199,210,254,0.55),transparent_35%),linear-gradient(180deg,#f5f9ff_0%,#e9f0fa_100%)]">
         <div className="mx-auto w-full max-w-[1040px] px-4 pb-24 pt-12 sm:px-6 sm:pt-16">
           <section className="relative overflow-hidden rounded-3xl border border-sky-100/80 bg-white/80 p-7 shadow-[0_18px_60px_rgba(15,23,42,0.10)] backdrop-blur sm:p-10">
             <div className="pointer-events-none absolute -top-20 -right-16 h-72 w-72 rounded-full bg-gradient-to-br from-sky-200/80 to-indigo-200/60 blur-3xl" />
@@ -642,11 +642,56 @@ export default function SurveyPageClient() {
               >
                 설문 시작하기
               </button>
-              {introNotice ? (
-                <p className="text-sm font-medium text-rose-600">{introNotice}</p>
-              ) : null}
             </div>
           </section>
+          {isRenewalModalOpen ? (
+            <div
+              className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/55 px-4 backdrop-blur-[2px]"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="survey-renewal-modal-title"
+              onClick={() => setIsRenewalModalOpen(false)}
+            >
+              <div
+                className="w-full max-w-md overflow-hidden rounded-3xl border border-sky-100 bg-white shadow-[0_22px_64px_rgba(15,23,42,0.28)]"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="bg-[radial-gradient(circle_at_12%_18%,rgba(14,165,233,0.24),transparent_46%),radial-gradient(circle_at_88%_8%,rgba(99,102,241,0.24),transparent_42%),linear-gradient(180deg,#eff7ff_0%,#ffffff_72%)] p-6">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-sky-700 ring-1 ring-sky-100">
+                    <span className="h-2 w-2 rounded-full bg-sky-500" />
+                    서비스 안내
+                  </div>
+                  <h3
+                    id="survey-renewal-modal-title"
+                    className="mt-3 text-xl font-extrabold tracking-tight text-slate-900"
+                  >
+                    현재 설문 리뉴얼 중이에요
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    더 나은 설문 경험을 위해 개선 작업을 진행하고 있습니다.
+                    <br />
+                    준비가 완료되면 바로 이용하실 수 있도록 안내드릴게요.
+                  </p>
+                  <div className="mt-6 flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsRenewalModalOpen(false)}
+                      className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                    >
+                      닫기
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsRenewalModalOpen(false)}
+                      className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(59,130,246,0.35)] transition hover:brightness-110"
+                    >
+                      확인
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     );
@@ -655,7 +700,7 @@ export default function SurveyPageClient() {
   if (phase === "calculating") {
     return (
       <div
-        className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 bg-[radial-gradient(circle_at_15%_0%,rgba(186,230,253,0.75),transparent_42%),radial-gradient(circle_at_90%_8%,rgba(199,210,254,0.55),transparent_35%),linear-gradient(180deg,#f5f9ff_0%,#e9f0fa_100%)]"
+        className="relative left-1/2 right-1/2 min-h-screen w-screen -translate-x-1/2 bg-[radial-gradient(circle_at_15%_0%,rgba(186,230,253,0.75),transparent_42%),radial-gradient(circle_at_90%_8%,rgba(199,210,254,0.55),transparent_35%),linear-gradient(180deg,#f5f9ff_0%,#e9f0fa_100%)]"
         data-testid="survey-calculating"
       >
         <div className="mx-auto w-full max-w-[1040px] px-4 pb-24 pt-12 sm:px-6 sm:pt-16">
@@ -698,7 +743,7 @@ export default function SurveyPageClient() {
   if (phase === "result") {
     return (
       <div
-        className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 bg-[radial-gradient(circle_at_15%_0%,rgba(186,230,253,0.75),transparent_42%),radial-gradient(circle_at_90%_8%,rgba(199,210,254,0.55),transparent_35%),linear-gradient(180deg,#f5f9ff_0%,#e9f0fa_100%)]"
+        className="relative left-1/2 right-1/2 min-h-screen w-screen -translate-x-1/2 bg-[radial-gradient(circle_at_15%_0%,rgba(186,230,253,0.75),transparent_42%),radial-gradient(circle_at_90%_8%,rgba(199,210,254,0.55),transparent_35%),linear-gradient(180deg,#f5f9ff_0%,#e9f0fa_100%)]"
         data-testid="survey-result"
       >
         <div className="mx-auto w-full max-w-[1040px] px-4 pb-24 pt-12 sm:px-6 sm:pt-16">
@@ -791,7 +836,7 @@ export default function SurveyPageClient() {
   }
 
   return (
-    <div className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 bg-[radial-gradient(circle_at_15%_0%,rgba(186,230,253,0.75),transparent_42%),radial-gradient(circle_at_90%_8%,rgba(199,210,254,0.55),transparent_35%),linear-gradient(180deg,#f5f9ff_0%,#e9f0fa_100%)]">
+    <div className="relative left-1/2 right-1/2 min-h-screen w-screen -translate-x-1/2 bg-[radial-gradient(circle_at_15%_0%,rgba(186,230,253,0.75),transparent_42%),radial-gradient(circle_at_90%_8%,rgba(199,210,254,0.55),transparent_35%),linear-gradient(180deg,#f5f9ff_0%,#e9f0fa_100%)]">
       <div className="mx-auto w-full max-w-[1040px] px-4 pb-24 pt-10 sm:px-6 sm:pt-14">
         <section className="relative overflow-hidden rounded-3xl border border-sky-100/80 bg-white/85 p-6 shadow-[0_18px_60px_rgba(15,23,42,0.10)] backdrop-blur sm:p-10">
           <div className="pointer-events-none absolute -top-24 -right-20 h-72 w-72 rounded-full bg-gradient-to-br from-sky-100/90 to-indigo-100/80 blur-3xl" />
