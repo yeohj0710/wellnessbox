@@ -51,7 +51,6 @@ export function extractHealthMetrics(normalizedJson: unknown): HealthMetric[] {
     if (seen.has(uniqueKey)) continue;
     seen.add(uniqueKey);
     metrics.push({ metric, value, unit });
-    if (metrics.length >= 16) break;
   }
 
   return metrics;

@@ -29,7 +29,6 @@ const RADAR_CENTER = RADAR_SIZE / 2;
 const RADAR_RADIUS = 70;
 
 const MAX_PAGE1_SECTION_BARS = 3;
-const MAX_PAGE2_METRIC_ITEMS = 12;
 
 type AxisItem = {
   id: string;
@@ -157,14 +156,31 @@ export default function ReportSummaryCards(props: {
   const analysisLines = hasWellnessScoringData ? buildFriendlyAnalysisLines(payload) : [];
   const riskLines = hasWellnessScoringData ? buildFriendlyRiskLines(payload) : [];
 
-  const healthMetricsAll = ensureArray(payload.health?.coreMetrics)
-    .map((row) => ({
-      label: sanitizeTitle(firstOrDash(row?.label)),
-      value: formatMetricValue(row?.value, row?.unit),
-      statusLabel: resolveMetricStatusLabel(row?.status),
-    }));
-  const healthMetrics = healthMetricsAll.slice(0, MAX_PAGE2_METRIC_ITEMS);
-  const hiddenHealthMetricCount = Math.max(0, healthMetricsAll.length - healthMetrics.length);
+  const coreMetricStatusByLabel = new Map(
+    ensureArray(payload.health?.coreMetrics)
+      .map((row) => ({
+        label: sanitizeTitle(firstOrDash(row?.label)),
+        statusLabel: resolveMetricStatusLabel(row?.status),
+      }))
+      .filter((row) => row.label.length > 0)
+      .map((row) => [row.label, row.statusLabel] as const)
+  );
+  const rawHealthMetrics = ensureArray(payload.health?.metrics);
+  const healthMetrics =
+    rawHealthMetrics.length > 0
+      ? rawHealthMetrics.map((row) => {
+          const label = sanitizeTitle(firstOrDash(row?.metric));
+          return {
+            label,
+            value: formatMetricValue(row?.value, row?.unit),
+            statusLabel: coreMetricStatusByLabel.get(label) ?? "참고",
+          };
+        })
+      : ensureArray(payload.health?.coreMetrics).map((row) => ({
+          label: sanitizeTitle(firstOrDash(row?.label)),
+          value: formatMetricValue(row?.value, row?.unit),
+          statusLabel: resolveMetricStatusLabel(row?.status),
+        }));
 
   const healthInsightEmptyMessage = "내용이 없습니다.";
 
@@ -384,19 +400,16 @@ export default function ReportSummaryCards(props: {
       <section className={`${styles.reportSheet} ${styles.reportSheetSecond}`} data-report-page="2">
         <header className={styles.reportPageHeader}>
           <p className={styles.reportPageKicker}>2페이지 상세 데이터</p>
-          <h2 className={styles.reportPageTitle}>건강검진 데이터 · 진료/조제 이력 · 약사 코멘트</h2>
+          <h2 className={styles.reportPageTitle}>건강검진 데이터 상세</h2>
           <p className={styles.reportPageSubtitle}>
-            건강검진 수치, 진료/조제 이력, 약사 의견을 함께 보고 다음 관리 방향을 정리합니다.
+            건강검진에서 측정된 지표를 모두 확인하고 현재 상태를 점검합니다.
           </p>
         </header>
 
         <div className={styles.reportSecondStack}>
           <article className={styles.reportDataCard}>
             <div className={styles.reportDataHeadRow}>
-              <h3 className={styles.reportDataTitle}>건강검진 핵심 수치</h3>
-              {hiddenHealthMetricCount > 0 ? (
-                <span className={styles.inlineHint}>추가 {hiddenHealthMetricCount}개 수치는 원본에서 확인</span>
-              ) : null}
+              <h3 className={styles.reportDataTitle}>건강검진 전체 수치</h3>
             </div>
             {healthMetrics.length === 0 ? (
               <p className={styles.reportDataEmpty}>확인 가능한 건강검진 핵심 수치가 없습니다.</p>
@@ -419,7 +432,19 @@ export default function ReportSummaryCards(props: {
             <h3 className={styles.reportDataTitle}>건강검진 데이터 해석</h3>
             <p className={styles.reportDataEmpty}>{healthInsightEmptyMessage}</p>
           </article>
+        </div>
+      </section>
 
+      <section className={`${styles.reportSheet} ${styles.reportSheetThird}`} data-report-page="3">
+        <header className={styles.reportPageHeader}>
+          <p className={styles.reportPageKicker}>3페이지 상세 데이터</p>
+          <h2 className={styles.reportPageTitle}>최근 진료·조제 이력 · 약사 코멘트</h2>
+          <p className={styles.reportPageSubtitle}>
+            최근 3건 진료/조제 이력을 확인하고, 복약 관련 코멘트를 함께 확인합니다.
+          </p>
+        </header>
+
+        <div className={styles.reportSecondStack}>
           <article className={styles.reportDataCard}>
             <div className={styles.reportDataHeadRow}>
               <h3 className={styles.reportDataTitle}>최근 진료·조제 이력 상세</h3>

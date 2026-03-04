@@ -2411,6 +2411,11 @@
   border-top-right-radius: 20px;
 }
 
+.reportSheetThird {
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+}
+
 .reportPageHeader {
   display: grid;
   gap: 5px;
@@ -3291,7 +3296,8 @@
   }
 
   .reportSheetFirst,
-  .reportSheetSecond {
+  .reportSheetSecond,
+  .reportSheetThird {
     border-radius: 14px;
   }
 
@@ -3398,6 +3404,11 @@
   }
 
   [data-report-pdf-parity="1"] .reportSheetSecond {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+  [data-report-pdf-parity="1"] .reportSheetThird {
     border-top-left-radius: 0;
     border-top-right-radius: 0;
   }

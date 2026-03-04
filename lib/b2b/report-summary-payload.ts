@@ -91,6 +91,11 @@ export type ReportSummaryPayload = {
     answers?: Array<{ questionKey?: string }>;
   };
   health?: {
+    metrics?: Array<{
+      metric?: string;
+      value?: string;
+      unit?: string | null;
+    }>;
     coreMetrics?: Array<{
       label?: string;
       value?: string;

@@ -54,6 +54,18 @@ function runStaticRegressionChecks() {
     fetchExecutorSource.includes("payloadHasAnyRows(detailPayloadResult)"),
     "medication fetch should return detail payload when rows exist"
   );
+  assert.ok(
+    fetchExecutorSource.includes("MEDICATION_RECENT_VISIT_BACKFILL_LIMIT = 3"),
+    "medication fetch should keep recent-visit detail backfill bounded to 3"
+  );
+  assert.ok(
+    fetchExecutorSource.includes("fetchMedicationByRecentVisitsBackfill"),
+    "medication fetch should try targeted recent-visit backfill when names are missing"
+  );
+  assert.ok(
+    fetchExecutorSource.includes("fromDate: date"),
+    "targeted medication backfill should narrow date range per recent visit"
+  );
 
   const medicationSource = read("lib/b2b/report-payload-medication.ts");
   assert.ok(
@@ -107,8 +119,16 @@ function runStaticRegressionChecks() {
 
   const reportSummarySource = read("components/b2b/ReportSummaryCards.tsx");
   assert.ok(
+    reportSummarySource.includes("payload.health?.metrics"),
+    "report summary should render health metric grid from full health.metrics payload"
+  );
+  assert.ok(
     reportSummarySource.includes("const medications = medicationsAll.slice(0, 3);"),
     "report summary should render only the most recent 3 medication visits"
+  );
+  assert.ok(
+    reportSummarySource.includes("data-report-page=\"3\""),
+    "medication detail section should be moved to page 3"
   );
   assert.ok(
     reportSummarySource.includes("buildMedicationMetaLine"),
@@ -133,6 +153,12 @@ function runStaticRegressionChecks() {
   assert.ok(
     insightSource.includes("replace(/<sup>\\s*([0-9]+)\\s*<\\/sup>/gi, \"$1\")"),
     "metric formatter should normalize <sup> unit notation to plain text"
+  );
+
+  const metricsSource = read("lib/b2b/report-payload-health-metrics.ts");
+  assert.ok(
+    !metricsSource.includes("if (metrics.length >= 16) break;"),
+    "health metric extraction should not truncate measured indicators at 16"
   );
   console.log("[qa:medication-fetch-resilience] PASS static regression checks");
 }

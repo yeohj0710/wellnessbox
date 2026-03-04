@@ -26,6 +26,7 @@ import {
   type DetailKeyPair,
   type RequestDefaultsLike,
 } from "@/lib/server/hyphen/fetch-executor.helpers";
+import { normalizeTreatmentPayload } from "@/lib/server/hyphen/normalize-treatment";
 import { normalizeNhisPayload } from "@/lib/server/hyphen/normalize";
 import {
   getErrorCodeMessage,
@@ -64,6 +65,48 @@ const AUTH_OR_PRECONDITION_MESSAGE_PATTERN =
 
 const HARD_FAILURE_MESSAGE_PATTERN =
   /(불러오지\s*못|불러올\s*수\s*없|연동\s*실패|실패|오류|error|exception|timeout|forbidden|denied|not\s*allowed|unable\s*to)/i;
+const MEDICATION_RECENT_VISIT_BACKFILL_LIMIT = 3;
+const MEDICATION_NAME_KEYS = [
+  "medicineNm",
+  "medicine",
+  "drugName",
+  "drugNm",
+  "medNm",
+  "medicineName",
+  "prodName",
+  "drug_MEDI_PRDC_NM",
+  "MEDI_PRDC_NM",
+  "drug_CMPN_NM",
+  "detail_CMPN_NM",
+  "CMPN_NM",
+  "drug_CMPN_NM_2",
+  "detail_CMPN_NM_2",
+  "CMPN_NM_2",
+  "mediPrdcNm",
+  "drugMediPrdcNm",
+  "cmpnNm",
+  "drugCmpnNm",
+  "detailCmpnNm",
+  "cmpnNm2",
+  "drugCmpnNm2",
+  "detailCmpnNm2",
+  "복용약",
+  "약품명",
+  "약품",
+  "성분",
+] as const;
+const MEDICATION_DATE_KEYS = [
+  "diagSdate",
+  "diagDate",
+  "medDate",
+  "date",
+  "TRTM_YMD",
+  "PRSC_YMD",
+  "detail_TRTM_YMD",
+  "detail_PRSC_YMD",
+  "drug_TRTM_YMD",
+  "drug_PRSC_YMD",
+] as const;
 
 function getErrorBody(error: unknown): unknown | null {
   if (!error || typeof error !== "object") return null;
@@ -93,6 +136,132 @@ function payloadHasAnyRows(payload: HyphenApiResponse) {
     if (Array.isArray(value) && value.length > 0) return true;
   }
   return false;
+}
+
+function toNonEmptyText(value: unknown): string | null {
+  if (value == null) return null;
+  const rendered = String(value).trim();
+  return rendered.length > 0 ? rendered : null;
+}
+
+function isMeaningfulMedicationName(value: unknown) {
+  const text = toNonEmptyText(value);
+  if (!text) return false;
+  if (text === "-" || text === "없음") return false;
+  return true;
+}
+
+function resolveMedicationDateText(row: Record<string, unknown>) {
+  for (const key of MEDICATION_DATE_KEYS) {
+    const text = toNonEmptyText(row[key]);
+    if (text) return text;
+  }
+  return null;
+}
+
+function resolveMedicationDateScore(text: string | null) {
+  if (!text) return 0;
+  const digits = text.replace(/\D/g, "");
+  if (digits.length >= 8) {
+    const score = Number(digits.slice(0, 8));
+    return Number.isFinite(score) ? score : 0;
+  }
+  if (digits.length >= 6) {
+    const score = Number(`${digits.slice(0, 6)}01`);
+    return Number.isFinite(score) ? score : 0;
+  }
+  return 0;
+}
+
+function collectTreatmentRows(payload: HyphenApiResponse) {
+  const treatment = normalizeTreatmentPayload(payload);
+  return Array.isArray(treatment.list)
+    ? (treatment.list as Array<Record<string, unknown>>)
+    : [];
+}
+
+function payloadHasMedicationNames(payload: HyphenApiResponse) {
+  const rows = collectTreatmentRows(payload);
+  for (const row of rows) {
+    for (const key of MEDICATION_NAME_KEYS) {
+      if (isMeaningfulMedicationName(row[key])) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function collectRecentMedicalVisitDates(payload: HyphenApiResponse, limit: number) {
+  const rows = collectTreatmentRows(payload);
+  const scored = rows
+    .map((row, index) => {
+      const date = resolveMedicationDateText(row);
+      return {
+        date,
+        score: resolveMedicationDateScore(date),
+        index,
+      };
+    })
+    .filter((item) => item.score > 0)
+    .sort((left, right) => {
+      if (right.score !== left.score) return right.score - left.score;
+      return left.index - right.index;
+    });
+
+  const dates: string[] = [];
+  const seen = new Set<string>();
+  for (const item of scored) {
+    if (!item.date || seen.has(item.date)) continue;
+    seen.add(item.date);
+    dates.push(item.date);
+    if (dates.length >= limit) break;
+  }
+  return dates;
+}
+
+function buildExactDateMedicationPayload(
+  base: HyphenNhisRequestPayload,
+  date: string
+): HyphenNhisRequestPayload {
+  return {
+    ...base,
+    fromDate: date,
+    toDate: date,
+  };
+}
+
+async function fetchMedicationByRecentVisitsBackfill(input: {
+  medicalPayload: HyphenApiResponse;
+  detailPayload: HyphenNhisRequestPayload;
+}) {
+  const recentDates = collectRecentMedicalVisitDates(
+    input.medicalPayload,
+    MEDICATION_RECENT_VISIT_BACKFILL_LIMIT
+  );
+  if (recentDates.length === 0) return null;
+
+  const settled = await Promise.allSettled(
+    recentDates.map((date) =>
+      fetchMedicationInfo(buildExactDateMedicationPayload(input.detailPayload, date))
+    )
+  );
+  const payloads: HyphenApiResponse[] = [];
+
+  for (const result of settled) {
+    if (result.status === "fulfilled") {
+      if (payloadHasAnyRows(result.value)) {
+        payloads.push(result.value);
+      }
+      continue;
+    }
+    if (isNonFatalNhisNoDataFailure(result.reason)) continue;
+    logHyphenError("[hyphen][fetch] recent-medication backfill failed", result.reason);
+  }
+
+  if (payloads.length === 0) return null;
+  if (payloads.length === 1) return payloads[0];
+  return mergeListPayloads(payloads);
 }
 
 function normalizeErrCode(value: string | null | undefined) {
@@ -443,6 +612,43 @@ export async function executeNhisFetch(
   }
 
   await Promise.all(independentJobs);
+
+  if (input.targets.includes("medication")) {
+    const medicationPayload = getTargetPayload<HyphenApiResponse>(
+      successful,
+      "medication"
+    );
+    const medicalPayload = getTargetPayload<HyphenApiResponse>(successful, "medical");
+    const shouldBackfillMedicationNames =
+      !!medicalPayload &&
+      (!medicationPayload ||
+        !payloadHasAnyRows(medicationPayload) ||
+        !payloadHasMedicationNames(medicationPayload));
+
+    if (shouldBackfillMedicationNames) {
+      const backfilledMedicationPayload = await fetchMedicationByRecentVisitsBackfill({
+        medicalPayload,
+        detailPayload: input.detailPayload,
+      });
+
+      if (backfilledMedicationPayload && payloadHasAnyRows(backfilledMedicationPayload)) {
+        if (medicationPayload && payloadHasAnyRows(medicationPayload)) {
+          successful.set(
+            "medication",
+            mergeListPayloads([medicationPayload, backfilledMedicationPayload])
+          );
+        } else {
+          successful.set("medication", backfilledMedicationPayload);
+        }
+        rawFailures.delete("medication");
+        for (let index = failed.length - 1; index >= 0; index -= 1) {
+          if (failed[index]?.target === "medication") {
+            failed.splice(index, 1);
+          }
+        }
+      }
+    }
+  }
 
   if (successful.size === 0) {
     const firstFailure = failed[0];
