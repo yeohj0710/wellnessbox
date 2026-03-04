@@ -138,6 +138,14 @@ function runStaticRegressionChecks() {
     summaryPatchSource.includes("mergeRawPayloadByTargets"),
     "summary patch should merge patched raw payload for updated targets"
   );
+  assert.ok(
+    summaryPatchSource.includes("hasRawTargetPayload"),
+    "summary patch planner should detect missing raw target payloads even when normalized placeholders exist"
+  );
+  assert.ok(
+    summaryPatchSource.includes("missingTargetSet.add(\"medication\")"),
+    "summary patch planner should force medication patch when raw medication payload is missing"
+  );
 
   const summaryNormalizerSource = read("lib/b2b/employee-sync-summary.normalizer.ts");
   assert.ok(
@@ -161,6 +169,10 @@ function runStaticRegressionChecks() {
       "mobileNo: input.identity?.phoneNormalized ?? undefined"
     ),
     "summary patch network payload should include employee phone for API compatibility"
+  );
+  assert.ok(
+    summaryPatchFetchSource.includes("payloadHasRequestedRawTargets"),
+    "summary patch cache selection should reject payloads missing requested raw targets"
   );
 
   const medicationExtractSource = read("lib/b2b/report-payload-health-medication.ts");

@@ -28,6 +28,8 @@ const CALCULATING_MESSAGES = [
   "건강관리 필요도를 분석하고 있어요.",
   "결과 리포트를 준비하고 있어요.",
 ];
+// NOTE: 미팅용 임시 조치. 설문 재오픈 시 false 로 변경하세요.
+const BLOCK_SURVEY_START_TEMPORARILY = true;
 
 type SurveyPhase = "intro" | "survey" | "calculating" | "result";
 type PersistedSurveyPhase = Exclude<SurveyPhase, "calculating">;
@@ -137,6 +139,7 @@ export default function SurveyPageClient() {
   const [selectedSectionsCommitted, setSelectedSectionsCommitted] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [errorText, setErrorText] = useState<string | null>(null);
+  const [introNotice, setIntroNotice] = useState<string | null>(null);
   const [result, setResult] = useState<WellnessComputedResult | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [calcPercent, setCalcPercent] = useState(8);
@@ -330,9 +333,14 @@ export default function SurveyPageClient() {
   }
 
   function handleStart() {
+    if (BLOCK_SURVEY_START_TEMPORARILY) {
+      setIntroNotice("건강 설문은 현재 작업 중입니다. 잠시 후 다시 시도해 주세요.");
+      return;
+    }
     setPhase("survey");
     setCurrentIndex(0);
     setErrorText(null);
+    setIntroNotice(null);
   }
 
   function handleReset() {
@@ -340,6 +348,7 @@ export default function SurveyPageClient() {
     setSelectedSectionsCommitted([]);
     setCurrentIndex(0);
     setErrorText(null);
+    setIntroNotice(null);
     setResult(null);
     setPhase("intro");
     setCalcPercent(8);
@@ -633,6 +642,9 @@ export default function SurveyPageClient() {
               >
                 설문 시작하기
               </button>
+              {introNotice ? (
+                <p className="text-sm font-medium text-rose-600">{introNotice}</p>
+              ) : null}
             </div>
           </section>
         </div>
@@ -891,4 +903,3 @@ export default function SurveyPageClient() {
     </div>
   );
 }
-

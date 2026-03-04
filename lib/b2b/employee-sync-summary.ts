@@ -33,6 +33,16 @@ const RAW_TARGET_KEY_MAP: Record<NhisFetchTarget, string> = {
   healthAge: "healthAge",
 };
 
+function hasRawTargetPayload(
+  raw: Record<string, unknown> | null,
+  target: NhisFetchTarget
+) {
+  if (!raw) return false;
+  const key = RAW_TARGET_KEY_MAP[target];
+  if (!key) return false;
+  return raw[key] != null;
+}
+
 function mergeRawPayloadByTargets(input: {
   baseRaw: unknown;
   patchRaw: unknown;
@@ -71,7 +81,19 @@ export async function patchSummaryTargetsIfNeeded(input: {
 }): Promise<SummaryPatchResult> {
   const baseNormalized = input.payload.data?.normalized ?? null;
   const summaryPatchNeeds = resolveSummaryPatchNeeds(baseNormalized);
-  const missingTargets = summaryPatchNeeds.targets;
+  const missingTargetSet = new Set<NhisFetchTarget>(summaryPatchNeeds.targets);
+  const baseRaw = asRecord(input.payload.data?.raw);
+
+  // Legacy/partial cache payloads can have normalized placeholders while raw target payload is null.
+  // In that case, force a target patch so medication/checkup data can be recovered.
+  if (!hasRawTargetPayload(baseRaw, "medication")) {
+    missingTargetSet.add("medication");
+  }
+  if (!hasRawTargetPayload(baseRaw, "checkupOverview")) {
+    missingTargetSet.add("checkupOverview");
+  }
+
+  const missingTargets = [...missingTargetSet];
   if (missingTargets.length === 0) {
     return { payload: input.payload, usedNetwork: false, patchedTargets: [] };
   }

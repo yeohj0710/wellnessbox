@@ -15,6 +15,34 @@ import {
 import { buildNhisRequestDefaults } from "@/lib/server/hyphen/request-defaults";
 import type { HyphenNhisRequestPayload } from "@/lib/server/hyphen/client";
 
+const RAW_TARGET_KEY_MAP: Record<NhisFetchTarget, string> = {
+  medical: "medical",
+  medication: "medication",
+  checkupList: "checkupList",
+  checkupYearly: "checkupYearly",
+  checkupOverview: "checkupOverview",
+  healthAge: "healthAge",
+};
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+function payloadHasRequestedRawTargets(
+  payload: NhisFetchRoutePayload,
+  targets: NhisFetchTarget[]
+) {
+  const raw = asRecord(payload.data?.raw);
+  if (!raw) return false;
+  for (const target of targets) {
+    const key = RAW_TARGET_KEY_MAP[target];
+    if (!key) continue;
+    if (raw[key] == null) return false;
+  }
+  return true;
+}
+
 export function buildBasePayload(input: {
   linkLoginMethod: string | null | undefined;
   linkLoginOrgCd: string | null | undefined;
@@ -92,6 +120,7 @@ export async function resolveSummaryPatchPayload(input: {
     const parsed = parseCachedPayload(validCache.payload);
     if (
       parsed?.ok &&
+      payloadHasRequestedRawTargets(parsed, input.targets) &&
       (!input.requireMedicationNames || input.hasRequiredMedicationNames(parsed))
     ) {
       return { payload: parsed, usedNetwork: false };
@@ -109,6 +138,7 @@ export async function resolveSummaryPatchPayload(input: {
     const parsed = parseCachedPayload(historyCache.payload);
     if (
       parsed?.ok &&
+      payloadHasRequestedRawTargets(parsed, input.targets) &&
       (!input.requireMedicationNames || input.hasRequiredMedicationNames(parsed))
     ) {
       return { payload: parsed, usedNetwork: false };
@@ -126,6 +156,7 @@ export async function resolveSummaryPatchPayload(input: {
     const parsed = parseCachedPayload(globalHistoryCache.payload);
     if (
       parsed?.ok &&
+      payloadHasRequestedRawTargets(parsed, input.targets) &&
       (!input.requireMedicationNames || input.hasRequiredMedicationNames(parsed))
     ) {
       return { payload: parsed, usedNetwork: false };
@@ -166,6 +197,9 @@ export async function resolveSummaryPatchPayload(input: {
   });
 
   if (!executed.payload.ok) return null;
+  if (!payloadHasRequestedRawTargets(executed.payload, input.targets)) {
+    return null;
+  }
   if (
     input.requireMedicationNames &&
     !input.hasRequiredMedicationNames(executed.payload)
