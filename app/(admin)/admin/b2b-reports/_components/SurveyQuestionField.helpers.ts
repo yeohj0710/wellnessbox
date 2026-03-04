@@ -4,6 +4,7 @@ export type ResolvedOption = {
   value: string;
   label: string;
   score?: number;
+  allowsCustomInput?: boolean;
   isNoneOption?: boolean;
 };
 
@@ -43,6 +44,7 @@ export function resolveVariantOptions(
         value: option.value,
         label: option.label,
         score: option.score,
+        allowsCustomInput: option.allowsCustomInput,
         isNoneOption: false,
       })),
       optionsPrefix:
@@ -68,16 +70,19 @@ export function withVariantAnswer(
   variantKey: string | null,
   selectedValues: string[],
   options: ResolvedOption[],
-  fallbackAnswerText = ""
+  fallbackAnswerText = "",
+  otherTextByValue?: Record<string, string>
 ) {
   const firstValue = selectedValues[0] ?? "";
   const labels = selectedValues
     .map((optionValue) => options.find((option) => option.value === optionValue)?.label || optionValue)
     .filter(Boolean);
+  const hasOtherText = Boolean(otherTextByValue && Object.keys(otherTextByValue).length > 0);
   return {
     answerValue: firstValue || undefined,
     answerText: labels.join(", ") || fallbackAnswerText || undefined,
     selectedValues,
+    ...(hasOtherText ? { otherTextByValue } : {}),
     variantId: variantKey ?? undefined,
   };
 }

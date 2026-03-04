@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import db from "@/lib/db";
 import { logB2bAdminAction } from "@/lib/b2b/employee-service";
 import { periodKeyToCycle, resolveCurrentPeriodKey } from "@/lib/b2b/period";
+import { ensureLatestB2bReport } from "@/lib/b2b/report-service";
 import { upsertSurveyResponseWithAnswers } from "@/lib/b2b/survey-response-service";
 import {
   buildSurveyAnswerRows,
@@ -89,6 +90,19 @@ export async function runAdminSurveyUpsert(input: {
 }) {
   const { template, schema } = await ensureActiveB2bSurveyTemplate();
   const { commonMap, sectionMap } = buildSurveyQuestionMap(schema);
+  const previousResponse = await db.b2bSurveyResponse.findFirst({
+    where: {
+      employeeId: input.employeeId,
+      templateId: template.id,
+      periodKey: input.periodKey,
+    },
+    orderBy: { updatedAt: "desc" },
+    select: {
+      submittedAt: true,
+      selectedSections: true,
+      answersJson: true,
+    },
+  });
 
   const selectedSections = resolveSurveySelectedSections({
     schema,
@@ -101,6 +115,16 @@ export async function runAdminSurveyUpsert(input: {
     );
   }
 
+  const previousSelectedSignature = JSON.stringify(previousResponse?.selectedSections ?? []);
+  const nextSelectedSignature = JSON.stringify(selectedSections);
+  const previousAnswersSignature = JSON.stringify(previousResponse?.answersJson ?? null);
+  const nextAnswersSignature = JSON.stringify(input.answers);
+  const shouldSyncReport =
+    !previousResponse ||
+    previousResponse.submittedAt == null ||
+    previousSelectedSignature !== nextSelectedSignature ||
+    previousAnswersSignature !== nextAnswersSignature;
+
   const { response, answerRows } = await upsertSurveyResponseWithAnswers({
     employeeId: input.employeeId,
     templateId: template.id,
@@ -109,6 +133,7 @@ export async function runAdminSurveyUpsert(input: {
     reportCycle: periodKeyToCycle(input.periodKey),
     selectedSections,
     answersJson: asJsonValue(input.answers),
+    submittedAt: new Date(),
     buildAnswerRows: (responseId) =>
       buildSurveyAnswerRows({
         responseId,
@@ -117,6 +142,9 @@ export async function runAdminSurveyUpsert(input: {
         asJsonValue,
       }),
   });
+  const report = shouldSyncReport
+    ? await ensureLatestB2bReport(input.employeeId, input.periodKey)
+    : null;
 
   await logB2bAdminAction({
     employeeId: input.employeeId,
@@ -137,5 +165,109 @@ export async function runAdminSurveyUpsert(input: {
     selectedSections,
     answerCount: answerRows.length,
     updatedAt: response.updatedAt.toISOString(),
+    report: report
+      ? {
+          id: report.id,
+          variantIndex: report.variantIndex,
+          status: report.status,
+          periodKey: report.periodKey ?? input.periodKey,
+          updatedAt: report.updatedAt.toISOString(),
+        }
+      : null,
+  };
+}
+
+export async function runEmployeeSurveyLookup(input: {
+  employeeId: string;
+  periodKey: string | null;
+}) {
+  return runAdminSurveyLookup(input);
+}
+
+export async function runEmployeeSurveyUpsert(input: {
+  employeeId: string;
+  periodKey: string;
+  selectedSections?: string[];
+  answers: Record<string, unknown>;
+  finalize?: boolean;
+}) {
+  const { template, schema } = await ensureActiveB2bSurveyTemplate();
+  const { commonMap, sectionMap } = buildSurveyQuestionMap(schema);
+  const previousResponse = await db.b2bSurveyResponse.findFirst({
+    where: {
+      employeeId: input.employeeId,
+      templateId: template.id,
+      periodKey: input.periodKey,
+    },
+    orderBy: { updatedAt: "desc" },
+    select: {
+      submittedAt: true,
+      selectedSections: true,
+      answersJson: true,
+    },
+  });
+
+  const selectedSections = resolveSurveySelectedSections({
+    schema,
+    answers: input.answers,
+    selectedSections: input.selectedSections,
+  });
+  if (selectedSections.length > schema.rules.maxSelectedSections) {
+    throw new SurveyRouteInputError(
+      `상세 섹션은 최대 ${schema.rules.maxSelectedSections}개까지 선택할 수 있습니다.`
+    );
+  }
+
+  const previousSelectedSignature = JSON.stringify(previousResponse?.selectedSections ?? []);
+  const nextSelectedSignature = JSON.stringify(selectedSections);
+  const previousAnswersSignature = JSON.stringify(previousResponse?.answersJson ?? null);
+  const nextAnswersSignature = JSON.stringify(input.answers);
+  const shouldSyncReport =
+    input.finalize === true &&
+    (!previousResponse ||
+      previousResponse.submittedAt == null ||
+      previousSelectedSignature !== nextSelectedSignature ||
+      previousAnswersSignature !== nextAnswersSignature);
+
+  const { response, answerRows } = await upsertSurveyResponseWithAnswers({
+    employeeId: input.employeeId,
+    templateId: template.id,
+    templateVersion: template.version,
+    periodKey: input.periodKey,
+    reportCycle: periodKeyToCycle(input.periodKey),
+    selectedSections,
+    answersJson: asJsonValue(input.answers),
+    preserveSubmittedOnDraft: true,
+    ...(input.finalize ? { submittedAt: new Date() } : {}),
+    buildAnswerRows: (responseId) =>
+      buildSurveyAnswerRows({
+        responseId,
+        answers: input.answers,
+        maps: { commonMap, sectionMap },
+        asJsonValue,
+      }),
+  });
+  const report =
+    shouldSyncReport
+      ? await ensureLatestB2bReport(input.employeeId, input.periodKey)
+      : null;
+
+  return {
+    id: response.id,
+    periodKey: response.periodKey ?? input.periodKey,
+    reportCycle: response.reportCycle ?? null,
+    selectedSections,
+    answerCount: answerRows.length,
+    submittedAt: response.submittedAt?.toISOString() ?? null,
+    updatedAt: response.updatedAt.toISOString(),
+    report: report
+      ? {
+          id: report.id,
+          variantIndex: report.variantIndex,
+          status: report.status,
+          periodKey: report.periodKey ?? input.periodKey,
+          updatedAt: report.updatedAt.toISOString(),
+        }
+      : null,
   };
 }

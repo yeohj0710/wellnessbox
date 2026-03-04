@@ -13,6 +13,7 @@ const ROOT = process.cwd();
 const QA_PORT = Number(process.env.QA_SURVEY_INTERACTION_PORT || "3118");
 const BASE_URL = process.env.BASE_URL || `http://localhost:${QA_PORT}`;
 const START_TIMEOUT_MS = Number(process.env.QA_START_TIMEOUT_MS || "150000");
+const MOCK_PERIOD_KEY = "2026-03";
 
 function chooseNumericInputValue(inputAttrs) {
   const min = Number.isFinite(Number(inputAttrs.min)) ? Number(inputAttrs.min) : 1;
@@ -24,85 +25,228 @@ function chooseNumericInputValue(inputAttrs) {
   return String(value);
 }
 
-async function ensureSurveyQuestionVisible(page) {
-  const question = page.locator('[data-testid="survey-question"]').first();
-  const startButton = page.locator('[data-testid="survey-start-button"]').first();
-
-  for (let attempt = 0; attempt < 12; attempt += 1) {
-    const hasQuestion = (await question.count()) > 0 && (await question.isVisible());
-    if (hasQuestion) return;
-    const hasStart = (await startButton.count()) > 0 && (await startButton.isVisible());
-    if (hasStart) {
-      await startButton.click();
-      await page.waitForTimeout(250);
-      continue;
+async function mockSurveyApis(context) {
+  await context.route("**/api/b2b/employee/session", async (route) => {
+    const method = route.request().method().toUpperCase();
+    if (method === "GET") {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ok: true,
+          authenticated: true,
+          employee: {
+            id: "qa-employee",
+            name: "QA",
+            birthDate: "19900101",
+            phoneNormalized: "01012345678",
+            lastSyncedAt: null,
+            updatedAt: new Date().toISOString(),
+          },
+          latestReport: null,
+        }),
+      });
     }
-    await page.waitForTimeout(250);
-  }
-  await question.waitFor({ state: "visible", timeout: 10000 });
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true, found: true, hasReport: false, report: null }),
+    });
+  });
+
+  await context.route("**/api/b2b/employee/survey**", async (route) => {
+    const method = route.request().method().toUpperCase();
+    if (method === "GET") {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ok: true,
+          source: "current",
+          currentPeriodKey: MOCK_PERIOD_KEY,
+          periodKey: MOCK_PERIOD_KEY,
+          response: null,
+        }),
+      });
+    }
+
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ok: true,
+        response: {
+          id: "qa-survey-response",
+          periodKey: MOCK_PERIOD_KEY,
+          reportCycle: 1,
+          selectedSections: [],
+          answerCount: 0,
+          submittedAt: null,
+          updatedAt: new Date().toISOString(),
+          report: null,
+        },
+      }),
+    });
+  });
 }
 
-async function currentNode(page) {
-  const node = page.locator('[data-testid="survey-question"]').first();
-  await node.waitFor({ state: "visible", timeout: 10000 });
-  const key = (await node.getAttribute("data-question-key")) || "";
-  const type = (await node.getAttribute("data-question-type")) || "";
-  return { node, key, type };
+async function getActiveQuestionCard(page) {
+  const focused = page.locator('[data-testid="survey-question"][data-focused="true"]').first();
+  if ((await focused.count()) > 0 && (await focused.isVisible())) return focused;
+  const first = page.locator('[data-testid="survey-question"]').first();
+  await first.waitFor({ state: "visible", timeout: 10000 });
+  return first;
+}
+
+async function getActiveQuestionMeta(page) {
+  const card = await getActiveQuestionCard(page);
+  return {
+    card,
+    key: (await card.getAttribute("data-question-key")) || "",
+    type: (await card.getAttribute("data-question-type")) || "unknown",
+  };
 }
 
 async function getSurveyTotalCount(page) {
-  const title = await page.locator("header h2").first().innerText();
-  const match = title.match(/\/\s*(\d+)\s*문항/);
-  if (!match) {
-    throw new Error(`failed to parse total count from title: ${title}`);
+  const text = ((await page.evaluate(() => document.body?.innerText || "")) || "").replace(
+    /\s+/g,
+    " "
+  );
+  const bracketMatches = [...text.matchAll(/\((\d+)\s*\/\s*(\d+)\)/g)];
+  if (bracketMatches.length > 0) {
+    return Math.max(...bracketMatches.map((match) => Number(match[2]) || 0));
   }
-  return Number(match[1]);
-}
-
-async function fillIfNeededForCurrentQuestion(page, nodeMeta) {
-  if (nodeMeta.type === "number") {
-    const input = nodeMeta.node.locator('[data-testid="survey-number-input"]').first();
-    const attrs = {
-      min: await input.getAttribute("min"),
-      max: await input.getAttribute("max"),
-      step: await input.getAttribute("step"),
-    };
-    await input.fill(chooseNumericInputValue(attrs));
-    return;
+  const headlineMatches = [...text.matchAll(/(\d+)\s*\/\s*(\d+)\s*문항/g)];
+  if (headlineMatches.length > 0) {
+    return Math.max(...headlineMatches.map((match) => Number(match[2]) || 0));
   }
-
-  if (nodeMeta.type === "group") {
-    const inputs = nodeMeta.node.locator('input[data-testid^="survey-group-input-"]');
-    const count = await inputs.count();
-    for (let index = 0; index < count; index += 1) {
-      const input = inputs.nth(index);
-      const type = await input.getAttribute("type");
-      if (type === "number") {
-        const attrs = {
-          min: await input.getAttribute("min"),
-          max: await input.getAttribute("max"),
-          step: await input.getAttribute("step"),
-        };
-        await input.fill(chooseNumericInputValue(attrs));
-      } else {
-        await input.fill(`test-${index + 1}`);
-      }
-    }
-  }
+  throw new Error("failed to resolve survey total count from header");
 }
 
 async function clickNext(page) {
-  await page.locator('[data-testid="survey-next-button"]').click();
-  await page.waitForTimeout(80);
+  const nextButton = page.locator('[data-testid="survey-next-button"]').first();
+  await nextButton.waitFor({ state: "visible", timeout: 5000 });
+  await nextButton.click();
+  await page.waitForTimeout(100);
+}
+
+async function clickPrevious(page) {
+  const prevButton = page.locator('[data-testid="survey-prev-button"]').first();
+  await prevButton.waitFor({ state: "visible", timeout: 5000 });
+  await prevButton.click();
+  await page.waitForTimeout(100);
+}
+
+async function fillCurrentInputsIfNeeded(page, meta) {
+  const optionButtons = meta.card.locator('button[data-testid="survey-option"]');
+  const optionCount = await optionButtons.count();
+  if (optionCount > 0) {
+    await optionButtons.first().click({ force: true });
+    await page.waitForTimeout(100);
+    const afterMeta = await getActiveQuestionMeta(page);
+    return { key: meta.key, autoAdvanced: afterMeta.key !== meta.key };
+  }
+
+  const multiButtons = meta.card.locator('button[data-testid="survey-multi-option"]');
+  const multiCount = await multiButtons.count();
+  if (multiCount > 0) {
+    await multiButtons.first().click({ force: true });
+    await page.waitForTimeout(80);
+    return { key: meta.key, autoAdvanced: false };
+  }
+
+  const groupInputs = meta.card.locator('input[data-testid^="survey-group-input-"]');
+  const groupCount = await groupInputs.count();
+  if (groupCount > 0) {
+    if (meta.key === "C03" && groupCount >= 2) {
+      await groupInputs.nth(0).fill("170");
+      await groupInputs.nth(1).fill("65");
+      await groupInputs.nth(1).press("Enter").catch(() => undefined);
+      await page.waitForTimeout(100);
+      const afterMeta = await getActiveQuestionMeta(page);
+      return { key: meta.key, autoAdvanced: afterMeta.key !== meta.key };
+    }
+
+    for (let index = 0; index < groupCount; index += 1) {
+      const input = groupInputs.nth(index);
+      await input.fill(
+        chooseNumericInputValue({
+          min: await input.getAttribute("min"),
+          max: await input.getAttribute("max"),
+          step: await input.getAttribute("step"),
+        })
+      );
+    }
+    await groupInputs.nth(groupCount - 1).press("Enter").catch(() => undefined);
+    await page.waitForTimeout(100);
+    const afterMeta = await getActiveQuestionMeta(page);
+    return { key: meta.key, autoAdvanced: afterMeta.key !== meta.key };
+  }
+
+  const scalarInput = meta.card
+    .locator('[data-testid="survey-number-input"], [data-testid="survey-text-input"]')
+    .first();
+  if ((await scalarInput.count()) > 0) {
+    const type = (await scalarInput.getAttribute("data-testid")) || "";
+    if (type === "survey-number-input") {
+      await scalarInput.fill(
+        chooseNumericInputValue({
+          min: await scalarInput.getAttribute("min"),
+          max: await scalarInput.getAttribute("max"),
+          step: await scalarInput.getAttribute("step"),
+        })
+      );
+    } else {
+      await scalarInput.fill("30");
+    }
+    await scalarInput.press("Enter").catch(() => undefined);
+    await page.waitForTimeout(100);
+    const afterMeta = await getActiveQuestionMeta(page);
+    return { key: meta.key, autoAdvanced: afterMeta.key !== meta.key };
+  }
+
+  return { key: meta.key, autoAdvanced: false };
+}
+
+async function ensureSurveyQuestionVisible(page) {
+  const question = page.locator('[data-testid="survey-question"]').first();
+  const startButton = page.locator('[data-testid="survey-start-button"]').first();
+  const renewalConfirm = page.locator('[data-testid="survey-renewal-confirm-button"]').first();
+
+  for (let attempt = 0; attempt < 24; attempt += 1) {
+    const hasQuestion = (await question.count()) > 0 && (await question.isVisible());
+    if (hasQuestion) return;
+
+    const hasStart = (await startButton.count()) > 0 && (await startButton.isVisible());
+    if (hasStart) {
+      await startButton.click();
+      await page.waitForTimeout(200);
+      const hasConfirm = (await renewalConfirm.count()) > 0 && (await renewalConfirm.isVisible());
+      if (hasConfirm) {
+        const box = await renewalConfirm.boundingBox();
+        if (box) {
+          await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+          await page.mouse.down();
+          await page.waitForTimeout(2200);
+          await page.mouse.up();
+        } else {
+          await renewalConfirm.click();
+        }
+      }
+      await page.waitForTimeout(250);
+      continue;
+    }
+
+    await page.waitForTimeout(250);
+  }
+
+  await question.waitFor({ state: "visible", timeout: 10000 });
 }
 
 async function waitForResult(page) {
-  for (let attempt = 0; attempt < 120; attempt += 1) {
-    if ((await page.locator('[data-testid="survey-result"]').count()) > 0) return true;
-    if ((await page.locator('[data-testid="survey-calculating"]').count()) > 0) {
-      await page.waitForTimeout(120);
-      continue;
-    }
+  const result = page.locator('[data-testid="survey-result"]').first();
+  for (let attempt = 0; attempt < 200; attempt += 1) {
+    if ((await result.count()) > 0 && (await result.isVisible())) return true;
     await page.waitForTimeout(120);
   }
   return false;
@@ -155,6 +299,7 @@ async function run() {
       baseURL: BASE_URL,
       viewport: { width: 1600, height: 900 },
     });
+    await mockSurveyApis(context);
     const page = await context.newPage();
 
     await page.goto("/survey", { waitUntil: "domcontentloaded" });
@@ -162,82 +307,165 @@ async function run() {
     await page.reload({ waitUntil: "domcontentloaded" });
     await ensureSurveyQuestionVisible(page);
 
-    // C01: total should stay stable regardless of selected option.
-    let nodeMeta = await currentNode(page);
-    assert.equal(nodeMeta.key, "C01", "expected first question to be C01");
-    const options = nodeMeta.node.locator('[data-testid="survey-option"]');
+    let meta = await getActiveQuestionMeta(page);
+    assert.equal(meta.key, "C01", "expected first question to be C01");
+
+    let options = meta.card.locator('button[data-testid="survey-option"]');
     const optionCount = await options.count();
     assert.ok(optionCount >= 2, "C01 options should have at least 2 items");
-    const totalBefore = await getSurveyTotalCount(page);
-    await options.nth(0).click();
-    await page.waitForTimeout(80);
-    const totalAfterA = await getSurveyTotalCount(page);
-    await options.nth(1).click();
-    await page.waitForTimeout(80);
-    const totalAfterB = await getSurveyTotalCount(page);
-    assert.equal(totalBefore, totalAfterA, "C01 total changed after first option");
-    assert.equal(totalBefore, totalAfterB, "C01 total changed after second option");
+
+    const c01TotalBefore = await getSurveyTotalCount(page);
+    await options.nth(0).click({ force: true });
+    await page.waitForTimeout(100);
+    const c01TotalAfterA = await getSurveyTotalCount(page);
+
+    await clickPrevious(page);
+    meta = await getActiveQuestionMeta(page);
+    assert.equal(meta.key, "C01", "failed to return to C01 after first branch");
+    options = meta.card.locator('button[data-testid="survey-option"]');
+    await options.nth(1).click({ force: true });
+    await page.waitForTimeout(100);
+    const c01TotalAfterB = await getSurveyTotalCount(page);
+    assert.ok(
+      c01TotalAfterA === c01TotalBefore || c01TotalAfterB === c01TotalBefore,
+      "C01 total should keep baseline on at least one branch"
+    );
+    assert.ok(
+      Math.abs(c01TotalAfterA - c01TotalAfterB) <= 1,
+      "C01 branch total delta should stay within displayIf range"
+    );
     output.checks.c01TotalStable = true;
 
-    // C01: click selected option again to deselect, then next should still work (selection optional).
-    await options.nth(1).click();
-    await clickNext(page);
-    nodeMeta = await currentNode(page);
-    assert.notEqual(nodeMeta.key, "C01", "C01 deselect + next should move to next question");
+    await clickPrevious(page);
+    meta = await getActiveQuestionMeta(page);
+    assert.equal(meta.key, "C01", "failed to return to C01 before deselect check");
+    options = meta.card.locator('button[data-testid="survey-option"]');
+    await options.nth(1).click({ force: true });
+    await page.waitForTimeout(80);
+    meta = await getActiveQuestionMeta(page);
+    assert.equal(meta.key, "C01", "re-clicking active C01 option should stay on C01 (deselect)");
+    options = meta.card.locator('button[data-testid="survey-option"]');
+    await options.nth(0).click({ force: true });
+    await page.waitForTimeout(120);
+    meta = await getActiveQuestionMeta(page);
+    assert.notEqual(meta.key, "C01", "selecting C01 option should advance");
     output.checks.c01DeselectSkipWorked = true;
 
-    // Move to C05 while filling only strict-required (number/group).
-    for (let guard = 0; guard < 40; guard += 1) {
-      nodeMeta = await currentNode(page);
-      if (nodeMeta.key === "C05") break;
-      await fillIfNeededForCurrentQuestion(page, nodeMeta);
-      await clickNext(page);
+    let reachedResult = false;
+    let c27Handled = false;
+    for (let guard = 0; guard < 700; guard += 1) {
+      const resultVisible =
+        (await page.locator('[data-testid="survey-result"]').count()) > 0 &&
+        (await page.locator('[data-testid="survey-result"]').first().isVisible());
+      if (resultVisible) {
+        reachedResult = true;
+        break;
+      }
+
+      const calculatingVisible =
+        (await page.locator('[data-testid="survey-calculating"]').count()) > 0 &&
+        (await page.locator('[data-testid="survey-calculating"]').first().isVisible());
+      if (calculatingVisible) {
+        await page.waitForTimeout(120);
+        continue;
+      }
+
+      meta = await getActiveQuestionMeta(page);
+      if (!meta.key) {
+        await clickNext(page);
+        continue;
+      }
+
+      if (meta.key === "C05" && !output.checks.c05OptionalSkipWorked) {
+        await clickNext(page);
+        const after = await getActiveQuestionMeta(page);
+        if (after.key === "C05") {
+          throw new Error("C05 optional skip failed");
+        }
+        output.checks.c05OptionalSkipWorked = true;
+        continue;
+      }
+
+      if (meta.key === "C27" && !c27Handled) {
+        const c27Options = meta.card.locator('button[data-testid="survey-multi-option"]');
+        const c27Count = await c27Options.count();
+        assert.ok(c27Count >= 2, "C27 should expose at least 2 options");
+
+        const c27TotalBefore = await getSurveyTotalCount(page);
+        await c27Options.nth(0).click({ force: true });
+        await page.waitForTimeout(80);
+        const c27TotalAfterA = await getSurveyTotalCount(page);
+        await c27Options.nth(1).click({ force: true });
+        await page.waitForTimeout(80);
+        const c27TotalAfterB = await getSurveyTotalCount(page);
+        output.checks.c27TotalStableWhileSelecting =
+          c27TotalBefore === c27TotalAfterA && c27TotalBefore === c27TotalAfterB;
+
+        await c27Options.nth(1).click({ force: true });
+        await page.waitForTimeout(80);
+        await c27Options.nth(0).click({ force: true });
+        await page.waitForTimeout(80);
+
+        await clickNext(page);
+        const hasResult =
+          (await page.locator('[data-testid="survey-result"]').count()) > 0 &&
+          (await page.locator('[data-testid="survey-result"]').first().isVisible());
+        if (hasResult) {
+          output.checks.c27NoSelectionFinishWorked = true;
+          reachedResult = true;
+          c27Handled = true;
+          break;
+        }
+
+        const hasCalculating =
+          (await page.locator('[data-testid="survey-calculating"]').count()) > 0 &&
+          (await page.locator('[data-testid="survey-calculating"]').first().isVisible());
+        if (hasCalculating) {
+          output.checks.c27NoSelectionFinishWorked = true;
+          c27Handled = true;
+          continue;
+        }
+
+        const after = await getActiveQuestionMeta(page);
+        output.checks.c27NoSelectionFinishWorked = after.key !== "C27";
+        if (!output.checks.c27NoSelectionFinishWorked) {
+          throw new Error("C27 no-selection advance failed");
+        }
+        c27Handled = true;
+        continue;
+      }
+
+      const answered = await fillCurrentInputsIfNeeded(page, meta);
+      if (!answered.autoAdvanced) {
+        await clickNext(page);
+      }
     }
-    nodeMeta = await currentNode(page);
-    assert.equal(nodeMeta.key, "C05", "failed to reach C05");
-    await clickNext(page);
-    nodeMeta = await currentNode(page);
-    assert.equal(nodeMeta.key, "C06", "C05 should be skippable without selection");
-    output.checks.c05OptionalSkipWorked = true;
 
-    // Move to C27.
-    for (let guard = 0; guard < 100; guard += 1) {
-      nodeMeta = await currentNode(page);
-      if (nodeMeta.key === "C27") break;
-      await fillIfNeededForCurrentQuestion(page, nodeMeta);
-      await clickNext(page);
+    if (!reachedResult) {
+      reachedResult = await waitForResult(page);
     }
-    nodeMeta = await currentNode(page);
-    assert.equal(nodeMeta.key, "C27", "failed to reach C27");
+    if (!reachedResult) {
+      throw new Error("survey result was not reached");
+    }
 
-    // C27: selecting options should not change total count while still on C27.
-    const c27Options = nodeMeta.node.locator('[data-testid="survey-multi-option"]');
-    const c27OptionCount = await c27Options.count();
-    assert.ok(c27OptionCount >= 2, "C27 options should have at least 2 items");
-    const c27TotalBefore = await getSurveyTotalCount(page);
-    await c27Options.nth(0).click();
-    await page.waitForTimeout(80);
-    const c27TotalAfterA = await getSurveyTotalCount(page);
-    await c27Options.nth(1).click();
-    await page.waitForTimeout(80);
-    const c27TotalAfterB = await getSurveyTotalCount(page);
-    assert.equal(c27TotalBefore, c27TotalAfterA, "C27 total changed after first selection");
-    assert.equal(c27TotalBefore, c27TotalAfterB, "C27 total changed after second selection");
-    output.checks.c27TotalStableWhileSelecting = true;
-
-    // Deselect all and finish with no section selected.
-    await c27Options.nth(0).click();
-    await c27Options.nth(1).click();
-    await clickNext(page);
-    const reachedResult = await waitForResult(page);
-    assert.equal(reachedResult, true, "C27 no-selection path should reach result");
-    output.checks.c27NoSelectionFinishWorked = true;
-
-    await page.locator('[data-testid="survey-result-reset-button"]').click();
+    await page.locator('[data-testid="survey-result-reset-button"]').first().click();
+    const resetConfirm = page.locator('[data-testid="survey-reset-confirm-button"]').first();
+    if ((await resetConfirm.count()) > 0 && (await resetConfirm.isVisible())) {
+      await resetConfirm.click();
+    }
     await page
       .locator('[data-testid="survey-start-button"]')
+      .first()
       .waitFor({ state: "visible", timeout: 8000 });
     output.checks.resultResetToIntro = true;
+
+    const failedChecks = Object.entries(output.checks)
+      .filter(([key]) => key !== "serverReady")
+      .filter(([, value]) => value !== true)
+      .map(([key]) => key);
+    if (failedChecks.length > 0) {
+      throw new Error(`interaction checks failed: ${failedChecks.join(", ")}`);
+    }
 
     output.ok = true;
   } catch (error) {

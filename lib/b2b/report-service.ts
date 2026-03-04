@@ -237,7 +237,11 @@ async function hasNewerSourceData(input: {
       select: { updatedAt: true },
     }),
     db.b2bSurveyResponse.findFirst({
-      where: { employeeId: input.employeeId, periodKey: input.periodKey },
+      where: {
+        employeeId: input.employeeId,
+        periodKey: input.periodKey,
+        submittedAt: { not: null },
+      },
       orderBy: { updatedAt: "desc" },
       select: { updatedAt: true },
     }),

@@ -42,6 +42,7 @@ export type SurveyQuestion = {
     label: string;
     score?: number;
     aliases?: string[];
+    allowsCustomInput?: boolean;
     isNoneOption?: boolean;
   }>;
   placeholder?: string;
@@ -69,7 +70,12 @@ export type SurveyQuestion = {
     {
       variantId?: string;
       optionsPrefix?: string;
-      options?: Array<{ value: string; label: string; score?: number }>;
+      options?: Array<{
+        value: string;
+        label: string;
+        score?: number;
+        allowsCustomInput?: boolean;
+      }>;
     }
   >;
   constraints?: {

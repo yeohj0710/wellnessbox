@@ -58,7 +58,7 @@ function normalizePeriodKeyOrCurrent(periodKey?: string | null) {
 
 async function findLatestSurveyForPeriod(employeeId: string, periodKey: string) {
   const periodRow = await db.b2bSurveyResponse.findFirst({
-    where: { employeeId, periodKey },
+    where: { employeeId, periodKey, submittedAt: { not: null } },
     include: { answers: true },
     orderBy: { updatedAt: "desc" },
   });
@@ -69,6 +69,7 @@ async function findLatestSurveyForPeriod(employeeId: string, periodKey: string) 
   return db.b2bSurveyResponse.findFirst({
     where: {
       employeeId,
+      submittedAt: { not: null },
       updatedAt: { lt: range.to },
     },
     include: { answers: true },

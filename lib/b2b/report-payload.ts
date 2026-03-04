@@ -77,7 +77,11 @@ export async function buildB2bReportPayload(input: {
       periodKey: input.periodKey,
       exactFinder: () =>
         db.b2bSurveyResponse.findFirst({
-          where: { employeeId: input.employeeId, periodKey: input.periodKey },
+          where: {
+            employeeId: input.employeeId,
+            periodKey: input.periodKey,
+            submittedAt: { not: null },
+          },
           include: {
             answers: {
               orderBy: [{ sectionKey: "asc" }, { questionKey: "asc" }],
@@ -87,7 +91,11 @@ export async function buildB2bReportPayload(input: {
         }),
       fallbackFinder: (to) =>
         db.b2bSurveyResponse.findFirst({
-          where: { employeeId: input.employeeId, updatedAt: { lt: to } },
+          where: {
+            employeeId: input.employeeId,
+            submittedAt: { not: null },
+            updatedAt: { lt: to },
+          },
           include: {
             answers: {
               orderBy: [{ sectionKey: "asc" }, { questionKey: "asc" }],

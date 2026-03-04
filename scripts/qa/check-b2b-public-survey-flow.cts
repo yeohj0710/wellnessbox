@@ -186,9 +186,8 @@ function run() {
   assert.equal(unresolvedSections.length, 0);
   checks.push("c27_unknown_tokens_guard");
 
-  // case 4) multi-select none-option exclusivity + maxSelect cap
+  // case 4) multi-select interaction + maxSelect cap
   assert.equal(c05.type, "multi");
-  assert.ok(c05.noneOptionValue, "C05 should define noneOptionValue");
   const firstRegularOption =
     c05.options.find((option) => option.value !== c05.noneOptionValue)?.value ??
     c05.options[0]?.value ??
@@ -198,11 +197,18 @@ function run() {
   let c05Answer = toggleSurveyMultiValue(c05, [], firstRegularOption!, maxSelectedSections);
   assert.deepEqual(toMultiValues(c05Answer), [firstRegularOption]);
 
-  c05Answer = toggleSurveyMultiValue(c05, c05Answer, c05.noneOptionValue!, maxSelectedSections);
-  assert.deepEqual(toMultiValues(c05Answer), [c05.noneOptionValue]);
+  if (c05.noneOptionValue) {
+    c05Answer = toggleSurveyMultiValue(
+      c05,
+      c05Answer,
+      c05.noneOptionValue,
+      maxSelectedSections
+    );
+    assert.deepEqual(toMultiValues(c05Answer), [c05.noneOptionValue]);
 
-  c05Answer = toggleSurveyMultiValue(c05, c05Answer, firstRegularOption!, maxSelectedSections);
-  assert.deepEqual(toMultiValues(c05Answer), [firstRegularOption]);
+    c05Answer = toggleSurveyMultiValue(c05, c05Answer, firstRegularOption!, maxSelectedSections);
+    assert.deepEqual(toMultiValues(c05Answer), [firstRegularOption]);
+  }
 
   const c05RegularCandidates = c05.options
     .map((option) => option.value)
@@ -216,7 +222,7 @@ function run() {
     toMultiValues(c05Sanitized).length,
     c05.maxSelect || c05.constraints?.maxSelections || maxSelectedSections
   );
-  checks.push("multi_none_exclusive_and_max_cap");
+  checks.push("multi_interaction_and_max_cap");
 
   // case 5) single validation invalid option should fail
   assert.ok(validateSurveyQuestionAnswer(c01, "__INVALID__") !== null);

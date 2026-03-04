@@ -210,6 +210,15 @@ export const reportTextsSchema = z.object({
     z.object({
       title: z.string().min(1),
       paragraphs: z.array(z.string().min(1)).min(1),
+      recommendedNutrients: z
+        .array(
+          z.object({
+            code: z.string().min(1),
+            label: z.string().min(1),
+            aliases: z.array(z.string().min(1)).optional(),
+          })
+        )
+        .optional(),
     })
   ),
 });

@@ -92,15 +92,12 @@
         {
           "value": "C",
           "label": "폐경"
-        },
-        {
-          "value": "D",
-          "label": "해당없음"
         }
       ],
       "scoring": {
         "enabled": false
-      }
+      },
+      "notes": "해당되는 항목이 없으면 선택하지 않고 다음 문항으로 넘어가세요."
     },
     {
       "id": "C05",
@@ -148,15 +145,13 @@
           "label": "대상포진"
         },
         {
-          "label": "기타 (             )"
+          "label": "기타 (직접 입력)"
         }
       ],
-      "noneOption": {
-        "label": "없음"
-      },
       "scoring": {
         "enabled": false
-      }
+      },
+      "notes": "해당되는 항목이 없으면 선택하지 않고 다음 문항으로 넘어가세요."
     },
     {
       "id": "C06",
@@ -192,15 +187,13 @@
           "label": "암"
         },
         {
-          "label": "기타 (             )"
+          "label": "기타 (직접 입력)"
         }
       ],
-      "noneOption": {
-        "label": "없음"
-      },
       "scoring": {
         "enabled": false
-      }
+      },
+      "notes": "해당되는 항목이 없으면 선택하지 않고 다음 문항으로 넘어가세요."
     },
     {
       "id": "C07",
@@ -272,15 +265,13 @@
           "label": "사과"
         },
         {
-          "label": "기타 (             )"
+          "label": "기타 (직접 입력)"
         }
       ],
-      "noneOption": {
-        "label": "없음"
-      },
       "scoring": {
         "enabled": false
-      }
+      },
+      "notes": "해당되는 항목이 없으면 선택하지 않고 다음 문항으로 넘어가세요."
     },
     {
       "id": "C08",
@@ -325,15 +316,13 @@
           "label": "호르몬제"
         },
         {
-          "label": "기타 (             )"
+          "label": "기타 (직접 입력)"
         }
       ],
-      "noneOption": {
-        "label": "없음"
-      },
       "scoring": {
         "enabled": false
-      }
+      },
+      "notes": "해당되는 항목이 없으면 선택하지 않고 다음 문항으로 넘어가세요."
     },
     {
       "id": "C09",
@@ -428,7 +417,7 @@
         {
           "value": "A",
           "label": "항상 그런 편이다",
-          "score": 0.0
+          "score": 0
         },
         {
           "value": "B",
@@ -438,7 +427,7 @@
         {
           "value": "C",
           "label": "아닌 편이다",
-          "score": 1.0
+          "score": 1
         }
       ],
       "scoring": {
@@ -461,7 +450,7 @@
         {
           "value": "A",
           "label": "주 5회 이상",
-          "score": 1.0
+          "score": 1
         },
         {
           "value": "B",
@@ -471,7 +460,7 @@
         {
           "value": "C",
           "label": "주 1회 이하",
-          "score": 0.0
+          "score": 0
         }
       ],
       "scoring": {
@@ -494,7 +483,7 @@
         {
           "value": "A",
           "label": "항상 그런 편이다",
-          "score": 0.0
+          "score": 0
         },
         {
           "value": "B",
@@ -504,7 +493,7 @@
         {
           "value": "C",
           "label": "아닌 편이다",
-          "score": 1.0
+          "score": 1
         }
       ],
       "scoring": {
@@ -527,7 +516,7 @@
         {
           "value": "A",
           "label": "항상 그런 편이다",
-          "score": 0.0
+          "score": 0
         },
         {
           "value": "B",
@@ -537,7 +526,7 @@
         {
           "value": "C",
           "label": "아닌 편이다",
-          "score": 1.0
+          "score": 1
         }
       ],
       "scoring": {
@@ -560,7 +549,7 @@
         {
           "value": "A",
           "label": "항상 그런 편이다",
-          "score": 0.0
+          "score": 0
         },
         {
           "value": "B",
@@ -570,7 +559,7 @@
         {
           "value": "C",
           "label": "아닌 편이다",
-          "score": 1.0
+          "score": 1
         }
       ],
       "scoring": {
@@ -593,7 +582,7 @@
         {
           "value": "A",
           "label": "항상 그런 편이다",
-          "score": 1.0
+          "score": 1
         },
         {
           "value": "B",
@@ -603,7 +592,7 @@
         {
           "value": "C",
           "label": "아닌 편이다",
-          "score": 0.0
+          "score": 0
         }
       ],
       "scoring": {
@@ -626,7 +615,7 @@
         {
           "value": "A",
           "label": "항상 그런 편이다",
-          "score": 1.0
+          "score": 1
         },
         {
           "value": "B",
@@ -636,7 +625,7 @@
         {
           "value": "C",
           "label": "아닌 편이다",
-          "score": 0.0
+          "score": 0
         }
       ],
       "scoring": {
@@ -659,7 +648,7 @@
         {
           "value": "A",
           "label": "주 4회 이상",
-          "score": 1.0
+          "score": 1
         },
         {
           "value": "B",
@@ -669,7 +658,7 @@
         {
           "value": "C",
           "label": "주 1회 이하",
-          "score": 0.0
+          "score": 0
         }
       ],
       "scoring": {
@@ -692,12 +681,12 @@
         {
           "value": "A",
           "label": "네",
-          "score": 1.0
+          "score": 1
         },
         {
           "value": "B",
           "label": "아니오",
-          "score": 0.0
+          "score": 0
         }
       ],
       "scoring": {
@@ -720,7 +709,7 @@
         {
           "value": "A",
           "label": "안 마신다",
-          "score": 0.0
+          "score": 0
         },
         {
           "value": "B",
@@ -740,7 +729,7 @@
         {
           "value": "E",
           "label": "주 4회 이상",
-          "score": 1.0
+          "score": 1
         }
       ],
       "scoring": {
@@ -763,7 +752,7 @@
         {
           "value": "A",
           "label": "반병 이하",
-          "score": 0.0
+          "score": 0
         },
         {
           "value": "B",
@@ -783,7 +772,7 @@
         {
           "value": "E",
           "label": "2.5병 이상",
-          "score": 1.0
+          "score": 1
         }
       ],
       "scoring": {
@@ -806,7 +795,7 @@
         {
           "value": "A",
           "label": "아니오",
-          "score": 0.0
+          "score": 0
         },
         {
           "value": "B",
@@ -821,7 +810,7 @@
         {
           "value": "D",
           "label": "흡연 중",
-          "score": 1.0
+          "score": 1
         }
       ],
       "scoring": {
@@ -844,12 +833,12 @@
         {
           "value": "A",
           "label": "네",
-          "score": 0.0
+          "score": 0
         },
         {
           "value": "B",
           "label": "아니오",
-          "score": 1.0
+          "score": 1
         }
       ],
       "scoring": {
@@ -872,12 +861,12 @@
         {
           "value": "A",
           "label": "네",
-          "score": 0.0
+          "score": 0
         },
         {
           "value": "B",
           "label": "아니오",
-          "score": 1.0
+          "score": 1
         }
       ],
       "scoring": {
@@ -900,12 +889,12 @@
         {
           "value": "A",
           "label": "네",
-          "score": 1.0
+          "score": 1
         },
         {
           "value": "B",
           "label": "아니오",
-          "score": 0.0
+          "score": 0
         }
       ],
       "scoring": {
@@ -928,12 +917,12 @@
         {
           "value": "A",
           "label": "네",
-          "score": 0.0
+          "score": 0
         },
         {
           "value": "B",
           "label": "아니오",
-          "score": 1.0
+          "score": 1
         }
       ],
       "scoring": {
@@ -956,7 +945,7 @@
         {
           "value": "A",
           "label": "전혀 없다",
-          "score": 0.0
+          "score": 0
         },
         {
           "value": "B",
@@ -976,7 +965,7 @@
         {
           "value": "E",
           "label": "매우 자주 있다",
-          "score": 1.0
+          "score": 1
         }
       ],
       "scoring": {

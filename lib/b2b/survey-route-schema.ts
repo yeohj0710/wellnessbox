@@ -29,3 +29,7 @@ export const adminSurveyPutSchema = z.object({
     )
     .default({}),
 });
+
+export const employeeSurveyPutSchema = adminSurveyPutSchema.extend({
+  finalize: z.boolean().optional(),
+});

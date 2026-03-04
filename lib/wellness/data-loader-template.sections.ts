@@ -3,26 +3,72 @@ import type {
   WellnessSectionSurvey,
 } from "@/lib/wellness/data-schemas";
 import type { WellnessSurveyTemplate } from "@/lib/wellness/data-template-types";
-import { normalizeTemplateQuestionType } from "@/lib/wellness/data-loader-template.shared";
+import {
+  isCustomInputOptionLabel,
+  isNoneLikeOptionLabel,
+  mergeNoSelectionGuide,
+  normalizeOptionLabel,
+  normalizeTemplateQuestionType,
+} from "@/lib/wellness/data-loader-template.shared";
 
 type C27Question = WellnessCommonSurvey["questions"][number] | undefined;
 type SectionQuestion = WellnessSectionSurvey["sections"][number]["questions"][number];
 
+function mapSectionOptions(options: SectionQuestion["options"]) {
+  let removedNoneLikeOption = false;
+  const mappedOptions = options
+    .map((option) => {
+      const label = normalizeOptionLabel(option.label);
+      return {
+        value: option.value,
+        label,
+        score: option.score,
+        allowsCustomInput: isCustomInputOptionLabel(label),
+      };
+    })
+    .filter((option) => {
+      const shouldRemove = isNoneLikeOptionLabel(option.label);
+      if (shouldRemove) removedNoneLikeOption = true;
+      return !shouldRemove;
+    });
+
+  return {
+    options: mappedOptions,
+    removedNoneLikeOption,
+  };
+}
+
 function mapSectionQuestionVariants(question: SectionQuestion) {
-  return Object.fromEntries(
+  let removedNoneLikeOption = false;
+  const variants = Object.fromEntries(
     Object.entries(question.variants ?? {}).map(([variantKey, variant]) => [
       variantKey,
       {
         variantId: variant.variantId ?? variantKey,
         optionsPrefix: variant.optionsPrefix ?? undefined,
-        options: variant.options.map((option) => ({
-          value: option.value,
-          label: option.label,
-          score: option.score,
-        })),
+        options: variant.options
+          .map((option) => {
+            const label = normalizeOptionLabel(option.label);
+            return {
+              value: option.value,
+              label,
+              score: option.score,
+              allowsCustomInput: isCustomInputOptionLabel(label),
+            };
+          })
+          .filter((option) => {
+            const shouldRemove = isNoneLikeOptionLabel(option.label);
+            if (shouldRemove) removedNoneLikeOption = true;
+            return !shouldRemove;
+          }),
       },
     ])
   );
+
+  return {
+    variants,
+    removedNoneLikeOption,
+  };
 }
 
 export function mapSectionTemplates(
@@ -33,35 +79,38 @@ export function mapSectionTemplates(
     title: section.title,
     displayName: section.title,
     description: `${section.title} 관련 상세 문항`,
-    questions: section.questions.map((question) => ({
-      key: question.id,
-      index: question.number,
-      text: question.prompt,
-      helpText: undefined,
-      type: normalizeTemplateQuestionType(question.type),
-      sourceType: question.type,
-      required: true,
-      options: question.options.map((option) => ({
-        value: option.value,
-        label: option.label,
-        score: option.score,
-      })),
-      maxSelect:
-        question.type === "multi_select_limited" ||
-        question.type === "multi_select_with_none"
-          ? question.constraints?.maxSelections ?? question.options.length
+    questions: section.questions.map((question) => {
+      const mappedOptions = mapSectionOptions(question.options);
+      const mappedVariants = mapSectionQuestionVariants(question);
+      const removedNoneLikeOption =
+        mappedOptions.removedNoneLikeOption || mappedVariants.removedNoneLikeOption;
+
+      return {
+        key: question.id,
+        index: question.number,
+        text: question.prompt,
+        helpText: mergeNoSelectionGuide(undefined, removedNoneLikeOption),
+        type: normalizeTemplateQuestionType(question.type),
+        sourceType: question.type,
+        required: true,
+        options: mappedOptions.options,
+        maxSelect:
+          question.type === "multi_select_limited" ||
+          question.type === "multi_select_with_none"
+            ? question.constraints?.maxSelections ?? Math.max(1, mappedOptions.options.length)
+            : undefined,
+        optionsPrefix: question.optionsPrefix ?? undefined,
+        constraints: question.constraints
+          ? {
+              maxSelections: question.constraints.maxSelections,
+              recommendedSelectionsRange: question.constraints.recommendedSelectionsRange,
+            }
           : undefined,
-      optionsPrefix: question.optionsPrefix ?? undefined,
-      constraints: question.constraints
-        ? {
-            maxSelections: question.constraints.maxSelections,
-            recommendedSelectionsRange: question.constraints.recommendedSelectionsRange,
-          }
-        : undefined,
-      scoringEnabled: question.scoring?.enabled === true,
-      noneOptionValue: undefined,
-      variants: mapSectionQuestionVariants(question),
-    })),
+        scoringEnabled: question.scoring?.enabled === true,
+        noneOptionValue: undefined,
+        variants: mappedVariants.variants,
+      };
+    }),
   }));
 }
 
@@ -90,3 +139,4 @@ export function mapSectionCatalog(
     (section, index, source) => source.findIndex((item) => item.key === section.key) === index
   );
 }
+

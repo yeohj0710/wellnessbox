@@ -9,6 +9,11 @@ export type SupplementDesignItem = {
   sectionId: string;
   title: string;
   paragraphs: string[];
+  recommendedNutrients?: Array<{
+    code: string;
+    label: string;
+    aliases?: string[];
+  }>;
 };
 
 function toQuestionId(prefix: "C" | "S", number: number) {
@@ -100,11 +105,16 @@ export function buildSupplementDesign(
     .map((row) => {
       const text = reportTexts.supplementDesignTextBySectionId[row.sectionId];
       if (!text) return null;
-      return {
+      const item: SupplementDesignItem = {
         sectionId: row.sectionId,
         title: text.title,
         paragraphs: text.paragraphs,
-      } satisfies SupplementDesignItem;
+        ...(Array.isArray(text.recommendedNutrients) &&
+        text.recommendedNutrients.length > 0
+          ? { recommendedNutrients: text.recommendedNutrients }
+          : {}),
+      };
+      return item;
     })
-    .filter((item): item is SupplementDesignItem => Boolean(item));
+    .filter((item): item is SupplementDesignItem => item !== null);
 }

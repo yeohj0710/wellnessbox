@@ -161,6 +161,11 @@ export type B2bReportPayload = {
         sectionId: string;
         title: string;
         paragraphs: string[];
+        recommendedNutrients?: Array<{
+          code: string;
+          label: string;
+          aliases?: string[];
+        }>;
       }>;
       perQuestionScores: Record<string, unknown>;
     } | null;

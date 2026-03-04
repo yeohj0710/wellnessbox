@@ -127,6 +127,19 @@ export function extractWellness(payload: unknown) {
           paragraphs: Array.isArray(item.paragraphs)
             ? item.paragraphs.map((paragraph) => toText(paragraph)).filter(Boolean)
             : [],
+          recommendedNutrients: Array.isArray(item.recommendedNutrients)
+            ? item.recommendedNutrients
+                .map((nutrient) => asRecord(nutrient))
+                .filter((nutrient): nutrient is JsonRecord => Boolean(nutrient))
+                .map((nutrient) => ({
+                  code: toText(nutrient.code) || "",
+                  label: toText(nutrient.label) || "",
+                  aliases: Array.isArray(nutrient.aliases)
+                    ? nutrient.aliases.map((alias) => toText(alias)).filter(Boolean)
+                    : undefined,
+                }))
+                .filter((nutrient) => Boolean(nutrient.code && nutrient.label))
+            : undefined,
         }))
     : [];
 

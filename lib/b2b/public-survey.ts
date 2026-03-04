@@ -100,6 +100,51 @@ export function toMultiValues(raw: unknown) {
   return [];
 }
 
+export function toMultiOtherTextByValue(raw: unknown) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  const record = raw as Record<string, unknown>;
+  const source = record.otherTextByValue;
+  if (!source || typeof source !== "object" || Array.isArray(source)) return {};
+
+  return Object.fromEntries(
+    Object.entries(source as Record<string, unknown>)
+      .map(([value, text]) => [String(value).trim(), String(text ?? "").trim()] as const)
+      .filter(([value, text]) => value.length > 0 && text.length > 0)
+  );
+}
+
+function buildSurveyMultiAnswerValue(values: string[], otherTextByValue: Record<string, string>) {
+  if (Object.keys(otherTextByValue).length === 0) return values;
+  return {
+    values,
+    otherTextByValue,
+  };
+}
+
+function sanitizeMultiOtherTextByValue(
+  question: WellnessSurveyQuestionForTemplate,
+  rawValue: unknown,
+  selectedValues: string[]
+) {
+  const selectedValueSet = new Set(selectedValues);
+  const customInputValueSet = new Set(
+    (question.options ?? [])
+      .filter((option) => option.allowsCustomInput)
+      .map((option) => option.value)
+  );
+  const source = toMultiOtherTextByValue(rawValue);
+  const sanitized: Record<string, string> = {};
+
+  for (const [value, text] of Object.entries(source)) {
+    if (!selectedValueSet.has(value)) continue;
+    if (!customInputValueSet.has(value)) continue;
+    if (!text) continue;
+    sanitized[value] = text;
+  }
+
+  return sanitized;
+}
+
 function optionMatchesToken(
   option: {
     value: string;
@@ -385,13 +430,18 @@ export function sanitizeSurveyAnswerValue(
       (question.options ?? []).find((option) => option.isNoneOption)?.value ??
       null;
 
-    if (noneOptionValue && mappedValues.includes(noneOptionValue)) {
-      return [noneOptionValue];
-    }
-
-    return mappedValues
+    const selectedValues = (noneOptionValue && mappedValues.includes(noneOptionValue)
+      ? [noneOptionValue]
+      : mappedValues
       .filter((value) => !noneOptionValue || value !== noneOptionValue)
-      .slice(0, maxSelect);
+      .slice(0, maxSelect)) as string[];
+    const otherTextByValue = sanitizeMultiOtherTextByValue(
+      question,
+      rawValue,
+      selectedValues
+    );
+
+    return buildSurveyMultiAnswerValue(selectedValues, otherTextByValue);
   }
 
   if (question.type === "single") {
@@ -418,9 +468,9 @@ export function toggleSurveyMultiValue(
   targetValue: string,
   maxSelectedSections: number
 ) {
-  const currentValues = toMultiValues(
-    sanitizeSurveyAnswerValue(question, rawValue, maxSelectedSections)
-  );
+  const currentAnswer = sanitizeSurveyAnswerValue(question, rawValue, maxSelectedSections);
+  const currentValues = toMultiValues(currentAnswer);
+  const currentOtherTextByValue = { ...toMultiOtherTextByValue(currentAnswer) };
   const current = new Set(currentValues);
   const maxSelect =
     question.maxSelect ||
@@ -433,9 +483,13 @@ export function toggleSurveyMultiValue(
 
   if (current.has(targetValue)) {
     current.delete(targetValue);
+    delete currentOtherTextByValue[targetValue];
   } else if (noneOptionValue && targetValue === noneOptionValue) {
     current.clear();
     current.add(targetValue);
+    Object.keys(currentOtherTextByValue).forEach((value) => {
+      delete currentOtherTextByValue[value];
+    });
   } else {
     if (noneOptionValue) current.delete(noneOptionValue);
     if (current.size < maxSelect) {
@@ -443,7 +497,37 @@ export function toggleSurveyMultiValue(
     }
   }
 
-  return sanitizeSurveyAnswerValue(question, [...current], maxSelectedSections);
+  return sanitizeSurveyAnswerValue(
+    question,
+    buildSurveyMultiAnswerValue([...current], currentOtherTextByValue),
+    maxSelectedSections
+  );
+}
+
+export function updateSurveyMultiOtherText(
+  question: WellnessSurveyQuestionForTemplate,
+  rawValue: unknown,
+  targetValue: string,
+  text: string,
+  maxSelectedSections: number
+) {
+  const currentAnswer = sanitizeSurveyAnswerValue(question, rawValue, maxSelectedSections);
+  const currentValues = toMultiValues(currentAnswer);
+  if (!currentValues.includes(targetValue)) return currentAnswer;
+
+  const currentOtherTextByValue = { ...toMultiOtherTextByValue(currentAnswer) };
+  const nextText = String(text ?? "").trim();
+  if (nextText) {
+    currentOtherTextByValue[targetValue] = nextText;
+  } else {
+    delete currentOtherTextByValue[targetValue];
+  }
+
+  return sanitizeSurveyAnswerValue(
+    question,
+    buildSurveyMultiAnswerValue(currentValues, currentOtherTextByValue),
+    maxSelectedSections
+  );
 }
 
 function parseNumber(rawValue: string) {
@@ -526,6 +610,14 @@ export function validateSurveyQuestionAnswer(
       null;
     if (noneOptionValue && values.includes(noneOptionValue) && values.length > 1) {
       return "없음 항목은 다른 항목과 함께 선택할 수 없습니다.";
+    }
+    const otherTextByValue = toMultiOtherTextByValue(rawValue);
+    for (const value of values) {
+      const option = (question.options ?? []).find((item) => item.value === value);
+      if (!option?.allowsCustomInput) continue;
+      if (!otherTextByValue[value]?.trim()) {
+        return "기타 항목 내용을 입력해 주세요.";
+      }
     }
     return null;
   }
@@ -656,10 +748,15 @@ function toAnalysisAnswerRow(input: {
   if (question.type === "multi") {
     const selectedValues = toMultiValues(rawValue);
     if (selectedValues.length === 0) return null;
+    const otherTextByValue = toMultiOtherTextByValue(rawValue);
     const answerLabels = selectedValues.map((value) => {
       const matched = (question.options ?? []).find((option) => option.value === value);
+      if (matched?.allowsCustomInput && otherTextByValue[value]) {
+        return `${matched.label}: ${otherTextByValue[value]}`;
+      }
       return matched?.label ?? value;
     });
+    const hasOtherText = Object.keys(otherTextByValue).length > 0;
     return {
       questionKey: question.key,
       sectionKey,
@@ -668,6 +765,7 @@ function toAnalysisAnswerRow(input: {
       score: null,
       meta: {
         selectedValues,
+        ...(hasOtherText ? { otherTextByValue } : {}),
         ...(variantId ? { variantId } : {}),
       },
     };

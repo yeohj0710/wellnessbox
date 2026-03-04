@@ -74,6 +74,11 @@ export type ReportSummaryPayload = {
         sectionId?: string;
         title?: string;
         paragraphs?: string[];
+        recommendedNutrients?: Array<{
+          code?: string;
+          label?: string;
+          aliases?: string[];
+        }>;
       }>;
       perQuestionScores?: {
         common?: Record<string, number | null>;

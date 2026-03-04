@@ -1,6 +1,10 @@
 import type { WellnessCommonSurvey } from "@/lib/wellness/data-schemas";
 import type { WellnessSurveyQuestionForTemplate } from "@/lib/wellness/data-template-types";
 import {
+  isCustomInputOptionLabel,
+  isNoneLikeOptionLabel,
+  mergeNoSelectionGuide,
+  normalizeOptionLabel,
   normalizeTemplateQuestionType,
   type CommonQuestion,
 } from "@/lib/wellness/data-loader-template.shared";
@@ -76,46 +80,67 @@ function toDisplayIf(displayIf: CommonQuestion["displayIf"]) {
 }
 
 function mapOption(option: CommonQuestionOption, fallbackValue: string) {
+  const label = normalizeOptionLabel(option.label);
   return {
     value: option.value || fallbackValue,
-    label: option.label,
+    label,
     score: option.score,
     aliases: option.aliases,
+    allowsCustomInput: isCustomInputOptionLabel(label),
   };
 }
 
 function mapListItem(item: CommonQuestionItem, fallbackValue: string) {
+  const label = normalizeOptionLabel(item.label);
   return {
     value: item.value || fallbackValue,
-    label: item.label,
+    label,
     aliases: item.aliases,
+    allowsCustomInput: isCustomInputOptionLabel(label),
   };
 }
 
 function buildQuestionOptions(question: CommonQuestion) {
   const options: WellnessSurveyQuestionForTemplate["options"] = [];
+  let removedNoneLikeOption = false;
+
+  const pushOption = (option: WellnessSurveyQuestionForTemplate["options"][number]) => {
+    if (isNoneLikeOptionLabel(option.label)) {
+      removedNoneLikeOption = true;
+      return;
+    }
+    options.push(option);
+  };
 
   if (Array.isArray(question.options) && question.options.length > 0) {
     question.options.forEach((option, index) => {
-      options.push(mapOption(option, buildGeneratedValue(question.id, index, "OPT")));
+      pushOption(mapOption(option, buildGeneratedValue(question.id, index, "OPT")));
     });
   }
 
   if (Array.isArray(question.items) && question.items.length > 0) {
     question.items.forEach((item, index) => {
-      options.push(mapListItem(item, buildGeneratedValue(question.id, index, "ITEM")));
+      pushOption(mapListItem(item, buildGeneratedValue(question.id, index, "ITEM")));
     });
   }
 
   if (question.noneOption) {
-    options.push({
-      value: question.noneOption.value || `${question.id}_NONE`,
-      label: question.noneOption.label,
-      isNoneOption: true,
-    });
+    const label = normalizeOptionLabel(question.noneOption.label);
+    if (isNoneLikeOptionLabel(label)) {
+      removedNoneLikeOption = true;
+    } else {
+      options.push({
+        value: question.noneOption.value || `${question.id}_NONE`,
+        label,
+        isNoneOption: true,
+      });
+    }
   }
 
-  return options;
+  return {
+    options,
+    removedNoneLikeOption,
+  };
 }
 
 export function mapCommonQuestions(
@@ -123,7 +148,7 @@ export function mapCommonQuestions(
   maxSelectedSections: number
 ): WellnessSurveyQuestionForTemplate[] {
   return commonSurvey.questions.map((question) => {
-    const options = buildQuestionOptions(question);
+    const { options, removedNoneLikeOption } = buildQuestionOptions(question);
     const noneOptionValue = options.find((option) => option.isNoneOption)?.value;
     const constraints = normalizeConstraint(question.constraints);
 
@@ -131,7 +156,7 @@ export function mapCommonQuestions(
       key: question.id,
       index: question.number,
       text: question.prompt,
-      helpText: question.notes,
+      helpText: mergeNoSelectionGuide(question.notes, removedNoneLikeOption),
       type: normalizeTemplateQuestionType(question.type),
       sourceType: question.type,
       required: true,

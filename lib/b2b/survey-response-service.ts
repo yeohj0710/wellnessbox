@@ -11,6 +11,8 @@ type UpsertSurveyResponseInput = {
   reportCycle: number | null;
   selectedSections: string[];
   answersJson: Prisma.InputJsonValue | Prisma.JsonNullValueInput;
+  submittedAt?: Date | null;
+  preserveSubmittedOnDraft?: boolean;
   buildAnswerRows: (responseId: string) => SurveyAnswerRow[];
 };
 
@@ -18,8 +20,6 @@ export async function upsertSurveyResponseWithAnswers(
   input: UpsertSurveyResponseInput
 ) {
   return db.$transaction(async (tx) => {
-    const submittedAt = new Date();
-
     const latestResponse = await tx.b2bSurveyResponse.findFirst({
       where: {
         employeeId: input.employeeId,
@@ -27,16 +27,37 @@ export async function upsertSurveyResponseWithAnswers(
         periodKey: input.periodKey,
       },
       orderBy: { updatedAt: "desc" },
-      select: { id: true },
+      select: { id: true, submittedAt: true },
     });
 
-    const response = latestResponse
+    const shouldCreateDraftCopy =
+      input.preserveSubmittedOnDraft === true &&
+      typeof input.submittedAt === "undefined" &&
+      latestResponse?.submittedAt != null;
+
+    const response = shouldCreateDraftCopy
+      ? await tx.b2bSurveyResponse.create({
+          data: {
+            employeeId: input.employeeId,
+            templateId: input.templateId,
+            templateVersion: input.templateVersion,
+            selectedSections: input.selectedSections,
+            answersJson: input.answersJson,
+            submittedAt: null,
+            periodKey: input.periodKey,
+            reportCycle: input.reportCycle,
+          },
+        })
+      : latestResponse
       ? await tx.b2bSurveyResponse.update({
           where: { id: latestResponse.id },
           data: {
+            templateVersion: input.templateVersion,
             selectedSections: input.selectedSections,
             answersJson: input.answersJson,
-            submittedAt,
+            ...(typeof input.submittedAt !== "undefined"
+              ? { submittedAt: input.submittedAt }
+              : {}),
             periodKey: input.periodKey,
             reportCycle: input.reportCycle,
           },
@@ -48,7 +69,10 @@ export async function upsertSurveyResponseWithAnswers(
             templateVersion: input.templateVersion,
             selectedSections: input.selectedSections,
             answersJson: input.answersJson,
-            submittedAt,
+            submittedAt:
+              typeof input.submittedAt === "undefined"
+                ? null
+                : input.submittedAt,
             periodKey: input.periodKey,
             reportCycle: input.reportCycle,
           },
