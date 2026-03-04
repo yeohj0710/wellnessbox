@@ -76,6 +76,14 @@ function runStaticRegressionChecks() {
     fetchExecutorSource.includes("fromDate: date"),
     "targeted medication backfill should narrow date range per recent visit"
   );
+  assert.ok(
+    fetchExecutorSource.includes("buildMonthRangeMedicationPayload"),
+    "medication backfill should include month-range fallback for same recent visit months"
+  );
+  assert.ok(
+    fetchExecutorSource.includes("monthProbeDates"),
+    "medication backfill should dedupe month probes from recent visit dates"
+  );
 
   const medicationSource = read("lib/b2b/report-payload-medication.ts");
   assert.ok(
@@ -117,6 +125,16 @@ function runStaticRegressionChecks() {
   assert.ok(
     summaryPatchSource.includes("mergeRawPayloadByTargets"),
     "summary patch should merge patched raw payload for updated targets"
+  );
+
+  const summaryNormalizerSource = read("lib/b2b/employee-sync-summary.normalizer.ts");
+  assert.ok(
+    summaryNormalizerSource.includes("hasMedicalMedicationHint"),
+    "summary patch planner should detect medication-missing hints from medical rows"
+  );
+  assert.ok(
+    summaryNormalizerSource.includes("medicationRows.length === 0"),
+    "summary patch planner should treat empty medication rows as recoverable when medical hints exist"
   );
 
   const medicationExtractSource = read("lib/b2b/report-payload-health-medication.ts");

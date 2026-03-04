@@ -238,6 +238,71 @@ function buildExactDateMedicationPayload(
   };
 }
 
+function resolveLastDayOfMonth(year: number, month: number) {
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+function buildMonthRangeMedicationPayload(
+  base: HyphenNhisRequestPayload,
+  date: string
+): HyphenNhisRequestPayload {
+  const ymd = normalizeMedicationDateToYmd(date);
+  if (!ymd) return base;
+  const year = Number(ymd.slice(0, 4));
+  const month = Number(ymd.slice(4, 6));
+  if (!Number.isFinite(year) || !Number.isFinite(month) || month < 1 || month > 12) {
+    return base;
+  }
+  const fromDate = `${String(year).padStart(4, "0")}${String(month).padStart(
+    2,
+    "0"
+  )}01`;
+  const toDate = `${String(year).padStart(4, "0")}${String(month).padStart(
+    2,
+    "0"
+  )}${String(resolveLastDayOfMonth(year, month)).padStart(2, "0")}`;
+  return {
+    ...base,
+    fromDate,
+    toDate,
+  };
+}
+
+function mergeHyphenPayloadList(payloads: HyphenApiResponse[]) {
+  if (payloads.length === 0) return null;
+  if (payloads.length === 1) return payloads[0] ?? null;
+  return mergeListPayloads(payloads);
+}
+
+async function fetchMedicationBackfillPayloads(input: {
+  dates: string[];
+  detailPayload: HyphenNhisRequestPayload;
+  payloadBuilder: (
+    base: HyphenNhisRequestPayload,
+    date: string
+  ) => HyphenNhisRequestPayload;
+}) {
+  if (input.dates.length === 0) return [];
+  const settled = await Promise.allSettled(
+    input.dates.map((date) =>
+      fetchMedicationInfo(input.payloadBuilder(input.detailPayload, date))
+    )
+  );
+  const payloads: HyphenApiResponse[] = [];
+
+  for (const result of settled) {
+    if (result.status === "fulfilled") {
+      if (payloadHasAnyRows(result.value)) {
+        payloads.push(result.value);
+      }
+      continue;
+    }
+    if (isNonFatalNhisNoDataFailure(result.reason)) continue;
+    logHyphenError("[hyphen][fetch] recent-medication backfill failed", result.reason);
+  }
+  return payloads;
+}
+
 async function fetchMedicationByRecentVisitsBackfill(input: {
   dateSourcePayloads: Array<HyphenApiResponse | null | undefined>;
   detailPayload: HyphenNhisRequestPayload;
@@ -260,27 +325,27 @@ async function fetchMedicationByRecentVisitsBackfill(input: {
   }
   if (recentDates.length === 0) return null;
 
-  const settled = await Promise.allSettled(
-    recentDates.map((date) =>
-      fetchMedicationInfo(buildExactDateMedicationPayload(input.detailPayload, date))
-    )
-  );
-  const payloads: HyphenApiResponse[] = [];
-
-  for (const result of settled) {
-    if (result.status === "fulfilled") {
-      if (payloadHasAnyRows(result.value)) {
-        payloads.push(result.value);
-      }
-      continue;
-    }
-    if (isNonFatalNhisNoDataFailure(result.reason)) continue;
-    logHyphenError("[hyphen][fetch] recent-medication backfill failed", result.reason);
+  const exactPayloads = await fetchMedicationBackfillPayloads({
+    dates: recentDates,
+    detailPayload: input.detailPayload,
+    payloadBuilder: buildExactDateMedicationPayload,
+  });
+  const exactMerged = mergeHyphenPayloadList(exactPayloads);
+  if (exactMerged && payloadHasMedicationNames(exactMerged)) {
+    return exactMerged;
   }
 
-  if (payloads.length === 0) return null;
-  if (payloads.length === 1) return payloads[0];
-  return mergeListPayloads(payloads);
+  const monthProbeDates = [...new Set(recentDates.map((date) => date.slice(0, 6)))].map(
+    (yyyymm) => `${yyyymm}01`
+  );
+  const monthPayloads = await fetchMedicationBackfillPayloads({
+    dates: monthProbeDates,
+    detailPayload: input.detailPayload,
+    payloadBuilder: buildMonthRangeMedicationPayload,
+  });
+
+  const merged = mergeHyphenPayloadList([...exactPayloads, ...monthPayloads]);
+  return merged ?? null;
 }
 
 function normalizeErrCode(value: string | null | undefined) {

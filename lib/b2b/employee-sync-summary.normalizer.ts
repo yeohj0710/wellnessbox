@@ -75,6 +75,14 @@ const MEDICATION_DATE_KEYS = [
   "medicationDate",
   "diagSdate",
 ] as const;
+const MEDICAL_PHARMACY_HINT_KEYS = [
+  "diagType",
+  "detail_diagType",
+  "drug_diagType",
+  "visitType",
+  "pharmNm",
+  "hospitalNm",
+] as const;
 
 function toText(value: unknown) {
   if (value == null) return null;
@@ -140,6 +148,32 @@ function rowHasMedicationName(row: unknown): boolean {
 
 function hasMedicationNameInRows(rows: unknown[]) {
   return rows.some((row) => rowHasMedicationName(row));
+}
+
+function hasMedicalMedicationHint(row: unknown) {
+  const record = asRecord(row);
+  if (!record) return false;
+
+  const presCntText = toText(record.presCnt);
+  if (presCntText && Number(presCntText) > 0) return true;
+
+  const medCntText = toText(record.medCnt);
+  if (medCntText && Number(medCntText) > 0) return true;
+
+  for (const key of MEDICAL_PHARMACY_HINT_KEYS) {
+    const text = (toText(record[key]) || "").toLowerCase();
+    if (!text) continue;
+    if (
+      text.includes("약국") ||
+      text.includes("처방") ||
+      text.includes("조제") ||
+      text.includes("pharmacy") ||
+      text.includes("prescription")
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function compareMedicationRows(
@@ -271,6 +305,27 @@ function resolveMedicationRows(normalizedJson: unknown) {
   return null;
 }
 
+function resolveMedicalRows(normalizedJson: unknown) {
+  const normalized = asRecord(normalizedJson);
+  const medicalRaw = normalized?.medical;
+  if (Array.isArray(medicalRaw)) return medicalRaw;
+  const medicalRecord = asRecord(medicalRaw);
+  if (!medicalRecord) return null;
+  if (Array.isArray(medicalRecord.list)) return medicalRecord.list;
+  if (Array.isArray(medicalRecord.rows)) return medicalRecord.rows;
+  if (Array.isArray(medicalRecord.items)) return medicalRecord.items;
+  if (Array.isArray(medicalRecord.history)) return medicalRecord.history;
+  if (
+    "list" in medicalRecord ||
+    "rows" in medicalRecord ||
+    "items" in medicalRecord ||
+    "history" in medicalRecord
+  ) {
+    return [];
+  }
+  return null;
+}
+
 function resolveCheckupRows(normalizedJson: unknown) {
   const normalized = asRecord(normalizedJson);
   const checkup = normalized?.checkup;
@@ -286,10 +341,18 @@ function resolveCheckupRows(normalizedJson: unknown) {
 function resolveSummaryPatchNeeds(normalizedJson: unknown) {
   const missing = new Set<NhisFetchTarget>();
   const medicationRows = resolveMedicationRows(normalizedJson);
+  const medicalRows = resolveMedicalRows(normalizedJson);
   const checkupRows = resolveCheckupRows(normalizedJson);
-  const medicationNeedsNameBackfill = false;
+  const medicationNeedsNameBackfill =
+    (medicationRows != null &&
+      medicationRows.length > 0 &&
+      !hasMedicationNameInRows(medicationRows)) ||
+    (medicationRows != null &&
+      medicationRows.length === 0 &&
+      medicalRows != null &&
+      medicalRows.some((row) => hasMedicalMedicationHint(row)));
 
-  if (medicationRows == null) {
+  if (medicationRows == null || medicationNeedsNameBackfill) {
     missing.add("medication");
   }
   if (checkupRows == null) {
