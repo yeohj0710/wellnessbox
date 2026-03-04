@@ -3381,11 +3381,11 @@
   }
 
   [data-report-pdf-parity="1"] .reportTopGrid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 
   [data-report-pdf-parity="1"] .reportSecondGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 
   [data-report-pdf-parity="1"] .reportDocument {
@@ -3393,24 +3393,22 @@
   }
 
   [data-report-pdf-parity="1"] .reportSheet {
-    aspect-ratio: 194 / 281;
-    border-radius: 0;
-    padding: 16px 16px 14px;
+    aspect-ratio: auto;
+    min-height: 0;
+    border-radius: 14px;
+    padding: 14px 13px;
   }
 
   [data-report-pdf-parity="1"] .reportSheetFirst {
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
+    border-radius: 14px;
   }
 
   [data-report-pdf-parity="1"] .reportSheetSecond {
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
+    border-radius: 14px;
   }
 
   [data-report-pdf-parity="1"] .reportSheetThird {
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
+    border-radius: 14px;
   }
 
   [data-report-pdf-parity="1"] .reportBlockTitle {
@@ -3476,5 +3474,23 @@
   .previewGaugeRing {
     width: 124px;
     height: 124px;
+  }
+}
+
+@media (max-width: 480px) {
+  .reportMetricGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .reportPageTitle {
+    font-size: 17px;
+  }
+
+  .reportBlockTitle {
+    font-size: 15px;
+  }
+
+  .reportDataTitle {
+    font-size: 13px;
   }
 }

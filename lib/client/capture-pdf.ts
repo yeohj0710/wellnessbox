@@ -41,7 +41,7 @@ function resolveScale(explicitScale: number | undefined) {
 
 function resolveDesktopViewportWidth(value: number | undefined) {
   if (typeof value === "number" && Number.isFinite(value)) {
-    return Math.max(1280, Math.round(value));
+    return Math.max(320, Math.round(value));
   }
   return 1440;
 }

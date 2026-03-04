@@ -287,6 +287,10 @@ function runStaticRegressionChecks() {
     "EmployeeReportClient should include browser PDF capture fallback"
   );
   assert.ok(
+    clientSource.includes("shouldPreferBrowserCapture"),
+    "EmployeeReportClient should prefer browser PDF capture on narrow mobile viewports"
+  );
+  assert.ok(
     clientSource.includes("isPdfEngineUnavailableFailure"),
     "EmployeeReportClient should detect server PDF engine unavailability"
   );
@@ -309,6 +313,20 @@ function runStaticRegressionChecks() {
   assert.ok(
     routeSource.includes("networkFetched: syncResult.source === \"fresh\""),
     "execute sync responses should derive networkFetched from source"
+  );
+
+  const stylesSource = read("components/b2b/B2bUx.module.css");
+  assert.ok(
+    stylesSource.includes("[data-report-pdf-parity=\"1\"] .reportSheet"),
+    "mobile parity styles should target report sheet blocks"
+  );
+  assert.ok(
+    stylesSource.includes("aspect-ratio: auto;"),
+    "mobile parity styles should remove fixed page aspect ratio to avoid overflow clipping"
+  );
+  assert.ok(
+    stylesSource.includes("[data-report-pdf-parity=\"1\"] .reportTopGrid"),
+    "mobile parity styles should override report top grid layout"
   );
   console.log("[qa:employee-report-sync-notice] PASS static regression checks");
 }

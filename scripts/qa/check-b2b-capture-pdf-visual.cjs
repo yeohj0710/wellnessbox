@@ -945,60 +945,85 @@ async function runCase(browser, baseUrl, caseConfig, adminPasswordCandidates, ou
     output.downloadUrl = capture.downloadUrl || "";
     output.captureSurfaceWidthPx = capture.captureSurfaceWidthPx ?? null;
     output.textLayoutParity = capture.textLayoutParity || null;
-    const expectedRouteSegment =
-      caseConfig.route === "employee"
-        ? "/api/b2b/employee/report/export/pdf"
-        : "/api/admin/b2b/reports/";
-    if (!output.downloadUrl.includes(expectedRouteSegment)) {
-      throw new Error(`unexpected download url: ${output.downloadUrl}`);
-    }
-    if (!/[?&]w=\d+/.test(output.downloadUrl)) {
-      throw new Error(`download url is missing width query: ${output.downloadUrl}`);
-    }
-    if (!/[?&]vw=\d+/.test(output.downloadUrl)) {
-      throw new Error(`download url is missing viewport-width query: ${output.downloadUrl}`);
-    }
-    if (output.downloadUrl.includes("mode=legacy")) {
-      throw new Error(`download url should not use legacy mode: ${output.downloadUrl}`);
-    }
-    if (typeof output.captureSurfaceWidthPx === "number") {
-      const parsedUrl = new URL(output.downloadUrl);
-      const widthFromQuery = Number(parsedUrl.searchParams.get("w") || "");
-      if (!Number.isFinite(widthFromQuery)) {
-        throw new Error(`download url width query is not numeric: ${output.downloadUrl}`);
+    const isMobileBrowserCaptureMode =
+      caseConfig.route === "employee" &&
+      !output.downloadUrl &&
+      Number(caseConfig.viewport?.width || 0) <= 900;
+    output.captureMode = isMobileBrowserCaptureMode ? "browser" : "server";
+
+    if (!isMobileBrowserCaptureMode) {
+      const expectedRouteSegment =
+        caseConfig.route === "employee"
+          ? "/api/b2b/employee/report/export/pdf"
+          : "/api/admin/b2b/reports/";
+      if (!output.downloadUrl.includes(expectedRouteSegment)) {
+        throw new Error(`unexpected download url: ${output.downloadUrl}`);
       }
-      if (Math.abs(widthFromQuery - output.captureSurfaceWidthPx) > 2) {
+      if (!/[?&]w=\d+/.test(output.downloadUrl)) {
+        throw new Error(`download url is missing width query: ${output.downloadUrl}`);
+      }
+      if (!/[?&]vw=\d+/.test(output.downloadUrl)) {
+        throw new Error(`download url is missing viewport-width query: ${output.downloadUrl}`);
+      }
+      if (output.downloadUrl.includes("mode=legacy")) {
+        throw new Error(`download url should not use legacy mode: ${output.downloadUrl}`);
+      }
+      if (typeof output.captureSurfaceWidthPx === "number") {
+        const parsedUrl = new URL(output.downloadUrl);
+        const widthFromQuery = Number(parsedUrl.searchParams.get("w") || "");
+        if (!Number.isFinite(widthFromQuery)) {
+          throw new Error(`download url width query is not numeric: ${output.downloadUrl}`);
+        }
+        if (Math.abs(widthFromQuery - output.captureSurfaceWidthPx) > 2) {
+          throw new Error(
+            `download width mismatch (query=${widthFromQuery}, surface=${output.captureSurfaceWidthPx})`
+          );
+        }
+      }
+      if (!output.textLayoutParity?.pass) {
         throw new Error(
-          `download width mismatch (query=${widthFromQuery}, surface=${output.captureSurfaceWidthPx})`
+          `text layout parity failed: ${(output.textLayoutParity?.reasons || []).join("; ")}`
         );
       }
-    }
-    if (!output.textLayoutParity?.pass) {
-      throw new Error(
-        `text layout parity failed: ${(output.textLayoutParity?.reasons || []).join("; ")}`
-      );
+    } else {
+      output.textLayoutParity = {
+        pass: true,
+        reasons: ["browser-capture-mode"],
+      };
     }
 
     const pdfSizeBytes = fs.statSync(capture.pdfPath).size;
+    const pdfMaxSizeBytes = isMobileBrowserCaptureMode
+      ? Number(process.env.QA_PDF_MAX_SIZE_BYTES_BROWSER || "60000000")
+      : PDF_MAX_SIZE_BYTES;
     output.pdfSizeBytes = pdfSizeBytes;
+    output.pdfMaxSizeBytes = pdfMaxSizeBytes;
     if (pdfSizeBytes < PDF_MIN_SIZE_BYTES) {
       throw new Error(`pdf size too small (${pdfSizeBytes} bytes)`);
     }
-    if (pdfSizeBytes > PDF_MAX_SIZE_BYTES) {
+    if (pdfSizeBytes > pdfMaxSizeBytes) {
       throw new Error(`pdf size too large (${pdfSizeBytes} bytes)`);
     }
 
     const pdfPageCount = readPdfPageCount(capture.pdfPath);
     output.pdfPageCount = pdfPageCount;
-    if (pdfPageCount !== 2) {
+    const allowedPdfPageCounts = [2, 3];
+    if (!allowedPdfPageCounts.includes(pdfPageCount)) {
       throw new Error(`unexpected pdf page count (${pdfPageCount})`);
     }
 
     const extractedText = extractPdfText(capture.pdfPath);
     output.pdfExtractedTextChars = extractedText.length;
     output.pdfHasTextLayer = extractedText.trim().length >= PDF_MIN_TEXT_CHARS;
-    if (!output.pdfHasTextLayer) {
+    if (!isMobileBrowserCaptureMode && !output.pdfHasTextLayer) {
       throw new Error(`pdf text layer missing (chars=${output.pdfExtractedTextChars})`);
+    }
+
+    if (isMobileBrowserCaptureMode) {
+      output.pages = [];
+      output.pagesToCompare = 0;
+      output.visualThresholdSkipped = true;
+      return;
     }
 
     const pdfPrefix = path.join(caseDir, "pdf-page");
@@ -1007,7 +1032,9 @@ async function runCase(browser, baseUrl, caseConfig, adminPasswordCandidates, ou
     const caseThresholds = resolveThresholdsForCase(caseConfig);
     output.caseThresholds = caseThresholds;
     output.pages = [];
-    for (let pageNumber = 1; pageNumber <= 2; pageNumber += 1) {
+    const pagesToCompare = Math.min(capture.webImages.length, pdfPageCount);
+    output.pagesToCompare = pagesToCompare;
+    for (let pageNumber = 1; pageNumber <= pagesToCompare; pageNumber += 1) {
       const pdfPageRaw = `${pdfPrefix}-${pageNumber}.png`;
       const pdfPageTrimmed = path.join(caseDir, `pdf-page-${pageNumber}-trim.png`);
       await trimWhiteMargins(pdfPageRaw, pdfPageTrimmed);

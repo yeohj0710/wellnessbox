@@ -355,7 +355,11 @@ export default function EmployeeReportClient() {
       type: "info",
       duration: 3600,
     });
-  }, [reportData?.report?.id, reportData?.report?.payload?.meta?.isMockData, showToast]);
+  }, [
+    reportData?.report?.id,
+    reportData?.report?.payload?.meta?.isMockData,
+    showToast,
+  ]);
 
   useEffect(() => {
     if (!medicationStatus?.text) return;
@@ -657,8 +661,51 @@ export default function EmployeeReportClient() {
     beginBusy("PDF 파일을 생성하고 있어요.");
     setError("");
     setNotice("");
+
+    const fallbackTarget = webReportCaptureRef.current;
     let downloadFileName = "웰니스박스_건강리포트.pdf";
     let viewportWidthPx = 0;
+
+    const tryBrowserCapture = async (input: {
+      busyMessage: string;
+      noticeMessage: string;
+    }) => {
+      if (!fallbackTarget) {
+        return {
+          attempted: false,
+          success: false,
+          errorMessage: null,
+        } as const;
+      }
+      try {
+        updateBusy({
+          message: input.busyMessage,
+          hint: "sync-remote",
+        });
+        await captureElementToPdf({
+          element: fallbackTarget,
+          fileName: downloadFileName,
+          desktopViewportWidth:
+            viewportWidthPx > 0 ? viewportWidthPx : undefined,
+        });
+        setNotice(input.noticeMessage);
+        return {
+          attempted: true,
+          success: true,
+          errorMessage: null,
+        } as const;
+      } catch (captureError) {
+        return {
+          attempted: true,
+          success: false,
+          errorMessage:
+            captureError instanceof Error
+              ? captureError.message
+              : "PDF 다운로드에 실패했습니다.",
+        } as const;
+      }
+    };
+
     try {
       const normalizeFilenameToken = (
         value: string | null | undefined,
@@ -671,6 +718,7 @@ export default function EmployeeReportClient() {
           .trim();
         return text.length > 0 ? text : fallback;
       };
+
       const employeeLabel = normalizeFilenameToken(
         reportData.employee?.name ??
           reportData.report?.payload?.meta?.employeeName,
@@ -684,22 +732,36 @@ export default function EmployeeReportClient() {
       );
       downloadFileName =
         "웰니스박스_건강리포트_" + employeeLabel + "_" + periodLabel + ".pdf";
+
       const query = new URLSearchParams();
       if (selectedPeriodKey) {
         query.set("period", selectedPeriodKey);
       }
+
       const captureWidthPx = Math.round(
-        webReportCaptureRef.current?.getBoundingClientRect().width ?? 0
+        fallbackTarget?.getBoundingClientRect().width ?? 0
       );
       if (captureWidthPx > 0) {
         query.set("w", String(captureWidthPx));
       }
+
       viewportWidthPx = Math.round(
         window.innerWidth || document.documentElement?.clientWidth || 0
       );
       if (viewportWidthPx > 0) {
         query.set("vw", String(viewportWidthPx));
       }
+
+      const shouldPreferBrowserCapture =
+        !!fallbackTarget && viewportWidthPx > 0 && viewportWidthPx <= 900;
+      if (shouldPreferBrowserCapture) {
+        const captureResult = await tryBrowserCapture({
+          busyMessage: "모바일 화면 기준으로 PDF를 저장하고 있어요.",
+          noticeMessage: "모바일 화면 기준으로 PDF 저장을 완료했습니다.",
+        });
+        if (captureResult.success) return;
+      }
+
       const queryString = query.toString();
       await downloadPdf(
         "/api/b2b/employee/report/export/pdf" +
@@ -708,42 +770,30 @@ export default function EmployeeReportClient() {
       );
       setNotice("PDF 다운로드가 완료되었습니다.");
     } catch (err) {
-      const fallbackTarget = webReportCaptureRef.current;
       const pdfErrorPayload =
         err && typeof err === "object" && "payload" in err
-          ? ((err as {
-              payload?: {
-                code?: string;
-                reason?: string;
-                error?: string;
-              };
-            }).payload ?? {})
+          ? (
+              err as {
+                payload?: {
+                  code?: string;
+                  reason?: string;
+                  error?: string;
+                };
+              }
+            ).payload ?? {}
           : {
               error: err instanceof Error ? err.message : null,
             };
 
-      if (
-        fallbackTarget &&
-        isPdfEngineUnavailableFailure(pdfErrorPayload)
-      ) {
-        try {
-          updateBusy({
-            message: "서버 PDF 엔진을 사용할 수 없어 화면 캡처로 저장하고 있어요.",
-            hint: "sync-remote",
-          });
-          await captureElementToPdf({
-            element: fallbackTarget,
-            fileName: downloadFileName,
-            desktopViewportWidth: viewportWidthPx > 0 ? viewportWidthPx : undefined,
-          });
-          setNotice("브라우저 화면 캡처로 PDF를 저장했습니다.");
-          return;
-        } catch (captureError) {
-          setError(
-            captureError instanceof Error
-              ? captureError.message
-              : "PDF 다운로드에 실패했습니다."
-          );
+      if (isPdfEngineUnavailableFailure(pdfErrorPayload)) {
+        const captureResult = await tryBrowserCapture({
+          busyMessage:
+            "서버 PDF 엔진을 사용할 수 없어 화면 캡처로 저장하고 있어요.",
+          noticeMessage: "브라우저 화면 캡처로 PDF를 저장했습니다.",
+        });
+        if (captureResult.success) return;
+        if (captureResult.attempted && captureResult.errorMessage) {
+          setError(captureResult.errorMessage);
           return;
         }
       }
@@ -869,9 +919,8 @@ export default function EmployeeReportClient() {
           <p className={styles.kicker}>EMPLOYEE REPORT</p>
           <h1 className={styles.title}>임직원 건강 레포트</h1>
           <p className={styles.description}>
-            본인 확인을 마치면 선택한 기간의 건강 레포트를 바로 볼 수 있어요.
-            화면에서 확인한 내용을 그대로 PDF로 내려받아 제출하거나 공유하면
-            돼요.
+            본인 확인을 마치면 선택한 기간의 건강 레포트를 바로 조회할 수
+            있어요.
           </p>
           <div className={styles.statusRow}>
             {reportData?.report ? (
