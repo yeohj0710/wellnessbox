@@ -26,6 +26,7 @@ type SupplementRow = {
   sectionId: string;
   sectionTitle: string;
   title: string;
+  showSectionTitle?: boolean;
   paragraphs: string[];
   recommendedNutrients: string[];
 };
@@ -82,7 +83,7 @@ export default function SurveyDetailPages(props: {
 
             <div className={styles.reportSecondStack}>
               <article className={styles.reportDataCard}>
-                <h3 className={styles.reportDataTitle}>핵심 위험 하이라이트</h3>
+                <h3 className={styles.reportDataTitle}>주의가 필요한 문항 요약</h3>
                 <p className={styles.reportDataEmpty}>
                   표기된 점수는 전체 위험도가 아니라 각 문항 응답 기준의 문항 위험도입니다.
                 </p>
@@ -105,9 +106,7 @@ export default function SurveyDetailPages(props: {
                         <p className={styles.reportDataBody}>
                           <strong>내 답변:</strong> {line.answerText || "응답 정보 없음"}
                         </p>
-                        <p className={styles.reportDataBody}>
-                          <strong>권장안:</strong> {line.recommendation}
-                        </p>
+                        <p className={styles.reportRecommendation}>{line.recommendation}</p>
                       </li>
                     ))}
                   </ul>
@@ -150,7 +149,7 @@ export default function SurveyDetailPages(props: {
                 {pageIndex === 0 ? "영역별 분석 코멘트" : "영역별 분석 코멘트 (계속)"}
               </h2>
               <p className={styles.reportPageSubtitle}>
-                선택한 영역의 주요 문항, 내 답변, 권장안을 함께 확인할 수 있습니다.
+                선택한 영역의 주요 문항, 내 답변, 개선 제안을 함께 확인할 수 있습니다.
               </p>
             </header>
 
@@ -170,9 +169,7 @@ export default function SurveyDetailPages(props: {
                       <p className={styles.reportDataBody}>
                         <strong>내 답변:</strong> {line.answerText || "-"}
                       </p>
-                      <p className={styles.reportDataBody}>
-                        <strong>권장안:</strong> {line.recommendation}
-                      </p>
+                      <p className={styles.reportRecommendation}>{line.recommendation}</p>
                     </li>
                   ))}
                 </ul>
@@ -213,7 +210,9 @@ export default function SurveyDetailPages(props: {
                       className={styles.reportDataCard}
                     >
                       <h3 className={styles.reportDataTitle}>
-                        {row.sectionTitle} · {row.title}
+                        {row.showSectionTitle
+                          ? `${row.sectionTitle} · ${row.title}`
+                          : row.title || row.sectionTitle}
                       </h3>
                       {row.paragraphs.length > 0 ? (
                         <div className={styles.reportSecondStack}>

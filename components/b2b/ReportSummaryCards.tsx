@@ -88,6 +88,14 @@ function chunkItems<T>(items: T[], chunkSize: number) {
   return chunks;
 }
 
+function toRadarPointString(points: Array<{ x: number; y: number }>) {
+  return points.map((point) => `${point.x.toFixed(2)},${point.y.toFixed(2)}`).join(" ");
+}
+
+function normalizeSupplementHeadingText(value: string) {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
 export default function ReportSummaryCards(props: {
   payload: ReportSummaryPayload | null | undefined;
   viewerMode?: "employee" | "admin";
@@ -199,19 +207,25 @@ export default function ReportSummaryCards(props: {
         .filter(Boolean)
     : [];
   const supplementDesignRows = hasWellnessScoringData
-    ? ensureArray(wellness?.supplementDesign).map((item) => ({
-        sectionId: firstOrDash(item?.sectionId),
-        sectionTitle:
-          sectionTitleById.get(firstOrDash(item?.sectionId)) ||
-          sanitizeTitle(firstOrDash(item?.sectionId)),
-        title: sanitizeTitle(firstOrDash(item?.title)),
-        paragraphs: ensureArray(item?.paragraphs)
-          .map((paragraph) => ensureSentence(toTrimmedText(paragraph)))
-          .filter(Boolean),
-        recommendedNutrients: ensureArray(item?.recommendedNutrients)
-          .map((nutrient) => sanitizeTitle(firstOrDash(nutrient?.labelKo || nutrient?.label)))
-          .filter(Boolean),
-      }))
+    ? ensureArray(wellness?.supplementDesign).map((item) => {
+        const sectionId = firstOrDash(item?.sectionId);
+        const sectionTitle = sectionTitleById.get(sectionId) || sanitizeTitle(sectionId);
+        const title = sanitizeTitle(firstOrDash(item?.title));
+        const showSectionTitle =
+          normalizeSupplementHeadingText(sectionTitle) !== normalizeSupplementHeadingText(title);
+        return {
+          sectionId,
+          sectionTitle,
+          title,
+          showSectionTitle,
+          paragraphs: ensureArray(item?.paragraphs)
+            .map((paragraph) => ensureSentence(toTrimmedText(paragraph)))
+            .filter(Boolean),
+          recommendedNutrients: ensureArray(item?.recommendedNutrients)
+            .map((nutrient) => sanitizeTitle(firstOrDash(nutrient?.labelKo || nutrient?.label)))
+            .filter(Boolean),
+        };
+      })
     : [];
 
   const riskPages = chunkItems(detailedRiskLines, RISK_CHUNK_SIZE);
@@ -219,9 +233,37 @@ export default function ReportSummaryCards(props: {
   const combinedSurveyPageCount = Math.max(riskPages.length, routinePages.length);
   const sectionAdvicePages = chunkItems(detailedSectionAdviceLines, SECTION_ADVICE_CHUNK_SIZE);
   const supplementPages = chunkItems(supplementDesignRows, SUPPLEMENT_CHUNK_SIZE);
-  const surveyDetailPageStart = 4;
+  const surveyDetailPageStart = 2;
   const sectionAdvicePageStart = surveyDetailPageStart + combinedSurveyPageCount;
   const supplementPageStart = sectionAdvicePageStart + sectionAdvicePages.length;
+  const healthDataPageNumber = supplementPageStart + supplementPages.length;
+  const medicationPageNumber = healthDataPageNumber + 1;
+
+  const radarCenter = 100;
+  const radarRadius = 60;
+  const radarAxes = resolvedLifestyleRiskAxes.map((axis, index, axisList) => {
+    const angle = -Math.PI / 2 + (Math.PI * 2 * index) / axisList.length;
+    const outerX = radarCenter + radarRadius * Math.cos(angle);
+    const outerY = radarCenter + radarRadius * Math.sin(angle);
+    const valueRatio = clampPercent(axis.score) / 100;
+    const valueX = radarCenter + radarRadius * valueRatio * Math.cos(angle);
+    const valueY = radarCenter + radarRadius * valueRatio * Math.sin(angle);
+    const labelX = radarCenter + (radarRadius + 16) * Math.cos(angle);
+    const labelY = radarCenter + (radarRadius + 16) * Math.sin(angle);
+    return {
+      ...axis,
+      outerX,
+      outerY,
+      valueX,
+      valueY,
+      labelX,
+      labelY,
+    };
+  });
+  const radarLevels = [0.25, 0.5, 0.75, 1];
+  const radarAreaPoints = toRadarPointString(
+    radarAxes.map((axis) => ({ x: axis.valueX, y: axis.valueY }))
+  );
 
   const coreMetricStatusByLabel = new Map(
     ensureArray(payload.health?.coreMetrics)
@@ -327,19 +369,73 @@ export default function ReportSummaryCards(props: {
             <div className={styles.reportTopHead}>
               <h3 className={styles.sectionTitle}>생활습관 위험도</h3>
             </div>
-            <ul className={styles.riskBarList} aria-label="생활습관 위험도 막대 그래프">
-              {resolvedLifestyleRiskAxes.map((axis) => (
-                <li key={`lifestyle-risk-${axis.id}`} className={styles.riskBarRow}>
-                  <div className={styles.riskBarHead}>
-                    <span>{axis.label}</span>
-                    <strong>{toScoreLabel(axis.score)}</strong>
-                  </div>
-                  <div className={styles.riskBarTrack}>
-                    <div
-                      className={styles.riskBarFill}
-                      style={{ width: `${clampPercent(axis.score)}%` }}
+            <div className={styles.radarWrap}>
+              <svg
+                viewBox="0 0 200 200"
+                className={styles.radarSvg}
+                role="img"
+                aria-label="생활습관 위험도 다이아몬드 그래프"
+              >
+                {radarLevels.map((level) => {
+                  const levelPoints = toRadarPointString(
+                    radarAxes.map((axis) => ({
+                      x: radarCenter + (axis.outerX - radarCenter) * level,
+                      y: radarCenter + (axis.outerY - radarCenter) * level,
+                    }))
+                  );
+                  return (
+                    <polygon
+                      key={`radar-level-${level}`}
+                      className={styles.radarGrid}
+                      points={levelPoints}
                     />
-                  </div>
+                  );
+                })}
+                {radarAxes.map((axis) => (
+                  <line
+                    key={`radar-axis-${axis.id}`}
+                    className={styles.radarAxis}
+                    x1={radarCenter}
+                    y1={radarCenter}
+                    x2={axis.outerX}
+                    y2={axis.outerY}
+                  />
+                ))}
+                <polygon className={styles.radarArea} points={radarAreaPoints} />
+                {radarAxes.map((axis) => (
+                  <circle
+                    key={`radar-point-${axis.id}`}
+                    className={styles.radarPoint}
+                    cx={axis.valueX}
+                    cy={axis.valueY}
+                    r={3}
+                  />
+                ))}
+                {radarAxes.map((axis) => (
+                  <text
+                    key={`radar-label-${axis.id}`}
+                    className={styles.radarLabel}
+                    x={axis.labelX}
+                    y={axis.labelY}
+                    textAnchor={
+                      axis.labelX > radarCenter + 12
+                        ? "start"
+                        : axis.labelX < radarCenter - 12
+                          ? "end"
+                          : "middle"
+                    }
+                    dominantBaseline="central"
+                  >
+                    {axis.label}
+                  </text>
+                ))}
+              </svg>
+            </div>
+            <ul className={styles.radarLegendList}>
+              {resolvedLifestyleRiskAxes.map((axis) => (
+                <li key={`radar-legend-${axis.id}`} className={styles.radarLegendItem}>
+                  <span>{axis.label}</span>
+                  <strong>{toScoreLabel(axis.score)}</strong>
                 </li>
               ))}
             </ul>
@@ -381,7 +477,7 @@ export default function ReportSummaryCards(props: {
                 <span className={styles.riskScoreText}>{toScoreLabel(healthNeedAverage)}</span>
               </p>
               {hiddenSectionNeedCount > 0 ? (
-                <p className={styles.inlineHint}>추가 영역 {hiddenSectionNeedCount}개는 2페이지에서 확인 가능</p>
+                <p className={styles.inlineHint}>추가 영역 {hiddenSectionNeedCount}개는 뒤 페이지에서 확인 가능</p>
               ) : null}
             </div>
           </article>
@@ -405,9 +501,7 @@ export default function ReportSummaryCards(props: {
                   <p className={styles.reportDataBody}>
                     <strong>내 답변:</strong> {line.answerText || "-"}
                   </p>
-                  <p className={styles.reportDataBody}>
-                    <strong>권장안:</strong> {line.recommendation}
-                  </p>
+                  <p className={styles.reportRecommendation}>{line.recommendation}</p>
                 </li>
               ))}
             </ul>
@@ -434,9 +528,7 @@ export default function ReportSummaryCards(props: {
                       <strong>내 답변:</strong> {line.answerText}
                     </p>
                   ) : null}
-                  <p className={styles.reportDataBody}>
-                    <strong>권장안:</strong> {line.recommendation}
-                  </p>
+                  <p className={styles.reportRecommendation}>{line.recommendation}</p>
                 </li>
               ))}
             </ul>
@@ -445,9 +537,23 @@ export default function ReportSummaryCards(props: {
 
       </section>
 
-      <section className={`${styles.reportSheet} ${styles.reportSheetSecond}`} data-report-page="2">
+      <SurveyDetailPages
+        combinedSurveyPageCount={combinedSurveyPageCount}
+        surveyDetailPageStart={surveyDetailPageStart}
+        riskPages={riskPages}
+        routinePages={routinePages}
+        sectionAdvicePageStart={sectionAdvicePageStart}
+        sectionAdvicePages={sectionAdvicePages}
+        supplementPageStart={supplementPageStart}
+        supplementPages={supplementPages}
+      />
+
+      <section
+        className={`${styles.reportSheet} ${styles.reportSheetSecond}`}
+        data-report-page={String(healthDataPageNumber)}
+      >
         <header className={styles.reportPageHeader}>
-          <p className={styles.reportPageKicker}>2페이지 상세 데이터</p>
+          <p className={styles.reportPageKicker}>{`${healthDataPageNumber}페이지 상세 데이터`}</p>
           <h2 className={styles.reportPageTitle}>건강검진 데이터 상세</h2>
           <p className={styles.reportPageSubtitle}>
             건강검진에서 측정된 지표를 모두 확인하고 현재 상태를 점검합니다.
@@ -483,9 +589,12 @@ export default function ReportSummaryCards(props: {
         </div>
       </section>
 
-      <section className={`${styles.reportSheet} ${styles.reportSheetThird}`} data-report-page="3">
+      <section
+        className={`${styles.reportSheet} ${styles.reportSheetThird}`}
+        data-report-page={String(medicationPageNumber)}
+      >
         <header className={styles.reportPageHeader}>
-          <p className={styles.reportPageKicker}>3페이지 상세 데이터</p>
+          <p className={styles.reportPageKicker}>{`${medicationPageNumber}페이지 상세 데이터`}</p>
           <h2 className={styles.reportPageTitle}>복약 이력 · 약사 코멘트</h2>
           <p className={styles.reportPageSubtitle}>
             복약 이력을 기준으로 언제 어떤 약물을 처방·조제받았는지 확인합니다.
@@ -556,16 +665,6 @@ export default function ReportSummaryCards(props: {
         </section>
       </section>
 
-      <SurveyDetailPages
-        combinedSurveyPageCount={combinedSurveyPageCount}
-        surveyDetailPageStart={surveyDetailPageStart}
-        riskPages={riskPages}
-        routinePages={routinePages}
-        sectionAdvicePageStart={sectionAdvicePageStart}
-        sectionAdvicePages={sectionAdvicePages}
-        supplementPageStart={supplementPageStart}
-        supplementPages={supplementPages}
-      />
     </div>
   );
 }

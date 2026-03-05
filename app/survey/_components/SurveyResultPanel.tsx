@@ -40,6 +40,41 @@ function toSurveyLifestyleRiskLabel(input: { id?: string; name?: string }) {
   return `${withoutSuffix} 위험도`;
 }
 
+function normalizeHighlightIdentityText(value?: string) {
+  return (value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function dedupeSurveyHighRiskHighlights(highlights: WellnessComputedResult["highRiskHighlights"]) {
+  const picked: WellnessComputedResult["highRiskHighlights"] = [];
+  const seenIdentities = new Set<string>();
+
+  for (const item of highlights) {
+    const normalizedQuestionText = normalizeHighlightIdentityText(item.questionText);
+    const normalizedQuestionKey = normalizeHighlightIdentityText(item.questionKey);
+    const normalizedTitle = normalizeHighlightIdentityText(item.title);
+    const identity =
+      normalizedQuestionText
+        ? `question:${normalizedQuestionText}`
+        : normalizedQuestionKey
+          ? `key:${normalizedQuestionKey}`
+          : normalizedTitle
+            ? `title:${normalizedTitle}`
+            : "";
+
+    if (identity && seenIdentities.has(identity)) continue;
+    picked.push(item);
+    if (identity) {
+      seenIdentities.add(identity);
+    }
+  }
+
+  return picked;
+}
+
+function normalizeSupplementHeadingText(value: string) {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
 export type SurveyResultPanelText = {
   resultTitle: string;
   scoreHealth: string;
@@ -58,6 +93,9 @@ export default function SurveyResultPanel(props: {
   onOpenEmployeeReport: () => void;
 }) {
   const { resultSummary, sectionTitleMap, text } = props;
+  const highRiskHighlights = resultSummary
+    ? dedupeSurveyHighRiskHighlights(resultSummary.highRiskHighlights)
+    : [];
 
   return (
     <div
@@ -214,13 +252,13 @@ export default function SurveyResultPanel(props: {
           })()}
 
           <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-            <h3 className="text-lg font-bold text-slate-900">핵심 위험 하이라이트</h3>
+            <h3 className="text-lg font-bold text-slate-900">주의가 필요한 문항 요약</h3>
             <p className="mt-1 text-xs text-slate-500">
               표기된 점수는 전체 위험도가 아니라 각 문항 응답 기준의 문항 위험도입니다.
             </p>
-            {resultSummary.highRiskHighlights.length > 0 ? (
+            {highRiskHighlights.length > 0 ? (
               <ul className="mt-3 space-y-2 text-sm text-slate-700">
-                {resultSummary.highRiskHighlights.map((item, index) => {
+                {highRiskHighlights.map((item, index) => {
                   const categoryLabel =
                     item.category === "common"
                       ? "공통"
@@ -243,10 +281,9 @@ export default function SurveyResultPanel(props: {
                       <p className="mt-1 text-sm text-slate-700">
                         내 답변: {item.answerText || "응답 정보 없음"}
                       </p>
-                      <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2">
-                        <p className="text-xs font-semibold text-amber-700">권장안</p>
-                        <p className="mt-0.5 text-sm text-amber-900">{item.action}</p>
-                      </div>
+                      <p className="mt-1.5 text-sm font-medium leading-relaxed text-emerald-700">
+                        {item.action}
+                      </p>
                     </li>
                   );
                 })}
@@ -295,10 +332,9 @@ export default function SurveyResultPanel(props: {
                           <p className="mt-0.5 text-slate-700">
                             내 답변: {item.answerText || "응답 정보 없음"}
                           </p>
-                          <div className="mt-1.5 rounded-lg border border-cyan-200 bg-cyan-50 px-2.5 py-2">
-                            <p className="text-xs font-semibold text-cyan-700">권장안</p>
-                            <p className="mt-0.5 text-sm text-cyan-900">{item.text}</p>
-                          </div>
+                          <p className="mt-1.5 text-sm font-medium leading-relaxed text-emerald-700">
+                            {item.text}
+                          </p>
                         </li>
                       ))}
                     </ul>
@@ -311,15 +347,25 @@ export default function SurveyResultPanel(props: {
             <h3 className="text-lg font-bold text-slate-900">맞춤 영양제 설계</h3>
             {resultSummary.supplementDesign.length > 0 ? (
               <div className="mt-3 space-y-3">
-                {resultSummary.supplementDesign.map((item) => (
+                {resultSummary.supplementDesign.map((item) => {
+                  const sectionLabel = (sectionTitleMap.get(item.sectionId) ?? item.sectionId).trim();
+                  const titleLabel = (item.title ?? "").trim();
+                  const showSectionLabel =
+                    sectionLabel.length > 0 &&
+                    normalizeSupplementHeadingText(sectionLabel) !==
+                      normalizeSupplementHeadingText(titleLabel);
+
+                  return (
                   <article
                     key={`supplement-${item.sectionId}`}
                     className="rounded-xl border border-indigo-100 bg-indigo-50/40 px-3 py-3"
                   >
-                    <p className="text-xs font-semibold text-indigo-700">
-                      {sectionTitleMap.get(item.sectionId) ?? item.sectionId}
-                    </p>
-                    <h4 className="mt-1 text-sm font-bold text-slate-900">{item.title}</h4>
+                    {showSectionLabel ? (
+                      <p className="text-xs font-semibold text-indigo-700">{sectionLabel}</p>
+                    ) : null}
+                    <h4 className={`${showSectionLabel ? "mt-1" : "mt-0"} text-sm font-bold text-slate-900`}>
+                      {titleLabel || sectionLabel}
+                    </h4>
                     <div className="mt-2 space-y-1.5 text-sm text-slate-700">
                       {item.paragraphs.map((paragraph, index) => (
                         <p key={`supplement-paragraph-${item.sectionId}-${index}`}>{paragraph}</p>
@@ -344,7 +390,8 @@ export default function SurveyResultPanel(props: {
                       </div>
                     ) : null}
                   </article>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="mt-2 text-sm text-slate-500">
@@ -387,4 +434,3 @@ export default function SurveyResultPanel(props: {
     </div>
   );
 }
-

@@ -213,6 +213,20 @@ function normalizeQuestionKey(input: {
   return "";
 }
 
+function normalizeRiskIdentityText(value: string) {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function resolveRiskCandidateIdentity(candidate: RiskCandidate) {
+  const normalizedQuestionText = normalizeRiskIdentityText(candidate.questionText);
+  if (normalizedQuestionText) return `question:${normalizedQuestionText}`;
+  const normalizedQuestionKey = normalizeRiskIdentityText(candidate.questionKey);
+  if (normalizedQuestionKey) return `key:${normalizedQuestionKey}`;
+  const normalizedTitle = normalizeRiskIdentityText(candidate.title);
+  if (normalizedTitle) return `title:${normalizedTitle}`;
+  return "";
+}
+
 function buildSurveyAnswerLookup(payload: ReportSummaryPayload) {
   const lookup = new Map<string, SurveyAnswerLookup>();
   for (const answer of ensureArray(payload.survey?.answers)) {
@@ -407,11 +421,24 @@ function extractRiskCandidates(payload: ReportSummaryPayload): RiskCandidate[] {
     });
   }
 
-  return candidates.sort((left, right) => {
+  const sorted = candidates.sort((left, right) => {
     if (right.score !== left.score) return right.score - left.score;
     if (left.questionNumber !== right.questionNumber) return left.questionNumber - right.questionNumber;
     return left.title.localeCompare(right.title);
   });
+
+  const deduped: RiskCandidate[] = [];
+  const seenRiskIdentities = new Set<string>();
+  for (const candidate of sorted) {
+    const identity = resolveRiskCandidateIdentity(candidate);
+    if (identity && seenRiskIdentities.has(identity)) continue;
+    deduped.push(candidate);
+    if (identity) {
+      seenRiskIdentities.add(identity);
+    }
+  }
+
+  return deduped;
 }
 
 

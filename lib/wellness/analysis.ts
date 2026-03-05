@@ -130,6 +130,20 @@ function pickRepresentativeRiskCandidate(candidates: RiskCandidate[]) {
     .at(0);
 }
 
+function normalizeRiskIdentityText(value?: string) {
+  return (value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function getRiskCandidateIdentity(candidate: RiskCandidate) {
+  const questionText = normalizeRiskIdentityText(candidate.questionText);
+  if (questionText) return `question:${questionText}`;
+  const questionKey = normalizeRiskIdentityText(candidate.questionKey);
+  if (questionKey) return `key:${questionKey}`;
+  const title = normalizeRiskIdentityText(candidate.title);
+  if (title) return `title:${title}`;
+  return "";
+}
+
 function toHighlight(candidate: RiskCandidate) {
   return {
     category: candidate.category,
@@ -372,31 +386,36 @@ export function computeWellnessResult(input: WellnessAnalysisInput): WellnessCom
     (candidate): candidate is RiskCandidate => Boolean(candidate)
   );
 
-  let mergedHighlights = [...selectedQuestionHighlights];
-  for (const required of requiredCandidates) {
-    const exists = mergedHighlights.some((item) => item.category === required.category);
-    if (exists) continue;
-    if (mergedHighlights.length < maxHighlights) {
-      mergedHighlights.push(required);
-    } else {
-      mergedHighlights = [...mergedHighlights]
-        .sort(sortRiskCandidates)
-        .slice(0, maxHighlights - 1);
-      mergedHighlights.push(required);
+  const mergedHighlights: RiskCandidate[] = [];
+  const seenRiskIdentities = new Set<string>();
+  const pushUniqueRiskCandidate = (candidate: RiskCandidate) => {
+    if (mergedHighlights.length >= maxHighlights) return;
+    const identity = getRiskCandidateIdentity(candidate);
+    if (identity && seenRiskIdentities.has(identity)) return;
+    mergedHighlights.push(candidate);
+    if (identity) {
+      seenRiskIdentities.add(identity);
+    }
+  };
+
+  for (const candidate of selectedQuestionHighlights) {
+    pushUniqueRiskCandidate(candidate);
+  }
+  for (const candidate of requiredCandidates) {
+    pushUniqueRiskCandidate(candidate);
+  }
+
+  if (mergedHighlights.length < maxHighlights) {
+    for (const candidate of [...pickedQuestionCandidates].sort(sortRiskCandidates)) {
+      pushUniqueRiskCandidate(candidate);
+      if (mergedHighlights.length >= maxHighlights) break;
     }
   }
 
-  mergedHighlights = [...mergedHighlights].sort(sortRiskCandidates).slice(0, maxHighlights);
-
-  for (const required of requiredCandidates) {
-    const exists = mergedHighlights.some((item) => item.category === required.category);
-    if (exists) continue;
-    const next = [...mergedHighlights].slice(0, Math.max(0, maxHighlights - 1));
-    next.push(required);
-    mergedHighlights = next.sort(sortRiskCandidates).slice(0, maxHighlights);
-  }
-
-  const highRiskHighlights = mergedHighlights.map((candidate) => toHighlight(candidate));
+  const highRiskHighlights = [...mergedHighlights]
+    .sort(sortRiskCandidates)
+    .slice(0, maxHighlights)
+    .map((candidate) => toHighlight(candidate));
 
   return {
     schemaVersion: "wellness-score-v1",

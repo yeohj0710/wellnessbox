@@ -2316,21 +2316,43 @@
 }
 
 .radarArea {
-  fill: rgba(49, 130, 246, 0.24);
-  stroke: #2f7df9;
+  fill: rgba(239, 68, 68, 0.2);
+  stroke: #dc2626;
   stroke-width: 2;
 }
 
 .radarPoint {
-  fill: #ffffff;
-  stroke: #1f6bf1;
+  fill: #fff7f7;
+  stroke: #b91c1c;
   stroke-width: 2;
 }
 
 .radarLabel {
-  fill: #4f6484;
-  font-size: 11px;
+  fill: #4b5563;
+  font-size: 10px;
   font-weight: 700;
+}
+
+.radarLegendList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+}
+
+.radarLegendItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--ink-2);
+  font-size: 11px;
+}
+
+.radarLegendItem strong {
+  color: #be123c;
+  font-weight: 800;
 }
 
 .riskBarList {
@@ -2709,6 +2731,14 @@
 .reportDataBody strong {
   display: inline;
   margin-right: 4px;
+}
+
+.reportRecommendation {
+  margin: 0;
+  color: #0f766e;
+  font-size: 11px;
+  line-height: 1.5;
+  font-weight: 700;
 }
 
 .reportDataLabel {
