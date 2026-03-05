@@ -118,6 +118,18 @@ function sortRiskCandidates(left: RiskCandidate, right: RiskCandidate) {
   return left.title.localeCompare(right.title);
 }
 
+function pickRepresentativeRiskCandidate(candidates: RiskCandidate[]) {
+  return [...candidates]
+    .sort((left, right) => {
+      const answerPresenceDiff =
+        Number(Boolean(right.answerText && right.answerText.trim())) -
+        Number(Boolean(left.answerText && left.answerText.trim()));
+      if (answerPresenceDiff !== 0) return answerPresenceDiff;
+      return sortRiskCandidates(left, right);
+    })
+    .at(0);
+}
+
 function toHighlight(candidate: RiskCandidate) {
   return {
     category: candidate.category,
@@ -305,6 +317,15 @@ export function computeWellnessResult(input: WellnessAnalysisInput): WellnessCom
   const worstDomain = [...domains]
     .sort((left, right) => right.percent - left.percent)
     .at(0);
+  const domainRepresentative =
+    worstDomain != null
+      ? pickRepresentativeRiskCandidate(
+          commonCandidates.filter((candidate) => {
+            if (!candidate.questionKey) return false;
+            return domainByQuestionId.get(candidate.questionKey)?.id === worstDomain.id;
+          })
+        )
+      : undefined;
   const domainCandidate: RiskCandidate | null = worstDomain
     ? {
         category: "domain",
@@ -312,11 +333,22 @@ export function computeWellnessResult(input: WellnessAnalysisInput): WellnessCom
         scorePercent: clampPercent(worstDomain.percent),
         contextPercent: clampPercent(worstDomain.percent),
         action: `${worstDomain.name} 위험도가 높습니다. 해당 축 생활 루틴을 우선 교정해 주세요.`,
-        questionNumber: 999,
+        questionNumber: domainRepresentative?.questionNumber ?? 999,
+        questionKey: domainRepresentative?.questionKey,
+        questionText: domainRepresentative?.questionText,
+        answerText: domainRepresentative?.answerText ?? null,
       }
     : null;
 
   const worstSection = sectionNeedRows.at(0);
+  const sectionRepresentative =
+    worstSection != null
+      ? pickRepresentativeRiskCandidate(
+          detailedCandidates.filter(
+            (candidate) => candidate.sectionId === worstSection.sectionId
+          )
+        )
+      : undefined;
   const sectionCandidate: RiskCandidate | null = worstSection
     ? {
         category: "section",
@@ -324,8 +356,11 @@ export function computeWellnessResult(input: WellnessAnalysisInput): WellnessCom
         scorePercent: clampPercent(worstSection.percent),
         contextPercent: clampPercent(worstSection.percent),
         action: `${worstSection.sectionTitle} 영역 필요도가 높습니다. 우선 관리 영역으로 설정해 주세요.`,
-        questionNumber: 999,
+        questionNumber: sectionRepresentative?.questionNumber ?? 999,
         sectionId: worstSection.sectionId,
+        questionKey: sectionRepresentative?.questionKey,
+        questionText: sectionRepresentative?.questionText,
+        answerText: sectionRepresentative?.answerText ?? null,
       }
     : null;
 

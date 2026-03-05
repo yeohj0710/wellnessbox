@@ -34,6 +34,7 @@ export type SurveyResponseRow = {
   id: string;
   periodKey: string | null;
   reportCycle: number | string | null;
+  submittedAt: Date | null;
   selectedSections: string[];
   answersJson: unknown;
   updatedAt: Date;

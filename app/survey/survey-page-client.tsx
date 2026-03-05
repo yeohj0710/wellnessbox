@@ -95,6 +95,7 @@ const TEXT = {
   commonSection: "\uACF5\uD1B5 \uBB38\uD56D",
   commonBadge: "\uACF5\uD1B5 \uC124\uBB38",
   requiredBadge: "\uD544\uC218",
+  optionalBadge: "\uC120\uD0DD",
   optionalHint:
     "\uD574\uB2F9 \uC0AC\uD56D\uC774 \uC5C6\uC73C\uBA74 \uC120\uD0DD\uD558\uC9C0 \uC54A\uACE0 \uB2E4\uC74C\uC73C\uB85C \uB118\uC5B4\uAC00\uB3C4 \uB429\uB2C8\uB2E4.",
   sectionCounterPrefix: "\uC139\uC158 \uB0B4 \uBB38\uD56D",
@@ -298,6 +299,10 @@ function isSkippableSelectionQuestion(question: WellnessSurveyQuestionForTemplat
   if (question.type !== "single" && question.type !== "multi") return false;
   if (!question.required) return true;
   return question.type === "multi";
+}
+
+function isQuestionEffectivelyRequired(question: WellnessSurveyQuestionForTemplate) {
+  return question.required && !isSkippableSelectionQuestion(question);
 }
 
 function normalizeHintTextForMatch(text: string) {
@@ -1004,7 +1009,9 @@ export default function SurveyPageClient() {
     if (questionList.length === 0) return 0;
     let done = 0;
     for (const section of surveySections) {
-      const requiredQuestions = section.questions.filter((item) => item.question.required);
+      const requiredQuestions = section.questions.filter((item) =>
+        isQuestionEffectivelyRequired(item.question)
+      );
       const hasAllRequiredAnswers = requiredQuestions.every((item) =>
         isSurveyQuestionAnswered(item.question, answers[item.question.key])
       );
@@ -2142,32 +2149,92 @@ export default function SurveyPageClient() {
     );
   }
 
-  function handleMovePrevious() {
+  function handleMovePreviousSection() {
+    if (isSectionTransitioning) return;
+    if (currentSectionIndex <= 0) return;
+    moveToSection(currentSectionIndex - 1);
+  }
+
+  function handleMoveNextSection() {
     if (isSectionTransitioning) return;
     if (!currentSection || currentSection.questions.length === 0) return;
-    const activeIndex = getFocusedIndex(
-      currentSection,
-      focusedQuestionBySection[currentSection.key],
-      answers
+
+    for (const node of currentSection.questions) {
+      const question = node.question;
+      const answerValue = answers[question.key];
+      const numericWarning = resolveQuestionNumericWarning(question, answerValue);
+      if (numericWarning) {
+        setFocusedQuestionBySection((prev) => ({ ...prev, [currentSection.key]: question.key }));
+        setErrorQuestionKey(question.key);
+        setErrorText(numericWarning);
+        scrollToQuestion(question.key);
+        return;
+      }
+      const validationError = validateSurveyQuestionAnswer(question, answerValue, {
+        treatSelectionAsOptional: isSkippableSelectionQuestion(question),
+      });
+      if (validationError) {
+        setFocusedQuestionBySection((prev) => ({ ...prev, [currentSection.key]: question.key }));
+        setErrorQuestionKey(question.key);
+        setErrorText(validationError);
+        scrollToQuestion(question.key);
+        return;
+      }
+    }
+
+    let nextAnswers = answers;
+    const nextSelectedSections = resolveSelectedSectionsFromC27(template, nextAnswers, []);
+    const hasSelectionChanged =
+      JSON.stringify(nextSelectedSections) !== JSON.stringify(selectedSectionsCommitted);
+    if (hasSelectionChanged) {
+      nextAnswers = pruneAnswersByVisibility(nextAnswers, nextSelectedSections);
+      setSelectedSectionsCommitted(nextSelectedSections);
+      setAnswers(nextAnswers);
+    }
+
+    const effectiveQuestionList = buildVisibleQuestionList(nextAnswers, nextSelectedSections);
+    const effectiveSections = buildSurveySections(
+      effectiveQuestionList,
+      nextSelectedSections,
+      sectionTitleMap
     );
-    if (activeIndex > 0) {
-      const prevKey = currentSection.questions[activeIndex - 1].question.key;
-      setFocusedQuestionBySection((prev) => ({ ...prev, [currentSection.key]: prevKey }));
+    const sectionAt = effectiveSections.findIndex((section) => section.key === currentSection.key);
+    if (sectionAt < 0) return;
+
+    if (sectionAt >= effectiveSections.length - 1) {
       setErrorQuestionKey(null);
       setErrorText(null);
-      scrollToQuestion(prevKey);
+      setIsSectionTransitioning(false);
+      startCalculation(nextAnswers, nextSelectedSections);
       return;
     }
 
-    if (currentSectionIndex <= 0) return;
-    const prevSection = surveySections[currentSectionIndex - 1];
-    if (!prevSection || prevSection.questions.length === 0) return;
-    const prevKey = prevSection.questions[prevSection.questions.length - 1].question.key;
-    setCurrentSectionIndex(currentSectionIndex - 1);
-    setFocusedQuestionBySection((prev) => ({ ...prev, [prevSection.key]: prevKey }));
+    const nextSection = effectiveSections[sectionAt + 1];
+    const nextKey = nextSection.questions[0]?.question.key ?? "";
+    const shouldShowSectionTransition = currentSection.questions.some(
+      (item) => item.question.key === c27Key
+    );
     setErrorQuestionKey(null);
     setErrorText(null);
-    scrollToQuestion(prevKey);
+    if (shouldShowSectionTransition) {
+      setIsSectionTransitioning(true);
+    } else {
+      setIsSectionTransitioning(false);
+    }
+    setCurrentSectionIndex(sectionAt + 1);
+    if (nextKey) {
+      setFocusedQuestionBySection((prev) => ({ ...prev, [nextSection.key]: nextKey }));
+      if (shouldShowSectionTransition) {
+        window.setTimeout(() => {
+          scrollToQuestion(nextKey);
+          setIsSectionTransitioning(false);
+        }, 140);
+      } else {
+        scrollToQuestion(nextKey);
+      }
+    } else {
+      setIsSectionTransitioning(false);
+    }
   }
 
   function handleStartSurvey() {
@@ -2272,40 +2339,10 @@ export default function SurveyPageClient() {
 
   if (!hydrated) return null;
 
-  const activeQuestionIndex =
-    currentSection && currentSection.questions.length > 0
-      ? getFocusedIndex(currentSection, focusedQuestionBySection[currentSection.key], answers)
-      : -1;
-  const hasPrevStep = currentSectionIndex > 0 || activeQuestionIndex > 0;
-  const prevButtonLabel = activeQuestionIndex > 0 ? TEXT.prevQuestion : TEXT.prevSection;
-  const atLastQuestionInSection =
-    !!currentSection &&
-    activeQuestionIndex >= 0 &&
-    activeQuestionIndex >= currentSection.questions.length - 1;
+  const hasPrevStep = currentSectionIndex > 0;
+  const prevButtonLabel = TEXT.prevSection;
   const atLastSection = currentSectionIndex >= surveySections.length - 1;
-  const currentFocusedQuestion =
-    currentSection && activeQuestionIndex >= 0
-      ? currentSection.questions[activeQuestionIndex]?.question
-      : null;
-  const pendingSelectedSectionsForC27 =
-    currentFocusedQuestion?.key === c27Key
-      ? resolveSelectedSectionsFromC27(template, answers, []).length
-      : 0;
-  const shouldUseNextSectionLabelAtCommonTail =
-    atLastSection &&
-    atLastQuestionInSection &&
-    currentSection?.key === "common" &&
-    currentFocusedQuestion?.key === c27Key &&
-    pendingSelectedSectionsForC27 > 0;
-  const nextButtonLabel = atLastSection
-    ? shouldUseNextSectionLabelAtCommonTail
-      ? TEXT.nextSection
-      : atLastQuestionInSection
-      ? TEXT.resultCheck
-      : TEXT.nextQuestion
-    : atLastQuestionInSection
-    ? TEXT.nextSection
-    : TEXT.nextQuestion;
+  const nextButtonLabel = atLastSection ? TEXT.resultCheck : TEXT.nextSection;
   const progressMessage = resolveProgressMessage(progressPercent);
 
   return (
@@ -2591,6 +2628,7 @@ export default function SurveyPageClient() {
                 const isFocused = focusedQuestionKey === question.key;
                 const questionNumber = sectionQuestionIndex + 1;
                 const shouldShowOptionalHint = isSkippableSelectionQuestion(question);
+                const isEffectivelyRequired = isQuestionEffectivelyRequired(question);
                 const rawHelpText = question.helpText?.trim() ?? "";
                 const helpTextIsOptionalHint = isOptionalHintLikeText(rawHelpText);
                 const resolvedHelpText =
@@ -2615,11 +2653,15 @@ export default function SurveyPageClient() {
                       <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700">
                         {node.sectionKey ? node.sectionTitle : TEXT.commonBadge}
                       </span>
-                      {question.required ? (
-                        <span className="rounded-full bg-rose-100 px-2.5 py-1 text-[11px] font-semibold text-rose-700">
-                          {TEXT.requiredBadge}
-                        </span>
-                      ) : null}
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                          isEffectivelyRequired
+                            ? "bg-rose-100 text-rose-700"
+                            : "border border-slate-200 bg-slate-50 text-slate-600"
+                        }`}
+                      >
+                        {isEffectivelyRequired ? TEXT.requiredBadge : TEXT.optionalBadge}
+                      </span>
                     </div>
                     <div className="w-full text-left">
                       <h3 className="text-xl font-extrabold leading-tight text-slate-900 sm:text-2xl sm:leading-tight">
@@ -2644,7 +2686,7 @@ export default function SurveyPageClient() {
             <footer className="mt-7 flex items-center justify-between">
               <button
                 type="button"
-                onClick={handleMovePrevious}
+                onClick={handleMovePreviousSection}
                 disabled={!hasPrevStep || isSectionTransitioning}
                 data-testid="survey-prev-button"
                 className="rounded-full border border-slate-300 px-4 py-2 text-sm text-slate-700 transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
@@ -2653,7 +2695,7 @@ export default function SurveyPageClient() {
               </button>
               <button
                 type="button"
-                onClick={() => handleAdvance()}
+                onClick={handleMoveNextSection}
                 disabled={isSectionTransitioning}
                 data-testid="survey-next-button"
                 className="rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-105 hover:shadow-md active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
