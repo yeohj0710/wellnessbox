@@ -6,6 +6,7 @@ import type { WellnessSurveyTemplate } from "@/lib/wellness/data-template-types"
 import {
   isCustomInputOptionLabel,
   isNoneLikeOptionLabel,
+  isOptionalSelectionPrompt,
   mergeNoSelectionGuide,
   normalizeOptionLabel,
   normalizeTemplateQuestionType,
@@ -14,7 +15,10 @@ import {
 type C27Question = WellnessCommonSurvey["questions"][number] | undefined;
 type SectionQuestion = WellnessSectionSurvey["sections"][number]["questions"][number];
 
-function mapSectionOptions(options: SectionQuestion["options"]) {
+function mapSectionOptions(
+  options: SectionQuestion["options"],
+  stripNoneLikeOption: boolean
+) {
   let removedNoneLikeOption = false;
   const mappedOptions = options
     .map((option) => {
@@ -27,7 +31,7 @@ function mapSectionOptions(options: SectionQuestion["options"]) {
       };
     })
     .filter((option) => {
-      const shouldRemove = isNoneLikeOptionLabel(option.label);
+      const shouldRemove = stripNoneLikeOption && isNoneLikeOptionLabel(option.label);
       if (shouldRemove) removedNoneLikeOption = true;
       return !shouldRemove;
     });
@@ -38,7 +42,7 @@ function mapSectionOptions(options: SectionQuestion["options"]) {
   };
 }
 
-function mapSectionQuestionVariants(question: SectionQuestion) {
+function mapSectionQuestionVariants(question: SectionQuestion, stripNoneLikeOption: boolean) {
   let removedNoneLikeOption = false;
   const variants = Object.fromEntries(
     Object.entries(question.variants ?? {}).map(([variantKey, variant]) => [
@@ -57,7 +61,7 @@ function mapSectionQuestionVariants(question: SectionQuestion) {
             };
           })
           .filter((option) => {
-            const shouldRemove = isNoneLikeOptionLabel(option.label);
+            const shouldRemove = stripNoneLikeOption && isNoneLikeOptionLabel(option.label);
             if (shouldRemove) removedNoneLikeOption = true;
             return !shouldRemove;
           }),
@@ -71,6 +75,20 @@ function mapSectionQuestionVariants(question: SectionQuestion) {
   };
 }
 
+function resolveSectionQuestionRequired(input: {
+  question: SectionQuestion;
+  removedNoneLikeOption: boolean;
+}) {
+  const { question, removedNoneLikeOption } = input;
+  if (typeof question.required === "boolean") return question.required;
+  if (question.type === "multi_select_with_none" || question.type === "multi_select_limited") {
+    return false;
+  }
+  if (isOptionalSelectionPrompt(question.prompt)) return false;
+  if (removedNoneLikeOption) return false;
+  return true;
+}
+
 export function mapSectionTemplates(
   sectionSurvey: WellnessSectionSurvey
 ): WellnessSurveyTemplate["sections"] {
@@ -80,8 +98,10 @@ export function mapSectionTemplates(
     displayName: section.title,
     description: `${section.title} 관련 상세 문항`,
     questions: section.questions.map((question) => {
-      const mappedOptions = mapSectionOptions(question.options);
-      const mappedVariants = mapSectionQuestionVariants(question);
+      const shouldStripNoneLikeOption =
+        question.type === "multi_select_limited" || question.type === "multi_select_with_none";
+      const mappedOptions = mapSectionOptions(question.options, shouldStripNoneLikeOption);
+      const mappedVariants = mapSectionQuestionVariants(question, shouldStripNoneLikeOption);
       const removedNoneLikeOption =
         mappedOptions.removedNoneLikeOption || mappedVariants.removedNoneLikeOption;
 
@@ -92,7 +112,10 @@ export function mapSectionTemplates(
         helpText: mergeNoSelectionGuide(undefined, removedNoneLikeOption),
         type: normalizeTemplateQuestionType(question.type),
         sourceType: question.type,
-        required: true,
+        required: resolveSectionQuestionRequired({
+          question,
+          removedNoneLikeOption,
+        }),
         options: mappedOptions.options,
         maxSelect:
           question.type === "multi_select_limited" ||
@@ -139,4 +162,3 @@ export function mapSectionCatalog(
     (section, index, source) => source.findIndex((item) => item.key === section.key) === index
   );
 }
-

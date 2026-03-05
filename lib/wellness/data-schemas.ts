@@ -77,6 +77,7 @@ const commonQuestionSchema = z.object({
   constraints: constraintsSchema,
   scoring: scoringToggleSchema,
   displayIf: displayIfSchema,
+  required: z.boolean().optional(),
   unit: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -91,6 +92,7 @@ const sectionQuestionSchema = z.object({
   variants: z.record(z.string(), optionVariantSchema).optional(),
   constraints: constraintsSchema,
   scoring: scoringToggleSchema,
+  required: z.boolean().optional(),
 });
 
 export const commonSurveySchema = z.object({

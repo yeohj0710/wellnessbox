@@ -41,6 +41,23 @@ export function mergeNoSelectionGuide(helpText: string | undefined, includeGuide
   return trimmed ? `${trimmed} ${NONE_OPTION_GUIDE_TEXT}` : NONE_OPTION_GUIDE_TEXT;
 }
 
+function normalizeCompactText(value: string | undefined) {
+  return (value ?? "").replace(/\s+/g, "").trim();
+}
+
+export function isOptionalSelectionPrompt(value: string | undefined) {
+  const normalized = normalizeCompactText(value);
+  if (!normalized) return false;
+  return (
+    normalized.includes("여성의경우") ||
+    normalized.includes("남성의경우") ||
+    (normalized.includes("해당되는") &&
+      normalized.includes("있으시면") &&
+      normalized.includes("선택")) ||
+    normalized.includes("해당되는건강항목")
+  );
+}
+
 export function normalizeTemplateQuestionType(type: CommonQuestion["type"]) {
   switch (type) {
     case "single_choice":

@@ -278,14 +278,13 @@ function resolveProgressMessage(percent: number) {
   return "\uC124\uBB38\uC774 \uC644\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4.";
 }
 
-function isSkippableSelectionQuestion(question: WellnessSurveyQuestionForTemplate) {
+function isOptionalSelectionQuestion(question: WellnessSurveyQuestionForTemplate) {
   if (question.type !== "single" && question.type !== "multi") return false;
-  if (!question.required) return true;
-  return question.type === "multi";
+  return !question.required;
 }
 
 function isQuestionEffectivelyRequired(question: WellnessSurveyQuestionForTemplate) {
-  return question.required && !isSkippableSelectionQuestion(question);
+  return question.required;
 }
 
 function normalizeHintTextForMatch(text: string) {
@@ -1801,7 +1800,7 @@ export default function SurveyPageClient() {
       currentNode.question,
       effectiveAnswers[currentNode.question.key],
       {
-        treatSelectionAsOptional: isSkippableSelectionQuestion(currentNode.question),
+        treatSelectionAsOptional: isOptionalSelectionQuestion(currentNode.question),
       }
     );
     const numericWarning = resolveQuestionNumericWarning(
@@ -2251,7 +2250,7 @@ export default function SurveyPageClient() {
         return;
       }
       const validationError = validateSurveyQuestionAnswer(question, answerValue, {
-        treatSelectionAsOptional: isSkippableSelectionQuestion(question),
+        treatSelectionAsOptional: isOptionalSelectionQuestion(question),
       });
       if (validationError) {
         setFocusedQuestionBySection((prev) => ({ ...prev, [currentSection.key]: question.key }));
@@ -2563,7 +2562,7 @@ export default function SurveyPageClient() {
             resolveQuestionText={toDisplayQuestionText}
             resolveQuestionHelpText={resolveQuestionHelpText}
             isQuestionRequired={isQuestionEffectivelyRequired}
-            shouldShowQuestionOptionalHint={isSkippableSelectionQuestion}
+            shouldShowQuestionOptionalHint={isOptionalSelectionQuestion}
           />
         ) : null}
 

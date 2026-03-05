@@ -3,6 +3,7 @@ import type { WellnessSurveyQuestionForTemplate } from "@/lib/wellness/data-temp
 import {
   isCustomInputOptionLabel,
   isNoneLikeOptionLabel,
+  isOptionalSelectionPrompt,
   mergeNoSelectionGuide,
   normalizeOptionLabel,
   normalizeTemplateQuestionType,
@@ -103,9 +104,11 @@ function mapListItem(item: CommonQuestionItem, fallbackValue: string) {
 function buildQuestionOptions(question: CommonQuestion) {
   const options: WellnessSurveyQuestionForTemplate["options"] = [];
   let removedNoneLikeOption = false;
+  const shouldStripNoneLikeOption =
+    question.type === "multi_select_limited" || question.type === "multi_select_with_none";
 
   const pushOption = (option: WellnessSurveyQuestionForTemplate["options"][number]) => {
-    if (isNoneLikeOptionLabel(option.label)) {
+    if (shouldStripNoneLikeOption && isNoneLikeOptionLabel(option.label)) {
       removedNoneLikeOption = true;
       return;
     }
@@ -126,7 +129,7 @@ function buildQuestionOptions(question: CommonQuestion) {
 
   if (question.noneOption) {
     const label = normalizeOptionLabel(question.noneOption.label);
-    if (isNoneLikeOptionLabel(label)) {
+    if (shouldStripNoneLikeOption && isNoneLikeOptionLabel(label)) {
       removedNoneLikeOption = true;
     } else {
       options.push({
@@ -141,6 +144,30 @@ function buildQuestionOptions(question: CommonQuestion) {
     options,
     removedNoneLikeOption,
   };
+}
+
+function hasOptionalSkipGuide(question: CommonQuestion) {
+  const normalizedNotes = (question.notes ?? "").replace(/\s+/g, "");
+  if (!normalizedNotes) return false;
+  return (
+    normalizedNotes.includes("선택하지않고다음") ||
+    normalizedNotes.includes("다음문항")
+  );
+}
+
+function resolveQuestionRequired(
+  question: CommonQuestion,
+  removedNoneLikeOption: boolean
+) {
+  if (typeof question.required === "boolean") return question.required;
+  if (question.type === "multi_select_with_none" || question.type === "multi_select_limited") {
+    return false;
+  }
+  if (question.displayIf?.field) return false;
+  if (isOptionalSelectionPrompt(question.prompt)) return false;
+  if (hasOptionalSkipGuide(question)) return false;
+  if (removedNoneLikeOption) return false;
+  return true;
 }
 
 export function mapCommonQuestions(
@@ -159,7 +186,7 @@ export function mapCommonQuestions(
       helpText: mergeNoSelectionGuide(question.notes, removedNoneLikeOption),
       type: normalizeTemplateQuestionType(question.type),
       sourceType: question.type,
-      required: true,
+      required: resolveQuestionRequired(question, removedNoneLikeOption),
       options,
       placeholder: buildPlaceholder(question),
       maxSelect:

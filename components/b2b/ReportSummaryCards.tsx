@@ -31,11 +31,15 @@ import SurveyDetailPages, {
 const DONUT_RADIUS = 52;
 const DONUT_CIRCUMFERENCE = 2 * Math.PI * DONUT_RADIUS;
 const MAX_PAGE1_SECTION_BARS = 3;
-const FIRST_PAGE_SURVEY_CONTENT_UNITS = 156;
-const DETAIL_PAGE_SURVEY_CONTENT_UNITS = 226;
-const ROUTINE_CARD_BASE_UNITS = 10;
-const SECTION_CARD_BASE_UNITS = 12;
-const SUPPLEMENT_CARD_BASE_UNITS = 16;
+const FIRST_PAGE_SURVEY_CONTENT_UNITS = 780;
+const DETAIL_PAGE_SURVEY_CONTENT_UNITS = 1240;
+const ROUTINE_CARD_BASE_UNITS = 108;
+const ROUTINE_ROW_BASE_UNITS = 48;
+const SECTION_CARD_BASE_UNITS = 112;
+const SECTION_GROUP_BASE_UNITS = 34;
+const SECTION_ROW_BASE_UNITS = 74;
+const SUPPLEMENT_CARD_BASE_UNITS = 122;
+const SUPPLEMENT_ROW_BASE_UNITS = 72;
 
 const LIFESTYLE_RISK_LABEL_BY_ID: Record<string, string> = {
   diet: "식습관 위험도",
@@ -107,25 +111,68 @@ function estimateTextUnits(text: string, charsPerUnit: number) {
   return Math.max(1, Math.ceil(normalized.length / Math.max(8, charsPerUnit)));
 }
 
+function estimateWrappedTextUnits(
+  text: string,
+  charsPerLine: number,
+  lineHeightUnits: number
+) {
+  return estimateTextUnits(text, charsPerLine) * lineHeightUnits;
+}
+
+function normalizeSectionGroupKey(value: string) {
+  return value.trim().replace(/\s+/g, "").toLowerCase();
+}
+
+function resolveSectionGroupTitle(line: SectionAdviceLine) {
+  const sectionTitle = toTrimmedText(line.sectionTitle);
+  const questionText = toTrimmedText(line.questionText);
+  const prefixMatch = questionText.match(/^(.+?)\s*[·ㆍ•-]\s*(.+)$/u);
+
+  if (!sectionTitle || sectionTitle === "-") {
+    if (prefixMatch?.[1]) {
+      return prefixMatch[1].trim();
+    }
+    return "section";
+  }
+
+  if (prefixMatch?.[1]) {
+    const prefixTitle = prefixMatch[1].trim();
+    if (normalizeSectionGroupKey(prefixTitle) === normalizeSectionGroupKey(sectionTitle)) {
+      return sectionTitle;
+    }
+  }
+
+  return sectionTitle;
+}
+
+function resolveSectionGroupKey(line: SectionAdviceLine) {
+  return normalizeSectionGroupKey(resolveSectionGroupTitle(line));
+}
+
 function estimateRoutineRowUnits(line: string) {
-  return 3 + estimateTextUnits(line, 34);
+  return (
+    ROUTINE_ROW_BASE_UNITS +
+    estimateWrappedTextUnits(line, 36, 19)
+  );
 }
 
 function estimateSectionAdviceRowUnits(line: SectionAdviceLine) {
   return (
-    4 +
-    estimateTextUnits(line.questionText, 30) +
-    estimateTextUnits(line.answerText, 30) +
-    estimateTextUnits(line.recommendation, 34)
+    SECTION_ROW_BASE_UNITS +
+    estimateWrappedTextUnits(line.questionText, 34, 18) +
+    estimateWrappedTextUnits(line.answerText, 34, 16) +
+    estimateWrappedTextUnits(line.recommendation, 36, 19)
   );
 }
 
 function estimateSupplementRowUnits(row: SupplementRow) {
   const paragraphUnits = row.paragraphs.reduce((sum, paragraph) => {
-    return sum + estimateTextUnits(paragraph, 40);
+    return sum + estimateWrappedTextUnits(paragraph, 42, 18);
   }, 0);
-  const nutrientUnits = row.recommendedNutrients.length * 2;
-  return 8 + paragraphUnits + nutrientUnits;
+  const nutrientCount = row.recommendedNutrients.length;
+  const nutrientRows = nutrientCount > 0 ? Math.ceil(nutrientCount / 3) : 0;
+  const nutrientUnits = nutrientCount > 0 ? 26 + nutrientRows * 18 : 0;
+  return SUPPLEMENT_ROW_BASE_UNITS + paragraphUnits + nutrientUnits;
 }
 
 function createEmptySurveyDetailPage(): SurveyDetailPageModel {
@@ -232,10 +279,31 @@ function buildSurveyDetailPages(input: {
 
       let takeCount = 0;
       let takenUnits = baseUnits;
+      const existingSectionGroupKeys =
+        segment.type === "section"
+          ? new Set(
+              currentPage.sectionAdviceRows.map((row) =>
+                resolveSectionGroupKey(row)
+              )
+            )
+          : null;
+      const pickedSectionGroupKeys = new Set<string>();
 
       while (cursor + takeCount < segment.items.length) {
         const item = segment.items[cursor + takeCount];
-        const nextUnits = Math.max(1, segment.estimate(item));
+        let additionalUnits = 0;
+        if (segment.type === "section") {
+          const groupKey = resolveSectionGroupKey(item as SectionAdviceLine);
+          const hasExistingGroup =
+            !!groupKey &&
+            (existingSectionGroupKeys?.has(groupKey) ||
+              pickedSectionGroupKeys.has(groupKey));
+          if (!hasExistingGroup) {
+            additionalUnits += SECTION_GROUP_BASE_UNITS;
+            if (groupKey) pickedSectionGroupKeys.add(groupKey);
+          }
+        }
+        const nextUnits = Math.max(1, segment.estimate(item)) + additionalUnits;
         if (takenUnits + nextUnits > remainingUnits) break;
         takenUnits += nextUnits;
         takeCount += 1;
@@ -247,9 +315,11 @@ function buildSurveyDetailPages(input: {
           continue;
         }
         const forcedItem = segment.items[cursor];
+        const forcedAdditionalUnits =
+          segment.type === "section" ? SECTION_GROUP_BASE_UNITS : 0;
         const forcedUnits = Math.max(1, segment.estimate(forcedItem));
         appendTypeRows(currentPage, segment.type, [forcedItem]);
-        currentUnits += baseUnits + forcedUnits;
+        currentUnits += baseUnits + forcedAdditionalUnits + forcedUnits;
         cursor += 1;
         continue;
       }
