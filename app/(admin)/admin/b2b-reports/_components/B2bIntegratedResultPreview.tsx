@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import SurveyResultPanel from "@/app/survey/_components/SurveyResultPanel";
+import { resolvePreferredAnswerText } from "@/components/b2b/report-summary/card-insights";
 import type { ReportSummaryPayload } from "@/lib/b2b/report-summary-payload";
 import type { WellnessComputedResult } from "@/lib/wellness/analysis";
 
@@ -53,9 +54,44 @@ function formatMetricValue(value: unknown, unit?: unknown) {
   return `${valueText} ${unitText}`;
 }
 
+function resolveQuestionKey(input: {
+  questionKey?: unknown;
+  sectionId?: unknown;
+  questionNumber?: number;
+  category?: HighlightCategory;
+}) {
+  const directKey = toText(input.questionKey);
+  if (directKey) return directKey;
+
+  if (typeof input.questionNumber !== "number" || !Number.isFinite(input.questionNumber)) return "";
+  const normalizedNumber = Math.round(input.questionNumber);
+  if (normalizedNumber <= 0) return "";
+
+  if (input.category === "common") {
+    return `C${String(normalizedNumber).padStart(2, "0")}`;
+  }
+
+  const sectionId = toText(input.sectionId);
+  if (!sectionId) return "";
+  return `${sectionId}_Q${String(normalizedNumber).padStart(2, "0")}`;
+}
+
+function buildSurveyAnswerTextByQuestionKey(payload: ReportSummaryPayload | null | undefined) {
+  const map = new Map<string, string>();
+  for (const answer of ensureArray(payload?.survey?.answers)) {
+    const questionKey = toText(answer?.questionKey);
+    if (!questionKey) continue;
+    const answerText = toText(answer?.answerText) || toText(answer?.answerValue);
+    if (!answerText) continue;
+    map.set(questionKey, answerText);
+  }
+  return map;
+}
+
 function toWellnessResult(payload: ReportSummaryPayload | null | undefined): WellnessComputedResult | null {
   const wellness = payload?.analysis?.wellness;
   if (!wellness) return null;
+  const surveyAnswerTextByQuestionKey = buildSurveyAnswerTextByQuestionKey(payload);
 
   const domains = ensureArray(wellness.lifestyleRisk?.domains).map((domain, index) => ({
     id: toText(domain?.id) || `domain-${index + 1}`,
@@ -83,36 +119,63 @@ function toWellnessResult(payload: ReportSummaryPayload | null | undefined): Wel
   const rawSectionAdvice = wellness.sectionAdvice ?? {};
   for (const [sectionId, sectionValue] of Object.entries(rawSectionAdvice)) {
     const sectionTitle = toText(sectionValue?.sectionTitle) || sectionId;
-    const items = ensureArray(sectionValue?.items).map((item, index) => ({
-      questionNumber: (() => {
-        const numeric = toNumber(item?.questionNumber);
-        return numeric > 0 ? Math.round(numeric) : index + 1;
-      })(),
-      score: clampPercent(toNumber(item?.score)),
-      text: toText(item?.text),
-      questionKey: toText(item?.questionKey) || undefined,
-      questionText: toText(item?.questionText) || undefined,
-      answerText: toText(item?.answerText) || null,
-    }));
+    const items = ensureArray(sectionValue?.items).map((item, index) => {
+      const numeric = toNumber(item?.questionNumber);
+      const questionNumber = numeric > 0 ? Math.round(numeric) : index + 1;
+      const questionKey = resolveQuestionKey({
+        questionKey: item?.questionKey,
+        sectionId,
+        questionNumber,
+      });
+      const answerText = resolvePreferredAnswerText({
+        questionKey,
+        rawAnswerText: item?.answerText,
+        surveyAnswerText: questionKey ? surveyAnswerTextByQuestionKey.get(questionKey) : undefined,
+        emptyFallback: "",
+      });
+      return {
+        questionNumber,
+        score: clampPercent(toNumber(item?.score)),
+        text: toText(item?.text),
+        questionKey: questionKey || undefined,
+        questionText: toText(item?.questionText) || undefined,
+        answerText: answerText || null,
+      };
+    });
     sectionAdvice[sectionId] = { sectionTitle, items };
   }
 
   const highRiskHighlights: WellnessComputedResult["highRiskHighlights"] = ensureArray(
     wellness.highRiskHighlights
-  ).map((item, index) => ({
-    category: resolveHighlightCategory(item?.category),
-    title: toText(item?.title) || `주의 항목 ${index + 1}`,
-    score: clampPercent(toNumber(item?.score)),
-    action: toText(item?.action),
-    questionNumber: (() => {
-      const numeric = toNumber(item?.questionNumber);
-      return numeric > 0 ? Math.round(numeric) : undefined;
-    })(),
-    sectionId: toText(item?.sectionId) || undefined,
-    questionKey: toText(item?.questionKey) || undefined,
-    questionText: toText(item?.questionText) || undefined,
-    answerText: toText(item?.answerText) || undefined,
-  }));
+  ).map((item, index) => {
+    const category = resolveHighlightCategory(item?.category);
+    const numeric = toNumber(item?.questionNumber);
+    const questionNumber = numeric > 0 ? Math.round(numeric) : undefined;
+    const sectionId = toText(item?.sectionId) || undefined;
+    const questionKey = resolveQuestionKey({
+      questionKey: item?.questionKey,
+      sectionId,
+      questionNumber,
+      category,
+    });
+    const answerText = resolvePreferredAnswerText({
+      questionKey,
+      rawAnswerText: item?.answerText,
+      surveyAnswerText: questionKey ? surveyAnswerTextByQuestionKey.get(questionKey) : undefined,
+      emptyFallback: "",
+    });
+    return {
+      category,
+      title: toText(item?.title) || `주의 항목 ${index + 1}`,
+      score: clampPercent(toNumber(item?.score)),
+      action: toText(item?.action),
+      questionNumber,
+      sectionId,
+      questionKey: questionKey || undefined,
+      questionText: toText(item?.questionText) || undefined,
+      answerText: answerText || undefined,
+    };
+  });
 
   const supplementDesign: WellnessComputedResult["supplementDesign"] = ensureArray(
     wellness.supplementDesign

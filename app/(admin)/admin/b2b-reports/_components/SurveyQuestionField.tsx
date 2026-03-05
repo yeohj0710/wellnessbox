@@ -25,7 +25,7 @@ type SurveyQuestionFieldProps = {
   maxSelectedSections: number;
   busy?: boolean;
   onChangeValue: (question: SurveyQuestion, value: unknown) => void;
-  onRequestAdvance?: (questionKey: string) => void;
+  onRequestAdvance?: (questionKey: string, pendingValue?: unknown) => void;
 };
 
 function toAnswerRecord(raw: unknown) {
@@ -326,16 +326,17 @@ export default function SurveyQuestionField({
                   const nextValue = option.value;
                   const selectedLabel =
                     visibleOptions.find((row) => row.value === nextValue)?.label ?? nextValue;
+                  const committedValue =
+                    variantKeys.length > 0
+                      ? withVariantAnswer(currentVariantKey, [nextValue], visibleOptions, selectedLabel)
+                      : nextValue;
                   if (variantKeys.length > 0) {
-                    onChangeValue(
-                      question,
-                      withVariantAnswer(currentVariantKey, [nextValue], visibleOptions, selectedLabel)
-                    );
+                    onChangeValue(question, committedValue);
                   } else {
-                    onChangeValue(question, nextValue);
+                    onChangeValue(question, committedValue);
                   }
                   window.setTimeout(() => {
-                    onRequestAdvance?.(question.key);
+                    onRequestAdvance?.(question.key, committedValue);
                   }, 0);
                 }}
               >

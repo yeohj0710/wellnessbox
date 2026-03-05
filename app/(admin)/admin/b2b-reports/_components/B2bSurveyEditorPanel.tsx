@@ -130,7 +130,22 @@ export default function B2bSurveyEditorPanel({
     window.requestAnimationFrame(() => {
       const node = questionRefs.current[questionKey];
       if (!node) return;
-      node.scrollIntoView({ behavior: "smooth", block: "start" });
+      const fixedTopInset = 80;
+      const fixedBottomInset = 16;
+      const viewportHeight = Math.max(
+        1,
+        window.innerHeight - fixedTopInset - fixedBottomInset
+      );
+      const nodeRect = node.getBoundingClientRect();
+      const nodeHeight = Math.max(1, nodeRect.height);
+      const centerOffset = Math.max(0, (viewportHeight - nodeHeight) / 2);
+      const targetTop =
+        window.scrollY + nodeRect.top - fixedTopInset - centerOffset;
+
+      window.scrollTo({
+        top: Math.max(0, targetTop),
+        behavior: "smooth",
+      });
       const focusable = node.querySelector<HTMLElement>("input,button,select,textarea");
       focusable?.focus({ preventScroll: true });
     });
@@ -161,7 +176,7 @@ export default function B2bSurveyEditorPanel({
     setErrorText(null);
   }
 
-  function handleAdvance(fromQuestionKey?: string) {
+  function handleAdvance(fromQuestionKey?: string, pendingValue?: unknown) {
     if (!currentSection || currentSection.questions.length === 0) return;
 
     const currentIndex =
@@ -175,13 +190,13 @@ export default function B2bSurveyEditorPanel({
     if (currentIndex < 0) return;
 
     const currentQuestion = currentSection.questions[currentIndex];
-    const currentError = validateSurveyQuestionAnswer(
-      currentQuestion,
-      answers[currentQuestion.key],
-      {
-        treatSelectionAsOptional: isOptionalSelectionQuestion(currentQuestion),
-      }
-    );
+    const currentValueForValidation =
+      fromQuestionKey && currentQuestion.key === fromQuestionKey && pendingValue !== undefined
+        ? pendingValue
+        : answers[currentQuestion.key];
+    const currentError = validateSurveyQuestionAnswer(currentQuestion, currentValueForValidation, {
+      treatSelectionAsOptional: isOptionalSelectionQuestion(currentQuestion),
+    });
     if (currentError) {
       setErrorQuestionKey(currentQuestion.key);
       setErrorText(currentError);
@@ -359,7 +374,9 @@ export default function B2bSurveyEditorPanel({
                           setErrorText(null);
                         }
                       }}
-                      onRequestAdvance={(questionKey) => handleAdvance(questionKey)}
+                      onRequestAdvance={(questionKey, pendingValue) =>
+                        handleAdvance(questionKey, pendingValue)
+                      }
                     />
                     {errorQuestionKey === question.key && errorText ? (
                       <p className="px-5 pb-4 text-sm font-medium text-rose-600">{errorText}</p>

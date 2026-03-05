@@ -75,7 +75,7 @@ function getOptionLabelByQuestionKey() {
   return map;
 }
 
-function decodeAnswerTextByQuestionKey(questionKey: string, answerText: string) {
+export function decodeAnswerTextByQuestionKey(questionKey: string, answerText: string) {
   const normalizedQuestionKey = toTrimmedText(questionKey);
   const normalizedAnswerText = toTrimmedText(answerText);
   if (!normalizedQuestionKey || !normalizedAnswerText) return normalizedAnswerText;
@@ -100,7 +100,7 @@ function isCodeLikeAnswerText(value: string) {
   return /^[A-Z](?:\s*[,/|]\s*[A-Z])*$/i.test(normalized);
 }
 
-function resolvePreferredAnswerText(input: {
+export function resolvePreferredAnswerText(input: {
   questionKey: string;
   rawAnswerText: unknown;
   surveyAnswerText: string | undefined;

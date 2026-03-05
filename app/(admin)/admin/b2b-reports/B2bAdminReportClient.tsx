@@ -933,7 +933,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
                           }`}
                           onClick={() => setPreviewTab("integrated")}
                         >
-                          ?? ?? ??
+                          통합 결과 보기
                         </button>
                         <button
                           type="button"
@@ -942,22 +942,22 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
                           }`}
                           onClick={() => setPreviewTab("report")}
                         >
-                          ??? ?? ????
+                          레포트 본문 미리보기
                         </button>
                       </div>
                       <h3>
                         {previewTab === "integrated"
-                          ? "?? ?? + ??/?? ??? ?? ??"
-                          : "??? ?? ????"}
+                          ? "설문 결과 + 검사/이력 데이터 통합 보기"
+                          : "레포트 본문 미리보기"}
                       </h3>
                       <p>
                         {previewTab === "integrated"
-                          ? "?? ?? UI? ???? ????, ???? ???? ??/?? ??? ?? ?????."
-                          : "???? ?? ? ???? ??? ??? PDF? ?????."}
+                          ? "설문 결과 UI를 기본으로 보여주고, 건강검진 데이터와 진료/복약 이력을 함께 확인합니다."
+                          : "화면에서 보는 웹 레포트를 그대로 캡쳐해 PDF로 저장합니다."}
                       </p>
                     </div>
                     <span className={previewTab === "integrated" ? styles.statusWarn : styles.statusOn}>
-                      {previewTab === "integrated" ? "??? ?? ?" : "?/PDF ?? ???? ??"}
+                      {previewTab === "integrated" ? "관리자 통합 뷰" : "웹/PDF 동일 레이아웃 지향"}
                     </span>
                   </div>
                   <div className={`${styles.reportCanvasBoard} ${styles.reportCanvasBoardWide}`}>
