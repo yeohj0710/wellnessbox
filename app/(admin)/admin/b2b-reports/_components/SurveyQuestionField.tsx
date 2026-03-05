@@ -1,6 +1,7 @@
 import styles from "@/components/b2b/B2bUx.module.css";
 import { toInputValue, toMultiValues } from "../_lib/client-utils";
 import type { SurveyQuestion } from "../_lib/client-types";
+import { isSkippableSelectionQuestion } from "../_lib/survey-progress";
 import {
   buildGroupAnswer,
   clampByVariantOptions,
@@ -170,12 +171,13 @@ function buildMultiPayload(input: {
 }
 
 function QuestionHeader({ question }: { question: SurveyQuestion }) {
+  const isRequired = Boolean(question.required) && !isSkippableSelectionQuestion(question);
   return (
     <div className={styles.questionCardHead}>
       <p className={styles.questionCardTitle}>
         {question.index}. {toDisplayQuestionText(question) || question.key}
       </p>
-      {question.required ? (
+      {isRequired ? (
         <span className={styles.requiredBadge}>필수</span>
       ) : (
         <span className={styles.optionalBadge}>선택</span>
@@ -285,7 +287,9 @@ export default function SurveyQuestionField({
         {renderVariantSelector}
         <p className={styles.questionCardHint}>
           {optionsPrefix ? `${optionsPrefix} ` : ""}최대 {maxSelect}개까지 선택할 수 있습니다.
-          {!question.required ? " 해당 사항이 없으면 선택하지 않고 다음으로 이동해도 됩니다." : ""}
+          {isSkippableSelectionQuestion(question)
+            ? " 해당 사항이 없으면 선택하지 않고 다음으로 이동해도 됩니다."
+            : ""}
         </p>
         <div className={`grid gap-2 ${optionLayout.gridClass} sm:gap-2.5`}>
           {visibleOptions.map((option) => {

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import styles from "@/components/b2b/B2bUx.module.css";
+import { validateSurveyQuestionAnswer } from "@/lib/b2b/public-survey";
 import SurveyQuestionField from "./SurveyQuestionField";
 import type {
   CompletionStats,
@@ -7,10 +8,15 @@ import type {
   SurveyTemplateSchema,
 } from "../_lib/client-types";
 import { formatDateTime } from "../_lib/client-utils";
-import { hasAnswer, isQuestionVisible } from "../_lib/survey-progress";
+import {
+  hasAnswer,
+  isQuestionVisible,
+  isSkippableSelectionQuestion,
+} from "../_lib/survey-progress";
 
 type B2bSurveyEditorPanelProps = {
   completionStats: CompletionStats;
+  surveySubmittedAt: string | null;
   surveyUpdatedAt: string | null;
   surveyTemplate: SurveyTemplateSchema | null;
   selectedSectionSet: Set<string>;
@@ -74,6 +80,7 @@ function getFocusedIndex(
 
 export default function B2bSurveyEditorPanel({
   completionStats,
+  surveySubmittedAt,
   surveyUpdatedAt,
   surveyTemplate,
   selectedSectionSet,
@@ -89,7 +96,6 @@ export default function B2bSurveyEditorPanel({
   const [focusedQuestionBySection, setFocusedQuestionBySection] = useState<Record<string, string>>(
     {}
   );
-  const [confirmedQuestionKeys, setConfirmedQuestionKeys] = useState<string[]>([]);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [errorQuestionKey, setErrorQuestionKey] = useState<string | null>(null);
   const questionRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -110,10 +116,6 @@ export default function B2bSurveyEditorPanel({
     () => surveySections.flatMap((section) => section.questions),
     [surveySections]
   );
-  const visibleQuestionKeySet = useMemo(
-    () => new Set(allVisibleQuestions.map((question) => question.key)),
-    [allVisibleQuestions]
-  );
 
   const currentSection = surveySections[currentSectionIndex] ?? null;
   const focusedIndex = getFocusedIndex(
@@ -127,17 +129,25 @@ export default function B2bSurveyEditorPanel({
     () => allVisibleQuestions.find((question) => question.key === focusedQuestionKey) ?? null,
     [allVisibleQuestions, focusedQuestionKey]
   );
-  const displayTotal = Math.max(allVisibleQuestions.length, 1);
-  const displayStep = useMemo(() => {
-    if (!focusedQuestionKey) return 0;
-    const index = allVisibleQuestions.findIndex((question) => question.key === focusedQuestionKey);
-    return index >= 0 ? index + 1 : 0;
-  }, [allVisibleQuestions, focusedQuestionKey]);
-  const progressPercent = useMemo(() => {
-    if (allVisibleQuestions.length === 0) return 0;
-    const confirmedCount = confirmedQuestionKeys.filter((key) => visibleQuestionKeySet.has(key)).length;
-    return Math.round((confirmedCount / allVisibleQuestions.length) * 100);
-  }, [allVisibleQuestions.length, confirmedQuestionKeys, visibleQuestionKeySet]);
+  const displayTotal = completionStats.total;
+  const hasRequiredCompletion =
+    completionStats.requiredTotal === 0 ||
+    completionStats.requiredAnswered >= completionStats.requiredTotal;
+  const effectiveProgressPercent = useMemo(() => {
+    if (completionStats.total <= 0) return 0;
+    if (surveySubmittedAt && hasRequiredCompletion) return 100;
+    return completionStats.percent;
+  }, [
+    completionStats.percent,
+    completionStats.total,
+    hasRequiredCompletion,
+    surveySubmittedAt,
+  ]);
+  const progressDoneCount = useMemo(() => {
+    if (completionStats.total <= 0) return 0;
+    if (effectiveProgressPercent >= 100) return completionStats.total;
+    return completionStats.answered;
+  }, [completionStats.answered, completionStats.total, effectiveProgressPercent]);
 
   useEffect(() => {
     setCurrentSectionIndex((prev) => {
@@ -159,10 +169,6 @@ export default function B2bSurveyEditorPanel({
       [currentSection.key]: defaultQuestion.key,
     }));
   }, [currentSection, focusedQuestionBySection, surveyAnswers]);
-
-  useEffect(() => {
-    setConfirmedQuestionKeys((prev) => prev.filter((key) => visibleQuestionKeySet.has(key)));
-  }, [visibleQuestionKeySet]);
 
   function scrollToQuestion(questionKey: string) {
     window.requestAnimationFrame(() => {
@@ -199,14 +205,6 @@ export default function B2bSurveyEditorPanel({
     setErrorText(null);
   }
 
-  function markConfirmed(questionKey: string) {
-    setConfirmedQuestionKeys((prev) => {
-      const next = new Set(prev);
-      next.add(questionKey);
-      return [...next].filter((key) => visibleQuestionKeySet.has(key));
-    });
-  }
-
   function handleAdvance(fromQuestionKey?: string) {
     if (!currentSection || currentSection.questions.length === 0) return;
 
@@ -217,17 +215,21 @@ export default function B2bSurveyEditorPanel({
     if (currentIndex < 0) return;
 
     const currentQuestion = currentSection.questions[currentIndex];
-    const answered = hasAnswer(currentQuestion, surveyAnswers[currentQuestion.key]);
-    if (answered) {
-      markConfirmed(currentQuestion.key);
-      setErrorQuestionKey(null);
-      setErrorText(null);
-    } else if (currentQuestion.required) {
+    const currentError = validateSurveyQuestionAnswer(
+      currentQuestion as Parameters<typeof validateSurveyQuestionAnswer>[0],
+      surveyAnswers[currentQuestion.key],
+      {
+        treatSelectionAsOptional: isSkippableSelectionQuestion(currentQuestion),
+      }
+    );
+    if (currentError) {
       setErrorQuestionKey(currentQuestion.key);
-      setErrorText("필수 문항입니다. 입력 후 다음으로 이동해 주세요.");
+      setErrorText(currentError);
       scrollToQuestion(currentQuestion.key);
       return;
     }
+    setErrorQuestionKey(null);
+    setErrorText(null);
 
     if (currentIndex < currentSection.questions.length - 1) {
       const nextQuestion = currentSection.questions[currentIndex + 1];
@@ -310,7 +312,7 @@ export default function B2bSurveyEditorPanel({
       <summary className={styles.editorPanelSummary}>
         <span className={styles.editorPanelSummaryTitle}>설문 입력</span>
         <span className={styles.editorPanelSummaryMeta}>
-          {completionStats.answered}/{completionStats.total} 문항 완료 · {completionStats.percent}%
+          {progressDoneCount}/{completionStats.total} 문항 완료 · {effectiveProgressPercent}%
         </span>
       </summary>
       <div className={styles.editorPanelMotion}>
@@ -328,7 +330,7 @@ export default function B2bSurveyEditorPanel({
             <div>
               <p className="text-sm font-semibold text-sky-700">임직원 설문 입력</p>
               <p className="mt-1 text-4xl font-extrabold leading-none text-slate-900 sm:text-5xl">
-                {displayStep > 0 ? displayStep : 1}/{displayTotal}
+                {progressDoneCount}/{displayTotal}
               </p>
               <p className="mt-2 text-sm text-slate-600">
                 마지막 저장: {formatDateTime(surveyUpdatedAt)}
@@ -337,12 +339,12 @@ export default function B2bSurveyEditorPanel({
             <div className="space-y-3">
               <div className="flex items-center justify-between text-sm text-slate-600">
                 <span>진행률</span>
-                <span>{progressPercent}%</span>
+                <span>{effectiveProgressPercent}%</span>
               </div>
               <div className="h-2 w-full rounded-full bg-sky-100">
                 <div
                   className="h-2 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 transition-[width] duration-300"
-                  style={{ width: `${progressPercent}%` }}
+                  style={{ width: `${effectiveProgressPercent}%` }}
                 />
               </div>
               <p className="text-xs text-slate-500">

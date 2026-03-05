@@ -58,7 +58,14 @@ export type ReportSummaryPayload = {
         string,
         {
           sectionTitle?: string;
-          items?: Array<{ questionNumber?: number; score?: number; text?: string }>;
+          items?: Array<{
+            questionNumber?: number;
+            score?: number;
+            text?: string;
+            questionKey?: string;
+            questionText?: string;
+            answerText?: string | null;
+          }>;
         }
       >;
       highRiskHighlights?: Array<{
@@ -68,6 +75,9 @@ export type ReportSummaryPayload = {
         action?: string;
         questionNumber?: number;
         sectionId?: string;
+        questionKey?: string;
+        questionText?: string;
+        answerText?: string;
       }>;
       lifestyleRoutineAdvice?: string[];
       supplementDesign?: Array<{
@@ -77,6 +87,7 @@ export type ReportSummaryPayload = {
         recommendedNutrients?: Array<{
           code?: string;
           label?: string;
+          labelKo?: string;
           aliases?: string[];
         }>;
       }>;
@@ -93,7 +104,13 @@ export type ReportSummaryPayload = {
       answeredCount?: number;
       questionCount?: number;
     }>;
-    answers?: Array<{ questionKey?: string }>;
+    answers?: Array<{
+      questionKey?: string;
+      sectionKey?: string | null;
+      questionText?: string | null;
+      answerText?: string | null;
+      answerValue?: string | null;
+    }>;
   };
   health?: {
     metrics?: Array<{

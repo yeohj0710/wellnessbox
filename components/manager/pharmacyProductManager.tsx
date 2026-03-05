@@ -299,6 +299,7 @@ export default function PharmacyProductManager({ pharmacyId }: any) {
             <h3 className="font-bold text-gray-700 my-2">가격 (원)</h3>
             <input
               type="number"
+              inputMode="numeric"
               placeholder="가격"
               value={selectedPharmacyProduct?.price || ""}
               onChange={(e) =>
@@ -312,6 +313,7 @@ export default function PharmacyProductManager({ pharmacyId }: any) {
             <h3 className="font-bold text-gray-700 my-2">재고 수량 (개)</h3>
             <input
               type="number"
+              inputMode="numeric"
               placeholder="재고"
               value={selectedPharmacyProduct?.stock || ""}
               onChange={(e) =>

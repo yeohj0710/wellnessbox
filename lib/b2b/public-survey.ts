@@ -369,7 +369,7 @@ function unique(values: string[]) {
 }
 
 export function resolveGroupFieldValues(
-  question: WellnessSurveyQuestionForTemplate,
+  question: WellnessSurveyQuestionForTemplate | null | undefined,
   rawValue: unknown
 ) {
   const record = toAnswerRecord(rawValue);
@@ -377,9 +377,19 @@ export function resolveGroupFieldValues(
     record && record.fieldValues && typeof record.fieldValues === "object"
       ? (record.fieldValues as Record<string, unknown>)
       : null;
+  const fields = question?.fields ?? [];
+
+  if (fields.length === 0) {
+    return Object.fromEntries(
+      Object.entries(sourceValues ?? {}).map(([fieldId, value]) => [
+        fieldId,
+        String(value ?? "").trim(),
+      ])
+    ) as Record<string, string>;
+  }
 
   return Object.fromEntries(
-    (question.fields ?? []).map((field) => {
+    fields.map((field) => {
       const raw = sourceValues?.[field.id] ?? record?.[field.id] ?? "";
       return [field.id, String(raw ?? "").trim()];
     })

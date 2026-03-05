@@ -27,8 +27,71 @@ import {
 import type { B2bReportPayload } from "@/lib/b2b/report-payload-types";
 import { extractWellness } from "@/lib/b2b/report-payload-wellness";
 import { resolveReportScores } from "@/lib/b2b/report-score-engine";
+import { loadWellnessTemplateForB2b } from "@/lib/wellness/data-loader";
 
 export const B2B_REPORT_PAYLOAD_VERSION = 14;
+
+type SurveyQuestionLookup = {
+  text: string;
+  optionLabelByValue: Map<string, string>;
+};
+
+let surveyQuestionLookupByKeyCache: Map<string, SurveyQuestionLookup> | null = null;
+
+function getSurveyQuestionLookupByKey() {
+  if (surveyQuestionLookupByKeyCache) return surveyQuestionLookupByKeyCache;
+
+  const template = loadWellnessTemplateForB2b();
+  const map = new Map<string, SurveyQuestionLookup>();
+  const allQuestions = [
+    ...template.common,
+    ...template.sections.flatMap((section) => section.questions),
+  ];
+
+  for (const question of allQuestions) {
+    map.set(question.key, {
+      text: question.text,
+      optionLabelByValue: new Map(
+        (question.options ?? []).map((option) => [option.value, option.label] as const)
+      ),
+    });
+  }
+
+  surveyQuestionLookupByKeyCache = map;
+  return map;
+}
+
+function resolveSurveyQuestionText(questionKey: string) {
+  const lookup = getSurveyQuestionLookupByKey().get(questionKey);
+  const text = lookup?.text?.trim() ?? "";
+  return text.length > 0 ? text : null;
+}
+
+function splitAnswerTokens(value: string) {
+  return value
+    .split(/[,\n/|]/g)
+    .map((token) => token.trim())
+    .filter(Boolean);
+}
+
+function normalizeSurveyAnswerText(input: {
+  questionKey: string;
+  answerText: string | null;
+  answerValue: string | null;
+}) {
+  const fallback = toText(input.answerText) || toText(input.answerValue) || null;
+  const lookup = getSurveyQuestionLookupByKey().get(input.questionKey);
+  if (!lookup) return fallback;
+
+  const raw = toText(input.answerValue) || toText(input.answerText) || "";
+  if (!raw) return fallback;
+  const tokens = splitAnswerTokens(raw);
+  if (tokens.length === 0) return fallback;
+
+  const labels = tokens.map((token) => lookup.optionLabelByValue.get(token) ?? token);
+  const normalized = labels.join(", ").trim();
+  return normalized.length > 0 ? normalized : fallback;
+}
 
 async function findLatestByPeriodOrFallback<T>(input: {
   periodKey: string;
@@ -234,7 +297,12 @@ export async function buildB2bReportPayload(input: {
         latestSurvey?.answers.map((answer) => ({
           questionKey: answer.questionKey,
           sectionKey: answer.sectionKey ?? null,
-          answerText: answer.answerText ?? null,
+          questionText: resolveSurveyQuestionText(answer.questionKey),
+          answerText: normalizeSurveyAnswerText({
+            questionKey: answer.questionKey,
+            answerText: answer.answerText ?? null,
+            answerValue: answer.answerValue ?? null,
+          }),
           answerValue: answer.answerValue ?? null,
         })) ?? [],
       updatedAt: latestSurvey?.updatedAt?.toISOString() ?? null,

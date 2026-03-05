@@ -53,6 +53,8 @@ export function ManualLookupSection({
             <input
               type="text"
               autoComplete="tel"
+              inputMode="numeric"
+              pattern="[0-9]*"
               maxLength={3}
               value={phonePart1}
               onChange={(e) => {
@@ -73,6 +75,8 @@ export function ManualLookupSection({
               id="phonePart2"
               type="text"
               autoComplete="tel"
+              inputMode="numeric"
+              pattern="[0-9]*"
               maxLength={4}
               value={phonePart2}
               onChange={(e) => {
@@ -93,6 +97,8 @@ export function ManualLookupSection({
               id="phonePart3"
               type="text"
               autoComplete="tel"
+              inputMode="numeric"
+              pattern="[0-9]*"
               maxLength={4}
               value={phonePart3}
               onChange={(e) => {

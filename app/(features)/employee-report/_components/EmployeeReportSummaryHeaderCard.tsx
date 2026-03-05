@@ -49,7 +49,7 @@ export default function EmployeeReportSummaryHeaderCard({
   const syncRetryBusyLabel =
     syncNextAction === "sign" ? "확인 중..." : "재시도 중...";
   // NOTE: PDF 다운로드 장애 대응 임시 숨김. 복구 시 true로 바꿔 버튼을 다시 노출하세요.
-  const showPdfDownloadButton = false;
+  const showPdfDownloadButton = true;
 
   return (
     <section className={styles.sectionCard} data-testid="employee-report-summary-section">

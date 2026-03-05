@@ -25,6 +25,9 @@ function extractWellnessSectionAdvice(payload: unknown) {
                 ? item.score
                 : Number.parseFloat(toText(item.score) || "0"),
             text: toText(item.text),
+            questionKey: toText(item.questionKey) || undefined,
+            questionText: toText(item.questionText) || undefined,
+            answerText: toText(item.answerText) || null,
           }))
           .filter(
             (item) =>
@@ -73,6 +76,9 @@ function extractWellnessHighRiskHighlights(payload: unknown) {
           ? item.questionNumber
           : Number.parseInt(toText(item.questionNumber), 10) || undefined,
       sectionId: toText(item.sectionId) || undefined,
+      questionKey: toText(item.questionKey) || undefined,
+      questionText: toText(item.questionText) || undefined,
+      answerText: toText(item.answerText) || undefined,
     }))
     .filter((item) => Boolean(item.title) && Number.isFinite(item.score));
 }
@@ -134,6 +140,7 @@ export function extractWellness(payload: unknown) {
                 .map((nutrient) => ({
                   code: toText(nutrient.code) || "",
                   label: toText(nutrient.label) || "",
+                  labelKo: toText(nutrient.labelKo) || undefined,
                   aliases: Array.isArray(nutrient.aliases)
                     ? nutrient.aliases.map((alias) => toText(alias)).filter(Boolean)
                     : undefined,

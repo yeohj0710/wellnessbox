@@ -1,15 +1,18 @@
 import type { ReportSummaryPayload } from "@/lib/b2b/report-summary-payload";
 import { ensureArray, firstOrDash, toScoreValue } from "./helpers";
 
-const MAX_ANALYSIS_LINES = 3;
-const MAX_RISK_LINES = 4;
+const MAX_ANALYSIS_LINES = 2;
+const MAX_RISK_LINES = 3;
 
 type AnalysisCandidate = {
   sectionId: string;
   sectionTitle: string;
   sectionPercent: number;
   questionNumber: number;
+  questionKey: string;
   questionScore: number;
+  questionText: string;
+  answerText: string;
   text: string;
 };
 
@@ -18,7 +21,15 @@ type RiskCandidate = {
   title: string;
   score: number;
   action: string;
+  questionKey: string;
   questionNumber: number;
+  questionText: string;
+  answerText: string;
+};
+
+type SurveyAnswerLookup = {
+  questionText: string;
+  answerText: string;
 };
 
 export function clampPercent(value: unknown): number {
@@ -91,8 +102,43 @@ export function resolveHealthScoreLabel(value: number | null) {
   return { valueText: String(Math.round(clampPercent(value))), unitText: "점" };
 }
 
+function normalizeQuestionKey(input: {
+  questionKey?: string;
+  sectionId?: string;
+  questionNumber?: number;
+  category?: RiskCandidate["category"];
+}) {
+  const directKey = toTrimmedText(input.questionKey);
+  if (directKey) return directKey;
+  if (typeof input.questionNumber !== "number" || !Number.isFinite(input.questionNumber)) return "";
+
+  if (input.category === "common") {
+    return `C${String(input.questionNumber).padStart(2, "0")}`;
+  }
+
+  const sectionId = toTrimmedText(input.sectionId);
+  if (sectionId) {
+    return `${sectionId}_Q${String(input.questionNumber).padStart(2, "0")}`;
+  }
+
+  return "";
+}
+
+function buildSurveyAnswerLookup(payload: ReportSummaryPayload) {
+  const lookup = new Map<string, SurveyAnswerLookup>();
+  for (const answer of ensureArray(payload.survey?.answers)) {
+    const questionKey = toTrimmedText(answer?.questionKey);
+    if (!questionKey) continue;
+    const questionText = toTrimmedText(answer?.questionText);
+    const answerText = toTrimmedText(answer?.answerText) || toTrimmedText(answer?.answerValue);
+    lookup.set(questionKey, { questionText, answerText });
+  }
+  return lookup;
+}
+
 function extractAnalysisCandidates(payload: ReportSummaryPayload): AnalysisCandidate[] {
   const sectionAdvice = payload.analysis?.wellness?.sectionAdvice ?? {};
+  const surveyAnswerLookup = buildSurveyAnswerLookup(payload);
   const sectionScoreMap = new Map(
     ensureArray(payload.analysis?.wellness?.healthManagementNeed?.sections).map((section) => [
       section?.sectionId || "",
@@ -111,7 +157,16 @@ function extractAnalysisCandidates(payload: ReportSummaryPayload): AnalysisCandi
     for (const item of ensureArray(row?.items)) {
       const questionNumber =
         typeof item?.questionNumber === "number" ? item.questionNumber : Number.NaN;
+      const questionKey = normalizeQuestionKey({
+        questionKey: toTrimmedText(item?.questionKey),
+        sectionId,
+        questionNumber,
+      });
+      const surveyLookup = questionKey ? surveyAnswerLookup.get(questionKey) : undefined;
       const questionScore = toPercentScore(item?.score);
+      const questionText =
+        toTrimmedText(item?.questionText) || surveyLookup?.questionText || questionKey || `Q${questionNumber}`;
+      const answerText = toTrimmedText(item?.answerText) || surveyLookup?.answerText || "-";
       const text = toTrimmedText(item?.text);
       if (!Number.isFinite(questionNumber) || questionScore == null || !text) continue;
       if (questionScore < 50) continue;
@@ -120,7 +175,10 @@ function extractAnalysisCandidates(payload: ReportSummaryPayload): AnalysisCandi
         sectionTitle,
         sectionPercent,
         questionNumber,
+        questionKey,
         questionScore,
+        questionText,
+        answerText,
         text,
       });
     }
@@ -181,18 +239,17 @@ function pickBalancedAnalysisLines(candidates: AnalysisCandidate[], maxCount: nu
 export function buildFriendlyAnalysisLines(payload: ReportSummaryPayload) {
   const candidates = extractAnalysisCandidates(payload);
   const picked = pickBalancedAnalysisLines(candidates, MAX_ANALYSIS_LINES);
-  return picked.map((item) => {
-    const sectionTitle = sanitizeTitle(item.sectionTitle) || "선택 영역";
-    const text = softenAdviceTone(item.text);
-    return {
-      key: `${item.sectionId}-${item.questionNumber}`,
-      text: shortenLine(`${sectionTitle} 영역은 ${text}`),
-    };
-  });
+  return picked.map((item) => ({
+    key: item.questionKey || `${item.sectionId}-${item.questionNumber}`,
+    questionText: item.questionText,
+    answerText: item.answerText,
+    recommendation: shortenLine(ensureSentence(toTrimmedText(item.text)), 88),
+  }));
 }
 
 function extractRiskCandidates(payload: ReportSummaryPayload): RiskCandidate[] {
   const rows = ensureArray(payload.analysis?.wellness?.highRiskHighlights);
+  const surveyAnswerLookup = buildSurveyAnswerLookup(payload);
   const candidates: RiskCandidate[] = [];
 
   for (const item of rows) {
@@ -207,23 +264,36 @@ function extractRiskCandidates(payload: ReportSummaryPayload): RiskCandidate[] {
     }
 
     const title = sanitizeTitle(toTrimmedText(item?.title));
-    const action = softenAdviceTone(toTrimmedText(item?.action));
+    const action = ensureSentence(toTrimmedText(item?.action));
     if (!action) continue;
+    const sectionId = toTrimmedText(item?.sectionId);
 
     const questionNumber =
       typeof item?.questionNumber === "number" && Number.isFinite(item.questionNumber)
         ? item.questionNumber
         : 999;
+    const questionKey = normalizeQuestionKey({
+      questionKey: toTrimmedText(item?.questionKey),
+      sectionId,
+      questionNumber: Number.isFinite(questionNumber) ? questionNumber : undefined,
+      category,
+    });
+    const surveyLookup = questionKey ? surveyAnswerLookup.get(questionKey) : undefined;
+    const questionText =
+      sanitizeTitle(toTrimmedText(item?.questionText)) || surveyLookup?.questionText || title;
+    const answerText = toTrimmedText(item?.answerText) || surveyLookup?.answerText || "";
 
     const score = clampPercent(toScoreValue(item?.score));
-    if (score < 50) continue;
 
     candidates.push({
       category,
       title,
       score,
       action,
+      questionKey,
       questionNumber,
+      questionText,
+      answerText,
     });
   }
 
@@ -234,49 +304,22 @@ function extractRiskCandidates(payload: ReportSummaryPayload): RiskCandidate[] {
   });
 }
 
-function pickBalancedRiskLines(candidates: RiskCandidate[], maxCount: number) {
-  const selected: RiskCandidate[] = [];
-  const selectedCategory = new Set<RiskCandidate["category"]>();
 
-  for (const row of candidates) {
-    if (selectedCategory.has(row.category)) continue;
-    selected.push(row);
-    selectedCategory.add(row.category);
-    if (selected.length >= maxCount) return selected;
-  }
-
-  for (const row of candidates) {
-    if (selected.some((item) => item.category === row.category && item.title === row.title)) continue;
-    selected.push(row);
-    if (selected.length >= maxCount) break;
-  }
-
-  return selected;
-}
-
-function riskLead(category: RiskCandidate["category"], title: string) {
-  if (category === "detailed") {
-    return title ? `${title} 항목은` : "우선 조정이 필요한 항목은";
-  }
-  if (category === "common") {
-    return title ? `생활 습관 중 ${title} 부분은` : "생활 습관에서는";
-  }
-  if (category === "domain") {
-    return title ? `${title} 축은` : "생활 습관 축에서는";
-  }
-  return title ? `${title} 영역은` : "선택 영역에서는";
-}
 
 export function buildFriendlyRiskLines(payload: ReportSummaryPayload) {
   const candidates = extractRiskCandidates(payload);
-  const picked = pickBalancedRiskLines(candidates, MAX_RISK_LINES);
-  return picked.map((item) => {
-    const merged = ensureSentence(`${riskLead(item.category, item.title)} ${item.action}`);
-    return {
-      key: `${item.category}-${item.title || item.questionNumber}`,
-      text: shortenLine(merged),
-    };
-  });
+  const questionFirstCandidates = candidates.filter(
+    (item) => item.category === "common" || item.category === "detailed"
+  );
+  const source = questionFirstCandidates.length > 0 ? questionFirstCandidates : candidates;
+  const picked = source.slice(0, MAX_RISK_LINES);
+  return picked.map((item) => ({
+    key: item.questionKey || `${item.category}-${item.title || item.questionNumber}`,
+    questionText: item.questionText || item.title || "확인 필요 항목",
+    answerText: item.answerText || "",
+    recommendation: shortenLine(item.action, 88),
+    category: item.category,
+  }));
 }
 
 function stripHtmlToPlainText(value: string) {

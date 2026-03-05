@@ -63,6 +63,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
   const [surveyTemplate, setSurveyTemplate] = useState<SurveyTemplateSchema | null>(null);
   const [surveyAnswers, setSurveyAnswers] = useState<Record<string, unknown>>({});
   const [selectedSections, setSelectedSections] = useState<string[]>([]);
+  const [surveySubmittedAt, setSurveySubmittedAt] = useState<string | null>(null);
   const [surveyUpdatedAt, setSurveyUpdatedAt] = useState<string | null>(null);
 
   const [analysisText, setAnalysisText] = useState("{}");
@@ -147,6 +148,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     setSelectedEmployeeDetail(detail.employee);
     setSurveyTemplate(survey.template.schema);
     setSelectedSections(survey.response?.selectedSections ?? []);
+    setSurveySubmittedAt(survey.response?.submittedAt ?? null);
     setSurveyUpdatedAt(survey.response?.updatedAt ?? null);
 
     const answersFromJson = survey.response?.answersJson || {};
@@ -675,6 +677,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
 
                 <B2bSurveyEditorPanel
                   completionStats={completionStats}
+                  surveySubmittedAt={surveySubmittedAt}
                   surveyUpdatedAt={surveyUpdatedAt}
                   surveyTemplate={surveyTemplate}
                   selectedSectionSet={selectedSectionSet}

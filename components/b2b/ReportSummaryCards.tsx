@@ -374,7 +374,15 @@ export default function ReportSummaryCards(props: {
             <ul className={styles.reportFriendlyList}>
               {analysisLines.map((line) => (
                 <li key={`analysis-${line.key}`} className={styles.reportFriendlyItem}>
-                  {line.text}
+                  <p className={styles.reportDataBody}>
+                    <strong>문항</strong> {line.questionText}
+                  </p>
+                  <p className={styles.reportDataBody}>
+                    <strong>내 답변</strong> {line.answerText || "-"}
+                  </p>
+                  <p className={styles.reportDataBody}>
+                    <strong>권장안</strong> {line.recommendation}
+                  </p>
                 </li>
               ))}
             </ul>
@@ -393,7 +401,17 @@ export default function ReportSummaryCards(props: {
             <ul className={styles.reportFriendlyList}>
               {riskLines.map((line) => (
                 <li key={`risk-${line.key}`} className={styles.reportFriendlyItem}>
-                  {line.text}
+                  <p className={styles.reportDataBody}>
+                    <strong>문항</strong> {line.questionText}
+                  </p>
+                  {line.answerText ? (
+                    <p className={styles.reportDataBody}>
+                      <strong>내 답변</strong> {line.answerText}
+                    </p>
+                  ) : null}
+                  <p className={styles.reportDataBody}>
+                    <strong>권장안</strong> {line.recommendation}
+                  </p>
                 </li>
               ))}
             </ul>

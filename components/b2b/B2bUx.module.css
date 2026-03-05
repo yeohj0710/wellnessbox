@@ -27,8 +27,13 @@
 
 .pageBackdrop {
   width: 100%;
-  min-height: calc(105vh - 3.5rem);
-  min-height: calc(105dvh - 3.5rem);
+  min-height: calc(105vh - var(--wb-topbar-height, 3.5rem));
+  min-height: max(
+    calc(105vh - var(--wb-topbar-height, 3.5rem)),
+    calc(105dvh - var(--wb-topbar-height, 3.5rem))
+  );
+  flex: 1 0 auto;
+  align-self: stretch;
   background:
     radial-gradient(circle at 95% -8%, rgba(49, 130, 246, 0.12), transparent 38%),
     radial-gradient(circle at -6% 108%, rgba(16, 185, 129, 0.1), transparent 32%),
@@ -1287,7 +1292,7 @@
   border: 0;
   border-bottom: 1px solid #dce6f5;
   background: transparent;
-  padding: 10px 2px 12px;
+  padding: 12px 12px 14px;
   display: grid;
   gap: 7px;
 }
@@ -2471,9 +2476,9 @@
   border-radius: 14px;
   border: 1px solid #d4e1f5;
   background: linear-gradient(180deg, #fbfdff 0%, #f6f9ff 100%);
-  padding: 9px 10px;
+  padding: 8px 10px;
   display: grid;
-  gap: 6px;
+  gap: 5px;
 }
 
 .reportBlockTitle {
@@ -2492,19 +2497,19 @@
 
 .reportFriendlyList {
   margin: 0;
-  padding-left: 18px;
+  padding-left: 14px;
   display: grid;
-  gap: 5px;
+  gap: 4px;
   color: #405979;
-  font-size: 12px;
-  line-height: 1.45;
+  font-size: 11px;
+  line-height: 1.4;
 }
 
 .reportFriendlyItem {
   margin: 0;
   display: block;
   overflow: visible;
-  line-height: 1.55;
+  line-height: 1.45;
 }
 
 .reportFooterNote {
@@ -2655,9 +2660,9 @@
   margin: 0;
   color: #445d7f;
   font-size: 11px;
-  line-height: 1.55;
+  line-height: 1.45;
   display: grid;
-  gap: 2px;
+  gap: 1px;
 }
 
 .reportDataLabel {
@@ -2837,8 +2842,8 @@
 }
 
 [data-report-pdf-parity="1"] .reportBlock {
-  padding: 10px;
-  gap: 6px;
+  padding: 8px 10px;
+  gap: 5px;
 }
 
 [data-report-pdf-parity="1"] .reportBlockTitle {
@@ -2850,8 +2855,8 @@
 }
 
 [data-report-pdf-parity="1"] .reportFriendlyList {
-  gap: 5px;
-  font-size: 12px;
+  gap: 3px;
+  font-size: 11px;
 }
 
 [data-report-pdf-parity="1"] .reportDataCard {

@@ -92,6 +92,8 @@ export default function PhoneAuthPage() {
               </span>
               <input
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="예: 010-1234-5678"
@@ -105,6 +107,8 @@ export default function PhoneAuthPage() {
               </span>
               <input
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 placeholder="발송된 인증번호 입력"

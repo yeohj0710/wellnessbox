@@ -215,12 +215,14 @@ export const reportTextsSchema = z.object({
           z.object({
             code: z.string().min(1),
             label: z.string().min(1),
+            labelKo: z.string().min(1).optional(),
             aliases: z.array(z.string().min(1)).optional(),
           })
         )
         .optional(),
     })
   ),
+  nutrientLabelKoByCode: z.record(z.string(), z.string().min(1)).optional(),
 });
 
 export type WellnessCommonSurvey = z.infer<typeof commonSurveySchema>;

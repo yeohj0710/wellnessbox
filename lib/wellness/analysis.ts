@@ -46,7 +46,14 @@ export type WellnessComputedResult = {
     string,
     {
       sectionTitle: string;
-      items: Array<{ questionNumber: number; score: number; text: string }>;
+      items: Array<{
+        questionNumber: number;
+        score: number;
+        text: string;
+        questionKey?: string;
+        questionText?: string;
+        answerText?: string | null;
+      }>;
     }
   >;
   highRiskHighlights: Array<{
@@ -56,6 +63,9 @@ export type WellnessComputedResult = {
     action: string;
     questionNumber?: number;
     sectionId?: string;
+    questionKey?: string;
+    questionText?: string;
+    answerText?: string;
   }>;
   lifestyleRoutineAdvice: string[];
   supplementDesign: Array<{
@@ -65,6 +75,7 @@ export type WellnessComputedResult = {
     recommendedNutrients?: Array<{
       code: string;
       label: string;
+      labelKo?: string;
       aliases?: string[];
     }>;
   }>;
@@ -89,6 +100,9 @@ type RiskCandidate = {
   action: string;
   questionNumber: number;
   sectionId?: string;
+  questionKey?: string;
+  questionText?: string;
+  answerText?: string | null;
 };
 
 function sortRiskCandidates(left: RiskCandidate, right: RiskCandidate) {
@@ -114,6 +128,9 @@ function toHighlight(candidate: RiskCandidate) {
       ? candidate.questionNumber
       : undefined,
     sectionId: candidate.sectionId,
+    questionKey: candidate.questionKey,
+    questionText: candidate.questionText || undefined,
+    answerText: candidate.answerText || undefined,
   } as const;
 }
 
@@ -121,6 +138,21 @@ export function computeWellnessResult(input: WellnessAnalysisInput): WellnessCom
   const { common, sections, rules, texts } = loadWellnessDataBundle();
   const questionAnswers = buildQuestionAnswerMap(input);
   const selectedSections = deriveSelectedSections(input.selectedSections, common, questionAnswers);
+  const questionTextById = new Map<string, string>();
+  for (const question of common.questions) {
+    questionTextById.set(question.id, (question.prompt ?? "").trim() || question.id);
+  }
+  for (const section of sections.sections) {
+    for (const question of section.questions) {
+      questionTextById.set(question.id, (question.prompt ?? "").trim() || question.id);
+    }
+  }
+  const answerTextByQuestionId = new Map<string, string>();
+  for (const [questionId, answer] of questionAnswers.entries()) {
+    const resolvedAnswerText = (answer.answerText ?? answer.answerValue ?? "").trim();
+    if (!resolvedAnswerText) continue;
+    answerTextByQuestionId.set(questionId, resolvedAnswerText);
+  }
 
   const commonAnswers = buildCommonAnswerMap(common, questionAnswers);
   const sectionAnswersBySectionId = buildSectionAnswerMap(
@@ -162,11 +194,22 @@ export function computeWellnessResult(input: WellnessAnalysisInput): WellnessCom
     selectedSections.map((sectionId) => {
       const section = sections.sections.find((item) => item.id === sectionId);
       const sectionQuestionScores = sectionScoring.perQuestionScores[sectionId] ?? {};
+      const adviceItems = buildSectionAdvice(sectionId, sectionQuestionScores, texts, rules).map((item) => {
+        const questionKey = `${sectionId}_Q${String(item.questionNumber).padStart(2, "0")}`;
+        return {
+          ...item,
+          questionKey,
+          questionText:
+            questionTextById.get(questionKey) ??
+            `${section?.title ?? sectionId} ${item.questionNumber}번 문항`,
+          answerText: answerTextByQuestionId.get(questionKey) ?? null,
+        };
+      });
       return [
         sectionId,
         {
           sectionTitle: section?.title ?? sectionId,
-          items: buildSectionAdvice(sectionId, sectionQuestionScores, texts, rules),
+          items: adviceItems,
         },
       ];
     })
@@ -200,14 +243,24 @@ export function computeWellnessResult(input: WellnessAnalysisInput): WellnessCom
   for (const [sectionId, row] of Object.entries(sectionAdvice)) {
     const sectionPercent = sectionPercentById.get(sectionId) ?? 0;
     for (const item of row.items) {
+      const questionKey =
+        item.questionKey ?? `${sectionId}_Q${String(item.questionNumber).padStart(2, "0")}`;
+      const questionText =
+        item.questionText ??
+        questionTextById.get(questionKey) ??
+        `${row.sectionTitle} ${item.questionNumber}번 문항`;
+      const answerText = item.answerText ?? answerTextByQuestionId.get(questionKey) ?? null;
       detailedCandidates.push({
         category: "detailed",
-        title: `${row.sectionTitle} Q${item.questionNumber}`,
+        title: questionText,
         scorePercent: clampPercent(item.score * 100),
         contextPercent: sectionPercent,
         action: item.text,
         questionNumber: item.questionNumber,
         sectionId,
+        questionKey,
+        questionText,
+        answerText,
       });
     }
   }
@@ -220,14 +273,20 @@ export function computeWellnessResult(input: WellnessAnalysisInput): WellnessCom
     const action = texts.lifestyleRoutineAdviceByCommonQuestionNumber[String(questionNumber)];
     if (!action) continue;
     const domain = domainByQuestionId.get(questionId);
+    const questionText =
+      questionTextById.get(questionId) ?? `공통 ${questionNumber}번 문항`;
+    const answerText = answerTextByQuestionId.get(questionId) ?? null;
     commonCandidates.push({
       category: "common",
-      title: `Q${questionNumber}`,
+      title: questionText,
       scorePercent: clampPercent(score * 100),
       contextPercent: domain?.percent ?? 0,
       action,
       questionNumber,
       sectionId: undefined,
+      questionKey: questionId,
+      questionText,
+      answerText,
     });
   }
 

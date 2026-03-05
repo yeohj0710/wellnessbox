@@ -55,6 +55,8 @@ export default function EmployeeReportIdentitySection({
           <input
             className={styles.input}
             value={identity.birthDate}
+            inputMode="numeric"
+            pattern="[0-9]*"
             onChange={(event) => onBirthDateChange(event.target.value)}
             placeholder="19900101"
             disabled={busy}
@@ -65,6 +67,8 @@ export default function EmployeeReportIdentitySection({
           <input
             className={styles.input}
             value={identity.phone}
+            inputMode="numeric"
+            pattern="[0-9]*"
             onChange={(event) => onPhoneChange(event.target.value)}
             placeholder="01012345678"
             disabled={busy}

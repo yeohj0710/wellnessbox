@@ -6,6 +6,27 @@ import type {
 } from "./client-types";
 import { toInputValue, toMultiValues } from "./client-utils";
 
+const OPTIONAL_SELECTION_HINT_TOKENS = [
+  "해당사항이없으면선택하지않고다음으로넘어가도됩니다",
+  "해당되는항목이없으면선택하지않고다음문항으로넘어가세요",
+  "해당사항이없으면선택하지않고다음으로이동해도됩니다",
+];
+
+function normalizeHintTextForMatch(text: string) {
+  return text
+    .replace(/[\s.,:;!?'"`~()[\]{}\-_/\\]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+export function isSkippableSelectionQuestion(question: SurveyQuestion) {
+  if (!question.required) return true;
+  if (question.type !== "single" && question.type !== "multi") return false;
+  const help = normalizeHintTextForMatch(question.helpText ?? "");
+  if (!help) return false;
+  return OPTIONAL_SELECTION_HINT_TOKENS.some((token) => help.includes(token));
+}
+
 export function toAnswerRecord(raw: unknown) {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
   return raw as Record<string, unknown>;
@@ -122,7 +143,9 @@ export function buildCompletionStats(input: {
   ];
 
   const total = activeQuestions.length;
-  const required = activeQuestions.filter((q) => q.required);
+  const required = activeQuestions.filter(
+    (q) => q.required && !isSkippableSelectionQuestion(q)
+  );
   const answered = activeQuestions.filter((question) =>
     hasAnswer(question, surveyAnswers[question.key])
   ).length;

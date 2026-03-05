@@ -69,6 +69,7 @@ export type B2bReportPayload = {
     answers: Array<{
       questionKey: string;
       sectionKey: string | null;
+      questionText?: string | null;
       answerText: string | null;
       answerValue: string | null;
     }>;
@@ -145,7 +146,14 @@ export type B2bReportPayload = {
         string,
         {
           sectionTitle: string;
-          items: Array<{ questionNumber: number; score: number; text: string }>;
+          items: Array<{
+            questionNumber: number;
+            score: number;
+            text: string;
+            questionKey?: string;
+            questionText?: string;
+            answerText?: string | null;
+          }>;
         }
       >;
       highRiskHighlights: Array<{
@@ -155,6 +163,9 @@ export type B2bReportPayload = {
         action: string;
         questionNumber?: number;
         sectionId?: string;
+        questionKey?: string;
+        questionText?: string;
+        answerText?: string;
       }>;
       lifestyleRoutineAdvice: string[];
       supplementDesign: Array<{
@@ -164,6 +175,7 @@ export type B2bReportPayload = {
         recommendedNutrients?: Array<{
           code: string;
           label: string;
+          labelKo?: string;
           aliases?: string[];
         }>;
       }>;

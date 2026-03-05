@@ -110,6 +110,7 @@ export function serializeSurveyResponse(response: SurveyResponseRow) {
     id: response.id,
     periodKey: response.periodKey,
     reportCycle: response.reportCycle,
+    submittedAt: response.submittedAt?.toISOString() ?? null,
     selectedSections: response.selectedSections,
     answersJson: response.answersJson,
     updatedAt: response.updatedAt.toISOString(),

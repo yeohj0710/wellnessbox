@@ -12,6 +12,7 @@ export type SupplementDesignItem = {
   recommendedNutrients?: Array<{
     code: string;
     label: string;
+    labelKo?: string;
     aliases?: string[];
   }>;
 };
@@ -96,6 +97,7 @@ export function buildSupplementDesign(
   rules: WellnessScoringRules
 ): SupplementDesignItem[] {
   const topN = rules.reportGeneration.supplementDesign.defaultTopN;
+  const nutrientLabelKoByCode = reportTexts.nutrientLabelKoByCode ?? {};
   return [...selectedSectionScores]
     .sort((left, right) => {
       if (right.score !== left.score) return right.score - left.score;
@@ -111,7 +113,14 @@ export function buildSupplementDesign(
         paragraphs: text.paragraphs,
         ...(Array.isArray(text.recommendedNutrients) &&
         text.recommendedNutrients.length > 0
-          ? { recommendedNutrients: text.recommendedNutrients }
+          ? {
+              recommendedNutrients: text.recommendedNutrients.map((nutrient) => ({
+                ...nutrient,
+                ...(nutrient.labelKo || nutrientLabelKoByCode[nutrient.code]
+                  ? { labelKo: nutrient.labelKo ?? nutrientLabelKoByCode[nutrient.code] }
+                  : {}),
+              })),
+            }
           : {}),
       };
       return item;

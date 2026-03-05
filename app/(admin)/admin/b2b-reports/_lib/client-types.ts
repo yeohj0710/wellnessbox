@@ -160,6 +160,7 @@ export type SurveyResponseRecord = {
   id: string;
   periodKey?: string | null;
   reportCycle?: number | null;
+  submittedAt?: string | null;
   selectedSections: string[];
   answersJson?: Record<string, unknown> | null;
   updatedAt?: string | null;

@@ -34,7 +34,7 @@ import type { IdentityInput } from "@/app/(features)/employee-report/_lib/client
 
 const STORAGE_KEY = "b2b-public-survey-state.v4";
 const SURVEY_IDENTITY_STORAGE_KEY = "wb:b2b:survey:identity:v1";
-const BLOCK_SURVEY_START_TEMPORARILY = true;
+const BLOCK_SURVEY_START_TEMPORARILY = false;
 
 const TEXT = {
   introTitle: "\uC6F0\uB2C8\uC2A4\uBC15\uC2A4 \uC628\uB77C\uC778 \uAC74\uAC15 \uC124\uBB38",
@@ -105,7 +105,7 @@ const TEXT = {
   sectionTransitionTitle: "\uC120\uD0DD\uD55C \uBD84\uC57C \uBB38\uD56D\uC744 \uBD88\uB7EC\uC624\uB294 \uC911\uC785\uB2C8\uB2E4.",
   sectionTransitionDesc: "\uC7A0\uC2DC\uB9CC \uAE30\uB2E4\uB824 \uC8FC\uC138\uC694.",
   resultCheck: "\uACB0\uACFC \uD655\uC778",
-  editSurvey: "\uC124\uBB38 \uC218\uC815",
+  editSurvey: "\uC124\uBB38 \uB2F5\uC548 \uC218\uC815",
   resultTitle: "\uC124\uBB38 \uACB0\uACFC",
   scoreHealth: "\uAC74\uAC15\uC810\uC218",
   scoreRisk: "\uC0DD\uD65C\uC2B5\uAD00 \uC704\uD5D8\uB3C4",
@@ -118,6 +118,37 @@ const CALCULATING_MESSAGES = [
   "\uAC74\uAC15\uAD00\uB9AC \uD544\uC694\uB3C4\uB97C \uACC4\uC0B0\uD558\uACE0 \uC788\uC2B5\uB2C8\uB2E4.",
   "\uACB0\uACFC\uB97C \uC900\uBE44\uD558\uACE0 \uC788\uC2B5\uB2C8\uB2E4.",
 ];
+
+const SURVEY_RESULT_DONUT_RADIUS = 44;
+const SURVEY_RESULT_DONUT_CIRCUMFERENCE = 2 * Math.PI * SURVEY_RESULT_DONUT_RADIUS;
+const SURVEY_RESULT_RADAR_SIZE = 192;
+const SURVEY_RESULT_RADAR_CENTER = SURVEY_RESULT_RADAR_SIZE / 2;
+const SURVEY_RESULT_RADAR_RADIUS = 62;
+
+function clampResultPercent(value: number) {
+  if (!Number.isFinite(value)) return 0;
+  if (value < 0) return 0;
+  if (value > 100) return 100;
+  return value;
+}
+
+function getResultRadarPoint(index: number, total: number, scale: number) {
+  const angle = -Math.PI / 2 + (Math.PI * 2 * index) / Math.max(1, total);
+  return {
+    x: SURVEY_RESULT_RADAR_CENTER + SURVEY_RESULT_RADAR_RADIUS * scale * Math.cos(angle),
+    y: SURVEY_RESULT_RADAR_CENTER + SURVEY_RESULT_RADAR_RADIUS * scale * Math.sin(angle),
+  };
+}
+
+function getResultRadarPolygonPoints(values: number[], denominator = 100) {
+  const total = Math.max(1, values.length);
+  return values
+    .map((value, index) => {
+      const point = getResultRadarPoint(index, total, clampResultPercent(value) / denominator);
+      return `${point.x.toFixed(2)},${point.y.toFixed(2)}`;
+    })
+    .join(" ");
+}
 
 type SurveyPhase = "intro" | "survey" | "calculating" | "result";
 type PersistedSurveyPhase = Exclude<SurveyPhase, "calculating">;
@@ -209,11 +240,27 @@ function escapeRegExp(value: string) {
 
 function toDisplayQuestionText(question: WellnessSurveyQuestionForTemplate) {
   let text = (question.text ?? "")
+    .replace(/귀하께서는/g, "")
+    .replace(/귀하께서/g, "")
+    .replace(/귀하가/g, "")
+    .replace(/귀하의/g, "")
+    .replace(/귀하는/g, "")
+    .replace(/귀하\b/g, "")
     .replace(/\s*\uB9CC\s*\(\s*\)\s*\uC138/gi, "")
+    .replace(/\uB9CC\s*\uB098\uC774/g, "\uB098\uC774")
     .replace(/\(\s*\)/g, "")
     .replace(/\uD574\uC8FC\uC2ED\uC2DC\uC624/g, "\uD574 \uC8FC\uC138\uC694")
     .replace(/\uAE30\uC7AC\uD574/g, "\uC785\uB825\uD574")
+    .replace(/^\s*\uC5EC\uC131\uC77C\s*\uACBD\uC6B0/g, "\uC5EC\uC131\uC774\uB77C\uBA74")
+    .replace(/^\s*\uB0A8\uC131\uC77C\s*\uACBD\uC6B0/g, "\uB0A8\uC131\uC774\uB77C\uBA74")
     .replace(/\s+/g, " ")
+    .trim();
+
+  text = text
+    .replace(/^\s*[\uC758\uAC00\uB294]\s+/, "")
+    .replace(/\s+([,.!?])/g, "$1")
+    .replace(/\(\s+/g, "(")
+    .replace(/\s+\)/g, ")")
     .trim();
 
   if (question.type === "group" && (question.fields?.length ?? 0) > 0) {
@@ -245,6 +292,30 @@ function resolveProgressMessage(percent: number) {
   if (percent < 75) return "\uC808\uBC18 \uC774\uC0C1 \uC9C4\uD589\uB410\uC2B5\uB2C8\uB2E4.";
   if (percent < 100) return "\uAC70\uC758 \uC644\uB8CC \uB2E8\uACC4\uC785\uB2C8\uB2E4.";
   return "\uC124\uBB38\uC774 \uC644\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4.";
+}
+
+function isSkippableSelectionQuestion(question: WellnessSurveyQuestionForTemplate) {
+  if (question.type !== "single" && question.type !== "multi") return false;
+  if (!question.required) return true;
+  return question.type === "multi";
+}
+
+function normalizeHintTextForMatch(text: string) {
+  return text.replace(/\s+/g, "").toLowerCase();
+}
+
+function isOptionalHintLikeText(text: string | undefined) {
+  if (!text) return false;
+  const normalized = normalizeHintTextForMatch(text);
+  const baseHint = normalizeHintTextForMatch(TEXT.optionalHint);
+  if (normalized === baseHint) return true;
+  if (normalized.includes("선택하지않고다음")) return true;
+  return (
+    normalized.includes("해당") &&
+    normalized.includes("없") &&
+    normalized.includes("선택") &&
+    normalized.includes("다음")
+  );
 }
 
 function isNoneLikeOption(option: { label?: string | null; value?: string | null }) {
@@ -416,6 +487,295 @@ function getFocusedIndex(
 type SurveyOptionLike = { value?: string | null; label?: string | null };
 
 const BMI_SOURCE_GROUP_KEY = "C03";
+const DUPLICATE_SOURCE_COMMON_KEYS = {
+  gender: "C01",
+  age: "C02",
+  femaleStatus: "C04",
+  caffeine: "C18",
+  alcoholFrequency: "C19",
+  alcoholAmount: "C20",
+  smoking: "C21",
+  sleepDuration: "C23",
+  sleepQuality: "C24",
+  stress: "C26",
+} as const;
+
+const EXPLICIT_DUPLICATE_SOURCE_BY_QUESTION_KEY: Record<string, string> = {
+  S02_Q01: DUPLICATE_SOURCE_COMMON_KEYS.caffeine,
+  S02_Q02: DUPLICATE_SOURCE_COMMON_KEYS.sleepDuration,
+  S10_Q07: DUPLICATE_SOURCE_COMMON_KEYS.sleepQuality,
+  S10_Q08: DUPLICATE_SOURCE_COMMON_KEYS.sleepDuration,
+  S19_Q09: DUPLICATE_SOURCE_COMMON_KEYS.femaleStatus,
+  S23_Q01: DUPLICATE_SOURCE_COMMON_KEYS.gender,
+};
+
+type AutoSurveyResolution = {
+  answers: PublicSurveyAnswers;
+  hiddenQuestionKeys: Set<string>;
+};
+
+function normalizeMatchText(value: string) {
+  return String(value ?? "")
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/[^\p{L}\p{N}]/gu, "");
+}
+
+function normalizeQuestionTextForMatching(question: WellnessSurveyQuestionForTemplate) {
+  return normalizeMatchText(`${question.text ?? ""} ${question.helpText ?? ""}`);
+}
+
+function optionMatchTokens(option: WellnessSurveyQuestionForTemplate["options"][number]) {
+  return [option.value, option.label, ...(option.aliases ?? [])]
+    .map((value) => normalizeMatchText(String(value ?? "")))
+    .filter(Boolean);
+}
+
+function hasTokenMatch(a: string, b: string) {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  if (a.length < 2 || b.length < 2) return false;
+  return a.includes(b) || b.includes(a);
+}
+
+function resolveOptionValueByTokens(
+  question: WellnessSurveyQuestionForTemplate,
+  tokens: string[]
+): string | null {
+  if (!tokens.length) return null;
+  const normalizedTokens = tokens.map(normalizeMatchText).filter(Boolean);
+  if (normalizedTokens.length === 0) return null;
+  for (const option of question.options ?? []) {
+    const keys = optionMatchTokens(option);
+    if (keys.some((key) => normalizedTokens.some((token) => hasTokenMatch(token, key)))) {
+      return option.value;
+    }
+  }
+  return null;
+}
+
+function collectAnswerTokensForMapping(
+  sourceQuestion: WellnessSurveyQuestionForTemplate,
+  sourceRawValue: unknown
+) {
+  const tokens = new Set<string>();
+  const addToken = (value: unknown) => {
+    const normalized = normalizeMatchText(String(value ?? ""));
+    if (normalized) tokens.add(normalized);
+  };
+
+  addToken(toInputValue(sourceRawValue));
+  for (const value of toMultiValues(sourceRawValue)) {
+    addToken(value);
+  }
+
+  const record = toAnswerRecord(sourceRawValue);
+  if (record) {
+    if (typeof record.answerValue === "string") addToken(record.answerValue);
+    if (typeof record.answerText === "string") addToken(record.answerText);
+  }
+
+  const selectedValues = toMultiValues(sourceRawValue);
+  const scalar = toInputValue(sourceRawValue).trim();
+  if (scalar && selectedValues.length === 0) selectedValues.push(scalar);
+  for (const selected of selectedValues) {
+    const option = (sourceQuestion.options ?? []).find((item) => item.value === selected);
+    if (!option) continue;
+    addToken(option.value);
+    addToken(option.label);
+    for (const alias of option.aliases ?? []) addToken(alias);
+  }
+
+  return [...tokens];
+}
+
+function resolveAgeThresholdFromQuestion(question: WellnessSurveyQuestionForTemplate): number | null {
+  const source = `${question.text ?? ""} ${question.helpText ?? ""}`;
+  const matched = source.match(/만\s*(\d{1,3})\s*세\s*이상/i);
+  if (!matched) return null;
+  const parsed = Number.parseInt(matched[1], 10);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function resolveBinaryOptionValues(question: WellnessSurveyQuestionForTemplate) {
+  const options = question.options ?? [];
+  if (options.length === 0) return { yesValue: null as string | null, noValue: null as string | null };
+  const yesKeywords = ["예", "네", "있", "해당", "맞", "yes", "true"];
+  const noKeywords = ["아니", "없", "해당없", "no", "false"];
+  const findByKeywords = (keywords: string[]) =>
+    options.find((option) => {
+      const source = normalizeMatchText([option.value, option.label, ...(option.aliases ?? [])].join(" "));
+      return keywords.some((keyword) => source.includes(normalizeMatchText(keyword)));
+    })?.value ?? null;
+
+  const yesValue = findByKeywords(yesKeywords) ?? options[0]?.value ?? null;
+  const fallbackNo = options.find((option) => option.value !== yesValue)?.value ?? null;
+  const noValue = findByKeywords(noKeywords) ?? fallbackNo;
+  return { yesValue, noValue };
+}
+
+function resolveDuplicateCommonSourceKey(node: PublicSurveyQuestionNode): string | null {
+  if (!node.sectionKey) return null;
+  const explicit = EXPLICIT_DUPLICATE_SOURCE_BY_QUESTION_KEY[node.question.key];
+  if (explicit) return explicit;
+
+  const text = normalizeQuestionTextForMatching(node.question);
+  if (!text) return null;
+
+  if (text.includes("흡연") || text.includes("전자담배") || text.includes("담배")) {
+    return DUPLICATE_SOURCE_COMMON_KEYS.smoking;
+  }
+  if (text.includes("스트레스")) {
+    return DUPLICATE_SOURCE_COMMON_KEYS.stress;
+  }
+  if (text.includes("성별")) {
+    return DUPLICATE_SOURCE_COMMON_KEYS.gender;
+  }
+  if (text.includes("카페인") || text.includes("커피")) {
+    return DUPLICATE_SOURCE_COMMON_KEYS.caffeine;
+  }
+  if (text.includes("음주") || text.includes("술")) {
+    if (text.includes("음주량") || text.includes("1회") || text.includes("한번") || text.includes("몇잔")) {
+      return DUPLICATE_SOURCE_COMMON_KEYS.alcoholAmount;
+    }
+    if (text.includes("빈도") || text.includes("횟수") || text.includes("자주")) {
+      return DUPLICATE_SOURCE_COMMON_KEYS.alcoholFrequency;
+    }
+  }
+  if (text.includes("수면") || text.includes("잠")) {
+    if (text.includes("질") || text.includes("숙면") || text.includes("개운")) {
+      return DUPLICATE_SOURCE_COMMON_KEYS.sleepQuality;
+    }
+    if (text.includes("시간") || text.includes("68")) {
+      return DUPLICATE_SOURCE_COMMON_KEYS.sleepDuration;
+    }
+  }
+  if (resolveAgeThresholdFromQuestion(node.question) != null) {
+    return DUPLICATE_SOURCE_COMMON_KEYS.age;
+  }
+  return null;
+}
+
+function isSameAnswerValue(left: unknown, right: unknown) {
+  return JSON.stringify(left ?? null) === JSON.stringify(right ?? null);
+}
+
+function mapSourceAnswerToTargetQuestion(input: {
+  sourceQuestion: WellnessSurveyQuestionForTemplate;
+  sourceRawValue: unknown;
+  targetQuestion: WellnessSurveyQuestionForTemplate;
+  maxSelectedSections: number;
+}): unknown | null {
+  const { sourceQuestion, sourceRawValue, targetQuestion, maxSelectedSections } = input;
+  if (!isSurveyQuestionAnswered(sourceQuestion, sourceRawValue)) return null;
+
+  if (targetQuestion.type === "single") {
+    const tokens = collectAnswerTokensForMapping(sourceQuestion, sourceRawValue);
+    const matchedValue = resolveOptionValueByTokens(targetQuestion, tokens);
+    if (!matchedValue) return null;
+    const sanitized = sanitizeSurveyAnswerValue(targetQuestion, matchedValue, maxSelectedSections);
+    return isSurveyQuestionAnswered(targetQuestion, sanitized) ? sanitized : null;
+  }
+
+  if (targetQuestion.type === "multi") {
+    const tokens = collectAnswerTokensForMapping(sourceQuestion, sourceRawValue);
+    const selectedValues = Array.from(
+      new Set(
+        tokens
+          .map((token) => resolveOptionValueByTokens(targetQuestion, [token]))
+          .filter((value): value is string => Boolean(value))
+      )
+    );
+    if (selectedValues.length === 0) return null;
+    const sanitized = sanitizeSurveyAnswerValue(targetQuestion, selectedValues, maxSelectedSections);
+    return isSurveyQuestionAnswered(targetQuestion, sanitized) ? sanitized : null;
+  }
+
+  if (targetQuestion.type === "number" || targetQuestion.type === "text") {
+    const scalar = toInputValue(sourceRawValue).trim();
+    if (!scalar) return null;
+    const sanitized = sanitizeSurveyAnswerValue(targetQuestion, scalar, maxSelectedSections);
+    return isSurveyQuestionAnswered(targetQuestion, sanitized) ? sanitized : null;
+  }
+
+  return null;
+}
+
+function resolveAgeDerivedAnswerForQuestion(input: {
+  sourceRawValue: unknown;
+  targetQuestion: WellnessSurveyQuestionForTemplate;
+  maxSelectedSections: number;
+}): unknown | null {
+  const { sourceRawValue, targetQuestion, maxSelectedSections } = input;
+  if (targetQuestion.type !== "single") return null;
+  const threshold = resolveAgeThresholdFromQuestion(targetQuestion);
+  if (threshold == null) return null;
+  const age = toPositiveNumber(toInputValue(sourceRawValue));
+  if (age == null) return null;
+  const { yesValue, noValue } = resolveBinaryOptionValues(targetQuestion);
+  const targetValue = age >= threshold ? yesValue : noValue;
+  if (!targetValue) return null;
+  const sanitized = sanitizeSurveyAnswerValue(targetQuestion, targetValue, maxSelectedSections);
+  return isSurveyQuestionAnswered(targetQuestion, sanitized) ? sanitized : null;
+}
+
+function resolveAutoDuplicateSurveyState(input: {
+  answers: PublicSurveyAnswers;
+  questionList: PublicSurveyQuestionNode[];
+  maxSelectedSections: number;
+}): AutoSurveyResolution {
+  const questionMap = new Map(input.questionList.map((node) => [node.question.key, node.question]));
+  const hiddenQuestionKeys = new Set<string>();
+  let nextAnswers = input.answers;
+
+  for (const node of input.questionList) {
+    if (!node.sectionKey) continue;
+    const sourceCommonKey = resolveDuplicateCommonSourceKey(node);
+    if (!sourceCommonKey) continue;
+
+    const sourceQuestion = questionMap.get(sourceCommonKey);
+    if (!sourceQuestion) continue;
+    const sourceRawValue = input.answers[sourceCommonKey];
+    if (!isSurveyQuestionAnswered(sourceQuestion, sourceRawValue)) continue;
+
+    const derivedAnswer =
+      sourceCommonKey === DUPLICATE_SOURCE_COMMON_KEYS.age
+        ? resolveAgeDerivedAnswerForQuestion({
+            sourceRawValue,
+            targetQuestion: node.question,
+            maxSelectedSections: input.maxSelectedSections,
+          })
+        : mapSourceAnswerToTargetQuestion({
+            sourceQuestion,
+            sourceRawValue,
+            targetQuestion: node.question,
+            maxSelectedSections: input.maxSelectedSections,
+          });
+    if (derivedAnswer == null) continue;
+
+    hiddenQuestionKeys.add(node.question.key);
+    if (isSameAnswerValue(input.answers[node.question.key], derivedAnswer)) continue;
+    if (nextAnswers === input.answers) nextAnswers = { ...input.answers };
+    nextAnswers[node.question.key] = derivedAnswer;
+  }
+
+  return { answers: nextAnswers, hiddenQuestionKeys };
+}
+
+function resolveAutoComputedSurveyState(input: {
+  answers: PublicSurveyAnswers;
+  questionList: PublicSurveyQuestionNode[];
+  maxSelectedSections: number;
+}): AutoSurveyResolution {
+  const duplicateState = resolveAutoDuplicateSurveyState(input);
+  const answersWithBmi = mergeAutoDerivedBmiAnswers(duplicateState.answers, input.questionList);
+  const hiddenQuestionKeys = new Set(duplicateState.hiddenQuestionKeys);
+  for (const node of input.questionList) {
+    if (!isAutoDerivedBmiQuestion(node)) continue;
+    hiddenQuestionKeys.add(node.question.key);
+  }
+  return { answers: answersWithBmi, hiddenQuestionKeys };
+}
 
 function toPositiveNumber(raw: string | undefined): number | null {
   if (typeof raw !== "string") return null;
@@ -426,8 +786,16 @@ function toPositiveNumber(raw: string | undefined): number | null {
   return value;
 }
 
-function resolveBmiFromAnswers(answers: PublicSurveyAnswers): number | null {
-  const fields = resolveGroupFieldValues(answers[BMI_SOURCE_GROUP_KEY]);
+function resolveBmiFromAnswers(
+  answers: PublicSurveyAnswers,
+  questionList: PublicSurveyQuestionNode[]
+): number | null {
+  const bmiSourceQuestion = questionList.find(
+    (node) => node.question.key === BMI_SOURCE_GROUP_KEY && node.question.type === "group"
+  )?.question;
+  if (!bmiSourceQuestion) return null;
+
+  const fields = resolveGroupFieldValues(bmiSourceQuestion, answers[BMI_SOURCE_GROUP_KEY]);
   const heightCm = toPositiveNumber(fields.heightCm);
   const weightKg = toPositiveNumber(fields.weightKg);
   if (heightCm == null || weightKg == null) return null;
@@ -478,7 +846,7 @@ function mergeAutoDerivedBmiAnswers(
   inputAnswers: PublicSurveyAnswers,
   questionList: PublicSurveyQuestionNode[]
 ): PublicSurveyAnswers {
-  const bmi = resolveBmiFromAnswers(inputAnswers);
+  const bmi = resolveBmiFromAnswers(inputAnswers, questionList);
   let nextAnswers = inputAnswers;
   for (const node of questionList) {
     if (!isAutoDerivedBmiQuestion(node)) continue;
@@ -522,6 +890,7 @@ export default function SurveyPageClient() {
   const [isRenewalModalOpen, setIsRenewalModalOpen] = useState(false);
   const [isResetConfirmModalOpen, setIsResetConfirmModalOpen] = useState(false);
   const [result, setResult] = useState<WellnessComputedResult | null>(null);
+  const [hasCompletedSubmission, setHasCompletedSubmission] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [calcPercent, setCalcPercent] = useState(8);
   const [calcMessageIndex, setCalcMessageIndex] = useState(0);
@@ -557,11 +926,18 @@ export default function SurveyPageClient() {
   );
 
   const buildVisibleQuestionList = useCallback(
-    (inputAnswers: PublicSurveyAnswers, selectedSections: string[]) =>
-      buildPublicSurveyQuestionList(template, inputAnswers, selectedSections, {
+    (inputAnswers: PublicSurveyAnswers, selectedSections: string[]) => {
+      const rawList = buildPublicSurveyQuestionList(template, inputAnswers, selectedSections, {
         deriveSelectedSections: false,
-      }).filter((item) => !isAutoDerivedBmiQuestion(item)),
-    [template]
+      });
+      const autoComputed = resolveAutoComputedSurveyState({
+        answers: inputAnswers,
+        questionList: rawList,
+        maxSelectedSections,
+      });
+      return rawList.filter((item) => !autoComputed.hiddenQuestionKeys.has(item.question.key));
+    },
+    [maxSelectedSections, template]
   );
 
   const questionListRaw = useMemo(
@@ -571,15 +947,33 @@ export default function SurveyPageClient() {
       }),
     [answers, selectedSectionsCommitted, template]
   );
+  const autoComputedState = useMemo(
+    () =>
+      resolveAutoComputedSurveyState({
+        answers,
+        questionList: questionListRaw,
+        maxSelectedSections,
+      }),
+    [answers, maxSelectedSections, questionListRaw]
+  );
   const questionList = useMemo(
-    () => questionListRaw.filter((item) => !isAutoDerivedBmiQuestion(item)),
-    [questionListRaw]
+    () =>
+      questionListRaw.filter(
+        (item) => !autoComputedState.hiddenQuestionKeys.has(item.question.key)
+      ),
+    [autoComputedState, questionListRaw]
   );
 
   useEffect(() => {
     if (questionListRaw.length === 0) return;
-    setAnswers((prev) => mergeAutoDerivedBmiAnswers(prev, questionListRaw));
-  }, [questionListRaw]);
+    setAnswers((prev) =>
+      resolveAutoComputedSurveyState({
+        answers: prev,
+        questionList: questionListRaw,
+        maxSelectedSections,
+      }).answers
+    );
+  }, [maxSelectedSections, questionListRaw]);
 
   const surveySections = useMemo(
     () => buildSurveySections(questionList, selectedSectionsCommitted, sectionTitleMap),
@@ -605,17 +999,19 @@ export default function SurveyPageClient() {
   );
   const focusedQuestionKey =
     currentSection && focusedIndex >= 0 ? currentSection.questions[focusedIndex].question.key : null;
-  const displayTotal = Math.max(questionList.length, 1);
-  const displayStep = useMemo(() => {
-    if (!focusedQuestionKey) return 0;
-    const idx = questionList.findIndex((item) => item.question.key === focusedQuestionKey);
-    return idx >= 0 ? idx + 1 : 0;
-  }, [focusedQuestionKey, questionList]);
+  const progressTotalCount = questionList.length;
   const progressDoneCount = useMemo(() => {
     if (questionList.length === 0) return 0;
     let done = 0;
     for (const section of surveySections) {
-      if (completedSectionKeySet.has(section.key)) {
+      const requiredQuestions = section.questions.filter((item) => item.question.required);
+      const hasAllRequiredAnswers = requiredQuestions.every((item) =>
+        isSurveyQuestionAnswered(item.question, answers[item.question.key])
+      );
+      const canTreatSectionAsCompleted =
+        completedSectionKeySet.has(section.key) && hasAllRequiredAnswers;
+
+      if (canTreatSectionAsCompleted) {
         done += section.questions.length;
         continue;
       }
@@ -627,10 +1023,14 @@ export default function SurveyPageClient() {
     }
     return Math.min(done, questionList.length);
   }, [answers, completedSectionKeySet, questionList.length, surveySections]);
+  const progressDisplayDoneCount = useMemo(
+    () => Math.min(progressDoneCount, progressTotalCount),
+    [progressDoneCount, progressTotalCount]
+  );
   const progressPercent = useMemo(() => {
-    if (questionList.length === 0) return 0;
-    return Math.round((progressDoneCount / questionList.length) * 100);
-  }, [progressDoneCount, questionList.length]);
+    if (progressTotalCount === 0) return 0;
+    return Math.round((progressDisplayDoneCount / progressTotalCount) * 100);
+  }, [progressDisplayDoneCount, progressTotalCount]);
   const identityPayload = useMemo(() => toIdentityPayload(identity), [identity]);
   const validIdentity = useMemo(() => isValidIdentityInput(identityPayload), [identityPayload]);
   const identityLocked = authVerified && !identityEditable;
@@ -819,6 +1219,7 @@ export default function SurveyPageClient() {
             .filter((key) => restoredSectionKeySet.has(key))
         );
       }
+      setHasCompletedSubmission(parsed.phase === "result");
       if (parsed.phase === "result") {
         const input = buildWellnessAnalysisInputFromSurvey({
           template,
@@ -924,6 +1325,7 @@ export default function SurveyPageClient() {
     setFocusedQuestionBySection(
       targetSection && targetQuestionKey ? { [targetSection.key]: targetQuestionKey } : {}
     );
+    setHasCompletedSubmission(Boolean(input.response.submittedAt));
     setConfirmedQuestionKeys(answeredQuestionKeys);
     setCompletedSectionKeys(completedKeysFromSnapshot);
     lastVisitedSectionIndexRef.current = nextSectionIndex;
@@ -949,15 +1351,18 @@ export default function SurveyPageClient() {
     finalize: boolean;
     periodKey?: string | null;
   }) {
+    const rawQuestionList = buildPublicSurveyQuestionList(template, input.answers, input.selectedSections, {
+      deriveSelectedSections: false,
+    });
+    const autoComputed = resolveAutoComputedSurveyState({
+      answers: input.answers,
+      questionList: rawQuestionList,
+      maxSelectedSections,
+    });
     const payload = {
       periodKey: input.periodKey ?? surveyPeriodKey ?? undefined,
       selectedSections: input.selectedSections,
-      answers: mergeAutoDerivedBmiAnswers(
-        input.answers,
-        buildPublicSurveyQuestionList(template, input.answers, input.selectedSections, {
-          deriveSelectedSections: false,
-        })
-      ),
+      answers: autoComputed.answers,
       finalize: input.finalize,
     };
     const signature = JSON.stringify(payload);
@@ -1051,9 +1456,10 @@ export default function SurveyPageClient() {
         if (!remote.response) return;
         const remoteUpdatedMs = new Date(remote.response.updatedAt).getTime();
         const localUpdatedMs = restoredSnapshotUpdatedAtRef.current;
+        const hasLocalSnapshot = localUpdatedMs > 0;
         const hasLocalAnswers = Object.keys(answers).length > 0;
         const shouldApplyRemote =
-          !hasLocalAnswers ||
+          (!hasLocalAnswers && !hasLocalSnapshot) ||
           (Number.isFinite(remoteUpdatedMs) && remoteUpdatedMs > localUpdatedMs);
         if (!shouldApplyRemote) return;
         applyRemoteSurveySnapshot({
@@ -1107,6 +1513,7 @@ export default function SurveyPageClient() {
     if (phase === "result") {
       setPhase("survey");
       setResult(null);
+      setHasCompletedSubmission(false);
     }
   }
 
@@ -1191,6 +1598,7 @@ export default function SurveyPageClient() {
       setErrorText(null);
       setErrorQuestionKey(null);
       setResult(null);
+      setHasCompletedSubmission(false);
       setSurveyPeriodKey(null);
       setSurveySyncReady(false);
       setPhase("intro");
@@ -1239,12 +1647,13 @@ export default function SurveyPageClient() {
   }
 
   function startCalculation(finalAnswers: PublicSurveyAnswers, finalSections: string[]) {
-    const resolvedAnswers = mergeAutoDerivedBmiAnswers(
-      finalAnswers,
-      buildPublicSurveyQuestionList(template, finalAnswers, finalSections, {
+    const resolvedAnswers = resolveAutoComputedSurveyState({
+      answers: finalAnswers,
+      questionList: buildPublicSurveyQuestionList(template, finalAnswers, finalSections, {
         deriveSelectedSections: false,
-      })
-    );
+      }),
+      maxSelectedSections,
+    }).answers;
     if (resolvedAnswers !== finalAnswers) {
       setAnswers(resolvedAnswers);
     }
@@ -1256,6 +1665,11 @@ export default function SurveyPageClient() {
       return [...next];
     });
     setPhase("calculating");
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      });
+    }
     setResult(null);
     setErrorText(null);
     setErrorQuestionKey(null);
@@ -1278,6 +1692,7 @@ export default function SurveyPageClient() {
         });
         setResult(computeWellnessResult(input));
         setCalcPercent(100);
+        setHasCompletedSubmission(true);
         setPhase("result");
       } catch {
         setPhase("survey");
@@ -1321,7 +1736,9 @@ export default function SurveyPageClient() {
     const currentError = validateSurveyQuestionAnswer(
       currentNode.question,
       effectiveAnswers[currentNode.question.key],
-      { treatSelectionAsOptional: true }
+      {
+        treatSelectionAsOptional: isSkippableSelectionQuestion(currentNode.question),
+      }
     );
     const numericWarning = resolveQuestionNumericWarning(
       currentNode.question,
@@ -1421,6 +1838,13 @@ export default function SurveyPageClient() {
       return;
     }
 
+    if (isAutoAdvanceFromAnswer) {
+      setErrorQuestionKey(null);
+      setErrorText(null);
+      setIsSectionTransitioning(false);
+      return;
+    }
+
     setIsSectionTransitioning(false);
     startCalculation(nextAnswers, nextSelectedSections);
   }
@@ -1440,12 +1864,14 @@ export default function SurveyPageClient() {
     setErrorQuestionKey(null);
     setIsResetConfirmModalOpen(false);
     setResult(null);
+    setHasCompletedSubmission(false);
+    setIsSectionTransitioning(false);
     setPhase("intro");
     window.localStorage.removeItem(STORAGE_KEY);
     restoredSnapshotUpdatedAtRef.current = Date.now();
     lastRemoteSavedSignatureRef.current = "";
     lastVisitedSectionIndexRef.current = 0;
-    if (authVerified && surveySyncReady) {
+    if (authVerified) {
       void persistSurveySnapshot({
         answers: {},
         selectedSections: [],
@@ -1527,15 +1953,15 @@ export default function SurveyPageClient() {
                 }}
                 className={`rounded-xl border transition ${
                   optionLayout.compact
-                    ? "min-h-[40px] px-2 py-2 text-center text-[12px] font-semibold leading-snug break-keep sm:min-h-[46px] sm:px-3 sm:py-2.5 sm:text-[13px]"
-                    : "min-h-[44px] px-3 py-2.5 text-left text-[13px] font-medium leading-tight break-keep sm:min-h-[50px] sm:px-4 sm:py-3 sm:text-sm"
+                    ? "h-[40px] px-2 py-1.5 text-center text-[12px] font-semibold leading-tight break-keep sm:h-[44px] sm:px-3 sm:py-2 sm:text-[13px]"
+                    : "h-[44px] px-3 py-1.5 text-left text-[12px] font-medium leading-tight break-keep sm:h-[48px] sm:px-4 sm:py-2 sm:text-[13px]"
                 } ${
                   active
                     ? "border-sky-300 bg-sky-50 text-slate-900 ring-1 ring-sky-200 shadow-[0_8px_18px_-14px_rgba(14,116,144,0.35)]"
                     : "border-slate-300 bg-white text-slate-800 hover:border-sky-300 hover:bg-sky-50"
                 }`}
               >
-                {option.label}
+                <span className="block max-h-[2.2em] overflow-hidden leading-tight">{option.label}</span>
               </button>
             );
           })}
@@ -1551,7 +1977,6 @@ export default function SurveyPageClient() {
       const optionLayout = resolveOptionLayout(options);
       return (
         <div className="space-y-3">
-          {!question.required ? <p className="text-xs text-slate-500">{TEXT.optionalHint}</p> : null}
           <div className={`grid gap-2 ${optionLayout.gridClass} sm:gap-2.5`}>
             {options.map((option) => {
               const active = selected.has(option.value);
@@ -1568,15 +1993,15 @@ export default function SurveyPageClient() {
                   }
                   className={`rounded-xl border transition ${
                     optionLayout.compact
-                      ? "min-h-[40px] px-2 py-2 text-center text-[12px] font-semibold leading-snug break-keep sm:min-h-[46px] sm:px-3 sm:py-2.5 sm:text-[13px]"
-                      : "min-h-[44px] px-3 py-2.5 text-left text-[13px] font-medium leading-tight break-keep sm:min-h-[50px] sm:px-4 sm:py-3 sm:text-sm"
+                      ? "h-[40px] px-2 py-1.5 text-center text-[12px] font-semibold leading-tight break-keep sm:h-[44px] sm:px-3 sm:py-2 sm:text-[13px]"
+                      : "h-[44px] px-3 py-1.5 text-left text-[12px] font-medium leading-tight break-keep sm:h-[48px] sm:px-4 sm:py-2 sm:text-[13px]"
                   } ${
                     active
                       ? "border-sky-300 bg-sky-50 text-slate-900 ring-1 ring-sky-200 shadow-[0_8px_18px_-14px_rgba(14,116,144,0.35)]"
                       : "border-slate-300 bg-white text-slate-800 hover:border-sky-300 hover:bg-sky-50"
                   }`}
                 >
-                  {option.label}
+                  <span className="block max-h-[2.2em] overflow-hidden leading-tight">{option.label}</span>
                 </button>
               );
             })}
@@ -1755,6 +2180,31 @@ export default function SurveyPageClient() {
       setIsRenewalModalOpen(true);
       return;
     }
+    if (hasCompletedSubmission) {
+      setAnswers({});
+      setSelectedSectionsCommitted([]);
+      setCurrentSectionIndex(0);
+      setFocusedQuestionBySection({});
+      setConfirmedQuestionKeys([]);
+      setCompletedSectionKeys([]);
+      setErrorText(null);
+      setErrorQuestionKey(null);
+      setResult(null);
+      setHasCompletedSubmission(false);
+      setIsSectionTransitioning(false);
+      restoredSnapshotUpdatedAtRef.current = Date.now();
+      lastRemoteSavedSignatureRef.current = "";
+      lastVisitedSectionIndexRef.current = 0;
+      window.localStorage.removeItem(STORAGE_KEY);
+      if (authVerified) {
+        void persistSurveySnapshot({
+          answers: {},
+          selectedSections: [],
+          finalize: false,
+          periodKey: surveyPeriodKey,
+        }).catch(() => null);
+      }
+    }
     setPhase("survey");
   }
 
@@ -1833,38 +2283,84 @@ export default function SurveyPageClient() {
     activeQuestionIndex >= 0 &&
     activeQuestionIndex >= currentSection.questions.length - 1;
   const atLastSection = currentSectionIndex >= surveySections.length - 1;
+  const currentFocusedQuestion =
+    currentSection && activeQuestionIndex >= 0
+      ? currentSection.questions[activeQuestionIndex]?.question
+      : null;
+  const pendingSelectedSectionsForC27 =
+    currentFocusedQuestion?.key === c27Key
+      ? resolveSelectedSectionsFromC27(template, answers, []).length
+      : 0;
+  const shouldUseNextSectionLabelAtCommonTail =
+    atLastSection &&
+    atLastQuestionInSection &&
+    currentSection?.key === "common" &&
+    currentFocusedQuestion?.key === c27Key &&
+    pendingSelectedSectionsForC27 > 0;
   const nextButtonLabel = atLastSection
-    ? atLastQuestionInSection
+    ? shouldUseNextSectionLabelAtCommonTail
+      ? TEXT.nextSection
+      : atLastQuestionInSection
       ? TEXT.resultCheck
       : TEXT.nextQuestion
     : atLastQuestionInSection
     ? TEXT.nextSection
     : TEXT.nextQuestion;
-  const headerStep = displayStep > 0 ? displayStep : 1;
   const progressMessage = resolveProgressMessage(progressPercent);
 
   return (
-    <div className="w-full min-h-[calc(100vh-3.5rem)] bg-[linear-gradient(120deg,#d2e6f5_0%,#d6deee_42%,#dfe4f0_100%)] py-4 sm:py-6">
-      <div className="mx-auto w-full max-w-[920px] px-4 overflow-visible">
+    <div
+      className="relative isolate w-full overflow-hidden bg-[radial-gradient(130%_90%_at_0%_0%,#c9f6ff_0%,#dce9ff_42%,#eef2ff_100%)] py-5 sm:py-8"
+      style={{
+        minHeight:
+          "max(calc(105vh - var(--wb-topbar-height, 3.5rem)), calc(105dvh - var(--wb-topbar-height, 3.5rem)))",
+      }}
+    >
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-20 -top-16 h-64 w-64 rounded-full bg-cyan-300/35 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-24 top-20 h-72 w-72 rounded-full bg-blue-300/35 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute bottom-0 left-1/3 h-56 w-56 -translate-x-1/2 rounded-full bg-indigo-200/45 blur-3xl"
+      />
+      <div className="relative z-10 mx-auto w-full max-w-[960px] px-4 overflow-visible">
         {phase === "intro" ? (
-          <div className="mx-auto max-w-[820px] rounded-[26px] border border-sky-100/70 bg-white/80 p-5 shadow-[0_16px_34px_-24px_rgba(15,23,42,0.38)] backdrop-blur sm:p-7">
-            <h1 className="text-xl font-extrabold text-slate-900 sm:text-2xl">{TEXT.introTitle}</h1>
-            <p className="mt-3 text-sm text-slate-600 sm:text-base">{TEXT.introDesc1}</p>
-            <p className="mt-1 text-sm text-slate-600 sm:text-base">{TEXT.introDesc2}</p>
+          <div className="mx-auto max-w-[860px] rounded-[30px] border border-sky-200/70 bg-white/92 p-6 shadow-[0_26px_58px_-34px_rgba(15,23,42,0.45)] backdrop-blur sm:p-8">
+            <span className="inline-flex rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700">
+              웰니스 리포트 사전 설문
+            </span>
+            <h1 className="mt-3 text-xl font-extrabold text-slate-900 sm:text-2xl">{TEXT.introTitle}</h1>
+            <p className="mt-3 text-sm leading-relaxed text-slate-600 sm:text-base">{TEXT.introDesc1}</p>
+            <p className="mt-1 text-sm leading-relaxed text-slate-600 sm:text-base">{TEXT.introDesc2}</p>
 
-            <section className="mt-6 rounded-2xl border border-sky-100 bg-sky-50/50 p-4 sm:p-5">
+            <section className="mt-7 rounded-3xl border border-cyan-200/70 bg-[linear-gradient(140deg,rgba(236,253,255,0.95),rgba(239,246,255,0.92))] p-4 sm:p-6">
               <h2 className="text-lg font-bold text-slate-900">{TEXT.preAuthTitle}</h2>
               <p className="mt-1 text-sm text-slate-600">{TEXT.preAuthDesc}</p>
               {authInitializing ? (
-                <div data-testid="survey-auth-loading" className="mt-4 space-y-3">
-                  <p className="text-sm font-semibold text-slate-700">{TEXT.authCheckingTitle}</p>
-                  <p className="text-xs text-slate-500">{TEXT.authCheckingDesc}</p>
-                  <div className="grid gap-2 sm:grid-cols-3">
-                    <div className="h-[44px] animate-pulse rounded-xl border border-slate-200 bg-slate-100/90" />
-                    <div className="h-[44px] animate-pulse rounded-xl border border-slate-200 bg-slate-100/90" />
-                    <div className="h-[44px] animate-pulse rounded-xl border border-slate-200 bg-slate-100/90" />
+                <div
+                  data-testid="survey-auth-loading"
+                  className="mt-4 rounded-xl border border-slate-200 bg-white/80 p-4"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block h-2.5 w-2.5 rounded-full bg-sky-500 animate-pulse" />
+                    <p className="text-sm font-semibold text-slate-700">{TEXT.authCheckingTitle}</p>
                   </div>
-                  <div className="h-[40px] w-[170px] animate-pulse rounded-full border border-slate-200 bg-slate-100/90" />
+                  <p className="mt-1 text-xs text-slate-500">{TEXT.authCheckingDesc}</p>
+                  <div className="mt-3 space-y-2">
+                    <div className="h-[10px] w-[42%] animate-pulse rounded-full bg-slate-200/85" />
+                    <div className="h-[10px] w-[58%] animate-pulse rounded-full bg-slate-200/75" />
+                  </div>
+                  <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                    <div className="h-[44px] animate-pulse rounded-xl bg-slate-200/80" />
+                    <div className="h-[44px] animate-pulse rounded-xl bg-slate-200/80" />
+                    <div className="h-[44px] animate-pulse rounded-xl bg-slate-200/80" />
+                  </div>
+                  <div className="mt-3 h-[40px] w-[170px] animate-pulse rounded-full bg-slate-200/80" />
                 </div>
               ) : (
                 <>
@@ -1881,7 +2377,7 @@ export default function SurveyPageClient() {
                         }))
                       }
                       placeholder={TEXT.namePlaceholder}
-                      className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
+                      className="rounded-2xl border border-slate-300/85 bg-white px-3.5 py-2.5 text-sm shadow-sm outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
                     />
                     <input
                       type="text"
@@ -1898,7 +2394,7 @@ export default function SurveyPageClient() {
                         }))
                       }
                       placeholder={TEXT.birthPlaceholder}
-                      className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
+                      className="rounded-2xl border border-slate-300/85 bg-white px-3.5 py-2.5 text-sm shadow-sm outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
                     />
                     <input
                       type="text"
@@ -1915,7 +2411,7 @@ export default function SurveyPageClient() {
                         }))
                       }
                       placeholder={TEXT.phonePlaceholder}
-                      className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
+                      className="rounded-2xl border border-slate-300/85 bg-white px-3.5 py-2.5 text-sm shadow-sm outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
                     />
                   </div>
                   {identityLocked ? (
@@ -1925,26 +2421,31 @@ export default function SurveyPageClient() {
                   ) : null}
 
                   <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      disabled={authBusy !== "idle" || !identityEditable || authVerified}
-                      onClick={() => void handleStartKakaoAuth()}
-                      className="rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105 hover:shadow-md active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {identityLocked
-                        ? TEXT.authDone
-                        : authBusy === "init" || authBusy === "sync"
-                        ? TEXT.busyRequest
-                        : authPendingSign
-                        ? TEXT.resendAuth
-                        : TEXT.sendAuth}
-                    </button>
+                    {identityLocked ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                        {TEXT.authDone}
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={authBusy !== "idle" || !identityEditable || authVerified}
+                        onClick={() => void handleStartKakaoAuth()}
+                        className="rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-105 hover:shadow-md active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {authBusy === "init" || authBusy === "sync"
+                          ? TEXT.busyRequest
+                          : authPendingSign
+                          ? TEXT.resendAuth
+                          : TEXT.sendAuth}
+                      </button>
+                    )}
                     {authPendingSign && !authVerified ? (
                       <button
                         type="button"
                         disabled={authBusy !== "idle" || !identityEditable}
                         onClick={() => void handleConfirmKakaoAuth()}
-                        className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+                        className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {authBusy === "sign" ? TEXT.busyChecking : TEXT.checkAuth}
                       </button>
@@ -1954,7 +2455,7 @@ export default function SurveyPageClient() {
                         type="button"
                         disabled={authBusy !== "idle"}
                         onClick={() => void handleSwitchIdentity()}
-                        className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+                        className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {TEXT.switchIdentity}
                       </button>
@@ -1969,85 +2470,95 @@ export default function SurveyPageClient() {
                 {authNoticeText}
               </p>
             ) : null}
+            {authVerified && !authInitializing ? (
+              <p className="mt-3 text-xs font-semibold text-emerald-700">
+                인증이 확인되었습니다. 설문을 시작해 주세요.
+              </p>
+            ) : null}
             {authErrorText ? (
               <p className="mt-3 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-sm text-rose-700">
                 {authErrorText}
               </p>
             ) : null}
 
-            <div className="mt-6 flex flex-wrap items-center gap-3">
+            <div className="mt-7 flex flex-wrap items-center gap-3">
               <button
                 type="button"
                 onClick={handleStartSurvey}
                 disabled={!authVerified || authBusy !== "idle" || authInitializing}
                 data-testid="survey-start-button"
-                className="rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-105 hover:shadow-md active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-105 hover:shadow-md active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {TEXT.startSurvey}
               </button>
               <span
                 className={`text-sm font-medium ${
                   authInitializing
-                    ? "text-sky-700"
+                    ? "text-cyan-700"
                     : authVerified
-                    ? "text-emerald-700"
+                    ? "text-cyan-700"
                     : "text-slate-500"
                 }`}
               >
                 {authInitializing
                   ? TEXT.authCheckingTitle
                   : authVerified
-                  ? TEXT.authDone
+                  ? "설문을 시작할 수 있습니다."
                   : TEXT.needAuthNotice}
               </span>
             </div>
+            {hasCompletedSubmission ? (
+              <p className="mt-3 rounded-2xl border border-cyan-100 bg-cyan-50 px-3 py-2 text-xs text-cyan-700 sm:text-sm">
+                완료된 설문 이력이 있어도 다시 시작하면 문항 선택값은 초기화되고 처음부터 진행됩니다.
+              </p>
+            ) : null}
           </div>
         ) : null}
 
         {phase === "survey" ? (
-          <div className="rounded-[26px] border border-sky-100/70 bg-white/78 p-4 shadow-[0_18px_36px_-24px_rgba(15,23,42,0.38)] backdrop-blur sm:p-6 overflow-visible">
-            <header className="grid grid-cols-2 gap-4 border-b border-slate-200/80 pb-5 sm:pb-6">
+          <div className="overflow-visible rounded-[30px] border border-sky-200/70 bg-white/90 p-4 shadow-[0_24px_58px_-36px_rgba(15,23,42,0.48)] backdrop-blur sm:p-7">
+            <header className="grid gap-4 border-b border-slate-200/80 pb-5 sm:pb-6 lg:grid-cols-[minmax(0,1fr)_320px]">
               <div className="space-y-1.5">
-                <span className="inline-flex rounded-full border border-sky-300 bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-700">
+                <span className="inline-flex rounded-full border border-cyan-300 bg-cyan-50 px-2.5 py-1 text-xs font-semibold text-cyan-700">
                   {currentSectionIndex + 1}. {currentSection?.title ?? TEXT.commonSection}
                 </span>
-                <p className="text-sm font-semibold text-sky-700">{TEXT.progressTitle}</p>
-                <p className="text-2xl font-extrabold leading-none text-slate-900 sm:text-3xl">
-                  {headerStep}/{displayTotal}
+                <p className="text-sm font-semibold text-cyan-700">{TEXT.progressTitle}</p>
+                <p className="text-2xl font-black leading-none text-slate-900 sm:text-3xl">
+                  {progressDisplayDoneCount}/{progressTotalCount}
                 </p>
                 <p className="text-sm text-slate-600 sm:text-base">
-                  전체 진행률 {progressPercent}% ({progressDoneCount}/{questionList.length || 0})
+                  전체 진행률 {progressPercent}% ({progressDisplayDoneCount}/{progressTotalCount})
                 </p>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-3 lg:rounded-2xl lg:border lg:border-slate-200/80 lg:bg-slate-50/60 lg:p-3">
                 <div className="flex justify-end">
                   <button
                     type="button"
                     onClick={requestReset}
                     data-testid="survey-header-reset-button"
-                    className="text-sm text-slate-500 underline-offset-2 hover:text-slate-700 hover:underline"
+                    className="text-sm font-medium text-slate-500 underline-offset-2 hover:text-cyan-700 hover:underline"
                   >
                     {TEXT.restart}
                   </button>
                 </div>
-                <div className="rounded-2xl border border-slate-200/80 bg-white/70 px-3 py-3">
+                <div className="rounded-2xl border border-cyan-200/80 bg-white/85 px-3 py-3">
                   <div className="mb-1.5 flex items-center justify-between text-sm text-slate-600">
                     <span>{TEXT.progressBarLabel}</span>
-                    <span>{progressPercent}%</span>
+                    <span className="font-semibold text-cyan-700">{progressPercent}%</span>
                   </div>
-                  <div className="h-2.5 w-full rounded-full bg-sky-100">
+                  <div className="h-2.5 w-full rounded-full bg-cyan-100">
                     <div
-                      className="h-2.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 transition-[width] duration-300"
+                      className="h-2.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-[width] duration-300"
                       style={{ width: `${progressPercent}%` }}
                     />
                   </div>
-                  <p className="mt-2 text-xs text-sky-700">{progressMessage}</p>
+                  <p className="mt-2 text-xs text-cyan-700">{progressMessage}</p>
                 </div>
               </div>
             </header>
 
             {surveySections.length > 1 ? (
-              <nav className="mt-4 flex flex-wrap gap-2">
+              <nav className="mt-5 flex flex-wrap gap-2.5">
                 {surveySections.map((section, index) => (
                   <button
                     key={section.key}
@@ -2056,8 +2567,8 @@ export default function SurveyPageClient() {
                     onClick={() => moveToSection(index)}
                     className={`rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm ${
                       index === currentSectionIndex
-                        ? "bg-sky-600 text-white hover:bg-sky-700"
-                        : "border border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
+                        ? "bg-cyan-600 text-white shadow-sm hover:bg-cyan-700"
+                        : "border border-slate-200 bg-white text-slate-600 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700"
                     } ${isSectionTransitioning ? "cursor-wait opacity-70" : ""}`}
                   >
                     {section.title}
@@ -2067,19 +2578,23 @@ export default function SurveyPageClient() {
             ) : null}
 
             {isSectionTransitioning ? (
-              <div className="mt-4 rounded-xl border border-sky-200 bg-sky-50/80 px-3 py-2.5 text-sm text-sky-700">
+              <div className="mt-4 rounded-2xl border border-cyan-200 bg-cyan-50/80 px-3 py-2.5 text-sm text-cyan-700">
                 <p className="font-semibold">{TEXT.sectionTransitionTitle}</p>
-                <p className="mt-0.5 text-xs text-sky-600">{TEXT.sectionTransitionDesc}</p>
+                <p className="mt-0.5 text-xs text-cyan-700/80">{TEXT.sectionTransitionDesc}</p>
               </div>
             ) : null}
 
-            <section className="mt-5 space-y-3 overflow-visible max-h-none">
-              {currentSection?.questions.map((node) => {
+            <section className="mt-6 space-y-3.5 overflow-visible max-h-none">
+              {currentSection?.questions.map((node, sectionQuestionIndex) => {
                 const question = node.question;
                 const questionText = toDisplayQuestionText(question);
                 const isFocused = focusedQuestionKey === question.key;
-                const questionNumber =
-                  questionList.findIndex((item) => item.question.key === question.key) + 1;
+                const questionNumber = sectionQuestionIndex + 1;
+                const shouldShowOptionalHint = isSkippableSelectionQuestion(question);
+                const rawHelpText = question.helpText?.trim() ?? "";
+                const helpTextIsOptionalHint = isOptionalHintLikeText(rawHelpText);
+                const resolvedHelpText =
+                  !helpTextIsOptionalHint && rawHelpText.length > 0 ? rawHelpText : "";
                 return (
                   <article
                     key={question.key}
@@ -2090,14 +2605,14 @@ export default function SurveyPageClient() {
                     ref={(nodeRef) => {
                       questionRefs.current[question.key] = nodeRef;
                     }}
-                    className={`rounded-2xl border bg-white p-4 transition sm:p-5 ${
+                    className={`rounded-3xl border bg-gradient-to-b from-white to-slate-50/60 p-4 transition sm:p-6 ${
                       isFocused
-                        ? "border-sky-300 shadow-[0_12px_30px_-20px_rgba(56,189,248,0.8)]"
-                        : "border-slate-200"
+                        ? "border-cyan-300 shadow-[0_16px_36px_-24px_rgba(34,211,238,0.85)]"
+                        : "border-slate-200/90"
                     }`}
                   >
                     <div className="mb-3 flex flex-wrap items-center gap-1.5">
-                      <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-[11px] font-semibold text-indigo-700">
+                      <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700">
                         {node.sectionKey ? node.sectionTitle : TEXT.commonBadge}
                       </span>
                       {question.required ? (
@@ -2111,8 +2626,11 @@ export default function SurveyPageClient() {
                         {questionNumber}. {questionText || question.key}
                       </h3>
                     </div>
-                    {question.helpText ? (
-                      <p className="mt-2 text-sm text-slate-500">{question.helpText}</p>
+                    {resolvedHelpText ? (
+                      <p className="mt-2 text-sm text-slate-500">{resolvedHelpText}</p>
+                    ) : null}
+                    {shouldShowOptionalHint ? (
+                      <p className="mt-2 text-xs text-slate-500">{TEXT.optionalHint}</p>
                     ) : null}
                     <div className="mt-4">{renderQuestionInput(question)}</div>
                     {errorQuestionKey === question.key && errorText ? (
@@ -2123,13 +2641,13 @@ export default function SurveyPageClient() {
               })}
             </section>
 
-            <footer className="mt-6 flex items-center justify-between">
+            <footer className="mt-7 flex items-center justify-between">
               <button
                 type="button"
                 onClick={handleMovePrevious}
                 disabled={!hasPrevStep || isSectionTransitioning}
                 data-testid="survey-prev-button"
-                className="rounded-full border border-slate-300 px-4 py-2 text-sm text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-full border border-slate-300 px-4 py-2 text-sm text-slate-700 transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {prevButtonLabel}
               </button>
@@ -2138,7 +2656,7 @@ export default function SurveyPageClient() {
                 onClick={() => handleAdvance()}
                 disabled={isSectionTransitioning}
                 data-testid="survey-next-button"
-                className="rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 px-6 py-2.5 text-sm font-semibold text-white transition hover:brightness-105 hover:shadow-md active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-105 hover:shadow-md active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {nextButtonLabel}
               </button>
@@ -2149,15 +2667,15 @@ export default function SurveyPageClient() {
         {phase === "calculating" ? (
           <div
             data-testid="survey-calculating"
-            className="mx-auto max-w-2xl rounded-[30px] border border-sky-100/70 bg-white/78 p-6 text-center shadow-[0_24px_50px_-32px_rgba(15,23,42,0.45)] backdrop-blur sm:p-8"
+            className="mx-auto max-w-2xl rounded-[30px] border border-cyan-200/70 bg-white/88 p-6 text-center shadow-[0_24px_50px_-32px_rgba(15,23,42,0.45)] backdrop-blur sm:p-8"
           >
-            <p className="text-sm font-semibold text-sky-700">{TEXT.resultTitle}</p>
+            <p className="text-sm font-semibold text-cyan-700">{TEXT.resultTitle}</p>
             <h2 className="mt-2 text-xl font-extrabold text-slate-900 sm:text-2xl">
               {CALCULATING_MESSAGES[calcMessageIndex]}
             </h2>
-            <div className="mx-auto mt-6 h-2 w-full max-w-xl rounded-full bg-sky-100">
+            <div className="mx-auto mt-6 h-2 w-full max-w-xl rounded-full bg-cyan-100">
               <div
-                className="h-2 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 transition-[width] duration-300"
+                className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-[width] duration-300"
                 style={{ width: `${calcPercent}%` }}
               />
             </div>
@@ -2173,26 +2691,194 @@ export default function SurveyPageClient() {
             <h2 className="text-xl font-extrabold text-slate-900 sm:text-2xl">{TEXT.resultTitle}</h2>
             {resultSummary ? (
               <div className="mt-5 space-y-5">
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-xs font-semibold text-slate-500">{TEXT.scoreHealth}</p>
-                    <p className="mt-1 text-xl font-extrabold text-slate-900">
-                      {Math.round(resultSummary.overallHealthScore)}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-xs font-semibold text-slate-500">{TEXT.scoreRisk}</p>
-                    <p className="mt-1 text-xl font-extrabold text-slate-900">
-                      {Math.round(resultSummary.lifestyleRisk.overallPercent)}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-xs font-semibold text-slate-500">{TEXT.scoreNeed}</p>
-                    <p className="mt-1 text-xl font-extrabold text-slate-900">
-                      {Math.round(resultSummary.healthManagementNeed.averagePercent)}
-                    </p>
-                  </div>
-                </div>
+                {(() => {
+                  const healthScore = clampResultPercent(
+                    Math.round(resultSummary.overallHealthScore)
+                  );
+                  const lifestyleOverall = clampResultPercent(
+                    Math.round(resultSummary.lifestyleRisk.overallPercent)
+                  );
+                  const healthNeedAverage = clampResultPercent(
+                    Math.round(resultSummary.healthManagementNeed.averagePercent)
+                  );
+                  const donutOffset =
+                    SURVEY_RESULT_DONUT_CIRCUMFERENCE * (1 - healthScore / 100);
+                  const radarDomainsRaw = resultSummary.lifestyleRisk.domains
+                    .map((axis) => ({
+                      id: axis.id,
+                      name: (axis.name ?? axis.id ?? "").trim(),
+                      percent: clampResultPercent(Math.round(axis.percent ?? 0)),
+                    }))
+                    .filter((axis) => axis.name.length > 0)
+                    .slice(0, 4);
+                  const radarDomains =
+                    radarDomainsRaw.length > 0
+                      ? radarDomainsRaw
+                      : [
+                          { id: "diet", name: "식습관", percent: 0 },
+                          { id: "immune", name: "면역관리", percent: 0 },
+                          { id: "sleep", name: "수면", percent: 0 },
+                          { id: "activity", name: "활동량", percent: 0 },
+                        ];
+                  const radarPolygon = getResultRadarPolygonPoints(
+                    radarDomains.map((axis) => axis.percent)
+                  );
+                  const sectionNeedRows = [...(resultSummary.healthManagementNeed.sections ?? [])]
+                    .map((section) => ({
+                      sectionId: section.sectionId,
+                      sectionTitle: (section.sectionTitle ?? section.sectionId ?? "").trim(),
+                      percent: clampResultPercent(Math.round(section.percent ?? 0)),
+                    }))
+                    .filter((section) => section.sectionTitle.length > 0)
+                    .sort((left, right) => right.percent - left.percent)
+                    .slice(0, 3);
+
+                  return (
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <article className="rounded-2xl border border-slate-200 bg-white p-4">
+                        <p className="text-sm font-semibold text-slate-900">{TEXT.scoreHealth}</p>
+                        <div className="mt-2 flex items-center gap-3">
+                          <div className="relative h-[112px] w-[112px] shrink-0">
+                            <svg
+                              viewBox="0 0 120 120"
+                              className="h-full w-full"
+                              role="img"
+                              aria-label="건강점수 원형 차트"
+                            >
+                              <circle
+                                cx="60"
+                                cy="60"
+                                r={SURVEY_RESULT_DONUT_RADIUS}
+                                fill="none"
+                                stroke="#E2E8F0"
+                                strokeWidth="10"
+                              />
+                              <circle
+                                cx="60"
+                                cy="60"
+                                r={SURVEY_RESULT_DONUT_RADIUS}
+                                fill="none"
+                                stroke="#16A34A"
+                                strokeWidth="10"
+                                strokeLinecap="round"
+                                strokeDasharray={SURVEY_RESULT_DONUT_CIRCUMFERENCE}
+                                strokeDashoffset={donutOffset}
+                                transform="rotate(-90 60 60)"
+                              />
+                            </svg>
+                            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                              <p className="text-3xl font-extrabold text-slate-900">
+                                {healthScore}
+                                <span className="ml-0.5 text-xl">점</span>
+                              </p>
+                            </div>
+                          </div>
+                          <p className="text-[11px] leading-relaxed text-slate-500">
+                            건강점수 = 100 - ((생활습관 위험도 + 건강관리 위험도 평균) / 2)
+                          </p>
+                        </div>
+                      </article>
+
+                      <article className="rounded-2xl border border-slate-200 bg-white p-4">
+                        <p className="text-sm font-semibold text-slate-900">{TEXT.scoreRisk}</p>
+                        <div className="mt-2">
+                          <svg
+                            viewBox={`0 0 ${SURVEY_RESULT_RADAR_SIZE} ${SURVEY_RESULT_RADAR_SIZE}`}
+                            className="mx-auto h-[146px] w-full max-w-[220px]"
+                            role="img"
+                            aria-label="생활습관 위험도 레이더 차트"
+                          >
+                            {[25, 50, 75, 100].map((level) => (
+                              <polygon
+                                key={`grid-${level}`}
+                                points={getResultRadarPolygonPoints(radarDomains.map(() => level))}
+                                fill="none"
+                                stroke="#CBD5E1"
+                                strokeWidth="1"
+                              />
+                            ))}
+                            {radarDomains.map((axis, index) => {
+                              const point = getResultRadarPoint(index, radarDomains.length, 1);
+                              return (
+                                <line
+                                  key={`axis-${axis.id}`}
+                                  x1={SURVEY_RESULT_RADAR_CENTER}
+                                  y1={SURVEY_RESULT_RADAR_CENTER}
+                                  x2={point.x}
+                                  y2={point.y}
+                                  stroke="#CBD5E1"
+                                  strokeWidth="1"
+                                />
+                              );
+                            })}
+                            <polygon
+                              points={radarPolygon}
+                              fill="rgba(59,130,246,0.22)"
+                              stroke="#2563EB"
+                              strokeWidth="2"
+                            />
+                            {radarDomains.map((axis, index) => {
+                              const point = getResultRadarPoint(
+                                index,
+                                radarDomains.length,
+                                axis.percent / 100
+                              );
+                              return <circle key={`point-${axis.id}`} cx={point.x} cy={point.y} r="3.2" fill="#2563EB" />;
+                            })}
+                            {radarDomains.map((axis, index) => {
+                              const point = getResultRadarPoint(index, radarDomains.length, 1.18);
+                              return (
+                                <text
+                                  key={`label-${axis.id}`}
+                                  x={point.x}
+                                  y={point.y}
+                                  textAnchor="middle"
+                                  fill="#1E3A8A"
+                                  fontSize="10"
+                                  fontWeight="600"
+                                >
+                                  {axis.name}
+                                </text>
+                              );
+                            })}
+                          </svg>
+                        </div>
+                        <p className="mt-2 text-xs text-slate-500">
+                          종합 위험도:{" "}
+                          <span className="font-semibold text-rose-600">{lifestyleOverall}점</span>
+                        </p>
+                      </article>
+
+                      <article className="rounded-2xl border border-slate-200 bg-white p-4">
+                        <p className="text-sm font-semibold text-slate-900">건강관리 위험도</p>
+                        {sectionNeedRows.length === 0 ? (
+                          <p className="mt-3 text-xs text-slate-500">선택한 세부 영역 데이터가 없습니다.</p>
+                        ) : (
+                          <ul className="mt-3 space-y-2.5">
+                            {sectionNeedRows.map((section) => (
+                              <li key={`need-${section.sectionId}`}>
+                                <div className="mb-1 flex items-center justify-between text-xs text-slate-600">
+                                  <span className="truncate pr-2">{section.sectionTitle}</span>
+                                  <span className="font-semibold text-rose-600">{section.percent}점</span>
+                                </div>
+                                <div className="h-2 w-full rounded-full bg-slate-200">
+                                  <div
+                                    className="h-2 rounded-full bg-gradient-to-r from-rose-500 to-orange-400"
+                                    style={{ width: `${section.percent}%` }}
+                                  />
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        <p className="mt-3 text-xs text-slate-500">
+                          평균 위험도:{" "}
+                          <span className="font-semibold text-rose-600">{healthNeedAverage}점</span>
+                        </p>
+                      </article>
+                    </div>
+                  );
+                })()}
 
                 <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
                   <h3 className="text-lg font-bold text-slate-900">핵심 위험 하이라이트</h3>
@@ -2215,8 +2901,13 @@ export default function SurveyPageClient() {
                             <p className="text-xs font-semibold text-rose-700">
                               {categoryLabel} · 위험도 {Math.round(item.score)}점
                             </p>
-                            <p className="mt-1 font-semibold text-slate-900">{item.title}</p>
-                            <p className="mt-1 text-slate-700">{item.action}</p>
+                            <p className="mt-1 font-semibold text-slate-900">
+                              {item.questionText || item.title}
+                            </p>
+                            <p className="mt-1 text-sm text-slate-700">
+                              내 답변: {item.answerText || "응답 정보 없음"}
+                            </p>
+                            <p className="mt-1 text-slate-700">권장안: {item.action}</p>
                           </li>
                         );
                       })}
@@ -2258,7 +2949,14 @@ export default function SurveyPageClient() {
                           <ul className="mt-2 space-y-1.5 text-sm text-slate-700">
                             {value.items.map((item) => (
                               <li key={`section-item-${sectionId}-${item.questionNumber}`}>
-                                Q{item.questionNumber}. {item.text}
+                                <p className="font-semibold text-slate-900">
+                                  {item.questionText ||
+                                    `${value.sectionTitle} ${item.questionNumber}번 문항`}
+                                </p>
+                                <p className="mt-0.5 text-slate-700">
+                                  내 답변: {item.answerText || "응답 정보 없음"}
+                                </p>
+                                <p className="mt-0.5 text-slate-700">권장안: {item.text}</p>
                               </li>
                             ))}
                           </ul>
@@ -2294,7 +2992,7 @@ export default function SurveyPageClient() {
                                   key={`nutrient-${item.sectionId}-${nutrient.code}`}
                                   className="rounded-full border border-indigo-200 bg-white px-2 py-1 text-xs font-medium text-indigo-700"
                                 >
-                                  {nutrient.label}
+                                  {nutrient.labelKo ?? nutrient.label}
                                 </span>
                               ))}
                             </div>
@@ -2321,17 +3019,11 @@ export default function SurveyPageClient() {
                 onClick={() => {
                   setPhase("survey");
                   setResult(resultSummary);
+                  setHasCompletedSubmission(false);
                 }}
                 className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700 active:scale-[0.99]"
               >
                 {TEXT.editSurvey}
-              </button>
-              <button
-                type="button"
-                onClick={() => startCalculation(answers, selectedSectionsCommitted)}
-                className="rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105 hover:shadow-md active:scale-[0.99]"
-              >
-                {TEXT.resultCheck}
               </button>
               <button
                 type="button"

@@ -55,6 +55,7 @@ export function NumberInput({
         <input
           ref={inputRef}
           type="number"
+          inputMode="decimal"
           value={val}
           min={question.min}
           max={question.max}

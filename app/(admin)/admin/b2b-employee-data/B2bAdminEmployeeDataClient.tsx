@@ -471,6 +471,8 @@ export default function B2bAdminEmployeeDataClient() {
               <input
                 className={styles.input}
                 value={createBirthDate}
+                inputMode="numeric"
+                pattern="[0-9]*"
                 onChange={(event) => setCreateBirthDate(event.target.value.replace(/\D/g, ""))}
                 placeholder="생년월일 8자리 (YYYYMMDD)"
                 maxLength={8}
@@ -479,6 +481,8 @@ export default function B2bAdminEmployeeDataClient() {
               <input
                 className={styles.input}
                 value={createPhone}
+                inputMode="numeric"
+                pattern="[0-9]*"
                 onChange={(event) => setCreatePhone(event.target.value.replace(/\D/g, ""))}
                 placeholder="휴대폰 10~11자리"
                 maxLength={11}
@@ -584,6 +588,8 @@ export default function B2bAdminEmployeeDataClient() {
                     <input
                       className={styles.input}
                       value={editBirthDate}
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       onChange={(event) => setEditBirthDate(event.target.value.replace(/\D/g, ""))}
                       placeholder="생년월일 8자리"
                       maxLength={8}
@@ -592,6 +598,8 @@ export default function B2bAdminEmployeeDataClient() {
                     <input
                       className={styles.input}
                       value={editPhone}
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       onChange={(event) => setEditPhone(event.target.value.replace(/\D/g, ""))}
                       placeholder="휴대폰 10~11자리"
                       maxLength={11}

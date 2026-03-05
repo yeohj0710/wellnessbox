@@ -122,6 +122,7 @@ export default function PaymentSection({
               </label>
               <input
                 type="number"
+                inputMode="numeric"
                 value={customTestAmount}
                 onChange={(e) => setCustomTestAmount(Number(e.target.value))}
                 className="mt-1 w-full border rounded-md px-3 py-2"
