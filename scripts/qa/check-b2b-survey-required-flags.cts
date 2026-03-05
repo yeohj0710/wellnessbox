@@ -133,22 +133,26 @@ function run() {
     );
   }
 
-  const s10q06 = findQuestion(sectionQuestions, "S10_Q06");
-  assert.ok(s10q06, "S10_Q06 question is missing");
-  assert.equal(s10q06.required, true, "S10_Q06 should remain required");
-
-  for (const key of ["S07_Q05", "S15_Q03"]) {
-    const question = findQuestion(sectionQuestions, key);
-    assert.ok(question, `${key} question is missing`);
-    assert.equal(question.required, true, `${key} should remain required`);
+  const rawSectionQuestions = bundle.sections.sections.flatMap((section) => section.questions);
+  const rawSectionById = new Map(rawSectionQuestions.map((question) => [question.id, question]));
+  for (const question of sectionQuestions) {
+    const rawQuestion = rawSectionById.get(question.key);
+    const expectedRequired =
+      typeof rawQuestion?.required === "boolean" ? rawQuestion.required : false;
     assert.equal(
-      validateSurveyQuestionAnswer(question, "", { treatSelectionAsOptional: false }),
-      "필수 문항입니다. 응답을 입력해 주세요.",
-      `${key} should reject empty answer because it is required`
+      question.required,
+      expectedRequired,
+      `${question.key} should follow required flag from section data (default optional)`
     );
-    const labels = (question.options ?? []).map((option) => option.label);
-    assert.ok(labels.includes("있음"), `${key} options should include '있음'`);
-    assert.ok(labels.includes("없음"), `${key} options should include '없음'`);
+    if (!expectedRequired) {
+      assert.equal(
+        validateSurveyQuestionAnswer(question, "", {
+          treatSelectionAsOptional: false,
+        }),
+        null,
+        `${question.key} optional section question should allow empty answer`
+      );
+    }
   }
 
   const requiredMultiQuestions = allQuestions.filter(
@@ -182,8 +186,7 @@ function run() {
           "core_identity_questions_remain_required",
           "optional_skip_guide_questions_are_optional",
           "section_optional_prompt_questions_are_optional",
-          "s10_q06_remains_required",
-          "medication_single_choice_questions_are_required",
+          "section_questions_default_to_optional",
           "all_multi_questions_are_optional",
         ],
         stats: requiredStats,

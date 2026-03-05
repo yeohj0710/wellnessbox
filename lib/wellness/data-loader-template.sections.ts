@@ -86,7 +86,8 @@ function resolveSectionQuestionRequired(input: {
   }
   if (isOptionalSelectionPrompt(question.prompt)) return false;
   if (removedNoneLikeOption) return false;
-  return true;
+  // 세부 섹션 문항은 기본적으로 "선택"으로 두고, 데이터에서 명시적으로 required=true일 때만 필수 처리한다.
+  return false;
 }
 
 export function mapSectionTemplates(
