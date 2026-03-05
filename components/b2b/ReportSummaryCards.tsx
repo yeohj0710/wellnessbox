@@ -10,10 +10,7 @@ import {
   toScoreValue,
 } from "./report-summary/helpers";
 import {
-  buildDetailedRiskHighlightLines,
   buildDetailedSectionAdviceLines,
-  buildFriendlyAnalysisLines,
-  buildFriendlyRiskLines,
   clampPercent,
   ensureSentence,
   formatMetricValue,
@@ -28,10 +25,10 @@ import SurveyDetailPages from "./report-summary/SurveyDetailPages";
 const DONUT_RADIUS = 52;
 const DONUT_CIRCUMFERENCE = 2 * Math.PI * DONUT_RADIUS;
 const MAX_PAGE1_SECTION_BARS = 3;
-const RISK_CHUNK_SIZE = 5;
 const ROUTINE_CHUNK_SIZE = 6;
-const SECTION_ADVICE_CHUNK_SIZE = 6;
+const SECTION_ADVICE_CHUNK_SIZE = 4;
 const SUPPLEMENT_CHUNK_SIZE = 2;
+const SURVEY_CARDS_PER_PAGE = 2;
 
 const LIFESTYLE_RISK_LABEL_BY_ID: Record<string, string> = {
   diet: "식습관 위험도",
@@ -94,6 +91,81 @@ function toRadarPointString(points: Array<{ x: number; y: number }>) {
 
 function normalizeSupplementHeadingText(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+type SectionAdviceLine = {
+  key: string;
+  sectionTitle: string;
+  questionText: string;
+  answerText: string;
+  recommendation: string;
+};
+
+type SupplementRow = {
+  sectionId: string;
+  sectionTitle: string;
+  title: string;
+  showSectionTitle?: boolean;
+  paragraphs: string[];
+  recommendedNutrients: string[];
+};
+
+type SurveyDetailPageModel = {
+  routineRows: string[];
+  sectionAdviceRows: SectionAdviceLine[];
+  supplementRows: SupplementRow[];
+};
+
+function buildSurveyDetailPages(input: {
+  routineLines: string[];
+  sectionAdviceLines: SectionAdviceLine[];
+  supplementRows: SupplementRow[];
+}) {
+  const cards: Array<
+    | { type: "routine"; rows: string[] }
+    | { type: "section"; rows: SectionAdviceLine[] }
+    | { type: "supplement"; rows: SupplementRow[] }
+  > = [];
+
+  for (const rows of chunkItems(input.routineLines, ROUTINE_CHUNK_SIZE)) {
+    if (rows.length > 0) cards.push({ type: "routine", rows });
+  }
+  for (const rows of chunkItems(input.sectionAdviceLines, SECTION_ADVICE_CHUNK_SIZE)) {
+    if (rows.length > 0) cards.push({ type: "section", rows });
+  }
+  for (const rows of chunkItems(input.supplementRows, SUPPLEMENT_CHUNK_SIZE)) {
+    if (rows.length > 0) cards.push({ type: "supplement", rows });
+  }
+
+  if (cards.length === 0) return [] as SurveyDetailPageModel[];
+
+  const pages: SurveyDetailPageModel[] = [];
+  let currentPage: SurveyDetailPageModel = {
+    routineRows: [],
+    sectionAdviceRows: [],
+    supplementRows: [],
+  };
+  let cardsInCurrentPage = 0;
+
+  for (const card of cards) {
+    if (cardsInCurrentPage >= SURVEY_CARDS_PER_PAGE) {
+      pages.push(currentPage);
+      currentPage = {
+        routineRows: [],
+        sectionAdviceRows: [],
+        supplementRows: [],
+      };
+      cardsInCurrentPage = 0;
+    }
+
+    if (card.type === "routine") currentPage.routineRows = card.rows;
+    if (card.type === "section") currentPage.sectionAdviceRows = card.rows;
+    if (card.type === "supplement") currentPage.supplementRows = card.rows;
+    cardsInCurrentPage += 1;
+  }
+
+  if (cardsInCurrentPage > 0) pages.push(currentPage);
+  return pages;
 }
 
 export default function ReportSummaryCards(props: {
@@ -190,14 +262,7 @@ export default function ReportSummaryCards(props: {
 
   const sectionNeedsForPage1 = sectionNeeds.slice(0, MAX_PAGE1_SECTION_BARS);
   const hiddenSectionNeedCount = Math.max(0, sectionNeeds.length - sectionNeedsForPage1.length);
-  const centerNeedCardContent =
-    sectionNeedsForPage1.length > 0 && sectionNeedsForPage1.length < MAX_PAGE1_SECTION_BARS;
 
-  const analysisLines = hasWellnessScoringData ? buildFriendlyAnalysisLines(payload) : [];
-  const riskLines = hasWellnessScoringData ? buildFriendlyRiskLines(payload) : [];
-  const detailedRiskLines = hasWellnessScoringData
-    ? buildDetailedRiskHighlightLines(payload, Number.POSITIVE_INFINITY)
-    : [];
   const detailedSectionAdviceLines = hasWellnessScoringData
     ? buildDetailedSectionAdviceLines(payload, Number.POSITIVE_INFINITY)
     : [];
@@ -228,28 +293,42 @@ export default function ReportSummaryCards(props: {
       })
     : [];
 
-  const riskPages = chunkItems(detailedRiskLines, RISK_CHUNK_SIZE);
-  const routinePages = chunkItems(lifestyleRoutineAdviceLines, ROUTINE_CHUNK_SIZE);
-  const combinedSurveyPageCount = Math.max(riskPages.length, routinePages.length);
-  const sectionAdvicePages = chunkItems(detailedSectionAdviceLines, SECTION_ADVICE_CHUNK_SIZE);
-  const supplementPages = chunkItems(supplementDesignRows, SUPPLEMENT_CHUNK_SIZE);
+  const surveyPages = buildSurveyDetailPages({
+    routineLines: lifestyleRoutineAdviceLines,
+    sectionAdviceLines: detailedSectionAdviceLines,
+    supplementRows: supplementDesignRows,
+  });
   const surveyDetailPageStart = 2;
-  const sectionAdvicePageStart = surveyDetailPageStart + combinedSurveyPageCount;
-  const supplementPageStart = sectionAdvicePageStart + sectionAdvicePages.length;
-  const healthDataPageNumber = supplementPageStart + supplementPages.length;
+  const healthDataPageNumber = surveyDetailPageStart + surveyPages.length;
   const medicationPageNumber = healthDataPageNumber + 1;
 
-  const radarCenter = 100;
-  const radarRadius = 60;
+  const radarCenterX = 120;
+  const radarCenterY = 106;
+  const radarRadius = 52;
   const radarAxes = resolvedLifestyleRiskAxes.map((axis, index, axisList) => {
     const angle = -Math.PI / 2 + (Math.PI * 2 * index) / axisList.length;
-    const outerX = radarCenter + radarRadius * Math.cos(angle);
-    const outerY = radarCenter + radarRadius * Math.sin(angle);
+    const outerX = radarCenterX + radarRadius * Math.cos(angle);
+    const outerY = radarCenterY + radarRadius * Math.sin(angle);
     const valueRatio = clampPercent(axis.score) / 100;
-    const valueX = radarCenter + radarRadius * valueRatio * Math.cos(angle);
-    const valueY = radarCenter + radarRadius * valueRatio * Math.sin(angle);
-    const labelX = radarCenter + (radarRadius + 16) * Math.cos(angle);
-    const labelY = radarCenter + (radarRadius + 16) * Math.sin(angle);
+    const valueX = radarCenterX + radarRadius * valueRatio * Math.cos(angle);
+    const valueY = radarCenterY + radarRadius * valueRatio * Math.sin(angle);
+    const labelRadius = radarRadius + 22;
+    const rawLabelX = radarCenterX + labelRadius * Math.cos(angle);
+    const rawLabelY = radarCenterY + labelRadius * Math.sin(angle);
+    const labelX = Math.max(16, Math.min(224, rawLabelX));
+    const labelY = Math.max(20, Math.min(186, rawLabelY));
+    const labelAnchor: "start" | "middle" | "end" =
+      rawLabelX < radarCenterX - 30
+        ? "end"
+        : rawLabelX > radarCenterX + 30
+          ? "start"
+          : "middle";
+    const isWrappedRiskLabel = axis.id === "activity" || axis.id === "immune";
+    const labelBaseText = isWrappedRiskLabel
+      ? axis.label.replace(/\s*위험도$/u, "").trim()
+      : axis.label;
+    const labelLines =
+      isWrappedRiskLabel && labelBaseText.length > 0 ? [labelBaseText, "위험도"] : [axis.label];
     return {
       ...axis,
       outerX,
@@ -258,6 +337,9 @@ export default function ReportSummaryCards(props: {
       valueY,
       labelX,
       labelY,
+      labelAnchor,
+      labelLines,
+      scoreText: toScoreLabel(axis.score),
     };
   });
   const radarLevels = [0.25, 0.5, 0.75, 1];
@@ -371,7 +453,7 @@ export default function ReportSummaryCards(props: {
             </div>
             <div className={styles.radarWrap}>
               <svg
-                viewBox="0 0 200 200"
+                viewBox="0 0 240 210"
                 className={styles.radarSvg}
                 role="img"
                 aria-label="생활습관 위험도 다이아몬드 그래프"
@@ -379,8 +461,8 @@ export default function ReportSummaryCards(props: {
                 {radarLevels.map((level) => {
                   const levelPoints = toRadarPointString(
                     radarAxes.map((axis) => ({
-                      x: radarCenter + (axis.outerX - radarCenter) * level,
-                      y: radarCenter + (axis.outerY - radarCenter) * level,
+                      x: radarCenterX + (axis.outerX - radarCenterX) * level,
+                      y: radarCenterY + (axis.outerY - radarCenterY) * level,
                     }))
                   );
                   return (
@@ -395,8 +477,8 @@ export default function ReportSummaryCards(props: {
                   <line
                     key={`radar-axis-${axis.id}`}
                     className={styles.radarAxis}
-                    x1={radarCenter}
-                    y1={radarCenter}
+                    x1={radarCenterX}
+                    y1={radarCenterY}
                     x2={axis.outerX}
                     y2={axis.outerY}
                   />
@@ -417,28 +499,25 @@ export default function ReportSummaryCards(props: {
                     className={styles.radarLabel}
                     x={axis.labelX}
                     y={axis.labelY}
-                    textAnchor={
-                      axis.labelX > radarCenter + 12
-                        ? "start"
-                        : axis.labelX < radarCenter - 12
-                          ? "end"
-                          : "middle"
-                    }
+                    textAnchor={axis.labelAnchor}
                     dominantBaseline="central"
                   >
-                    {axis.label}
+                    {axis.labelLines.map((labelLine, lineIndex) => (
+                      <tspan
+                        key={`radar-label-line-${axis.id}-${lineIndex}`}
+                        x={axis.labelX}
+                        dy={lineIndex === 0 ? "-0.35em" : "1.1em"}
+                      >
+                        {labelLine}
+                      </tspan>
+                    ))}
+                    <tspan x={axis.labelX} dy="1.15em" className={styles.radarScoreLabel}>
+                      {axis.scoreText}
+                    </tspan>
                   </text>
                 ))}
               </svg>
             </div>
-            <ul className={styles.radarLegendList}>
-              {resolvedLifestyleRiskAxes.map((axis) => (
-                <li key={`radar-legend-${axis.id}`} className={styles.radarLegendItem}>
-                  <span>{axis.label}</span>
-                  <strong>{toScoreLabel(axis.score)}</strong>
-                </li>
-              ))}
-            </ul>
             <p className={styles.inlineHint}>
               종합 위험도:{" "}
               <span className={styles.riskScoreText}>{toScoreLabel(lifestyleOverall)}</span>
@@ -450,7 +529,7 @@ export default function ReportSummaryCards(props: {
               <h3 className={styles.sectionTitle}>건강관리 위험도</h3>
             </div>
             <div
-              className={`${styles.needCardContent} ${centerNeedCardContent ? styles.needCardContentCentered : ""}`}
+              className={styles.needCardContent}
             >
               {sectionNeedsForPage1.length === 0 ? (
                 <p className={styles.inlineHint}>선택 영역 데이터가 없습니다.</p>
@@ -483,69 +562,11 @@ export default function ReportSummaryCards(props: {
           </article>
         </section>
 
-        <section className={styles.reportBlock}>
-          <h3 className={styles.reportBlockTitle}>1. 종합 건강 분석 멘트</h3>
-          {analysisLines.length === 0 ? (
-            <p className={styles.reportDataEmpty}>
-              {hasWellnessScoringData
-                ? "현재 기준으로는 강조할 핵심 문장을 만들 정보가 충분하지 않습니다."
-                : "분석 멘트를 보여줄 데이터가 아직 부족합니다."}
-            </p>
-          ) : (
-            <ul className={styles.reportFriendlyList}>
-              {analysisLines.map((line) => (
-                <li key={`analysis-${line.key}`} className={styles.reportFriendlyItem}>
-                  <p className={styles.reportDataBody}>
-                    <strong>문항:</strong> {line.questionText}
-                  </p>
-                  <p className={styles.reportDataBody}>
-                    <strong>내 답변:</strong> {line.answerText || "-"}
-                  </p>
-                  <p className={styles.reportRecommendation}>{line.recommendation}</p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <section className={styles.reportBlock}>
-          <h3 className={styles.reportBlockTitle}>2. 주의가 필요한 고위험 항목</h3>
-          {riskLines.length === 0 ? (
-            <p className={styles.reportDataEmpty}>
-              {hasWellnessScoringData
-                ? "현재 기준에서 우선 조정이 필요한 고위험 항목은 뚜렷하지 않습니다."
-                : "고위험 항목을 안내할 데이터가 아직 부족합니다."}
-            </p>
-          ) : (
-            <ul className={styles.reportFriendlyList}>
-              {riskLines.map((line) => (
-                <li key={`risk-${line.key}`} className={styles.reportFriendlyItem}>
-                  <p className={styles.reportDataBody}>
-                    <strong>문항:</strong> {line.questionText}
-                  </p>
-                  {line.answerText ? (
-                    <p className={styles.reportDataBody}>
-                      <strong>내 답변:</strong> {line.answerText}
-                    </p>
-                  ) : null}
-                  <p className={styles.reportRecommendation}>{line.recommendation}</p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
       </section>
 
       <SurveyDetailPages
-        combinedSurveyPageCount={combinedSurveyPageCount}
         surveyDetailPageStart={surveyDetailPageStart}
-        riskPages={riskPages}
-        routinePages={routinePages}
-        sectionAdvicePageStart={sectionAdvicePageStart}
-        sectionAdvicePages={sectionAdvicePages}
-        supplementPageStart={supplementPageStart}
-        supplementPages={supplementPages}
+        surveyPages={surveyPages}
       />
 
       <section

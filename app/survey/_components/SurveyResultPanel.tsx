@@ -75,6 +75,10 @@ function normalizeSupplementHeadingText(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+function toSurveyRadarPointString(points: Array<{ x: number; y: number }>) {
+  return points.map((point) => `${point.x.toFixed(2)},${point.y.toFixed(2)}`).join(" ");
+}
+
 export type SurveyResultPanelText = {
   resultTitle: string;
   scoreHealth: string;
@@ -134,6 +138,51 @@ export default function SurveyResultPanel(props: {
                     { id: "immune", label: "면역관리 위험도", percent: 0 },
                     { id: "sleep", label: "수면 위험도", percent: 0 },
                   ];
+            const radarCenterX = 120;
+            const radarCenterY = 106;
+            const radarRadius = 52;
+            const radarAxes = lifestyleRiskDomains.map((axis, index, axisList) => {
+              const angle = -Math.PI / 2 + (Math.PI * 2 * index) / axisList.length;
+              const outerX = radarCenterX + radarRadius * Math.cos(angle);
+              const outerY = radarCenterY + radarRadius * Math.sin(angle);
+              const valueRatio = clampResultPercent(axis.percent) / 100;
+              const valueX = radarCenterX + radarRadius * valueRatio * Math.cos(angle);
+              const valueY = radarCenterY + radarRadius * valueRatio * Math.sin(angle);
+              const labelRadius = radarRadius + 22;
+              const rawLabelX = radarCenterX + labelRadius * Math.cos(angle);
+              const rawLabelY = radarCenterY + labelRadius * Math.sin(angle);
+              const labelX = Math.max(16, Math.min(224, rawLabelX));
+              const labelY = Math.max(20, Math.min(186, rawLabelY));
+              const labelAnchor: "start" | "middle" | "end" =
+                rawLabelX < radarCenterX - 30
+                  ? "end"
+                  : rawLabelX > radarCenterX + 30
+                    ? "start"
+                    : "middle";
+              const isWrappedRiskLabel = axis.id === "activity" || axis.id === "immune";
+              const labelBaseText = isWrappedRiskLabel
+                ? axis.label.replace(/\s*위험도$/u, "").trim()
+                : axis.label;
+              const labelLines =
+                isWrappedRiskLabel && labelBaseText.length > 0
+                  ? [labelBaseText, "위험도"]
+                  : [axis.label];
+              return {
+                ...axis,
+                outerX,
+                outerY,
+                valueX,
+                valueY,
+                labelX,
+                labelY,
+                labelAnchor,
+                labelLines,
+              };
+            });
+            const radarLevels = [0.25, 0.5, 0.75, 1];
+            const radarAreaPoints = toSurveyRadarPointString(
+              radarAxes.map((axis) => ({ x: axis.valueX, y: axis.valueY }))
+            );
             const sectionNeedRows = [...(resultSummary.healthManagementNeed.sections ?? [])]
               .map((section) => ({
                 sectionId: section.sectionId,
@@ -143,8 +192,6 @@ export default function SurveyResultPanel(props: {
               .filter((section) => section.sectionTitle.length > 0)
               .sort((left, right) => right.percent - left.percent)
               .slice(0, 3);
-            const centerNeedCardContent =
-              sectionNeedRows.length > 0 && sectionNeedRows.length < 3;
 
             return (
               <div className="grid gap-3 sm:grid-cols-3">
@@ -194,22 +241,80 @@ export default function SurveyResultPanel(props: {
 
                 <article className="rounded-2xl border border-slate-200 bg-white p-4">
                   <p className="text-sm font-semibold text-slate-900">{text.scoreRisk}</p>
-                  <ul className="mt-3 space-y-2" aria-label="생활습관 위험도 막대 그래프">
-                    {lifestyleRiskDomains.map((axis) => (
-                      <li key={`lifestyle-risk-${axis.id}`}>
-                        <div className="mb-1 flex items-center justify-between text-xs text-slate-600">
-                          <span className="truncate pr-2">{axis.label}</span>
-                          <span className="font-semibold text-rose-600">{axis.percent}점</span>
-                        </div>
-                        <div className="h-2 w-full rounded-sm bg-rose-100">
-                          <div
-                            className="h-2 rounded-none bg-gradient-to-r from-rose-400 to-red-600"
-                            style={{ width: `${axis.percent}%` }}
+                  <div className="mt-2 grid justify-items-center">
+                    <svg
+                      viewBox="0 0 240 210"
+                      className="h-auto w-full max-w-[236px]"
+                      role="img"
+                      aria-label="생활습관 위험도 다이아몬드 그래프"
+                    >
+                      {radarLevels.map((level) => {
+                        const levelPoints = toSurveyRadarPointString(
+                          radarAxes.map((axis) => ({
+                            x: radarCenterX + (axis.outerX - radarCenterX) * level,
+                            y: radarCenterY + (axis.outerY - radarCenterY) * level,
+                          }))
+                        );
+                        return (
+                          <polygon
+                            key={`survey-radar-level-${level}`}
+                            points={levelPoints}
+                            fill="none"
+                            stroke="#d7e3f7"
+                            strokeWidth="1"
                           />
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
+                        );
+                      })}
+                      {radarAxes.map((axis) => (
+                        <line
+                          key={`survey-radar-axis-${axis.id}`}
+                          x1={radarCenterX}
+                          y1={radarCenterY}
+                          x2={axis.outerX}
+                          y2={axis.outerY}
+                          stroke="#cad8ef"
+                          strokeWidth="1"
+                        />
+                      ))}
+                      <polygon points={radarAreaPoints} fill="rgba(239,68,68,0.2)" stroke="#dc2626" strokeWidth="2" />
+                      {radarAxes.map((axis) => (
+                        <circle
+                          key={`survey-radar-point-${axis.id}`}
+                          cx={axis.valueX}
+                          cy={axis.valueY}
+                          r="3"
+                          fill="#fff7f7"
+                          stroke="#b91c1c"
+                          strokeWidth="2"
+                        />
+                      ))}
+                      {radarAxes.map((axis) => (
+                        <text
+                          key={`survey-radar-label-${axis.id}`}
+                          x={axis.labelX}
+                          y={axis.labelY}
+                          textAnchor={axis.labelAnchor}
+                          dominantBaseline="central"
+                          fill="#4b5563"
+                          fontSize="9.5"
+                          fontWeight="700"
+                        >
+                          {axis.labelLines.map((labelLine, lineIndex) => (
+                            <tspan
+                              key={`survey-radar-label-line-${axis.id}-${lineIndex}`}
+                              x={axis.labelX}
+                              dy={lineIndex === 0 ? "-0.35em" : "1.1em"}
+                            >
+                              {labelLine}
+                            </tspan>
+                          ))}
+                          <tspan x={axis.labelX} dy="1.15em" fill="#be123c" fontWeight="800">
+                            {axis.percent}점
+                          </tspan>
+                        </text>
+                      ))}
+                    </svg>
+                  </div>
                   <p className="mt-2 text-xs text-slate-500">
                     종합 위험도:{" "}
                     <span className="font-semibold text-rose-600">{lifestyleOverall}점</span>
@@ -218,9 +323,7 @@ export default function SurveyResultPanel(props: {
 
                 <article className="rounded-2xl border border-slate-200 bg-white p-4 sm:min-h-[220px] sm:flex sm:flex-col">
                   <p className="text-sm font-semibold text-slate-900">건강관리 위험도</p>
-                  <div
-                    className={`mt-3 ${centerNeedCardContent ? "sm:flex-1 sm:flex sm:flex-col sm:justify-center" : ""}`}
-                  >
+                  <div className="mt-3">
                     {sectionNeedRows.length === 0 ? (
                       <p className="text-xs text-slate-500">선택한 세부 영역 데이터가 없습니다.</p>
                     ) : (
@@ -281,7 +384,7 @@ export default function SurveyResultPanel(props: {
                       <p className="mt-1 text-sm text-slate-700">
                         내 답변: {item.answerText || "응답 정보 없음"}
                       </p>
-                      <p className="mt-1.5 text-sm font-medium leading-relaxed text-emerald-700">
+                      <p className="mt-1.5 text-sm font-medium leading-relaxed text-rose-700">
                         {item.action}
                       </p>
                     </li>
@@ -332,7 +435,7 @@ export default function SurveyResultPanel(props: {
                           <p className="mt-0.5 text-slate-700">
                             내 답변: {item.answerText || "응답 정보 없음"}
                           </p>
-                          <p className="mt-1.5 text-sm font-medium leading-relaxed text-emerald-700">
+                          <p className="mt-1.5 text-sm font-medium leading-relaxed text-rose-700">
                             {item.text}
                           </p>
                         </li>
@@ -406,31 +509,42 @@ export default function SurveyResultPanel(props: {
         </p>
       )}
 
-      <div className="mt-6 flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={props.onEditSurvey}
-          className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700 active:scale-[0.99]"
-        >
-          {text.editSurvey}
-        </button>
-        <button
-          type="button"
-          onClick={props.onOpenEmployeeReport}
-          data-testid="survey-result-open-employee-report"
-          className="rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-105 hover:shadow-md active:scale-[0.99]"
-        >
-          {text.viewEmployeeReport}
-        </button>
-        <button
-          type="button"
-          onClick={props.onRestart}
-          data-testid="survey-result-reset-button"
-          className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700 active:scale-[0.99]"
-        >
-          {text.restart}
-        </button>
-      </div>
+      <section className="mt-6 rounded-2xl border border-slate-200/90 bg-gradient-to-r from-white via-sky-50/55 to-white px-3 py-3 shadow-[0_10px_24px_-22px_rgba(14,116,204,0.65)] sm:px-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-[11px] font-semibold tracking-[0.01em] text-slate-500">다음 단계</p>
+            <p className="mt-0.5 text-xs text-slate-500">
+              결과를 바탕으로 건강 레포트를 확인하거나 답안을 다시 조정할 수 있습니다.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={props.onOpenEmployeeReport}
+            data-testid="survey-result-open-employee-report"
+            className="inline-flex min-h-11 items-center justify-center rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 px-5 py-2 text-sm font-semibold text-white shadow-[0_10px_22px_-14px_rgba(14,116,204,0.9)] transition hover:-translate-y-0.5 hover:brightness-105 hover:shadow-[0_14px_26px_-14px_rgba(14,116,204,0.95)] active:translate-y-0"
+          >
+            {text.viewEmployeeReport}
+          </button>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-200/85 pt-3">
+          <button
+            type="button"
+            onClick={props.onEditSurvey}
+            className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700 active:scale-[0.99]"
+          >
+            {text.editSurvey}
+          </button>
+          <button
+            type="button"
+            onClick={props.onRestart}
+            data-testid="survey-result-reset-button"
+            className="rounded-full border border-transparent bg-transparent px-2 py-1.5 text-sm font-medium text-slate-500 underline decoration-slate-300 underline-offset-4 transition hover:text-sky-700 hover:decoration-sky-300 active:scale-[0.99]"
+          >
+            {text.restart}
+          </button>
+        </div>
+      </section>
     </div>
   );
 }

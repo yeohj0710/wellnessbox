@@ -2297,10 +2297,11 @@
 .radarWrap {
   display: grid;
   justify-items: center;
+  padding-top: 2px;
 }
 
 .radarSvg {
-  width: min(100%, 204px);
+  width: min(100%, 236px);
   height: auto;
 }
 
@@ -2329,30 +2330,14 @@
 
 .radarLabel {
   fill: #4b5563;
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 700;
 }
 
-.radarLegendList {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: grid;
-  gap: 4px;
-}
-
-.radarLegendItem {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  color: var(--ink-2);
-  font-size: 11px;
-}
-
-.radarLegendItem strong {
+.radarScoreLabel {
   color: #be123c;
   font-weight: 800;
+  fill: #be123c;
 }
 
 .riskBarList {
@@ -2735,7 +2720,7 @@
 
 .reportRecommendation {
   margin: 0;
-  color: #0f766e;
+  color: #9f1239;
   font-size: 11px;
   line-height: 1.5;
   font-weight: 700;
