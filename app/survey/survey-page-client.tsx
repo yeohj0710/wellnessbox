@@ -38,10 +38,12 @@ import {
   saveStoredIdentity,
 } from "@/app/(features)/employee-report/_lib/client-utils";
 import { emitAuthSyncEvent, subscribeAuthSyncEvent } from "@/lib/client/auth-sync";
+import { getLoginStatus } from "@/lib/useLoginStatus";
 import SurveyCalculatingPanel from "./_components/SurveyCalculatingPanel";
 import SurveyIntroPanel from "./_components/SurveyIntroPanel";
 import SurveyResultPanel from "./_components/SurveyResultPanel";
 import SurveySectionPanel from "./_components/SurveySectionPanel";
+import SurveySubmittedPanel from "./_components/SurveySubmittedPanel";
 
 const STORAGE_KEY = "b2b-public-survey-state.v4";
 const BLOCK_SURVEY_START_TEMPORARILY = false;
@@ -125,6 +127,9 @@ const TEXT = {
   scoreHealth: "\uAC74\uAC15\uC810\uC218",
   scoreRisk: "\uC0DD\uD65C\uC2B5\uAD00 \uC704\uD5D8\uB3C4",
   scoreNeed: "\uAC74\uAC15\uAD00\uB9AC \uD544\uC694\uB3C4 \uD3C9\uADE0",
+  submittedTitle: "설문이 제출되었습니다.",
+  submittedDesc:
+    "제출하신 내용은 정상 저장되었습니다. 필요하면 답안을 수정하거나 처음부터 다시 시작할 수 있습니다.",
 };
 
 const CALCULATING_MESSAGES = [
@@ -882,6 +887,7 @@ export default function SurveyPageClient() {
   const [hydrated, setHydrated] = useState(false);
   const [calcPercent, setCalcPercent] = useState(8);
   const [calcMessageIndex, setCalcMessageIndex] = useState(0);
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
 
   const restoredRef = useRef(false);
   const authBootstrappedRef = useRef(false);
@@ -1031,9 +1037,29 @@ export default function SurveyPageClient() {
   const identityLocked = authVerified && !identityEditable;
   const authInitializing = !hydrated || authBusy === "session";
 
+  const refreshLoginStatus = useCallback(async () => {
+    try {
+      const status = await getLoginStatus();
+      setIsAdminLoggedIn(status.isAdminLoggedIn);
+    } catch {
+      setIsAdminLoggedIn(false);
+    }
+  }, []);
+
   useEffect(() => {
     setCompletedSectionKeys((prev) => prev.filter((key) => visibleSectionKeySet.has(key)));
   }, [visibleSectionKeySet]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    void refreshLoginStatus();
+  }, [hydrated, refreshLoginStatus]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (phase !== "result") return;
+    void refreshLoginStatus();
+  }, [hydrated, phase, refreshLoginStatus]);
 
   useEffect(() => {
     if (surveySections.length === 0) {
@@ -1455,6 +1481,7 @@ export default function SurveyPageClient() {
     if (!hydrated) return;
     const unsubscribe = subscribeAuthSyncEvent(
       () => {
+        void refreshLoginStatus();
         if (authBusy !== "idle") return;
         setAuthBusy("session");
         fetchEmployeeSession()
@@ -1490,7 +1517,7 @@ export default function SurveyPageClient() {
       { scopes: ["b2b-employee-session", "user-session"] }
     );
     return unsubscribe;
-  }, [authBusy, hydrated]);
+  }, [authBusy, hydrated, refreshLoginStatus]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -2401,20 +2428,20 @@ export default function SurveyPageClient() {
     );
   }
 
-  const resultSummary =
-    result ??
-    (() => {
-      try {
-        const input = buildWellnessAnalysisInputFromSurvey({
-          template,
-          answers,
-          selectedSections: selectedSectionsCommitted,
-        });
-        return computeWellnessResult(input);
-      } catch {
-        return null;
-      }
-    })();
+  const resultSummary = useMemo(() => {
+    if (phase !== "result" || !isAdminLoggedIn) return null;
+    if (result) return result;
+    try {
+      const input = buildWellnessAnalysisInputFromSurvey({
+        template,
+        answers,
+        selectedSections: selectedSectionsCommitted,
+      });
+      return computeWellnessResult(input);
+    } catch {
+      return null;
+    }
+  }, [answers, isAdminLoggedIn, phase, result, selectedSectionsCommitted, template]);
 
   if (!hydrated) return null;
 
@@ -2574,7 +2601,7 @@ export default function SurveyPageClient() {
           />
         ) : null}
 
-        {phase === "result" ? (
+        {phase === "result" && isAdminLoggedIn ? (
           <SurveyResultPanel
             resultSummary={resultSummary}
             sectionTitleMap={sectionTitleMap}
@@ -2593,6 +2620,23 @@ export default function SurveyPageClient() {
             }}
             onRestart={requestReset}
             onOpenEmployeeReport={handleOpenEmployeeReport}
+          />
+        ) : null}
+
+        {phase === "result" && !isAdminLoggedIn ? (
+          <SurveySubmittedPanel
+            text={{
+              submittedTitle: TEXT.submittedTitle,
+              submittedDesc: TEXT.submittedDesc,
+              editSurvey: TEXT.editSurvey,
+              restart: TEXT.restart,
+            }}
+            onEditSurvey={() => {
+              setPhase("survey");
+              setResult(null);
+              setHasCompletedSubmission(false);
+            }}
+            onRestart={requestReset}
           />
         ) : null}
       </div>
