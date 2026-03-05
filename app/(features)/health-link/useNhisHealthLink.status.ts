@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { subscribeAuthSyncEvent } from "@/lib/client/auth-sync";
 import { HEALTH_LINK_COPY } from "./copy";
 import type { NhisStatusResponse } from "./types";
 import { parseErrorMessage, readJson } from "./utils";
+import { clearLocalNhisFetchData } from "./local-fetch-cache";
 
 type LoadStatusOptions = {
   preserveError?: boolean;
@@ -75,6 +77,20 @@ export function useNhisStatusState() {
 
   useEffect(() => {
     void loadStatus();
+  }, [loadStatus]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeAuthSyncEvent(
+      (detail) => {
+        if (detail.scope === "user-session") {
+          clearLocalNhisFetchData();
+          setStatus(undefined);
+        }
+        void loadStatus({ preserveError: true });
+      },
+      { scopes: ["user-session", "nhis-link"] }
+    );
+    return unsubscribe;
   }, [loadStatus]);
 
   return {

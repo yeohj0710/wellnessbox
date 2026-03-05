@@ -6,6 +6,7 @@ import ReportSummaryCards from "@/components/b2b/ReportSummaryCards";
 import OperationLoadingOverlay from "@/components/common/operationLoadingOverlay";
 import { useToast } from "@/components/common/toastContext.client";
 import styles from "@/components/b2b/B2bUx.module.css";
+import { emitAuthSyncEvent, subscribeAuthSyncEvent } from "@/lib/client/auth-sync";
 import EmployeeReportBootSkeleton from "./_components/EmployeeReportBootSkeleton";
 import EmployeeReportIdentitySection from "./_components/EmployeeReportIdentitySection";
 import EmployeeReportSummaryHeaderCard from "./_components/EmployeeReportSummaryHeaderCard";
@@ -190,6 +191,14 @@ export default function EmployeeReportClient() {
     setStoredIdentitySource("none");
   }
 
+  function emitB2bSessionSync(reason: string) {
+    emitAuthSyncEvent({ scope: "b2b-employee-session", reason });
+  }
+
+  function emitNhisSync(reason: string) {
+    emitAuthSyncEvent({ scope: "nhis-link", reason });
+  }
+
   function resetReportState() {
     setReportData(null);
     setSelectedPeriodKey("");
@@ -251,18 +260,23 @@ export default function EmployeeReportClient() {
     });
   }
 
-  async function checkSessionAndMaybeAutoLogin() {
-    setBooting(true);
+  async function checkSessionAndMaybeAutoLogin(options?: { silent?: boolean }) {
+    if (!options?.silent) {
+      setBooting(true);
+    }
     try {
       const session: EmployeeSessionGetResponse = await fetchEmployeeSession();
 
       if (session.authenticated) {
         if (session.employee) {
-          setIdentity({
+          const sessionIdentity = {
             name: session.employee.name,
             birthDate: session.employee.birthDate,
             phone: session.employee.phoneNormalized,
-          });
+          };
+          setIdentity(sessionIdentity);
+          saveStoredIdentity(sessionIdentity);
+          setStoredIdentitySource("v2");
         }
         if (!session.latestReport) {
           resetReportState();
@@ -290,6 +304,7 @@ export default function EmployeeReportClient() {
           if (loginResult.found) {
             saveStoredIdentity(stored);
             setStoredIdentitySource("v2");
+            emitB2bSessionSync("employee-report-auto-login");
             if (!loginResult.hasReport) {
               resetReportState();
               setSyncNextAction("init");
@@ -311,6 +326,11 @@ export default function EmployeeReportClient() {
           clearLocalIdentityCache();
         }
       }
+
+      resetReportState();
+      setSyncNextAction("init");
+      setSyncGuidance(null);
+      setPendingSignForceRefresh(false);
     } catch (err) {
       const message =
         err instanceof Error
@@ -318,7 +338,9 @@ export default function EmployeeReportClient() {
           : "\uC138\uC158 \uD655\uC778 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.";
       setError(message);
     } finally {
-      setBooting(false);
+      if (!options?.silent) {
+        setBooting(false);
+      }
     }
   }
 
@@ -326,6 +348,27 @@ export default function EmployeeReportClient() {
     void checkSessionAndMaybeAutoLogin();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    const unsubscribe = subscribeAuthSyncEvent(
+      (detail) => {
+        if (busy) return;
+
+        if (detail.scope === "nhis-link") {
+          if (!reportData) return;
+          void loadReport(selectedPeriodKey || undefined).catch(() => null);
+          return;
+        }
+
+        hasTriedStoredLogin.current = false;
+        void checkSessionAndMaybeAutoLogin({ silent: true });
+      },
+      { scopes: ["user-session", "b2b-employee-session", "nhis-link"] }
+    );
+
+    return unsubscribe;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [busy, reportData, selectedPeriodKey]);
 
   useEffect(() => {
     const text = notice.trim();
@@ -401,6 +444,7 @@ export default function EmployeeReportClient() {
       }
       saveStoredIdentity(payload);
       setStoredIdentitySource("v2");
+      emitB2bSessionSync("employee-report-find-existing");
       if (!result.hasReport) {
         resetReportState();
         setSyncNextAction("init");
@@ -452,6 +496,7 @@ export default function EmployeeReportClient() {
 
     saveStoredIdentity(payload);
     setStoredIdentitySource("v2");
+    emitB2bSessionSync("employee-report-try-load-existing");
     if (!result.hasReport) {
       resetReportState();
       setSyncNextAction("init");
@@ -503,6 +548,8 @@ export default function EmployeeReportClient() {
       });
 
       if (restartResult.status === "ready") {
+        emitB2bSessionSync("employee-report-restart-ready");
+        emitNhisSync("employee-report-restart-ready");
         setPendingSignForceRefresh(false);
         setNotice(
           "건강정보 연동이 완료되었습니다. 이어서 설문을 진행해 주세요."
@@ -623,6 +670,8 @@ export default function EmployeeReportClient() {
           authReused: ready.reused,
         })
       );
+      emitB2bSessionSync("employee-report-sync-success");
+      emitNhisSync("employee-report-sync-success");
       setSyncNextAction(null);
       setSyncGuidance(null);
       setPendingSignForceRefresh(false);
@@ -862,6 +911,7 @@ export default function EmployeeReportClient() {
     try {
       await deleteEmployeeSession();
       await requestNhisUnlink().catch(() => null);
+      clearLocalIdentityCache();
       setReportData(null);
       setSelectedPeriodKey("");
       setSyncNextAction(null);
@@ -870,6 +920,8 @@ export default function EmployeeReportClient() {
       setForceConfirmOpen(false);
       setForceConfirmText("");
       setForceConfirmChecked(false);
+      emitB2bSessionSync("employee-report-logout");
+      emitNhisSync("employee-report-logout");
       setNotice("현재 연결된 조회 세션을 해제했습니다.");
     } catch (err) {
       setError(

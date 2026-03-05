@@ -11,6 +11,7 @@ const LS_KEY = "wb:b2b:employee:last-input:v2";
 const LEGACY_LS_KEYS = [
   "wb:b2b:employee:last-input:v1",
   "wb:b2b:employee:last-input",
+  "wb:b2b:survey:identity:v1",
 ] as const;
 const IDENTITY_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 

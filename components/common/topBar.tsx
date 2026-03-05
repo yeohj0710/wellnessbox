@@ -12,6 +12,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useLoading } from "@/components/common/loadingContext.client";
 import { usePrefetchOnIntent } from "@/components/common/usePrefetchOnIntent";
 import { clearCartReturnState } from "@/lib/client/cart-navigation";
+import { emitAuthSyncEvent } from "@/lib/client/auth-sync";
 import { TopBarHeader } from "./topBar.header";
 import { TopBarDrawer } from "./topBar.drawer";
 import {
@@ -152,12 +153,15 @@ function TopBarInner() {
       });
 
       if (!response.ok) {
+        emitAuthSyncEvent({ scope: "user-session", reason: "logout-fallback" });
         window.location.assign("/api/auth/logout");
         return;
       }
 
+      emitAuthSyncEvent({ scope: "user-session", reason: "logout" });
       window.location.assign("/");
     } catch {
+      emitAuthSyncEvent({ scope: "user-session", reason: "logout-error" });
       window.location.assign("/api/auth/logout");
     }
   }, [closeCartOverlay, logoutPending, showLoading]);

@@ -1,12 +1,11 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useRouter } from "next/navigation";
 import { ArrowRightStartOnRectangleIcon } from "@heroicons/react/24/outline";
+import { emitAuthSyncEvent } from "@/lib/client/auth-sync";
 import ConfirmDialog from "./confirmDialog";
 
 export default function LogoutButton() {
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -19,9 +18,10 @@ export default function LogoutButton() {
     } finally {
       setOpen(false);
       setLoading(false);
+      emitAuthSyncEvent({ scope: "user-session", reason: "logout" });
       window.location.replace("/");
     }
-  }, [loading, router]);
+  }, [loading]);
 
   return (
     <>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { subscribeAuthSyncEvent } from "@/lib/client/auth-sync";
 import { fetchLoginStatus } from "./api";
 
 export function useAdminLoginStatus() {
@@ -8,14 +9,23 @@ export function useAdminLoginStatus() {
 
   useEffect(() => {
     let mounted = true;
-    void fetchLoginStatus()
-      .then((status) => {
-        if (!mounted) return;
-        setIsAdminLoggedIn(status.isAdminLoggedIn === true);
-      })
-      .catch(() => undefined);
+    const refresh = () => {
+      void fetchLoginStatus()
+        .then((status) => {
+          if (!mounted) return;
+          setIsAdminLoggedIn(status.isAdminLoggedIn === true);
+        })
+        .catch(() => undefined);
+    };
+
+    refresh();
+    const unsubscribe = subscribeAuthSyncEvent(refresh, {
+      scopes: ["user-session"],
+    });
+
     return () => {
       mounted = false;
+      unsubscribe();
     };
   }, []);
 

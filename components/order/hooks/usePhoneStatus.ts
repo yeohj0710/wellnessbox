@@ -4,6 +4,7 @@ import {
   fetchMyPhoneStatusRequest,
   unlinkMyPhoneRequest,
 } from "@/lib/client/phone-api";
+import { emitAuthSyncEvent, subscribeAuthSyncEvent } from "@/lib/client/auth-sync";
 import { formatPhoneDisplay } from "@/lib/client/phone-format";
 
 export function usePhoneStatus(loginStatus: LoginStatus | null) {
@@ -83,6 +84,7 @@ export function usePhoneStatus(loginStatus: LoginStatus | null) {
       setPhone("");
       setLinkedAt(undefined);
       await fetchPhoneStatus();
+      emitAuthSyncEvent({ scope: "phone-link", reason: "unlink" });
       return true;
     } catch (error) {
       setUnlinkError(error instanceof Error ? error.message : String(error));
@@ -101,6 +103,17 @@ export function usePhoneStatus(loginStatus: LoginStatus | null) {
   useEffect(() => {
     if (loginStatus === null) return;
     fetchPhoneStatus();
+  }, [fetchPhoneStatus, loginStatus]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeAuthSyncEvent(
+      () => {
+        if (loginStatus === null) return;
+        void fetchPhoneStatus();
+      },
+      { scopes: ["user-session", "phone-link"] }
+    );
+    return unsubscribe;
   }, [fetchPhoneStatus, loginStatus]);
 
   return {

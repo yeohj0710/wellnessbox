@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { getUploadUrl } from "@/lib/upload";
 import { saveMeProfileRequest } from "@/lib/client/me-account-api";
 import { unlinkMyPhoneRequest } from "@/lib/client/phone-api";
+import { emitAuthSyncEvent } from "@/lib/client/auth-sync";
 
 type SavingField = "nickname" | "email" | "image" | null;
 
@@ -154,6 +155,7 @@ export function useMeProfileMutations({
 
       onUnlinked();
       onRefresh();
+      emitAuthSyncEvent({ scope: "phone-link", reason: "unlink" });
     } catch (error) {
       setUnlinkError(error instanceof Error ? error.message : String(error));
     } finally {
@@ -173,4 +175,3 @@ export function useMeProfileMutations({
     unlinkPhone,
   };
 }
-

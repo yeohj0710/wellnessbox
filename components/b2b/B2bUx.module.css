@@ -2661,8 +2661,12 @@
   color: #445d7f;
   font-size: 11px;
   line-height: 1.45;
-  display: grid;
-  gap: 1px;
+  display: block;
+}
+
+.reportDataBody strong {
+  display: inline;
+  margin-right: 4px;
 }
 
 .reportDataLabel {

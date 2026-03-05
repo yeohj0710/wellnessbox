@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { emitAuthSyncEvent } from "@/lib/client/auth-sync";
 import {
   NHIS_ERR_CODE_HEALTHIN_REQUIRED,
   NHIS_LOGIN_ORG,
@@ -120,6 +121,7 @@ export function useNhisHealthLink() {
         setActionNotice(resolveInitSuccessNotice(payload));
         setStatusError(null);
         if (payload.linked) {
+          emitAuthSyncEvent({ scope: "nhis-link", reason: "init-linked" });
           patchStatus({
             linked: true,
             loginMethod: "EASY",
@@ -129,6 +131,7 @@ export function useNhisHealthLink() {
             lastError: null,
           });
         } else {
+          emitAuthSyncEvent({ scope: "nhis-link", reason: "init-pending" });
           patchStatus({
             linked: false,
             loginMethod: "EASY",
@@ -166,6 +169,7 @@ export function useNhisHealthLink() {
         setFetchFailures([]);
         setActionNotice(resolveSignSuccessNotice(payload));
         setStatusError(null);
+        emitAuthSyncEvent({ scope: "nhis-link", reason: "sign-linked" });
         patchStatus({
           linked: true,
           pendingAuthReady: false,
@@ -197,6 +201,7 @@ export function useNhisHealthLink() {
         setFetchedFromLocalCache(false);
         clearLocalNhisFetchData();
         setFetchFailures([]);
+        emitAuthSyncEvent({ scope: "nhis-link", reason: "unlink" });
         setActionNotice(HEALTH_LINK_COPY.hook.unlinkNotice);
         setStatusError(null);
         patchStatus({

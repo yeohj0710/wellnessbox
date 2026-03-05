@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { upsertB2bEmployee } from "@/lib/b2b/employee-service";
+import { B2bEmployeeIdentityValidationError } from "@/lib/b2b/identity";
 import { b2bEmployeeIdentityInputSchema } from "@/lib/b2b/employee-route-schema";
 import { B2B_PERIOD_KEY_REGEX, resolveCurrentPeriodKey } from "@/lib/b2b/period";
 import {
@@ -87,6 +88,13 @@ export async function runEmployeeSyncAuthedPostRoute(input: {
       })
     );
   } catch (error) {
+    if (error instanceof B2bEmployeeIdentityValidationError) {
+      return noStoreJson(
+        { ok: false, code: error.code, error: INPUT_INVALID_ERROR },
+        400
+      );
+    }
+
     const dbError = resolveDbRouteError(error, SYNC_FAILED_ERROR);
     console.error("[b2b][employee-sync] route handler failed", {
       appUserId: input.appUserId,

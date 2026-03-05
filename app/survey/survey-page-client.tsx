@@ -31,9 +31,14 @@ import {
   upsertEmployeeSession,
 } from "@/app/(features)/employee-report/_lib/api";
 import type { IdentityInput } from "@/app/(features)/employee-report/_lib/client-types";
+import {
+  clearStoredIdentity,
+  readStoredIdentityWithSource,
+  saveStoredIdentity,
+} from "@/app/(features)/employee-report/_lib/client-utils";
+import { emitAuthSyncEvent, subscribeAuthSyncEvent } from "@/lib/client/auth-sync";
 
 const STORAGE_KEY = "b2b-public-survey-state.v4";
-const SURVEY_IDENTITY_STORAGE_KEY = "wb:b2b:survey:identity:v1";
 const BLOCK_SURVEY_START_TEMPORARILY = false;
 
 const TEXT = {
@@ -56,7 +61,7 @@ const TEXT = {
   authCheckingDesc:
     "\uC774\uC804 \uC778\uC99D \uC815\uBCF4\uB97C \uC870\uD68C\uD558\uACE0 \uC788\uC5B4\uC694. \uC7A0\uC2DC\uB9CC \uAE30\uB2E4\uB824 \uC8FC\uC138\uC694.",
   authLockedHint:
-    "\uD604\uC7AC \uC778\uC99D\uB41C \uC815\uBCF4\uC785\uB2C8\uB2E4. \uB2E4\uB978 \uC0AC\uB78C\uC73C\uB85C \uC9C4\uD589\uD558\uB824\uBA74 \uC544\uB798 \uBC84\uD2BC\uC744 \uB20C\uB7EC \uC815\uBCF4\uB97C \uBCC0\uACBD\uD574 \uC8FC\uC138\uC694.",
+    "\uB2E4\uB978 \uC0AC\uB78C\uC73C\uB85C \uC9C4\uD589\uD558\uB824\uBA74 \uC544\uB798 \uBC84\uD2BC\uC744 \uB20C\uB7EC \uC815\uBCF4\uB97C \uBCC0\uACBD\uD574 \uC8FC\uC138\uC694.",
   switchIdentity: "\uB2E4\uB978 \uC0AC\uB78C\uC73C\uB85C \uC124\uBB38 \uC9C4\uD589",
   startSurvey: "\uC124\uBB38 \uC2DC\uC791\uD558\uAE30",
   needAuthNotice:
@@ -89,8 +94,9 @@ const TEXT = {
     "\uC9C0\uAE08\uAE4C\uC9C0 \uC785\uB825\uD55C \uC124\uBB38 \uB2F5\uBCC0\uC774 \uBAA8\uB450 \uCD08\uAE30\uD654\uB429\uB2C8\uB2E4.",
   cancel: "\uCDE8\uC18C",
   reset: "\uB2E4\uC2DC \uC2DC\uC791",
-  progressTitle: "B2B \uC124\uBB38 \uC9C4\uD589",
   progressBarLabel: "\uC9C4\uD589\uB960",
+  sectionGuide:
+    "\uD604\uC7AC \uC139\uC158 \uBB38\uD56D\uC5D0 \uB2F5\uD558\uBA74 \uC790\uB3D9\uC73C\uB85C \uB2E4\uC74C \uBB38\uD56D\uC73C\uB85C \uC774\uB3D9\uD569\uB2C8\uB2E4.",
   restart: "\uCC98\uC74C\uBD80\uD130 \uB2E4\uC2DC \uC2DC\uC791",
   commonSection: "\uACF5\uD1B5 \uBB38\uD56D",
   commonBadge: "\uACF5\uD1B5 \uC124\uBB38",
@@ -1072,37 +1078,58 @@ export default function SurveyPageClient() {
     lastVisitedSectionIndexRef.current = clampedCurrent;
   }, [currentSectionIndex, surveySections]);
 
-  const scrollToQuestion = useCallback((questionKey: string) => {
-    const run = (attempt: number) => {
-      window.requestAnimationFrame(() => {
-        const node = questionRefs.current[questionKey];
-        if (!node) {
-          if (attempt < 12) window.setTimeout(() => run(attempt + 1), 40);
-          return;
-        }
+  const scrollToQuestion = useCallback(
+    (questionKey: string, options?: { align?: "comfort" | "center" }) => {
+      const align = options?.align ?? "comfort";
+      const run = (attempt: number) => {
+        window.requestAnimationFrame(() => {
+          const node = questionRefs.current[questionKey];
+          if (!node) {
+            if (attempt < 12) window.setTimeout(() => run(attempt + 1), 40);
+            return;
+          }
 
-        const isMobileViewport = window.innerWidth < 640;
-        const topPadding = isMobileViewport ? 84 : 116;
-        const bottomPadding = isMobileViewport ? 104 : 170;
-        const rect = node.getBoundingClientRect();
-        const viewportHeight = window.innerHeight;
-        const inComfortZone =
-          rect.top >= topPadding && rect.bottom <= viewportHeight - bottomPadding;
+          const isMobileViewport = window.innerWidth < 640;
+          const topPadding = isMobileViewport ? 84 : 116;
+          const bottomPadding = isMobileViewport ? 104 : 170;
+          const rect = node.getBoundingClientRect();
+          const viewportHeight = window.innerHeight;
+          const safeTop = isMobileViewport ? 76 : 108;
+          const safeBottom = isMobileViewport ? 92 : 148;
+          const safeHeight = Math.max(1, viewportHeight - safeTop - safeBottom);
 
-        if (!inComfortZone) {
-          const targetTop = window.scrollY + rect.top - topPadding;
-          window.scrollTo({
-            top: Math.max(0, targetTop),
-            behavior: "smooth",
-          });
-        }
+          if (align === "center") {
+            const centeredOffset = safeTop + (safeHeight - Math.min(rect.height, safeHeight)) / 2;
+            const targetTop = window.scrollY + rect.top - centeredOffset;
+            if (Math.abs(targetTop - window.scrollY) > 6) {
+              window.scrollTo({
+                top: Math.max(0, targetTop),
+                behavior: "smooth",
+              });
+            }
+          } else {
+            const inComfortZone =
+              rect.top >= topPadding && rect.bottom <= viewportHeight - bottomPadding;
+            if (inComfortZone) {
+              const focusable = node.querySelector<HTMLElement>("input,button,select,textarea");
+              focusable?.focus({ preventScroll: true });
+              return;
+            }
+            const targetTop = window.scrollY + rect.top - topPadding;
+            window.scrollTo({
+              top: Math.max(0, targetTop),
+              behavior: "smooth",
+            });
+          }
 
-        const focusable = node.querySelector<HTMLElement>("input,button,select,textarea");
-        focusable?.focus({ preventScroll: true });
-      });
-    };
-    run(0);
-  }, []);
+          const focusable = node.querySelector<HTMLElement>("input,button,select,textarea");
+          focusable?.focus({ preventScroll: true });
+        });
+      };
+      run(0);
+    },
+    []
+  );
 
   const moveToSection = useCallback(
     (nextIndex: number) => {
@@ -1276,10 +1303,7 @@ export default function SurveyPageClient() {
   ]);
 
   function saveSurveyIdentity(input: IdentityInput) {
-    window.localStorage.setItem(
-      SURVEY_IDENTITY_STORAGE_KEY,
-      JSON.stringify({ savedAt: new Date().toISOString(), identity: input })
-    );
+    saveStoredIdentity(toIdentityPayload(input));
   }
 
   function applyRemoteSurveySnapshot(input: {
@@ -1393,21 +1417,14 @@ export default function SurveyPageClient() {
     authBootstrappedRef.current = true;
     let bootIdentity: IdentityInput | null = null;
 
-    try {
-      const raw = window.localStorage.getItem(SURVEY_IDENTITY_STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as { identity?: IdentityInput };
-        if (parsed.identity) {
-          bootIdentity = {
-            name: parsed.identity.name ?? "",
-            birthDate: normalizeDigits(parsed.identity.birthDate ?? ""),
-            phone: normalizeDigits(parsed.identity.phone ?? ""),
-          };
-          setIdentity(bootIdentity);
-        }
-      }
-    } catch {
-      window.localStorage.removeItem(SURVEY_IDENTITY_STORAGE_KEY);
+    const stored = readStoredIdentityWithSource().identity;
+    if (stored) {
+      bootIdentity = {
+        name: stored.name ?? "",
+        birthDate: normalizeDigits(stored.birthDate ?? ""),
+        phone: normalizeDigits(stored.phone ?? ""),
+      };
+      setIdentity(bootIdentity);
     }
 
     setAuthBusy("session");
@@ -1436,6 +1453,10 @@ export default function SurveyPageClient() {
         const loginResult = await upsertEmployeeSession(storedPayload).catch(() => null);
         if (!loginResult?.found) return;
         saveSurveyIdentity(storedPayload);
+        emitAuthSyncEvent({
+          scope: "b2b-employee-session",
+          reason: "survey-session-restored",
+        });
         setAuthVerified(true);
         setIdentityEditable(false);
         setAuthPendingSign(false);
@@ -1447,6 +1468,47 @@ export default function SurveyPageClient() {
         setAuthBusy("idle");
       });
   }, [hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    const unsubscribe = subscribeAuthSyncEvent(
+      () => {
+        if (authBusy !== "idle") return;
+        setAuthBusy("session");
+        fetchEmployeeSession()
+          .then((session) => {
+            if (!session.authenticated) {
+              setAuthVerified(false);
+              setIdentityEditable(true);
+              setAuthPendingSign(false);
+              setAuthErrorText(null);
+              setAuthNoticeText(null);
+              return;
+            }
+
+            if (session.employee) {
+              const sessionIdentity = {
+                name: session.employee.name,
+                birthDate: normalizeDigits(session.employee.birthDate),
+                phone: normalizeDigits(session.employee.phoneNormalized),
+              };
+              setIdentity(sessionIdentity);
+              saveSurveyIdentity(sessionIdentity);
+            }
+            setAuthVerified(true);
+            setIdentityEditable(false);
+            setAuthPendingSign(false);
+            setAuthErrorText(null);
+          })
+          .catch(() => null)
+          .finally(() => {
+            setAuthBusy("idle");
+          });
+      },
+      { scopes: ["b2b-employee-session", "user-session"] }
+    );
+    return unsubscribe;
+  }, [authBusy, hydrated]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -1539,6 +1601,10 @@ export default function SurveyPageClient() {
       forceRefresh: false,
     });
     saveSurveyIdentity(nextIdentity);
+    emitAuthSyncEvent({
+      scope: "b2b-employee-session",
+      reason: "survey-session-synced",
+    });
     setAuthVerified(true);
     setIdentityEditable(false);
     setAuthPendingSign(false);
@@ -1561,6 +1627,10 @@ export default function SurveyPageClient() {
       const existing = await upsertEmployeeSession(payload).catch(() => null);
       if (existing?.found) {
         saveSurveyIdentity(payload);
+        emitAuthSyncEvent({
+          scope: "b2b-employee-session",
+          reason: "survey-session-found",
+        });
         setAuthVerified(true);
         setIdentityEditable(false);
         setAuthPendingSign(false);
@@ -1614,7 +1684,11 @@ export default function SurveyPageClient() {
       lastRemoteSavedSignatureRef.current = "";
       lastVisitedSectionIndexRef.current = 0;
       window.localStorage.removeItem(STORAGE_KEY);
-      window.localStorage.removeItem(SURVEY_IDENTITY_STORAGE_KEY);
+      clearStoredIdentity();
+      emitAuthSyncEvent({
+        scope: "b2b-employee-session",
+        reason: "survey-session-cleared",
+      });
     } finally {
       setAuthBusy("idle");
     }
@@ -1789,6 +1863,15 @@ export default function SurveyPageClient() {
       section.questions.findIndex((item) => item.question.key === currentNode.question.key)
     );
 
+    const shouldBlockAutoAdvanceFromMulti =
+      isAutoAdvanceFromAnswer && currentNode.question.type === "multi";
+    if (shouldBlockAutoAdvanceFromMulti) {
+      setErrorQuestionKey(null);
+      setErrorText(null);
+      setIsSectionTransitioning(false);
+      return;
+    }
+
     if (questionAt < section.questions.length - 1) {
       const nextQuestion = section.questions[questionAt + 1].question;
       const nextKey = nextQuestion.key;
@@ -1803,7 +1886,13 @@ export default function SurveyPageClient() {
       setFocusedQuestionBySection((prev) => ({ ...prev, [section.key]: nextKey }));
       setErrorQuestionKey(null);
       setErrorText(null);
-      scrollToQuestion(nextKey);
+      const shouldCenterNextQuestion =
+        isAutoAdvanceFromAnswer &&
+        currentNode.question.type !== "multi" &&
+        !nextAlreadyAnswered;
+      scrollToQuestion(nextKey, {
+        align: shouldCenterNextQuestion ? "center" : "comfort",
+      });
       setIsSectionTransitioning(false);
       return;
     }
@@ -1829,13 +1918,21 @@ export default function SurveyPageClient() {
       setCurrentSectionIndex(sectionAt + 1);
       if (nextKey) {
         setFocusedQuestionBySection((prev) => ({ ...prev, [nextSection.key]: nextKey }));
+        const shouldCenterNextSectionFirstQuestion =
+          isAutoAdvanceFromAnswer &&
+          currentNode.question.type !== "multi" &&
+          !nextAlreadyAnswered;
         if (shouldShowSectionTransition) {
           window.setTimeout(() => {
-            scrollToQuestion(nextKey);
+            scrollToQuestion(nextKey, {
+              align: shouldCenterNextSectionFirstQuestion ? "center" : "comfort",
+            });
             setIsSectionTransitioning(false);
           }, 140);
         } else {
-          scrollToQuestion(nextKey);
+          scrollToQuestion(nextKey, {
+            align: shouldCenterNextSectionFirstQuestion ? "center" : "comfort",
+          });
         }
       } else {
         setIsSectionTransitioning(false);
@@ -2340,9 +2437,21 @@ export default function SurveyPageClient() {
   if (!hydrated) return null;
 
   const hasPrevStep = currentSectionIndex > 0;
+  const isCommonSurveySection = currentSection?.key === "common";
+  const liveSelectedSections = resolveSelectedSectionsFromC27(
+    template,
+    answers,
+    selectedSectionsCommitted
+  );
+  const hasLiveDetailedSectionSelection = liveSelectedSections.length > 0;
   const prevButtonLabel = TEXT.prevSection;
   const atLastSection = currentSectionIndex >= surveySections.length - 1;
-  const nextButtonLabel = atLastSection ? TEXT.resultCheck : TEXT.nextSection;
+  const shouldShowNextSectionLabelAtCommon =
+    isCommonSurveySection && atLastSection && hasLiveDetailedSectionSelection;
+  const nextButtonLabel =
+    atLastSection && !shouldShowNextSectionLabelAtCommon
+      ? TEXT.resultCheck
+      : TEXT.nextSection;
   const progressMessage = resolveProgressMessage(progressPercent);
 
   return (
@@ -2365,7 +2474,7 @@ export default function SurveyPageClient() {
         aria-hidden
         className="pointer-events-none absolute bottom-0 left-1/3 h-56 w-56 -translate-x-1/2 rounded-full bg-indigo-200/45 blur-3xl"
       />
-      <div className="relative z-10 mx-auto w-full max-w-[960px] px-4 overflow-visible">
+      <div className="relative z-10 mx-auto w-full max-w-full px-4 overflow-visible sm:max-w-[640px] lg:max-w-[760px]">
         {phase === "intro" ? (
           <div className="mx-auto max-w-[860px] rounded-[30px] border border-sky-200/70 bg-white/92 p-6 shadow-[0_26px_58px_-34px_rgba(15,23,42,0.45)] backdrop-blur sm:p-8">
             <span className="inline-flex rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700">
@@ -2502,14 +2611,9 @@ export default function SurveyPageClient() {
               )}
             </section>
 
-            {authNoticeText ? (
-              <p className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+            {authNoticeText && !identityLocked ? (
+              <p className="mt-4 rounded-xl border border-sky-100 bg-sky-50 px-3 py-2 text-sm text-sky-700">
                 {authNoticeText}
-              </p>
-            ) : null}
-            {authVerified && !authInitializing ? (
-              <p className="mt-3 text-xs font-semibold text-emerald-700">
-                인증이 확인되었습니다. 설문을 시작해 주세요.
               </p>
             ) : null}
             {authErrorText ? (
@@ -2528,21 +2632,15 @@ export default function SurveyPageClient() {
               >
                 {TEXT.startSurvey}
               </button>
-              <span
-                className={`text-sm font-medium ${
-                  authInitializing
-                    ? "text-cyan-700"
-                    : authVerified
-                    ? "text-cyan-700"
-                    : "text-slate-500"
-                }`}
-              >
-                {authInitializing
-                  ? TEXT.authCheckingTitle
-                  : authVerified
-                  ? "설문을 시작할 수 있습니다."
-                  : TEXT.needAuthNotice}
-              </span>
+              {authInitializing || !authVerified ? (
+                <span
+                  className={`text-sm font-medium ${
+                    authInitializing ? "text-cyan-700" : "text-slate-500"
+                  }`}
+                >
+                  {authInitializing ? TEXT.authCheckingTitle : TEXT.needAuthNotice}
+                </span>
+              ) : null}
             </div>
             {hasCompletedSubmission ? (
               <p className="mt-3 rounded-2xl border border-cyan-100 bg-cyan-50 px-3 py-2 text-xs text-cyan-700 sm:text-sm">
@@ -2559,21 +2657,15 @@ export default function SurveyPageClient() {
                 <span className="inline-flex rounded-full border border-cyan-300 bg-cyan-50 px-2.5 py-1 text-xs font-semibold text-cyan-700">
                   {currentSectionIndex + 1}. {currentSection?.title ?? TEXT.commonSection}
                 </span>
-                <p className="text-sm font-semibold text-cyan-700">{TEXT.progressTitle}</p>
-                <p className="text-2xl font-black leading-none text-slate-900 sm:text-3xl">
-                  {progressDisplayDoneCount}/{progressTotalCount}
-                </p>
-                <p className="text-sm text-slate-600 sm:text-base">
-                  전체 진행률 {progressPercent}% ({progressDisplayDoneCount}/{progressTotalCount})
-                </p>
+                <p className="text-sm text-slate-600 sm:text-base">{TEXT.sectionGuide}</p>
               </div>
-              <div className="space-y-3 lg:rounded-2xl lg:border lg:border-slate-200/80 lg:bg-slate-50/60 lg:p-3">
+              <div className="space-y-3">
                 <div className="flex justify-end">
                   <button
                     type="button"
                     onClick={requestReset}
                     data-testid="survey-header-reset-button"
-                    className="text-sm font-medium text-slate-500 underline-offset-2 hover:text-cyan-700 hover:underline"
+                    className="text-sm font-medium text-slate-500 underline decoration-slate-400 underline-offset-2 hover:text-cyan-700 hover:decoration-cyan-600"
                   >
                     {TEXT.restart}
                   </button>
@@ -2683,16 +2775,22 @@ export default function SurveyPageClient() {
               })}
             </section>
 
-            <footer className="mt-7 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={handleMovePreviousSection}
-                disabled={!hasPrevStep || isSectionTransitioning}
-                data-testid="survey-prev-button"
-                className="rounded-full border border-slate-300 px-4 py-2 text-sm text-slate-700 transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {prevButtonLabel}
-              </button>
+            <footer
+              className={`mt-7 flex items-center ${
+                isCommonSurveySection ? "justify-end" : "justify-between"
+              }`}
+            >
+              {!isCommonSurveySection ? (
+                <button
+                  type="button"
+                  onClick={handleMovePreviousSection}
+                  disabled={!hasPrevStep || isSectionTransitioning}
+                  data-testid="survey-prev-button"
+                  className="rounded-full border border-slate-300 px-4 py-2 text-sm text-slate-700 transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {prevButtonLabel}
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={handleMoveNextSection}

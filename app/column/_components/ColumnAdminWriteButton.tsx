@@ -3,16 +3,28 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { EMPTY_LOGIN_STATUS, getLoginStatus, type LoginStatus } from "@/lib/useLoginStatus";
+import { subscribeAuthSyncEvent } from "@/lib/client/auth-sync";
 
 export default function ColumnAdminWriteButton() {
   const [status, setStatus] = useState<LoginStatus>(EMPTY_LOGIN_STATUS);
 
   useEffect(() => {
     const controller = new AbortController();
-    void getLoginStatus(controller.signal)
-      .then((next) => setStatus(next))
-      .catch(() => undefined);
-    return () => controller.abort();
+    const refresh = () => {
+      void getLoginStatus(controller.signal)
+        .then((next) => setStatus(next))
+        .catch(() => undefined);
+    };
+
+    refresh();
+    const unsubscribe = subscribeAuthSyncEvent(refresh, {
+      scopes: ["user-session"],
+    });
+
+    return () => {
+      controller.abort();
+      unsubscribe();
+    };
   }, []);
 
   if (!status.isAdminLoggedIn) return null;

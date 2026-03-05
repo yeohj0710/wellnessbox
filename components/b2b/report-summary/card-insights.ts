@@ -1,4 +1,6 @@
 import type { ReportSummaryPayload } from "@/lib/b2b/report-summary-payload";
+import commonSurveyJson from "@/data/b2b/survey.common.json";
+import sectionSurveyJson from "@/data/b2b/survey.sections.json";
 import { ensureArray, firstOrDash, toScoreValue } from "./helpers";
 
 const MAX_ANALYSIS_LINES = 2;
@@ -31,6 +33,93 @@ type SurveyAnswerLookup = {
   questionText: string;
   answerText: string;
 };
+
+let optionLabelByQuestionKeyCache: Map<string, Map<string, string>> | null = null;
+
+function getOptionLabelByQuestionKey() {
+  if (optionLabelByQuestionKeyCache) return optionLabelByQuestionKeyCache;
+  const map = new Map<string, Map<string, string>>();
+
+  const pushQuestionOptions = (question: unknown) => {
+    const row = question as
+      | {
+          id?: unknown;
+          options?: Array<{ value?: unknown; label?: unknown }>;
+        }
+      | undefined;
+    const questionKey = toTrimmedText(row?.id);
+    if (!questionKey) return;
+    const optionMap = new Map<string, string>();
+    for (const option of row?.options ?? []) {
+      const value = toTrimmedText(option.value);
+      const label = toTrimmedText(option.label);
+      if (!value || !label) continue;
+      optionMap.set(value, label);
+    }
+    if (optionMap.size > 0) {
+      map.set(questionKey, optionMap);
+    }
+  };
+
+  for (const question of commonSurveyJson.questions ?? []) {
+    pushQuestionOptions(question);
+  }
+
+  for (const section of sectionSurveyJson.sections ?? []) {
+    for (const question of section.questions ?? []) {
+      pushQuestionOptions(question);
+    }
+  }
+
+  optionLabelByQuestionKeyCache = map;
+  return map;
+}
+
+function decodeAnswerTextByQuestionKey(questionKey: string, answerText: string) {
+  const normalizedQuestionKey = toTrimmedText(questionKey);
+  const normalizedAnswerText = toTrimmedText(answerText);
+  if (!normalizedQuestionKey || !normalizedAnswerText) return normalizedAnswerText;
+
+  const optionMap = getOptionLabelByQuestionKey().get(normalizedQuestionKey);
+  if (!optionMap) return normalizedAnswerText;
+
+  const tokens = normalizedAnswerText
+    .split(/[,\n/|]/g)
+    .map((token) => token.trim())
+    .filter(Boolean);
+  if (tokens.length === 0) return normalizedAnswerText;
+
+  const labels = tokens.map((token) => optionMap.get(token) ?? token);
+  const decoded = labels.join(", ").trim();
+  return decoded || normalizedAnswerText;
+}
+
+function isCodeLikeAnswerText(value: string) {
+  const normalized = value.trim();
+  if (!normalized) return false;
+  return /^[A-Z](?:\s*[,/|]\s*[A-Z])*$/i.test(normalized);
+}
+
+function resolvePreferredAnswerText(input: {
+  questionKey: string;
+  rawAnswerText: unknown;
+  surveyAnswerText: string | undefined;
+  emptyFallback: string;
+}) {
+  const raw = decodeAnswerTextByQuestionKey(
+    input.questionKey,
+    toTrimmedText(input.rawAnswerText)
+  );
+  const survey = decodeAnswerTextByQuestionKey(
+    input.questionKey,
+    toTrimmedText(input.surveyAnswerText)
+  );
+  if (!raw) return survey || input.emptyFallback;
+  if (!survey) return raw;
+  if (raw === survey) return raw;
+  if (isCodeLikeAnswerText(raw) && !isCodeLikeAnswerText(survey)) return survey;
+  return raw;
+}
 
 export function clampPercent(value: unknown): number {
   if (typeof value !== "number" || !Number.isFinite(value)) return 0;
@@ -130,7 +219,9 @@ function buildSurveyAnswerLookup(payload: ReportSummaryPayload) {
     const questionKey = toTrimmedText(answer?.questionKey);
     if (!questionKey) continue;
     const questionText = toTrimmedText(answer?.questionText);
-    const answerText = toTrimmedText(answer?.answerText) || toTrimmedText(answer?.answerValue);
+    const answerTextSource =
+      toTrimmedText(answer?.answerText) || toTrimmedText(answer?.answerValue);
+    const answerText = decodeAnswerTextByQuestionKey(questionKey, answerTextSource);
     lookup.set(questionKey, { questionText, answerText });
   }
   return lookup;
@@ -166,7 +257,12 @@ function extractAnalysisCandidates(payload: ReportSummaryPayload): AnalysisCandi
       const questionScore = toPercentScore(item?.score);
       const questionText =
         toTrimmedText(item?.questionText) || surveyLookup?.questionText || questionKey || `Q${questionNumber}`;
-      const answerText = toTrimmedText(item?.answerText) || surveyLookup?.answerText || "-";
+      const answerText = resolvePreferredAnswerText({
+        questionKey,
+        rawAnswerText: item?.answerText,
+        surveyAnswerText: surveyLookup?.answerText,
+        emptyFallback: "-",
+      });
       const text = toTrimmedText(item?.text);
       if (!Number.isFinite(questionNumber) || questionScore == null || !text) continue;
       if (questionScore < 50) continue;
@@ -281,7 +377,12 @@ function extractRiskCandidates(payload: ReportSummaryPayload): RiskCandidate[] {
     const surveyLookup = questionKey ? surveyAnswerLookup.get(questionKey) : undefined;
     const questionText =
       sanitizeTitle(toTrimmedText(item?.questionText)) || surveyLookup?.questionText || title;
-    const answerText = toTrimmedText(item?.answerText) || surveyLookup?.answerText || "";
+    const answerText = resolvePreferredAnswerText({
+      questionKey,
+      rawAnswerText: item?.answerText,
+      surveyAnswerText: surveyLookup?.answerText,
+      emptyFallback: "",
+    });
 
     const score = clampPercent(toScoreValue(item?.score));
 

@@ -375,13 +375,13 @@ export default function ReportSummaryCards(props: {
               {analysisLines.map((line) => (
                 <li key={`analysis-${line.key}`} className={styles.reportFriendlyItem}>
                   <p className={styles.reportDataBody}>
-                    <strong>문항</strong> {line.questionText}
+                    <strong>문항:</strong> {line.questionText}
                   </p>
                   <p className={styles.reportDataBody}>
-                    <strong>내 답변</strong> {line.answerText || "-"}
+                    <strong>내 답변:</strong> {line.answerText || "-"}
                   </p>
                   <p className={styles.reportDataBody}>
-                    <strong>권장안</strong> {line.recommendation}
+                    <strong>권장안:</strong> {line.recommendation}
                   </p>
                 </li>
               ))}
@@ -402,15 +402,15 @@ export default function ReportSummaryCards(props: {
               {riskLines.map((line) => (
                 <li key={`risk-${line.key}`} className={styles.reportFriendlyItem}>
                   <p className={styles.reportDataBody}>
-                    <strong>문항</strong> {line.questionText}
+                    <strong>문항:</strong> {line.questionText}
                   </p>
                   {line.answerText ? (
                     <p className={styles.reportDataBody}>
-                      <strong>내 답변</strong> {line.answerText}
+                      <strong>내 답변:</strong> {line.answerText}
                     </p>
                   ) : null}
                   <p className={styles.reportDataBody}>
-                    <strong>권장안</strong> {line.recommendation}
+                    <strong>권장안:</strong> {line.recommendation}
                   </p>
                 </li>
               ))}
@@ -503,12 +503,12 @@ export default function ReportSummaryCards(props: {
             )}
             {pharmacistRecommendations ? (
               <p className={styles.reportDataBody}>
-                <strong>권장사항</strong> {pharmacistRecommendations}
+                <strong>권장사항:</strong> {pharmacistRecommendations}
               </p>
             ) : null}
             {pharmacistCautions ? (
               <p className={styles.reportDataBody}>
-                <strong>주의사항</strong> {pharmacistCautions}
+                <strong>주의사항:</strong> {pharmacistCautions}
               </p>
             ) : null}
           </article>

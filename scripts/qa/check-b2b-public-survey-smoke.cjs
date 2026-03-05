@@ -115,7 +115,7 @@ async function getActiveQuestionCard(page) {
   const focused = page.locator('[data-testid="survey-question"][data-focused="true"]').first();
   if ((await focused.count()) > 0 && (await focused.isVisible())) return focused;
   const first = page.locator('[data-testid="survey-question"]').first();
-  await first.waitFor({ state: "visible", timeout: 10000 });
+  await first.waitFor({ state: "visible", timeout: 20000 });
   return first;
 }
 
@@ -204,28 +204,44 @@ async function ensureSurveyQuestionVisible(page) {
   const question = page.locator('[data-testid="survey-question"]').first();
   const startButton = page.locator('[data-testid="survey-start-button"]').first();
   const renewalConfirm = page.locator('[data-testid="survey-renewal-confirm-button"]').first();
+  const authLoading = page.locator('[data-testid="survey-auth-loading"]').first();
 
-  for (let attempt = 0; attempt < 24; attempt += 1) {
+  for (let attempt = 0; attempt < 80; attempt += 1) {
     const hasQuestion = (await question.count()) > 0 && (await question.isVisible());
     if (hasQuestion) return;
 
+    const hasRenewalConfirm =
+      (await renewalConfirm.count()) > 0 && (await renewalConfirm.isVisible());
+    if (hasRenewalConfirm) {
+      const box = await renewalConfirm.boundingBox();
+      if (box) {
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+        await page.mouse.down();
+        await page.waitForTimeout(2200);
+        await page.mouse.up();
+      } else {
+        await renewalConfirm.click();
+      }
+      await page.waitForTimeout(250);
+      continue;
+    }
+
+    const hasAuthLoading = (await authLoading.count()) > 0 && (await authLoading.isVisible());
+    if (hasAuthLoading) {
+      await page.waitForTimeout(250);
+      continue;
+    }
+
     const hasStartButton = (await startButton.count()) > 0 && (await startButton.isVisible());
     if (hasStartButton) {
-      await startButton.click();
-      await page.waitForTimeout(200);
-      const hasRenewalConfirm =
-        (await renewalConfirm.count()) > 0 && (await renewalConfirm.isVisible());
-      if (hasRenewalConfirm) {
-        const box = await renewalConfirm.boundingBox();
-        if (box) {
-          await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-          await page.mouse.down();
-          await page.waitForTimeout(2200);
-          await page.mouse.up();
-        } else {
-          await renewalConfirm.click();
-        }
+      const isDisabled = await startButton.isDisabled();
+      if (isDisabled) {
+        await page.waitForTimeout(250);
+        continue;
       }
+
+      await startButton.click({ force: true });
+      await page.waitForTimeout(200);
       await page.waitForTimeout(250);
       continue;
     }
@@ -233,7 +249,25 @@ async function ensureSurveyQuestionVisible(page) {
     await page.waitForTimeout(250);
   }
 
-  await question.waitFor({ state: "visible", timeout: 10000 });
+  const diagnostics = await page.evaluate(() => {
+    const question = document.querySelector('[data-testid="survey-question"]');
+    const startButton = document.querySelector('[data-testid="survey-start-button"]');
+    const authLoading = document.querySelector('[data-testid="survey-auth-loading"]');
+    const renewal = document.querySelector('[data-testid="survey-renewal-modal"]');
+    return {
+      hasQuestion: Boolean(question),
+      hasStartButton: Boolean(startButton),
+      startButtonDisabled:
+        startButton instanceof HTMLButtonElement ? startButton.disabled : null,
+      hasAuthLoading: Boolean(authLoading),
+      hasRenewalModal: Boolean(renewal),
+      bodyTextSample: (document.body?.innerText || "").slice(0, 260),
+    };
+  });
+
+  throw new Error(
+    `survey question not visible after intro handling: ${JSON.stringify(diagnostics)}`
+  );
 }
 
 async function run() {

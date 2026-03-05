@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { resolvePhoneOtpError } from "@/lib/client/phone-otp-error";
 import { linkPhoneRequest, sendPhoneOtpRequest } from "@/lib/client/phone-api";
+import { emitAuthSyncEvent } from "@/lib/client/auth-sync";
 import { formatPhoneDisplay } from "@/lib/client/phone-format";
 
 type UsePhoneLinkSectionStateParams = {
@@ -123,6 +124,7 @@ export function usePhoneLinkSectionState({
       }
 
       onLinked?.(result.data.phone, result.data.linkedAt);
+      emitAuthSyncEvent({ scope: "phone-link", reason: "link" });
       setCode("");
       setStatusMessage("전화번호 인증이 완료됐어요.");
     } catch {

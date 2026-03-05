@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { getLoginStatus, type LoginStatus } from "@/lib/useLoginStatus";
+import { subscribeAuthSyncEvent } from "@/lib/client/auth-sync";
 import CartItemsSection from "./cartItemsSection";
 import AddressSection from "./addressSection";
 import PharmacyInfoSection from "./pharmacyInfoSection";
@@ -157,12 +158,33 @@ export default function Cart({
   }, [allProducts]);
 
   useEffect(() => {
-    const fetchLoginStatus = async () => {
+    const controller = new AbortController();
+    void getLoginStatus(controller.signal)
+      .then((fetchedLoginStatus) => {
+        setLoginStatus(fetchedLoginStatus);
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, []);
+
+  const refreshLoginStatus = useCallback(async () => {
+    try {
       const fetchedLoginStatus = await getLoginStatus();
       setLoginStatus(fetchedLoginStatus);
-    };
-    fetchLoginStatus();
+    } catch {
+      // ignore
+    }
   }, []);
+
+  useEffect(() => {
+    const unsubscribe = subscribeAuthSyncEvent(
+      () => {
+        refreshLoginStatus();
+      },
+      { scopes: ["user-session"] }
+    );
+    return unsubscribe;
+  }, [refreshLoginStatus]);
 
   useEffect(() => {
     if (selectedPharmacy?.id) {

@@ -15,6 +15,7 @@ import {
 } from "@/lib/useLoginStatus";
 import { readClientCartItems } from "@/lib/client/cart-storage";
 import { consumeCartScrollRestoreForPath } from "@/lib/client/cart-navigation";
+import { subscribeAuthSyncEvent } from "@/lib/client/auth-sync";
 
 export function useTopBarLoginStatus(
   pathname: string | null,
@@ -67,6 +68,16 @@ export function useTopBarLoginStatus(
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
+  }, [refreshLoginStatus]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeAuthSyncEvent(
+      () => {
+        void refreshLoginStatus();
+      },
+      { scopes: ["user-session"] }
+    );
+    return unsubscribe;
   }, [refreshLoginStatus]);
 
   useEffect(() => {
