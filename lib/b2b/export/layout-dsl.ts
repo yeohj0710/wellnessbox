@@ -20,6 +20,7 @@ import {
   type LayoutStyleColorTokens,
 } from "@/lib/b2b/export/layout-dsl-config";
 import {
+  addPage,
   addNode,
   ensurePageSpace,
   maybeAppendUnit,
@@ -137,6 +138,10 @@ function addHeader(input: {
 }
 
 function addSection(input: SectionInput) {
+  addSectionPaginated(input);
+}
+
+function addSectionPaginated(input: SectionInput) {
   const { ctx, sectionId, title, lines, colors, compact, maxChars } = input;
   const wrapped = lines.flatMap((line) => wrapLine(line, maxChars));
   const titleHeight = compact ? 6.8 : 7.2;
@@ -144,58 +149,80 @@ function addSection(input: SectionInput) {
   const lineStep = compact ? 5.4 : 5.8;
   const paddingY = compact ? 3.2 : 3.7;
   const safeLines = wrapped.length > 0 ? wrapped : ["표시할 데이터가 없습니다."];
-  const blockHeight = paddingY * 2 + titleHeight + safeLines.length * lineStep + 0.4;
-
-  ensurePageSpace(ctx, blockHeight + 3.6);
+  const minLineCount = 1;
+  const minBlockHeight = paddingY * 2 + titleHeight + minLineCount * lineStep + 0.4;
+  const pageBottom = () => ctx.heightMm - ctx.margin;
+  const maxLinesForCurrentPage = () => {
+    const availableHeight = pageBottom() - ctx.cursorY;
+    const contentHeight = availableHeight - (paddingY * 2 + titleHeight + 0.4);
+    if (contentHeight <= 0) return 0;
+    return Math.floor(contentHeight / lineStep);
+  };
 
   const x = ctx.margin;
-  const y = ctx.cursorY;
   const w = ctx.widthMm - ctx.margin * 2;
   const contentX = x + 4;
   const contentW = w - 8;
+  let lineCursor = 0;
 
-  addNode(ctx, {
-    id: `${sectionId}-bg-${ctx.pages.length}`,
-    type: "rect",
-    role: "background",
-    allowOverlap: true,
-    x,
-    y,
-    w,
-    h: blockHeight,
-    fill: colors.card,
-  });
+  while (lineCursor < safeLines.length) {
+    ensurePageSpace(ctx, minBlockHeight + 3.6);
+    let linesPerChunk = maxLinesForCurrentPage();
+    if (linesPerChunk < minLineCount) {
+      addPage(ctx);
+      linesPerChunk = maxLinesForCurrentPage();
+    }
+    if (linesPerChunk < minLineCount) break;
 
-  addNode(ctx, {
-    id: `${sectionId}-title-${ctx.pages.length}`,
-    type: "text",
-    role: "content",
-    x: contentX,
-    y: y + paddingY,
-    w: contentW,
-    h: titleHeight,
-    text: title,
-    fontSize: compact ? 11 : 11.4,
-    bold: true,
-    color: colors.accent,
-  });
+    const chunkLines = safeLines.slice(lineCursor, lineCursor + linesPerChunk);
+    const y = ctx.cursorY;
+    const blockHeight = paddingY * 2 + titleHeight + chunkLines.length * lineStep + 0.4;
+    const blockToken = `${ctx.pages.length}-${lineCursor + 1}`;
 
-  safeLines.forEach((line, index) => {
     addNode(ctx, {
-      id: `${sectionId}-line-${index + 1}-${ctx.pages.length}`,
-      type: "text",
-      role: "line",
-      x: contentX,
-      y: y + paddingY + titleHeight + 1 + index * lineStep,
-      w: contentW,
-      h: lineHeight,
-      text: line,
-      fontSize: compact ? 9.1 : 9.5,
-      color: colors.text,
+      id: `${sectionId}-bg-${blockToken}`,
+      type: "rect",
+      role: "background",
+      allowOverlap: true,
+      x,
+      y,
+      w,
+      h: blockHeight,
+      fill: colors.card,
     });
-  });
 
-  ctx.cursorY = y + blockHeight + 3.6;
+    addNode(ctx, {
+      id: `${sectionId}-title-${blockToken}`,
+      type: "text",
+      role: "content",
+      x: contentX,
+      y: y + paddingY,
+      w: contentW,
+      h: titleHeight,
+      text: title,
+      fontSize: compact ? 11 : 11.4,
+      bold: true,
+      color: colors.accent,
+    });
+
+    chunkLines.forEach((line, index) => {
+      addNode(ctx, {
+        id: `${sectionId}-line-${lineCursor + index + 1}-${ctx.pages.length}`,
+        type: "text",
+        role: "line",
+        x: contentX,
+        y: y + paddingY + titleHeight + 1 + index * lineStep,
+        w: contentW,
+        h: lineHeight,
+        text: line,
+        fontSize: compact ? 9.1 : 9.5,
+        color: colors.text,
+      });
+    });
+
+    lineCursor += chunkLines.length;
+    ctx.cursorY = y + blockHeight + 3.6;
+  }
 }
 
 function buildSummaryLines(payload: B2bReportPayload) {

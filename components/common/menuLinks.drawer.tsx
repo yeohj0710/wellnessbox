@@ -30,24 +30,16 @@ export function DrawerMenuContent({
 }: DrawerMenuContentProps) {
   return (
     <>
-      <IntentPrefetchLink
-        href="/explore"
-        className={menuItemClasses()}
-        {...pressHandlers}
-      >
+      <IntentPrefetchLink href="/explore" className={menuItemClasses()} {...pressHandlers}>
         상품 둘러보기
       </IntentPrefetchLink>
 
-      <IntentPrefetchLink
-        href="/my-orders"
-        className={menuItemClasses()}
-        onClick={onItemClick}
-      >
+      <IntentPrefetchLink href="/my-orders" className={menuItemClasses()} onClick={onItemClick}>
         내 주문 조회
       </IntentPrefetchLink>
 
       <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
-        <span>AI 진단 검사</span>
+        <span>진단 검사</span>
         <AiPromptBadge />
       </div>
 
@@ -61,8 +53,16 @@ export function DrawerMenuContent({
       </IntentPrefetchLink>
 
       <IntentPrefetchLink
+        href="/survey"
+        className="-mt-1 rounded-lg px-3 py-2 hover:bg-slate-50"
+        onClick={onItemClick}
+      >
+        건강 설문
+      </IntentPrefetchLink>
+
+      <IntentPrefetchLink
         href="/check-ai"
-        className="-mt-4 rounded-lg px-3 py-2 -mb-2 hover:bg-slate-50"
+        className="-mt-4 -mb-2 rounded-lg px-3 py-2 hover:bg-slate-50"
         onClick={onItemClick}
       >
         빠른 검사
@@ -70,28 +70,26 @@ export function DrawerMenuContent({
 
       <IntentPrefetchLink
         href="/chat"
-        className={`${menuItemClasses()} flex items-center mt-2`}
+        className={`${menuItemClasses()} mt-2 flex items-center`}
         onClick={onItemClick}
       >
         <span>AI 맞춤 상담</span>
         <BetaBadge className="ml-2" />
       </IntentPrefetchLink>
 
-      <IntentPrefetchLink
-        href="/column"
-        className={menuItemClasses()}
-        onClick={onItemClick}
-      >
+      <IntentPrefetchLink href="/column" className={menuItemClasses()} onClick={onItemClick}>
         건강 칼럼
       </IntentPrefetchLink>
 
-      <IntentPrefetchLink
-        href="/employee-report"
-        className={menuItemClasses()}
-        onClick={onItemClick}
-      >
-        임직원 레포트
-      </IntentPrefetchLink>
+      {visibility.isAdminLoggedIn && (
+        <IntentPrefetchLink
+          href="/employee-report"
+          className={menuItemClasses()}
+          onClick={onItemClick}
+        >
+          임직원 레포트
+        </IntentPrefetchLink>
+      )}
 
       <DrawerOperatorLinks
         showPharmMenus={visibility.showPharmMenus}

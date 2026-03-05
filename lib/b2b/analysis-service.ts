@@ -1,8 +1,11 @@
 import "server-only";
 
+import type { Prisma } from "@prisma/client";
 import db from "@/lib/db";
+import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
 import { analyzeB2bReport } from "@/lib/b2b/analyzer";
 import { generateB2bAiEvaluation } from "@/lib/b2b/ai-evaluation";
+import { pickMostCompleteSurveyResponse } from "@/lib/b2b/survey-response-completeness";
 import { computeWellnessResult } from "@/lib/wellness/analysis";
 import {
   monthRangeFromPeriodKey,
@@ -22,6 +25,9 @@ type SaveAnalysisInput = {
 };
 
 type JsonRecord = Record<string, unknown>;
+type SurveyResponseWithAnswers = Prisma.B2bSurveyResponseGetPayload<{
+  include: { answers: true };
+}>;
 
 function asRecord(value: unknown): JsonRecord | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
@@ -34,7 +40,7 @@ function extractExistingAiEvaluation(payload: unknown) {
   if (!ai) return null;
   const generatedAt =
     typeof ai.generatedAt === "string" ? ai.generatedAt : new Date().toISOString();
-  const model = typeof ai.model === "string" ? ai.model : "gpt-4o-mini";
+  const model = typeof ai.model === "string" ? ai.model : DEFAULT_CHAT_MODEL;
   const summary = typeof ai.summary === "string" ? ai.summary : "";
   const monthlyGuide = typeof ai.monthlyGuide === "string" ? ai.monthlyGuide : "";
   const caution = typeof ai.caution === "string" ? ai.caution : "";
@@ -57,16 +63,18 @@ function normalizePeriodKeyOrCurrent(periodKey?: string | null) {
 }
 
 async function findLatestSurveyForPeriod(employeeId: string, periodKey: string) {
-  const periodRow = await db.b2bSurveyResponse.findFirst({
+  const periodRows = await db.b2bSurveyResponse.findMany({
     where: { employeeId, periodKey, submittedAt: { not: null } },
     include: { answers: true },
     orderBy: { updatedAt: "desc" },
+    take: 24,
   });
-  if (periodRow) return periodRow;
+  const exact = pickMostCompleteSurveyResponse(periodRows);
+  if (exact) return exact;
 
   const range = monthRangeFromPeriodKey(periodKey);
   if (!range) return null;
-  return db.b2bSurveyResponse.findFirst({
+  const fallbackRows = await db.b2bSurveyResponse.findMany({
     where: {
       employeeId,
       submittedAt: { not: null },
@@ -74,7 +82,9 @@ async function findLatestSurveyForPeriod(employeeId: string, periodKey: string) 
     },
     include: { answers: true },
     orderBy: { updatedAt: "desc" },
+    take: 24,
   });
+  return pickMostCompleteSurveyResponse(fallbackRows);
 }
 
 async function findLatestHealthForPeriod(employeeId: string, periodKey: string) {

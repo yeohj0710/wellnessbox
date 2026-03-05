@@ -41,7 +41,7 @@ const runLlm = async (
   patternId?: string
 ): Promise<PlaygroundRunResult> => {
   const tracer = new TraceCollector();
-  const llm = createChatModel();
+  const llm = await createChatModel();
   const pattern = getPattern(patternId);
 
   try {

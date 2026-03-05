@@ -5,6 +5,14 @@ import { ArrowRightStartOnRectangleIcon } from "@heroicons/react/24/outline";
 import { emitAuthSyncEvent } from "@/lib/client/auth-sync";
 import ConfirmDialog from "./confirmDialog";
 
+function resolveCurrentReturnToPath() {
+  if (typeof window === "undefined") return "/";
+  const { pathname, search, hash } = window.location;
+  const composed = `${pathname}${search}${hash}`;
+  if (!composed.startsWith("/") || composed.startsWith("//")) return "/";
+  return composed;
+}
+
 export default function LogoutButton() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -13,13 +21,14 @@ export default function LogoutButton() {
     if (loading) return;
 
     setLoading(true);
+    const returnTo = resolveCurrentReturnToPath();
     try {
       await fetch("/api/auth/logout", { method: "POST" });
     } finally {
       setOpen(false);
       setLoading(false);
       emitAuthSyncEvent({ scope: "user-session", reason: "logout" });
-      window.location.replace("/");
+      window.location.replace(returnTo);
     }
   }, [loading]);
 

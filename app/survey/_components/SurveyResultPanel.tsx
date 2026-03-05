@@ -258,7 +258,7 @@ export default function SurveyResultPanel(props: {
                   <div className="mt-2 grid justify-items-center">
                     <svg
                       viewBox="0 0 240 210"
-                      className="h-auto w-full max-w-[236px]"
+                      className="h-auto w-full max-w-[252px]"
                       role="img"
                       aria-label="생활습관 위험도 다이아몬드 그래프"
                     >
@@ -310,7 +310,7 @@ export default function SurveyResultPanel(props: {
                           textAnchor={axis.labelAnchor}
                           dominantBaseline="central"
                           fill="#4b5563"
-                          fontSize="9.5"
+                          fontSize="11.5"
                           fontWeight="700"
                         >
                           {axis.labelLines.map((labelLine, lineIndex) => (
@@ -322,14 +322,14 @@ export default function SurveyResultPanel(props: {
                               {labelLine}
                             </tspan>
                           ))}
-                          <tspan x={axis.labelX} dy="1.15em" fill="#be123c" fontWeight="800">
+                          <tspan x={axis.labelX} dy="1.2em" fill="#be123c" fontSize="12.5" fontWeight="800">
                             {axis.percent}점
                           </tspan>
                         </text>
                       ))}
                     </svg>
                   </div>
-                  <p className="mt-2 text-xs text-slate-500">
+                  <p className="mt-2 text-sm text-slate-500">
                     종합 위험도:{" "}
                     <span className="font-semibold text-rose-600">{lifestyleOverall}점</span>
                   </p>

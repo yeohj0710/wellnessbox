@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { Prisma } from "@prisma/client";
 import db from "@/lib/db";
 import { maskBirthDate, maskPhone } from "@/lib/b2b/identity";
 import { monthRangeFromPeriodKey, periodKeyToCycle } from "@/lib/b2b/period";
@@ -27,14 +28,26 @@ import {
 import type { B2bReportPayload } from "@/lib/b2b/report-payload-types";
 import { extractWellness } from "@/lib/b2b/report-payload-wellness";
 import { resolveReportScores } from "@/lib/b2b/report-score-engine";
+import { pickMostCompleteSurveyResponse } from "@/lib/b2b/survey-response-completeness";
+import { computeWellnessResult } from "@/lib/wellness/analysis";
 import { loadWellnessTemplateForB2b } from "@/lib/wellness/data-loader";
 
-export const B2B_REPORT_PAYLOAD_VERSION = 14;
+export const B2B_REPORT_PAYLOAD_VERSION = 15;
 
 type SurveyQuestionLookup = {
   text: string;
   optionLabelByValue: Map<string, string>;
 };
+
+type SurveyResponseWithAnswers = Prisma.B2bSurveyResponseGetPayload<{
+  include: {
+    answers: {
+      orderBy: [{ sectionKey: "asc" }, { questionKey: "asc" }];
+    };
+  };
+}>;
+
+type ReportWellness = B2bReportPayload["analysis"]["wellness"];
 
 let surveyQuestionLookupByKeyCache: Map<string, SurveyQuestionLookup> | null = null;
 
@@ -105,6 +118,100 @@ async function findLatestByPeriodOrFallback<T>(input: {
   return input.fallbackFinder(range.to);
 }
 
+async function findBestSurveyByPeriodOrFallback(input: {
+  employeeId: string;
+  periodKey: string;
+}) {
+  const periodRows = await db.b2bSurveyResponse.findMany({
+    where: {
+      employeeId: input.employeeId,
+      periodKey: input.periodKey,
+      submittedAt: { not: null },
+    },
+    include: {
+      answers: {
+        orderBy: [{ sectionKey: "asc" }, { questionKey: "asc" }],
+      },
+    },
+    orderBy: { updatedAt: "desc" },
+    take: 24,
+  });
+
+  const exact = pickMostCompleteSurveyResponse(periodRows);
+  if (exact) return exact;
+
+  const range = monthRangeFromPeriodKey(input.periodKey);
+  if (!range) return null;
+
+  const fallbackRows = await db.b2bSurveyResponse.findMany({
+    where: {
+      employeeId: input.employeeId,
+      submittedAt: { not: null },
+      updatedAt: { lt: range.to },
+    },
+    include: {
+      answers: {
+        orderBy: [{ sectionKey: "asc" }, { questionKey: "asc" }],
+      },
+    },
+    orderBy: { updatedAt: "desc" },
+    take: 24,
+  });
+
+  return pickMostCompleteSurveyResponse(fallbackRows);
+}
+
+function countWellnessSectionAdviceItems(wellness: ReportWellness | null | undefined) {
+  if (!wellness) return 0;
+  return Object.values(wellness.sectionAdvice ?? {}).reduce((sum, row) => {
+    return sum + (Array.isArray(row?.items) ? row.items.length : 0);
+  }, 0);
+}
+
+function shouldPreferFallbackWellness(primary: ReportWellness, fallback: ReportWellness) {
+  if (!fallback) return false;
+  if (!primary) return true;
+
+  const primarySectionAdviceCount = countWellnessSectionAdviceItems(primary);
+  const fallbackSectionAdviceCount = countWellnessSectionAdviceItems(fallback);
+  if (fallbackSectionAdviceCount > primarySectionAdviceCount) return true;
+
+  const primarySupplementCount = primary.supplementDesign?.length ?? 0;
+  const fallbackSupplementCount = fallback.supplementDesign?.length ?? 0;
+  if (fallbackSupplementCount > primarySupplementCount) return true;
+
+  const primaryNeedSectionCount = primary.healthManagementNeed?.sections?.length ?? 0;
+  const fallbackNeedSectionCount = fallback.healthManagementNeed?.sections?.length ?? 0;
+  if (fallbackNeedSectionCount > primaryNeedSectionCount) return true;
+
+  const primaryRoutineCount = primary.lifestyleRoutineAdvice?.length ?? 0;
+  const fallbackRoutineCount = fallback.lifestyleRoutineAdvice?.length ?? 0;
+  if (fallbackRoutineCount > primaryRoutineCount) return true;
+
+  return false;
+}
+
+function computeFallbackWellnessFromSurvey(
+  survey: SurveyResponseWithAnswers | null
+): ReportWellness {
+  if (!survey) return null;
+
+  const computed = computeWellnessResult({
+    selectedSections: survey.selectedSections ?? [],
+    answersJson: asRecord(survey.answersJson) ?? null,
+    answers: survey.answers.map((answer) => ({
+      questionKey: answer.questionKey,
+      sectionKey: answer.sectionKey ?? null,
+      answerText: answer.answerText ?? null,
+      answerValue: answer.answerValue ?? null,
+      score: typeof answer.score === "number" ? answer.score : null,
+      meta: answer.meta ?? null,
+    })),
+  });
+
+  return extractWellness({ wellness: computed });
+}
+
 export type { B2bReportPayload } from "@/lib/b2b/report-payload-types";
 
 export async function buildB2bReportPayload(input: {
@@ -136,36 +243,9 @@ export async function buildB2bReportPayload(input: {
           orderBy: { fetchedAt: "desc" },
         }),
     }),
-    findLatestByPeriodOrFallback({
+    findBestSurveyByPeriodOrFallback({
+      employeeId: input.employeeId,
       periodKey: input.periodKey,
-      exactFinder: () =>
-        db.b2bSurveyResponse.findFirst({
-          where: {
-            employeeId: input.employeeId,
-            periodKey: input.periodKey,
-            submittedAt: { not: null },
-          },
-          include: {
-            answers: {
-              orderBy: [{ sectionKey: "asc" }, { questionKey: "asc" }],
-            },
-          },
-          orderBy: { updatedAt: "desc" },
-        }),
-      fallbackFinder: (to) =>
-        db.b2bSurveyResponse.findFirst({
-          where: {
-            employeeId: input.employeeId,
-            submittedAt: { not: null },
-            updatedAt: { lt: to },
-          },
-          include: {
-            answers: {
-              orderBy: [{ sectionKey: "asc" }, { questionKey: "asc" }],
-            },
-          },
-          orderBy: { updatedAt: "desc" },
-        }),
     }),
     findLatestByPeriodOrFallback({
       periodKey: input.periodKey,
@@ -218,7 +298,11 @@ export async function buildB2bReportPayload(input: {
   const analysisTrend = extractAnalysisTrend(latestAnalysis?.payload);
   const externalCards = extractExternalCards(latestAnalysis?.payload);
   const aiEvaluation = extractAiEvaluation(latestAnalysis?.payload);
-  const wellness = extractWellness(latestAnalysis?.payload);
+  const extractedWellness = extractWellness(latestAnalysis?.payload);
+  const computedFallbackWellness = computeFallbackWellnessFromSurvey(latestSurvey);
+  const wellness = shouldPreferFallbackWellness(extractedWellness, computedFallbackWellness)
+    ? computedFallbackWellness
+    : extractedWellness;
   const scoreResolution = resolveReportScores({
     analysisSummary,
     analysisSurveyOverallScore: analysisSurvey.overallScore,

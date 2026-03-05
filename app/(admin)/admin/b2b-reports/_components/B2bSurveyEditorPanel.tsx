@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import styles from "@/components/b2b/B2bUx.module.css";
-import { validateSurveyQuestionAnswer } from "@/lib/b2b/public-survey";
+import {
+  isSurveyQuestionAnswered,
+  validateSurveyQuestionAnswer,
+  type PublicSurveyAnswers,
+} from "@/lib/b2b/public-survey";
+import type { WellnessSurveyTemplate } from "@/lib/wellness/data-template-types";
 import SurveyQuestionField from "./SurveyQuestionField";
 import type {
   CompletionStats,
@@ -9,18 +14,18 @@ import type {
 } from "../_lib/client-types";
 import { formatDateTime } from "../_lib/client-utils";
 import {
-  hasAnswer,
-  isQuestionVisible,
-  isSkippableSelectionQuestion,
-} from "../_lib/survey-progress";
+  buildEditorSections,
+  getFocusedQuestionIndex,
+  isOptionalSelectionQuestion,
+} from "../_lib/survey-editor-sections";
 
 type B2bSurveyEditorPanelProps = {
   completionStats: CompletionStats;
   surveySubmittedAt: string | null;
   surveyUpdatedAt: string | null;
   surveyTemplate: SurveyTemplateSchema | null;
+  selectedSections: string[];
   selectedSectionSet: Set<string>;
-  selectedSectionObjects: SurveyTemplateSchema["sections"];
   surveyAnswers: Record<string, unknown>;
   maxSelectedSections: number;
   busy: boolean;
@@ -29,62 +34,13 @@ type B2bSurveyEditorPanelProps = {
   onSaveSurvey: () => void;
 };
 
-type SurveySectionGroup = {
-  key: string;
-  title: string;
-  questions: SurveyQuestion[];
-};
-
-function buildEditorSections(
-  template: SurveyTemplateSchema | null,
-  selectedSectionObjects: SurveyTemplateSchema["sections"],
-  answers: Record<string, unknown>
-) {
-  if (!template) return [] as SurveySectionGroup[];
-
-  const groups: SurveySectionGroup[] = [];
-  const common = template.common.filter((question) => isQuestionVisible(question, answers));
-  if (common.length > 0) {
-    groups.push({
-      key: "common",
-      title: "공통 문항",
-      questions: common,
-    });
-  }
-
-  for (const section of selectedSectionObjects) {
-    const questions = section.questions.filter((question) => isQuestionVisible(question, answers));
-    groups.push({
-      key: section.key,
-      title: section.displayName || `${section.key} ${section.title}`,
-      questions,
-    });
-  }
-
-  return groups;
-}
-
-function getFocusedIndex(
-  section: SurveySectionGroup | null,
-  focusedKey: string | undefined,
-  answers: Record<string, unknown>
-) {
-  if (!section || section.questions.length === 0) return -1;
-  if (focusedKey) {
-    const index = section.questions.findIndex((item) => item.key === focusedKey);
-    if (index >= 0) return index;
-  }
-  const firstUnanswered = section.questions.findIndex((item) => !hasAnswer(item, answers[item.key]));
-  return firstUnanswered >= 0 ? firstUnanswered : 0;
-}
-
 export default function B2bSurveyEditorPanel({
   completionStats,
   surveySubmittedAt,
   surveyUpdatedAt,
   surveyTemplate,
+  selectedSections,
   selectedSectionSet,
-  selectedSectionObjects,
   surveyAnswers,
   maxSelectedSections,
   busy,
@@ -107,28 +63,23 @@ export default function B2bSurveyEditorPanel({
     recommendedRange && recommendedRange.length === 2
       ? `${recommendedRange[0]}~${recommendedRange[1]}개`
       : "4~5개";
+  const template = (surveyTemplate ?? null) as WellnessSurveyTemplate | null;
+  const answers = surveyAnswers as PublicSurveyAnswers;
 
   const surveySections = useMemo(
-    () => buildEditorSections(surveyTemplate, selectedSectionObjects, surveyAnswers),
-    [selectedSectionObjects, surveyAnswers, surveyTemplate]
-  );
-  const allVisibleQuestions = useMemo(
-    () => surveySections.flatMap((section) => section.questions),
-    [surveySections]
+    () => buildEditorSections(template, answers, selectedSections),
+    [answers, selectedSections, template]
   );
 
   const currentSection = surveySections[currentSectionIndex] ?? null;
-  const focusedIndex = getFocusedIndex(
+  const focusedIndex = getFocusedQuestionIndex(
     currentSection,
     focusedQuestionBySection[currentSection?.key ?? ""],
-    surveyAnswers
+    answers
   );
   const focusedQuestionKey =
     currentSection && focusedIndex >= 0 ? currentSection.questions[focusedIndex]?.key ?? null : null;
-  const focusedQuestion = useMemo(
-    () => allVisibleQuestions.find((question) => question.key === focusedQuestionKey) ?? null,
-    [allVisibleQuestions, focusedQuestionKey]
-  );
+
   const displayTotal = completionStats.total;
   const hasRequiredCompletion =
     completionStats.requiredTotal === 0 ||
@@ -159,16 +110,21 @@ export default function B2bSurveyEditorPanel({
   useEffect(() => {
     if (!currentSection || currentSection.questions.length === 0) return;
     const currentFocused = focusedQuestionBySection[currentSection.key];
-    if (currentFocused && currentSection.questions.some((question) => question.key === currentFocused)) return;
+    if (
+      currentFocused &&
+      currentSection.questions.some((question) => question.key === currentFocused)
+    ) {
+      return;
+    }
     const defaultQuestion =
-      currentSection.questions.find((question) => !hasAnswer(question, surveyAnswers[question.key])) ??
+      currentSection.questions.find((question) => !isSurveyQuestionAnswered(question, answers[question.key])) ??
       currentSection.questions[0];
     if (!defaultQuestion) return;
     setFocusedQuestionBySection((prev) => ({
       ...prev,
       [currentSection.key]: defaultQuestion.key,
     }));
-  }, [currentSection, focusedQuestionBySection, surveyAnswers]);
+  }, [answers, currentSection, focusedQuestionBySection]);
 
   function scrollToQuestion(questionKey: string) {
     window.requestAnimationFrame(() => {
@@ -187,7 +143,7 @@ export default function B2bSurveyEditorPanel({
     if (!target) return;
     const currentFocused = focusedQuestionBySection[target.key];
     const firstUnanswered =
-      target.questions.find((question) => !hasAnswer(question, surveyAnswers[question.key])) ??
+      target.questions.find((question) => !isSurveyQuestionAnswered(question, answers[question.key])) ??
       target.questions[0];
     const nextFocused =
       currentFocused && target.questions.some((question) => question.key === currentFocused)
@@ -211,15 +167,19 @@ export default function B2bSurveyEditorPanel({
     const currentIndex =
       fromQuestionKey != null
         ? currentSection.questions.findIndex((question) => question.key === fromQuestionKey)
-        : getFocusedIndex(currentSection, focusedQuestionBySection[currentSection.key], surveyAnswers);
+        : getFocusedQuestionIndex(
+            currentSection,
+            focusedQuestionBySection[currentSection.key],
+            answers
+          );
     if (currentIndex < 0) return;
 
     const currentQuestion = currentSection.questions[currentIndex];
     const currentError = validateSurveyQuestionAnswer(
-      currentQuestion as Parameters<typeof validateSurveyQuestionAnswer>[0],
-      surveyAnswers[currentQuestion.key],
+      currentQuestion,
+      answers[currentQuestion.key],
       {
-        treatSelectionAsOptional: isSkippableSelectionQuestion(currentQuestion),
+        treatSelectionAsOptional: isOptionalSelectionQuestion(currentQuestion),
       }
     );
     if (currentError) {
@@ -243,69 +203,40 @@ export default function B2bSurveyEditorPanel({
     }
 
     if (currentSectionIndex < surveySections.length - 1) {
-      const nextSection = surveySections[currentSectionIndex + 1];
-      const nextQuestion = nextSection?.questions[0];
-      if (!nextSection || !nextQuestion) return;
-      setCurrentSectionIndex((prev) => Math.min(prev + 1, surveySections.length - 1));
-      setFocusedQuestionBySection((prev) => ({
-        ...prev,
-        [nextSection.key]: nextQuestion.key,
-      }));
-      scrollToQuestion(nextQuestion.key);
+      moveToSection(currentSectionIndex + 1);
     }
   }
 
-  function handlePrevious() {
+  function handleMovePreviousSection() {
+    if (currentSectionIndex <= 0) return;
+    moveToSection(currentSectionIndex - 1);
+  }
+
+  function handleMoveNextSection() {
     if (!currentSection || currentSection.questions.length === 0) return;
-    const currentIndex = getFocusedIndex(
-      currentSection,
-      focusedQuestionBySection[currentSection.key],
-      surveyAnswers
-    );
-    if (currentIndex > 0) {
-      const prevQuestion = currentSection.questions[currentIndex - 1];
-      if (!prevQuestion) return;
-      setFocusedQuestionBySection((prev) => ({
-        ...prev,
-        [currentSection.key]: prevQuestion.key,
-      }));
-      scrollToQuestion(prevQuestion.key);
-      setErrorQuestionKey(null);
-      setErrorText(null);
-      return;
+    for (const question of currentSection.questions) {
+      const validationError = validateSurveyQuestionAnswer(question, answers[question.key], {
+        treatSelectionAsOptional: isOptionalSelectionQuestion(question),
+      });
+      if (validationError) {
+        setFocusedQuestionBySection((prev) => ({ ...prev, [currentSection.key]: question.key }));
+        setErrorQuestionKey(question.key);
+        setErrorText(validationError);
+        scrollToQuestion(question.key);
+        return;
+      }
     }
 
-    if (currentSectionIndex <= 0) return;
-    const prevSection = surveySections[currentSectionIndex - 1];
-    const prevQuestion = prevSection?.questions[prevSection.questions.length - 1];
-    if (!prevSection || !prevQuestion) return;
-    setCurrentSectionIndex(currentSectionIndex - 1);
-    setFocusedQuestionBySection((prev) => ({
-      ...prev,
-      [prevSection.key]: prevQuestion.key,
-    }));
-    scrollToQuestion(prevQuestion.key);
     setErrorQuestionKey(null);
     setErrorText(null);
+    if (currentSectionIndex < surveySections.length - 1) {
+      moveToSection(currentSectionIndex + 1);
+    }
   }
 
-  const activeQuestionIndex =
-    currentSection && currentSection.questions.length > 0
-      ? getFocusedIndex(currentSection, focusedQuestionBySection[currentSection.key], surveyAnswers)
-      : -1;
-  const hasPreviousStep = currentSectionIndex > 0 || activeQuestionIndex > 0;
+  const isCommonSurveySection = currentSection?.key === "common";
+  const hasPreviousSection = currentSectionIndex > 0;
   const atLastSection = currentSectionIndex >= surveySections.length - 1;
-  const atLastQuestionInSection =
-    !!currentSection &&
-    activeQuestionIndex >= 0 &&
-    activeQuestionIndex >= currentSection.questions.length - 1;
-  const nextButtonLabel = atLastSection
-    ? atLastQuestionInSection
-      ? "입력 완료"
-      : "다음 문항"
-    : atLastQuestionInSection
-    ? "다음 섹션"
-    : "다음 문항";
 
   return (
     <details className={`${styles.optionalCard} ${styles.editorPanel}`} open>
@@ -320,9 +251,9 @@ export default function B2bSurveyEditorPanel({
           <div className="rounded-2xl border border-sky-100 bg-sky-50/55 p-4">
             <p className="text-[13px] font-semibold text-sky-800">관리자 입력 가이드</p>
             <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-5 text-slate-600">
-              <li>임직원 설문을 실제 `/survey` 진행 방식과 유사하게 바로 입력/수정할 수 있습니다.</li>
+              <li>설문 문항 처리 로직은 `/survey`와 동일한 공통 로직을 사용합니다.</li>
               <li>단일 선택 문항은 클릭 즉시 다음 문항으로 자동 이동합니다.</li>
-              <li>필수 문항은 입력하지 않으면 다음으로 넘어갈 수 없습니다.</li>
+              <li>이전/다음 버튼은 섹션 이동 기준으로 동작합니다.</li>
             </ul>
           </div>
 
@@ -417,7 +348,7 @@ export default function B2bSurveyEditorPanel({
                     }
                   >
                     <SurveyQuestionField
-                      question={question}
+                      question={question as SurveyQuestion}
                       value={surveyAnswers[question.key]}
                       maxSelectedSections={maxSelectedSections}
                       busy={busy}
@@ -444,32 +375,36 @@ export default function B2bSurveyEditorPanel({
           </section>
 
           <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {!isCommonSurveySection && hasPreviousSection ? (
+                <button
+                  type="button"
+                  onClick={handleMovePreviousSection}
+                  disabled={busy}
+                  className="rounded-full border border-slate-300 px-4 py-2 text-sm text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  이전 섹션
+                </button>
+              ) : null}
+              {!atLastSection ? (
+                <button
+                  type="button"
+                  onClick={handleMoveNextSection}
+                  disabled={busy}
+                  className="rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  다음 섹션
+                </button>
+              ) : null}
+            </div>
             <button
               type="button"
-              onClick={handlePrevious}
-              disabled={!hasPreviousStep || busy}
-              className="rounded-full border border-slate-300 px-4 py-2 text-sm text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={onSaveSurvey}
+              disabled={busy}
+              className={`${styles.buttonPrimary} ${styles.editorPrimaryButton}`}
             >
-              이전 문항
+              {busy ? "설문 저장 중..." : "설문 저장"}
             </button>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => handleAdvance()}
-                disabled={busy || !focusedQuestion}
-                className="rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {nextButtonLabel}
-              </button>
-              <button
-                type="button"
-                onClick={onSaveSurvey}
-                disabled={busy}
-                className={`${styles.buttonPrimary} ${styles.editorPrimaryButton}`}
-              >
-                {busy ? "설문 저장 중..." : "설문 저장"}
-              </button>
-            </div>
           </div>
         </div>
       </div>

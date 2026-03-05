@@ -1,5 +1,10 @@
 import { ChatOpenAI, OpenAIEmbeddings } from "@langchain/openai";
 import type { EmbeddingsInterface } from "@langchain/core/embeddings";
+import {
+  DEFAULT_CHAT_MODEL,
+  getDefaultModel as getConfiguredDefaultModel,
+  normalizeChatModel,
+} from "@/lib/ai/models";
 
 function ensureKey() {
   const key = process.env.OPENAI_API_KEY;
@@ -18,11 +23,11 @@ function resolveChatTemperature() {
 }
 
 export function getChatModel(
-  modelName = process.env.OPENAI_MODEL || "gpt-4o-mini"
+  modelName = DEFAULT_CHAT_MODEL
 ) {
   const apiKey = ensureKey();
   return new ChatOpenAI({
-    model: modelName,
+    model: normalizeChatModel(modelName),
     temperature: resolveChatTemperature(),
     apiKey,
     streaming: true,
@@ -39,11 +44,9 @@ export function getEmbeddings(): EmbeddingsInterface {
 
 export async function getDefaultModelName() {
   try {
-    const { default: db } = await import("@/lib/db");
-    const record = await db.config.findUnique({ where: { key: "chatModel" } });
-    return record?.value || "gpt-4o-mini";
+    return await getConfiguredDefaultModel();
   } catch {
-    return "gpt-4o-mini";
+    return DEFAULT_CHAT_MODEL;
   }
 }
 

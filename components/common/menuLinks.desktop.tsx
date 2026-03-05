@@ -44,45 +44,31 @@ export function DesktopMenuContent({
 }: DesktopMenuContentProps) {
   return (
     <>
-      <IntentPrefetchLink
-        href="/explore"
-        className={menuItemClasses()}
-        {...pressHandlers}
-      >
+      <IntentPrefetchLink href="/explore" className={menuItemClasses()} {...pressHandlers}>
         상품 둘러보기
       </IntentPrefetchLink>
 
-      <IntentPrefetchLink
-        href="/my-orders"
-        className={menuItemClasses()}
-        onClick={onItemClick}
-      >
+      <IntentPrefetchLink href="/my-orders" className={menuItemClasses()} onClick={onItemClick}>
         내 주문 조회
       </IntentPrefetchLink>
 
       <div className="relative flex items-center gap-2" ref={aiRef}>
         <button
           onClick={onToggleAiOpen}
-          className="hover:text-gray-800 inline-flex items-center gap-1 font-semibold transition-transform duration-200 ease-in-out hover:scale-105"
+          className="inline-flex items-center gap-1 font-semibold transition-transform duration-200 ease-in-out hover:scale-105 hover:text-gray-800"
           aria-haspopup="menu"
           aria-expanded={aiOpen}
         >
           <span className="inline-flex items-center gap-2">
-            <span>AI 진단 검사</span>
+            <span>진단 검사</span>
             <AiPromptBadge />
           </span>
-          <ChevronDownIcon
-            className={`w-4 h-4 transition-transform ${
-              aiOpen ? "rotate-180" : ""
-            }`}
-          />
+          <ChevronDownIcon className={`h-4 w-4 transition-transform ${aiOpen ? "rotate-180" : ""}`} />
         </button>
 
         <IntentPrefetchLink
           href="/chat"
-          className={menuItemClasses(
-            "ml-1.5 inline-flex items-center gap-1 leading-none"
-          )}
+          className={menuItemClasses("ml-1.5 inline-flex items-center gap-1 leading-none")}
           onClick={onItemClick}
         >
           <span>AI 맞춤 상담</span>
@@ -90,7 +76,7 @@ export function DesktopMenuContent({
         </IntentPrefetchLink>
 
         {aiOpen && (
-          <div className="absolute left-0 top-full mt-2 w-56 rounded-xl border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 p-2">
+          <div className="absolute left-0 top-full mt-2 w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-lg ring-1 ring-black/5">
             <IntentPrefetchLink
               href="/assess"
               className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-slate-50"
@@ -101,6 +87,17 @@ export function DesktopMenuContent({
             >
               <span>정밀 검사</span>
               <BetaBadge className="ml-2" />
+            </IntentPrefetchLink>
+
+            <IntentPrefetchLink
+              href="/survey"
+              className="block rounded-lg px-3 py-2 text-slate-800 hover:bg-slate-50"
+              onClick={() => {
+                onCloseAiOpen();
+                onItemClick?.();
+              }}
+            >
+              건강 설문
             </IntentPrefetchLink>
 
             <IntentPrefetchLink
@@ -117,21 +114,19 @@ export function DesktopMenuContent({
         )}
       </div>
 
-      <IntentPrefetchLink
-        href="/column"
-        className={menuItemClasses()}
-        onClick={onItemClick}
-      >
+      <IntentPrefetchLink href="/column" className={menuItemClasses()} onClick={onItemClick}>
         건강 칼럼
       </IntentPrefetchLink>
 
-      <IntentPrefetchLink
-        href="/employee-report"
-        className={menuItemClasses()}
-        onClick={onItemClick}
-      >
-        임직원 레포트
-      </IntentPrefetchLink>
+      {visibility.isAdminLoggedIn && (
+        <IntentPrefetchLink
+          href="/employee-report"
+          className={menuItemClasses()}
+          onClick={onItemClick}
+        >
+          임직원 레포트
+        </IntentPrefetchLink>
+      )}
 
       <DesktopOperatorLinks
         showPharmMenus={visibility.showPharmMenus}

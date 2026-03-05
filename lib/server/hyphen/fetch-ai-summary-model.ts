@@ -28,4 +28,7 @@ export type OpenAiSummaryDraft = {
   riskLevel?: unknown;
 };
 
-export const NHIS_AI_MODEL = "gpt-4o-mini";
+export type OpenAiSummaryResult = {
+  model: string;
+  draft: OpenAiSummaryDraft;
+};

@@ -4,6 +4,15 @@ import { NextResponse } from "next/server";
 import getSession from "@/lib/session";
 import { NO_STORE_HEADERS } from "@/lib/server/no-store";
 
+function resolveSafeReturnToPath(req: Request) {
+  const url = new URL(req.url);
+  const returnTo = url.searchParams.get("returnTo");
+  if (!returnTo) return "/";
+  if (!returnTo.startsWith("/")) return "/";
+  if (returnTo.startsWith("//")) return "/";
+  return returnTo;
+}
+
 async function clearUserOnlySession() {
   const session = await getSession();
   session.user = undefined;
@@ -23,7 +32,8 @@ export async function runLogoutUserPostRoute() {
 
 export async function runLogoutUserGetRoute(req: Request) {
   await clearUserOnlySession();
-  const response = NextResponse.redirect(new URL("/", req.url));
+  const returnToPath = resolveSafeReturnToPath(req);
+  const response = NextResponse.redirect(new URL(returnToPath, req.url));
   response.headers.set("Cache-Control", NO_STORE_HEADERS["Cache-Control"]);
   return response;
 }

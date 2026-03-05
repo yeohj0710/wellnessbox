@@ -28,9 +28,9 @@ export async function enrichNhisPayloadWithAiSummary(
     return payload;
   }
 
-  const aiDraft = await requestOpenAiSummary(snapshot);
-  normalized.aiSummary = aiDraft
-    ? mergeAiSummary(aiDraft, fallback)
+  const aiResult = await requestOpenAiSummary(snapshot);
+  normalized.aiSummary = aiResult
+    ? mergeAiSummary(aiResult.draft, fallback, aiResult.model)
     : fallback;
 
   return payload;

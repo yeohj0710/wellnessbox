@@ -80,7 +80,7 @@ export default function B2bLayoutValidationPanel({
                     [{entry.stage}] {entry.ok ? "통과" : "실패"}
                   </p>
                   <p className={styles.editorStatusMeta}>
-                    static {entry.staticIssueCount ?? 0} · runtime {entry.runtimeIssueCount ?? 0}
+                    static {entry.staticIssueCount ?? 0} / runtime {entry.runtimeIssueCount ?? 0} / 중복제거 {entry.dedupedIssueCount ?? entry.issues?.length ?? 0}
                   </p>
                 </article>
               ))}

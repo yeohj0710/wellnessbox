@@ -62,7 +62,13 @@ import { useEmployeeReportToastEffects } from "./_lib/use-employee-report-toast-
 
 const B2B_EMPLOYEE_REPORT_ADMIN_ONLY_CODE = "B2B_REPORT_ADMIN_ONLY";
 const B2B_EMPLOYEE_REPORT_ADMIN_ONLY_NOTICE =
-  "현재 건강 레포트는 관리자만 열람할 수 있습니다. wellnessbox.me@gmail.com 으로 문의해 주세요.";
+  "현재 건강 레포트는 관리자 확인 후 순차 안내되고 있습니다. 문의: wellnessbox.me@gmail.com";
+const ADMIN_ONLY_STATUS_LABEL = "관리자 안내 필요";
+const ADMIN_ONLY_GATE_BADGE_LABEL = "열람 안내";
+const ADMIN_ONLY_GATE_TITLE =
+  "건강 레포트는 관리자 확인 후 순차적으로 안내드리고 있어요.";
+const ADMIN_ONLY_GATE_DESCRIPTION =
+  "본인인증은 완료되었고 개인 직접 열람은 현재 준비 중입니다. 확인이 필요하시면 아래 이메일로 문의해 주세요.";
 
 export default function EmployeeReportClient() {
   const { showToast } = useToast();
@@ -824,7 +830,7 @@ export default function EmployeeReportClient() {
             {reportData?.report ? (
               <span className={styles.statusOn}>레포트 준비 완료</span>
             ) : adminOnlyReportBlocked ? (
-              <span className={styles.statusWarn}>관리자 열람 권한 필요</span>
+              <span className={styles.statusWarn}>{ADMIN_ONLY_STATUS_LABEL}</span>
             ) : (
               <span className={styles.statusOff}>본인 확인 필요</span>
             )}
@@ -879,23 +885,16 @@ export default function EmployeeReportClient() {
         ) : null}
 
         {adminOnlyReportBlocked ? (
-          <section className={styles.sectionCard}>
-            <div className={styles.adminOnlyGateCard}>
-              <span className={styles.adminOnlyGateBadge}>관리자 전용 열람</span>
-              <h2 className={styles.adminOnlyGateTitle}>
-                현재 건강 레포트는 관리자만 확인할 수 있습니다.
-              </h2>
-              <p className={styles.adminOnlyGateDescription}>
-                본인인증은 완료되었지만, 현재 정책상 개인 직접 열람은 임시 제한되어 있습니다.
-                열람이 필요하시면 아래 이메일로 문의해 주세요.
-              </p>
+          <section className={styles.adminOnlyGateCard}>
+              <span className={styles.adminOnlyGateBadge}>{ADMIN_ONLY_GATE_BADGE_LABEL}</span>
+              <h2 className={styles.adminOnlyGateTitle}>{ADMIN_ONLY_GATE_TITLE}</h2>
+              <p className={styles.adminOnlyGateDescription}>{ADMIN_ONLY_GATE_DESCRIPTION}</p>
               <a
                 href="mailto:wellnessbox.me@gmail.com"
                 className={styles.adminOnlyGateEmail}
               >
                 wellnessbox.me@gmail.com
               </a>
-            </div>
           </section>
         ) : null}
 

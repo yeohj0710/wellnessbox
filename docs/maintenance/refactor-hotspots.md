@@ -501,11 +501,10 @@ This document tracks large/complex files that are most likely to slow down follo
      `pickOptionByScore`, `pickMultiValues`.
    - `demo-seed-builders.ts` now focuses on schema-aware answer assembly and mock health payload composition.
    - Splitting kept deterministic selection behavior intact while reducing builder-file cognitive load.
-110. `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx`, `app/(admin)/admin/b2b-reports/_lib/survey-progress.ts`
-   - Survey visibility/answer/completion helpers extracted into `survey-progress.ts`:
-     `toAnswerRecord`, `isQuestionVisible`, `hasAnswer`, `buildCompletionStats`, `mergeSurveyAnswers`.
-   - `B2bAdminReportClient.tsx` now delegates completion-stat computation to the shared helper while keeping view/state orchestration local.
-   - Survey `answersJson` + row payload merge normalization also moved to shared helper, reducing repeated selected-value fallback logic.
+110. `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx`, `app/(admin)/admin/b2b-reports/_lib/survey-answer-merge.ts`
+   - Legacy `survey-progress.ts` dependency removed to avoid dead helper drift.
+   - Survey `answersJson` + row payload merge normalization is now isolated in `survey-answer-merge.ts` (`mergeSurveyAnswers`).
+   - `B2bAdminReportClient.tsx` keeps UI/state orchestration while answer merge logic stays in a pure utility for reuse/testing.
 111. `app/(features)/employee-report/EmployeeReportClient.tsx`, `app/(features)/employee-report/_lib/sync-flow.ts`
    - NHIS 준비/동기화 오케스트레이션을 `sync-flow.ts`로 분리:
      `ensureNhisReadyForSync`, `syncEmployeeReportAndReload`.
@@ -631,6 +630,22 @@ This document tracks large/complex files that are most likely to slow down follo
    - Survey phase panel (header/progress/section tabs/question list/footer nav) was extracted into `SurveySectionPanel.tsx`.
    - Question card rendering now lives in one component boundary, reducing the main page client's JSX complexity.
    - `survey-page-client.tsx` keeps state/validation/navigation logic and passes rendering hooks into the panel component.
+137. `app/(admin)/admin/b2b-reports/_components/B2bSurveyEditorPanel.tsx`, `app/(admin)/admin/b2b-reports/_lib/survey-editor-sections.ts`
+   - Section grouping / optional-selection / focused-question index logic was extracted to `survey-editor-sections.ts`.
+   - `B2bSurveyEditorPanel.tsx` now focuses on UI event orchestration and rendering.
+   - Added QA contract script `scripts/qa/check-b2b-admin-survey-sync.cts` to guard admin-survey/public-survey logic drift.
+138. `lib/b2b/analysis-service.ts`, `lib/b2b/report-payload.ts`, `lib/b2b/survey-response-completeness.ts`
+   - Completeness-first survey row selection comparator/picker was extracted to shared utility:
+     `survey-response-completeness.ts`.
+   - Both analysis recomputation and report payload assembly now use the same rule order:
+     `answers.length -> sectionAnswerCount -> selectedSections.length -> updatedAt`.
+   - Added regression guard script:
+     `scripts/qa/check-b2b-survey-completeness-selection.cts`.
+139. `app/survey/survey-page-client.tsx`, `app/survey/_lib/survey-page-helpers.ts`, `app/(admin)/admin/b2b-reports/_components/SurveyQuestionField.tsx`, `app/(admin)/admin/b2b-reports/_lib/survey-editor-sections.ts`
+   - Survey page helper functions (progress message, optional-selection 판단, question text normalization, option layout, section grouping) were centralized in:
+     `app/survey/_lib/survey-page-helpers.ts`.
+   - Admin survey editor now reuses the same helper module for question text/option layout and section grouping, reducing drift between `/survey` and `/admin/b2b-reports`.
+   - This makes follow-up changes to survey rendering/navigation rules propagate to admin editor with fewer duplicate edits.
 
 ## Guardrails For Any Refactor
 

@@ -1,7 +1,7 @@
 import {
-  NHIS_AI_MODEL,
-  type OpenAiSummaryDraft,
+  type OpenAiSummaryResult,
 } from "./fetch-ai-summary-model";
+import { getDefaultModel } from "@/lib/ai/models";
 import {
   asRecord,
   type NhisAiSnapshot,
@@ -30,9 +30,10 @@ function buildPrompt(snapshot: NhisAiSnapshot) {
 
 export async function requestOpenAiSummary(
   snapshot: NhisAiSnapshot
-): Promise<OpenAiSummaryDraft | null> {
+): Promise<OpenAiSummaryResult | null> {
   const apiKey = getOpenAiApiKey();
   if (!apiKey) return null;
+  const model = await getDefaultModel();
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), OPENAI_TIMEOUT_MS);
@@ -45,7 +46,7 @@ export async function requestOpenAiSummary(
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: NHIS_AI_MODEL,
+        model,
         temperature: 0.2,
         max_tokens: 480,
         response_format: { type: "json_object" as const },
@@ -79,12 +80,15 @@ export async function requestOpenAiSummary(
     if (!parsedRecord) return null;
 
     return {
-      headline: parsedRecord.headline,
-      summary: parsedRecord.summary,
-      highlights: parsedRecord.highlights,
-      nextSteps: parsedRecord.nextSteps,
-      metricInsights: parsedRecord.metricInsights,
-      riskLevel: parsedRecord.riskLevel,
+      model,
+      draft: {
+        headline: parsedRecord.headline,
+        summary: parsedRecord.summary,
+        highlights: parsedRecord.highlights,
+        nextSteps: parsedRecord.nextSteps,
+        metricInsights: parsedRecord.metricInsights,
+        riskLevel: parsedRecord.riskLevel,
+      },
     };
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {

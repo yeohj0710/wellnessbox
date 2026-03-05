@@ -1,5 +1,4 @@
 import {
-  NHIS_AI_MODEL,
   type NhisAiMetricInsight,
   type NhisAiRiskLevel,
   type NhisAiSummary,
@@ -283,7 +282,8 @@ function normalizeRiskLevel(value: unknown): NhisAiRiskLevel {
 
 export function mergeAiSummary(
   draft: OpenAiSummaryDraft,
-  fallback: NhisAiSummary
+  fallback: NhisAiSummary,
+  model: string
 ): NhisAiSummary {
   const headline = sanitizeLine(draft.headline, 48) ?? fallback.headline;
   const summary = sanitizeLine(draft.summary, 180) ?? fallback.summary;
@@ -293,7 +293,7 @@ export function mergeAiSummary(
 
   return {
     source: "openai",
-    model: NHIS_AI_MODEL,
+    model,
     generatedAt: new Date().toISOString(),
     headline,
     summary,

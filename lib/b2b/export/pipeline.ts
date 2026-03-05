@@ -16,6 +16,7 @@ import type {
 } from "@/lib/b2b/export/layout-types";
 import { renderLayoutToPptxBuffer } from "@/lib/b2b/export/pptx";
 import { validateLayout } from "@/lib/b2b/export/validation";
+import { dedupeLayoutValidationIssues } from "@/lib/b2b/export/validation-issues";
 import type { LayoutValidationIssue } from "@/lib/b2b/export/validation-types";
 
 export type AutofixStage = "base" | "shorten" | "compact" | "fallback";
@@ -26,6 +27,8 @@ export type ValidationAuditEntry = {
   ok: boolean;
   staticIssueCount: number;
   runtimeIssueCount: number;
+  mergedIssueCount: number;
+  dedupedIssueCount: number;
   runtimeEngine: string;
   blockingIssueCount: number;
   issues: LayoutValidationIssue[];
@@ -107,7 +110,8 @@ async function runValidation(
   layout: LayoutDocument
 ) {
   const result = await validateLayout(layout);
-  const issues = [...result.staticIssues, ...result.runtimeIssues];
+  const mergedIssues = [...result.staticIssues, ...result.runtimeIssues];
+  const issues = dedupeLayoutValidationIssues(mergedIssues);
   const blockingIssueCount = issues.filter((issue) => issue.code !== "TEXT_OVERFLOW").length;
   return {
     result,
@@ -117,6 +121,8 @@ async function runValidation(
       ok: result.ok,
       staticIssueCount: result.staticIssues.length,
       runtimeIssueCount: result.runtimeIssues.length,
+      mergedIssueCount: mergedIssues.length,
+      dedupedIssueCount: issues.length,
       runtimeEngine: result.runtimeEngine,
       blockingIssueCount,
       issues,
@@ -206,7 +212,7 @@ export async function runB2bLayoutPipeline(input: PipelineInput) {
       if (!canPromoteAttempt(validation)) continue;
 
       const issueScore =
-        validation.audit.staticIssueCount + validation.audit.runtimeIssueCount * 2;
+        validation.audit.dedupedIssueCount + validation.audit.blockingIssueCount * 2;
       if (
         !bestNonBlockingAttempt ||
         issueScore < bestNonBlockingAttempt.issueScore

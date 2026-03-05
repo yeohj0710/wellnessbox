@@ -1,7 +1,12 @@
 import styles from "@/components/b2b/B2bUx.module.css";
+import {
+  isNoneLikeOption,
+  resolveOptionLayout,
+  toDisplayQuestionText,
+} from "@/app/survey/_lib/survey-page-helpers";
+import type { WellnessSurveyQuestionForTemplate } from "@/lib/wellness/data-template-types";
 import { toInputValue, toMultiValues } from "../_lib/client-utils";
 import type { SurveyQuestion } from "../_lib/client-types";
-import { isSkippableSelectionQuestion } from "../_lib/survey-progress";
 import {
   buildGroupAnswer,
   clampByVariantOptions,
@@ -26,70 +31,6 @@ type SurveyQuestionFieldProps = {
 function toAnswerRecord(raw: unknown) {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
   return raw as Record<string, unknown>;
-}
-
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function toDisplayQuestionText(question: SurveyQuestion) {
-  let text = (question.text ?? "")
-    .replace(/\s*만\s*\(\s*\)\s*세/gi, "")
-    .replace(/\(\s*\)/g, "")
-    .replace(/해주십시오/g, "해 주세요")
-    .replace(/기재해/g, "입력해")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  if (question.type === "group" && (question.fields?.length ?? 0) > 0) {
-    const trailingUnits = (question.fields ?? [])
-      .map((field) => {
-        const label = (field.label ?? "").trim();
-        if (!label) return "";
-        const unit = (field.unit ?? "").trim();
-        if (!unit) return escapeRegExp(label);
-        return `${escapeRegExp(label)}\\s*\\(?\\s*${escapeRegExp(unit)}\\s*\\)?`;
-      })
-      .filter(Boolean);
-    if (trailingUnits.length > 0) {
-      const trailingPattern = new RegExp(
-        `(?:\\s*[:,-]?\\s*)?(?:${trailingUnits.join("\\s+")})\\s*$`,
-        "i"
-      );
-      text = text.replace(trailingPattern, "").trim();
-    }
-  }
-
-  return text.replace(/\s+[,.]$/g, "").trim();
-}
-
-function isNoneLikeOption(option: { label?: string | null; value?: string | null }) {
-  const normalized = `${option.label ?? ""}${option.value ?? ""}`.replace(/\s+/g, "").toLowerCase();
-  return normalized === "없음" || normalized.includes("해당없음") || normalized === "none";
-}
-
-function resolveOptionLayout(options: Array<{ label?: string | null }>) {
-  const count = options.length;
-  const lengths = options.map((option) => (option.label ?? "").replace(/\s+/g, "").length);
-  const maxLabelLength = lengths.length > 0 ? Math.max(...lengths) : 0;
-  const avgLabelLength =
-    lengths.length > 0
-      ? Math.round(lengths.reduce((sum, len) => sum + len, 0) / lengths.length)
-      : 0;
-  const shortLabelRatio =
-    lengths.length > 0 ? lengths.filter((len) => len <= 7).length / lengths.length : 0;
-
-  if (count <= 1) return { gridClass: "grid-cols-1", compact: false };
-  if (count === 2) return { gridClass: "grid-cols-2", compact: false };
-
-  const canUseThreeCols = count >= 9 && shortLabelRatio >= 0.65 && avgLabelLength <= 8;
-  if (canUseThreeCols) {
-    if (count >= 12) return { gridClass: "grid-cols-3 sm:grid-cols-4 lg:grid-cols-5", compact: true };
-    return { gridClass: "grid-cols-3 sm:grid-cols-4", compact: true };
-  }
-
-  if (count <= 6) return { gridClass: "grid-cols-2 sm:grid-cols-3", compact: false };
-  return { gridClass: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4", compact: count >= 10 && maxLabelLength <= 10 };
 }
 
 function toMultiOtherTextByValue(raw: unknown) {
@@ -171,11 +112,12 @@ function buildMultiPayload(input: {
 }
 
 function QuestionHeader({ question }: { question: SurveyQuestion }) {
-  const isRequired = Boolean(question.required) && !isSkippableSelectionQuestion(question);
+  const isRequired = Boolean(question.required);
   return (
     <div className={styles.questionCardHead}>
       <p className={styles.questionCardTitle}>
-        {question.index}. {toDisplayQuestionText(question) || question.key}
+        {question.index}.{" "}
+        {toDisplayQuestionText(question as WellnessSurveyQuestionForTemplate) || question.key}
       </p>
       {isRequired ? (
         <span className={styles.requiredBadge}>필수</span>
@@ -287,7 +229,7 @@ export default function SurveyQuestionField({
         {renderVariantSelector}
         <p className={styles.questionCardHint}>
           {optionsPrefix ? `${optionsPrefix} ` : ""}최대 {maxSelect}개까지 선택할 수 있습니다.
-          {isSkippableSelectionQuestion(question)
+          {!question.required
             ? " 해당 사항이 없으면 선택하지 않고 다음으로 이동해도 됩니다."
             : ""}
         </p>

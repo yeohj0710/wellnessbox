@@ -2,7 +2,7 @@ import {
   ChatPromptTemplate,
   MessagesPlaceholder,
 } from "@langchain/core/prompts";
-import { getChatModel } from "./model";
+import { getChatModel, getDefaultModel } from "./model";
 import {
   lastUserText,
   limitPromptMessages,
@@ -389,7 +389,6 @@ export async function streamChat(
   const {
     messages,
     profile,
-    model,
     clientId,
     appUserId,
     mode,
@@ -524,7 +523,7 @@ export async function streamChat(
     new MessagesPlaceholder("messages"),
   ]);
 
-  const llm = getChatModel(model);
+  const llm = getChatModel(await getDefaultModel());
   const formatted = await prompt.formatMessages({ messages: allMessages });
   const eventStream = await llm.stream(formatted);
 

@@ -1,33 +1,51 @@
 import "server-only";
 
+import {
+  CHAT_MODEL_CONFIG_KEY,
+  getChatModelOptions,
+  getDefaultModel,
+  isSupportedChatModel,
+  MODEL_PRICING_REFERENCE,
+} from "@/lib/ai/models";
 import db from "@/lib/db";
 import { requireAdminSession } from "@/lib/server/route-auth";
 
-const DEFAULT_CHAT_MODEL = "gpt-4o-mini";
-
-function normalizeModel(raw: unknown) {
-  return typeof raw === "string" && raw.trim().length > 0
-    ? raw.trim()
-    : DEFAULT_CHAT_MODEL;
-}
+type ModelBody = { model?: unknown } | null;
 
 export async function runAdminModelGetRoute() {
-  const record = await db.config.findUnique({ where: { key: "chatModel" } });
-  const model = normalizeModel(record?.value);
-  return Response.json({ model });
+  const model = await getDefaultModel();
+  return Response.json({
+    model,
+    options: getChatModelOptions(),
+    pricingReference: MODEL_PRICING_REFERENCE,
+  });
 }
 
 export async function runAdminModelPostRoute(req: Request) {
   const body = await req.json().catch(() => null);
-  const rawModel = (body as { model?: unknown } | null)?.model;
-  const model = normalizeModel(rawModel);
+  const rawModel = (body as ModelBody)?.model;
+  const model = typeof rawModel === "string" ? rawModel.trim() : "";
+
+  if (!isSupportedChatModel(model)) {
+    return Response.json(
+      {
+        error: "지원되지 않는 모델입니다.",
+        supportedModels: getChatModelOptions().map((option) => option.id),
+      },
+      { status: 400 }
+    );
+  }
 
   await db.config.upsert({
-    where: { key: "chatModel" },
+    where: { key: CHAT_MODEL_CONFIG_KEY },
     update: { value: model },
-    create: { key: "chatModel", value: model },
+    create: { key: CHAT_MODEL_CONFIG_KEY, value: model },
   });
-  return Response.json({ model });
+
+  return Response.json({
+    model,
+    selected: getChatModelOptions().find((option) => option.id === model) ?? null,
+  });
 }
 
 export async function runAdminModelAuthedGetRoute() {

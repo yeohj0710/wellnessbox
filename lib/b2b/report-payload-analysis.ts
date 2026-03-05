@@ -3,6 +3,7 @@ import {
   toText,
   type JsonRecord,
 } from "@/lib/b2b/report-payload-shared";
+import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
 
 export type AnalysisSummary = {
   overallScore: number | null;
@@ -217,7 +218,7 @@ export function extractAiEvaluation(payload: unknown): AnalysisAiEvaluation | nu
   if (!summary || !monthlyGuide) return null;
   return {
     generatedAt: toText(ai.generatedAt) || new Date().toISOString(),
-    model: toText(ai.model) || "gpt-4o-mini",
+    model: toText(ai.model) || DEFAULT_CHAT_MODEL,
     summary,
     monthlyGuide,
     actionItems: Array.isArray(ai.actionItems)

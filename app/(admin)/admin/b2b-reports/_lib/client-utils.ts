@@ -1,4 +1,5 @@
 import type { LayoutDocument } from "@/lib/b2b/export/layout-types";
+import { dedupeLayoutValidationIssues } from "@/lib/b2b/export/validation-issues";
 import type { LayoutValidationIssue } from "@/lib/b2b/export/validation-types";
 import type { ExportApiFailure, ReportAudit } from "./client-types";
 
@@ -126,13 +127,15 @@ export function extractIssuesFromAudit(audit: ReportAudit | null | undefined) {
     if (!selectedStylePreset) return true;
     return entry.stylePreset === selectedStylePreset;
   });
-  if (selected?.issues?.length) return selected.issues;
+  if (selected?.issues?.length) return dedupeLayoutValidationIssues(selected.issues);
   const selectedStageOnly = [...entries]
     .reverse()
     .find((entry) => selectedStage && entry.stage === selectedStage && entry.issues?.length);
-  if (selectedStageOnly?.issues?.length) return selectedStageOnly.issues;
+  if (selectedStageOnly?.issues?.length) {
+    return dedupeLayoutValidationIssues(selectedStageOnly.issues);
+  }
   const latest = [...entries].reverse().find((entry) => entry.issues?.length);
-  return latest?.issues ?? [];
+  return latest?.issues ? dedupeLayoutValidationIssues(latest.issues) : [];
 }
 
 function formatBounds(issue: LayoutValidationIssue) {

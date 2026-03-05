@@ -8,6 +8,7 @@ export type SectionAdviceLine = {
   questionText: string;
   answerText: string;
   recommendation: string;
+  continuation?: boolean;
 };
 
 export type SupplementRow = {
@@ -17,6 +18,7 @@ export type SupplementRow = {
   showSectionTitle?: boolean;
   paragraphs: string[];
   recommendedNutrients: string[];
+  continuation?: boolean;
 };
 
 export type SurveyDetailPageModel = {
@@ -43,6 +45,18 @@ function normalizeGroupKey(value: string) {
 }
 
 function normalizeSectionAdviceLine(line: SectionAdviceLine): NormalizedSectionAdviceLine {
+  if (line.continuation) {
+    const continuationSectionTitle = line.sectionTitle.trim();
+    return {
+      ...line,
+      normalizedSectionTitle:
+        continuationSectionTitle && continuationSectionTitle !== "-"
+          ? continuationSectionTitle
+          : "\uBD84\uC11D \uD56D\uBAA9",
+      normalizedQuestionText: "",
+    };
+  }
+
   const sectionTitleRaw = line.sectionTitle.trim();
   const questionTextRaw = line.questionText.trim();
   const questionPrefixMatch = questionTextRaw.match(/^(.+?)\s*[·ㆍ]\s*(.+)$/u);
@@ -140,9 +154,17 @@ export function SurveyDetailCards(props: {
                       key={`section-advice-${pageNumber}-${line.key}`}
                       className="rounded-lg border border-slate-200/80 bg-white/80 px-2.5 py-2"
                     >
-                      <p className="font-semibold text-slate-900">{line.normalizedQuestionText}</p>
-                      <p className="mt-0.5 text-slate-700">내 답변: {line.answerText || "-"}</p>
-                      <p className="mt-1.5 text-sm font-medium leading-relaxed text-rose-700">
+                      {line.normalizedQuestionText ? (
+                        <>
+                          <p className="font-semibold text-slate-900">{line.normalizedQuestionText}</p>
+                          <p className="mt-0.5 text-slate-700">내 답변: {line.answerText || "-"}</p>
+                        </>
+                      ) : null}
+                      <p
+                        className={`text-sm font-medium leading-relaxed text-rose-700 ${
+                          line.normalizedQuestionText ? "mt-1.5" : ""
+                        }`}
+                      >
                         {line.recommendation}
                       </p>
                     </li>
@@ -227,9 +249,7 @@ export default function SurveyDetailPages(props: {
           >
             <header className={styles.reportPageHeader}>
               <p className={styles.reportPageKicker}>{`${pageNumber}페이지 설문 결과`}</p>
-              <h2 className={styles.reportPageTitle}>
-                {pageIndex === 0 ? "설문 결과" : "설문 결과 (계속)"}
-              </h2>
+              <h2 className={styles.reportPageTitle}>{"\uC124\uBB38 \uACB0\uACFC"}</h2>
               <p className={styles.reportPageSubtitle}>
                 생활습관 실천 가이드, 영역별 분석 코멘트, 맞춤 영양제 설계를 정리했습니다.
               </p>

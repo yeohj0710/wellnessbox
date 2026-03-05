@@ -64,8 +64,7 @@ function buildFallbackTitle(input: TitleInput) {
 
 async function requestModelTitle(
   apiKey: string,
-  input: TitleInput,
-  modelOverride: unknown
+  input: TitleInput
 ): Promise<TitleResolveResult> {
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -74,7 +73,7 @@ async function requestModelTitle(
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: modelOverride || (await getDefaultModel()),
+      model: await getDefaultModel(),
       messages: buildTitleMessages(input),
       temperature: 0.5,
       top_p: 0.9,
@@ -109,13 +108,7 @@ export async function resolveChatTitle(rawBody: unknown): Promise<TitleResolveRe
       title: buildFallbackTitle(parsed.input),
     };
   }
-
-  const modelOverride =
-    rawBody && typeof rawBody === "object"
-      ? (rawBody as Record<string, unknown>).model
-      : undefined;
-
-  return requestModelTitle(apiKey, parsed.input, modelOverride);
+  return requestModelTitle(apiKey, parsed.input);
 }
 
 function jsonResponse(payload: unknown, status = 200) {

@@ -166,7 +166,7 @@ export const runAgentPattern = async (
   input: string
 ): Promise<PlaygroundRunResult> => {
   const tracer = new TraceCollector();
-  const llm = createChatModel();
+  const llm = await createChatModel();
   const ctx: AgentContext = { input, scratch: {} };
 
   const invoke = async (prompt: NodePrompt, nodeName: string) => {

@@ -1,13 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReportRenderer from "@/components/b2b/ReportRenderer";
 import ReportSummaryCards from "@/components/b2b/ReportSummaryCards";
-import OperationLoadingOverlay from "@/components/common/operationLoadingOverlay";
 import { useToast } from "@/components/common/toastContext.client";
 import styles from "@/components/b2b/B2bUx.module.css";
+import {
+  buildPublicSurveyQuestionList,
+  computeSurveyProgress,
+  resolveSelectedSectionsFromC27,
+  sanitizeSurveyAnswerValue,
+  type PublicSurveyAnswers,
+} from "@/lib/b2b/public-survey";
 import type { LayoutDocument } from "@/lib/b2b/export/layout-types";
 import type { LayoutValidationIssue } from "@/lib/b2b/export/validation-types";
+import type {
+  WellnessSurveyQuestionForTemplate,
+  WellnessSurveyTemplate,
+} from "@/lib/wellness/data-template-types";
 import B2bAnalysisJsonPanel from "./_components/B2bAnalysisJsonPanel";
 import B2bAdminOpsHero from "./_components/B2bAdminOpsHero";
 import B2bEmployeeOverviewCard from "./_components/B2bEmployeeOverviewCard";
@@ -42,13 +52,12 @@ import {
   extractIssuesFromAudit,
   mergePeriods,
   parseLayoutDsl,
-  toInputValue,
-  toMultiValues,
 } from "./_lib/client-utils";
 import {
-  buildCompletionStats,
-  mergeSurveyAnswers,
-} from "./_lib/survey-progress";
+  buildEmployeeReportPdfFilename,
+  buildPdfCaptureQuery,
+} from "./_lib/export-filename";
+import { mergeSurveyAnswers } from "./_lib/survey-answer-merge";
 
 export default function B2bAdminReportClient({ demoMode = false }: AdminClientProps) {
   const { showToast } = useToast();
@@ -82,17 +91,36 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
   const [reportDisplayPeriodKey, setReportDisplayPeriodKey] = useState("");
 
   const [busy, setBusy] = useState(false);
-  const [busyMessage, setBusyMessage] = useState("");
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const webReportCaptureRef = useRef<HTMLDivElement | null>(null);
 
+  type BusyActionOptions = {
+    fallbackError: string;
+    clearNotice?: boolean;
+    onError?: (err: unknown, fallbackError: string) => void;
+    run: () => Promise<void>;
+  };
+
   const maxSelectedSections = surveyTemplate?.rules?.maxSelectedSections ?? 5;
-  const selectedSectionSet = useMemo(() => new Set(selectedSections), [selectedSections]);
-  const selectedSectionObjects = useMemo(() => {
-    if (!surveyTemplate) return [];
-    return surveyTemplate.sections.filter((section) => selectedSectionSet.has(section.key));
-  }, [surveyTemplate, selectedSectionSet]);
+  const wellnessTemplate = useMemo(
+    () => (surveyTemplate as WellnessSurveyTemplate | null),
+    [surveyTemplate]
+  );
+  const surveyAnswersRecord = surveyAnswers as PublicSurveyAnswers;
+  const resolvedSelectedSections = useMemo(() => {
+    if (!wellnessTemplate) return selectedSections;
+    return resolveSelectedSectionsFromC27(
+      wellnessTemplate,
+      surveyAnswersRecord,
+      selectedSections
+    );
+  }, [selectedSections, surveyAnswersRecord, wellnessTemplate]);
+  const selectedSectionSet = useMemo(
+    () => new Set(resolvedSelectedSections),
+    [resolvedSelectedSections]
+  );
   const latestLayout = useMemo(
     () => validatedLayout ?? parseLayoutDsl(latestReport?.layoutDsl),
     [latestReport?.layoutDsl, validatedLayout]
@@ -104,8 +132,19 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
   }, [availablePeriods, selectedPeriodKey]);
 
   const completionStats = useMemo(
-    () => buildCompletionStats({ surveyTemplate, selectedSectionSet, surveyAnswers }),
-    [surveyTemplate, selectedSectionSet, surveyAnswers]
+    () => {
+      if (!wellnessTemplate) {
+        return { total: 0, answered: 0, requiredTotal: 0, requiredAnswered: 0, percent: 0 };
+      }
+      const questionList = buildPublicSurveyQuestionList(
+        wellnessTemplate,
+        surveyAnswersRecord,
+        resolvedSelectedSections,
+        { deriveSelectedSections: false }
+      );
+      return computeSurveyProgress(questionList, surveyAnswersRecord);
+    },
+    [resolvedSelectedSections, surveyAnswersRecord, wellnessTemplate]
   );
 
   function applyExportFailure(err: unknown, fallbackMessage: string) {
@@ -126,14 +165,34 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     setError(err instanceof Error ? err.message : fallbackMessage);
   }
 
-  function beginBusy(message: string) {
-    setBusyMessage(message);
+  function beginBusy() {
     setBusy(true);
   }
 
   function endBusy() {
     setBusy(false);
-    setBusyMessage("");
+  }
+
+  async function runBusyAction({
+    fallbackError,
+    clearNotice = false,
+    onError,
+    run,
+  }: BusyActionOptions) {
+    beginBusy();
+    setError("");
+    if (clearNotice) setNotice("");
+    try {
+      await run();
+    } catch (err) {
+      if (onError) {
+        onError(err, fallbackError);
+        return;
+      }
+      setError(err instanceof Error ? err.message : fallbackError);
+    } finally {
+      endBusy();
+    }
   }
 
   async function loadEmployees(query = "") {
@@ -188,6 +247,22 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     );
   }
 
+  const clearEmployeeDetailState = useCallback(() => {
+    setSelectedEmployeeDetail(null);
+    setLatestReport(null);
+    setValidatedLayout(null);
+    setValidationAudit(null);
+    setValidationIssues([]);
+  }, []);
+
+  const selectEmployeeForLoading = useCallback((nextEmployeeId: string | null) => {
+    setSelectedEmployeeId(nextEmployeeId);
+    setSelectedPeriodKey("");
+    setReportDisplayPeriodKey("");
+    clearEmployeeDetailState();
+    setIsDetailLoading(Boolean(nextEmployeeId));
+  }, [clearEmployeeDetailState]);
+
   useEffect(() => {
     void loadEmployees();
   }, []);
@@ -195,9 +270,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
   useEffect(() => {
     if (employees.length === 0) {
       if (selectedEmployeeId !== null) {
-        setSelectedEmployeeId(null);
-        setSelectedPeriodKey("");
-        setReportDisplayPeriodKey("");
+        selectEmployeeForLoading(null);
       }
       return;
     }
@@ -209,41 +282,36 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
       return;
     }
 
-    setSelectedEmployeeId(employees[0].id);
-    setSelectedPeriodKey("");
-    setReportDisplayPeriodKey("");
-  }, [employees, selectedEmployeeId]);
+    selectEmployeeForLoading(employees[0].id);
+  }, [employees, selectedEmployeeId, selectEmployeeForLoading]);
 
   useEffect(() => {
-    if (!selectedEmployeeId) return;
+    if (!selectedEmployeeId) {
+      setIsDetailLoading(false);
+      return;
+    }
     if (
       employees.length > 0 &&
       !employees.some((employee) => employee.id === selectedEmployeeId)
     ) {
-      setSelectedEmployeeDetail(null);
-      setLatestReport(null);
-      setValidatedLayout(null);
-      setValidationAudit(null);
-      setValidationIssues([]);
-      setSelectedEmployeeId(employees[0]?.id ?? null);
-      setReportDisplayPeriodKey("");
+      selectEmployeeForLoading(employees[0]?.id ?? null);
       return;
     }
     void (async () => {
-      beginBusy("임직원 상세 데이터를 불러오고 있어요.");
-      setError("");
+      setIsDetailLoading(true);
       try {
-        await loadEmployeeDetail(selectedEmployeeId, selectedPeriodKey || undefined);
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "임직원 상세 정보를 불러오지 못했습니다."
-        );
+        await runBusyAction({
+          fallbackError: "임직원 상세 정보를 불러오지 못했습니다.",
+          run: async () => {
+            await loadEmployeeDetail(selectedEmployeeId, selectedPeriodKey || undefined);
+          },
+        });
       } finally {
-        endBusy();
+        setIsDetailLoading(false);
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [employees, selectedEmployeeId]);
+  }, [employees, selectedEmployeeId, selectEmployeeForLoading]);
 
   useEffect(() => {
     const text = notice.trim();
@@ -259,150 +327,148 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     setError("");
   }, [error, showToast]);
 
+  useEffect(() => {
+    const refreshFromServer = () => {
+      if (busy || isDetailLoading) return;
+      void loadEmployees(search.trim()).catch(() => null);
+      if (!selectedEmployeeId) return;
+      void loadEmployeeDetail(selectedEmployeeId, selectedPeriodKey || undefined).catch(() => null);
+    };
+
+    const handleFocus = () => {
+      refreshFromServer();
+    };
+    const handleVisibilityChange = () => {
+      if (!document.hidden) refreshFromServer();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [busy, isDetailLoading, search, selectedEmployeeId, selectedPeriodKey]);
+
   async function reloadCurrentEmployee() {
     if (!selectedEmployeeId) return;
     await loadEmployeeDetail(selectedEmployeeId, selectedPeriodKey || undefined);
   }
 
   async function handleSearch() {
-    beginBusy("임직원 목록을 검색하고 있어요.");
-    setError("");
-    try {
-      await loadEmployees(search.trim());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "검색에 실패했습니다.");
-    } finally {
-      endBusy();
-    }
+    await runBusyAction({
+      fallbackError: "검색에 실패했습니다.",
+      run: async () => {
+        await loadEmployees(search.trim());
+      },
+    });
   }
 
   async function handleSaveSurvey() {
     if (!selectedEmployeeId) return;
-    beginBusy("설문 응답을 저장하고 있어요.");
-    setError("");
-    setNotice("");
-    try {
-      await saveSurvey({
-        employeeId: selectedEmployeeId,
-        periodKey: selectedPeriodKey || undefined,
-        selectedSections,
-        answers: surveyAnswers,
-      });
-      setNotice("설문을 저장했습니다.");
-      await reloadCurrentEmployee();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "설문 저장에 실패했습니다.");
-    } finally {
-      endBusy();
-    }
+    await runBusyAction({
+      fallbackError: "설문 저장에 실패했습니다.",
+      clearNotice: true,
+      run: async () => {
+        await saveSurvey({
+          employeeId: selectedEmployeeId,
+          periodKey: selectedPeriodKey || undefined,
+          selectedSections: resolvedSelectedSections,
+          answers: surveyAnswers,
+        });
+        setNotice("설문을 저장했습니다.");
+        await reloadCurrentEmployee();
+      },
+    });
   }
 
   async function handleSaveAnalysisPayload() {
     if (!selectedEmployeeId) return;
-    beginBusy("분석 JSON을 저장하고 있어요.");
-    setError("");
-    setNotice("");
-    try {
-      await saveAnalysisPayload({
-        employeeId: selectedEmployeeId,
-        periodKey: selectedPeriodKey || undefined,
-        payload: JSON.parse(analysisText || "{}"),
-      });
-      setNotice("분석 JSON을 저장했습니다.");
-      await reloadCurrentEmployee();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "분석 JSON 저장에 실패했습니다.");
-    } finally {
-      endBusy();
-    }
+    await runBusyAction({
+      fallbackError: "분석 JSON 저장에 실패했습니다.",
+      clearNotice: true,
+      run: async () => {
+        await saveAnalysisPayload({
+          employeeId: selectedEmployeeId,
+          periodKey: selectedPeriodKey || undefined,
+          payload: JSON.parse(analysisText || "{}"),
+        });
+        setNotice("분석 JSON을 저장했습니다.");
+        await reloadCurrentEmployee();
+      },
+    });
   }
 
   async function handleSaveNote() {
     if (!selectedEmployeeId) return;
-    beginBusy("약사 코멘트를 저장하고 있어요.");
-    setError("");
-    setNotice("");
-    try {
-      await saveNote({
-        employeeId: selectedEmployeeId,
-        periodKey: selectedPeriodKey || undefined,
-        note,
-        recommendations,
-        cautions,
-      });
-      setNotice("약사 코멘트를 저장했습니다.");
-      await reloadCurrentEmployee();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "약사 코멘트 저장에 실패했습니다.");
-    } finally {
-      endBusy();
-    }
+    await runBusyAction({
+      fallbackError: "약사 코멘트 저장에 실패했습니다.",
+      clearNotice: true,
+      run: async () => {
+        await saveNote({
+          employeeId: selectedEmployeeId,
+          periodKey: selectedPeriodKey || undefined,
+          note,
+          recommendations,
+          cautions,
+        });
+        setNotice("약사 코멘트를 저장했습니다.");
+        await reloadCurrentEmployee();
+      },
+    });
   }
 
   async function handleRecomputeAnalysis(generateAiEvaluation: boolean) {
     if (!selectedEmployeeId) return;
-    beginBusy(
-      generateAiEvaluation
-        ? "분석 지표와 AI 평가를 재생성하고 있어요."
-        : "분석 지표를 재계산하고 있어요."
-    );
-    setError("");
-    setNotice("");
-    try {
-      await recomputeAnalysis({
-        employeeId: selectedEmployeeId,
-        periodKey: selectedPeriodKey || undefined,
-        generateAiEvaluation,
-      });
-      setNotice(
-        generateAiEvaluation
-          ? "분석과 AI 평가를 재생성했습니다."
-          : "분석 지표를 재계산했습니다."
-      );
-      await reloadCurrentEmployee();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "분석 재계산에 실패했습니다.");
-    } finally {
-      endBusy();
-    }
+    await runBusyAction({
+      fallbackError: "분석 재계산에 실패했습니다.",
+      clearNotice: true,
+      run: async () => {
+        await recomputeAnalysis({
+          employeeId: selectedEmployeeId,
+          periodKey: selectedPeriodKey || undefined,
+          generateAiEvaluation,
+        });
+        setNotice(
+          generateAiEvaluation
+            ? "분석과 AI 평가를 생성했습니다."
+            : "분석 지표를 재계산했습니다."
+        );
+        await reloadCurrentEmployee();
+      },
+    });
   }
 
   async function handleRegenerateReport() {
     if (!selectedEmployeeId) return;
-    beginBusy("레포트를 재생성하고 있어요.");
-    setError("");
-    setNotice("");
-    try {
-      await regenerateReport({
-        employeeId: selectedEmployeeId,
-        periodKey: selectedPeriodKey || undefined,
-      });
-      setNotice("레포트를 재생성했습니다.");
-      await reloadCurrentEmployee();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "레포트 재생성에 실패했습니다.");
-    } finally {
-      endBusy();
-    }
+    await runBusyAction({
+      fallbackError: "레포트 재생성에 실패했습니다.",
+      clearNotice: true,
+      run: async () => {
+        await regenerateReport({
+          employeeId: selectedEmployeeId,
+          periodKey: selectedPeriodKey || undefined,
+        });
+        setNotice("레포트를 재생성했습니다.");
+        await reloadCurrentEmployee();
+      },
+    });
   }
 
   async function handleRunValidation() {
     if (!latestReport?.id) return;
-    beginBusy("레이아웃 검증을 실행하고 있어요.");
-    setError("");
-    setNotice("");
-    try {
-      const result = await runLayoutValidation(latestReport.id);
-      setValidationAudit((result.audit ?? null) as ReportAudit | null);
-      setValidationIssues(result.issues ?? []);
-      if (result.layout) setValidatedLayout(result.layout);
-      setNotice(result.ok ? "레이아웃 검증을 완료했습니다." : "레이아웃 검증에 실패했습니다.");
-      await reloadCurrentEmployee();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "레이아웃 검증에 실패했습니다.");
-    } finally {
-      endBusy();
-    }
+    await runBusyAction({
+      fallbackError: "레이아웃 검증에 실패했습니다.",
+      clearNotice: true,
+      run: async () => {
+        const result = await runLayoutValidation(latestReport.id);
+        setValidationAudit((result.audit ?? null) as ReportAudit | null);
+        setValidationIssues(result.issues ?? []);
+        if (result.layout) setValidatedLayout(result.layout);
+        setNotice(result.ok ? "레이아웃 검증을 완료했습니다." : "레이아웃 검증에 실패했습니다.");
+        await reloadCurrentEmployee();
+      },
+    });
   }
 
   async function handleSaveDisplayPeriod() {
@@ -412,181 +478,152 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
       setError("표기 연월은 YYYY-MM 형식으로 입력해 주세요.");
       return;
     }
-    beginBusy("레포트 표기 연월을 반영하고 있어요.");
-    setError("");
-    setNotice("");
-    try {
-      await saveReportDisplayPeriod({
-        reportId: latestReport.id,
-        displayPeriodKey: nextDisplayPeriod,
-      });
-      setNotice("레포트 표기 연월을 반영했습니다.");
-      await reloadCurrentEmployee();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "표기 연월 저장에 실패했습니다.");
-    } finally {
-      endBusy();
-    }
+    await runBusyAction({
+      fallbackError: "표기 연월 저장에 실패했습니다.",
+      clearNotice: true,
+      run: async () => {
+        await saveReportDisplayPeriod({
+          reportId: latestReport.id,
+          displayPeriodKey: nextDisplayPeriod,
+        });
+        setNotice("레포트 표기 연월을 반영했습니다.");
+        await reloadCurrentEmployee();
+      },
+    });
   }
 
   async function handleExportPdf() {
     if (!latestReport?.id) return;
+    await runBusyAction({
+      fallbackError: "PDF 다운로드에 실패했습니다.",
+      clearNotice: true,
+      onError: applyExportFailure,
+      run: async () => {
+        const downloadFileName = buildEmployeeReportPdfFilename({
+          employeeName: selectedEmployeeDetail?.name ?? latestReport.payload?.meta?.employeeName,
+          periodKey:
+            selectedPeriodKey || latestReport.periodKey || latestReport.payload?.meta?.periodKey,
+        });
+        const captureWidthPx = Math.round(
+          webReportCaptureRef.current?.getBoundingClientRect().width ?? 0
+        );
+        const viewportWidthPx = Math.round(
+          window.innerWidth || document.documentElement?.clientWidth || 0
+        );
+        const queryString = buildPdfCaptureQuery(captureWidthPx, viewportWidthPx);
 
-    beginBusy("PDF 파일을 생성하고 있어요.");
-    setError("");
-    setNotice("");
-    try {
-      const normalizeFilenameToken = (value: string | null | undefined, fallback: string) => {
-        const text = (value ?? "")
-          .trim()
-          .replace(/[\/:*?"<>|]+/g, " ")
-          .replace(/\s+/g, " ")
-          .trim();
-        return text.length > 0 ? text : fallback;
-      };
-      const employeeLabel = normalizeFilenameToken(
-        selectedEmployeeDetail?.name ?? latestReport.payload?.meta?.employeeName,
-        "직원"
-      );
-      const periodLabel = normalizeFilenameToken(
-        selectedPeriodKey ||
-          latestReport.periodKey ||
-          latestReport.payload?.meta?.periodKey,
-        "최근"
-      );
-      const downloadFileName =
-        "웰니스박스_건강리포트_" +
-        employeeLabel +
-        "_" +
-        periodLabel +
-        ".pdf";
-      const query = new URLSearchParams();
-      const captureWidthPx = Math.round(
-        webReportCaptureRef.current?.getBoundingClientRect().width ?? 0
-      );
-      if (captureWidthPx > 0) {
-        query.set("w", String(captureWidthPx));
-      }
-      const viewportWidthPx = Math.round(
-        window.innerWidth || document.documentElement?.clientWidth || 0
-      );
-      if (viewportWidthPx > 0) {
-        query.set("vw", String(viewportWidthPx));
-      }
-      const queryString = query.toString();
-
-      await downloadFromApi(
-        "/api/admin/b2b/reports/" +
-          latestReport.id +
-          "/export/pdf" +
-          (queryString.length > 0 ? `?${queryString}` : ""),
-        downloadFileName
-      );
-      setNotice("PDF 다운로드가 완료되었습니다.");
-    } catch (err) {
-      applyExportFailure(err, "PDF 다운로드에 실패했습니다.");
-    } finally {
-      endBusy();
-    }
+        await downloadFromApi(
+          "/api/admin/b2b/reports/" +
+            latestReport.id +
+            "/export/pdf" +
+            (queryString.length > 0 ? `?${queryString}` : ""),
+          downloadFileName
+        );
+        setNotice("PDF 다운로드가 완료되었습니다.");
+      },
+    });
   }
 
   async function handleExportLegacyPdf() {
     if (!latestReport?.id) return;
-    beginBusy("기존 PDF 엔진으로 파일을 생성하고 있어요.");
-    setError("");
-    setNotice("");
-    try {
-      const normalizeFilenameToken = (value: string | null | undefined, fallback: string) => {
-        const text = (value ?? "")
-          .trim()
-          .replace(/[\/:*?"<>|]+/g, " ")
-          .replace(/\s+/g, " ")
-          .trim();
-        return text.length > 0 ? text : fallback;
-      };
-      const employeeLabel = normalizeFilenameToken(
-        selectedEmployeeDetail?.name ?? latestReport.payload?.meta?.employeeName,
-        "직원"
-      );
-      const periodLabel = normalizeFilenameToken(
-        selectedPeriodKey ||
-          latestReport.periodKey ||
-          latestReport.payload?.meta?.periodKey,
-        "최근"
-      );
-      const fallbackPdfName =
-        "웰니스박스_건강리포트_" +
-        employeeLabel +
-        "_" +
-        periodLabel +
-        ".pdf";
-      await downloadFromApi(
-        "/api/admin/b2b/reports/" + latestReport.id + "/export/pdf?mode=legacy",
-        fallbackPdfName
-      );
-      setNotice("기존 PDF 엔진 다운로드가 완료되었습니다.");
-    } catch (err) {
-      applyExportFailure(err, "기존 PDF 다운로드에 실패했습니다.");
-    } finally {
-      endBusy();
-    }
+    await runBusyAction({
+      fallbackError: "기존 PDF 다운로드에 실패했습니다.",
+      clearNotice: true,
+      onError: applyExportFailure,
+      run: async () => {
+        const fallbackPdfName = buildEmployeeReportPdfFilename({
+          employeeName: selectedEmployeeDetail?.name ?? latestReport.payload?.meta?.employeeName,
+          periodKey:
+            selectedPeriodKey || latestReport.periodKey || latestReport.payload?.meta?.periodKey,
+        });
+        await downloadFromApi(
+          "/api/admin/b2b/reports/" + latestReport.id + "/export/pdf?mode=legacy",
+          fallbackPdfName
+        );
+        setNotice("기존 PDF 엔진 다운로드가 완료되었습니다.");
+      },
+    });
   }
 
   async function handleSeedDemo() {
-    beginBusy("데모 임직원 데이터를 생성하고 있어요.");
-    setError("");
-    setNotice("");
-    try {
-      const seeded = await seedDemoEmployees();
-      await loadEmployees("데모");
-      if (seeded.employeeIds[0]) setSelectedEmployeeId(seeded.employeeIds[0]);
-      setNotice("데모 데이터를 생성했습니다.");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "데모 데이터 생성에 실패했습니다.");
-    } finally {
-      endBusy();
-    }
+    await runBusyAction({
+      fallbackError: "데모 데이터 생성에 실패했습니다.",
+      clearNotice: true,
+      run: async () => {
+        const seeded = await seedDemoEmployees();
+        await loadEmployees("데모");
+        if (seeded.employeeIds[0]) setSelectedEmployeeId(seeded.employeeIds[0]);
+        setNotice("데모 데이터를 생성했습니다.");
+      },
+    });
   }
 
   async function handleChangePeriod(nextPeriod: string) {
     if (!selectedEmployeeId) return;
     setSelectedPeriodKey(nextPeriod);
-    beginBusy("선택한 기간의 리포트를 불러오고 있어요.");
-    setError("");
+    setIsDetailLoading(true);
     try {
-      await loadEmployeeDetail(selectedEmployeeId, nextPeriod);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "기간별 데이터 조회에 실패했습니다.");
+      await runBusyAction({
+        fallbackError: "기간별 데이터 조회에 실패했습니다.",
+        run: async () => {
+          await loadEmployeeDetail(selectedEmployeeId, nextPeriod);
+        },
+      });
     } finally {
-      endBusy();
+      setIsDetailLoading(false);
     }
   }
 
   function setAnswerValue(question: SurveyQuestion, value: unknown) {
-    setSurveyAnswers((prev) => ({ ...prev, [question.key]: value }));
-    if (question.key === "C27") {
-      setSelectedSections(toMultiValues(value).slice(0, maxSelectedSections));
+    const template = wellnessTemplate;
+    if (!template) {
+      setSurveyAnswers((prev) => ({ ...prev, [question.key]: value }));
+      return;
     }
+    setSurveyAnswers((prev) => {
+      const sanitized = sanitizeSurveyAnswerValue(
+        question as WellnessSurveyQuestionForTemplate,
+        value,
+        maxSelectedSections
+      );
+      const nextAnswers = {
+        ...prev,
+        [question.key]: sanitized,
+      } as PublicSurveyAnswers;
+
+      setSelectedSections((prevSections) =>
+        resolveSelectedSectionsFromC27(template, nextAnswers, prevSections)
+      );
+      return nextAnswers;
+    });
   }
 
   function toggleSection(sectionKey: string) {
+    const template = wellnessTemplate;
+    if (!template) return;
+    const c27Key = template.rules.selectSectionByCommonQuestionKey || "C27";
+    const c27Question = template.common.find((question) => question.key === c27Key);
     setSelectedSections((prev) => {
       const next = new Set(prev);
       if (next.has(sectionKey)) next.delete(sectionKey);
       else if (next.size < maxSelectedSections) next.add(sectionKey);
-      const value = [...next];
-      setSurveyAnswers((answers) => ({ ...answers, C27: value }));
-      return value;
+      const nextSections = [...next];
+      setSurveyAnswers((answers) => {
+        const nextC27Value = c27Question
+          ? sanitizeSurveyAnswerValue(c27Question, nextSections, maxSelectedSections)
+          : nextSections;
+        const nextAnswers = {
+          ...answers,
+          [c27Key]: nextC27Value,
+        } as PublicSurveyAnswers;
+        return nextAnswers;
+      });
+      return nextSections;
     });
   }
 
   return (
     <div className={styles.pageBackdrop}>
-      <OperationLoadingOverlay
-        visible={busy}
-        title={busyMessage || "작업을 처리하고 있어요"}
-        description="완료되면 화면이 자동으로 갱신됩니다."
-      />
       <div className={`${styles.page} ${styles.pageNoBg} ${styles.stack}`}>
         <B2bAdminOpsHero
           search={search}
@@ -603,9 +640,8 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
             selectedEmployeeId={selectedEmployeeId}
             busy={busy}
             onSelectEmployee={(employeeId) => {
-              setSelectedEmployeeId(employeeId);
-              setSelectedPeriodKey("");
-              setReportDisplayPeriodKey("");
+              if (employeeId === selectedEmployeeId) return;
+              selectEmployeeForLoading(employeeId);
             }}
           />
 
@@ -613,12 +649,97 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
             {!selectedEmployeeId ? (
               <section className={`${styles.sectionCard} ${styles.reportSelectionPlaceholder}`}>
                 <p className={styles.reportSelectionPlaceholderText}>
-                  임직원을 선택하면 레포트 미리보기와 편집 도구가 함께 열려요.
+                  {"임직원을 선택하면 레포트 미리보기와 편집 도구가 함께 열려요."}
                 </p>
               </section>
             ) : null}
 
-            {selectedEmployeeId && selectedEmployeeDetail ? (
+            {selectedEmployeeId && isDetailLoading ? (
+              <>
+                <section className={styles.sectionCard} aria-live="polite" aria-busy="true">
+                  <div className={styles.skeletonRow}>
+                    <span
+                      className={`${styles.skeletonLine} ${styles.skeletonBlock}`}
+                      style={{ width: "48%" }}
+                      aria-hidden="true"
+                    />
+                    <span
+                      className={`${styles.skeletonPill} ${styles.skeletonBlock}`}
+                      style={{ width: 96 }}
+                      aria-hidden="true"
+                    />
+                  </div>
+                  <span
+                    className={`${styles.skeletonLineShort} ${styles.skeletonBlock}`}
+                    style={{ width: "72%" }}
+                    aria-hidden="true"
+                  />
+                  <div className={styles.loadingKpiRow}>
+                    {Array.from({ length: 4 }).map((_, index) => (
+                      <span
+                        key={`overview-kpi-skeleton-${index}`}
+                        className={`${styles.skeletonBlock} ${styles.loadingKpi}`}
+                        aria-hidden="true"
+                      />
+                    ))}
+                  </div>
+                </section>
+
+                <section className={styles.reportCanvas} aria-hidden="true">
+                  <div className={styles.reportCanvasHeader}>
+                    <div>
+                      <span
+                        className={`${styles.skeletonLine} ${styles.skeletonBlock}`}
+                        style={{ width: 220 }}
+                      />
+                      <span
+                        className={`${styles.skeletonLineShort} ${styles.skeletonBlock}`}
+                        style={{ width: 320, marginTop: 8 }}
+                      />
+                    </div>
+                    <span
+                      className={`${styles.skeletonPill} ${styles.skeletonBlock}`}
+                      style={{ width: 160, height: 30 }}
+                    />
+                  </div>
+                  <div className={`${styles.reportCanvasBoard} ${styles.reportCanvasBoardWide}`}>
+                    <span
+                      className={styles.skeletonBlock}
+                      style={{ width: "100%", minHeight: 560, borderRadius: 20 }}
+                    />
+                  </div>
+                </section>
+
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <section key={`detail-panel-skeleton-${index}`} className={styles.sectionCard}>
+                    <div className={styles.skeletonRow}>
+                      <span
+                        className={`${styles.skeletonLine} ${styles.skeletonBlock}`}
+                        style={{ width: "44%" }}
+                        aria-hidden="true"
+                      />
+                      <span
+                        className={`${styles.skeletonPill} ${styles.skeletonBlock}`}
+                        style={{ width: 88 }}
+                        aria-hidden="true"
+                      />
+                    </div>
+                    <span
+                      className={`${styles.skeletonLineShort} ${styles.skeletonBlock}`}
+                      style={{ width: "84%" }}
+                      aria-hidden="true"
+                    />
+                    <span
+                      className={`${styles.skeletonLineShort} ${styles.skeletonBlock}`}
+                      style={{ width: "68%" }}
+                      aria-hidden="true"
+                    />
+                  </section>
+                ))}
+              </>
+            ) : null}
+
+            {selectedEmployeeId && !isDetailLoading && selectedEmployeeDetail ? (
               <>
                 <B2bEmployeeOverviewCard
                   detail={selectedEmployeeDetail}
@@ -644,10 +765,10 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
                 <section className={styles.reportCanvas}>
                   <div className={styles.reportCanvasHeader}>
                     <div>
-                      <h3>레포트 본문 미리보기</h3>
-                      <p>화면에서 보는 웹 레포트를 그대로 캡처해 PDF로 저장합니다.</p>
+                      <h3>{"레포트 본문 미리보기"}</h3>
+                      <p>{"화면에서 보는 웹 레포트를 그대로 캡처해 PDF로 저장합니다."}</p>
                     </div>
-                    <span className={styles.statusOn}>웹/PDF 동일 레이아웃 지향</span>
+                    <span className={styles.statusOn}>{"웹/PDF 동일 레이아웃 지향"}</span>
                   </div>
                   <div className={`${styles.reportCanvasBoard} ${styles.reportCanvasBoardWide}`}>
                     <div
@@ -663,10 +784,10 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
 
                 {latestLayout ? (
                   <details className={`${styles.optionalCard} ${styles.reportLegacyPanel}`}>
-                    <summary>현행 엔진 미리보기</summary>
+                    <summary>{"구 엔진 미리보기"}</summary>
                     <div className={styles.optionalBody}>
                       <p className={styles.optionalText}>
-                        기존 DSL 렌더러 결과입니다. 비교 확인이 필요할 때만 펼쳐서 확인하세요.
+                        {"기존 DSL 렌더 결과입니다. 비교 확인이 필요할 때만 펼쳐서 확인하세요."}
                       </p>
                       <div className={styles.reportCanvasBoard}>
                         <ReportRenderer layout={latestLayout} fitToWidth />
@@ -680,8 +801,8 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
                   surveySubmittedAt={surveySubmittedAt}
                   surveyUpdatedAt={surveyUpdatedAt}
                   surveyTemplate={surveyTemplate}
+                  selectedSections={resolvedSelectedSections}
                   selectedSectionSet={selectedSectionSet}
-                  selectedSectionObjects={selectedSectionObjects}
                   surveyAnswers={surveyAnswers}
                   maxSelectedSections={maxSelectedSections}
                   busy={busy}
@@ -719,6 +840,14 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
                   onTogglePreview={() => setShowExportPreview((prev) => !prev)}
                 />
               </>
+            ) : null}
+
+            {selectedEmployeeId && !isDetailLoading && !selectedEmployeeDetail ? (
+              <section className={`${styles.sectionCard} ${styles.reportSelectionPlaceholder}`}>
+                <p className={styles.reportSelectionPlaceholderText}>
+                  {"임직원 상세 데이터를 불러오지 못했습니다. 다시 시도해 주세요."}
+                </p>
+              </section>
             ) : null}
           </div>
         </div>

@@ -26,6 +26,14 @@ const GLOBAL_CART_OPEN_KEY = "wbGlobalCartOpen";
 const SEVEN_DAY_HREF = "/?package=7#home-products";
 const CLOSE_TOPBAR_DRAWER_EVENT = "wb:topbar-close-drawer";
 
+function resolveCurrentReturnToPath() {
+  if (typeof window === "undefined") return "/";
+  const { pathname, search, hash } = window.location;
+  const composed = `${pathname}${search}${hash}`;
+  if (!composed.startsWith("/") || composed.startsWith("//")) return "/";
+  return composed;
+}
+
 export default function TopBar() {
   return (
     <Suspense fallback={<TopBarFallback />}>
@@ -153,6 +161,8 @@ function TopBarInner() {
     setIsDrawerOpen(false);
     closeCartOverlay();
     showLoading();
+    const returnTo = resolveCurrentReturnToPath();
+    const fallbackLogoutUrl = `/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`;
 
     try {
       const response = await fetch("/api/auth/logout", {
@@ -163,15 +173,15 @@ function TopBarInner() {
 
       if (!response.ok) {
         emitAuthSyncEvent({ scope: "user-session", reason: "logout-fallback" });
-        window.location.assign("/api/auth/logout");
+        window.location.assign(fallbackLogoutUrl);
         return;
       }
 
       emitAuthSyncEvent({ scope: "user-session", reason: "logout" });
-      window.location.assign("/");
+      window.location.assign(returnTo);
     } catch {
       emitAuthSyncEvent({ scope: "user-session", reason: "logout-error" });
-      window.location.assign("/api/auth/logout");
+      window.location.assign(fallbackLogoutUrl);
     }
   }, [closeCartOverlay, logoutPending, showLoading]);
 

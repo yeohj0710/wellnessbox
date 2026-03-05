@@ -5,6 +5,15 @@ import { NextResponse } from "next/server";
 import getSession from "@/lib/session";
 import { NO_CACHE_HEADERS } from "@/lib/server/no-cache";
 
+function resolveSafeReturnToPath(req: Request) {
+  const url = new URL(req.url);
+  const returnTo = url.searchParams.get("returnTo");
+  if (!returnTo) return "/";
+  if (!returnTo.startsWith("/")) return "/";
+  if (returnTo.startsWith("//")) return "/";
+  return returnTo;
+}
+
 async function clearAllSessions() {
   const session = await getSession();
 
@@ -44,7 +53,8 @@ export async function runLogoutPostRoute() {
 
 export async function runLogoutGetRoute(req: Request) {
   await clearAllSessions();
-  const response = NextResponse.redirect(new URL("/", req.url));
+  const returnToPath = resolveSafeReturnToPath(req);
+  const response = NextResponse.redirect(new URL(returnToPath, req.url));
   response.headers.set("Cache-Control", NO_CACHE_HEADERS["Cache-Control"]);
   response.headers.set("Pragma", NO_CACHE_HEADERS.Pragma);
   return response;

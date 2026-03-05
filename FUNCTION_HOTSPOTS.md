@@ -9,18 +9,19 @@ Only function-like blocks with at least 30 lines are included.
 
 | Lines | Kind | Function | Location |
 |---:|---|---|---|
-| 1756 | `function` | `SurveyPageClient` | `app/survey/survey-page-client.tsx:850` |
-| 844 | `function` | `EmployeeReportClient` | `app/(features)/employee-report/EmployeeReportClient.tsx:63` |
+| 1819 | `function` | `SurveyPageClient` | `app/survey/survey-page-client.tsx:855` |
+| 918 | `function` | `EmployeeReportClient` | `app/(features)/employee-report/EmployeeReportClient.tsx:73` |
+| 796 | `function` | `B2bAdminReportClient` | `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx:62` |
 | 756 | `function` | `B2bAdminEmployeeDataClient` | `app/(admin)/admin/b2b-employee-data/B2bAdminEmployeeDataClient.tsx:30` |
 | 732 | `function` | `trainAllRndAiModels` | `lib/rnd/ai-training/pipeline.ts:2997` |
 | 680 | `function` | `LandingSection2` | `app/(components)/landingSection2.tsx:29` |
-| 676 | `function` | `B2bAdminReportClient` | `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx:53` |
-| 481 | `function` | `ReportSummaryCards` | `components/b2b/ReportSummaryCards.tsx:91` |
+| 528 | `function` | `ReportSummaryCards` | `components/b2b/ReportSummaryCards.tsx:487` |
+| 465 | `function` | `SurveyResultPanel` | `app/survey/_components/SurveyResultPanel.tsx:102` |
 | 460 | `function` | `HomeProductSection` | `app/(components)/homeProductSection.tsx:76` |
 | 407 | `function` | `loadEmployeeForOps` | `lib/b2b/admin-employee-management-route.ts:187` |
 | 399 | `function` | `EditorAdminClient` | `app/(admin)/admin/column/editor/EditorAdminClient.tsx:44` |
-| 398 | `function` | `B2bSurveyEditorPanel` | `app/(admin)/admin/b2b-reports/_components/B2bSurveyEditorPanel.tsx:81` |
 | 398 | `function` | `Cart` | `components/order/cart.tsx:46` |
+| 377 | `function` | `B2bSurveyEditorPanel` | `app/(admin)/admin/b2b-reports/_components/B2bSurveyEditorPanel.tsx:37` |
 | 374 | `function` | `RecommendedProductActions` | `app/chat/components/RecommendedProductActions.tsx:26` |
 | 365 | `function` | `useAssessFlow` | `app/assess/useAssessFlow.ts:29` |
 | 355 | `function` | `ProductManager` | `components/manager/productManager.tsx:14` |
@@ -28,14 +29,13 @@ Only function-like blocks with at least 30 lines are included.
 | 343 | `function` | `OrderComplete` | `app/(orders)/order-complete/page.tsx:43` |
 | 343 | `function` | `GlobalCartHost` | `components/order/globalCartHost.tsx:42` |
 | 341 | `function` | `useChat` | `app/chat/hooks/useChat.ts:38` |
-| 338 | `function` | `SurveyResultPanel` | `app/survey/_components/SurveyResultPanel.tsx:52` |
 | 337 | `function` | `OrderAccordionItem` | `components/pharm/orderAccordionItem.tsx:48` |
 | 336 | `function` | `executeNhisFetch` | `lib/server/hyphen/fetch-executor.ts:492` |
 | 335 | `function` | `ReviewModal` | `components/modal/reviewModal.tsx:11` |
 | 331 | `function` | `ChatInput` | `app/chat/components/ChatInput.tsx:39` |
 | 330 | `function` | `EditorClient` | `app/column/editor/EditorClient.tsx:133` |
 | 329 | `function` | `ChatDrawer` | `app/chat/components/ChatDrawer.tsx:21` |
-| 327 | `function` | `SurveyQuestionField` | `app/(admin)/admin/b2b-reports/_components/SurveyQuestionField.tsx:189` |
+| 327 | `function` | `SurveyQuestionField` | `app/(admin)/admin/b2b-reports/_components/SurveyQuestionField.tsx:188` |
 | 327 | `function` | `EnglishCheckAI` | `app/en/check-ai/page.tsx:45` |
 | 324 | `function` | `DesktopChatDock` | `components/chat/DesktopChatDock.tsx:50` |
 | 324 | `function` | `ProductDetail` | `components/product/productDetail.tsx:24` |
@@ -43,10 +43,10 @@ Only function-like blocks with at least 30 lines are included.
 | 307 | `function` | `CartItemsSection` | `components/order/cartItemsSection.tsx:43` |
 | 304 | `function` | `KakaoExternalBridge` | `components/common/kakaoExternalBridge.tsx:29` |
 | 297 | `function` | `runModule05OptimizationMvp` | `lib/rnd/module05-optimization/mvp-engine.ts:77` |
+| 290 | `function` | `CommandPalette` | `components/common/commandPalette.tsx:27` |
 | 287 | `function` | `DesktopChatDockPanel` | `components/chat/DesktopChatDockPanel.tsx:29` |
-| 287 | `function` | `CommandPalette` | `components/common/commandPalette.tsx:26` |
+| 286 | `function` | `computeWellnessResult` | `lib/wellness/analysis.ts:163` |
 | 284 | `function` | `AgentPlaygroundPage` | `app/agent-playground/page.tsx:182` |
-| 281 | `function` | `computeWellnessResult` | `lib/wellness/analysis.ts:149` |
 | 279 | `function` | `runModule06ClosedLoopMvp` | `lib/rnd/module06-closed-loop-ai/mvp-engine.ts:104` |
 | 275 | `function` | `AddressModal` | `components/modal/addressModal.tsx:39` |
 | 270 | `function` | `buildModule06FixtureRecords` | `lib/rnd/module06-closed-loop-ai/scaffold-fixtures.ts:18` |
@@ -74,10 +74,12 @@ Only function-like blocks with at least 30 lines are included.
 | 210 | `function` | `runStaticRegressionChecks` | `scripts/qa/check-medication-fetch-resilience.cts:35` |
 | 193 | `function` | `buildWeightedKpiItems` | `scripts/rnd/train-all-ai.ts:490` |
 | 190 | `function` | `runEmployeeReportScenario` | `scripts/qa/lib/cde-regression/employee-report-scenario.cjs:1` |
+| 157 | `function` | `run` | `scripts/qa/check-b2b-survey-required-flags.cts:39` |
 | 155 | `function` | `runRouteScrollAndColumnCardScenario` | `scripts/qa/lib/route-scroll/scenario.cjs:42` |
 | 141 | `function` | `runCase` | `scripts/qa/check-b2b-capture-pdf-visual.cjs:924` |
 | 137 | `function` | `measure` | `scripts/perf/measure-navigation-prefetch.cjs:210` |
 | 136 | `function` | `run` | `scripts/qa/check-b2b-public-survey-smoke.cjs:273` |
+| 136 | `function` | `run` | `scripts/qa/check-b2b-report-page-overflow.cjs:254` |
 | 131 | `function` | `captureRoutePdf` | `scripts/qa/check-b2b-capture-pdf-visual.cjs:792` |
 | 129 | `function` | `run` | `scripts/qa/check-wellness-scoring.cts:21` |
 | 124 | `function` | `scanSourceFile` | `scripts/perf/scan-prefetch-regressions.cjs:61` |
@@ -92,8 +94,6 @@ Only function-like blocks with at least 30 lines are included.
 | 95 | `function` | `cleanupStaleBenchData` | `scripts/perf/push-notification-benchmark.cjs:301` |
 | 92 | `function` | `run` | `scripts/maintenance/smoke-hyphen-ai-summary.cts:17` |
 | 92 | `function` | `runStoredIdentityCases` | `scripts/qa/check-employee-report-auth-ux.cts:31` |
-| 92 | `function` | `runB2bExportSmokeScenario` | `scripts/qa/lib/b2b-export-smoke/scenario.cjs:17` |
-| 89 | `function` | `run` | `scripts/qa/check-b2b-score-engine.cts:4` |
 
 ## Notes
 

@@ -15,16 +15,8 @@ import {
   resolveSafeFallbackSuggestions,
 } from "./suggest-route-helpers";
 
-function asRecord(value: unknown) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return {} as Record<string, unknown>;
-  }
-  return value as Record<string, unknown>;
-}
-
 async function requestPrimarySuggestions(input: {
   apiKey: string;
-  modelOverride: unknown;
   count: number;
   text: string;
   recentMessages: Array<{ role?: string; content?: unknown }>;
@@ -50,7 +42,7 @@ async function requestPrimarySuggestions(input: {
   }
 
   const payload = {
-    model: input.modelOverride || (await getDefaultModel()),
+    model: await getDefaultModel(),
     messages: buildSuggestionMessages({
       contextSummary: input.contextSummary,
       lastAssistantReply: input.text,
@@ -78,7 +70,6 @@ async function requestPrimarySuggestions(input: {
 
 export async function runSuggestRoute(rawBody: unknown, count = 2) {
   const apiKey = getOpenAIKey();
-  const body = asRecord(rawBody);
   const input = prepareSuggestRouteInput(rawBody, count);
 
   if (!input.text) {
@@ -94,7 +85,6 @@ export async function runSuggestRoute(rawBody: unknown, count = 2) {
   const primarySuggestions = apiKey
     ? await requestPrimarySuggestions({
         apiKey,
-        modelOverride: body.model,
         count: input.count,
         text: input.text,
         recentMessages: input.recentMessages,

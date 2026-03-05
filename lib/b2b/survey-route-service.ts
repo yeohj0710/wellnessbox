@@ -193,19 +193,6 @@ export async function runEmployeeSurveyUpsert(input: {
 }) {
   const { template, schema } = await ensureActiveB2bSurveyTemplate();
   const { commonMap, sectionMap } = buildSurveyQuestionMap(schema);
-  const previousResponse = await db.b2bSurveyResponse.findFirst({
-    where: {
-      employeeId: input.employeeId,
-      templateId: template.id,
-      periodKey: input.periodKey,
-    },
-    orderBy: { updatedAt: "desc" },
-    select: {
-      submittedAt: true,
-      selectedSections: true,
-      answersJson: true,
-    },
-  });
 
   const selectedSections = resolveSurveySelectedSections({
     schema,
@@ -218,16 +205,7 @@ export async function runEmployeeSurveyUpsert(input: {
     );
   }
 
-  const previousSelectedSignature = JSON.stringify(previousResponse?.selectedSections ?? []);
-  const nextSelectedSignature = JSON.stringify(selectedSections);
-  const previousAnswersSignature = JSON.stringify(previousResponse?.answersJson ?? null);
-  const nextAnswersSignature = JSON.stringify(input.answers);
-  const shouldSyncReport =
-    input.finalize === true &&
-    (!previousResponse ||
-      previousResponse.submittedAt == null ||
-      previousSelectedSignature !== nextSelectedSignature ||
-      previousAnswersSignature !== nextAnswersSignature);
+  const shouldSyncReport = input.finalize === true;
 
   const { response, answerRows } = await upsertSurveyResponseWithAnswers({
     employeeId: input.employeeId,
@@ -247,6 +225,12 @@ export async function runEmployeeSurveyUpsert(input: {
         asJsonValue,
       }),
   });
+  if (input.finalize === true) {
+    await db.b2bEmployee.update({
+      where: { id: input.employeeId },
+      data: { updatedAt: new Date() },
+    });
+  }
   const report =
     shouldSyncReport
       ? await ensureLatestB2bReport(input.employeeId, input.periodKey)

@@ -31,15 +31,21 @@ import SurveyDetailPages, {
 const DONUT_RADIUS = 52;
 const DONUT_CIRCUMFERENCE = 2 * Math.PI * DONUT_RADIUS;
 const MAX_PAGE1_SECTION_BARS = 3;
-const FIRST_PAGE_SURVEY_CONTENT_UNITS = 780;
-const DETAIL_PAGE_SURVEY_CONTENT_UNITS = 1240;
+const FIRST_PAGE_SURVEY_CONTENT_UNITS = 700;
+const DETAIL_PAGE_SURVEY_CONTENT_UNITS = 1180;
 const ROUTINE_CARD_BASE_UNITS = 108;
 const ROUTINE_ROW_BASE_UNITS = 48;
 const SECTION_CARD_BASE_UNITS = 112;
 const SECTION_GROUP_BASE_UNITS = 34;
-const SECTION_ROW_BASE_UNITS = 74;
+const SECTION_ROW_BASE_UNITS = 90;
 const SUPPLEMENT_CARD_BASE_UNITS = 122;
 const SUPPLEMENT_ROW_BASE_UNITS = 72;
+const ROUTINE_ROW_CHUNK_MAX_CHARS = 110;
+const SECTION_RECOMMENDATION_CHUNK_MAX_CHARS = 130;
+const SUPPLEMENT_PARAGRAPH_CHUNK_MAX_CHARS = 150;
+const SUPPLEMENT_PARAGRAPHS_PER_ROW = 1;
+const SUPPLEMENT_NUTRIENTS_PER_ROW = 6;
+const SUPPLEMENT_ROW_SAFETY_UNITS = 30;
 
 const LIFESTYLE_RISK_LABEL_BY_ID: Record<string, string> = {
   diet: "식습관 위험도",
@@ -119,6 +125,60 @@ function estimateWrappedTextUnits(
   return estimateTextUnits(text, charsPerLine) * lineHeightUnits;
 }
 
+function splitLongTextForPagination(text: string, maxCharsPerChunk: number) {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  if (!normalized) return [] as string[];
+  if (normalized.length <= maxCharsPerChunk) return [normalized];
+
+  const sentenceParts = (normalized.match(/[^.!?]+[.!?]?/g) ?? [])
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  const parts = sentenceParts.length > 0 ? sentenceParts : [normalized];
+  const chunks: string[] = [];
+  let buffer = "";
+
+  const flushBuffer = () => {
+    const value = buffer.trim();
+    if (value) chunks.push(value);
+    buffer = "";
+  };
+
+  for (const part of parts) {
+    if (part.length > maxCharsPerChunk) {
+      flushBuffer();
+      let cursor = part;
+      while (cursor.length > maxCharsPerChunk) {
+        let cut = cursor.lastIndexOf(" ", maxCharsPerChunk);
+        if (cut < Math.floor(maxCharsPerChunk * 0.55)) {
+          cut = cursor.lastIndexOf(",", maxCharsPerChunk);
+        }
+        if (cut < Math.floor(maxCharsPerChunk * 0.45)) {
+          cut = maxCharsPerChunk;
+        }
+        const head = cursor.slice(0, cut).trim();
+        if (head) chunks.push(head);
+        cursor = cursor.slice(cut).trim();
+      }
+      if (cursor) {
+        buffer = cursor;
+      }
+      continue;
+    }
+
+    const candidate = buffer ? `${buffer} ${part}` : part;
+    if (candidate.length > maxCharsPerChunk && buffer) {
+      flushBuffer();
+      buffer = part;
+      continue;
+    }
+    buffer = candidate;
+  }
+
+  flushBuffer();
+  return chunks.length > 0 ? chunks : [normalized];
+}
+
 function normalizeSectionGroupKey(value: string) {
   return value.trim().replace(/\s+/g, "").toLowerCase();
 }
@@ -152,27 +212,38 @@ function resolveSectionGroupKey(line: SectionAdviceLine) {
 function estimateRoutineRowUnits(line: string) {
   return (
     ROUTINE_ROW_BASE_UNITS +
-    estimateWrappedTextUnits(line, 36, 19)
+    estimateWrappedTextUnits(line, 32, 20)
   );
 }
 
 function estimateSectionAdviceRowUnits(line: SectionAdviceLine) {
+  const recommendationWeightMultiplier = line.continuation ? 1.2 : 1;
   return (
     SECTION_ROW_BASE_UNITS +
-    estimateWrappedTextUnits(line.questionText, 34, 18) +
-    estimateWrappedTextUnits(line.answerText, 34, 16) +
-    estimateWrappedTextUnits(line.recommendation, 36, 19)
+    estimateWrappedTextUnits(line.questionText, 30, 19) +
+    estimateWrappedTextUnits(line.answerText, 30, 17) +
+    estimateWrappedTextUnits(line.recommendation, 30, 20) * recommendationWeightMultiplier
   );
 }
 
 function estimateSupplementRowUnits(row: SupplementRow) {
+  const headingUnits = row.showSectionTitle ? 48 : 34;
+  const continuationUnits = row.continuation ? 20 : 0;
   const paragraphUnits = row.paragraphs.reduce((sum, paragraph) => {
-    return sum + estimateWrappedTextUnits(paragraph, 42, 18);
+    return sum + estimateWrappedTextUnits(paragraph, 30, 21);
   }, 0);
   const nutrientCount = row.recommendedNutrients.length;
-  const nutrientRows = nutrientCount > 0 ? Math.ceil(nutrientCount / 3) : 0;
-  const nutrientUnits = nutrientCount > 0 ? 26 + nutrientRows * 18 : 0;
-  return SUPPLEMENT_ROW_BASE_UNITS + paragraphUnits + nutrientUnits;
+  const nutrientRows =
+    nutrientCount > 0 ? Math.ceil(nutrientCount / SUPPLEMENT_NUTRIENTS_PER_ROW) : 0;
+  const nutrientUnits = nutrientCount > 0 ? 62 + nutrientRows * 24 : 0;
+  return (
+    SUPPLEMENT_ROW_BASE_UNITS +
+    headingUnits +
+    continuationUnits +
+    paragraphUnits +
+    nutrientUnits +
+    SUPPLEMENT_ROW_SAFETY_UNITS
+  );
 }
 
 function createEmptySurveyDetailPage(): SurveyDetailPageModel {
@@ -181,6 +252,80 @@ function createEmptySurveyDetailPage(): SurveyDetailPageModel {
     sectionAdviceRows: [],
     supplementRows: [],
   };
+}
+
+function normalizeContinuationTitle(title: string) {
+  const trimmed = title.trim();
+  if (!trimmed) return trimmed;
+  return trimmed.replace(/\(\s*\uACC4\uC18D\s*\)$/u, "").trim();
+}
+
+function chunkArray<T>(items: T[], size: number) {
+  const safeSize = Math.max(1, Math.floor(size));
+  const chunks: T[][] = [];
+  for (let index = 0; index < items.length; index += safeSize) {
+    chunks.push(items.slice(index, index + safeSize));
+  }
+  return chunks;
+}
+
+function expandRoutineLinesForPagination(lines: string[]) {
+  return lines.flatMap((line) =>
+    splitLongTextForPagination(line, ROUTINE_ROW_CHUNK_MAX_CHARS)
+  );
+}
+
+function expandSectionAdviceLinesForPagination(lines: SectionAdviceLine[]) {
+  return lines.flatMap((line) => {
+    const recommendationChunks = splitLongTextForPagination(
+      line.recommendation,
+      SECTION_RECOMMENDATION_CHUNK_MAX_CHARS
+    );
+    if (recommendationChunks.length <= 1) return [line];
+
+    return recommendationChunks.map((chunk, chunkIndex) => ({
+      ...line,
+      key: `${line.key}::chunk-${chunkIndex}`,
+      questionText: chunkIndex === 0 ? line.questionText : "",
+      answerText: chunkIndex === 0 ? line.answerText : "",
+      recommendation: chunk,
+      continuation: chunkIndex > 0,
+    }));
+  });
+}
+
+function expandSupplementRowsForPagination(rows: SupplementRow[]) {
+  return rows.flatMap((row) => {
+    const paragraphChunks = row.paragraphs.flatMap((paragraph) =>
+      splitLongTextForPagination(paragraph, SUPPLEMENT_PARAGRAPH_CHUNK_MAX_CHARS)
+    );
+    const groupedParagraphs =
+      paragraphChunks.length > 0 ? chunkArray(paragraphChunks, SUPPLEMENT_PARAGRAPHS_PER_ROW) : [[]];
+    const groupedNutrients =
+      row.recommendedNutrients.length > 0
+        ? chunkArray(row.recommendedNutrients, SUPPLEMENT_NUTRIENTS_PER_ROW)
+        : [[]];
+    const groupCount = Math.max(groupedParagraphs.length, groupedNutrients.length);
+
+    return Array.from({ length: groupCount }, (_, groupIndex) => {
+      const isContinuation = groupIndex > 0;
+      return {
+        ...row,
+        title: isContinuation
+          ? normalizeContinuationTitle(row.title || row.sectionTitle)
+          : row.title,
+        showSectionTitle: isContinuation ? false : row.showSectionTitle,
+        paragraphs: groupedParagraphs[groupIndex] ?? [],
+        recommendedNutrients: groupedNutrients[groupIndex] ?? [],
+        continuation: isContinuation,
+      };
+    }).filter(
+      (fragment, fragmentIndex) =>
+        fragmentIndex === 0 ||
+        fragment.paragraphs.length > 0 ||
+        fragment.recommendedNutrients.length > 0
+    );
+  });
 }
 
 function pageHasTypeRows(page: SurveyDetailPageModel, type: "routine" | "section" | "supplement") {
@@ -211,10 +356,14 @@ function buildSurveyDetailPages(input: {
   sectionAdviceLines: SectionAdviceLine[];
   supplementRows: SupplementRow[];
 }) {
+  const routineLines = expandRoutineLinesForPagination(input.routineLines);
+  const sectionAdviceLines = expandSectionAdviceLinesForPagination(input.sectionAdviceLines);
+  const supplementRows = expandSupplementRowsForPagination(input.supplementRows);
+
   if (
-    input.routineLines.length === 0 &&
-    input.sectionAdviceLines.length === 0 &&
-    input.supplementRows.length === 0
+    routineLines.length === 0 &&
+    sectionAdviceLines.length === 0 &&
+    supplementRows.length === 0
   ) {
     return [] as SurveyDetailPageModel[];
   }
@@ -227,19 +376,19 @@ function buildSurveyDetailPages(input: {
   }> = [
     {
       type: "routine",
-      items: input.routineLines,
+      items: routineLines,
       estimate: (item) => estimateRoutineRowUnits(item as string),
       baseUnits: ROUTINE_CARD_BASE_UNITS,
     },
     {
       type: "section",
-      items: input.sectionAdviceLines,
+      items: sectionAdviceLines,
       estimate: (item) => estimateSectionAdviceRowUnits(item as SectionAdviceLine),
       baseUnits: SECTION_CARD_BASE_UNITS,
     },
     {
       type: "supplement",
-      items: input.supplementRows,
+      items: supplementRows,
       estimate: (item) => estimateSupplementRowUnits(item as SupplementRow),
       baseUnits: SUPPLEMENT_CARD_BASE_UNITS,
     },
@@ -430,35 +579,32 @@ export default function ReportSummaryCards(props: {
   const sectionNeedsForPage1 = sectionNeeds.slice(0, MAX_PAGE1_SECTION_BARS);
   const hiddenSectionNeedCount = Math.max(0, sectionNeeds.length - sectionNeedsForPage1.length);
 
-  const detailedSectionAdviceLines = hasWellnessScoringData
-    ? buildDetailedSectionAdviceLines(payload, Number.POSITIVE_INFINITY)
-    : [];
-  const lifestyleRoutineAdviceLines = hasWellnessScoringData
-    ? ensureArray(wellness?.lifestyleRoutineAdvice)
-        .map((item) => ensureSentence(toTrimmedText(item)))
-        .filter(Boolean)
-    : [];
-  const supplementDesignRows = hasWellnessScoringData
-    ? ensureArray(wellness?.supplementDesign).map((item) => {
-        const sectionId = firstOrDash(item?.sectionId);
-        const sectionTitle = sectionTitleById.get(sectionId) || sanitizeTitle(sectionId);
-        const title = sanitizeTitle(firstOrDash(item?.title));
-        const showSectionTitle =
-          normalizeSupplementHeadingText(sectionTitle) !== normalizeSupplementHeadingText(title);
-        return {
-          sectionId,
-          sectionTitle,
-          title,
-          showSectionTitle,
-          paragraphs: ensureArray(item?.paragraphs)
-            .map((paragraph) => ensureSentence(toTrimmedText(paragraph)))
-            .filter(Boolean),
-          recommendedNutrients: ensureArray(item?.recommendedNutrients)
-            .map((nutrient) => sanitizeTitle(firstOrDash(nutrient?.labelKo || nutrient?.label)))
-            .filter(Boolean),
-        };
-      })
-    : [];
+  const detailedSectionAdviceLines = buildDetailedSectionAdviceLines(
+    payload,
+    Number.POSITIVE_INFINITY
+  );
+  const lifestyleRoutineAdviceLines = ensureArray(wellness?.lifestyleRoutineAdvice)
+    .map((item) => ensureSentence(toTrimmedText(item)))
+    .filter(Boolean);
+  const supplementDesignRows = ensureArray(wellness?.supplementDesign).map((item) => {
+    const sectionId = firstOrDash(item?.sectionId);
+    const sectionTitle = sectionTitleById.get(sectionId) || sanitizeTitle(sectionId);
+    const title = sanitizeTitle(firstOrDash(item?.title));
+    const showSectionTitle =
+      normalizeSupplementHeadingText(sectionTitle) !== normalizeSupplementHeadingText(title);
+    return {
+      sectionId,
+      sectionTitle,
+      title,
+      showSectionTitle,
+      paragraphs: ensureArray(item?.paragraphs)
+        .map((paragraph) => ensureSentence(toTrimmedText(paragraph)))
+        .filter(Boolean),
+      recommendedNutrients: ensureArray(item?.recommendedNutrients)
+        .map((nutrient) => sanitizeTitle(firstOrDash(nutrient?.labelKo || nutrient?.label)))
+        .filter(Boolean),
+    };
+  });
 
   const surveyPages = buildSurveyDetailPages({
     routineLines: lifestyleRoutineAdviceLines,

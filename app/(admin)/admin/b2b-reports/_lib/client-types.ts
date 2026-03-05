@@ -116,6 +116,8 @@ export type ReportAudit = {
     issues?: LayoutValidationIssue[];
     runtimeIssueCount?: number;
     staticIssueCount?: number;
+    mergedIssueCount?: number;
+    dedupedIssueCount?: number;
   }>;
 };
 
