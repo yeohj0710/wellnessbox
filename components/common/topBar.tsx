@@ -24,6 +24,7 @@ import {
 
 const GLOBAL_CART_OPEN_KEY = "wbGlobalCartOpen";
 const SEVEN_DAY_HREF = "/?package=7#home-products";
+const CLOSE_TOPBAR_DRAWER_EVENT = "wb:topbar-close-drawer";
 
 export default function TopBar() {
   return (
@@ -66,6 +67,14 @@ function TopBarInner() {
   useEffect(() => {
     setIsDrawerOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    const onCloseDrawerByEvent = () => setIsDrawerOpen(false);
+    window.addEventListener(CLOSE_TOPBAR_DRAWER_EVENT, onCloseDrawerByEvent);
+    return () => {
+      window.removeEventListener(CLOSE_TOPBAR_DRAWER_EVENT, onCloseDrawerByEvent);
+    };
+  }, []);
 
   const closeCartOverlay = useCallback(() => {
     if (typeof window === "undefined") return;

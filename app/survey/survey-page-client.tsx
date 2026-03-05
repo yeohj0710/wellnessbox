@@ -121,6 +121,7 @@ const TEXT = {
   sectionTransitionTitle: "\uC120\uD0DD\uD55C \uBD84\uC57C \uBB38\uD56D\uC744 \uBD88\uB7EC\uC624\uB294 \uC911\uC785\uB2C8\uB2E4.",
   sectionTransitionDesc: "\uC7A0\uC2DC\uB9CC \uAE30\uB2E4\uB824 \uC8FC\uC138\uC694.",
   resultCheck: "\uACB0\uACFC \uD655\uC778",
+  submitSurvey: "\uC124\uBB38 \uC81C\uCD9C",
   editSurvey: "\uC124\uBB38 \uB2F5\uC548 \uC218\uC815",
   resultTitle: "\uC124\uBB38 \uACB0\uACFC",
   viewEmployeeReport: "\uB0B4 \uAC74\uAC15 \uB808\uD3EC\uD2B8 \uBCF4\uAE30",
@@ -1060,6 +1061,20 @@ export default function SurveyPageClient() {
     if (phase !== "result") return;
     void refreshLoginStatus();
   }, [hydrated, phase, refreshLoginStatus]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (phase !== "result") return;
+    if (isAdminLoggedIn) return;
+    if (typeof window === "undefined") return;
+
+    window.dispatchEvent(new Event("wb:topbar-close-drawer"));
+    window.dispatchEvent(new Event("wb:close-command-palette"));
+    window.dispatchEvent(new Event("wb:chat-close-dock"));
+    window.dispatchEvent(new Event("closeCart"));
+    sessionStorage.removeItem("wbGlobalCartOpen");
+    localStorage.removeItem("openCart");
+  }, [hydrated, isAdminLoggedIn, phase]);
 
   useEffect(() => {
     if (surveySections.length === 0) {
@@ -2459,7 +2474,9 @@ export default function SurveyPageClient() {
     isCommonSurveySection && atLastSection && hasLiveDetailedSectionSelection;
   const nextButtonLabel =
     atLastSection && !shouldShowNextSectionLabelAtCommon
-      ? TEXT.resultCheck
+      ? isAdminLoggedIn
+        ? TEXT.resultCheck
+        : TEXT.submitSurvey
       : TEXT.nextSection;
   const progressMessage = resolveProgressMessage(progressPercent);
   const resolveQuestionHelpText = (question: WellnessSurveyQuestionForTemplate) => {

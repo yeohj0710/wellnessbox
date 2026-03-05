@@ -18,6 +18,7 @@ type PaletteAction = {
 };
 
 const OPEN_COMMAND_PALETTE_EVENT = "wb:open-command-palette";
+const CLOSE_COMMAND_PALETTE_EVENT = "wb:close-command-palette";
 
 function normalizeText(value: string) {
   return value.trim().toLowerCase();
@@ -164,11 +165,14 @@ export default function CommandPalette() {
 
   useEffect(() => {
     const onOpenFromEvent = () => openPalette();
+    const onCloseFromEvent = () => closePalette();
     window.addEventListener(OPEN_COMMAND_PALETTE_EVENT, onOpenFromEvent);
+    window.addEventListener(CLOSE_COMMAND_PALETTE_EVENT, onCloseFromEvent);
     return () => {
       window.removeEventListener(OPEN_COMMAND_PALETTE_EVENT, onOpenFromEvent);
+      window.removeEventListener(CLOSE_COMMAND_PALETTE_EVENT, onCloseFromEvent);
     };
-  }, [openPalette]);
+  }, [closePalette, openPalette]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -310,4 +314,3 @@ export default function CommandPalette() {
     </div>
   );
 }
-
