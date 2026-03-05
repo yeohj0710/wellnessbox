@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   buildPublicSurveyQuestionList,
   buildWellnessAnalysisInputFromSurvey,
@@ -37,11 +38,16 @@ import {
   saveStoredIdentity,
 } from "@/app/(features)/employee-report/_lib/client-utils";
 import { emitAuthSyncEvent, subscribeAuthSyncEvent } from "@/lib/client/auth-sync";
+import SurveyCalculatingPanel from "./_components/SurveyCalculatingPanel";
+import SurveyIntroPanel from "./_components/SurveyIntroPanel";
+import SurveyResultPanel from "./_components/SurveyResultPanel";
+import SurveySectionPanel from "./_components/SurveySectionPanel";
 
 const STORAGE_KEY = "b2b-public-survey-state.v4";
 const BLOCK_SURVEY_START_TEMPORARILY = false;
 
 const TEXT = {
+  introBadge: "웰니스 리포트 사전 설문",
   introTitle: "\uC6F0\uB2C8\uC2A4\uBC15\uC2A4 \uC628\uB77C\uC778 \uAC74\uAC15 \uC124\uBB38",
   introDesc1:
     "\uD604\uC7AC \uAC74\uAC15 \uC0C1\uD0DC\uC640 \uC0DD\uD65C \uC2B5\uAD00\uC744 \uAC04\uD3B8\uD558\uAC8C \uD655\uC778\uD574 \uBCF4\uC138\uC694.",
@@ -66,6 +72,7 @@ const TEXT = {
   startSurvey: "\uC124\uBB38 \uC2DC\uC791\uD558\uAE30",
   needAuthNotice:
     "\uBCF8\uC778\uC778\uC99D \uC644\uB8CC \uD6C4 \uC124\uBB38\uC744 \uC2DC\uC791\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.",
+  completedRestartHint: "완료된 설문 이력이 있어도 다시 시작하면 문항 선택값이 초기화되고 처음부터 진행됩니다.",
   busyRequest: "\uC694\uCCAD \uC911...",
   busyChecking: "\uD655\uC778 \uC911...",
   errorInvalidIdentity:
@@ -114,6 +121,7 @@ const TEXT = {
   resultCheck: "\uACB0\uACFC \uD655\uC778",
   editSurvey: "\uC124\uBB38 \uB2F5\uC548 \uC218\uC815",
   resultTitle: "\uC124\uBB38 \uACB0\uACFC",
+  viewEmployeeReport: "\uB0B4 \uAC74\uAC15 \uB808\uD3EC\uD2B8 \uBCF4\uAE30",
   scoreHealth: "\uAC74\uAC15\uC810\uC218",
   scoreRisk: "\uC0DD\uD65C\uC2B5\uAD00 \uC704\uD5D8\uB3C4",
   scoreNeed: "\uAC74\uAC15\uAD00\uB9AC \uD544\uC694\uB3C4 \uD3C9\uADE0",
@@ -125,37 +133,6 @@ const CALCULATING_MESSAGES = [
   "\uAC74\uAC15\uAD00\uB9AC \uD544\uC694\uB3C4\uB97C \uACC4\uC0B0\uD558\uACE0 \uC788\uC2B5\uB2C8\uB2E4.",
   "\uACB0\uACFC\uB97C \uC900\uBE44\uD558\uACE0 \uC788\uC2B5\uB2C8\uB2E4.",
 ];
-
-const SURVEY_RESULT_DONUT_RADIUS = 44;
-const SURVEY_RESULT_DONUT_CIRCUMFERENCE = 2 * Math.PI * SURVEY_RESULT_DONUT_RADIUS;
-const SURVEY_RESULT_RADAR_SIZE = 192;
-const SURVEY_RESULT_RADAR_CENTER = SURVEY_RESULT_RADAR_SIZE / 2;
-const SURVEY_RESULT_RADAR_RADIUS = 62;
-
-function clampResultPercent(value: number) {
-  if (!Number.isFinite(value)) return 0;
-  if (value < 0) return 0;
-  if (value > 100) return 100;
-  return value;
-}
-
-function getResultRadarPoint(index: number, total: number, scale: number) {
-  const angle = -Math.PI / 2 + (Math.PI * 2 * index) / Math.max(1, total);
-  return {
-    x: SURVEY_RESULT_RADAR_CENTER + SURVEY_RESULT_RADAR_RADIUS * scale * Math.cos(angle),
-    y: SURVEY_RESULT_RADAR_CENTER + SURVEY_RESULT_RADAR_RADIUS * scale * Math.sin(angle),
-  };
-}
-
-function getResultRadarPolygonPoints(values: number[], denominator = 100) {
-  const total = Math.max(1, values.length);
-  return values
-    .map((value, index) => {
-      const point = getResultRadarPoint(index, total, clampResultPercent(value) / denominator);
-      return `${point.x.toFixed(2)},${point.y.toFixed(2)}`;
-    })
-    .join(" ");
-}
 
 type SurveyPhase = "intro" | "survey" | "calculating" | "result";
 type PersistedSurveyPhase = Exclude<SurveyPhase, "calculating">;
@@ -871,6 +848,7 @@ function mergeAutoDerivedBmiAnswers(
 }
 
 export default function SurveyPageClient() {
+  const router = useRouter();
   const template = useMemo(() => loadWellnessTemplateForB2b(), []);
   const c27Key = template.rules.selectSectionByCommonQuestionKey || "C27";
   const maxSelectedSections = Math.max(1, template.rules.maxSelectedSections || 5);
@@ -918,6 +896,11 @@ export default function SurveyPageClient() {
   const calcTimeoutRef = useRef<number | null>(null);
   const saveDraftTimerRef = useRef<number | null>(null);
   const lastVisitedSectionIndexRef = useRef(0);
+
+  const handleOpenEmployeeReport = useCallback(() => {
+    const query = surveyPeriodKey ? `?period=${encodeURIComponent(surveyPeriodKey)}` : "";
+    router.push(`/employee-report${query}`);
+  }, [router, surveyPeriodKey]);
 
   const pruneAnswersByVisibility = useCallback(
     (inputAnswers: PublicSurveyAnswers, selectedSections: string[]) => {
@@ -2453,6 +2436,11 @@ export default function SurveyPageClient() {
       ? TEXT.resultCheck
       : TEXT.nextSection;
   const progressMessage = resolveProgressMessage(progressPercent);
+  const resolveQuestionHelpText = (question: WellnessSurveyQuestionForTemplate) => {
+    const rawHelpText = question.helpText?.trim() ?? "";
+    if (!rawHelpText) return "";
+    return isOptionalHintLikeText(rawHelpText) ? "" : rawHelpText;
+  };
 
   return (
     <div
@@ -2476,705 +2464,137 @@ export default function SurveyPageClient() {
       />
       <div className="relative z-10 mx-auto w-full max-w-full px-4 overflow-visible sm:max-w-[640px] lg:max-w-[760px]">
         {phase === "intro" ? (
-          <div className="mx-auto max-w-[860px] rounded-[30px] border border-sky-200/70 bg-white/92 p-6 shadow-[0_26px_58px_-34px_rgba(15,23,42,0.45)] backdrop-blur sm:p-8">
-            <span className="inline-flex rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700">
-              웰니스 리포트 사전 설문
-            </span>
-            <h1 className="mt-3 text-xl font-extrabold text-slate-900 sm:text-2xl">{TEXT.introTitle}</h1>
-            <p className="mt-3 text-sm leading-relaxed text-slate-600 sm:text-base">{TEXT.introDesc1}</p>
-            <p className="mt-1 text-sm leading-relaxed text-slate-600 sm:text-base">{TEXT.introDesc2}</p>
-
-            <section className="mt-7 rounded-3xl border border-cyan-200/70 bg-[linear-gradient(140deg,rgba(236,253,255,0.95),rgba(239,246,255,0.92))] p-4 sm:p-6">
-              <h2 className="text-lg font-bold text-slate-900">{TEXT.preAuthTitle}</h2>
-              <p className="mt-1 text-sm text-slate-600">{TEXT.preAuthDesc}</p>
-              {authInitializing ? (
-                <div
-                  data-testid="survey-auth-loading"
-                  className="mt-4 rounded-xl border border-slate-200 bg-white/80 p-4"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="inline-block h-2.5 w-2.5 rounded-full bg-sky-500 animate-pulse" />
-                    <p className="text-sm font-semibold text-slate-700">{TEXT.authCheckingTitle}</p>
-                  </div>
-                  <p className="mt-1 text-xs text-slate-500">{TEXT.authCheckingDesc}</p>
-                  <div className="mt-3 space-y-2">
-                    <div className="h-[10px] w-[42%] animate-pulse rounded-full bg-slate-200/85" />
-                    <div className="h-[10px] w-[58%] animate-pulse rounded-full bg-slate-200/75" />
-                  </div>
-                  <div className="mt-4 grid gap-2 sm:grid-cols-3">
-                    <div className="h-[44px] animate-pulse rounded-xl bg-slate-200/80" />
-                    <div className="h-[44px] animate-pulse rounded-xl bg-slate-200/80" />
-                    <div className="h-[44px] animate-pulse rounded-xl bg-slate-200/80" />
-                  </div>
-                  <div className="mt-3 h-[40px] w-[170px] animate-pulse rounded-full bg-slate-200/80" />
-                </div>
-              ) : (
-                <>
-                  <div className="mt-4 grid gap-2 sm:grid-cols-3">
-                    <input
-                      type="text"
-                      autoComplete="name"
-                      value={identity.name}
-                      disabled={!identityEditable || authBusy !== "idle"}
-                      onChange={(event) =>
-                        setIdentity((prev) => ({
-                          ...prev,
-                          name: event.target.value,
-                        }))
-                      }
-                      placeholder={TEXT.namePlaceholder}
-                      className="rounded-2xl border border-slate-300/85 bg-white px-3.5 py-2.5 text-sm shadow-sm outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
-                    />
-                    <input
-                      type="text"
-                      autoComplete="bday"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      maxLength={8}
-                      value={identity.birthDate}
-                      disabled={!identityEditable || authBusy !== "idle"}
-                      onChange={(event) =>
-                        setIdentity((prev) => ({
-                          ...prev,
-                          birthDate: normalizeDigits(event.target.value).slice(0, 8),
-                        }))
-                      }
-                      placeholder={TEXT.birthPlaceholder}
-                      className="rounded-2xl border border-slate-300/85 bg-white px-3.5 py-2.5 text-sm shadow-sm outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
-                    />
-                    <input
-                      type="text"
-                      autoComplete="tel"
-                      inputMode="tel"
-                      pattern="[0-9]*"
-                      maxLength={11}
-                      value={identity.phone}
-                      disabled={!identityEditable || authBusy !== "idle"}
-                      onChange={(event) =>
-                        setIdentity((prev) => ({
-                          ...prev,
-                          phone: normalizeDigits(event.target.value).slice(0, 11),
-                        }))
-                      }
-                      placeholder={TEXT.phonePlaceholder}
-                      className="rounded-2xl border border-slate-300/85 bg-white px-3.5 py-2.5 text-sm shadow-sm outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
-                    />
-                  </div>
-                  {identityLocked ? (
-                    <p className="mt-3 rounded-lg border border-slate-200 bg-white/80 px-3 py-2 text-xs text-slate-600">
-                      {TEXT.authLockedHint}
-                    </p>
-                  ) : null}
-
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    {identityLocked ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
-                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                        {TEXT.authDone}
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={authBusy !== "idle" || !identityEditable || authVerified}
-                        onClick={() => void handleStartKakaoAuth()}
-                        className="rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-105 hover:shadow-md active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {authBusy === "init" || authBusy === "sync"
-                          ? TEXT.busyRequest
-                          : authPendingSign
-                          ? TEXT.resendAuth
-                          : TEXT.sendAuth}
-                      </button>
-                    )}
-                    {authPendingSign && !authVerified ? (
-                      <button
-                        type="button"
-                        disabled={authBusy !== "idle" || !identityEditable}
-                        onClick={() => void handleConfirmKakaoAuth()}
-                        className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {authBusy === "sign" ? TEXT.busyChecking : TEXT.checkAuth}
-                      </button>
-                    ) : null}
-                    {identityLocked ? (
-                      <button
-                        type="button"
-                        disabled={authBusy !== "idle"}
-                        onClick={() => void handleSwitchIdentity()}
-                        className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {TEXT.switchIdentity}
-                      </button>
-                    ) : null}
-                  </div>
-                </>
-              )}
-            </section>
-
-            {authNoticeText && !identityLocked ? (
-              <p className="mt-4 rounded-xl border border-sky-100 bg-sky-50 px-3 py-2 text-sm text-sky-700">
-                {authNoticeText}
-              </p>
-            ) : null}
-            {authErrorText ? (
-              <p className="mt-3 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-                {authErrorText}
-              </p>
-            ) : null}
-
-            <div className="mt-7 flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={handleStartSurvey}
-                disabled={!authVerified || authBusy !== "idle" || authInitializing}
-                data-testid="survey-start-button"
-                className="rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-105 hover:shadow-md active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {TEXT.startSurvey}
-              </button>
-              {authInitializing || !authVerified ? (
-                <span
-                  className={`text-sm font-medium ${
-                    authInitializing ? "text-cyan-700" : "text-slate-500"
-                  }`}
-                >
-                  {authInitializing ? TEXT.authCheckingTitle : TEXT.needAuthNotice}
-                </span>
-              ) : null}
-            </div>
-            {hasCompletedSubmission ? (
-              <p className="mt-3 rounded-2xl border border-cyan-100 bg-cyan-50 px-3 py-2 text-xs text-cyan-700 sm:text-sm">
-                완료된 설문 이력이 있어도 다시 시작하면 문항 선택값은 초기화되고 처음부터 진행됩니다.
-              </p>
-            ) : null}
-          </div>
+          <SurveyIntroPanel
+            text={{
+              introBadge: TEXT.introBadge,
+              introTitle: TEXT.introTitle,
+              introDesc1: TEXT.introDesc1,
+              introDesc2: TEXT.introDesc2,
+              preAuthTitle: TEXT.preAuthTitle,
+              preAuthDesc: TEXT.preAuthDesc,
+              namePlaceholder: TEXT.namePlaceholder,
+              birthPlaceholder: TEXT.birthPlaceholder,
+              phonePlaceholder: TEXT.phonePlaceholder,
+              sendAuth: TEXT.sendAuth,
+              resendAuth: TEXT.resendAuth,
+              checkAuth: TEXT.checkAuth,
+              authDone: TEXT.authDone,
+              authCheckingTitle: TEXT.authCheckingTitle,
+              authCheckingDesc: TEXT.authCheckingDesc,
+              authLockedHint: TEXT.authLockedHint,
+              switchIdentity: TEXT.switchIdentity,
+              startSurvey: TEXT.startSurvey,
+              needAuthNotice: TEXT.needAuthNotice,
+              busyRequest: TEXT.busyRequest,
+              busyChecking: TEXT.busyChecking,
+              completedRestartHint: TEXT.completedRestartHint,
+            }}
+            identity={identity}
+            identityEditable={identityEditable}
+            identityLocked={identityLocked}
+            authBusy={authBusy}
+            authPendingSign={authPendingSign}
+            authVerified={authVerified}
+            authInitializing={authInitializing}
+            authNoticeText={authNoticeText}
+            authErrorText={authErrorText}
+            hasCompletedSubmission={hasCompletedSubmission}
+            startDisabled={!authVerified || authBusy !== "idle" || authInitializing}
+            onNameChange={(value) =>
+              setIdentity((prev) => ({
+                ...prev,
+                name: value,
+              }))
+            }
+            onBirthDateChange={(value) =>
+              setIdentity((prev) => ({
+                ...prev,
+                birthDate: normalizeDigits(value).slice(0, 8),
+              }))
+            }
+            onPhoneChange={(value) =>
+              setIdentity((prev) => ({
+                ...prev,
+                phone: normalizeDigits(value).slice(0, 11),
+              }))
+            }
+            onStartKakaoAuth={() => void handleStartKakaoAuth()}
+            onConfirmKakaoAuth={() => void handleConfirmKakaoAuth()}
+            onSwitchIdentity={() => void handleSwitchIdentity()}
+            onStartSurvey={handleStartSurvey}
+          />
         ) : null}
 
         {phase === "survey" ? (
-          <div className="overflow-visible rounded-[30px] border border-sky-200/70 bg-white/90 p-4 shadow-[0_24px_58px_-36px_rgba(15,23,42,0.48)] backdrop-blur sm:p-7">
-            <header className="grid gap-4 border-b border-slate-200/80 pb-5 sm:pb-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-              <div className="space-y-1.5">
-                <span className="inline-flex rounded-full border border-cyan-300 bg-cyan-50 px-2.5 py-1 text-xs font-semibold text-cyan-700">
-                  {currentSectionIndex + 1}. {currentSection?.title ?? TEXT.commonSection}
-                </span>
-                <p className="text-sm text-slate-600 sm:text-base">{TEXT.sectionGuide}</p>
-              </div>
-              <div className="space-y-3">
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={requestReset}
-                    data-testid="survey-header-reset-button"
-                    className="text-sm font-medium text-slate-500 underline decoration-slate-400 underline-offset-2 hover:text-cyan-700 hover:decoration-cyan-600"
-                  >
-                    {TEXT.restart}
-                  </button>
-                </div>
-                <div className="rounded-2xl border border-cyan-200/80 bg-white/85 px-3 py-3">
-                  <div className="mb-1.5 flex items-center justify-between text-sm text-slate-600">
-                    <span>{TEXT.progressBarLabel}</span>
-                    <span className="font-semibold text-cyan-700">{progressPercent}%</span>
-                  </div>
-                  <div className="h-2.5 w-full rounded-full bg-cyan-100">
-                    <div
-                      className="h-2.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-[width] duration-300"
-                      style={{ width: `${progressPercent}%` }}
-                    />
-                  </div>
-                  <p className="mt-2 text-xs text-cyan-700">{progressMessage}</p>
-                </div>
-              </div>
-            </header>
-
-            {surveySections.length > 1 ? (
-              <nav className="mt-5 flex flex-wrap gap-2.5">
-                {surveySections.map((section, index) => (
-                  <button
-                    key={section.key}
-                    type="button"
-                    disabled={isSectionTransitioning}
-                    onClick={() => moveToSection(index)}
-                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm ${
-                      index === currentSectionIndex
-                        ? "bg-cyan-600 text-white shadow-sm hover:bg-cyan-700"
-                        : "border border-slate-200 bg-white text-slate-600 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700"
-                    } ${isSectionTransitioning ? "cursor-wait opacity-70" : ""}`}
-                  >
-                    {section.title}
-                  </button>
-                ))}
-              </nav>
-            ) : null}
-
-            {isSectionTransitioning ? (
-              <div className="mt-4 rounded-2xl border border-cyan-200 bg-cyan-50/80 px-3 py-2.5 text-sm text-cyan-700">
-                <p className="font-semibold">{TEXT.sectionTransitionTitle}</p>
-                <p className="mt-0.5 text-xs text-cyan-700/80">{TEXT.sectionTransitionDesc}</p>
-              </div>
-            ) : null}
-
-            <section className="mt-6 space-y-3.5 overflow-visible max-h-none">
-              {currentSection?.questions.map((node, sectionQuestionIndex) => {
-                const question = node.question;
-                const questionText = toDisplayQuestionText(question);
-                const isFocused = focusedQuestionKey === question.key;
-                const questionNumber = sectionQuestionIndex + 1;
-                const shouldShowOptionalHint = isSkippableSelectionQuestion(question);
-                const isEffectivelyRequired = isQuestionEffectivelyRequired(question);
-                const rawHelpText = question.helpText?.trim() ?? "";
-                const helpTextIsOptionalHint = isOptionalHintLikeText(rawHelpText);
-                const resolvedHelpText =
-                  !helpTextIsOptionalHint && rawHelpText.length > 0 ? rawHelpText : "";
-                return (
-                  <article
-                    key={question.key}
-                    data-testid="survey-question"
-                    data-question-key={question.key}
-                    data-question-type={question.type}
-                    data-focused={isFocused ? "true" : "false"}
-                    ref={(nodeRef) => {
-                      questionRefs.current[question.key] = nodeRef;
-                    }}
-                    className={`rounded-3xl border bg-gradient-to-b from-white to-slate-50/60 p-4 transition sm:p-6 ${
-                      isFocused
-                        ? "border-cyan-300 shadow-[0_16px_36px_-24px_rgba(34,211,238,0.85)]"
-                        : "border-slate-200/90"
-                    }`}
-                  >
-                    <div className="mb-3 flex flex-wrap items-center gap-1.5">
-                      <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700">
-                        {node.sectionKey ? node.sectionTitle : TEXT.commonBadge}
-                      </span>
-                      <span
-                        className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                          isEffectivelyRequired
-                            ? "bg-rose-100 text-rose-700"
-                            : "border border-slate-200 bg-slate-50 text-slate-600"
-                        }`}
-                      >
-                        {isEffectivelyRequired ? TEXT.requiredBadge : TEXT.optionalBadge}
-                      </span>
-                    </div>
-                    <div className="w-full text-left">
-                      <h3 className="text-xl font-extrabold leading-tight text-slate-900 sm:text-2xl sm:leading-tight">
-                        {questionNumber}. {questionText || question.key}
-                      </h3>
-                    </div>
-                    {resolvedHelpText ? (
-                      <p className="mt-2 text-sm text-slate-500">{resolvedHelpText}</p>
-                    ) : null}
-                    {shouldShowOptionalHint ? (
-                      <p className="mt-2 text-xs text-slate-500">{TEXT.optionalHint}</p>
-                    ) : null}
-                    <div className="mt-4">{renderQuestionInput(question)}</div>
-                    {errorQuestionKey === question.key && errorText ? (
-                      <p className="mt-2 text-sm font-medium text-rose-600">{errorText}</p>
-                    ) : null}
-                  </article>
-                );
-              })}
-            </section>
-
-            <footer
-              className={`mt-7 flex items-center ${
-                isCommonSurveySection ? "justify-end" : "justify-between"
-              }`}
-            >
-              {!isCommonSurveySection ? (
-                <button
-                  type="button"
-                  onClick={handleMovePreviousSection}
-                  disabled={!hasPrevStep || isSectionTransitioning}
-                  data-testid="survey-prev-button"
-                  className="rounded-full border border-slate-300 px-4 py-2 text-sm text-slate-700 transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {prevButtonLabel}
-                </button>
-              ) : null}
-              <button
-                type="button"
-                onClick={handleMoveNextSection}
-                disabled={isSectionTransitioning}
-                data-testid="survey-next-button"
-                className="rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-105 hover:shadow-md active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {nextButtonLabel}
-              </button>
-            </footer>
-          </div>
+          <SurveySectionPanel
+            text={{
+              commonSection: TEXT.commonSection,
+              sectionGuide: TEXT.sectionGuide,
+              restart: TEXT.restart,
+              progressBarLabel: TEXT.progressBarLabel,
+              sectionTransitionTitle: TEXT.sectionTransitionTitle,
+              sectionTransitionDesc: TEXT.sectionTransitionDesc,
+              commonBadge: TEXT.commonBadge,
+              requiredBadge: TEXT.requiredBadge,
+              optionalBadge: TEXT.optionalBadge,
+              optionalHint: TEXT.optionalHint,
+            }}
+            currentSectionIndex={currentSectionIndex}
+            currentSection={currentSection}
+            surveySections={surveySections}
+            progressPercent={progressPercent}
+            progressMessage={progressMessage}
+            isSectionTransitioning={isSectionTransitioning}
+            isCommonSurveySection={isCommonSurveySection}
+            hasPrevStep={hasPrevStep}
+            prevButtonLabel={prevButtonLabel}
+            nextButtonLabel={nextButtonLabel}
+            focusedQuestionKey={focusedQuestionKey}
+            errorQuestionKey={errorQuestionKey}
+            errorText={errorText}
+            onReset={requestReset}
+            onMoveToSection={moveToSection}
+            onMovePreviousSection={handleMovePreviousSection}
+            onMoveNextSection={handleMoveNextSection}
+            onQuestionRef={(questionKey, nodeRef) => {
+              questionRefs.current[questionKey] = nodeRef;
+            }}
+            renderQuestionInput={renderQuestionInput}
+            resolveQuestionText={toDisplayQuestionText}
+            resolveQuestionHelpText={resolveQuestionHelpText}
+            isQuestionRequired={isQuestionEffectivelyRequired}
+            shouldShowQuestionOptionalHint={isSkippableSelectionQuestion}
+          />
         ) : null}
 
         {phase === "calculating" ? (
-          <div
-            data-testid="survey-calculating"
-            className="mx-auto max-w-2xl rounded-[30px] border border-cyan-200/70 bg-white/88 p-6 text-center shadow-[0_24px_50px_-32px_rgba(15,23,42,0.45)] backdrop-blur sm:p-8"
-          >
-            <p className="text-sm font-semibold text-cyan-700">{TEXT.resultTitle}</p>
-            <h2 className="mt-2 text-xl font-extrabold text-slate-900 sm:text-2xl">
-              {CALCULATING_MESSAGES[calcMessageIndex]}
-            </h2>
-            <div className="mx-auto mt-6 h-2 w-full max-w-xl rounded-full bg-cyan-100">
-              <div
-                className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-[width] duration-300"
-                style={{ width: `${calcPercent}%` }}
-              />
-            </div>
-            <p className="mt-3 text-sm text-slate-600">{calcPercent}%</p>
-          </div>
+          <SurveyCalculatingPanel
+            title={TEXT.resultTitle}
+            message={CALCULATING_MESSAGES[calcMessageIndex]}
+            percent={calcPercent}
+          />
         ) : null}
 
         {phase === "result" ? (
-          <div
-            data-testid="survey-result"
-            className="mx-auto max-w-[840px] rounded-[26px] border border-sky-100/70 bg-white/82 p-5 shadow-[0_16px_34px_-24px_rgba(15,23,42,0.38)] backdrop-blur sm:p-7"
-          >
-            <h2 className="text-xl font-extrabold text-slate-900 sm:text-2xl">{TEXT.resultTitle}</h2>
-            {resultSummary ? (
-              <div className="mt-5 space-y-5">
-                {(() => {
-                  const healthScore = clampResultPercent(
-                    Math.round(resultSummary.overallHealthScore)
-                  );
-                  const lifestyleOverall = clampResultPercent(
-                    Math.round(resultSummary.lifestyleRisk.overallPercent)
-                  );
-                  const healthNeedAverage = clampResultPercent(
-                    Math.round(resultSummary.healthManagementNeed.averagePercent)
-                  );
-                  const donutOffset =
-                    SURVEY_RESULT_DONUT_CIRCUMFERENCE * (1 - healthScore / 100);
-                  const radarDomainsRaw = resultSummary.lifestyleRisk.domains
-                    .map((axis) => ({
-                      id: axis.id,
-                      name: (axis.name ?? axis.id ?? "").trim(),
-                      percent: clampResultPercent(Math.round(axis.percent ?? 0)),
-                    }))
-                    .filter((axis) => axis.name.length > 0)
-                    .slice(0, 4);
-                  const radarDomains =
-                    radarDomainsRaw.length > 0
-                      ? radarDomainsRaw
-                      : [
-                          { id: "diet", name: "식습관", percent: 0 },
-                          { id: "immune", name: "면역관리", percent: 0 },
-                          { id: "sleep", name: "수면", percent: 0 },
-                          { id: "activity", name: "활동량", percent: 0 },
-                        ];
-                  const radarPolygon = getResultRadarPolygonPoints(
-                    radarDomains.map((axis) => axis.percent)
-                  );
-                  const sectionNeedRows = [...(resultSummary.healthManagementNeed.sections ?? [])]
-                    .map((section) => ({
-                      sectionId: section.sectionId,
-                      sectionTitle: (section.sectionTitle ?? section.sectionId ?? "").trim(),
-                      percent: clampResultPercent(Math.round(section.percent ?? 0)),
-                    }))
-                    .filter((section) => section.sectionTitle.length > 0)
-                    .sort((left, right) => right.percent - left.percent)
-                    .slice(0, 3);
-
-                  return (
-                    <div className="grid gap-3 sm:grid-cols-3">
-                      <article className="rounded-2xl border border-slate-200 bg-white p-4">
-                        <p className="text-sm font-semibold text-slate-900">{TEXT.scoreHealth}</p>
-                        <div className="mt-2 flex items-center gap-3">
-                          <div className="relative h-[112px] w-[112px] shrink-0">
-                            <svg
-                              viewBox="0 0 120 120"
-                              className="h-full w-full"
-                              role="img"
-                              aria-label="건강점수 원형 차트"
-                            >
-                              <circle
-                                cx="60"
-                                cy="60"
-                                r={SURVEY_RESULT_DONUT_RADIUS}
-                                fill="none"
-                                stroke="#E2E8F0"
-                                strokeWidth="10"
-                              />
-                              <circle
-                                cx="60"
-                                cy="60"
-                                r={SURVEY_RESULT_DONUT_RADIUS}
-                                fill="none"
-                                stroke="#16A34A"
-                                strokeWidth="10"
-                                strokeLinecap="round"
-                                strokeDasharray={SURVEY_RESULT_DONUT_CIRCUMFERENCE}
-                                strokeDashoffset={donutOffset}
-                                transform="rotate(-90 60 60)"
-                              />
-                            </svg>
-                            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                              <p className="text-3xl font-extrabold text-slate-900">
-                                {healthScore}
-                                <span className="ml-0.5 text-xl">점</span>
-                              </p>
-                            </div>
-                          </div>
-                          <p className="text-[11px] leading-relaxed text-slate-500">
-                            건강점수 = 100 - ((생활습관 위험도 + 건강관리 위험도 평균) / 2)
-                          </p>
-                        </div>
-                      </article>
-
-                      <article className="rounded-2xl border border-slate-200 bg-white p-4">
-                        <p className="text-sm font-semibold text-slate-900">{TEXT.scoreRisk}</p>
-                        <div className="mt-2">
-                          <svg
-                            viewBox={`0 0 ${SURVEY_RESULT_RADAR_SIZE} ${SURVEY_RESULT_RADAR_SIZE}`}
-                            className="mx-auto h-[146px] w-full max-w-[220px]"
-                            role="img"
-                            aria-label="생활습관 위험도 레이더 차트"
-                          >
-                            {[25, 50, 75, 100].map((level) => (
-                              <polygon
-                                key={`grid-${level}`}
-                                points={getResultRadarPolygonPoints(radarDomains.map(() => level))}
-                                fill="none"
-                                stroke="#CBD5E1"
-                                strokeWidth="1"
-                              />
-                            ))}
-                            {radarDomains.map((axis, index) => {
-                              const point = getResultRadarPoint(index, radarDomains.length, 1);
-                              return (
-                                <line
-                                  key={`axis-${axis.id}`}
-                                  x1={SURVEY_RESULT_RADAR_CENTER}
-                                  y1={SURVEY_RESULT_RADAR_CENTER}
-                                  x2={point.x}
-                                  y2={point.y}
-                                  stroke="#CBD5E1"
-                                  strokeWidth="1"
-                                />
-                              );
-                            })}
-                            <polygon
-                              points={radarPolygon}
-                              fill="rgba(59,130,246,0.22)"
-                              stroke="#2563EB"
-                              strokeWidth="2"
-                            />
-                            {radarDomains.map((axis, index) => {
-                              const point = getResultRadarPoint(
-                                index,
-                                radarDomains.length,
-                                axis.percent / 100
-                              );
-                              return <circle key={`point-${axis.id}`} cx={point.x} cy={point.y} r="3.2" fill="#2563EB" />;
-                            })}
-                            {radarDomains.map((axis, index) => {
-                              const point = getResultRadarPoint(index, radarDomains.length, 1.18);
-                              return (
-                                <text
-                                  key={`label-${axis.id}`}
-                                  x={point.x}
-                                  y={point.y}
-                                  textAnchor="middle"
-                                  fill="#1E3A8A"
-                                  fontSize="10"
-                                  fontWeight="600"
-                                >
-                                  {axis.name}
-                                </text>
-                              );
-                            })}
-                          </svg>
-                        </div>
-                        <p className="mt-2 text-xs text-slate-500">
-                          종합 위험도:{" "}
-                          <span className="font-semibold text-rose-600">{lifestyleOverall}점</span>
-                        </p>
-                      </article>
-
-                      <article className="rounded-2xl border border-slate-200 bg-white p-4">
-                        <p className="text-sm font-semibold text-slate-900">건강관리 위험도</p>
-                        {sectionNeedRows.length === 0 ? (
-                          <p className="mt-3 text-xs text-slate-500">선택한 세부 영역 데이터가 없습니다.</p>
-                        ) : (
-                          <ul className="mt-3 space-y-2.5">
-                            {sectionNeedRows.map((section) => (
-                              <li key={`need-${section.sectionId}`}>
-                                <div className="mb-1 flex items-center justify-between text-xs text-slate-600">
-                                  <span className="truncate pr-2">{section.sectionTitle}</span>
-                                  <span className="font-semibold text-rose-600">{section.percent}점</span>
-                                </div>
-                                <div className="h-2 w-full rounded-full bg-slate-200">
-                                  <div
-                                    className="h-2 rounded-full bg-gradient-to-r from-rose-500 to-orange-400"
-                                    style={{ width: `${section.percent}%` }}
-                                  />
-                                </div>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                        <p className="mt-3 text-xs text-slate-500">
-                          평균 위험도:{" "}
-                          <span className="font-semibold text-rose-600">{healthNeedAverage}점</span>
-                        </p>
-                      </article>
-                    </div>
-                  );
-                })()}
-
-                <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-                  <h3 className="text-lg font-bold text-slate-900">핵심 위험 하이라이트</h3>
-                  {resultSummary.highRiskHighlights.length > 0 ? (
-                    <ul className="mt-3 space-y-2 text-sm text-slate-700">
-                      {resultSummary.highRiskHighlights.map((item, index) => {
-                        const categoryLabel =
-                          item.category === "common"
-                            ? "공통"
-                            : item.category === "detailed"
-                            ? "상세"
-                            : item.category === "domain"
-                            ? "생활습관"
-                            : "영역";
-                        return (
-                          <li
-                            key={`risk-${item.category}-${item.title}-${index}`}
-                            className="rounded-xl border border-rose-100 bg-rose-50/60 px-3 py-2"
-                          >
-                            <p className="text-xs font-semibold text-rose-700">
-                              {categoryLabel} · 위험도 {Math.round(item.score)}점
-                            </p>
-                            <p className="mt-1 font-semibold text-slate-900">
-                              {item.questionText || item.title}
-                            </p>
-                            <p className="mt-1 text-sm text-slate-700">
-                              내 답변: {item.answerText || "응답 정보 없음"}
-                            </p>
-                            <p className="mt-1 text-slate-700">권장안: {item.action}</p>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  ) : (
-                    <p className="mt-2 text-sm text-slate-500">표시할 하이라이트가 없습니다.</p>
-                  )}
-                </section>
-
-                <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-                  <h3 className="text-lg font-bold text-slate-900">생활습관 실천 가이드</h3>
-                  {resultSummary.lifestyleRoutineAdvice.length > 0 ? (
-                    <ul className="mt-3 space-y-2 text-sm text-slate-700">
-                      {resultSummary.lifestyleRoutineAdvice.map((item, index) => (
-                        <li
-                          key={`routine-${index}`}
-                          className="rounded-xl border border-sky-100 bg-sky-50/60 px-3 py-2"
-                        >
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="mt-2 text-sm text-slate-500">추가 실천 가이드가 없습니다.</p>
-                  )}
-                </section>
-
-                <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-                  <h3 className="text-lg font-bold text-slate-900">영역별 분석 코멘트</h3>
-                  <div className="mt-3 space-y-3">
-                    {Object.entries(resultSummary.sectionAdvice)
-                      .filter(([, value]) => value.items.length > 0)
-                      .map(([sectionId, value]) => (
-                        <article
-                          key={`section-advice-${sectionId}`}
-                          className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3"
-                        >
-                          <h4 className="text-sm font-bold text-slate-900">{value.sectionTitle}</h4>
-                          <ul className="mt-2 space-y-1.5 text-sm text-slate-700">
-                            {value.items.map((item) => (
-                              <li key={`section-item-${sectionId}-${item.questionNumber}`}>
-                                <p className="font-semibold text-slate-900">
-                                  {item.questionText ||
-                                    `${value.sectionTitle} ${item.questionNumber}번 문항`}
-                                </p>
-                                <p className="mt-0.5 text-slate-700">
-                                  내 답변: {item.answerText || "응답 정보 없음"}
-                                </p>
-                                <p className="mt-0.5 text-slate-700">권장안: {item.text}</p>
-                              </li>
-                            ))}
-                          </ul>
-                        </article>
-                      ))}
-                  </div>
-                </section>
-
-                <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-                  <h3 className="text-lg font-bold text-slate-900">맞춤 영양제 설계</h3>
-                  {resultSummary.supplementDesign.length > 0 ? (
-                    <div className="mt-3 space-y-3">
-                      {resultSummary.supplementDesign.map((item) => (
-                        <article
-                          key={`supplement-${item.sectionId}`}
-                          className="rounded-xl border border-indigo-100 bg-indigo-50/40 px-3 py-3"
-                        >
-                          <p className="text-xs font-semibold text-indigo-700">
-                            {sectionTitleMap.get(item.sectionId) ?? item.sectionId}
-                          </p>
-                          <h4 className="mt-1 text-sm font-bold text-slate-900">{item.title}</h4>
-                          <div className="mt-2 space-y-1.5 text-sm text-slate-700">
-                            {item.paragraphs.map((paragraph, index) => (
-                              <p key={`supplement-paragraph-${item.sectionId}-${index}`}>
-                                {paragraph}
-                              </p>
-                            ))}
-                          </div>
-                          {item.recommendedNutrients && item.recommendedNutrients.length > 0 ? (
-                            <div className="mt-2 flex flex-wrap gap-1.5">
-                              {item.recommendedNutrients.map((nutrient) => (
-                                <span
-                                  key={`nutrient-${item.sectionId}-${nutrient.code}`}
-                                  className="rounded-full border border-indigo-200 bg-white px-2 py-1 text-xs font-medium text-indigo-700"
-                                >
-                                  {nutrient.labelKo ?? nutrient.label}
-                                </span>
-                              ))}
-                            </div>
-                          ) : null}
-                        </article>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="mt-2 text-sm text-slate-500">
-                      현재 선택한 설문 결과에서 제안할 맞춤 설계가 없습니다.
-                    </p>
-                  )}
-                </section>
-              </div>
-            ) : (
-              <p className="mt-4 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-                analysis_failed
-              </p>
-            )}
-
-            <div className="mt-6 flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setPhase("survey");
-                  setResult(resultSummary);
-                  setHasCompletedSubmission(false);
-                }}
-                className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700 active:scale-[0.99]"
-              >
-                {TEXT.editSurvey}
-              </button>
-              <button
-                type="button"
-                onClick={requestReset}
-                data-testid="survey-result-reset-button"
-                className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700 active:scale-[0.99]"
-              >
-                {TEXT.restart}
-              </button>
-            </div>
-          </div>
+          <SurveyResultPanel
+            resultSummary={resultSummary}
+            sectionTitleMap={sectionTitleMap}
+            text={{
+              resultTitle: TEXT.resultTitle,
+              scoreHealth: TEXT.scoreHealth,
+              scoreRisk: TEXT.scoreRisk,
+              editSurvey: TEXT.editSurvey,
+              restart: TEXT.restart,
+              viewEmployeeReport: TEXT.viewEmployeeReport,
+            }}
+            onEditSurvey={() => {
+              setPhase("survey");
+              setResult(resultSummary);
+              setHasCompletedSubmission(false);
+            }}
+            onRestart={requestReset}
+            onOpenEmployeeReport={handleOpenEmployeeReport}
+          />
         ) : null}
       </div>
 

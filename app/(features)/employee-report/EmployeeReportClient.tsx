@@ -30,9 +30,7 @@ import {
   ApiRequestError,
   buildSyncGuidance,
   clearStoredIdentity,
-  downloadPdf,
   formatDateTime,
-  isPdfEngineUnavailableFailure,
   isValidIdentityInput,
   normalizeDigits,
   readStoredIdentityWithSource,
@@ -43,16 +41,24 @@ import {
   toIdentityPayload,
   toSyncNextAction,
 } from "./_lib/client-utils";
-import { captureElementToPdf } from "@/lib/client/capture-pdf";
 import {
   ensureNhisReadyForSync as ensureNhisReadyForSyncFlow,
   runRestartAuthFlow,
   runSyncFlowWithRecovery,
   syncEmployeeReportAndReload as syncEmployeeReportAndReloadFlow,
 } from "./_lib/sync-flow";
+import {
+  downloadEmployeeReportLegacyPdf,
+  downloadEmployeeReportPdf,
+} from "./_lib/pdf-download";
+import {
+  resolveEmployeeReportOverlayDescription,
+  resolveEmployeeReportOverlayDetailLines,
+} from "./_lib/overlay-copy";
 import { useAdminLoginStatus } from "./_lib/use-admin-login-status";
 import { useBusyState } from "./_lib/use-busy-state";
 import { useForceSyncCooldown } from "./_lib/use-force-sync-cooldown";
+import { useEmployeeReportToastEffects } from "./_lib/use-employee-report-toast-effects";
 
 export default function EmployeeReportClient() {
   const { showToast } = useToast();
@@ -141,46 +147,15 @@ export default function EmployeeReportClient() {
     [hasAuthAttempt, storedIdentitySource, syncNextAction]
   );
 
-  const overlayDescription = useMemo(() => {
-    if (busyHint === "force-preflight" || busyHint === "sync-preflight") {
-      return "연동 상태를 확인하고 있어요.";
-    }
-    if (busyHint === "force-remote") {
-      return "건강정보를 다시 불러오고 있어요. 잠시만 기다려 주세요.";
-    }
-    if (busyHint === "sync-remote") {
-      return "건강정보를 불러오고 있어요. 잠시만 기다려 주세요.";
-    }
-    return "완료되면 화면이 자동으로 갱신됩니다.";
-  }, [busyHint]);
+  const overlayDescription = useMemo(
+    () => resolveEmployeeReportOverlayDescription(busyHint),
+    [busyHint]
+  );
 
-  const overlayDetailLines = useMemo(() => {
-    if (busyHint === "sync-preflight" || busyHint === "force-preflight") {
-      return [
-        "저장된 정보가 있는지 먼저 확인합니다.",
-        "필요한 경우에만 외부 연동을 진행합니다.",
-      ];
-    }
-    if (busyHint !== "sync-remote" && busyHint !== "force-remote") {
-      return [] as string[];
-    }
-    if (busyElapsedSec < 45) {
-      return [
-        "인증 상태와 요청 정보를 확인하고 있어요.",
-        "브라우저를 닫지 말고 잠시만 기다려 주세요.",
-      ];
-    }
-    if (busyElapsedSec < 120) {
-      return [
-        "외부 건강정보를 조회하고 있어요.",
-        "응답 시간에 따라 몇 분 정도 걸릴 수 있어요.",
-      ];
-    }
-    return [
-      "받은 데이터를 정리하고 레포트를 갱신하고 있어요.",
-      "완료 후 화면이 자동으로 갱신됩니다.",
-    ];
-  }, [busyElapsedSec, busyHint]);
+  const overlayDetailLines = useMemo(
+    () => resolveEmployeeReportOverlayDetailLines({ busyHint, busyElapsedSec }),
+    [busyElapsedSec, busyHint]
+  );
 
   function getIdentityPayload() {
     return identityPayload;
@@ -370,51 +345,17 @@ export default function EmployeeReportClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [busy, reportData, selectedPeriodKey]);
 
-  useEffect(() => {
-    const text = notice.trim();
-    if (!text) return;
-    showToast(text, { type: "success", duration: 3200 });
-    setNotice("");
-  }, [notice, showToast]);
-
-  useEffect(() => {
-    const text = error.trim();
-    if (!text) return;
-    showToast(text, { type: "error", duration: 4600 });
-    setError("");
-  }, [error, showToast]);
-
-  useEffect(() => {
-    if (!reportData?.report?.id) {
-      lastMockNoticeKeyRef.current = null;
-      return;
-    }
-    const isMock = reportData.report.payload?.meta?.isMockData === true;
-    if (!isMock) return;
-    const key = `${reportData.report.id}:mock`;
-    if (lastMockNoticeKeyRef.current === key) return;
-    lastMockNoticeKeyRef.current = key;
-    showToast("현재 레포트는 데모 데이터 기반으로 생성되었습니다.", {
-      type: "info",
-      duration: 3600,
-    });
-  }, [
-    reportData?.report?.id,
-    reportData?.report?.payload?.meta?.isMockData,
+  useEmployeeReportToastEffects({
+    notice,
+    setNotice,
+    error,
+    setError,
+    reportData,
+    medicationStatus,
     showToast,
-  ]);
-
-  useEffect(() => {
-    if (!medicationStatus?.text) return;
-    const reportId = reportData?.report?.id ?? "no-report";
-    const key = `${reportId}:${medicationStatus.tone}:${medicationStatus.text}`;
-    if (lastMedicationStatusKeyRef.current === key) return;
-    lastMedicationStatusKeyRef.current = key;
-    showToast(medicationStatus.text, {
-      type: medicationStatus.tone === "error" ? "error" : "info",
-      duration: medicationStatus.tone === "error" ? 5000 : 3400,
-    });
-  }, [medicationStatus, reportData?.report?.id, showToast]);
+    lastMockNoticeKeyRef,
+    lastMedicationStatusKeyRef,
+  });
 
   async function handleFindExisting() {
     if (!validIdentity) {
@@ -711,145 +652,18 @@ export default function EmployeeReportClient() {
     setError("");
     setNotice("");
 
-    const fallbackTarget = webReportCaptureRef.current;
-    let downloadFileName = "웰니스박스_건강리포트.pdf";
-    let viewportWidthPx = 0;
-
-    const tryBrowserCapture = async (input: {
-      busyMessage: string;
-      noticeMessage: string;
-    }) => {
-      if (!fallbackTarget) {
-        return {
-          attempted: false,
-          success: false,
-          errorMessage: null,
-        } as const;
-      }
-      try {
-        updateBusy({
-          message: input.busyMessage,
-          hint: "sync-remote",
-        });
-        await captureElementToPdf({
-          element: fallbackTarget,
-          fileName: downloadFileName,
-          desktopViewportWidth:
-            viewportWidthPx > 0 ? viewportWidthPx : undefined,
-        });
-        setNotice(input.noticeMessage);
-        return {
-          attempted: true,
-          success: true,
-          errorMessage: null,
-        } as const;
-      } catch (captureError) {
-        return {
-          attempted: true,
-          success: false,
-          errorMessage:
-            captureError instanceof Error
-              ? captureError.message
-              : "PDF 다운로드에 실패했습니다.",
-        } as const;
-      }
-    };
-
     try {
-      const normalizeFilenameToken = (
-        value: string | null | undefined,
-        fallback: string
-      ) => {
-        const text = (value ?? "")
-          .trim()
-          .replace(/[\/:*?"<>|]+/g, " ")
-          .replace(/\s+/g, " ")
-          .trim();
-        return text.length > 0 ? text : fallback;
-      };
-
-      const employeeLabel = normalizeFilenameToken(
-        reportData.employee?.name ??
-          reportData.report?.payload?.meta?.employeeName,
-        "직원"
-      );
-      const periodLabel = normalizeFilenameToken(
-        selectedPeriodKey ||
-          reportData.periodKey ||
-          reportData.report?.payload?.meta?.periodKey,
-        "최근"
-      );
-      downloadFileName =
-        "웰니스박스_건강리포트_" + employeeLabel + "_" + periodLabel + ".pdf";
-
-      const query = new URLSearchParams();
-      if (selectedPeriodKey) {
-        query.set("period", selectedPeriodKey);
+      const result = await downloadEmployeeReportPdf({
+        reportData,
+        selectedPeriodKey,
+        captureTarget: webReportCaptureRef.current,
+        updateBusy,
+      });
+      if (result.ok) {
+        setNotice(result.notice);
+      } else {
+        setError(result.error);
       }
-
-      const captureWidthPx = Math.round(
-        fallbackTarget?.getBoundingClientRect().width ?? 0
-      );
-      if (captureWidthPx > 0) {
-        query.set("w", String(captureWidthPx));
-      }
-
-      viewportWidthPx = Math.round(
-        window.innerWidth || document.documentElement?.clientWidth || 0
-      );
-      if (viewportWidthPx > 0) {
-        query.set("vw", String(viewportWidthPx));
-      }
-
-      const shouldPreferBrowserCapture =
-        !!fallbackTarget && viewportWidthPx > 0 && viewportWidthPx <= 900;
-      if (shouldPreferBrowserCapture) {
-        const captureResult = await tryBrowserCapture({
-          busyMessage: "모바일 화면 기준으로 PDF를 저장하고 있어요.",
-          noticeMessage: "모바일 화면 기준으로 PDF 저장을 완료했습니다.",
-        });
-        if (captureResult.success) return;
-      }
-
-      const queryString = query.toString();
-      await downloadPdf(
-        "/api/b2b/employee/report/export/pdf" +
-          (queryString.length > 0 ? `?${queryString}` : ""),
-        downloadFileName
-      );
-      setNotice("PDF 다운로드가 완료되었습니다.");
-    } catch (err) {
-      const pdfErrorPayload =
-        err && typeof err === "object" && "payload" in err
-          ? (
-              err as {
-                payload?: {
-                  code?: string;
-                  reason?: string;
-                  error?: string;
-                };
-              }
-            ).payload ?? {}
-          : {
-              error: err instanceof Error ? err.message : null,
-            };
-
-      if (isPdfEngineUnavailableFailure(pdfErrorPayload)) {
-        const captureResult = await tryBrowserCapture({
-          busyMessage:
-            "서버 PDF 엔진을 사용할 수 없어 화면 캡처로 저장하고 있어요.",
-          noticeMessage: "브라우저 화면 캡처로 PDF를 저장했습니다.",
-        });
-        if (captureResult.success) return;
-        if (captureResult.attempted && captureResult.errorMessage) {
-          setError(captureResult.errorMessage);
-          return;
-        }
-      }
-
-      setError(
-        err instanceof Error ? err.message : "PDF 다운로드에 실패했습니다."
-      );
     } finally {
       endBusy();
     }
@@ -861,45 +675,15 @@ export default function EmployeeReportClient() {
     setError("");
     setNotice("");
     try {
-      const query = new URLSearchParams();
-      query.set("mode", "legacy");
-      if (selectedPeriodKey) {
-        query.set("period", selectedPeriodKey);
+      const result = await downloadEmployeeReportLegacyPdf({
+        reportData,
+        selectedPeriodKey,
+      });
+      if (result.ok) {
+        setNotice(result.notice);
+      } else {
+        setError(result.error);
       }
-
-      const normalizeFilenameToken = (
-        value: string | null | undefined,
-        fallback: string
-      ) => {
-        const text = (value ?? "")
-          .trim()
-          .replace(/[\/:*?"<>|]+/g, " ")
-          .replace(/\s+/g, " ")
-          .trim();
-        return text.length > 0 ? text : fallback;
-      };
-      const employeeLabel = normalizeFilenameToken(
-        reportData.employee?.name ??
-          reportData.report?.payload?.meta?.employeeName,
-        "직원"
-      );
-      const periodLabel = normalizeFilenameToken(
-        selectedPeriodKey ||
-          reportData.periodKey ||
-          reportData.report?.payload?.meta?.periodKey,
-        "최근"
-      );
-      const fallbackPdfName =
-        "웰니스박스_건강리포트_" + employeeLabel + "_" + periodLabel + ".pdf";
-      await downloadPdf(
-        "/api/b2b/employee/report/export/pdf?" + query.toString(),
-        fallbackPdfName
-      );
-      setNotice("기존 PDF 엔진 다운로드가 완료되었습니다.");
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "기존 PDF 다운로드에 실패했습니다."
-      );
     } finally {
       endBusy();
     }

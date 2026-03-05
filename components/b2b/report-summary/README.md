@@ -13,6 +13,9 @@
 - `card-insights.ts`
   - `ReportSummaryCards` 전용 문장 가공/리스크 라인 구성/지표 인사이트 생성
   - 렌더링 로직과 텍스트 가공 로직 분리를 통해 본 컴포넌트 복잡도 완화
+- `SurveyDetailPages.tsx`
+  - 설문 상세 다중 페이지(위험 하이라이트/생활습관/영역 코멘트/영양 설계) 렌더링 전담
+  - `ReportSummaryCards.tsx` 본문 길이를 줄이고 후속 UI 수정 범위를 국소화
 
 ## 수정 가이드
 

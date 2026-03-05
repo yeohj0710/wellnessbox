@@ -13,36 +13,19 @@ import {
   resetAllB2bData,
   resetPeriodData,
 } from "./_lib/api";
-import { compactJson, formatDateTime, formatRelativeTime, prettyJson } from "./_lib/client-utils";
+import { formatDateTime, formatRelativeTime } from "./_lib/client-utils";
 import type {
   DeleteRecordType,
   EmployeeListItem,
   EmployeeOpsResponse,
 } from "./_lib/client-types";
+import RecordListSection, { type RecordListRow } from "./_components/RecordListSection";
+import {
+  buildEmployeeRecordRowsByGroup,
+  buildHealthLinkRecordRows,
+} from "./_lib/record-row-builders";
 
 const MONTH_KEY_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
-
-function JsonPreview(props: { label: string; value: unknown }) {
-  return (
-    <details className={styles.optionalCard}>
-      <summary>{props.label}</summary>
-      <div className={styles.optionalBody}>
-        <pre
-          className={styles.mono}
-          style={{
-            margin: 0,
-            whiteSpace: "pre-wrap",
-            wordBreak: "break-all",
-            fontSize: 11,
-            lineHeight: 1.5,
-          }}
-        >
-          {prettyJson(props.value)}
-        </pre>
-      </div>
-    </details>
-  );
-}
 
 export default function B2bAdminEmployeeDataClient() {
   const [employees, setEmployees] = useState<EmployeeListItem[]>([]);
@@ -353,48 +336,25 @@ export default function B2bAdminEmployeeDataClient() {
     }
   }
 
-  function renderRecordList(
-    title: string,
-    count: number,
-    rows: Array<{
-      id: string;
-      periodKey?: string | null;
-      updatedAt?: string;
-      payload?: unknown;
-      metaText: string;
-      recordType: DeleteRecordType;
-    }>
-  ) {
-    return (
-      <details className={styles.optionalCard}>
-        <summary>
-          {title} ({count})
-        </summary>
-        <div className={styles.optionalBody}>
-          {rows.map((row) => (
-            <div key={row.id} className={styles.optionalCard}>
-              <div className={styles.actionRow}>
-                <strong className={styles.mono}>{row.id}</strong>
-                <span className={styles.inlineHint}>{row.metaText}</span>
-                <button
-                  type="button"
-                  className={styles.buttonDanger}
-                  onClick={() => void handleDeleteRecord(row.recordType, row.id)}
-                  disabled={busy}
-                >
-                  삭제
-                </button>
-              </div>
-              {row.payload !== undefined ? (
-                <JsonPreview label="JSON 보기" value={row.payload} />
-              ) : null}
-            </div>
-          ))}
-          {rows.length === 0 ? <p className={styles.noticeInfo}>데이터가 없습니다.</p> : null}
-        </div>
-      </details>
-    );
-  }
+  const recordRowsByGroup = useMemo(
+    () => (opsData ? buildEmployeeRecordRowsByGroup(opsData) : null),
+    [opsData]
+  );
+
+  const healthLinkRows = useMemo(() => (opsData ? buildHealthLinkRecordRows(opsData) : null), [opsData]);
+
+  const recordSections = useMemo<Array<{ title: string; rows: RecordListRow[] }>>(() => {
+    if (!recordRowsByGroup) return [];
+    return [
+      { title: "건강 스냅샷", rows: recordRowsByGroup.healthSnapshots },
+      { title: "설문 응답", rows: recordRowsByGroup.surveyResponses },
+      { title: "분석 결과", rows: recordRowsByGroup.analysisResults },
+      { title: "약사 코멘트", rows: recordRowsByGroup.pharmacistNotes },
+      { title: "리포트", rows: recordRowsByGroup.reports },
+      { title: "접근 로그 기록", rows: recordRowsByGroup.accessLogs },
+      { title: "관리자 작업 기록", rows: recordRowsByGroup.adminActionLogs },
+    ];
+  }, [recordRowsByGroup]);
 
   return (
     <div className={styles.pageBackdrop}>
@@ -780,120 +740,33 @@ export default function B2bAdminEmployeeDataClient() {
                   </p>
                 </section>
 
-                {renderRecordList(
-                  "건강 스냅샷",
-                  opsData.records.healthSnapshots.length,
-                  opsData.records.healthSnapshots.map((row) => ({
-                    id: row.id,
-                    recordType: "healthSnapshot" as const,
-                    metaText: `${row.periodKey || "-"} · ${formatDateTime(row.fetchedAt)} · ${compactJson(
-                      row.normalizedShape,
-                      90
-                    )}`,
-                    payload: row.normalizedJson,
-                  }))
-                )}
-
-                {renderRecordList(
-                  "설문 응답",
-                  opsData.records.surveyResponses.length,
-                  opsData.records.surveyResponses.map((row) => ({
-                    id: row.id,
-                    recordType: "surveyResponse" as const,
-                    metaText: `${row.periodKey || "-"} · 답변 ${row.answers.length}개 · ${formatDateTime(
-                      row.updatedAt
-                    )}`,
-                    payload: row.answersJson,
-                  }))
-                )}
-
-                {renderRecordList(
-                  "분석 결과",
-                  opsData.records.analysisResults.length,
-                  opsData.records.analysisResults.map((row) => ({
-                    id: row.id,
-                    recordType: "analysisResult" as const,
-                    metaText: `v${row.version} · ${row.periodKey || "-"} · ${formatDateTime(
-                      row.updatedAt
-                    )}`,
-                    payload: row.payload,
-                  }))
-                )}
-
-                {renderRecordList(
-                  "약사 코멘트",
-                  opsData.records.pharmacistNotes.length,
-                  opsData.records.pharmacistNotes.map((row) => ({
-                    id: row.id,
-                    recordType: "pharmacistNote" as const,
-                    metaText: `${row.periodKey || "-"} · ${formatDateTime(row.updatedAt)} · ${
-                      row.note?.slice(0, 60) || "-"
-                    }`,
-                  }))
-                )}
-
-                {renderRecordList(
-                  "리포트",
-                  opsData.records.reports.length,
-                  opsData.records.reports.map((row) => ({
-                    id: row.id,
-                    recordType: "report" as const,
-                    metaText: `${row.periodKey || "-"} · ${row.status} · ${formatDateTime(
-                      row.updatedAt
-                    )}`,
-                    payload: row.reportPayload,
-                  }))
-                )}
-
-                {renderRecordList(
-                  "직원 접근 로그",
-                  opsData.records.accessLogs.length,
-                  opsData.records.accessLogs.map((row) => ({
-                    id: row.id,
-                    recordType: "accessLog" as const,
-                    metaText: `${row.action} · ${formatDateTime(row.createdAt)}`,
-                    payload: row.payload,
-                  }))
-                )}
-
-                {renderRecordList(
-                  "관리자 작업 로그",
-                  opsData.records.adminActionLogs.length,
-                  opsData.records.adminActionLogs.map((row) => ({
-                    id: row.id,
-                    recordType: "adminActionLog" as const,
-                    metaText: `${row.action} · ${formatDateTime(row.createdAt)}`,
-                    payload: row.payload,
-                  }))
-                )}
+                {recordSections.map((section) => (
+                  <RecordListSection
+                    key={section.title}
+                    title={section.title}
+                    rows={section.rows}
+                    busy={busy}
+                    onDeleteRecord={handleDeleteRecord}
+                  />
+                ))}
 
                 <details className={styles.optionalCard}>
                   <summary>하이픈 캐시/조회이력</summary>
                   <div className={styles.optionalBody}>
                     {opsData.healthLink ? (
                       <>
-                        {renderRecordList(
-                          "하이픈 캐시 레코드",
-                          opsData.healthLink.fetchCaches.length,
-                          opsData.healthLink.fetchCaches.map((row) => ({
-                            id: row.id,
-                            recordType: "healthFetchCache" as const,
-                            metaText: `${row.ok ? "성공" : "실패"} · ${formatDateTime(
-                              row.fetchedAt
-                            )} · targets: ${row.targets.join(",")}`,
-                          }))
-                        )}
-                        {renderRecordList(
-                          "하이픈 조회 시도",
-                          opsData.healthLink.fetchAttempts.length,
-                          opsData.healthLink.fetchAttempts.map((row) => ({
-                            id: row.id,
-                            recordType: "healthFetchAttempt" as const,
-                            metaText: `${row.forceRefresh ? "강제조회" : "일반조회"} · ${
-                              row.cached ? "캐시" : "원격"
-                            } · ${formatDateTime(row.createdAt)}`,
-                          }))
-                        )}
+                        <RecordListSection
+                          title="\uD558\uC774\uD508 \uCE90\uC2DC \uB808\uCF54\uB4DC"
+                          rows={healthLinkRows?.fetchCaches ?? []}
+                          busy={busy}
+                          onDeleteRecord={handleDeleteRecord}
+                        />
+                        <RecordListSection
+                          title="\uD558\uC774\uD508 \uC870\uD68C \uC2DC\uB3C4"
+                          rows={healthLinkRows?.fetchAttempts ?? []}
+                          busy={busy}
+                          onDeleteRecord={handleDeleteRecord}
+                        />
                       </>
                     ) : (
                       <p className={styles.noticeInfo}>

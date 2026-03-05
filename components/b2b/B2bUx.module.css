@@ -2333,6 +2333,48 @@
   font-weight: 700;
 }
 
+.riskBarList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 7px;
+}
+
+.riskBarRow {
+  display: grid;
+  gap: 5px;
+}
+
+.riskBarHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.riskBarHead strong {
+  color: #be123c;
+  font-weight: 800;
+}
+
+.riskBarTrack {
+  height: 8px;
+  width: 100%;
+  border-radius: 4px;
+  background: #ffe4e6;
+  overflow: hidden;
+}
+
+.riskBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, #fb7185 0%, #dc2626 100%);
+  border-radius: 0;
+  transition: width 220ms ease;
+}
+
 .needList {
   margin: 0;
   padding: 0;
@@ -2705,6 +2747,45 @@
   line-height: 1.45;
 }
 
+.reportNutrientTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.reportNutrientPanel {
+  border-radius: 10px;
+  border: 1px solid #d6e1f6;
+  background: #f8fbff;
+  padding: 8px 9px;
+  display: grid;
+  gap: 5px;
+}
+
+.reportNutrientTitle {
+  margin: 0;
+  color: #2f5f9f;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.reportNutrientHint {
+  margin: 0;
+  color: #5a76a0;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.reportNutrientTag {
+  border-radius: 999px;
+  border: 1px solid #d1dcf5;
+  background: #f7faff;
+  color: #2b558f;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
 .reportTopGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2721,12 +2802,34 @@
   gap: 7px;
 }
 
+.reportTopCardNeed {
+  display: flex;
+  flex-direction: column;
+}
+
+.needCardContent {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+}
+
+.needCardContentCentered {
+  flex: 1;
+  align-content: center;
+}
+
 .reportTopHead {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.reportScoreStack {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
 }
 
 .donutWrap {
@@ -2789,6 +2892,8 @@
 
 .reportFormula {
   margin: 0;
+  max-width: 220px;
+  text-align: center;
   color: #54729b;
   font-size: 10px;
   line-height: 1.4;

@@ -10,6 +10,8 @@ import {
   toScoreValue,
 } from "./report-summary/helpers";
 import {
+  buildDetailedRiskHighlightLines,
+  buildDetailedSectionAdviceLines,
   buildFriendlyAnalysisLines,
   buildFriendlyRiskLines,
   clampPercent,
@@ -21,19 +23,28 @@ import {
   softenAdviceTone,
   toTrimmedText,
 } from "./report-summary/card-insights";
+import SurveyDetailPages from "./report-summary/SurveyDetailPages";
 
 const DONUT_RADIUS = 52;
 const DONUT_CIRCUMFERENCE = 2 * Math.PI * DONUT_RADIUS;
-const RADAR_SIZE = 212;
-const RADAR_CENTER = RADAR_SIZE / 2;
-const RADAR_RADIUS = 70;
-
 const MAX_PAGE1_SECTION_BARS = 3;
+const RISK_CHUNK_SIZE = 5;
+const ROUTINE_CHUNK_SIZE = 6;
+const SECTION_ADVICE_CHUNK_SIZE = 6;
+const SUPPLEMENT_CHUNK_SIZE = 2;
 
-type AxisItem = {
-  id: string;
-  label: string;
-  score: number;
+const LIFESTYLE_RISK_LABEL_BY_ID: Record<string, string> = {
+  diet: "식습관 위험도",
+  activity: "활동량 위험도",
+  immune: "면역관리 위험도",
+  sleep: "수면 위험도",
+};
+
+const LIFESTYLE_RISK_BASE_LABEL_BY_NAME: Record<string, string> = {
+  식습관: "식습관",
+  활동량: "활동량",
+  면역관리: "면역관리",
+  수면: "수면",
 };
 
 function toMedicationMetaDate(value: unknown) {
@@ -54,21 +65,27 @@ function buildMedicationMetaLine(input: {
   return parts.length > 0 ? parts.join(" / ") : "-";
 }
 
-function radarPoint(index: number, total: number, scale: number) {
-  const angle = -Math.PI / 2 + (Math.PI * 2 * index) / Math.max(1, total);
-  const x = RADAR_CENTER + RADAR_RADIUS * scale * Math.cos(angle);
-  const y = RADAR_CENTER + RADAR_RADIUS * scale * Math.sin(angle);
-  return { x, y };
+function toLifestyleRiskLabel(input: { id?: string; label?: string }) {
+  const normalizedId = toTrimmedText(input.id).toLowerCase();
+  if (normalizedId && LIFESTYLE_RISK_LABEL_BY_ID[normalizedId]) {
+    return LIFESTYLE_RISK_LABEL_BY_ID[normalizedId];
+  }
+
+  const rawLabel = sanitizeTitle(toTrimmedText(input.label || input.id));
+  const collapsed = rawLabel.replace(/\s+/g, "");
+  const mapped = LIFESTYLE_RISK_BASE_LABEL_BY_NAME[collapsed] || rawLabel || "생활습관";
+  const withoutSuffix = mapped.endsWith("위험도") ? mapped.slice(0, -3).trim() : mapped;
+  return `${withoutSuffix} 위험도`;
 }
 
-function polygonPoints(values: number[], denominator = 100) {
-  const total = Math.max(1, values.length);
-  return values
-    .map((value, index) => {
-      const point = radarPoint(index, total, clampPercent(value) / denominator);
-      return `${point.x.toFixed(2)},${point.y.toFixed(2)}`;
-    })
-    .join(" ");
+function chunkItems<T>(items: T[], chunkSize: number) {
+  if (items.length === 0) return [] as T[][];
+  const safeChunkSize = Math.max(1, Math.floor(chunkSize));
+  const chunks: T[][] = [];
+  for (let index = 0; index < items.length; index += safeChunkSize) {
+    chunks.push(items.slice(index, index + safeChunkSize));
+  }
+  return chunks;
 }
 
 export default function ReportSummaryCards(props: {
@@ -126,22 +143,25 @@ export default function ReportSummaryCards(props: {
 
   const resolvedHealthScore = resolveHealthScoreLabel(healthScore);
 
-  const axes: AxisItem[] = ensureArray(wellness?.lifestyleRisk?.domains)
+  const lifestyleRiskAxes = ensureArray(wellness?.lifestyleRisk?.domains)
     .map((axis) => ({
       id: firstOrDash(axis?.id),
-      label: sanitizeTitle(firstOrDash(axis?.name || axis?.id)),
+      label: toLifestyleRiskLabel({
+        id: firstOrDash(axis?.id),
+        label: firstOrDash(axis?.name || axis?.id),
+      }),
       score: clampPercent(axis?.percent),
     }))
     .slice(0, 4);
 
-  const radarAxes =
-    axes.length > 0
-      ? axes
+  const resolvedLifestyleRiskAxes =
+    lifestyleRiskAxes.length > 0
+      ? lifestyleRiskAxes
       : [
-          { id: "diet", label: "식습관", score: 0 },
-          { id: "immune", label: "면역관리", score: 0 },
-          { id: "sleep", label: "수면", score: 0 },
-          { id: "activity", label: "활동량", score: 0 },
+          { id: "diet", label: "식습관 위험도", score: 0 },
+          { id: "activity", label: "활동량 위험도", score: 0 },
+          { id: "immune", label: "면역관리 위험도", score: 0 },
+          { id: "sleep", label: "수면 위험도", score: 0 },
         ];
 
   const sectionNeeds = ensureArray(wellness?.healthManagementNeed?.sections)
@@ -154,12 +174,54 @@ export default function ReportSummaryCards(props: {
       if (right.percent !== left.percent) return right.percent - left.percent;
       return left.sectionId.localeCompare(right.sectionId);
     });
+  const sectionTitleById = new Map(
+    sectionNeeds
+      .filter((row) => row.sectionId.length > 0 && row.sectionId !== "-")
+      .map((row) => [row.sectionId, row.sectionTitle] as const)
+  );
 
   const sectionNeedsForPage1 = sectionNeeds.slice(0, MAX_PAGE1_SECTION_BARS);
   const hiddenSectionNeedCount = Math.max(0, sectionNeeds.length - sectionNeedsForPage1.length);
+  const centerNeedCardContent =
+    sectionNeedsForPage1.length > 0 && sectionNeedsForPage1.length < MAX_PAGE1_SECTION_BARS;
 
   const analysisLines = hasWellnessScoringData ? buildFriendlyAnalysisLines(payload) : [];
   const riskLines = hasWellnessScoringData ? buildFriendlyRiskLines(payload) : [];
+  const detailedRiskLines = hasWellnessScoringData
+    ? buildDetailedRiskHighlightLines(payload, Number.POSITIVE_INFINITY)
+    : [];
+  const detailedSectionAdviceLines = hasWellnessScoringData
+    ? buildDetailedSectionAdviceLines(payload, Number.POSITIVE_INFINITY)
+    : [];
+  const lifestyleRoutineAdviceLines = hasWellnessScoringData
+    ? ensureArray(wellness?.lifestyleRoutineAdvice)
+        .map((item) => ensureSentence(toTrimmedText(item)))
+        .filter(Boolean)
+    : [];
+  const supplementDesignRows = hasWellnessScoringData
+    ? ensureArray(wellness?.supplementDesign).map((item) => ({
+        sectionId: firstOrDash(item?.sectionId),
+        sectionTitle:
+          sectionTitleById.get(firstOrDash(item?.sectionId)) ||
+          sanitizeTitle(firstOrDash(item?.sectionId)),
+        title: sanitizeTitle(firstOrDash(item?.title)),
+        paragraphs: ensureArray(item?.paragraphs)
+          .map((paragraph) => ensureSentence(toTrimmedText(paragraph)))
+          .filter(Boolean),
+        recommendedNutrients: ensureArray(item?.recommendedNutrients)
+          .map((nutrient) => sanitizeTitle(firstOrDash(nutrient?.labelKo || nutrient?.label)))
+          .filter(Boolean),
+      }))
+    : [];
+
+  const riskPages = chunkItems(detailedRiskLines, RISK_CHUNK_SIZE);
+  const routinePages = chunkItems(lifestyleRoutineAdviceLines, ROUTINE_CHUNK_SIZE);
+  const combinedSurveyPageCount = Math.max(riskPages.length, routinePages.length);
+  const sectionAdvicePages = chunkItems(detailedSectionAdviceLines, SECTION_ADVICE_CHUNK_SIZE);
+  const supplementPages = chunkItems(supplementDesignRows, SUPPLEMENT_CHUNK_SIZE);
+  const surveyDetailPageStart = 4;
+  const sectionAdvicePageStart = surveyDetailPageStart + combinedSurveyPageCount;
+  const supplementPageStart = sectionAdvicePageStart + sectionAdvicePages.length;
 
   const coreMetricStatusByLabel = new Map(
     ensureArray(payload.health?.coreMetrics)
@@ -226,139 +288,102 @@ export default function ReportSummaryCards(props: {
             <div className={styles.reportTopHead}>
               <h3 className={styles.sectionTitle}>건강점수</h3>
             </div>
-            <div className={styles.donutWrap}>
-              <svg
-                viewBox="0 0 140 140"
-                className={styles.donutSvg}
-                role="img"
-                aria-label="건강점수 원형 차트"
-              >
-                <circle cx="70" cy="70" r={DONUT_RADIUS} className={styles.donutTrack} />
-                <circle
-                  cx="70"
-                  cy="70"
-                  r={DONUT_RADIUS}
-                  className={styles.donutProgress}
-                  style={{
-                    strokeDasharray: DONUT_CIRCUMFERENCE,
-                    strokeDashoffset: donutOffset,
-                  }}
-                />
-              </svg>
-              <div className={styles.donutCenter}>
-                <strong>
-                  <span className={styles.scoreValue}>{resolvedHealthScore.valueText}</span>
-                  {resolvedHealthScore.unitText ? (
-                    <span className={styles.scoreUnit}>{resolvedHealthScore.unitText}</span>
-                  ) : null}
-                </strong>
+            <div className={styles.reportScoreStack}>
+              <div className={styles.donutWrap}>
+                <svg
+                  viewBox="0 0 140 140"
+                  className={styles.donutSvg}
+                  role="img"
+                  aria-label="건강점수 원형 차트"
+                >
+                  <circle cx="70" cy="70" r={DONUT_RADIUS} className={styles.donutTrack} />
+                  <circle
+                    cx="70"
+                    cy="70"
+                    r={DONUT_RADIUS}
+                    className={styles.donutProgress}
+                    style={{
+                      strokeDasharray: DONUT_CIRCUMFERENCE,
+                      strokeDashoffset: donutOffset,
+                    }}
+                  />
+                </svg>
+                <div className={styles.donutCenter}>
+                  <strong>
+                    <span className={styles.scoreValue}>{resolvedHealthScore.valueText}</span>
+                    {resolvedHealthScore.unitText ? (
+                      <span className={styles.scoreUnit}>{resolvedHealthScore.unitText}</span>
+                    ) : null}
+                  </strong>
+                </div>
               </div>
+              <p className={styles.reportFormula}>
+                건강점수 = 100 - ((생활습관 위험도 + 건강관리 위험도 평균) / 2)
+              </p>
             </div>
-            <p className={styles.reportFormula}>
-              건강점수 = 100 - ((생활습관 위험도 + 건강관리 위험도 평균) / 2)
-            </p>
           </article>
 
           <article className={styles.reportTopCard}>
             <div className={styles.reportTopHead}>
               <h3 className={styles.sectionTitle}>생활습관 위험도</h3>
             </div>
-            <div className={styles.radarWrap}>
-              <svg
-                className={styles.radarSvg}
-                viewBox={`0 0 ${RADAR_SIZE} ${RADAR_SIZE}`}
-                role="img"
-                aria-label="생활습관 위험도 레이더 차트"
-              >
-                {[25, 50, 75, 100].map((level) => (
-                  <polygon
-                    key={`grid-${level}`}
-                    points={polygonPoints(radarAxes.map(() => level))}
-                    className={styles.radarGrid}
-                  />
-                ))}
-                {radarAxes.map((axis, index) => {
-                  const point = radarPoint(index, radarAxes.length, 1);
-                  return (
-                    <line
-                      key={`axis-${axis.id}`}
-                      x1={RADAR_CENTER}
-                      y1={RADAR_CENTER}
-                      x2={point.x}
-                      y2={point.y}
-                      className={styles.radarAxis}
+            <ul className={styles.riskBarList} aria-label="생활습관 위험도 막대 그래프">
+              {resolvedLifestyleRiskAxes.map((axis) => (
+                <li key={`lifestyle-risk-${axis.id}`} className={styles.riskBarRow}>
+                  <div className={styles.riskBarHead}>
+                    <span>{axis.label}</span>
+                    <strong>{toScoreLabel(axis.score)}</strong>
+                  </div>
+                  <div className={styles.riskBarTrack}>
+                    <div
+                      className={styles.riskBarFill}
+                      style={{ width: `${clampPercent(axis.score)}%` }}
                     />
-                  );
-                })}
-                <polygon
-                  points={polygonPoints(radarAxes.map((axis) => axis.score))}
-                  className={styles.radarArea}
-                />
-                {radarAxes.map((axis, index) => {
-                  const point = radarPoint(index, radarAxes.length, axis.score / 100);
-                  return (
-                    <circle
-                      key={`point-${axis.id}`}
-                      cx={point.x}
-                      cy={point.y}
-                      r={3.6}
-                      className={styles.radarPoint}
-                    />
-                  );
-                })}
-                {radarAxes.map((axis, index) => {
-                  const point = radarPoint(index, radarAxes.length, 1.18);
-                  return (
-                    <text
-                      key={`label-${axis.id}`}
-                      x={point.x}
-                      y={point.y}
-                      textAnchor="middle"
-                      className={styles.radarLabel}
-                    >
-                      {axis.label}
-                    </text>
-                  );
-                })}
-              </svg>
-            </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
             <p className={styles.inlineHint}>
               종합 위험도:{" "}
               <span className={styles.riskScoreText}>{toScoreLabel(lifestyleOverall)}</span>
             </p>
           </article>
 
-          <article className={styles.reportTopCard}>
+          <article className={`${styles.reportTopCard} ${styles.reportTopCardNeed}`}>
             <div className={styles.reportTopHead}>
               <h3 className={styles.sectionTitle}>건강관리 위험도</h3>
             </div>
-            {sectionNeedsForPage1.length === 0 ? (
-              <p className={styles.inlineHint}>선택 영역 데이터가 없습니다.</p>
-            ) : (
-              <ul className={styles.needList}>
-                {sectionNeedsForPage1.map((section) => (
-                  <li key={`need-${section.sectionId}`} className={styles.needRow}>
-                    <div className={styles.needHead}>
-                      <span>{section.sectionTitle}</span>
-                      <strong>{toScoreLabel(section.percent)}</strong>
-                    </div>
-                    <div className={styles.needTrack}>
-                      <div
-                        className={styles.needFill}
-                        style={{ width: `${clampPercent(section.percent)}%` }}
-                      />
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <p className={styles.inlineHint}>
-              평균 위험도:{" "}
-              <span className={styles.riskScoreText}>{toScoreLabel(healthNeedAverage)}</span>
-            </p>
-            {hiddenSectionNeedCount > 0 ? (
-              <p className={styles.inlineHint}>추가 영역 {hiddenSectionNeedCount}개는 2페이지에서 확인 가능</p>
-            ) : null}
+            <div
+              className={`${styles.needCardContent} ${centerNeedCardContent ? styles.needCardContentCentered : ""}`}
+            >
+              {sectionNeedsForPage1.length === 0 ? (
+                <p className={styles.inlineHint}>선택 영역 데이터가 없습니다.</p>
+              ) : (
+                <ul className={styles.needList}>
+                  {sectionNeedsForPage1.map((section) => (
+                    <li key={`need-${section.sectionId}`} className={styles.needRow}>
+                      <div className={styles.needHead}>
+                        <span>{section.sectionTitle}</span>
+                        <strong>{toScoreLabel(section.percent)}</strong>
+                      </div>
+                      <div className={styles.needTrack}>
+                        <div
+                          className={styles.needFill}
+                          style={{ width: `${clampPercent(section.percent)}%` }}
+                        />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className={styles.inlineHint}>
+                평균 위험도:{" "}
+                <span className={styles.riskScoreText}>{toScoreLabel(healthNeedAverage)}</span>
+              </p>
+              {hiddenSectionNeedCount > 0 ? (
+                <p className={styles.inlineHint}>추가 영역 {hiddenSectionNeedCount}개는 2페이지에서 확인 가능</p>
+              ) : null}
+            </div>
           </article>
         </section>
 
@@ -530,6 +555,17 @@ export default function ReportSummaryCards(props: {
           )}
         </section>
       </section>
+
+      <SurveyDetailPages
+        combinedSurveyPageCount={combinedSurveyPageCount}
+        surveyDetailPageStart={surveyDetailPageStart}
+        riskPages={riskPages}
+        routinePages={routinePages}
+        sectionAdvicePageStart={sectionAdvicePageStart}
+        sectionAdvicePages={sectionAdvicePages}
+        supplementPageStart={supplementPageStart}
+        supplementPages={supplementPages}
+      />
     </div>
   );
 }

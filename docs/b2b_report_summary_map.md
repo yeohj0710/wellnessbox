@@ -7,6 +7,8 @@
 ## Boundaries
 - Summary UI renderer:
   - `components/b2b/ReportSummaryCards.tsx`
+- Survey detail page renderer (split component):
+  - `components/b2b/report-summary/SurveyDetailPages.tsx`
 - Summary view-model builder:
   - `components/b2b/report-summary/view-model.ts`
 - Summary helper functions (formatting/score view helpers):

@@ -2,8 +2,8 @@
 
 ## 기준
 - 범위: `docs/` 하위의 모든 `.md` 파일
-- 작성 시점: 2026-02-28
-- 총 문서 수: 43개
+- 작성 시점: 2026-03-05
+- 총 문서 수: 46개
 - 산출 기준 명령:
   - `Get-ChildItem -Path docs -Recurse -File`
 
@@ -78,6 +78,7 @@
 | 경로 | 유형 | 용도 | 언제 읽는가 | 연관 문서 |
 | --- | --- | --- | --- | --- |
 | `docs/b2b_admin_report_client_map.md` | Map | B2B 관리자 리포트 클라이언트 맵 | B2B 관리자 UI 수정 시 | B2B API/화면 |
+| `docs/b2b_admin_employee_data_client_map.md` | Map | B2B 관리자 직원 데이터 운영 화면 맵 | `/admin/b2b-employee-data` 수정 시 | 직원 운영 API/화면 |
 | `docs/b2b_employee_report_dev_runbook.md` | Runbook | 임직원 리포트 개발 런북 | B2B 리포트 개발 시 | 관련 spec/map |
 | `docs/b2b_employee_report_manual_test.md` | QA | 임직원 리포트 수동 테스트 | 배포 전 수동 QA 시 | B2B 리포트 |
 | `docs/b2b_employee_report_spec.md` | Spec | 임직원 리포트 요구사항 | 기능 설계 시 | payload/summary map |
@@ -89,6 +90,7 @@
 | `docs/b2b_survey_template_schema.md` | Schema | B2B 설문 템플릿 스키마 | 설문 구조 변경 시 | seed script |
 | `docs/column_editor_client_map.md` | Map | 칼럼 에디터 클라이언트 맵 | 칼럼 에디터 수정 시 | column API |
 | `docs/employee_report_client_map.md` | Map | 직원 리포트 클라이언트 맵 | 직원 리포트 UI 수정 시 | employee report API |
+| `docs/survey_client_map.md` | Map | 설문 클라이언트 맵 | `/survey` UI/흐름 수정 시 | public-survey/wellness 분석 |
 
 ## 문서 탐색 추천 순서
 

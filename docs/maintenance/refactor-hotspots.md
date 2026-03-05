@@ -600,6 +600,37 @@ This document tracks large/complex files that are most likely to slow down follo
    - Fixed mojibake in user-facing cart copy (`장바구니` title, stock-change alert, pharmacy fetch error log) to keep Korean-first UX and avoid ambiguous runtime text.
    - Consolidated duplicated cart persistence side-effects into `persistCartItems` and reused shared `openPhoneModal` handler.
    - The component now has fewer repeated mutation paths, which lowers follow-up regression risk in cart behavior updates.
+130. `app/survey/survey-page-client.tsx`, `app/survey/_components/SurveyResultPanel.tsx`
+   - Survey result rendering block was extracted into `SurveyResultPanel.tsx`.
+   - `survey-page-client.tsx` now delegates result markup and keeps phase/state orchestration focused.
+   - `SurveyPageClient` hotspot size was reduced (`2303 -> 1987` lines in hotspot report).
+131. `components/b2b/ReportSummaryCards.tsx`, `components/b2b/report-summary/SurveyDetailPages.tsx`
+   - Multi-page survey detail rendering loops (risk highlights / lifestyle guide / section advice / supplement pages) were extracted to `SurveyDetailPages.tsx`.
+   - `ReportSummaryCards.tsx` now keeps payload-to-view composition and top-level page orchestration while delegating repeated page rendering.
+   - This reduces follow-up edit scope when changing detail page UI or pagination behavior.
+132. `lib/db-env.ts`
+   - Added build-phase aware conflict warning gate: DB env conflict warning spam is suppressed during Next production build workers.
+   - Override supported via `WB_DB_ENV_WARN_CONFLICT=1|0` for explicit diagnostics.
+   - Keeps runtime diagnostics available while reducing build log noise for follow-up sessions.
+133. `app/(features)/employee-report/EmployeeReportClient.tsx`, `app/(features)/employee-report/_lib/pdf-download.ts`
+   - PDF 다운로드 대형 핸들러를 `pdf-download.ts`로 분리:
+     `downloadEmployeeReportPdf`, `downloadEmployeeReportLegacyPdf`.
+   - `EmployeeReportClient.tsx`는 busy/notice/error 상태 제어와 버튼 핸들러 연결에 집중하도록 단순화.
+   - 모바일 웹 캡처 우선 전략과 서버 PDF 엔진 fallback 동작은 동일하게 유지.
+134. `app/(features)/employee-report/EmployeeReportClient.tsx`, `app/(features)/employee-report/_lib/use-employee-report-toast-effects.ts`, `app/(features)/employee-report/_lib/overlay-copy.ts`
+   - 오버레이 문구 계산 로직을 `overlay-copy.ts`로 분리:
+     `resolveEmployeeReportOverlayDescription`, `resolveEmployeeReportOverlayDetailLines`.
+   - notice/error/mock/복약상태 토스트 effect 묶음을 `use-employee-report-toast-effects.ts`로 분리.
+   - `EmployeeReportClient.tsx`는 세션/동기화 오케스트레이션 중심으로 단순화되어 후속 세션 가독성이 개선됨.
+
+135. `app/survey/survey-page-client.tsx`, `app/survey/_components/SurveyIntroPanel.tsx`, `app/survey/_components/SurveyCalculatingPanel.tsx`
+   - Intro/auth panel markup was extracted into `SurveyIntroPanel.tsx` to isolate identity/auth UI from survey phase state orchestration.
+   - Calculating phase card markup was extracted into `SurveyCalculatingPanel.tsx` to keep the phase renderer focused on transitions.
+   - `survey-page-client.tsx` now delegates intro/calculating rendering and keeps answer/state/section movement logic as the primary responsibility.
+136. `app/survey/survey-page-client.tsx`, `app/survey/_components/SurveySectionPanel.tsx`
+   - Survey phase panel (header/progress/section tabs/question list/footer nav) was extracted into `SurveySectionPanel.tsx`.
+   - Question card rendering now lives in one component boundary, reducing the main page client's JSX complexity.
+   - `survey-page-client.tsx` keeps state/validation/navigation logic and passes rendering hooks into the panel component.
 
 ## Guardrails For Any Refactor
 

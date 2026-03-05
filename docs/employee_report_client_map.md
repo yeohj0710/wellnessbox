@@ -27,6 +27,14 @@
   - `resolveCooldownUntilFromPayload`
   - `resolveMedicationStatusMessage`
   - `buildSyncGuidance`
+- PDF 다운로드 오케스트레이션: `app/(features)/employee-report/_lib/pdf-download.ts`
+  - `downloadEmployeeReportPdf` (웹 캡처/서버 PDF fallback 포함)
+  - `downloadEmployeeReportLegacyPdf` (legacy 모드 다운로드)
+- 로딩 오버레이 문구 규칙: `app/(features)/employee-report/_lib/overlay-copy.ts`
+  - `resolveEmployeeReportOverlayDescription`
+  - `resolveEmployeeReportOverlayDetailLines`
+- 토스트/안내 메시지 effect 분리: `app/(features)/employee-report/_lib/use-employee-report-toast-effects.ts`
+  - notice/error/mock/복약상태 토스트 중복 방지 및 표시 effect 전담
 
 ## 수정 가이드
 1. UI 텍스트/레이아웃 변경:

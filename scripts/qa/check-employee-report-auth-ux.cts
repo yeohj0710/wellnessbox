@@ -173,6 +173,9 @@ function runPrimaryActionLabelCases() {
 
 function runUiIntegrationChecks() {
   const clientSource = read("app/(features)/employee-report/EmployeeReportClient.tsx");
+  const toastEffectsSource = read(
+    "app/(features)/employee-report/_lib/use-employee-report-toast-effects.ts"
+  );
   assert.ok(
     clientSource.includes("readStoredIdentityWithSource"),
     "EmployeeReportClient should read stored identity with source context."
@@ -207,8 +210,12 @@ function runUiIntegrationChecks() {
     "EmployeeReportClient should use toast UX for transient notices."
   );
   assert.ok(
-    clientSource.includes("showToast("),
-    "EmployeeReportClient should trigger toast messages instead of fixed banners."
+    clientSource.includes("useEmployeeReportToastEffects"),
+    "EmployeeReportClient should delegate toast side-effects to dedicated hook."
+  );
+  assert.ok(
+    toastEffectsSource.includes("showToast("),
+    "Toast effect hook should trigger toast messages instead of fixed banners."
   );
   assert.equal(
     clientSource.includes("styles.noticeError"),

@@ -270,6 +270,7 @@ function runPdfEngineFallbackCases() {
 
 function runStaticRegressionChecks() {
   const clientSource = read("app/(features)/employee-report/EmployeeReportClient.tsx");
+  const pdfSource = read("app/(features)/employee-report/_lib/pdf-download.ts");
   assert.ok(
     clientSource.includes("resolveSyncCompletionNotice"),
     "EmployeeReportClient should resolve sync notice via helper"
@@ -283,20 +284,24 @@ function runStaticRegressionChecks() {
     "EmployeeReportClient should use generalized summary CTA text"
   );
   assert.ok(
-    clientSource.includes("captureElementToPdf"),
-    "EmployeeReportClient should include browser PDF capture fallback"
+    clientSource.includes("downloadEmployeeReportPdf"),
+    "EmployeeReportClient should delegate PDF download to dedicated helper"
   );
   assert.ok(
-    clientSource.includes("shouldPreferBrowserCapture"),
-    "EmployeeReportClient should prefer browser PDF capture on narrow mobile viewports"
+    pdfSource.includes("captureElementToPdf"),
+    "PDF helper should include browser PDF capture fallback"
   );
   assert.ok(
-    clientSource.includes("isPdfEngineUnavailableFailure"),
-    "EmployeeReportClient should detect server PDF engine unavailability"
+    pdfSource.includes("shouldPreferBrowserCapture"),
+    "PDF helper should prefer browser PDF capture on narrow mobile viewports"
   );
   assert.ok(
-    clientSource.includes("브라우저 화면 캡처로 PDF를 저장했습니다."),
-    "EmployeeReportClient should show explicit browser PDF fallback notice"
+    pdfSource.includes("isPdfEngineUnavailableFailure"),
+    "PDF helper should detect server PDF engine unavailability"
+  );
+  assert.ok(
+    pdfSource.includes("브라우저 화면 캡처로 PDF를 저장했습니다."),
+    "PDF helper should show explicit browser PDF fallback notice"
   );
 
   const responseSource = read("lib/b2b/employee-sync-response.ts");

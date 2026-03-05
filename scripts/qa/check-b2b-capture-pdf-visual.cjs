@@ -1007,9 +1007,12 @@ async function runCase(browser, baseUrl, caseConfig, adminPasswordCandidates, ou
 
     const pdfPageCount = readPdfPageCount(capture.pdfPath);
     output.pdfPageCount = pdfPageCount;
-    const allowedPdfPageCounts = [2, 3];
-    if (!allowedPdfPageCounts.includes(pdfPageCount)) {
-      throw new Error(`unexpected pdf page count (${pdfPageCount})`);
+    const minPdfPageCount = 2;
+    const maxPdfPageCount = 16;
+    if (pdfPageCount < minPdfPageCount || pdfPageCount > maxPdfPageCount) {
+      throw new Error(
+        `unexpected pdf page count (${pdfPageCount}); expected ${minPdfPageCount}-${maxPdfPageCount}`
+      );
     }
 
     const extractedText = extractPdfText(capture.pdfPath);

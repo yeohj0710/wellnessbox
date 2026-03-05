@@ -332,13 +332,22 @@ function pickBalancedAnalysisLines(candidates: AnalysisCandidate[], maxCount: nu
   return picked;
 }
 
-export function buildFriendlyAnalysisLines(payload: ReportSummaryPayload) {
+export function buildFriendlyAnalysisLines(
+  payload: ReportSummaryPayload,
+  maxCount = MAX_ANALYSIS_LINES
+) {
   const candidates = extractAnalysisCandidates(payload);
-  const picked = pickBalancedAnalysisLines(candidates, MAX_ANALYSIS_LINES);
+  const safeMaxCount = Number.isFinite(maxCount)
+    ? Math.max(1, Math.floor(maxCount))
+    : MAX_ANALYSIS_LINES;
+  const picked = pickBalancedAnalysisLines(candidates, safeMaxCount);
   return picked.map((item) => ({
     key: item.questionKey || `${item.sectionId}-${item.questionNumber}`,
     questionText: item.questionText,
     answerText: item.answerText,
+    sectionId: item.sectionId,
+    sectionTitle: item.sectionTitle,
+    score: item.questionScore,
     recommendation: shortenLine(ensureSentence(toTrimmedText(item.text)), 88),
   }));
 }
@@ -407,19 +416,66 @@ function extractRiskCandidates(payload: ReportSummaryPayload): RiskCandidate[] {
 
 
 
-export function buildFriendlyRiskLines(payload: ReportSummaryPayload) {
+export function buildFriendlyRiskLines(
+  payload: ReportSummaryPayload,
+  maxCount = MAX_RISK_LINES
+) {
   const candidates = extractRiskCandidates(payload);
   const questionFirstCandidates = candidates.filter(
     (item) => item.category === "common" || item.category === "detailed"
   );
   const source = questionFirstCandidates.length > 0 ? questionFirstCandidates : candidates;
-  const picked = source.slice(0, MAX_RISK_LINES);
+  const safeMaxCount = Number.isFinite(maxCount)
+    ? Math.max(1, Math.floor(maxCount))
+    : MAX_RISK_LINES;
+  const picked = source.slice(0, safeMaxCount);
   return picked.map((item) => ({
     key: item.questionKey || `${item.category}-${item.title || item.questionNumber}`,
     questionText: item.questionText || item.title || "확인 필요 항목",
     answerText: item.answerText || "",
     recommendation: shortenLine(item.action, 88),
     category: item.category,
+  }));
+}
+
+export function buildDetailedSectionAdviceLines(
+  payload: ReportSummaryPayload,
+  maxCount = Number.POSITIVE_INFINITY
+) {
+  const candidates = extractAnalysisCandidates(payload);
+  const safeMaxCount = Number.isFinite(maxCount)
+    ? Math.max(1, Math.floor(maxCount))
+    : Number.POSITIVE_INFINITY;
+
+  return candidates.slice(0, safeMaxCount).map((item) => ({
+    key: item.questionKey || `${item.sectionId}-${item.questionNumber}`,
+    sectionId: item.sectionId,
+    sectionTitle: item.sectionTitle,
+    questionNumber: item.questionNumber,
+    questionText: item.questionText,
+    answerText: item.answerText || "-",
+    score: item.questionScore,
+    recommendation: shortenLine(ensureSentence(toTrimmedText(item.text)), 100),
+  }));
+}
+
+export function buildDetailedRiskHighlightLines(
+  payload: ReportSummaryPayload,
+  maxCount = Number.POSITIVE_INFINITY
+) {
+  const candidates = extractRiskCandidates(payload);
+  const safeMaxCount = Number.isFinite(maxCount)
+    ? Math.max(1, Math.floor(maxCount))
+    : Number.POSITIVE_INFINITY;
+
+  return candidates.slice(0, safeMaxCount).map((item) => ({
+    key: item.questionKey || `${item.category}-${item.title || item.questionNumber}`,
+    category: item.category,
+    title: item.title,
+    score: item.score,
+    questionText: item.questionText || item.title || "\uD655\uC778 \uD544\uC694 \uD56D\uBAA9",
+    answerText: item.answerText || "",
+    recommendation: shortenLine(item.action, 100),
   }));
 }
 

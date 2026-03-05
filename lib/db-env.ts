@@ -42,6 +42,7 @@ type EnvValue = {
 };
 
 let cachedValidation: PrismaEnvValidation | null = null;
+let lastConflictWarnSignature: string | null = null;
 
 function pickEnvValue(keys: readonly string[]) {
   for (const key of keys) {
@@ -144,6 +145,37 @@ function buildPrismaEnvGuide(errors: string[]) {
     .join(" ");
 }
 
+function isNextProductionBuildPhase() {
+  const phase = (process.env.NEXT_PHASE ?? "").trim();
+  return phase.includes("phase-production-build");
+}
+
+function shouldWarnPrismaEnvConflicts() {
+  const override = (process.env.WB_DB_ENV_WARN_CONFLICT ?? "").trim();
+  if (override === "1") return true;
+  if (override === "0") return false;
+  return !isNextProductionBuildPhase();
+}
+
+function warnPrismaEnvConflictsOnce(input: {
+  conflictMessages: string[];
+  selected: {
+    databaseKey: string | null;
+    directKey: string | null;
+  };
+}) {
+  const signature = JSON.stringify({
+    conflicts: input.conflictMessages,
+    selected: input.selected,
+  });
+  if (lastConflictWarnSignature === signature) return;
+  lastConflictWarnSignature = signature;
+  console.warn("[db-env] conflicting db url env detected", {
+    conflicts: input.conflictMessages,
+    selected: input.selected,
+  });
+}
+
 function buildValidationResult(): PrismaEnvValidation {
   const databaseCandidates = collectEnvValues(DATABASE_URL_KEYS);
   const directCandidates = collectEnvValues(DIRECT_URL_KEYS);
@@ -169,9 +201,9 @@ function buildValidationResult(): PrismaEnvValidation {
 
   const errors: string[] = [];
   const conflictMessages = conflicts.map(formatPrismaEnvConflict);
-  if (conflictMessages.length > 0) {
-    console.warn("[db-env] conflicting db url env detected", {
-      conflicts: conflictMessages,
+  if (conflictMessages.length > 0 && shouldWarnPrismaEnvConflicts()) {
+    warnPrismaEnvConflictsOnce({
+      conflictMessages,
       selected: {
         databaseKey: database?.key ?? null,
         directKey: direct?.key ?? null,
