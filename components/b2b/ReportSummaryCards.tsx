@@ -20,15 +20,22 @@ import {
   softenAdviceTone,
   toTrimmedText,
 } from "./report-summary/card-insights";
-import SurveyDetailPages from "./report-summary/SurveyDetailPages";
+import SurveyDetailPages, {
+  SurveyDetailCards,
+  hasSurveyDetailPageContent,
+  type SectionAdviceLine,
+  type SupplementRow,
+  type SurveyDetailPageModel,
+} from "./report-summary/SurveyDetailPages";
 
 const DONUT_RADIUS = 52;
 const DONUT_CIRCUMFERENCE = 2 * Math.PI * DONUT_RADIUS;
 const MAX_PAGE1_SECTION_BARS = 3;
-const ROUTINE_CHUNK_SIZE = 6;
-const SECTION_ADVICE_CHUNK_SIZE = 4;
-const SUPPLEMENT_CHUNK_SIZE = 2;
-const SURVEY_CARDS_PER_PAGE = 2;
+const FIRST_PAGE_SURVEY_CONTENT_UNITS = 156;
+const DETAIL_PAGE_SURVEY_CONTENT_UNITS = 226;
+const ROUTINE_CARD_BASE_UNITS = 10;
+const SECTION_CARD_BASE_UNITS = 12;
+const SUPPLEMENT_CARD_BASE_UNITS = 16;
 
 const LIFESTYLE_RISK_LABEL_BY_ID: Record<string, string> = {
   diet: "식습관 위험도",
@@ -75,16 +82,6 @@ function toLifestyleRiskLabel(input: { id?: string; label?: string }) {
   return `${withoutSuffix} 위험도`;
 }
 
-function chunkItems<T>(items: T[], chunkSize: number) {
-  if (items.length === 0) return [] as T[][];
-  const safeChunkSize = Math.max(1, Math.floor(chunkSize));
-  const chunks: T[][] = [];
-  for (let index = 0; index < items.length; index += safeChunkSize) {
-    chunks.push(items.slice(index, index + safeChunkSize));
-  }
-  return chunks;
-}
-
 function toRadarPointString(points: Array<{ x: number; y: number }>) {
   return points.map((point) => `${point.x.toFixed(2)},${point.y.toFixed(2)}`).join(" ");
 }
@@ -93,78 +90,178 @@ function normalizeSupplementHeadingText(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-type SectionAdviceLine = {
-  key: string;
-  sectionTitle: string;
-  questionText: string;
-  answerText: string;
-  recommendation: string;
-};
+function shouldWrapLifestyleRiskLabel(input: { id: string; label: string }) {
+  const normalizedId = input.id.trim().toLowerCase();
+  const normalizedLabel = input.label.replace(/\s+/g, "");
+  return (
+    normalizedId.includes("activity") ||
+    normalizedId.includes("immune") ||
+    normalizedLabel.includes("활동량위험도") ||
+    normalizedLabel.includes("면역관리위험도")
+  );
+}
 
-type SupplementRow = {
-  sectionId: string;
-  sectionTitle: string;
-  title: string;
-  showSectionTitle?: boolean;
-  paragraphs: string[];
-  recommendedNutrients: string[];
-};
+function estimateTextUnits(text: string, charsPerUnit: number) {
+  const normalized = text.trim();
+  if (!normalized) return 0;
+  return Math.max(1, Math.ceil(normalized.length / Math.max(8, charsPerUnit)));
+}
 
-type SurveyDetailPageModel = {
-  routineRows: string[];
-  sectionAdviceRows: SectionAdviceLine[];
-  supplementRows: SupplementRow[];
-};
+function estimateRoutineRowUnits(line: string) {
+  return 3 + estimateTextUnits(line, 34);
+}
+
+function estimateSectionAdviceRowUnits(line: SectionAdviceLine) {
+  return (
+    4 +
+    estimateTextUnits(line.questionText, 30) +
+    estimateTextUnits(line.answerText, 30) +
+    estimateTextUnits(line.recommendation, 34)
+  );
+}
+
+function estimateSupplementRowUnits(row: SupplementRow) {
+  const paragraphUnits = row.paragraphs.reduce((sum, paragraph) => {
+    return sum + estimateTextUnits(paragraph, 40);
+  }, 0);
+  const nutrientUnits = row.recommendedNutrients.length * 2;
+  return 8 + paragraphUnits + nutrientUnits;
+}
+
+function createEmptySurveyDetailPage(): SurveyDetailPageModel {
+  return {
+    routineRows: [],
+    sectionAdviceRows: [],
+    supplementRows: [],
+  };
+}
+
+function pageHasTypeRows(page: SurveyDetailPageModel, type: "routine" | "section" | "supplement") {
+  if (type === "routine") return page.routineRows.length > 0;
+  if (type === "section") return page.sectionAdviceRows.length > 0;
+  return page.supplementRows.length > 0;
+}
+
+function appendTypeRows(
+  page: SurveyDetailPageModel,
+  type: "routine" | "section" | "supplement",
+  rows: Array<string | SectionAdviceLine | SupplementRow>
+) {
+  if (rows.length === 0) return;
+  if (type === "routine") {
+    page.routineRows = [...page.routineRows, ...(rows as string[])];
+    return;
+  }
+  if (type === "section") {
+    page.sectionAdviceRows = [...page.sectionAdviceRows, ...(rows as SectionAdviceLine[])];
+    return;
+  }
+  page.supplementRows = [...page.supplementRows, ...(rows as SupplementRow[])];
+}
 
 function buildSurveyDetailPages(input: {
   routineLines: string[];
   sectionAdviceLines: SectionAdviceLine[];
   supplementRows: SupplementRow[];
 }) {
-  const cards: Array<
-    | { type: "routine"; rows: string[] }
-    | { type: "section"; rows: SectionAdviceLine[] }
-    | { type: "supplement"; rows: SupplementRow[] }
-  > = [];
-
-  for (const rows of chunkItems(input.routineLines, ROUTINE_CHUNK_SIZE)) {
-    if (rows.length > 0) cards.push({ type: "routine", rows });
-  }
-  for (const rows of chunkItems(input.sectionAdviceLines, SECTION_ADVICE_CHUNK_SIZE)) {
-    if (rows.length > 0) cards.push({ type: "section", rows });
-  }
-  for (const rows of chunkItems(input.supplementRows, SUPPLEMENT_CHUNK_SIZE)) {
-    if (rows.length > 0) cards.push({ type: "supplement", rows });
+  if (
+    input.routineLines.length === 0 &&
+    input.sectionAdviceLines.length === 0 &&
+    input.supplementRows.length === 0
+  ) {
+    return [] as SurveyDetailPageModel[];
   }
 
-  if (cards.length === 0) return [] as SurveyDetailPageModel[];
+  const segments: Array<{
+    type: "routine" | "section" | "supplement";
+    items: string[] | SectionAdviceLine[] | SupplementRow[];
+    estimate: (item: string | SectionAdviceLine | SupplementRow) => number;
+    baseUnits: number;
+  }> = [
+    {
+      type: "routine",
+      items: input.routineLines,
+      estimate: (item) => estimateRoutineRowUnits(item as string),
+      baseUnits: ROUTINE_CARD_BASE_UNITS,
+    },
+    {
+      type: "section",
+      items: input.sectionAdviceLines,
+      estimate: (item) => estimateSectionAdviceRowUnits(item as SectionAdviceLine),
+      baseUnits: SECTION_CARD_BASE_UNITS,
+    },
+    {
+      type: "supplement",
+      items: input.supplementRows,
+      estimate: (item) => estimateSupplementRowUnits(item as SupplementRow),
+      baseUnits: SUPPLEMENT_CARD_BASE_UNITS,
+    },
+  ];
+
+  const getPageBudget = (pageIndex: number) =>
+    pageIndex === 0 ? FIRST_PAGE_SURVEY_CONTENT_UNITS : DETAIL_PAGE_SURVEY_CONTENT_UNITS;
 
   const pages: SurveyDetailPageModel[] = [];
-  let currentPage: SurveyDetailPageModel = {
-    routineRows: [],
-    sectionAdviceRows: [],
-    supplementRows: [],
-  };
-  let cardsInCurrentPage = 0;
+  let currentPage = createEmptySurveyDetailPage();
+  let currentUnits = 0;
+  let pageIndex = 0;
 
-  for (const card of cards) {
-    if (cardsInCurrentPage >= SURVEY_CARDS_PER_PAGE) {
+  const pushCurrentPage = () => {
+    if (hasSurveyDetailPageContent(currentPage)) {
       pages.push(currentPage);
-      currentPage = {
-        routineRows: [],
-        sectionAdviceRows: [],
-        supplementRows: [],
-      };
-      cardsInCurrentPage = 0;
+      currentPage = createEmptySurveyDetailPage();
+      currentUnits = 0;
+      pageIndex += 1;
     }
+  };
 
-    if (card.type === "routine") currentPage.routineRows = card.rows;
-    if (card.type === "section") currentPage.sectionAdviceRows = card.rows;
-    if (card.type === "supplement") currentPage.supplementRows = card.rows;
-    cardsInCurrentPage += 1;
+  for (const segment of segments) {
+    if (segment.items.length === 0) continue;
+    let cursor = 0;
+
+    while (cursor < segment.items.length) {
+      const pageBudget = getPageBudget(pageIndex);
+      const alreadyHasTypeRows = pageHasTypeRows(currentPage, segment.type);
+      const baseUnits = alreadyHasTypeRows ? 0 : segment.baseUnits;
+      const remainingUnits = pageBudget - currentUnits;
+
+      if (remainingUnits <= baseUnits) {
+        pushCurrentPage();
+        continue;
+      }
+
+      let takeCount = 0;
+      let takenUnits = baseUnits;
+
+      while (cursor + takeCount < segment.items.length) {
+        const item = segment.items[cursor + takeCount];
+        const nextUnits = Math.max(1, segment.estimate(item));
+        if (takenUnits + nextUnits > remainingUnits) break;
+        takenUnits += nextUnits;
+        takeCount += 1;
+      }
+
+      if (takeCount === 0) {
+        if (currentUnits > 0) {
+          pushCurrentPage();
+          continue;
+        }
+        const forcedItem = segment.items[cursor];
+        const forcedUnits = Math.max(1, segment.estimate(forcedItem));
+        appendTypeRows(currentPage, segment.type, [forcedItem]);
+        currentUnits += baseUnits + forcedUnits;
+        cursor += 1;
+        continue;
+      }
+
+      const picked = segment.items.slice(cursor, cursor + takeCount);
+      appendTypeRows(currentPage, segment.type, picked);
+      currentUnits += takenUnits;
+      cursor += takeCount;
+    }
   }
 
-  if (cardsInCurrentPage > 0) pages.push(currentPage);
+  pushCurrentPage();
   return pages;
 }
 
@@ -298,8 +395,11 @@ export default function ReportSummaryCards(props: {
     sectionAdviceLines: detailedSectionAdviceLines,
     supplementRows: supplementDesignRows,
   });
+  const firstPageSurveyDetails = surveyPages[0] ?? createEmptySurveyDetailPage();
+  const continuationSurveyPages = surveyPages.slice(1);
+  const hasFirstPageSurveyContent = hasSurveyDetailPageContent(firstPageSurveyDetails);
   const surveyDetailPageStart = 2;
-  const healthDataPageNumber = surveyDetailPageStart + surveyPages.length;
+  const healthDataPageNumber = surveyDetailPageStart + continuationSurveyPages.length;
   const medicationPageNumber = healthDataPageNumber + 1;
 
   const radarCenterX = 120;
@@ -323,7 +423,10 @@ export default function ReportSummaryCards(props: {
         : rawLabelX > radarCenterX + 30
           ? "start"
           : "middle";
-    const isWrappedRiskLabel = axis.id === "activity" || axis.id === "immune";
+    const isWrappedRiskLabel = shouldWrapLifestyleRiskLabel({
+      id: axis.id,
+      label: axis.label,
+    });
     const labelBaseText = isWrappedRiskLabel
       ? axis.label.replace(/\s*위험도$/u, "").trim()
       : axis.label;
@@ -562,11 +665,15 @@ export default function ReportSummaryCards(props: {
           </article>
         </section>
 
+        {hasFirstPageSurveyContent ? (
+          <SurveyDetailCards page={firstPageSurveyDetails} pageNumber={1} />
+        ) : null}
+
       </section>
 
       <SurveyDetailPages
         surveyDetailPageStart={surveyDetailPageStart}
-        surveyPages={surveyPages}
+        surveyPages={continuationSurveyPages}
       />
 
       <section

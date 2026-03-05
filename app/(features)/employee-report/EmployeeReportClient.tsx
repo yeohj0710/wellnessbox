@@ -60,6 +60,10 @@ import { useBusyState } from "./_lib/use-busy-state";
 import { useForceSyncCooldown } from "./_lib/use-force-sync-cooldown";
 import { useEmployeeReportToastEffects } from "./_lib/use-employee-report-toast-effects";
 
+const B2B_EMPLOYEE_REPORT_ADMIN_ONLY_CODE = "B2B_REPORT_ADMIN_ONLY";
+const B2B_EMPLOYEE_REPORT_ADMIN_ONLY_NOTICE =
+  "현재 건강 레포트는 관리자만 열람할 수 있습니다. wellnessbox.me@gmail.com 으로 문의해 주세요.";
+
 export default function EmployeeReportClient() {
   const { showToast } = useToast();
   const searchParams = useSearchParams();
@@ -81,6 +85,7 @@ export default function EmployeeReportClient() {
   >(null);
   const [syncGuidance, setSyncGuidance] = useState<SyncGuidance | null>(null);
   const [pendingSignForceRefresh, setPendingSignForceRefresh] = useState(false);
+  const [adminOnlyReportBlocked, setAdminOnlyReportBlocked] = useState(false);
   const [forceConfirmOpen, setForceConfirmOpen] = useState(false);
   const [forceConfirmText, setForceConfirmText] = useState("");
   const [forceConfirmChecked, setForceConfirmChecked] = useState(false);
@@ -177,6 +182,7 @@ export default function EmployeeReportClient() {
   function resetReportState() {
     setReportData(null);
     setSelectedPeriodKey("");
+    setAdminOnlyReportBlocked(false);
   }
 
   function setPendingSignGuidance(message: string, forceRefresh = false) {
@@ -200,6 +206,7 @@ export default function EmployeeReportClient() {
         resetReportState();
         return;
       }
+      setAdminOnlyReportBlocked(false);
       setReportData(data);
       setSelectedPeriodKey(data.periodKey || periodKey || "");
       setError("");
@@ -208,6 +215,21 @@ export default function EmployeeReportClient() {
         setStoredIdentitySource("v2");
       }
     } catch (err) {
+      if (
+        err instanceof ApiRequestError &&
+        err.status === 403 &&
+        err.payload.code === B2B_EMPLOYEE_REPORT_ADMIN_ONLY_CODE
+      ) {
+        setAdminOnlyReportBlocked(true);
+        setReportData(null);
+        setSelectedPeriodKey("");
+        setSyncNextAction(null);
+        setSyncGuidance(null);
+        setPendingSignForceRefresh(false);
+        setError("");
+        setNotice(B2B_EMPLOYEE_REPORT_ADMIN_ONLY_NOTICE);
+        return;
+      }
       if (
         err instanceof ApiRequestError &&
         (err.status === 401 || err.status === 404)
@@ -261,6 +283,17 @@ export default function EmployeeReportClient() {
           setNotice(
             "\uC800\uC7A5\uB41C \uB9AC\uD3EC\uD2B8\uAC00 \uC5C6\uC5B4 \uB2E4\uC2DC \uC778\uC99D \uD6C4 \uC5F0\uB3D9\uC774 \uD544\uC694\uD569\uB2C8\uB2E4."
           );
+          return;
+        }
+        if (!isAdminLoggedIn) {
+          setAdminOnlyReportBlocked(true);
+          setReportData(null);
+          setSelectedPeriodKey("");
+          setSyncNextAction(null);
+          setSyncGuidance(null);
+          setPendingSignForceRefresh(false);
+          setError("");
+          setNotice(B2B_EMPLOYEE_REPORT_ADMIN_ONLY_NOTICE);
           return;
         }
         await loadReport();
@@ -323,6 +356,12 @@ export default function EmployeeReportClient() {
     void checkSessionAndMaybeAutoLogin();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!isAdminLoggedIn || !adminOnlyReportBlocked || busy) return;
+    void checkSessionAndMaybeAutoLogin({ silent: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adminOnlyReportBlocked, busy, isAdminLoggedIn]);
 
   useEffect(() => {
     const unsubscribe = subscribeAuthSyncEvent(
@@ -397,6 +436,16 @@ export default function EmployeeReportClient() {
         );
         return;
       }
+      if (!isAdminLoggedIn) {
+        setAdminOnlyReportBlocked(true);
+        setReportData(null);
+        setSelectedPeriodKey("");
+        setSyncNextAction(null);
+        setSyncGuidance(null);
+        setPendingSignForceRefresh(false);
+        setNotice(B2B_EMPLOYEE_REPORT_ADMIN_ONLY_NOTICE);
+        return;
+      }
       setNotice(
         "\uAE30\uC874 \uB9AC\uD3EC\uD2B8\uB97C \uBD88\uB7EC\uC654\uC2B5\uB2C8\uB2E4."
       );
@@ -451,6 +500,16 @@ export default function EmployeeReportClient() {
       }
       return false;
     }
+    if (!isAdminLoggedIn) {
+      setAdminOnlyReportBlocked(true);
+      setReportData(null);
+      setSelectedPeriodKey("");
+      setSyncNextAction(null);
+      setSyncGuidance(null);
+      setPendingSignForceRefresh(false);
+      setNotice(B2B_EMPLOYEE_REPORT_ADMIN_ONLY_NOTICE);
+      return true;
+    }
     setSyncNextAction(null);
     setSyncGuidance(null);
     setPendingSignForceRefresh(false);
@@ -478,6 +537,7 @@ export default function EmployeeReportClient() {
     beginBusy("카카오톡으로 인증 요청을 보내고 있어요.");
     setError("");
     setNotice("");
+    setAdminOnlyReportBlocked(false);
     setSyncGuidance(null);
     setSyncNextAction(null);
     setPendingSignForceRefresh(false);
@@ -554,6 +614,7 @@ export default function EmployeeReportClient() {
       clearStoredIdentity();
       setStoredIdentitySource("none");
     }
+    setAdminOnlyReportBlocked(false);
 
     beginBusy(
       forceRefresh
@@ -698,6 +759,7 @@ export default function EmployeeReportClient() {
       clearLocalIdentityCache();
       setReportData(null);
       setSelectedPeriodKey("");
+      setAdminOnlyReportBlocked(false);
       setSyncNextAction(null);
       setSyncGuidance(null);
       setPendingSignForceRefresh(false);
@@ -761,6 +823,8 @@ export default function EmployeeReportClient() {
           <div className={styles.statusRow}>
             {reportData?.report ? (
               <span className={styles.statusOn}>레포트 준비 완료</span>
+            ) : adminOnlyReportBlocked ? (
+              <span className={styles.statusWarn}>관리자 열람 권한 필요</span>
             ) : (
               <span className={styles.statusOff}>본인 확인 필요</span>
             )}
@@ -770,7 +834,7 @@ export default function EmployeeReportClient() {
           </div>
         </header>
 
-        {!reportData ? (
+        {!reportData && !adminOnlyReportBlocked ? (
           <>
             <EmployeeReportIdentitySection
               identity={identity}
@@ -812,6 +876,27 @@ export default function EmployeeReportClient() {
               />
             ) : null}
           </>
+        ) : null}
+
+        {adminOnlyReportBlocked ? (
+          <section className={styles.sectionCard}>
+            <div className={styles.adminOnlyGateCard}>
+              <span className={styles.adminOnlyGateBadge}>관리자 전용 열람</span>
+              <h2 className={styles.adminOnlyGateTitle}>
+                현재 건강 레포트는 관리자만 확인할 수 있습니다.
+              </h2>
+              <p className={styles.adminOnlyGateDescription}>
+                본인인증은 완료되었지만, 현재 정책상 개인 직접 열람은 임시 제한되어 있습니다.
+                열람이 필요하시면 아래 이메일로 문의해 주세요.
+              </p>
+              <a
+                href="mailto:wellnessbox.me@gmail.com"
+                className={styles.adminOnlyGateEmail}
+              >
+                wellnessbox.me@gmail.com
+              </a>
+            </div>
+          </section>
         ) : null}
 
         {reportData?.report ? (

@@ -9,14 +9,29 @@ import {
   listB2bReportPeriods,
 } from "@/lib/b2b/report-service";
 import { noStoreJson } from "@/lib/server/no-store";
-import { requireB2bEmployeeToken } from "@/lib/server/route-auth";
+import { requireAdminSession, requireB2bEmployeeToken } from "@/lib/server/route-auth";
 
 const B2B_EMPLOYEE_NOT_FOUND_ERROR =
   "\uC9C1\uC6D0 \uC815\uBCF4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.";
+const B2B_EMPLOYEE_REPORT_ADMIN_ONLY_CODE = "B2B_REPORT_ADMIN_ONLY";
+const B2B_EMPLOYEE_REPORT_ADMIN_ONLY_ERROR =
+  "현재 건강 레포트는 관리자만 열람할 수 있습니다. 문의: wellnessbox.me@gmail.com";
 
 export async function runB2bEmployeeReportGetRoute(req: Request) {
   const auth = await requireB2bEmployeeToken();
   if (!auth.ok) return auth.response;
+  const adminAuth = await requireAdminSession();
+  if (!adminAuth.ok) {
+    return noStoreJson(
+      {
+        ok: false,
+        code: B2B_EMPLOYEE_REPORT_ADMIN_ONLY_CODE,
+        reason: "admin_only_report_access",
+        error: B2B_EMPLOYEE_REPORT_ADMIN_ONLY_ERROR,
+      },
+      403
+    );
+  }
 
   const { searchParams } = new URL(req.url);
   const periodKey = searchParams.get("period") || resolveCurrentPeriodKey();

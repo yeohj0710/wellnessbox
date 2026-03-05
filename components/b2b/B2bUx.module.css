@@ -957,6 +957,72 @@
   color: var(--error-ink);
 }
 
+.adminOnlyGateCard {
+  border-radius: 20px;
+  border: 1px solid #f9c7cc;
+  background:
+    radial-gradient(circle at 96% -14%, rgba(220, 38, 38, 0.12), transparent 42%),
+    linear-gradient(180deg, #fff7f8 0%, #fffdfd 100%);
+  padding: 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.adminOnlyGateBadge {
+  width: fit-content;
+  border-radius: 999px;
+  border: 1px solid #f6a3ad;
+  background: #fff0f2;
+  color: #be123c;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.adminOnlyGateTitle {
+  margin: 0;
+  color: #9f1239;
+  font-size: 1.08rem;
+  line-height: 1.36;
+}
+
+.adminOnlyGateDescription {
+  margin: 0;
+  color: #4e5968;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.adminOnlyGateEmail {
+  width: fit-content;
+  border-radius: 999px;
+  border: 1px solid #f8a7b1;
+  background: #ffffff;
+  color: #be123c;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  transition:
+    transform 160ms ease,
+    box-shadow 200ms ease,
+    border-color 200ms ease;
+}
+
+.adminOnlyGateEmail:hover {
+  border-color: #f26f86;
+  box-shadow: 0 6px 14px rgba(190, 18, 60, 0.18);
+  transform: translateY(-1px);
+}
+
+.adminOnlyGateEmail:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.96),
+    0 0 0 6px rgba(244, 63, 94, 0.28);
+}
+
 .optionalCard {
   border-radius: 12px;
   border: 1px solid var(--line);

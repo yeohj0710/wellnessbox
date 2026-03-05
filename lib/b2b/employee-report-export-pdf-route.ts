@@ -16,9 +16,12 @@ import {
 import type { ReportSummaryPayload } from "@/lib/b2b/report-summary-payload";
 import { resolveDbRouteError } from "@/lib/server/db-error";
 import { noStoreJson } from "@/lib/server/no-store";
-import { requireB2bEmployeeToken } from "@/lib/server/route-auth";
+import { requireAdminSession, requireB2bEmployeeToken } from "@/lib/server/route-auth";
 
 type EmployeeReportPdfMode = "web" | "legacy";
+const B2B_EMPLOYEE_REPORT_ADMIN_ONLY_CODE = "B2B_REPORT_ADMIN_ONLY";
+const B2B_EMPLOYEE_REPORT_ADMIN_ONLY_ERROR =
+  "현재 건강 레포트는 관리자만 열람할 수 있습니다. 문의: wellnessbox.me@gmail.com";
 
 function allowLegacyPdfMode() {
   const raw = (process.env.B2B_ENABLE_LEGACY_PDF_EXPORT || "").trim().toLowerCase();
@@ -293,6 +296,18 @@ export async function runEmployeeReportPdfExport(input: {
 export async function runEmployeeReportPdfGetRoute(req: Request) {
   const auth = await requireB2bEmployeeToken();
   if (!auth.ok) return auth.response;
+  const adminAuth = await requireAdminSession();
+  if (!adminAuth.ok) {
+    return noStoreJson(
+      {
+        ok: false,
+        code: B2B_EMPLOYEE_REPORT_ADMIN_ONLY_CODE,
+        reason: "admin_only_report_access",
+        error: B2B_EMPLOYEE_REPORT_ADMIN_ONLY_ERROR,
+      },
+      403
+    );
+  }
 
   const { searchParams } = new URL(req.url);
   const periodKey = searchParams.get("period") || resolveCurrentPeriodKey();

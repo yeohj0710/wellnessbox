@@ -79,6 +79,17 @@ function toSurveyRadarPointString(points: Array<{ x: number; y: number }>) {
   return points.map((point) => `${point.x.toFixed(2)},${point.y.toFixed(2)}`).join(" ");
 }
 
+function shouldWrapLifestyleRiskLabel(input: { id?: string; label: string }) {
+  const normalizedId = (input.id ?? "").trim().toLowerCase();
+  const normalizedLabel = input.label.replace(/\s+/g, "");
+  return (
+    normalizedId.includes("activity") ||
+    normalizedId.includes("immune") ||
+    normalizedLabel.includes("활동량위험도") ||
+    normalizedLabel.includes("면역관리위험도")
+  );
+}
+
 export type SurveyResultPanelText = {
   resultTitle: string;
   scoreHealth: string;
@@ -159,7 +170,10 @@ export default function SurveyResultPanel(props: {
                   : rawLabelX > radarCenterX + 30
                     ? "start"
                     : "middle";
-              const isWrappedRiskLabel = axis.id === "activity" || axis.id === "immune";
+              const isWrappedRiskLabel = shouldWrapLifestyleRiskLabel({
+                id: axis.id,
+                label: axis.label,
+              });
               const labelBaseText = isWrappedRiskLabel
                 ? axis.label.replace(/\s*위험도$/u, "").trim()
                 : axis.label;
@@ -485,9 +499,7 @@ export default function SurveyResultPanel(props: {
                             <span
                               key={`nutrient-${item.sectionId}-${nutrient.code}`}
                               className="rounded-full border border-indigo-200 bg-white px-2 py-1 text-xs font-medium text-indigo-700"
-                            >
-                              추천 성분 · {nutrient.labelKo ?? nutrient.label}
-                            </span>
+                            >{nutrient.labelKo ?? nutrient.label}</span>
                           ))}
                         </div>
                       </div>
@@ -514,17 +526,21 @@ export default function SurveyResultPanel(props: {
           <div>
             <p className="text-[11px] font-semibold tracking-[0.01em] text-slate-500">다음 단계</p>
             <p className="mt-0.5 text-xs text-slate-500">
-              결과를 바탕으로 건강 레포트를 확인하거나 답안을 다시 조정할 수 있습니다.
+              결과를 확인하고 답안을 다시 조정할 수 있습니다.
             </p>
           </div>
-          <button
+          {/*
+            TODO(temp): 개인 사용자의 건강 레포트 직접 열람을 임시 제한합니다.
+            정책 확정 후 버튼 노출을 재개하세요.
+          */}
+          {/* <button
             type="button"
             onClick={props.onOpenEmployeeReport}
             data-testid="survey-result-open-employee-report"
             className="inline-flex min-h-11 items-center justify-center rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 px-5 py-2 text-sm font-semibold text-white shadow-[0_10px_22px_-14px_rgba(14,116,204,0.9)] transition hover:-translate-y-0.5 hover:brightness-105 hover:shadow-[0_14px_26px_-14px_rgba(14,116,204,0.95)] active:translate-y-0"
           >
             {text.viewEmployeeReport}
-          </button>
+          </button> */}
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-200/85 pt-3">

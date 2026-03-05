@@ -4,7 +4,7 @@ import { normalizePdfCaptureWidthPx } from "@/lib/b2b/export/pdf-capture-setting
 import { resolveCurrentPeriodKey } from "@/lib/b2b/period";
 import type { ReportSummaryPayload } from "@/lib/b2b/report-summary-payload";
 import { ensureLatestB2bReport } from "@/lib/b2b/report-service";
-import { requireB2bEmployeeToken } from "@/lib/server/route-auth";
+import { requireAdminSession, requireB2bEmployeeToken } from "@/lib/server/route-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +24,8 @@ function resolveReportWidth(rawWidth: string | undefined) {
 export default async function EmployeeReportPdfExportViewPage(props: PageProps) {
   const auth = await requireB2bEmployeeToken();
   if (!auth.ok) notFound();
+  const adminAuth = await requireAdminSession();
+  if (!adminAuth.ok) notFound();
 
   const searchParams = (await props.searchParams) ?? {};
   const requestedPeriod = (searchParams.period || "").trim();
