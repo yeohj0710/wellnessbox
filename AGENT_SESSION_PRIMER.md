@@ -13,8 +13,8 @@ Run `npm run agent:context-refresh` (or `npm run agent:session-primer`) to refre
 
 ## Guard Snapshot
 
-- Total routes: **83**
-- Guarded routes: **51**
+- Total routes: **85**
+- Guarded routes: **53**
 - Expected session-managed routes: **6**
 - Unexpected review needed: **0**
 - Missing method exports: **0**
@@ -24,32 +24,32 @@ Run `npm run agent:context-refresh` (or `npm run agent:session-primer`) to refre
 ## Runtime File Hotspots (Top 12)
 
 - 3729 lines: `lib/rnd/ai-training/pipeline.ts`
--  787 lines: `app/(features)/employee-report/EmployeeReportClient.tsx`
--  711 lines: `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx`
+- 2455 lines: `app/survey/survey-page-client.tsx`
+- 1251 lines: `lib/b2b/admin-employee-management-route.ts`
+- 1077 lines: `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx`
+- 1021 lines: `components/b2b/ReportSummaryCards.tsx`
+-  991 lines: `app/(features)/employee-report/EmployeeReportClient.tsx`
+-  902 lines: `lib/b2b/public-survey.ts`
+-  828 lines: `lib/server/hyphen/fetch-executor.ts`
+-  786 lines: `app/(admin)/admin/b2b-employee-data/B2bAdminEmployeeDataClient.tsx`
 -  709 lines: `app/(components)/landingSection2.tsx`
--  551 lines: `lib/ai/chain.ts`
--  536 lines: `app/(components)/homeProductSection.tsx`
--  512 lines: `lib/b2b/export/layout-dsl.ts`
--  489 lines: `app/my-data/myDataPageSections.tsx`
--  487 lines: `public/scripts/google-translate-orchestrator.js`
--  477 lines: `components/b2b/ReportSummaryCards.tsx`
--  469 lines: `lib/agent-playground/patterns.ts`
--  466 lines: `app/agent-playground/page.tsx`
+-  674 lines: `app/(features)/employee-report/_lib/client-utils.ts`
+-  578 lines: `app/survey/_components/SurveyResultPanel.tsx`
 
 ## Runtime Function Hotspots (Top 12)
 
--  732 lines: `EmployeeReportClient` (`app/(features)/employee-report/EmployeeReportClient.tsx:55`)
+- 1841 lines: `SurveyPageClient` (`app/survey/survey-page-client.tsx:614`)
+- 1014 lines: `B2bAdminReportClient` (`app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx:63`)
+-  918 lines: `EmployeeReportClient` (`app/(features)/employee-report/EmployeeReportClient.tsx:73`)
+-  756 lines: `B2bAdminEmployeeDataClient` (`app/(admin)/admin/b2b-employee-data/B2bAdminEmployeeDataClient.tsx:30`)
 -  732 lines: `trainAllRndAiModels` (`lib/rnd/ai-training/pipeline.ts:2997`)
 -  680 lines: `LandingSection2` (`app/(components)/landingSection2.tsx:29`)
--  658 lines: `B2bAdminReportClient` (`app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx:53`)
+-  534 lines: `ReportSummaryCards` (`components/b2b/ReportSummaryCards.tsx:487`)
+-  476 lines: `SurveyResultPanel` (`app/survey/_components/SurveyResultPanel.tsx:102`)
 -  460 lines: `HomeProductSection` (`app/(components)/homeProductSection.tsx:76`)
--  417 lines: `ReportSummaryCards` (`components/b2b/ReportSummaryCards.tsx:60`)
+-  407 lines: `loadEmployeeForOps` (`lib/b2b/admin-employee-management-route.ts:187`)
 -  399 lines: `EditorAdminClient` (`app/(admin)/admin/column/editor/EditorAdminClient.tsx:44`)
--  377 lines: `Cart` (`components/order/cart.tsx:45`)
--  374 lines: `RecommendedProductActions` (`app/chat/components/RecommendedProductActions.tsx:26`)
--  365 lines: `useAssessFlow` (`app/assess/useAssessFlow.ts:29`)
--  355 lines: `ProductManager` (`components/manager/productManager.tsx:14`)
--  350 lines: `PharmacyProductManager` (`components/manager/pharmacyProductManager.tsx:18`)
+-  398 lines: `Cart` (`components/order/cart.tsx:46`)
 
 ## Critical Edit Invariants
 

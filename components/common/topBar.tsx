@@ -62,6 +62,7 @@ function TopBarInner() {
   const { showLoading } = useLoading();
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isDrawerMode, setIsDrawerMode] = useState(true);
   const [logoutPending, setLogoutPending] = useState(false);
   const logoRef = useRef<HTMLImageElement>(null);
 
@@ -83,6 +84,12 @@ function TopBarInner() {
       window.removeEventListener(CLOSE_TOPBAR_DRAWER_EVENT, onCloseDrawerByEvent);
     };
   }, []);
+
+  useEffect(() => {
+    if (!isDrawerMode) {
+      setIsDrawerOpen(false);
+    }
+  }, [isDrawerMode]);
 
   const closeCartOverlay = useCallback(() => {
     if (typeof window === "undefined") return;
@@ -205,13 +212,14 @@ function TopBarInner() {
         onOpenCommandPalette={openCommandPalette}
         onToggleDrawer={() => setIsDrawerOpen((value) => !value)}
         onMenuItemClick={handleMenuItemClick}
+        onDrawerModeChange={setIsDrawerMode}
       />
 
       <TopBarDrawer
         loginStatus={loginStatus}
         onRequestLogout={requestLogout}
         isLogoutPending={logoutPending}
-        isDrawerOpen={isDrawerOpen}
+        isDrawerOpen={isDrawerMode && isDrawerOpen}
         sevenDayIntentHandlers={sevenDayIntentHandlers}
         onGoSevenDays={goSevenDays}
         onOpenCommandPalette={closeDrawerAndOpenCommandPalette}

@@ -188,7 +188,8 @@ function run() {
     buildQuestionAnswerMap(deriveInput)
   );
   assert.equal(derived.length, 5);
-  assert.deepEqual(derived, ["S03", "S01", "S24", "S21", "S14"]);
+  assert.deepEqual(derived, ["S01", "S24", "S21", "S14", "S02"]);
+  assert.ok(!derived.includes("S03"), "explicit C27 answer should override legacy seed selection");
   checks.push("c27_alias_and_max_selection");
 
   // case 6) wellness result with full-risk synthetic input
@@ -245,8 +246,10 @@ function run() {
       syntheticResult.highRiskHighlights.length <= 5
   );
   assert.ok(
-    syntheticResult.highRiskHighlights.some((item) => item.category === "section"),
-    "highRiskHighlights should include section category"
+    syntheticResult.highRiskHighlights.some(
+      (item) => item.category === "section" || item.category === "detailed"
+    ),
+    "highRiskHighlights should include detailed risk coverage for selected sections"
   );
   assert.ok(syntheticResult.lifestyleRoutineAdvice.length > 0);
   assert.equal(

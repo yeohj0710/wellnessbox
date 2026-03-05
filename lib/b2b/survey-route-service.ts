@@ -7,6 +7,7 @@ import { upsertSurveyResponseWithAnswers } from "@/lib/b2b/survey-response-servi
 import {
   buildSurveyAnswerRows,
   collectSurveyAvailablePeriods,
+  pruneSurveyAnswersForSelectedSections,
   resolveSurveySelectedSections,
   serializeSurveyResponse,
   type SurveyPeriodRow,
@@ -114,11 +115,16 @@ export async function runAdminSurveyUpsert(input: {
       `\uC0C1\uC138 \uC139\uC158\uC740 \uCD5C\uB300 ${schema.rules.maxSelectedSections}\uAC1C\uAE4C\uC9C0 \uC120\uD0DD\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.`
     );
   }
+  const prunedAnswers = pruneSurveyAnswersForSelectedSections({
+    answers: input.answers,
+    maps: { commonMap, sectionMap },
+    selectedSections,
+  });
 
   const previousSelectedSignature = JSON.stringify(previousResponse?.selectedSections ?? []);
   const nextSelectedSignature = JSON.stringify(selectedSections);
   const previousAnswersSignature = JSON.stringify(previousResponse?.answersJson ?? null);
-  const nextAnswersSignature = JSON.stringify(input.answers);
+  const nextAnswersSignature = JSON.stringify(prunedAnswers);
   const shouldSyncReport =
     !previousResponse ||
     previousResponse.submittedAt == null ||
@@ -132,12 +138,12 @@ export async function runAdminSurveyUpsert(input: {
     periodKey: input.periodKey,
     reportCycle: periodKeyToCycle(input.periodKey),
     selectedSections,
-    answersJson: asJsonValue(input.answers),
+    answersJson: asJsonValue(prunedAnswers),
     submittedAt: new Date(),
     buildAnswerRows: (responseId) =>
       buildSurveyAnswerRows({
         responseId,
-        answers: input.answers,
+        answers: prunedAnswers,
         maps: { commonMap, sectionMap },
         asJsonValue,
       }),
@@ -205,6 +211,12 @@ export async function runEmployeeSurveyUpsert(input: {
     );
   }
 
+  const prunedAnswers = pruneSurveyAnswersForSelectedSections({
+    answers: input.answers,
+    maps: { commonMap, sectionMap },
+    selectedSections,
+  });
+
   const shouldSyncReport = input.finalize === true;
 
   const { response, answerRows } = await upsertSurveyResponseWithAnswers({
@@ -214,13 +226,13 @@ export async function runEmployeeSurveyUpsert(input: {
     periodKey: input.periodKey,
     reportCycle: periodKeyToCycle(input.periodKey),
     selectedSections,
-    answersJson: asJsonValue(input.answers),
+    answersJson: asJsonValue(prunedAnswers),
     preserveSubmittedOnDraft: true,
     ...(input.finalize ? { submittedAt: new Date() } : {}),
     buildAnswerRows: (responseId) =>
       buildSurveyAnswerRows({
         responseId,
-        answers: input.answers,
+        answers: prunedAnswers,
         maps: { commonMap, sectionMap },
         asJsonValue,
       }),

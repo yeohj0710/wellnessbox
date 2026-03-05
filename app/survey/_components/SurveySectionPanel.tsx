@@ -34,6 +34,8 @@ export default function SurveySectionPanel(props: {
   currentSection: SurveyPanelSection | null;
   surveySections: SurveyPanelSection[];
   progressPercent: number;
+  progressDoneCount: number;
+  progressTotalCount: number;
   progressMessage: string;
   isSectionTransitioning: boolean;
   isCommonSurveySection: boolean;
@@ -81,6 +83,14 @@ export default function SurveySectionPanel(props: {
               <span>{text.progressBarLabel}</span>
               <span className="font-semibold text-cyan-700">{props.progressPercent}%</span>
             </div>
+            <span
+              data-testid="survey-progress-meta"
+              data-done={props.progressDoneCount}
+              data-total={props.progressTotalCount}
+              className="sr-only"
+            >
+              {props.progressDoneCount}/{props.progressTotalCount}
+            </span>
             <div className="h-2.5 w-full rounded-full bg-cyan-100">
               <div
                 className="h-2.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-[width] duration-300"

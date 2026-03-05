@@ -8,6 +8,7 @@ import styles from "@/components/b2b/B2bUx.module.css";
 import {
   buildPublicSurveyQuestionList,
   computeSurveyProgress,
+  resolveSurveySelectionState,
   resolveSelectedSectionsFromC27,
   sanitizeSurveyAnswerValue,
   type PublicSurveyAnswers,
@@ -627,15 +628,16 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
         value,
         maxSelectedSections
       );
-      const nextAnswers = {
-        ...prev,
-        [question.key]: sanitized,
-      } as PublicSurveyAnswers;
-
-      setSelectedSections((prevSections) =>
-        resolveSelectedSectionsFromC27(template, nextAnswers, prevSections)
-      );
-      return nextAnswers;
+      const nextState = resolveSurveySelectionState({
+        template,
+        answers: {
+          ...prev,
+          [question.key]: sanitized,
+        } as PublicSurveyAnswers,
+        selectedSections,
+      });
+      setSelectedSections(nextState.selectedSections);
+      return nextState.answers;
     });
   }
 
@@ -645,22 +647,33 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     if (!template) return;
     const c27Key = template.rules.selectSectionByCommonQuestionKey || "C27";
     const c27Question = template.common.find((question) => question.key === c27Key);
-    setSelectedSections((prev) => {
-      const next = new Set(prev);
-      if (next.has(sectionKey)) next.delete(sectionKey);
-      else if (next.size < maxSelectedSections) next.add(sectionKey);
-      const nextSections = [...next];
-      setSurveyAnswers((answers) => {
-        const nextC27Value = c27Question
-          ? sanitizeSurveyAnswerValue(c27Question, nextSections, maxSelectedSections)
-          : nextSections;
-        const nextAnswers = {
-          ...answers,
-          [c27Key]: nextC27Value,
-        } as PublicSurveyAnswers;
-        return nextAnswers;
+    setSurveyAnswers((prevAnswers) => {
+      const currentSelectedSections = resolveSelectedSectionsFromC27(
+        template,
+        prevAnswers as PublicSurveyAnswers,
+        selectedSections
+      );
+      const nextSectionSet = new Set(currentSelectedSections);
+      if (nextSectionSet.has(sectionKey)) {
+        nextSectionSet.delete(sectionKey);
+      } else if (nextSectionSet.size < maxSelectedSections) {
+        nextSectionSet.add(sectionKey);
+      }
+      const toggledSections = [...nextSectionSet];
+      const nextC27Value = c27Question
+        ? sanitizeSurveyAnswerValue(c27Question, toggledSections, maxSelectedSections)
+        : toggledSections;
+      const nextAnswers = {
+        ...prevAnswers,
+        [c27Key]: nextC27Value,
+      } as PublicSurveyAnswers;
+      const nextState = resolveSurveySelectionState({
+        template,
+        answers: nextAnswers,
+        selectedSections: toggledSections,
       });
-      return nextSections;
+      setSelectedSections(nextState.selectedSections);
+      return nextState.answers;
     });
   }
 

@@ -2,6 +2,18 @@ import type { WellnessCommonSurvey } from "@/lib/wellness/data-schemas";
 
 export type CommonQuestion = WellnessCommonSurvey["questions"][number];
 
+type TemplateQuestionType = CommonQuestion["type"] | "single_choice";
+
+export type ResolveTemplateQuestionRequiredInput = {
+  questionType: TemplateQuestionType;
+  explicitRequired?: boolean;
+  prompt?: string;
+  displayIfField?: string;
+  removedNoneLikeOption: boolean;
+  hasOptionalSkipGuide?: boolean;
+  defaultRequired: boolean;
+};
+
 const NONE_LIKE_LABELS = new Set(["없음", "해당없음", "해당 없음", "해당무"]);
 const CUSTOM_OPTION_LABEL_REGEX = /기타/u;
 
@@ -56,6 +68,23 @@ export function isOptionalSelectionPrompt(value: string | undefined) {
       normalized.includes("선택")) ||
     normalized.includes("해당되는건강항목")
   );
+}
+
+export function resolveTemplateQuestionRequired(
+  input: ResolveTemplateQuestionRequiredInput
+) {
+  if (typeof input.explicitRequired === "boolean") return input.explicitRequired;
+  if (
+    input.questionType === "multi_select_with_none" ||
+    input.questionType === "multi_select_limited"
+  ) {
+    return false;
+  }
+  if (input.displayIfField) return false;
+  if (isOptionalSelectionPrompt(input.prompt)) return false;
+  if (input.hasOptionalSkipGuide) return false;
+  if (input.removedNoneLikeOption) return false;
+  return input.defaultRequired;
 }
 
 export function normalizeTemplateQuestionType(type: CommonQuestion["type"]) {

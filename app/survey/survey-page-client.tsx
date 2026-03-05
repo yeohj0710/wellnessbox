@@ -7,6 +7,8 @@ import {
   buildWellnessAnalysisInputFromSurvey,
   isSurveyQuestionAnswered,
   normalizeSurveyAnswersByTemplate,
+  pruneSurveyAnswersByVisibility,
+  resolveSurveySelectionState,
   resolveGroupFieldValues,
   resolveSelectedSectionsFromC27,
   sanitizeSurveyAnswerValue,
@@ -667,17 +669,7 @@ export default function SurveyPageClient() {
 
   const pruneAnswersByVisibility = useCallback(
     (inputAnswers: PublicSurveyAnswers, selectedSections: string[]) => {
-      const visibleKeys = new Set(
-        buildPublicSurveyQuestionList(template, inputAnswers, selectedSections, {
-          deriveSelectedSections: false,
-        }).map((item) => item.question.key)
-      );
-      const pruned: PublicSurveyAnswers = {};
-      for (const [questionKey, rawValue] of Object.entries(inputAnswers)) {
-        if (!visibleKeys.has(questionKey)) continue;
-        pruned[questionKey] = rawValue;
-      }
-      return pruned;
+      return pruneSurveyAnswersByVisibility(template, inputAnswers, selectedSections);
     },
     [template]
   );
@@ -696,6 +688,14 @@ export default function SurveyPageClient() {
     },
     [maxSelectedSections, template]
   );
+
+  const hasSameSectionSelection = useCallback((left: string[], right: string[]) => {
+    if (left.length !== right.length) return false;
+    for (let index = 0; index < left.length; index += 1) {
+      if (left[index] !== right[index]) return false;
+    }
+    return true;
+  }, []);
 
   const questionListRaw = useMemo(
     () =>
@@ -989,11 +989,13 @@ export default function SurveyPageClient() {
       const seededSections = Array.isArray(parsed.selectedSections)
         ? parsed.selectedSections.filter((value): value is string => typeof value === "string")
         : [];
-      const nextSelectedSections =
-        seededSections.length > 0
-          ? resolveSelectedSectionsFromC27(template, {}, seededSections)
-          : resolveSelectedSectionsFromC27(template, loadedAnswers, []);
-      const prunedAnswers = pruneAnswersByVisibility(loadedAnswers, nextSelectedSections);
+      const nextSelectionState = resolveSurveySelectionState({
+        template,
+        answers: loadedAnswers,
+        selectedSections: seededSections,
+      });
+      const nextSelectedSections = nextSelectionState.selectedSections;
+      const prunedAnswers = nextSelectionState.answers;
       const restoredList = buildVisibleQuestionList(prunedAnswers, nextSelectedSections);
       const restoredKeySet = new Set(restoredList.map((item) => item.question.key));
       const restoredSections = buildSurveySections(
@@ -1105,12 +1107,13 @@ export default function SurveyPageClient() {
       template,
       (input.response.answersJson ?? {}) as PublicSurveyAnswers
     );
-    const derivedSelectedSections = resolveSelectedSectionsFromC27(
+    const nextSelectionState = resolveSurveySelectionState({
       template,
-      normalizedAnswers,
-      input.response.selectedSections ?? []
-    );
-    const prunedAnswers = pruneAnswersByVisibility(normalizedAnswers, derivedSelectedSections);
+      answers: normalizedAnswers,
+      selectedSections: input.response.selectedSections ?? [],
+    });
+    const derivedSelectedSections = nextSelectionState.selectedSections;
+    const prunedAnswers = nextSelectionState.answers;
     const nextQuestionList = buildVisibleQuestionList(prunedAnswers, derivedSelectedSections);
     const nextSections = buildSurveySections(
       nextQuestionList,
@@ -1366,7 +1369,21 @@ export default function SurveyPageClient() {
   function applyAnswer(question: WellnessSurveyQuestionForTemplate, rawValue: unknown) {
     setAnswers((prev) => {
       const sanitized = sanitizeSurveyAnswerValue(question, rawValue, maxSelectedSections);
-      return pruneAnswersByVisibility({ ...prev, [question.key]: sanitized }, selectedSectionsCommitted);
+      const nextState = resolveSurveySelectionState({
+        template,
+        answers: { ...prev, [question.key]: sanitized },
+        selectedSections: selectedSectionsCommitted,
+      });
+      const nextSelectedSections = nextState.selectedSections;
+      if (
+        nextSelectedSections.length !== selectedSectionsCommitted.length ||
+        nextSelectedSections.some(
+          (sectionKey, index) => sectionKey !== selectedSectionsCommitted[index]
+        )
+      ) {
+        setSelectedSectionsCommitted(nextSelectedSections);
+      }
+      return nextState.answers;
     });
     if (errorQuestionKey === question.key) {
       setErrorQuestionKey(null);
@@ -1609,10 +1626,11 @@ export default function SurveyPageClient() {
         params.answerOverride,
         maxSelectedSections
       );
-      effectiveAnswers = pruneAnswersByVisibility(
-        { ...answers, [currentNode.question.key]: sanitized },
-        selectedSectionsCommitted
-      );
+      effectiveAnswers = resolveSurveySelectionState({
+        template,
+        answers: { ...answers, [currentNode.question.key]: sanitized },
+        selectedSections: selectedSectionsCommitted,
+      }).answers;
     }
 
     const currentError = validateSurveyQuestionAnswer(
@@ -1642,8 +1660,13 @@ export default function SurveyPageClient() {
     let nextAnswers = effectiveAnswers;
     let nextSelectedSections = selectedSectionsCommitted;
     if (currentNode.question.key === c27Key) {
-      nextSelectedSections = resolveSelectedSectionsFromC27(template, nextAnswers, []);
-      nextAnswers = pruneAnswersByVisibility(nextAnswers, nextSelectedSections);
+      const nextSelectionState = resolveSurveySelectionState({
+        template,
+        answers: nextAnswers,
+        selectedSections: selectedSectionsCommitted,
+      });
+      nextSelectedSections = nextSelectionState.selectedSections;
+      nextAnswers = nextSelectionState.answers;
       setSelectedSectionsCommitted(nextSelectedSections);
       setAnswers(nextAnswers);
     }
@@ -2086,11 +2109,21 @@ export default function SurveyPageClient() {
     }
 
     let nextAnswers = answers;
-    const nextSelectedSections = resolveSelectedSectionsFromC27(template, nextAnswers, []);
-    const hasSelectionChanged =
-      JSON.stringify(nextSelectedSections) !== JSON.stringify(selectedSectionsCommitted);
-    if (hasSelectionChanged) {
-      nextAnswers = pruneAnswersByVisibility(nextAnswers, nextSelectedSections);
+    const nextSelectionState = resolveSurveySelectionState({
+      template,
+      answers: nextAnswers,
+      selectedSections: selectedSectionsCommitted,
+    });
+    const nextSelectedSections = nextSelectionState.selectedSections;
+    const nextPrunedAnswers = nextSelectionState.answers;
+    const hasSelectionChanged = !hasSameSectionSelection(
+      nextSelectedSections,
+      selectedSectionsCommitted
+    );
+    const hasAnswersChanged =
+      JSON.stringify(nextPrunedAnswers) !== JSON.stringify(nextAnswers);
+    if (hasSelectionChanged || hasAnswersChanged) {
+      nextAnswers = nextPrunedAnswers;
       setSelectedSectionsCommitted(nextSelectedSections);
       setAnswers(nextAnswers);
     }
@@ -2369,6 +2402,8 @@ export default function SurveyPageClient() {
             currentSection={currentSection}
             surveySections={surveySections}
             progressPercent={progressPercent}
+            progressDoneCount={progressDisplayDoneCount}
+            progressTotalCount={progressTotalCount}
             progressMessage={progressMessage}
             isSectionTransitioning={isSectionTransitioning}
             isCommonSurveySection={isCommonSurveySection}

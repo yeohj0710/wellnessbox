@@ -101,13 +101,20 @@ function hasSuspiciousQuestionMarkPattern(line: string) {
     return false;
   }
 
-  if (line.includes("[\\uAC00-\\uD7A3]?")) {
+  if (
+    line.includes("[\\uAC00-\\uD7A3]?") ||
+    line.includes("[\\u3130-\\u318F]?")
+  ) {
     return false;
   }
 
+  const hangulOrJamo = "[\\u3130-\\u318F\\uAC00-\\uD7A3]";
+  const betweenPattern = new RegExp(`${hangulOrJamo}\\?${hangulOrJamo}`);
+  const leadingPattern = new RegExp(`\\?${hangulOrJamo}`);
+
   return (
-    /[\uAC00-\uD7A3]\?[\uAC00-\uD7A3]/.test(line) ||
-    /\?[\uAC00-\uD7A3]/.test(line)
+    betweenPattern.test(line) ||
+    leadingPattern.test(line)
   );
 }
 

@@ -9,19 +9,19 @@ Only function-like blocks with at least 30 lines are included.
 
 | Lines | Kind | Function | Location |
 |---:|---|---|---|
-| 1819 | `function` | `SurveyPageClient` | `app/survey/survey-page-client.tsx:855` |
+| 1870 | `function` | `SurveyPageClient` | `app/survey/survey-page-client.tsx:614` |
+| 1014 | `function` | `B2bAdminReportClient` | `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx:63` |
 | 918 | `function` | `EmployeeReportClient` | `app/(features)/employee-report/EmployeeReportClient.tsx:73` |
-| 796 | `function` | `B2bAdminReportClient` | `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx:62` |
 | 756 | `function` | `B2bAdminEmployeeDataClient` | `app/(admin)/admin/b2b-employee-data/B2bAdminEmployeeDataClient.tsx:30` |
 | 732 | `function` | `trainAllRndAiModels` | `lib/rnd/ai-training/pipeline.ts:2997` |
 | 680 | `function` | `LandingSection2` | `app/(components)/landingSection2.tsx:29` |
-| 528 | `function` | `ReportSummaryCards` | `components/b2b/ReportSummaryCards.tsx:487` |
-| 465 | `function` | `SurveyResultPanel` | `app/survey/_components/SurveyResultPanel.tsx:102` |
+| 534 | `function` | `ReportSummaryCards` | `components/b2b/ReportSummaryCards.tsx:487` |
+| 476 | `function` | `SurveyResultPanel` | `app/survey/_components/SurveyResultPanel.tsx:102` |
 | 460 | `function` | `HomeProductSection` | `app/(components)/homeProductSection.tsx:76` |
 | 407 | `function` | `loadEmployeeForOps` | `lib/b2b/admin-employee-management-route.ts:187` |
 | 399 | `function` | `EditorAdminClient` | `app/(admin)/admin/column/editor/EditorAdminClient.tsx:44` |
 | 398 | `function` | `Cart` | `components/order/cart.tsx:46` |
-| 377 | `function` | `B2bSurveyEditorPanel` | `app/(admin)/admin/b2b-reports/_components/B2bSurveyEditorPanel.tsx:37` |
+| 394 | `function` | `B2bSurveyEditorPanel` | `app/(admin)/admin/b2b-reports/_components/B2bSurveyEditorPanel.tsx:37` |
 | 374 | `function` | `RecommendedProductActions` | `app/chat/components/RecommendedProductActions.tsx:26` |
 | 365 | `function` | `useAssessFlow` | `app/assess/useAssessFlow.ts:29` |
 | 355 | `function` | `ProductManager` | `components/manager/productManager.tsx:14` |
@@ -35,7 +35,7 @@ Only function-like blocks with at least 30 lines are included.
 | 331 | `function` | `ChatInput` | `app/chat/components/ChatInput.tsx:39` |
 | 330 | `function` | `EditorClient` | `app/column/editor/EditorClient.tsx:133` |
 | 329 | `function` | `ChatDrawer` | `app/chat/components/ChatDrawer.tsx:21` |
-| 327 | `function` | `SurveyQuestionField` | `app/(admin)/admin/b2b-reports/_components/SurveyQuestionField.tsx:188` |
+| 328 | `function` | `SurveyQuestionField` | `app/(admin)/admin/b2b-reports/_components/SurveyQuestionField.tsx:131` |
 | 327 | `function` | `EnglishCheckAI` | `app/en/check-ai/page.tsx:45` |
 | 324 | `function` | `DesktopChatDock` | `components/chat/DesktopChatDock.tsx:50` |
 | 324 | `function` | `ProductDetail` | `components/product/productDetail.tsx:24` |
@@ -67,14 +67,14 @@ Only function-like blocks with at least 30 lines are included.
 | 488 | `function` | `main` | `scripts/rnd/train-all-ai.ts:1215` |
 | 402 | `function` | `run` | `scripts/qa/check-b2b-survey-adversarial.cts:184` |
 | 357 | `function` | `run` | `scripts/qa/check-b2b-public-survey-flow.cts:131` |
-| 325 | `function` | `run` | `scripts/qa/check-b2b-survey-readiness.cts:29` |
+| 328 | `function` | `run` | `scripts/qa/check-b2b-survey-readiness.cts:29` |
 | 275 | `function` | `buildImplementationCoverageReport` | `scripts/rnd/train-all-ai.ts:811` |
-| 233 | `function` | `run` | `scripts/qa/check-b2b-public-survey-interactions.cjs:255` |
 | 221 | `function` | `runColumnAndAdminCrudScenario` | `scripts/qa/lib/cde-regression/column-admin-scenario.cjs:1` |
 | 210 | `function` | `runStaticRegressionChecks` | `scripts/qa/check-medication-fetch-resilience.cts:35` |
+| 207 | `function` | `run` | `scripts/qa/check-b2b-public-survey-interactions.cjs:277` |
 | 193 | `function` | `buildWeightedKpiItems` | `scripts/rnd/train-all-ai.ts:490` |
 | 190 | `function` | `runEmployeeReportScenario` | `scripts/qa/lib/cde-regression/employee-report-scenario.cjs:1` |
-| 157 | `function` | `run` | `scripts/qa/check-b2b-survey-required-flags.cts:39` |
+| 160 | `function` | `run` | `scripts/qa/check-b2b-survey-required-flags.cts:39` |
 | 155 | `function` | `runRouteScrollAndColumnCardScenario` | `scripts/qa/lib/route-scroll/scenario.cjs:42` |
 | 141 | `function` | `runCase` | `scripts/qa/check-b2b-capture-pdf-visual.cjs:924` |
 | 137 | `function` | `measure` | `scripts/perf/measure-navigation-prefetch.cjs:210` |

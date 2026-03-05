@@ -6,10 +6,10 @@ import type { WellnessSurveyTemplate } from "@/lib/wellness/data-template-types"
 import {
   isCustomInputOptionLabel,
   isNoneLikeOptionLabel,
-  isOptionalSelectionPrompt,
   mergeNoSelectionGuide,
   normalizeOptionLabel,
   normalizeTemplateQuestionType,
+  resolveTemplateQuestionRequired,
 } from "@/lib/wellness/data-loader-template.shared";
 
 type C27Question = WellnessCommonSurvey["questions"][number] | undefined;
@@ -80,14 +80,14 @@ function resolveSectionQuestionRequired(input: {
   removedNoneLikeOption: boolean;
 }) {
   const { question, removedNoneLikeOption } = input;
-  if (typeof question.required === "boolean") return question.required;
-  if (question.type === "multi_select_with_none" || question.type === "multi_select_limited") {
-    return false;
-  }
-  if (isOptionalSelectionPrompt(question.prompt)) return false;
-  if (removedNoneLikeOption) return false;
-  // 세부 섹션 문항은 기본적으로 "선택"으로 두고, 데이터에서 명시적으로 required=true일 때만 필수 처리한다.
-  return false;
+  // 세부 섹션 문항은 데이터에서 required=true를 명시한 경우에만 필수 처리한다.
+  return resolveTemplateQuestionRequired({
+    questionType: question.type,
+    explicitRequired: question.required,
+    prompt: question.prompt,
+    removedNoneLikeOption,
+    defaultRequired: false,
+  });
 }
 
 export function mapSectionTemplates(

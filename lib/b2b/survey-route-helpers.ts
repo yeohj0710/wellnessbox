@@ -6,8 +6,9 @@ import {
 } from "@/lib/b2b/survey-answer";
 import {
   resolveSectionKeysFromC27Input,
-  type B2bSurveyTemplateSchema,
-} from "@/lib/b2b/survey-template";
+  resolveSelectedSectionsByC27Policy,
+} from "@/lib/b2b/survey-section-resolver";
+import type { B2bSurveyTemplateSchema } from "@/lib/b2b/survey-template";
 
 type SurveyAnswers = Record<string, unknown>;
 
@@ -50,16 +51,46 @@ export function resolveSurveySelectedSections(input: {
   answers: SurveyAnswers;
   selectedSections?: string[];
 }) {
-  const q27Value =
-    input.answers[input.schema.rules.selectSectionByCommonQuestionKey] ?? null;
+  const c27Key = input.schema.rules.selectSectionByCommonQuestionKey;
+  const hasExplicitC27Answer = Object.prototype.hasOwnProperty.call(
+    input.answers,
+    c27Key
+  );
+  const q27Value = input.answers[c27Key] ?? null;
   const derivedSections = resolveSectionKeysFromC27Input(input.schema, q27Value);
-  const allowedSectionKeys = new Set(
-    input.schema.sectionCatalog.map((section) => section.key)
+  const maxSelectedSections = Math.max(
+    1,
+    input.schema.rules.maxSelectedSections || 5
   );
+  return resolveSelectedSectionsByC27Policy({
+    hasExplicitC27Answer,
+    selectedSections: input.selectedSections,
+    derivedSections,
+    allowedSectionKeys: input.schema.sectionCatalog.map((section) => section.key),
+    maxSelectedSections,
+  });
+}
 
-  return [...new Set([...(input.selectedSections ?? []), ...derivedSections])].filter(
-    (sectionKey) => allowedSectionKeys.has(sectionKey)
-  );
+export function pruneSurveyAnswersForSelectedSections(input: {
+  answers: SurveyAnswers;
+  maps: SurveyMaps;
+  selectedSections: string[];
+}) {
+  const selectedSectionSet = new Set(input.selectedSections);
+  const pruned: SurveyAnswers = {};
+
+  for (const [questionKey, value] of Object.entries(input.answers)) {
+    if (input.maps.commonMap.has(questionKey)) {
+      pruned[questionKey] = value;
+      continue;
+    }
+    const sectionQuestion = input.maps.sectionMap.get(questionKey);
+    if (!sectionQuestion) continue;
+    if (!selectedSectionSet.has(sectionQuestion.sectionKey)) continue;
+    pruned[questionKey] = value;
+  }
+
+  return pruned;
 }
 
 export function buildSurveyAnswerRows(input: {

@@ -52,10 +52,10 @@ export function DesktopMenuContent({
         내 주문 조회
       </IntentPrefetchLink>
 
-      <div className="relative flex items-center gap-2" ref={aiRef}>
+      <div className="relative flex shrink-0 items-center gap-2 whitespace-nowrap" ref={aiRef}>
         <button
           onClick={onToggleAiOpen}
-          className="inline-flex items-center gap-1 font-semibold transition-transform duration-200 ease-in-out hover:scale-105 hover:text-gray-800"
+          className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap font-semibold transition-transform duration-200 ease-in-out hover:scale-105 hover:text-gray-800"
           aria-haspopup="menu"
           aria-expanded={aiOpen}
         >

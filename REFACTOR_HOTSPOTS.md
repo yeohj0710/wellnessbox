@@ -8,41 +8,44 @@ Run `npm run agent:refactor-report` to refresh this report.
 | Lines | File |
 |---:|---|
 | 3729 | `lib/rnd/ai-training/pipeline.ts` |
-| 787 | `app/(features)/employee-report/EmployeeReportClient.tsx` |
-| 711 | `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx` |
+| 2455 | `app/survey/survey-page-client.tsx` |
+| 1251 | `lib/b2b/admin-employee-management-route.ts` |
+| 1077 | `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx` |
+| 1021 | `components/b2b/ReportSummaryCards.tsx` |
+| 991 | `app/(features)/employee-report/EmployeeReportClient.tsx` |
+| 902 | `lib/b2b/public-survey.ts` |
+| 828 | `lib/server/hyphen/fetch-executor.ts` |
+| 786 | `app/(admin)/admin/b2b-employee-data/B2bAdminEmployeeDataClient.tsx` |
 | 709 | `app/(components)/landingSection2.tsx` |
-| 551 | `lib/ai/chain.ts` |
+| 674 | `app/(features)/employee-report/_lib/client-utils.ts` |
+| 578 | `app/survey/_components/SurveyResultPanel.tsx` |
+| 567 | `components/b2b/report-summary/card-insights.ts` |
+| 550 | `lib/ai/chain.ts` |
+| 538 | `lib/b2b/export/layout-dsl.ts` |
 | 536 | `app/(components)/homeProductSection.tsx` |
-| 512 | `lib/b2b/export/layout-dsl.ts` |
+| 530 | `lib/b2b/employee-service.ts` |
 | 489 | `app/my-data/myDataPageSections.tsx` |
 | 487 | `public/scripts/google-translate-orchestrator.js` |
-| 477 | `components/b2b/ReportSummaryCards.tsx` |
+| 472 | `lib/b2b/report-service.ts` |
 | 469 | `lib/agent-playground/patterns.ts` |
 | 466 | `app/agent-playground/page.tsx` |
 | 463 | `app/column/editor/EditorClient.tsx` |
-| 443 | `app/(admin)/admin/column/editor/EditorAdminClient.tsx` |
-| 440 | `app/(features)/health-link/components/HealthLinkResultSection.helpers.tsx` |
-| 422 | `components/order/cart.tsx` |
-| 414 | `lib/server/hyphen/fetch-executor.ts` |
-| 408 | `lib/b2b/analyzer-health.ts` |
-| 400 | `app/chat/components/RecommendedProductActions.tsx` |
-| 394 | `app/assess/useAssessFlow.ts` |
-| 392 | `app/chat/components/recommendedProductActions.resolve.ts` |
-| 391 | `lib/chat/prompts.ts` |
-| 386 | `app/(orders)/order-complete/page.tsx` |
-| 385 | `components/order/globalCartHost.tsx` |
-| 385 | `components/pharm/orderAccordionItem.tsx` |
+| 459 | `app/(admin)/admin/b2b-reports/_components/SurveyQuestionField.tsx` |
+| 453 | `lib/b2b/report-payload-health-medication.ts` |
 
 ## API Route Top 20
 
 | Lines | File |
 |---:|---|
+| 30 | `app/api/admin/b2b/employees/[employeeId]/route.ts` |
+| 20 | `app/api/admin/b2b/employees/route.ts` |
 | 18 | `app/api/messages/stream/token/route.ts` |
 | 17 | `app/api/admin/b2b/employees/[employeeId]/note/route.ts` |
+| 17 | `app/api/admin/b2b/employees/[employeeId]/ops/route.ts` |
 | 17 | `app/api/admin/b2b/employees/[employeeId]/report/route.ts` |
 | 17 | `app/api/admin/b2b/employees/[employeeId]/survey/route.ts` |
+| 17 | `app/api/b2b/employee/survey/route.ts` |
 | 15 | `app/api/admin/model/route.ts` |
-| 14 | `app/api/admin/b2b/employees/[employeeId]/route.ts` |
 | 14 | `app/api/auth/email/send-otp/route.ts` |
 | 14 | `app/api/auth/email/verify-otp/route.ts` |
 | 14 | `app/api/auth/kakao/complete/[token]/route.ts` |
@@ -54,54 +57,51 @@ Run `npm run agent:refactor-report` to refresh this report.
 | 13 | `app/api/admin/b2b/reports/[reportId]/validation/route.ts` |
 | 13 | `app/api/admin/b2b/reports/export-batch/route.ts` |
 | 13 | `app/api/auth/logout/route.ts` |
-| 13 | `app/api/me/link-phone/route.ts` |
-| 13 | `app/api/me/phone-status/route.ts` |
-| 12 | `app/api/admin/b2b/demo/seed/route.ts` |
 
 ## Frontend Surface Top 20
 
 | Lines | File |
 |---:|---|
-| 787 | `app/(features)/employee-report/EmployeeReportClient.tsx` |
-| 711 | `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx` |
+| 2455 | `app/survey/survey-page-client.tsx` |
+| 1077 | `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx` |
+| 1021 | `components/b2b/ReportSummaryCards.tsx` |
+| 991 | `app/(features)/employee-report/EmployeeReportClient.tsx` |
+| 786 | `app/(admin)/admin/b2b-employee-data/B2bAdminEmployeeDataClient.tsx` |
 | 709 | `app/(components)/landingSection2.tsx` |
+| 674 | `app/(features)/employee-report/_lib/client-utils.ts` |
+| 578 | `app/survey/_components/SurveyResultPanel.tsx` |
+| 567 | `components/b2b/report-summary/card-insights.ts` |
 | 536 | `app/(components)/homeProductSection.tsx` |
 | 489 | `app/my-data/myDataPageSections.tsx` |
-| 477 | `components/b2b/ReportSummaryCards.tsx` |
 | 466 | `app/agent-playground/page.tsx` |
 | 463 | `app/column/editor/EditorClient.tsx` |
+| 459 | `app/(admin)/admin/b2b-reports/_components/SurveyQuestionField.tsx` |
+| 444 | `components/order/cart.tsx` |
 | 443 | `app/(admin)/admin/column/editor/EditorAdminClient.tsx` |
 | 440 | `app/(features)/health-link/components/HealthLinkResultSection.helpers.tsx` |
-| 422 | `components/order/cart.tsx` |
+| 431 | `app/(admin)/admin/b2b-reports/_components/B2bSurveyEditorPanel.tsx` |
 | 400 | `app/chat/components/RecommendedProductActions.tsx` |
 | 394 | `app/assess/useAssessFlow.ts` |
-| 392 | `app/chat/components/recommendedProductActions.resolve.ts` |
-| 386 | `app/(orders)/order-complete/page.tsx` |
-| 385 | `components/order/globalCartHost.tsx` |
-| 385 | `components/pharm/orderAccordionItem.tsx` |
-| 382 | `app/assess/logic/algorithm.ts` |
-| 379 | `app/chat/hooks/useChat.ts` |
-| 374 | `components/chat/DesktopChatDock.tsx` |
 
 ## Scripts Top 15
 
 | Lines | File |
 |---:|---|
 | 1708 | `scripts/rnd/train-all-ai.ts` |
-| 699 | `scripts/qa/check-b2b-capture-pdf-visual.cjs` |
+| 1169 | `scripts/qa/check-b2b-capture-pdf-visual.cjs` |
+| 588 | `scripts/qa/check-b2b-survey-adversarial.cts` |
 | 519 | `scripts/perf/push-notification-benchmark.cjs` |
+| 493 | `scripts/qa/check-b2b-public-survey-interactions.cjs` |
+| 490 | `scripts/qa/check-b2b-public-survey-flow.cts` |
 | 465 | `scripts/perf/navigation-prefetch-benchmark.cjs` |
+| 414 | `scripts/qa/check-b2b-public-survey-smoke.cjs` |
+| 395 | `scripts/qa/check-b2b-report-page-overflow.cjs` |
 | 387 | `scripts/b2b/generate-survey-template-v1.ts` |
 | 375 | `scripts/rnd/module02/kpi-rollup-artifacts.ts` |
+| 356 | `scripts/qa/check-b2b-survey-readiness.cts` |
 | 352 | `scripts/perf/measure-navigation-prefetch.cjs` |
+| 352 | `scripts/qa/check-employee-report-sync-notice.cts` |
 | 352 | `scripts/rnd/module02/evaluate-kpi-rollup.ts` |
-| 283 | `scripts/lib/guard-map.scan.cts` |
-| 269 | `scripts/rnd/module03/orchestrate-adverse-event-evaluation-monthly-helpers.ts` |
-| 240 | `scripts/lib/hotspot-audit-checks.cts` |
-| 240 | `scripts/rnd/module07/evaluate-integration-rate.ts` |
-| 238 | `scripts/agent/generate-session-primer.cts` |
-| 229 | `scripts/lib/encoding-audit.cts` |
-| 226 | `scripts/qa/lib/cde-regression/column-admin-scenario.cjs` |
 
 ## Notes
 

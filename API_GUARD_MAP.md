@@ -5,8 +5,8 @@ Run `npm run agent:guard-map` to refresh this report.
 
 ## Summary
 
-- Total routes: **83**
-- Guarded routes: **51**
+- Total routes: **85**
+- Guarded routes: **53**
 - Expected session-managed routes: **6**
 - Unexpected review needed: **0**
 - Missing method exports: **0**
@@ -78,10 +78,11 @@ Run `npm run agent:guard-map` to refresh this report.
 | Route | Methods | Guards | Guard Source | Session Access | Note | File |
 |---|---|---|---|---|---|---|
 | `/api/admin/b2b/demo/seed` | `POST` | `requireAdminSession` | `direct` | `getSession` | - | `app/api/admin/b2b/demo/seed/route.ts` |
-| `/api/admin/b2b/employees` | `GET` | `requireAdminSession` | `delegated` | `route-auth-import` | - | `app/api/admin/b2b/employees/route.ts` |
-| `/api/admin/b2b/employees/[employeeId]` | `GET` | `requireAdminSession` | `delegated` | `none` | - | `app/api/admin/b2b/employees/[employeeId]/route.ts` |
+| `/api/admin/b2b/employees` | `GET, POST` | `requireAdminSession` | `delegated` | `route-auth-import` | - | `app/api/admin/b2b/employees/route.ts` |
+| `/api/admin/b2b/employees/[employeeId]` | `DELETE, GET, PATCH` | `requireAdminSession` | `delegated` | `route-auth-import` | - | `app/api/admin/b2b/employees/[employeeId]/route.ts` |
 | `/api/admin/b2b/employees/[employeeId]/analysis` | `GET, POST, PUT` | `requireAdminSession` | `delegated` | `none` | - | `app/api/admin/b2b/employees/[employeeId]/analysis/route.ts` |
 | `/api/admin/b2b/employees/[employeeId]/note` | `GET, PUT` | `requireAdminSession` | `delegated` | `none` | - | `app/api/admin/b2b/employees/[employeeId]/note/route.ts` |
+| `/api/admin/b2b/employees/[employeeId]/ops` | `GET, POST` | `requireAdminSession` | `delegated` | `route-auth-import` | - | `app/api/admin/b2b/employees/[employeeId]/ops/route.ts` |
 | `/api/admin/b2b/employees/[employeeId]/report` | `GET, POST` | `requireAdminSession` | `delegated` | `none` | - | `app/api/admin/b2b/employees/[employeeId]/report/route.ts` |
 | `/api/admin/b2b/employees/[employeeId]/survey` | `GET, PUT` | `requireAdminSession` | `delegated` | `none` | - | `app/api/admin/b2b/employees/[employeeId]/survey/route.ts` |
 | `/api/admin/b2b/reports/[reportId]/export/pdf` | `GET` | `requireAdminSession` | `delegated` | `none` | - | `app/api/admin/b2b/reports/[reportId]/export/pdf/route.ts` |
@@ -96,9 +97,10 @@ Run `npm run agent:guard-map` to refresh this report.
 | `/api/agent-playground/run` | `POST` | `requireAdminSession` | `direct` | `getSession` | - | `app/api/agent-playground/run/route.ts` |
 | `/api/auth/email/send-otp` | `POST` | `requireUserSession` | `direct` | `getSession` | - | `app/api/auth/email/send-otp/route.ts` |
 | `/api/auth/email/verify-otp` | `POST` | `requireUserSession` | `direct` | `getSession` | - | `app/api/auth/email/verify-otp/route.ts` |
-| `/api/b2b/employee/report` | `GET` | `requireB2bEmployeeToken` | `delegated` | `route-auth-import` | - | `app/api/b2b/employee/report/route.ts` |
-| `/api/b2b/employee/report/export/pdf` | `GET` | `requireB2bEmployeeToken` | `delegated` | `route-auth-import` | - | `app/api/b2b/employee/report/export/pdf/route.ts` |
+| `/api/b2b/employee/report` | `GET` | `requireAdminSession, requireB2bEmployeeToken` | `delegated` | `route-auth-import` | - | `app/api/b2b/employee/report/route.ts` |
+| `/api/b2b/employee/report/export/pdf` | `GET` | `requireAdminSession, requireB2bEmployeeToken` | `delegated` | `route-auth-import` | - | `app/api/b2b/employee/report/export/pdf/route.ts` |
 | `/api/b2b/employee/session` | `DELETE, GET, POST` | `requireB2bEmployeeToken` | `delegated` | `route-auth-import` | - | `app/api/b2b/employee/session/route.ts` |
+| `/api/b2b/employee/survey` | `GET, PUT` | `requireB2bEmployeeToken` | `direct` | `getSession` | - | `app/api/b2b/employee/survey/route.ts` |
 | `/api/b2b/employee/sync` | `POST` | `requireAdminSession, requireNhisSession` | `direct` | `getSession` | - | `app/api/b2b/employee/sync/route.ts` |
 | `/api/column/editor/save` | `POST` | `requireAdminSession` | `direct` | `getSession` | - | `app/api/column/editor/save/route.ts` |
 | `/api/column/upload-image` | `POST` | `requireAdminSession` | `delegated` | `route-auth-import` | - | `app/api/column/upload-image/route.ts` |

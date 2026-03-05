@@ -2,6 +2,7 @@ import type {
   WellnessCommonSurvey,
   WellnessSectionSurvey,
 } from "@/lib/wellness/data-loader";
+import { resolveSelectedSectionsByC27Policy } from "@/lib/survey/section-selection-policy";
 import type {
   CommonAnswerMap,
   SectionAnswerMapBySectionId,
@@ -149,9 +150,10 @@ export function deriveSelectedSections(
   commonDef: WellnessCommonSurvey,
   questionAnswers: Map<string, WellnessAnswerValue>
 ) {
-  const selected = new Set(selectedSections.filter(Boolean));
   const c27 = commonDef.questions.find((question) => question.id === "C27");
   const c27Answer = questionAnswers.get("C27");
+  const hasExplicitC27Answer = questionAnswers.has("C27");
+  const derivedSections: string[] = [];
   for (const token of c27Answer?.selectedValues ?? []) {
     const normalized = token.trim().toLowerCase();
     if (!normalized) continue;
@@ -162,11 +164,26 @@ export function deriveSelectedSections(
         (alias) => alias.trim().toLowerCase() === normalized
       );
     });
-    if (matched) selected.add(matched.value);
+    if (!matched) continue;
+    if (derivedSections.includes(matched.value)) continue;
+    derivedSections.push(matched.value);
   }
 
   const maxSelected = c27?.constraints?.maxSelections ?? 5;
-  return [...selected].slice(0, maxSelected);
+  const allowedSectionKeysFromC27 = (c27?.options ?? [])
+    .map((option) => option.value)
+    .filter(Boolean);
+  const allowedSectionKeys =
+    allowedSectionKeysFromC27.length > 0
+      ? allowedSectionKeysFromC27
+      : [...new Set([...selectedSections, ...derivedSections])];
+  return resolveSelectedSectionsByC27Policy({
+    hasExplicitC27Answer,
+    selectedSections,
+    derivedSections,
+    allowedSectionKeys,
+    maxSelectedSections: maxSelected,
+  });
 }
 
 export function buildCommonAnswerMap(

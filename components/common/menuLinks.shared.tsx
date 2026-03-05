@@ -24,7 +24,7 @@ const AI_PROMPT_BADGE = "가입없이 바로";
 const BETA_LABEL = "BETA";
 
 export const menuItemClasses = (additionalClasses = "") =>
-  `relative font-semibold transition-transform duration-200 ease-in-out hover:scale-105 hover:text-gray-800 ${additionalClasses}`;
+  `relative shrink-0 whitespace-nowrap font-semibold transition-transform duration-200 ease-in-out hover:scale-105 hover:text-gray-800 ${additionalClasses}`;
 
 export function getMenuVisibility(loginStatus: LoginStatus | null): MenuVisibility {
   const kakaoLoggedIn = loginStatus?.isUserLoggedIn === true;
@@ -46,8 +46,8 @@ export function getMenuVisibility(loginStatus: LoginStatus | null): MenuVisibili
 
 export function AiPromptBadge() {
   return (
-    <span className="inline-flex rounded-full bg-emerald-50 ring-1 ring-emerald-200 max-w-[220px]">
-      <span className="block w-full px-3 py-1 text-[10px] font-bold text-emerald-600 leading-tight text-center break-words">
+    <span className="inline-flex shrink-0 whitespace-nowrap rounded-full bg-emerald-50 ring-1 ring-emerald-200">
+      <span className="block px-3 py-1 text-[10px] font-bold text-emerald-600 leading-none text-center whitespace-nowrap">
         {AI_PROMPT_BADGE}
       </span>
     </span>

@@ -1,6 +1,7 @@
 import "server-only";
 
 import db from "@/lib/db";
+import { resolveSectionKeysFromC27Input } from "@/lib/b2b/survey-section-resolver";
 import { loadWellnessTemplateForB2b } from "@/lib/wellness/data-loader";
 import { z } from "zod";
 
@@ -259,66 +260,7 @@ export async function ensureActiveB2bSurveyTemplate() {
   return { template: upserted, schema: fileTemplate };
 }
 
-function collectRawTokens(rawValue: unknown) {
-  if (Array.isArray(rawValue)) {
-    return rawValue.map((item) => String(item));
-  }
-  if (typeof rawValue === "string") {
-    return rawValue.split(/[,\n/|]/g);
-  }
-  if (typeof rawValue === "object" && rawValue) {
-    const record = rawValue as Record<string, unknown>;
-    if (Array.isArray(record.selectedValues)) {
-      return record.selectedValues.map((item) => String(item));
-    }
-    if (Array.isArray(record.values)) {
-      return record.values.map((item) => String(item));
-    }
-    return Object.values(record).map((value) => String(value));
-  }
-  return [];
-}
-
-export function resolveSectionKeysFromC27Input(
-  templateSchema: B2bSurveyTemplateSchema,
-  rawC27Value: unknown
-) {
-  const normalized = collectRawTokens(rawC27Value)
-    .map((item) => item.trim())
-    .filter(Boolean);
-  if (normalized.length === 0) return [];
-
-  const sectionByKeyword = templateSchema.sectionCatalog.map((section) => {
-    const aliases = section.aliases ?? [];
-    return {
-      key: section.key,
-      keywords: [
-        section.key,
-        section.title,
-        section.displayName ?? section.title,
-        section.triggerLabel,
-        ...aliases,
-      ]
-        .map((item) => item.toLowerCase())
-        .filter(Boolean),
-    };
-  });
-
-  const selected = new Set<string>();
-  for (const token of normalized) {
-    const lowered = token.toLowerCase();
-    const matched = sectionByKeyword.find((section) =>
-      section.keywords.some(
-        (keyword) => lowered === keyword || lowered.includes(keyword) || keyword.includes(lowered)
-      )
-    );
-    if (!matched) continue;
-    selected.add(matched.key);
-    if (selected.size >= templateSchema.rules.maxSelectedSections) break;
-  }
-
-  return [...selected];
-}
+export { resolveSectionKeysFromC27Input };
 
 export function buildSurveyQuestionMap(templateSchema: B2bSurveyTemplateSchema) {
   const commonMap = new Map(templateSchema.common.map((question) => [question.key, question]));

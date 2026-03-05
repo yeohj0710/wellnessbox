@@ -3,10 +3,10 @@ import type { WellnessSurveyQuestionForTemplate } from "@/lib/wellness/data-temp
 import {
   isCustomInputOptionLabel,
   isNoneLikeOptionLabel,
-  isOptionalSelectionPrompt,
   mergeNoSelectionGuide,
   normalizeOptionLabel,
   normalizeTemplateQuestionType,
+  resolveTemplateQuestionRequired,
   type CommonQuestion,
 } from "@/lib/wellness/data-loader-template.shared";
 
@@ -155,21 +155,6 @@ function hasOptionalSkipGuide(question: CommonQuestion) {
   );
 }
 
-function resolveQuestionRequired(
-  question: CommonQuestion,
-  removedNoneLikeOption: boolean
-) {
-  if (typeof question.required === "boolean") return question.required;
-  if (question.type === "multi_select_with_none" || question.type === "multi_select_limited") {
-    return false;
-  }
-  if (question.displayIf?.field) return false;
-  if (isOptionalSelectionPrompt(question.prompt)) return false;
-  if (hasOptionalSkipGuide(question)) return false;
-  if (removedNoneLikeOption) return false;
-  return true;
-}
-
 export function mapCommonQuestions(
   commonSurvey: WellnessCommonSurvey,
   maxSelectedSections: number
@@ -186,7 +171,15 @@ export function mapCommonQuestions(
       helpText: mergeNoSelectionGuide(question.notes, removedNoneLikeOption),
       type: normalizeTemplateQuestionType(question.type),
       sourceType: question.type,
-      required: resolveQuestionRequired(question, removedNoneLikeOption),
+      required: resolveTemplateQuestionRequired({
+        questionType: question.type,
+        explicitRequired: question.required,
+        prompt: question.prompt,
+        displayIfField: question.displayIf?.field,
+        removedNoneLikeOption,
+        hasOptionalSkipGuide: hasOptionalSkipGuide(question),
+        defaultRequired: true,
+      }),
       options,
       placeholder: buildPlaceholder(question),
       maxSelect:

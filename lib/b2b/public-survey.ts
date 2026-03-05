@@ -2,6 +2,7 @@ import type {
   WellnessAnalysisAnswerRow,
   WellnessAnalysisInput,
 } from "@/lib/wellness/analysis-answer-maps";
+import { resolveSelectedSectionsByC27Policy } from "@/lib/b2b/survey-section-resolver";
 import type {
   WellnessSurveyQuestionForTemplate,
   WellnessSurveyTemplate,
@@ -240,15 +241,24 @@ export function resolveSelectedSectionsFromC27(
   const c27Key = template.rules.selectSectionByCommonQuestionKey || "C27";
   const c27 = template.common.find((question) => question.key === c27Key);
   const maxSelectedSections = Math.max(1, template.rules.maxSelectedSections || 5);
-  const allowedSectionKeys = new Set(template.sectionCatalog.map((section) => section.key));
-  const resolved = new Set<string>();
+  const hasExplicitC27Answer = Object.prototype.hasOwnProperty.call(answers, c27Key);
+  const allowedSectionKeys = template.sectionCatalog.map((section) => section.key);
+  const allowedSectionKeySet = new Set(allowedSectionKeys);
+  const c27Question = c27 ?? null;
+  const canUseExplicitC27Answer = Boolean(c27Question) && hasExplicitC27Answer;
 
-  for (const sectionKey of selectedSections) {
-    if (allowedSectionKeys.has(sectionKey)) resolved.add(sectionKey);
-    if (resolved.size >= maxSelectedSections) return [...resolved];
+  if (!canUseExplicitC27Answer) {
+    return resolveSelectedSectionsByC27Policy({
+      hasExplicitC27Answer: false,
+      selectedSections,
+      derivedSections: [],
+      allowedSectionKeys,
+      maxSelectedSections,
+    });
   }
+  const c27Resolved = c27Question as WellnessSurveyQuestionForTemplate;
 
-  if (!c27) return [...resolved];
+  const resolved: string[] = [];
   const rawTokens = collectRawTokens(answers[c27Key])
     .map((value) => value.trim())
     .filter(Boolean);
@@ -259,7 +269,7 @@ export function resolveSelectedSectionsFromC27(
 
     let matchedSectionKey: string | null = null;
     for (const section of template.sectionCatalog) {
-      const keywords = sectionKeywords(template, c27, section.key);
+      const keywords = sectionKeywords(template, c27Resolved, section.key);
       const matched = keywords.some((keyword) => {
         if (normalizedToken === keyword) return true;
         if (normalizedToken.length < 2 || keyword.length < 2) return false;
@@ -272,12 +282,19 @@ export function resolveSelectedSectionsFromC27(
     }
 
     if (!matchedSectionKey) continue;
-    if (!allowedSectionKeys.has(matchedSectionKey)) continue;
-    resolved.add(matchedSectionKey);
-    if (resolved.size >= maxSelectedSections) break;
+    if (!allowedSectionKeySet.has(matchedSectionKey)) continue;
+    if (resolved.includes(matchedSectionKey)) continue;
+    resolved.push(matchedSectionKey);
+    if (resolved.length >= maxSelectedSections) break;
   }
 
-  return [...resolved];
+  return resolveSelectedSectionsByC27Policy({
+    hasExplicitC27Answer: true,
+    selectedSections,
+    derivedSections: resolved,
+    allowedSectionKeys,
+    maxSelectedSections,
+  });
 }
 
 export function isSurveyQuestionVisible(
@@ -689,6 +706,27 @@ export function pruneSurveyAnswersByVisibility(
     pruned[questionKey] = rawValue;
   }
   return pruned;
+}
+
+export function resolveSurveySelectionState(input: {
+  template: WellnessSurveyTemplate;
+  answers: PublicSurveyAnswers;
+  selectedSections?: string[];
+}) {
+  const selectedSections = resolveSelectedSectionsFromC27(
+    input.template,
+    input.answers,
+    input.selectedSections
+  );
+  const answers = pruneSurveyAnswersByVisibility(
+    input.template,
+    input.answers,
+    selectedSections
+  );
+  return {
+    selectedSections,
+    answers,
+  };
 }
 
 export function normalizeSurveyAnswersByTemplate(
