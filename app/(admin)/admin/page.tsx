@@ -49,7 +49,7 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-3">
             <ToolPanel
               title="B2B 임직원 레포트 관리"
               description="임직원별 설문, 분석, 코멘트, 레이아웃 검증, PDF 내보내기를 처리하는 운영 화면입니다."

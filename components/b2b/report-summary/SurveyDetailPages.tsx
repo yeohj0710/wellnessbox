@@ -115,9 +115,11 @@ function groupSectionAdviceRows(rows: SectionAdviceLine[]) {
 export function SurveyDetailCards(props: {
   page: SurveyDetailPageModel;
   pageNumber: number;
+  showSectionAdviceEmpty?: boolean;
 }) {
-  const { page, pageNumber } = props;
+  const { page, pageNumber, showSectionAdviceEmpty = false } = props;
   const sectionAdviceGroups = groupSectionAdviceRows(page.sectionAdviceRows);
+  const showSectionAdviceSection = sectionAdviceGroups.length > 0 || showSectionAdviceEmpty;
 
   return (
     <div className="space-y-4">
@@ -138,41 +140,48 @@ export function SurveyDetailCards(props: {
         </section>
       ) : null}
 
-      {sectionAdviceGroups.length > 0 ? (
+      {showSectionAdviceSection ? (
         <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
           <h3 className="text-lg font-bold text-slate-900">영역별 분석 코멘트</h3>
-          <div className="mt-3 space-y-3">
-            {sectionAdviceGroups.map((group, groupIndex) => (
-              <article
-                key={`section-advice-group-${pageNumber}-${group.sectionTitle}-${groupIndex}`}
-                className="rounded-xl border border-sky-200/80 bg-sky-50/45 px-3 py-3"
-              >
-                <p className="text-xs font-semibold text-sky-700">{group.sectionTitle}</p>
-                <ul className="mt-2 space-y-2 text-sm text-slate-700">
-                  {group.items.map((line) => (
-                    <li
-                      key={`section-advice-${pageNumber}-${line.key}`}
-                      className="rounded-lg border border-slate-200/80 bg-white/80 px-2.5 py-2"
-                    >
-                      {line.normalizedQuestionText ? (
-                        <>
-                          <p className="font-semibold text-slate-900">{line.normalizedQuestionText}</p>
-                          <p className="mt-0.5 text-slate-700">내 답변: {line.answerText || "-"}</p>
-                        </>
-                      ) : null}
-                      <p
-                        className={`text-sm font-medium leading-relaxed text-rose-700 ${
-                          line.normalizedQuestionText ? "mt-1.5" : ""
-                        }`}
+          {sectionAdviceGroups.length > 0 ? (
+            <div className="mt-3 space-y-3">
+              {sectionAdviceGroups.map((group, groupIndex) => (
+                <article
+                  key={`section-advice-group-${pageNumber}-${group.sectionTitle}-${groupIndex}`}
+                  className="rounded-xl border border-sky-200/80 bg-sky-50/45 px-3 py-3"
+                >
+                  <p className="text-xs font-semibold text-sky-700">{group.sectionTitle}</p>
+                  <ul className="mt-2 space-y-2 text-sm text-slate-700">
+                    {group.items.map((line) => (
+                      <li
+                        key={`section-advice-${pageNumber}-${line.key}`}
+                        className="rounded-lg border border-slate-200/80 bg-white/80 px-2.5 py-2"
                       >
-                        {line.recommendation}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              </article>
-            ))}
-          </div>
+                        {line.normalizedQuestionText ? (
+                          <>
+                            <p className="font-semibold text-slate-900">{line.normalizedQuestionText}</p>
+                            <p className="mt-0.5 text-slate-700">내 답변: {line.answerText || "-"}</p>
+                          </>
+                        ) : null}
+                        <p
+                          className={`text-sm font-medium leading-relaxed text-rose-700 ${
+                            line.normalizedQuestionText ? "mt-1.5" : ""
+                          }`}
+                        >
+                          {line.recommendation}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-600">
+              현재 응답 기준으로 표시할 영역별 분석 코멘트가 없습니다. 문항 응답이 더 수집되면 이
+              영역에 코멘트가 자동으로 표시됩니다.
+            </p>
+          )}
         </section>
       ) : null}
 
@@ -230,8 +239,9 @@ export function SurveyDetailCards(props: {
 export default function SurveyDetailPages(props: {
   surveyDetailPageStart: number;
   surveyPages: SurveyDetailPageModel[];
+  showSectionAdviceEmptyOnFirstPage?: boolean;
 }) {
-  const { surveyDetailPageStart, surveyPages } = props;
+  const { surveyDetailPageStart, surveyPages, showSectionAdviceEmptyOnFirstPage = false } = props;
 
   if (surveyPages.length === 0) {
     return null;
@@ -255,7 +265,11 @@ export default function SurveyDetailPages(props: {
               </p>
             </header>
 
-            <SurveyDetailCards page={page} pageNumber={pageNumber} />
+            <SurveyDetailCards
+              page={page}
+              pageNumber={pageNumber}
+              showSectionAdviceEmpty={showSectionAdviceEmptyOnFirstPage && pageIndex === 0}
+            />
           </section>
         );
       })}

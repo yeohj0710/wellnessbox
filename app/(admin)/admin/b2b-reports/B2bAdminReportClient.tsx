@@ -22,6 +22,7 @@ import B2bAnalysisJsonPanel from "./_components/B2bAnalysisJsonPanel";
 import B2bAdminOpsHero from "./_components/B2bAdminOpsHero";
 import B2bEmployeeOverviewCard from "./_components/B2bEmployeeOverviewCard";
 import B2bEmployeeSidebar from "./_components/B2bEmployeeSidebar";
+import B2bIntegratedResultPreview from "./_components/B2bIntegratedResultPreview";
 import B2bLayoutValidationPanel from "./_components/B2bLayoutValidationPanel";
 import B2bNoteEditorPanel from "./_components/B2bNoteEditorPanel";
 import B2bSurveyEditorPanel from "./_components/B2bSurveyEditorPanel";
@@ -89,6 +90,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
   const [selectedPeriodKey, setSelectedPeriodKey] = useState("");
   const [availablePeriods, setAvailablePeriods] = useState<string[]>([]);
   const [reportDisplayPeriodKey, setReportDisplayPeriodKey] = useState("");
+  const [previewTab, setPreviewTab] = useState<"integrated" | "report">("integrated");
 
   const [busy, setBusy] = useState(false);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
@@ -276,6 +278,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     setSelectedEmployeeId(nextEmployeeId);
     setSelectedPeriodKey("");
     setReportDisplayPeriodKey("");
+    setPreviewTab("integrated");
     clearEmployeeDetailState();
     setIsDetailLoading(Boolean(nextEmployeeId));
   }, [clearEmployeeDetailState]);
@@ -922,24 +925,58 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
                 <section className={styles.reportCanvas}>
                   <div className={styles.reportCanvasHeader}>
                     <div>
-                      <h3>{"레포트 본문 미리보기"}</h3>
-                      <p>{"화면에서 보는 웹 레포트를 그대로 캡처해 PDF로 저장합니다."}</p>
+                      <div className={styles.previewTabRow}>
+                        <button
+                          type="button"
+                          className={`${styles.previewTabButton} ${
+                            previewTab === "integrated" ? styles.previewTabButtonActive : ""
+                          }`}
+                          onClick={() => setPreviewTab("integrated")}
+                        >
+                          ?? ?? ??
+                        </button>
+                        <button
+                          type="button"
+                          className={`${styles.previewTabButton} ${
+                            previewTab === "report" ? styles.previewTabButtonActive : ""
+                          }`}
+                          onClick={() => setPreviewTab("report")}
+                        >
+                          ??? ?? ????
+                        </button>
+                      </div>
+                      <h3>
+                        {previewTab === "integrated"
+                          ? "?? ?? + ??/?? ??? ?? ??"
+                          : "??? ?? ????"}
+                      </h3>
+                      <p>
+                        {previewTab === "integrated"
+                          ? "?? ?? UI? ???? ????, ???? ???? ??/?? ??? ?? ?????."
+                          : "???? ?? ? ???? ??? ??? PDF? ?????."}
+                      </p>
                     </div>
-                    <span className={styles.statusOn}>{"웹/PDF 동일 레이아웃 지향"}</span>
+                    <span className={previewTab === "integrated" ? styles.statusWarn : styles.statusOn}>
+                      {previewTab === "integrated" ? "??? ?? ?" : "?/PDF ?? ???? ??"}
+                    </span>
                   </div>
                   <div className={`${styles.reportCanvasBoard} ${styles.reportCanvasBoardWide}`}>
                     <div
                       ref={webReportCaptureRef}
                       className={styles.reportCaptureSurface}
                       data-testid="report-capture-surface"
-                      data-report-pdf-parity="1"
+                      data-report-pdf-parity={previewTab === "report" ? "1" : "0"}
                     >
-                      <ReportSummaryCards payload={latestReport?.payload} viewerMode="admin" />
+                      {previewTab === "integrated" ? (
+                        <B2bIntegratedResultPreview payload={latestReport?.payload} />
+                      ) : (
+                        <ReportSummaryCards payload={latestReport?.payload} viewerMode="admin" />
+                      )}
                     </div>
                   </div>
                 </section>
 
-                {latestLayout ? (
+                {previewTab === "report" && latestLayout ? (
                   <details className={`${styles.optionalCard} ${styles.reportLegacyPanel}`}>
                     <summary>{"구 엔진 미리보기"}</summary>
                     <div className={styles.optionalBody}>

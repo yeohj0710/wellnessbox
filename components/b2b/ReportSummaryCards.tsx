@@ -583,6 +583,7 @@ export default function ReportSummaryCards(props: {
     payload,
     Number.POSITIVE_INFINITY
   );
+  const hasSectionAdviceContent = detailedSectionAdviceLines.length > 0;
   const lifestyleRoutineAdviceLines = ensureArray(wellness?.lifestyleRoutineAdvice)
     .map((item) => ensureSentence(toTrimmedText(item)))
     .filter(Boolean);
@@ -882,7 +883,11 @@ export default function ReportSummaryCards(props: {
         </section>
 
         {hasFirstPageSurveyContent ? (
-          <SurveyDetailCards page={firstPageSurveyDetails} pageNumber={1} />
+          <SurveyDetailCards
+            page={firstPageSurveyDetails}
+            pageNumber={1}
+            showSectionAdviceEmpty={!hasSectionAdviceContent}
+          />
         ) : null}
 
       </section>
@@ -890,6 +895,7 @@ export default function ReportSummaryCards(props: {
       <SurveyDetailPages
         surveyDetailPageStart={surveyDetailPageStart}
         surveyPages={continuationSurveyPages}
+        showSectionAdviceEmptyOnFirstPage={!hasSectionAdviceContent && !hasFirstPageSurveyContent}
       />
 
       <section

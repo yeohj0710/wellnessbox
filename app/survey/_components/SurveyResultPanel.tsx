@@ -106,10 +106,14 @@ export default function SurveyResultPanel(props: {
   onEditSurvey: () => void;
   onRestart: () => void;
   onOpenEmployeeReport: () => void;
+  hideActionSection?: boolean;
 }) {
   const { resultSummary, sectionTitleMap, text } = props;
   const highRiskHighlights = resultSummary
     ? dedupeSurveyHighRiskHighlights(resultSummary.highRiskHighlights)
+    : [];
+  const sectionAdviceEntries = resultSummary
+    ? Object.entries(resultSummary.sectionAdvice).filter(([, value]) => value.items.length > 0)
     : [];
 
   return (
@@ -432,9 +436,8 @@ export default function SurveyResultPanel(props: {
           <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
             <h3 className="text-lg font-bold text-slate-900">영역별 분석 코멘트</h3>
             <div className="mt-3 space-y-3">
-              {Object.entries(resultSummary.sectionAdvice)
-                .filter(([, value]) => value.items.length > 0)
-                .map(([sectionId, value]) => (
+              {sectionAdviceEntries.length > 0 ? (
+                sectionAdviceEntries.map(([sectionId, value]) => (
                   <article
                     key={`section-advice-${sectionId}`}
                     className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3"
@@ -456,7 +459,13 @@ export default function SurveyResultPanel(props: {
                       ))}
                     </ul>
                   </article>
-                ))}
+                ))
+              ) : (
+                <p className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-600">
+                  현재 응답 기준으로 표시할 영역별 분석 코멘트가 없습니다. 문항 응답이 더 수집되면 이
+                  영역에 코멘트가 자동으로 표시됩니다.
+                </p>
+              )}
             </div>
           </section>
 
@@ -521,6 +530,7 @@ export default function SurveyResultPanel(props: {
         </p>
       )}
 
+      {!props.hideActionSection ? (
       <section className="mt-6 rounded-2xl border border-slate-200/90 bg-gradient-to-r from-white via-sky-50/55 to-white px-3 py-3 shadow-[0_10px_24px_-22px_rgba(14,116,204,0.65)] sm:px-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -561,6 +571,7 @@ export default function SurveyResultPanel(props: {
           </button>
         </div>
       </section>
+      ) : null}
     </div>
   );
 }
