@@ -27,7 +27,6 @@ import B2bNoteEditorPanel from "./_components/B2bNoteEditorPanel";
 import B2bSurveyEditorPanel from "./_components/B2bSurveyEditorPanel";
 import type {
   AdminClientProps,
-  EmployeeDetail,
   EmployeeListItem,
   LatestReport,
   ReportAudit,
@@ -66,8 +65,6 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
   const [employees, setEmployees] = useState<EmployeeListItem[]>([]);
   const [search, setSearch] = useState("");
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
-  const [selectedEmployeeDetail, setSelectedEmployeeDetail] =
-    useState<EmployeeDetail | null>(null);
 
   const [surveyTemplate, setSurveyTemplate] = useState<SurveyTemplateSchema | null>(null);
   const [surveyAnswers, setSurveyAnswers] = useState<Record<string, unknown>>({});
@@ -79,6 +76,9 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
   const [note, setNote] = useState("");
   const [recommendations, setRecommendations] = useState("");
   const [cautions, setCautions] = useState("");
+  const [surveyDirty, setSurveyDirty] = useState(false);
+  const [analysisDirty, setAnalysisDirty] = useState(false);
+  const [noteDirty, setNoteDirty] = useState(false);
 
   const [latestReport, setLatestReport] = useState<LatestReport | null>(null);
   const [validationAudit, setValidationAudit] = useState<ReportAudit | null>(null);
@@ -92,9 +92,14 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
 
   const [busy, setBusy] = useState(false);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const [isEmployeeListReady, setIsEmployeeListReady] = useState(false);
+  const [isInitialDetailReady, setIsInitialDetailReady] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const webReportCaptureRef = useRef<HTMLDivElement | null>(null);
+  const backgroundRefreshInFlightRef = useRef(false);
+  const lastBackgroundRefreshAtRef = useRef(0);
+  const BACKGROUND_REFRESH_MIN_INTERVAL_MS = 15000;
 
   type BusyActionOptions = {
     fallbackError: string;
@@ -130,6 +135,12 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     if (selectedPeriodKey) return [selectedPeriodKey];
     return [];
   }, [availablePeriods, selectedPeriodKey]);
+  const selectedEmployee = useMemo(
+    () => employees.find((employee) => employee.id === selectedEmployeeId) ?? null,
+    [employees, selectedEmployeeId]
+  );
+  const hasUnsavedDraft = surveyDirty || analysisDirty || noteDirty;
+  const isBootstrapping = !isEmployeeListReady || (employees.length > 0 && !isInitialDetailReady);
 
   const completionStats = useMemo(
     () => {
@@ -201,10 +212,11 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
   }
 
   async function loadEmployeeDetail(employeeId: string, periodKey?: string) {
-    const { detail, survey, analysis, note: noteData, report } =
-      await fetchEmployeeDetailBundle(employeeId, periodKey);
+    const { survey, analysis, note: noteData, report } = await fetchEmployeeDetailBundle(
+      employeeId,
+      periodKey
+    );
 
-    setSelectedEmployeeDetail(detail.employee);
     setSurveyTemplate(survey.template.schema);
     setSelectedSections(survey.response?.selectedSections ?? []);
     setSurveySubmittedAt(survey.response?.submittedAt ?? null);
@@ -245,14 +257,19 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
         ? displayPeriodRaw
         : ""
     );
+    setSurveyDirty(false);
+    setAnalysisDirty(false);
+    setNoteDirty(false);
   }
 
   const clearEmployeeDetailState = useCallback(() => {
-    setSelectedEmployeeDetail(null);
     setLatestReport(null);
     setValidatedLayout(null);
     setValidationAudit(null);
     setValidationIssues([]);
+    setSurveyDirty(false);
+    setAnalysisDirty(false);
+    setNoteDirty(false);
   }, []);
 
   const selectEmployeeForLoading = useCallback((nextEmployeeId: string | null) => {
@@ -264,7 +281,13 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
   }, [clearEmployeeDetailState]);
 
   useEffect(() => {
-    void loadEmployees();
+    void (async () => {
+      try {
+        await loadEmployees();
+      } finally {
+        setIsEmployeeListReady(true);
+      }
+    })();
   }, []);
 
   useEffect(() => {
@@ -290,13 +313,6 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
       setIsDetailLoading(false);
       return;
     }
-    if (
-      employees.length > 0 &&
-      !employees.some((employee) => employee.id === selectedEmployeeId)
-    ) {
-      selectEmployeeForLoading(employees[0]?.id ?? null);
-      return;
-    }
     void (async () => {
       setIsDetailLoading(true);
       try {
@@ -308,10 +324,13 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
         });
       } finally {
         setIsDetailLoading(false);
+        if (!isInitialDetailReady) {
+          setIsInitialDetailReady(true);
+        }
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [employees, selectedEmployeeId, selectEmployeeForLoading]);
+  }, [selectedEmployeeId]);
 
   useEffect(() => {
     const text = notice.trim();
@@ -329,10 +348,25 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
 
   useEffect(() => {
     const refreshFromServer = () => {
-      if (busy || isDetailLoading) return;
-      void loadEmployees(search.trim()).catch(() => null);
-      if (!selectedEmployeeId) return;
-      void loadEmployeeDetail(selectedEmployeeId, selectedPeriodKey || undefined).catch(() => null);
+      if (busy || isDetailLoading || hasUnsavedDraft || backgroundRefreshInFlightRef.current) {
+        return;
+      }
+      const now = Date.now();
+      if (now - lastBackgroundRefreshAtRef.current < BACKGROUND_REFRESH_MIN_INTERVAL_MS) return;
+
+      backgroundRefreshInFlightRef.current = true;
+      lastBackgroundRefreshAtRef.current = now;
+      void (async () => {
+        try {
+          const tasks: Array<Promise<unknown>> = [loadEmployees(search.trim())];
+          if (selectedEmployeeId) {
+            tasks.push(loadEmployeeDetail(selectedEmployeeId, selectedPeriodKey || undefined));
+          }
+          await Promise.all(tasks);
+        } finally {
+          backgroundRefreshInFlightRef.current = false;
+        }
+      })();
     };
 
     const handleFocus = () => {
@@ -348,7 +382,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [busy, isDetailLoading, search, selectedEmployeeId, selectedPeriodKey]);
+  }, [busy, hasUnsavedDraft, isDetailLoading, search, selectedEmployeeId, selectedPeriodKey]);
 
   async function reloadCurrentEmployee() {
     if (!selectedEmployeeId) return;
@@ -376,6 +410,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
           selectedSections: resolvedSelectedSections,
           answers: surveyAnswers,
         });
+        setSurveyDirty(false);
         setNotice("설문을 저장했습니다.");
         await reloadCurrentEmployee();
       },
@@ -393,6 +428,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
           periodKey: selectedPeriodKey || undefined,
           payload: JSON.parse(analysisText || "{}"),
         });
+        setAnalysisDirty(false);
         setNotice("분석 JSON을 저장했습니다.");
         await reloadCurrentEmployee();
       },
@@ -412,6 +448,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
           recommendations,
           cautions,
         });
+        setNoteDirty(false);
         setNotice("약사 코멘트를 저장했습니다.");
         await reloadCurrentEmployee();
       },
@@ -500,7 +537,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
       onError: applyExportFailure,
       run: async () => {
         const downloadFileName = buildEmployeeReportPdfFilename({
-          employeeName: selectedEmployeeDetail?.name ?? latestReport.payload?.meta?.employeeName,
+          employeeName: selectedEmployee?.name ?? latestReport.payload?.meta?.employeeName,
           periodKey:
             selectedPeriodKey || latestReport.periodKey || latestReport.payload?.meta?.periodKey,
         });
@@ -532,7 +569,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
       onError: applyExportFailure,
       run: async () => {
         const fallbackPdfName = buildEmployeeReportPdfFilename({
-          employeeName: selectedEmployeeDetail?.name ?? latestReport.payload?.meta?.employeeName,
+          employeeName: selectedEmployee?.name ?? latestReport.payload?.meta?.employeeName,
           periodKey:
             selectedPeriodKey || latestReport.periodKey || latestReport.payload?.meta?.periodKey,
         });
@@ -575,6 +612,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
   }
 
   function setAnswerValue(question: SurveyQuestion, value: unknown) {
+    setSurveyDirty(true);
     const template = wellnessTemplate;
     if (!template) {
       setSurveyAnswers((prev) => ({ ...prev, [question.key]: value }));
@@ -599,6 +637,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
   }
 
   function toggleSection(sectionKey: string) {
+    setSurveyDirty(true);
     const template = wellnessTemplate;
     if (!template) return;
     const c27Key = template.rules.selectSectionByCommonQuestionKey || "C27";
@@ -620,6 +659,124 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
       });
       return nextSections;
     });
+  }
+
+  if (isBootstrapping) {
+    return (
+      <div className={styles.pageBackdrop}>
+        <div className={`${styles.page} ${styles.pageNoBg} ${styles.stack}`}>
+          <section className={styles.heroCard} aria-live="polite" aria-busy="true">
+            <span
+              className={`${styles.skeletonPill} ${styles.skeletonBlock}`}
+              style={{ width: 132 }}
+              aria-hidden="true"
+            />
+            <span
+              className={`${styles.skeletonLine} ${styles.skeletonBlock}`}
+              style={{ width: "52%", marginTop: 18 }}
+              aria-hidden="true"
+            />
+            <span
+              className={`${styles.skeletonLineShort} ${styles.skeletonBlock}`}
+              style={{ width: "74%", marginTop: 10 }}
+              aria-hidden="true"
+            />
+            <div className={styles.actionRow} style={{ marginTop: 20 }}>
+              <span
+                className={`${styles.skeletonBlock} ${styles.input}`}
+                style={{ minWidth: 260, height: 44 }}
+                aria-hidden="true"
+              />
+              <span
+                className={`${styles.skeletonBlock} ${styles.buttonPrimary}`}
+                style={{ width: 88, height: 44 }}
+                aria-hidden="true"
+              />
+            </div>
+          </section>
+
+          <div className={styles.splitLayout} aria-hidden="true">
+            <section className={`${styles.sectionCard} ${styles.sidebarCard}`}>
+              <div className={styles.skeletonRow}>
+                <span
+                  className={`${styles.skeletonLine} ${styles.skeletonBlock}`}
+                  style={{ width: "42%" }}
+                />
+                <span
+                  className={`${styles.skeletonPill} ${styles.skeletonBlock}`}
+                  style={{ width: 68 }}
+                />
+              </div>
+              <span
+                className={`${styles.skeletonLineShort} ${styles.skeletonBlock}`}
+                style={{ width: "56%", marginTop: 10 }}
+              />
+              <div className={`${styles.listWrap} ${styles.listWrapGrid}`} style={{ marginTop: 16 }}>
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <span
+                    key={`initial-side-skeleton-${index}`}
+                    className={styles.skeletonBlock}
+                    style={{ width: "100%", height: 92, borderRadius: 18 }}
+                  />
+                ))}
+              </div>
+            </section>
+
+            <div className={styles.stack}>
+              <section className={styles.sectionCard}>
+                <div className={styles.skeletonRow}>
+                  <span
+                    className={`${styles.skeletonLine} ${styles.skeletonBlock}`}
+                    style={{ width: "44%" }}
+                  />
+                  <span
+                    className={`${styles.skeletonPill} ${styles.skeletonBlock}`}
+                    style={{ width: 96 }}
+                  />
+                </div>
+                <span
+                  className={`${styles.skeletonLineShort} ${styles.skeletonBlock}`}
+                  style={{ width: "72%", marginTop: 10 }}
+                />
+                <div className={styles.loadingKpiRow}>
+                  {Array.from({ length: 4 }).map((_, index) => (
+                    <span
+                      key={`initial-kpi-skeleton-${index}`}
+                      className={`${styles.skeletonBlock} ${styles.loadingKpi}`}
+                    />
+                  ))}
+                </div>
+              </section>
+
+              <section className={styles.reportCanvas}>
+                <div className={styles.reportCanvasHeader}>
+                  <div>
+                    <span
+                      className={`${styles.skeletonLine} ${styles.skeletonBlock}`}
+                      style={{ width: 220 }}
+                    />
+                    <span
+                      className={`${styles.skeletonLineShort} ${styles.skeletonBlock}`}
+                      style={{ width: 340, marginTop: 8 }}
+                    />
+                  </div>
+                  <span
+                    className={`${styles.skeletonPill} ${styles.skeletonBlock}`}
+                    style={{ width: 170, height: 30 }}
+                  />
+                </div>
+                <div className={`${styles.reportCanvasBoard} ${styles.reportCanvasBoardWide}`}>
+                  <span
+                    className={styles.skeletonBlock}
+                    style={{ width: "100%", minHeight: 520, borderRadius: 20 }}
+                  />
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -739,10 +896,10 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
               </>
             ) : null}
 
-            {selectedEmployeeId && !isDetailLoading && selectedEmployeeDetail ? (
+            {selectedEmployeeId && !isDetailLoading && selectedEmployee ? (
               <>
                 <B2bEmployeeOverviewCard
-                  detail={selectedEmployeeDetail}
+                  detail={selectedEmployee}
                   latestReport={latestReport}
                   selectedPeriodKey={selectedPeriodKey}
                   periodOptions={periodOptions}
@@ -816,16 +973,28 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
                   recommendations={recommendations}
                   cautions={cautions}
                   busy={busy}
-                  onNoteChange={setNote}
-                  onRecommendationsChange={setRecommendations}
-                  onCautionsChange={setCautions}
+                  onNoteChange={(value) => {
+                    setNoteDirty(true);
+                    setNote(value);
+                  }}
+                  onRecommendationsChange={(value) => {
+                    setNoteDirty(true);
+                    setRecommendations(value);
+                  }}
+                  onCautionsChange={(value) => {
+                    setNoteDirty(true);
+                    setCautions(value);
+                  }}
                   onSave={() => void handleSaveNote()}
                 />
 
                 <B2bAnalysisJsonPanel
                   analysisText={analysisText}
                   busy={busy}
-                  onAnalysisTextChange={setAnalysisText}
+                  onAnalysisTextChange={(value) => {
+                    setAnalysisDirty(true);
+                    setAnalysisText(value);
+                  }}
                   onSave={() => void handleSaveAnalysisPayload()}
                 />
 
@@ -842,7 +1011,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
               </>
             ) : null}
 
-            {selectedEmployeeId && !isDetailLoading && !selectedEmployeeDetail ? (
+            {selectedEmployeeId && !isDetailLoading && !selectedEmployee ? (
               <section className={`${styles.sectionCard} ${styles.reportSelectionPlaceholder}`}>
                 <p className={styles.reportSelectionPlaceholderText}>
                   {"임직원 상세 데이터를 불러오지 못했습니다. 다시 시도해 주세요."}

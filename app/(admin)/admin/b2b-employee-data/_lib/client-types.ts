@@ -12,11 +12,6 @@ export type EmployeeListItem = {
   counts: {
     healthSnapshots: number;
     reports: number;
-    surveyResponses: number;
-    analysisResults: number;
-    pharmacistNotes: number;
-    accessLogs: number;
-    adminActionLogs: number;
   };
 };
 

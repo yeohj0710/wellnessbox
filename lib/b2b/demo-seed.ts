@@ -219,9 +219,8 @@ export async function seedB2bDemoData() {
         linkedProvider: "HYPHEN_NHIS",
       },
       update: {
-        name: identity.name,
-        birthDate: identity.birthDate,
-        phoneNormalized: identity.phoneNormalized,
+        // Keep manually edited identity fields for existing demo employees.
+        // Re-running demo seed should refresh report/survey snapshots only.
         linkedProvider: "HYPHEN_NHIS",
       },
     });

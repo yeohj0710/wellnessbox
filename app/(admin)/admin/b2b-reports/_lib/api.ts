@@ -2,7 +2,6 @@ import type { LayoutDocument } from "@/lib/b2b/export/layout-types";
 import type { LayoutValidationIssue } from "@/lib/b2b/export/validation-types";
 import type {
   AnalysisGetResponse,
-  EmployeeDetailGetResponse,
   EmployeeListItem,
   NoteGetResponse,
   ReportGetResponse,
@@ -12,7 +11,6 @@ import type {
 import { requestJson } from "./client-utils";
 
 export type EmployeeDetailBundle = {
-  detail: EmployeeDetailGetResponse;
   survey: SurveyGetResponse;
   analysis: AnalysisGetResponse;
   note: NoteGetResponse;
@@ -31,15 +29,16 @@ function toPeriodQuery(periodKey?: string) {
 }
 
 export async function fetchEmployees(query = "") {
+  const params = new URLSearchParams({ view: "reports" });
+  if (query) params.set("q", query);
   return requestJson<{ ok: boolean; employees: EmployeeListItem[] }>(
-    `/api/admin/b2b/employees${query ? `?q=${encodeURIComponent(query)}` : ""}`
+    `/api/admin/b2b/employees?${params.toString()}`
   );
 }
 
 export async function fetchEmployeeDetailBundle(employeeId: string, periodKey?: string) {
   const periodQuery = toPeriodQuery(periodKey);
-  const [detail, survey, analysis, note, report] = await Promise.all([
-    requestJson<EmployeeDetailGetResponse>(`/api/admin/b2b/employees/${employeeId}`),
+  const [survey, analysis, note, report] = await Promise.all([
     requestJson<SurveyGetResponse>(`/api/admin/b2b/employees/${employeeId}/survey${periodQuery}`),
     requestJson<AnalysisGetResponse>(
       `/api/admin/b2b/employees/${employeeId}/analysis${periodQuery}`
@@ -47,7 +46,7 @@ export async function fetchEmployeeDetailBundle(employeeId: string, periodKey?: 
     requestJson<NoteGetResponse>(`/api/admin/b2b/employees/${employeeId}/note${periodQuery}`),
     requestJson<ReportGetResponse>(`/api/admin/b2b/employees/${employeeId}/report${periodQuery}`),
   ]);
-  return { detail, survey, analysis, note, report } satisfies EmployeeDetailBundle;
+  return { survey, analysis, note, report } satisfies EmployeeDetailBundle;
 }
 
 export async function saveSurvey(input: {
