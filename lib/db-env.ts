@@ -42,7 +42,24 @@ type EnvValue = {
 };
 
 let cachedValidation: PrismaEnvValidation | null = null;
-let lastConflictWarnSignature: string | null = null;
+const DB_ENV_WARN_STATE_KEY = "__WB_DB_ENV_WARN_STATE__";
+
+type DbEnvWarnState = {
+  lastConflictWarnSignature: string | null;
+};
+
+function getDbEnvWarnState(): DbEnvWarnState {
+  const root = globalThis as typeof globalThis & {
+    [DB_ENV_WARN_STATE_KEY]?: DbEnvWarnState;
+  };
+  const existing = root[DB_ENV_WARN_STATE_KEY];
+  if (existing) return existing;
+  const created: DbEnvWarnState = {
+    lastConflictWarnSignature: null,
+  };
+  root[DB_ENV_WARN_STATE_KEY] = created;
+  return created;
+}
 
 function pickEnvValue(keys: readonly string[]) {
   for (const key of keys) {
@@ -164,12 +181,13 @@ function warnPrismaEnvConflictsOnce(input: {
     directKey: string | null;
   };
 }) {
+  const warnState = getDbEnvWarnState();
   const signature = JSON.stringify({
     conflicts: input.conflictMessages,
     selected: input.selected,
   });
-  if (lastConflictWarnSignature === signature) return;
-  lastConflictWarnSignature = signature;
+  if (warnState.lastConflictWarnSignature === signature) return;
+  warnState.lastConflictWarnSignature = signature;
   console.warn("[db-env] conflicting db url env detected", {
     conflicts: input.conflictMessages,
     selected: input.selected,
@@ -213,7 +231,7 @@ function buildValidationResult(): PrismaEnvValidation {
 
   if (!normalizedDatabase?.value) {
     errors.push(
-      "데이터베이스 URL이 비어 있습니다. DATABASE_URL 또는 WELLNESSBOX_PRISMA_URL(대체 POSTGRES_PRISMA_URL)을 설정해 주세요."
+      "데이터베이스 URL이 비어 있습니다. DATABASE_URL 또는 WELLNESSBOX_PRISMA_URL(대체: POSTGRES_PRISMA_URL)을 설정해 주세요."
     );
   } else if (!isAcceptedDbUrl(normalizedDatabase.value)) {
     errors.push(
@@ -223,7 +241,7 @@ function buildValidationResult(): PrismaEnvValidation {
 
   if (!normalizedDirect?.value) {
     errors.push(
-      "DIRECT URL이 비어 있습니다. DIRECT_URL 또는 WELLNESSBOX_URL_NON_POOLING(대체 POSTGRES_URL_NON_POOLING)을 설정해 주세요."
+      "DIRECT URL이 비어 있습니다. DIRECT_URL 또는 WELLNESSBOX_URL_NON_POOLING(대체: POSTGRES_URL_NON_POOLING)을 설정해 주세요."
     );
   } else if (!isAcceptedDbUrl(normalizedDirect.value)) {
     errors.push(

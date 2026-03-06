@@ -290,7 +290,7 @@ export default function B2bIntegratedResultPreview({ payload }: B2bIntegratedRes
       <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
         <h3 className="text-lg font-bold text-slate-900">건강검진 데이터 상세</h3>
         <p className="mt-1 text-xs text-slate-500">
-          건강검진에서 수집된 핵심 지표와 상태를 함께 확인합니다.
+          건강검진에서 수집된 핵심 지표 상태를 빠르게 확인합니다.
         </p>
         {healthMetrics.length === 0 ? (
           <p className="mt-3 text-sm text-slate-500">표시할 건강검진 지표가 없습니다.</p>

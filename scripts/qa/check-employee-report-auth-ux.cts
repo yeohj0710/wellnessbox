@@ -173,12 +173,15 @@ function runPrimaryActionLabelCases() {
 
 function runUiIntegrationChecks() {
   const clientSource = read("app/(features)/employee-report/EmployeeReportClient.tsx");
+  const sessionBootstrapSource = read(
+    "app/(features)/employee-report/_lib/use-employee-report-session-bootstrap.ts"
+  );
   const toastEffectsSource = read(
     "app/(features)/employee-report/_lib/use-employee-report-toast-effects.ts"
   );
   assert.ok(
-    clientSource.includes("readStoredIdentityWithSource"),
-    "EmployeeReportClient should read stored identity with source context."
+    sessionBootstrapSource.includes("readStoredIdentityWithSource"),
+    "Employee report session bootstrap hook should read stored identity with source context."
   );
   assert.ok(
     clientSource.includes("primaryActionLabel={identityPrimaryActionLabel}"),

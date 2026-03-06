@@ -10,70 +10,33 @@ import type {
   CartPharmacy,
   CartProduct,
 } from "@/components/order/cart.types";
-import {
-  clearCartReturnState,
-  isCartHostPath,
-} from "@/lib/client/cart-navigation";
-import {
-  buildClientCartSignature,
-  readClientCartItems,
-  writeClientCartItems,
-} from "@/lib/client/cart-storage";
-
-const MISSING_ADDRESS_ERROR =
-  "주소를 설정해 주세요. 해당 상품을 주문할 수 있는 약국을 보여드릴게요.";
-const GLOBAL_CART_OPEN_KEY = "wbGlobalCartOpen";
-const GLOBAL_CART_VISIBILITY_EVENT = "wb:global-cart-visibility";
-
-function readRoadAddress() {
-  if (typeof window === "undefined") return "";
-  return (localStorage.getItem("roadAddress") || "").trim();
-}
-
-function notifyGlobalCartVisibility(visible: boolean) {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(
-    new CustomEvent(GLOBAL_CART_VISIBILITY_EVENT, {
-      detail: { visible },
-    })
-  );
-}
+import { isCartHostPath } from "@/lib/client/cart-navigation";
+import { writeClientCartItems } from "@/lib/client/cart-storage";
+import { MISSING_ADDRESS_ERROR } from "@/components/order/globalCartHost.constants";
+import { useGlobalCartVisibility } from "@/components/order/hooks/useGlobalCartVisibility";
+import { useRoadAddressState } from "@/components/order/hooks/useRoadAddressState";
+import { useSyncedClientCartItems } from "@/components/order/hooks/useSyncedClientCartItems";
 
 export default function GlobalCartHost() {
   const pathname = usePathname();
   const canRenderGlobalCart = !isCartHostPath(pathname);
 
-  const [isVisible, setIsVisible] = useState(false);
-  const [cartItems, setCartItems] = useState<CartLineItem[]>(() =>
-    typeof window !== "undefined" ? readClientCartItems() : []
-  );
+  const { cartItems, setCartItemsIfChanged } = useSyncedClientCartItems();
+  const { roadAddress, setRoadAddress } = useRoadAddressState();
+  const { isVisible, closeGlobalCart } = useGlobalCartVisibility({
+    canRenderGlobalCart,
+    pathname,
+  });
+
   const [allProducts, setAllProducts] = useState<CartProduct[]>([]);
   const [totalPrice, setTotalPrice] = useState(0);
-  const [roadAddress, setRoadAddressState] = useState("");
   const [selectedPharmacy, setSelectedPharmacyState] =
     useState<CartPharmacy | null>(null);
   const [isPharmacyLoading, setIsPharmacyLoading] = useState(false);
   const [pharmacyError, setPharmacyError] = useState<string | null>(null);
   const [pharmacyResolveToken, setPharmacyResolveToken] = useState(0);
 
-  const cartSignatureRef = useRef(
-    typeof window !== "undefined"
-      ? buildClientCartSignature(readClientCartItems())
-      : ""
-  );
-  const openScrollYRef = useRef(0);
-  const openedPathRef = useRef<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  const setCartItemsIfChanged = useCallback((nextItems: CartLineItem[]) => {
-    const nextSignature = buildClientCartSignature(nextItems);
-    if (nextSignature === cartSignatureRef.current) {
-      return false;
-    }
-    cartSignatureRef.current = nextSignature;
-    setCartItems(nextItems);
-    return true;
-  }, []);
 
   const setSelectedPharmacy = useCallback((pharmacy: CartPharmacy | null) => {
     setSelectedPharmacyState(pharmacy);
@@ -84,106 +47,6 @@ export default function GlobalCartHost() {
       localStorage.removeItem("selectedPharmacyId");
     }
   }, []);
-
-  const openGlobalCart = useCallback(() => {
-    if (!canRenderGlobalCart || typeof window === "undefined") return;
-    const activeElement = document.activeElement;
-    if (activeElement instanceof HTMLElement) {
-      activeElement.blur();
-    }
-    window.dispatchEvent(new Event("wb:chat-close-dock"));
-    clearCartReturnState();
-    openScrollYRef.current = window.scrollY;
-    openedPathRef.current = pathname || window.location.pathname;
-    sessionStorage.setItem("scrollPos", String(window.scrollY));
-    sessionStorage.setItem(GLOBAL_CART_OPEN_KEY, "1");
-    localStorage.setItem("openCart", "true");
-    setIsVisible(true);
-    notifyGlobalCartVisibility(true);
-  }, [canRenderGlobalCart, pathname]);
-
-  const closeGlobalCart = useCallback(() => {
-    openedPathRef.current = null;
-    setIsVisible(false);
-    if (typeof window === "undefined") return;
-    sessionStorage.removeItem(GLOBAL_CART_OPEN_KEY);
-    localStorage.removeItem("openCart");
-    notifyGlobalCartVisibility(false);
-    const y = openScrollYRef.current;
-    requestAnimationFrame(() => {
-      window.scrollTo(0, y);
-      requestAnimationFrame(() => window.scrollTo(0, y));
-    });
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const syncCart = () => {
-      setCartItemsIfChanged(readClientCartItems());
-    };
-    syncCart();
-    window.addEventListener("cartUpdated", syncCart);
-    return () => window.removeEventListener("cartUpdated", syncCart);
-  }, [setCartItemsIfChanged]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const syncAddress = () => setRoadAddressState(readRoadAddress());
-    syncAddress();
-    window.addEventListener("addressUpdated", syncAddress);
-    window.addEventListener("addressCleared", syncAddress);
-    return () => {
-      window.removeEventListener("addressUpdated", syncAddress);
-      window.removeEventListener("addressCleared", syncAddress);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const handleOpen = () => {
-      if (isCartHostPath(window.location.pathname)) return;
-      openGlobalCart();
-    };
-    window.addEventListener("openCart", handleOpen);
-    return () => window.removeEventListener("openCart", handleOpen);
-  }, [openGlobalCart]);
-
-  useEffect(() => {
-    if (!canRenderGlobalCart) {
-      openedPathRef.current = null;
-      setIsVisible(false);
-      notifyGlobalCartVisibility(false);
-      return;
-    }
-    if (typeof window === "undefined") return;
-    if (sessionStorage.getItem(GLOBAL_CART_OPEN_KEY) !== "1") return;
-    openGlobalCart();
-  }, [canRenderGlobalCart, openGlobalCart]);
-
-  useEffect(() => {
-    if (!isVisible) return;
-    const openedPath = openedPathRef.current;
-    if (!openedPath || openedPath === pathname) return;
-    openedPathRef.current = null;
-    setIsVisible(false);
-    if (typeof window !== "undefined") {
-      sessionStorage.removeItem(GLOBAL_CART_OPEN_KEY);
-      localStorage.removeItem("openCart");
-      notifyGlobalCartVisibility(false);
-    }
-  }, [isVisible, pathname]);
-
-  useEffect(() => {
-    if (!isVisible) return;
-    const htmlOverflow = document.documentElement.style.overflow;
-    const bodyOverflow = document.body.style.overflow;
-    document.documentElement.style.overflow = "hidden";
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.documentElement.style.overflow = htmlOverflow;
-      document.body.style.overflow = bodyOverflow;
-    };
-  }, [isVisible]);
 
   const cartProductIds = useMemo(() => {
     return Array.from(
@@ -347,12 +210,15 @@ export default function GlobalCartHost() {
     }
   }, [isVisible, selectedPharmacy, allProducts, cartItems, setCartItemsIfChanged]);
 
-  const handleUpdateCart = useCallback((updatedItems: CartLineItem[]) => {
-    const normalized = writeClientCartItems(updatedItems);
-    if (setCartItemsIfChanged(normalized)) {
-      window.dispatchEvent(new Event("cartUpdated"));
-    }
-  }, [setCartItemsIfChanged]);
+  const handleUpdateCart = useCallback(
+    (updatedItems: CartLineItem[]) => {
+      const normalized = writeClientCartItems(updatedItems);
+      if (setCartItemsIfChanged(normalized)) {
+        window.dispatchEvent(new Event("cartUpdated"));
+      }
+    },
+    [setCartItemsIfChanged]
+  );
 
   const retryPharmacyResolve = useCallback(() => {
     setPharmacyResolveToken((prev) => prev + 1);
@@ -372,7 +238,7 @@ export default function GlobalCartHost() {
           pharmacyError={pharmacyError}
           onRetryPharmacyResolve={retryPharmacyResolve}
           roadAddress={roadAddress}
-          setRoadAddress={setRoadAddressState}
+          setRoadAddress={setRoadAddress}
           setSelectedPharmacy={setSelectedPharmacy}
           containerRef={containerRef}
           onBack={closeGlobalCart}

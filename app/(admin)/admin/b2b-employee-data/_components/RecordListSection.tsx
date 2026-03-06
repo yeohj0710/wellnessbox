@@ -1,8 +1,9 @@
 "use client";
 
 import styles from "@/components/b2b/B2bUx.module.css";
-import { prettyJson } from "../_lib/client-utils";
 import type { DeleteRecordType } from "../_lib/client-types";
+import { EMPLOYEE_DATA_COPY } from "../_lib/employee-data-copy";
+import { prettyJson } from "../_lib/client-utils";
 
 export type RecordListRow = {
   id: string;
@@ -56,13 +57,17 @@ export default function RecordListSection(props: {
                 onClick={() => void props.onDeleteRecord(row.recordType, row.id)}
                 disabled={props.busy}
               >
-                삭제
+                {EMPLOYEE_DATA_COPY.recordList.deleteButton}
               </button>
             </div>
-            {row.payload !== undefined ? <JsonPreview label="JSON 보기" value={row.payload} /> : null}
+            {row.payload !== undefined ? (
+              <JsonPreview label={EMPLOYEE_DATA_COPY.recordList.jsonPreview} value={row.payload} />
+            ) : null}
           </div>
         ))}
-        {props.rows.length === 0 ? <p className={styles.noticeInfo}>데이터가 없습니다.</p> : null}
+        {props.rows.length === 0 ? (
+          <p className={styles.noticeInfo}>{EMPLOYEE_DATA_COPY.recordList.empty}</p>
+        ) : null}
       </div>
     </details>
   );

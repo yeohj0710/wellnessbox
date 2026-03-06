@@ -1,19 +1,21 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
-import { getLoginStatus, type LoginStatus } from "@/lib/useLoginStatus";
-import { subscribeAuthSyncEvent } from "@/lib/client/auth-sync";
 import CartItemsSection from "./cartItemsSection";
 import AddressSection from "./addressSection";
 import PharmacyInfoSection from "./pharmacyInfoSection";
 import PaymentSection from "./paymentSection";
+import CartTopHeader from "./CartTopHeader";
 import axios from "axios";
 import { useCartHydration } from "./hooks/useCartHydration";
 import { useAddressFields } from "./hooks/useAddressFields";
 import { useCartPayment } from "./hooks/useCartPayment";
+import { useCartLoginStatus } from "./hooks/useCartLoginStatus";
+import { useCartOverlayCloseBehavior } from "./hooks/useCartOverlayCloseBehavior";
+import { useCartClientPersistence } from "./hooks/useCartClientPersistence";
 import { usePhoneStatus } from "./hooks/usePhoneStatus";
 import { buildBulkChangedCartItems, filterRegisteredPharmacies } from "./cart.helpers";
 import type {
@@ -22,6 +24,7 @@ import type {
   CartProduct,
   CartProps,
 } from "./cart.types";
+import { CART_COPY, buildUnavailableBulkChangeAlert } from "./cart.copy";
 import {
   mergeClientCartItems,
   writeClientCartItems,
@@ -59,7 +62,7 @@ export default function Cart({
   onUpdateCart,
 }: CartProps) {
   const router = useRouter();
-  const [loginStatus, setLoginStatus] = useState<LoginStatus | null>(null);
+  const { loginStatus, safeLoginStatus } = useCartLoginStatus();
   const [showPharmacyDetail, setShowPharmacyDetail] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("inicis");
@@ -105,17 +108,6 @@ export default function Cart({
     () => phoneDisplay || phone,
     [phone, phoneDisplay]
   );
-  const safeLoginStatus = useMemo<LoginStatus>(
-    () =>
-      loginStatus ?? {
-        isUserLoggedIn: false,
-        isPharmLoggedIn: false,
-        isRiderLoggedIn: false,
-        isAdminLoggedIn: false,
-        isTestLoggedIn: false,
-      },
-    [loginStatus]
-  );
 
   const persistCartItems = useCallback(
     (nextItems: CartLineItem[]) => {
@@ -131,92 +123,18 @@ export default function Cart({
     setPhoneModalOpen(true);
   }, [setUnlinkError]);
 
-  useEffect(() => {
-    const onClose = () => onBack();
-    window.addEventListener("closeCart", onClose);
-    return () => window.removeEventListener("closeCart", onClose);
-  }, [onBack]);
+  useCartClientPersistence({
+    password,
+    setPassword,
+    setSdkLoaded,
+    allProducts,
+    selectedPharmacy,
+  });
 
-  useEffect(() => {
-    const savedPassword = localStorage.getItem("password");
-    if (savedPassword) {
-      setPassword(savedPassword);
-    }
-    if ((window as any).IMP) {
-      setSdkLoaded(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("password", password);
-  }, [password]);
-
-  useEffect(() => {
-    if (Array.isArray(allProducts) && allProducts.length > 0) {
-      localStorage.setItem("products", JSON.stringify(allProducts));
-    }
-  }, [allProducts]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    void getLoginStatus(controller.signal)
-      .then((fetchedLoginStatus) => {
-        setLoginStatus(fetchedLoginStatus);
-      })
-      .catch(() => undefined);
-    return () => controller.abort();
-  }, []);
-
-  const refreshLoginStatus = useCallback(async () => {
-    try {
-      const fetchedLoginStatus = await getLoginStatus();
-      setLoginStatus(fetchedLoginStatus);
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  useEffect(() => {
-    const unsubscribe = subscribeAuthSyncEvent(
-      () => {
-        refreshLoginStatus();
-      },
-      { scopes: ["user-session"] }
-    );
-    return unsubscribe;
-  }, [refreshLoginStatus]);
-
-  useEffect(() => {
-    if (selectedPharmacy?.id) {
-      localStorage.setItem("selectedPharmacyId", String(selectedPharmacy.id));
-      return;
-    }
-    localStorage.removeItem("selectedPharmacyId");
-  }, [selectedPharmacy]);
-
-  useEffect(() => {
-    if (detailProduct) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onBack();
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    const isMobile = /Mobi|Android/i.test(navigator.userAgent);
-    const handlePopState = () => {
-      onBack();
-    };
-    if (isMobile) {
-      window.history.pushState(null, "", window.location.href);
-      window.addEventListener("popstate", handlePopState);
-    }
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      if (isMobile) {
-        window.removeEventListener("popstate", handlePopState);
-      }
-    };
-  }, [onBack, detailProduct]);
+  useCartOverlayCloseBehavior({
+    onBack,
+    isDetailProductOpen: Boolean(detailProduct),
+  });
 
   const deliveryFee = 3000;
   const totalPriceWithDelivery = totalPrice + deliveryFee;
@@ -238,7 +156,7 @@ export default function Cart({
           setSelectedPharmacy(sorted[0]);
         }
       } catch (error) {
-        console.error("약국 정보를 가져오는 데 실패했습니다:", error);
+        console.error(CART_COPY.fetchPharmacyErrorPrefix, error);
       }
     }
   };
@@ -283,11 +201,7 @@ export default function Cart({
       });
     persistCartItems(updatedItems);
     if (unavailable.length) {
-      alert(
-        `${unavailable.join(
-          ", "
-        )} 상품은 재고가 없어 변경하지 않고, 나머지 상품만 ${target}로 바꿨어요.`
-      );
+      alert(buildUnavailableBulkChangeAlert(unavailable, target));
     }
   };
 
@@ -321,15 +235,7 @@ export default function Cart({
         }}
         strategy="afterInteractive"
       />
-      <div className="z-10 fixed top-14 left-0 right-0 w-full max-w-[640px] mx-auto bg-sky-400 h-12 sm:h-14 flex items-center px-4 mb-6 border-b border-gray-200">
-        <button
-          onClick={onBack}
-          className="text-white text-xl mr-4 font-bold hover:scale-110"
-        >
-          ←
-        </button>
-        <h1 className="sm:text-lg font-bold text-white">장바구니</h1>
-      </div>
+      <CartTopHeader onBack={onBack} />
       <CartItemsSection
         cartItems={cartItems}
         allProducts={allProducts}

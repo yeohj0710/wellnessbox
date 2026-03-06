@@ -9,25 +9,20 @@ Only function-like blocks with at least 30 lines are included.
 
 | Lines | Kind | Function | Location |
 |---:|---|---|---|
-| 1870 | `function` | `SurveyPageClient` | `app/survey/survey-page-client.tsx:614` |
-| 1014 | `function` | `B2bAdminReportClient` | `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx:63` |
-| 918 | `function` | `EmployeeReportClient` | `app/(features)/employee-report/EmployeeReportClient.tsx:73` |
-| 756 | `function` | `B2bAdminEmployeeDataClient` | `app/(admin)/admin/b2b-employee-data/B2bAdminEmployeeDataClient.tsx:30` |
+| 1720 | `function` | `SurveyPageClient` | `app/survey/survey-page-client.tsx:137` |
 | 732 | `function` | `trainAllRndAiModels` | `lib/rnd/ai-training/pipeline.ts:2997` |
 | 680 | `function` | `LandingSection2` | `app/(components)/landingSection2.tsx:29` |
 | 534 | `function` | `ReportSummaryCards` | `components/b2b/ReportSummaryCards.tsx:487` |
-| 476 | `function` | `SurveyResultPanel` | `app/survey/_components/SurveyResultPanel.tsx:102` |
 | 460 | `function` | `HomeProductSection` | `app/(components)/homeProductSection.tsx:76` |
+| 410 | `function` | `EmployeeReportClient` | `app/(features)/employee-report/EmployeeReportClient.tsx:56` |
 | 407 | `function` | `loadEmployeeForOps` | `lib/b2b/admin-employee-management-route.ts:187` |
 | 399 | `function` | `EditorAdminClient` | `app/(admin)/admin/column/editor/EditorAdminClient.tsx:44` |
-| 398 | `function` | `Cart` | `components/order/cart.tsx:46` |
-| 394 | `function` | `B2bSurveyEditorPanel` | `app/(admin)/admin/b2b-reports/_components/B2bSurveyEditorPanel.tsx:37` |
 | 374 | `function` | `RecommendedProductActions` | `app/chat/components/RecommendedProductActions.tsx:26` |
 | 365 | `function` | `useAssessFlow` | `app/assess/useAssessFlow.ts:29` |
 | 355 | `function` | `ProductManager` | `components/manager/productManager.tsx:14` |
 | 352 | `function` | `PharmacyProductManager` | `components/manager/pharmacyProductManager.tsx:18` |
 | 343 | `function` | `OrderComplete` | `app/(orders)/order-complete/page.tsx:43` |
-| 343 | `function` | `GlobalCartHost` | `components/order/globalCartHost.tsx:42` |
+| 342 | `function` | `B2bAdminReportClient` | `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx:46` |
 | 341 | `function` | `useChat` | `app/chat/hooks/useChat.ts:38` |
 | 337 | `function` | `OrderAccordionItem` | `components/pharm/orderAccordionItem.tsx:48` |
 | 336 | `function` | `executeNhisFetch` | `lib/server/hyphen/fetch-executor.ts:492` |
@@ -35,13 +30,12 @@ Only function-like blocks with at least 30 lines are included.
 | 331 | `function` | `ChatInput` | `app/chat/components/ChatInput.tsx:39` |
 | 330 | `function` | `EditorClient` | `app/column/editor/EditorClient.tsx:133` |
 | 329 | `function` | `ChatDrawer` | `app/chat/components/ChatDrawer.tsx:21` |
-| 328 | `function` | `SurveyQuestionField` | `app/(admin)/admin/b2b-reports/_components/SurveyQuestionField.tsx:131` |
 | 327 | `function` | `EnglishCheckAI` | `app/en/check-ai/page.tsx:45` |
 | 324 | `function` | `DesktopChatDock` | `components/chat/DesktopChatDock.tsx:50` |
 | 324 | `function` | `ProductDetail` | `components/product/productDetail.tsx:24` |
 | 307 | `function` | `CheckAI` | `app/check-ai/page.tsx:32` |
-| 307 | `function` | `CartItemsSection` | `components/order/cartItemsSection.tsx:43` |
 | 304 | `function` | `KakaoExternalBridge` | `components/common/kakaoExternalBridge.tsx:29` |
+| 301 | `function` | `Cart` | `components/order/cart.tsx:49` |
 | 297 | `function` | `runModule05OptimizationMvp` | `lib/rnd/module05-optimization/mvp-engine.ts:77` |
 | 290 | `function` | `CommandPalette` | `components/common/commandPalette.tsx:27` |
 | 287 | `function` | `DesktopChatDockPanel` | `components/chat/DesktopChatDockPanel.tsx:29` |
@@ -59,6 +53,12 @@ Only function-like blocks with at least 30 lines are included.
 | 253 | `function` | `Terms` | `app/about/terms/page.tsx:3` |
 | 252 | `function` | `useProfileImageEditorController` | `app/me/useProfileImageEditorController.ts:28` |
 | 250 | `function` | `MeClient` | `app/me/meClient.tsx:25` |
+| 247 | `function` | `useDesktopChatDockLayout` | `components/chat/useDesktopChatDockLayout.ts:63` |
+| 246 | `function` | `ChatPage` | `app/chat/page.tsx:35` |
+| 244 | `function` | `useDesktopChatDockPointer` | `components/chat/useDesktopChatDockPointer.ts:53` |
+| 242 | `function` | `useEmployeeReportSyncActions` | `app/(features)/employee-report/_lib/use-employee-report-sync-actions.ts:62` |
+| 234 | `function` | `usePhoneAndPassword` | `components/order/hooks/usePhoneAndPassword.ts:16` |
+| 233 | `function` | `useCustomerOrderPushState` | `components/order/useCustomerOrderPushState.ts:11` |
 
 ## Scripts Top 30
 
@@ -85,15 +85,15 @@ Only function-like blocks with at least 30 lines are included.
 | 124 | `function` | `scanSourceFile` | `scripts/perf/scan-prefetch-regressions.cjs:61` |
 | 120 | `function` | `runOne` | `scripts/perf/navigation-prefetch-benchmark.cjs:226` |
 | 117 | `function` | `run` | `scripts/maintenance/smoke-hyphen-fetch-policy.cts:28` |
-| 106 | `function` | `runDbEnvChecks` | `scripts/qa/check-b2b-employee-sync-guard.cjs:73` |
+| 106 | `function` | `runDbEnvChecks` | `scripts/qa/check-b2b-employee-sync-guard.cjs:76` |
 | 106 | `function` | `buildDataRequirementMatrix` | `scripts/rnd/train-all-ai.ts:1087` |
 | 104 | `function` | `collectScenario` | `scripts/perf/measure-navigation-prefetch.cjs:105` |
+| 101 | `function` | `run` | `scripts/qa/topbar-responsive-check.cjs:17` |
+| 100 | `function` | `runUiIntegrationChecks` | `scripts/qa/check-employee-report-auth-ux.cts:174` |
 | 98 | `function` | `run` | `scripts/qa/check-b2b-capture-pdf-visual.cjs:1066` |
-| 97 | `function` | `runUiIntegrationChecks` | `scripts/qa/check-employee-report-auth-ux.cts:174` |
-| 95 | `function` | `findLineIssues` | `scripts/lib/encoding-audit.cts:125` |
+| 95 | `function` | `findLineIssues` | `scripts/lib/encoding-audit.cts:132` |
 | 95 | `function` | `cleanupStaleBenchData` | `scripts/perf/push-notification-benchmark.cjs:301` |
-| 92 | `function` | `run` | `scripts/maintenance/smoke-hyphen-ai-summary.cts:17` |
-| 92 | `function` | `runStoredIdentityCases` | `scripts/qa/check-employee-report-auth-ux.cts:31` |
+| 93 | `function` | `run` | `scripts/qa/check-global-cart-host-hooks-extraction.cts:23` |
 
 ## Notes
 

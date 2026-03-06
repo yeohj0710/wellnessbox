@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
 import type { ComponentPropsWithoutRef, RefObject } from "react";
 import Image from "next/image";
 import { Bars3Icon, ShoppingCartIcon } from "@heroicons/react/24/outline";
 import { MenuLinks } from "./menuLinks";
+import { TOPBAR_COPY } from "./topBar.copy";
+import { useTopBarDrawerMode } from "./useTopBarDrawerMode";
 import type { LoginStatus } from "@/lib/useLoginStatus";
 
 export type TopBarIntentHandlers = Pick<
@@ -32,11 +33,6 @@ const menuItemClasses = (additionalClasses = "") => {
   return `relative transition-transform duration-200 ease-in-out hover:scale-[1.02] ${additionalClasses}`;
 };
 
-const DESKTOP_MENU_MIN_VIEWPORT = 1024;
-const LEFT_GROUP_GAP_PX = 24;
-const WIDTH_EPSILON_PX = 2;
-const LAYOUT_SAFETY_PX = 20;
-
 export function TopBarHeader({
   loginStatus,
   onRequestLogout,
@@ -52,76 +48,16 @@ export function TopBarHeader({
   onMenuItemClick,
   onDrawerModeChange,
 }: TopBarHeaderProps) {
-  const rowRef = useRef<HTMLDivElement>(null);
-  const leftBrandRef = useRef<HTMLButtonElement>(null);
-  const navRef = useRef<HTMLElement>(null);
-  const rightActionsRef = useRef<HTMLDivElement>(null);
-  const frameRef = useRef<number | null>(null);
-  const [isDrawerMode, setIsDrawerMode] = useState(true);
-
-  const computeDrawerMode = useCallback(() => {
-    if (typeof window === "undefined") return true;
-    if (window.innerWidth < DESKTOP_MENU_MIN_VIEWPORT) return true;
-
-    const rowNode = rowRef.current;
-    const brandNode = leftBrandRef.current;
-    const navNode = navRef.current;
-    const rightNode = rightActionsRef.current;
-    if (!rowNode || !brandNode || !navNode || !rightNode) return true;
-
-    const availableWidth =
-      rowNode.clientWidth -
-      brandNode.getBoundingClientRect().width -
-      rightNode.getBoundingClientRect().width -
-      LEFT_GROUP_GAP_PX;
-
-    const requiredWidth = navNode.scrollWidth;
-    const exceedsWidth =
-      requiredWidth > availableWidth - LAYOUT_SAFETY_PX + WIDTH_EPSILON_PX;
-    if (exceedsWidth) return true;
-
-    const rowOverflowing = rowNode.scrollWidth > rowNode.clientWidth + WIDTH_EPSILON_PX;
-    if (rowOverflowing) return true;
-
-    return false;
-  }, []);
-
-  const scheduleDrawerModeUpdate = useCallback(() => {
-    if (typeof window === "undefined") return;
-    if (frameRef.current != null) cancelAnimationFrame(frameRef.current);
-    frameRef.current = window.requestAnimationFrame(() => {
-      frameRef.current = null;
-      setIsDrawerMode(computeDrawerMode());
+  const layoutDependencyKey = `${Boolean(loginStatus?.isUserLoggedIn)}:${Boolean(
+    loginStatus?.isPharmLoggedIn
+  )}:${Boolean(loginStatus?.isRiderLoggedIn)}:${Boolean(
+    loginStatus?.isAdminLoggedIn
+  )}:${Boolean(loginStatus?.isTestLoggedIn)}:${Boolean(isLogoutPending)}`;
+  const { isDrawerMode, rowRef, leftBrandRef, navRef, rightActionsRef } =
+    useTopBarDrawerMode({
+      onDrawerModeChange,
+      layoutDependencyKey,
     });
-  }, [computeDrawerMode]);
-
-  useEffect(() => {
-    onDrawerModeChange?.(isDrawerMode);
-  }, [isDrawerMode, onDrawerModeChange]);
-
-  useEffect(() => {
-    scheduleDrawerModeUpdate();
-  }, [loginStatus, isLogoutPending, scheduleDrawerModeUpdate]);
-
-  useEffect(() => {
-    const resizeObserver = new ResizeObserver(() => {
-      scheduleDrawerModeUpdate();
-    });
-    const nodes = [rowRef.current, leftBrandRef.current, navRef.current, rightActionsRef.current];
-    for (const node of nodes) {
-      if (node) resizeObserver.observe(node);
-    }
-
-    window.addEventListener("resize", scheduleDrawerModeUpdate);
-    return () => {
-      resizeObserver.disconnect();
-      window.removeEventListener("resize", scheduleDrawerModeUpdate);
-      if (frameRef.current != null) {
-        cancelAnimationFrame(frameRef.current);
-        frameRef.current = null;
-      }
-    };
-  }, [scheduleDrawerModeUpdate]);
 
   return (
     <header
@@ -139,19 +75,19 @@ export function TopBarHeader({
             className={menuItemClasses(
               "group shrink-0 whitespace-nowrap text-[17px] font-extrabold tracking-tight flex items-center gap-2"
             )}
-            aria-label="홈으로"
+            aria-label={TOPBAR_COPY.brandAriaLabel}
           >
             <div className="relative w-8 h-8">
               <Image
                 src="/logo.png"
-                alt="웰니스박스"
+                alt={TOPBAR_COPY.brandAlt}
                 ref={logoRef}
                 fill
                 sizes="64px"
                 className="object-contain group-hover:animate-bounce-custom"
               />
             </div>
-            <span>웰니스박스</span>
+            <span>{TOPBAR_COPY.brandText}</span>
           </button>
 
           <nav
@@ -175,13 +111,13 @@ export function TopBarHeader({
         <div ref={rightActionsRef} className="flex items-center gap-3 md:gap-5">
           {loginStatus?.isTestLoggedIn === true && (
             <span className="hidden sm:inline-flex rounded-full bg-orange-400 px-3 py-1 text-xs font-bold text-white cursor-default">
-              테스트
+              {TOPBAR_COPY.testBadge}
             </span>
           )}
 
           <button
             className={menuItemClasses("text-slate-600 relative")}
-            aria-label="장바구니"
+            aria-label={TOPBAR_COPY.cartAriaLabel}
             onClick={onOpenCart}
           >
             <ShoppingCartIcon className="w-6 h-6" />
@@ -196,10 +132,10 @@ export function TopBarHeader({
             type="button"
             onClick={onOpenCommandPalette}
             className="hidden md:inline-flex shrink-0 whitespace-nowrap items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-            aria-label="Open command palette"
+            aria-label={TOPBAR_COPY.commandButtonAriaLabel}
             title="Ctrl+K"
           >
-            <span>빠른 메뉴 실행</span>
+            <span>{TOPBAR_COPY.commandButtonLabel}</span>
             <kbd className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px]">
               Ctrl+K
             </kbd>
@@ -210,7 +146,7 @@ export function TopBarHeader({
             onClick={onGoSevenDays}
             className="hidden sm:block shrink-0 whitespace-nowrap text-[15px] font-semibold text-slate-600"
           >
-            7일치 구매하기
+            {TOPBAR_COPY.sevenDayPurchaseText}
           </button>
 
           <button
@@ -218,13 +154,15 @@ export function TopBarHeader({
             onClick={onGoSevenDays}
             className="group relative inline-flex shrink-0 whitespace-nowrap items-center justify-center rounded-full px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#59C1FF] to-[#7B61FF] shadow-[0_10px_30px_rgba(86,115,255,0.35)] transition-all duration-300 ease-out will-change-transform hover:scale-[1.03] hover:shadow-[0_14px_36px_rgba(86,115,255,0.5)] hover:saturate-150 hover:brightness-110 hover:from-[#6BD1FF] hover:to-[#6E58FF] active:translate-y-[1px] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#6E58FF] after:content-[''] after:absolute after:inset-0 after:rounded-full after:bg-white/20 after:opacity-0 hover:after:opacity-10"
           >
-            시작하기
+            {TOPBAR_COPY.startText}
           </button>
 
           <button
-            className={menuItemClasses(`text-2xl ml-1 ${isDrawerMode ? "inline-flex" : "hidden"}`)}
+            className={menuItemClasses(
+              `text-2xl ml-1 ${isDrawerMode ? "inline-flex" : "hidden"}`
+            )}
             onClick={onToggleDrawer}
-            aria-label="메뉴 열기"
+            aria-label={TOPBAR_COPY.drawerButtonAriaLabel}
           >
             <Bars3Icon className="h-6 w-6 text-slate-700" />
           </button>

@@ -848,6 +848,95 @@ Base input: `npm run audit:hotspots`
      - `scripts/rnd/module03/scheduler-deployment-bundle-cli-fields.ts`
    - Reduced `scheduler-deployment-bundle-cli.ts` to CLI arg wiring/orchestration (`field parser results -> CliArgs`).
    - Preserved cron/timezone/retention default policy, schema/sql file existence checks, required-env parsing, and failure-webhook env-key validation while separating defaults vs field parsing responsibilities.
+137. B2B admin report toast effect extraction (`app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx`)
+   - Extracted notice/error toast side-effects into:
+     - `app/(admin)/admin/b2b-reports/_lib/use-b2b-admin-report-toast-effects.ts`
+   - Reduced root client noise by removing inline toast `useEffect` blocks and delegating to shared hook.
+   - Added QA guard:
+     - `scripts/qa/check-b2b-admin-report-toast-effects-extraction.cts`
+   - Added maintenance note:
+     - `docs/maintenance/b2b-admin-report-toast-effects-extraction.md`
+138. Employee report session effect extraction (`app/(features)/employee-report/EmployeeReportClient.tsx`)
+   - Extracted admin re-check/auth-sync subscription effects into:
+     - `app/(features)/employee-report/_lib/use-employee-report-session-effects.ts`
+   - Reduced client-root side-effect density by removing inline `subscribeAuthSyncEvent` effect.
+   - Added QA guard:
+     - `scripts/qa/check-employee-report-session-effects-extraction.cts`
+   - Added maintenance note:
+     - `docs/maintenance/employee-report-session-effects-extraction.md`
+139. Employee report session bootstrap extraction (`app/(features)/employee-report/EmployeeReportClient.tsx`)
+   - Extracted session restore + stored-identity auto-login bootstrap into:
+     - `app/(features)/employee-report/_lib/use-employee-report-session-bootstrap.ts`
+   - Replaced inline `checkSessionAndMaybeAutoLogin` implementation with hook-returned callback wiring.
+   - Added QA guard:
+     - `scripts/qa/check-employee-report-session-bootstrap-extraction.cts`
+   - Added maintenance note:
+     - `docs/maintenance/employee-report-session-bootstrap-extraction.md`
+140. Employee report existing-record actions extraction (`app/(features)/employee-report/EmployeeReportClient.tsx`)
+   - Extracted duplicated existing-report lookup/upsert handlers into:
+     - `app/(features)/employee-report/_lib/use-employee-report-existing-record-actions.ts`
+   - Removed inline `handleFindExisting` + `tryLoadExistingReport` implementations from client root.
+   - Added QA guard:
+     - `scripts/qa/check-employee-report-existing-record-actions-extraction.cts`
+   - Added maintenance note:
+     - `docs/maintenance/employee-report-existing-record-actions-extraction.md`
+141. Employee report report-actions extraction (`app/(features)/employee-report/EmployeeReportClient.tsx`)
+   - Extracted inline operational handlers into:
+     - `app/(features)/employee-report/_lib/use-employee-report-report-actions.ts`
+   - Removed inline `handleDownloadPdf`, `handleDownloadLegacyPdf`, `handleLogout`, and `handleChangePeriod` implementations from client root.
+   - Added QA guard:
+     - `scripts/qa/check-employee-report-report-actions-extraction.cts`
+   - Added maintenance note:
+     - `docs/maintenance/employee-report-report-actions-extraction.md`
+142. Employee report sync-actions extraction (`app/(features)/employee-report/EmployeeReportClient.tsx`)
+   - Extracted restart/sign sync orchestration handlers into:
+     - `app/(features)/employee-report/_lib/use-employee-report-sync-actions.ts`
+   - Removed inline `handleRestartAuth` and `handleSignAndSync` implementations from client root.
+   - Added QA guard:
+     - `scripts/qa/check-employee-report-sync-actions-extraction.cts`
+   - Added maintenance note:
+     - `docs/maintenance/employee-report-sync-actions-extraction.md`
+143. Employee report report-loading extraction (`app/(features)/employee-report/EmployeeReportClient.tsx`)
+   - Extracted inline report fetch/sync loaders into:
+     - `app/(features)/employee-report/_lib/use-employee-report-report-loading.ts`
+   - Removed inline `loadReport` and `syncEmployeeReport` implementations from client root.
+   - Added QA guard:
+     - `scripts/qa/check-employee-report-report-loading-extraction.cts`
+   - Added maintenance note:
+     - `docs/maintenance/employee-report-report-loading-extraction.md`
+144. Employee report sync-actions subhooks (`app/(features)/employee-report/_lib/use-employee-report-sync-actions.ts`)
+   - Split sync-actions internals into dedicated subhooks:
+     - `app/(features)/employee-report/_lib/use-employee-report-restart-auth-action.ts`
+     - `app/(features)/employee-report/_lib/use-employee-report-sign-sync-action.ts`
+   - Reduced `useEmployeeReportSyncActions` to shared preflight wiring + subhook composition.
+   - Updated QA guard:
+     - `scripts/qa/check-employee-report-sync-actions-extraction.cts`
+   - Added maintenance note:
+     - `docs/maintenance/employee-report-sync-actions-subhooks.md`
+145. Survey auth-actions extraction (`app/survey/survey-page-client.tsx`)
+   - Extracted inline Kakao auth action/sync handlers into:
+     - `app/survey/_lib/use-survey-auth-actions.ts`
+   - Removed inline `ensureEmployeeSessionFromIdentity`, `handleStartKakaoAuth`, and `handleConfirmKakaoAuth` from client root.
+   - Added QA guard:
+     - `scripts/qa/check-survey-auth-actions-extraction.cts`
+   - Added maintenance note:
+     - `docs/maintenance/survey-auth-actions-extraction.md`
+146. Survey remote-sync extraction (`app/survey/survey-page-client.tsx`)
+   - Extracted inline survey remote sync/save effects into:
+     - `app/survey/_lib/use-survey-remote-sync.ts`
+   - Removed inline `requestSurveyJson`, `persistSurveySnapshot`, and related remote bootstrap/autosave effects from client root.
+   - Added QA guard:
+     - `scripts/qa/check-survey-remote-sync-extraction.cts`
+   - Added maintenance note:
+     - `docs/maintenance/survey-remote-sync-extraction.md`
+147. Survey lifecycle-actions extraction (`app/survey/survey-page-client.tsx`)
+   - Extracted inline survey lifecycle handlers into:
+     - `app/survey/_lib/use-survey-lifecycle-actions.ts`
+   - Removed inline `requestReset`, `handleReset`, `handleStartSurvey`, `handleRenewalHoldStart`, and `handleRenewalHoldEnd` from client root.
+   - Added QA guard:
+     - `scripts/qa/check-survey-lifecycle-actions-extraction.cts`
+   - Added maintenance note:
+     - `docs/maintenance/survey-lifecycle-actions-extraction.md`
 
 ## Priority 1 (next)
 

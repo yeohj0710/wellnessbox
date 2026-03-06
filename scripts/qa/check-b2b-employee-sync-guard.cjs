@@ -23,6 +23,9 @@ const URL_A_DIRECT = "postgresql://user:pw@host-a-direct.example.com:5432/db_a";
 const URL_B_POOL =
   "postgresql://user:pw@host-b.example.com:5432/db_b?pgbouncer=true";
 const URL_B_DIRECT = "postgresql://user:pw@host-b-direct.example.com:5432/db_b";
+const URL_C_POOL =
+  "postgresql://user:pw@host-c.example.com:5432/db_c?pgbouncer=true";
+const URL_C_DIRECT = "postgresql://user:pw@host-c-direct.example.com:5432/db_c";
 
 function freshDbEnvModule() {
   delete require.cache[require.resolve(DB_ENV_PATH)];
@@ -153,9 +156,9 @@ function runDbEnvChecks() {
     {
       NODE_ENV: "development",
       WELLNESSBOX_PRISMA_URL: URL_A_POOL,
-      DATABASE_URL: URL_B_POOL,
+      DATABASE_URL: URL_C_POOL,
       WELLNESSBOX_URL_NON_POOLING: URL_A_DIRECT,
-      DIRECT_URL: URL_B_DIRECT,
+      DIRECT_URL: URL_C_DIRECT,
     },
     () => {
       const warnings = [];

@@ -117,13 +117,19 @@ function runStaticSyncChecks() {
     "from \"../_lib/survey-editor-sections\"",
     "editor sections helper import"
   );
-  for (const token of [
-    "buildEditorSections",
-    "getFocusedQuestionIndex",
-    "isOptionalSelectionQuestion",
-  ]) {
+  for (const token of ["buildEditorSections"]) {
     assertIncludes(editorPanel, token, `editor panel token ${token}`);
   }
+  assertIncludes(
+    editorPanel,
+    "from \"../_lib/use-survey-editor-navigation\"",
+    "editor navigation hook import"
+  );
+  assertIncludes(
+    editorPanel,
+    "useSurveyEditorNavigation(",
+    "editor navigation hook usage"
+  );
 }
 
 function runRuntimeSyncChecks() {
@@ -174,6 +180,7 @@ function run() {
         checks: [
           "admin_client_uses_public_survey_helpers",
           "editor_panel_uses_extracted_section_helpers",
+          "editor_panel_uses_navigation_hook",
           ...runtimeChecks,
         ],
       },

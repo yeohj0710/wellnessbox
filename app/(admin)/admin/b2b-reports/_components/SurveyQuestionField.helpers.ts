@@ -29,7 +29,7 @@ export function listVariantKeys(question: SurveyQuestion) {
 }
 
 export function variantLabel(variantKey: string) {
-  if (variantKey === "base") return "기본 옵션(옵션 키값)";
+  if (variantKey === "base") return "기본 옵션(공통 문항)";
   if (variantKey.includes("paperPdf")) return "종이 설문지 옵션";
   return variantKey;
 }
