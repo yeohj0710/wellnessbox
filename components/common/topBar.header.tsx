@@ -92,10 +92,10 @@ export function TopBarHeader({
 
           <nav
             ref={navRef}
-            className={`hidden lg:flex items-center gap-8 text-[15px] font-medium text-slate-500 [&_a]:text-slate-500 [&_a:hover]:text-slate-900 [&_a]:whitespace-nowrap [&_button]:whitespace-nowrap overflow-hidden transition-[max-width,opacity] duration-200 ease-out ${
+            className={`hidden lg:flex items-center gap-8 text-[15px] font-medium text-slate-500 [&_a]:text-slate-500 [&_a:hover]:text-slate-900 [&_a]:whitespace-nowrap [&_button]:whitespace-nowrap transition-[max-width,opacity] duration-200 ease-out ${
               isDrawerMode
-                ? "max-w-0 opacity-0 pointer-events-none"
-                : "max-w-[2200px] opacity-100"
+                ? "max-w-0 overflow-hidden opacity-0 pointer-events-none"
+                : "max-w-[2200px] overflow-visible opacity-100"
             }`}
             aria-hidden={isDrawerMode}
           >

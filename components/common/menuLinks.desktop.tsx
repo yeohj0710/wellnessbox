@@ -52,7 +52,7 @@ export function DesktopMenuContent({
         내 주문 조회
       </IntentPrefetchLink>
 
-      <div className="relative flex shrink-0 items-center gap-2 whitespace-nowrap" ref={aiRef}>
+      <div className="relative z-20 flex shrink-0 items-center gap-2 whitespace-nowrap" ref={aiRef}>
         <button
           onClick={onToggleAiOpen}
           className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap font-semibold transition-transform duration-200 ease-in-out hover:scale-105 hover:text-gray-800"
@@ -76,7 +76,18 @@ export function DesktopMenuContent({
         </IntentPrefetchLink>
 
         {aiOpen && (
-          <div className="absolute left-0 top-full mt-2 w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-lg ring-1 ring-black/5">
+          <div className="absolute left-0 top-full z-30 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-lg ring-1 ring-black/5">
+            <IntentPrefetchLink
+              href="/check-ai"
+              className="block rounded-lg px-3 py-2 text-slate-800 hover:bg-slate-50"
+              onClick={() => {
+                onCloseAiOpen();
+                onItemClick?.();
+              }}
+            >
+              빠른 AI 검사
+            </IntentPrefetchLink>
+
             <IntentPrefetchLink
               href="/assess"
               className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-slate-50"
@@ -85,7 +96,7 @@ export function DesktopMenuContent({
                 onItemClick?.();
               }}
             >
-              <span>정밀 검사</span>
+              <span>정밀 AI 검사</span>
               <BetaBadge className="ml-2" />
             </IntentPrefetchLink>
 
@@ -98,17 +109,6 @@ export function DesktopMenuContent({
               }}
             >
               건강 설문
-            </IntentPrefetchLink>
-
-            <IntentPrefetchLink
-              href="/check-ai"
-              className="block rounded-lg px-3 py-2 text-slate-800 hover:bg-slate-50"
-              onClick={() => {
-                onCloseAiOpen();
-                onItemClick?.();
-              }}
-            >
-              빠른 검사
             </IntentPrefetchLink>
           </div>
         )}
@@ -124,7 +124,7 @@ export function DesktopMenuContent({
           className={menuItemClasses()}
           onClick={onItemClick}
         >
-          임직원 레포트
+          건강 레포트
         </IntentPrefetchLink>
       )}
 

@@ -20,6 +20,9 @@ type DrawerMenuContentProps = {
   adminVisible: boolean;
 };
 
+const drawerItemClasses =
+  "block rounded-lg px-3 py-2 leading-tight text-slate-800 hover:bg-slate-50";
+
 export function DrawerMenuContent({
   onRequestLogout,
   isLogoutPending = false,
@@ -30,64 +33,73 @@ export function DrawerMenuContent({
 }: DrawerMenuContentProps) {
   return (
     <>
-      <IntentPrefetchLink href="/explore" className={menuItemClasses()} {...pressHandlers}>
+      <IntentPrefetchLink
+        href="/explore"
+        className={menuItemClasses("leading-tight")}
+        {...pressHandlers}
+      >
         상품 둘러보기
       </IntentPrefetchLink>
 
-      <IntentPrefetchLink href="/my-orders" className={menuItemClasses()} onClick={onItemClick}>
+      <IntentPrefetchLink
+        href="/my-orders"
+        className={menuItemClasses("leading-tight")}
+        onClick={onItemClick}
+      >
         내 주문 조회
       </IntentPrefetchLink>
 
-      <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
-        <span>진단 검사</span>
+      <div className="mt-2 flex items-center justify-between">
+        <div className="inline-flex items-center gap-2">
+          <span className="h-4 w-1 rounded-full bg-emerald-400/80" aria-hidden="true" />
+          <span className="text-sm font-bold tracking-[-0.01em] text-slate-700">진단 검사</span>
+        </div>
         <AiPromptBadge />
       </div>
 
-      <IntentPrefetchLink
-        href="/assess"
-        className="-mt-2 inline-flex items-center gap-1 rounded-lg px-3 py-2 hover:bg-slate-50"
-        onClick={onItemClick}
-      >
-        <span>정밀 검사</span>
-        <BetaBadge className="ml-1" />
-      </IntentPrefetchLink>
+      <div className="mt-0 flex flex-col gap-0.5 pl-3">
+        <IntentPrefetchLink href="/check-ai" className={drawerItemClasses} onClick={onItemClick}>
+          빠른 AI 검사
+        </IntentPrefetchLink>
 
-      <IntentPrefetchLink
-        href="/survey"
-        className="-mt-1 rounded-lg px-3 py-2 hover:bg-slate-50"
-        onClick={onItemClick}
-      >
-        건강 설문
-      </IntentPrefetchLink>
+        <IntentPrefetchLink
+          href="/assess"
+          className={`inline-flex items-center gap-1 ${drawerItemClasses}`}
+          onClick={onItemClick}
+        >
+          <span>정밀 AI 검사</span>
+          <BetaBadge className="ml-1" />
+        </IntentPrefetchLink>
 
-      <IntentPrefetchLink
-        href="/check-ai"
-        className="-mt-4 -mb-2 rounded-lg px-3 py-2 hover:bg-slate-50"
-        onClick={onItemClick}
-      >
-        빠른 검사
-      </IntentPrefetchLink>
+        <IntentPrefetchLink href="/survey" className={drawerItemClasses} onClick={onItemClick}>
+          건강 설문
+        </IntentPrefetchLink>
+      </div>
 
       <IntentPrefetchLink
         href="/chat"
-        className={`${menuItemClasses()} mt-2 flex items-center`}
+        className={`${menuItemClasses("leading-tight")} mt-1.5 inline-flex items-center`}
         onClick={onItemClick}
       >
         <span>AI 맞춤 상담</span>
         <BetaBadge className="ml-2" />
       </IntentPrefetchLink>
 
-      <IntentPrefetchLink href="/column" className={menuItemClasses()} onClick={onItemClick}>
+      <IntentPrefetchLink
+        href="/column"
+        className={menuItemClasses("leading-tight")}
+        onClick={onItemClick}
+      >
         건강 칼럼
       </IntentPrefetchLink>
 
       {visibility.isAdminLoggedIn && (
         <IntentPrefetchLink
           href="/employee-report"
-          className={menuItemClasses()}
+          className={menuItemClasses("leading-tight")}
           onClick={onItemClick}
         >
-          임직원 레포트
+          건강 레포트
         </IntentPrefetchLink>
       )}
 

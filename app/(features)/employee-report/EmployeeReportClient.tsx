@@ -53,7 +53,11 @@ const ADMIN_ONLY_GATE_TITLE =
 const ADMIN_ONLY_GATE_DESCRIPTION =
   "본인인증은 완료되었고 개인 직접 열람은 현재 준비 중입니다. 확인이 필요하시면 아래 이메일로 문의해 주세요.";
 
-export default function EmployeeReportClient() {
+export default function EmployeeReportClient({
+  initialIsAdminLoggedIn,
+}: {
+  initialIsAdminLoggedIn: boolean;
+}) {
   const { showToast } = useToast();
   const searchParams = useSearchParams();
   const debugMode = searchParams.get("debug") === "1";
@@ -86,7 +90,7 @@ export default function EmployeeReportClient() {
   const lastMockNoticeKeyRef = useRef<string | null>(null);
   const lastMedicationStatusKeyRef = useRef<string | null>(null);
   const webReportCaptureRef = useRef<HTMLDivElement | null>(null);
-  const isAdminLoggedIn = useAdminLoginStatus();
+  const isAdminLoggedIn = useAdminLoginStatus(initialIsAdminLoggedIn);
   const {
     busy,
     busyMessage,

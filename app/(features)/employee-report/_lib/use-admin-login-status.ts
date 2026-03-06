@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { subscribeAuthSyncEvent } from "@/lib/client/auth-sync";
 import { fetchLoginStatus } from "./api";
 
-export function useAdminLoginStatus() {
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+export function useAdminLoginStatus(initialIsAdminLoggedIn = false) {
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(initialIsAdminLoggedIn);
 
   useEffect(() => {
     let mounted = true;
@@ -20,7 +20,7 @@ export function useAdminLoginStatus() {
 
     refresh();
     const unsubscribe = subscribeAuthSyncEvent(refresh, {
-      scopes: ["user-session"],
+      scopes: ["user-session", "b2b-employee-session"],
     });
 
     return () => {

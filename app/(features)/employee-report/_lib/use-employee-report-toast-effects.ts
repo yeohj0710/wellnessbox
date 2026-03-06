@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { MutableRefObject } from "react";
 import type { EmployeeReportResponse } from "./client-types";
 
@@ -37,10 +37,28 @@ export function useEmployeeReportToastEffects(input: {
     lastMockNoticeKeyRef,
     lastMedicationStatusKeyRef,
   } = input;
+  const lastToastRef = useRef<{ key: string; shownAt: number } | null>(null);
+
+  function shouldSkipDuplicateToast(key: string) {
+    const now = Date.now();
+    if (
+      lastToastRef.current &&
+      lastToastRef.current.key === key &&
+      now - lastToastRef.current.shownAt < 1200
+    ) {
+      return true;
+    }
+    lastToastRef.current = { key, shownAt: now };
+    return false;
+  }
 
   useEffect(() => {
     const text = notice.trim();
     if (!text) return;
+    if (shouldSkipDuplicateToast(`success:${text}`)) {
+      setNotice("");
+      return;
+    }
     showToast(text, { type: "success", duration: 3200 });
     setNotice("");
   }, [notice, setNotice, showToast]);
@@ -48,6 +66,10 @@ export function useEmployeeReportToastEffects(input: {
   useEffect(() => {
     const text = error.trim();
     if (!text) return;
+    if (shouldSkipDuplicateToast(`error:${text}`)) {
+      setError("");
+      return;
+    }
     showToast(text, { type: "error", duration: 4600 });
     setError("");
   }, [error, setError, showToast]);
