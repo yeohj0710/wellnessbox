@@ -9,22 +9,23 @@ Only function-like blocks with at least 30 lines are included.
 
 | Lines | Kind | Function | Location |
 |---:|---|---|---|
-| 1720 | `function` | `SurveyPageClient` | `app/survey/survey-page-client.tsx:137` |
-| 732 | `function` | `trainAllRndAiModels` | `lib/rnd/ai-training/pipeline.ts:2997` |
+| 1523 | `function` | `SurveyPageClient` | `app/survey/survey-page-client.tsx:98` |
+| 732 | `function` | `trainAllRndAiModels` | `lib/rnd/ai-training/pipeline.ts:3003` |
 | 680 | `function` | `LandingSection2` | `app/(components)/landingSection2.tsx:29` |
+| 543 | `function` | `ProductManager` | `components/manager/productManager.tsx:96` |
 | 534 | `function` | `ReportSummaryCards` | `components/b2b/ReportSummaryCards.tsx:487` |
+| 463 | `function` | `PharmacyProductManager` | `components/manager/pharmacyProductManager.tsx:112` |
 | 460 | `function` | `HomeProductSection` | `app/(components)/homeProductSection.tsx:76` |
-| 410 | `function` | `EmployeeReportClient` | `app/(features)/employee-report/EmployeeReportClient.tsx:56` |
+| 414 | `function` | `EmployeeReportClient` | `app/(features)/employee-report/EmployeeReportClient.tsx:56` |
 | 407 | `function` | `loadEmployeeForOps` | `lib/b2b/admin-employee-management-route.ts:187` |
 | 399 | `function` | `EditorAdminClient` | `app/(admin)/admin/column/editor/EditorAdminClient.tsx:44` |
 | 374 | `function` | `RecommendedProductActions` | `app/chat/components/RecommendedProductActions.tsx:26` |
 | 365 | `function` | `useAssessFlow` | `app/assess/useAssessFlow.ts:29` |
-| 355 | `function` | `ProductManager` | `components/manager/productManager.tsx:14` |
-| 352 | `function` | `PharmacyProductManager` | `components/manager/pharmacyProductManager.tsx:18` |
 | 343 | `function` | `OrderComplete` | `app/(orders)/order-complete/page.tsx:43` |
 | 342 | `function` | `B2bAdminReportClient` | `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx:46` |
 | 341 | `function` | `useChat` | `app/chat/hooks/useChat.ts:38` |
 | 337 | `function` | `OrderAccordionItem` | `components/pharm/orderAccordionItem.tsx:48` |
+| 336 | `function` | `CategoryManager` | `components/manager/categoryManager.tsx:79` |
 | 336 | `function` | `executeNhisFetch` | `lib/server/hyphen/fetch-executor.ts:492` |
 | 335 | `function` | `ReviewModal` | `components/modal/reviewModal.tsx:11` |
 | 331 | `function` | `ChatInput` | `app/chat/components/ChatInput.tsx:39` |
@@ -44,7 +45,6 @@ Only function-like blocks with at least 30 lines are included.
 | 279 | `function` | `runModule06ClosedLoopMvp` | `lib/rnd/module06-closed-loop-ai/mvp-engine.ts:104` |
 | 275 | `function` | `AddressModal` | `components/modal/addressModal.tsx:39` |
 | 270 | `function` | `buildModule06FixtureRecords` | `lib/rnd/module06-closed-loop-ai/scaffold-fixtures.ts:18` |
-| 269 | `function` | `CategoryManager` | `components/manager/categoryManager.tsx:14` |
 | 265 | `function` | `PricingSection` | `app/(components)/landingSection2/pricingSection.tsx:10` |
 | 261 | `function` | `ColumnEditorWorkspace` | `app/(admin)/admin/column/editor/_components/ColumnEditorWorkspace.tsx:47` |
 | 261 | `function` | `CustomerOrderAccordionItem` | `components/order/customerOrderAccordionItem.tsx:43` |
@@ -56,23 +56,24 @@ Only function-like blocks with at least 30 lines are included.
 | 247 | `function` | `useDesktopChatDockLayout` | `components/chat/useDesktopChatDockLayout.ts:63` |
 | 246 | `function` | `ChatPage` | `app/chat/page.tsx:35` |
 | 244 | `function` | `useDesktopChatDockPointer` | `components/chat/useDesktopChatDockPointer.ts:53` |
-| 242 | `function` | `useEmployeeReportSyncActions` | `app/(features)/employee-report/_lib/use-employee-report-sync-actions.ts:62` |
 | 234 | `function` | `usePhoneAndPassword` | `components/order/hooks/usePhoneAndPassword.ts:16` |
 | 233 | `function` | `useCustomerOrderPushState` | `components/order/useCustomerOrderPushState.ts:11` |
+| 232 | `function` | `useRolePushSubscription` | `components/push/useRolePushSubscription.ts:31` |
 
 ## Scripts Top 30
 
 | Lines | Kind | Function | Location |
 |---:|---|---|---|
-| 488 | `function` | `main` | `scripts/rnd/train-all-ai.ts:1215` |
+| 528 | `function` | `main` | `scripts/rnd/train-all-ai.ts:1434` |
 | 402 | `function` | `run` | `scripts/qa/check-b2b-survey-adversarial.cts:184` |
 | 357 | `function` | `run` | `scripts/qa/check-b2b-public-survey-flow.cts:131` |
 | 328 | `function` | `run` | `scripts/qa/check-b2b-survey-readiness.cts:29` |
-| 275 | `function` | `buildImplementationCoverageReport` | `scripts/rnd/train-all-ai.ts:811` |
+| 276 | `function` | `buildImplementationCoverageReport` | `scripts/rnd/train-all-ai.ts:831` |
 | 221 | `function` | `runColumnAndAdminCrudScenario` | `scripts/qa/lib/cde-regression/column-admin-scenario.cjs:1` |
 | 210 | `function` | `runStaticRegressionChecks` | `scripts/qa/check-medication-fetch-resilience.cts:35` |
 | 207 | `function` | `run` | `scripts/qa/check-b2b-public-survey-interactions.cjs:277` |
-| 193 | `function` | `buildWeightedKpiItems` | `scripts/rnd/train-all-ai.ts:490` |
+| 197 | `function` | `buildSlideEvidenceMap` | `scripts/rnd/train-all-ai.ts:1215` |
+| 193 | `function` | `buildWeightedKpiItems` | `scripts/rnd/train-all-ai.ts:510` |
 | 190 | `function` | `runEmployeeReportScenario` | `scripts/qa/lib/cde-regression/employee-report-scenario.cjs:1` |
 | 160 | `function` | `run` | `scripts/qa/check-b2b-survey-required-flags.cts:39` |
 | 155 | `function` | `runRouteScrollAndColumnCardScenario` | `scripts/qa/lib/route-scroll/scenario.cjs:42` |
@@ -86,14 +87,13 @@ Only function-like blocks with at least 30 lines are included.
 | 120 | `function` | `runOne` | `scripts/perf/navigation-prefetch-benchmark.cjs:226` |
 | 117 | `function` | `run` | `scripts/maintenance/smoke-hyphen-fetch-policy.cts:28` |
 | 106 | `function` | `runDbEnvChecks` | `scripts/qa/check-b2b-employee-sync-guard.cjs:76` |
-| 106 | `function` | `buildDataRequirementMatrix` | `scripts/rnd/train-all-ai.ts:1087` |
+| 106 | `function` | `buildDataRequirementMatrix` | `scripts/rnd/train-all-ai.ts:1108` |
 | 104 | `function` | `collectScenario` | `scripts/perf/measure-navigation-prefetch.cjs:105` |
 | 101 | `function` | `run` | `scripts/qa/topbar-responsive-check.cjs:17` |
 | 100 | `function` | `runUiIntegrationChecks` | `scripts/qa/check-employee-report-auth-ux.cts:174` |
 | 98 | `function` | `run` | `scripts/qa/check-b2b-capture-pdf-visual.cjs:1066` |
-| 95 | `function` | `findLineIssues` | `scripts/lib/encoding-audit.cts:132` |
+| 95 | `function` | `findLineIssues` | `scripts/lib/encoding-audit.cts:144` |
 | 95 | `function` | `cleanupStaleBenchData` | `scripts/perf/push-notification-benchmark.cjs:301` |
-| 93 | `function` | `run` | `scripts/qa/check-global-cart-host-hooks-extraction.cts:23` |
 
 ## Notes
 

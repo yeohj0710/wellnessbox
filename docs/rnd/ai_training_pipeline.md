@@ -89,9 +89,10 @@ node scripts/rnd/train-all-ai.cjs --profile auto --require-stability-buffer true
 
 - `docs/rnd/01_kpi_and_evaluation.md`의 25~26 슬라이드 기준 공식을 그대로 사용합니다.
 - 구현 커버리지 게이트는 슬라이드 13~26의 핵심 모듈(One-Stop, Data Lake, 안전 검증, ITE, 최적화, Closed-loop, 바이오센서·유전자 연동)을 파일/샘플/정확도 기준으로 자동 검증합니다.
+- `tips-slide-evidence-map.json`을 함께 생성해, 슬라이드 13~26별 구현 체크/데이터 조건/KPI를 한 파일에서 역추적할 수 있습니다.
 - 슬라이드 24의 유전자 검사 연동 구조를 반영해 `genetic-adjustment-samples.jsonl`(유전자 파라미터 벡터 -> 안전 제약/최적화 가중치 조정 trace)을 생성하고, 커버리지 게이트에서 `샘플 수`, `조정 trace 비율`, `룰 카탈로그 커버리지`를 함께 검증합니다.
 - 바이오센서·유전자 연동 게이트는 슬라이드 26의 데이터 조건을 반영해 `전체 샘플 >= 100`, `W/C/G 소스 커버리지`, `소스별 최소 샘플(>=10)`까지 함께 검증합니다.
-- 약물이상반응(KPI #6) 게이트는 슬라이드 26의 `직전 12개월` 조건을 반영해 윈도우 커버리지 일수를 산출하고(기본 300일 이상) 판정 근거로 함께 저장합니다.
+- 약물이상반응(KPI #6) 게이트는 슬라이드 26의 `직전 12개월` 조건을 반영해 윈도우 커버리지 일수를 산출하고(기본 365일 이상) 판정 근거로 함께 저장합니다.
 - KPI 요약/제출 번들(`tips-kpi-evaluation-summary.json`, `tips-evaluation-submission-bundle.json`)에는 슬라이드 26 최소 데이터 조건 충족 여부를 `dataRequirements` 매트릭스로 함께 기록합니다.
 - 산출 KPI:
   - 추천 정확도(%)
@@ -113,6 +114,7 @@ node scripts/rnd/train-all-ai.cjs --profile auto --require-stability-buffer true
 - `attempt-selection-report.json`
 - `tips-kpi-evaluation-summary.json`
 - `tips-implementation-coverage.json`
+- `tips-slide-evidence-map.json`
 - `tips-evaluation-submission-bundle.json`
 - `tips-evaluation-submission-verify.json`
 - `recommender-two-tower.json`

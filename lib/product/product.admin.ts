@@ -12,8 +12,15 @@ export async function getProductsForAdmin() {
       id: true,
       name: true,
       images: true,
+      description: true,
       importance: true,
+      updatedAt: true,
       categories: true,
+      _count: {
+        select: {
+          pharmacyProducts: true,
+        },
+      },
     },
     orderBy: [
       { importance: "desc" },

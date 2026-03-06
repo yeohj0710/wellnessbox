@@ -46,6 +46,10 @@ const EXCLUDED_DIRS = new Set([
   "tmp",
 ]);
 
+const EXCLUDED_DIR_PATH_PREFIXES = [
+  "data/b2b/backups",
+];
+
 const AUDIT_ENTRY_FILE_POSIX = "scripts/audit-encoding.ts";
 const AUDIT_CORE_FILE_POSIX = "scripts/lib/encoding-audit.cts";
 
@@ -60,6 +64,14 @@ function shouldScanFile(filePath: string) {
   return TEXT_EXTENSIONS.has(ext);
 }
 
+function shouldExcludeDirectory(relativeDir: string, entryName: string) {
+  if (EXCLUDED_DIRS.has(entryName)) return true;
+  const nextPath = toPosix(path.join(relativeDir, entryName));
+  return EXCLUDED_DIR_PATH_PREFIXES.some(
+    (prefix) => nextPath === prefix || nextPath.startsWith(`${prefix}/`)
+  );
+}
+
 function walkScannableFiles(rootDir: string, relativeDir = ""): string[] {
   const currentDir = path.join(rootDir, relativeDir);
   const entries = fs
@@ -69,7 +81,7 @@ function walkScannableFiles(rootDir: string, relativeDir = ""): string[] {
 
   for (const entry of entries) {
     if (entry.isDirectory()) {
-      if (EXCLUDED_DIRS.has(entry.name)) continue;
+      if (shouldExcludeDirectory(relativeDir, entry.name)) continue;
       files.push(...walkScannableFiles(rootDir, path.join(relativeDir, entry.name)));
       continue;
     }

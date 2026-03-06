@@ -31,6 +31,7 @@
 ### 통합 학습/평가 파이프라인
 - `lib/rnd/ai-training/pipeline.ts`
 - `scripts/rnd/train-all-ai.ts`
+- `scripts/rnd/train-all-ai.reporting.ts`
 - `scripts/rnd/train-all-ai.cjs`
 - `package.json` 스크립트: `rnd:train:all`
 
@@ -54,6 +55,7 @@
 - `attempt-selection-report.json`
 - `tips-kpi-evaluation-summary.json`
 - `tips-implementation-coverage.json`
+- `tips-slide-evidence-map.json`
 - `tips-evaluation-submission-bundle.json`
 - `tips-evaluation-submission-verify.json`
 
@@ -77,6 +79,7 @@
   - `integration-samples.jsonl`, `genetic-adjustment-samples.jsonl`
 - 슬라이드 25~26: KPI 평가 기준/데이터 조건
   - `tips-kpi-evaluation-summary.json`의 KPI 및 `dataRequirements`
+  - `tips-slide-evidence-map.json`의 슬라이드별 구현/산출물 근거
 
 ## 5) 빠른 점검 명령
 

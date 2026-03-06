@@ -2,40 +2,19 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import {
+  buildDataRequirementMatrix,
+  buildImplementationCoverageReport,
+  buildKpiStabilityReport,
+  buildSlideEvidenceMap,
+  buildWeightedKpiItems,
+  computeWeightedScores,
+  KPI_STABILITY_THRESHOLDS,
+} from "./train-all-ai.reporting";
+import {
   trainAllRndAiModels,
   type TrainAllAiResult,
   type TrainProfile,
 } from "../../lib/rnd/ai-training/pipeline";
-
-const KPI_TARGETS = {
-  recommendationAccuracyPercent: 80,
-  efficacyScgiPp: 0,
-  actionAccuracyPercent: 80,
-  llmAccuracyPercent: 91,
-  referenceAccuracyPercent: 95,
-  adverseEventCountPerYearMax: 5,
-  integrationRatePercent: 90,
-} as const;
-
-const KPI_WEIGHTS = {
-  recommendationAccuracyPercent: 20,
-  efficacyScgiPp: 20,
-  actionAccuracyPercent: 20,
-  llmAccuracyPercent: 20,
-  referenceAccuracyPercent: 10,
-  adverseEventCountPerYear: 5,
-  integrationRatePercent: 5,
-} as const;
-
-const KPI_STABILITY_THRESHOLDS = {
-  recommendationAccuracyPercent: 85,
-  efficacyScgiPp: 5,
-  actionAccuracyPercent: 85,
-  llmAccuracyPercent: 94,
-  referenceAccuracyPercent: 97,
-  adverseEventCountPerYearMax: 4,
-  integrationRatePercent: 92,
-} as const;
 
 const DEFAULT_MAX_ATTEMPTS_BY_PROFILE: Record<TrainProfile, number> = {
   smoke: 3,
@@ -46,7 +25,10 @@ const AUTO_PROFILE_STAGE_DATA_SCALE_STEP = 0.5;
 const AUTO_PROFILE_ATTEMPT_DATA_SCALE_STEP = 0.3;
 const DEFAULT_AUTO_MAX_DATA_SCALE = 3.2;
 const DEFAULT_AUTO_MIN_WEIGHTED_OBJECTIVE_SCORE = 125.9;
-const ADVERSE_EVENT_WINDOW_MIN_COVERAGE_DAYS = 300;
+const TIPS_SOURCE_PDF_PATH =
+  "c:/Users/hjyeo/Desktop/웰박/00 핵심 자료/회사 소개 자료/TIPS 연구개발계획서 전체본.pdf";
+const TIPS_IMPLEMENTATION_CRITERIA_SLIDES = "13-26";
+const TIPS_KPI_CRITERIA_SLIDES = "25-26";
 
 type CliProfile = TrainProfile | "auto";
 
@@ -77,48 +59,6 @@ type AttemptSummary = {
   weightedPassScorePercent: number;
   weightedObjectiveScore: number;
   result: TrainAllAiResult;
-};
-
-type KpiStabilityReport = {
-  recommendationAccuracySatisfied: boolean;
-  efficacyScgiSatisfied: boolean;
-  actionAccuracySatisfied: boolean;
-  llmAccuracySatisfied: boolean;
-  referenceAccuracySatisfied: boolean;
-  adverseEventCountSatisfied: boolean;
-  integrationRateSatisfied: boolean;
-  allSatisfied: boolean;
-};
-
-type CoverageCheck = {
-  id: string;
-  slideRange: string;
-  description: string;
-  satisfied: boolean;
-  evidence: Record<string, unknown>;
-};
-
-type WeightedKpiItem = {
-  id: "kpi01" | "kpi02" | "kpi03" | "kpi04" | "kpi05" | "kpi06" | "kpi07";
-  label: string;
-  weightPercent: number;
-  measuredValue: number;
-  unit: "%" | "pp" | "count/year";
-  targetDescription: string;
-  targetSatisfied: boolean;
-  weightedPassContributionPercent: number;
-  weightedObjectiveContribution: number;
-  slideFormula: string;
-};
-
-type DataRequirementItem = {
-  id: string;
-  slideRange: string;
-  requirement: string;
-  measuredValue: number | boolean;
-  targetDescription: string;
-  satisfied: boolean;
-  evidence?: Record<string, unknown>;
 };
 
 type ArtifactChecksum = {
@@ -354,333 +294,6 @@ function isGatePassed(result: TrainAllAiResult): boolean {
   );
 }
 
-function buildKpiStabilityReport(
-  kpi: TrainAllAiResult["kpi"]
-): KpiStabilityReport {
-  const recommendationAccuracySatisfied =
-    kpi.recommendationAccuracyPercent >=
-    KPI_STABILITY_THRESHOLDS.recommendationAccuracyPercent;
-  const efficacyScgiSatisfied =
-    kpi.efficacyScgiPp >= KPI_STABILITY_THRESHOLDS.efficacyScgiPp;
-  const actionAccuracySatisfied =
-    kpi.actionAccuracyPercent >= KPI_STABILITY_THRESHOLDS.actionAccuracyPercent;
-  const llmAccuracySatisfied =
-    kpi.llmAccuracyPercent >= KPI_STABILITY_THRESHOLDS.llmAccuracyPercent;
-  const referenceAccuracySatisfied =
-    kpi.referenceAccuracyPercent >= KPI_STABILITY_THRESHOLDS.referenceAccuracyPercent;
-  const adverseEventCountSatisfied =
-    kpi.adverseEventCountPerYear <=
-    KPI_STABILITY_THRESHOLDS.adverseEventCountPerYearMax;
-  const integrationRateSatisfied =
-    kpi.integrationRatePercent >= KPI_STABILITY_THRESHOLDS.integrationRatePercent;
-
-  return {
-    recommendationAccuracySatisfied,
-    efficacyScgiSatisfied,
-    actionAccuracySatisfied,
-    llmAccuracySatisfied,
-    referenceAccuracySatisfied,
-    adverseEventCountSatisfied,
-    integrationRateSatisfied,
-    allSatisfied:
-      recommendationAccuracySatisfied &&
-      efficacyScgiSatisfied &&
-      actionAccuracySatisfied &&
-      llmAccuracySatisfied &&
-      referenceAccuracySatisfied &&
-      adverseEventCountSatisfied &&
-      integrationRateSatisfied,
-  };
-}
-
-function positiveImprovementObjectiveRate(efficacyScgiPp: number): number {
-  if (efficacyScgiPp > 0) {
-    return 1 + clamp(efficacyScgiPp / 20, 0, 1.5);
-  }
-  return clamp(efficacyScgiPp / 10, -1, 0);
-}
-
-function computeWeightedScores(kpi: TrainAllAiResult["kpi"]): {
-  weightedPassScorePercent: number;
-  weightedObjectiveScore: number;
-} {
-  const recommendationPassRate = clamp(
-    kpi.recommendationAccuracyPercent /
-      KPI_TARGETS.recommendationAccuracyPercent,
-    0,
-    1
-  );
-  const efficacyPassRate = kpi.efficacyScgiPp > KPI_TARGETS.efficacyScgiPp ? 1 : 0;
-  const actionPassRate = clamp(
-    kpi.actionAccuracyPercent / KPI_TARGETS.actionAccuracyPercent,
-    0,
-    1
-  );
-  const llmPassRate = clamp(
-    kpi.llmAccuracyPercent / KPI_TARGETS.llmAccuracyPercent,
-    0,
-    1
-  );
-  const referencePassRate = clamp(
-    kpi.referenceAccuracyPercent / KPI_TARGETS.referenceAccuracyPercent,
-    0,
-    1
-  );
-  const adversePassRate = clamp(
-    KPI_TARGETS.adverseEventCountPerYearMax /
-      Math.max(kpi.adverseEventCountPerYear, 1),
-    0,
-    1
-  );
-  const integrationPassRate = clamp(
-    kpi.integrationRatePercent / KPI_TARGETS.integrationRatePercent,
-    0,
-    1
-  );
-
-  const weightedPassScorePercent = roundTo(
-    recommendationPassRate * KPI_WEIGHTS.recommendationAccuracyPercent +
-      efficacyPassRate * KPI_WEIGHTS.efficacyScgiPp +
-      actionPassRate * KPI_WEIGHTS.actionAccuracyPercent +
-      llmPassRate * KPI_WEIGHTS.llmAccuracyPercent +
-      referencePassRate * KPI_WEIGHTS.referenceAccuracyPercent +
-      adversePassRate * KPI_WEIGHTS.adverseEventCountPerYear +
-      integrationPassRate * KPI_WEIGHTS.integrationRatePercent,
-    2
-  );
-
-  const recommendationObjectiveRate =
-    kpi.recommendationAccuracyPercent /
-    KPI_TARGETS.recommendationAccuracyPercent;
-  const efficacyObjectiveRate = positiveImprovementObjectiveRate(
-    kpi.efficacyScgiPp
-  );
-  const actionObjectiveRate =
-    kpi.actionAccuracyPercent / KPI_TARGETS.actionAccuracyPercent;
-  const llmObjectiveRate =
-    kpi.llmAccuracyPercent / KPI_TARGETS.llmAccuracyPercent;
-  const referenceObjectiveRate =
-    kpi.referenceAccuracyPercent / KPI_TARGETS.referenceAccuracyPercent;
-  const adverseObjectiveRate = clamp(
-    KPI_TARGETS.adverseEventCountPerYearMax /
-      Math.max(kpi.adverseEventCountPerYear, 1),
-    0,
-    2
-  );
-  const integrationObjectiveRate =
-    kpi.integrationRatePercent / KPI_TARGETS.integrationRatePercent;
-
-  const weightedObjectiveScore = roundTo(
-    recommendationObjectiveRate * KPI_WEIGHTS.recommendationAccuracyPercent +
-      efficacyObjectiveRate * KPI_WEIGHTS.efficacyScgiPp +
-      actionObjectiveRate * KPI_WEIGHTS.actionAccuracyPercent +
-      llmObjectiveRate * KPI_WEIGHTS.llmAccuracyPercent +
-      referenceObjectiveRate * KPI_WEIGHTS.referenceAccuracyPercent +
-      adverseObjectiveRate * KPI_WEIGHTS.adverseEventCountPerYear +
-      integrationObjectiveRate * KPI_WEIGHTS.integrationRatePercent,
-    4
-  );
-
-  return {
-    weightedPassScorePercent,
-    weightedObjectiveScore,
-  };
-}
-
-function buildWeightedKpiItems(kpi: TrainAllAiResult["kpi"]): WeightedKpiItem[] {
-  const recommendationPassRate = clamp(
-    kpi.recommendationAccuracyPercent /
-      KPI_TARGETS.recommendationAccuracyPercent,
-    0,
-    1
-  );
-  const efficacyPassRate = kpi.efficacyScgiPp > KPI_TARGETS.efficacyScgiPp ? 1 : 0;
-  const actionPassRate = clamp(
-    kpi.actionAccuracyPercent / KPI_TARGETS.actionAccuracyPercent,
-    0,
-    1
-  );
-  const llmPassRate = clamp(
-    kpi.llmAccuracyPercent / KPI_TARGETS.llmAccuracyPercent,
-    0,
-    1
-  );
-  const referencePassRate = clamp(
-    kpi.referenceAccuracyPercent / KPI_TARGETS.referenceAccuracyPercent,
-    0,
-    1
-  );
-  const adversePassRate = clamp(
-    KPI_TARGETS.adverseEventCountPerYearMax /
-      Math.max(kpi.adverseEventCountPerYear, 1),
-    0,
-    1
-  );
-  const integrationPassRate = clamp(
-    kpi.integrationRatePercent / KPI_TARGETS.integrationRatePercent,
-    0,
-    1
-  );
-
-  const recommendationObjectiveRate =
-    kpi.recommendationAccuracyPercent /
-    KPI_TARGETS.recommendationAccuracyPercent;
-  const efficacyObjectiveRate = positiveImprovementObjectiveRate(
-    kpi.efficacyScgiPp
-  );
-  const actionObjectiveRate =
-    kpi.actionAccuracyPercent / KPI_TARGETS.actionAccuracyPercent;
-  const llmObjectiveRate =
-    kpi.llmAccuracyPercent / KPI_TARGETS.llmAccuracyPercent;
-  const referenceObjectiveRate =
-    kpi.referenceAccuracyPercent / KPI_TARGETS.referenceAccuracyPercent;
-  const adverseObjectiveRate = clamp(
-    KPI_TARGETS.adverseEventCountPerYearMax /
-      Math.max(kpi.adverseEventCountPerYear, 1),
-    0,
-    2
-  );
-  const integrationObjectiveRate =
-    kpi.integrationRatePercent / KPI_TARGETS.integrationRatePercent;
-
-  return [
-    {
-      id: "kpi01",
-      label: "Health Supplement Recommendation Accuracy",
-      weightPercent: KPI_WEIGHTS.recommendationAccuracyPercent,
-      measuredValue: kpi.recommendationAccuracyPercent,
-      unit: "%",
-      targetDescription: ">= 80%",
-      targetSatisfied:
-        kpi.recommendationAccuracyPercent >=
-        KPI_TARGETS.recommendationAccuracyPercent,
-      weightedPassContributionPercent: roundTo(
-        recommendationPassRate * KPI_WEIGHTS.recommendationAccuracyPercent,
-        2
-      ),
-      weightedObjectiveContribution: roundTo(
-        recommendationObjectiveRate * KPI_WEIGHTS.recommendationAccuracyPercent,
-        4
-      ),
-      slideFormula: "Score = (1/N) * sum_i 100 * |R_i intersect Gamma_i| / |R_i|",
-    },
-    {
-      id: "kpi02",
-      label: "Measured Efficacy Improvement",
-      weightPercent: KPI_WEIGHTS.efficacyScgiPp,
-      measuredValue: kpi.efficacyScgiPp,
-      unit: "pp",
-      targetDescription: "> 0pp",
-      targetSatisfied: kpi.efficacyScgiPp > KPI_TARGETS.efficacyScgiPp,
-      weightedPassContributionPercent: roundTo(
-        efficacyPassRate * KPI_WEIGHTS.efficacyScgiPp,
-        2
-      ),
-      weightedObjectiveContribution: roundTo(
-        efficacyObjectiveRate * KPI_WEIGHTS.efficacyScgiPp,
-        4
-      ),
-      slideFormula: "SCGI = (1/N) * sum_i 100 * (Phi(z_post,i) - Phi(z_pre,i))",
-    },
-    {
-      id: "kpi03",
-      label: "Closed-loop Next-action Accuracy",
-      weightPercent: KPI_WEIGHTS.actionAccuracyPercent,
-      measuredValue: kpi.actionAccuracyPercent,
-      unit: "%",
-      targetDescription: ">= 80%",
-      targetSatisfied:
-        kpi.actionAccuracyPercent >= KPI_TARGETS.actionAccuracyPercent,
-      weightedPassContributionPercent: roundTo(
-        actionPassRate * KPI_WEIGHTS.actionAccuracyPercent,
-        2
-      ),
-      weightedObjectiveContribution: roundTo(
-        actionObjectiveRate * KPI_WEIGHTS.actionAccuracyPercent,
-        4
-      ),
-      slideFormula:
-        "Accuracy = 100 * sum_s I(a_s = a*_s and e_s = 1) / |S|",
-    },
-    {
-      id: "kpi04",
-      label: "Conversational LLM Answer Accuracy",
-      weightPercent: KPI_WEIGHTS.llmAccuracyPercent,
-      measuredValue: kpi.llmAccuracyPercent,
-      unit: "%",
-      targetDescription: ">= 91%",
-      targetSatisfied: kpi.llmAccuracyPercent >= KPI_TARGETS.llmAccuracyPercent,
-      weightedPassContributionPercent: roundTo(
-        llmPassRate * KPI_WEIGHTS.llmAccuracyPercent,
-        2
-      ),
-      weightedObjectiveContribution: roundTo(
-        llmObjectiveRate * KPI_WEIGHTS.llmAccuracyPercent,
-        4
-      ),
-      slideFormula: "Accuracy = 100 * sum_q g(answer_q) / |Q|",
-    },
-    {
-      id: "kpi05",
-      label: "Safety/Data-lake Reference Accuracy",
-      weightPercent: KPI_WEIGHTS.referenceAccuracyPercent,
-      measuredValue: kpi.referenceAccuracyPercent,
-      unit: "%",
-      targetDescription: ">= 95%",
-      targetSatisfied:
-        kpi.referenceAccuracyPercent >= KPI_TARGETS.referenceAccuracyPercent,
-      weightedPassContributionPercent: roundTo(
-        referencePassRate * KPI_WEIGHTS.referenceAccuracyPercent,
-        2
-      ),
-      weightedObjectiveContribution: roundTo(
-        referenceObjectiveRate * KPI_WEIGHTS.referenceAccuracyPercent,
-        4
-      ),
-      slideFormula:
-        "Accuracy = 100 * (1/R) * sum_r I(l_r = l_ref and f_r = f_ref)",
-    },
-    {
-      id: "kpi06",
-      label: "Adverse Event Count",
-      weightPercent: KPI_WEIGHTS.adverseEventCountPerYear,
-      measuredValue: kpi.adverseEventCountPerYear,
-      unit: "count/year",
-      targetDescription: "<= 5 count/year",
-      targetSatisfied:
-        kpi.adverseEventCountPerYear <= KPI_TARGETS.adverseEventCountPerYearMax,
-      weightedPassContributionPercent: roundTo(
-        adversePassRate * KPI_WEIGHTS.adverseEventCountPerYear,
-        2
-      ),
-      weightedObjectiveContribution: roundTo(
-        adverseObjectiveRate * KPI_WEIGHTS.adverseEventCountPerYear,
-        4
-      ),
-      slideFormula: "Count events linked to recommendations over last 12 months",
-    },
-    {
-      id: "kpi07",
-      label: "Biosensor/Genetic Integration Rate",
-      weightPercent: KPI_WEIGHTS.integrationRatePercent,
-      measuredValue: kpi.integrationRatePercent,
-      unit: "%",
-      targetDescription: ">= 90%",
-      targetSatisfied:
-        kpi.integrationRatePercent >= KPI_TARGETS.integrationRatePercent,
-      weightedPassContributionPercent: roundTo(
-        integrationPassRate * KPI_WEIGHTS.integrationRatePercent,
-        2
-      ),
-      weightedObjectiveContribution: roundTo(
-        integrationObjectiveRate * KPI_WEIGHTS.integrationRatePercent,
-        4
-      ),
-      slideFormula: "R = (r_W + r_C + r_G) / 3",
-    },
-  ];
-}
-
 function buildAttemptGeneratedAt(
   baseGeneratedAt: string | undefined,
   attemptIndex: number
@@ -806,389 +419,6 @@ function buildDatasetArtifactPaths(dataDir: string): string[] {
     "kpi06-samples.jsonl",
     "kpi07-samples.jsonl",
   ].map((fileName) => path.join(dataDir, fileName));
-}
-
-function buildImplementationCoverageReport(result: TrainAllAiResult): {
-  allSatisfied: boolean;
-  checks: CoverageCheck[];
-} {
-  const modelDir = result.paths.modelDir;
-  const dataDir = result.paths.dataDir;
-  const check = (
-    id: string,
-    slideRange: string,
-    description: string,
-    satisfied: boolean,
-    evidence: Record<string, unknown>
-  ): CoverageCheck => ({ id, slideRange, description, satisfied, evidence });
-
-  const checks: CoverageCheck[] = [
-    check(
-      "one_stop_workflow",
-      "13-15",
-      "One-stop workflow trace from health-data analysis to follow-up management",
-      fs.existsSync(path.join(dataDir, "workflow-samples.jsonl")) &&
-        result.datasetSummary.workflowSampleCount >= 100 &&
-        result.modelMetrics.workflowCompletionRatePercent >= 80,
-      {
-        workflowDatasetPath: path.join(dataDir, "workflow-samples.jsonl"),
-        workflowSampleCount: result.datasetSummary.workflowSampleCount,
-        workflowCompletionRatePercent:
-          result.modelMetrics.workflowCompletionRatePercent,
-      }
-    ),
-    check(
-      "closed_loop_schedule_automation",
-      "22",
-      "Periodic API call / reminder / reorder automation loop trace",
-      fs.existsSync(path.join(dataDir, "closed-loop-schedule-samples.jsonl")) &&
-        result.datasetSummary.closedLoopScheduleSampleCount >= 100 &&
-        result.modelMetrics.closedLoopScheduleExecutionPercent >= 80,
-      {
-        scheduleDatasetPath: path.join(dataDir, "closed-loop-schedule-samples.jsonl"),
-        closedLoopScheduleSampleCount:
-          result.datasetSummary.closedLoopScheduleSampleCount,
-        closedLoopScheduleExecutionPercent:
-          result.modelMetrics.closedLoopScheduleExecutionPercent,
-      }
-    ),
-    check(
-      "closed_loop_node_orchestration",
-      "21-22",
-      "Node-based closed-loop orchestration trace across consultation/execution/reminder/follow-up",
-      fs.existsSync(path.join(dataDir, "closed-loop-node-trace-samples.jsonl")) &&
-        result.datasetSummary.closedLoopNodeTraceSampleCount >= 100 &&
-        result.modelMetrics.closedLoopNodeFlowSuccessPercent >= 80,
-      {
-        nodeTraceDatasetPath: path.join(dataDir, "closed-loop-node-trace-samples.jsonl"),
-        closedLoopNodeTraceSampleCount:
-          result.datasetSummary.closedLoopNodeTraceSampleCount,
-        closedLoopNodeFlowSuccessPercent:
-          result.modelMetrics.closedLoopNodeFlowSuccessPercent,
-      }
-    ),
-    check(
-      "crag_grounding_quality",
-      "21-22",
-      "CRAG grounding quality with Data-Lake retrieval and web-fallback trace",
-      fs.existsSync(path.join(dataDir, "crag-grounding-samples.jsonl")) &&
-        result.datasetSummary.cragGroundingSampleCount >= 100 &&
-        result.modelMetrics.cragGroundingAccuracyPercent >= 91,
-      {
-        cragDatasetPath: path.join(dataDir, "crag-grounding-samples.jsonl"),
-        cragGroundingSampleCount: result.datasetSummary.cragGroundingSampleCount,
-        cragGroundingAccuracyPercent:
-          result.modelMetrics.cragGroundingAccuracyPercent,
-      }
-    ),
-    check(
-      "data_lake_engine",
-      "16",
-      "Data Lake ingestion/classification pipeline",
-      fs.existsSync(path.join(modelDir, "data-lake-softmax.json")) &&
-        fs.existsSync(path.join(dataDir, "data-lake-samples.jsonl")) &&
-        fs.existsSync(path.join(dataDir, "kpi05-module02-samples.jsonl")) &&
-        result.datasetSummary.dataLakeSampleCount >= 100 &&
-        result.modelMetrics.dataLakeAccuracyPercent >= 95,
-      {
-        dataLakeModelPath: path.join(modelDir, "data-lake-softmax.json"),
-        dataLakeDatasetPath: path.join(dataDir, "data-lake-samples.jsonl"),
-        kpi05Module02DatasetPath: path.join(dataDir, "kpi05-module02-samples.jsonl"),
-        dataLakeSampleCount: result.datasetSummary.dataLakeSampleCount,
-        dataLakeAccuracyPercent: result.modelMetrics.dataLakeAccuracyPercent,
-      }
-    ),
-    check(
-      "safety_validation_engine",
-      "17",
-      "Personal safety validation engine with reference-linked decisioning",
-      fs.existsSync(path.join(modelDir, "safety-softmax.json")) &&
-        fs.existsSync(path.join(dataDir, "safety-samples.jsonl")) &&
-        fs.existsSync(path.join(dataDir, "kpi05-module03-samples.jsonl")) &&
-        result.datasetSummary.safetySampleCount >= 100 &&
-        result.modelMetrics.safetyAccuracyPercent >= 95,
-      {
-        safetyModelPath: path.join(modelDir, "safety-softmax.json"),
-        safetyDatasetPath: path.join(dataDir, "safety-samples.jsonl"),
-        kpi05Module03DatasetPath: path.join(dataDir, "kpi05-module03-samples.jsonl"),
-        safetySampleCount: result.datasetSummary.safetySampleCount,
-        safetyAccuracyPercent: result.modelMetrics.safetyAccuracyPercent,
-      }
-    ),
-    check(
-      "ite_quantification_model",
-      "18-19",
-      "ITE efficacy quantification model and training dataset",
-      fs.existsSync(path.join(modelDir, "ite-linear-regression.json")) &&
-        fs.existsSync(path.join(dataDir, "ite-samples.jsonl")) &&
-        result.datasetSummary.iteSampleCount >= 100 &&
-        result.modelMetrics.iteRmse <= 0.35,
-      {
-        iteModelPath: path.join(modelDir, "ite-linear-regression.json"),
-        iteDatasetPath: path.join(dataDir, "ite-samples.jsonl"),
-        iteSampleCount: result.datasetSummary.iteSampleCount,
-        iteRmse: result.modelMetrics.iteRmse,
-      }
-    ),
-    check(
-      "ite_online_finetune",
-      "23",
-      "Biosensor-driven ITE online fine-tuning feedback loop",
-      fs.existsSync(path.join(dataDir, "ite-feedback-samples.jsonl")) &&
-        fs.existsSync(path.join(modelDir, "ite-finetune-summary.json")) &&
-        result.datasetSummary.iteFeedbackSampleCount >= 100 &&
-        result.modelMetrics.iteFeedbackRmse <= 0.35 &&
-        result.modelMetrics.iteFineTuneGain >= 0,
-      {
-        iteFeedbackDatasetPath: path.join(dataDir, "ite-feedback-samples.jsonl"),
-        iteFineTuneSummaryPath: path.join(modelDir, "ite-finetune-summary.json"),
-        iteFeedbackSampleCount: result.datasetSummary.iteFeedbackSampleCount,
-        iteRmseBeforeFineTune: result.modelMetrics.iteRmseBeforeFineTune,
-        iteFeedbackRmse: result.modelMetrics.iteFeedbackRmse,
-        iteRmseAfterFineTune: result.modelMetrics.iteRmse,
-        iteFineTuneGain: result.modelMetrics.iteFineTuneGain,
-        iteFineTuneRollbackApplied: result.modelMetrics.iteFineTuneRollbackApplied,
-      }
-    ),
-    check(
-      "two_tower_reranker",
-      "18-19",
-      "Two-Tower + GBDT reranker recommendation stack",
-      fs.existsSync(path.join(modelDir, "recommender-two-tower.json")) &&
-        fs.existsSync(path.join(modelDir, "recommender-reranker-gbdt.json")) &&
-        result.datasetSummary.rerankerSampleCount >= 1000,
-      {
-        twoTowerModel: path.join(modelDir, "recommender-two-tower.json"),
-        rerankerModel: path.join(modelDir, "recommender-reranker-gbdt.json"),
-        rerankerSampleCount: result.datasetSummary.rerankerSampleCount,
-      }
-    ),
-    check(
-      "pro_z_normalization",
-      "19,26",
-      "PRO raw-score to z-score normalization pipeline for KPI #2",
-      fs.existsSync(path.join(dataDir, "pro-assessment-samples.jsonl")) &&
-        result.datasetSummary.proAssessmentSampleCount >= 100,
-      {
-        proAssessmentPath: path.join(dataDir, "pro-assessment-samples.jsonl"),
-        proAssessmentSampleCount: result.datasetSummary.proAssessmentSampleCount,
-      }
-    ),
-    check(
-      "optimization_constraints",
-      "20",
-      "Constraint-aware optimization engine with budget/risk/count feasibility",
-      fs.existsSync(path.join(dataDir, "optimization-constraint-samples.jsonl")) &&
-        result.datasetSummary.optimizationConstraintSampleCount >= 100,
-      {
-        optimizationConstraintDatasetPath: path.join(
-          dataDir,
-          "optimization-constraint-samples.jsonl"
-        ),
-        optimizationConstraintSampleCount:
-          result.datasetSummary.optimizationConstraintSampleCount,
-        optimizationConstraintSatisfactionPercent:
-          result.modelMetrics.optimizationConstraintSatisfactionPercent,
-      }
-    ),
-    check(
-      "closed_loop_online_finetune",
-      "21-23",
-      "Closed-loop feedback dataset and online fine-tuning execution",
-      fs.existsSync(path.join(dataDir, "closed-loop-feedback-samples.jsonl")) &&
-        fs.existsSync(path.join(modelDir, "closed-loop-action-finetune-summary.json")) &&
-        result.datasetSummary.closedLoopFeedbackSampleCount >= 100,
-      {
-        feedbackDatasetPath: path.join(dataDir, "closed-loop-feedback-samples.jsonl"),
-        feedbackSampleCount: result.datasetSummary.closedLoopFeedbackSampleCount,
-        fineTuneSummaryPath: path.join(
-          modelDir,
-          "closed-loop-action-finetune-summary.json"
-        ),
-        actionAccuracyBeforeFineTunePercent:
-          result.modelMetrics.actionAccuracyBeforeFineTunePercent,
-        actionAccuracyPercent: result.modelMetrics.actionAccuracyPercent,
-        actionFineTuneGainPercent: result.modelMetrics.actionFineTuneGainPercent,
-      }
-    ),
-    check(
-      "adverse_event_window_coverage",
-      "26",
-      "Adverse-event KPI window coverage over the last 12 months",
-      result.kpi.adverseEventWindowCoverageSatisfied,
-      {
-        adverseEventCountPerYear: result.kpi.adverseEventCountPerYear,
-        adverseEventWindowCoverageDays: result.kpi.adverseEventWindowCoverageDays,
-        adverseEventWindowMinCoverageDays: ADVERSE_EVENT_WINDOW_MIN_COVERAGE_DAYS,
-        adverseEventWindowCoverageSatisfied:
-          result.kpi.adverseEventWindowCoverageSatisfied,
-      }
-    ),
-    check(
-      "biosensor_genetic_integration",
-      "24",
-      "Biosensor/genetic integration data pipeline",
-      result.datasetSummary.integrationSampleCount >= 100 &&
-        result.kpi.integrationRatePercent >= KPI_TARGETS.integrationRatePercent &&
-        result.kpi.integrationSampleCountSatisfied &&
-        result.kpi.integrationSourceCoverageSatisfied &&
-        result.kpi.integrationPerSourceMinSampleCountSatisfied,
-      {
-        integrationSampleCount: result.datasetSummary.integrationSampleCount,
-        integrationRatePercent: result.kpi.integrationRatePercent,
-        integrationTargetPercent: KPI_TARGETS.integrationRatePercent,
-        integrationSampleCountSatisfied: result.kpi.integrationSampleCountSatisfied,
-        integrationSourceCoverageSatisfied:
-          result.kpi.integrationSourceCoverageSatisfied,
-        integrationPerSourceMinSampleCountSatisfied:
-          result.kpi.integrationPerSourceMinSampleCountSatisfied,
-      }
-    ),
-    check(
-      "genetic_parameter_adjustment",
-      "24",
-      "Genetic-variant parameter adjustment trace for safety constraints and optimization weights",
-      fs.existsSync(path.join(dataDir, "genetic-adjustment-samples.jsonl")) &&
-        result.datasetSummary.geneticAdjustmentSampleCount >= 100 &&
-        result.modelMetrics.geneticAdjustmentTraceCoveragePercent >= 90 &&
-        result.modelMetrics.geneticRuleCatalogCoveragePercent >= 95,
-      {
-        geneticAdjustmentDatasetPath: path.join(
-          dataDir,
-          "genetic-adjustment-samples.jsonl"
-        ),
-        geneticAdjustmentSampleCount:
-          result.datasetSummary.geneticAdjustmentSampleCount,
-        geneticAdjustmentTraceCoveragePercent:
-          result.modelMetrics.geneticAdjustmentTraceCoveragePercent,
-        geneticRuleCatalogCoveragePercent:
-          result.modelMetrics.geneticRuleCatalogCoveragePercent,
-      }
-    ),
-    check(
-      "kpi_eval_gate",
-      "25-26",
-      "KPI evaluation gate under TIPS slide formulas",
-      result.kpi.allTargetsSatisfied && result.kpi.allDataRequirementsSatisfied,
-      {
-        allTargetsSatisfied: result.kpi.allTargetsSatisfied,
-        allDataRequirementsSatisfied: result.kpi.allDataRequirementsSatisfied,
-        kpi: result.kpi,
-      }
-    ),
-  ];
-
-  return {
-    allSatisfied: checks.every((item) => item.satisfied),
-    checks,
-  };
-}
-
-function buildDataRequirementMatrix(result: TrainAllAiResult): {
-  allSatisfied: boolean;
-  items: DataRequirementItem[];
-} {
-  const atLeast100 = (value: number) => value >= 100;
-  const items: DataRequirementItem[] = [
-    {
-      id: "kpi01_min_case_count",
-      slideRange: "26",
-      requirement: "Recommendation accuracy test cases",
-      measuredValue: result.datasetSummary.kpi01SampleCount,
-      targetDescription: ">= 100 cases",
-      satisfied: atLeast100(result.datasetSummary.kpi01SampleCount),
-    },
-    {
-      id: "kpi02_min_case_count",
-      slideRange: "26",
-      requirement: "Efficacy improvement test cases",
-      measuredValue: result.datasetSummary.kpi02SampleCount,
-      targetDescription: ">= 100 cases",
-      satisfied: atLeast100(result.datasetSummary.kpi02SampleCount),
-    },
-    {
-      id: "kpi03_min_case_count",
-      slideRange: "26",
-      requirement: "Closed-loop action test cases",
-      measuredValue: result.datasetSummary.kpi03SampleCount,
-      targetDescription: ">= 100 cases",
-      satisfied: atLeast100(result.datasetSummary.kpi03SampleCount),
-    },
-    {
-      id: "kpi04_min_prompt_count",
-      slideRange: "26",
-      requirement: "Conversational LLM test prompts",
-      measuredValue: result.datasetSummary.kpi04SampleCount,
-      targetDescription: ">= 100 prompts",
-      satisfied: atLeast100(result.datasetSummary.kpi04SampleCount),
-    },
-    {
-      id: "kpi05_module02_min_rule_count",
-      slideRange: "26",
-      requirement: "Data Lake reference rule samples",
-      measuredValue: result.datasetSummary.kpi05Module02SampleCount,
-      targetDescription: ">= 100 rules",
-      satisfied: atLeast100(result.datasetSummary.kpi05Module02SampleCount),
-    },
-    {
-      id: "kpi05_module03_min_rule_count",
-      slideRange: "26",
-      requirement: "Safety-engine reference rule samples",
-      measuredValue: result.datasetSummary.kpi05Module03SampleCount,
-      targetDescription: ">= 100 rules",
-      satisfied: atLeast100(result.datasetSummary.kpi05Module03SampleCount),
-    },
-    {
-      id: "kpi05_module07_min_rule_count",
-      slideRange: "26",
-      requirement: "Integration-interface wiring rule samples",
-      measuredValue: result.datasetSummary.kpi05Module07SampleCount,
-      targetDescription: ">= 100 rules",
-      satisfied: atLeast100(result.datasetSummary.kpi05Module07SampleCount),
-    },
-    {
-      id: "kpi06_last_12_months_window_coverage",
-      slideRange: "26",
-      requirement: "Adverse-event coverage window for last 12 months",
-      measuredValue: result.kpi.adverseEventWindowCoverageDays,
-      targetDescription: `>= ${ADVERSE_EVENT_WINDOW_MIN_COVERAGE_DAYS} days`,
-      satisfied: result.kpi.adverseEventWindowCoverageSatisfied,
-      evidence: {
-        adverseEventCountPerYear: result.kpi.adverseEventCountPerYear,
-      },
-    },
-    {
-      id: "kpi07_min_sample_count",
-      slideRange: "26",
-      requirement: "Integration session sample count",
-      measuredValue: result.datasetSummary.kpi07SampleCount,
-      targetDescription: ">= 100 sessions",
-      satisfied: result.kpi.integrationSampleCountSatisfied,
-    },
-    {
-      id: "kpi07_source_coverage",
-      slideRange: "26",
-      requirement: "W/C/G source coverage",
-      measuredValue: result.kpi.integrationSourceCoverageSatisfied,
-      targetDescription: "All sources covered (W, C, G)",
-      satisfied: result.kpi.integrationSourceCoverageSatisfied,
-    },
-    {
-      id: "kpi07_per_source_min_sample_count",
-      slideRange: "26",
-      requirement: "Per-source minimum sample count",
-      measuredValue: result.kpi.integrationPerSourceMinSampleCountSatisfied,
-      targetDescription: "Each source >= 10 samples",
-      satisfied: result.kpi.integrationPerSourceMinSampleCountSatisfied,
-    },
-  ];
-
-  return {
-    allSatisfied:
-      items.every((item) => item.satisfied) &&
-      result.kpi.allDataRequirementsSatisfied,
-    items,
-  };
 }
 
 function rankAttempts(attempts: readonly AttemptSummary[]): AttemptSummary[] {
@@ -1390,25 +620,23 @@ async function main() {
   fs.writeFileSync(attemptReportPath, JSON.stringify(attemptReport, null, 2), "utf8");
 
   const weightedKpis = buildWeightedKpiItems(selected.result.kpi);
-  const weightedPassScorePercent = roundTo(
-    weightedKpis.reduce(
-      (sum, item) => sum + item.weightedPassContributionPercent,
-      0
-    ),
-    2
-  );
-  const weightedObjectiveScore = roundTo(
-    weightedKpis.reduce(
-      (sum, item) => sum + item.weightedObjectiveContribution,
-      0
-    ),
-    4
-  );
+  const { weightedPassScorePercent, weightedObjectiveScore } =
+    computeWeightedScores(selected.result.kpi);
   const implementationCoverage = buildImplementationCoverageReport(selected.result);
   const dataRequirements = buildDataRequirementMatrix(selected.result);
+  const slideEvidenceMap = buildSlideEvidenceMap(
+    selected.result,
+    implementationCoverage,
+    dataRequirements,
+    weightedKpis
+  );
   const implementationCoveragePath = path.join(
     selected.result.paths.modelDir,
     "tips-implementation-coverage.json"
+  );
+  const slideEvidenceMapPath = path.join(
+    selected.result.paths.modelDir,
+    "tips-slide-evidence-map.json"
   );
   const implementationCoveragePayload = {
     title: "TIPS Slide 01-26 Implementation Coverage",
@@ -1423,6 +651,25 @@ async function main() {
     JSON.stringify(implementationCoveragePayload, null, 2),
     "utf8"
   );
+  const slideEvidenceMapPayload = {
+    title: "TIPS Slide Evidence Map",
+    reference: {
+      sourcePdf: TIPS_SOURCE_PDF_PATH,
+      criteriaSlides: TIPS_IMPLEMENTATION_CRITERIA_SLIDES,
+      criteriaDoc: "docs/rnd/01_kpi_and_evaluation.md",
+    },
+    generatedAt: new Date().toISOString(),
+    selectedRunId: selected.result.runId,
+    profile: selected.result.profile,
+    profileOption: args.profile,
+    allSatisfied: slideEvidenceMap.allSatisfied,
+    items: slideEvidenceMap.items,
+  };
+  fs.writeFileSync(
+    slideEvidenceMapPath,
+    JSON.stringify(slideEvidenceMapPayload, null, 2),
+    "utf8"
+  );
   const tipsSummaryPath = path.join(
     selected.result.paths.modelDir,
     "tips-kpi-evaluation-summary.json"
@@ -1430,7 +677,9 @@ async function main() {
   const tipsSummary = {
     title: "TIPS KPI Evaluation Summary",
     reference: {
-      source: "TIPS R&D Plan Slides 25-26",
+      sourcePdf: TIPS_SOURCE_PDF_PATH,
+      source: `TIPS R&D Plan Slides ${TIPS_KPI_CRITERIA_SLIDES}`,
+      implementationSlides: TIPS_IMPLEMENTATION_CRITERIA_SLIDES,
       criteriaDoc: "docs/rnd/01_kpi_and_evaluation.md",
     },
     generatedAt: new Date().toISOString(),
@@ -1461,6 +710,7 @@ async function main() {
     weightedObjectiveScore,
     implementationCoverage,
     dataRequirements,
+    slideEvidenceMap,
     kpis: weightedKpis,
     reports: {
       trainReportPath: selected.result.paths.reportPath,
@@ -1468,6 +718,7 @@ async function main() {
       datasetConfigPath: selected.result.paths.datasetConfigPath,
       executionEnvironmentPath: selected.result.paths.executionEnvironmentPath,
       implementationCoveragePath,
+      slideEvidenceMapPath,
     },
     command: invokedBy,
   };
@@ -1478,6 +729,7 @@ async function main() {
     attemptReportPath,
     tipsSummaryPath,
     implementationCoveragePath,
+    slideEvidenceMapPath,
     selected.result.paths.executionEnvironmentPath,
   ]);
   const datasetArtifactChecksums = collectChecksumsForFiles(
@@ -1505,7 +757,9 @@ async function main() {
     seed: selected.result.seed,
     command: invokedBy,
     references: {
-      pdfSlides: "TIPS R&D Plan Slides 25-26",
+      sourcePdf: TIPS_SOURCE_PDF_PATH,
+      pdfSlides: `TIPS R&D Plan Slides ${TIPS_KPI_CRITERIA_SLIDES}`,
+      implementationSlides: TIPS_IMPLEMENTATION_CRITERIA_SLIDES,
       criteriaDoc: "docs/rnd/01_kpi_and_evaluation.md",
     },
     kpiGate: {
@@ -1525,6 +779,7 @@ async function main() {
     weightedKpis,
     implementationCoverage,
     dataRequirements,
+    slideEvidenceMap,
     outputs: {
       trainReportPath: selected.result.paths.reportPath,
       tipsSummaryPath,
@@ -1532,6 +787,7 @@ async function main() {
       datasetConfigPath: selected.result.paths.datasetConfigPath,
       executionEnvironmentPath: selected.result.paths.executionEnvironmentPath,
       implementationCoveragePath,
+      slideEvidenceMapPath,
     },
     checksums: {
       modelArtifacts: modelArtifactChecksums,
@@ -1600,11 +856,13 @@ async function main() {
     reportPath: selected.result.paths.reportPath,
     tipsSummaryPath,
     implementationCoveragePath,
+    slideEvidenceMapPath,
     submissionBundlePath,
     verificationReportPath,
     attemptReportPath,
     implementationCoverageSatisfied: implementationCoverage.allSatisfied,
     dataRequirementsSatisfied: dataRequirements.allSatisfied,
+    slideEvidenceSatisfied: slideEvidenceMap.allSatisfied,
   };
   fs.writeFileSync(latestPointerPath, JSON.stringify(latestPointer, null, 2), "utf8");
 

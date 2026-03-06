@@ -9,6 +9,12 @@ export async function getCategories() {
       name: true,
       image: true,
       importance: true,
+      updatedAt: true,
+      _count: {
+        select: {
+          products: true,
+        },
+      },
     },
     orderBy: [
       { importance: "desc" },
@@ -25,6 +31,12 @@ export async function getCategoriesByUpdatedAt() {
       name: true,
       image: true,
       importance: true,
+      updatedAt: true,
+      _count: {
+        select: {
+          products: true,
+        },
+      },
     },
     orderBy: [
       { importance: "desc" },

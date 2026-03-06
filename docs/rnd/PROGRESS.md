@@ -1,6 +1,14 @@
 # TIPS R&D Progress
 
 ## Completed Items
+- [x] 2026-03-06 인코딩 가드 범위 보정: `scripts/lib/encoding-audit.cts`에서 `data/b2b/backups/` 백업 스냅샷 디렉터리를 스캔 제외 대상으로 추가. 실제 소스 인코딩 문제가 아닌 백업 데이터의 한자 혼용 문구 오탐으로 `audit:encoding`이 실패하지 않도록 최소 범위로 조정.
+- [x] 2026-03-06 train-all report-builder split: extracted KPI/data-requirement/slide-evidence report builders from `scripts/rnd/train-all-ai.ts` into `scripts/rnd/train-all-ai.reporting.ts` so future sessions can inspect orchestration and evaluation assembly separately without changing output contracts.
+- [x] 2026-03-06 PDF 참조 메타 보강: `scripts/rnd/train-all-ai.ts`의 KPI 요약/제출 번들에 원본 PDF 경로(`TIPS 연구개발계획서 전체본.pdf`)와 구현 기준 슬라이드 범위(`13-26`)를 함께 기록하도록 보강. 최신 런 `rnd-ai-2026-03-06T07-57-02-131Z-standard-scale-1_2`로 산출물 갱신 완료.
+- [x] 2026-03-06 slide evidence bundle: added `tips-slide-evidence-map.json` generation to `scripts/rnd/train-all-ai.ts` so `npm run rnd:train:all` now emits a slide 13~26별 구현/데이터/KPI 근거 매핑 리포트를 자동 생성.
+- [x] 2026-03-06 KPI #6 정합성 보강: `lib/rnd/module03-personal-safety/evaluation.ts`의 약물이상반응 윈도우 최소 커버리지를 `365일`로 강화하고, `lib/rnd/ai-training/pipeline.ts`에서 직전 12개월 시작/말일 anchor 샘플을 강제 생성하도록 보강. 최신 런 `rnd-ai-2026-03-06T07-27-39-223Z-standard-scale-1_2`에서 `adverseEventWindowCoverageDays: 365`로 통과 확인.
+- [x] 2026-03-06 전체 검증 재실행: `npm run lint`, `npm run build`를 최신 워크트리 기준으로 재실행해 모두 성공함을 확인. R&D 별도 구현 경로(`lib/rnd`, `scripts/rnd`)가 현재 앱 빌드를 깨뜨리지 않음을 재검증.
+- [x] 2026-03-06 TIPS PDF 재검증: `c:\Users\hjyeo\Desktop\웰박\00 핵심 자료\회사 소개 자료\TIPS 연구개발계획서 전체본.pdf`의 슬라이드 13~26(특히 25~26 평가 방법/환경)를 이미지 렌더링으로 재확인하고, 문서-구현 매핑이 실제 도식과 일치함을 검증.
+- [x] 2026-03-06 one-command 학습 재실행 검증: `npm run rnd:train:all` 재실행으로 `rnd-ai-2026-03-06T07-57-02-131Z-standard-scale-1_2` 런을 확보했고, KPI 목표/데이터 조건/구현 커버리지/슬라이드 증빙 모두 통과(`weightedObjectiveScore: 125.971`, `allTargetsSatisfied: true`, `allDataRequirementsSatisfied: true`, `implementationCoverageSatisfied: true`, `slideEvidenceSatisfied: true`)함을 확인.
 - [x] 2026-02-28 deploy bundle hardening: expanded ignore scope to `tmp/` in both `.gitignore` and `.vercelignore` to prevent tracked temporary artifacts from entering Vercel deployment uploads.
 - [x] 2026-02-28 slide 24 genetic parameter-adjustment trace: added `genetic-adjustment-samples.jsonl` generation and coverage metrics (`geneticAdjustmentTraceCoveragePercent`, `geneticRuleCatalogCoveragePercent`) in `lib/rnd/ai-training/pipeline.ts`, and wired `genetic_parameter_adjustment` implementation gate in `scripts/rnd/train-all-ai.ts`.
 - [x] 2026-02-28 auto objective threshold uplift: raised default `--auto-min-weighted-objective-score` from 125.6 to 125.9 in `scripts/rnd/train-all-ai.ts` to enforce a higher one-command quality floor.

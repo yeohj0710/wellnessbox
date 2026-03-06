@@ -5,7 +5,7 @@
 - 기준 문서는 `docs/rnd/01_kpi_and_evaluation.md`이며, 본 문서는 현재 구현 상태와 실행 방법을 요약한다.
 
 ## 2) 현재 기준 시점
-- 작성/검증 기준일: 2026-02-28
+- 작성/검증 기준일: 2026-03-06
 - 기준 명령:
   - `npm run rnd:train:all`
   - `npm run lint`
@@ -33,11 +33,12 @@
 ## 4) 최근 검증 결과 (요약)
 
 ### 최근 성공 실행
-- runId: `rnd-ai-2026-02-28T05-52-35-069Z-standard-scale-1_2`
+- runId: `rnd-ai-2026-03-06T07-57-02-131Z-standard-scale-1_2`
 - 결과:
   - `allTargetsSatisfied: true`
   - `allDataRequirementsSatisfied: true`
   - `implementationCoverageSatisfied: true`
+  - `slideEvidenceSatisfied: true`
   - `weightedPassScorePercent: 100`
   - `weightedObjectiveScore: 125.971`
 
@@ -48,12 +49,53 @@
 - LLM 답변 정확도: `100%`
 - 레퍼런스 정확도: `98.7%`
 - 약물이상반응 건수: `4건/year`
+- 약물이상반응 윈도우 커버리지: `365일`
 - 연동율: `93.89%`
 
 ### 슬라이드 24 관련 지표
 - `geneticAdjustmentSampleCount: 1800`
 - `geneticAdjustmentTraceCoveragePercent: 100`
 - `geneticRuleCatalogCoveragePercent: 100`
+
+### 슬라이드 13~26 구현 커버리지 재검증
+- PDF 렌더링 확인:
+  - `tmp/pdf_render_13_24/tips-13.png` ~ `tips-24.png`
+  - `tmp/pdf_render/tips-25.png`
+  - `tmp/pdf_render/tips-26.png`
+- 구현 커버리지 결과:
+  - `one_stop_workflow`: pass
+  - `data_lake_engine`: pass
+  - `safety_validation_engine`: pass
+  - `two_tower_reranker`: pass
+  - `ite_quantification_model`: pass
+  - `optimization_constraints`: pass
+  - `closed_loop_node_orchestration`: pass
+  - `crag_grounding_quality`: pass
+  - `closed_loop_schedule_automation`: pass
+  - `closed_loop_online_finetune`: pass
+  - `biosensor_genetic_integration`: pass
+  - `genetic_parameter_adjustment`: pass
+  - `kpi_eval_gate`: pass
+
+### 슬라이드 증빙 아티팩트
+- `tips-slide-evidence-map.json` 생성
+- 슬라이드 13~26 각각에 대해:
+  - 연결된 구현 체크 ID
+  - 연결된 데이터 조건 ID
+  - 연결된 KPI ID
+  - 관련 산출물 경로
+  를 한 파일에서 확인 가능
+
+### 최신 품질 검증
+- `npm run lint`: 성공
+- `npm run build`: 성공
+- `npm run audit:encoding`: 성공
+
+### 인코딩 가드 운영 메모
+- `data/b2b/backups/`는 운영 백업 스냅샷 디렉터리로 간주해 `audit:encoding` 스캔에서 제외됨
+- 이유:
+  - 의약품 원문 데이터에 한자+한글 혼용 표현이 포함되어 인코딩 깨짐이 아닌 정상 데이터가 오탐될 수 있음
+  - 소스/문서/설정 파일 인코딩 검사는 그대로 유지
 
 ## 5) 반드시 먼저 읽을 파일
 1. `AGENTS.md`
@@ -67,6 +109,7 @@
 ### 통합 파이프라인
 - `lib/rnd/ai-training/pipeline.ts`
 - `scripts/rnd/train-all-ai.ts`
+- `scripts/rnd/train-all-ai.reporting.ts`
 - `scripts/rnd/train-all-ai.cjs`
 
 ### KPI 평가 함수
@@ -113,6 +156,7 @@ npm run build
 - `attempt-selection-report.json`
 - `tips-kpi-evaluation-summary.json`
 - `tips-implementation-coverage.json`
+- `tips-slide-evidence-map.json`
 - `tips-evaluation-submission-bundle.json`
 - `tips-evaluation-submission-verify.json`
 
@@ -136,6 +180,7 @@ npm run build
 1. `git status`로 작업 트리 상태 확인
 2. `npm run audit:encoding` 실행
 3. `docs/rnd/PROGRESS.md` 최신 항목 확인
-4. `npm run rnd:train:all` 재실행해 최신 리포트 생성
-5. 필요 변경 적용 후 `lint/build` 재검증
-6. 변경 내용을 `docs/rnd/PROGRESS.md`와 본 문서에 동기화
+4. `tmp/rnd/latest-train-all-run.json`가 가리키는 최신 run과 `tips-kpi-evaluation-summary.json` / `tips-implementation-coverage.json` / `tips-slide-evidence-map.json`를 먼저 확인
+5. 필요 시 `npm run rnd:train:all` 재실행해 최신 리포트 생성
+6. 필요 변경 적용 후 `lint/build` 재검증
+7. 변경 내용을 `docs/rnd/PROGRESS.md`와 본 문서에 동기화

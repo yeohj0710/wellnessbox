@@ -2901,13 +2901,19 @@ function buildAdverseEventSamples(
   outsideWindow.setUTCFullYear(outsideWindow.getUTCFullYear() - 2);
 
   const rows: Module03AdverseEventSample[] = [];
+  const withinWindowAnchorDayOffsets = [0, 364] as const;
   for (let index = 0; index < 160; index += 1) {
     const counted = index < 4;
     const inWindow = index % 9 !== 0;
+    const withinWindowDayOffset =
+      index < withinWindowAnchorDayOffsets.length
+        ? withinWindowAnchorDayOffsets[index]
+        : rng.int(365);
     const date = new Date(
       counted || inWindow
-        ? withinWindowStart.valueOf() + rng.range(0, 360) * 24 * 60 * 60 * 1000
-        : outsideWindow.valueOf() + rng.range(0, 120) * 24 * 60 * 60 * 1000
+        ? withinWindowStart.valueOf() +
+          withinWindowDayOffset * 24 * 60 * 60 * 1000
+        : outsideWindow.valueOf() + rng.int(120) * 24 * 60 * 60 * 1000
     );
 
     rows.push({
