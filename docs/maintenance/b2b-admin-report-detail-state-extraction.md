@@ -1,4 +1,4 @@
-﻿# B2B Admin Report Detail-State Extraction
+# B2B Admin Report Detail-State Extraction
 
 ## Goal
 - Reduce orchestration pressure in `B2bAdminReportClient` by moving employee-detail state and bundle hydration into one hook.
@@ -36,4 +36,3 @@
 2. `npm run audit:hotspots`
 3. `npm run lint`
 4. `npm run build`
-

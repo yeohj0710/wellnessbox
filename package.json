@@ -35,6 +35,7 @@
     "qa:syntax": "node scripts/qa/check-syntax.cjs",
     "qa:route-scroll": "node scripts/qa/check-route-scroll-and-column-card.cjs",
     "qa:smoke": "npm run qa:syntax && npm run qa:route-scroll && npm run qa:b2b:export-smoke",
+    "qa:rnd:preview-route": "ts-node scripts/qa/check-rnd-recommend-preview.cts",
     "qa:my-data:copy-localization": "ts-node scripts/qa/check-my-data-copy-localization.cts",
     "qa:my-data:section-modules": "ts-node scripts/qa/check-my-data-section-modules.cts",
     "qa:chat:command-layer": "ts-node scripts/qa/check-chat-command-layer-extraction.cts",
