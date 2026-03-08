@@ -1,17 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import "../globals.css";
+import { createNoIndexMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Agent Playground | Workflow vs LLM",
-  description:
-    "Next.js agent playground: compare single-shot LLM responses with structured agent workflows across common patterns.",
-  openGraph: {
-    title: "Agent Playground | Workflow vs LLM",
-    description:
-      "Compare LLM one-shot outputs with multi-step agent patterns (chaining, optimizer loop, routing, voting).",
-  },
-};
+export const metadata: Metadata = createNoIndexMetadata(
+  "Agent Playground | Workflow vs LLM",
+  "Next.js agent playground: compare single-shot LLM responses with structured agent workflows across common patterns."
+);
 
 export default function AgentPlaygroundLayout({
   children,

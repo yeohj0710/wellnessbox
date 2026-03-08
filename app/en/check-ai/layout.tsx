@@ -1,27 +1,25 @@
 import type { Metadata } from "next";
-import { SITE_URL } from "@/lib/constants";
+import { createPageMetadata, SITE_NAME_EN } from "@/lib/seo";
 
-export const metadata: Metadata = {
+const baseMetadata = createPageMetadata({
   title: "Quick AI Check | Wellnessbox",
   description:
     "Complete a quick AI check to get supplement category recommendations tailored to you.",
-  openGraph: {
-    title: "Quick AI Check | Wellnessbox",
-    description:
-      "Complete a quick AI check to get supplement category recommendations tailored to you.",
-    url: `${SITE_URL}/en/check-ai`,
-    images: [
-      { url: "/kakao-logo.png", width: 800, height: 400, alt: "Wellnessbox" },
-      { url: "/logo.png", width: 800, height: 800, alt: "Wellnessbox" },
-    ],
-    siteName: "Wellnessbox",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Quick AI Check | Wellnessbox",
-    description:
-      "Complete a quick AI check to get supplement category recommendations tailored to you.",
-    images: ["/logo.png"],
+  path: "/en/check-ai",
+  locale: "en_US",
+  siteName: SITE_NAME_EN,
+  keywords: ["AI supplement recommendation", "wellness check", "supplement guide"],
+});
+
+export const metadata: Metadata = {
+  ...baseMetadata,
+  alternates: {
+    canonical: "/en/check-ai",
+    languages: {
+      "ko-KR": "/check-ai",
+      "en-US": "/en/check-ai",
+      "x-default": "/check-ai",
+    },
   },
 };
 

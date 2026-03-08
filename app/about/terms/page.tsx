@@ -1,4 +1,13 @@
 import Link from "next/link";
+import type { Metadata } from "next";
+import { createPageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = createPageMetadata({
+  title: "이용약관 | 웰니스박스",
+  description:
+    "웰니스박스 서비스 이용 조건, 주문 및 결제, 배송, 환불, 책임 제한 등 이용약관을 확인하세요.",
+  path: "/about/terms",
+});
 
 export default function Terms() {
   return (

@@ -1,3 +1,13 @@
+import type { Metadata } from "next";
+import { createPageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = createPageMetadata({
+  title: "취소 및 환불 규정 | 웰니스박스",
+  description:
+    "웰니스박스 상품 취소 및 환불 가능 조건, 예외 사항, 문의 방법을 확인하세요.",
+  path: "/about/refund-policy",
+});
+
 export default function RefundPolicy() {
   return (
     <div className="mt-8 w-full max-w-[640px] mx-auto px-6 py-10 bg-white sm:border sm:border-gray-200 sm:rounded-lg sm:shadow-lg">

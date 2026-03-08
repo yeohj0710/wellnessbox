@@ -11,6 +11,7 @@ import {
 } from "../_lib/columns";
 import { isColumnAdminSession } from "../_lib/admin-session";
 import { SITE_URL } from "@/lib/constants";
+import { absoluteUrl, getDefaultOpenGraphImages } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +50,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: `${column.title} | 웰니스박스 칼럼`,
     description: column.description,
+    keywords: column.tags,
     alternates: {
       canonical: `/column/${column.slug}`,
     },
@@ -61,6 +63,22 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       publishedTime: column.publishedAt,
       modifiedTime: column.updatedAt,
       tags: column.tags,
+      images: column.coverImageUrl
+        ? [
+            {
+              url: column.coverImageUrl,
+              alt: `${column.title} 커버 이미지`,
+            },
+          ]
+        : getDefaultOpenGraphImages(),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${column.title} | 웰니스박스 칼럼`,
+      description: column.description,
+      images: column.coverImageUrl
+        ? [column.coverImageUrl]
+        : getDefaultOpenGraphImages().map((image) => image.url),
     },
   };
 }
@@ -89,6 +107,7 @@ export default async function ColumnDetailPage({ params }: PageProps) {
     "@type": "Article",
     headline: column.title,
     description: column.description,
+    image: column.coverImageUrl ? [column.coverImageUrl] : [absoluteUrl("/kakao-logo.png")],
     datePublished: column.publishedAt,
     dateModified: column.updatedAt,
     mainEntityOfPage: articleUrl,
@@ -104,6 +123,7 @@ export default async function ColumnDetailPage({ params }: PageProps) {
         url: `${SITE_URL}/logo.png`,
       },
     },
+    articleSection: column.tags,
     keywords: column.tags.join(", "),
   };
   const breadcrumbJsonLd = {

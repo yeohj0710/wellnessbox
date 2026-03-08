@@ -13,9 +13,9 @@ export default function SymptomImprovement() {
               <SparklesIcon className="h-4 w-4 text-[#6C4DFF]" />
               5~7분 소요 · 맞춤 추천
             </div>
-            <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-gray-900">
+            <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-gray-900">
               AI 증상 자가 진단
-            </h1>
+            </h2>
             <p className="mt-2 text-sm leading-relaxed text-gray-600">
               몇 가지 질문에 답하면 AI가 나에게 맞는 영양제를 추천해줘요.
             </p>

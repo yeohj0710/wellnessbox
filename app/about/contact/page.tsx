@@ -1,3 +1,12 @@
+import type { Metadata } from "next";
+import { createPageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = createPageMetadata({
+  title: "문의하기 | 웰니스박스",
+  description: "웰니스박스 고객센터 이메일과 대표 전화번호 등 문의 채널을 안내합니다.",
+  path: "/about/contact",
+});
+
 export default function Contact() {
   return (
     <div className="mt-8 mb-12 w-full max-w-[640px] px-8 py-10 bg-white sm:shadow-md sm:rounded-lg">

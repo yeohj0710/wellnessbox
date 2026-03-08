@@ -7,19 +7,24 @@ import { LocalStorageProvider } from "@/components/common/localStorage";
 import { LoadingProvider } from "@/components/common/loadingContext.client";
 import { ToastProvider } from "@/components/common/toastContext.client";
 import { pretendard } from "./fonts";
-import Script from "next/script";
 import RootLayoutBoot from "@/components/common/rootLayoutBoot.client";
 import RootLayoutEnhancers from "@/components/common/rootLayoutEnhancers.client";
 import RootLayoutGate from "@/components/common/rootLayoutGate.client";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, absoluteUrl } from "@/lib/seo";
 
 export const viewport = {
   themeColor: "#ffffff",
 };
 
 export const metadata: Metadata = {
-  title: "웰니스박스 | 내 몸에 맞는 프리미엄 건강 솔루션",
-  description: "내 몸에 맞는 프리미엄 건강 솔루션",
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
   metadataBase: new URL(SITE_URL),
+  applicationName: SITE_NAME,
+  alternates: {
+    canonical: "/",
+  },
+  manifest: "/manifest.webmanifest",
   robots: {
     index: true,
     follow: true,
@@ -35,32 +40,26 @@ export const metadata: Metadata = {
     icon: "/logo.png",
   },
   openGraph: {
-    title: "웰니스박스 | 내 몸에 맞는 프리미엄 건강 솔루션",
-    description: "내 몸에 맞는 프리미엄 건강 솔루션",
-    url: "/",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
     type: "website",
     locale: "ko_KR",
-    siteName: "웰니스박스",
+    siteName: SITE_NAME,
     images: [
       {
-        url: new URL("/kakao-logo.png", SITE_URL).toString(),
+        url: absoluteUrl("/kakao-logo.png"),
         width: 800,
         height: 400,
-        alt: "웰니스박스",
-      },
-      {
-        url: new URL("/logo.png", SITE_URL).toString(),
-        width: 800,
-        height: 800,
-        alt: "웰니스박스",
+        alt: SITE_NAME,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "웰니스박스 | 내 몸에 맞는 프리미엄 건강 솔루션",
-    description: "내 몸에 맞는 프리미엄 건강 솔루션",
-    images: [new URL("/logo.png", SITE_URL).toString()],
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [absoluteUrl("/kakao-logo.png")],
   },
   verification: {
     google: "rxIVuaujGlI5Tc8FtIqiIFwfntmlTl1MSA5EG9E67Rw",
@@ -76,6 +75,33 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const organizationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: SITE_NAME,
+    url: SITE_URL,
+    logo: absoluteUrl("/logo.png"),
+    contactPoint: [
+      {
+        "@type": "ContactPoint",
+        contactType: "customer support",
+        email: "wellnessbox.me@gmail.com",
+        telephone: "+82-2-6241-5530",
+        areaServed: "KR",
+        availableLanguage: ["Korean"],
+      },
+    ],
+  };
+
+  const websiteJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: SITE_NAME,
+    alternateName: "Wellnessbox",
+    url: SITE_URL,
+    inLanguage: "ko-KR",
+  };
+
   return (
     <html lang="ko">
       <body
@@ -110,32 +136,14 @@ export default async function RootLayout({
         </LocalStorageProvider>
         <div id="toast-portal" />
 
-        <Script
-          id="ld-json-org"
+        <script
           type="application/ld+json"
-          strategy="afterInteractive"
-        >
-          {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Organization",
-            name: "웰니스박스",
-            url: SITE_URL,
-            logo: new URL("/logo.png", SITE_URL).toString(),
-          })}
-        </Script>
-
-        <Script
-          id="ld-json-website"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
+        <script
           type="application/ld+json"
-          strategy="afterInteractive"
-        >
-          {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "WebSite",
-            name: "웰니스박스",
-            url: SITE_URL,
-          })}
-        </Script>
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
         <style
           dangerouslySetInnerHTML={{
             __html: `

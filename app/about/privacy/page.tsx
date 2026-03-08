@@ -1,3 +1,13 @@
+import type { Metadata } from "next";
+import { createPageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = createPageMetadata({
+  title: "개인정보처리방침 | 웰니스박스",
+  description:
+    "웰니스박스의 개인정보 수집 항목, 이용 목적, 보관 기간, 이용자 권리와 보호 조치를 확인하세요.",
+  path: "/about/privacy",
+});
+
 export default function Privacy() {
   return (
     <div className="mt-8 mb-12 w-full max-w-[640px] px-8 py-10 bg-white sm:shadow-md sm:rounded-lg">

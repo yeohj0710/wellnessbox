@@ -1,8 +1,7 @@
 "use client";
 
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import Image from "next/image";
-import { ArrowPathIcon, PhotoIcon } from "@heroicons/react/24/outline";
+import { ArrowPathIcon } from "@heroicons/react/24/outline";
 import { createProduct, deleteProduct, getCategories, getProductsForAdmin, updateProduct } from "@/lib/product";
 import { getUploadUrl } from "@/lib/upload";
 import {
@@ -12,86 +11,30 @@ import {
   ManagerCardGrid,
   ManagerDangerButton,
   ManagerEmptyState,
-  ManagerField,
-  ManagerInput,
   ManagerMetaRow,
   ManagerModal,
   ManagerPrimaryButton,
   ManagerResultsHeader,
   ManagerSecondaryButton,
-  ManagerSection,
-  ManagerTextarea,
   ManagerToolbar,
   ManagerWorkspaceShell,
 } from "./managerWorkspace";
-
-type CategoryOption = {
-  id: number;
-  name: string;
-  image?: string | null;
-  updatedAt?: string | Date;
-  _count?: {
-    products?: number;
-  };
-};
-
-type ProductRecord = {
-  id: number;
-  name: string | null;
-  description?: string | null;
-  images: string[];
-  updatedAt?: string | Date;
-  categories: CategoryOption[];
-  _count?: {
-    pharmacyProducts?: number;
-  };
-};
-
-type ProductDraft = {
-  id?: number;
-  name: string;
-  description: string;
-  images: string[];
-  categories: CategoryOption[];
-};
-
-const PRODUCT_SORT_OPTIONS = [
-  { label: "최신 수정순", value: "recent" },
-  { label: "이름순", value: "name" },
-  { label: "카테고리 많은 순", value: "category-count" },
-  { label: "약국 연결 많은 순", value: "linked-count" },
-] as const;
-
-function toDateValue(value: string | Date | undefined) {
-  if (!value) return 0;
-  const parsed = new Date(value).getTime();
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function createEmptyDraft(): ProductDraft {
-  return {
-    name: "",
-    description: "",
-    images: [],
-    categories: [],
-  };
-}
-
-function ProductCardImage(props: { image?: string | null; alt: string }) {
-  if (!props.image) {
-    return (
-      <div className="flex h-44 items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(226,232,240,0.85),rgba(248,250,252,0.95))] text-slate-400">
-        <PhotoIcon className="h-12 w-12" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative h-44 overflow-hidden bg-[linear-gradient(180deg,#f8fbff_0%,#eef4fb_100%)]">
-      <Image src={props.image} alt={props.alt} fill sizes="420px" className="object-contain p-5" />
-    </div>
-  );
-}
+import {
+  createEmptyDraft,
+  getVisibleCategories,
+  getVisibleProducts,
+  PRODUCT_SORT_OPTIONS,
+  type CategoryOption,
+  type ProductDraft,
+  type ProductRecord,
+  type ProductSortValue,
+} from "./productManager.types";
+import {
+  ProductBasicsSection,
+  ProductCardImage,
+  ProductCategoriesSection,
+  ProductImagesSection,
+} from "./productManager.sections";
 
 export default function ProductManager() {
   const [products, setProducts] = useState<ProductRecord[]>([]);
@@ -104,7 +47,7 @@ export default function ProductManager() {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isRefreshingCategories, setIsRefreshingCategories] = useState(false);
   const [searchValue, setSearchValue] = useState("");
-  const [sortValue, setSortValue] = useState<(typeof PRODUCT_SORT_OPTIONS)[number]["value"]>("recent");
+  const [sortValue, setSortValue] = useState<ProductSortValue>("recent");
   const [categorySearchValue, setCategorySearchValue] = useState("");
   const [formError, setFormError] = useState("");
   const deferredSearch = useDeferredValue(searchValue);
@@ -127,41 +70,18 @@ export default function ProductManager() {
   }, []);
 
   const visibleProducts = useMemo(() => {
-    const keyword = deferredSearch.trim().toLowerCase();
-    const filtered = products.filter((product) => {
-      if (!keyword) return true;
-      const haystack = [
-        product.name || "",
-        product.description || "",
-        product.categories.map((category) => category.name).join(" "),
-      ]
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(keyword);
+    return getVisibleProducts({
+      products,
+      keyword: deferredSearch,
+      sortValue,
     });
-
-    const sorted = [...filtered];
-    sorted.sort((left, right) => {
-      if (sortValue === "name") {
-        return (left.name || "").localeCompare(right.name || "", "ko");
-      }
-      if (sortValue === "category-count") {
-        return right.categories.length - left.categories.length;
-      }
-      if (sortValue === "linked-count") {
-        return (right._count?.pharmacyProducts || 0) - (left._count?.pharmacyProducts || 0);
-      }
-      return toDateValue(right.updatedAt) - toDateValue(left.updatedAt);
-    });
-    return sorted;
   }, [deferredSearch, products, sortValue]);
 
   const visibleCategories = useMemo(() => {
-    const keyword = deferredCategorySearch.trim().toLowerCase();
-    const filtered = categories.filter((category) =>
-      !keyword ? true : category.name.toLowerCase().includes(keyword)
-    );
-    return filtered.sort((left, right) => left.name.localeCompare(right.name, "ko"));
+    return getVisibleCategories({
+      categories,
+      keyword: deferredCategorySearch,
+    });
   }, [categories, deferredCategorySearch]);
 
   const totalLinkedCount = useMemo(
@@ -345,7 +265,7 @@ export default function ProductManager() {
             onSearchChange={setSearchValue}
             searchPlaceholder="상품명, 카테고리, 설명으로 검색"
             sortValue={sortValue}
-            onSortChange={(value) => setSortValue(value as (typeof PRODUCT_SORT_OPTIONS)[number]["value"])}
+            onSortChange={(value) => setSortValue(value as ProductSortValue)}
             sortOptions={[...PRODUCT_SORT_OPTIONS]}
             actionLabel="새 상품 등록"
             onAction={openCreateModal}
@@ -426,192 +346,34 @@ export default function ProductManager() {
       >
         <div className="space-y-4">
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)]">
-            <ManagerSection
-              title="기본 정보"
-              description="검색성과 품질에 직접 영향을 주는 상품 기본 정보를 정리합니다."
-            >
-              <div className="space-y-4">
-                <ManagerField label="상품명">
-                  <ManagerInput
-                    value={draft.name}
-                    onChange={(event) => setDraft((prev) => ({ ...prev, name: event.target.value }))}
-                    placeholder="예: 나우푸드 밀크씨슬"
-                  />
-                </ManagerField>
+            <ProductBasicsSection
+              draft={draft}
+              selectedFilesCount={selectedFiles.length}
+              onNameChange={(value) => setDraft((prev) => ({ ...prev, name: value }))}
+              onDescriptionChange={(value) => setDraft((prev) => ({ ...prev, description: value }))}
+            />
 
-                <ManagerField label="상품 설명" hint="간단한 설명이라도 적어두면 검색과 운영 판단이 쉬워집니다.">
-                  <ManagerTextarea
-                    value={draft.description}
-                    onChange={(event) =>
-                      setDraft((prev) => ({ ...prev, description: event.target.value }))
-                    }
-                    placeholder="대표 효능, 용량 특징, 운영 메모 등을 적어주세요."
-                  />
-                </ManagerField>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <ManagerMetaRow label="선택 카테고리" value={`${draft.categories.length}개`} />
-                  <ManagerMetaRow label="저장된 이미지" value={`${draft.images.length + selectedFiles.length}장`} />
-                </div>
-              </div>
-            </ManagerSection>
-
-            <ManagerSection
-              title="카테고리 연결"
-              description="오른쪽에서 검색 후 체크하면 즉시 현재 상품에 연결됩니다."
-            >
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <ManagerInput
-                    value={categorySearchValue}
-                    onChange={(event) => setCategorySearchValue(event.target.value)}
-                    placeholder="카테고리 검색"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleRefreshCategories}
-                    className="inline-flex shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white p-3 text-slate-500 transition hover:bg-slate-50 hover:text-slate-800"
-                    aria-label="카테고리 새로고침"
-                  >
-                    <ArrowPathIcon className={`h-4 w-4 ${isRefreshingCategories ? "animate-spin" : ""}`} />
-                  </button>
-                </div>
-
-                {draft.categories.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {draft.categories.map((category) => (
-                      <button
-                        key={category.id}
-                        type="button"
-                        onClick={() => toggleCategory(category)}
-                        className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1.5 text-xs font-bold text-white"
-                      >
-                        {category.name}
-                        <span className="text-white/70">삭제</span>
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-slate-500">아직 연결된 카테고리가 없습니다.</p>
-                )}
-
-                <div className="max-h-[22rem] space-y-2 overflow-y-auto pr-1">
-                  {visibleCategories.map((category) => {
-                    const checked = draft.categories.some((item) => item.id === category.id);
-                    return (
-                      <button
-                        key={category.id}
-                        type="button"
-                        onClick={() => toggleCategory(category)}
-                        className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left transition ${
-                          checked
-                            ? "border-sky-200 bg-sky-50"
-                            : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
-                        }`}
-                      >
-                        <div className="relative h-14 w-14 overflow-hidden rounded-2xl bg-slate-100">
-                          {category.image ? (
-                            <Image
-                              src={category.image}
-                              alt={category.name}
-                              fill
-                              sizes="112px"
-                              className="object-contain p-2"
-                            />
-                          ) : (
-                            <div className="flex h-full items-center justify-center text-slate-300">
-                              <PhotoIcon className="h-6 w-6" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-bold text-slate-900">{category.name}</p>
-                          <p className="text-xs text-slate-500">
-                            연결 상품 {category._count?.products || 0}개
-                          </p>
-                        </div>
-                        <div
-                          className={`h-5 w-5 rounded-full border ${
-                            checked ? "border-sky-500 bg-sky-500" : "border-slate-300 bg-white"
-                          }`}
-                        />
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </ManagerSection>
+            <ProductCategoriesSection
+              categories={visibleCategories}
+              draftCategories={draft.categories}
+              categorySearchValue={categorySearchValue}
+              isRefreshingCategories={isRefreshingCategories}
+              onCategorySearchChange={setCategorySearchValue}
+              onRefreshCategories={() => void handleRefreshCategories()}
+              onToggleCategory={toggleCategory}
+            />
           </div>
 
-          <ManagerSection
-            title="이미지 자산"
-            description="기존 이미지를 유지하거나 새 파일을 추가해 대표 썸네일 구성을 빠르게 정리할 수 있습니다."
-          >
-            <div className="space-y-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <ManagerSecondaryButton
-                  onClick={() => document.getElementById("product-image-upload-input")?.click()}
-                >
-                  이미지 추가
-                </ManagerSecondaryButton>
-                <input
-                  id="product-image-upload-input"
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={(event) =>
-                    setSelectedFiles((prev) => [...prev, ...Array.from(event.target.files || [])])
-                  }
-                />
-                <p className="text-sm text-slate-500">여러 장을 한 번에 추가할 수 있습니다.</p>
-              </div>
-
-              {draft.images.length === 0 && selectedFiles.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-500">
-                  등록된 이미지가 없습니다.
-                </div>
-              ) : (
-                <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
-                  {draft.images.map((image, index) => (
-                    <div key={`saved-${image}-${index}`} className="overflow-hidden rounded-[24px] border border-slate-200 bg-white">
-                      <div className="relative h-36 bg-slate-50">
-                        <Image src={image} alt={`상품 이미지 ${index + 1}`} fill sizes="240px" className="object-contain p-3" />
-                      </div>
-                      <div className="flex items-center justify-between px-3 py-2">
-                        <span className="text-xs font-semibold text-slate-500">저장됨</span>
-                        <button
-                          type="button"
-                          onClick={() => removeSavedImage(index)}
-                          className="text-xs font-bold text-rose-500"
-                        >
-                          삭제
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-
-                  {previewImages.map((preview, index) => (
-                    <div key={preview.key} className="overflow-hidden rounded-[24px] border border-sky-200 bg-sky-50/60">
-                      <div className="relative h-36">
-                        <Image src={preview.url} alt={`새 이미지 ${index + 1}`} fill sizes="240px" className="object-contain p-3" />
-                      </div>
-                      <div className="flex items-center justify-between px-3 py-2">
-                        <span className="text-xs font-semibold text-sky-700">업로드 예정</span>
-                        <button
-                          type="button"
-                          onClick={() => removeSelectedFile(index)}
-                          className="text-xs font-bold text-rose-500"
-                        >
-                          삭제
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </ManagerSection>
+          <ProductImagesSection
+            savedImages={draft.images}
+            previewImages={previewImages}
+            onOpenFilePicker={() => document.getElementById("product-image-upload-input")?.click()}
+            onFilesSelected={(files) =>
+              setSelectedFiles((prev) => [...prev, ...Array.from(files || [])])
+            }
+            onRemoveSavedImage={removeSavedImage}
+            onRemoveSelectedFile={removeSelectedFile}
+          />
 
           {formError ? (
             <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
