@@ -1,80 +1,61 @@
-# 문서 분류와 형식 기준
+# 문서 유형 및 형식 기준
 
-## 목적
-- 문서가 많아져도 유형별로 동일한 형식으로 관리되도록 기준을 고정한다.
-- 새 문서 추가 시 어디에 배치하고 어떤 섹션을 가져야 하는지 명확히 한다.
+## 기본 원칙
+- `wellnessbox`에는 서비스 운영과 유지보수에 필요한 문서만 둔다.
+- R&D 요구사항, 평가, 설계, 진행, 실험 기록은 `wellnessbox-rnd`를 기준으로 본다.
+- 새 문서를 만들기 전에 `AGENTS.md`의 저장소 경계를 먼저 확인한다.
 
-## 유형별 기준
+## 서비스 저장소에 둘 수 있는 문서
 
-### 1) 요구사항 스펙 문서 (`Spec`)
-- 위치: `docs/rnd/*.md` (예: `01_kpi_and_evaluation.md`, `02~07_*.md`)
-- 필수 섹션:
-  - `목표`
-  - `입력/출력(계약)`
-  - `기능 요구사항`
-  - `비기능 요구사항`
-  - `성능지표(KPI)`
-  - `평가방법`
-  - `평가환경`
-  - `재현 가능한 산출물`
-- 작성 원칙:
-  - 구현 방식보다 판정 기준을 우선한다.
-  - 수식/임계치/최소 샘플 조건을 숫자로 명시한다.
+### Index
+- 목적: 특정 영역 문서로 진입하는 인덱스 제공
+- 예시:
+  - `docs/README.md`
+  - `docs/DOCS_CATALOG.md`
+  - `docs/engineering/README.md`
+  - `docs/maintenance/README.md`
+  - `docs/b2b/README.md`
+  - `docs/maps/README.md`
+  - `docs/qa/README.md`
 
-### 2) 구현 참고 문서 (`Implementation Notes`)
-- 위치: `docs/rnd_impl/*.md`
-- 필수 섹션:
-  - `문서 성격/우선순위`
-  - `최소 성공 조건`
-  - `데이터 불확실성 대응`
-  - `구현 힌트(강제 아님)`
-  - `완료 체크리스트`
-- 작성 원칙:
-  - 요구사항(`docs/rnd`)과 충돌하면 참고 문서는 무효.
+### Standard
+- 목적: 문서 구조, 작성 규칙, 갱신 규칙 정의
+- 예시:
+  - `docs/DOC_TYPES_AND_FORMAT.md`
 
-### 3) 실행 런북 문서 (`Runbook`)
-- 위치: `docs/rnd/ai_training_pipeline.md`, `docs/*_runbook*.md`, `docs/engineering/*.md`
-- 필수 섹션:
-  - `실행 명령`
-  - `입력/옵션`
-  - `산출물 경로`
-  - `실패 시 대응`
-  - `검증 방법`
+### Runbook / Policy / Maintenance / Scenario / QA / Map
+- 목적: 서비스 운영, 유지보수, QA, 시나리오, 화면/기능 구조 설명
+- 위치:
+  - `docs/engineering/*.md`
+  - `docs/maintenance/*.md`
+  - `docs/b2b/*.md`
+  - `docs/maps/*.md`
+  - `docs/qa/*.md`
+  - `docs/scenarios/*.md`
 
-### 4) 진행/작업 이력 문서 (`Progress/Worklog`)
-- 위치: `docs/rnd/PROGRESS.md`, `docs/*worklog*.md`
-- 필수 섹션:
-  - `완료 항목`
-  - `현재 상태`
-  - `다음 작업`
-- 작성 원칙:
-  - 날짜와 변경 파일을 함께 남긴다.
-  - 실행 결과(성공/실패)도 기록한다.
+## 서비스 저장소에 두지 않는 문서
 
-### 5) 맵/스키마 문서 (`Map/Schema`)
-- 위치: `docs/*_map.md`, `docs/*_schema.md`
-- 필수 섹션:
-  - `대상 시스템/모듈`
-  - `필드/경로 매핑`
-  - `주의사항`
-  - `검증 포인트`
+### R&D Spec / Impl / Progress / Handoff
+- canonical 위치:
+  - `C:/dev/wellnessbox-rnd/docs/context/master_context.md`
+  - `C:/dev/wellnessbox-rnd/docs/imported/wellnessbox/legacy-rnd-docs/*.md`
+  - `C:/dev/wellnessbox-rnd/docs/imported/wellnessbox/legacy-rnd-impl/*.md`
+- 예시:
+  - KPI 평가 기준
+  - 모듈별 R&D 요구사항
+  - R&D 구현 노트
+  - R&D 진행 기록
+  - R&D 세션 핸드오프
 
-### 6) QA/시나리오 문서 (`QA/Scenario`)
-- 위치: `docs/qa_*.md`, `docs/scenarios/*.md`
-- 필수 섹션:
-  - `시나리오/테스트 목적`
-  - `사전 조건`
-  - `절차`
-  - `기대 결과`
-  - `실패 케이스`
+## 작성 규칙
+- 파일명은 문서 목적이 바로 드러나게 유지한다.
+- 문서를 이동하거나 삭제하면 아래를 함께 갱신한다.
+  - `docs/DOCS_CATALOG.md`
+  - 해당 영역 `README.md`
+  - 관련 참조 문서와 QA 스크립트
+- 서비스 문서에서 외부 R&D 문서를 참조할 때는 `C:/dev/wellnessbox-rnd/...` 절대 경로를 사용한다.
 
-## 네이밍 규칙
-- 파일명은 소문자+스네이크 또는 기존 규칙 유지.
-- 날짜가 필요한 경우 문서 본문에 `YYYY-MM-DD`로 기록.
-- 경로 의미를 유지하는 접미어 권장:
-  - `*_spec.md`, `*_runbook.md`, `*_worklog.md`, `*_map.md`, `*_schema.md`
-
-## 유지보수 규칙
-- 새 문서를 추가/이동/삭제하면 `docs/DOCS_CATALOG.md`를 즉시 갱신한다.
-- R&D 상태가 바뀌면 `docs/rnd/SESSION_HANDOFF.md`와 `docs/rnd/PROGRESS.md`를 함께 갱신한다.
-- 배포 관련 규칙이 바뀌면 `.gitignore`, `.vercelignore`, 관련 런북을 동시에 갱신한다.
+## 검증
+1. `npm run audit:encoding`
+2. `npm run lint`
+3. `npm run build`

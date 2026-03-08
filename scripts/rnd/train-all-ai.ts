@@ -29,6 +29,18 @@ const TIPS_SOURCE_PDF_PATH =
   "c:/Users/hjyeo/Desktop/웰박/00 핵심 자료/회사 소개 자료/TIPS 연구개발계획서 전체본.pdf";
 const TIPS_IMPLEMENTATION_CRITERIA_SLIDES = "13-26";
 const TIPS_KPI_CRITERIA_SLIDES = "25-26";
+const LEGACY_RND_DOCS_DIR = path.resolve(
+  process.cwd(),
+  "..",
+  "wellnessbox-rnd",
+  "docs",
+  "imported",
+  "wellnessbox",
+  "legacy-rnd-docs"
+);
+const KPI_CRITERIA_DOC_PATH = path
+  .join(LEGACY_RND_DOCS_DIR, "01_kpi_and_evaluation.md")
+  .replace(/\\/g, "/");
 
 type CliProfile = TrainProfile | "auto";
 
@@ -656,7 +668,7 @@ async function main() {
     reference: {
       sourcePdf: TIPS_SOURCE_PDF_PATH,
       criteriaSlides: TIPS_IMPLEMENTATION_CRITERIA_SLIDES,
-      criteriaDoc: "docs/rnd/01_kpi_and_evaluation.md",
+      criteriaDoc: KPI_CRITERIA_DOC_PATH,
     },
     generatedAt: new Date().toISOString(),
     selectedRunId: selected.result.runId,
@@ -680,7 +692,7 @@ async function main() {
       sourcePdf: TIPS_SOURCE_PDF_PATH,
       source: `TIPS R&D Plan Slides ${TIPS_KPI_CRITERIA_SLIDES}`,
       implementationSlides: TIPS_IMPLEMENTATION_CRITERIA_SLIDES,
-      criteriaDoc: "docs/rnd/01_kpi_and_evaluation.md",
+      criteriaDoc: KPI_CRITERIA_DOC_PATH,
     },
     generatedAt: new Date().toISOString(),
     selectedRunId: selected.result.runId,
@@ -760,7 +772,7 @@ async function main() {
       sourcePdf: TIPS_SOURCE_PDF_PATH,
       pdfSlides: `TIPS R&D Plan Slides ${TIPS_KPI_CRITERIA_SLIDES}`,
       implementationSlides: TIPS_IMPLEMENTATION_CRITERIA_SLIDES,
-      criteriaDoc: "docs/rnd/01_kpi_and_evaluation.md",
+      criteriaDoc: KPI_CRITERIA_DOC_PATH,
     },
     kpiGate: {
       requirePass: args.requirePass,

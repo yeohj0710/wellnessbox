@@ -144,7 +144,7 @@ function runListenerChecks() {
 }
 
 function runDocumentationChecks() {
-  const docPath = "docs/auth-sync-map.md";
+  const docPath = "docs/maps/auth-sync-map.md";
   assertIncludes(docPath, "## 인증 축", "doc should explain auth domains");
   assertIncludes(docPath, "## 이벤트 계약", "doc should explain sync event contract");
   assertIncludes(docPath, "## 테스트 케이스", "doc should include test matrix");
