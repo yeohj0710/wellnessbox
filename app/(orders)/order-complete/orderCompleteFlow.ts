@@ -47,6 +47,11 @@ export type PaymentOutcome = {
   totalPrice: number;
 };
 
+export type PreparedOrderDraftValidation =
+  | "ok"
+  | "empty_cart"
+  | "missing_order_items";
+
 function parseStoredJson<T>(value: string | null, fallback: T): T {
   if (!value) return fallback;
   try {
@@ -124,6 +129,14 @@ export function clearCheckoutProgressStorage() {
   localStorage.removeItem("checkoutInProgress");
 }
 
+export function isOrderCompleteCancelled(params: URLSearchParams) {
+  return (
+    params.get("imp_success") === "false" ||
+    params.get("cancelled") === "true" ||
+    Boolean(params.get("code"))
+  );
+}
+
 export function readPaymentContext(params: URLSearchParams): PaymentContext {
   let paymentId = localStorage.getItem("paymentId") || "";
   let paymentMethod = localStorage.getItem("paymentMethod") || "";
@@ -185,6 +198,18 @@ export function prepareOrderDraftFromStorage(): PreparedOrderDraft {
     rawCartItems,
     orderItems,
   };
+}
+
+export function validatePreparedOrderDraft(
+  draft: PreparedOrderDraft
+): PreparedOrderDraftValidation {
+  if (!draft.rawCartItems.length) {
+    return "empty_cart";
+  }
+  if (!draft.orderItems.length || draft.orderItems.length !== draft.rawCartItems.length) {
+    return "missing_order_items";
+  }
+  return "ok";
 }
 
 export function resolvePaymentOutcome(

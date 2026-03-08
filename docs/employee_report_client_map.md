@@ -1,52 +1,59 @@
 # Employee Report Client Map
 
 ## 목적
-- `/employee-report` 유지보수 시 수정 범위를 빠르게 파악하고 회귀를 줄입니다.
-- 인증/연동 플로우와 UI 표현 블록의 책임을 분리해 후속 세션 생산성을 높입니다.
+- `/employee-report` 후속 작업 시 진입점을 빠르게 찾을 수 있게 클라이언트 경계를 고정합니다.
+- 대형 유틸 파일을 책임별 모듈로 분리해, 다음 세션 에이전트가 필요한 블록만 읽고 수정할 수 있게 합니다.
 
-## 엔트리
-- 메인 오케스트레이션: `app/(features)/employee-report/EmployeeReportClient.tsx`
-- 라우트 페이지: `app/(features)/employee-report/page.tsx`
+## 진입 순서
+- 오케스트레이션: `app/(features)/employee-report/EmployeeReportClient.tsx`
+- 페이지 엔트리: `app/(features)/employee-report/page.tsx`
+- UI 블록:
+  - `app/(features)/employee-report/_components/EmployeeReportInputFlowPanel.tsx`
+  - `app/(features)/employee-report/_components/EmployeeReportReadyPanel.tsx`
+  - `app/(features)/employee-report/_components/EmployeeReportAdminOnlySection.tsx`
+  - `app/(features)/employee-report/_components/EmployeeReportIdentitySection.tsx`
+  - `app/(features)/employee-report/_components/EmployeeReportSummaryHeaderCard.tsx`
+  - `app/(features)/employee-report/_components/EmployeeReportSyncGuidanceNotice.tsx`
 
-## UI 컴포넌트 경계
-- 부트 스켈레톤: `app/(features)/employee-report/_components/EmployeeReportBootSkeleton.tsx`
-- 강제 재조회 확인 모달: `app/(features)/employee-report/_components/ForceRefreshConfirmDialog.tsx`
-- 동기화 가이드 알림: `app/(features)/employee-report/_components/EmployeeReportSyncGuidanceNotice.tsx`
-- 본인확인 입력 카드: `app/(features)/employee-report/_components/EmployeeReportIdentitySection.tsx`
-- 리포트 상단 제어 카드: `app/(features)/employee-report/_components/EmployeeReportSummaryHeaderCard.tsx`
-
-## 클라이언트 유틸/타입 경계
-- 타입 계약: `app/(features)/employee-report/_lib/client-types.ts`
-- API 경계: `app/(features)/employee-report/_lib/api.ts`
-  - `fetchEmployeeReport`, `postEmployeeSync`
-  - `fetchEmployeeSession`, `upsertEmployeeSession`, `deleteEmployeeSession`
-  - `requestNhisInit`, `requestNhisSign`, `requestNhisUnlink`
-- 요청 공통/포맷/저장/가이드 유틸: `app/(features)/employee-report/_lib/client-utils.ts`
-  - `requestJson`, `ApiRequestError`
-  - `readStoredIdentity`, `saveStoredIdentity`
+## 클라이언트 유틸 경계
+- 안정적 facade: `app/(features)/employee-report/_lib/client-utils.ts`
+  - 기존 import 호환성 유지용 export surface입니다.
+- identity/localStorage: `app/(features)/employee-report/_lib/client-utils.identity.ts`
+  - `normalizeDigits`, `toIdentityPayload`, `isValidIdentityInput`
+  - `readStoredIdentityWithSource`, `saveStoredIdentity`, `clearStoredIdentity`
+  - `resolveIdentityPrimaryActionLabel`
+- request/network resilience: `app/(features)/employee-report/_lib/client-utils.request.ts`
+  - `ApiRequestError`, `requestJson`
+- sync guidance/report helpers: `app/(features)/employee-report/_lib/client-utils.guidance.ts`
+  - `toSyncNextAction`, `resolveSyncCompletionNotice`
   - `resolveCooldownUntilFromPayload`
   - `resolveMedicationStatusMessage`
-  - `buildSyncGuidance`
-- PDF 다운로드 오케스트레이션: `app/(features)/employee-report/_lib/pdf-download.ts`
-  - `downloadEmployeeReportPdf` (웹 캡처/서버 PDF fallback 포함)
-  - `downloadEmployeeReportLegacyPdf` (legacy 모드 다운로드)
-- 로딩 오버레이 문구 규칙: `app/(features)/employee-report/_lib/overlay-copy.ts`
-  - `resolveEmployeeReportOverlayDescription`
-  - `resolveEmployeeReportOverlayDetailLines`
-- 토스트/안내 메시지 effect 분리: `app/(features)/employee-report/_lib/use-employee-report-toast-effects.ts`
-  - notice/error/mock/복약상태 토스트 중복 방지 및 표시 effect 전담
+  - `parseLayoutDsl`, `buildSyncGuidance`
+- PDF helper: `app/(features)/employee-report/_lib/client-utils.pdf.ts`
+  - `downloadPdf`, `PdfDownloadError`, `isPdfEngineUnavailableFailure`
+- format helper: `app/(features)/employee-report/_lib/client-utils.format.ts`
+  - `formatDateTime`, `formatRelativeTime`
 
-## 수정 가이드
-1. UI 텍스트/레이아웃 변경:
-   - 먼저 `_components/*`를 수정하고, 오케스트레이션 파일은 가급적 건드리지 않습니다.
-2. 인증/연동 분기 변경:
-   - `EmployeeReportClient.tsx`의 핸들러(`handleRestartAuth`, `handleSignAndSync`)를 수정합니다.
-   - 엔드포인트/헤더/요청 바디 변경은 `_lib/api.ts`에서 먼저 반영합니다.
-   - 서버 응답 구조가 바뀌면 `client-types.ts`를 먼저 갱신합니다.
-3. 에러/대기/안내 문구 정책 변경:
-   - `buildSyncGuidance`와 `resolveMedicationStatusMessage`를 우선 수정합니다.
+## 다른 핵심 경계
+- 타입 계약: `app/(features)/employee-report/_lib/client-types.ts`
+- API 경계: `app/(features)/employee-report/_lib/api.ts`
+- 공통 문구/상수: `app/(features)/employee-report/_lib/employee-report-copy.ts`
+- PDF 다운로드 오케스트레이션: `app/(features)/employee-report/_lib/pdf-download.ts`
+- NHIS/동기화 오케스트레이션: `app/(features)/employee-report/_lib/sync-flow.ts`
+
+## 수정 순서 가이드
+1. 입력값/로컬 저장소 문제:
+   - `client-utils.identity.ts` -> `use-employee-report-session-bootstrap.ts` -> `EmployeeReportClient.tsx`
+2. 네트워크/timeout/서버 에러 처리:
+   - `client-utils.request.ts` -> `api.ts` -> 관련 action hook
+3. 재연동 안내/쿨다운/복약 상태 문구:
+   - `client-utils.guidance.ts` -> `EmployeeReportSyncGuidanceNotice.tsx` -> sync action hooks
+4. PDF 저장 동작:
+   - `client-utils.pdf.ts` -> `pdf-download.ts`
 
 ## 빠른 검증
+- `npm run qa:employee-report:client-utils-modules`
+- `npm run qa:employee-report:auth-ux`
+- `npm run qa:employee-report:sync-notice`
 - `npm run lint`
 - `npm run build`
-- `npm run qa:cde:regression:local`

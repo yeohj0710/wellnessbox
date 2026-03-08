@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useMemo } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
   ArrowPathIcon,
@@ -13,28 +8,14 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { buildPageAgentContext } from "@/lib/chat/page-agent-context";
-import {
-  DOCK_NUDGE_AUTO_HIDE_COOLDOWN_MS,
-  DOCK_NUDGE_MANUAL_HIDE_COOLDOWN_MS,
-  FOOTER_CART_BAR_LAYOUT_EVENT,
-  MOBILE_TRIGGER_BREAKPOINT,
-  MOBILE_TRIGGER_EXTRA_GAP,
-  dismissDockNudge,
-  emitChatDockLayout,
-  isDockNudgeDismissed,
-  isDockNudgeGloballySuppressed,
-  isFooterCartBarLayoutDetail,
-  queueDockPrompt,
-  readFooterCartBarOffsetPx,
-  suppressDockNudgeGlobally,
-} from "./DesktopChatDock.layout";
 import DesktopChatDockPanel from "./DesktopChatDockPanel";
-const ROUTE_NUDGE_AUTO_HIDE_MS = 4800;
+import { useDesktopChatDockLauncher } from "./useDesktopChatDockLauncher";
+
 const DOCK_NUDGE_TEXT_MAP: Record<string, string> = {
   "agent assist": "AI 에이전트",
   "home product browsing": "홈 상품 탐색",
-  "show me products for a 7-day package.": "7일 패키지 상품 보여줘.",
-  "show me products for a 7-day package": "7일 패키지 상품 보여줘.",
+  "show me products for a 7-day package.": "7일 패키지 상품 보여줘",
+  "show me products for a 7-day package": "7일 패키지 상품 보여줘",
   "scroll to the home product section.": "홈 상품 섹션으로 이동해줘.",
   "scroll to the home product section": "홈 상품 섹션으로 이동해줘.",
   "open cart and continue checkout.": "장바구니 열고 결제 계속 진행해줘.",
@@ -64,14 +45,6 @@ export default function DesktopChatDock() {
     const query = searchParams.toString();
     return query ? `${basePath}?${query}` : basePath;
   }, [pathname, searchParams]);
-  const [isOpen, setIsOpen] = useState(false);
-  const [hasBooted, setHasBooted] = useState(false);
-  const [pendingOpen, setPendingOpen] = useState(false);
-  const [viewportWidth, setViewportWidth] = useState(0);
-  const [mobileFooterCartBarHeight, setMobileFooterCartBarHeight] = useState(
-    () => readFooterCartBarOffsetPx()
-  );
-  const [showRouteNudge, setShowRouteNudge] = useState(false);
   const routeKey = pageAgentContext?.routeKey || "generic";
   const localizedRouteTitle = localizeDockNudgeText(
     pageAgentContext?.title || "현재 페이지"
@@ -81,207 +54,26 @@ export default function DesktopChatDock() {
     .map((prompt) => prompt.trim())
     .filter(Boolean)
     .slice(0, 2);
-  const hasViewportMeasurement = viewportWidth > 0;
-  const isMobileViewport =
-    hasViewportMeasurement && viewportWidth < MOBILE_TRIGGER_BREAKPOINT;
-
-  const requestOpenDock = useCallback(() => {
-    if (isChatRoute) return;
-    if (hasBooted) {
-      setPendingOpen(false);
-      setIsOpen(true);
-      return;
-    }
-    // Keep intent first, then open immediately when lazy boot completes.
-    setPendingOpen(true);
-    setHasBooted(true);
-  }, [hasBooted, isChatRoute]);
-
-  useEffect(() => {
-    if (!pendingOpen) return;
-    if (!hasBooted) return;
-    if (isChatRoute) return;
-    setIsOpen(true);
-    setPendingOpen(false);
-  }, [hasBooted, isChatRoute, pendingOpen]);
-
-  useEffect(() => {
-    if (
-      isChatRoute ||
-      isOpen ||
-      pendingOpen ||
-      nudgePrompts.length === 0 ||
-      !hasViewportMeasurement ||
-      isMobileViewport
-    ) {
-      setShowRouteNudge(false);
-      return;
-    }
-    const routeDismissed = isDockNudgeDismissed(routeKey);
-    const globallySuppressed = isDockNudgeGloballySuppressed();
-    setShowRouteNudge(!routeDismissed && !globallySuppressed);
-  }, [
-    hasViewportMeasurement,
-    isChatRoute,
-    isMobileViewport,
+  const {
     isOpen,
-    nudgePrompts.length,
+    hasBooted,
     pendingOpen,
+    isMobileViewport,
+    showRouteNudge,
+    triggerBottomStyle,
+    requestOpenDock,
+    closeDock,
+    dismissRouteNudge,
+    openDockWithPrompt,
+  } = useDesktopChatDockLauncher({
+    isChatRoute,
     routeKey,
-  ]);
-
-  useEffect(() => {
-    if (isMobileViewport || !showRouteNudge) return;
-    const timer = window.setTimeout(() => {
-      suppressDockNudgeGlobally(DOCK_NUDGE_AUTO_HIDE_COOLDOWN_MS);
-      setShowRouteNudge(false);
-    }, ROUTE_NUDGE_AUTO_HIDE_MS);
-    return () => window.clearTimeout(timer);
-  }, [isMobileViewport, showRouteNudge]);
-
-  useEffect(() => {
-    if (isChatRoute) return;
-    if (hasBooted) return;
-    if (typeof window === "undefined") return;
-
-    let cancelled = false;
-    const boot = () => {
-      if (cancelled) return;
-      setHasBooted(true);
-    };
-
-    const requestIdle = (window as any).requestIdleCallback as
-      | ((callback: () => void, options?: { timeout?: number }) => number)
-      | undefined;
-    if (typeof requestIdle === "function") {
-      const id = requestIdle(boot, { timeout: 1200 });
-      return () => {
-        cancelled = true;
-        const cancelIdle = (window as any).cancelIdleCallback as
-          | ((handle: number) => void)
-          | undefined;
-        if (typeof cancelIdle === "function") {
-          cancelIdle(id);
-        }
-      };
-    }
-
-    const timer = window.setTimeout(boot, 700);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [hasBooted, isChatRoute]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const onResize = () => {
-      setViewportWidth(window.innerWidth);
-      setMobileFooterCartBarHeight(readFooterCartBarOffsetPx());
-    };
-    onResize();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const onFooterLayout = (event: Event) => {
-      const detail = (event as CustomEvent<unknown>).detail;
-      if (!isFooterCartBarLayoutDetail(detail)) return;
-      const nextHeight =
-        detail.visible && Number.isFinite(detail.height)
-          ? Math.max(0, Math.round(detail.height)) + MOBILE_TRIGGER_EXTRA_GAP
-          : 0;
-      setMobileFooterCartBarHeight(nextHeight);
-    };
-    window.addEventListener(
-      FOOTER_CART_BAR_LAYOUT_EVENT,
-      onFooterLayout as EventListener
-    );
-    return () => {
-      window.removeEventListener(
-        FOOTER_CART_BAR_LAYOUT_EVENT,
-        onFooterLayout as EventListener
-      );
-    };
-  }, []);
-
-  useEffect(() => {
-    if (isChatRoute) return;
-    if (!isOpen) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setIsOpen(false);
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [isOpen, isChatRoute]);
-
-  useEffect(() => {
-    if (!isChatRoute) return;
-    setPendingOpen(false);
-    setIsOpen(false);
-    emitChatDockLayout({
-      open: false,
-      left: 0,
-      right: 0,
-      width: 0,
-      height: 0,
-    });
-  }, [isChatRoute]);
-
-  const handleDismissRouteNudge = useCallback(() => {
-    dismissDockNudge(routeKey);
-    suppressDockNudgeGlobally(DOCK_NUDGE_MANUAL_HIDE_COOLDOWN_MS);
-    setShowRouteNudge(false);
-  }, [routeKey]);
-
-  const openDockWithPrompt = useCallback(
-    (prompt: string) => {
-      queueDockPrompt(prompt);
-      dismissDockNudge(routeKey);
-      suppressDockNudgeGlobally(DOCK_NUDGE_AUTO_HIDE_COOLDOWN_MS);
-      setShowRouteNudge(false);
-      requestOpenDock();
-    },
-    [requestOpenDock, routeKey]
-  );
-
-  useEffect(() => {
-    const handleCloseDock = () => {
-      setPendingOpen(false);
-      setIsOpen(false);
-      emitChatDockLayout({
-        open: false,
-        left: 0,
-        right: 0,
-        width: 0,
-        height: 0,
-      });
-    };
-    const handleOpenDock = () => requestOpenDock();
-    window.addEventListener("wb:chat-close-dock", handleCloseDock);
-    window.addEventListener("wb:chat-open-dock", handleOpenDock);
-    window.addEventListener("openCart", handleCloseDock);
-    return () => {
-      window.removeEventListener("wb:chat-close-dock", handleCloseDock);
-      window.removeEventListener("wb:chat-open-dock", handleOpenDock);
-      window.removeEventListener("openCart", handleCloseDock);
-    };
-  }, [requestOpenDock]);
+    hasNudgePrompts: nudgePrompts.length > 0,
+  });
 
   if (isChatRoute) {
     return null;
   }
-
-  const mobileTriggerOffset = isMobileViewport
-    ? mobileFooterCartBarHeight
-    : 0;
-  const triggerBottomStyle = isMobileViewport
-    ? `calc(max(24px, env(safe-area-inset-bottom)) + ${mobileTriggerOffset}px)`
-    : undefined;
 
   return (
     <div
@@ -305,9 +97,9 @@ export default function DesktopChatDock() {
             </div>
             <button
               type="button"
-              onClick={handleDismissRouteNudge}
+              onClick={dismissRouteNudge}
               className="rounded-full border border-slate-200 p-1 text-slate-500 hover:bg-slate-100"
-              aria-label="도움 패널 닫기"
+              aria-label="현재 안내 닫기"
             >
               <XMarkIcon className="h-3.5 w-3.5" />
             </button>
@@ -363,7 +155,7 @@ export default function DesktopChatDock() {
       {hasBooted && (
         <DesktopChatDockPanel
           isOpen={isOpen}
-          onClose={() => setIsOpen(false)}
+          onClose={closeDock}
           pageAgentContext={pageAgentContext}
           fromPath={contextFromPath}
         />

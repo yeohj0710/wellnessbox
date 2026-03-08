@@ -8,12 +8,12 @@ import type {
   SyncGuidance,
 } from "./client-types";
 import {
-  ApiRequestError,
   buildSyncGuidance,
-  formatDateTime,
   resolveSyncCompletionNotice,
   toSyncNextAction,
-} from "./client-utils";
+} from "./client-utils.guidance";
+import { formatDateTime } from "./client-utils.format";
+import { ApiRequestError } from "./client-utils.request";
 import type { NhisReadyResult } from "./sync-flow";
 import { runSyncFlowWithRecovery } from "./sync-flow";
 import type { BusyHint } from "./use-busy-state";

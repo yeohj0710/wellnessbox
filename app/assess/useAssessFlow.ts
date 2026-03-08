@@ -1,15 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { evaluate } from "@/app/assess/logic/algorithm";
-import { sectionA, sectionB, fixedA, hashChoice } from "./data/questions";
-import { getOrCreateClientId, refreshClientIdCookieIfNeeded } from "@/lib/client-id";
-import { KEY_TO_CODE, labelOf, type CategoryKey } from "@/lib/categories";
+import { fixedA, hashChoice } from "./data/questions";
+import { getOrCreateClientId } from "@/lib/client-id";
+import { KEY_TO_CODE, type CategoryKey } from "@/lib/categories";
 import type { CSectionResult } from "./components/CSection";
-import { fetchCategories, type CategoryLite } from "@/lib/client/categories";
+import type { CategoryLite } from "@/lib/client/categories";
 import { getTzOffsetMinutes } from "@/lib/timezone";
-import { useChatPageActionListener } from "@/lib/chat/useChatPageActionListener";
-import { resolveProgressMessage } from "./logic/progress-message";
 import { composeAssessAnswers } from "./logic/compose-answers";
 import { computeRemainingQuestionIds } from "./logic/question-flow";
 import {
@@ -17,12 +15,11 @@ import {
   ASSESS_STORAGE_KEY,
   clearAssessCPersistStorage,
   clearAssessStorage,
-  loadAssessStateSnapshot,
   rollbackLatestCStateAnswer,
-  saveAssessStateSnapshot,
 } from "./lib/assessStorage";
-
-export type AssessSection = "INTRO" | "A" | "B" | "C" | "DONE";
+import { useAssessFlowDerivedState } from "./useAssessFlow.derived";
+import { useAssessFlowLifecycle } from "./useAssessFlow.lifecycle";
+import type { AssessSection } from "./useAssessFlow.types";
 
 type TopItem = { key: CategoryKey; label: string; score: number };
 
@@ -45,22 +42,33 @@ export function useAssessFlow() {
 
   const cPrevRef = useRef<(() => boolean) | null>(null);
   const cancelBtnRef = useRef<HTMLButtonElement>(null);
+  const loadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearLoadingTimer = useCallback(() => {
+    if (!loadingTimerRef.current) return;
+    clearTimeout(loadingTimerRef.current);
+    loadingTimerRef.current = null;
+  }, []);
 
   const registerPrevCb = useCallback((fn: () => boolean) => {
     cPrevRef.current = fn;
   }, []);
 
   const reset = useCallback(() => {
+    clearLoadingTimer();
     setSection("INTRO");
     setAnswers({});
     setCurrent(fixedA[0]);
     setFixedIdx(0);
     setHistory([]);
+    setLoading(false);
+    setLoadingText("");
     setCCats([]);
     setCResult(null);
     setCAnswers({});
+    setCProgress({ step: 0, total: 0, pct: 0 });
     clearAssessStorage(ASSESS_STORAGE_KEY, ASSESS_C_PERSIST_KEY);
-  }, []);
+  }, [clearLoadingTimer]);
 
   const confirmReset = useCallback(() => setConfirmOpen(true), []);
   const closeConfirm = useCallback(() => setConfirmOpen(false), []);
@@ -82,54 +90,24 @@ export function useAssessFlow() {
     });
   }, []);
 
-  const cProgressMsg = useMemo(() => {
-    return resolveProgressMessage(cProgress.step, cProgress.total);
-  }, [cProgress.step, cProgress.total]);
-
-  const recommendedIds = useMemo(() => {
-    if (!cResult || categories.length === 0) return [] as number[];
-    const ids = cResult.catsOrdered
-      .map((code) => categories.find((item) => item.name === labelOf(code))?.id)
-      .filter((id): id is number => typeof id === "number");
-    return Array.from(new Set(ids)).slice(0, 3);
-  }, [cResult, categories]);
-
-  const allQuestions =
-    section === "A" ? sectionA : section === "B" ? sectionB : [];
-  const isAB = section === "A" || section === "B";
-  const currentQuestion = isAB
-    ? allQuestions.find((question) => question.id === current)
-    : undefined;
-
-  const { completion, answered, total } = useMemo(() => {
-    const applicableIds =
-      section === "A"
-        ? sectionA
-            .map((question) => question.id)
-            .filter((id) => !(answers.A1 === "M" && id === "A5"))
-        : sectionB
-            .map((question) => question.id)
-            .filter((id) => !(answers.A1 !== "F" && id === "B22"));
-    const answeredSet = new Set(
-      history.filter((id) =>
-        section === "A" ? id.startsWith("A") : id.startsWith("B")
-      )
-    );
-    const done = applicableIds.filter((id) => answeredSet.has(id)).length;
-    const totalCount = applicableIds.length;
-    return {
-      completion: totalCount > 0 ? Math.round((done / totalCount) * 100) : 0,
-      answered: done,
-      total: totalCount,
-    };
-  }, [answers, history, section]);
-
-  const progressMsg = useMemo(() => {
-    if (section !== "A" && section !== "B") return "";
-    return resolveProgressMessage(answered, total);
-  }, [answered, section, total]);
-
-  const sectionTitle = section === "A" ? "기초 건강 데이터" : "생활 습관·증상";
+  const {
+    cProgressMsg,
+    recommendedIds,
+    currentQuestion,
+    completion,
+    answered,
+    total,
+    progressMsg,
+    sectionTitle,
+  } = useAssessFlowDerivedState({
+    section,
+    answers,
+    history,
+    current,
+    cResult,
+    categories,
+    cProgress,
+  });
 
   const goBack = useCallback(() => {
     if (section === "DONE") {
@@ -230,18 +208,23 @@ export function useAssessFlow() {
         action = () => setCurrent(nextId);
       }
 
+      clearLoadingTimer();
       setLoadingText(message);
       setLoading(true);
-      setTimeout(() => {
+      loadingTimerRef.current = setTimeout(() => {
+        loadingTimerRef.current = null;
         action();
         setLoading(false);
       }, delay);
     },
-    [answers, current, history, section]
+    [answers, clearLoadingTimer, current, history, section]
   );
 
   const handleCSubmit = useCallback(
     (res: CSectionResult, cAns: Record<string, number[]>) => {
+      clearLoadingTimer();
+      setLoading(false);
+      setLoadingText("");
       setCAnswers(cAns);
       setCResult(res);
       const payload = {
@@ -257,7 +240,7 @@ export function useAssessFlow() {
       }).catch(() => {});
       setSection("DONE");
     },
-    [answers, cCats]
+    [answers, cCats, clearLoadingTimer]
   );
 
   const handleCLoadingChange = useCallback((flag: boolean, text?: string) => {
@@ -265,98 +248,32 @@ export function useAssessFlow() {
     setLoading(Boolean(flag));
   }, []);
 
-  useEffect(() => {
-    refreshClientIdCookieIfNeeded();
-  }, []);
-
-  useChatPageActionListener((detail) => {
-    if (detail.action !== "focus_assess_flow") return;
-    document
-      .getElementById("assess-flow")
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  useAssessFlowLifecycle({
+    confirmOpen,
+    confirmAndReset,
+    cancelBtnRef,
+    setConfirmOpen,
+    section,
+    setSection,
+    answers,
+    setAnswers,
+    current,
+    setCurrent,
+    fixedIdx,
+    setFixedIdx,
+    history,
+    setHistory,
+    cCats,
+    setCCats,
+    cResult,
+    setCResult,
+    cAnswers,
+    setCAnswers,
+    hydrated,
+    setHydrated,
+    setCategories,
+    clearLoadingTimer,
   });
-
-  useEffect(() => {
-    if (!confirmOpen) return;
-    cancelBtnRef.current?.focus();
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setConfirmOpen(false);
-      if (event.key === "Enter") {
-        confirmAndReset();
-      }
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [confirmAndReset, confirmOpen]);
-
-  useEffect(() => {
-    try {
-      const parsed = loadAssessStateSnapshot(ASSESS_STORAGE_KEY);
-      if (parsed) {
-        setSection(parsed.section ?? "INTRO");
-        setAnswers(parsed.answers ?? {});
-        setCurrent(parsed.current ?? fixedA[0]);
-        setFixedIdx(parsed.fixedIdx ?? 0);
-        setHistory(parsed.history ?? []);
-        if (Array.isArray(parsed.cCats)) setCCats(parsed.cCats);
-        if (parsed.cResult && parsed.cResult.catsOrdered) {
-          setCResult(parsed.cResult);
-        }
-        if (parsed.cAnswers) setCAnswers(parsed.cAnswers);
-      }
-    } finally {
-      const arm = () => setHydrated(true);
-      if (typeof requestAnimationFrame === "function") {
-        requestAnimationFrame(() => requestAnimationFrame(arm));
-      } else {
-        setTimeout(arm, 0);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    try {
-      const base = loadAssessStateSnapshot(ASSESS_STORAGE_KEY) ?? {};
-      const next = {
-        ...base,
-        section,
-        answers,
-        current,
-        fixedIdx,
-        history,
-        cCats,
-        cResult,
-        cAnswers,
-      };
-      saveAssessStateSnapshot(ASSESS_STORAGE_KEY, next);
-    } catch {}
-  }, [hydrated, section, answers, current, fixedIdx, history, cCats, cResult, cAnswers]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    fetchCategories(controller.signal)
-      .then((cats) => setCategories(cats))
-      .catch(() => setCategories([]));
-    return () => controller.abort();
-  }, []);
-
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-    document.body.style.overflow = confirmOpen ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [confirmOpen]);
-
-  useEffect(() => {
-    if (section !== "INTRO") return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Enter") setSection("A");
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [section]);
 
   return {
     section,

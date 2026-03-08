@@ -98,6 +98,7 @@ When touching these files, prefer block-level extraction over in-place growth:
   - `lib/chat/action-intent-rules.ts` = regex intent rules + runtime-context flags + fallback action feedback
 - Chat hook split:
   - `app/chat/hooks/useChat.ts` = lifecycle orchestration + state wiring
+  - `app/chat/hooks/useChat.commandLayer.ts` = UI-facing command assembly over assistant/assessment/interactive/message/session handlers
   - `app/chat/hooks/useChat.agentGuide.ts` = capability ranking + guide examples
   - `app/chat/hooks/useChat.sendMessageFlow.ts` = send branch selection
   - `app/chat/hooks/useChat.actionFlow.ts` = cart/action decision branch handlers
@@ -107,6 +108,13 @@ When touching these files, prefer block-level extraction over in-place growth:
   - `app/chat/hooks/useChat.ui.ts` = drawer/scroll helpers
   - `app/chat/hooks/useChat.interactionGuard.ts` = duplicate action guard
   - `app/chat/hooks/useChat.derived.ts` = summary/context payload builders + guide visibility logic
+  - `app/chat/hooks/useChat.recommendation.ts` = recommendation-price hydration orchestration
+  - `app/chat/hooks/useChat.recommendation.catalog.ts` = home-data recommendation catalog fetch/cache + option selection
+  - `app/chat/hooks/useChat.interactiveActions.ts` = cart/profile/assessment interactive action orchestration
+  - `app/chat/hooks/useChat.interactiveActions.routes.ts` = route/page-focus/support-link interactive action config + helpers
+  - `app/chat/hooks/useChat.interactiveActions.types.ts` = shared interactive action contracts
+  - `npm run qa:chat:recommendation-modules`
+  - `npm run qa:chat:interactive-actions-modules`
 - Chat message bubble split:
   - `app/chat/components/MessageBubble.tsx` = bubble shell + loading/copy interaction orchestration
   - `app/chat/components/messageBubble.markdown.tsx` = markdown plugin list + renderer map/image fallback policy
@@ -115,18 +123,40 @@ When touching these files, prefer block-level extraction over in-place growth:
   - `app/chat/components/ProfileModal.tsx` = profile modal shell + drag/reset/save orchestration
   - `app/chat/components/ProfileModalForm.tsx` = profile field form section + labeled input/select/chips blocks
   - `app/chat/components/useProfileModalState.ts` = profile modal local-state + keyboard/scroll lock + drag state
+- Chat input split:
+  - `app/chat/components/ChatInput.tsx` = chat input shell shared by page/dock
+  - `app/chat/components/useChatInputController.ts` = textarea sizing + coachmark/tray state + unified-action local behavior
+  - `app/chat/components/ChatInputActionAssist.tsx` = coachmark bubble + hint pill + quick-action tray presenter
+  - `app/chat/components/chatInput.types.ts` = shared chat input prop contract
+  - `npm run qa:chat:input-controller`
+- Recommended product actions split:
+  - `app/chat/components/RecommendedProductActions.tsx` = recommendation CTA shell + modal mounting
+  - `app/chat/components/useRecommendedProductActionsController.ts` = recommendation resolve lifecycle + cart/address guard state + feedback/confirm handlers
+  - `app/chat/components/RecommendedProductActionList.tsx` = preview chips + item row CTA list
+  - `app/chat/components/RecommendedProductAddressGuideModal.tsx` = address guidance modal shell
+  - `app/chat/components/RecommendedProductConfirmDialog.tsx` = confirm/cancel modal shell
+  - `app/chat/components/recommendedProductActions.resolve.ts` = category fallback policy + final recommendation assembly
+  - `app/chat/components/recommendedProductActions.resolve.catalog.ts` = product-name catalog fetch/cache normalization
+  - `app/chat/components/recommendedProductActions.resolve.name.ts` = name tokenization + candidate score/ranking
+  - `app/chat/components/recommendedProductActions.resolve.category.ts` = placeholder/category-like predicate helpers for fallback gating
 - Desktop dock split:
   - `components/chat/DesktopChatDock.tsx` = dock shell and trigger
+  - `components/chat/useDesktopChatDockLauncher.ts` = dock boot/open lifecycle + route nudge visibility + global dock open/close events
   - `components/chat/DesktopChatDockPanel.tsx` = UI composition shell
+  - `components/chat/useDesktopChatDockPanelShell.ts` = dock prompt consumption + inert/focus cleanup + session layer handlers
   - `components/chat/useDesktopChatDockLayout.ts` = layout state + viewport clamp + dock layout emit
   - `components/chat/useDesktopChatDockPointer.ts` = pointer move loop + drag/resize commit/persist
-  - `components/chat/DesktopChatDock.layout.ts` = geometry/storage/event primitives
+  - `components/chat/DesktopChatDock.layout.ts` = stable export surface for dock layout helpers
+  - `components/chat/DesktopChatDock.layout.geometry.ts` = geometry/resize/scroll primitives
+  - `components/chat/DesktopChatDock.layout.storage.ts` = prompt/nudge/storage/event primitives
   - `components/chat/DesktopChatDockPanelHeader.tsx` = dock header actions
   - `components/chat/DesktopChatDockResizeOverlay.tsx` = resize hint and handles
   - `components/chat/DesktopChatDockPanel.loading.ts` = loading metadata helper
   - `components/chat/DesktopChatDockMessageFeed.tsx` = message feed composition
 - Home product section split:
-  - `app/(components)/homeProductSection.tsx` = page-level orchestration and UI composition
+  - `app/(components)/homeProductSection.tsx` = page-level orchestration and callback wiring
+  - `app/(components)/useHomeProductSectionData.ts` = home-data fetch/cache/recovery lifecycle + sorted product/category state
+  - `app/(components)/homeProductSection.content.tsx` = section composition + product-detail/cart overlay rendering
   - `app/(components)/homeProductSection.helpers.ts` = filter/cart/cache pure helpers
   - `app/(components)/homeProductSection.copy.ts` = package labels + user-facing copy constants
   - `app/(components)/useHomeProductPharmacy.ts` = nearby pharmacy resolve/retry state machine
@@ -137,13 +167,43 @@ When touching these files, prefer block-level extraction over in-place growth:
   - `app/(components)/useHomeProductSectionEffects.lifecycle.ts` = bootstrap/cache/recovery/address lifecycle effects
   - `app/(components)/useHomeProductSectionEffects.computation.ts` = totals/filter/cart-prune/symptom-category computation effects
   - `app/(components)/homeProductSectionEffects.types.ts` = shared effect input type aliases
+  - `npm run qa:home:data-content`
+- B2B admin report split:
+  - `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx` = employee list/search state + hook wiring
+  - `app/(admin)/admin/b2b-reports/_lib/use-b2b-admin-report-detail-state.ts` = employee-detail bundle hydration + preview/period/editor state
+  - `app/(admin)/admin/b2b-reports/_lib/use-b2b-admin-report-actions.ts` = save/export/regenerate/validation orchestration
+  - `app/(admin)/admin/b2b-reports/_components/B2bAdminReportWorkspace.tsx` = right-column workspace composition
+  - `app/(admin)/admin/b2b-reports/_components/B2bIntegratedResultPreview.tsx` = integrated preview composition shell
+  - `app/(admin)/admin/b2b-reports/_lib/b2b-integrated-result-preview-model.ts` = payload -> survey/result/metric/medication preview model
+  - `app/(admin)/admin/b2b-reports/_components/B2bIntegratedHealthMetricsSection.tsx` = health-metric detail cards
+  - `app/(admin)/admin/b2b-reports/_components/B2bIntegratedMedicationReviewSection.tsx` = medication history + pharmacist comment cards
+  - `npm run qa:b2b:integrated-result-preview-modules`
 - My-data page split:
   - `app/my-data/page.tsx` = route-level guard + section composition
   - `app/my-data/myDataPageData.ts` = session/actor/appUser + my-data query orchestration
-  - `app/my-data/myDataPageSections.tsx` = account/orders/assessment/check-ai/chat section rendering blocks
+  - `app/my-data/myDataPageSections.tsx` = stable export surface for my-data section modules
+  - `app/my-data/myDataPageOverviewSections.tsx` = locked/header/metrics/account/session-profile blocks
+  - `app/my-data/myDataPageOrderSection.tsx` = order accordion section
+  - `app/my-data/myDataPageResultSections.tsx` = assessment/check-ai result sections
+  - `app/my-data/myDataPageChatSection.tsx` = chat session/message section
+  - `app/my-data/myDataPageLabels.ts` = user-facing badge/status/role labels for Korean-first copy
+  - quick QA:
+    - `npm run qa:my-data:section-modules`
+    - `npm run qa:my-data:copy-localization`
 - Order-complete page split:
-  - `app/(orders)/order-complete/page.tsx` = payment verification + order-create orchestration + notification UI
-  - `app/(orders)/order-complete/orderCompleteFlow.ts` = payment context/order draft parsing + payment outcome normalization + checkout/payment storage cleanup
+  - `app/(orders)/order-complete/page.tsx` = route shell + success/cancelled/notify rendering
+  - `app/(orders)/order-complete/useOrderCompleteBootstrap.ts` = payment verification + order-create orchestration + checkout recovery routing
+  - `app/(orders)/order-complete/useOrderCompleteNotifications.ts` = push subscribe/send/unsubscribe handlers + notification status state
+  - `app/(orders)/order-complete/orderCompleteFlow.ts` = payment context/order draft parsing + payment outcome normalization + checkout/payment storage cleanup + draft validation
+  - `app/(orders)/order-complete/orderComplete.client.ts` = cart restore/clear + customer account key local persistence
+  - `app/(orders)/order-complete/orderComplete.copy.ts` = Korean-first order-complete alert/page copy
+  - `npm run qa:order-complete:hooks`
+- Cart surface split:
+  - `components/order/cart.tsx` = cart root orchestration + section/modal composition + payment hook wiring
+  - `components/order/hooks/useCartInteractionController.ts` = address/pharmacy/detail/phone/confirm modal state + local cart interaction handlers
+  - `components/order/hooks/useCartPayment.ts` = 결제 전 검증 + 결제사 요청 + 주문완료 라우팅
+  - `components/order/hooks/usePhoneStatus.ts` = 휴대폰 상태 조회/해제 + auth sync 반영
+  - `components/order/cartItemsSection.actions.ts` = 장바구니 영속화 + `cartUpdated` 알림 공용 경로
 - Assess C-section split:
   - `app/assess/components/CSection.tsx` = C-section UI shell + option grid composition
   - `app/assess/components/useCSectionController.ts` = C-section state/submission/persist/transition orchestration
@@ -261,8 +321,13 @@ When touching these files, prefer block-level extraction over in-place growth:
 
 - Keep assess persistence boundaries explicit:
   - `app/assess/page.tsx` = assess route-level section render composition
-  - `app/assess/useAssessFlow.ts` = question flow/evaluation orchestration + C-section transition/submit wiring
+  - `app/assess/useAssessFlow.ts` = assess state/action orchestration + C-section transition/submit wiring
+  - `app/assess/useAssessFlow.derived.ts` = progress/current-question/recommendation derived state
+  - `app/assess/useAssessFlow.lifecycle.ts` = storage hydrate/persist + keyboard/focus/body-scroll/category-fetch effects
+  - `app/assess/useAssessFlow.types.ts` = shared assess section contract
   - `app/assess/lib/assessStorage.ts` = localStorage snapshot load/save/clear + C-section previous-step rollback
+- quick QA:
+  - `npm run qa:assess:flow-modules`
 - If adjusting assess persistence shape, update storage helper contracts before page orchestration logic.
 
 ## 13) Client Link Map
@@ -389,6 +454,14 @@ When touching these files, prefer block-level extraction over in-place growth:
 - 상세 가이드: `docs/b2b_report_summary_map.md`
 
 ## 22) Column Editor Map
+ 
+- Fast path for follow-up sessions:
+  - controller hook: `app/(admin)/admin/column/editor/_lib/use-column-editor-controller.ts`
+  - post-actions subhook: `app/(admin)/admin/column/editor/_lib/use-column-editor-post-actions.ts`
+  - markdown-media subhook: `app/(admin)/admin/column/editor/_lib/use-column-editor-markdown-media.ts`
+  - shell root: `app/(admin)/admin/column/editor/EditorAdminClient.tsx`
+  - legacy route note: `app/column/editor/page.tsx` redirects to `/admin/column/editor`; no standalone `EditorClient.tsx`
+  - updated map: `docs/column_editor_client_map.md`
 
 - `/admin/column/editor` 유지보수 경계:
   - 오케스트레이션: `app/(admin)/admin/column/editor/EditorAdminClient.tsx`
@@ -399,7 +472,21 @@ When touching these files, prefer block-level extraction over in-place growth:
   - 타입 계약: `app/(admin)/admin/column/editor/_lib/types.ts`
   - API 호출: `app/(admin)/admin/column/editor/_lib/api.ts`
   - 순수 유틸: `app/(admin)/admin/column/editor/_lib/utils.ts`
+- 레거시 `/column/editor` 경계:
+  - `app/column/editor/page.tsx` = 관리자 편집기로 즉시 redirect
+  - 별도 레거시 클라이언트 파일은 유지하지 않음
 - 상세 가이드: `docs/column_editor_client_map.md`
+- 빠른 QA:
+  - `npm run qa:column-editor:legacy-redirect`
+  - `npm run qa:column-editor:controller-extraction`
+  - `npm run qa:column-editor:controller-subhooks`
+- Public `/column` read boundary:
+  - source orchestration: `app/column/_lib/columns.ts`
+  - pure summary queries: `app/column/_lib/columns-summary-queries.ts`
+  - content/frontmatter helpers: `app/column/_lib/columns-content-utils.ts`
+  - DB source reads: `app/column/_lib/columns-db-source.ts`
+  - file fallback discovery: `app/column/_lib/columns-file-source.ts`
+  - quick guard: `npm run qa:column:summary-queries`
 
 ## 23) Wellness Data Loader Map
 
@@ -420,12 +507,25 @@ When touching these files, prefer block-level extraction over in-place growth:
   - 오케스트레이션: `app/(features)/employee-report/EmployeeReportClient.tsx`
   - 타입 계약: `app/(features)/employee-report/_lib/client-types.ts`
   - API 경계: `app/(features)/employee-report/_lib/api.ts`
-  - 요청/가이드 유틸: `app/(features)/employee-report/_lib/client-utils.ts`
+  - 안정적 facade: `app/(features)/employee-report/_lib/client-utils.ts`
+  - identity/localStorage 정규화: `app/(features)/employee-report/_lib/client-utils.identity.ts`
+  - 요청 timeout/network 에러 경계: `app/(features)/employee-report/_lib/client-utils.request.ts`
+  - sync guidance/cooldown/report helper: `app/(features)/employee-report/_lib/client-utils.guidance.ts`
+  - PDF download/fallback helper: `app/(features)/employee-report/_lib/client-utils.pdf.ts`
+  - 날짜 포맷 helper: `app/(features)/employee-report/_lib/client-utils.format.ts`
+  - 공통 UI 문구/상수: `app/(features)/employee-report/_lib/employee-report-copy.ts`
   - UI 블록:
+    - `app/(features)/employee-report/_components/EmployeeReportInputFlowPanel.tsx`
+    - `app/(features)/employee-report/_components/EmployeeReportReadyPanel.tsx`
+    - `app/(features)/employee-report/_components/EmployeeReportAdminOnlySection.tsx`
     - `app/(features)/employee-report/_components/EmployeeReportIdentitySection.tsx`
     - `app/(features)/employee-report/_components/EmployeeReportSummaryHeaderCard.tsx`
     - `app/(features)/employee-report/_components/EmployeeReportSyncGuidanceNotice.tsx`
 - 상세 가이드: `docs/employee_report_client_map.md`
+- 빠른 QA:
+  - `npm run qa:employee-report:client-utils-modules`
+  - `npm run qa:employee-report:auth-ux`
+  - `npm run qa:employee-report:sync-notice`
 
 ## 25) Module03 Scheduler Handoff Validation Map
 
@@ -639,3 +739,18 @@ When touching these files, prefer block-level extraction over in-place growth:
   - schema parser helpers (`parseSchemaMap`) in `evaluate-adverse-event-count-from-source-schema.ts`
   - row mapping helpers (`parseReportedAt`, `parseBooleanLike`, `toSamples`) in `evaluate-adverse-event-count-from-source-schema.ts`
   - output composition (`buildOpsEvaluationOutput`) in `evaluate-adverse-event-count-from-source-artifacts.ts`
+
+## 36) Cart Surface Map
+
+- `cart` 유지보수 경계:
+  - 오케스트레이션: `components/order/cart.tsx`
+  - 상호작용 컨트롤러: `components/order/hooks/useCartInteractionController.ts`
+  - 결제 오케스트레이션: `components/order/hooks/useCartPayment.ts`
+  - 로그인/전화번호 상태: `components/order/hooks/useCartLoginStatus.ts`, `components/order/hooks/usePhoneStatus.ts`
+  - UI 블록:
+    - `components/order/cartItemsSection.tsx`
+    - `components/order/addressSection.tsx`
+    - `components/order/pharmacyInfoSection.tsx`
+    - `components/order/paymentSection.tsx`
+  - 공용 영속화 헬퍼: `components/order/cartItemsSection.actions.ts`
+- 상세 가이드: `docs/cart_client_map.md`

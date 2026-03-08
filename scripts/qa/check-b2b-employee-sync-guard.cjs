@@ -207,7 +207,20 @@ function runStaticChecks() {
     ),
     "utf8"
   );
-  assert.ok(clientUtilsSource.includes("DB_SCHEMA_MISMATCH"));
+  assert.ok(clientUtilsSource.includes('export * from "./client-utils.guidance";'));
+
+  const clientGuidanceSource = fs.readFileSync(
+    path.join(
+      ROOT,
+      "app",
+      "(features)",
+      "employee-report",
+      "_lib",
+      "client-utils.guidance.ts"
+    ),
+    "utf8"
+  );
+  assert.ok(clientGuidanceSource.includes("DB_SCHEMA_MISMATCH"));
   console.log("[qa:b2b-sync-guard] PASS static regression checks");
 }
 

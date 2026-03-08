@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import { upsertEmployeeSession } from "./api";
 import type { IdentityInput } from "./client-types";
-import { saveStoredIdentity } from "./client-utils";
+import { saveStoredIdentity } from "./client-utils.identity";
 
 type TryLoadExistingOptions = {
   successNotice?: string;

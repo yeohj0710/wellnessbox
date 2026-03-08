@@ -8,7 +8,8 @@ import type {
   NhisInitResponse,
   NhisSignResponse,
 } from "./client-types";
-import { requestJson, toIdentityPayload } from "./client-utils";
+import { toIdentityPayload } from "./client-utils.identity";
+import { requestJson } from "./client-utils.request";
 
 const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
 const NHIS_INIT_TIMEOUT_MS = 45_000;

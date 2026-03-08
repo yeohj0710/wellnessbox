@@ -6,66 +6,113 @@ const CLIENT_PATH = path.resolve(
   process.cwd(),
   "app/(features)/employee-report/EmployeeReportClient.tsx"
 );
-const ADMIN_GATE_PATH = path.resolve(
+const INPUT_FLOW_PANEL_PATH = path.resolve(
   process.cwd(),
-  "app/(features)/employee-report/_components/EmployeeReportAdminOnlyGate.tsx"
+  "app/(features)/employee-report/_components/EmployeeReportInputFlowPanel.tsx"
 );
-const CAPTURE_PREVIEW_PATH = path.resolve(
+const READY_PANEL_PATH = path.resolve(
   process.cwd(),
-  "app/(features)/employee-report/_components/EmployeeReportCapturePreview.tsx"
+  "app/(features)/employee-report/_components/EmployeeReportReadyPanel.tsx"
+);
+const ADMIN_ONLY_PANEL_PATH = path.resolve(
+  process.cwd(),
+  "app/(features)/employee-report/_components/EmployeeReportAdminOnlySection.tsx"
 );
 
 function run() {
   const checks: string[] = [];
   const clientSource = fs.readFileSync(CLIENT_PATH, "utf8");
-  const adminGateSource = fs.readFileSync(ADMIN_GATE_PATH, "utf8");
-  const capturePreviewSource = fs.readFileSync(CAPTURE_PREVIEW_PATH, "utf8");
+  const inputFlowPanelSource = fs.readFileSync(INPUT_FLOW_PANEL_PATH, "utf8");
+  const readyPanelSource = fs.readFileSync(READY_PANEL_PATH, "utf8");
+  const adminOnlyPanelSource = fs.readFileSync(ADMIN_ONLY_PANEL_PATH, "utf8");
 
   assert.match(
     clientSource,
-    /import EmployeeReportAdminOnlyGate from "\.\/_components\/EmployeeReportAdminOnlyGate";/,
-    "EmployeeReportClient must import EmployeeReportAdminOnlyGate."
+    /import EmployeeReportInputFlowPanel from "\.\/_components\/EmployeeReportInputFlowPanel";/,
+    "EmployeeReportClient must import EmployeeReportInputFlowPanel."
   );
   assert.match(
     clientSource,
-    /import EmployeeReportCapturePreview from "\.\/_components\/EmployeeReportCapturePreview";/,
-    "EmployeeReportClient must import EmployeeReportCapturePreview."
+    /import EmployeeReportReadyPanel from "\.\/_components\/EmployeeReportReadyPanel";/,
+    "EmployeeReportClient must import EmployeeReportReadyPanel."
   );
-  checks.push("client_imports_extracted_components");
+  assert.match(
+    clientSource,
+    /import EmployeeReportAdminOnlySection from "\.\/_components\/EmployeeReportAdminOnlySection";/,
+    "EmployeeReportClient must import EmployeeReportAdminOnlySection."
+  );
+  checks.push("client_imports_flow_panels");
 
   assert.match(
     clientSource,
-    /<EmployeeReportAdminOnlyGate[\s\S]*contactEmail="wellnessbox\.me@gmail\.com"[\s\S]*\/>/,
-    "EmployeeReportClient should render EmployeeReportAdminOnlyGate with contactEmail."
+    /<EmployeeReportInputFlowPanel[\s\S]*primaryActionLabel=\{identityPrimaryActionLabel\}[\s\S]*\/>/,
+    "EmployeeReportClient should render EmployeeReportInputFlowPanel with identityPrimaryActionLabel."
   );
   assert.match(
     clientSource,
-    /<EmployeeReportCapturePreview[\s\S]*captureRef=\{webReportCaptureRef\}[\s\S]*\/>/,
-    "EmployeeReportClient should render EmployeeReportCapturePreview with captureRef."
+    /<EmployeeReportReadyPanel[\s\S]*captureRef=\{webReportCaptureRef\}[\s\S]*\/>/,
+    "EmployeeReportClient should render EmployeeReportReadyPanel with captureRef."
   );
-  checks.push("client_uses_extracted_components");
+  assert.match(
+    clientSource,
+    /<EmployeeReportAdminOnlySection \/>/,
+    "EmployeeReportClient should render EmployeeReportAdminOnlySection."
+  );
+  checks.push("client_uses_flow_panels");
 
   assert.ok(
-    !/className=\{styles\.adminOnlyGateCard\}/.test(clientSource),
-    "Inline admin-only gate card markup should not remain in EmployeeReportClient."
+    !/import EmployeeReportIdentitySection/.test(clientSource),
+    "EmployeeReportClient should not directly import EmployeeReportIdentitySection."
   );
   assert.ok(
-    !/data-testid="report-capture-surface"/.test(clientSource),
-    "Inline report-capture-surface markup should not remain in EmployeeReportClient."
+    !/import EmployeeReportSummaryHeaderCard/.test(clientSource),
+    "EmployeeReportClient should not directly import EmployeeReportSummaryHeaderCard."
   );
-  checks.push("client_has_no_inline_panel_markup");
+  assert.ok(
+    !/import EmployeeReportSyncGuidanceNotice/.test(clientSource),
+    "EmployeeReportClient should not directly import EmployeeReportSyncGuidanceNotice."
+  );
+  assert.ok(
+    !/import EmployeeReportCapturePreview/.test(clientSource),
+    "EmployeeReportClient should not directly import EmployeeReportCapturePreview."
+  );
+  assert.ok(
+    !/import EmployeeReportAdminOnlyGate/.test(clientSource),
+    "EmployeeReportClient should not directly import EmployeeReportAdminOnlyGate."
+  );
+  checks.push("client_keeps_leaf_panels_out");
 
   assert.match(
-    adminGateSource,
-    /export default function EmployeeReportAdminOnlyGate/,
-    "EmployeeReportAdminOnlyGate should export a default component."
+    inputFlowPanelSource,
+    /import EmployeeReportIdentitySection from "\.\/EmployeeReportIdentitySection";/,
+    "EmployeeReportInputFlowPanel should compose EmployeeReportIdentitySection."
   );
   assert.match(
-    capturePreviewSource,
-    /export default function EmployeeReportCapturePreview/,
-    "EmployeeReportCapturePreview should export a default component."
+    inputFlowPanelSource,
+    /import EmployeeReportSyncGuidanceNotice from "\.\/EmployeeReportSyncGuidanceNotice";/,
+    "EmployeeReportInputFlowPanel should compose EmployeeReportSyncGuidanceNotice."
   );
-  checks.push("components_export_defaults");
+  assert.match(
+    readyPanelSource,
+    /import EmployeeReportSummaryHeaderCard from "\.\/EmployeeReportSummaryHeaderCard";/,
+    "EmployeeReportReadyPanel should compose EmployeeReportSummaryHeaderCard."
+  );
+  assert.match(
+    readyPanelSource,
+    /import EmployeeReportSyncGuidanceNotice from "\.\/EmployeeReportSyncGuidanceNotice";/,
+    "EmployeeReportReadyPanel should compose EmployeeReportSyncGuidanceNotice."
+  );
+  assert.match(
+    readyPanelSource,
+    /import EmployeeReportCapturePreview from "\.\/EmployeeReportCapturePreview";/,
+    "EmployeeReportReadyPanel should compose EmployeeReportCapturePreview."
+  );
+  assert.match(
+    adminOnlyPanelSource,
+    /import EmployeeReportAdminOnlyGate from "\.\/EmployeeReportAdminOnlyGate";/,
+    "EmployeeReportAdminOnlySection should compose EmployeeReportAdminOnlyGate."
+  );
+  checks.push("panels_compose_leaf_components");
 
   console.log(JSON.stringify({ ok: true, checks }, null, 2));
 }

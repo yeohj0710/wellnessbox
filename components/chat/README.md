@@ -3,9 +3,13 @@
 ## Desktop Dock Composition
 
 - `DesktopChatDock.tsx`
-  - Dock trigger, open/close state, route-aware prompt bootstrap.
+  - Dock trigger shell, page-agent context wiring, and route-nudge composition.
+- `useDesktopChatDockLauncher.ts`
+  - Dock boot/open lifecycle, route-nudge visibility, viewport/footer offset state, and global open/close event wiring.
 - `DesktopChatDockPanel.tsx`
   - Dock shell composition (header/feed/input/session layer/profile modal).
+- `useDesktopChatDockPanelShell.ts`
+  - Dock panel shell state, prompt bootstrap effect, inert/focus cleanup, and session-layer handlers.
 - `useDesktopChatDockLayout.ts`
   - Drag/resize lifecycle, viewport clamping, layout emit, and panel inline style state.
 - `useDesktopChatDockPointer.ts`
@@ -21,11 +25,19 @@
 - `DesktopChatDockSessionLayer.tsx`
   - Session list layer (select/rename/delete/new).
 - `DesktopChatDock.layout.ts`
-  - Geometry/storage/event/scroll helper primitives.
+  - Stable export surface for shared dock layout helpers.
+- `DesktopChatDock.layout.geometry.ts`
+  - Geometry math, resize-edge contracts, scroll-chain helpers, and cursor primitives.
+- `DesktopChatDock.layout.storage.ts`
+  - Prompt/nudge persistence, layout event helpers, and dock size/position storage.
 
 ## Maintenance Notes
 
-- Keep geometry math and storage keys in `DesktopChatDock.layout.ts`.
+- Keep `DesktopChatDock.layout.ts` limited to stable re-exports.
+- Keep geometry math, scroll-chain helpers, and resize cursor helpers in `DesktopChatDock.layout.geometry.ts`.
+- Keep storage keys, prompt/nudge persistence, and layout event helpers in `DesktopChatDock.layout.storage.ts`.
+- Keep dock boot/open lifecycle, route nudge visibility, and global launcher events in `useDesktopChatDockLauncher.ts`.
+- Keep dock prompt consumption, inert/focus effects, and session prompt/confirm handlers in `useDesktopChatDockPanelShell.ts`.
 - Keep pointer drag/resize orchestration in `useDesktopChatDockPointer.ts`.
 - Keep `DesktopChatDockPanel.tsx` focused on composition and wiring.
 - Extract reusable presentation blocks before adding new large conditional JSX sections.
@@ -33,5 +45,5 @@
 ## Next Safe Targets
 
 1. Add a Playwright smoke test for dock open -> send -> close.
-2. If feed logic grows, split loading rows and assistant message row presenters.
-3. Consider extracting session-panel prompt/confirm handlers when session actions expand.
+2. If layout state grows again, split effect-heavy viewport/layout emit work from style derivation inside `useDesktopChatDockLayout.ts`.
+3. If feed logic grows, split loading rows and assistant message row presenters.

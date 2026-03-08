@@ -2,7 +2,10 @@
 
 import { captureElementToPdf } from "@/lib/client/capture-pdf";
 import type { EmployeeReportResponse } from "./client-types";
-import { downloadPdf, isPdfEngineUnavailableFailure } from "./client-utils";
+import {
+  downloadPdf,
+  isPdfEngineUnavailableFailure,
+} from "./client-utils.pdf";
 import type { BusyHint } from "./use-busy-state";
 
 type DownloadResult = { ok: true; notice: string } | { ok: false; error: string };

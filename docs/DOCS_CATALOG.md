@@ -3,7 +3,7 @@
 ## 기준
 - 범위: `docs/` 하위의 모든 `.md` 파일
 - 작성 시점: 2026-03-05
-- 총 문서 수: 46개
+- 총 문서 수: 54개
 - 산출 기준 명령:
   - `Get-ChildItem -Path docs -Recurse -File`
 
@@ -56,6 +56,18 @@
 | 경로 | 유형 | 용도 | 언제 읽는가 | 연관 문서 |
 | --- | --- | --- | --- | --- |
 | `docs/maintenance/refactor-hotspots.md` | Maintenance | 리팩터링 우선순위/핫스팟 추적 | 구조 개선 작업 시 | `npm run audit:hotspots` |
+| `docs/maintenance/employee-report-client-utils-modules.md` | Maintenance | 직원 리포트 client-utils 모듈 분리 메모 | employee-report 유틸 후속 수정 시 | `docs/employee_report_client_map.md` |
+| `docs/maintenance/column-legacy-editor-redirect-cleanup.md` | Maintenance | 칼럼 레거시 editor redirect 정리 메모 | column editor 진입점 확인 시 | `docs/column_editor_client_map.md` |
+| `docs/maintenance/my-data-section-modules.md` | Maintenance | my-data 섹션 모듈 분리 메모 | my-data 후속 수정 시 | `docs/my_data_client_map.md` |
+| `docs/maintenance/desktop-chat-dock-panel-shell-extraction.md` | Maintenance | desktop chat dock panel shell 분리 메모 | chat dock 후속 수정 시 | `components/chat/README.md` |
+| `docs/maintenance/desktop-chat-dock-launcher-extraction.md` | Maintenance | desktop chat dock launcher 분리 메모 | chat dock trigger 후속 수정 시 | `components/chat/README.md` |
+| `docs/maintenance/desktop-chat-dock-layout-modules.md` | Maintenance | desktop chat dock layout 모듈 분리 메모 | chat dock layout 후속 수정 시 | `components/chat/README.md` |
+| `docs/maintenance/chat-recommendation-modules.md` | Maintenance | chat recommendation 모듈 분리 메모 | chat recommendation 후속 수정 시 | `app/chat/hooks/README.md` |
+| `docs/maintenance/recommended-product-actions-controller-extraction.md` | Maintenance | recommended product actions controller 분리 메모 | chat 추천 상품 CTA 후속 수정 시 | `app/chat/components/RecommendedProductActions.tsx` |
+| `docs/maintenance/recommended-product-actions-resolve-modules.md` | Maintenance | recommended product actions resolve 모듈 분리 메모 | chat 추천 상품 resolve 후속 수정 시 | `app/chat/components/recommendedProductActions.resolve.ts` |
+| `docs/maintenance/b2b-integrated-result-preview-modules.md` | Maintenance | B2B 통합 결과 프리뷰 모듈 분리 메모 | admin integrated preview 후속 수정 시 | `app/(admin)/admin/b2b-reports/_components/B2bIntegratedResultPreview.tsx` |
+| `docs/maintenance/assess-flow-modules.md` | Maintenance | assess flow 모듈 분리 메모 | `/assess` 후속 수정 시 | `app/assess/useAssessFlow.ts` |
+| `docs/maintenance/chat-input-controller-extraction.md` | Maintenance | chat input controller 분리 메모 | chat input 후속 수정 시 | `app/chat/components/ChatInput.tsx` |
 
 ## F. QA/회귀 테스트 문서
 
@@ -88,8 +100,10 @@
 | `docs/b2b_report_score_engine.md` | Spec | B2B 리포트 스코어 엔진 기준 | 계산 로직 수정 시 | payload map |
 | `docs/b2b_report_summary_map.md` | Map | B2B 리포트 요약 필드 매핑 | 요약/대시보드 수정 시 | payload map |
 | `docs/b2b_survey_template_schema.md` | Schema | B2B 설문 템플릿 스키마 | 설문 구조 변경 시 | seed script |
+| `docs/cart_client_map.md` | Map | 카트 클라이언트 맵 | `cart`/주문 UI 수정 시 | order-complete/payment/cart hooks |
 | `docs/column_editor_client_map.md` | Map | 칼럼 에디터 클라이언트 맵 | 칼럼 에디터 수정 시 | column API |
 | `docs/employee_report_client_map.md` | Map | 직원 리포트 클라이언트 맵 | 직원 리포트 UI 수정 시 | employee report API |
+| `docs/my_data_client_map.md` | Map | my-data 클라이언트 맵 | my-data UI 수정 시 | my-data data/labels/primitives |
 | `docs/survey_client_map.md` | Map | 설문 클라이언트 맵 | `/survey` UI/흐름 수정 시 | public-survey/wellness 분석 |
 
 ## 문서 탐색 추천 순서

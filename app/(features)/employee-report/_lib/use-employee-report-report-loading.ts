@@ -7,10 +7,8 @@ import type {
   EmployeeReportResponse,
   IdentityInput,
 } from "./client-types";
-import {
-  ApiRequestError,
-  saveStoredIdentity,
-} from "./client-utils";
+import { saveStoredIdentity } from "./client-utils.identity";
+import { ApiRequestError } from "./client-utils.request";
 import { syncEmployeeReportAndReload as syncEmployeeReportAndReloadFlow } from "./sync-flow";
 
 type UseEmployeeReportReportLoadingInput = {

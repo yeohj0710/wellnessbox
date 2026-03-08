@@ -11,6 +11,28 @@ Run `npm run agent:context-refresh` (or `npm run agent:session-primer`) to refre
 4. `npm run lint`
 5. `npm run build`
 
+## Read Next
+
+- `AGENT_PRECHECK.md`
+- `REFACTOR_BACKLOG.md`
+- `API_GUARD_MAP.md`
+- `FUNCTION_HOTSPOTS.md`
+- `REFACTOR_HOTSPOTS.md`
+- `CHAT_AGENT_HANDOFF.md`
+
+## Domain Entry Points
+
+- B2B admin reports: Start with `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx`, then `app/(admin)/admin/b2b-reports/_lib/use-b2b-admin-report-detail-state.ts`, then `app/(admin)/admin/b2b-reports/_components/B2bAdminReportWorkspace.tsx`, then the integrated preview boundary `B2bIntegratedResultPreview.tsx`, `B2bIntegratedHealthMetricsSection.tsx`, `B2bIntegratedMedicationReviewSection.tsx`, and `_lib/b2b-integrated-result-preview-model.ts`, then `app/(admin)/admin/b2b-reports/_lib/use-b2b-admin-report-actions.ts`.
+- Employee report: Start with `app/(features)/employee-report/EmployeeReportClient.tsx`, then the flow panels under `app/(features)/employee-report/_components/`, then the focused hooks under `app/(features)/employee-report/_lib/`, especially `client-utils.identity.ts`, `client-utils.request.ts`, and `client-utils.guidance.ts`.
+- My data: Start with `app/my-data/page.tsx`, then `app/my-data/myDataPageData.ts`, then the focused section modules `myDataPageOverviewSections.tsx`, `myDataPageOrderSection.tsx`, `myDataPageResultSections.tsx`, and `myDataPageChatSection.tsx`. Keep `myDataPageSections.tsx` as the stable export surface only.
+- Cart and order flow: Start with `components/order/cart.tsx`, then `components/order/hooks/useCartInteractionController.ts`, then `components/order/hooks/useCartPayment.ts`, then `app/(orders)/order-complete/page.tsx` together with `useOrderCompleteBootstrap.ts`, `useOrderCompleteNotifications.ts`, and `orderCompleteFlow.ts`. Keep stock/order mutations inside `lib/order/mutations.ts`.
+- Home explore: Start with `app/(components)/homeProductSection.tsx`, then the extracted data hook `app/(components)/useHomeProductSectionData.ts`, then the view shell `app/(components)/homeProductSection.content.tsx`, then the pharmacy/actions/effects helpers around it.
+- Column editor: Start with `app/(admin)/admin/column/editor/EditorAdminClient.tsx`, then `app/(admin)/admin/column/editor/_lib/use-column-editor-controller.ts`, then the focused subhooks `use-column-editor-post-actions.ts` and `use-column-editor-markdown-media.ts`, then the workspace/sidebar components under `app/(admin)/admin/column/editor/_components/`. Treat `app/column/editor/page.tsx` as redirect-only; there is no standalone legacy editor client.
+- Public columns: Start with `app/column/_lib/columns.ts`, then the pure summary-query module `app/column/_lib/columns-summary-queries.ts`, then shared parsing/tag helpers in `app/column/_lib/columns-content-utils.ts`, and finally the DB/file source adapters `columns-db-source.ts` and `columns-file-source.ts`.
+- Chat: Start with `app/chat/hooks/useChat.ts`, then `app/chat/hooks/useChat.commandLayer.ts`, then the recommendation hydration boundary `useChat.recommendation.ts` and `useChat.recommendation.catalog.ts`, then the interactive action boundary `useChat.interactiveActions.ts`, `useChat.interactiveActions.routes.ts`, and `useChat.interactiveActions.types.ts`, then the chat input boundary `app/chat/components/ChatInput.tsx`, `useChatInputController.ts`, `ChatInputActionAssist.tsx`, `chatInput.actions.ts`, and `chatInput.types.ts`, then the chat CTA surfaces under `app/chat/components/` especially `RecommendedProductActions.tsx`, `useRecommendedProductActionsController.ts`, and the focused resolve helpers `recommendedProductActions.resolve.ts`, `recommendedProductActions.resolve.catalog.ts`, `recommendedProductActions.resolve.name.ts`, `recommendedProductActions.resolve.category.ts`, then the dock shell files under `components/chat/` especially `DesktopChatDock.tsx`, `useDesktopChatDockLauncher.ts`, `DesktopChatDockPanel.tsx`, `useDesktopChatDockPanelShell.ts`, and the stable layout helpers `DesktopChatDock.layout.ts`, `DesktopChatDock.layout.geometry.ts`, and `DesktopChatDock.layout.storage.ts`, then `app/api/chat/route.ts` and shared prompt/context logic under `lib/chat/`.
+- Health-link and NHIS: Start with `app/(features)/health-link/HealthLinkClient.tsx`, `app/api/health/nhis/fetch/route.ts`, and helpers under `lib/server/hyphen/`.
+- Assess: Start with `app/assess/page.tsx`, then `app/assess/useAssessFlow.ts`, then the extracted boundaries `useAssessFlow.derived.ts`, `useAssessFlow.lifecycle.ts`, and `useAssessFlow.types.ts`, then the C-section modules under `app/assess/components/` especially `useCSectionController.ts`.
+
 ## Guard Snapshot
 
 - Total routes: **85**
@@ -21,35 +43,46 @@ Run `npm run agent:context-refresh` (or `npm run agent:session-primer`) to refre
 - Public/Internal candidate routes: **26**
 - Guard policy violations: **0**
 
+## Recent Refactors
+
+- Chat recommendation modules (`app/chat/hooks/useChat.recommendation.ts`)
+- Desktop chat dock layout modules (`components/chat/DesktopChatDock.layout.ts`)
+- Chat input controller extraction (`app/chat/components/ChatInput.tsx`)
+- Assess flow modules (`app/assess/useAssessFlow.ts`)
+- B2B integrated result preview modules (`app/(admin)/admin/b2b-reports/_components/B2bIntegratedResultPreview.tsx`)
+- Chat interactive action route modules (`app/chat/hooks/useChat.interactiveActions.ts`)
+- Order-complete bootstrap/notification hook extraction (`app/(orders)/order-complete/page.tsx`)
+- Home product section data/content extraction (`app/(components)/homeProductSection.tsx`)
+
 ## Runtime File Hotspots (Top 12)
 
-- 3729 lines: `lib/rnd/ai-training/pipeline.ts`
-- 2455 lines: `app/survey/survey-page-client.tsx`
+- 3735 lines: `lib/rnd/ai-training/pipeline.ts`
+- 1621 lines: `app/survey/survey-page-client.tsx`
 - 1251 lines: `lib/b2b/admin-employee-management-route.ts`
-- 1077 lines: `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx`
 - 1021 lines: `components/b2b/ReportSummaryCards.tsx`
--  991 lines: `app/(features)/employee-report/EmployeeReportClient.tsx`
--  902 lines: `lib/b2b/public-survey.ts`
+-  912 lines: `lib/b2b/public-survey.ts`
 -  828 lines: `lib/server/hyphen/fetch-executor.ts`
--  786 lines: `app/(admin)/admin/b2b-employee-data/B2bAdminEmployeeDataClient.tsx`
 -  709 lines: `app/(components)/landingSection2.tsx`
--  674 lines: `app/(features)/employee-report/_lib/client-utils.ts`
--  578 lines: `app/survey/_components/SurveyResultPanel.tsx`
+-  639 lines: `components/manager/productManager.tsx`
+-  575 lines: `components/manager/pharmacyProductManager.tsx`
+-  572 lines: `app/(admin)/admin/b2b-reports/_components/SurveyQuestionField.tsx`
+-  567 lines: `components/b2b/report-summary/card-insights.ts`
+-  550 lines: `lib/ai/chain.ts`
 
 ## Runtime Function Hotspots (Top 12)
 
-- 1841 lines: `SurveyPageClient` (`app/survey/survey-page-client.tsx:614`)
-- 1014 lines: `B2bAdminReportClient` (`app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx:63`)
--  918 lines: `EmployeeReportClient` (`app/(features)/employee-report/EmployeeReportClient.tsx:73`)
--  756 lines: `B2bAdminEmployeeDataClient` (`app/(admin)/admin/b2b-employee-data/B2bAdminEmployeeDataClient.tsx:30`)
--  732 lines: `trainAllRndAiModels` (`lib/rnd/ai-training/pipeline.ts:2997`)
+- 1523 lines: `SurveyPageClient` (`app/survey/survey-page-client.tsx:98`)
+-  732 lines: `trainAllRndAiModels` (`lib/rnd/ai-training/pipeline.ts:3003`)
 -  680 lines: `LandingSection2` (`app/(components)/landingSection2.tsx:29`)
+-  543 lines: `ProductManager` (`components/manager/productManager.tsx:96`)
 -  534 lines: `ReportSummaryCards` (`components/b2b/ReportSummaryCards.tsx:487`)
--  476 lines: `SurveyResultPanel` (`app/survey/_components/SurveyResultPanel.tsx:102`)
--  460 lines: `HomeProductSection` (`app/(components)/homeProductSection.tsx:76`)
+-  463 lines: `PharmacyProductManager` (`components/manager/pharmacyProductManager.tsx:112`)
 -  407 lines: `loadEmployeeForOps` (`lib/b2b/admin-employee-management-route.ts:187`)
--  399 lines: `EditorAdminClient` (`app/(admin)/admin/column/editor/EditorAdminClient.tsx:44`)
--  398 lines: `Cart` (`components/order/cart.tsx:46`)
+-  391 lines: `EmployeeReportClient` (`app/(features)/employee-report/EmployeeReportClient.tsx:52`)
+-  337 lines: `OrderAccordionItem` (`components/pharm/orderAccordionItem.tsx:48`)
+-  336 lines: `CategoryManager` (`components/manager/categoryManager.tsx:79`)
+-  336 lines: `executeNhisFetch` (`lib/server/hyphen/fetch-executor.ts:492`)
+-  335 lines: `ReviewModal` (`components/modal/reviewModal.tsx:11`)
 
 ## Critical Edit Invariants
 

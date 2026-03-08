@@ -20,6 +20,12 @@ import {
   summarize,
   toIsoDate,
 } from "./columns-content-utils";
+import {
+  collectColumnTags,
+  resolveColumnsByTagSlug,
+  selectAdjacentColumnSummaries,
+  selectRelatedColumnSummaries,
+} from "./columns-summary-queries";
 import { fetchPublishedDbAliasRowBySlug, fetchPublishedDbRowBySlug, fetchPublishedDbRows } from "./columns-db-source";
 import { collectMarkdownFiles } from "./columns-file-source";
 import type { ColumnDetail, ColumnSummary, ColumnTag, TocItem } from "./columns-types";
@@ -264,108 +270,28 @@ export async function getColumnBySlug(slug: string): Promise<ColumnDetail | null
 
 export async function getAllColumnTags(): Promise<ColumnTag[]> {
   const columns = await getAllColumnSummaries();
-  const counter = new Map<string, ColumnTag>();
-
-  for (const column of columns) {
-    for (const tag of column.tags) {
-      const slug = normalizeTagSlug(tag);
-      if (!slug) continue;
-
-      const existing = counter.get(slug);
-      if (existing) {
-        existing.count += 1;
-      } else {
-        counter.set(slug, {
-          label: tag,
-          slug,
-          count: 1,
-        });
-      }
-    }
-  }
-
-  return [...counter.values()].sort(
-    (a, b) => b.count - a.count || a.label.localeCompare(b.label, "ko")
-  );
+  return collectColumnTags(columns);
 }
 
 export async function getColumnsByTagSlug(
   tagSlug: string
 ): Promise<{ tag: ColumnTag | null; columns: ColumnSummary[] }> {
-  const normalized = normalizeTagSlug(tagSlug);
-  if (!normalized) {
-    return { tag: null, columns: [] };
-  }
-
-  const [allTags, columns] = await Promise.all([
-    getAllColumnTags(),
-    getAllColumnSummaries(),
-  ]);
-  const tag = allTags.find((item) => item.slug === normalized) ?? null;
-  if (!tag) {
-    return { tag: null, columns: [] };
-  }
-
-  const tagged = columns.filter((column) =>
-    column.tags.some((rawTag) => normalizeTagSlug(rawTag) === normalized)
-  );
-  return { tag, columns: tagged };
+  const columns = await getAllColumnSummaries();
+  return resolveColumnsByTagSlug(columns, tagSlug);
 }
 
 export async function getRelatedColumnSummaries(
   slug: string,
   limit = 3
 ): Promise<ColumnSummary[]> {
-  const normalized = normalizeSlug(slug);
-  if (!normalized || limit <= 0) return [];
-
   const columns = await getAllColumnSummaries();
-  const current = columns.find((column) => column.slug === normalized);
-  if (!current) return [];
-
-  const currentTagSlugs = new Set(
-    current.tags.map((tag) => normalizeTagSlug(tag)).filter(Boolean)
-  );
-
-  return columns
-    .filter((column) => column.slug !== normalized)
-    .map((column) => {
-      const sharedTagCount = column.tags.reduce((count, rawTag) => {
-        const tagSlug = normalizeTagSlug(rawTag);
-        return currentTagSlugs.has(tagSlug) ? count + 1 : count;
-      }, 0);
-      return { column, sharedTagCount };
-    })
-    .sort((a, b) => {
-      if (a.sharedTagCount !== b.sharedTagCount) {
-        return b.sharedTagCount - a.sharedTagCount;
-      }
-      return (
-        new Date(b.column.publishedAt).getTime() -
-        new Date(a.column.publishedAt).getTime()
-      );
-    })
-    .slice(0, limit)
-    .map((item) => item.column);
+  return selectRelatedColumnSummaries(columns, slug, limit);
 }
 
 export async function getAdjacentColumnSummaries(slug: string): Promise<{
   previous: ColumnSummary | null;
   next: ColumnSummary | null;
 }> {
-  const normalized = normalizeSlug(slug);
-  if (!normalized) {
-    return { previous: null, next: null };
-  }
-
   const columns = await getAllColumnSummaries();
-  const currentIndex = columns.findIndex((column) => column.slug === normalized);
-  if (currentIndex < 0) {
-    return { previous: null, next: null };
-  }
-
-  return {
-    previous: columns[currentIndex + 1] ?? null,
-    next: columns[currentIndex - 1] ?? null,
-  };
+  return selectAdjacentColumnSummaries(columns, slug);
 }

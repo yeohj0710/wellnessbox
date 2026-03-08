@@ -5,11 +5,11 @@ import type {
   IdentityInput,
 } from "./client-types";
 import {
-  ApiRequestError,
   saveStoredIdentity,
   toIdentityPayload,
-  toSyncNextAction,
-} from "./client-utils";
+} from "./client-utils.identity";
+import { toSyncNextAction } from "./client-utils.guidance";
+import { ApiRequestError } from "./client-utils.request";
 
 export type NhisReadyResult = {
   linked: boolean;

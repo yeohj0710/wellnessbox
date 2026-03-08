@@ -10,6 +10,7 @@ import B2bLayoutValidationPanel from "./B2bLayoutValidationPanel";
 import B2bNoteEditorPanel from "./B2bNoteEditorPanel";
 import B2bSurveyEditorPanel from "./B2bSurveyEditorPanel";
 import type {
+  B2bAdminReportPreviewTab,
   CompletionStats,
   EmployeeListItem,
   LatestReport,
@@ -17,8 +18,6 @@ import type {
   SurveyQuestion,
   SurveyTemplateSchema,
 } from "../_lib/client-types";
-
-type B2bAdminReportWorkspaceTab = "integrated" | "report";
 
 type B2bAdminReportWorkspaceProps = {
   selectedEmployeeId: string | null;
@@ -29,7 +28,7 @@ type B2bAdminReportWorkspaceProps = {
   periodOptions: string[];
   reportDisplayPeriodKey: string;
   busy: boolean;
-  previewTab: B2bAdminReportWorkspaceTab;
+  previewTab: B2bAdminReportPreviewTab;
   latestLayout: LayoutDocument | null;
   captureRef: MutableRefObject<HTMLDivElement | null>;
   completionStats: CompletionStats;
@@ -54,7 +53,7 @@ type B2bAdminReportWorkspaceProps = {
   onExportLegacyPdf: () => void;
   onRegenerateReport: () => void;
   onRecomputeAnalysis: (generateAiEvaluation: boolean) => void;
-  onPreviewTabChange: (nextTab: B2bAdminReportWorkspaceTab) => void;
+  onPreviewTabChange: (nextTab: B2bAdminReportPreviewTab) => void;
   onToggleSection: (sectionKey: string) => void;
   onSetAnswerValue: (question: SurveyQuestion, value: unknown) => void;
   onSaveSurvey: () => void;

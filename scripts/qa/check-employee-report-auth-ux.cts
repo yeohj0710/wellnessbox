@@ -4,15 +4,15 @@ import fs from "node:fs";
 import path from "node:path";
 
 const ROOT = process.cwd();
-const CLIENT_UTILS_PATH = path.join(
+const CLIENT_UTILS_IDENTITY_PATH = path.join(
   ROOT,
-  "app/(features)/employee-report/_lib/client-utils.ts"
+  "app/(features)/employee-report/_lib/client-utils.identity.ts"
 );
 
 const {
   parseStoredIdentitySnapshot,
   resolveIdentityPrimaryActionLabel,
-} = require(CLIENT_UTILS_PATH) as {
+} = require(CLIENT_UTILS_IDENTITY_PATH) as {
   parseStoredIdentitySnapshot: (
     raw: string | null | undefined,
     nowMs?: number
@@ -176,6 +176,15 @@ function runUiIntegrationChecks() {
   const sessionBootstrapSource = read(
     "app/(features)/employee-report/_lib/use-employee-report-session-bootstrap.ts"
   );
+  const inputFlowPanelSource = read(
+    "app/(features)/employee-report/_components/EmployeeReportInputFlowPanel.tsx"
+  );
+  const readyPanelSource = read(
+    "app/(features)/employee-report/_components/EmployeeReportReadyPanel.tsx"
+  );
+  const copySource = read(
+    "app/(features)/employee-report/_lib/employee-report-copy.ts"
+  );
   const toastEffectsSource = read(
     "app/(features)/employee-report/_lib/use-employee-report-toast-effects.ts"
   );
@@ -193,20 +202,37 @@ function runUiIntegrationChecks() {
     "EmployeeReportClient should avoid re-request wording for first-time auth."
   );
   assert.ok(
-    clientSource.includes("primarySyncActionLabel=\"최신 정보 확인\""),
-    "EmployeeReportClient should set generalized summary CTA for existing DB report users."
+    readyPanelSource.includes(
+      "primarySyncActionLabel={EMPLOYEE_REPORT_PRIMARY_SYNC_ACTION_LABEL}"
+    ),
+    "EmployeeReportReadyPanel should use the shared generalized summary CTA text."
+  );
+  assert.ok(
+    copySource.includes(
+      'EMPLOYEE_REPORT_PRIMARY_SYNC_ACTION_LABEL = "최신 정보 확인"'
+    ),
+    "Employee report copy should centralize the generalized summary CTA text."
   );
   assert.equal(
     clientSource.includes("syncGuidance && !reportData?.report"),
     false,
     "EmployeeReportClient should avoid top-level guidance placement detached from active section."
   );
-  const guidanceRenderCount = (
-    clientSource.match(/<EmployeeReportSyncGuidanceNotice/g) ?? []
-  ).length;
   assert.ok(
-    guidanceRenderCount >= 2,
-    "EmployeeReportClient should render guidance near both identity and report sections."
+    clientSource.includes("<EmployeeReportInputFlowPanel"),
+    "EmployeeReportClient should delegate the identity flow surface to EmployeeReportInputFlowPanel."
+  );
+  assert.ok(
+    clientSource.includes("<EmployeeReportReadyPanel"),
+    "EmployeeReportClient should delegate the ready report surface to EmployeeReportReadyPanel."
+  );
+  assert.ok(
+    inputFlowPanelSource.includes("<EmployeeReportSyncGuidanceNotice"),
+    "EmployeeReportInputFlowPanel should render guidance near the identity flow."
+  );
+  assert.ok(
+    readyPanelSource.includes("<EmployeeReportSyncGuidanceNotice"),
+    "EmployeeReportReadyPanel should render guidance near the ready report section."
   );
   assert.ok(
     clientSource.includes("useToast"),

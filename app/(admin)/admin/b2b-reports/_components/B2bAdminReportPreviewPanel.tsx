@@ -3,10 +3,11 @@ import ReportRenderer from "@/components/b2b/ReportRenderer";
 import ReportSummaryCards from "@/components/b2b/ReportSummaryCards";
 import styles from "@/components/b2b/B2bUx.module.css";
 import type { LayoutDocument } from "@/lib/b2b/export/layout-types";
-import type { LatestReport } from "../_lib/client-types";
+import type {
+  B2bAdminReportPreviewTab,
+  LatestReport,
+} from "../_lib/client-types";
 import B2bIntegratedResultPreview from "./B2bIntegratedResultPreview";
-
-type B2bAdminReportPreviewTab = "integrated" | "report";
 
 type B2bAdminReportPreviewPanelProps = {
   previewTab: B2bAdminReportPreviewTab;

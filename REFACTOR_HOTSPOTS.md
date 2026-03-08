@@ -7,31 +7,31 @@ Run `npm run agent:refactor-report` to refresh this report.
 
 | Lines | File |
 |---:|---|
-| 3729 | `lib/rnd/ai-training/pipeline.ts` |
-| 2455 | `app/survey/survey-page-client.tsx` |
+| 3735 | `lib/rnd/ai-training/pipeline.ts` |
+| 1621 | `app/survey/survey-page-client.tsx` |
 | 1251 | `lib/b2b/admin-employee-management-route.ts` |
-| 1077 | `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx` |
 | 1021 | `components/b2b/ReportSummaryCards.tsx` |
-| 991 | `app/(features)/employee-report/EmployeeReportClient.tsx` |
-| 902 | `lib/b2b/public-survey.ts` |
+| 912 | `lib/b2b/public-survey.ts` |
 | 828 | `lib/server/hyphen/fetch-executor.ts` |
-| 786 | `app/(admin)/admin/b2b-employee-data/B2bAdminEmployeeDataClient.tsx` |
 | 709 | `app/(components)/landingSection2.tsx` |
-| 674 | `app/(features)/employee-report/_lib/client-utils.ts` |
-| 578 | `app/survey/_components/SurveyResultPanel.tsx` |
+| 639 | `components/manager/productManager.tsx` |
+| 575 | `components/manager/pharmacyProductManager.tsx` |
+| 572 | `app/(admin)/admin/b2b-reports/_components/SurveyQuestionField.tsx` |
 | 567 | `components/b2b/report-summary/card-insights.ts` |
 | 550 | `lib/ai/chain.ts` |
 | 538 | `lib/b2b/export/layout-dsl.ts` |
-| 536 | `app/(components)/homeProductSection.tsx` |
 | 530 | `lib/b2b/employee-service.ts` |
-| 489 | `app/my-data/myDataPageSections.tsx` |
 | 487 | `public/scripts/google-translate-orchestrator.js` |
 | 472 | `lib/b2b/report-service.ts` |
 | 469 | `lib/agent-playground/patterns.ts` |
 | 466 | `app/agent-playground/page.tsx` |
-| 463 | `app/column/editor/EditorClient.tsx` |
-| 459 | `app/(admin)/admin/b2b-reports/_components/SurveyQuestionField.tsx` |
 | 453 | `lib/b2b/report-payload-health-medication.ts` |
+| 449 | `lib/wellness/analysis.ts` |
+| 443 | `app/(features)/employee-report/EmployeeReportClient.tsx` |
+| 443 | `lib/b2b/export/web-route-pdf.ts` |
+| 440 | `app/(features)/health-link/components/HealthLinkResultSection.helpers.tsx` |
+| 435 | `app/survey/_lib/survey-page-auto-compute.ts` |
+| 435 | `components/manager/managerWorkspace.tsx` |
 
 ## API Route Top 20
 
@@ -62,46 +62,46 @@ Run `npm run agent:refactor-report` to refresh this report.
 
 | Lines | File |
 |---:|---|
-| 2455 | `app/survey/survey-page-client.tsx` |
-| 1077 | `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx` |
+| 1621 | `app/survey/survey-page-client.tsx` |
 | 1021 | `components/b2b/ReportSummaryCards.tsx` |
-| 991 | `app/(features)/employee-report/EmployeeReportClient.tsx` |
-| 786 | `app/(admin)/admin/b2b-employee-data/B2bAdminEmployeeDataClient.tsx` |
 | 709 | `app/(components)/landingSection2.tsx` |
-| 674 | `app/(features)/employee-report/_lib/client-utils.ts` |
-| 578 | `app/survey/_components/SurveyResultPanel.tsx` |
+| 639 | `components/manager/productManager.tsx` |
+| 575 | `components/manager/pharmacyProductManager.tsx` |
+| 572 | `app/(admin)/admin/b2b-reports/_components/SurveyQuestionField.tsx` |
 | 567 | `components/b2b/report-summary/card-insights.ts` |
-| 536 | `app/(components)/homeProductSection.tsx` |
-| 489 | `app/my-data/myDataPageSections.tsx` |
 | 466 | `app/agent-playground/page.tsx` |
-| 463 | `app/column/editor/EditorClient.tsx` |
-| 459 | `app/(admin)/admin/b2b-reports/_components/SurveyQuestionField.tsx` |
-| 444 | `components/order/cart.tsx` |
-| 443 | `app/(admin)/admin/column/editor/EditorAdminClient.tsx` |
+| 443 | `app/(features)/employee-report/EmployeeReportClient.tsx` |
 | 440 | `app/(features)/health-link/components/HealthLinkResultSection.helpers.tsx` |
-| 431 | `app/(admin)/admin/b2b-reports/_components/B2bSurveyEditorPanel.tsx` |
-| 400 | `app/chat/components/RecommendedProductActions.tsx` |
-| 394 | `app/assess/useAssessFlow.ts` |
+| 435 | `app/survey/_lib/survey-page-auto-compute.ts` |
+| 435 | `components/manager/managerWorkspace.tsx` |
+| 415 | `components/manager/categoryManager.tsx` |
+| 385 | `components/pharm/orderAccordionItem.tsx` |
+| 382 | `app/assess/logic/algorithm.ts` |
+| 372 | `app/en/check-ai/page.tsx` |
+| 350 | `app/chat/components/ChatDrawer.tsx` |
+| 349 | `components/pharm/pharmOrderAccordionSections.tsx` |
+| 348 | `components/product/productDetail.tsx` |
+| 346 | `components/modal/reviewModal.tsx` |
 
 ## Scripts Top 15
 
 | Lines | File |
 |---:|---|
-| 1708 | `scripts/rnd/train-all-ai.ts` |
 | 1169 | `scripts/qa/check-b2b-capture-pdf-visual.cjs` |
+| 1022 | `scripts/rnd/train-all-ai.reporting.ts` |
+| 966 | `scripts/rnd/train-all-ai.ts` |
 | 588 | `scripts/qa/check-b2b-survey-adversarial.cts` |
 | 519 | `scripts/perf/push-notification-benchmark.cjs` |
-| 493 | `scripts/qa/check-b2b-public-survey-interactions.cjs` |
 | 490 | `scripts/qa/check-b2b-public-survey-flow.cts` |
+| 489 | `scripts/qa/check-b2b-public-survey-interactions.cjs` |
 | 465 | `scripts/perf/navigation-prefetch-benchmark.cjs` |
 | 414 | `scripts/qa/check-b2b-public-survey-smoke.cjs` |
 | 395 | `scripts/qa/check-b2b-report-page-overflow.cjs` |
 | 387 | `scripts/b2b/generate-survey-template-v1.ts` |
+| 380 | `scripts/qa/check-employee-report-sync-notice.cts` |
 | 375 | `scripts/rnd/module02/kpi-rollup-artifacts.ts` |
-| 356 | `scripts/qa/check-b2b-survey-readiness.cts` |
-| 352 | `scripts/perf/measure-navigation-prefetch.cjs` |
-| 352 | `scripts/qa/check-employee-report-sync-notice.cts` |
-| 352 | `scripts/rnd/module02/evaluate-kpi-rollup.ts` |
+| 359 | `scripts/qa/check-b2b-survey-readiness.cts` |
+| 356 | `scripts/agent/generate-session-primer.cts` |
 
 ## Notes
 

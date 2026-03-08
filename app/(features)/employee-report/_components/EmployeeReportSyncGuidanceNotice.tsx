@@ -1,6 +1,6 @@
 import styles from "@/components/b2b/B2bUx.module.css";
 import type { SyncGuidance } from "../_lib/client-types";
-import { formatDateTime } from "../_lib/client-utils";
+import { formatDateTime } from "../_lib/client-utils.format";
 
 type EmployeeReportSyncGuidanceNoticeProps = {
   guidance: SyncGuidance;

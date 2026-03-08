@@ -6,13 +6,11 @@ import OperationLoadingOverlay from "@/components/common/operationLoadingOverlay
 import { useToast } from "@/components/common/toastContext.client";
 import styles from "@/components/b2b/B2bUx.module.css";
 import { emitAuthSyncEvent } from "@/lib/client/auth-sync";
-import EmployeeReportAdminOnlyGate from "./_components/EmployeeReportAdminOnlyGate";
+import EmployeeReportAdminOnlySection from "./_components/EmployeeReportAdminOnlySection";
 import EmployeeReportBootSkeleton from "./_components/EmployeeReportBootSkeleton";
-import EmployeeReportCapturePreview from "./_components/EmployeeReportCapturePreview";
 import EmployeeReportHeroCard from "./_components/EmployeeReportHeroCard";
-import EmployeeReportIdentitySection from "./_components/EmployeeReportIdentitySection";
-import EmployeeReportSummaryHeaderCard from "./_components/EmployeeReportSummaryHeaderCard";
-import EmployeeReportSyncGuidanceNotice from "./_components/EmployeeReportSyncGuidanceNotice";
+import EmployeeReportInputFlowPanel from "./_components/EmployeeReportInputFlowPanel";
+import EmployeeReportReadyPanel from "./_components/EmployeeReportReadyPanel";
 import ForceRefreshConfirmDialog from "./_components/ForceRefreshConfirmDialog";
 import type {
   EmployeeReportResponse,
@@ -24,9 +22,17 @@ import {
   isValidIdentityInput,
   normalizeDigits,
   resolveIdentityPrimaryActionLabel,
-  resolveMedicationStatusMessage,
   toIdentityPayload,
-} from "./_lib/client-utils";
+} from "./_lib/client-utils.identity";
+import {
+  resolveMedicationStatusMessage,
+} from "./_lib/client-utils.guidance";
+import {
+  EMPLOYEE_REPORT_ADMIN_ONLY_CODE,
+  EMPLOYEE_REPORT_ADMIN_ONLY_NOTICE,
+  EMPLOYEE_REPORT_ADMIN_ONLY_STATUS_LABEL,
+  EMPLOYEE_REPORT_FORCE_CONFIRM_PHRASE,
+} from "./_lib/employee-report-copy";
 import {
   resolveEmployeeReportOverlayDescription,
   resolveEmployeeReportOverlayDetailLines,
@@ -42,16 +48,6 @@ import { useEmployeeReportToastEffects } from "./_lib/use-employee-report-toast-
 import { useEmployeeReportReportActions } from "./_lib/use-employee-report-report-actions";
 import { useEmployeeReportSyncActions } from "./_lib/use-employee-report-sync-actions";
 import { useEmployeeReportReportLoading } from "./_lib/use-employee-report-report-loading";
-
-const B2B_EMPLOYEE_REPORT_ADMIN_ONLY_CODE = "B2B_REPORT_ADMIN_ONLY";
-const B2B_EMPLOYEE_REPORT_ADMIN_ONLY_NOTICE =
-  "현재 건강 레포트는 관리자 확인 후 순차 안내되고 있습니다. 문의: wellnessbox.me@gmail.com";
-const ADMIN_ONLY_STATUS_LABEL = "관리자 안내 필요";
-const ADMIN_ONLY_GATE_BADGE_LABEL = "열람 안내";
-const ADMIN_ONLY_GATE_TITLE =
-  "건강 레포트는 관리자 확인 후 순차적으로 안내드리고 있어요.";
-const ADMIN_ONLY_GATE_DESCRIPTION =
-  "본인인증은 완료되었고 개인 직접 열람은 현재 준비 중입니다. 확인이 필요하시면 아래 이메일로 문의해 주세요.";
 
 export default function EmployeeReportClient({
   initialIsAdminLoggedIn,
@@ -148,7 +144,9 @@ export default function EmployeeReportClient({
   );
 
   const canExecuteForceSync = useMemo(
-    () => forceConfirmChecked && forceConfirmText.trim() === "강제 재조회",
+    () =>
+      forceConfirmChecked &&
+      forceConfirmText.trim() === EMPLOYEE_REPORT_FORCE_CONFIRM_PHRASE,
     [forceConfirmChecked, forceConfirmText]
   );
   const identityPrimaryActionLabel = useMemo(
@@ -170,6 +168,8 @@ export default function EmployeeReportClient({
     () => resolveEmployeeReportOverlayDetailLines({ busyHint, busyElapsedSec }),
     [busyElapsedSec, busyHint]
   );
+  const readyReportData = reportData?.report ? reportData : null;
+  const showIdentityFlow = !reportData && !adminOnlyReportBlocked;
 
   function getIdentityPayload() {
     return identityPayload;
@@ -192,8 +192,8 @@ export default function EmployeeReportClient({
     validIdentity,
     identityPayload,
     selectedPeriodKey,
-    adminOnlyCode: B2B_EMPLOYEE_REPORT_ADMIN_ONLY_CODE,
-    adminOnlyNotice: B2B_EMPLOYEE_REPORT_ADMIN_ONLY_NOTICE,
+    adminOnlyCode: EMPLOYEE_REPORT_ADMIN_ONLY_CODE,
+    adminOnlyNotice: EMPLOYEE_REPORT_ADMIN_ONLY_NOTICE,
     clearLocalIdentityCache,
     applyAdminOnlyBlockedState,
     resetReportState,
@@ -206,7 +206,7 @@ export default function EmployeeReportClient({
   });
 
   const checkSessionAndMaybeAutoLogin = useEmployeeReportSessionBootstrap({
-    adminOnlyNotice: B2B_EMPLOYEE_REPORT_ADMIN_ONLY_NOTICE,
+    adminOnlyNotice: EMPLOYEE_REPORT_ADMIN_ONLY_NOTICE,
     isAdminLoggedIn,
     hasTriedStoredLoginRef: hasTriedStoredLogin,
     setBooting,
@@ -253,7 +253,7 @@ export default function EmployeeReportClient({
     useEmployeeReportExistingRecordActions({
       validIdentity,
       isAdminLoggedIn,
-      adminOnlyNotice: B2B_EMPLOYEE_REPORT_ADMIN_ONLY_NOTICE,
+      adminOnlyNotice: EMPLOYEE_REPORT_ADMIN_ONLY_NOTICE,
       getIdentityPayload,
       beginBusy,
       endBusy,
@@ -319,6 +319,44 @@ export default function EmployeeReportClient({
       emitNhisSync,
     });
 
+  function handleIdentityNameChange(value: string) {
+    setIdentity((prev) => ({ ...prev, name: value }));
+  }
+
+  function handleIdentityBirthDateChange(value: string) {
+    setIdentity((prev) => ({
+      ...prev,
+      birthDate: normalizeDigits(value).slice(0, 8),
+    }));
+  }
+
+  function handleIdentityPhoneChange(value: string) {
+    setIdentity((prev) => ({
+      ...prev,
+      phone: normalizeDigits(value).slice(0, 11),
+    }));
+  }
+
+  function handleContinueSync() {
+    void handleSignAndSync(pendingSignForceRefresh);
+  }
+
+  function resetForceConfirmDialog() {
+    setForceConfirmOpen(false);
+    setForceConfirmText("");
+    setForceConfirmChecked(false);
+  }
+
+  function closeForceConfirmDialog() {
+    if (busy) return;
+    resetForceConfirmDialog();
+  }
+
+  function confirmForceSync() {
+    resetForceConfirmDialog();
+    void handleSignAndSync(true);
+  }
+
   if (booting) {
     return <EmployeeReportBootSkeleton />;
   }
@@ -340,106 +378,51 @@ export default function EmployeeReportClient({
         className={`${styles.page} ${styles.pageNoBg} ${styles.compactPage} ${styles.stack}`}
       >
         <EmployeeReportHeroCard
-          reportReady={Boolean(reportData?.report)}
+          reportReady={Boolean(readyReportData)}
           adminOnlyBlocked={adminOnlyReportBlocked}
-          adminOnlyStatusLabel={ADMIN_ONLY_STATUS_LABEL}
+          adminOnlyStatusLabel={EMPLOYEE_REPORT_ADMIN_ONLY_STATUS_LABEL}
           selectedPeriodKey={selectedPeriodKey}
         />
 
-        {!reportData && !adminOnlyReportBlocked ? (
-          <>
-            <EmployeeReportIdentitySection
-              identity={identity}
-              busy={busy}
-              showSignAction={!syncGuidance && syncNextAction === "sign"}
-              primaryActionLabel={identityPrimaryActionLabel}
-              hideActionRow={!!syncGuidance}
-              onNameChange={(value) => {
-                setIdentity((prev) => ({ ...prev, name: value }));
-              }}
-              onBirthDateChange={(value) => {
-                setIdentity((prev) => ({
-                  ...prev,
-                  birthDate: normalizeDigits(value).slice(0, 8),
-                }));
-              }}
-              onPhoneChange={(value) => {
-                setIdentity((prev) => ({
-                  ...prev,
-                  phone: normalizeDigits(value).slice(0, 11),
-                }));
-              }}
-              onRestartAuth={handleRestartAuth}
-              onSignAndSync={() =>
-                void handleSignAndSync(pendingSignForceRefresh)
-              }
-              onFindExisting={handleFindExisting}
-            />
-
-            {syncGuidance ? (
-              <EmployeeReportSyncGuidanceNotice
-                guidance={syncGuidance}
-                busy={busy}
-                showActions
-                onRestartAuth={handleRestartAuth}
-                onSignAndSync={() =>
-                  void handleSignAndSync(pendingSignForceRefresh)
-                }
-              />
-            ) : null}
-          </>
-        ) : null}
-
-        {adminOnlyReportBlocked ? (
-          <EmployeeReportAdminOnlyGate
-            badgeLabel={ADMIN_ONLY_GATE_BADGE_LABEL}
-            title={ADMIN_ONLY_GATE_TITLE}
-            description={ADMIN_ONLY_GATE_DESCRIPTION}
-            contactEmail="wellnessbox.me@gmail.com"
+        {showIdentityFlow ? (
+          <EmployeeReportInputFlowPanel
+            identity={identity}
+            busy={busy}
+            syncGuidance={syncGuidance}
+            syncNextAction={syncNextAction}
+            primaryActionLabel={identityPrimaryActionLabel}
+            onNameChange={handleIdentityNameChange}
+            onBirthDateChange={handleIdentityBirthDateChange}
+            onPhoneChange={handleIdentityPhoneChange}
+            onRestartAuth={handleRestartAuth}
+            onSignAndSync={handleContinueSync}
+            onFindExisting={handleFindExisting}
           />
         ) : null}
 
-        {reportData?.report ? (
-          <>
-            <EmployeeReportSummaryHeaderCard
-              reportData={reportData}
-              selectedPeriodKey={selectedPeriodKey}
-              periodOptions={periodOptions}
-              busy={busy}
-              syncNextAction={syncNextAction}
-              primarySyncActionLabel="최신 정보 확인"
-              canUseForceSync={canUseForceSync}
-              forceSyncRemainingSec={forceSyncRemainingSec}
-              onPeriodChange={(next) => {
-                void handleChangePeriod(next);
-              }}
-              onDownloadPdf={handleDownloadPdf}
-              onDownloadLegacyPdf={handleDownloadLegacyPdf}
-              onRestartAuth={handleRestartAuth}
-              onSignAndSync={() =>
-                void handleSignAndSync(pendingSignForceRefresh)
-              }
-              onLogout={handleLogout}
-              onOpenForceSync={() => setForceConfirmOpen(true)}
-            />
-            {syncGuidance ? (
-              <EmployeeReportSyncGuidanceNotice
-                guidance={syncGuidance}
-                busy={busy}
-                showActions
-                onRestartAuth={handleRestartAuth}
-                onSignAndSync={() =>
-                  void handleSignAndSync(pendingSignForceRefresh)
-                }
-              />
-            ) : null}
+        {adminOnlyReportBlocked ? <EmployeeReportAdminOnlySection /> : null}
 
-            {/* New default: web-first report + capture PDF */}
-            <EmployeeReportCapturePreview
-              reportData={reportData}
-              captureRef={webReportCaptureRef}
-            />
-          </>
+        {readyReportData ? (
+          <EmployeeReportReadyPanel
+            reportData={readyReportData}
+            selectedPeriodKey={selectedPeriodKey}
+            periodOptions={periodOptions}
+            busy={busy}
+            syncNextAction={syncNextAction}
+            canUseForceSync={canUseForceSync}
+            forceSyncRemainingSec={forceSyncRemainingSec}
+            syncGuidance={syncGuidance}
+            captureRef={webReportCaptureRef}
+            onPeriodChange={(next) => {
+              void handleChangePeriod(next);
+            }}
+            onDownloadPdf={handleDownloadPdf}
+            onDownloadLegacyPdf={handleDownloadLegacyPdf}
+            onRestartAuth={handleRestartAuth}
+            onSignAndSync={handleContinueSync}
+            onLogout={handleLogout}
+            onOpenForceSync={() => setForceConfirmOpen(true)}
+          />
         ) : null}
 
         <ForceRefreshConfirmDialog
@@ -450,18 +433,8 @@ export default function EmployeeReportClient({
           canExecuteForceSync={canExecuteForceSync}
           onConfirmCheckedChange={setForceConfirmChecked}
           onConfirmTextChange={setForceConfirmText}
-          onClose={() => {
-            if (busy) return;
-            setForceConfirmOpen(false);
-            setForceConfirmText("");
-            setForceConfirmChecked(false);
-          }}
-          onConfirm={() => {
-            setForceConfirmOpen(false);
-            setForceConfirmText("");
-            setForceConfirmChecked(false);
-            void handleSignAndSync(true);
-          }}
+          onClose={closeForceConfirmDialog}
+          onConfirm={confirmForceSync}
         />
       </div>
     </div>

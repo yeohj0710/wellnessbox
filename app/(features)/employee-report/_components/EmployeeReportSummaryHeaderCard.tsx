@@ -1,6 +1,6 @@
 import styles from "@/components/b2b/B2bUx.module.css";
 import type { EmployeeReportResponse } from "../_lib/client-types";
-import { formatRelativeTime } from "../_lib/client-utils";
+import { formatRelativeTime } from "../_lib/client-utils.format";
 
 type EmployeeReportSummaryHeaderCardProps = {
   reportData: EmployeeReportResponse;

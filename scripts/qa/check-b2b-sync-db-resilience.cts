@@ -145,8 +145,15 @@ function runStaticRegressionChecks() {
   );
 
   const clientUtilsSource = read("app/(features)/employee-report/_lib/client-utils.ts");
+  const clientGuidanceSource = read(
+    "app/(features)/employee-report/_lib/client-utils.guidance.ts"
+  );
   assert.ok(
-    clientUtilsSource.includes("DB_POOL_TIMEOUT"),
+    clientUtilsSource.includes('export * from "./client-utils.guidance";'),
+    "employee-report client-utils facade should re-export guidance helpers"
+  );
+  assert.ok(
+    clientGuidanceSource.includes("DB_POOL_TIMEOUT"),
     "employee-report client guidance should handle DB pool timeout"
   );
 

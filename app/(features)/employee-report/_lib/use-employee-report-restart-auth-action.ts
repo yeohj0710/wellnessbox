@@ -8,10 +8,10 @@ import type {
   SyncGuidance,
 } from "./client-types";
 import {
-  ApiRequestError,
   buildSyncGuidance,
   toSyncNextAction,
-} from "./client-utils";
+} from "./client-utils.guidance";
+import { ApiRequestError } from "./client-utils.request";
 import { runRestartAuthFlow } from "./sync-flow";
 import type { BusyHint } from "./use-busy-state";
 

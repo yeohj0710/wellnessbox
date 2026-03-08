@@ -5,6 +5,12 @@ import {
   buildResolvedRecommendations,
   dedupeRecommendationsByProductOption,
 } from "./recommendedProductActions.scoring";
+import {
+  isCategoryLikeProductName,
+  isPlaceholderProductName,
+} from "./recommendedProductActions.resolve.category";
+import { fetchProductNameCatalog } from "./recommendedProductActions.resolve.catalog";
+import { findProductCandidatesByName } from "./recommendedProductActions.resolve.name";
 import type {
   ActionableRecommendation,
   ProductIdScore,
@@ -13,11 +19,7 @@ import type {
   RecommendationLineMatch,
 } from "./recommendedProductActions.types";
 
-const PRODUCT_NAME_CATALOG_TTL_MS = 5 * 60 * 1000;
 const RECOMMENDATION_RESOLVE_CACHE_TTL_MS = 60 * 1000;
-let productNameCatalogPromise: Promise<ProductNameItem[]> | null = null;
-let productNameCatalogLoadedAt = 0;
-let productNameCatalogRetryAt = 0;
 const recommendationResolveCache = new Map<
   string,
   { createdAt: number; promise: Promise<ActionableRecommendation[]> }
@@ -68,140 +70,10 @@ const CATEGORY_KEYWORD_SET = new Set(
   ].map((entry) => normalizeKey(entry)).filter(Boolean)
 );
 
-async function fetchProductNameCatalog() {
-  const now = Date.now();
-  if (now < productNameCatalogRetryAt) return [];
-  if (
-    productNameCatalogPromise &&
-    now - productNameCatalogLoadedAt < PRODUCT_NAME_CATALOG_TTL_MS
-  ) {
-    return productNameCatalogPromise;
-  }
-  if (typeof navigator !== "undefined" && navigator.onLine === false) {
-    productNameCatalogRetryAt = now + 4_000;
-    return [];
-  }
-
-  productNameCatalogPromise = fetch("/api/product/names", {
-    method: "GET",
-    cache: "no-store",
-  })
-    .then(async (response) => {
-      if (!response.ok) {
-        throw new Error(`product names status ${response.status}`);
-      }
-      return response.json().catch(() => ({}));
-    })
-    .then((json) =>
-      Array.isArray(json?.products)
-        ? json.products
-            .map((item: any) => ({
-              id: Number(item?.id),
-              name: typeof item?.name === "string" ? item.name.trim() : "",
-              categories: Array.isArray(item?.categories)
-                ? item.categories
-                    .map((category: any) =>
-                      typeof category === "string"
-                        ? category.trim()
-                        : typeof category?.name === "string"
-                          ? category.name.trim()
-                          : ""
-                    )
-                    .filter(Boolean)
-                : [],
-            }))
-            .filter((item: ProductNameItem) => Number.isFinite(item.id) && item.name)
-        : []
-    )
-    .then((items) => {
-      productNameCatalogLoadedAt = Date.now();
-      return items;
-    })
-    .catch(() => {
-      productNameCatalogRetryAt = Date.now() + 4_000;
-      productNameCatalogPromise = null;
-      productNameCatalogLoadedAt = 0;
-      return [];
-    });
-  return productNameCatalogPromise;
-}
-
-function scoreNameMatch(targetRaw: string, candidateRaw: string) {
-  const targetNorm = normalizeKey(targetRaw);
-  const candidateNorm = normalizeKey(candidateRaw);
-  if (!targetNorm || !candidateNorm) return -1;
-  if (targetNorm === candidateNorm) return 10_000;
-
-  const splitTokens = (value: string) =>
-    value
-      .split(/[^\p{L}\p{N}]+/u)
-      .map((token) => normalizeKey(token))
-      .filter(Boolean);
-  const scoreTokenOverlap = (targetValue: string, candidateValue: string) => {
-    const targetTokens = splitTokens(targetValue);
-    const candidateTokens = splitTokens(candidateValue);
-    if (targetTokens.length === 0 || candidateTokens.length === 0) return 0;
-
-    const targetTokenSet = new Set(targetTokens);
-    const candidateTokenSet = new Set(candidateTokens);
-    let overlap = 0;
-    for (const token of targetTokenSet) {
-      if (candidateTokenSet.has(token)) overlap += 1;
-    }
-    if (overlap === 0) return 0;
-
-    const coverage =
-      overlap / Math.max(1, Math.max(targetTokenSet.size, candidateTokenSet.size));
-    return overlap * 700 + Math.round(coverage * 400);
-  };
-
-  let score = 0;
-  if (candidateNorm.includes(targetNorm)) {
-    score += 6_000 - Math.abs(candidateNorm.length - targetNorm.length);
-  }
-  if (targetNorm.includes(candidateNorm)) {
-    score += 4_000 - Math.abs(candidateNorm.length - targetNorm.length);
-  }
-  score += scoreTokenOverlap(targetRaw, candidateRaw);
-
-  const maxPrefix = Math.min(targetNorm.length, candidateNorm.length, 12);
-  let prefix = 0;
-  while (prefix < maxPrefix && targetNorm[prefix] === candidateNorm[prefix]) {
-    prefix += 1;
-  }
-  score += prefix * 50;
-  return score;
-}
-
-function isPlaceholderProductName(value: string) {
-  const normalized = normalizeKey(value);
-  if (!normalized) return true;
-  return PLACEHOLDER_PRODUCT_NAME_SET.has(normalized);
-}
-
 function isGenericCategory(value: string) {
   const normalized = normalizeKey(value);
   if (!normalized) return true;
   return GENERIC_CATEGORY_SET.has(normalized);
-}
-
-function isCategoryLikeProductName(productName: string, category: string) {
-  const normalizedName = normalizeKey(productName);
-  if (!normalizedName) return true;
-  if (CATEGORY_KEYWORD_SET.has(normalizedName)) return true;
-
-  const normalizedCategory = normalizeKey(category);
-  if (normalizedCategory && normalizedName === normalizedCategory) return true;
-  if (
-    normalizedCategory &&
-    normalizedName.length >= 2 &&
-    (normalizedName.includes(normalizedCategory) ||
-      normalizedCategory.includes(normalizedName))
-  ) {
-    return true;
-  }
-
-  return false;
 }
 
 function buildCategoryAliases(rawCategory: string) {
@@ -260,26 +132,6 @@ function scoreCategoryMatch(category: string, item: ProductNameItem) {
     }
   }
   return best;
-}
-
-function findProductCandidatesByName(
-  productName: string,
-  catalog: ProductNameItem[],
-  take = 4
-) {
-  if (!normalizeKey(productName)) return null;
-
-  const candidates: ProductIdScore[] = [];
-  for (const item of catalog) {
-    const score = scoreNameMatch(productName, item.name);
-    if (score < 0) continue;
-    candidates.push({ id: item.id, score, source: "name" });
-  }
-  const out = candidates
-    .filter((candidate) => candidate.score >= 1_000)
-    .sort((left, right) => right.score - left.score)
-    .slice(0, take);
-  return out.length > 0 ? out : null;
 }
 
 function findBestProductCandidateByCategory(
@@ -351,8 +203,15 @@ export async function resolveRecommendations(
     const lineMatches: RecommendationLineMatch[] = [];
     for (const line of lines) {
       const allowCategoryFallback =
-        isPlaceholderProductName(line.productName) ||
-        isCategoryLikeProductName(line.productName, line.category);
+        isPlaceholderProductName(
+          line.productName,
+          PLACEHOLDER_PRODUCT_NAME_SET
+        ) ||
+        isCategoryLikeProductName(
+          line.productName,
+          line.category,
+          CATEGORY_KEYWORD_SET
+        );
 
       const nameCandidates = allowCategoryFallback
         ? []

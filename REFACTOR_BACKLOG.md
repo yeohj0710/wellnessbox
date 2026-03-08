@@ -12,8 +12,10 @@ Base input: `npm run audit:hotspots`
    - Added `useChat.api.ts` to centralize chat endpoint calls.
 3. `components/chat/DesktopChatDock.tsx`
    - Split dock panel from trigger container.
+   - Extracted launch lifecycle and route-nudge/global-event state into `useDesktopChatDockLauncher.ts`.
 4. `components/chat/DesktopChatDockPanel.tsx`
    - Extracted session drawer layer into `DesktopChatDockSessionLayer.tsx`.
+   - Extracted shell effects and session-layer handlers into `useDesktopChatDockPanelShell.ts`.
 5. Agent maintenance tooling
    - Added `agent:skills-catalog` and `agent:refactor-report` scripts.
 6. `app/api/health/nhis/fetch/route.ts`
@@ -937,15 +939,114 @@ Base input: `npm run audit:hotspots`
      - `scripts/qa/check-survey-lifecycle-actions-extraction.cts`
    - Added maintenance note:
      - `docs/maintenance/survey-lifecycle-actions-extraction.md`
+148. `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx` detail-state boundary split
+   - Added `app/(admin)/admin/b2b-reports/_lib/use-b2b-admin-report-detail-state.ts` to own employee-detail state, bundle hydration, preview state, and period-selection state.
+   - Moved `fetchEmployeeDetailBundle` response normalization into the new hook so the page stays focused on list/search orchestration and action wiring.
+   - Hardened employee switching by clearing survey/note/analysis/report detail state together, preventing stale detail content from leaking if the next employee load fails.
+   - Centralized `B2bAdminReportPreviewTab` in `client-types.ts` to remove duplicated tab-union definitions across workspace/preview/lifecycle modules.
+149. `app/my-data/myDataPageSections.tsx` copy/label boundary cleanup
+   - Added `app/my-data/myDataPageLabels.ts` to centralize Korean-first badge, chat scope/status, and role labels.
+   - Replaced raw English user-facing pills (`Kakao`, `Session`, `has data`, raw role/scope labels) in `myDataPageSections.tsx` with shared label helpers.
+   - Added `scripts/qa/check-my-data-copy-localization.cts` and npm script `qa:my-data:copy-localization` to guard the surface against English-only copy regressions.
+150. Employee report flow panel boundary split (`app/(features)/employee-report/EmployeeReportClient.tsx`)
+   - Added `app/(features)/employee-report/_components/EmployeeReportInputFlowPanel.tsx`, `EmployeeReportReadyPanel.tsx`, and `EmployeeReportAdminOnlySection.tsx` so `EmployeeReportClient` can stay focused on state/hook orchestration.
+   - Added `app/(features)/employee-report/_lib/employee-report-copy.ts` to centralize admin-only notice text, force-confirm wording, and summary CTA copy used across the employee report surface.
+   - Updated static QA/doc maps so future sessions follow wrapper panels first, then leaf components and hooks.
+151. Cart interaction-controller boundary split (`components/order/cart.tsx`)
+   - Added `components/order/hooks/useCartInteractionController.ts` to own address save, product-detail scroll restore, phone modal callbacks, bulk option change, and checkout/pharmacy modal state.
+   - Reused `updateCartAndPersist` from `components/order/cartItemsSection.actions.ts` so cart-level persistence follows the same notification path as row-level mutations.
+   - Added `docs/cart_client_map.md`, `scripts/qa/check-cart-interaction-controller-extraction.cts`, and npm script `qa:cart:interaction-controller-extraction` to make cart follow-up sessions faster and safer.
+152. Column editor controller boundary split (`app/(admin)/admin/column/editor/EditorAdminClient.tsx`)
+   - Added `app/(admin)/admin/column/editor/_lib/use-column-editor-controller.ts` to own list/detail loading, query-param selection, form reset/edit state, mutation handlers, and markdown image-upload insertion flow.
+   - Reduced `EditorAdminClient.tsx` to shell rendering plus `sidebarProps` / `workspaceProps` composition.
+   - Parallelized multi-image upload with `Promise.all` while preserving insertion order.
+   - Added `docs/maintenance/column-editor-controller-extraction.md`, `docs/column_editor_client_map.md` updates, and `scripts/qa/check-column-editor-controller-extraction.cts` for follow-up session clarity.
+153. Column editor controller subhooks (`app/(admin)/admin/column/editor/_lib/use-column-editor-controller.ts`)
+   - Added `use-column-editor-post-actions.ts` for save/publish/delete/dev-save mutation handlers and publish-block derivation.
+   - Added `use-column-editor-markdown-media.ts` for textarea/file-input refs, paste/file upload flow, and markdown insertion.
+   - Reduced `use-column-editor-controller.ts` to selection/form orchestration plus UI prop composition.
+   - Added `docs/maintenance/column-editor-controller-subhooks.md` and `scripts/qa/check-column-editor-controller-subhooks.cts` to keep future follow-up edits on the right boundary.
+154. Employee report client-utils module split (`app/(features)/employee-report/_lib/client-utils.ts`)
+   - Split the monolithic client utility file into focused modules: `client-utils.identity.ts`, `client-utils.request.ts`, `client-utils.guidance.ts`, `client-utils.pdf.ts`, and `client-utils.format.ts`.
+   - Kept `client-utils.ts` as a stable facade for legacy imports while moving feature code to direct focused-module imports.
+   - Added `scripts/qa/check-employee-report-client-utils-modules.cts`, updated employee-report docs/precheck guidance, and documented the new boundary for follow-up sessions.
+155. Column legacy editor redirect cleanup (`app/column/editor/page.tsx`)
+   - Removed the unused `app/column/editor/EditorClient.tsx` legacy dev editor so follow-up sessions no longer mistake it for an active entry point.
+   - Kept `/column/editor` redirect-only and documented the admin editor as the single maintained editor surface.
+   - Added `scripts/qa/check-column-editor-legacy-redirect.cts` plus precheck/map updates to keep the dead client boundary from returning.
+156. My-data section modules (`app/my-data/myDataPageSections.tsx`)
+   - Split the monolithic my-data section file into focused modules: `myDataPageOverviewSections.tsx`, `myDataPageOrderSection.tsx`, `myDataPageResultSections.tsx`, and `myDataPageChatSection.tsx`.
+   - Kept `myDataPageSections.tsx` as a stable export surface so `app/my-data/page.tsx` and future callers can keep a single import path.
+   - Added `scripts/qa/check-my-data-section-modules.cts`, updated the localization QA, and documented the new map for follow-up sessions.
+157. Desktop chat dock panel shell extraction (`components/chat/DesktopChatDockPanel.tsx`)
+   - Moved dock prompt bootstrap, inert/focus cleanup, scroll-chain guard, and session-layer handlers into `components/chat/useDesktopChatDockPanelShell.ts`.
+   - Kept `DesktopChatDockPanel.tsx` as the composition shell that wires `useChat`, layout state, and dock subcomponents.
+   - Added `scripts/qa/check-desktop-chat-dock-panel-shell-extraction.cts` and documented the new boundary for follow-up sessions.
+158. Desktop chat dock launcher extraction (`components/chat/DesktopChatDock.tsx`)
+   - Moved lazy boot, pending-open, viewport/footer offset tracking, route-nudge visibility, and global dock open/close events into `components/chat/useDesktopChatDockLauncher.ts`.
+   - Kept `DesktopChatDock.tsx` as the route-aware trigger shell that composes localized nudge UI and the dock panel.
+   - Added `scripts/qa/check-desktop-chat-dock-launcher-extraction.cts` and documented the new launcher boundary for follow-up sessions.
+159. Recommended product actions controller extraction (`app/chat/components/RecommendedProductActions.tsx`)
+   - Moved recommendation resolve lifecycle, cart/address guard state, confirm dialog payloads, and address-save follow-up handling into `app/chat/components/useRecommendedProductActionsController.ts`.
+   - Split preview/item-row rendering into `RecommendedProductActionList.tsx` and separated the draggable address guide / confirm dialogs into dedicated modal components.
+   - Kept `RecommendedProductActions.tsx` as the chat CTA shell and added `scripts/qa/check-recommended-product-actions-controller-extraction.cts` plus follow-up docs.
+160. Recommended product actions resolve modules (`app/chat/components/recommendedProductActions.resolve.ts`)
+   - Moved product-name catalog fetch/cache normalization into `recommendedProductActions.resolve.catalog.ts`.
+   - Moved name tokenization and candidate score/ranking into `recommendedProductActions.resolve.name.ts`.
+   - Moved placeholder/category-like fallback predicates into `recommendedProductActions.resolve.category.ts`.
+   - Kept `recommendedProductActions.resolve.ts` focused on category fallback policy, category scoring, and final recommendation assembly, and extended `scripts/qa/check-recommended-product-actions-resolve-modules.cts`.
+161. Chat useChat command layer extraction (`app/chat/hooks/useChat.ts`)
+   - Moved UI-facing handler assembly into `app/chat/hooks/useChat.commandLayer.ts`.
+   - Kept `useChat.ts` focused on state, refs, bootstrap/scroll effects, derived context, and return wiring.
+   - Added `scripts/qa/check-chat-command-layer-extraction.cts` plus follow-up maintenance docs.
+162. Column summary query extraction (`app/column/_lib/columns.ts`)
+   - Moved tag aggregation, tag archive filtering, related-column selection, and adjacent-column selection into `app/column/_lib/columns-summary-queries.ts`.
+   - Kept `columns.ts` focused on file/DB loading, slug resolution, and async public wrappers.
+   - Added `scripts/qa/check-column-summary-query-extraction.cts` plus follow-up maintenance docs.
+163. Home product section data/content extraction (`app/(components)/homeProductSection.tsx`)
+   - Moved home-data fetch/cache/recovery state into `app/(components)/useHomeProductSectionData.ts`.
+   - Moved section composition plus product-detail/cart overlay rendering into `app/(components)/homeProductSection.content.tsx`.
+   - Kept `homeProductSection.tsx` focused on state orchestration, effect wiring, and cart callbacks.
+   - Added `scripts/qa/check-home-product-section-data-content-extraction.cts` plus follow-up maintenance docs.
+164. Order-complete bootstrap/notification hook extraction (`app/(orders)/order-complete/page.tsx`)
+   - Moved payment verification, duplicate-order lookup, order creation, and cart/checkout recovery routing into `app/(orders)/order-complete/useOrderCompleteBootstrap.ts`.
+   - Moved push subscribe/send/unsubscribe handlers into `app/(orders)/order-complete/useOrderCompleteNotifications.ts`.
+   - Added `orderComplete.client.ts`, `orderComplete.copy.ts`, and draft-validation helpers so future sessions can find order-complete boundaries faster.
+   - Added `scripts/qa/check-order-complete-hooks-extraction.cts` plus follow-up maintenance docs.
+165. Chat interactive action route modules (`app/chat/hooks/useChat.interactiveActions.ts`)
+   - Moved route navigation, page-focus fallback, and support link config/helpers into `app/chat/hooks/useChat.interactiveActions.routes.ts`.
+   - Moved shared interactive action contracts into `app/chat/hooks/useChat.interactiveActions.types.ts`.
+   - Kept `useChat.interactiveActions.ts` focused on cart/profile/assessment orchestration plus route-helper wiring.
+   - Added `scripts/qa/check-chat-interactive-actions-modules.cts` plus follow-up maintenance docs.
+166. B2B integrated result preview modules (`app/(admin)/admin/b2b-reports/_components/B2bIntegratedResultPreview.tsx`)
+   - Moved payload-to-preview normalization into `app/(admin)/admin/b2b-reports/_lib/b2b-integrated-result-preview-model.ts`.
+   - Split the integrated preview card families into `B2bIntegratedHealthMetricsSection.tsx` and `B2bIntegratedMedicationReviewSection.tsx`.
+   - Kept `B2bIntegratedResultPreview.tsx` focused on preview-model memoization plus section composition, and added `scripts/qa/check-b2b-integrated-result-preview-modules.cts`.
+167. Assess flow modules (`app/assess/useAssessFlow.ts`)
+   - Moved progress/current-question/recommendation derived state into `app/assess/useAssessFlow.derived.ts`.
+   - Moved storage hydrate/persist, keyboard/focus/body-scroll effects, category fetch, and loading-timer cleanup into `app/assess/useAssessFlow.lifecycle.ts`.
+   - Added `app/assess/useAssessFlow.types.ts` for the shared section union and `scripts/qa/check-assess-flow-modules.cts`.
+168. Chat input controller extraction (`app/chat/components/ChatInput.tsx`)
+   - Moved textarea sizing, coachmark persistence, quick-action tray state, and unified-action wiring into `app/chat/components/useChatInputController.ts`.
+   - Split coachmark/hint/tray UI into `app/chat/components/ChatInputActionAssist.tsx` and shared the prop contract via `app/chat/components/chatInput.types.ts`.
+   - Kept `ChatInput.tsx` focused on the shared input shell used by the chat page and desktop dock, and added `scripts/qa/check-chat-input-controller-extraction.cts`.
+169. Desktop chat dock layout modules (`components/chat/DesktopChatDock.layout.ts`)
+   - Moved clamp, scroll-chain, focus-blur, and resize-edge helpers into `components/chat/DesktopChatDock.layout.geometry.ts`.
+   - Moved dock prompt queue, route-nudge persistence, footer offset parsing, and size/position storage helpers into `components/chat/DesktopChatDock.layout.storage.ts`.
+   - Kept `DesktopChatDock.layout.ts` as the stable export surface for existing consumers and added `scripts/qa/check-desktop-chat-dock-layout-modules.cts`.
+170. Chat recommendation modules (`app/chat/hooks/useChat.recommendation.ts`)
+   - Moved home-data fetch/cache, best-option selection, and category bucket building into `app/chat/hooks/useChat.recommendation.catalog.ts`.
+   - Kept `useChat.recommendation.ts` focused on recommendation section detection, resolved-price line replacement, and missing-price fallback hydration.
+   - Added `scripts/qa/check-chat-recommendation-modules.cts` and documented the new hook boundary for follow-up sessions.
 
 ## Priority 1 (next)
 
-1. `app/chat/hooks/useChat.ts` (~1247 lines)
-   - Split cart-command + action-decision handlers into policy module.
-2. `components/chat/DesktopChatDockPanel.tsx` (~991 lines)
-   - Split header/feed/resize-hint into dedicated components.
-3. `app/(components)/homeProductSection.tsx` (~948 lines)
-   - Split data retrieval from rendering sections.
+1. `app/chat/components/ChatDrawer.tsx` (~350 lines)
+   - Split session row rendering and modal-layer controls if the drawer surface expands again.
+2. `components/pharm/orderAccordionItem.tsx` (~385 lines)
+   - Split order summary, status, and action rows if the pharmacy order surface changes again.
+3. `components/pharm/pharmOrderAccordionSections.tsx` (~349 lines)
+   - Split status/action/helper blocks if the accordion section surface grows again.
 
 ## Priority 2
 

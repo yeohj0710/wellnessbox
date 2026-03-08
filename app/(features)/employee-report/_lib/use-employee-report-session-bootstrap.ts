@@ -7,7 +7,10 @@ import type {
   EmployeeSessionUpsertResponse,
   IdentityInput,
 } from "./client-types";
-import { readStoredIdentityWithSource, saveStoredIdentity } from "./client-utils";
+import {
+  readStoredIdentityWithSource,
+  saveStoredIdentity,
+} from "./client-utils.identity";
 
 type StoredIdentitySource = "none" | "v2" | "legacy" | "expired" | "invalid";
 

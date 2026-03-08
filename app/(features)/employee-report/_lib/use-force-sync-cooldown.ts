@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { ApiErrorPayload } from "./client-types";
-import { resolveCooldownUntilFromPayload } from "./client-utils";
+import { resolveCooldownUntilFromPayload } from "./client-utils.guidance";
 
 export function useForceSyncCooldown() {
   const [forceSyncCooldownUntil, setForceSyncCooldownUntil] = useState<number | null>(

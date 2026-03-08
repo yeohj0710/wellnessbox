@@ -9,27 +9,13 @@ function read(filePath: string) {
   return fs.readFileSync(path.join(ROOT, filePath), "utf8");
 }
 
-const {
-  ApiRequestError,
-  buildSyncGuidance,
-  isPdfEngineUnavailableFailure,
-  requestJson,
-  resolveSyncCompletionNotice,
-} = require(path.join(
+const { ApiRequestError, requestJson } = require(path.join(
   ROOT,
-  "app/(features)/employee-report/_lib/client-utils.ts"
+  "app/(features)/employee-report/_lib/client-utils.request.ts"
 )) as {
   ApiRequestError: new (status: number, payload: any) => Error & {
     status: number;
     payload: { code?: string; reason?: string; nextAction?: string; error?: string };
-  };
-  buildSyncGuidance: (payload: any, status: number, fallbackMessage: string) => {
-    code?: string;
-    reason?: string;
-    nextAction?: "init" | "sign" | "retry" | "wait";
-    message: string;
-    retryAfterSec?: number;
-    availableAt?: string | null;
   };
   requestJson: <T>(
     url: string,
@@ -40,11 +26,23 @@ const {
       networkErrorMessage?: string;
     }
   ) => Promise<T>;
-  isPdfEngineUnavailableFailure: (input: {
-    code?: string | null;
-    reason?: string | null;
-    error?: string | null;
-  }) => boolean;
+};
+
+const {
+  buildSyncGuidance,
+  resolveSyncCompletionNotice,
+} = require(path.join(
+  ROOT,
+  "app/(features)/employee-report/_lib/client-utils.guidance.ts"
+)) as {
+  buildSyncGuidance: (payload: any, status: number, fallbackMessage: string) => {
+    code?: string;
+    reason?: string;
+    nextAction?: "init" | "sign" | "retry" | "wait";
+    message: string;
+    retryAfterSec?: number;
+    availableAt?: string | null;
+  };
   resolveSyncCompletionNotice: (input: {
     sync?: {
       source?: "fresh" | "cache-valid" | "cache-history" | "snapshot-history";
@@ -53,6 +51,17 @@ const {
     forceRefresh: boolean;
     authReused: boolean;
   }) => string;
+};
+
+const { isPdfEngineUnavailableFailure } = require(path.join(
+  ROOT,
+  "app/(features)/employee-report/_lib/client-utils.pdf.ts"
+)) as {
+  isPdfEngineUnavailableFailure: (input: {
+    code?: string | null;
+    reason?: string | null;
+    error?: string | null;
+  }) => boolean;
 };
 
 function runSyncNoticeCases() {
@@ -269,23 +278,42 @@ function runPdfEngineFallbackCases() {
 }
 
 function runStaticRegressionChecks() {
-  const clientSource = read("app/(features)/employee-report/EmployeeReportClient.tsx");
+  const signSyncSource = read(
+    "app/(features)/employee-report/_lib/use-employee-report-sign-sync-action.ts"
+  );
+  const reportActionsSource = read(
+    "app/(features)/employee-report/_lib/use-employee-report-report-actions.ts"
+  );
+  const readyPanelSource = read(
+    "app/(features)/employee-report/_components/EmployeeReportReadyPanel.tsx"
+  );
+  const copySource = read(
+    "app/(features)/employee-report/_lib/employee-report-copy.ts"
+  );
   const pdfSource = read("app/(features)/employee-report/_lib/pdf-download.ts");
   assert.ok(
-    clientSource.includes("resolveSyncCompletionNotice"),
-    "EmployeeReportClient should resolve sync notice via helper"
+    signSyncSource.includes("resolveSyncCompletionNotice"),
+    "Sign sync action should resolve sync notice via helper"
   );
   assert.ok(
-    clientSource.includes("authReused: ready.reused"),
+    signSyncSource.includes("authReused: ready.reused"),
     "sync notice helper should receive auth reuse context"
   );
   assert.ok(
-    clientSource.includes("primarySyncActionLabel=\"최신 정보 확인\""),
-    "EmployeeReportClient should use generalized summary CTA text"
+    readyPanelSource.includes(
+      "primarySyncActionLabel={EMPLOYEE_REPORT_PRIMARY_SYNC_ACTION_LABEL}"
+    ),
+    "Ready panel should use the shared generalized summary CTA text"
   );
   assert.ok(
-    clientSource.includes("downloadEmployeeReportPdf"),
-    "EmployeeReportClient should delegate PDF download to dedicated helper"
+    copySource.includes(
+      'EMPLOYEE_REPORT_PRIMARY_SYNC_ACTION_LABEL = "최신 정보 확인"'
+    ),
+    "Employee report copy should centralize the generalized summary CTA text"
+  );
+  assert.ok(
+    reportActionsSource.includes("downloadEmployeeReportPdf"),
+    "Report actions hook should delegate PDF download to the dedicated helper"
   );
   assert.ok(
     pdfSource.includes("captureElementToPdf"),

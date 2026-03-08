@@ -7,7 +7,11 @@ Keep `homeProductSection.tsx` focused on orchestration and UI composition, while
 ## Current Split
 
 - `homeProductSection.tsx`
-  - Home product screen orchestration, section composition, and cross-block state wiring.
+  - Home product screen state orchestration, effect wiring, and callback composition.
+- `useHomeProductSectionData.ts`
+  - Home-data fetch/cache/recovery lifecycle and sorted category/product state.
+- `homeProductSection.content.tsx`
+  - Section composition plus product-detail/cart overlay rendering.
 - `homeProductSection.helpers.ts`
   - Pure helpers for cache read, product filtering, cart total calculation, and symptom-category resolution.
 - `homeProductSection.copy.ts`
@@ -35,4 +39,5 @@ Keep `homeProductSection.tsx` focused on orchestration and UI composition, while
 
 - Keep text/copy in `homeProductSection.copy.ts` and avoid inline English-only labels.
 - Keep network side effects in hooks/modules before extending `homeProductSection.tsx`.
+- Keep the main JSX shell in `homeProductSection.content.tsx`; add new blocks there before growing `homeProductSection.tsx` again.
 - Keep filter/cart math in `homeProductSection.helpers.ts` as pure functions.

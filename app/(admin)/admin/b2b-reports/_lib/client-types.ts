@@ -3,6 +3,8 @@ import type { ReportSummaryPayload } from "@/lib/b2b/report-summary-payload";
 
 export type AdminClientProps = { demoMode?: boolean };
 
+export type B2bAdminReportPreviewTab = "integrated" | "report";
+
 export type EmployeeListItem = {
   id: string;
   name: string;

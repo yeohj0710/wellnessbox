@@ -7,7 +7,9 @@ Keep `useChat.ts` orchestration-focused and push parsing/branching/side-effect d
 ## Current Modules
 
 - `useChat.ts`
-  - Main chat state machine and UI-facing callbacks.
+  - Main chat state machine and hook-level state/effect wiring.
+- `useChat.commandLayer.ts`
+  - UI-facing command assembly over assistant-turn, assessment, interactive-action, message-flow, and session handlers.
 - `useChat.api.ts`
   - API wrappers for chat, title, suggestions, actions, save, and delete.
 - `useChat.browser.ts`
@@ -18,6 +20,10 @@ Keep `useChat.ts` orchestration-focused and push parsing/branching/side-effect d
   - Action execution decision normalization and fallback policy.
 - `useChat.interactiveActions.ts`
   - Interactive action execution flows.
+- `useChat.interactiveActions.routes.ts`
+  - Route/page-focus/support-link interactive action config and execution helpers.
+- `useChat.interactiveActions.types.ts`
+  - Shared interactive action contracts reused by chat action layers.
 - `useChat.assessment.ts`
   - In-chat assessment question model and answer parsing.
 - `useChat.evaluation.ts`
@@ -29,7 +35,9 @@ Keep `useChat.ts` orchestration-focused and push parsing/branching/side-effect d
 - `useChat.results.ts`
   - All-results payload normalization.
 - `useChat.text.ts`, `useChat.stream.ts`, `useChat.recommendation.ts`
-  - Text normalization, stream reader, recommendation hydration.
+  - Text normalization, stream reader, and recommendation-price hydration orchestration.
+- `useChat.recommendation.catalog.ts`
+  - Home-data fetch/cache, best-option selection, and fallback recommendation catalog shaping.
 - `useChat.assistant.ts`
   - Shared assistant stream flow (`/api/chat` request -> stream read -> sanitize -> recommendation hydration).
 - `useChat.persistence.ts`
@@ -69,10 +77,13 @@ Keep `useChat.ts` orchestration-focused and push parsing/branching/side-effect d
 
 - Add new logic to module files first.
 - Keep `useChat.ts` focused on state composition and orchestration.
+- Keep handler assembly and closure helpers in `useChat.commandLayer.ts`.
+- Keep route/page-focus/support-link config in `useChat.interactiveActions.routes.ts`.
+- Keep recommendation hydration flow in `useChat.recommendation.ts` and cache/option selection in `useChat.recommendation.catalog.ts`.
 - If a function can run without React state setters, move it out.
 
 ## Next Safe Targets
 
 1. Split message-row rendering details when feed variants increase again.
 2. Add a lightweight Playwright smoke flow for dock open -> send -> close.
-3. Group actor refs (`loggedIn`, `appUserId`, `phoneLinked`) behind a tiny helper object.
+3. If `useChat.commandLayer.ts` grows again, split actor-aware session commands from assistant-turn/message-flow assembly.
