@@ -1,4 +1,4 @@
-# Refactor Hotspots (Agent Handoff)
+﻿# Refactor Hotspots (Agent Handoff)
 
 Last validated: 2026-02-26
 
@@ -506,21 +506,21 @@ This document tracks large/complex files that are most likely to slow down follo
    - Survey `answersJson` + row payload merge normalization is now isolated in `survey-answer-merge.ts` (`mergeSurveyAnswers`).
    - `B2bAdminReportClient.tsx` keeps UI/state orchestration while answer merge logic stays in a pure utility for reuse/testing.
 111. `app/(features)/employee-report/EmployeeReportClient.tsx`, `app/(features)/employee-report/_lib/sync-flow.ts`
-   - NHIS 준비/동기화 오케스트레이션을 `sync-flow.ts`로 분리:
+   - NHIS 以鍮??숆린???ㅼ??ㅽ듃?덉씠?섏쓣 `sync-flow.ts`濡?遺꾨━:
      `ensureNhisReadyForSync`, `syncEmployeeReportAndReload`.
-   - `EmployeeReportClient.tsx`는 동일한 동작을 유지하면서 래퍼를 통해 동기화 플로우를 위임하도록 단순화.
-   - 결과적으로 컴포넌트 파일 길이가 `787 -> 754`로 감소하여 후속 세션에서 흐름 파악이 쉬워짐.
+   - `EmployeeReportClient.tsx`???숈씪???숈옉???좎??섎㈃???섑띁瑜??듯빐 ?숆린???뚮줈?곕? ?꾩엫?섎룄濡??⑥닚??
+   - 寃곌낵?곸쑝濡?而댄룷?뚰듃 ?뚯씪 湲몄씠媛 `787 -> 754`濡?媛먯냼?섏뿬 ?꾩냽 ?몄뀡?먯꽌 ?먮쫫 ?뚯븙???ъ썙吏?
 112. `app/(features)/employee-report/EmployeeReportClient.tsx`, `app/(features)/employee-report/_lib/sync-flow.ts`
-   - 강제 동기화 재인증 복구 분기와 캐시 소스 판정 로직을 `sync-flow.ts`로 추가 이관:
+   - 媛뺤젣 ?숆린???ъ씤利?蹂듦뎄 遺꾧린? 罹먯떆 ?뚯뒪 ?먯젙 濡쒖쭅??`sync-flow.ts`濡?異붽? ?닿?:
      `runSyncFlowWithRecovery`, `isCachedSyncSource`, `runRestartAuthFlow`.
-   - `handleSignAndSync`와 `handleRestartAuth`의 동기화 분기(준비/복구/캐시판정) 중복을 줄이고 UI 상태 처리 중심으로 단순화.
-   - 결과적으로 컴포넌트 파일 길이가 `754 -> 717`로 추가 감소하여 후속 작업 시 핵심 흐름을 더 빠르게 파악할 수 있음.
+   - `handleSignAndSync`? `handleRestartAuth`???숆린??遺꾧린(以鍮?蹂듦뎄/罹먯떆?먯젙) 以묐났??以꾩씠怨?UI ?곹깭 泥섎━ 以묒떖?쇰줈 ?⑥닚??
+   - 寃곌낵?곸쑝濡?而댄룷?뚰듃 ?뚯씪 湲몄씠媛 `754 -> 717`濡?異붽? 媛먯냼?섏뿬 ?꾩냽 ?묒뾽 ???듭떖 ?먮쫫????鍮좊Ⅴ寃??뚯븙?????덉쓬.
 113. `lib/b2b/export/layout-dsl.ts`, `lib/b2b/export/layout-dsl-config.ts`, `lib/b2b/export/layout-dsl-artifacts.ts`
-   - 스타일 프리셋/컬러 토큰 및 선택 로직을 `layout-dsl-config.ts`로 분리:
+   - ?ㅽ????꾨━??而щ윭 ?좏겙 諛??좏깮 濡쒖쭅??`layout-dsl-config.ts`濡?遺꾨━:
      `STYLE_COLORS`, `pickStylePreset`.
-   - 생성 레이아웃 파일 저장/정리 로직을 `layout-dsl-artifacts.ts`로 분리:
+   - ?앹꽦 ?덉씠?꾩썐 ?뚯씪 ????뺣━ 濡쒖쭅??`layout-dsl-artifacts.ts`濡?遺꾨━:
      `persistGeneratedLayout`, `clearGeneratedLayoutArtifacts`.
-   - `layout-dsl.ts`는 레이아웃 조립 오케스트레이션에 더 집중되며 파일 길이가 `562 -> 512`로 감소.
+   - `layout-dsl.ts`???덉씠?꾩썐 議곕┰ ?ㅼ??ㅽ듃?덉씠?섏뿉 ??吏묒쨷?섎ŉ ?뚯씪 湲몄씠媛 `562 -> 512`濡?媛먯냼.
 
 114. `app/(features)/health-link/utils-health-data.ts`, `app/(features)/health-link/utils-medication-digest.ts`
    - Medication digest/count/sort helpers were extracted into `utils-medication-digest.ts`:
@@ -596,7 +596,7 @@ This document tracks large/complex files that are most likely to slow down follo
    - `cartItemsSection.tsx` now keeps rendering and action wiring, while async product resolution is isolated in a dedicated hook.
    - Main file length was reduced from `413 -> 322`, improving readability for order/cart follow-up sessions.
 129. `components/order/cart.tsx`
-   - Fixed mojibake in user-facing cart copy (`장바구니` title, stock-change alert, pharmacy fetch error log) to keep Korean-first UX and avoid ambiguous runtime text.
+   - Fixed mojibake in user-facing cart copy (`?λ컮援щ땲` title, stock-change alert, pharmacy fetch error log) to keep Korean-first UX and avoid ambiguous runtime text.
    - Consolidated duplicated cart persistence side-effects into `persistCartItems` and reused shared `openPhoneModal` handler.
    - The component now has fewer repeated mutation paths, which lowers follow-up regression risk in cart behavior updates.
 130. `app/survey/survey-page-client.tsx`, `app/survey/_components/SurveyResultPanel.tsx`
@@ -612,15 +612,15 @@ This document tracks large/complex files that are most likely to slow down follo
    - Override supported via `WB_DB_ENV_WARN_CONFLICT=1|0` for explicit diagnostics.
    - Keeps runtime diagnostics available while reducing build log noise for follow-up sessions.
 133. `app/(features)/employee-report/EmployeeReportClient.tsx`, `app/(features)/employee-report/_lib/pdf-download.ts`
-   - PDF 다운로드 대형 핸들러를 `pdf-download.ts`로 분리:
+   - PDF ?ㅼ슫濡쒕뱶 ????몃뱾?щ? `pdf-download.ts`濡?遺꾨━:
      `downloadEmployeeReportPdf`, `downloadEmployeeReportLegacyPdf`.
-   - `EmployeeReportClient.tsx`는 busy/notice/error 상태 제어와 버튼 핸들러 연결에 집중하도록 단순화.
-   - 모바일 웹 캡처 우선 전략과 서버 PDF 엔진 fallback 동작은 동일하게 유지.
+   - `EmployeeReportClient.tsx`??busy/notice/error ?곹깭 ?쒖뼱? 踰꾪듉 ?몃뱾???곌껐??吏묒쨷?섎룄濡??⑥닚??
+   - 紐⑤컮????罹≪쿂 ?곗꽑 ?꾨왂怨??쒕쾭 PDF ?붿쭊 fallback ?숈옉? ?숈씪?섍쾶 ?좎?.
 134. `app/(features)/employee-report/EmployeeReportClient.tsx`, `app/(features)/employee-report/_lib/use-employee-report-toast-effects.ts`, `app/(features)/employee-report/_lib/overlay-copy.ts`
-   - 오버레이 문구 계산 로직을 `overlay-copy.ts`로 분리:
+   - ?ㅻ쾭?덉씠 臾멸뎄 怨꾩궛 濡쒖쭅??`overlay-copy.ts`濡?遺꾨━:
      `resolveEmployeeReportOverlayDescription`, `resolveEmployeeReportOverlayDetailLines`.
-   - notice/error/mock/복약상태 토스트 effect 묶음을 `use-employee-report-toast-effects.ts`로 분리.
-   - `EmployeeReportClient.tsx`는 세션/동기화 오케스트레이션 중심으로 단순화되어 후속 세션 가독성이 개선됨.
+   - notice/error/mock/蹂듭빟?곹깭 ?좎뒪??effect 臾띠쓬??`use-employee-report-toast-effects.ts`濡?遺꾨━.
+   - `EmployeeReportClient.tsx`???몄뀡/?숆린???ㅼ??ㅽ듃?덉씠??以묒떖?쇰줈 ?⑥닚?붾릺???꾩냽 ?몄뀡 媛?낆꽦??媛쒖꽑??
 
 135. `app/survey/survey-page-client.tsx`, `app/survey/_components/SurveyIntroPanel.tsx`, `app/survey/_components/SurveyCalculatingPanel.tsx`
    - Intro/auth panel markup was extracted into `SurveyIntroPanel.tsx` to isolate identity/auth UI from survey phase state orchestration.
@@ -642,7 +642,7 @@ This document tracks large/complex files that are most likely to slow down follo
    - Added regression guard script:
      `scripts/qa/check-b2b-survey-completeness-selection.cts`.
 139. `app/survey/survey-page-client.tsx`, `app/survey/_lib/survey-page-helpers.ts`, `app/(admin)/admin/b2b-reports/_components/SurveyQuestionField.tsx`, `app/(admin)/admin/b2b-reports/_lib/survey-editor-sections.ts`
-   - Survey page helper functions (progress message, optional-selection 판단, question text normalization, option layout, section grouping) were centralized in:
+   - Survey page helper functions (progress message, optional-selection ?먮떒, question text normalization, option layout, section grouping) were centralized in:
      `app/survey/_lib/survey-page-helpers.ts`.
    - Admin survey editor now reuses the same helper module for question text/option layout and section grouping, reducing drift between `/survey` and `/admin/b2b-reports`.
    - This makes follow-up changes to survey rendering/navigation rules propagate to admin editor with fewer duplicate edits.
@@ -656,10 +656,8 @@ This document tracks large/complex files that are most likely to slow down follo
    - `npm run audit:encoding`
    - `npm run lint`
    - `npm run build`
-5. Refresh onboarding artifacts for follow-up sessions:
-   - `npm run agent:context-refresh`
-   - `npm run agent:guard-map`
-   - `npm run agent:guard-check`
+5. Agent/R&D onboarding artifacts moved to `C:/dev/wellnessbox-rnd/docs/legacy_from_wellnessbox/agents/`.
+   Service repo follow-up checks stay limited to runtime-safe commands such as `npm run audit:hotspots`.
 
 ## Existing NHIS Maintenance Scripts
 
@@ -668,3 +666,5 @@ This document tracks large/complex files that are most likely to slow down follo
 3. `npm run maintenance:nhis-report-attempts`
 4. `npm run maintenance:nhis-prune-attempts`
 5. `npm run maintenance:nhis-prune-cache`
+
+
