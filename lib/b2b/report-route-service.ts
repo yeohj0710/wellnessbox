@@ -1,3 +1,7 @@
+import type {
+  ReportGetResponse,
+  ReportPostResponse,
+} from "@/lib/b2b/admin-report-contract";
 import db from "@/lib/db";
 import { logB2bAdminAction } from "@/lib/b2b/employee-service";
 import { resolveCurrentPeriodKey } from "@/lib/b2b/period";
@@ -15,7 +19,7 @@ import type { AdminReportPostInput } from "@/lib/b2b/report-route-schema";
 export async function loadAdminReportLookup(
   employeeId: string,
   requestedPeriodKey: string | null
-) {
+): Promise<Omit<ReportGetResponse, "ok">> {
   const periodKey = requestedPeriodKey || resolveCurrentPeriodKey();
   const [latest, reports, availablePeriods] = await Promise.all([
     ensureLatestB2bReport(employeeId, periodKey),
@@ -40,7 +44,7 @@ export async function loadAdminReportLookup(
 export async function runAdminReportMutation(input: {
   employeeId: string;
   payload: AdminReportPostInput;
-}) {
+}): Promise<Omit<ReportPostResponse, "ok">> {
   const periodKey = input.payload.periodKey ?? resolveCurrentPeriodKey();
   const report = input.payload.regenerate
     ? await regenerateB2bReport({

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   createMessage,
   deleteMessage,
@@ -64,11 +64,13 @@ export default function CustomerOrderAccordionItem({
   const pollingRef = useRef(false);
   const lastSeenIdRef = useRef<number>(0);
   const isNearBottomRef = useRef<boolean>(true);
+
   const scrollToBottom = () => {
     const el = messagesContainerRef.current;
     if (!el) return;
     el.scrollTop = el.scrollHeight;
   };
+
   const handleScroll = () => {
     const el = messagesContainerRef.current;
     if (!el) return;
@@ -98,17 +100,14 @@ export default function CustomerOrderAccordionItem({
 
         const sorted = sortMessagesByCreatedAt(msgs);
         setMessages(sorted);
-
-        const lastId = getLastMessageId(sorted);
-        lastSeenIdRef.current = lastId;
-
+        lastSeenIdRef.current = getLastMessageId(sorted);
         setIsLoaded(true);
-      } catch (e) {
-        console.error(e);
+      } catch (error) {
+        console.error(error);
       }
     }
 
-    fetchDetailsAndMessages();
+    void fetchDetailsAndMessages();
 
     return () => {
       cancelled = true;
@@ -118,12 +117,14 @@ export default function CustomerOrderAccordionItem({
   useEffect(() => {
     if (!isExpanded || !isLoaded) return;
     const intervalId = setInterval(() => {
-      refreshOrderStatus();
+      void refreshOrderStatus();
     }, POLL_INTERVAL_MS);
     return () => clearInterval(intervalId);
   }, [isExpanded, isLoaded]);
+
   useEffect(() => {
     if (!isExpanded || !isLoaded) return;
+
     const tick = async () => {
       if (pollingRef.current) return;
       pollingRef.current = true;
@@ -141,13 +142,15 @@ export default function CustomerOrderAccordionItem({
         if (hasNew) {
           lastSeenIdRef.current = newLastId;
         }
-      } catch (e) {
-        console.error(e);
+      } catch (error) {
+        console.error(error);
       } finally {
         pollingRef.current = false;
       }
     };
+
     void tick();
+
     const onVisibilityChange = () => {
       if (document.visibilityState !== "visible") return;
       void tick();
@@ -155,20 +158,20 @@ export default function CustomerOrderAccordionItem({
     const onFocus = () => {
       void tick();
     };
+
     window.addEventListener("visibilitychange", onVisibilityChange, {
       passive: true,
     });
     window.addEventListener("focus", onFocus, { passive: true });
-    const id: ReturnType<typeof setInterval> = setInterval(
-      tick,
-      POLL_INTERVAL_MS
-    );
+    const id: ReturnType<typeof setInterval> = setInterval(tick, POLL_INTERVAL_MS);
+
     return () => {
       clearInterval(id);
       window.removeEventListener("visibilitychange", onVisibilityChange);
       window.removeEventListener("focus", onFocus);
     };
   }, [isExpanded, isLoaded, order.id]);
+
   useEffect(() => {
     if (!isExpanded || !isLoaded) return;
     requestAnimationFrame(() => {
@@ -177,9 +180,11 @@ export default function CustomerOrderAccordionItem({
       scrollToBottom();
     });
   }, [isExpanded, isLoaded, messages.length]);
+
   const toggleExpanded = () => {
     setIsExpanded((prev) => !prev);
   };
+
   const refreshOrderStatus = async () => {
     try {
       const updatedStatus = await getOrderStatusById(order.id);
@@ -193,7 +198,8 @@ export default function CustomerOrderAccordionItem({
       console.error(error);
     }
   };
-  const refreshMessages = async (manual: boolean = false) => {
+
+  const refreshMessages = async (manual = false) => {
     if (manual) setIsMessagesRefreshing(true);
     try {
       const msgs = await getMessagesByOrder(order.id);
@@ -210,6 +216,7 @@ export default function CustomerOrderAccordionItem({
       if (manual) setIsMessagesRefreshing(false);
     }
   };
+
   const isSubscriptionBusy = isSubscribeLoading || isSubscriptionStatusLoading;
 
   const sendMessage = async () => {
@@ -232,6 +239,7 @@ export default function CustomerOrderAccordionItem({
       setIsSending(false);
     }
   };
+
   const handleDeleteMessage = async (messageId: number) => {
     const confirmDelete = window.confirm("정말로 메시지를 삭제할까요?");
     if (!confirmDelete) return;
@@ -245,9 +253,10 @@ export default function CustomerOrderAccordionItem({
       alert("메시지 삭제에 실패했습니다.");
     }
   };
+
   if (isExpanded && !isLoaded) {
     return (
-      <div className="w-full max-w-[640px] mx-auto px-3 sm:px-6 py-6 bg-white sm:shadow-md sm:rounded-lg">
+      <div className="mx-auto w-full max-w-[640px] bg-white px-3 py-6 sm:rounded-lg sm:px-6 sm:shadow-md">
         <OrderAccordionHeader
           role="customer"
           order={order}
@@ -258,16 +267,17 @@ export default function CustomerOrderAccordionItem({
           toggleSubscription={toggleSubscription}
           subscriptionLoading={isSubscriptionBusy}
         />
-        <div className="mt-4 border-t sm:px-4 pt-16 sm:pt-12 pb-4">
-          <div className="flex justify-center items-center mt-2 mb-6">
-            <div className="w-6 h-6 border-2 border-sky-400 border-t-transparent rounded-full animate-spin" />
+        <div className="mt-4 border-t px-0 pb-4 pt-16 sm:px-4 sm:pt-12">
+          <div className="mt-2 mb-6 flex items-center justify-center">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-sky-400 border-t-transparent" />
           </div>
         </div>
       </div>
     );
   }
+
   return (
-    <div className="w-full max-w-[640px] mx-auto px-3 sm:px-6 py-6 bg-white sm:shadow-md sm:rounded-lg">
+    <div className="mx-auto w-full max-w-[640px] bg-white px-3 py-6 sm:rounded-lg sm:px-6 sm:shadow-md">
       <OrderAccordionHeader
         role="customer"
         order={order}
@@ -278,8 +288,8 @@ export default function CustomerOrderAccordionItem({
         toggleSubscription={toggleSubscription}
         subscriptionLoading={isSubscriptionBusy}
       />
-      {isExpanded && (
-        <div className="mt-4 border-t sm:px-4 pt-16 sm:pt-12 pb-4">
+      {isExpanded ? (
+        <div className="mt-4 border-t px-0 pb-4 pt-16 sm:px-4 sm:pt-12">
           <OrderProgressBar currentStatus={order.status} />
           <CustomerOrderItemsSection order={order} />
           <CustomerOrderMessagesSection
@@ -297,7 +307,7 @@ export default function CustomerOrderAccordionItem({
           />
           <CustomerOrderPharmacySection order={order} />
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

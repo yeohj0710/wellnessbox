@@ -10,6 +10,10 @@ const CONTROLLER_PATH = path.resolve(
   process.cwd(),
   "app/chat/components/useRecommendedProductActionsController.ts"
 );
+const SUPPORT_PATH = path.resolve(
+  process.cwd(),
+  "app/chat/components/recommendedProductActions.controller-support.ts"
+);
 const LIST_PATH = path.resolve(
   process.cwd(),
   "app/chat/components/RecommendedProductActionList.tsx"
@@ -26,6 +30,7 @@ const CONFIRM_MODAL_PATH = path.resolve(
 function run() {
   const rootSource = fs.readFileSync(ROOT_PATH, "utf8");
   const controllerSource = fs.readFileSync(CONTROLLER_PATH, "utf8");
+  const supportSource = fs.readFileSync(SUPPORT_PATH, "utf8");
   const listSource = fs.readFileSync(LIST_PATH, "utf8");
   const guideModalSource = fs.readFileSync(GUIDE_MODAL_PATH, "utf8");
   const confirmModalSource = fs.readFileSync(CONFIRM_MODAL_PATH, "utf8");
@@ -76,9 +81,10 @@ function run() {
     "useDraggableModal(showAddressGuideModal, {",
     "runCartActionWithAddressGuard({",
     "applyPendingCartActionAfterAddressSave({",
-    "localStorage.setItem(\"roadAddress\", roadAddress);",
-    "window.dispatchEvent(new Event(\"addressUpdated\"));",
-    "setConfirmDialog({",
+    "persistRecommendedProductAddress(roadAddress, detailAddress);",
+    "buildSingleRecommendationConfirmDialog(item)",
+    "buildBulkRecommendationConfirmDialog(items)",
+    "resolvePendingCartActionFeedback(pending)",
   ]) {
     assert.ok(
       controllerSource.includes(token),
@@ -86,6 +92,20 @@ function run() {
     );
   }
   checks.push("controller_owns_state_effects_and_cart_flow");
+
+  for (const token of [
+    "export type RecommendedProductActionConfirmDialog = {",
+    "export function buildSingleRecommendationConfirmDialog(",
+    "export function buildBulkRecommendationConfirmDialog(",
+    "export function persistRecommendedProductAddress(",
+    "export function resolvePendingCartActionFeedback(",
+  ]) {
+    assert.ok(
+      supportSource.includes(token),
+      `[qa:chat:recommended-product-actions] missing support token: ${token}`
+    );
+  }
+  checks.push("support_module_owns_confirm_copy_and_address_feedback_rules");
 
   for (const token of [
     "추천 상품 빠른 실행",

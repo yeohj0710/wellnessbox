@@ -1,3 +1,8 @@
+import type {
+  NoteGetResponse,
+  NoteSaveResult,
+  NoteSnapshot,
+} from "@/lib/b2b/admin-report-contract";
 import db from "@/lib/db";
 import { logB2bAdminAction } from "@/lib/b2b/employee-service";
 import { periodKeyToCycle } from "@/lib/b2b/period";
@@ -15,7 +20,7 @@ type PharmacistNoteRecord = {
 
 function serializeAdminPharmacistNote(
   note: PharmacistNoteRecord | null | undefined
-) {
+): NoteSnapshot | null {
   if (!note) return null;
   return {
     id: note.id,
@@ -32,7 +37,7 @@ function serializeAdminPharmacistNote(
 export async function runAdminPharmacistNoteLookup(input: {
   employeeId: string;
   periodKey: string | null;
-}) {
+}): Promise<Pick<NoteGetResponse, "note">> {
   const latest = await db.b2bPharmacistNote.findFirst({
     where: {
       employeeId: input.employeeId,
@@ -53,7 +58,7 @@ export async function runAdminPharmacistNoteUpsert(input: {
   note?: string | null;
   recommendations?: string | null;
   cautions?: string | null;
-}) {
+}): Promise<NoteSaveResult> {
   const reportCycle = periodKeyToCycle(input.periodKey);
 
   const latest = await db.b2bPharmacistNote.findFirst({

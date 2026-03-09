@@ -15,14 +15,26 @@ Single page flow for Hyphen NHIS integration:
   - Route entry and login/session bootstrap.
 - `HealthLinkClient.tsx`
   - Page-level orchestration and section composition.
+- `useHealthLinkClientModel.ts`
+  - Page-level derived state and UI action adapters for `HealthLinkClient`.
 - `components/HealthLinkHeader.tsx`
   - Header and top status chips.
 - `components/HealthLinkAuthSection.tsx`
   - Auth/init/sign form section and status notices.
 - `components/HealthLinkResultSection.tsx`
   - Result stage orchestrator (loading/notice/content composition).
+- `components/useHealthLinkResultSectionModel.ts`
+  - Result-stage derived state and loading-progress model for `HealthLinkResultSection`.
 - `components/HealthLinkResultContent.tsx`
   - Result content composition (`summary hero -> checkup -> optional medication`).
+- `components/useHealthLinkResultContentModel.ts`
+  - Result content view-model (`metric tabs + medication-only summary + optional medication details`).
+- `components/HealthLinkResultSection.metric-helpers.tsx`
+  - Metric grouping, AI risk labels, card rendering, and insight helpers.
+- `components/HealthLinkResultSection.medication-helpers.ts`
+  - Medication summary view-model helpers and compact text normalization.
+- `components/HealthLinkResultSection.failure-helpers.ts`
+  - Failure filtering and friendly failure message helpers.
 - `components/HealthLinkSummaryHero.tsx`
   - Single high-priority summary block for mobile users.
 - `components/HealthLinkCheckupSection.tsx`
@@ -34,7 +46,7 @@ Single page flow for Hyphen NHIS integration:
 - `components/HealthLinkResultFailureNotice.tsx`
   - Soft failure notice/detail block for partial-fetch scenarios.
 - `components/HealthLinkResultSection.helpers.tsx`
-  - Result section helper types and pure rendering/normalization helpers.
+  - Thin facade that re-exports metric/medication/failure helper modules for stable imports.
 - `components/HealthLinkCommon.tsx`
   - Reusable presentational blocks (step strip, metric cards, table panel).
 - `components/HealthLinkFetchActions.tsx`
@@ -42,7 +54,9 @@ Single page flow for Hyphen NHIS integration:
 - `components/HealthLinkRawResponseSection.tsx`
   - Collapsible raw JSON response block.
 - `useNhisHealthLink.ts`
-  - Client workflow state + API calls.
+  - Client workflow state, capability wiring, and auth-sync bridge.
+- `useNhisHealthLink.actions.ts`
+  - `init/sign/fetch/unlink` orchestration over shared request + status hooks.
 - `useNhisActionRequest.ts`
   - Shared request executor hook (timeout/error/session-expiry handling).
 - `useNhisSummaryAutoFetch.ts`

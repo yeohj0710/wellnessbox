@@ -1,6 +1,9 @@
 import type {
+  AdminEmployeeCreatePayload,
+  AdminEmployeeDeletePayload,
+  AdminEmployeeListResponse,
+  AdminEmployeePatchPayload,
   DeleteRecordType,
-  EmployeeListItem,
   EmployeeOpsResponse,
 } from "./client-types";
 
@@ -24,18 +27,12 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export async function fetchEmployees(query = "") {
-  return requestJson<{ ok: boolean; employees: EmployeeListItem[] }>(
+  return requestJson<AdminEmployeeListResponse>(
     `/api/admin/b2b/employees${query ? `?q=${encodeURIComponent(query)}` : ""}`
   );
 }
 
-export async function createEmployee(input: {
-  name: string;
-  birthDate: string;
-  phone: string;
-  appUserId?: string | null;
-  linkedProvider?: string;
-}) {
+export async function createEmployee(input: AdminEmployeeCreatePayload) {
   return requestJson<{ ok: boolean; employee: { id: string } }>(
     "/api/admin/b2b/employees",
     {
@@ -51,13 +48,7 @@ export async function fetchEmployeeOps(employeeId: string) {
 
 export async function patchEmployee(
   employeeId: string,
-  input: {
-    name?: string;
-    birthDate?: string;
-    phone?: string;
-    appUserId?: string | null;
-    linkedProvider?: string;
-  }
+  input: AdminEmployeePatchPayload
 ) {
   return requestJson<{ ok: boolean; employee: { id: string } }>(
     `/api/admin/b2b/employees/${employeeId}`,
@@ -68,7 +59,10 @@ export async function patchEmployee(
   );
 }
 
-export async function deleteEmployee(employeeId: string, confirmName: string) {
+export async function deleteEmployee(
+  employeeId: string,
+  confirmName: AdminEmployeeDeletePayload["confirmName"]
+) {
   return requestJson<{ ok: boolean; deleted: { employeeId: string; employeeName: string } }>(
     `/api/admin/b2b/employees/${employeeId}`,
     {

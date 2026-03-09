@@ -2,28 +2,17 @@
 
 import { useCallback, useState } from "react";
 import { emitAuthSyncEvent } from "@/lib/client/auth-sync";
-import {
-  NHIS_ERR_CODE_HEALTHIN_REQUIRED,
-  NHIS_LOGIN_ORG,
-} from "./constants";
-import { HEALTH_LINK_COPY } from "./copy";
 import type {
   ActionKind,
-  NhisActionResponse,
 } from "./types";
 import {
-  resolveInitSuccessNotice,
   isNhisSignReady,
-  resolveSignSuccessNotice,
-  validateInitIdentityInput,
 } from "./useNhisHealthLink.helpers";
 import { useNhisSummaryAutoFetch } from "./useNhisSummaryAutoFetch";
 import { useNhisActionRequest } from "./useNhisActionRequest";
-import {
-  clearLocalNhisFetchData,
-} from "./local-fetch-cache";
 import { useNhisSummaryFetchState } from "./useNhisHealthLink.summaryFetchState";
 import { useNhisStatusState } from "./useNhisHealthLink.status";
+import { useNhisHealthLinkActions } from "./useNhisHealthLink.actions";
 
 export function useNhisHealthLink() {
   const { status, statusError, setStatusError, patchStatus, loadStatus } =
@@ -72,6 +61,10 @@ export function useNhisHealthLink() {
 
   const canFetch = canRequest && !!status?.linked && !summaryFetchBlocked;
 
+  const emitNhisLinkSync = useCallback((reason: string) => {
+    emitAuthSyncEvent({ scope: "nhis-link", reason });
+  }, []);
+
   const { requestAutoFetchAfterSign } = useNhisSummaryAutoFetch({
     actionLoading,
     status,
@@ -85,145 +78,33 @@ export function useNhisHealthLink() {
     setActionError,
     runSummaryFetch,
   });
-
-  const handleInit = useCallback(async () => {
-    const validationError = validateInitIdentityInput({
-      resNm,
-      resNo,
-      mobileNo,
-    });
-    if (validationError) {
-      setActionError(validationError);
-      return;
-    }
-
-    await runRequest<NhisActionResponse>({
-      kind: "init",
-      url: "/api/health/nhis/init",
-      fallbackError: HEALTH_LINK_COPY.hook.initFallback,
-      body: {
-        loginMethod: "EASY",
-        loginOrgCd: NHIS_LOGIN_ORG,
-        resNm: resNm.trim(),
-        resNo,
-        mobileNo,
-      },
-      onSuccess: async (payload) => {
-        setFetchFailures([]);
-        const restoredFromLocal =
-          payload.linked && payload.reused
-            ? restoreFetchedFromLocalCache(status?.lastFetchedAt ?? null)
-            : false;
-        if (!restoredFromLocal) {
-          setFetched(null);
-          setFetchedFromLocalCache(false);
-        }
-        setActionNotice(resolveInitSuccessNotice(payload));
-        setStatusError(null);
-        if (payload.linked) {
-          emitAuthSyncEvent({ scope: "nhis-link", reason: "init-linked" });
-          patchStatus({
-            linked: true,
-            loginMethod: "EASY",
-            loginOrgCd: NHIS_LOGIN_ORG,
-            pendingAuthReady: false,
-            lastLinkedAt: new Date().toISOString(),
-            lastError: null,
-          });
-        } else {
-          emitAuthSyncEvent({ scope: "nhis-link", reason: "init-pending" });
-          patchStatus({
-            linked: false,
-            loginMethod: "EASY",
-            loginOrgCd: NHIS_LOGIN_ORG,
-            pendingAuthReady: true,
-            hasStepData: true,
-            lastError: null,
-          });
-        }
-        if (payload.linked) requestAutoFetchAfterSign();
-        await loadStatus({ preserveError: true });
-      },
-      onFailure: async () => {
-        await loadStatus({ preserveError: true });
-      },
-    });
-  }, [
-    loadStatus,
-    mobileNo,
-    patchStatus,
-    requestAutoFetchAfterSign,
+  const {
+    handleInit,
+    handleSign,
+    handleFetch,
+    handleUnlink,
+    showHealthInPrereqGuide,
+  } = useNhisHealthLinkActions({
+    status,
     resNm,
     resNo,
-    restoreFetchedFromLocalCache,
+    mobileNo,
     runRequest,
-    status?.lastFetchedAt,
-  ]);
-
-  const handleSign = useCallback(async () => {
-    await runRequest<NhisActionResponse>({
-      kind: "sign",
-      url: "/api/health/nhis/sign",
-      fallbackError: HEALTH_LINK_COPY.hook.signFallback,
-      onSuccess: async (payload) => {
-        setFetchFailures([]);
-        setActionNotice(resolveSignSuccessNotice(payload));
-        setStatusError(null);
-        emitAuthSyncEvent({ scope: "nhis-link", reason: "sign-linked" });
-        patchStatus({
-          linked: true,
-          pendingAuthReady: false,
-          loginMethod: "EASY",
-          loginOrgCd: NHIS_LOGIN_ORG,
-          lastLinkedAt: new Date().toISOString(),
-          lastError: null,
-        });
-        requestAutoFetchAfterSign();
-        await loadStatus({ preserveError: true });
-      },
-      onFailure: async () => {
-        await loadStatus({ preserveError: true });
-      },
-    });
-  }, [loadStatus, patchStatus, requestAutoFetchAfterSign, runRequest]);
-
-  const handleFetch = useCallback(async () => {
-    await runSummaryFetch();
-  }, [runSummaryFetch]);
-
-  const handleUnlink = useCallback(async () => {
-    await runRequest<NhisActionResponse>({
-      kind: "unlink",
-      url: "/api/health/nhis/unlink",
-      fallbackError: HEALTH_LINK_COPY.hook.unlinkFallback,
-      onSuccess: async () => {
-        setFetched(null);
-        setFetchedFromLocalCache(false);
-        clearLocalNhisFetchData();
-        setFetchFailures([]);
-        emitAuthSyncEvent({ scope: "nhis-link", reason: "unlink" });
-        setActionNotice(HEALTH_LINK_COPY.hook.unlinkNotice);
-        setStatusError(null);
-        patchStatus({
-          linked: false,
-          loginMethod: null,
-          loginOrgCd: null,
-          pendingAuthReady: false,
-          hasStepData: false,
-          hasCookieData: false,
-          lastError: null,
-        });
-        await loadStatus({ preserveError: true });
-      },
-      onFailure: async () => {
-        await loadStatus({ preserveError: true });
-      },
-    });
-  }, [loadStatus, patchStatus, runRequest]);
-
-  const showHealthInPrereqGuide =
-    actionErrorCode === NHIS_ERR_CODE_HEALTHIN_REQUIRED ||
-    status?.lastError?.code === NHIS_ERR_CODE_HEALTHIN_REQUIRED;
+    loadStatus,
+    patchStatus,
+    requestAutoFetchAfterSign,
+    restoreFetchedFromLocalCache,
+    runSummaryFetch,
+    setFetched,
+    setFetchedFromLocalCache,
+    setFetchFailures,
+    setActionNotice,
+    setActionError,
+    actionErrorCode,
+    setActionErrorCode,
+    setStatusError,
+    emitNhisLinkSync,
+  });
 
   return {
     status,

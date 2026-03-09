@@ -57,10 +57,7 @@ export function resolveVariantOptions(
   };
 }
 
-export function clampByVariantOptions(
-  values: string[],
-  options: ResolvedOption[]
-) {
+export function clampByVariantOptions(values: string[], options: ResolvedOption[]) {
   if (values.length === 0) return [];
   const optionSet = new Set(options.map((option) => option.value));
   return values.filter((item) => optionSet.has(item));

@@ -19,7 +19,7 @@ export default function B2bSurveyEditorProgressHeader({
   return (
     <header className="grid grid-cols-2 gap-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
       <div>
-        <p className="text-sm font-semibold text-sky-700">임직원 설문 입력</p>
+        <p className="text-sm font-semibold text-sky-700">현재 설문 입력</p>
         <p className="mt-1 text-4xl font-extrabold leading-none text-slate-900 sm:text-5xl">
           {progressDoneCount}/{displayTotal}
         </p>

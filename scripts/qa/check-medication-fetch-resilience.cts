@@ -34,6 +34,9 @@ function runMedicationStatusCases() {
 
 function runStaticRegressionChecks() {
   const fetchExecutorSource = read("lib/server/hyphen/fetch-executor.ts");
+  const medicationBackfillHelperSource = read(
+    "lib/server/hyphen/fetch-executor.medication-backfill-helpers.ts"
+  );
   assert.ok(
     fetchExecutorSource.includes("fetchMedicationInfo(input.basePayload)"),
     "medication fetch should retry using base payload when detail payload fails"
@@ -73,11 +76,11 @@ function runStaticRegressionChecks() {
     "medication backfill medical-source fallback should log non-fatal failures"
   );
   assert.ok(
-    fetchExecutorSource.includes("fromDate: date"),
+    medicationBackfillHelperSource.includes("fromDate: date"),
     "targeted medication backfill should narrow date range per recent visit"
   );
   assert.ok(
-    fetchExecutorSource.includes("buildMonthRangeMedicationPayload"),
+    medicationBackfillHelperSource.includes("buildMonthRangeMedicationPayload"),
     "medication backfill should include month-range fallback for same recent visit months"
   );
   assert.ok(
@@ -86,6 +89,7 @@ function runStaticRegressionChecks() {
   );
 
   const medicationSource = read("lib/b2b/report-payload-medication.ts");
+  const medicationHelperSource = read("lib/b2b/report-payload-medication-helpers.ts");
   assert.ok(
     medicationSource.includes("periodKey: { not: input.periodKey }"),
     "medication history fallback should include cross-period snapshots"
@@ -103,15 +107,15 @@ function runStaticRegressionChecks() {
     "medication rows should merge raw and normalized sources with quality preference"
   );
   assert.ok(
-    medicationSource.includes("asParsedRecord(root.raw)"),
+    medicationHelperSource.includes("asParsedRecord(root.raw)"),
     "report payload medication resolver should parse snapshot raw envelope shape (`raw`)"
   );
   assert.ok(
-    medicationSource.includes("asParsedRecord(rootData?.raw)"),
+    medicationHelperSource.includes("asParsedRecord(rootData?.raw)"),
     "report payload medication resolver should parse legacy envelope shape (`data.raw`)"
   );
   assert.ok(
-    medicationSource.includes("parseMaybeJson"),
+    medicationHelperSource.includes("parseMaybeJson"),
     "report payload medication resolver should parse stringified raw envelope payloads"
   );
   assert.ok(
@@ -184,25 +188,47 @@ function runStaticRegressionChecks() {
   );
 
   const reportSummarySource = read("components/b2b/ReportSummaryCards.tsx");
+  const reportSummaryPagesSource = read(
+    "components/b2b/report-summary/ReportSummaryPages.tsx"
+  );
+  const reportSummaryDetailModelSource = read(
+    "components/b2b/report-summary/detail-data-model.ts"
+  );
   assert.ok(
-    reportSummarySource.includes("payload.health?.metrics"),
-    "report summary should render health metric grid from full health.metrics payload"
+    reportSummarySource.includes("buildReportSummaryHealthMetrics(payload)"),
+    "report summary should build health metric grid through the shared detail-data-model"
   );
   assert.ok(
     reportSummarySource.includes("const medications = medicationsAll;"),
     "report summary should render full medication-focused rows from payload"
   );
   assert.ok(
+    reportSummaryDetailModelSource.includes("payload.health?.metrics"),
+    "shared detail-data-model should still render health metric grid from full health.metrics payload"
+  );
+  assert.ok(
     !reportSummarySource.includes("최근 3건 진료/조제 이력을 확인하고"),
     "report summary copy should no longer force recent-3 visit framing"
   );
   assert.ok(
-    reportSummarySource.includes("data-report-page=\"3\""),
-    "medication detail section should be moved to page 3"
+    reportSummarySource.includes("ReportSummaryMedicationPage"),
+    "report summary should delegate medication detail rendering to ReportSummaryMedicationPage"
+  );
+  assert.ok(
+    reportSummaryPagesSource.includes("data-report-page={String(pageNumber)}"),
+    "medication detail page should expose dynamic page marker in ReportSummaryPages"
+  );
+  assert.ok(
+    reportSummarySource.includes("pageNumber={medicationPageNumber}"),
+    "report summary should pass the resolved medication page number into ReportSummaryMedicationPage"
   );
   assert.ok(
     reportSummarySource.includes("buildMedicationMetaLine"),
     "report summary should build medication meta from date/hospital only"
+  );
+  assert.ok(
+    reportSummarySource.includes("buildReportSummaryMedicationReviewModel(payload)"),
+    "report summary should build medication review rows through the shared detail-data-model"
   );
   assert.ok(
     !reportSummarySource.includes("medication.dosageDay"),

@@ -1,12 +1,14 @@
-import type { LayoutDocument } from "@/lib/b2b/export/layout-types";
-import type { LayoutValidationIssue } from "@/lib/b2b/export/validation-types";
 import type {
+  AnalysisMutationResponse,
   AnalysisGetResponse,
-  EmployeeListItem,
+  EmployeeListResponse,
   NoteGetResponse,
+  NotePutResponse,
   ReportGetResponse,
-  ReportAudit,
+  ReportPostResponse,
   SurveyGetResponse,
+  SurveyPutResponse,
+  ValidationResponse,
 } from "./client-types";
 import { requestJson } from "./client-utils";
 
@@ -17,13 +19,6 @@ export type EmployeeDetailBundle = {
   report: ReportGetResponse;
 };
 
-export type ValidationResponse = {
-  ok: boolean;
-  layout?: LayoutDocument;
-  audit?: ReportAudit;
-  issues?: LayoutValidationIssue[];
-};
-
 function toPeriodQuery(periodKey?: string) {
   return periodKey ? `?period=${encodeURIComponent(periodKey)}` : "";
 }
@@ -31,7 +26,7 @@ function toPeriodQuery(periodKey?: string) {
 export async function fetchEmployees(query = "") {
   const params = new URLSearchParams({ view: "reports" });
   if (query) params.set("q", query);
-  return requestJson<{ ok: boolean; employees: EmployeeListItem[] }>(
+  return requestJson<EmployeeListResponse>(
     `/api/admin/b2b/employees?${params.toString()}`
   );
 }
@@ -55,14 +50,17 @@ export async function saveSurvey(input: {
   selectedSections: string[];
   answers: Record<string, unknown>;
 }) {
-  return requestJson(`/api/admin/b2b/employees/${input.employeeId}/survey`, {
+  return requestJson<SurveyPutResponse>(
+    `/api/admin/b2b/employees/${input.employeeId}/survey`,
+    {
     method: "PUT",
     body: JSON.stringify({
       periodKey: input.periodKey,
       selectedSections: input.selectedSections,
       answers: input.answers,
     }),
-  });
+    }
+  );
 }
 
 export async function saveAnalysisPayload(input: {
@@ -70,13 +68,16 @@ export async function saveAnalysisPayload(input: {
   periodKey?: string;
   payload: unknown;
 }) {
-  return requestJson(`/api/admin/b2b/employees/${input.employeeId}/analysis`, {
-    method: "PUT",
-    body: JSON.stringify({
-      periodKey: input.periodKey,
-      payload: input.payload,
-    }),
-  });
+  return requestJson<AnalysisMutationResponse>(
+    `/api/admin/b2b/employees/${input.employeeId}/analysis`,
+    {
+      method: "PUT",
+      body: JSON.stringify({
+        periodKey: input.periodKey,
+        payload: input.payload,
+      }),
+    }
+  );
 }
 
 export async function saveNote(input: {
@@ -86,16 +87,19 @@ export async function saveNote(input: {
   recommendations: string;
   cautions: string;
 }) {
-  return requestJson(`/api/admin/b2b/employees/${input.employeeId}/note`, {
-    method: "PUT",
-    body: JSON.stringify({
-      periodKey: input.periodKey,
-      note: input.note,
-      recommendations: input.recommendations,
-      cautions: input.cautions,
-      actorTag: "admin",
-    }),
-  });
+  return requestJson<NotePutResponse>(
+    `/api/admin/b2b/employees/${input.employeeId}/note`,
+    {
+      method: "PUT",
+      body: JSON.stringify({
+        periodKey: input.periodKey,
+        note: input.note,
+        recommendations: input.recommendations,
+        cautions: input.cautions,
+        actorTag: "admin",
+      }),
+    }
+  );
 }
 
 export async function recomputeAnalysis(input: {
@@ -103,26 +107,32 @@ export async function recomputeAnalysis(input: {
   periodKey?: string;
   generateAiEvaluation: boolean;
 }) {
-  return requestJson(`/api/admin/b2b/employees/${input.employeeId}/analysis`, {
-    method: "POST",
-    body: JSON.stringify({
-      periodKey: input.periodKey,
-      generateAiEvaluation: input.generateAiEvaluation,
-      forceAiRegenerate: input.generateAiEvaluation,
-      replaceLatestPeriodEntry: true,
-    }),
-  });
+  return requestJson<AnalysisMutationResponse>(
+    `/api/admin/b2b/employees/${input.employeeId}/analysis`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        periodKey: input.periodKey,
+        generateAiEvaluation: input.generateAiEvaluation,
+        forceAiRegenerate: input.generateAiEvaluation,
+        replaceLatestPeriodEntry: true,
+      }),
+    }
+  );
 }
 
 export async function regenerateReport(input: { employeeId: string; periodKey?: string }) {
-  return requestJson(`/api/admin/b2b/employees/${input.employeeId}/report`, {
-    method: "POST",
-    body: JSON.stringify({
-      regenerate: true,
-      pageSize: "A4",
-      periodKey: input.periodKey,
-    }),
-  });
+  return requestJson<ReportPostResponse>(
+    `/api/admin/b2b/employees/${input.employeeId}/report`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        regenerate: true,
+        pageSize: "A4",
+        periodKey: input.periodKey,
+      }),
+    }
+  );
 }
 
 export async function saveReportDisplayPeriod(input: {

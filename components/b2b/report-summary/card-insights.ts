@@ -1,7 +1,28 @@
 import type { ReportSummaryPayload } from "@/lib/b2b/report-summary-payload";
-import commonSurveyJson from "@/data/b2b/survey.common.json";
-import sectionSurveyJson from "@/data/b2b/survey.sections.json";
+import {
+  buildSurveyAnswerLookup,
+  clampPercent,
+  decodeAnswerTextByQuestionKey,
+  ensureSentence,
+  resolveHealthScoreLabel,
+  resolvePreferredAnswerText,
+  sanitizeTitle,
+  shortenLine,
+  softenAdviceTone,
+  toTrimmedText,
+} from "./card-insight-text";
 import { ensureArray, firstOrDash, toScoreValue } from "./helpers";
+
+export {
+  clampPercent,
+  decodeAnswerTextByQuestionKey,
+  ensureSentence,
+  resolveHealthScoreLabel,
+  resolvePreferredAnswerText,
+  sanitizeTitle,
+  softenAdviceTone,
+  toTrimmedText,
+} from "./card-insight-text";
 
 const MAX_ANALYSIS_LINES = 2;
 const MAX_RISK_LINES = 3;
@@ -29,166 +50,10 @@ type RiskCandidate = {
   answerText: string;
 };
 
-type SurveyAnswerLookup = {
-  questionText: string;
-  answerText: string;
-};
-
-let optionLabelByQuestionKeyCache: Map<string, Map<string, string>> | null = null;
-
-function getOptionLabelByQuestionKey() {
-  if (optionLabelByQuestionKeyCache) return optionLabelByQuestionKeyCache;
-  const map = new Map<string, Map<string, string>>();
-
-  const pushQuestionOptions = (question: unknown) => {
-    const row = question as
-      | {
-          id?: unknown;
-          options?: Array<{ value?: unknown; label?: unknown }>;
-        }
-      | undefined;
-    const questionKey = toTrimmedText(row?.id);
-    if (!questionKey) return;
-    const optionMap = new Map<string, string>();
-    for (const option of row?.options ?? []) {
-      const value = toTrimmedText(option.value);
-      const label = toTrimmedText(option.label);
-      if (!value || !label) continue;
-      optionMap.set(value, label);
-    }
-    if (optionMap.size > 0) {
-      map.set(questionKey, optionMap);
-    }
-  };
-
-  for (const question of commonSurveyJson.questions ?? []) {
-    pushQuestionOptions(question);
-  }
-
-  for (const section of sectionSurveyJson.sections ?? []) {
-    for (const question of section.questions ?? []) {
-      pushQuestionOptions(question);
-    }
-  }
-
-  optionLabelByQuestionKeyCache = map;
-  return map;
-}
-
-export function decodeAnswerTextByQuestionKey(questionKey: string, answerText: string) {
-  const normalizedQuestionKey = toTrimmedText(questionKey);
-  const normalizedAnswerText = toTrimmedText(answerText);
-  if (!normalizedQuestionKey || !normalizedAnswerText) return normalizedAnswerText;
-
-  const optionMap = getOptionLabelByQuestionKey().get(normalizedQuestionKey);
-  if (!optionMap) return normalizedAnswerText;
-
-  const tokens = normalizedAnswerText
-    .split(/[,\n/|]/g)
-    .map((token) => token.trim())
-    .filter(Boolean);
-  if (tokens.length === 0) return normalizedAnswerText;
-
-  const labels = tokens.map((token) => optionMap.get(token) ?? token);
-  const decoded = labels.join(", ").trim();
-  return decoded || normalizedAnswerText;
-}
-
-function isCodeLikeAnswerText(value: string) {
-  const normalized = value.trim();
-  if (!normalized) return false;
-  return /^[A-Z](?:\s*[,/|]\s*[A-Z])*$/i.test(normalized);
-}
-
-export function resolvePreferredAnswerText(input: {
-  questionKey: string;
-  rawAnswerText: unknown;
-  surveyAnswerText: string | undefined;
-  emptyFallback: string;
-}) {
-  const raw = decodeAnswerTextByQuestionKey(
-    input.questionKey,
-    toTrimmedText(input.rawAnswerText)
-  );
-  const survey = decodeAnswerTextByQuestionKey(
-    input.questionKey,
-    toTrimmedText(input.surveyAnswerText)
-  );
-  if (!raw) return survey || input.emptyFallback;
-  if (!survey) return raw;
-  if (raw === survey) return raw;
-  if (isCodeLikeAnswerText(raw) && !isCodeLikeAnswerText(survey)) return survey;
-  return raw;
-}
-
-export function clampPercent(value: unknown): number {
-  if (typeof value !== "number" || !Number.isFinite(value)) return 0;
-  if (value < 0) return 0;
-  if (value > 100) return 100;
-  return value;
-}
-
 function toPercentScore(value: unknown): number | null {
   if (typeof value !== "number" || !Number.isFinite(value)) return null;
   if (value <= 1) return clampPercent(value * 100);
   return clampPercent(value);
-}
-
-export function toTrimmedText(value: unknown) {
-  return typeof value === "string" ? value.trim() : "";
-}
-
-export function ensureSentence(text: string) {
-  const normalized = text.replace(/\s+/g, " ").trim();
-  if (!normalized) return "";
-  if (/[.!?]$/.test(normalized)) return normalized;
-  return `${normalized}.`;
-}
-
-function shortenLine(text: string, maxLength = 110) {
-  const normalized = text.replace(/\s+/g, " ").trim();
-  if (normalized.length <= maxLength) return normalized;
-  return `${normalized.slice(0, maxLength - 1).trimEnd()}…`;
-}
-
-function stripQuestionAndScoreTokens(text: string) {
-  return text
-    .replace(/\bS\d{2}_Q\d{2}\b/gi, " ")
-    .replace(/\bQ\s*\d+\b/gi, " ")
-    .replace(/\b[CS]\d{1,2}\b/gi, " ")
-    .replace(/점수\s*\(?\d+\s*점\)?/g, " ")
-    .replace(/\(\s*\d+\s*점\s*\)/g, " ")
-    .replace(/\[\s*(상세|공통|생활습관 축|선택 영역)\s*\]/g, " ")
-    .replace(/\s{2,}/g, " ")
-    .trim();
-}
-
-export function sanitizeTitle(text: string) {
-  return stripQuestionAndScoreTokens(text).replace(/^[\-:|/,\s]+|[\-:|/,\s]+$/g, "");
-}
-
-export function softenAdviceTone(text: string) {
-  let updated = stripQuestionAndScoreTokens(text);
-  const replacements: Array<[RegExp, string]> = [
-    [/권장합니다/g, "도움이 됩니다"],
-    [/추천합니다/g, "추천드려요"],
-    [/필요합니다/g, "챙겨보면 좋습니다"],
-    [/점검해 주세요/g, "한 번 살펴보세요"],
-    [/확인해 주세요/g, "확인해보세요"],
-    [/조정해 주세요/g, "조정해보세요"],
-    [/관리해 주세요/g, "관리해보세요"],
-    [/줄이세요/g, "줄여보세요"],
-    [/드세요/g, "드셔보세요"],
-  ];
-  for (const [pattern, replacement] of replacements) {
-    updated = updated.replace(pattern, replacement);
-  }
-  return ensureSentence(updated);
-}
-
-export function resolveHealthScoreLabel(value: number | null) {
-  if (value == null) return { valueText: "-", unitText: "" };
-  return { valueText: String(Math.round(clampPercent(value))), unitText: "점" };
 }
 
 function normalizeQuestionKey(input: {
@@ -199,7 +64,9 @@ function normalizeQuestionKey(input: {
 }) {
   const directKey = toTrimmedText(input.questionKey);
   if (directKey) return directKey;
-  if (typeof input.questionNumber !== "number" || !Number.isFinite(input.questionNumber)) return "";
+  if (typeof input.questionNumber !== "number" || !Number.isFinite(input.questionNumber)) {
+    return "";
+  }
 
   if (input.category === "common") {
     return `C${String(input.questionNumber).padStart(2, "0")}`;
@@ -225,20 +92,6 @@ function resolveRiskCandidateIdentity(candidate: RiskCandidate) {
   const normalizedTitle = normalizeRiskIdentityText(candidate.title);
   if (normalizedTitle) return `title:${normalizedTitle}`;
   return "";
-}
-
-function buildSurveyAnswerLookup(payload: ReportSummaryPayload) {
-  const lookup = new Map<string, SurveyAnswerLookup>();
-  for (const answer of ensureArray(payload.survey?.answers)) {
-    const questionKey = toTrimmedText(answer?.questionKey);
-    if (!questionKey) continue;
-    const questionText = toTrimmedText(answer?.questionText);
-    const answerTextSource =
-      toTrimmedText(answer?.answerText) || toTrimmedText(answer?.answerValue);
-    const answerText = decodeAnswerTextByQuestionKey(questionKey, answerTextSource);
-    lookup.set(questionKey, { questionText, answerText });
-  }
-  return lookup;
 }
 
 function extractAnalysisCandidates(payload: ReportSummaryPayload): AnalysisCandidate[] {
@@ -270,7 +123,10 @@ function extractAnalysisCandidates(payload: ReportSummaryPayload): AnalysisCandi
       const surveyLookup = questionKey ? surveyAnswerLookup.get(questionKey) : undefined;
       const questionScore = toPercentScore(item?.score);
       const questionText =
-        toTrimmedText(item?.questionText) || surveyLookup?.questionText || questionKey || `Q${questionNumber}`;
+        toTrimmedText(item?.questionText) ||
+        surveyLookup?.questionText ||
+        questionKey ||
+        `Q${questionNumber}`;
       const answerText = resolvePreferredAnswerText({
         questionKey,
         rawAnswerText: item?.answerText,
@@ -423,7 +279,9 @@ function extractRiskCandidates(payload: ReportSummaryPayload): RiskCandidate[] {
 
   const sorted = candidates.sort((left, right) => {
     if (right.score !== left.score) return right.score - left.score;
-    if (left.questionNumber !== right.questionNumber) return left.questionNumber - right.questionNumber;
+    if (left.questionNumber !== right.questionNumber) {
+      return left.questionNumber - right.questionNumber;
+    }
     return left.title.localeCompare(right.title);
   });
 
@@ -440,8 +298,6 @@ function extractRiskCandidates(payload: ReportSummaryPayload): RiskCandidate[] {
 
   return deduped;
 }
-
-
 
 export function buildFriendlyRiskLines(
   payload: ReportSummaryPayload,
@@ -500,7 +356,7 @@ export function buildDetailedRiskHighlightLines(
     category: item.category,
     title: item.title,
     score: item.score,
-    questionText: item.questionText || item.title || "\uD655\uC778 \uD544\uC694 \uD56D\uBAA9",
+    questionText: item.questionText || item.title || "확인 필요 항목",
     answerText: item.answerText || "",
     recommendation: shortenLine(item.action, 100),
   }));
@@ -530,7 +386,7 @@ export function resolveMetricStatusLabel(status?: string) {
   if (normalized === "low") return "주의";
   if (normalized === "caution") return "관찰";
   if (normalized === "normal") return "정상";
-  return "안정";
+  return "미정";
 }
 
 export function buildHealthInsightLines(payload: ReportSummaryPayload) {
@@ -549,12 +405,14 @@ export function buildHealthInsightLines(payload: ReportSummaryPayload) {
 
   const lines: string[] = [];
   if (flagged.length === 0) {
-    lines.push("최근 검진 수치에서 큰 이상 신호는 많지 않습니다. 현재 루틴을 꾸준히 유지해보세요.");
+    lines.push(
+      "최근 검진 수치에서 눈에 띄는 이상 신호가 많지 않습니다. 현재 루틴을 꾸준히 이어가보세요."
+    );
   } else {
     for (const metric of flagged) {
       const label = firstOrDash(metric?.label);
       const value = formatMetricValue(metric?.value, metric?.unit);
-      lines.push(`${label} 수치가 ${value}로 확인되어, 생활 루틴을 조금 더 꼼꼼히 챙겨보세요.`);
+      lines.push(`${label} 수치가 ${value}로 확인되어, 생활 루틴을 조금 더 챙겨보세요.`);
     }
   }
 

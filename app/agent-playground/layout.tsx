@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+
 import "../globals.css";
 import { createNoIndexMetadata } from "@/lib/seo";
 
@@ -16,7 +17,7 @@ export default function AgentPlaygroundLayout({
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="border-b bg-white">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex flex-col gap-1">
+        <div className="mx-auto flex max-w-5xl flex-col gap-1 px-4 py-4">
           <div className="text-sm text-gray-500">Agent Playground 전용 페이지</div>
           <div className="flex items-center justify-between">
             <h1 className="text-lg font-semibold text-gray-900">LLM vs Agent Workflow</h1>
@@ -25,7 +26,7 @@ export default function AgentPlaygroundLayout({
             </Link>
           </div>
           <p className="text-xs text-gray-600">
-            패턴별 그래프/워크플로를 실행해 단일 LLM 호출과 비교합니다.
+            패턴별 워크플로를 실행해 단일 LLM 응답과 비교합니다.
           </p>
         </div>
       </header>

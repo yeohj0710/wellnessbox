@@ -95,15 +95,46 @@ function buildAutoAnsweredSurvey(seedAnswers: PublicSurveyAnswers = {}) {
 
 function runStaticSyncChecks() {
   const adminClient = readSource("app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx");
-  assertIncludes(adminClient, "from \"@/lib/b2b/public-survey\"", "public survey import");
+  const adminClientModel = readSource(
+    "app/(admin)/admin/b2b-reports/_lib/b2b-admin-report-client-model.ts"
+  );
+  const derivedStateHook = readSource(
+    "app/(admin)/admin/b2b-reports/_lib/use-b2b-admin-report-derived-state.ts"
+  );
+  assertIncludes(
+    adminClient,
+    "from \"./_lib/use-b2b-admin-report-derived-state\"",
+    "admin report derived state hook import"
+  );
+  assertIncludes(
+    adminClientModel,
+    "from \"@/lib/b2b/public-survey\"",
+    "public survey import"
+  );
   for (const token of [
     "buildPublicSurveyQuestionList",
     "computeSurveyProgress",
     "resolveSelectedSectionsFromC27",
-    "sanitizeSurveyAnswerValue",
   ]) {
-    assertIncludes(adminClient, token, `admin client token ${token}`);
+    assertIncludes(adminClientModel, token, `admin client model token ${token}`);
   }
+  assertIncludes(
+    derivedStateHook,
+    "resolveAdminReportSelectedSections(",
+    "selected sections helper usage"
+  );
+  assertIncludes(
+    derivedStateHook,
+    "computeAdminReportCompletionStats(",
+    "completion stats helper usage"
+  );
+  assertIncludes(
+    adminClient,
+    "useB2bAdminReportDerivedState(",
+    "admin report derived state hook usage"
+  );
+  assertIncludes(adminClientModel, "resolveAdminReportSelectedSections(", "selected sections helper export");
+  assertIncludes(adminClientModel, "computeAdminReportCompletionStats(", "completion stats helper export");
   assert.ok(
     !adminClient.includes("survey-progress"),
     "[qa:b2b:admin-survey-sync] legacy survey-progress import should not remain"

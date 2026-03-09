@@ -50,6 +50,7 @@
 - `docs/maintenance/employee-report-flow-panels-extraction.md`
 - `docs/maintenance/employee-report-hero-extraction.md`
 - `docs/maintenance/employee-report-panel-extraction.md`
+- `docs/maintenance/employee-report-page-hooks.md`
 - `docs/maintenance/employee-report-report-actions-extraction.md`
 - `docs/maintenance/employee-report-report-loading-extraction.md`
 - `docs/maintenance/employee-report-session-bootstrap-extraction.md`

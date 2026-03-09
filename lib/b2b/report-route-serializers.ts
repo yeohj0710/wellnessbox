@@ -1,3 +1,8 @@
+import type {
+  LatestReport,
+  ReportListItem,
+} from "@/lib/b2b/admin-report-contract";
+
 type ReportStatusInput = {
   id: string;
   variantIndex: number;
@@ -58,7 +63,7 @@ export function serializeB2bReportDetail(
   report: ReportDetailInput,
   fallbackPeriodKey: string,
   options: { includeStylePreset?: boolean } = {}
-) {
+): LatestReport {
   const base = {
     id: report.id,
     variantIndex: report.variantIndex,
@@ -66,9 +71,9 @@ export function serializeB2bReportDetail(
     pageSize: report.pageSize,
     periodKey: report.periodKey ?? fallbackPeriodKey,
     reportCycle: report.reportCycle ?? null,
-    payload: report.reportPayload,
+    payload: report.reportPayload as LatestReport["payload"],
     layoutDsl: report.layoutDsl,
-    exportAudit: report.exportAudit,
+    exportAudit: report.exportAudit as LatestReport["exportAudit"],
     updatedAt: report.updatedAt.toISOString(),
   };
   if (!options.includeStylePreset) return base;
@@ -78,7 +83,9 @@ export function serializeB2bReportDetail(
   };
 }
 
-export function serializeB2bReportListItem(report: ReportListItemInput) {
+export function serializeB2bReportListItem(
+  report: ReportListItemInput
+): ReportListItem {
   return {
     id: report.id,
     variantIndex: report.variantIndex,

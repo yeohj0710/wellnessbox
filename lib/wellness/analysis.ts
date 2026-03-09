@@ -12,6 +12,14 @@ import {
   deriveSelectedSections,
   type WellnessAnalysisInput,
 } from "@/lib/wellness/analysis-answer-maps";
+import {
+  clampWellnessPercent,
+  getRiskCandidateIdentity,
+  pickRepresentativeRiskCandidate,
+  sortRiskCandidates,
+  toWellnessHighlight,
+  type RiskCandidate,
+} from "@/lib/wellness/analysis-risk-highlights";
 
 export type {
   WellnessAnalysisAnswerRow,
@@ -84,81 +92,6 @@ export type WellnessComputedResult = {
     sections: Record<string, Record<string, number | null>>;
   };
 };
-
-function clampPercent(value: number) {
-  if (!Number.isFinite(value)) return 0;
-  if (value < 0) return 0;
-  if (value > 100) return 100;
-  return Math.round(value * 100) / 100;
-}
-
-type RiskCandidate = {
-  category: "detailed" | "common" | "domain" | "section";
-  title: string;
-  scorePercent: number;
-  contextPercent: number;
-  action: string;
-  questionNumber: number;
-  sectionId?: string;
-  questionKey?: string;
-  questionText?: string;
-  answerText?: string | null;
-};
-
-function sortRiskCandidates(left: RiskCandidate, right: RiskCandidate) {
-  if (right.scorePercent !== left.scorePercent) {
-    return right.scorePercent - left.scorePercent;
-  }
-  if (right.contextPercent !== left.contextPercent) {
-    return right.contextPercent - left.contextPercent;
-  }
-  if (left.questionNumber !== right.questionNumber) {
-    return left.questionNumber - right.questionNumber;
-  }
-  return left.title.localeCompare(right.title);
-}
-
-function pickRepresentativeRiskCandidate(candidates: RiskCandidate[]) {
-  return [...candidates]
-    .sort((left, right) => {
-      const answerPresenceDiff =
-        Number(Boolean(right.answerText && right.answerText.trim())) -
-        Number(Boolean(left.answerText && left.answerText.trim()));
-      if (answerPresenceDiff !== 0) return answerPresenceDiff;
-      return sortRiskCandidates(left, right);
-    })
-    .at(0);
-}
-
-function normalizeRiskIdentityText(value?: string) {
-  return (value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
-}
-
-function getRiskCandidateIdentity(candidate: RiskCandidate) {
-  const questionText = normalizeRiskIdentityText(candidate.questionText);
-  if (questionText) return `question:${questionText}`;
-  const questionKey = normalizeRiskIdentityText(candidate.questionKey);
-  if (questionKey) return `key:${questionKey}`;
-  const title = normalizeRiskIdentityText(candidate.title);
-  if (title) return `title:${title}`;
-  return "";
-}
-
-function toHighlight(candidate: RiskCandidate) {
-  return {
-    category: candidate.category,
-    title: candidate.title,
-    score: Math.round(clampPercent(candidate.scorePercent)),
-    action: candidate.action,
-    questionNumber: Number.isFinite(candidate.questionNumber)
-      ? candidate.questionNumber
-      : undefined,
-    sectionId: candidate.sectionId,
-    questionKey: candidate.questionKey,
-    questionText: candidate.questionText || undefined,
-    answerText: candidate.answerText || undefined,
-  } as const;
-}
 
 export function computeWellnessResult(input: WellnessAnalysisInput): WellnessComputedResult {
   const { common, sections, rules, texts } = loadWellnessDataBundle();
@@ -279,7 +212,7 @@ export function computeWellnessResult(input: WellnessAnalysisInput): WellnessCom
       detailedCandidates.push({
         category: "detailed",
         title: questionText,
-        scorePercent: clampPercent(item.score * 100),
+      scorePercent: clampWellnessPercent(item.score * 100),
         contextPercent: sectionPercent,
         action: item.text,
         questionNumber: item.questionNumber,
@@ -305,7 +238,7 @@ export function computeWellnessResult(input: WellnessAnalysisInput): WellnessCom
     commonCandidates.push({
       category: "common",
       title: questionText,
-      scorePercent: clampPercent(score * 100),
+      scorePercent: clampWellnessPercent(score * 100),
       contextPercent: domain?.percent ?? 0,
       action,
       questionNumber,
@@ -344,8 +277,8 @@ export function computeWellnessResult(input: WellnessAnalysisInput): WellnessCom
     ? {
         category: "domain",
         title: worstDomain.name,
-        scorePercent: clampPercent(worstDomain.percent),
-        contextPercent: clampPercent(worstDomain.percent),
+        scorePercent: clampWellnessPercent(worstDomain.percent),
+        contextPercent: clampWellnessPercent(worstDomain.percent),
         action: `${worstDomain.name} 위험도가 높습니다. 해당 축 생활 루틴을 우선 교정해 주세요.`,
         questionNumber: domainRepresentative?.questionNumber ?? 999,
         questionKey: domainRepresentative?.questionKey,
@@ -367,8 +300,8 @@ export function computeWellnessResult(input: WellnessAnalysisInput): WellnessCom
     ? {
         category: "section",
         title: worstSection.sectionTitle,
-        scorePercent: clampPercent(worstSection.percent),
-        contextPercent: clampPercent(worstSection.percent),
+        scorePercent: clampWellnessPercent(worstSection.percent),
+        contextPercent: clampWellnessPercent(worstSection.percent),
         action: `${worstSection.sectionTitle} 영역 필요도가 높습니다. 우선 관리 영역으로 설정해 주세요.`,
         questionNumber: sectionRepresentative?.questionNumber ?? 999,
         sectionId: worstSection.sectionId,
@@ -415,7 +348,7 @@ export function computeWellnessResult(input: WellnessAnalysisInput): WellnessCom
   const highRiskHighlights = [...mergedHighlights]
     .sort(sortRiskCandidates)
     .slice(0, maxHighlights)
-    .map((candidate) => toHighlight(candidate));
+    .map((candidate) => toWellnessHighlight(candidate));
 
   return {
     schemaVersion: "wellness-score-v1",

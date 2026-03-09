@@ -1,4 +1,5 @@
 import type { Prisma } from "@prisma/client";
+import type { SurveyResponseRecord } from "@/lib/b2b/admin-report-contract";
 import {
   normalizeSurveyAnswerValue,
   resolveSurveyQuestionScore,
@@ -9,7 +10,6 @@ import {
   resolveSelectedSectionsByC27Policy,
 } from "@/lib/b2b/survey-section-resolver";
 import type { B2bSurveyTemplateSchema } from "@/lib/b2b/survey-template";
-
 type SurveyAnswers = Record<string, unknown>;
 
 type SurveyMaps = {
@@ -137,14 +137,16 @@ export function collectSurveyAvailablePeriods(rows: SurveyPeriodRow[]) {
   ];
 }
 
-export function serializeSurveyResponse(response: SurveyResponseRow) {
+export function serializeSurveyResponse(
+  response: SurveyResponseRow
+): SurveyResponseRecord {
   return {
     id: response.id,
     periodKey: response.periodKey,
     reportCycle: response.reportCycle,
     submittedAt: response.submittedAt?.toISOString() ?? null,
     selectedSections: response.selectedSections,
-    answersJson: response.answersJson,
+    answersJson: response.answersJson as SurveyResponseRecord["answersJson"],
     updatedAt: response.updatedAt.toISOString(),
     answers: response.answers.map((answer) => ({
       questionKey: answer.questionKey,
@@ -152,7 +154,8 @@ export function serializeSurveyResponse(response: SurveyResponseRow) {
       answerText: answer.answerText,
       answerValue: answer.answerValue,
       score: answer.score,
-      meta: answer.meta,
+      meta:
+        answer.meta as NonNullable<SurveyResponseRecord["answers"]>[number]["meta"],
     })),
   };
 }

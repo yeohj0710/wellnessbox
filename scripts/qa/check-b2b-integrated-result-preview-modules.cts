@@ -70,6 +70,18 @@ function run() {
   }
   checks.push("model_file_owns_payload_normalization");
 
+  assert.ok(
+    modelSource.includes('from "@/components/b2b/report-summary/card-insights"'),
+    "integrated preview model should reuse shared report-summary helper contract"
+  );
+  checks.push("model_reuses_shared_report_summary_helpers");
+
+  assert.ok(
+    modelSource.includes('from "@/components/b2b/report-summary/detail-data-model"'),
+    "integrated preview model should reuse shared detail-data-model for health and medication sections"
+  );
+  checks.push("model_reuses_shared_detail_data_model");
+
   for (const token of [
     "export default function B2bIntegratedHealthMetricsSection(",
     "건강검진 데이터 상세",

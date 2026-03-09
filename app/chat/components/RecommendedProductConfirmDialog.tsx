@@ -5,7 +5,7 @@ import type {
   MutableRefObject,
   PointerEvent as ReactPointerEvent,
 } from "react";
-import type { RecommendedProductActionConfirmDialog } from "./useRecommendedProductActionsController";
+import type { RecommendedProductActionConfirmDialog } from "./recommendedProductActions.controller-support";
 
 type RecommendedProductConfirmDialogProps = {
   dialog: RecommendedProductActionConfirmDialog;

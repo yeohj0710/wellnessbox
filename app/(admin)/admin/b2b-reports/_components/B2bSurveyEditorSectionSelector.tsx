@@ -25,8 +25,7 @@ export default function B2bSurveyEditorSectionSelector({
       <div className={styles.editorSectionHead}>
         <h3 className={styles.editorSectionTitle}>세부 영역 선택</h3>
         <p className={styles.editorSectionHint}>
-          선택 {selectedSectionCount}/{Math.max(1, maxSelectedSections)} · 권장{" "}
-          {recommendedText}
+          선택 {selectedSectionCount}/{Math.max(1, maxSelectedSections)} · 권장 {recommendedText}
         </p>
       </div>
       <div className={`${styles.actionRow} ${styles.editorChipRow}`}>

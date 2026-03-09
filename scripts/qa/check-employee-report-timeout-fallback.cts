@@ -31,18 +31,28 @@ function runSyncTimeoutFallbackChecks() {
 }
 
 function runHealthInterpretationPlaceholderChecks() {
-  const source = read("components/b2b/ReportSummaryCards.tsx");
+  const cardsSource = read("components/b2b/ReportSummaryCards.tsx");
+  const copySource = read("components/b2b/report-summary/copy.ts");
+  const pagesSource = read("components/b2b/report-summary/ReportSummaryPages.tsx");
   assert.ok(
-    source.includes('const healthInsightEmptyMessage = "내용이 없습니다.";'),
+    cardsSource.includes("REPORT_SUMMARY_HEALTH_INSIGHT_EMPTY_MESSAGE"),
+    "health interpretation summary shell should use shared empty placeholder copy constant"
+  );
+  assert.ok(
+    copySource.includes(
+      'export const REPORT_SUMMARY_HEALTH_INSIGHT_EMPTY_MESSAGE = "내용이 없습니다.";'
+    ),
     "health interpretation section should use fixed empty placeholder copy"
   );
   assert.ok(
-    source.includes("<p className={styles.reportDataEmpty}>{healthInsightEmptyMessage}</p>"),
+    pagesSource.includes(
+      "<p className={styles.reportDataEmpty}>{healthInsightEmptyMessage}</p>"
+    ),
     "health interpretation section should render empty placeholder paragraph"
   );
   assert.ok(
-    !source.includes("buildHealthInsightLines"),
-    "health interpretation section should no longer render computed insight bullet list"
+    !pagesSource.includes("buildHealthInsightLines"),
+    "health interpretation page should no longer render computed insight bullet list"
   );
   console.log(
     "[qa:employee-report-timeout-fallback] PASS health interpretation placeholder"
@@ -79,4 +89,3 @@ try {
   console.error("[qa:employee-report-timeout-fallback] FAIL", error);
   process.exit(1);
 }
-

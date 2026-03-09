@@ -88,11 +88,12 @@ export function useB2bAdminReportSelectionLifecycle({
       setIsDetailLoading(false);
       return;
     }
+
     void (async () => {
       setIsDetailLoading(true);
       try {
         await runBusyAction({
-          fallbackError: "임직원 상세 정보를 불러오지 못했습니다.",
+          fallbackError: "아직 상세 정보를 불러오지 못했습니다.",
           run: async () => {
             await loadEmployeeDetail(selectedEmployeeId, selectedPeriodKey || undefined);
           },

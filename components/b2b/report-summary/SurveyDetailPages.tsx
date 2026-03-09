@@ -1,6 +1,7 @@
 "use client";
 
 import styles from "../B2bUx.module.css";
+import { groupSectionAdviceRows } from "./survey-detail-groups";
 
 export type SectionAdviceLine = {
   key: string;
@@ -32,83 +33,6 @@ export function hasSurveyDetailPageContent(page: SurveyDetailPageModel) {
     page.routineRows.length > 0 ||
     page.sectionAdviceRows.length > 0 ||
     page.supplementRows.length > 0
-  );
-}
-
-type NormalizedSectionAdviceLine = SectionAdviceLine & {
-  normalizedSectionTitle: string;
-  normalizedQuestionText: string;
-};
-
-function normalizeGroupKey(value: string) {
-  return value.trim().replace(/\s+/g, "").toLowerCase();
-}
-
-function normalizeSectionAdviceLine(line: SectionAdviceLine): NormalizedSectionAdviceLine {
-  if (line.continuation) {
-    const continuationSectionTitle = line.sectionTitle.trim();
-    return {
-      ...line,
-      normalizedSectionTitle:
-        continuationSectionTitle && continuationSectionTitle !== "-"
-          ? continuationSectionTitle
-          : "\uBD84\uC11D \uD56D\uBAA9",
-      normalizedQuestionText: "",
-    };
-  }
-
-  const sectionTitleRaw = line.sectionTitle.trim();
-  const questionTextRaw = line.questionText.trim();
-  const questionPrefixMatch = questionTextRaw.match(/^(.+?)\s*[·ㆍ]\s*(.+)$/u);
-
-  let normalizedSectionTitle = sectionTitleRaw;
-  let normalizedQuestionText = questionTextRaw;
-
-  if (questionPrefixMatch) {
-    const prefix = questionPrefixMatch[1].trim();
-    const body = questionPrefixMatch[2].trim();
-    if (!normalizedSectionTitle || normalizedSectionTitle === "-") {
-      normalizedSectionTitle = prefix;
-      normalizedQuestionText = body;
-    } else if (normalizeGroupKey(normalizedSectionTitle) === normalizeGroupKey(prefix)) {
-      normalizedQuestionText = body;
-    }
-  }
-
-  if (!normalizedSectionTitle || normalizedSectionTitle === "-") {
-    normalizedSectionTitle = "분석 항목";
-  }
-  if (!normalizedQuestionText) {
-    normalizedQuestionText = line.questionText || "확인 필요 문항";
-  }
-
-  return {
-    ...line,
-    normalizedSectionTitle,
-    normalizedQuestionText,
-  };
-}
-
-function groupSectionAdviceRows(rows: SectionAdviceLine[]) {
-  return rows.reduce<Array<{ sectionTitle: string; items: NormalizedSectionAdviceLine[] }>>(
-    (acc, row) => {
-      const normalized = normalizeSectionAdviceLine(row);
-      const existing = acc.find(
-        (group) =>
-          normalizeGroupKey(group.sectionTitle) ===
-          normalizeGroupKey(normalized.normalizedSectionTitle)
-      );
-      if (existing) {
-        existing.items.push(normalized);
-        return acc;
-      }
-      acc.push({
-        sectionTitle: normalized.normalizedSectionTitle,
-        items: [normalized],
-      });
-      return acc;
-    },
-    []
   );
 }
 
@@ -159,8 +83,12 @@ export function SurveyDetailCards(props: {
                       >
                         {line.normalizedQuestionText ? (
                           <>
-                            <p className="font-semibold text-slate-900">{line.normalizedQuestionText}</p>
-                            <p className="mt-0.5 text-slate-700">내 답변: {line.answerText || "-"}</p>
+                            <p className="font-semibold text-slate-900">
+                              {line.normalizedQuestionText}
+                            </p>
+                            <p className="mt-0.5 text-slate-700">
+                              응답: {line.answerText || "-"}
+                            </p>
                           </>
                         ) : null}
                         <p
@@ -178,8 +106,8 @@ export function SurveyDetailCards(props: {
             </div>
           ) : (
             <p className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-600">
-              현재 응답 기준으로 표시할 영역별 분석 코멘트가 없습니다. 문항 응답이 더 수집되면 이
-              영역에 코멘트가 자동으로 표시됩니다.
+              현재 응답 기준으로 표시할 영역별 분석 코멘트가 없습니다. 문항 응답 데이터가
+              더 수집되면 각 영역별 코멘트가 자동으로 표시됩니다.
             </p>
           )}
         </section>
@@ -197,7 +125,9 @@ export function SurveyDetailCards(props: {
                 {row.showSectionTitle ? (
                   <p className="text-xs font-semibold text-indigo-700">{row.sectionTitle}</p>
                 ) : null}
-                <h4 className={`${row.showSectionTitle ? "mt-1" : "mt-0"} text-sm font-bold text-slate-900`}>
+                <h4
+                  className={`${row.showSectionTitle ? "mt-1" : "mt-0"} text-sm font-bold text-slate-900`}
+                >
                   {row.title || row.sectionTitle}
                 </h4>
                 {row.paragraphs.length > 0 ? (
@@ -241,7 +171,8 @@ export default function SurveyDetailPages(props: {
   surveyPages: SurveyDetailPageModel[];
   showSectionAdviceEmptyOnFirstPage?: boolean;
 }) {
-  const { surveyDetailPageStart, surveyPages, showSectionAdviceEmptyOnFirstPage = false } = props;
+  const { surveyDetailPageStart, surveyPages, showSectionAdviceEmptyOnFirstPage = false } =
+    props;
 
   if (surveyPages.length === 0) {
     return null;
@@ -259,7 +190,7 @@ export default function SurveyDetailPages(props: {
           >
             <header className={styles.reportPageHeader}>
               <p className={styles.reportPageKicker}>{`${pageNumber}페이지 설문 결과`}</p>
-              <h2 className={styles.reportPageTitle}>{"\uC124\uBB38 \uACB0\uACFC"}</h2>
+              <h2 className={styles.reportPageTitle}>설문 결과</h2>
               <p className={styles.reportPageSubtitle}>
                 생활습관 실천 가이드, 영역별 분석 코멘트, 맞춤 영양제 설계를 정리했습니다.
               </p>

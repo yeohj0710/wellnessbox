@@ -12,6 +12,13 @@ import {
   readNhisFetchMemoryCache,
   writeNhisFetchMemoryCache,
 } from "@/lib/server/hyphen/fetch-memory-cache";
+import {
+  buildCachedFetchResponseBody,
+  buildSuccessfulCacheLinkPatch,
+  extractSessionArtifactsFromPayload,
+  isServeableNhisCachedPayload,
+  toFetchRoutePayload,
+} from "@/lib/server/hyphen/fetch-route-cache-support";
 import { toPrismaJson } from "@/lib/server/hyphen/json";
 import { upsertNhisLink } from "@/lib/server/hyphen/link";
 import { NO_STORE_HEADERS } from "@/lib/server/hyphen/route-utils";
@@ -51,86 +58,7 @@ type PersistNhisFetchResultInput = {
   updateFetchedAt: boolean;
   defaultErrorMessage?: string;
 };
-
-function toFetchRoutePayload(value: unknown): NhisFetchRoutePayload | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  const record = value as Record<string, unknown>;
-  if (typeof record.ok !== "boolean") return null;
-  return record as NhisFetchRoutePayload;
-}
-
-export function isServeableNhisCachedPayload(value: unknown) {
-  const parsed = toFetchRoutePayload(value);
-  return parsed?.ok === true;
-}
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  return value as Record<string, unknown>;
-}
-
-type SessionArtifacts = {
-  cookieData?: unknown;
-  stepData?: unknown;
-};
-
-function collectSessionArtifacts(
-  value: unknown,
-  found: SessionArtifacts,
-  depth = 0
-) {
-  if (depth > 8) return;
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      collectSessionArtifacts(item, found, depth + 1);
-      if (found.cookieData !== undefined && found.stepData !== undefined) return;
-    }
-    return;
-  }
-
-  const record = asRecord(value);
-  if (!record) return;
-  const data = asRecord(record.data);
-  const cookieData =
-    data?.cookieData ?? data?.cookie_data ?? record.cookieData ?? record.cookie_data;
-  if (found.cookieData === undefined && cookieData != null) {
-    found.cookieData = cookieData;
-  }
-  const stepData =
-    data?.stepData ?? data?.step_data ?? record.stepData ?? record.step_data;
-  if (found.stepData === undefined && stepData != null) {
-    found.stepData = stepData;
-  }
-  if (found.cookieData !== undefined && found.stepData !== undefined) return;
-
-  for (const child of Object.values(record)) {
-    collectSessionArtifacts(child, found, depth + 1);
-    if (found.cookieData !== undefined && found.stepData !== undefined) return;
-  }
-}
-
-function extractSessionArtifactsFromPayload(
-  payload: NhisFetchRoutePayload
-): SessionArtifacts {
-  const data = asRecord(payload.data);
-  const raw = asRecord(data?.raw);
-  if (!raw) return {};
-
-  const orderedCandidates = [
-    raw.medication,
-    raw.medical,
-    raw.checkupOverview,
-    raw.healthAge,
-    raw.checkupYearly,
-    raw.checkupList,
-  ];
-  const found: SessionArtifacts = {};
-  for (const candidate of orderedCandidates) {
-    collectSessionArtifacts(candidate, found);
-    if (found.cookieData !== undefined && found.stepData !== undefined) break;
-  }
-  return found;
-}
+export { isServeableNhisCachedPayload };
 
 export async function tryServeNhisFetchCache(input: TryServeNhisFetchCacheInput) {
   const memoryCached = readNhisFetchMemoryCache({
@@ -148,18 +76,10 @@ export async function tryServeNhisFetchCache(input: TryServeNhisFetchCacheInput)
     if (!isServeableNhisCachedPayload(cachedPayload)) {
       // Do not serve failed payloads from memory cache; allow identity/history fallback.
     } else {
-      const linkPatch: {
-        lastIdentityHash?: string;
-        lastErrorCode?: null;
-        lastErrorMessage?: null;
-      } = {};
-      if (input.shouldUpdateIdentityHash) {
-        linkPatch.lastIdentityHash = input.identityHash;
-      }
-      if (cachedPayload.ok) {
-        linkPatch.lastErrorCode = null;
-        linkPatch.lastErrorMessage = null;
-      }
+      const linkPatch = buildSuccessfulCacheLinkPatch({
+        shouldUpdateIdentityHash: input.shouldUpdateIdentityHash,
+        identityHash: input.identityHash,
+      });
 
       await Promise.all([
         ...(memoryCached.entry.cacheId
@@ -172,23 +92,16 @@ export async function tryServeNhisFetchCache(input: TryServeNhisFetchCacheInput)
 
       const resolvedSource = input.sourceOverride || memoryCached.source;
       return NextResponse.json(
-        {
-          ...cachedPayload,
-          cached: true,
-          ...(input.forceRefreshGuarded
-            ? {
-                forceRefreshGuarded: true,
-                forceRefreshAgeSeconds: memoryCached.ageSeconds,
-                forceRefreshGuardSeconds: input.maxAgeSeconds ?? null,
-              }
-            : {}),
-          cache: {
-            source: resolvedSource,
-            stale: memoryCached.stale,
-            fetchedAt: new Date(memoryCached.entry.fetchedAtMs).toISOString(),
-            expiresAt: new Date(memoryCached.entry.expiresAtMs).toISOString(),
-          },
-        },
+        buildCachedFetchResponseBody({
+          payload: cachedPayload,
+          source: resolvedSource,
+          stale: memoryCached.stale,
+          fetchedAt: new Date(memoryCached.entry.fetchedAtMs).toISOString(),
+          expiresAt: new Date(memoryCached.entry.expiresAtMs).toISOString(),
+          forceRefreshGuarded: input.forceRefreshGuarded,
+          forceRefreshAgeSeconds: memoryCached.ageSeconds,
+          forceRefreshGuardSeconds: input.maxAgeSeconds ?? null,
+        }),
         { status: memoryCached.entry.statusCode, headers: NO_STORE_HEADERS }
       );
     }
@@ -248,19 +161,10 @@ export async function tryServeNhisFetchCache(input: TryServeNhisFetchCacheInput)
     input.sourceOverride ||
     (historyCached ? "db-history" : directCached ? "db" : "db-identity");
 
-  const linkPatch: {
-    lastIdentityHash?: string;
-    lastErrorCode?: null;
-    lastErrorMessage?: null;
-  } = {};
-  if (input.shouldUpdateIdentityHash) {
-    linkPatch.lastIdentityHash = input.identityHash;
-  }
-  if (cachedPayload.ok) {
-    // Successful cached payloads should not keep stale session-expired errors.
-    linkPatch.lastErrorCode = null;
-    linkPatch.lastErrorMessage = null;
-  }
+  const linkPatch = buildSuccessfulCacheLinkPatch({
+    shouldUpdateIdentityHash: input.shouldUpdateIdentityHash,
+    identityHash: input.identityHash,
+  });
 
   await Promise.all([
     markNhisFetchCacheHit(selectedCache.id),
@@ -286,23 +190,16 @@ export async function tryServeNhisFetchCache(input: TryServeNhisFetchCacheInput)
   });
 
   return NextResponse.json(
-    {
-      ...cachedPayload,
-      cached: true,
-      ...(input.forceRefreshGuarded
-        ? {
-            forceRefreshGuarded: true,
-            forceRefreshAgeSeconds: ageSeconds,
-            forceRefreshGuardSeconds: input.maxAgeSeconds ?? null,
-          }
-        : {}),
-      cache: {
-        source: resolvedSource,
-        stale,
-        fetchedAt: selectedCache.fetchedAt.toISOString(),
-        expiresAt: selectedCache.expiresAt.toISOString(),
-      },
-    },
+    buildCachedFetchResponseBody({
+      payload: cachedPayload,
+      source: resolvedSource,
+      stale,
+      fetchedAt: selectedCache.fetchedAt.toISOString(),
+      expiresAt: selectedCache.expiresAt.toISOString(),
+      forceRefreshGuarded: input.forceRefreshGuarded,
+      forceRefreshAgeSeconds: ageSeconds,
+      forceRefreshGuardSeconds: input.maxAgeSeconds ?? null,
+    }),
     { status: selectedCache.statusCode, headers: NO_STORE_HEADERS }
   );
 }

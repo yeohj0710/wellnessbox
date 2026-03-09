@@ -81,14 +81,15 @@ function runMemoryThrottleCases() {
 }
 
 function runStaticRegressionChecks() {
-  const source = read("lib/b2b/employee-service.ts");
+  const source = read("lib/b2b/employee-service.logs.ts");
+  const facadeSource = read("lib/b2b/employee-service.ts");
   assert.ok(
     source.includes("shouldSkipEmployeeAccessLogWrite"),
-    "employee-service should guard access logs with dedupe checks"
+    "employee-service log module should guard access logs with dedupe checks"
   );
   assert.ok(
     source.includes("shouldSkipAdminActionLogWrite"),
-    "employee-service should guard admin logs with dedupe checks"
+    "employee-service log module should guard admin logs with dedupe checks"
   );
   assert.ok(
     source.includes("db.b2bEmployeeAccessLog.findFirst"),
@@ -97,6 +98,10 @@ function runStaticRegressionChecks() {
   assert.ok(
     source.includes("db.b2bAdminActionLog.findFirst"),
     "admin action dedupe should check recent log rows"
+  );
+  assert.ok(
+    facadeSource.includes('} from "@/lib/b2b/employee-service.logs";'),
+    "employee-service should re-export log helpers from the dedicated log module"
   );
   console.log("[qa:b2b-log-throttle] PASS static regression checks");
 }

@@ -19,40 +19,40 @@ function run() {
   assert.match(
     clientSource,
     /useB2bAdminBackgroundRefresh\(/,
-    "B2bAdminReportClient는 배경 새로고침 훅을 사용해야 합니다."
+    "B2bAdminReportClient must use useB2bAdminBackgroundRefresh."
   );
   checks.push("client_uses_background_refresh_hook");
 
   assert.ok(
     !/window\.addEventListener\("focus"/.test(clientSource),
-    "B2bAdminReportClient에 focus 이벤트 리스너를 인라인으로 두지 않습니다."
+    "B2bAdminReportClient should not keep a focus listener inline."
   );
   checks.push("client_has_no_inline_focus_listener");
 
   assert.ok(
     !/document\.addEventListener\("visibilitychange"/.test(clientSource),
-    "B2bAdminReportClient에 visibilitychange 리스너를 인라인으로 두지 않습니다."
+    "B2bAdminReportClient should not keep a visibilitychange listener inline."
   );
   checks.push("client_has_no_inline_visibility_listener");
 
   assert.match(
     hookSource,
     /DEFAULT_MIN_INTERVAL_MS = 15_000/,
-    "배경 새로고침 최소 간격 기준이 유지되어야 합니다."
+    "Background refresh should keep the 15s minimum interval default."
   );
   checks.push("hook_keeps_min_interval_default");
 
   assert.match(
     hookSource,
     /DEFAULT_INTERACTION_QUIET_MS = 8_000/,
-    "최근 사용자 입력 보호 간격이 유지되어야 합니다."
+    "Background refresh should keep the 8s interaction quiet window."
   );
   checks.push("hook_keeps_interaction_quiet_default");
 
   assert.match(
     hookSource,
     /const events = \["pointerdown", "keydown", "input", "compositionstart"\]/,
-    "입력 상호작용 이벤트 감지가 유지되어야 합니다."
+    "Background refresh should track recent user interaction events."
   );
   checks.push("hook_tracks_recent_interactions");
 

@@ -1,31 +1,46 @@
 # B2B Admin Survey Question Field Refactor
 
-## 목적
-- `SurveyQuestionField`의 단일 대형 함수(문항 타입 분기 + JSX 렌더링 + 옵션 처리)를 유지보수 가능한 블록 단위로 분리합니다.
-- 관리자 설문 입력 화면에서 깨진 한글 문구(모지바케)가 다시 유입되지 않도록 QA 가드를 추가합니다.
+## Goal
+- Keep `SurveyQuestionField` focused on question-type dispatch only.
+- Separate shared UI primitives from type-specific renderers so future edits do not require scanning one large JSX file.
+- Keep the admin survey question UI Korean-first and guard against mojibake regressions.
 
-## 적용 내용
-- 파일: `app/(admin)/admin/b2b-reports/_components/SurveyQuestionField.tsx`
-  - 타입별 렌더러 컴포넌트 분리:
-    - `MultiChoiceQuestionField`
-    - `SingleChoiceQuestionField`
-    - `NumberQuestionField`
-    - `GroupQuestionField`
-    - `TextQuestionField`
-  - 메인 컴포넌트는 `switch (question.type)` 기반 디스패처로 단순화
-  - 반복 버튼 클래스 로직을 `optionButtonClass` 헬퍼로 통합
-  - 사용자 문구를 한국어 정상 문구로 교정
-- 파일: `app/(admin)/admin/b2b-reports/_components/SurveyQuestionField.helpers.ts`
-  - `variantLabel` 한국어 문구 교정
+## Scope
+- Dispatcher:
+  - `app/(admin)/admin/b2b-reports/_components/SurveyQuestionField.tsx`
+- Type-specific renderers:
+  - `app/(admin)/admin/b2b-reports/_components/SurveyQuestionField.renderers.tsx`
+- Shared UI primitives and props:
+  - `app/(admin)/admin/b2b-reports/_components/SurveyQuestionField.shared.tsx`
+- Answer/variant helpers:
+  - `app/(admin)/admin/b2b-reports/_components/SurveyQuestionField.helpers.ts`
+- QA guard:
+  - `scripts/qa/check-b2b-admin-survey-question-field-refactor.cts`
+  - npm script: `qa:b2b:admin-survey-question-field-refactor`
 
-## 회귀 방지 QA
-- 스크립트: `scripts/qa/check-b2b-admin-survey-question-field-refactor.cts`
-  - 타입별 렌더러 함수 존재 검사
-  - 메인 디스패처가 분리된 렌더러를 호출하는지 검사
-  - `? + 한글` 형태의 모지바케 패턴 유입 검사
-- 명령어:
-  - `npm run qa:b2b:admin-survey-question-field-refactor`
+## Responsibility
+- `SurveyQuestionField.tsx`
+  - resolve variant context
+  - dispatch by `question.type`
+- `SurveyQuestionField.renderers.tsx`
+  - render `multi`, `single`, `number`, `group`, `text` question UIs
+  - keep option-selection payload shaping close to the renderer that uses it
+- `SurveyQuestionField.shared.tsx`
+  - shared card/header/variant selector UI
+  - shared renderer prop contract
+- `SurveyQuestionField.helpers.ts`
+  - variant key resolution
+  - option filtering and variant answer shaping
+  - group answer serialization
 
-## 기대 효과
-- 문항 렌더링 로직 수정 시 영향 범위를 타입별로 국소화할 수 있습니다.
-- 한국어 UI 문구 품질 저하(깨짐) 문제를 조기에 탐지할 수 있습니다.
+## Edit Guide
+- Change copy, spacing, or shared layout first in `SurveyQuestionField.shared.tsx`.
+- Change question-type behavior in `SurveyQuestionField.renderers.tsx`.
+- Change variant payload shape or group-answer serialization in `SurveyQuestionField.helpers.ts`.
+- Only touch `SurveyQuestionField.tsx` when a new question type or dispatch rule is added.
+
+## Validation
+1. `npm run audit:encoding`
+2. `npm run qa:b2b:admin-survey-question-field-refactor`
+3. `npm run lint`
+4. `npm run build`

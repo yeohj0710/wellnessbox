@@ -11,58 +11,22 @@ import {
   payloadHasMedicationNames,
   resolveSummaryPatchNeeds,
 } from "./employee-sync-summary.normalizer";
+import {
+  hasRawTargetPayload,
+  mergeRawPayloadByTargets,
+} from "./employee-sync-summary.raw-support";
 
 export {
   buildBasePayload,
   buildDetailPayload,
-  parseCachedPayload,
 } from "./employee-sync-summary.fetch-patch";
+export { parseCachedPayload } from "./employee-sync-summary.fetch-patch-cache";
 
 export type SummaryPatchResult = {
   payload: NhisFetchRoutePayload;
   usedNetwork: boolean;
   patchedTargets: NhisFetchTarget[];
 };
-
-const RAW_TARGET_KEY_MAP: Record<NhisFetchTarget, string> = {
-  medical: "medical",
-  medication: "medication",
-  checkupList: "checkupList",
-  checkupYearly: "checkupYearly",
-  checkupOverview: "checkupOverview",
-  healthAge: "healthAge",
-};
-
-function hasRawTargetPayload(
-  raw: Record<string, unknown> | null,
-  target: NhisFetchTarget
-) {
-  if (!raw) return false;
-  const key = RAW_TARGET_KEY_MAP[target];
-  if (!key) return false;
-  return raw[key] != null;
-}
-
-function mergeRawPayloadByTargets(input: {
-  baseRaw: unknown;
-  patchRaw: unknown;
-  targets: NhisFetchTarget[];
-}) {
-  const base = asRecord(input.baseRaw);
-  const patch = asRecord(input.patchRaw);
-  if (!base && !patch) return null;
-
-  const merged: Record<string, unknown> = { ...(base ?? {}) };
-  for (const target of input.targets) {
-    const rawKey = RAW_TARGET_KEY_MAP[target];
-    if (!rawKey) continue;
-    if (patch && Object.prototype.hasOwnProperty.call(patch, rawKey)) {
-      merged[rawKey] = patch[rawKey];
-    }
-  }
-
-  return merged;
-}
 
 export async function patchSummaryTargetsIfNeeded(input: {
   appUserId: string;

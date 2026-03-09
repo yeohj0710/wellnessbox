@@ -1,10 +1,12 @@
-import { z } from "zod";
 import { upsertB2bEmployee } from "@/lib/b2b/employee-service";
-import { B2bEmployeeIdentityValidationError } from "@/lib/b2b/identity";
-import { b2bEmployeeIdentityInputSchema } from "@/lib/b2b/employee-route-schema";
-import { B2B_PERIOD_KEY_REGEX, resolveCurrentPeriodKey } from "@/lib/b2b/period";
+import { resolveCurrentPeriodKey } from "@/lib/b2b/period";
 import {
-  buildDbPoolBusySyncResponse,
+  buildEmployeeSyncDedupKey,
+  buildEmployeeSyncRouteFailureResponse,
+  buildEmployeeSyncValidationErrorResponse,
+  type EmployeeSyncPayload,
+} from "@/lib/b2b/employee-sync-route-handler-support";
+import {
   ensureForceRefreshCooldown,
   executeSyncAndBuildResponse,
   logSyncAccess,
@@ -13,40 +15,8 @@ import {
   tryReuseLatestSnapshot,
   type SyncAccessContext,
 } from "@/lib/b2b/employee-sync-route";
-import { noStoreJson } from "@/lib/b2b/employee-sync-route";
-import { resolveDbRouteError } from "@/lib/server/db-error";
 import { runWithHyphenInFlightDedup } from "@/lib/server/hyphen/inflight-dedup";
 import { requireNhisSession } from "@/lib/server/route-auth";
-
-export const employeeSyncRequestSchema = b2bEmployeeIdentityInputSchema.extend({
-  forceRefresh: z.boolean().optional(),
-  periodKey: z.string().regex(B2B_PERIOD_KEY_REGEX).optional(),
-  generateAiEvaluation: z.boolean().optional(),
-});
-
-export type EmployeeSyncPayload = z.infer<typeof employeeSyncRequestSchema>;
-
-const INPUT_INVALID_ERROR =
-  "\uC785\uB825\uAC12\uC744 \uD655\uC778\uD574 \uC8FC\uC138\uC694.";
-const SYNC_FAILED_ERROR =
-  "\uAC74\uAC15 \uB370\uC774\uD130 \uB3D9\uAE30\uD654 \uCC98\uB9AC \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC5B4\uC694. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694.";
-
-function buildEmployeeSyncDedupKey(input: {
-  appUserId: string;
-  guest: boolean;
-  payload: EmployeeSyncPayload;
-}) {
-  return [
-    input.appUserId,
-    input.guest ? "guest" : "member",
-    input.payload.name.trim(),
-    input.payload.birthDate.trim(),
-    input.payload.phone.trim(),
-    input.payload.periodKey?.trim() || "-",
-    input.payload.forceRefresh === true ? "force" : "normal",
-    input.payload.generateAiEvaluation === true ? "ai" : "no-ai",
-  ].join("|");
-}
 
 export async function runEmployeeSyncPostRoute(req: Request) {
   const auth = await requireNhisSession();
@@ -66,57 +36,30 @@ export async function runEmployeeSyncAuthedPostRoute(input: {
 }) {
   try {
     const body = await input.req.json().catch(() => null);
-    const parsed = employeeSyncRequestSchema.safeParse(body);
-    if (!parsed.success) {
-      return noStoreJson(
-        { ok: false, error: parsed.error.issues[0]?.message || INPUT_INVALID_ERROR },
-        400
-      );
+    const validated = buildEmployeeSyncValidationErrorResponse(body);
+    if (!validated.ok) {
+      return validated.response;
     }
 
     const dedupKey = buildEmployeeSyncDedupKey({
       appUserId: input.appUserId,
       guest: input.guest,
-      payload: parsed.data,
+      payload: validated.payload,
     });
     return runWithHyphenInFlightDedup("b2b-employee-sync", dedupKey, () =>
       runEmployeeSyncFlow({
         req: input.req,
         appUserId: input.appUserId,
         guest: input.guest,
-        payload: parsed.data,
+        payload: validated.payload,
       })
     );
   } catch (error) {
-    if (error instanceof B2bEmployeeIdentityValidationError) {
-      return noStoreJson(
-        { ok: false, code: error.code, error: INPUT_INVALID_ERROR },
-        400
-      );
-    }
-
-    const dbError = resolveDbRouteError(error, SYNC_FAILED_ERROR);
-    console.error("[b2b][employee-sync] route handler failed", {
+    return buildEmployeeSyncRouteFailureResponse({
+      error,
       appUserId: input.appUserId,
       guest: input.guest,
-      errorName: error instanceof Error ? error.name : typeof error,
-      errorCode:
-        typeof (error as { code?: unknown })?.code === "string"
-          ? (error as { code: string }).code
-          : null,
-      errorMessage: error instanceof Error ? error.message : String(error),
-      mappedCode: dbError.code,
-      mappedStatus: dbError.status,
     });
-
-    if (dbError.code === "DB_POOL_TIMEOUT") {
-      return buildDbPoolBusySyncResponse(dbError.message);
-    }
-
-    return noStoreJson(
-      { ok: false, code: dbError.code, error: dbError.message },
-      dbError.status
-    );
   }
 }
 

@@ -2,6 +2,7 @@ import "server-only";
 
 import type { Prisma } from "@prisma/client";
 import db from "@/lib/db";
+import type { AdminEmployeeListResponse, EmployeeListItem } from "@/lib/b2b/admin-employee-management-contract";
 import { noStoreJson } from "@/lib/server/no-store";
 import { requireAdminSession } from "@/lib/server/route-auth";
 
@@ -43,9 +44,9 @@ export async function runAdminEmployeeListGetRoute(req: Request) {
       },
     });
 
-    return noStoreJson({
+    const payload: AdminEmployeeListResponse = {
       ok: true,
-      employees: employees.map((employee) => ({
+      employees: employees.map((employee): EmployeeListItem => ({
         id: employee.id,
         name: employee.name,
         birthDate: employee.birthDate,
@@ -54,7 +55,9 @@ export async function runAdminEmployeeListGetRoute(req: Request) {
         updatedAt: employee.updatedAt.toISOString(),
         counts: employee._count,
       })),
-    });
+    };
+
+    return noStoreJson(payload);
   }
 
   const employees = await db.b2bEmployee.findMany({
@@ -81,9 +84,9 @@ export async function runAdminEmployeeListGetRoute(req: Request) {
     },
   });
 
-  return noStoreJson({
+  const payload: AdminEmployeeListResponse = {
     ok: true,
-    employees: employees.map((employee) => ({
+    employees: employees.map((employee): EmployeeListItem => ({
       id: employee.id,
       appUserId: employee.appUserId,
       name: employee.name,
@@ -96,5 +99,7 @@ export async function runAdminEmployeeListGetRoute(req: Request) {
       updatedAt: employee.updatedAt.toISOString(),
       counts: employee._count,
     })),
-  });
+  };
+
+  return noStoreJson(payload);
 }

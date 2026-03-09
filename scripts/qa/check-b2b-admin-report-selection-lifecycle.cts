@@ -65,7 +65,13 @@ function run() {
     /await loadEmployeeDetail\(selectedEmployeeId, selectedPeriodKey \|\| undefined\)/,
     "The lifecycle hook should own selected employee detail loading."
   );
+  assert.match(
+    hookSource,
+    /fallbackError: "아직 상세 정보를 불러오지 못했습니다\."/,
+    "The lifecycle hook should keep the detail fallback copy readable."
+  );
   checks.push("hook_owns_initial_and_detail_loading");
+  checks.push("hook_keeps_readable_detail_fallback_copy");
 
   console.log(
     JSON.stringify(

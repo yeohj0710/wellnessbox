@@ -2,8 +2,9 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { z } from "zod";
 
 import { createChatModel, getOpenAIApiKey } from "./openai";
-import { getPattern } from "./patterns";
+import { getPattern } from "./pattern-registry";
 import { runAgentPattern } from "./engine";
+import { safeAnswer } from "./shared-utils";
 import { TraceCollector } from "./trace";
 import {
   PlaygroundMode,
@@ -13,17 +14,6 @@ import {
 } from "./types";
 
 const modeSchema = z.enum(["llm", "agent", "both"]);
-
-const safeAnswer = (content: unknown) =>
-  typeof content === "string"
-    ? content
-    : Array.isArray(content)
-      ? content
-          .map((item) =>
-            typeof item === "string" ? item : JSON.stringify(item ?? "")
-          )
-          .join(" ")
-      : JSON.stringify(content ?? "");
 
 const buildErrorResult = (message: string): PlaygroundRunResult => ({
   error: message,

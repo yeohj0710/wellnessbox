@@ -18,12 +18,17 @@ const CATEGORY_PATH = path.resolve(
   process.cwd(),
   "app/chat/components/recommendedProductActions.resolve.category.ts"
 );
+const SUPPORT_PATH = path.resolve(
+  process.cwd(),
+  "app/chat/components/recommendedProductActions.resolve.support.ts"
+);
 
 function run() {
   const resolveSource = fs.readFileSync(RESOLVE_PATH, "utf8");
   const catalogSource = fs.readFileSync(CATALOG_PATH, "utf8");
   const nameSource = fs.readFileSync(NAME_PATH, "utf8");
   const categorySource = fs.readFileSync(CATEGORY_PATH, "utf8");
+  const supportSource = fs.readFileSync(SUPPORT_PATH, "utf8");
   const checks: string[] = [];
 
   assert.match(
@@ -38,10 +43,10 @@ function run() {
   );
   assert.match(
     resolveSource,
-    /import \{\s*isCategoryLikeProductName,\s*isPlaceholderProductName,\s*\} from "\.\/recommendedProductActions\.resolve\.category";/m,
-    "Resolve module must import predicate helpers from the category module."
+    /import \{\s*buildResolveCacheKey,\s*findCategoryFallbackCandidate,\s*shouldAllowCategoryFallback,\s*\} from "\.\/recommendedProductActions\.resolve\.support";/m,
+    "Resolve module must import fallback policy helpers from the support module."
   );
-  checks.push("resolve_imports_catalog_name_and_category_modules");
+  checks.push("resolve_imports_catalog_name_and_support_modules");
 
   for (const legacyToken of [
     "const PRODUCT_NAME_CATALOG_TTL_MS = 5 * 60 * 1000;",
@@ -51,6 +56,10 @@ function run() {
     "function findProductCandidatesByName(",
     "function isPlaceholderProductName(value: string) {",
     "function isCategoryLikeProductName(productName: string, category: string) {",
+    "const PLACEHOLDER_PRODUCT_NAME_SET = new Set([",
+    "const CATEGORY_FALLBACK_ALIASES: Record<string, string[]> = {",
+    "function findBestProductCandidateByCategory(",
+    "function buildResolveCacheKey(",
   ]) {
     assert.ok(
       !resolveSource.includes(legacyToken),
@@ -97,6 +106,21 @@ function run() {
     );
   }
   checks.push("category_module_owns_placeholder_and_category_like_predicates");
+
+  for (const token of [
+    "const PLACEHOLDER_PRODUCT_NAME_SET = new Set([",
+    "const CATEGORY_FALLBACK_ALIASES: Record<string, string[]> = {",
+    "const CATEGORY_KEYWORD_SET = new Set(",
+    "export function shouldAllowCategoryFallback(line: RecommendationLine) {",
+    "export function findCategoryFallbackCandidate(",
+    "export function buildResolveCacheKey(",
+  ]) {
+    assert.ok(
+      supportSource.includes(token),
+      `[qa:chat:recommended-product-actions-resolve] missing support token: ${token}`
+    );
+  }
+  checks.push("support_module_owns_category_fallback_policy_and_cache_key");
 
   console.log(JSON.stringify({ ok: true, checks }, null, 2));
 }

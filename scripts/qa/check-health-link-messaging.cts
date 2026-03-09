@@ -198,10 +198,12 @@ function runStaticRegressionChecks() {
     "health-link hook should allow sign action only when pending auth + step data are both ready"
   );
 
-  const clientSource = read("app/(features)/health-link/HealthLinkClient.tsx");
+  const clientModelSource = read(
+    "app/(features)/health-link/useHealthLinkClientModel.ts"
+  );
   assert.ok(
-    clientSource.includes("const hasAuthRequested = isNhisSignReady(status);"),
-    "health-link client should enter sign step only when sign-ready status is true"
+    clientModelSource.includes("const hasAuthRequested = isNhisSignReady(status);"),
+    "health-link client model should enter sign step only when sign-ready status is true"
   );
 
   const policySource = read("app/(features)/health-link/fetchClientPolicy.ts");

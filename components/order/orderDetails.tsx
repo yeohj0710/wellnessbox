@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   getOrdersWithItemsAndStatusPaginated,
   getOrdersWithItemsByPhonePaginated,
@@ -106,7 +106,7 @@ export default function OrderDetails({
   if (error) {
     return (
       <div className="w-full flex justify-center px-3 sm:px-4">
-        <div className="w-full sm:w-[640px] bg-white border border-gray-100 sm:shadow-md rounded-2xl p-6 text-center">
+        <div className="w-full sm:w-[640px] rounded-2xl border border-gray-100 bg-white p-6 text-center sm:shadow-md">
           <p className="text-base font-semibold text-gray-900">
             주문을 불러오지 못했어요.
           </p>
@@ -124,11 +124,12 @@ export default function OrderDetails({
       </div>
     );
   }
+
   return (
-    <div className="w-full flex flex-col gap-0 sm:gap-4">
+    <div className="flex w-full flex-col gap-0 sm:gap-4">
       {isPageLoading ? (
         <div className="flex justify-center py-6">
-          <div className="w-6 h-6 border-2 border-sky-400 border-t-transparent rounded-full animate-spin" />
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-sky-400 border-t-transparent" />
         </div>
       ) : (
         orders.map((order, index) => {
@@ -138,53 +139,56 @@ export default function OrderDetails({
           } as unknown as OrderAccordionOrder;
 
           return (
-          <div key={order.id} className="w-full">
-            <CustomerOrderAccordionItem
-              initialOrder={normalizedOrder}
-              isInitiallyExpanded={false}
-              onBack={onBack}
-            />
-            {index < orders.length - 1 && (
-              <div className="hidden max-sm:block px-4">
-                <div className="border-t border-gray-200" />
-              </div>
-            )}
-          </div>
+            <div key={order.id} className="w-full">
+              <CustomerOrderAccordionItem
+                initialOrder={normalizedOrder}
+                isInitiallyExpanded={false}
+                onBack={onBack}
+              />
+              {index < orders.length - 1 ? (
+                <div className="hidden px-4 max-sm:block">
+                  <div className="border-t border-gray-200" />
+                </div>
+              ) : null}
+            </div>
           );
         })
       )}
 
       {totalPages > 1 ? (
-        <nav aria-label="페이지네이션" className="mt-6">
+        <nav aria-label="주문 페이지네이션" className="mt-6">
           <div className="mx-auto w-full max-w-[640px] px-4">
-            <div className="flex items-center justify-center gap-2 flex-wrap">
+            <div className="flex flex-wrap items-center justify-center gap-2">
               <button
+                type="button"
                 onClick={() => handlePageChange(1)}
                 disabled={!canGoPrev}
                 aria-label="첫 페이지"
-                className="px-3 py-2 rounded-full text-sm font-medium border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                className="rounded-full border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 active:scale-95"
               >
-                «
+                {"<<"}
               </button>
               <button
+                type="button"
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={!canGoPrev}
                 aria-label="이전 페이지"
-                className="px-3 py-2 rounded-full text-sm font-medium border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                className="rounded-full border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 active:scale-95"
               >
-                ←
+                {"<"}
               </button>
 
-              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar px-1">
+              <div className="no-scrollbar flex items-center gap-1 overflow-x-auto px-1">
                 {generateOptimizedPageNumbers(totalPages, currentPage).map(
                   (page) => (
                     <button
                       key={page}
+                      type="button"
                       onClick={() => handlePageChange(page)}
                       aria-current={page === currentPage ? "page" : undefined}
-                      className={`h-9 min-w-9 px-3 rounded-full text-sm transition-all border ${
+                      className={`h-9 min-w-9 rounded-full border px-3 text-sm transition-all ${
                         page === currentPage
-                          ? "bg-sky-600 text-white border-sky-600 shadow"
+                          ? "border-sky-600 bg-sky-600 text-white shadow"
                           : "border-gray-300 text-gray-700 hover:bg-gray-50"
                       }`}
                     >
@@ -195,20 +199,22 @@ export default function OrderDetails({
               </div>
 
               <button
+                type="button"
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={!canGoNext}
                 aria-label="다음 페이지"
-                className="px-3 py-2 rounded-full text-sm font-medium border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                className="rounded-full border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 active:scale-95"
               >
-                →
+                {">"}
               </button>
               <button
+                type="button"
                 onClick={() => handlePageChange(totalPages)}
                 disabled={!canGoNext}
                 aria-label="마지막 페이지"
-                className="px-3 py-2 rounded-full text-sm font-medium border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                className="rounded-full border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 active:scale-95"
               >
-                »
+                {">>"}
               </button>
             </div>
 

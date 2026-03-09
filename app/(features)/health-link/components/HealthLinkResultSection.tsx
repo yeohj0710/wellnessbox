@@ -10,7 +10,8 @@ import { HealthLinkFetchActions } from "./HealthLinkFetchActions";
 import { HealthLinkResultContent } from "./HealthLinkResultContent";
 import { HealthLinkResultFailureNotice } from "./HealthLinkResultFailureNotice";
 import { HealthLinkResultLoadingPanel } from "./HealthLinkResultLoadingPanel";
-import { isSkippableFailure, type LatestCheckupRow } from "./HealthLinkResultSection.helpers";
+import { type LatestCheckupRow } from "./HealthLinkResultSection.helpers";
+import { useHealthLinkResultSectionModel } from "./useHealthLinkResultSectionModel";
 
 type HealthLinkResultSectionProps = {
   linked: boolean;
@@ -48,39 +49,24 @@ export function HealthLinkResultSection({
   onSwitchIdentity,
 }: HealthLinkResultSectionProps) {
   const { showToast } = useToast();
-  const hasCheckupRows = latestCheckupRows.length > 0;
-  const hasMedicationRows = medicationDigest.totalRows > 0;
-  const sessionExpiredFailure = hasNhisSessionExpiredFailure(fetchFailures);
-  const sessionExpiredBlocking = sessionExpiredFailure && !hasFetchResult;
-
-  const visibleFailures = fetchFailures.filter(
-    (failure) =>
-      !isSkippableFailure(failure, {
-        hasAnyResult: hasFetchResult,
-        hasCheckupRows,
-        hasMedicationRows,
-      })
-  );
-  const showFailureNotice = visibleFailures.length > 0 && !sessionExpiredBlocking;
   const lastSummaryBlockedMessageRef = React.useRef<string | null>(null);
   const sessionExpiredNotifiedRef = React.useRef(false);
   const lastFailureDigestRef = React.useRef<string | null>(null);
-
-  const [fetchLoadingElapsedSec, setFetchLoadingElapsedSec] = React.useState(0);
-
-  React.useEffect(() => {
-    if (!fetchLoading) {
-      setFetchLoadingElapsedSec(0);
-      return;
-    }
-    setFetchLoadingElapsedSec(0);
-    const startedAt = Date.now();
-    const timer = window.setInterval(() => {
-      const elapsed = Math.floor((Date.now() - startedAt) / 1000);
-      setFetchLoadingElapsedSec(elapsed);
-    }, 1_000);
-    return () => window.clearInterval(timer);
-  }, [fetchLoading]);
+  const {
+    sessionExpiredBlocking,
+    visibleFailures,
+    showFailureNotice,
+    loadingElapsedLabel,
+    loadingStageMessage,
+    loadingProgressPercent,
+  } = useHealthLinkResultSectionModel({
+    fetchLoading,
+    fetchFailures,
+    hasFetchResult,
+    latestCheckupRows,
+    medicationDigest,
+    aiSummary,
+  });
 
   React.useEffect(() => {
     if (!summaryFetchBlocked || !summaryFetchBlockedMessage) return;
@@ -114,22 +100,6 @@ export function HealthLinkResultSection({
       duration: 3600,
     });
   }, [showFailureNotice, showToast, visibleFailures]);
-
-  const loadingProgressPercent = Math.min(
-    92,
-    fetchLoadingElapsedSec < 10
-      ? 20 + fetchLoadingElapsedSec * 5
-      : fetchLoadingElapsedSec < 25
-      ? 70 + (fetchLoadingElapsedSec - 10)
-      : 86 + Math.floor((fetchLoadingElapsedSec - 25) / 6)
-  );
-  const loadingStageMessage =
-    fetchLoadingElapsedSec < 8
-      ? HEALTH_LINK_COPY.result.loadingStageInit
-      : fetchLoadingElapsedSec < 20
-      ? HEALTH_LINK_COPY.result.loadingStageFetch
-      : HEALTH_LINK_COPY.result.loadingStageSlow;
-  const loadingElapsedLabel = `${fetchLoadingElapsedSec}${HEALTH_LINK_COPY.result.loadingElapsedUnit}`;
 
   if (!linked) {
     return (

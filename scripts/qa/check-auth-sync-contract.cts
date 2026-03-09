@@ -61,9 +61,14 @@ function runEmitterChecks() {
       label: "my-orders phone link state should emit phone-link sync",
     },
     {
-      file: "app/survey/survey-page-client.tsx",
-      pattern: 'scope: "b2b-employee-session"',
-      label: "survey should emit b2b employee sync",
+      file: "app/survey/_lib/use-survey-auth-bootstrap.ts",
+      pattern: 'emitAuthSyncEvent({',
+      label: "survey auth bootstrap should emit b2b employee sync when a stored session is restored",
+    },
+    {
+      file: "app/survey/_lib/use-survey-identity-switch.ts",
+      pattern: 'emitAuthSyncEvent({',
+      label: "survey identity switch should emit b2b employee sync",
     },
     {
       file: "app/(features)/employee-report/EmployeeReportClient.tsx",
@@ -96,9 +101,9 @@ function runListenerChecks() {
       label: "top bar should subscribe auth sync",
     },
     {
-      file: "components/order/cart.tsx",
-      pattern: "subscribeAuthSyncEvent",
-      label: "cart should subscribe auth sync",
+      file: "components/order/hooks/useCartLoginStatus.ts",
+      pattern: 'scopes: ["user-session"]',
+      label: "cart login-status hook should listen user-session",
     },
     {
       file: "components/order/hooks/usePhoneStatus.ts",
@@ -126,12 +131,12 @@ function runListenerChecks() {
       label: "column admin button should listen auth sync",
     },
     {
-      file: "app/survey/survey-page-client.tsx",
+      file: "app/survey/_lib/use-survey-auth-bootstrap.ts",
       pattern: 'scopes: ["b2b-employee-session", "user-session"]',
-      label: "survey should listen b2b-employee-session/user-session",
+      label: "survey auth bootstrap should listen b2b-employee-session/user-session",
     },
     {
-      file: "app/(features)/employee-report/EmployeeReportClient.tsx",
+      file: "app/(features)/employee-report/_lib/use-employee-report-session-effects.ts",
       pattern: 'scopes: ["user-session", "b2b-employee-session", "nhis-link"]',
       label: "employee-report should listen user-session/b2b/nhis",
     },
@@ -145,7 +150,7 @@ function runListenerChecks() {
 
 function runDocumentationChecks() {
   const docPath = "docs/maps/auth-sync-map.md";
-  assertIncludes(docPath, "## 인증 축", "doc should explain auth domains");
+  assertIncludes(docPath, "## 인증 도메인", "doc should explain auth domains");
   assertIncludes(docPath, "## 이벤트 계약", "doc should explain sync event contract");
   assertIncludes(docPath, "## 테스트 케이스", "doc should include test matrix");
   assertIncludes(docPath, "카카오 본인인증", "doc should describe external Kakao constraints");

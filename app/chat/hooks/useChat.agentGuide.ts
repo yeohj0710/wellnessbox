@@ -60,7 +60,8 @@ export function buildAgentCapabilityActions(input: {
     };
   }).sort(
     (left, right) =>
-      right.priority - left.priority || left.label.localeCompare(right.label, "ko")
+      right.priority - left.priority ||
+      left.label.localeCompare(right.label, "ko")
   );
 
   return scored.map(({ priority: _priority, ...item }) => item);
@@ -75,23 +76,23 @@ export function buildAgentGuideExamples(input: {
     return [
       {
         id: "agent-buy-all",
-        label: "추천 제품 바로 주문",
-        prompt: "추천 상품 전체 바로 구매 진행해줘",
+        label: "추천 상품 바로 주문",
+        prompt: "추천 상품 전체를 바로 구매 진행해줘",
       },
       {
         id: "agent-add-all",
-        label: "추천 제품 담기",
-        prompt: "추천 상품 전체 장바구니에 담아줘",
+        label: "추천 상품 담기",
+        prompt: "추천 상품 전체를 장바구니에 담아줘",
       },
       {
         id: "agent-cart-and-assess",
-        label: "담은 뒤 정밀검사",
-        prompt: "추천 상품 장바구니에 담고 정밀검사 페이지로 이동해줘",
+        label: "담고 정밀검진",
+        prompt: "추천 상품을 장바구니에 담고 정밀검진 페이지로 이동해줘",
       },
       {
         id: "agent-open-check-ai",
-        label: "빠른검사 시작하기",
-        prompt: "빠른검사 시작해줘",
+        label: "빠른검진 시작하기",
+        prompt: "빠른검진을 시작해줘",
       },
     ];
   }

@@ -43,10 +43,11 @@
 - 메인 파일은 상태와 서버 호출, 이벤트 흐름만 남깁니다.
 - 반복되는 렌더링 블록과 큰 모달 섹션은 별도 UI 파일로 분리합니다.
 - 정렬/검색처럼 순수 계산은 helper 파일로 이동합니다.
+- 공통 관리자 UI는 호출부를 깨지 않도록 `managerWorkspace.tsx`에서 재수출하고, 실제 구현은 `managerWorkspace.layout.tsx`, `managerWorkspace.form.tsx`, `managerWorkspace.types.ts`로 나눕니다.
 
 ## 다음 후보
 
-- `components/manager/managerWorkspace.tsx`
 - `app/survey/survey-page-client.tsx`
+- `components/b2b/ReportSummaryCards.tsx`
 
-관리자 상품/약국상품/카테고리 화면은 같은 분해 패턴을 적용해 정리했습니다. 다음 후보는 공통 UI 프리미티브 자체를 더 쪼개거나, 설문 클라이언트처럼 실제 기능 밀도가 높은 대형 파일입니다.
+관리자 상품/약국상품/카테고리 화면과 공통 관리자 UI 프리미티브는 같은 기준으로 정리했습니다. 다음 후보는 설문 클라이언트처럼 기능 밀도가 높은 대형 파일과, B2B 요약 카드처럼 후속 확장이 예상되는 시각화 컴포넌트입니다.

@@ -1,17 +1,7 @@
 import "server-only";
 
-import { createHash } from "crypto";
 import db from "@/lib/db";
 import { resolveB2bEmployeeIdentity } from "@/lib/b2b/identity";
-import {
-  buildAdminActionThrottleKey,
-  buildEmployeeAccessThrottleKey,
-  isLogThrottleMemoryHit,
-  rememberLogThrottleKey,
-  resolveAdminActionLogThrottleMs,
-  resolveEmployeeAccessLogThrottleMs,
-} from "@/lib/b2b/log-throttle";
-import { runBestEffortDbWrite } from "@/lib/server/db-resilience";
 import {
   DEFAULT_DETAIL_YEAR_LIMIT,
   DEFAULT_NHIS_FETCH_TARGETS,
@@ -20,9 +10,6 @@ import { executeNhisFetch } from "@/lib/server/hyphen/fetch-executor";
 import {
   buildNhisFetchRequestHash,
   clearNhisFetchCaches,
-  getLatestNhisFetchCacheByIdentity,
-  getValidNhisFetchCache,
-  markNhisFetchCacheHit,
   resolveNhisIdentityHash,
   runWithNhisFetchDedup,
   saveNhisFetchCache,
@@ -33,13 +20,16 @@ import { HYPHEN_PROVIDER } from "@/lib/server/hyphen/client";
 import {
   buildBasePayload,
   buildDetailPayload,
-  parseCachedPayload,
   patchSummaryTargetsIfNeeded,
 } from "@/lib/b2b/employee-sync-summary";
+import { resolveEmployeeSyncReusableSnapshot } from "@/lib/b2b/employee-service-cache-reuse";
 import {
-  asJsonValue,
   persistSnapshotAndSyncState,
 } from "@/lib/b2b/employee-sync-snapshot";
+export {
+  logB2bAdminAction,
+  logB2bEmployeeAccess,
+} from "@/lib/b2b/employee-service.logs";
 
 export type B2bSyncNextAction = "init" | "sign" | "retry";
 
@@ -65,18 +55,6 @@ export class B2bEmployeeSyncError extends Error {
   }
 }
 
-function normalizeIp(value: string | null | undefined) {
-  if (!value) return null;
-  const text = value.trim();
-  return text.length > 0 ? text : null;
-}
-
-function hashIp(value: string | null | undefined) {
-  const normalized = normalizeIp(value);
-  if (!normalized) return null;
-  return createHash("sha256").update(normalized).digest("hex");
-}
-
 const HYPHEN_TIMEOUT_CODES = new Set(["HYPHEN_TIMEOUT", "HYF-0002", "HYF-9999"]);
 const HYPHEN_TIMEOUT_MESSAGE_PATTERN =
   /(timeout|timed out|시간\s*초과|응답\s*지연|지연되고\s*있습니다)/i;
@@ -93,82 +71,6 @@ function isHyphenTimeoutFailure(input: {
     .join(" ");
   if (!message) return false;
   return HYPHEN_TIMEOUT_MESSAGE_PATTERN.test(message);
-}
-
-async function shouldSkipEmployeeAccessLogWrite(input: {
-  employeeId?: string | null;
-  appUserId?: string | null;
-  action: string;
-  route?: string | null;
-  throttleKey: string;
-  throttleMs: number;
-}) {
-  if (input.throttleMs <= 0) return false;
-  const nowMs = Date.now();
-  if (isLogThrottleMemoryHit(input.throttleKey, nowMs)) return true;
-  const windowStart = new Date(nowMs - input.throttleMs);
-
-  try {
-    const recent = await db.b2bEmployeeAccessLog.findFirst({
-      where: {
-        employeeId: input.employeeId ?? null,
-        appUserId: input.appUserId ?? null,
-        action: input.action,
-        route: input.route ?? null,
-        createdAt: { gte: windowStart },
-      },
-      orderBy: { createdAt: "desc" },
-      select: { id: true },
-    });
-    if (!recent) return false;
-    rememberLogThrottleKey(input.throttleKey, input.throttleMs, nowMs);
-    return true;
-  } catch (error) {
-    console.warn("[b2b][log-throttle] employee access dedupe check failed", {
-      action: input.action,
-      route: input.route ?? null,
-      employeeId: input.employeeId ?? null,
-      message: error instanceof Error ? error.message : String(error),
-    });
-    return true;
-  }
-}
-
-async function shouldSkipAdminActionLogWrite(input: {
-  employeeId?: string | null;
-  action: string;
-  actorTag?: string | null;
-  throttleKey: string;
-  throttleMs: number;
-}) {
-  if (input.throttleMs <= 0) return false;
-  const nowMs = Date.now();
-  if (isLogThrottleMemoryHit(input.throttleKey, nowMs)) return true;
-  const windowStart = new Date(nowMs - input.throttleMs);
-
-  try {
-    const recent = await db.b2bAdminActionLog.findFirst({
-      where: {
-        employeeId: input.employeeId ?? null,
-        action: input.action,
-        actorTag: input.actorTag ?? null,
-        createdAt: { gte: windowStart },
-      },
-      orderBy: { createdAt: "desc" },
-      select: { id: true },
-    });
-    if (!recent) return false;
-    rememberLogThrottleKey(input.throttleKey, input.throttleMs, nowMs);
-    return true;
-  } catch (error) {
-    console.warn("[b2b][log-throttle] admin action dedupe check failed", {
-      action: input.action,
-      employeeId: input.employeeId ?? null,
-      actorTag: input.actorTag ?? null,
-      message: error instanceof Error ? error.message : String(error),
-    });
-    return true;
-  }
 }
 
 export async function upsertB2bEmployee(input: {
@@ -207,100 +109,6 @@ export async function upsertB2bEmployee(input: {
     employee,
     identity,
   };
-}
-
-export async function logB2bEmployeeAccess(input: {
-  employeeId?: string | null;
-  appUserId?: string | null;
-  action: string;
-  route?: string | null;
-  ip?: string | null;
-  userAgent?: string | null;
-  payload?: unknown;
-}) {
-  const action = input.action.trim();
-  const route = input.route ?? null;
-  const throttleMs = resolveEmployeeAccessLogThrottleMs(action);
-  const throttleKey = buildEmployeeAccessThrottleKey({
-    employeeId: input.employeeId ?? null,
-    appUserId: input.appUserId ?? null,
-    action,
-    route,
-  });
-  if (
-    await shouldSkipEmployeeAccessLogWrite({
-      employeeId: input.employeeId ?? null,
-      appUserId: input.appUserId ?? null,
-      action,
-      route,
-      throttleKey,
-      throttleMs,
-    })
-  ) {
-    return;
-  }
-
-  const result = await runBestEffortDbWrite({
-    label: "b2b-employee-access-log",
-    task: () =>
-      db.b2bEmployeeAccessLog.create({
-        data: {
-          employeeId: input.employeeId ?? null,
-          appUserId: input.appUserId ?? null,
-          action,
-          route,
-          ipHash: hashIp(input.ip),
-          userAgent: input.userAgent ?? null,
-          payload: asJsonValue(input.payload),
-        },
-      }),
-  });
-  if (result.ok) {
-    rememberLogThrottleKey(throttleKey, throttleMs);
-  }
-}
-
-export async function logB2bAdminAction(input: {
-  employeeId?: string | null;
-  action: string;
-  actorTag?: string | null;
-  payload?: unknown;
-}) {
-  const action = input.action.trim();
-  const actorTag = input.actorTag ?? null;
-  const throttleMs = resolveAdminActionLogThrottleMs(action);
-  const throttleKey = buildAdminActionThrottleKey({
-    employeeId: input.employeeId ?? null,
-    action,
-    actorTag,
-  });
-  if (
-    await shouldSkipAdminActionLogWrite({
-      employeeId: input.employeeId ?? null,
-      action,
-      actorTag,
-      throttleKey,
-      throttleMs,
-    })
-  ) {
-    return;
-  }
-
-  const result = await runBestEffortDbWrite({
-    label: "b2b-admin-action-log",
-    task: () =>
-      db.b2bAdminActionLog.create({
-        data: {
-          employeeId: input.employeeId ?? null,
-          action,
-          actorTag,
-          payload: asJsonValue(input.payload),
-        },
-      }),
-  });
-  if (result.ok) {
-    rememberLogThrottleKey(throttleKey, throttleMs);
-  }
 }
 
 export async function fetchAndStoreB2bHealthSnapshot(input: {
@@ -377,54 +185,18 @@ export async function fetchAndStoreB2bHealthSnapshot(input: {
     }
 
     if (!input.forceRefresh) {
-      const cached = await getValidNhisFetchCache(
-        input.appUserId,
-        requestHashMeta.requestHash
-      );
-      if (cached) {
-        await markNhisFetchCacheHit(cached.id).catch(() => undefined);
-        const parsed = parseCachedPayload(cached.payload);
-        if (parsed?.ok) {
-          const patched = await patchSummaryTargetsIfNeeded({
-            ...summaryPatchContext,
-            payload: parsed,
-          });
-          const source = patched.usedNetwork ? "fresh" : "cache-valid";
-          return persistSnapshotAndSyncState({
-            employeeId: input.employeeId,
-            appUserId: input.appUserId,
-            identityHash: identity.identityHash,
-            source,
-            payload: patched.payload,
-            persistLinkArtifacts: patched.usedNetwork,
-          });
-        }
-      }
-
-      const historyCache = await getLatestNhisFetchCacheByIdentity({
+      const reused = await resolveEmployeeSyncReusableSnapshot({
+        employeeId: input.employeeId,
         appUserId: input.appUserId,
         identityHash: identity.identityHash,
+        requestHash: requestHashMeta.requestHash,
         targets,
-        yearLimit: effectiveYearLimit,
+        effectiveYearLimit,
         subjectType: requestDefaults.subjectType,
+        summaryPatchContext,
       });
-      if (historyCache) {
-        const parsed = parseCachedPayload(historyCache.payload);
-        if (parsed?.ok) {
-          const patched = await patchSummaryTargetsIfNeeded({
-            ...summaryPatchContext,
-            payload: parsed,
-          });
-          const source = patched.usedNetwork ? "fresh" : "cache-history";
-          return persistSnapshotAndSyncState({
-            employeeId: input.employeeId,
-            appUserId: input.appUserId,
-            identityHash: identity.identityHash,
-            source,
-            payload: patched.payload,
-            persistLinkArtifacts: patched.usedNetwork,
-          });
-        }
+      if (reused) {
+        return reused;
       }
     }
 

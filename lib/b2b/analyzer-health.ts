@@ -8,9 +8,13 @@ import {
   formatDateTime,
   parseSortableDateScore,
   resolveMedicationList,
-  toNumber,
   toText,
 } from "@/lib/b2b/analyzer-helpers";
+import {
+  inferHealthMetricStatus,
+  resolveHealthSeverityPenalty,
+  type CoreMetricStatus,
+} from "@/lib/b2b/analyzer-health-metrics";
 import { resolveSectionTitle } from "@/lib/b2b/analyzer-survey";
 
 type RiskFlag = {
@@ -26,65 +30,10 @@ type CoreMetric = {
   label: string;
   value: string;
   unit: string | null;
-  status: "normal" | "caution" | "high" | "unknown";
+  status: CoreMetricStatus;
 };
 
 type MedicationStatusType = "available" | "none" | "fetch_failed" | "unknown";
-
-function parseBloodPressure(value: string) {
-  const match = value.replace(/\s/g, "").match(/^(\d{2,3})\/(\d{2,3})$/);
-  if (!match) return null;
-  const systolic = Number(match[1]);
-  const diastolic = Number(match[2]);
-  if (!Number.isFinite(systolic) || !Number.isFinite(diastolic)) return null;
-  return { systolic, diastolic };
-}
-
-function inferMetricStatus(metricKey: string, valueText: string): CoreMetric["status"] {
-  const numeric = toNumber(valueText);
-  if (metricKey === "bloodPressure") {
-    const bp = parseBloodPressure(valueText);
-    if (!bp) return "unknown";
-    if (bp.systolic >= 140 || bp.diastolic >= 90) return "high";
-    if (bp.systolic >= 130 || bp.diastolic >= 80) return "caution";
-    return "normal";
-  }
-  if (numeric == null) return "unknown";
-
-  switch (metricKey) {
-    case "bmi":
-      if (numeric >= 30) return "high";
-      if (numeric >= 25) return "caution";
-      return "normal";
-    case "glucose":
-      if (numeric >= 126) return "high";
-      if (numeric >= 100) return "caution";
-      return "normal";
-    case "cholesterol":
-      if (numeric >= 240) return "high";
-      if (numeric >= 200) return "caution";
-      return "normal";
-    case "triglyceride":
-      if (numeric >= 200) return "high";
-      if (numeric >= 150) return "caution";
-      return "normal";
-    case "ldl":
-      if (numeric >= 160) return "high";
-      if (numeric >= 130) return "caution";
-      return "normal";
-    case "hdl":
-      if (numeric < 40) return "caution";
-      return "normal";
-    default:
-      return "unknown";
-  }
-}
-
-function severityPenalty(status: CoreMetric["status"]) {
-  if (status === "high") return 18;
-  if (status === "caution") return 10;
-  return 0;
-}
 
 export function buildHealth(input: B2bAnalyzerInput) {
   const normalized = asRecord(input.healthSnapshot?.normalizedJson);
@@ -114,7 +63,7 @@ export function buildHealth(input: B2bAnalyzerInput) {
     for (const metric of metricCatalog) {
       const matched = metric.keywords.some((keyword) => name.includes(keyword.toLowerCase()));
       if (!matched) continue;
-      const status = inferMetricStatus(metric.key, value);
+      const status = inferHealthMetricStatus(metric.key, value);
       metrics.set(metric.key, {
         key: metric.key,
         label: metric.label,
@@ -152,7 +101,11 @@ export function buildHealth(input: B2bAnalyzerInput) {
     }));
 
   const healthScore = clampScore(
-    100 - coreMetrics.reduce((sum, metric) => sum + severityPenalty(metric.status), 0)
+    100 -
+      coreMetrics.reduce(
+        (sum, metric) => sum + resolveHealthSeverityPenalty(metric.status),
+        0
+      )
   );
 
   return {

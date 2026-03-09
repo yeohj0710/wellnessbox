@@ -1,47 +1,20 @@
-import { Prisma } from "@prisma/client";
 import {
-  type NhisFetchRoutePayload,
   type NhisFetchTarget,
+  type NhisFetchRoutePayload,
 } from "@/lib/server/hyphen/fetch-contract";
 import { executeNhisFetch } from "@/lib/server/hyphen/fetch-executor";
 import {
   buildNhisFetchRequestHash,
-  getLatestNhisFetchCacheByIdentity,
-  getLatestNhisFetchCacheByIdentityGlobal,
-  getValidNhisFetchCache,
-  markNhisFetchCacheHit,
   saveNhisFetchCache,
 } from "@/lib/server/hyphen/fetch-cache";
 import { buildNhisRequestDefaults } from "@/lib/server/hyphen/request-defaults";
 import type { HyphenNhisRequestPayload } from "@/lib/server/hyphen/client";
-
-const RAW_TARGET_KEY_MAP: Record<NhisFetchTarget, string> = {
-  medical: "medical",
-  medication: "medication",
-  checkupList: "checkupList",
-  checkupYearly: "checkupYearly",
-  checkupOverview: "checkupOverview",
-  healthAge: "healthAge",
-};
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  return value as Record<string, unknown>;
-}
-
-function payloadHasRequestedRawTargets(
-  payload: NhisFetchRoutePayload,
-  targets: NhisFetchTarget[]
-) {
-  const raw = asRecord(payload.data?.raw);
-  if (!raw) return false;
-  for (const target of targets) {
-    const key = RAW_TARGET_KEY_MAP[target];
-    if (!key) continue;
-    if (raw[key] == null) return false;
-  }
-  return true;
-}
+import { payloadHasRequestedRawTargets } from "./employee-sync-summary.raw-support";
+import {
+  parseCachedPayload,
+  resolveSummaryPatchCachedPayload,
+  type SummaryPatchResolvedPayload,
+} from "./employee-sync-summary.fetch-patch-cache";
 
 export function buildBasePayload(input: {
   linkLoginMethod: string | null | undefined;
@@ -72,16 +45,6 @@ export function buildDetailPayload(
   return { ...basePayload, detailYn: "Y" as const, imgYn: "N" as const };
 }
 
-export function parseCachedPayload(
-  payload: Prisma.JsonValue
-): NhisFetchRoutePayload | null {
-  try {
-    return JSON.parse(JSON.stringify(payload)) as NhisFetchRoutePayload;
-  } catch {
-    return null;
-  }
-}
-
 export async function resolveSummaryPatchPayload(input: {
   appUserId: string;
   identityHash: string;
@@ -99,7 +62,7 @@ export async function resolveSummaryPatchPayload(input: {
   allowNetwork: boolean;
   requireMedicationNames: boolean;
   hasRequiredMedicationNames: (payload: NhisFetchRoutePayload) => boolean;
-}) {
+}): Promise<SummaryPatchResolvedPayload | null> {
   if (input.targets.length === 0) return null;
 
   const hashMeta = buildNhisFetchRequestHash({
@@ -111,56 +74,18 @@ export async function resolveSummaryPatchPayload(input: {
     subjectType: input.requestDefaults.subjectType,
   });
 
-  const validCache = await getValidNhisFetchCache(
-    input.appUserId,
-    hashMeta.requestHash
-  );
-  if (validCache) {
-    await markNhisFetchCacheHit(validCache.id).catch(() => undefined);
-    const parsed = parseCachedPayload(validCache.payload);
-    if (
-      parsed?.ok &&
-      payloadHasRequestedRawTargets(parsed, input.targets) &&
-      (!input.requireMedicationNames || input.hasRequiredMedicationNames(parsed))
-    ) {
-      return { payload: parsed, usedNetwork: false };
-    }
-  }
-
-  const historyCache = await getLatestNhisFetchCacheByIdentity({
+  const cached = await resolveSummaryPatchCachedPayload({
     appUserId: input.appUserId,
     identityHash: input.identityHash,
+    requestHash: hashMeta.requestHash,
     targets: input.targets,
-    yearLimit: input.effectiveYearLimit,
+    effectiveYearLimit: input.effectiveYearLimit,
     subjectType: input.requestDefaults.subjectType,
+    requireMedicationNames: input.requireMedicationNames,
+    hasRequiredMedicationNames: input.hasRequiredMedicationNames,
   });
-  if (historyCache) {
-    const parsed = parseCachedPayload(historyCache.payload);
-    if (
-      parsed?.ok &&
-      payloadHasRequestedRawTargets(parsed, input.targets) &&
-      (!input.requireMedicationNames || input.hasRequiredMedicationNames(parsed))
-    ) {
-      return { payload: parsed, usedNetwork: false };
-    }
-  }
-
-  const globalHistoryCache = await getLatestNhisFetchCacheByIdentityGlobal({
-    identityHash: input.identityHash,
-    targets: input.targets,
-    yearLimit: input.effectiveYearLimit,
-    subjectType: input.requestDefaults.subjectType,
-    excludeAppUserId: input.appUserId,
-  });
-  if (globalHistoryCache) {
-    const parsed = parseCachedPayload(globalHistoryCache.payload);
-    if (
-      parsed?.ok &&
-      payloadHasRequestedRawTargets(parsed, input.targets) &&
-      (!input.requireMedicationNames || input.hasRequiredMedicationNames(parsed))
-    ) {
-      return { payload: parsed, usedNetwork: false };
-    }
+  if (cached) {
+    return cached;
   }
 
   if (!input.allowNetwork) return null;

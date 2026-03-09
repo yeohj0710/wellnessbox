@@ -1,98 +1,19 @@
 import { z } from "zod";
 
-import { EvaluationResult, NodePrompt } from "./types";
-
-export type AgentContext = {
-  input: string;
-  scratch: Record<string, any>;
-};
-
-export type AgentStep =
-  | {
-      id: string;
-      type: "sequential";
-      label: string;
-      prompt: (ctx: AgentContext) => NodePrompt;
-      saveAs: string;
-    }
-  | {
-      id: string;
-      type: "parallel_generate";
-      label: string;
-      count: number;
-      prompt: (ctx: AgentContext, index: number) => NodePrompt;
-      saveAs: string;
-    }
-  | {
-      id: string;
-      type: "judge";
-      label: string;
-      from: string;
-      prompt: (ctx: AgentContext) => NodePrompt;
-      saveAs: string;
-    }
-  | {
-      id: string;
-      type: "route";
-      label: string;
-      prompt: (ctx: AgentContext) => NodePrompt;
-      routes: { id: string; label: string; prompt: (ctx: AgentContext) => NodePrompt }[];
-      saveAs: string;
-    };
-
-export type AgentPlan = {
-  steps: AgentStep[];
-  finalField: string;
-  revision?: {
-    targetField?: string;
-    maxRetries: number;
-    prompt: (ctx: AgentContext, evaluation: EvaluationResult) => NodePrompt;
-  };
-};
-
-export type PlaygroundPattern = {
-  id: string;
-  name: string;
-  description: string;
-  defaultPrompt: string;
-  expectedOutputSchema?: z.ZodTypeAny;
-  evaluator: (output: string) => EvaluationResult;
-  agentPlan: AgentPlan;
-};
-
-const sentenceCount = (text: string) => {
-  const normalized = text.replace(/\n+/g, ".");
-  return normalized
-    .split(/[.!?]/)
-    .map((s) => s.trim())
-    .filter(Boolean).length;
-};
-
-const lineCount = (text: string) =>
-  text
-    .split(/\n+/)
-    .map((l) => l.trim())
-    .filter(Boolean).length;
-
-const includesAll = (text: string, terms: string[]) =>
-  terms.every((term) => text.toLowerCase().includes(term.toLowerCase()));
-
-const withinLength = (text: string, min: number, max: number) =>
-  text.length >= min && text.length <= max;
-
-const parseJson = (text: string) => {
-  try {
-    return JSON.parse(text);
-  } catch (error) {
-    return null;
-  }
-};
+import { PlaygroundPattern } from "./pattern-contracts";
+import {
+  includesAll,
+  lineCount,
+  parseJson,
+  sentenceCount,
+  withinLength,
+} from "./pattern-utils";
 
 const patterns: PlaygroundPattern[] = [
   {
     id: "prompt-chaining",
     name: "Prompt chaining",
-    description: "추출→구성→초안→최종 다단계 서술", 
+    description: "추출→구성→초안→최종 다단계 서술",
     defaultPrompt:
       "지속 가능한 커피 브랜드 '그린빈'을 2문장으로 소개해주세요. 공정무역과 재활용 포장을 강조하고 80~140자 사이로 작성합니다.",
     evaluator: (output) => {
@@ -103,7 +24,9 @@ const patterns: PlaygroundPattern[] = [
       const sentences = sentenceCount(output);
       const lines = lineCount(output);
       if (!(sentences === 2 || lines === 2)) {
-        violations.push(`문장/줄 수가 2개가 아닙니다(문장 ${sentences}, 줄 ${lines}).`);
+        violations.push(
+          `문장/줄 수가 2개가 아닙니다(문장 ${sentences}, 줄 ${lines}).`
+        );
       }
       if (!withinLength(output, 80, 140)) {
         violations.push("길이가 80~140자 범위를 벗어났습니다.");
@@ -193,16 +116,18 @@ const patterns: PlaygroundPattern[] = [
       if (typeof json.title !== "string" || json.title.length > 20) {
         violations.push("title이 20자 이하여야 합니다.");
       }
-      if (
-        typeof json.advice !== "string" ||
-        !withinLength(json.advice, 80, 160)
-      ) {
+      if (typeof json.advice !== "string" || !withinLength(json.advice, 80, 160)) {
         violations.push("advice는 80~160자여야 합니다.");
       }
       if (!includesAll(json.advice || "", ["의사"])) {
         violations.push("advice에 '의사' 단어가 포함되어야 합니다.");
       }
-      return { pass: violations.length === 0, score: violations.length ? 0 : 1, violations, parsed: json };
+      return {
+        pass: violations.length === 0,
+        score: violations.length ? 0 : 1,
+        violations,
+        parsed: json,
+      };
     },
     agentPlan: {
       steps: [
@@ -282,7 +207,7 @@ const patterns: PlaygroundPattern[] = [
             system:
               "후보 중 조건을 지키지 않은 항목은 제외하세요. flow와 team이 모두 포함되고 20자 이내인 후보 중 가장 짧고 자연스러운 것을 선택해 슬로건만 그대로 출력하세요. 모든 후보가 조건을 어길 경우 조건을 만족하는 새 슬로건을 1개 생성하여 출력합니다.",
             human: `후보 목록:\n${ctx.scratch.candidates
-              .map((c: string, i: number) => `${i + 1}. ${c}`)
+              .map((candidate: string, candidateIndex: number) => `${candidateIndex + 1}. ${candidate}`)
               .join("\n")}`,
           }),
         },
@@ -310,7 +235,7 @@ const patterns: PlaygroundPattern[] = [
       const violations: string[] = [];
       const lines = output
         .split("\n")
-        .map((l) => l.trim())
+        .map((line) => line.trim())
         .filter(Boolean);
       const sentenceOrLineCount = Math.max(sentenceCount(output), lines.length);
       if (sentenceOrLineCount < 3) {
@@ -454,15 +379,5 @@ const patterns: PlaygroundPattern[] = [
     },
   },
 ];
-
-export const patternSummaries = patterns.map((pattern) => ({
-  id: pattern.id,
-  name: pattern.name,
-  description: pattern.description,
-  defaultPrompt: pattern.defaultPrompt,
-}));
-
-export const getPattern = (patternId?: string) =>
-  patterns.find((p) => p.id === patternId) ?? patterns[0];
 
 export { patterns };

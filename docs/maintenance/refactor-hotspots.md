@@ -1,6 +1,6 @@
 # Refactor Hotspots (Agent Handoff)
 
-Last validated: 2026-02-26
+Last validated: 2026-03-09
 
 This document tracks large/complex files that are most likely to slow down follow-up sessions.
 
@@ -15,9 +15,9 @@ This document tracks large/complex files that are most likely to slow down follo
 3. `components/order/orderDetails.tsx`
    - Dense conditional UI logic.
    - Suggested split: status panel, payment panel, line-items table.
-4. `app/chat/components/recommendedProductActions.resolve.ts`
-   - Recommendation resolver with catalog matching + price scoring.
-   - Suggested split: matching rules and IO/cache boundary.
+4. `app/chat/components/recommendedProductActions.resolve.support.ts`
+   - Category fallback alias policy and cache-key rules still influence recommendation matching quality.
+   - Suggested follow-up: keep synonym tuning and generic-category rules isolated here.
 5. `lib/ai/chain.ts`
    - Core AI chain orchestration with broad responsibilities.
    - Suggested split: prompt construction, context gathering, and post-processing.
@@ -60,15 +60,22 @@ This document tracks large/complex files that are most likely to slow down follo
      - `recommendedProductActions.resolve.ts`
      - `recommendedProductActions.cart.ts`
    - `recommendedProductActions.utils.ts` now acts as a facade/re-export layer.
-4. `lib/b2b/report-payload.ts`
+4. `app/chat/components/recommendedProductActions.resolve.ts`
+   - Refactored into:
+     - `recommendedProductActions.resolve.catalog.ts`
+     - `recommendedProductActions.resolve.name.ts`
+     - `recommendedProductActions.resolve.category.ts`
+     - `recommendedProductActions.resolve.support.ts`
+   - `recommendedProductActions.resolve.ts` now focuses on orchestration only.
+5. `lib/b2b/report-payload.ts`
    - Refactored into:
      - `lib/b2b/report-payload-analysis.ts`
      - `lib/b2b/report-payload-types.ts`
    - `report-payload.ts` now focuses on DB fetch orchestration and final payload assembly.
-5. `app/api/b2b/employee/sync/route.ts`
+6. `app/api/b2b/employee/sync/route.ts`
    - Route now delegates to `lib/b2b/employee-sync-route-handler.ts`.
    - Shared response/cooldown/log/token helpers live in `lib/b2b/employee-sync-route.ts`.
-6. `app/api/health/nhis/init/route.ts`, `app/api/health/nhis/sign/route.ts`, `app/api/health/nhis/fetch/route.ts`, and `app/api/health/nhis/status/route.ts`
+7. `app/api/health/nhis/init/route.ts`, `app/api/health/nhis/sign/route.ts`, `app/api/health/nhis/fetch/route.ts`, and `app/api/health/nhis/status/route.ts`
    - Shared schema/constants/safe wrappers extracted to:
      - `lib/server/hyphen/init-route-helpers.ts`
      - `lib/server/hyphen/sign-route-helpers.ts`
@@ -79,19 +86,19 @@ This document tracks large/complex files that are most likely to slow down follo
    - Init/sign route orchestration is now delegated to:
       - `lib/server/hyphen/init-route.ts`
       - `lib/server/hyphen/sign-route.ts`
-7. `app/api/b2b/employee/session/route.ts`
+8. `app/api/b2b/employee/session/route.ts`
    - GET/POST/DELETE orchestration delegated to:
       - `lib/b2b/employee-session-route-handler.ts`
    - Shared response/token/session primitives remain in:
       - `lib/b2b/employee-session-route.ts`.
-8. `app/api/chat/route.ts`
+9. `app/api/chat/route.ts`
    - Route slimmed to auth/smoke orchestration.
    - Stream body shaping and stream/error response building moved to:
      - `app/api/chat/route-service.ts`
-9. `app/api/chat/title/route.ts`
+10. `app/api/chat/title/route.ts`
    - Title request parsing/model fallback/model call logic moved to:
      - `app/api/chat/title/route-service.ts`
-10. `app/api/chat/suggest/route.ts`
+11. `app/api/chat/suggest/route.ts`
     - Suggestion orchestration moved to:
       - `app/api/chat/suggest/suggest-route-service.ts`
 11. `app/api/messages/stream/token/route.ts`
@@ -646,6 +653,24 @@ This document tracks large/complex files that are most likely to slow down follo
      `app/survey/_lib/survey-page-helpers.ts`.
    - Admin survey editor now reuses the same helper module for question text/option layout and section grouping, reducing drift between `/survey` and `/admin/b2b-reports`.
    - This makes follow-up changes to survey rendering/navigation rules propagate to admin editor with fewer duplicate edits.
+
+140. `lib/chat/prompts.ts`, `lib/chat/prompt-types.ts`, `lib/chat/prompt-helpers.ts`, `lib/chat/prompt-system.ts`, `lib/chat/prompt-followups.ts`
+   - Chat prompt contracts, text normalization, system rules, and suggestion/title prompt builders were split into dedicated modules.
+   - `lib/chat/prompts.ts` now acts as a composition shell for `buildMessages` plus prompt-module re-exports.
+   - Broken Korean prompt copy was restored to clean UTF-8/LF text, reducing follow-up risk in `/api/chat`, `/api/chat/suggest`, and `/api/chat/title`.
+141. `lib/chat/agent-actions.ts`, `lib/chat/agent-action-contracts.ts`, `lib/chat/agent-action-catalog.ts`, `app/chat/hooks/useChat.agentGuide.ts`
+   - Chat action contracts, capability catalog data, and action labels were split into dedicated modules.
+   - `lib/chat/agent-actions.ts` now acts as a facade re-export layer for stable imports across chat hooks and components.
+   - Broken Korean action copy and recommendation guide examples were restored to clean UTF-8/LF text.
+142. `lib/chat/actions/fallback.ts`, `lib/chat/actions/fallback-support.ts`
+   - Fallback execute/suggest action selection, assistant reply assembly, and reason-token rules were split into a dedicated support module.
+   - `fallback.ts` now acts as a thin orchestration shell for request normalization and final decision return.
+143. `lib/chat/action-intent-rules.ts`, `lib/chat/action-intent-patterns.ts`, `lib/chat/action-intent-runtime.ts`
+   - Chat action intent regex patterns and runtime metadata were split into dedicated modules.
+   - `action-intent-rules.ts` now acts as a thin facade so existing imports stay stable across chat action helpers.
+144. `app/chat/components/ChatDrawer.tsx`, `app/chat/components/ChatDrawerHeader.tsx`, `app/chat/components/ChatDrawerSessionItem.tsx`, `app/chat/components/ChatDrawerDeleteDialog.tsx`, `app/chat/components/ChatDrawer.types.ts`
+   - Chat drawer header, session row, and delete dialog were split into dedicated UI blocks.
+   - `ChatDrawer.tsx` now focuses on state orchestration and subcomponent composition.
 
 ## Guardrails For Any Refactor
 

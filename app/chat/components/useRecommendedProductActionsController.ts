@@ -3,6 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useDraggableModal } from "@/components/common/useDraggableModal";
 import {
+  buildBulkRecommendationConfirmDialog,
+  buildSingleRecommendationConfirmDialog,
+  persistRecommendedProductAddress,
+  resolvePendingCartActionFeedback,
+  type RecommendedProductActionConfirmDialog,
+} from "./recommendedProductActions.controller-support";
+import {
   applyPendingCartActionAfterAddressSave,
   type ActionableRecommendation,
   type PendingCartAction,
@@ -11,15 +18,6 @@ import {
   resolveRecommendations,
   runCartActionWithAddressGuard,
 } from "./recommendedProductActions.utils";
-
-export type RecommendedProductActionConfirmDialog = {
-  title: string;
-  description: string;
-  confirmLabel: string;
-  targets: ActionableRecommendation[];
-  openCartAfterSave?: boolean;
-  successFeedback?: string;
-};
 
 type UseRecommendedProductActionsControllerOptions = {
   content: string;
@@ -111,24 +109,12 @@ export function useRecommendedProductActionsController({
   }
 
   function addSingle(item: ActionableRecommendation) {
-    setConfirmDialog({
-      title: "장바구니에 담을까요?",
-      description: `'${item.productName}'을 장바구니에 추가합니다.`,
-      confirmLabel: "담기",
-      targets: [item],
-      successFeedback: `장바구니에 담았어요: ${item.productName}`,
-    });
+    setConfirmDialog(buildSingleRecommendationConfirmDialog(item));
   }
 
   function addAll() {
     if (!items.length) return;
-    setConfirmDialog({
-      title: `추천 상품 ${items.length}개 담기`,
-      description: "추천된 상품을 장바구니에 한 번에 추가합니다.",
-      confirmLabel: "전체 담기",
-      targets: items,
-      successFeedback: `추천 상품 ${items.length}개를 장바구니에 담았어요.`,
-    });
+    setConfirmDialog(buildBulkRecommendationConfirmDialog(items));
   }
 
   function buyNow(targets: ActionableRecommendation[]) {
@@ -170,9 +156,7 @@ export function useRecommendedProductActionsController({
   }
 
   function handleAddressSave(roadAddress: string, detailAddress: string) {
-    localStorage.setItem("roadAddress", roadAddress);
-    localStorage.setItem("detailAddress", detailAddress);
-    window.dispatchEvent(new Event("addressUpdated"));
+    persistRecommendedProductAddress(roadAddress, detailAddress);
 
     const pending = pendingCartAction;
     setPendingCartAction(null);
@@ -184,15 +168,8 @@ export function useRecommendedProductActionsController({
       pending,
     });
     if (openedCart) return;
-    if (pending.successFeedback) {
-      setFeedback(pending.successFeedback);
-      return;
-    }
-    if (pending.items.length === 1) {
-      setFeedback(`장바구니에 담았어요: ${pending.items[0].productName}`);
-      return;
-    }
-    setFeedback(`추천 상품 ${pending.items.length}개를 장바구니에 담았어요.`);
+
+    setFeedback(resolvePendingCartActionFeedback(pending));
   }
 
   return {

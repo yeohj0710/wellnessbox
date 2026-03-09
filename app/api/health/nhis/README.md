@@ -17,6 +17,8 @@
   - Fetches NHIS data with cost guard + DB cache replay protection.
   - Route handles auth/cache/persistence orchestration.
   - Provider fanout and normalization run in `lib/server/hyphen/fetch-executor.ts`.
+  - Shared payload assembly and row-detection helpers live in `lib/server/hyphen/fetch-executor.payload-helpers.ts`.
+  - Medication backfill/date-window helpers live in `lib/server/hyphen/fetch-executor.medication-backfill-helpers.ts`.
   - Cache replay + persistence helpers are isolated in `lib/server/hyphen/fetch-route-cache.ts`.
   - Request policy helpers are isolated in `lib/server/hyphen/fetch-request-policy.ts`.
   - Fetch flow relies on persisted linked credentials only; it does not consume pending easy-auth session state.

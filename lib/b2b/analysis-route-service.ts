@@ -1,3 +1,8 @@
+import type {
+  AnalysisGetResponse,
+  AnalysisMutationResponse,
+  AnalysisSnapshot,
+} from "@/lib/b2b/admin-report-contract";
 import db from "@/lib/db";
 import { computeAndSaveB2bAnalysis } from "@/lib/b2b/analysis-service";
 import { logB2bAdminAction } from "@/lib/b2b/employee-service";
@@ -76,7 +81,9 @@ export function summarizeComputedForResponse(computed: Record<string, unknown>) 
   };
 }
 
-export function serializeAnalysisMutationResult(input: AnalysisMutationResult) {
+export function serializeAnalysisMutationResult(
+  input: AnalysisMutationResult
+): AnalysisMutationResponse {
   const { saved, report, periodKey } = input;
   return {
     ok: true,
@@ -97,14 +104,16 @@ export function serializeAnalysisMutationResult(input: AnalysisMutationResult) {
   };
 }
 
-export function serializeAnalysisLookupRecord(latest: AnalysisLookupRecord) {
+export function serializeAnalysisLookupRecord(
+  latest: AnalysisLookupRecord
+): AnalysisSnapshot | null {
   if (!latest) return null;
   return {
     id: latest.id,
     version: latest.version,
     periodKey: latest.periodKey ?? null,
     reportCycle: latest.reportCycle ?? null,
-    payload: latest.payload,
+    payload: latest.payload as AnalysisSnapshot["payload"],
     computedAt: latest.computedAt?.toISOString() ?? null,
     updatedAt: latest.updatedAt.toISOString(),
   };
@@ -113,7 +122,7 @@ export function serializeAnalysisLookupRecord(latest: AnalysisLookupRecord) {
 export async function loadAdminAnalysisLookup(
   employeeId: string,
   requestedPeriodKey: string | null
-) {
+): Promise<Omit<AnalysisGetResponse, "ok">> {
   const [latest, periods] = await Promise.all([
     db.b2bAnalysisResult.findFirst({
       where: {

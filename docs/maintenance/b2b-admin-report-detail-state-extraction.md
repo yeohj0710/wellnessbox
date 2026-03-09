@@ -8,6 +8,8 @@
 ## Scope
 - New hook:
   - `app/(admin)/admin/b2b-reports/_lib/use-b2b-admin-report-detail-state.ts`
+- Pure hydration/model helper:
+  - `app/(admin)/admin/b2b-reports/_lib/detail-state-model.ts`
 - Updated client:
   - `app/(admin)/admin/b2b-reports/B2bAdminReportClient.tsx`
 - Shared preview tab type:
@@ -23,13 +25,18 @@
   - toast/busy orchestration
   - wiring selection lifecycle, refresh hooks, and action hooks
 - `use-b2b-admin-report-detail-state.ts`
-  - employee-detail state for survey, note, analysis, validation, preview, and period selection
-  - API bundle hydration from `fetchEmployeeDetailBundle`
+  - employee-detail React state for survey, note, analysis, validation, preview, and period selection
+  - applying hydrated detail snapshots into local state
   - full detail reset on employee switch
+- `detail-state-model.ts`
+  - pure bundle hydration from `fetchEmployeeDetailBundle`
+  - empty-state factory and loaded-state factory
+  - period/display-period resolution rules
 
 ## Safety Note
 - `clearEmployeeDetailState()` now resets all employee-scoped detail fields, not only report/validation metadata.
 - This avoids showing the previous employee's survey or note data under a newly selected employee if the new detail fetch fails.
+- Keep non-React parsing and merge logic inside `detail-state-model.ts` so future sessions can adjust payload mapping without touching hook state wiring.
 
 ## Validation
 1. `npm run audit:encoding`

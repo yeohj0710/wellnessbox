@@ -1,6 +1,7 @@
 import { useCallback, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
 import type { PublicSurveyAnswers } from "@/lib/b2b/public-survey";
 import type { WellnessComputedResult } from "@/lib/wellness/analysis";
+import { resetSurveyFlowState } from "./survey-state-reset";
 
 type SurveyPhase = "intro" | "survey" | "calculating" | "result";
 
@@ -73,21 +74,23 @@ export function useSurveyLifecycleActions(input: UseSurveyLifecycleActionsInput)
   } = input;
 
   const resetSurveyState = useCallback(() => {
-    setAnswers({});
-    setSelectedSectionsCommitted([]);
-    setCurrentSectionIndex(0);
-    setFocusedQuestionBySection({});
-    setConfirmedQuestionKeys([]);
-    setCompletedSectionKeys([]);
-    setErrorText(null);
-    setErrorQuestionKey(null);
-    setResult(null);
-    setHasCompletedSubmission(false);
-    setIsSectionTransitioning(false);
-    restoredSnapshotUpdatedAtRef.current = Date.now();
-    lastRemoteSavedSignatureRef.current = "";
-    lastVisitedSectionIndexRef.current = 0;
-    window.localStorage.removeItem(storageKey);
+    resetSurveyFlowState({
+      storageKey,
+      restoredSnapshotUpdatedAtRef,
+      lastRemoteSavedSignatureRef,
+      lastVisitedSectionIndexRef,
+      setAnswers,
+      setSelectedSectionsCommitted,
+      setCurrentSectionIndex,
+      setFocusedQuestionBySection,
+      setConfirmedQuestionKeys,
+      setCompletedSectionKeys,
+      setErrorText,
+      setErrorQuestionKey,
+      setResult,
+      setHasCompletedSubmission,
+      setIsSectionTransitioning,
+    });
   }, [
     lastRemoteSavedSignatureRef,
     lastVisitedSectionIndexRef,

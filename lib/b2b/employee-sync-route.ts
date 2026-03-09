@@ -1,4 +1,3 @@
-import db from "@/lib/db";
 import {
   B2bEmployeeSyncError,
   fetchAndStoreB2bHealthSnapshot,
@@ -21,13 +20,26 @@ import {
   attachEmployeeToken,
   buildSyncSuccessResponse,
 } from "@/lib/b2b/employee-sync-response";
+import {
+  buildEmployeeSyncBlockedResponse,
+  buildEmployeeSyncSuccessResponse,
+} from "@/lib/b2b/employee-sync-route-response-support";
+import {
+  buildDbPoolBusySyncResponse,
+  describeEmployeeSyncError,
+  resolveEmployeeSyncExecuteFailure,
+} from "@/lib/b2b/employee-sync-route-failure-support";
+import {
+  findLatestEmployeeSyncReusableSnapshot,
+  findLatestEmployeeSyncTimeoutFallbackSnapshot,
+} from "@/lib/b2b/employee-sync-route-query-support";
 import { ensureLatestB2bReport, regenerateB2bReport } from "@/lib/b2b/report-service";
-import { resolveDbRouteError } from "@/lib/server/db-error";
 import { noStoreJson } from "@/lib/server/no-store";
 import { requireAdminSession } from "@/lib/server/route-auth";
 
 export {
   attachEmployeeToken,
+  buildDbPoolBusySyncResponse,
   buildCooldownPayload,
   buildSyncSuccessResponse,
   canBypassForceRefreshAdminWithDebugHeader,
@@ -40,53 +52,7 @@ export {
 };
 export { noStoreJson };
 
-const DEFAULT_DB_POOL_BUSY_RETRY_AFTER_SEC = 20;
-
-function resolveDbPoolBusyRetryAfterSec() {
-  const raw = Number(process.env.B2B_SYNC_DB_POOL_BUSY_RETRY_AFTER_SEC);
-  if (!Number.isFinite(raw)) return DEFAULT_DB_POOL_BUSY_RETRY_AFTER_SEC;
-  return Math.max(5, Math.min(120, Math.floor(raw)));
-}
-
-export function buildDbPoolBusySyncResponse(errorMessage?: string) {
-  const retryAfterSec = resolveDbPoolBusyRetryAfterSec();
-  const availableAt = new Date(Date.now() + retryAfterSec * 1000).toISOString();
-  return noStoreJson(
-    {
-      ok: false,
-      code: "DB_POOL_TIMEOUT",
-      reason: "db_pool_busy",
-      nextAction: "wait",
-      retryAfterSec,
-      availableAt,
-      error:
-        errorMessage ||
-        "서버 요청이 많아 처리 대기 중입니다. 잠시 후 다시 시도해 주세요.",
-    },
-    503
-  );
-}
-
-function describeSyncError(error: unknown) {
-  if (error instanceof Error) {
-    const errorCode =
-      typeof (error as { code?: unknown }).code === "string"
-        ? (error as { code?: string }).code ?? null
-        : null;
-    return {
-      name: error.name,
-      message: error.message,
-      stack: error.stack,
-      code: errorCode,
-    };
-  }
-  return {
-    name: typeof error,
-    message: String(error),
-    stack: undefined,
-    code: null,
-  };
-}
+// DB busy payload keeps nextAction: "wait" in employee-sync-route-failure-support.ts.
 
 export async function resolveForceRefreshAccess(input: {
   req: Request;
@@ -188,7 +154,7 @@ export async function logSyncAccess(
       payload,
     });
   } catch (error) {
-    const details = describeSyncError(error);
+    const details = describeEmployeeSyncError(error);
     console.error("[b2b][employee-sync] access log failed", {
       employeeId: context.employeeId,
       appUserId: context.appUserId,
@@ -209,21 +175,16 @@ export async function tryReuseLatestSnapshot(input: {
   forceRefreshCooldownSeconds: number;
   accessContext: SyncAccessContext;
 }) {
-  const latestSnapshot = await db.b2bHealthDataSnapshot.findFirst({
-    where: { employeeId: input.employeeId, provider: "HYPHEN_NHIS" },
-    orderBy: [{ fetchedAt: "desc" }, { createdAt: "desc" }],
-    select: {
-      id: true,
-      periodKey: true,
-    },
-  });
+  const latestSnapshot = await findLatestEmployeeSyncReusableSnapshot(
+    input.employeeId
+  );
   if (!latestSnapshot) return null;
 
   const reusePeriodKey =
     input.explicitPeriodKey ?? latestSnapshot.periodKey ?? input.requestedPeriodKey;
   const report = await ensureLatestB2bReport(input.employeeId, reusePeriodKey);
 
-  const response = buildSyncSuccessResponse({
+  const response = buildEmployeeSyncSuccessResponse({
     employeeId: input.employeeId,
     employeeName: input.employeeName,
     identityHash: input.identityHash,
@@ -232,8 +193,6 @@ export async function tryReuseLatestSnapshot(input: {
     snapshotId: latestSnapshot.id,
     forceRefresh: false,
     cooldownSeconds: input.forceRefreshCooldownSeconds,
-    remainingCooldownSeconds: 0,
-    cooldownAvailableAt: null,
     reportId: report.id,
     reportVariantIndex: report.variantIndex,
     reportStatus: report.status,
@@ -282,11 +241,7 @@ export async function executeSyncAndBuildResponse(input: {
       generateAiEvaluation: input.generateAiEvaluation,
     });
 
-    const successCooldown = input.forceRefreshRequested
-      ? resolvePostForceRefreshCooldown(input.forceRefreshCooldownSeconds)
-      : { remainingSeconds: 0, availableAt: null as string | null };
-
-    const response = buildSyncSuccessResponse({
+    const response = buildEmployeeSyncSuccessResponse({
       employeeId: input.upserted.employee.id,
       employeeName: input.upserted.employee.name,
       identityHash: input.upserted.identity.identityHash,
@@ -295,8 +250,6 @@ export async function executeSyncAndBuildResponse(input: {
       snapshotId: syncResult.snapshot.id,
       forceRefresh: input.forceRefreshRequested,
       cooldownSeconds: input.forceRefreshCooldownSeconds,
-      remainingCooldownSeconds: successCooldown.remainingSeconds,
-      cooldownAvailableAt: successCooldown.availableAt,
       reportId: report.id,
       reportVariantIndex: report.variantIndex,
       reportStatus: report.status,
@@ -314,19 +267,14 @@ export async function executeSyncAndBuildResponse(input: {
   } catch (error) {
     if (error instanceof B2bEmployeeSyncError) {
       if (error.reason === "hyphen_fetch_timeout") {
-        const latestSnapshot = await db.b2bHealthDataSnapshot.findFirst({
-          where: { employeeId: input.upserted.employee.id },
-          orderBy: { fetchedAt: "desc" },
-          select: { id: true },
-        });
+        const latestSnapshot = await findLatestEmployeeSyncTimeoutFallbackSnapshot(
+          input.upserted.employee.id
+        );
         if (latestSnapshot) {
           const report = await ensureLatestB2bReport(
             input.upserted.employee.id,
             input.requestedPeriodKey
           );
-          const successCooldown = input.forceRefreshRequested
-            ? resolvePostForceRefreshCooldown(input.forceRefreshCooldownSeconds)
-            : { remainingSeconds: 0, availableAt: null as string | null };
 
           void logSyncAccess(input.accessContext, "sync_timeout_reused_snapshot", {
             code: error.code,
@@ -337,7 +285,7 @@ export async function executeSyncAndBuildResponse(input: {
             forceRefresh: input.forceRefreshRequested,
           });
 
-          return buildSyncSuccessResponse({
+          return buildEmployeeSyncSuccessResponse({
             employeeId: input.upserted.employee.id,
             employeeName: input.upserted.employee.name,
             identityHash: input.upserted.identity.identityHash,
@@ -346,8 +294,6 @@ export async function executeSyncAndBuildResponse(input: {
             snapshotId: latestSnapshot.id,
             forceRefresh: input.forceRefreshRequested,
             cooldownSeconds: input.forceRefreshCooldownSeconds,
-            remainingCooldownSeconds: successCooldown.remainingSeconds,
-            cooldownAvailableAt: successCooldown.availableAt,
             reportId: report.id,
             reportVariantIndex: report.variantIndex,
             reportStatus: report.status,
@@ -362,23 +308,11 @@ export async function executeSyncAndBuildResponse(input: {
         nextAction: error.nextAction,
       });
 
-      return noStoreJson(
-        {
-          ok: false,
-          code: error.code,
-          reason: error.reason,
-          nextAction: error.nextAction,
-          error: error.message,
-        },
-        error.status
-      );
+      return buildEmployeeSyncBlockedResponse(error);
     }
 
-    const dbError = resolveDbRouteError(
-      error,
-      "\uAC74\uAC15 \uB370\uC774\uD130 \uB3D9\uAE30\uD654 \uCC98\uB9AC \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC5B4\uC694. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."
-    );
-    const details = describeSyncError(error);
+    const failure = resolveEmployeeSyncExecuteFailure(error);
+    const { dbError, details, response } = failure;
     console.error("[b2b][employee-sync] execute sync failed", {
       employeeId: input.upserted.employee.id,
       appUserId: input.appUserId,
@@ -395,13 +329,6 @@ export async function executeSyncAndBuildResponse(input: {
       code: dbError.code,
     });
 
-    if (dbError.code === "DB_POOL_TIMEOUT") {
-      return buildDbPoolBusySyncResponse(dbError.message);
-    }
-
-    return noStoreJson(
-      { ok: false, code: dbError.code, error: dbError.message },
-      dbError.status
-    );
+    return response;
   }
 }

@@ -18,6 +18,8 @@
   - Composition shell for the integrated preview.
 - `app/(admin)/admin/b2b-reports/_lib/b2b-integrated-result-preview-model.ts`
   - Payload normalization for `SurveyResultPanel`, section-title map derivation, health metrics, and medication/comment data.
+  - Reuses `components/b2b/report-summary/card-insights.ts` shared helper contract for answer decoding, percent normalization, and metric formatting.
+  - Reuses `components/b2b/report-summary/detail-data-model.ts` for health metric rows and medication/pharmacist review data.
 - `app/(admin)/admin/b2b-reports/_components/B2bIntegratedHealthMetricsSection.tsx`
   - Health-metric detail card section.
 - `app/(admin)/admin/b2b-reports/_components/B2bIntegratedMedicationReviewSection.tsx`

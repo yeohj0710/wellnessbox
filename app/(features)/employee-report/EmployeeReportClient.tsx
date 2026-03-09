@@ -20,23 +20,16 @@ import type {
 import {
   clearStoredIdentity,
   isValidIdentityInput,
-  normalizeDigits,
-  resolveIdentityPrimaryActionLabel,
   toIdentityPayload,
 } from "./_lib/client-utils.identity";
-import {
-  resolveMedicationStatusMessage,
-} from "./_lib/client-utils.guidance";
 import {
   EMPLOYEE_REPORT_ADMIN_ONLY_CODE,
   EMPLOYEE_REPORT_ADMIN_ONLY_NOTICE,
   EMPLOYEE_REPORT_ADMIN_ONLY_STATUS_LABEL,
   EMPLOYEE_REPORT_FORCE_CONFIRM_PHRASE,
 } from "./_lib/employee-report-copy";
-import {
-  resolveEmployeeReportOverlayDescription,
-  resolveEmployeeReportOverlayDetailLines,
-} from "./_lib/overlay-copy";
+import { useEmployeeReportPageDerivedState } from "./_lib/use-employee-report-page-derived-state";
+import { useEmployeeReportPageHandlers } from "./_lib/use-employee-report-page-handlers";
 import { useAdminLoginStatus } from "./_lib/use-admin-login-status";
 import { useBusyState } from "./_lib/use-busy-state";
 import { useEmployeeReportExistingRecordActions } from "./_lib/use-employee-report-existing-record-actions";
@@ -125,52 +118,6 @@ export default function EmployeeReportClient({
     [identityPayload]
   );
 
-  const medicationStatus = useMemo(
-    () => resolveMedicationStatusMessage(reportData),
-    [reportData]
-  );
-
-  const periodOptions = useMemo(() => {
-    const options = reportData?.availablePeriods ?? [];
-    if (options.length > 0) return options;
-    if (selectedPeriodKey) return [selectedPeriodKey];
-    if (reportData?.periodKey) return [reportData.periodKey];
-    return [];
-  }, [reportData?.availablePeriods, reportData?.periodKey, selectedPeriodKey]);
-
-  const canUseForceSync = useMemo(
-    () => debugMode || isAdminLoggedIn,
-    [debugMode, isAdminLoggedIn]
-  );
-
-  const canExecuteForceSync = useMemo(
-    () =>
-      forceConfirmChecked &&
-      forceConfirmText.trim() === EMPLOYEE_REPORT_FORCE_CONFIRM_PHRASE,
-    [forceConfirmChecked, forceConfirmText]
-  );
-  const identityPrimaryActionLabel = useMemo(
-    () =>
-      resolveIdentityPrimaryActionLabel({
-        hasAuthAttempt,
-        syncNextAction,
-        storedIdentitySource,
-      }),
-    [hasAuthAttempt, storedIdentitySource, syncNextAction]
-  );
-
-  const overlayDescription = useMemo(
-    () => resolveEmployeeReportOverlayDescription(busyHint),
-    [busyHint]
-  );
-
-  const overlayDetailLines = useMemo(
-    () => resolveEmployeeReportOverlayDetailLines({ busyHint, busyElapsedSec }),
-    [busyElapsedSec, busyHint]
-  );
-  const readyReportData = reportData?.report ? reportData : null;
-  const showIdentityFlow = !reportData && !adminOnlyReportBlocked;
-
   function getIdentityPayload() {
     return identityPayload;
   }
@@ -187,6 +134,32 @@ export default function EmployeeReportClient({
   function emitNhisSync(reason: string) {
     emitAuthSyncEvent({ scope: "nhis-link", reason });
   }
+
+  const {
+    medicationStatus,
+    periodOptions,
+    canUseForceSync,
+    canExecuteForceSync,
+    identityPrimaryActionLabel,
+    overlayDescription,
+    overlayDetailLines,
+    readyReportData,
+    showIdentityFlow,
+  } = useEmployeeReportPageDerivedState({
+    reportData,
+    selectedPeriodKey,
+    debugMode,
+    isAdminLoggedIn,
+    adminOnlyReportBlocked,
+    forceConfirmChecked,
+    forceConfirmText,
+    hasAuthAttempt,
+    syncNextAction,
+    storedIdentitySource,
+    busyHint,
+    busyElapsedSec,
+    forceConfirmPhrase: EMPLOYEE_REPORT_FORCE_CONFIRM_PHRASE,
+  });
 
   const { loadReport, syncEmployeeReport } = useEmployeeReportReportLoading({
     validIdentity,
@@ -318,44 +291,22 @@ export default function EmployeeReportClient({
       emitB2bSessionSync,
       emitNhisSync,
     });
-
-  function handleIdentityNameChange(value: string) {
-    setIdentity((prev) => ({ ...prev, name: value }));
-  }
-
-  function handleIdentityBirthDateChange(value: string) {
-    setIdentity((prev) => ({
-      ...prev,
-      birthDate: normalizeDigits(value).slice(0, 8),
-    }));
-  }
-
-  function handleIdentityPhoneChange(value: string) {
-    setIdentity((prev) => ({
-      ...prev,
-      phone: normalizeDigits(value).slice(0, 11),
-    }));
-  }
-
-  function handleContinueSync() {
-    void handleSignAndSync(pendingSignForceRefresh);
-  }
-
-  function resetForceConfirmDialog() {
-    setForceConfirmOpen(false);
-    setForceConfirmText("");
-    setForceConfirmChecked(false);
-  }
-
-  function closeForceConfirmDialog() {
-    if (busy) return;
-    resetForceConfirmDialog();
-  }
-
-  function confirmForceSync() {
-    resetForceConfirmDialog();
-    void handleSignAndSync(true);
-  }
+  const {
+    handleIdentityNameChange,
+    handleIdentityBirthDateChange,
+    handleIdentityPhoneChange,
+    handleContinueSync,
+    closeForceConfirmDialog,
+    confirmForceSync,
+  } = useEmployeeReportPageHandlers({
+    busy,
+    pendingSignForceRefresh,
+    setIdentity,
+    setForceConfirmOpen,
+    setForceConfirmText,
+    setForceConfirmChecked,
+    handleSignAndSync,
+  });
 
   if (booting) {
     return <EmployeeReportBootSkeleton />;

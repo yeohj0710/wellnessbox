@@ -1,4 +1,8 @@
 import { Prisma } from "@prisma/client";
+import type {
+  SurveyGetResponse,
+  SurveySaveResult,
+} from "@/lib/b2b/admin-report-contract";
 import db from "@/lib/db";
 import { logB2bAdminAction } from "@/lib/b2b/employee-service";
 import { periodKeyToCycle, resolveCurrentPeriodKey } from "@/lib/b2b/period";
@@ -36,7 +40,7 @@ export class SurveyRouteInputError extends Error {
 export async function runAdminSurveyLookup(input: {
   employeeId: string;
   periodKey: string | null;
-}) {
+}): Promise<Omit<SurveyGetResponse, "ok">> {
   const { template, schema } = await ensureActiveB2bSurveyTemplate();
 
   const [latestResponse, periods] = await Promise.all([
@@ -88,7 +92,7 @@ export async function runAdminSurveyUpsert(input: {
   periodKey: string;
   selectedSections?: string[];
   answers: Record<string, unknown>;
-}) {
+}): Promise<SurveySaveResult> {
   const { template, schema } = await ensureActiveB2bSurveyTemplate();
   const { commonMap, sectionMap } = buildSurveyQuestionMap(schema);
   const previousResponse = await db.b2bSurveyResponse.findFirst({

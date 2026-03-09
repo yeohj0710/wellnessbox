@@ -49,10 +49,10 @@ export default function RecommendedProductAddressGuideModal({
           주소를 입력해 주세요
         </h2>
         <p className="text-sm leading-relaxed text-gray-600">
-          해당 상품은 주문 전에 받을 주소를 먼저 확인해야 해요.
+          해당 상품은 주문 전에 배송받을 주소를 먼저 확인해야 해요.
         </p>
         <p className="mb-6 mt-1 text-xs leading-relaxed text-gray-600">
-          (주소는 주문 완료 전까지는 어디에도 공개되지 않아요.)
+          주소는 주문 완료 전까지 어디에도 공개되지 않아요.
         </p>
         <div className="flex justify-end gap-3">
           <button

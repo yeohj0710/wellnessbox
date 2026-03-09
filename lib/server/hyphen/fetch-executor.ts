@@ -26,8 +26,21 @@ import {
   type DetailKeyPair,
   type RequestDefaultsLike,
 } from "@/lib/server/hyphen/fetch-executor.helpers";
-import { normalizeTreatmentPayload } from "@/lib/server/hyphen/normalize-treatment";
-import { normalizeNhisPayload } from "@/lib/server/hyphen/normalize";
+import {
+  buildSuccessfulFetchPayload,
+  emptyPayload,
+  getErrorBody,
+  getTargetPayload,
+  payloadHasAnyRows,
+} from "@/lib/server/hyphen/fetch-executor.payload-helpers";
+import {
+  buildExactDateMedicationPayload,
+  buildMonthRangeMedicationPayload,
+  collectRecentMedicalVisitDates,
+  fetchMedicationBackfillPayloads,
+  mergeHyphenPayloadList,
+  payloadHasMedicationNames,
+} from "@/lib/server/hyphen/fetch-executor.medication-backfill-helpers";
 import {
   getErrorCodeMessage,
   logHyphenError,
@@ -95,49 +108,6 @@ const MEDICATION_NAME_KEYS = [
   "약품",
   "성분",
 ] as const;
-const MEDICATION_DATE_KEYS = [
-  "diagSdate",
-  "diagDate",
-  "medDate",
-  "date",
-  "TRTM_YMD",
-  "PRSC_YMD",
-  "detail_TRTM_YMD",
-  "detail_PRSC_YMD",
-  "drug_TRTM_YMD",
-  "drug_PRSC_YMD",
-] as const;
-
-function getErrorBody(error: unknown): unknown | null {
-  if (!error || typeof error !== "object") return null;
-  const candidate = (error as { body?: unknown }).body;
-  return candidate ?? null;
-}
-
-function emptyPayload(): HyphenApiResponse {
-  return { data: {} };
-}
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  return value as Record<string, unknown>;
-}
-
-function resolvePayloadData(payload: HyphenApiResponse) {
-  const root = asRecord(payload) ?? {};
-  const data = asRecord(root.data);
-  return data ?? root;
-}
-
-function payloadHasAnyRows(payload: HyphenApiResponse) {
-  const data = resolvePayloadData(payload);
-  if (Array.isArray(data.list) && data.list.length > 0) return true;
-  for (const value of Object.values(data)) {
-    if (Array.isArray(value) && value.length > 0) return true;
-  }
-  return false;
-}
-
 function toNonEmptyText(value: unknown): string | null {
   if (value == null) return null;
   const rendered = String(value).trim();
@@ -151,198 +121,12 @@ function isMeaningfulMedicationName(value: unknown) {
   return true;
 }
 
-function resolveMedicationDateText(row: Record<string, unknown>) {
-  for (const key of MEDICATION_DATE_KEYS) {
-    const text = toNonEmptyText(row[key]);
-    if (text) return text;
-  }
-  return null;
-}
-
-function normalizeMedicationDateToYmd(text: string | null) {
-  if (!text) return null;
-  const digits = text.replace(/\D/g, "");
-  if (digits.length < 8) return null;
-  return digits.slice(0, 8);
-}
-
-function resolveMedicationDateScore(text: string | null) {
-  if (!text) return 0;
-  const digits = text.replace(/\D/g, "");
-  if (digits.length >= 8) {
-    const score = Number(digits.slice(0, 8));
-    return Number.isFinite(score) ? score : 0;
-  }
-  if (digits.length >= 6) {
-    const score = Number(`${digits.slice(0, 6)}01`);
-    return Number.isFinite(score) ? score : 0;
-  }
-  return 0;
-}
-
-function collectTreatmentRows(payload: HyphenApiResponse) {
-  const treatment = normalizeTreatmentPayload(payload);
-  return Array.isArray(treatment.list)
-    ? (treatment.list as Array<Record<string, unknown>>)
-    : [];
-}
-
-function payloadHasMedicationNames(payload: HyphenApiResponse) {
-  const rows = collectTreatmentRows(payload);
-  for (const row of rows) {
-    for (const key of MEDICATION_NAME_KEYS) {
-      if (isMeaningfulMedicationName(row[key])) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-function collectRecentMedicalVisitDates(payload: HyphenApiResponse, limit: number) {
-  const rows = collectTreatmentRows(payload);
-  const scored = rows
-    .map((row, index) => {
-      const date = normalizeMedicationDateToYmd(resolveMedicationDateText(row));
-      return {
-        date,
-        score: resolveMedicationDateScore(date),
-        index,
-      };
-    })
-    .filter((item) => item.score > 0)
-    .sort((left, right) => {
-      if (right.score !== left.score) return right.score - left.score;
-      return left.index - right.index;
-    });
-
-  const dates: string[] = [];
-  const seen = new Set<string>();
-  for (const item of scored) {
-    if (!item.date || seen.has(item.date)) continue;
-    seen.add(item.date);
-    dates.push(item.date);
-    if (dates.length >= limit) break;
-  }
-  return dates;
-}
-
-function buildExactDateMedicationPayload(
-  base: HyphenNhisRequestPayload,
-  date: string
-): HyphenNhisRequestPayload {
-  return {
-    ...base,
-    fromDate: date,
-    toDate: date,
-  };
-}
-
-function resolveLastDayOfMonth(year: number, month: number) {
-  return new Date(Date.UTC(year, month, 0)).getUTCDate();
-}
-
-function buildMonthRangeMedicationPayload(
-  base: HyphenNhisRequestPayload,
-  date: string
-): HyphenNhisRequestPayload {
-  const ymd = normalizeMedicationDateToYmd(date);
-  if (!ymd) return base;
-  const year = Number(ymd.slice(0, 4));
-  const month = Number(ymd.slice(4, 6));
-  if (!Number.isFinite(year) || !Number.isFinite(month) || month < 1 || month > 12) {
-    return base;
-  }
-  const fromDate = `${String(year).padStart(4, "0")}${String(month).padStart(
-    2,
-    "0"
-  )}01`;
-  const toDate = `${String(year).padStart(4, "0")}${String(month).padStart(
-    2,
-    "0"
-  )}${String(resolveLastDayOfMonth(year, month)).padStart(2, "0")}`;
-  return {
-    ...base,
-    fromDate,
-    toDate,
-  };
-}
-
-function mergeHyphenPayloadList(payloads: HyphenApiResponse[]) {
-  if (payloads.length === 0) return null;
-  if (payloads.length === 1) return payloads[0] ?? null;
-  return mergeListPayloads(payloads);
-}
-
-async function fetchMedicationBackfillPayloads(input: {
-  dates: string[];
-  basePayload: HyphenNhisRequestPayload;
-  detailPayload: HyphenNhisRequestPayload;
-  payloadBuilder: (
-    base: HyphenNhisRequestPayload,
-    date: string
-  ) => HyphenNhisRequestPayload;
-}) {
-  if (input.dates.length === 0) return [];
-  const settled = await Promise.allSettled(
-    input.dates.map(async (date) => {
-      const detailRequestPayload = input.payloadBuilder(input.detailPayload, date);
-      const baseRequestPayload = input.payloadBuilder(input.basePayload, date);
-
-      let detailResult: HyphenApiResponse | null = null;
-      let detailError: unknown = null;
-      try {
-        detailResult = await fetchMedicationInfo(detailRequestPayload);
-      } catch (error) {
-        detailError = error;
-      }
-
-      const detailHasRows = detailResult ? payloadHasAnyRows(detailResult) : false;
-      const detailHasNames = detailResult
-        ? payloadHasMedicationNames(detailResult)
-        : false;
-
-      let baseResult: HyphenApiResponse | null = null;
-      let baseError: unknown = null;
-      if (!detailHasNames) {
-        try {
-          baseResult = await fetchMedicationInfo(baseRequestPayload);
-        } catch (error) {
-          baseError = error;
-        }
-      }
-
-      const baseHasRows = baseResult ? payloadHasAnyRows(baseResult) : false;
-      const baseHasNames = baseResult ? payloadHasMedicationNames(baseResult) : false;
-
-      if (detailHasNames) return detailResult;
-      if (baseHasNames) return baseResult;
-      if (detailHasRows) return detailResult;
-      if (baseHasRows) return baseResult;
-
-      if (detailError && !isNonFatalNhisNoDataFailure(detailError)) {
-        throw detailError;
-      }
-      if (baseError && !isNonFatalNhisNoDataFailure(baseError)) {
-        throw baseError;
-      }
-      return null;
-    })
-  );
-  const payloads: HyphenApiResponse[] = [];
-
-  for (const result of settled) {
-    if (result.status === "fulfilled") {
-      if (result.value && payloadHasAnyRows(result.value)) {
-        payloads.push(result.value);
-      }
-      continue;
-    }
-    if (isNonFatalNhisNoDataFailure(result.reason)) continue;
-    logHyphenError("[hyphen][fetch] recent-medication backfill failed", result.reason);
-  }
-  return payloads;
-}
+const medicationHasNames = (payload: HyphenApiResponse) =>
+  payloadHasMedicationNames({
+    payload,
+    medicationNameKeys: MEDICATION_NAME_KEYS,
+    isMeaningfulMedicationName,
+  });
 
 async function fetchMedicationByRecentVisitsBackfill(input: {
   dateSourcePayloads: Array<HyphenApiResponse | null | undefined>;
@@ -372,9 +156,14 @@ async function fetchMedicationByRecentVisitsBackfill(input: {
     basePayload: input.basePayload,
     detailPayload: input.detailPayload,
     payloadBuilder: buildExactDateMedicationPayload,
+    hasRows: payloadHasAnyRows,
+    hasMedicationNames: medicationHasNames,
+    isNonFatalNoDataFailure: isNonFatalNhisNoDataFailure,
+    logError: (reason) =>
+      logHyphenError("[hyphen][fetch] recent-medication backfill failed", reason),
   });
   const exactMerged = mergeHyphenPayloadList(exactPayloads);
-  if (exactMerged && payloadHasMedicationNames(exactMerged)) {
+  if (exactMerged && medicationHasNames(exactMerged)) {
     return exactMerged;
   }
 
@@ -386,6 +175,11 @@ async function fetchMedicationByRecentVisitsBackfill(input: {
     basePayload: input.basePayload,
     detailPayload: input.detailPayload,
     payloadBuilder: buildMonthRangeMedicationPayload,
+    hasRows: payloadHasAnyRows,
+    hasMedicationNames: medicationHasNames,
+    isNonFatalNoDataFailure: isNonFatalNhisNoDataFailure,
+    logError: (reason) =>
+      logHyphenError("[hyphen][fetch] recent-medication backfill failed", reason),
   });
 
   const merged = mergeHyphenPayloadList([...exactPayloads, ...monthPayloads]);
@@ -413,81 +207,6 @@ export function isNonFatalNhisNoDataFailure(reason: unknown) {
 
 type FetchSuccessMap = Map<NhisFetchTarget, unknown>;
 type FetchRawFailureMap = Map<NhisFetchTarget, unknown>;
-
-function getTargetPayload<T>(
-  successful: FetchSuccessMap,
-  target: NhisFetchTarget
-): T | undefined {
-  return successful.get(target) as T | undefined;
-}
-
-function buildSuccessfulFetchPayload(input: {
-  successful: FetchSuccessMap;
-  rawFailures: FetchRawFailureMap;
-  failed: NhisFetchFailedItem[];
-  checkupListRawByYear: Record<string, unknown>;
-}): NhisFetchRoutePayload {
-  const checkupListPayload =
-    getTargetPayload<HyphenApiResponse[]>(input.successful, "checkupList") ?? [];
-  const checkupYearlyPayload =
-    getTargetPayload<HyphenApiResponse[]>(input.successful, "checkupYearly") ??
-    [];
-  const medicalPayload =
-    getTargetPayload<HyphenApiResponse>(input.successful, "medical") ??
-    emptyPayload();
-  const medicationPayload =
-    getTargetPayload<HyphenApiResponse>(input.successful, "medication") ??
-    emptyPayload();
-  const checkupOverviewPayload =
-    getTargetPayload<HyphenApiResponse>(input.successful, "checkupOverview") ??
-    emptyPayload();
-  const healthAgePayload =
-    getTargetPayload<HyphenApiResponse>(input.successful, "healthAge") ??
-    emptyPayload();
-
-  const normalized = normalizeNhisPayload({
-    medical: medicalPayload,
-    medication: medicationPayload,
-    checkupList: checkupListPayload,
-    checkupYearly: checkupYearlyPayload,
-    checkupOverview: checkupOverviewPayload,
-    healthAge: healthAgePayload,
-  });
-
-  return {
-    ok: true,
-    partial: input.failed.length > 0,
-    failed: input.failed,
-    data: {
-      normalized,
-      raw: {
-        medical:
-          input.successful.get("medical") ?? input.rawFailures.get("medical") ?? null,
-        medication:
-          input.successful.get("medication") ??
-          input.rawFailures.get("medication") ??
-          null,
-        checkupList:
-          (checkupListPayload.length > 0
-            ? mergeListPayloads(checkupListPayload)
-            : input.rawFailures.get("checkupList")) ?? null,
-        checkupYearly:
-          (checkupYearlyPayload.length > 0
-            ? checkupYearlyPayload
-            : input.rawFailures.get("checkupYearly")) ?? null,
-        checkupOverview:
-          input.successful.get("checkupOverview") ??
-          input.rawFailures.get("checkupOverview") ??
-          null,
-        healthAge:
-          input.successful.get("healthAge") ??
-          input.rawFailures.get("healthAge") ??
-          null,
-        checkupListByYear: input.checkupListRawByYear,
-      },
-    },
-  };
-}
 
 export async function executeNhisFetch(
   input: ExecuteNhisFetchInput
@@ -750,7 +469,7 @@ export async function executeNhisFetch(
     const shouldBackfillMedicationNames =
       (!medicationPayload ||
         !payloadHasAnyRows(medicationPayload) ||
-        !payloadHasMedicationNames(medicationPayload));
+        !medicationHasNames(medicationPayload));
 
     if (shouldBackfillMedicationNames) {
       const dateSourcePayloads: Array<HyphenApiResponse | null | undefined> = [];

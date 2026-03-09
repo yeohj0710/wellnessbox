@@ -105,9 +105,10 @@ function runStaticRegressionChecks() {
   );
 
   const employeeServiceSource = read("lib/b2b/employee-service.ts");
+  const employeeServiceLogSource = read("lib/b2b/employee-service.logs.ts");
   assert.ok(
-    employeeServiceSource.includes("runBestEffortDbWrite"),
-    "employee-service logs should use best-effort DB writes"
+    employeeServiceLogSource.includes("runBestEffortDbWrite"),
+    "employee-service log module should use best-effort DB writes"
   );
   assert.ok(
     employeeServiceSource.includes("HYPHEN_FETCH_TIMEOUT"),
