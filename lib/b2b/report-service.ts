@@ -117,7 +117,11 @@ async function hasNewerSourceData(input: {
   periodKey: string;
   reportUpdatedAt: Date;
 }) {
-  const [latestAnalysis, latestSurvey, latestHealth, latestNote] = await Promise.all([
+  const [employee, latestAnalysis, latestSurvey, latestHealth, latestNote] = await Promise.all([
+    db.b2bEmployee.findUnique({
+      where: { id: input.employeeId },
+      select: { updatedAt: true },
+    }),
     db.b2bAnalysisResult.findFirst({
       where: { employeeId: input.employeeId, periodKey: input.periodKey },
       orderBy: [{ updatedAt: "desc" }, { version: "desc" }],
@@ -146,6 +150,7 @@ async function hasNewerSourceData(input: {
 
   const reportTime = input.reportUpdatedAt.getTime();
   const latestTimes = [
+    employee?.updatedAt?.getTime() ?? 0,
     latestAnalysis?.updatedAt?.getTime() ?? 0,
     latestSurvey?.updatedAt?.getTime() ?? 0,
     latestHealth?.fetchedAt?.getTime() ?? 0,

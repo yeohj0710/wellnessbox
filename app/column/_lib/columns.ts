@@ -26,7 +26,7 @@ import {
   selectAdjacentColumnSummaries,
   selectRelatedColumnSummaries,
 } from "./columns-summary-queries";
-import { fetchPublishedDbAliasRowBySlug, fetchPublishedDbRowBySlug, fetchPublishedDbRows } from "./columns-db-source";
+import { fetchPublishedDbAliasRowBySlug, fetchPublishedDbRows } from "./columns-db-source";
 import { collectMarkdownFiles } from "./columns-file-source";
 import type { ColumnDetail, ColumnSummary, ColumnTag, TocItem } from "./columns-types";
 export type { ColumnDetail, ColumnSummary, ColumnTag, TocItem } from "./columns-types";
@@ -34,6 +34,37 @@ export type { ColumnDetail, ColumnSummary, ColumnTag, TocItem } from "./columns-
 export { buildHeadingAnchorId, normalizeTagSlug };
 
 const CONTENT_ROOT = path.join(process.cwd(), "app", "column", "_content");
+const KOREA_TIME_ZONE = "Asia/Seoul";
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+function resolveCurrentKoreaScheduleAnchor() {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: KOREA_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const parts = formatter.formatToParts(new Date());
+  const year = parts.find((part) => part.type === "year")?.value ?? "1970";
+  const month = parts.find((part) => part.type === "month")?.value ?? "01";
+  const day = parts.find((part) => part.type === "day")?.value ?? "01";
+  return new Date(`${year}-${month}-${day}T12:00:00+09:00`);
+}
+
+function normalizeColumnPublishSchedule(columns: ColumnDetail[]) {
+  const scheduleAnchor = resolveCurrentKoreaScheduleAnchor();
+  const hasFutureDate = columns.some((column) => {
+    const publishedAt = new Date(column.publishedAt);
+    return !Number.isNaN(publishedAt.getTime()) && publishedAt.getTime() > scheduleAnchor.getTime();
+  });
+
+  if (!hasFutureDate) return columns;
+
+  return columns.map((column, index) => ({
+    ...column,
+    publishedAt: new Date(scheduleAnchor.getTime() - index * DAY_IN_MS).toISOString(),
+  }));
+}
 
 async function parseColumnFile(absolutePath: string): Promise<ColumnDetail> {
   const [raw, stat] = await Promise.all([fs.readFile(absolutePath, "utf8"), fs.stat(absolutePath)]);
@@ -152,11 +183,6 @@ async function getPublishedDbColumns(): Promise<ColumnDetail[]> {
   );
 }
 
-async function getPublishedDbColumnBySlug(slug: string): Promise<ColumnDetail | null> {
-  const row = await fetchPublishedDbRowBySlug(slug);
-  return row ? mapDbPostToColumnDetail(row) : null;
-}
-
 async function getPublishedDbColumnByAliasSlug(
   slug: string
 ): Promise<ColumnDetail | null> {
@@ -174,7 +200,7 @@ async function getPublishedColumns(): Promise<ColumnDetail[]> {
     ...dbColumns,
     ...fileColumns.filter((column) => !dbSlugSet.has(column.slug)),
   ];
-  return sortColumnsByDateDesc(merged);
+  return normalizeColumnPublishSchedule(sortColumnsByDateDesc(merged));
 }
 
 export async function getAllColumnSummaries(): Promise<ColumnSummary[]> {
@@ -209,41 +235,34 @@ export async function resolveColumnBySlug(
     };
   }
 
-  const dbFirst = await getPublishedDbColumnBySlug(normalized);
-  if (dbFirst) {
-    return {
-      requestedSlug: requested,
-      canonicalSlug: dbFirst.slug,
-      shouldRedirect: dbFirst.slug !== requested,
-      source: "db",
-      column: dbFirst,
-    };
-  }
+  const publishedColumns = await getPublishedColumns();
 
-  const dbAlias = await getPublishedDbColumnByAliasSlug(normalized);
-  if (dbAlias) {
-    return {
-      requestedSlug: requested,
-      canonicalSlug: dbAlias.slug,
-      shouldRedirect: dbAlias.slug !== requested,
-      source: "db-alias",
-      column: dbAlias,
-    };
-  }
-
-  const fileColumns = await getPublishedFileColumns();
-  const direct = fileColumns.find((column) => column.slug === normalized);
+  const direct = publishedColumns.find((column) => column.slug === normalized);
   if (direct) {
     return {
       requestedSlug: requested,
       canonicalSlug: direct.slug,
       shouldRedirect: direct.slug !== requested,
-      source: "file",
+      source: direct.postId ? "db" : "file",
       column: direct,
     };
   }
 
-  const legacy = fileColumns.find((column) => column.legacySlugs.includes(normalized));
+  const dbAlias = await getPublishedDbColumnByAliasSlug(normalized);
+  if (dbAlias) {
+    const canonicalColumn =
+      publishedColumns.find((column) => column.slug === normalizeSlug(dbAlias.slug)) ??
+      dbAlias;
+    return {
+      requestedSlug: requested,
+      canonicalSlug: canonicalColumn.slug,
+      shouldRedirect: canonicalColumn.slug !== requested,
+      source: "db-alias",
+      column: canonicalColumn,
+    };
+  }
+
+  const legacy = publishedColumns.find((column) => column.legacySlugs.includes(normalized));
   if (legacy) {
     return {
       requestedSlug: requested,

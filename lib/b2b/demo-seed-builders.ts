@@ -25,7 +25,7 @@ type DemoEmployeeSeed = {
 
 export const DEMO_EMPLOYEES: DemoEmployeeSeed[] = [
   {
-    name: "데모 임직원 김하나",
+    name: "\uAE40\uD558\uB098 (\uD14C\uC2A4\uD2B8)",
     birthDate: "19890215",
     phone: "01090010001",
     gender: "female",
@@ -43,7 +43,7 @@ export const DEMO_EMPLOYEES: DemoEmployeeSeed[] = [
     },
   },
   {
-    name: "데모 임직원 박준호",
+    name: "\uBC15\uC900\uD638 (\uD14C\uC2A4\uD2B8)",
     birthDate: "19810420",
     phone: "01090010002",
     gender: "male",

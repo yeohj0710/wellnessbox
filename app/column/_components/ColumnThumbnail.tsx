@@ -15,28 +15,28 @@ type ColumnThumbnailProps = {
 function getFrameClasses(variant: NonNullable<ColumnThumbnailProps["variant"]>) {
   switch (variant) {
     case "feature":
-      return "aspect-[16/10] min-h-[240px] sm:min-h-[280px]";
+      return "aspect-[16/10] min-h-[176px] sm:min-h-[280px]";
     case "list":
-      return "h-full min-h-[168px] w-full";
+      return "h-full min-h-[152px] w-full";
     case "detail":
-      return "h-56 sm:h-72";
+      return "h-44 sm:h-72";
     case "card":
     default:
-      return "aspect-[16/9] min-h-[176px]";
+      return "aspect-[16/9] min-h-[148px] sm:min-h-[176px]";
   }
 }
 
 function getTitleClasses(variant: NonNullable<ColumnThumbnailProps["variant"]>) {
   switch (variant) {
     case "feature":
-      return "max-w-[18rem] text-2xl font-black leading-tight sm:text-[2rem]";
+      return "max-w-[18rem] text-xl font-black leading-tight sm:text-[2rem]";
     case "detail":
-      return "max-w-[18rem] text-xl font-black leading-tight sm:text-[1.85rem]";
+      return "max-w-[18rem] text-lg font-black leading-tight sm:text-[1.85rem]";
     case "list":
-      return "max-w-[13rem] text-lg font-black leading-tight";
+      return "max-w-[13rem] text-base font-black leading-tight sm:text-lg";
     case "card":
     default:
-      return "max-w-[14rem] text-xl font-black leading-tight";
+      return "max-w-[14rem] text-lg font-black leading-tight sm:text-xl";
   }
 }
 
@@ -85,7 +85,7 @@ export default function ColumnThumbnail({
               "linear-gradient(180deg, rgba(15,23,42,0) 0%, rgba(15,23,42,0.38) 100%)",
           }}
         />
-        <div className="relative flex h-full flex-col justify-between p-4 text-white sm:p-5">
+        <div className="relative flex h-full flex-col justify-between p-3.5 text-white sm:p-5">
           <div className="flex items-start justify-between gap-3">
             <span
               className="rounded-full px-3 py-1 text-[11px] font-semibold tracking-[0.18em]"

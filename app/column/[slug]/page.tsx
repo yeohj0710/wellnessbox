@@ -27,6 +27,7 @@ function formatDate(value: string) {
     return value;
   }
   return new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
     year: "numeric",
     month: "long",
     day: "numeric",

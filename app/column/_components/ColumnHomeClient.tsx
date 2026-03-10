@@ -24,6 +24,8 @@ type ColumnHomeClientProps = {
 type ViewMode = "grid" | "list";
 
 const ALL_TAG = "__all__";
+const PRIMARY_TAG_LIMIT = 12;
+const CARD_TAG_PREVIEW_LIMIT = 3;
 const PAGE_SIZE_OPTIONS = [12, 24, 48, 1000000] as const;
 const DOT = "\u2022";
 
@@ -52,6 +54,12 @@ const TEXT = {
   heroBody:
     "\uBCF5\uC6A9 \uC2DC\uAC04, \uC74C\uC2DD-\uC57D \uC0C1\uD638\uC791\uC6A9, \uC0DD\uD65C \uC2B5\uAD00 \uC774\uC288\uB97C \uD55C \uD654\uBA74\uC5D0\uC11C \uC815\uB9AC\uD574\uC11C \uBCFC \uC218 \uC788\uAC8C \uAD6C\uC870\uB97C \uBC14\uAFE8\uC2B5\uB2C8\uB2E4. \uAC80\uC0C9\uB9CC \uD558\uC9C0 \uC54A\uC544\uB3C4 \uD0DC\uADF8, \uBCF4\uAE30 \uBC29\uC2DD, \uD398\uC774\uC9C0 \uB2E8\uC704\uB85C \uBE60\uB974\uAC8C \uD6D1\uC744 \uC218 \uC788\uC2B5\uB2C8\uB2E4.",
   latestColumn: "\uCD5C\uC2E0 \uCE7C\uB7FC",
+  tagShelfTitle: "\uC790\uC8FC \uCC3E\uB294 \uD0DC\uADF8",
+  tagShelfBody:
+    "\uD0DC\uADF8\uB294 \uBA3C\uC800 \uB9CE\uC774 \uC4F0\uC778 \uAC83\uBD80\uD130 \uBCF4\uC5EC\uC8FC\uACE0, \uAE34 \uAF2C\uB9AC \uD0DC\uADF8\uB294 \uD544\uC694\uD560 \uB54C\uB9CC \uD3BC\uCCD0\uBCF4\uB294 \uBC29\uC2DD\uC73C\uB85C \uC815\uB9AC\uD588\uC2B5\uB2C8\uB2E4.",
+  expandTags: "\uB098\uBA38\uC9C0 \uD0DC\uADF8 \uD3BC\uCE58\uAE30",
+  collapseTags: "\uD0DC\uADF8 \uC811\uAE30",
+  longTailTags: "\uC138\uBD80 \uD0DC\uADF8",
   resultsEyebrow: "RESULTS",
   resultsTitle:
     "\uC6D0\uD558\uB294 \uBC00\uB3C4\uB85C \uC815\uB9AC\uD55C \uCE7C\uB7FC \uBAA9\uB85D",
@@ -71,10 +79,20 @@ function formatDate(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
     year: "numeric",
     month: "long",
     day: "numeric",
   }).format(date);
+}
+
+function buildClampStyle(lines: number) {
+  return {
+    display: "-webkit-box",
+    WebkitLineClamp: lines,
+    WebkitBoxOrient: "vertical" as const,
+    overflow: "hidden",
+  };
 }
 
 function normalizeTagSlugClient(input: string) {
@@ -129,6 +147,8 @@ function ColumnResultCard({
   onCardKeyDown: (event: KeyboardEvent<HTMLElement>, slug: string) => void;
 }) {
   const isList = viewMode === "list";
+  const previewTags = column.tags.slice(0, CARD_TAG_PREVIEW_LIMIT);
+  const hiddenTagCount = Math.max(0, column.tags.length - previewTags.length);
 
   return (
     <article
@@ -138,12 +158,12 @@ function ColumnResultCard({
       tabIndex={0}
       onClick={(event) => onCardClick(event, column.slug)}
       onKeyDown={(event) => onCardKeyDown(event, column.slug)}
-      className={`group cursor-pointer overflow-hidden rounded-[2rem] border border-slate-200/90 bg-white/95 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-[0_20px_45px_-30px_rgba(15,23,42,0.72)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 ${
-        isList ? "p-3 sm:p-4" : "p-5 sm:p-6"
+      className={`group cursor-pointer overflow-hidden rounded-[1.7rem] border border-slate-200/90 bg-white/95 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-[0_20px_45px_-30px_rgba(15,23,42,0.72)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 ${
+        isList ? "p-3 sm:p-4" : "p-4 sm:p-6"
       }`}
     >
-      <div className={isList ? "grid gap-4 sm:grid-cols-[220px_minmax(0,1fr)]" : ""}>
-        <div className={isList ? "overflow-hidden rounded-[1.5rem] border border-slate-200" : ""}>
+      <div className={isList ? "grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]" : ""}>
+        <div className={isList ? "overflow-hidden rounded-[1.35rem] border border-slate-200" : ""}>
           <ColumnThumbnail
             slug={column.slug}
             title={column.title}
@@ -168,7 +188,10 @@ function ColumnResultCard({
           </div>
 
           <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <h2 className="min-w-0 text-xl font-bold leading-snug text-slate-900 sm:text-2xl">
+            <h2
+              className="min-w-0 text-lg font-bold leading-snug text-slate-900 sm:text-2xl"
+              style={buildClampStyle(isList ? 2 : 3)}
+            >
               <Link
                 href={`/column/${column.slug}`}
                 className="transition hover:text-emerald-700"
@@ -185,11 +208,16 @@ function ColumnResultCard({
             ) : null}
           </div>
 
-          <p className="mt-4 text-[0.99rem] leading-7 text-slate-700">{column.summary}</p>
+          <p
+            className="mt-4 text-sm leading-6 text-slate-700 sm:text-[0.99rem] sm:leading-7"
+            style={buildClampStyle(isList ? 3 : 4)}
+          >
+            {column.summary}
+          </p>
 
-          {column.tags.length > 0 ? (
+          {previewTags.length > 0 ? (
             <div className="mt-4 flex flex-wrap gap-2">
-              {column.tags.map((tag) => (
+              {previewTags.map((tag) => (
                 <Link
                   key={`${column.slug}-${tag}`}
                   href={`/column/tag/${normalizeTagSlugClient(tag)}`}
@@ -198,6 +226,11 @@ function ColumnResultCard({
                   #{tag}
                 </Link>
               ))}
+              {hiddenTagCount > 0 ? (
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">
+                  +{hiddenTagCount}
+                </span>
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -219,6 +252,7 @@ export default function ColumnHomeClient({
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [pageSize, setPageSize] = useState<number>(12);
   const [page, setPage] = useState(1);
+  const [showAllTags, setShowAllTags] = useState(false);
   const deferredQuery = useDeferredValue(query);
 
   const openColumn = (slug: string) => {
@@ -260,7 +294,23 @@ export default function ColumnHomeClient({
   }, [columns, deferredQuery, selectedTag]);
 
   const featuredColumn = filteredColumns[0] ?? columns[0] ?? null;
+  const latestColumn = columns[0] ?? null;
   const activeTag = tags.find((tag) => tag.slug === selectedTag) ?? null;
+  const tagGroups = useMemo(() => {
+    const activeTags = activeTag ? [activeTag] : [];
+    const highSignalTags = tags.filter((tag) => tag.count > 1);
+    const preferredTags = (highSignalTags.length > 0 ? highSignalTags : tags).filter(
+      (tag) => tag.slug !== activeTag?.slug
+    );
+    const primary = [...activeTags, ...preferredTags].slice(0, PRIMARY_TAG_LIMIT);
+    const primarySlugs = new Set(primary.map((tag) => tag.slug));
+    const hidden = tags.filter((tag) => !primarySlugs.has(tag.slug));
+    return {
+      primary,
+      hidden,
+      visible: showAllTags ? [...primary, ...hidden] : primary,
+    };
+  }, [activeTag, showAllTags, tags]);
   const pageCount = Math.max(
     1,
     Math.ceil(filteredColumns.length / Math.max(1, pageSize))
@@ -272,8 +322,8 @@ export default function ColumnHomeClient({
     pageSize >= 1000000
       ? filteredColumns
       : filteredColumns.slice(startIndex, startIndex + pageSize);
-  const latestPublishedAt = featuredColumn
-    ? formatDate(featuredColumn.publishedAt)
+  const latestPublishedAt = latestColumn
+    ? formatDate(latestColumn.publishedAt)
     : null;
 
   useEffect(() => {
@@ -284,6 +334,10 @@ export default function ColumnHomeClient({
     if (page <= pageCount) return;
     setPage(pageCount);
   }, [page, pageCount]);
+
+  useEffect(() => {
+    setShowAllTags(false);
+  }, [selectedTag]);
 
   const moveToPage = (nextPage: number) => {
     const clamped = Math.min(Math.max(nextPage, 1), pageCount);
@@ -312,42 +366,42 @@ export default function ColumnHomeClient({
 
   return (
     <section className="min-h-[calc(100vh-7rem)] w-full bg-[radial-gradient(circle_at_top_left,_#d8f6eb_0%,_#f8fafc_40%,_#ffffff_100%)]">
-      <div className="mx-auto w-full max-w-6xl px-4 pb-20 pt-10 sm:px-6">
-        <header className="overflow-hidden rounded-[2rem] border border-emerald-200/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.96)_0%,rgba(241,253,248,0.97)_48%,rgba(236,253,245,0.9)_100%)] p-6 shadow-[0_24px_55px_-36px_rgba(6,95,70,0.56)] sm:p-8">
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)] lg:items-end">
+      <div className="mx-auto w-full max-w-6xl px-4 pb-20 pt-6 sm:px-6 sm:pt-10">
+        <header className="overflow-hidden rounded-[1.7rem] border border-emerald-200/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.96)_0%,rgba(241,253,248,0.97)_48%,rgba(236,253,245,0.9)_100%)] p-5 shadow-[0_24px_55px_-36px_rgba(6,95,70,0.56)] sm:rounded-[2rem] sm:p-8">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)] lg:items-end">
             <div>
               <p className="text-[11px] font-semibold tracking-[0.32em] text-emerald-700">
                 WELLNESSBOX COLUMN
               </p>
-              <h1 className="mt-3 max-w-3xl text-3xl font-black leading-tight text-slate-900 sm:text-[2.4rem]">
+              <h1 className="mt-3 max-w-3xl text-[2rem] font-black leading-[1.05] text-slate-900 sm:text-[2.4rem]">
                 {TEXT.heroTitle}
               </h1>
-              <p className="mt-4 max-w-2xl text-[1rem] leading-7 text-slate-700">
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-700 sm:text-[1rem] sm:leading-7">
                 {TEXT.heroBody}
               </p>
 
-              <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl border border-white/70 bg-white/75 p-4 backdrop-blur">
+              <div className="mt-6 grid grid-cols-3 gap-2 sm:gap-3">
+                <div className="rounded-[1.35rem] border border-white/70 bg-white/75 p-3 backdrop-blur sm:rounded-2xl sm:p-4">
                   <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">
                     {TEXT.totalPosts}
                   </p>
-                  <p className="mt-2 text-2xl font-black text-slate-900">
+                  <p className="mt-2 text-xl font-black text-slate-900 sm:text-2xl">
                     {columns.length}
                   </p>
                 </div>
-                <div className="rounded-2xl border border-white/70 bg-white/75 p-4 backdrop-blur">
+                <div className="rounded-[1.35rem] border border-white/70 bg-white/75 p-3 backdrop-blur sm:rounded-2xl sm:p-4">
                   <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">
                     {TEXT.totalTags}
                   </p>
-                  <p className="mt-2 text-2xl font-black text-slate-900">
+                  <p className="mt-2 text-xl font-black text-slate-900 sm:text-2xl">
                     {tags.length}
                   </p>
                 </div>
-                <div className="rounded-2xl border border-white/70 bg-white/75 p-4 backdrop-blur">
+                <div className="rounded-[1.35rem] border border-white/70 bg-white/75 p-3 backdrop-blur sm:rounded-2xl sm:p-4">
                   <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">
                     {TEXT.latestPublish}
                   </p>
-                  <p className="mt-2 text-sm font-bold text-slate-900">
+                  <p className="mt-2 text-xs font-bold leading-5 text-slate-900 sm:text-sm">
                     {latestPublishedAt ?? TEXT.notReady}
                   </p>
                 </div>
@@ -357,7 +411,7 @@ export default function ColumnHomeClient({
             {featuredColumn ? (
               <Link
                 href={`/column/${featuredColumn.slug}`}
-                className="block rounded-[1.75rem] border border-slate-200/80 bg-white/80 p-3 shadow-[0_20px_45px_-36px_rgba(15,23,42,0.75)] transition hover:-translate-y-0.5 hover:border-emerald-300"
+                className="block rounded-[1.45rem] border border-slate-200/80 bg-white/80 p-3 shadow-[0_20px_45px_-36px_rgba(15,23,42,0.75)] transition hover:-translate-y-0.5 hover:border-emerald-300 sm:rounded-[1.75rem]"
               >
                 <div className="overflow-hidden rounded-[1.3rem] border border-slate-200">
                   <ColumnThumbnail
@@ -373,10 +427,16 @@ export default function ColumnHomeClient({
                   <p className="text-xs font-semibold tracking-[0.18em] text-emerald-700">
                     {TEXT.latestColumn}
                   </p>
-                  <p className="mt-2 text-xl font-black leading-snug text-slate-900">
+                  <p
+                    className="mt-2 text-lg font-black leading-snug text-slate-900 sm:text-xl"
+                    style={buildClampStyle(2)}
+                  >
                     {featuredColumn.title}
                   </p>
-                  <p className="mt-3 text-sm leading-6 text-slate-700">
+                  <p
+                    className="mt-3 text-sm leading-6 text-slate-700"
+                    style={buildClampStyle(3)}
+                  >
                     {featuredColumn.summary}
                   </p>
                 </div>
@@ -385,7 +445,7 @@ export default function ColumnHomeClient({
           </div>
         </header>
 
-        <section className="mt-6 rounded-[2rem] border border-slate-200 bg-white/95 p-5 shadow-[0_12px_40px_-34px_rgba(15,23,42,0.6)] sm:p-6">
+        <section className="mt-6 rounded-[1.7rem] border border-slate-200 bg-white/95 p-4 shadow-[0_12px_40px_-34px_rgba(15,23,42,0.6)] sm:rounded-[2rem] sm:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="text-sm font-semibold text-slate-900">{TEXT.browseSettings}</p>
@@ -416,7 +476,7 @@ export default function ColumnHomeClient({
             </div>
           </div>
 
-          <div className="mt-5 grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_repeat(3,minmax(0,0.45fr))]">
+          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1.2fr)_repeat(3,minmax(0,0.45fr))]">
             <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-300 bg-slate-50 px-4 text-sm text-slate-700">
               <span className="shrink-0 font-semibold text-slate-900">{TEXT.search}</span>
               <input
@@ -472,32 +532,62 @@ export default function ColumnHomeClient({
           </div>
 
           {tags.length > 0 ? (
-            <div className="mt-5 flex flex-wrap gap-2" id="column-tags">
-              <button
-                type="button"
-                onClick={() => setSelectedTag(ALL_TAG)}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                  selectedTag === ALL_TAG
-                    ? "bg-slate-900 text-white"
-                    : "bg-slate-100 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700"
-                }`}
-              >
-                {TEXT.all}
-              </button>
-              {tags.map((tag) => (
+            <div
+              className="mt-5 rounded-[1.4rem] border border-slate-200 bg-slate-50/80 p-4"
+              id="column-tags"
+            >
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {TEXT.tagShelfTitle}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-600">
+                    {TEXT.tagShelfBody}
+                    {tagGroups.hidden.length > 0
+                      ? ` ${TEXT.longTailTags} ${tagGroups.hidden.length}개`
+                      : ""}
+                  </p>
+                </div>
+                {tagGroups.hidden.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllTags((prev) => !prev)}
+                    className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-emerald-300 hover:text-emerald-700"
+                  >
+                    {showAllTags
+                      ? TEXT.collapseTags
+                      : `${TEXT.expandTags} ${tagGroups.hidden.length}개`}
+                  </button>
+                ) : null}
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
                 <button
-                  key={`tag-${tag.slug}`}
                   type="button"
-                  onClick={() => setSelectedTag(tag.slug)}
+                  onClick={() => setSelectedTag(ALL_TAG)}
                   className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                    selectedTag === tag.slug
-                      ? "bg-emerald-600 text-white"
-                      : "bg-slate-100 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700"
+                    selectedTag === ALL_TAG
+                      ? "bg-slate-900 text-white"
+                      : "bg-white text-slate-700 hover:bg-emerald-50 hover:text-emerald-700"
                   }`}
                 >
-                  {`#${tag.label} (${tag.count})`}
+                  {TEXT.all}
                 </button>
-              ))}
+                {tagGroups.visible.map((tag) => (
+                  <button
+                    key={`tag-${tag.slug}`}
+                    type="button"
+                    onClick={() => setSelectedTag(tag.slug)}
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                      selectedTag === tag.slug
+                        ? "bg-emerald-600 text-white"
+                        : "bg-white text-slate-700 hover:bg-emerald-50 hover:text-emerald-700"
+                    }`}
+                  >
+                    {`#${tag.label} (${tag.count})`}
+                  </button>
+                ))}
+              </div>
             </div>
           ) : null}
         </section>
