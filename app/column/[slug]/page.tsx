@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import ColumnMarkdown from "../_components/columnMarkdown";
 import ColumnAdminActions from "../_components/ColumnAdminActions";
+import ColumnThumbnail from "../_components/ColumnThumbnail";
+import { getColumnThumbnailPresentation } from "../_lib/column-presentation";
 import {
   getAdjacentColumnSummaries,
   getRelatedColumnSummaries,
@@ -47,6 +49,26 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
+  const thumbnailPresentation = getColumnThumbnailPresentation({
+    slug: column.slug,
+    title: column.title,
+    tags: column.tags,
+    coverImageUrl: column.coverImageUrl,
+  });
+  const shareImages =
+    thumbnailPresentation.mode === "image" && column.coverImageUrl
+      ? [
+          {
+            url: column.coverImageUrl,
+            alt: `${column.title} 커버 이미지`,
+          },
+        ]
+      : getDefaultOpenGraphImages();
+  const shareImageUrls =
+    thumbnailPresentation.mode === "image" && column.coverImageUrl
+      ? [column.coverImageUrl]
+      : getDefaultOpenGraphImages().map((image) => image.url);
+
   return {
     title: `${column.title} | 웰니스박스 칼럼`,
     description: column.description,
@@ -63,22 +85,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       publishedTime: column.publishedAt,
       modifiedTime: column.updatedAt,
       tags: column.tags,
-      images: column.coverImageUrl
-        ? [
-            {
-              url: column.coverImageUrl,
-              alt: `${column.title} 커버 이미지`,
-            },
-          ]
-        : getDefaultOpenGraphImages(),
+      images: shareImages,
     },
     twitter: {
       card: "summary_large_image",
       title: `${column.title} | 웰니스박스 칼럼`,
       description: column.description,
-      images: column.coverImageUrl
-        ? [column.coverImageUrl]
-        : getDefaultOpenGraphImages().map((image) => image.url),
+      images: shareImageUrls,
     },
   };
 }
@@ -102,12 +115,22 @@ export default async function ColumnDetailPage({ params }: PageProps) {
   ]);
 
   const articleUrl = `${SITE_URL}/column/${column.slug}`;
+  const thumbnailPresentation = getColumnThumbnailPresentation({
+    slug: column.slug,
+    title: column.title,
+    tags: column.tags,
+    coverImageUrl: column.coverImageUrl,
+  });
+  const articleImages =
+    thumbnailPresentation.mode === "image" && column.coverImageUrl
+      ? [column.coverImageUrl]
+      : [absoluteUrl("/kakao-logo.png")];
   const articleJsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
     headline: column.title,
     description: column.description,
-    image: column.coverImageUrl ? [column.coverImageUrl] : [absoluteUrl("/kakao-logo.png")],
+    image: articleImages,
     datePublished: column.publishedAt,
     dateModified: column.updatedAt,
     mainEntityOfPage: articleUrl,
@@ -195,17 +218,16 @@ export default async function ColumnDetailPage({ params }: PageProps) {
               <p className="mt-4 text-[1.02rem] leading-7 text-slate-700">
                 {column.description}
               </p>
-              {column.coverImageUrl ? (
-                <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={column.coverImageUrl}
-                    alt={`${column.title} 커버 이미지`}
-                    className="h-56 w-full object-cover"
-                    loading="lazy"
-                  />
-                </div>
-              ) : null}
+              <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200">
+                <ColumnThumbnail
+                  slug={column.slug}
+                  title={column.title}
+                  tags={column.tags}
+                  coverImageUrl={column.coverImageUrl}
+                  alt={`${column.title} 커버 이미지`}
+                  variant="detail"
+                />
+              </div>
               {column.tags.length > 0 && (
                 <div className="mt-5 flex flex-wrap gap-2">
                   {column.tags.map((tag) => (

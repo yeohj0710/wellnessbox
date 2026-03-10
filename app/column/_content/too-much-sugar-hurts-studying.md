@@ -1,0 +1,90 @@
+---
+title: "단 걸 많이 먹을수록 공부가 안 되는 이유"
+description: "달달한 음료와 간식이 순간 집중력을 올리는 것처럼 보여도, 왜 공부 효율과 기억력은 오히려 깎아먹는지 생활 패턴 중심으로 설명했습니다."
+date: 2026-03-14
+draft: false
+tags:
+  - "집중력"
+  - "설탕"
+  - "공부"
+slug: "too-much-sugar-hurts-studying"
+coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/7/7a/Student_on_the_desk.jpg"
+---
+
+# 단 걸 많이 먹을수록 공부가 안 되는 이유
+
+시험 기간만 되면 책상 위 풍경이 비슷해집니다. 초콜릿, 젤리, 달달한 커피, 에너지 음료, 과자. 뇌를 쓰려면 당이 필요하다니까, 일단 단 걸 넣고 보는 거죠. 실제로 먹자마자 머리가 번쩍 드는 느낌도 있습니다. 그래서 더 믿게 됩니다. “역시 공부할 땐 당이야.”
+
+그런데 진짜 문제는 그 다음입니다. 잠깐 올라간 각성이 금방 꺼지고, 30분 뒤부터 집중이 쭉 처지고, 같은 페이지를 세 번 읽는데도 머리에 안 들어옵니다. 심지어 밤에는 더 배가 고프고, 더 자극적인 걸 찾게 되죠. 공부를 오래 하는 사람일수록 알아야 합니다. **뇌가 당을 쓴다**는 말과 **달달한 간식을 계속 넣는 게 공부에 좋다**는 말은 완전히 다른 얘기입니다.
+
+![공부와 집중력](https://upload.wikimedia.org/wikipedia/commons/7/7a/Student_on_the_desk.jpg)
+_이미지 출처: [Wikimedia Commons - Student on the desk](https://commons.wikimedia.org/wiki/File:Student%20on%20the%20desk.jpg)_
+
+
+## 핵심만 먼저
+
+1. 단 음식은 순간적으로 각성감을 줄 수 있지만, 빠르게 올라갔다 꺼지는 흐름이 집중력과 지속력을 더 쉽게 무너뜨립니다.
+2. 특히 액상당류 음료와 빈속 간식은 혈당 출렁임을 크게 만들어 공부 효율을 떨어뜨리기 쉽습니다.
+3. 문제는 설탕 자체보다 ‘단것으로 피로를 버티는 공부 방식’입니다.
+4. 공부가 잘되는 간식은 가장 달고 자극적인 것이 아니라, 포만감과 안정감을 오래 주는 조합입니다.
+
+## 왜 이런 일이 생길까요?
+
+뇌는 포도당을 사용합니다. 그래서 단 걸 먹으면 금방 에너지가 들어오는 느낌이 생길 수 있어요. 하지만 이건 어디까지나 **짧은 반짝 효과**에 가깝습니다. 특히 설탕이 많이 들어간 음료나 젤리처럼 빨리 흡수되는 형태는 혈당을 급하게 올리고, 곧바로 꺼뜨리면서 멍함과 허기를 부르기 쉽습니다.
+
+이 상태에서 사람은 보통 두 가지를 반복합니다. 하나는 더 단 걸 찾는 것, 다른 하나는 카페인을 추가하는 것입니다. 그렇게 되면 공부가 잘되는 게 아니라, **각성-추락-재각성**의 롤러코스터를 타게 됩니다. 머리는 쉬지 못하고, 몸은 계속 피곤한데 자극으로 밀어붙이는 구조가 되는 거죠.
+
+또한 단 음식을 많이 먹는 패턴은 밤 늦게까지 이어지기 쉽습니다. 야식, 달달한 커피, 탄산, 디저트가 붙으면 수면 질까지 떨어집니다. 결국 다음 날 집중력 저하를 다시 단 음식으로 때우는 악순환이 생깁니다. 공부를 망치는 건 한 번의 초콜릿이 아니라, **피곤할수록 단 걸로 버티는 루틴**입니다.
+
+![설탕 과다 섭취](https://upload.wikimedia.org/wikipedia/commons/6/6a/Sugar_cubes.jpg)
+_이미지 출처: [Wikimedia Commons - Sugar cubes](https://commons.wikimedia.org/wiki/File:Sugar%20cubes.jpg)_
+
+
+## 사람들이 제일 많이 놓치는 포인트
+
+### 가장 위험한 건 ‘달달한 커피’입니다
+
+설탕만 들어간 것보다 더 교묘한 게 달달한 커피입니다. 당과 카페인이 같이 들어와서 순간적으로는 확 살아나는 느낌을 줍니다. 하지만 한두 시간 뒤 피로감, 불안감, 집중력 끊김이 더 크게 돌아오기 쉽습니다.
+
+### 젤리와 에너지 음료가 공부용 아이템처럼 보이지만, 오래 못 갑니다
+
+짧게 버티기에는 편합니다. 문제는 포만감이 거의 없어서 계속 손이 간다는 겁니다. 그러면 뇌가 에너지를 받는 게 아니라, 입과 보상회로가 자극에 익숙해지는 쪽으로 갑니다.
+
+### 배고플 때 단 걸 먹는 건 더 크게 흔들립니다
+
+빈속이면 흡수가 빨라져서 오르내림이 더 큽니다. 아침을 거르고 점심 전까지 달달한 음료로 버티는 사람은 유독 오전 집중력이 오락가락하는 경우가 많습니다.
+
+### 공부가 안 될 때는 ‘더 달게’보다 ‘덜 출렁이게’가 맞습니다
+
+견과류, 요거트, 삶은 달걀, 과일처럼 단백질이나 지방, 식이섬유가 같이 붙은 간식은 속도는 덜 화려하지만 훨씬 오래 갑니다. 뇌는 번쩍이는 자극보다 안정적인 연료를 더 좋아합니다.
+
+![달달한 간식 습관](https://upload.wikimedia.org/wikipedia/commons/9/90/Colorful_candy.jpg)
+_이미지 출처: [Wikimedia Commons - Colorful candy](https://commons.wikimedia.org/wiki/File:Colorful%20candy.jpg)_
+
+
+## 바로 써먹는 실전 루틴
+
+1. 달달한 음료를 마시더라도 빈속에는 넣지 마세요. 최소한 달걀, 우유, 요거트, 견과류처럼 뭔가를 같이 넣어 혈당 출렁임을 줄이세요.
+2. 공부 간식은 ‘입이 심심한 것’과 ‘진짜 배고픈 것’을 구분해서 준비하세요. 젤리 대신 과일+요거트, 과자 대신 견과류 같은 식이 훨씬 오래 갑니다.
+3. 오후 집중력이 떨어질수록 단맛보다 10분 걷기, 물 마시기, 자리 바꾸기가 더 효과적일 때가 많습니다. 몸을 깨우는 게 설탕을 더 넣는 것보다 낫습니다.
+4. 시험 기간에는 특히 밤의 디저트와 액상당류를 줄이세요. 다음 날 머리 맑음은 밤의 간식 선택에서 거의 결정됩니다.
+
+## 이런 신호는 그냥 넘기지 마세요
+
+- 단 음식을 먹지 않으면 공부를 시작하기 어려울 정도로 의존도가 높아진 경우
+- 달달한 음료를 마신 뒤 두근거림, 식은땀, 손 떨림, 급격한 허기가 반복되는 경우
+- 체중 증가, 복부비만, 식후 졸림이 같이 붙으면서 집중력까지 떨어지는 경우
+- 야식과 수면 부족이 겹쳐 낮 피로가 계속 악화되는 경우
+
+## 같이 읽으면 좋은 글
+
+- [인슐린저항성은 탄수화물만 줄인다고 해결되지 않습니다](/column/insulin-resistance-is-not-just-carbs)
+- [한국인은 커피를 이렇게 마셔야 덜 망가집니다](/column/smarter-coffee-habits-for-koreans)
+- [햇빛만 잘 쬐어도 혈당이 달라질 수 있습니다](/column/sunlight-can-change-blood-sugar)
+
+## 참고 자료
+
+- [Review - The Impact of Free and Added Sugars on Cognitive Function](https://pmc.ncbi.nlm.nih.gov/articles/PMC10780393/)
+- [Review - Dietary Sugar Intake Associated with Higher Risk of Alzheimer's Disease](https://pmc.ncbi.nlm.nih.gov/articles/PMC10921393/)
+- [Review - Effects of Diet on Sleep Quality](https://pmc.ncbi.nlm.nih.gov/articles/PMC5015038/)
+- [NIDDK Diabetes in America - Impact of Sleep and Circadian Disturbances on Glucose Metabolism](https://www.niddk.nih.gov/-/media/Files/Strategic-Plans/Diabetes-in-America-3rd-Edition/DIA_Ch25.pdf)

@@ -1,0 +1,91 @@
+---
+title: "ADHD 약 먹을 때 커피, 정말 끊어야 할까요?"
+description: "ADHD 약물과 카페인이 집중력, 불안, 심박수, 수면에 어떤 영향을 줄 수 있는지 복용자가 실제로 헷갈리는 포인트 위주로 정리했습니다."
+date: 2026-03-25
+draft: false
+tags:
+  - "ADHD"
+  - "커피"
+  - "약물"
+slug: "adhd-medication-and-coffee"
+coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/3/3a/Coffee_cup_seen_from_above.jpg"
+---
+
+# ADHD 약 먹을 때 커피, 정말 끊어야 할까요?
+
+ADHD 약을 시작하면 제일 먼저 생기는 현실적인 질문이 있습니다. “커피 끊어야 해요?” 이 질문이 중요한 이유는 단순합니다. 커피는 한국인의 물 같은 존재고, ADHD 약도 결국 각성과 집중에 관여하니까요. 둘 다 각성 축에 걸쳐 있으니, 당연히 겹쳤을 때 느낌이 달라질 수밖에 없습니다.
+
+그렇다고 무조건 평생 금지냐 하면 또 그렇게 단순하지는 않습니다. 사람마다 반응이 다르고, 약 종류와 용량, 복용 시간, 평소 카페인 민감도, 수면 상태에 따라 결과가 꽤 달라집니다. 다만 확실한 건 있습니다. **약이 아직 자리 잡지 않은 초반에 카페인을 평소처럼 밀어 넣으면, 집중력보다 불안과 두근거림을 먼저 느끼는 사람**이 꽤 많다는 점입니다.
+
+![커피와 각성](https://upload.wikimedia.org/wikipedia/commons/3/3a/Coffee_cup_seen_from_above.jpg)
+_이미지 출처: [Wikimedia Commons - Coffee cup seen from above](https://commons.wikimedia.org/wiki/File:Coffee%20cup%20seen%20from%20above.jpg)_
+
+
+## 핵심만 먼저
+
+1. ADHD 약과 커피는 둘 다 각성에 영향을 줘서, 같이 쓰면 집중보다 불안·두근거림·수면 문제를 먼저 키울 수 있습니다.
+2. 특히 약 시작 초반, 용량 조절 중, 원래 카페인에 민감한 사람은 커피를 줄여 보는 게 훨씬 판단이 쉽습니다.
+3. 모든 사람이 완전 금지는 아니지만, ‘평소처럼 마셔도 된다’는 전제는 자주 틀립니다.
+4. 약 효과를 보려면 카페인으로 덮기보다, 약이 실제로 어떻게 느껴지는지 먼저 분리해서 보는 기간이 필요합니다.
+
+## 왜 이런 일이 생길까요?
+
+ADHD 약 중 흔히 쓰이는 자극제 계열은 집중력과 각성을 올리는 방향으로 작동합니다. 커피의 카페인도 비슷한 축에서 작동하죠. 그래서 둘을 같이 쓰면 어떤 사람은 집중이 더 되는 것 같다고 느끼지만, 다른 사람은 심박수 상승, 손 떨림, 예민함, 불안, 위장 불편감만 커질 수 있습니다.
+
+특히 초반에는 약 효과가 아직 낯설고, 본인도 어느 정도가 적정한지 모르는 상태입니다. 이때 커피가 섞이면 **약이 잘 맞는 건지, 커피가 과한 건지, 용량이 센 건지** 판단이 더 어려워집니다. 그래서 처음에는 커피를 줄여서 반응을 깨끗하게 보는 게 훨씬 실전적입니다.
+
+또 하나 중요한 건 **수면**입니다. ADHD 약을 먹는 사람 중 상당수는 원래도 수면이 일정하지 않거나 늦게 자는 패턴이 있습니다. 여기에 오후 카페인이 붙으면 밤이 더 밀리고, 다음 날 피곤해서 커피를 더 마시고, 약 효과는 더 지저분하게 느껴질 수 있습니다.
+
+![ADHD 약 복용](https://upload.wikimedia.org/wikipedia/commons/1/18/Pills_in_blister_pack.jpg)
+_이미지 출처: [Wikimedia Commons - Pills in blister pack](https://commons.wikimedia.org/wiki/File:Pills%20in%20blister%20pack.jpg)_
+
+
+## 사람들이 제일 많이 놓치는 포인트
+
+### 집중이 더 되는 느낌과 몸이 버티는 느낌은 다릅니다
+
+커피를 같이 마셨을 때 ‘오늘 잘되네’ 싶을 수 있습니다. 그런데 자세히 보면 집중이 좋아진 게 아니라 긴장감과 각성이 올라간 걸 집중으로 착각하는 경우가 있어요. 오후가 되면 더 쉽게 지치고 예민해질 수 있습니다.
+
+### 약 시작 초반에는 커피를 줄이는 게 가장 공정한 테스트입니다
+
+이 시기에 커피를 그대로 마시면 약 자체 반응을 보기 어렵습니다. 특히 첫 1~2주는 몸이 적응하는 구간이라 카페인을 줄여 두는 편이 훨씬 깔끔합니다.
+
+### 오후 커피가 밤을 망치면, 다음 날 약 체감도 망가집니다
+
+잠을 못 자면 ADHD 증상 자체도 더 심하게 느껴질 수 있습니다. 그러면 사람은 약이 부족한 줄 알고 더 자극을 찾게 되죠. 사실은 카페인이 문제일 때도 많습니다.
+
+### 카페인 민감도는 남의 후기를 따라가면 안 됩니다
+
+누군가는 약 먹고도 아메리카노 두 잔이 괜찮다며 후기 쓰지만, 본인 몸은 전혀 다를 수 있습니다. ADHD 약과 커피는 특히 개인차가 큽니다.
+
+![집중과 공부 환경](https://upload.wikimedia.org/wikipedia/commons/7/7a/Student_on_the_desk.jpg)
+_이미지 출처: [Wikimedia Commons - Student on the desk](https://commons.wikimedia.org/wiki/File:Student%20on%20the%20desk.jpg)_
+
+
+## 바로 써먹는 실전 루틴
+
+1. 약 시작 초반이나 증량 시기에는 커피를 평소보다 확 줄여 보세요. 그래야 약 자체 반응을 읽기 쉽습니다.
+2. 커피가 필요하다면 오전 소량부터 시작하고, 오후 카페인은 먼저 끊어 보세요. 수면이 무너지면 약 체감도 흐려집니다.
+3. 두근거림, 손 떨림, 식욕 저하, 불안이 심한 날은 카페인을 더 넣지 마세요. 대부분은 해결이 아니라 악화입니다.
+4. 집중이 안 되는 날 무조건 커피를 추가하기보다, 전날 수면과 약 복용 시간부터 확인하세요. 답이 거기에 있는 경우가 많습니다.
+
+## 이런 신호는 그냥 넘기지 마세요
+
+- 약과 커피를 같이 썼을 때 심한 두근거림, 불안, 손 떨림이 반복되는 경우
+- 오후 카페인 때문에 밤잠이 망가지고 다음 날 더 예민해지는 경우
+- 식욕 저하와 위장 불편감이 강한데 커피까지 계속 추가하는 경우
+- 약 용량 조절 중인데 카페인 섭취량이 날마다 크게 흔들리는 경우
+
+## 같이 읽으면 좋은 글
+
+- [한국인은 커피를 이렇게 마셔야 덜 망가집니다](/column/smarter-coffee-habits-for-koreans)
+- [항생제 먹는 동안 커피, 생각보다 더 위험할 수 있습니다](/column/antibiotics-and-coffee)
+- [단 걸 많이 먹을수록 공부가 안 되는 이유](/column/too-much-sugar-hurts-studying)
+
+## 참고 자료
+
+- [MedlinePlus - Dextroamphetamine and Amphetamine](https://medlineplus.gov/druginfo/meds/a601234.html)
+- [MedlinePlus - Methylphenidate](https://medlineplus.gov/druginfo/meds/a682188.html)
+- [AMA - What doctors wish patients knew about caffeine](https://www.ama-assn.org/public-health/prevention-wellness/what-doctors-wish-patients-knew-about-impact-caffeine)
+- [MedlinePlus - Caffeine](https://medlineplus.gov/caffeine.html)
+- [Sleep Foundation - Caffeine and Sleep](https://www.sleepfoundation.org/nutrition/caffeine-and-sleep)
