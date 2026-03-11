@@ -60,9 +60,14 @@ function HomeSearchHubSection() {
       description: "증상과 생활 습관을 더 자세히 입력해 개인 맞춤형 추천 근거를 살펴볼 수 있어요.",
     },
     {
-      href: "/explore",
-      title: "상품 둘러보기",
-      description: "인기 영양 성분과 추천 상품을 비교하면서 나에게 맞는 조합을 찾아보세요.",
+      href: "/survey",
+      title: "건강 설문",
+      description: "생활 습관과 현재 상태를 정리해두면 이후 검사와 상담에서 더 정확한 안내를 받을 수 있어요.",
+    },
+    {
+      href: "/chat",
+      title: "AI 맞춤 상담",
+      description: "검사 결과나 지금 불편한 점을 바탕으로 복용 루틴과 생활 습관을 대화로 정리해보세요.",
     },
     {
       href: "/column",
@@ -70,14 +75,9 @@ function HomeSearchHubSection() {
       description: "비타민, 오메가3, 유산균, 철분 등 건강기능식품 복용 가이드를 읽어보세요.",
     },
     {
-      href: "/health-link",
-      title: "건강검진 연동",
-      description: "건강 데이터를 연결해 더 정교한 건강 인사이트와 추천 근거를 확인할 수 있어요.",
-    },
-    {
-      href: "/employee-report",
-      title: "임직원 건강 리포트",
-      description: "검진과 설문 데이터를 바탕으로 개인별 건강 리포트를 확인하는 B2B 전용 흐름입니다.",
+      href: "/my-orders",
+      title: "내 주문 조회",
+      description: "주문한 상품의 상담, 조제, 배송 상태를 확인하고 진행 흐름을 이어서 관리할 수 있어요.",
     },
   ];
 
@@ -92,8 +92,8 @@ function HomeSearchHubSection() {
             처음 방문했다면 여기서 시작하세요
           </h2>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base">
-            웰니스박스는 AI 건강 분석, 약사 검토, 맞춤 영양제 추천, 건강기능식품
-            복용 가이드, 건강검진 연동 기능을 한 곳에서 제공합니다.
+            웰니스박스는 AI 건강 분석, 건강 설문, 맞춤 상담, 주문 조회, 건강 칼럼을 한 곳에서
+            제공합니다.
           </p>
 
           <nav aria-label="주요 서비스" className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
