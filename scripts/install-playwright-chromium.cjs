@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+const path = require("path");
 const { spawnSync } = require("child_process");
 
 function isTruthy(value) {
@@ -7,28 +8,57 @@ function isTruthy(value) {
   return normalized === "1" || normalized === "true" || normalized === "y";
 }
 
-const shouldInstall = isTruthy(process.env.B2B_INSTALL_PLAYWRIGHT_CHROMIUM);
+function resolveInstallMode() {
+  const explicit = String(process.env.B2B_INSTALL_PLAYWRIGHT_CHROMIUM || "").trim();
+  if (explicit.length > 0) {
+    return {
+      shouldInstall: isTruthy(explicit),
+      reason: "B2B_INSTALL_PLAYWRIGHT_CHROMIUM",
+    };
+  }
+
+  const shouldAutoInstall =
+    isTruthy(process.env.VERCEL) ||
+    isTruthy(process.env.CI) ||
+    process.env.NODE_ENV === "production";
+
+  return {
+    shouldInstall: shouldAutoInstall,
+    reason: shouldAutoInstall ? "auto-ci-production" : "default-skip",
+  };
+}
+
+const installMode = resolveInstallMode();
+const shouldInstall = installMode.shouldInstall;
 if (!shouldInstall) {
   console.log(
-    "[playwright:install] skipped (set B2B_INSTALL_PLAYWRIGHT_CHROMIUM=1 to enable browser install)"
+    `[playwright:install] skipped (${installMode.reason}; set B2B_INSTALL_PLAYWRIGHT_CHROMIUM=1 to force install)`
   );
   process.exit(0);
 }
 
-const command = process.platform === "win32" ? "npx.cmd" : "npx";
+const command = process.execPath;
+const playwrightEntryPath = require.resolve("playwright");
+const playwrightCliPath = path.join(path.dirname(playwrightEntryPath), "cli.js");
+const args = [playwrightCliPath, "install", "chromium"];
 const env = {
   ...process.env,
   PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || "0",
 };
 
 console.log(
-  `[playwright:install] installing chromium (PLAYWRIGHT_BROWSERS_PATH=${env.PLAYWRIGHT_BROWSERS_PATH})`
+  `[playwright:install] installing chromium (${installMode.reason}, PLAYWRIGHT_BROWSERS_PATH=${env.PLAYWRIGHT_BROWSERS_PATH})`
 );
 
-const result = spawnSync(command, ["playwright", "install", "chromium"], {
+const result = spawnSync(command, args, {
   stdio: "inherit",
   env,
 });
+
+if (result.error) {
+  console.error(`[playwright:install] failed to spawn installer: ${result.error.message}`);
+  process.exit(1);
+}
 
 if (result.status !== 0) {
   process.exit(result.status || 1);

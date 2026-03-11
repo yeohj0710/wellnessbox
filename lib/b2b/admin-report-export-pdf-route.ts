@@ -192,6 +192,13 @@ async function runWebAdminReportPdfExport(input: {
     viewportWidthPx: input.captureViewportWidthPx,
   });
   if (!conversion.ok) {
+    const engineUnavailable = shouldReturnInstallGuide(conversion.reason);
+    if (engineUnavailable && allowLegacyPdfMode()) {
+      return runLegacyAdminReportPdfExport({
+        reportId: input.reportId,
+        employeeId: input.employeeId,
+      });
+    }
     const debugId = randomUUID();
     await logB2bAdminAction({
       employeeId: input.employeeId,
@@ -204,7 +211,7 @@ async function runWebAdminReportPdfExport(input: {
         engine: "web",
       },
     });
-    const status = shouldReturnInstallGuide(conversion.reason) ? 501 : 500;
+    const status = engineUnavailable ? 501 : 500;
     return noStoreJson(
       {
         ok: false,
