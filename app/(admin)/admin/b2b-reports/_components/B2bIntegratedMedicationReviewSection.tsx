@@ -30,9 +30,9 @@ export default function B2bIntegratedMedicationReviewSection({
         </p>
       ) : null}
 
-      {medications.length === 0 ? (
+      {medications.length === 0 && !medicationStatusMessage ? (
         <p className="mt-3 text-sm text-slate-500">복약 이력이 없습니다.</p>
-      ) : (
+      ) : medications.length > 0 ? (
         <ul className="mt-3 grid gap-2">
           {medications.map((item, index) => (
             <li
@@ -48,7 +48,7 @@ export default function B2bIntegratedMedicationReviewSection({
             </li>
           ))}
         </ul>
-      )}
+      ) : null}
 
       <div className="mt-4 grid gap-2">
         <article className="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
@@ -60,13 +60,13 @@ export default function B2bIntegratedMedicationReviewSection({
         <article className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-3 py-2.5">
           <p className="text-xs font-semibold text-emerald-700">권장안</p>
           <p className="mt-1 text-sm text-emerald-900">
-            {pharmacistRecommendations || "등록된 권장안이 없습니다."}
+            {pharmacistRecommendations || "권장안이 없습니다."}
           </p>
         </article>
         <article className="rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-2.5">
           <p className="text-xs font-semibold text-amber-700">주의사항</p>
           <p className="mt-1 text-sm text-amber-900">
-            {pharmacistCautions || "등록된 주의사항이 없습니다."}
+            {pharmacistCautions || "주의사항이 없습니다."}
           </p>
         </article>
       </div>

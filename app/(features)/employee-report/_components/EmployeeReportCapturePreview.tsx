@@ -27,7 +27,7 @@ export default function EmployeeReportCapturePreview(
           data-testid="report-capture-surface"
           data-report-pdf-parity="1"
         >
-          <ReportSummaryCards payload={props.reportData.report?.payload} viewerMode="employee" />
+          <ReportSummaryCards payload={props.reportData.report?.payload} />
         </div>
       </div>
     </section>

@@ -38,7 +38,7 @@ export default function ReportPdfPage(props: {
         data-report-width-px={widthPx}
         data-report-height-px={heightPx}
       >
-        <ReportSummaryCards payload={props.payload} viewerMode={props.viewerMode} />
+        <ReportSummaryCards payload={props.payload} />
       </div>
     </main>
   );

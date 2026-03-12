@@ -4,6 +4,7 @@ import type { WellnessComputedResult } from "@/lib/wellness/analysis";
 import { buildSurveyResultSummaryMetrics } from "@/app/survey/_lib/survey-result-summary";
 import SurveyResultActionSection from "@/app/survey/_components/SurveyResultActionSection";
 import SurveyResultSummaryCards from "@/app/survey/_components/SurveyResultSummaryCards";
+import ResultSectionEmptyState from "@/components/common/resultSectionEmptyState";
 
 function normalizeHighlightIdentityText(value?: string) {
   return (value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
@@ -64,6 +65,7 @@ export default function SurveyResultPanel(props: {
   onRestart: () => void;
   onOpenEmployeeReport: () => void;
   hideActionSection?: boolean;
+  hideSupplementSection?: boolean;
 }) {
   const { resultSummary, sectionTitleMap, text } = props;
   const highRiskHighlights = resultSummary
@@ -129,9 +131,9 @@ export default function SurveyResultPanel(props: {
                 {resultSummary.lifestyleRoutineAdvice.map((item, index) => (
                   <li
                     key={`routine-${index}`}
-                    className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-3 py-2.5"
+                    className="flex min-h-[44px] items-center rounded-xl border border-emerald-200 bg-emerald-50/80 px-3 py-2.5"
                   >
-                    <p className="mt-1 text-sm text-emerald-900">{item}</p>
+                    <p className="text-sm leading-6 text-emerald-900">{item}</p>
                   </li>
                 ))}
               </ul>
@@ -168,70 +170,71 @@ export default function SurveyResultPanel(props: {
                   </article>
                 ))
               ) : (
-                <p className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-600">
-                  현재 응답 기준으로 표시할 영역별 분석 코멘트가 없습니다. 문항 응답을 추가로 작성하면 각
-                  영역 코멘트가 자동으로 표시됩니다.
-                </p>
+                <ResultSectionEmptyState message="현재 응답 기준으로 표시할 영역별 분석 코멘트가 없습니다. 문항 응답을 추가로 작성하면 각 영역 코멘트가 자동으로 표시됩니다." />
               )}
             </div>
           </section>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-            <h3 className="text-lg font-bold text-slate-900">맞춤 영양제 설계</h3>
-            {resultSummary.supplementDesign.length > 0 ? (
-              <div className="mt-3 space-y-3">
-                {resultSummary.supplementDesign.map((item) => {
-                  const sectionLabel = (sectionTitleMap.get(item.sectionId) ?? item.sectionId).trim();
-                  const titleLabel = (item.title ?? "").trim();
-                  const showSectionLabel =
-                    sectionLabel.length > 0 &&
-                    normalizeSupplementHeadingText(sectionLabel) !==
-                      normalizeSupplementHeadingText(titleLabel);
+          {!props.hideSupplementSection ? (
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+              <h3 className="text-lg font-bold text-slate-900">맞춤 영양제 설계</h3>
+              {resultSummary.supplementDesign.length > 0 ? (
+                <div className="mt-3 space-y-3">
+                  {resultSummary.supplementDesign.map((item) => {
+                    const sectionLabel = (sectionTitleMap.get(item.sectionId) ?? item.sectionId).trim();
+                    const titleLabel = (item.title ?? "").trim();
+                    const showSectionLabel =
+                      sectionLabel.length > 0 &&
+                      normalizeSupplementHeadingText(sectionLabel) !==
+                        normalizeSupplementHeadingText(titleLabel);
 
-                  return (
-                    <article
-                      key={`supplement-${item.sectionId}`}
-                      className="rounded-xl border border-indigo-100 bg-indigo-50/40 px-3 py-3"
-                    >
-                      {showSectionLabel ? (
-                        <p className="text-xs font-semibold text-indigo-700">{sectionLabel}</p>
-                      ) : null}
-                      <h4 className={`${showSectionLabel ? "mt-1" : "mt-0"} text-sm font-bold text-slate-900`}>
-                        {titleLabel || sectionLabel}
-                      </h4>
-                      <div className="mt-2 space-y-1.5 text-sm text-slate-700">
-                        {item.paragraphs.map((paragraph, index) => (
-                          <p key={`supplement-paragraph-${item.sectionId}-${index}`}>{paragraph}</p>
-                        ))}
-                      </div>
-                      {item.recommendedNutrients && item.recommendedNutrients.length > 0 ? (
-                        <div className="mt-2 rounded-lg border border-indigo-200/80 bg-white/70 px-2.5 py-2">
-                          <p className="text-xs font-semibold text-indigo-700">추천 영양소</p>
-                          <p className="mt-0.5 text-[11px] text-indigo-600">
-                            현재 결과 기준으로 우선 고려할 성분입니다.
-                          </p>
-                          <div className="mt-1.5 flex flex-wrap gap-1.5">
-                            {item.recommendedNutrients.map((nutrient) => (
-                              <span
-                                key={`nutrient-${item.sectionId}-${nutrient.code}`}
-                                className="rounded-full border border-indigo-200 bg-white px-2 py-1 text-xs font-medium text-indigo-700"
-                              >
-                                {nutrient.labelKo ?? nutrient.label}
-                              </span>
-                            ))}
-                          </div>
+                    return (
+                      <article
+                        key={`supplement-${item.sectionId}`}
+                        className="rounded-xl border border-indigo-100 bg-indigo-50/40 px-3 py-3"
+                      >
+                        {showSectionLabel ? (
+                          <p className="text-xs font-semibold text-indigo-700">{sectionLabel}</p>
+                        ) : null}
+                        <h4
+                          className={`${showSectionLabel ? "mt-1" : "mt-0"} text-sm font-bold text-slate-900`}
+                        >
+                          {titleLabel || sectionLabel}
+                        </h4>
+                        <div className="mt-2 space-y-1.5 text-sm text-slate-700">
+                          {item.paragraphs.map((paragraph, index) => (
+                            <p key={`supplement-paragraph-${item.sectionId}-${index}`}>
+                              {paragraph}
+                            </p>
+                          ))}
                         </div>
-                      ) : null}
-                    </article>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="mt-2 text-sm text-slate-500">
-                현재 선택한 설문 결과에서 제안된 맞춤 설계가 없습니다.
-              </p>
-            )}
-          </section>
+                        {item.recommendedNutrients && item.recommendedNutrients.length > 0 ? (
+                          <div className="mt-2 rounded-lg border border-indigo-200/80 bg-white/70 px-2.5 py-2">
+                            <p className="text-xs font-semibold text-indigo-700">추천 영양소</p>
+                            <p className="mt-0.5 text-[11px] text-indigo-600">
+                              현재 결과 기준으로 우선 고려할 성분입니다.
+                            </p>
+                            <div className="mt-1.5 flex flex-wrap gap-1.5">
+                              {item.recommendedNutrients.map((nutrient) => (
+                                <span
+                                  key={`nutrient-${item.sectionId}-${nutrient.code}`}
+                                  className="rounded-full border border-indigo-200 bg-white px-2 py-1 text-xs font-medium text-indigo-700"
+                                >
+                                  {nutrient.labelKo ?? nutrient.label}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+                      </article>
+                    );
+                  })}
+                </div>
+              ) : (
+                <ResultSectionEmptyState message="현재 선택한 설문 결과에서 제안된 맞춤 설계가 없습니다." />
+              )}
+            </section>
+          ) : null}
         </div>
       ) : (
         <p className="mt-4 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-sm text-rose-700">

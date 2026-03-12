@@ -1175,7 +1175,8 @@
   box-shadow:
     0 8px 20px rgba(12, 45, 111, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.85);
-  padding: 12px 14px;
+  padding: 0;
+  overflow: hidden;
 }
 
 .editorPanel[open] {
@@ -1188,27 +1189,35 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  flex-wrap: wrap;
+  gap: 6px;
+  flex-wrap: nowrap;
+  padding: 7px 12px;
+  min-height: 38px;
 }
 
 .editorPanelSummaryTitle {
   color: #12396f;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 800;
   letter-spacing: -0.01em;
+  line-height: 1.2;
 }
 
 .editorPanelSummaryMeta {
   color: #4c6f97;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
 }
 
 .editorPanelBody {
   margin-top: 0;
   display: grid;
   gap: 12px;
+  padding: 0 14px 14px;
 }
 
 .editorPanelMotion {
@@ -1233,7 +1242,7 @@
 }
 
 .editorPanel[open] > .editorPanelMotion > .editorPanelBody {
-  margin-top: 10px;
+  margin-top: 2px;
   opacity: 1;
   transform: translateY(0);
 }
@@ -2951,6 +2960,85 @@
   gap: 8px;
 }
 
+.reportFinalCommentWrap {
+  position: relative;
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding-top: 8px;
+}
+
+.reportFinalCommentAccent {
+  position: absolute;
+  inset: 18px 14px auto auto;
+  width: 164px;
+  height: 164px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(38, 115, 216, 0.14) 0%, rgba(38, 115, 216, 0.03) 52%, transparent 74%);
+  pointer-events: none;
+}
+
+.reportFinalCommentCard {
+  position: relative;
+  border-radius: 24px;
+  border: 1px solid #d5e2f6;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(247, 251, 255, 0.98) 100%);
+  padding: 22px 22px 24px;
+  box-shadow:
+    0 18px 28px rgba(16, 53, 122, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.reportFinalCommentCard::before {
+  content: "";
+  position: absolute;
+  inset: 18px auto 18px 0;
+  width: 6px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #58a8ff 0%, #2f6fe4 100%);
+}
+
+.reportFinalCommentEyebrow {
+  margin: 0 0 12px 0;
+  padding-left: 14px;
+  color: #3f689b;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.reportFinalCommentBody {
+  margin: 0;
+  padding-left: 14px;
+  color: #18365e;
+  font-size: 20px;
+  line-height: 1.8;
+  letter-spacing: -0.02em;
+  white-space: pre-wrap;
+}
+
+.reportFinalCommentFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-top: 1px solid #d7e4f6;
+  padding-top: 10px;
+  color: #597499;
+  font-size: 11px;
+}
+
+.reportFinalCommentFooter strong {
+  color: #1d4276;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
 .donutWrap {
   position: relative;
   width: 124px;
@@ -3670,12 +3758,23 @@
   }
 
   .editorPanel {
-    padding: 10px 11px;
+    padding: 0;
   }
 
   .editorPanelSummary {
-    align-items: flex-start;
-    flex-direction: column;
+    align-items: center;
+    flex-direction: row;
+    gap: 4px;
+    padding: 6px 10px;
+    min-height: 36px;
+  }
+
+  .editorPanelSummaryTitle {
+    font-size: 13px;
+  }
+
+  .editorPanelSummaryMeta {
+    font-size: 10px;
   }
 
   .editorActionBar {

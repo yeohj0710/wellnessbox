@@ -41,10 +41,19 @@ export type B2bIntegratedMedication = {
   hospitalName: string;
 };
 
+export type B2bIntegratedSupplementDesign = {
+  sectionId: string;
+  sectionTitle: string;
+  title: string;
+  paragraphs: string[];
+  recommendedNutrients: string[];
+};
+
 export type B2bIntegratedResultPreviewModel = {
   resultSummary: WellnessComputedResult | null;
   sectionTitleMap: Map<string, string>;
   healthMetrics: B2bIntegratedHealthMetric[];
+  supplementDesigns: B2bIntegratedSupplementDesign[];
   medicationStatusMessage: string;
   medications: B2bIntegratedMedication[];
   pharmacistSummary: string;
@@ -130,6 +139,32 @@ function buildMedications(
 ): B2bIntegratedMedication[] {
   if (!payload) return [];
   return buildReportSummaryMedicationReviewModel(payload).medications;
+}
+
+function buildSupplementDesigns(
+  payload: ReportSummaryPayload | null | undefined,
+  sectionTitleMap: Map<string, string>
+): B2bIntegratedSupplementDesign[] {
+  const supplementDesign = ensureArray(payload?.analysis?.wellness?.supplementDesign);
+
+  return supplementDesign.map((item, index) => {
+    const sectionId = toTrimmedText(item?.sectionId) || `section-${index + 1}`;
+    const sectionTitle =
+      sectionTitleMap.get(sectionId) || sectionId;
+    const title = toTrimmedText(item?.title) || sectionTitle;
+
+    return {
+      sectionId,
+      sectionTitle,
+      title,
+      paragraphs: ensureArray(item?.paragraphs)
+        .map((paragraph) => toTrimmedText(paragraph))
+        .filter(Boolean),
+      recommendedNutrients: ensureArray(item?.recommendedNutrients)
+        .map((nutrient) => toTrimmedText(nutrient?.labelKo) || toTrimmedText(nutrient?.label))
+        .filter(Boolean),
+    };
+  });
 }
 
 function toWellnessResult(
@@ -297,6 +332,7 @@ export function buildB2bIntegratedResultPreviewModel(
   payload: ReportSummaryPayload | null | undefined
 ): B2bIntegratedResultPreviewModel {
   const resultSummary = toWellnessResult(payload);
+  const sectionTitleMap = buildSectionTitleMap(resultSummary);
   const medicationReviewModel = payload
     ? buildReportSummaryMedicationReviewModel(payload)
     : {
@@ -308,8 +344,9 @@ export function buildB2bIntegratedResultPreviewModel(
       };
   return {
     resultSummary,
-    sectionTitleMap: buildSectionTitleMap(resultSummary),
+    sectionTitleMap,
     healthMetrics: buildHealthMetrics(payload),
+    supplementDesigns: buildSupplementDesigns(payload, sectionTitleMap),
     medicationStatusMessage: medicationReviewModel.medicationStatusMessage,
     medications: buildMedications(payload),
     pharmacistSummary: medicationReviewModel.pharmacistSummary,

@@ -14,6 +14,7 @@ import {
   serializeB2bReportDetail,
   serializeB2bReportListItem,
 } from "@/lib/b2b/report-route-serializers";
+import { resolveReportPayloadWithLatestNote } from "@/lib/b2b/report-render-payload";
 import type { AdminReportPostInput } from "@/lib/b2b/report-route-schema";
 
 export async function loadAdminReportLookup(
@@ -30,11 +31,24 @@ export async function loadAdminReportLookup(
     }),
     listB2bReportPeriods(employeeId),
   ]);
+  const latestPayload =
+    (await resolveReportPayloadWithLatestNote({
+      employeeId,
+      periodKey: latest.periodKey ?? periodKey,
+      rawPayload: latest.reportPayload,
+    })) ?? latest.reportPayload;
 
   return {
-    latest: serializeB2bReportDetail(latest, periodKey, {
-      includeStylePreset: true,
-    }),
+    latest: serializeB2bReportDetail(
+      {
+        ...latest,
+        reportPayload: latestPayload,
+      },
+      periodKey,
+      {
+        includeStylePreset: true,
+      }
+    ),
     reports: reports.map((report) => serializeB2bReportListItem(report)),
     availablePeriods,
     periodKey: latest.periodKey ?? periodKey,
@@ -68,10 +82,23 @@ export async function runAdminReportMutation(input: {
       generateAiEvaluation: input.payload.generateAiEvaluation === true,
     },
   });
+  const reportPayload =
+    (await resolveReportPayloadWithLatestNote({
+      employeeId: input.employeeId,
+      periodKey: report.periodKey ?? periodKey,
+      rawPayload: report.reportPayload,
+    })) ?? report.reportPayload;
 
   return {
-    report: serializeB2bReportDetail(report, periodKey, {
-      includeStylePreset: true,
-    }),
+    report: serializeB2bReportDetail(
+      {
+        ...report,
+        reportPayload,
+      },
+      periodKey,
+      {
+        includeStylePreset: true,
+      }
+    ),
   };
 }

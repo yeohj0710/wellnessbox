@@ -65,6 +65,14 @@ export type ReportSummaryHealthPageText = {
   insightTitle: string;
 };
 
+export type ReportSummaryFinalCommentPageText = {
+  pageKicker: string;
+  title: string;
+  subtitle: string;
+  bodyTitle: string;
+  footerLabel: string;
+};
+
 export type ReportSummaryMedicationPageText = {
   pageKicker: string;
   title: string;
@@ -109,6 +117,13 @@ export type ReportSummaryHealthPageProps = {
   healthMetrics: ReportSummaryHealthMetricRow[];
   healthInsightEmptyMessage: string;
   text: ReportSummaryHealthPageText;
+};
+
+export type ReportSummaryFinalCommentPageProps = {
+  pageNumber: number;
+  comment: string;
+  metaEmployeeName: string;
+  text: ReportSummaryFinalCommentPageText;
 };
 
 export type ReportSummaryMedicationPageProps = {

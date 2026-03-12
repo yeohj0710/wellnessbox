@@ -14,6 +14,7 @@ import {
   runB2bReportExport,
 } from "@/lib/b2b/report-service";
 import type { ReportSummaryPayload } from "@/lib/b2b/report-summary-payload";
+import { resolveReportPayloadWithLatestNote } from "@/lib/b2b/report-render-payload";
 import { resolveDbRouteError } from "@/lib/server/db-error";
 import { noStoreJson } from "@/lib/server/no-store";
 import { requireAdminSession, requireB2bEmployeeToken } from "@/lib/server/route-auth";
@@ -316,6 +317,12 @@ export async function runEmployeeReportPdfGetRoute(req: Request) {
   const captureViewportWidthPx = resolveCaptureViewportWidth(req);
 
   const report = await ensureLatestB2bReport(auth.data.employeeId, periodKey);
+  const reportPayload =
+    (await resolveReportPayloadWithLatestNote({
+      employeeId: auth.data.employeeId,
+      periodKey: report.periodKey ?? periodKey,
+      rawPayload: report.reportPayload,
+    })) ?? report.reportPayload;
   return runEmployeeReportPdfExport({
     req,
     mode,
@@ -324,7 +331,7 @@ export async function runEmployeeReportPdfGetRoute(req: Request) {
     periodKey: report.periodKey ?? periodKey,
     captureWidthPx,
     captureViewportWidthPx,
-    reportPayload: report.reportPayload,
+    reportPayload,
     ip: req.headers.get("x-forwarded-for"),
     userAgent: req.headers.get("user-agent"),
   });

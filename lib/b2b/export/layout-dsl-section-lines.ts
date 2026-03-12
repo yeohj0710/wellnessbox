@@ -65,7 +65,7 @@ export function buildSummaryLines(payload: B2bReportPayload) {
 
 export function buildHealthLines(payload: B2bReportPayload) {
   const lines = [
-    `건강검진 연동 시각: ${
+    `건강검진 데이터 시각: ${
       payload.health.fetchedAt
         ? new Date(payload.health.fetchedAt).toLocaleString("ko-KR")
         : "없음"
@@ -87,14 +87,14 @@ export function buildHealthLines(payload: B2bReportPayload) {
 }
 
 export function buildMedicationLines(payload: B2bReportPayload) {
-  const base = [
-    `복약 상태: ${medicationStatusLabel(payload.health.medicationStatus.type)}`,
-  ];
+  const base = [`복약 상태: ${medicationStatusLabel(payload.health.medicationStatus.type)}`];
   if (payload.health.medicationStatus.message) {
     base.push(payload.health.medicationStatus.message);
   }
   if (payload.health.medications.length === 0) {
-    base.push("최근 복약 데이터가 없습니다.");
+    if (!payload.health.medicationStatus.message) {
+      base.push("최근 복약 데이터가 없습니다.");
+    }
     return base;
   }
   return [
@@ -129,7 +129,7 @@ export function buildSurveyLines(payload: B2bReportPayload) {
     `응답 수: ${payload.survey.answers.length}개`,
     questionCount > 0
       ? `설문 완료율: ${Math.round((answeredCount / questionCount) * 100)}% (${answeredCount}/${questionCount})`
-      : "설문 미진행: 응답 데이터가 없습니다.",
+      : "설문 응답 데이터가 없습니다.",
   ];
   lines.push(
     ...payload.survey.sectionScores

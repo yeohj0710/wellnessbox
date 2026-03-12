@@ -3,16 +3,15 @@
 import styles from "./B2bUx.module.css";
 import type { ReportSummaryPayload } from "@/lib/b2b/report-summary-payload";
 import { firstOrDash, formatDate } from "./report-summary/helpers";
-import { ensureSentence } from "./report-summary/card-insights";
 import {
-  buildMedicationMetaLine,
   buildReportSummaryHealthMetrics,
-  buildReportSummaryMedicationReviewModel,
+  hasReportSummaryHealthMetricsContent,
+  resolveReportSummaryFinalPharmacistComment,
 } from "./report-summary/detail-data-model";
 import {
+  REPORT_SUMMARY_FINAL_COMMENT_PAGE_TEXT,
   REPORT_SUMMARY_HEALTH_INSIGHT_EMPTY_MESSAGE,
   REPORT_SUMMARY_HEALTH_PAGE_TEXT,
-  REPORT_SUMMARY_MEDICATION_PAGE_TEXT,
   REPORT_SUMMARY_OVERVIEW_TEXT,
 } from "./report-summary/copy";
 import {
@@ -24,8 +23,8 @@ import {
   REPORT_SUMMARY_RADAR_LEVELS,
 } from "./report-summary/overview-model";
 import {
+  ReportSummaryFinalCommentPage,
   ReportSummaryHealthPage,
-  ReportSummaryMedicationPage,
   ReportSummaryOverviewPage,
 } from "./report-summary/ReportSummaryPages";
 import {
@@ -36,10 +35,8 @@ import SurveyDetailPages from "./report-summary/SurveyDetailPages";
 
 export default function ReportSummaryCards(props: {
   payload: ReportSummaryPayload | null | undefined;
-  viewerMode?: "employee" | "admin";
 }) {
   const payload = props.payload;
-  const viewerMode = props.viewerMode ?? "admin";
 
   if (!payload) {
     return (
@@ -59,11 +56,9 @@ export default function ReportSummaryCards(props: {
     radarAreaPoints,
     sectionNeedsForPage1,
     hiddenSectionNeedCount,
-    sectionTitleById,
   } = overviewModel;
   const surveyDetailModel = buildReportSummarySurveyDetailModel({
     payload,
-    sectionTitleById,
   });
   const {
     firstPageSurveyDetails,
@@ -71,25 +66,16 @@ export default function ReportSummaryCards(props: {
     hasFirstPageSurveyContent,
     hasSectionAdviceContent,
     healthDataPageNumber,
-    medicationPageNumber,
   } = surveyDetailModel;
 
   const healthMetrics = buildReportSummaryHealthMetrics(payload);
-
-  const medicationReviewModel = buildReportSummaryMedicationReviewModel(payload);
-  const medicationsAll = medicationReviewModel.medications;
-  const medications = medicationsAll;
-
-  const medicationStatusMessage = medicationReviewModel.medicationStatusMessage;
-
-  const pharmacistSummary = medicationReviewModel.pharmacistSummary;
-  const pharmacistRecommendations = medicationReviewModel.pharmacistRecommendations;
-  const pharmacistCautions = medicationReviewModel.pharmacistCautions;
+  const showHealthPage = hasReportSummaryHealthMetricsContent(healthMetrics);
+  const finalPharmacistComment = resolveReportSummaryFinalPharmacistComment(payload);
+  const showFinalCommentPage = finalPharmacistComment.length > 0;
   const metaEmployeeName = firstOrDash(payload.meta?.employeeName);
   const metaPeriodKey = firstOrDash(payload.meta?.periodKey);
   const metaGeneratedAt = formatDate(payload.meta?.generatedAt);
-  const metaIsMockData = Boolean(payload.meta?.isMockData);
-  const medicationStatusLead = ensureSentence(medicationStatusMessage);
+  const finalCommentPageNumber = healthDataPageNumber + (showHealthPage ? 1 : 0);
 
   return (
     <div className={styles.reportDocument} data-report-document="1">
@@ -122,28 +108,23 @@ export default function ReportSummaryCards(props: {
         showSectionAdviceEmptyOnFirstPage={!hasSectionAdviceContent && !hasFirstPageSurveyContent}
       />
 
-      <ReportSummaryHealthPage
-        pageNumber={healthDataPageNumber}
-        healthMetrics={healthMetrics}
-        healthInsightEmptyMessage={REPORT_SUMMARY_HEALTH_INSIGHT_EMPTY_MESSAGE}
-        text={REPORT_SUMMARY_HEALTH_PAGE_TEXT}
-      />
+      {showHealthPage ? (
+        <ReportSummaryHealthPage
+          pageNumber={healthDataPageNumber}
+          healthMetrics={healthMetrics}
+          healthInsightEmptyMessage={REPORT_SUMMARY_HEALTH_INSIGHT_EMPTY_MESSAGE}
+          text={REPORT_SUMMARY_HEALTH_PAGE_TEXT}
+        />
+      ) : null}
 
-      <ReportSummaryMedicationPage
-        pageNumber={medicationPageNumber}
-        medications={medications}
-        medicationStatusMessage={medicationStatusLead}
-        pharmacistSummary={pharmacistSummary}
-        pharmacistRecommendations={pharmacistRecommendations}
-        pharmacistCautions={pharmacistCautions}
-        viewerMode={viewerMode}
-        metaGeneratedAt={metaGeneratedAt}
-        metaEmployeeName={metaEmployeeName}
-        metaPeriodKey={metaPeriodKey}
-        metaIsMockData={metaIsMockData}
-        buildMedicationMetaLine={buildMedicationMetaLine}
-        text={REPORT_SUMMARY_MEDICATION_PAGE_TEXT}
-      />
+      {showFinalCommentPage ? (
+        <ReportSummaryFinalCommentPage
+          pageNumber={finalCommentPageNumber}
+          comment={finalPharmacistComment}
+          metaEmployeeName={metaEmployeeName}
+          text={REPORT_SUMMARY_FINAL_COMMENT_PAGE_TEXT}
+        />
+      ) : null}
     </div>
   );
 }

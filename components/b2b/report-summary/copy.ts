@@ -28,6 +28,15 @@ export const REPORT_SUMMARY_HEALTH_PAGE_TEXT = {
   insightTitle: "건강검진 데이터 해석",
 } as const;
 
+export const REPORT_SUMMARY_FINAL_COMMENT_PAGE_TEXT = {
+  pageKicker: "{page}페이지 마무리 코멘트",
+  title: "약사님 최종 코멘트",
+  subtitle:
+    "자동 생성 문구보다 실제 상담 맥락을 우선해, 담당 약사가 직접 남긴 최종 코멘트를 그대로 담았습니다.",
+  bodyTitle: "담당 약사 코멘트",
+  footerLabel: "개인별 안내 메모",
+} as const;
+
 export const REPORT_SUMMARY_MEDICATION_PAGE_TEXT = {
   pageKicker: "{page}페이지 상세 데이터",
   title: "복약 이력 및 약사 코멘트",

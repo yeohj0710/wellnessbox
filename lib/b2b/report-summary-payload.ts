@@ -137,6 +137,7 @@ export type ReportSummaryPayload = {
     }>;
   };
   pharmacist?: {
+    note?: string | null;
     summary?: string | null;
     recommendations?: string | null;
     cautions?: string | null;

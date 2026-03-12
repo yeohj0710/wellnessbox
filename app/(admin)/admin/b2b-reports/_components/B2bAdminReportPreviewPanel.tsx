@@ -54,7 +54,7 @@ export default function B2bAdminReportPreviewPanel(
             </h3>
             <p>
               {previewTab === "integrated"
-                ? "설문 결과 UI를 기본으로 보여주고, 건강검진 데이터와 진료/복약 이력을 함께 확인합니다."
+                ? "설문 결과 UI를 기본으로 보여주고, 건강검진 데이터까지 한 번에 확인합니다."
                 : "화면에서 보는 웹 레포트를 그대로 캡쳐해 PDF로 저장합니다."}
             </p>
           </div>
@@ -72,7 +72,7 @@ export default function B2bAdminReportPreviewPanel(
             {previewTab === "integrated" ? (
               <B2bIntegratedResultPreview payload={latestPayload} />
             ) : (
-              <ReportSummaryCards payload={latestPayload} viewerMode="admin" />
+              <ReportSummaryCards payload={latestPayload} />
             )}
           </div>
         </div>

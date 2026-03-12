@@ -3,6 +3,7 @@
 import styles from "../B2bUx.module.css";
 import { clampPercent } from "./card-insights";
 import {
+  type ReportSummaryFinalCommentPageProps,
   type ReportSummaryHealthPageProps,
   type ReportSummaryMedicationPageProps,
   type ReportSummaryOverviewPageProps,
@@ -218,7 +219,7 @@ export function ReportSummaryOverviewPage(props: ReportSummaryOverviewPageProps)
 }
 
 export function ReportSummaryHealthPage(props: ReportSummaryHealthPageProps) {
-  const { pageNumber, healthMetrics, healthInsightEmptyMessage, text } = props;
+  const { pageNumber, healthMetrics, text } = props;
 
   return (
     <section
@@ -252,11 +253,35 @@ export function ReportSummaryHealthPage(props: ReportSummaryHealthPageProps) {
             </ul>
           )}
         </article>
+      </div>
+    </section>
+  );
+}
 
-        <article className={styles.reportDataCard}>
-          <h3 className={styles.reportDataTitle}>{text.insightTitle}</h3>
-          <p className={styles.reportDataEmpty}>{healthInsightEmptyMessage}</p>
+export function ReportSummaryFinalCommentPage(props: ReportSummaryFinalCommentPageProps) {
+  const { pageNumber, comment, metaEmployeeName, text } = props;
+
+  return (
+    <section
+      className={`${styles.reportSheet} ${styles.reportSheetThird}`}
+      data-report-page={String(pageNumber)}
+    >
+      <header className={styles.reportPageHeader}>
+        <p className={styles.reportPageKicker}>{text.pageKicker.replace("{page}", String(pageNumber))}</p>
+        <h2 className={styles.reportPageTitle}>{text.title}</h2>
+        <p className={styles.reportPageSubtitle}>{text.subtitle}</p>
+      </header>
+
+      <div className={styles.reportFinalCommentWrap}>
+        <div className={styles.reportFinalCommentAccent} aria-hidden="true" />
+        <article className={styles.reportFinalCommentCard}>
+          <p className={styles.reportFinalCommentEyebrow}>{text.bodyTitle}</p>
+          <p className={styles.reportFinalCommentBody}>{comment}</p>
         </article>
+        <div className={styles.reportFinalCommentFooter}>
+          <span>{text.footerLabel}</span>
+          <strong>{metaEmployeeName}</strong>
+        </div>
       </div>
     </section>
   );

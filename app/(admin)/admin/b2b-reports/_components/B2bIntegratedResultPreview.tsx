@@ -8,7 +8,6 @@ import {
   buildB2bIntegratedResultPreviewModel,
 } from "../_lib/b2b-integrated-result-preview-model";
 import B2bIntegratedHealthMetricsSection from "./B2bIntegratedHealthMetricsSection";
-import B2bIntegratedMedicationReviewSection from "./B2bIntegratedMedicationReviewSection";
 
 type B2bIntegratedResultPreviewProps = {
   payload: ReportSummaryPayload | null | undefined;
@@ -29,17 +28,10 @@ export default function B2bIntegratedResultPreview({
         onRestart={() => undefined}
         onOpenEmployeeReport={() => undefined}
         hideActionSection
+        hideSupplementSection
       />
 
       <B2bIntegratedHealthMetricsSection metrics={previewModel.healthMetrics} />
-
-      <B2bIntegratedMedicationReviewSection
-        medicationStatusMessage={previewModel.medicationStatusMessage}
-        medications={previewModel.medications}
-        pharmacistSummary={previewModel.pharmacistSummary}
-        pharmacistRecommendations={previewModel.pharmacistRecommendations}
-        pharmacistCautions={previewModel.pharmacistCautions}
-      />
     </div>
   );
 }

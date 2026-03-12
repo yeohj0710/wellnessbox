@@ -1,3 +1,4 @@
+import B2bAdminHiddenReportDataPanel from "./B2bAdminHiddenReportDataPanel";
 import B2bAdminReportPreviewPanel from "./B2bAdminReportPreviewPanel";
 import B2bAnalysisJsonPanel from "./B2bAnalysisJsonPanel";
 import B2bEmployeeOverviewCard from "./B2bEmployeeOverviewCard";
@@ -36,6 +37,8 @@ export default function B2bAdminReportWorkspaceLoaded({
         captureRef={content.captureRef}
         onPreviewTabChange={actions.onPreviewTabChange}
       />
+
+      <B2bAdminHiddenReportDataPanel payload={content.latestReport?.payload} />
 
       <B2bSurveyEditorPanel
         completionStats={content.completionStats}

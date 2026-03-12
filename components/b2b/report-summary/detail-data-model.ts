@@ -28,6 +28,16 @@ export type ReportSummaryMedicationReviewModel = {
   medications: ReportSummaryMedicationRow[];
 };
 
+const EMPTY_PHARMACIST_COMMENT_MESSAGES = new Set([
+  "약사 코멘트가 아직 입력되지 않았습니다.",
+  "등록된 약사 코멘트가 없습니다.",
+  "등록된 요약 코멘트가 없습니다.",
+  "등록된 권장안이 없습니다.",
+  "등록된 주의사항이 없습니다.",
+  "권장안이 없습니다.",
+  "주의사항이 없습니다.",
+]);
+
 export function toMedicationMetaDate(value: unknown) {
   if (typeof value !== "string") return "";
   const text = value.trim();
@@ -76,6 +86,25 @@ export function buildReportSummaryHealthMetrics(
     value: formatMetricValue(row?.value, row?.unit),
     statusLabel: resolveMetricStatusLabel(row?.status),
   }));
+}
+
+export function hasReportSummaryHealthMetricsContent(
+  rows: ReportSummaryHealthMetricRow[]
+) {
+  return rows.some((row) => {
+    const value = row.value.trim();
+    return value.length > 0 && value !== "-";
+  });
+}
+
+export function resolveReportSummaryFinalPharmacistComment(
+  payload: ReportSummaryPayload
+) {
+  const note = toTrimmedText(payload.pharmacist?.note);
+  if (note && !EMPTY_PHARMACIST_COMMENT_MESSAGES.has(note)) {
+    return softenAdviceTone(note);
+  }
+  return "";
 }
 
 export function buildReportSummaryMedicationReviewModel(

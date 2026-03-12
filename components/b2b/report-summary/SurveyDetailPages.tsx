@@ -1,5 +1,6 @@
 "use client";
 
+import ResultSectionEmptyState from "@/components/common/resultSectionEmptyState";
 import styles from "../B2bUx.module.css";
 import { groupSectionAdviceRows } from "./survey-detail-groups";
 
@@ -54,10 +55,9 @@ export function SurveyDetailCards(props: {
             {page.routineRows.map((line, lineIndex) => (
               <li
                 key={`routine-${pageNumber}-${lineIndex}`}
-                className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-3 py-2.5"
+                className="flex min-h-[44px] items-center rounded-xl border border-emerald-200 bg-emerald-50/80 px-3 py-2.5"
               >
-                <p className="text-xs font-semibold text-emerald-700">실천 권장</p>
-                <p className="mt-1 text-sm text-emerald-900">{line}</p>
+                <p className="text-sm leading-6 text-emerald-900">{line}</p>
               </li>
             ))}
           </ul>
@@ -105,10 +105,7 @@ export function SurveyDetailCards(props: {
               ))}
             </div>
           ) : (
-            <p className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-600">
-              현재 응답 기준으로 표시할 영역별 분석 코멘트가 없습니다. 문항 응답 데이터가
-              더 수집되면 각 영역별 코멘트가 자동으로 표시됩니다.
-            </p>
+            <ResultSectionEmptyState message="현재 응답 기준으로 표시할 영역별 분석 코멘트가 없습니다. 문항 응답 데이터가 더 수집되면 각 영역별 코멘트가 자동으로 표시됩니다." />
           )}
         </section>
       ) : null}
@@ -192,7 +189,7 @@ export default function SurveyDetailPages(props: {
               <p className={styles.reportPageKicker}>{`${pageNumber}페이지 설문 결과`}</p>
               <h2 className={styles.reportPageTitle}>설문 결과</h2>
               <p className={styles.reportPageSubtitle}>
-                생활습관 실천 가이드, 영역별 분석 코멘트, 맞춤 영양제 설계를 정리했습니다.
+                생활습관 실천 가이드와 영역별 분석 코멘트를 정리했습니다.
               </p>
             </header>
 

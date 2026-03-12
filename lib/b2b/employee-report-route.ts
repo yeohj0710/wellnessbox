@@ -4,6 +4,7 @@ import db from "@/lib/db";
 import { logB2bEmployeeAccess } from "@/lib/b2b/employee-service";
 import { resolveCurrentPeriodKey } from "@/lib/b2b/period";
 import { serializeB2bReportDetail } from "@/lib/b2b/report-route-serializers";
+import { resolveReportPayloadWithLatestNote } from "@/lib/b2b/report-render-payload";
 import {
   ensureLatestB2bReport,
   listB2bReportPeriods,
@@ -66,6 +67,12 @@ export async function runB2bEmployeeReportGetRoute(req: Request) {
     ip: req.headers.get("x-forwarded-for"),
     userAgent: req.headers.get("user-agent"),
   });
+  const reportPayload =
+    (await resolveReportPayloadWithLatestNote({
+      employeeId: employee.id,
+      periodKey: report.periodKey ?? periodKey,
+      rawPayload: report.reportPayload,
+    })) ?? report.reportPayload;
 
   return noStoreJson({
     ok: true,
@@ -74,7 +81,13 @@ export async function runB2bEmployeeReportGetRoute(req: Request) {
       name: employee.name,
       lastSyncedAt: employee.lastSyncedAt?.toISOString() ?? null,
     },
-    report: serializeB2bReportDetail(report, periodKey),
+    report: serializeB2bReportDetail(
+      {
+        ...report,
+        reportPayload,
+      },
+      periodKey
+    ),
     periodKey: report.periodKey ?? periodKey,
     availablePeriods,
   });

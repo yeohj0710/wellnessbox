@@ -251,7 +251,7 @@ function deriveMedicationScore(
   if (type === "fetch_failed") {
     return missingScore(
       "medication",
-      "복약 데이터 조회에 실패해 점수를 계산할 수 없습니다."
+      "복약 데이터가 없어 점수를 계산할 수 없습니다."
     );
   }
 
@@ -265,7 +265,9 @@ function deriveMedicationScore(
       "medication",
       base + densityBonus,
       "medication_status",
-      `복약 연동 상태와 최근 이력 ${medicationCount}건을 기준으로 계산했습니다.`
+      medicationCount > 0
+        ? `복약 데이터 ${medicationCount}건을 기준으로 계산했습니다.`
+        : "복약 데이터가 없어 기본 기준으로 계산했습니다."
     );
   }
 
@@ -274,18 +276,18 @@ function deriveMedicationScore(
       "medication",
       profile.medicationScores.none,
       "medication_status",
-      "최근 복약 이력이 확인되지 않아 보수적으로 계산했습니다."
+      "최근 복약 데이터가 없어 보수적으로 계산했습니다."
     );
   }
 
   const bySummary = scoreFromAnalysis(
     "medication",
     input.analysisSummary?.medicationScore,
-    "복약 연동 정보가 부족해 분석 요약 점수를 사용했습니다."
+    "복약 데이터가 부족해 분석 요약 점수를 사용했습니다."
   );
   if (bySummary) return bySummary;
 
-  return missingScore("medication", "복약 연동 상태가 없어 점수를 계산할 수 없습니다.");
+  return missingScore("medication", "복약 데이터가 없어 점수를 계산할 수 없습니다.");
 }
 
 function deriveOverallScore(

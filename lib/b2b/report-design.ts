@@ -50,10 +50,8 @@ export function resolveMetricStatusTone(status?: string) {
 }
 
 export function medicationStatusLabel(type?: string) {
-  if (type === "available") return "연동 완료";
-  if (type === "none") return "복약 없음";
-  if (type === "fetch_failed") return "조회 실패";
-  return "미연동/확인 필요";
+  if (type === "available") return "복약 데이터 있음";
+  return "복약 데이터 없음";
 }
 
 export function medicationStatusTone(type?: string) {

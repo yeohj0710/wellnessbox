@@ -22,6 +22,7 @@ export type CredibleTopIssue = {
   reason: string;
 };
 
+const MEDICATION_DATA_EMPTY_MESSAGE = "복약 데이터가 없습니다.";
 
 function clampIssueScore(value: number) {
   if (!Number.isFinite(value)) return 0;
@@ -76,34 +77,34 @@ export function resolveMedicationStatus(input: {
   if (medicationFailed) {
     return {
       type: "fetch_failed",
-      message: "복약 정보를 불러오지 못했습니다.",
+      message: MEDICATION_DATA_EMPTY_MESSAGE,
       failedTargets,
     };
   }
   if (!input.rawJson) {
     return {
       type: "unknown",
-      message: "아직 건강 연동이 완료되지 않았습니다.",
+      message: MEDICATION_DATA_EMPTY_MESSAGE,
       failedTargets,
     };
   }
   if (input.sourceMode === "mock") {
     return {
       type: "unknown",
-      message: "데모 데이터에서는 복약 정보를 확인할 수 없습니다.",
+      message: MEDICATION_DATA_EMPTY_MESSAGE,
       failedTargets,
     };
   }
   if (input.containerState === "missing" || input.containerState === "unrecognized") {
     return {
       type: "unknown",
-      message: "복약 데이터 구조를 확인하지 못했습니다. 잠시 후 다시 연동해 주세요.",
+      message: MEDICATION_DATA_EMPTY_MESSAGE,
       failedTargets,
     };
   }
   return {
     type: "none",
-    message: "복약 이력이 없습니다.",
+    message: MEDICATION_DATA_EMPTY_MESSAGE,
     failedTargets,
   };
 }
@@ -147,7 +148,7 @@ export function buildCredibleTopIssues(input: {
     if (detail.status === "missing") {
       pushCredibleIssue(issues, {
         sectionKey: key,
-        title: `${detail.label} 근거 데이터 부족`,
+        title: `${detail.label} 데이터 없음`,
         score: 82,
         reason: detail.reason,
       });
@@ -215,30 +216,28 @@ export function buildCredibleTopIssues(input: {
   if (input.medicationStatus.type === "fetch_failed") {
     pushCredibleIssue(issues, {
       sectionKey: "medication",
-      title: "복약 이력 수집 실패",
+      title: "복약 데이터 없음",
       score: 86,
-      reason: input.medicationStatus.message || "복약 데이터를 다시 동기화해 주세요.",
+      reason: input.medicationStatus.message || MEDICATION_DATA_EMPTY_MESSAGE,
     });
   } else if (input.medicationStatus.type === "unknown") {
     pushCredibleIssue(issues, {
       sectionKey: "medication",
-      title: "복약 이력 확인 불충분",
+      title: "복약 데이터 없음",
       score: 63,
-      reason:
-        input.medicationStatus.message ||
-        "복약 정보가 불명확해 안전성 평가의 신뢰도가 떨어집니다.",
+      reason: input.medicationStatus.message || MEDICATION_DATA_EMPTY_MESSAGE,
     });
   }
 
   if (input.fetchStatus.partial || input.fetchStatus.failedTargets.length > 0) {
     pushCredibleIssue(issues, {
       sectionKey: "fetch",
-      title: "데이터 동기화 일부 누락",
+      title: "일부 데이터 없음",
       score: 72,
       reason:
         input.fetchStatus.failedTargets.length > 0
-          ? `누락 대상: ${input.fetchStatus.failedTargets.join(", ")}`
-          : "원천 데이터 재수집이 필요합니다.",
+          ? `데이터가 없습니다: ${input.fetchStatus.failedTargets.join(", ")}`
+          : "일부 데이터가 없습니다.",
     });
   }
 

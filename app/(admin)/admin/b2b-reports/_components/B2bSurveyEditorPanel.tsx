@@ -95,7 +95,7 @@ export default function B2bSurveyEditorPanel({
   const atLastSection = currentSectionIndex >= surveySections.length - 1;
 
   return (
-    <details className={`${styles.optionalCard} ${styles.editorPanel}`} open>
+    <details className={`${styles.optionalCard} ${styles.editorPanel}`}>
       <summary className={styles.editorPanelSummary}>
         <span className={styles.editorPanelSummaryTitle}>설문 입력</span>
         <span className={styles.editorPanelSummaryMeta}>

@@ -24,12 +24,9 @@ import {
 import {
   buildGuideLines,
   buildHealthLines,
-  buildMedicationLines,
-  buildPharmacistAndAiLines,
   buildSummaryLines,
   buildSurveyLines,
   buildTrendLines,
-  compactText,
 } from "@/lib/b2b/export/layout-dsl-section-lines";
 import {
   clearGeneratedLayoutArtifacts as clearGeneratedLayoutArtifactsFromFile,
@@ -283,15 +280,6 @@ export function generateLayoutFromPayload(input: {
   });
   addSection({
     ctx,
-    sectionId: "medication",
-    title: "복약 연동 요약",
-    lines: buildMedicationLines(payload),
-    colors,
-    compact,
-    maxChars,
-  });
-  addSection({
-    ctx,
     sectionId: "survey",
     title: "설문 점수 요약",
     lines: buildSurveyLines(payload),
@@ -304,15 +292,6 @@ export function generateLayoutFromPayload(input: {
     sectionId: "guide",
     title: "이번 달 실천 가이드",
     lines: buildGuideLines(payload),
-    colors,
-    compact,
-    maxChars,
-  });
-  addSection({
-    ctx,
-    sectionId: "pharmacist-ai",
-    title: "약사 코멘트 및 AI 종합평가",
-    lines: buildPharmacistAndAiLines(payload).map((line) => compactText(line, 150)),
     colors,
     compact,
     maxChars,

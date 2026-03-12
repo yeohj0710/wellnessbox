@@ -10,6 +10,7 @@ import { isReportExportEngineUnavailableReason } from "@/lib/b2b/export/engine-e
 import { exportPdfFromWebRoute } from "@/lib/b2b/export/web-route-pdf";
 import { logB2bAdminAction } from "@/lib/b2b/employee-service";
 import type { ReportSummaryPayload } from "@/lib/b2b/report-summary-payload";
+import { resolveReportPayloadWithLatestNote } from "@/lib/b2b/report-render-payload";
 import { runB2bReportExport } from "@/lib/b2b/report-service";
 import {
   requireAdminReport,
@@ -311,6 +312,12 @@ export async function runAdminReportPdfGetRoute(
     })
   );
   if (!reportResult.ok) return reportResult.response;
+  const reportPayload =
+    (await resolveReportPayloadWithLatestNote({
+      employeeId: reportResult.report.employeeId,
+      periodKey: reportResult.report.periodKey,
+      rawPayload: reportResult.report.reportPayload,
+    })) ?? reportResult.report.reportPayload;
 
   return runAdminReportPdfExport({
     req,
@@ -320,6 +327,6 @@ export async function runAdminReportPdfGetRoute(
     periodKey: reportResult.report.periodKey,
     captureWidthPx: resolveCaptureWidth(req),
     captureViewportWidthPx: resolveCaptureViewportWidth(req),
-    reportPayload: reportResult.report.reportPayload,
+    reportPayload,
   });
 }
