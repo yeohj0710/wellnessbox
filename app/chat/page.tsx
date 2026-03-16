@@ -8,6 +8,7 @@ import ProfileBanner from "./components/ProfileBanner";
 import ChatTopBar from "./components/ChatTopBar";
 import useChat from "./hooks/useChat";
 import { buildPageAgentContext } from "@/lib/chat/page-agent-context";
+import { buildAssistantLoadingMetaMap } from "@/components/chat/DesktopChatDockPanel.loading";
 
 const MessageBubble = dynamic(() => import("./components/MessageBubble"));
 const ProfileModal = dynamic(() => import("./components/ProfileModal"), {
@@ -112,33 +113,7 @@ export default function ChatPage() {
   }, [active?.messages.length]);
 
   const assistantLoadingMetaByIndex = useMemo(() => {
-    const meta = new Map<number, { contextText: string; userTurnCountBefore: number }>();
-    if (!active) return meta;
-
-    let userTurnCount = 0;
-    for (let index = 0; index < active.messages.length; index += 1) {
-      const message = active.messages[index];
-      if (message.role === "assistant") {
-        let contextText = "";
-        for (let cursor = index - 1; cursor >= 0; cursor -= 1) {
-          const prev = active.messages[cursor];
-          if (prev.role !== "user") continue;
-          if (typeof prev.content !== "string") continue;
-          const text = prev.content.trim();
-          if (!text) continue;
-          contextText = text;
-          break;
-        }
-        meta.set(index, {
-          contextText,
-          userTurnCountBefore: userTurnCount,
-        });
-      }
-      if (message.role === "user") {
-        userTurnCount += 1;
-      }
-    }
-    return meta;
+    return active ? buildAssistantLoadingMetaMap(active.messages) : new Map();
   }, [active]);
 
   return (
@@ -210,11 +185,6 @@ export default function ChatPage() {
                       m.role === "assistant"
                         ? assistantLoadingMetaByIndex.get(i)?.contextText || ""
                         : ""
-                    }
-                    loadingUserTurnCount={
-                      m.role === "assistant"
-                        ? assistantLoadingMetaByIndex.get(i)?.userTurnCountBefore ?? 0
-                        : 0
                     }
                   />
                   {m.role === "assistant" && (

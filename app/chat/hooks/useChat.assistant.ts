@@ -31,14 +31,11 @@ export async function streamAssistantReply(
 
   let fullText = await readStreamingText(response, input.onChunk);
 
-  const finalizedText = sanitizeAssistantText(fullText, true);
-  if (finalizedText !== fullText) {
-    fullText = finalizedText;
-  }
+  fullText = sanitizeAssistantText(fullText, true);
 
   try {
     fullText = await hydrateRecommendationPrices(fullText);
   } catch {}
 
-  return fullText;
+  return sanitizeAssistantText(fullText, true);
 }

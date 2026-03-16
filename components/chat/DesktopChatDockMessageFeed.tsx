@@ -80,7 +80,9 @@ export default function DesktopChatDockMessageFeed({
             <div className="rounded-2xl border border-slate-200 bg-white px-3.5 py-3 shadow-sm">
               <div className="flex items-center gap-2">
                 <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-sky-500" />
-                <p className="text-xs font-medium text-slate-700">AI 상담 준비 중...</p>
+                <p className="text-xs font-medium text-slate-700">
+                  대화를 준비하고 있어요.
+                </p>
               </div>
               <div className="mt-2 space-y-1.5">
                 <div className="h-2 w-11/12 animate-pulse rounded bg-slate-200" />
@@ -106,11 +108,6 @@ export default function DesktopChatDockMessageFeed({
                       message.role === "assistant"
                         ? assistantLoadingMetaByIndex.get(index)?.contextText || ""
                         : ""
-                    }
-                    loadingUserTurnCount={
-                      message.role === "assistant"
-                        ? assistantLoadingMetaByIndex.get(index)?.userTurnCountBefore ?? 0
-                        : 0
                     }
                   />
                   {message.role === "assistant" ? (

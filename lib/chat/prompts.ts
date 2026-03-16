@@ -50,7 +50,7 @@ export function buildMessages(input: BuildMessagesInput): PromptMessage[] {
     },
     {
       role: "system",
-      content: `내부 참고 라벨: ${
+      content: `참고 근거 라벨: ${
         input.contextSummary.evidenceLabels.join(", ") || "없음"
       }\n추가 확인 필요 항목: ${
         input.contextSummary.missingData.join(", ") || "없음"
@@ -76,7 +76,7 @@ export function buildMessages(input: BuildMessagesInput): PromptMessage[] {
     messages.push({
       role: "user",
       content:
-        "상담을 시작합니다. user_context_summary를 바탕으로 초기 답변을 작성해 주세요. 반드시 '개인별 분석 -> 실행 계획 -> 추가 확인 -> 추천 제품(7일 기준 가격)' 순서를 지키고, 문항+응답 기반 해석을 2개 이상 포함해 주세요. 영양소 설명은 반복하지 말고 우선순위 2~3개만 제시해 주세요.",
+        "상담을 시작합니다. user_context_summary를 바탕으로 첫 응답을 작성해 주세요. 길게 분석하지 말고, 먼저 지금 파악된 점을 짧게 말한 뒤 바로 가능한 제안이 있으면 한두 줄로 덧붙여 주세요. 확인 질문이 꼭 필요하면 마지막에 1개만 해 주세요. 사용자가 먼저 요청하지 않았다면 보고서처럼 길게 쓰지 말고, 필요할 때만 markdown 목록을 짧게 사용해 주세요.",
     });
     return messages;
   }

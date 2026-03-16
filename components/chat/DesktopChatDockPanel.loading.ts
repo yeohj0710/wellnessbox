@@ -2,13 +2,11 @@ import type { ChatMessage } from "@/types/chat";
 
 export type AssistantLoadingMeta = {
   contextText: string;
-  userTurnCountBefore: number;
 };
 
 export function buildAssistantLoadingMetaMap(messages: ChatMessage[]) {
   const meta = new Map<number, AssistantLoadingMeta>();
 
-  let userTurnCount = 0;
   for (let index = 0; index < messages.length; index += 1) {
     const message = messages[index];
     if (message.role === "assistant") {
@@ -24,11 +22,7 @@ export function buildAssistantLoadingMetaMap(messages: ChatMessage[]) {
       }
       meta.set(index, {
         contextText,
-        userTurnCountBefore: userTurnCount,
       });
-    }
-    if (message.role === "user") {
-      userTurnCount += 1;
     }
   }
 
