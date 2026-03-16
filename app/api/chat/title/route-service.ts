@@ -1,4 +1,5 @@
 import { getDefaultModel } from "@/lib/ai/model";
+import { callOpenAIChatCompletions } from "@/lib/ai/openai-chat-compat";
 import { DEFAULT_CHAT_TITLE } from "@/lib/chat/constants";
 import { buildTitleMessages } from "@/lib/chat/prompts";
 
@@ -66,19 +67,16 @@ async function requestModelTitle(
   apiKey: string,
   input: TitleInput
 ): Promise<TitleResolveResult> {
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
+  const response = await callOpenAIChatCompletions(
+    apiKey,
+    {
       model: await getDefaultModel(),
       messages: buildTitleMessages(input),
       temperature: 0.5,
       top_p: 0.9,
-    }),
-  });
+    },
+    10_000
+  );
 
   if (!response.ok) {
     const text = await response.text().catch(() => "");

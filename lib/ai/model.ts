@@ -1,10 +1,11 @@
-import { ChatOpenAI, OpenAIEmbeddings } from "@langchain/openai";
+import { OpenAIEmbeddings } from "@langchain/openai";
 import type { EmbeddingsInterface } from "@langchain/core/embeddings";
 import {
   DEFAULT_CHAT_MODEL,
   getDefaultModel as getConfiguredDefaultModel,
   normalizeChatModel,
 } from "@/lib/ai/models";
+import { createCompatibleChatOpenAI } from "@/lib/ai/openai-chat-compat";
 
 function ensureKey() {
   const key = process.env.OPENAI_API_KEY;
@@ -26,11 +27,10 @@ export function getChatModel(
   modelName = DEFAULT_CHAT_MODEL
 ) {
   const apiKey = ensureKey();
-  return new ChatOpenAI({
-    model: normalizeChatModel(modelName),
-    temperature: resolveChatTemperature(),
+  return createCompatibleChatOpenAI(normalizeChatModel(modelName), {
     apiKey,
     streaming: true,
+    temperature: resolveChatTemperature(),
   });
 }
 

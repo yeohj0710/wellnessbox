@@ -1,4 +1,8 @@
 import { getDefaultModel } from "@/lib/ai/model";
+import {
+  callOpenAIChatCompletions,
+  type OpenAIChatCompletionsPayload,
+} from "@/lib/ai/openai-chat-compat";
 import { CATEGORY_LABELS } from "@/lib/categories";
 import { toPlainText } from "@/lib/chat/context";
 import { buildSuggestionTopicClassifierMessages } from "@/lib/chat/prompts";
@@ -131,29 +135,10 @@ export function isValidSuggestionText(text: string) {
 
 export async function callOpenAI(
   apiKey: string,
-  payload: unknown,
+  payload: OpenAIChatCompletionsPayload,
   timeoutMs = 10000
 ) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    });
-
-    clearTimeout(timer);
-    return response;
-  } catch (error) {
-    clearTimeout(timer);
-    throw error;
-  }
+  return callOpenAIChatCompletions(apiKey, payload, timeoutMs);
 }
 
 export async function extractTopicByAI(apiKey: string, sourceText: string) {

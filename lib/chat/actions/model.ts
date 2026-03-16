@@ -1,5 +1,9 @@
 import { getDefaultModel } from "@/lib/ai/model";
 import {
+  callOpenAIChatCompletions,
+  type OpenAIChatCompletionsPayload,
+} from "@/lib/ai/openai-chat-compat";
+import {
   CHAT_ACTION_LABELS,
   CHAT_ACTION_TYPES,
   type ChatAgentExecuteDecision,
@@ -7,22 +11,12 @@ import {
 } from "@/lib/chat/agent-actions";
 import { buildTranscript, getOpenAIKey, normalizeActionTypeList, normalizeConfidence, normalizeExecuteDecision, toText, type ExecuteBody, type SuggestBody } from "@/lib/chat/actions/shared";
 
-async function callOpenAI(apiKey: string, payload: unknown, timeoutMs = 9000) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(timer);
-  }
+async function callOpenAI(
+  apiKey: string,
+  payload: OpenAIChatCompletionsPayload,
+  timeoutMs = 9000
+) {
+  return callOpenAIChatCompletions(apiKey, payload, timeoutMs);
 }
 
 export async function decideExecuteByModel(

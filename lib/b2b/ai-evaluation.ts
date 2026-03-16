@@ -1,9 +1,9 @@
 import "server-only";
 
 import { getDefaultModel } from "@/lib/ai/models";
+import { callOpenAIChatCompletions } from "@/lib/ai/openai-chat-compat";
 import type { B2bAiEvaluation } from "@/lib/b2b/analyzer";
 
-const OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions";
 const OPENAI_TIMEOUT_MS = 10_000;
 
 type GenerateAiEvaluationInput = {
@@ -123,17 +123,8 @@ async function requestOpenAiEvaluation(
   const apiKey = getOpenAiApiKey();
   if (!apiKey) return null;
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), OPENAI_TIMEOUT_MS);
-
   try {
-    const response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
+    const response = await callOpenAIChatCompletions(apiKey, {
         model,
         temperature: 0.2,
         max_tokens: 420,
@@ -151,9 +142,9 @@ async function requestOpenAiEvaluation(
             content: `다음 건강 지표 요약으로 종합 평가를 작성해 주세요.\n${buildPrompt(input)}`,
           },
         ],
-      }),
-      signal: controller.signal,
-    });
+      },
+      OPENAI_TIMEOUT_MS
+    );
     if (!response.ok) return null;
 
     const body = await response.json().catch(() => null);
@@ -165,8 +156,6 @@ async function requestOpenAiEvaluation(
     return parsed as OpenAiResponseDraft;
   } catch {
     return null;
-  } finally {
-    clearTimeout(timeout);
   }
 }
 

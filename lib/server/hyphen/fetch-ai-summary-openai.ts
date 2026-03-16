@@ -2,12 +2,12 @@ import {
   type OpenAiSummaryResult,
 } from "./fetch-ai-summary-model";
 import { getDefaultModel } from "@/lib/ai/models";
+import { callOpenAIChatCompletions } from "@/lib/ai/openai-chat-compat";
 import {
   asRecord,
   type NhisAiSnapshot,
 } from "./fetch-ai-summary-snapshot";
 
-const OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions";
 const OPENAI_TIMEOUT_MS = 9_000;
 
 function getOpenAiApiKey() {
@@ -35,17 +35,8 @@ export async function requestOpenAiSummary(
   if (!apiKey) return null;
   const model = await getDefaultModel();
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), OPENAI_TIMEOUT_MS);
-
   try {
-    const response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
+    const response = await callOpenAIChatCompletions(apiKey, {
         model,
         temperature: 0.2,
         max_tokens: 480,
@@ -61,9 +52,9 @@ export async function requestOpenAiSummary(
             content: `다음 데이터를 요약해 주세요.\n${buildPrompt(snapshot)}`,
           },
         ],
-      }),
-      signal: controller.signal,
-    });
+      },
+      OPENAI_TIMEOUT_MS
+    );
 
     if (!response.ok) {
       return null;
@@ -96,7 +87,5 @@ export async function requestOpenAiSummary(
     }
     console.warn("[hyphen][ai-summary] failed to call OpenAI", error);
     return null;
-  } finally {
-    clearTimeout(timeout);
   }
 }
