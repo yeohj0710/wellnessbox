@@ -298,6 +298,90 @@
   line-height: 1.5;
 }
 
+.coachCard {
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.coachInfo {
+  background: linear-gradient(180deg, #f7fbff 0%, #ffffff 100%);
+  border-color: #d5e4ff;
+}
+
+.coachWarn {
+  background: linear-gradient(180deg, #fffaf1 0%, #ffffff 100%);
+  border-color: #ffe2ae;
+}
+
+.coachSuccess {
+  background: linear-gradient(180deg, #f3fcf7 0%, #ffffff 100%);
+  border-color: #cdebd9;
+}
+
+.coachHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.coachBadge {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #245ecf;
+  background: #edf5ff;
+}
+
+.coachWarn .coachBadge {
+  color: #8a5b00;
+  background: #fff1d8;
+}
+
+.coachSuccess .coachBadge {
+  color: #12724d;
+  background: #e8f8ee;
+}
+
+.coachTitle {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-1);
+}
+
+.coachBody {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.coachList {
+  margin: 0;
+  padding: 0 0 0 18px;
+  display: grid;
+  gap: 6px;
+}
+
+.coachList li {
+  color: var(--ink-2);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.coachFootnote {
+  margin: 0;
+  color: var(--ink-3);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .optionalLoginDetails {
   margin-top: 2px;
   border-radius: 12px;

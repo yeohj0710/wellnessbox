@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
+import BetaFeatureGate from "@/components/common/BetaFeatureGate";
 import CartItemsSection from "./cartItemsSection";
+import CartRecoveryCoachCard from "./CartRecoveryCoachCard";
 import AddressSection from "./addressSection";
 import PharmacyInfoSection from "./pharmacyInfoSection";
 import PaymentSection from "./paymentSection";
@@ -16,6 +18,8 @@ import { useCartPayment } from "./hooks/useCartPayment";
 import { useCartLoginStatus } from "./hooks/useCartLoginStatus";
 import { useCartOverlayCloseBehavior } from "./hooks/useCartOverlayCloseBehavior";
 import { useCartClientPersistence } from "./hooks/useCartClientPersistence";
+import { useCartCheckoutOffer } from "./hooks/useCartCheckoutOffer";
+import { useCartRecovery } from "./hooks/useCartRecovery";
 import { usePhoneStatus } from "./hooks/usePhoneStatus";
 import type { CartProps } from "./cart.types";
 
@@ -40,6 +44,7 @@ export default function Cart({
   totalPrice,
   selectedPharmacy,
   allProducts,
+  stockRecovery,
   isPharmacyLoading,
   pharmacyError,
   onRetryPharmacyResolve,
@@ -142,6 +147,49 @@ export default function Cart({
 
   const deliveryFee = 3000;
   const totalPriceWithDelivery = totalPrice + deliveryFee;
+  const {
+    checkoutOfferItems,
+    checkoutOffer,
+    offerSummary,
+    handleCheckoutOfferAction,
+  } = useCartCheckoutOffer({
+    cartItems,
+    allProducts,
+    selectedPharmacy,
+    totalPrice,
+    onBulkChange: handleBulkChange,
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const preferredMethod = window.localStorage.getItem("preferredPaymentMethod");
+    if (!preferredMethod) return;
+
+    const allowedMethods = safeLoginStatus.isTestLoggedIn
+      ? new Set(["inicis", "kpn", "kakao"])
+      : new Set(["inicis", "kakao"]);
+
+    if (allowedMethods.has(preferredMethod)) {
+      setSelectedPaymentMethod(preferredMethod);
+    }
+
+    window.localStorage.removeItem("preferredPaymentMethod");
+  }, [safeLoginStatus.isTestLoggedIn]);
+  const { cartRecoveryModel, handleCartRecoveryAction } = useCartRecovery({
+    itemCount: cartItems.length,
+    totalPriceWithDelivery,
+    roadAddress,
+    selectedPaymentMethod,
+    setSelectedPaymentMethod,
+    phone,
+    isPhoneLinked,
+    phoneStatusLoading,
+    password,
+    checkoutOfferItems,
+    onBulkChange: handleBulkChange,
+    onOpenAddressModal: openAddressModal,
+    onOpenPhoneModal: openPhoneModal,
+  });
 
   const { handleRequestPayment, handlePayment } = useCartPayment({
     router,
@@ -185,6 +233,8 @@ export default function Cart({
         onRetryResolve={onRetryPharmacyResolve}
         isAddressMissing={!roadAddress?.trim()}
         onOpenAddressModal={openAddressModal}
+        userSummary={offerSummary}
+        stockRecovery={stockRecovery}
       />
 
       <AddressSection
@@ -214,6 +264,21 @@ export default function Cart({
         onShowDetail={openPharmacyDetail}
       />
 
+      {cartRecoveryModel ? (
+        <div className="mt-4 px-4">
+          <BetaFeatureGate
+            title="Beta 구매 회복 가이드"
+            helper="새로 추가된 장바구니 회복 제안은 필요할 때만 펼쳐보세요."
+          >
+            <CartRecoveryCoachCard
+              model={cartRecoveryModel}
+              onAction={handleCartRecoveryAction}
+              hideBehindBeta={false}
+            />
+          </BetaFeatureGate>
+        </div>
+      ) : null}
+
       {showPharmacyDetail && (
         <PharmacyDetailModal
           selectedPharmacy={selectedPharmacy}
@@ -230,6 +295,22 @@ export default function Cart({
         totalPriceWithDelivery={totalPriceWithDelivery}
         customTestAmount={customTestAmount}
         setCustomTestAmount={setCustomTestAmount}
+        isUserLoggedIn={safeLoginStatus.isUserLoggedIn}
+        roadAddress={roadAddress}
+        phoneStatusLoading={phoneStatusLoading}
+        phone={phone}
+        isPhoneLinked={isPhoneLinked}
+        password={password}
+        itemCount={cartItems.length}
+        hasDeliveryContext={
+          Boolean(requestNotes.trim()) ||
+          Boolean(entrancePassword.trim()) ||
+          Boolean(directions.trim())
+        }
+        checkoutOffer={checkoutOffer}
+        onCheckoutOfferAction={handleCheckoutOfferAction}
+        onOpenAddressModal={openAddressModal}
+        onOpenPhoneModal={openPhoneModal}
         onRequestPayment={handleRequestPayment}
       />
 

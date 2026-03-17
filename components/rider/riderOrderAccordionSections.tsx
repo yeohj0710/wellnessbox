@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { ORDER_STATUS, type OrderStatus } from "@/lib/order/orderStatus";
+import { buildRiderOrderCopilot } from "@/lib/ops/order-status-copilot";
 import type {
   OrderAccordionOrder,
   OrderLineItem,
@@ -19,6 +20,16 @@ export function RiderOrderStatusActionsSection({
   onCancelPickup,
 }: RiderOrderStatusActionsSectionProps) {
   const isLoading = loadingStatus === order.id;
+  const copilot = buildRiderOrderCopilot(order);
+
+  const pickupClassName =
+    copilot.recommendedStatus === ORDER_STATUS.PICKUP_COMPLETE
+      ? "ring-2 ring-amber-300 ring-offset-2"
+      : "";
+  const deliveryClassName =
+    copilot.recommendedStatus === ORDER_STATUS.DELIVERY_COMPLETE
+      ? "ring-2 ring-amber-300 ring-offset-2"
+      : "";
 
   return (
     <div className="flex flex-col sm:flex-row justify-between sm:gap-8 mt-12 mb-6">
@@ -26,7 +37,7 @@ export function RiderOrderStatusActionsSection({
       <div className="flex gap-2 mt-4 sm:mt-0">
         <button
           onClick={() => void onUpdateOrderStatus(order.id, ORDER_STATUS.PICKUP_COMPLETE)}
-          className="text-sm flex justify-center items-center w-20 h-8 bg-orange-400 hover:bg-orange-500 text-white rounded"
+          className={`text-sm flex justify-center items-center w-20 h-8 bg-orange-400 hover:bg-orange-500 text-white rounded ${pickupClassName}`}
           disabled={isLoading}
         >
           {isLoading ? (
@@ -37,7 +48,7 @@ export function RiderOrderStatusActionsSection({
         </button>
         <button
           onClick={() => void onUpdateOrderStatus(order.id, ORDER_STATUS.DELIVERY_COMPLETE)}
-          className="text-sm flex justify-center items-center w-20 h-8 bg-gray-400 hover:bg-gray-500 text-white rounded"
+          className={`text-sm flex justify-center items-center w-20 h-8 bg-gray-400 hover:bg-gray-500 text-white rounded ${deliveryClassName}`}
           disabled={isLoading}
         >
           {isLoading ? (
@@ -58,6 +69,51 @@ export function RiderOrderStatusActionsSection({
           )}
         </button>
       </div>
+    </div>
+  );
+}
+
+type RiderOrderStatusCopilotSectionProps = {
+  order: OrderAccordionOrder;
+};
+
+export function RiderOrderStatusCopilotSection({
+  order,
+}: RiderOrderStatusCopilotSectionProps) {
+  const copilot = buildRiderOrderCopilot(order);
+  const toneClassName =
+    copilot.tone === "strong"
+      ? "border-amber-200 bg-amber-50/80"
+      : copilot.tone === "medium"
+      ? "border-sky-200 bg-sky-50/80"
+      : "border-slate-200 bg-slate-50/80";
+  const badgeClassName =
+    copilot.tone === "strong"
+      ? "bg-amber-100 text-amber-800"
+      : copilot.tone === "medium"
+      ? "bg-sky-100 text-sky-800"
+      : "bg-slate-200 text-slate-700";
+
+  return (
+    <div className={`mt-6 rounded-2xl border px-4 py-3 ${toneClassName}`}>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${badgeClassName}`}>
+          {copilot.badgeLabel}
+        </span>
+        <span className="text-sm font-bold text-slate-900">{copilot.title}</span>
+      </div>
+
+      <p className="mt-2 text-sm leading-6 text-slate-600">{copilot.helper}</p>
+
+      {copilot.reasonLines.length > 0 ? (
+        <div className="mt-3 space-y-1">
+          {copilot.reasonLines.map((line) => (
+            <p key={line} className="text-xs leading-5 text-slate-600">
+              {line}
+            </p>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

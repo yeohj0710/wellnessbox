@@ -6,7 +6,7 @@ export class ApiRequestError extends Error {
 
   constructor(status: number, payload: ApiErrorPayload) {
     super(
-      payload.error || "요청 처리에 실패했습니다. '다시 시도'를 눌러 한 번 더 진행해 주세요."
+      payload.error || "요청 처리에 실패했어요. 잠시 뒤 다시 시도해 주세요."
     );
     this.name = "ApiRequestError";
     this.status = status;
@@ -76,10 +76,10 @@ export async function requestJson<T>(
 ): Promise<T> {
   const timeoutMessage =
     options?.timeoutMessage ||
-    "요청 시간이 길어 응답을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.";
+    "응답이 지연되고 있어요. 잠시 뒤 다시 시도해 주세요.";
   const networkErrorMessage =
     options?.networkErrorMessage ||
-    "네트워크 연결이 불안정합니다. 와이파이/모바일 데이터 상태를 확인한 뒤 다시 시도해 주세요.";
+    "네트워크 연결이 불안정해요. 와이파이 또는 모바일 데이터 상태를 확인한 뒤 다시 시도해 주세요.";
 
   const { signal, clear } = resolveAbortSignal({
     timeoutMs: options?.timeoutMs,

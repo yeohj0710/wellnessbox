@@ -1,4 +1,5 @@
 import type { ReportScoreDetailMap } from "@/lib/b2b/report-score-engine";
+import type { B2bReportPackagedProduct } from "@/lib/b2b/report-customization-types";
 
 export type ReportSummaryPayload = {
   meta?: {
@@ -141,5 +142,9 @@ export type ReportSummaryPayload = {
     summary?: string | null;
     recommendations?: string | null;
     cautions?: string | null;
+  };
+  reportAddendum?: {
+    consultationSummary?: string | null;
+    packagedProducts?: B2bReportPackagedProduct[];
   };
 };

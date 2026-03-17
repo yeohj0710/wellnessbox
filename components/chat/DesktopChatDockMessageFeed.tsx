@@ -2,11 +2,11 @@
 
 import type { MutableRefObject } from "react";
 import type { ChatActionType } from "@/lib/chat/agent-actions";
+import type { UserContextSummary } from "@/lib/chat/context";
 import type { ChatSession, UserProfile } from "@/types/chat";
-import MessageBubble from "@/app/chat/components/MessageBubble";
+import type { ReferenceDataProps } from "@/app/chat/components/ReferenceData";
+import ChatConversationTimeline from "@/app/chat/components/ChatConversationTimeline";
 import ProfileBanner from "@/app/chat/components/ProfileBanner";
-import ReferenceData from "@/app/chat/components/ReferenceData";
-import RecommendedProductActions from "@/app/chat/components/RecommendedProductActions";
 import AssessmentActionCard from "@/app/chat/components/AssessmentActionCard";
 import AgentCapabilityHub from "@/app/chat/components/AgentCapabilityHub";
 import type { AssistantLoadingMeta } from "./DesktopChatDockPanel.loading";
@@ -21,9 +21,11 @@ type DesktopChatDockMessageFeedProps = {
   onCloseProfileBanner: () => void;
   bootstrapPending: boolean;
   active: ChatSession | null;
-  orders: any[];
-  assessResult: any | null;
-  checkAiResult: any | null;
+  userContextSummary: UserContextSummary;
+  orders: ReferenceDataProps["orders"];
+  assessResult: ReferenceDataProps["assessResult"];
+  checkAiResult: ReferenceDataProps["checkAiResult"];
+  healthLink: ReferenceDataProps["healthLink"];
   assistantLoadingMetaByIndex: Map<number, AssistantLoadingMeta>;
   showAgentCapabilityHub: boolean;
   agentCapabilityActions: Parameters<typeof AgentCapabilityHub>[0]["actions"];
@@ -46,9 +48,11 @@ export default function DesktopChatDockMessageFeed({
   onCloseProfileBanner,
   bootstrapPending,
   active,
+  userContextSummary,
   orders,
   assessResult,
   checkAiResult,
+  healthLink,
   assistantLoadingMetaByIndex,
   showAgentCapabilityHub,
   agentCapabilityActions,
@@ -76,62 +80,40 @@ export default function DesktopChatDockMessageFeed({
         ) : null}
 
         <div className="space-y-3">
-          {bootstrapPending && (!active || active.messages.length === 0) ? (
-            <div className="rounded-2xl border border-slate-200 bg-white px-3.5 py-3 shadow-sm">
-              <div className="flex items-center gap-2">
-                <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-sky-500" />
-                <p className="text-xs font-medium text-slate-700">
-                  대화를 준비하고 있어요.
-                </p>
-              </div>
-              <div className="mt-2 space-y-1.5">
-                <div className="h-2 w-11/12 animate-pulse rounded bg-slate-200" />
-                <div className="h-2 w-4/5 animate-pulse rounded bg-slate-200" />
-              </div>
-            </div>
-          ) : null}
-
-          {active && active.messages.length > 0
-            ? active.messages.map((message, index) => (
-                <div key={message.id}>
-                  {index === 0 ? (
-                    <ReferenceData
-                      orders={orders}
-                      assessResult={assessResult}
-                      checkAiResult={checkAiResult}
-                    />
-                  ) : null}
-                  <MessageBubble
-                    role={message.role}
-                    content={message.content}
-                    loadingContextText={
-                      message.role === "assistant"
-                        ? assistantLoadingMetaByIndex.get(index)?.contextText || ""
-                        : ""
-                    }
-                  />
-                  {message.role === "assistant" ? (
-                    <RecommendedProductActions content={message.content} />
-                  ) : null}
+          <ChatConversationTimeline
+            active={active}
+            bootstrapPending={bootstrapPending}
+            bootstrapFallback={
+              <div className="rounded-2xl border border-slate-200 bg-white px-3.5 py-3 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-sky-500" />
+                  <p className="text-xs font-medium text-slate-700">
+                    대화를 준비하고 있어요
+                  </p>
                 </div>
-              ))
-            : null}
-
-          <AgentCapabilityHub
-            visible={showAgentCapabilityHub}
-            actions={agentCapabilityActions}
-            disabled={loading || bootstrapPending || actionLoading}
+                <div className="mt-2 space-y-1.5">
+                  <div className="h-2 w-11/12 animate-pulse rounded bg-slate-200" />
+                  <div className="h-2 w-4/5 animate-pulse rounded bg-slate-200" />
+                </div>
+              </div>
+            }
+            summary={userContextSummary}
+            orders={orders}
+            assessResult={assessResult}
+            checkAiResult={checkAiResult}
+            healthLink={healthLink}
+            assistantLoadingMetaByIndex={assistantLoadingMetaByIndex}
+            showAgentCapabilityHub={showAgentCapabilityHub}
+            agentCapabilityActions={agentCapabilityActions}
+            loading={loading}
+            actionLoading={actionLoading}
             onRunPrompt={onRunPrompt}
             onRunAction={onRunAction}
+            inChatAssessmentPrompt={inChatAssessmentPrompt}
+            onCancelInChatAssessment={onCancelInChatAssessment}
+            onOpenAssessmentPage={onOpenAssessmentPage}
+            messagesEndRef={messagesEndRef}
           />
-          <AssessmentActionCard
-            prompt={inChatAssessmentPrompt}
-            disabled={loading || bootstrapPending}
-            onSelectOption={onRunPrompt}
-            onCancel={onCancelInChatAssessment}
-            onOpenPage={onOpenAssessmentPage}
-          />
-          <div ref={messagesEndRef} />
         </div>
       </div>
     </div>

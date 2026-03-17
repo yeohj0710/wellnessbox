@@ -97,12 +97,14 @@ export function normalizeCheckAiScores(
 export async function requestCheckAiPredictScores(
   responses: readonly number[],
   predictUrl = "/api/predict",
-  limit = 3
+  limit = 3,
+  signal?: AbortSignal
 ): Promise<CheckAiClientScore[]> {
   const response = await fetch(predictUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ responses }),
+    signal,
   });
 
   if (!response.ok) return [];

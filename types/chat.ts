@@ -47,6 +47,7 @@ export interface ChatRequestBody {
   orders?: any[];
   assessResult?: any;
   checkAiResult?: any;
+  healthLink?: any;
   chatSessions?: any[];
   actorContext?: {
     loggedIn?: boolean;

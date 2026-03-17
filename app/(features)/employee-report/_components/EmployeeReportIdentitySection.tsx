@@ -1,3 +1,6 @@
+"use client";
+
+import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
 import styles from "@/components/b2b/B2bUx.module.css";
 import type { IdentityInput } from "../_lib/client-types";
 
@@ -85,7 +88,7 @@ export default function EmployeeReportIdentitySection({
             data-testid="employee-report-restart-auth"
             className={styles.buttonPrimary}
           >
-            {busy ? "처리 중..." : primaryActionLabel}
+            {busy ? <InlineSpinnerLabel label="처리 중" /> : primaryActionLabel}
           </button>
           {showSignAction ? (
             <button
@@ -95,7 +98,11 @@ export default function EmployeeReportIdentitySection({
               data-testid="employee-report-sign-sync"
               className={styles.buttonSecondary}
             >
-              {busy ? "확인 중..." : "카카오톡 인증 완료 후 확인"}
+              {busy ? (
+                <InlineSpinnerLabel label="확인 중" />
+              ) : (
+                "카카오톡 인증 완료 후 확인"
+              )}
             </button>
           ) : null}
         </div>
@@ -105,8 +112,8 @@ export default function EmployeeReportIdentitySection({
         <summary>기존 조회 기록이 있으면 바로 불러오기</summary>
         <div className={styles.optionalBody}>
           <p className={styles.optionalText}>
-            이전에 같은 이름/생년월일/휴대폰 번호로 조회한 기록이 있으면 인증 없이
-            리포트를 바로 불러올 수 있습니다.
+            이전에 같은 이름, 생년월일, 휴대폰 번호로 조회한 기록이 있으면 인증 없이
+            리포트를 바로 불러올 수 있어요.
           </p>
           <div className={styles.actionRow}>
             <button
@@ -115,7 +122,11 @@ export default function EmployeeReportIdentitySection({
               disabled={busy}
               className={styles.buttonGhost}
             >
-              {busy ? "불러오는 중..." : "기존 조회 정보 불러오기"}
+              {busy ? (
+                <InlineSpinnerLabel label="불러오는 중" />
+              ) : (
+                "기존 조회 정보 불러오기"
+              )}
             </button>
           </div>
         </div>

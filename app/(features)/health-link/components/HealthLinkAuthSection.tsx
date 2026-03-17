@@ -5,14 +5,17 @@ import Image from "next/image";
 import KakaoLoginButton from "@/components/common/kakaoLoginButton";
 import { useToast } from "@/components/common/toastContext.client";
 import { NHIS_ERR_CODE_LOGIN_SESSION_EXPIRED } from "../constants";
+import type { NhisStatusResponse } from "../types";
 import { SpinnerLabel } from "./HealthLinkCommon";
 import { HEALTH_LINK_COPY } from "../copy";
 import type { PrimaryFlow } from "../ui-types";
 import { parseErrorMessage } from "../utils";
+import { HealthLinkRecoveryCoach } from "./HealthLinkRecoveryCoach";
 import styles from "../HealthLinkClient.module.css";
 
 type HealthLinkAuthSectionProps = {
   loggedIn: boolean;
+  status?: NhisStatusResponse["status"];
   statusError: string | null;
   actionNotice: string | null;
   actionError: string | null;
@@ -36,6 +39,7 @@ type HealthLinkAuthSectionProps = {
 
 export function HealthLinkAuthSection({
   loggedIn,
+  status,
   statusError,
   actionNotice,
   actionError,
@@ -122,6 +126,12 @@ export function HealthLinkAuthSection({
         <strong>{requiredTitle}</strong>
         <p>{requiredDescription}</p>
       </div>
+      <HealthLinkRecoveryCoach
+        status={status}
+        primaryFlow={primaryFlow}
+        sessionExpired={isSessionExpired}
+        showHealthInPrereqGuide={showHealthInPrereqGuide}
+      />
 
       {showIdentityForm ? (
         <>

@@ -1,9 +1,12 @@
 import { Suspense } from "react";
 import JourneyCtaBridge from "@/app/(components)/journeyCtaBridge";
 import SymptomImprovement from "@/app/(components)/symptomImprovement";
+import ExploreAdaptiveEntryStack from "./ExploreAdaptiveEntryStack";
+import type { ColumnSummary } from "@/app/column/_lib/columns-types";
 import PopularIngredientsNav from "@/app/(components)/popularIngredientsNav.client";
 import SupplementRankingNav from "@/app/(components)/supplementRankingNav.client";
 import HomeProductSectionServer from "@/app/(components)/homeProductSection.server";
+import { getAllColumnSummaries } from "@/app/column/_lib/columns";
 import { getHomePageData, type HomePageData } from "@/lib/product/home-data";
 
 export const revalidate = 60;
@@ -56,12 +59,45 @@ async function ExploreSupplementRankingSection({
   );
 }
 
+async function ExploreAdaptiveEntrySection({
+  homeDataPromise,
+  columnsPromise,
+}: {
+  homeDataPromise: Promise<HomePageData>;
+  columnsPromise: Promise<ColumnSummary[]>;
+}) {
+  const [{ categories }, columns] = await Promise.all([
+    homeDataPromise,
+    columnsPromise,
+  ]);
+  const normalizedCategories = categories
+    .map((category) => ({
+      id: category.id,
+      name: category.name || "",
+    }))
+    .filter((category) => category.id > 0 && category.name);
+
+  return (
+    <ExploreAdaptiveEntryStack
+      categories={normalizedCategories}
+      columns={columns}
+    />
+  );
+}
+
 export default function ExplorePage() {
   const homeDataPromise = getHomePageData();
+  const columnsPromise = getAllColumnSummaries();
 
   return (
     <>
       <JourneyCtaBridge />
+      <Suspense fallback={null}>
+        <ExploreAdaptiveEntrySection
+          homeDataPromise={homeDataPromise}
+          columnsPromise={columnsPromise}
+        />
+      </Suspense>
       <Suspense fallback={<CardSectionFallback />}>
         <ExplorePopularIngredientsSection homeDataPromise={homeDataPromise} />
       </Suspense>

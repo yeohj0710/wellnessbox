@@ -1,3 +1,7 @@
+"use client";
+
+import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
+
 type ForceRefreshConfirmDialogProps = {
   open: boolean;
   busy: boolean;
@@ -34,7 +38,7 @@ export default function ForceRefreshConfirmDialog({
       <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
         <h2 className="text-lg font-bold text-slate-900">강제 재조회 실행</h2>
         <p className="mt-2 text-sm leading-6 text-slate-700">
-          캐시를 무시하고 재조회합니다. 추가 API 비용이 발생하며, 되돌릴 수 없습니다.
+          캐시를 무시하고 다시 조회합니다. 추가 API 비용이 발생하며 되돌릴 수 없어요.
         </p>
         <label className="mt-3 flex items-start gap-2 text-sm text-slate-700">
           <input
@@ -45,7 +49,7 @@ export default function ForceRefreshConfirmDialog({
             className="mt-1"
             disabled={busy}
           />
-          비용 발생 가능성을 확인했고, 운영 목적에서만 실행합니다.
+          비용 발생 가능성을 확인했고, 운영 목적으로만 실행합니다.
         </label>
         <p className="mt-3 text-xs text-slate-500">
           확인을 위해 아래 입력창에 <span className="font-semibold">강제 재조회</span>를
@@ -76,7 +80,7 @@ export default function ForceRefreshConfirmDialog({
             data-testid="employee-report-force-sync-confirm"
             className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition-colors hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {busy ? "실행 중..." : "강제 재조회 실행"}
+            {busy ? <InlineSpinnerLabel label="실행 중" /> : "강제 재조회 실행"}
           </button>
         </div>
       </div>

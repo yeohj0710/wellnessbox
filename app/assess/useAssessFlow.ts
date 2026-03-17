@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { evaluate } from "@/app/assess/logic/algorithm";
-import { fixedA, hashChoice } from "./data/questions";
+import { fixedA } from "./data/questions";
 import { getOrCreateClientId } from "@/lib/client-id";
 import { KEY_TO_CODE, type CategoryKey } from "@/lib/categories";
 import type { CSectionResult } from "./components/CSection";
@@ -99,6 +99,7 @@ export function useAssessFlow() {
     total,
     progressMsg,
     sectionTitle,
+    questionGuide,
   } = useAssessFlowDerivedState({
     section,
     answers,
@@ -204,7 +205,7 @@ export function useAssessFlow() {
           };
         }
       } else {
-        const nextId = remaining[hashChoice(current, val) % remaining.length];
+        const nextId = remaining[0];
         action = () => setCurrent(nextId);
       }
 
@@ -292,6 +293,7 @@ export function useAssessFlow() {
     progressMsg,
     currentQuestion,
     sectionTitle,
+    questionGuide,
     answers,
     current,
     cancelBtnRef,

@@ -5,6 +5,7 @@ import { ORDER_STATUS } from "./orderStatus";
 import type { Prisma } from "@prisma/client";
 import {
   basicOrderSelection,
+  basicOperatorOrderSelection,
   type BasicOperatorOrderPage,
   buildOrderPhoneCandidates,
   DEFAULT_ORDER_QUERY_PAGE,
@@ -140,6 +141,7 @@ export async function getOrderForReview(orderid: number) {
       orderItems: {
         select: {
           id: true,
+          quantity: true,
           review: { select: { rate: true, content: true } },
           pharmacyProduct: {
             select: {
@@ -167,6 +169,18 @@ export async function getBasicOrdersByPharmacy(
   take = DEFAULT_ORDER_QUERY_TAKE
 ): Promise<BasicOperatorOrderPage> {
   return getBasicOperatorOrdersPage({ pharmacyId }, page, take);
+}
+
+export async function getRecentFeedbackOrdersByPharmacy(
+  pharmacyId: number,
+  take = 80
+) {
+  return db.order.findMany({
+    where: { pharmacyId },
+    select: basicOperatorOrderSelection,
+    orderBy: { createdAt: "desc" },
+    take,
+  });
 }
 
 export async function getBasicOrdersByRider(

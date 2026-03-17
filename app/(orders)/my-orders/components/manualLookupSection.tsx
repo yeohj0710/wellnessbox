@@ -1,5 +1,6 @@
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { FormEvent } from "react";
+import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
 
 interface ManualLookupSectionProps {
   phonePart1: string;
@@ -34,6 +35,8 @@ export function ManualLookupSection({
   onChangePhonePart3,
   onChangePassword,
 }: ManualLookupSectionProps) {
+  const isPhoneComplete = phonePart2.length === 4 && phonePart3.length === 4;
+
   return (
     <section
       id="manual-form"
@@ -42,7 +45,7 @@ export function ManualLookupSection({
       <div>
         <h2 className="text-base font-bold text-slate-900">다른 전화번호로 조회</h2>
         <p className="mt-1 text-sm leading-relaxed text-slate-600">
-          결제 시 입력한 전화번호와 주문 조회 비밀번호를 입력해 주세요.
+          결제 때 입력한 번호와 주문 조회 비밀번호로 찾을 수 있어요.
         </p>
       </div>
 
@@ -69,6 +72,7 @@ export function ManualLookupSection({
                   ? "bg-slate-100 text-slate-500"
                   : "text-slate-800"
               }`}
+              placeholder="010"
             />
             <span className="text-slate-400">-</span>
             <input
@@ -91,6 +95,7 @@ export function ManualLookupSection({
                   ? "bg-slate-100 text-slate-500"
                   : "text-slate-800"
               }`}
+              placeholder="1234"
             />
             <span className="text-slate-400">-</span>
             <input
@@ -110,10 +115,11 @@ export function ManualLookupSection({
                   ? "bg-slate-100 text-slate-500"
                   : "text-slate-800"
               }`}
+              placeholder="5678"
             />
           </div>
-          {manualPhoneDisplay ? (
-            <p className="mt-1 text-xs text-slate-500">입력값: {manualPhoneDisplay}</p>
+          {isPhoneComplete && manualPhoneDisplay ? (
+            <p className="mt-1 text-xs text-slate-500">{manualPhoneDisplay}</p>
           ) : null}
         </div>
 
@@ -125,7 +131,7 @@ export function ManualLookupSection({
               autoComplete="current-password"
               value={password}
               onChange={(e) => onChangePassword(e.target.value)}
-              placeholder="주문 시 입력한 비밀번호"
+              placeholder="주문 때 입력한 비밀번호"
               className="h-11 w-full rounded-xl border border-slate-300 px-3 pr-10 text-slate-800 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
               disabled={loading}
             />
@@ -154,12 +160,9 @@ export function ManualLookupSection({
             disabled={loading}
           >
             {loading ? (
-              <span className="inline-flex items-center gap-2">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                주문 조회 중...
-              </span>
+              <InlineSpinnerLabel label="주문 조회 중" />
             ) : (
-              "해당 정보로 주문 조회"
+              "입력한 정보로 주문 조회"
             )}
           </button>
         </div>

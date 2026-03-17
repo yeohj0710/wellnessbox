@@ -1,5 +1,6 @@
 "use client";
 
+import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
 import type { ColumnPostDto, PostListFilterStatus } from "../_lib/types";
 
 type ColumnPostListSidebarProps = {
@@ -77,9 +78,11 @@ export function ColumnPostListSidebar({
 
       <div className="mt-4 max-h-[62vh] overflow-y-auto pr-1">
         {loadingList ? (
-          <p className="text-sm text-slate-500">목록을 불러오는 중...</p>
+          <div className="flex items-center gap-2 text-sm text-slate-500">
+            <InlineSpinnerLabel label="목록 불러오는 중" className="text-slate-500" />
+          </div>
         ) : posts.length === 0 ? (
-          <p className="text-sm text-slate-500">게시글이 없습니다.</p>
+          <p className="text-sm text-slate-500">게시글이 없어요.</p>
         ) : (
           <ul className="space-y-2">
             {posts.map((post) => (
@@ -96,7 +99,8 @@ export function ColumnPostListSidebar({
                   <p className="line-clamp-1 text-sm font-semibold text-slate-900">{post.title}</p>
                   <p className="mt-1 line-clamp-1 text-xs text-slate-500">{post.slug}</p>
                   <p className="mt-1 text-xs text-slate-500">
-                    {post.status === "published" ? "발행" : "초안"} / {formatDateTime(post.updatedAt)}
+                    {post.status === "published" ? "발행" : "초안"} /{" "}
+                    {formatDateTime(post.updatedAt)}
                   </p>
                 </button>
               </li>

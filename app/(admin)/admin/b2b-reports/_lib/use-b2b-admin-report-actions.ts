@@ -1,6 +1,7 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 import type { LayoutDocument } from "@/lib/b2b/export/layout-types";
 import type { LayoutValidationIssue } from "@/lib/b2b/export/validation-types";
+import type { B2bReportPackagedProduct } from "@/lib/b2b/report-customization-types";
 import type { WellnessSurveyTemplate } from "@/lib/wellness/data-template-types";
 import type { EmployeeListItem, LatestReport, ReportAudit } from "./client-types";
 import type { B2bAdminReportRunBusyAction } from "./use-b2b-admin-report-busy-action";
@@ -38,13 +39,18 @@ type UseB2bAdminReportActionsParams = {
   setSurveyDirty: Dispatch<SetStateAction<boolean>>;
   setAnalysisDirty: Dispatch<SetStateAction<boolean>>;
   setNoteDirty: Dispatch<SetStateAction<boolean>>;
+  setReportCustomizationDirty: Dispatch<SetStateAction<boolean>>;
   setNote: Dispatch<SetStateAction<string>>;
   setRecommendations: Dispatch<SetStateAction<string>>;
   setCautions: Dispatch<SetStateAction<string>>;
   setAnalysisText: Dispatch<SetStateAction<string>>;
+  setReportConsultationSummary: Dispatch<SetStateAction<string>>;
+  setReportPackagedProducts: Dispatch<SetStateAction<B2bReportPackagedProduct[]>>;
   note: string;
   recommendations: string;
   cautions: string;
+  reportConsultationSummary: string;
+  reportPackagedProducts: B2bReportPackagedProduct[];
   analysisText: string;
 };
 
@@ -65,6 +71,9 @@ export function useB2bAdminReportActions(params: UseB2bAdminReportActionsParams)
     setCautions: params.setCautions,
     setAnalysisDirty: params.setAnalysisDirty,
     setAnalysisText: params.setAnalysisText,
+    setReportCustomizationDirty: params.setReportCustomizationDirty,
+    setReportConsultationSummary: params.setReportConsultationSummary,
+    setReportPackagedProducts: params.setReportPackagedProducts,
   });
 
   const crudActions = useB2bAdminReportCrudActions({
@@ -88,9 +97,12 @@ export function useB2bAdminReportActions(params: UseB2bAdminReportActionsParams)
     setSurveyDirty: params.setSurveyDirty,
     setAnalysisDirty: params.setAnalysisDirty,
     setNoteDirty: params.setNoteDirty,
+    setReportCustomizationDirty: params.setReportCustomizationDirty,
     note: params.note,
     recommendations: params.recommendations,
     cautions: params.cautions,
+    reportConsultationSummary: params.reportConsultationSummary,
+    reportPackagedProducts: params.reportPackagedProducts,
     analysisText: params.analysisText,
   });
 

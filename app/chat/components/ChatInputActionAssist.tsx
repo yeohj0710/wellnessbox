@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronUpIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
 import type { UnifiedAction } from "./chatInput.actions";
 
 type ChatInputActionAssistProps = {
@@ -39,7 +40,9 @@ export function ChatInputActionAssist({
       {showCoachmark && (
         <div className="mx-auto flex max-w-[760px] justify-end px-1">
           <div className="relative max-w-[300px] rounded-2xl bg-slate-900 px-3 py-2 text-white shadow-[0_14px_28px_rgba(15,23,42,0.35)]">
-            <p className="text-[12px] font-semibold">말로 지시하면 실행까지 바로 도와드려요.</p>
+            <p className="text-[12px] font-semibold">
+              말로 지시하면 실행까지 바로 이어서 도와드려요
+            </p>
             <p className="mt-0.5 text-[11px] text-slate-200">{helperHint}</p>
             <div className="mt-2 flex items-center justify-end gap-2">
               <button
@@ -50,7 +53,7 @@ export function ChatInputActionAssist({
                   onDismissCoachmark();
                 }}
               >
-                예시 보기
+                다시 보기
               </button>
               <button
                 type="button"
@@ -70,7 +73,7 @@ export function ChatInputActionAssist({
         <div className="mx-auto max-w-[760px] px-1">
           <div className="flex items-center justify-between gap-2 rounded-full border border-sky-200 bg-sky-50/90 px-3 py-1.5">
             <p className="truncate text-[11px] font-medium text-sky-800">
-              장바구니/주문/화면 이동까지 대화로 실행할 수 있어요
+              장바구니, 주문, 화면 이동까지 빠르게 이어서 도와드릴 수 있어요
             </p>
             <button
               type="button"
@@ -80,7 +83,7 @@ export function ChatInputActionAssist({
               }}
               className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-sky-700 hover:bg-sky-100"
             >
-              예시
+              보기
             </button>
           </div>
         </div>
@@ -122,9 +125,13 @@ export function ChatInputActionAssist({
             ))}
           </div>
           {quickActionLoading && (
-            <p className="mt-2 text-center text-[11px] font-medium text-slate-500">
-              요청 동작을 실행 중이에요...
-            </p>
+            <div className="mt-2 flex justify-center text-[11px] font-medium text-slate-500">
+              <InlineSpinnerLabel
+                label="요청 동작 실행 중"
+                className="text-slate-500"
+                spinnerClassName="text-slate-400"
+              />
+            </div>
           )}
         </div>
       )}

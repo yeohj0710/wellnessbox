@@ -15,8 +15,7 @@ function parseAssessSummaryLine(line: string) {
   const trimmed = line.trim();
   const match = trimmed.match(/^(.+?)\s+([\d.]+)%$/);
   if (!match) return stripPercentSuffix(normalizeCategoryLabel(trimmed));
-  const label = normalizeCategoryLabel(match[1]);
-  return stripPercentSuffix(label);
+  return stripPercentSuffix(normalizeCategoryLabel(match[1]));
 }
 
 export function buildAssessFindings(
@@ -32,18 +31,8 @@ export function buildAssessFindings(
   const topLabels = asStringArray(assess?.normalized?.topLabels).map(
     normalizeCategoryLabel
   );
-  const scores = Array.isArray(assess?.normalized?.scores)
-    ? assess?.normalized?.scores || []
-    : [];
-
   if (topLabels.length > 0) {
-    const withScores = topLabels.map((label, idx) => {
-      const score = scores[idx];
-      const value = typeof score?.value === "number" ? score.value : null;
-      if (value == null) return stripPercentSuffix(label);
-      return stripPercentSuffix(label);
-    });
-    return uniq(withScores.filter(Boolean), 7);
+    return uniq(topLabels.map((label) => stripPercentSuffix(label)), 7);
   }
 
   const local = asStringArray(localAssessCats).map(normalizeCategoryLabel);
@@ -96,10 +85,10 @@ function buildAnswerPairs(
 const HIGH_IMPACT_QUESTION_PATTERN =
   /(임신|수유|복용 중|복용약|알레르기|질환|빈혈|혈압|당뇨|통증|두근|어지럼|불면|우울|출혈|신장|간)/;
 const HIGH_IMPACT_ANSWER_PATTERN =
-  /(예|있음|있어요|자주|매우|심함|높음|불편|어렵|부족|나쁨|불규칙|많음|과다|가끔|종종)/;
-const LOW_IMPACT_ANSWER_PATTERN = /(아니오|없음|해당 없음|보통|괜찮|정상|복용 안 함)/;
+  /(예|있음|자주|매우|심함|높음|불편|이상|부족|과다|위험)/;
+const LOW_IMPACT_ANSWER_PATTERN = /(아니오|없음|해당 없음|보통|괜찮음|정상)/;
 const LIFESTYLE_QUESTION_PATTERN =
-  /(수면|운동|식사|생활|습관|스트레스|음주|흡연|카페인|수분|물 섭취|활동량)/;
+  /(수면|운동|식사|생활|음주|스트레스|흡연|카페인|수분|활동)/;
 
 function classifyAnswerSignal(pair: { question: string; answer: string }) {
   const isCautionQuestion = HIGH_IMPACT_QUESTION_PATTERN.test(pair.question);

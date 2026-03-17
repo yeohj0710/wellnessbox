@@ -4,6 +4,7 @@ import styles from "./B2bUx.module.css";
 import type { ReportSummaryPayload } from "@/lib/b2b/report-summary-payload";
 import { firstOrDash, formatDate } from "./report-summary/helpers";
 import {
+  buildReportSummaryAddendumModel,
   buildReportSummaryHealthMetrics,
   hasReportSummaryHealthMetricsContent,
   resolveReportSummaryFinalPharmacistComment,
@@ -23,6 +24,7 @@ import {
   REPORT_SUMMARY_RADAR_LEVELS,
 } from "./report-summary/overview-model";
 import {
+  ReportSummaryAddendumPage,
   ReportSummaryFinalCommentPage,
   ReportSummaryHealthPage,
   ReportSummaryOverviewPage,
@@ -72,10 +74,16 @@ export default function ReportSummaryCards(props: {
   const showHealthPage = hasReportSummaryHealthMetricsContent(healthMetrics);
   const finalPharmacistComment = resolveReportSummaryFinalPharmacistComment(payload);
   const showFinalCommentPage = finalPharmacistComment.length > 0;
+  const addendumModel = buildReportSummaryAddendumModel(payload);
+  const showAddendumPage =
+    addendumModel.consultationSummary.length > 0 ||
+    addendumModel.packagedProducts.length > 0;
   const metaEmployeeName = firstOrDash(payload.meta?.employeeName);
   const metaPeriodKey = firstOrDash(payload.meta?.periodKey);
   const metaGeneratedAt = formatDate(payload.meta?.generatedAt);
   const finalCommentPageNumber = healthDataPageNumber + (showHealthPage ? 1 : 0);
+  const addendumPageNumber =
+    finalCommentPageNumber + (showFinalCommentPage ? 1 : 0);
 
   return (
     <div className={styles.reportDocument} data-report-document="1">
@@ -123,6 +131,14 @@ export default function ReportSummaryCards(props: {
           comment={finalPharmacistComment}
           metaEmployeeName={metaEmployeeName}
           text={REPORT_SUMMARY_FINAL_COMMENT_PAGE_TEXT}
+        />
+      ) : null}
+
+      {showAddendumPage ? (
+        <ReportSummaryAddendumPage
+          pageNumber={addendumPageNumber}
+          metaEmployeeName={metaEmployeeName}
+          addendum={addendumModel}
         />
       ) : null}
     </div>

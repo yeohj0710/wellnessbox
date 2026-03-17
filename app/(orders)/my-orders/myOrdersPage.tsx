@@ -7,6 +7,7 @@ import { useChatPageActionListener } from "@/lib/chat/useChatPageActionListener"
 import { ManualLookupSection } from "./components/manualLookupSection";
 import { LinkedPhoneLookupSection } from "./components/linkedPhoneLookupSection";
 import { OrderDetailsView } from "./components/orderDetailsView";
+import { OrderLookupSelfServiceCard } from "./components/orderLookupSelfServiceCard";
 import { useMyOrdersController } from "./hooks/useMyOrdersController";
 
 export default function MyOrdersPage() {
@@ -75,6 +76,21 @@ export default function MyOrdersPage() {
               scrollToManual();
             }}
             onScrollToManual={scrollToManual}
+          />
+
+          <OrderLookupSelfServiceCard
+            isViewingDetails={false}
+            isPhoneLinked={linkedState.isPhoneLinked}
+            phoneStatusLoading={linkedState.phoneStatusLoading}
+            phoneStatusError={linkedState.phoneStatusError}
+            linkedPhoneDisplay={linkedState.linkedPhoneDisplay}
+            manualError={manualLookup.error}
+            manualPhoneDisplay={manualLookup.manualPhoneDisplay}
+            password={manualLookup.password}
+            onOpenVerify={actions.openVerifyModal}
+            onPrimaryManualAction={scrollToManual}
+            onPrimaryLinkedAction={actions.handleLinkedLookup}
+            onSecondaryManualAction={scrollToManual}
           />
 
           <ManualLookupSection

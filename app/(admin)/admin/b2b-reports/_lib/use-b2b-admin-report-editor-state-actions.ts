@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import type { Dispatch, SetStateAction } from "react";
+import type { B2bReportPackagedProduct } from "@/lib/b2b/report-customization-types";
 
 type UseB2bAdminReportEditorStateActionsParams = {
   setNoteDirty: Dispatch<SetStateAction<boolean>>;
@@ -8,6 +9,9 @@ type UseB2bAdminReportEditorStateActionsParams = {
   setCautions: Dispatch<SetStateAction<string>>;
   setAnalysisDirty: Dispatch<SetStateAction<boolean>>;
   setAnalysisText: Dispatch<SetStateAction<string>>;
+  setReportCustomizationDirty: Dispatch<SetStateAction<boolean>>;
+  setReportConsultationSummary: Dispatch<SetStateAction<string>>;
+  setReportPackagedProducts: Dispatch<SetStateAction<B2bReportPackagedProduct[]>>;
 };
 
 export function useB2bAdminReportEditorStateActions({
@@ -17,6 +21,9 @@ export function useB2bAdminReportEditorStateActions({
   setCautions,
   setAnalysisDirty,
   setAnalysisText,
+  setReportCustomizationDirty,
+  setReportConsultationSummary,
+  setReportPackagedProducts,
 }: UseB2bAdminReportEditorStateActionsParams) {
   const handleNoteChange = useCallback(
     (value: string) => {
@@ -50,10 +57,28 @@ export function useB2bAdminReportEditorStateActions({
     [setAnalysisDirty, setAnalysisText]
   );
 
+  const handleReportConsultationSummaryChange = useCallback(
+    (value: string) => {
+      setReportCustomizationDirty(true);
+      setReportConsultationSummary(value);
+    },
+    [setReportConsultationSummary, setReportCustomizationDirty]
+  );
+
+  const handleReportPackagedProductsChange = useCallback(
+    (value: B2bReportPackagedProduct[]) => {
+      setReportCustomizationDirty(true);
+      setReportPackagedProducts(value);
+    },
+    [setReportCustomizationDirty, setReportPackagedProducts]
+  );
+
   return {
     handleNoteChange,
     handleRecommendationsChange,
     handleCautionsChange,
     handleAnalysisTextChange,
+    handleReportConsultationSummaryChange,
+    handleReportPackagedProductsChange,
   };
 }

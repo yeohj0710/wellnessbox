@@ -1,7 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
+import BetaFeatureGate from "@/components/common/BetaFeatureGate";
 import CartBulkChangeControls from "./CartBulkChangeControls";
+import CartBundleIntelligenceCard from "./CartBundleIntelligenceCard";
+import CartCompositionExplainabilityCard from "./CartCompositionExplainabilityCard";
+import CartStockIntelligenceCard from "./CartStockIntelligenceCard";
 import CartItemsSectionStatusContent from "./CartItemsSectionStatusContent";
 import { CART_ITEMS_SECTION_COPY } from "./cartItemsSection.copy";
 import {
@@ -14,6 +18,8 @@ import type {
   CartPharmacy,
   CartProduct,
 } from "./cart.types";
+import type { UserContextSummary } from "@/lib/chat/context";
+import type { CartStockRecovery } from "@/lib/cart-stock-intelligence";
 
 type CartItemsSectionProps = {
   cartItems: CartLineItem[];
@@ -28,6 +34,8 @@ type CartItemsSectionProps = {
   onRetryResolve?: () => void;
   isAddressMissing?: boolean;
   onOpenAddressModal?: () => void;
+  userSummary?: UserContextSummary | null;
+  stockRecovery?: CartStockRecovery | null;
 };
 
 export default function CartItemsSection({
@@ -43,6 +51,8 @@ export default function CartItemsSection({
   onRetryResolve,
   isAddressMissing = false,
   onOpenAddressModal,
+  userSummary = null,
+  stockRecovery = null,
 }: CartItemsSectionProps) {
   const {
     products,
@@ -110,6 +120,41 @@ export default function CartItemsSection({
           onUpdateCart={onUpdateCart}
           onProductClick={onProductClick}
         />
+
+        {!resolving && items.length > 0 ? (
+          <BetaFeatureGate
+            title="Beta 장바구니 가이드"
+            helper="새로 추가된 재고·구성·설명 카드는 필요할 때만 펼쳐보세요."
+          >
+            <div className="space-y-4">
+              <CartStockIntelligenceCard
+                items={items}
+                cartItems={cartItems}
+                allProducts={allProducts}
+                selectedPharmacyId={selectedPharmacy?.id}
+                summary={userSummary}
+                recovery={stockRecovery}
+                isAddressMissing={isAddressMissing}
+                onUpdateCart={onUpdateCart}
+                onBulkChange={handleBulkChange}
+                onRetryResolve={onRetryResolve}
+                onOpenAddressModal={onOpenAddressModal}
+              />
+              <CartCompositionExplainabilityCard
+                items={items}
+                summary={userSummary}
+              />
+              <CartBundleIntelligenceCard
+                items={items}
+                cartItems={cartItems}
+                allProducts={allProducts}
+                selectedPharmacy={selectedPharmacy}
+                onUpdateCart={onUpdateCart}
+                onBulkChange={handleBulkChange}
+              />
+            </div>
+          </BetaFeatureGate>
+        ) : null}
       </div>
 
       <CartBulkChangeControls

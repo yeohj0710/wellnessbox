@@ -3,6 +3,7 @@ import type { ChatSession, UserProfile } from "@/types/chat";
 import type {
   NormalizedAssessResult,
   NormalizedCheckAiResult,
+  NormalizedHealthLinkSummary,
   NormalizedOrderSummary,
 } from "./useChat.results";
 import type { ChatAgentSuggestedAction } from "@/lib/chat/agent-actions";
@@ -38,6 +39,8 @@ export type UseChatState = {
   setAssessResult: React.Dispatch<React.SetStateAction<NormalizedAssessResult | null>>;
   checkAiResult: NormalizedCheckAiResult | null;
   setCheckAiResult: React.Dispatch<React.SetStateAction<NormalizedCheckAiResult | null>>;
+  healthLink: NormalizedHealthLinkSummary | null;
+  setHealthLink: React.Dispatch<React.SetStateAction<NormalizedHealthLinkSummary | null>>;
   orders: NormalizedOrderSummary[];
   setOrders: React.Dispatch<React.SetStateAction<NormalizedOrderSummary[]>>;
   resultsLoaded: boolean;
@@ -82,6 +85,8 @@ export function useChatState(): UseChatState {
   const [assessResult, setAssessResult] = useState<NormalizedAssessResult | null>(null);
   const [checkAiResult, setCheckAiResult] =
     useState<NormalizedCheckAiResult | null>(null);
+  const [healthLink, setHealthLink] =
+    useState<NormalizedHealthLinkSummary | null>(null);
   const [orders, setOrders] = useState<NormalizedOrderSummary[]>([]);
   const [resultsLoaded, setResultsLoaded] = useState(false);
   const [titleHighlightId, setTitleHighlightId] = useState<string | null>(null);
@@ -128,6 +133,8 @@ export function useChatState(): UseChatState {
     setAssessResult,
     checkAiResult,
     setCheckAiResult,
+    healthLink,
+    setHealthLink,
     orders,
     setOrders,
     resultsLoaded,

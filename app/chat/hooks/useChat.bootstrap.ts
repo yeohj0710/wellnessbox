@@ -1,51 +1,14 @@
-import { useEffect, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
-import type { ChatSession, UserProfile } from "@/types/chat";
+import { useEffect, type MutableRefObject } from "react";
 import { isBrowserOnline } from "./useChat.browser";
-import type {
-  NormalizedAssessResult,
-  NormalizedCheckAiResult,
-  NormalizedOrderSummary,
-} from "./useChat.results";
 import {
-  buildInitialSessionBootstrap,
-  fetchAllResultsBootstrap,
-  fetchRemoteSessionBootstrap,
-  type BootstrapActorState,
-  resolveInitialProfile,
-} from "./useChat.lifecycle";
-import { mergeServerSessions } from "./useChat.session";
-
-type ActorRefs = {
-  actorLoggedInRef: MutableRefObject<boolean>;
-  actorAppUserIdRef: MutableRefObject<string | null>;
-  actorPhoneLinkedRef: MutableRefObject<boolean>;
-};
-
-type SessionBootstrapParams = ActorRefs & {
-  remoteBootstrap: boolean;
-  activeIdRef: MutableRefObject<string | null>;
-  readyToPersistRef: MutableRefObject<Record<string, boolean>>;
-  setSessions: Dispatch<SetStateAction<ChatSession[]>>;
-  setActiveId: (id: string | null) => void;
-  setProfile: (profile: UserProfile | undefined) => void;
-  setShowProfileBanner: (show: boolean) => void;
-  setProfileLoaded: (loaded: boolean) => void;
-};
-
-type AllResultsBootstrapParams = ActorRefs & {
-  remoteBootstrap: boolean;
-  setAssessResult: Dispatch<SetStateAction<NormalizedAssessResult | null>>;
-  setCheckAiResult: Dispatch<SetStateAction<NormalizedCheckAiResult | null>>;
-  setOrders: Dispatch<SetStateAction<NormalizedOrderSummary[]>>;
-  setResultsLoaded: (loaded: boolean) => void;
-};
-
-function applyBootstrapActor(actor: BootstrapActorState | null, refs: ActorRefs) {
-  if (!actor) return;
-  refs.actorLoggedInRef.current = actor.loggedIn;
-  refs.actorAppUserIdRef.current = actor.appUserId;
-  refs.actorPhoneLinkedRef.current = actor.phoneLinked;
-}
+  type ActorRefs,
+  type AllResultsBootstrapParams,
+  initializeSessionBootstrap,
+  type SessionBootstrapParams,
+  syncAllResultsBootstrap,
+  syncInitialProfile,
+  syncRemoteSessionBootstrap,
+} from "./useChat.bootstrap.helpers";
 
 export function useSessionAndProfileBootstrap(params: SessionBootstrapParams) {
   const {
@@ -63,55 +26,28 @@ export function useSessionAndProfileBootstrap(params: SessionBootstrapParams) {
   } = params;
 
   useEffect(() => {
-    const refs: ActorRefs = {
+    const bootstrapParams: SessionBootstrapParams = {
+      remoteBootstrap,
+      activeIdRef,
+      readyToPersistRef,
       actorLoggedInRef,
       actorAppUserIdRef,
       actorPhoneLinkedRef,
+      setSessions,
+      setActiveId,
+      setProfile,
+      setShowProfileBanner,
+      setProfileLoaded,
     };
 
-    const initialState = buildInitialSessionBootstrap({
-      actor: {
-        loggedIn: actorLoggedInRef.current,
-        appUserId: actorAppUserIdRef.current,
-      },
+    initializeSessionBootstrap(bootstrapParams);
+
+    void syncRemoteSessionBootstrap({
+      ...bootstrapParams,
+      online: isBrowserOnline(),
     });
-    readyToPersistRef.current = initialState.readyMap;
-    setSessions(initialState.sessions);
-    setActiveId(initialState.activeId);
 
-    (async () => {
-      const bootstrap = await fetchRemoteSessionBootstrap({
-        enabled: remoteBootstrap,
-        online: isBrowserOnline(),
-      });
-      if (!bootstrap) return;
-      applyBootstrapActor(bootstrap.actor, refs);
-      if (!bootstrap.sessions.length) return;
-
-      setSessions((prev) => {
-        const merged = mergeServerSessions({
-          prevSessions: prev,
-          incomingSessions: bootstrap.sessions,
-          currentReadyMap: readyToPersistRef.current,
-          actor: {
-            loggedIn: actorLoggedInRef.current,
-            appUserId: actorAppUserIdRef.current,
-          },
-          currentActiveId: activeIdRef.current,
-        });
-
-        readyToPersistRef.current = merged.nextReadyMap;
-        setActiveId(merged.nextActiveId);
-        return merged.sessions;
-      });
-    })();
-
-    (async () => {
-      const resolved = await resolveInitialProfile(remoteBootstrap);
-      setProfile(resolved);
-      setShowProfileBanner(!resolved);
-      setProfileLoaded(true);
-    })();
+    void syncInitialProfile(bootstrapParams);
   }, [
     remoteBootstrap,
     activeIdRef,
@@ -135,6 +71,7 @@ export function useAllResultsBootstrap(params: AllResultsBootstrapParams) {
     actorPhoneLinkedRef,
     setAssessResult,
     setCheckAiResult,
+    setHealthLink,
     setOrders,
     setResultsLoaded,
   } = params;
@@ -151,27 +88,28 @@ export function useAllResultsBootstrap(params: AllResultsBootstrapParams) {
       actorPhoneLinkedRef,
     };
     const controller = new AbortController();
-    let alive = true;
+    const aliveRef: MutableRefObject<boolean> = {
+      current: true,
+    };
 
-    fetchAllResultsBootstrap({
-      enabled: remoteBootstrap,
+    void syncAllResultsBootstrap({
+      remoteBootstrap,
       online: true,
       signal: controller.signal,
-    })
-      .then((normalized) => {
-        if (!alive || !normalized) return;
-        applyBootstrapActor(normalized.actor, refs);
-        setAssessResult(normalized.assessResult);
-        setCheckAiResult(normalized.checkAiResult);
-        setOrders(normalized.orders);
-      })
-      .finally(() => {
-        if (!alive) return;
-        setResultsLoaded(true);
-      });
+      aliveRef,
+      ...refs,
+      setAssessResult,
+      setCheckAiResult,
+      setHealthLink,
+      setOrders,
+      setResultsLoaded,
+    }).finally(() => {
+      if (!aliveRef.current) return;
+      setResultsLoaded(true);
+    });
 
     return () => {
-      alive = false;
+      aliveRef.current = false;
       controller.abort();
     };
   }, [
@@ -181,6 +119,7 @@ export function useAllResultsBootstrap(params: AllResultsBootstrapParams) {
     actorPhoneLinkedRef,
     setAssessResult,
     setCheckAiResult,
+    setHealthLink,
     setOrders,
     setResultsLoaded,
   ]);

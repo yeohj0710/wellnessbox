@@ -1,145 +1,72 @@
 "use client";
-import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { useLoading } from "@/components/common/loadingContext.client";
-import { useDraggableModal } from "@/components/common/useDraggableModal";
-import { CheckAiAnimationStyles } from "@/components/check-ai/CheckAiAnimationStyles";
-import { refreshClientIdCookieIfNeeded } from "@/lib/client-id";
-import { fetchCategories, type CategoryLite } from "@/lib/client/categories";
-import {
-  CHECK_AI_QUESTIONS as QUESTIONS,
-  CHECK_AI_OPTIONS as OPTIONS,
-} from "@/lib/checkai";
-import {
-  useChatPageActionListener,
-} from "@/lib/chat/useChatPageActionListener";
-import { getTzOffsetMinutes } from "@/lib/timezone";
-import {
-  type CheckAiClientScore,
-  ensureMinimumDelay,
-  persistCheckAiResult,
-  requestCheckAiPredictScores,
-  resolveRecommendedCategoryIds,
-} from "@/lib/checkai-client";
 
-function getApiUrl(path: string) {
-  if (typeof window === "undefined") {
-    return path;
-  }
-  return new URL(path, window.location.origin).toString();
-}
+import Link from "next/link";
+import GuestMemberBridgeCard from "@/components/common/GuestMemberBridgeCard";
+import PersonalizedTrustPanel from "@/components/common/PersonalizedTrustPanel";
+import PersonalizedValuePropositionCard from "@/components/common/PersonalizedValuePropositionCard";
+import { useLoading } from "@/components/common/loadingContext.client";
+import { CheckAiAnimationStyles } from "@/components/check-ai/CheckAiAnimationStyles";
+import { CheckAiQuestionField } from "./CheckAiQuestionField";
+import { useCheckAiExperience } from "./useCheckAiExperience";
 
 export default function CheckAI() {
   const { showLoading } = useLoading();
-  const [answers, setAnswers] = useState<number[]>(
-    Array(QUESTIONS.length).fill(0)
-  );
-  const [results, setResults] = useState<CheckAiClientScore[] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [animateBars, setAnimateBars] = useState(false);
-  const [categories, setCategories] = useState<CategoryLite[]>([]);
-  const resultModalDrag = useDraggableModal(modalOpen, { resetOnOpen: true });
-
-  const completion = useMemo(() => {
-    const answered = answers.filter((v) => v > 0).length;
-    return Math.round((answered / QUESTIONS.length) * 100);
-  }, [answers]);
-
-  useEffect(() => {
-    refreshClientIdCookieIfNeeded();
-  }, []);
-
-  useChatPageActionListener((detail) => {
-    if (detail.action !== "focus_check_ai_form") return;
-
-    document
-      .getElementById("check-ai-form")
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
-  });
-
-  useEffect(() => {
-    const controller = new AbortController();
-    fetchCategories(controller.signal)
-      .then((cats) => setCategories(cats))
-      .catch(() => setCategories([]));
-    return () => controller.abort();
-  }, []);
-
-  const recommendedIds = useMemo(() => {
-    return resolveRecommendedCategoryIds(results, categories);
-  }, [results, categories]);
-
-  useEffect(() => {
-    if (modalOpen) {
-      setAnimateBars(false);
-      const t = setTimeout(() => setAnimateBars(true), 120);
-      return () => clearTimeout(t);
-    } else {
-      setAnimateBars(false);
-    }
-  }, [modalOpen]);
-
-  const handleChange = (idx: number, val: number) => {
-    const next = [...answers];
-    next[idx] = val;
-    setAnswers(next);
-  };
-
-  const handleSubmit = async () => {
-    setLoading(true);
-    const start = Date.now();
-    const filled = answers.map((v) => (v > 0 ? v : 3));
-    const normalized = await requestCheckAiPredictScores(
-      filled,
-      getApiUrl("/api/predict")
-    ).catch(() => []);
-    if (!normalized.length) {
-      setLoading(false);
-      return;
-    }
-
-    await ensureMinimumDelay(start, 3000);
-    setResults(normalized);
-
-    void persistCheckAiResult({
-      scores: normalized,
-      answers: filled,
-      tzOffsetMinutes: getTzOffsetMinutes(),
-      saveUrl: getApiUrl("/api/check-ai/save"),
-    });
-    setLoading(false);
-    setModalOpen(true);
-  };
+  const {
+    answers,
+    results,
+    loading,
+    modalOpen,
+    animateBars,
+    draftRestored,
+    previewLoading,
+    resultModalDrag,
+    answeredCount,
+    remainingCount,
+    canSubmit,
+    completion,
+    previewLabels,
+    recommendedIds,
+    minPreviewAnswers,
+    trustSummary,
+    valueProposition,
+    guestBridgeModel,
+    QUESTIONS,
+    OPTIONS,
+    handleChange,
+    handleSubmit,
+    openValueAction,
+    setModalOpen,
+  } = useCheckAiExperience({ showLoading });
 
   return (
-    <div className="w-full max-w-[760px] mx-auto px-2 sm:px-4 pb-28">
-      <div className="relative mt-6 sm:mt-10 overflow-visible sm:overflow-hidden sm:rounded-3xl sm:bg-white/70 sm:ring-1 sm:ring-black/5 sm:shadow-[0_10px_40px_rgba(2,6,23,0.08)] sm:backdrop-blur">
-        <div className="hidden sm:block pointer-events-none absolute -top-24 -right-24 h-80 w-80 rounded-full bg-gradient-to-br from-sky-400/30 via-indigo-400/20 to-fuchsia-300/20 blur-3xl" />
-        <div className="hidden sm:block pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-gradient-to-tr from-sky-400/30 via-indigo-400/20 to-fuchsia-300/20 blur-3xl" />
+    <div className="mx-auto w-full max-w-[760px] px-2 pb-28 sm:px-4">
+      <div className="relative mt-6 overflow-visible sm:mt-10 sm:overflow-hidden sm:rounded-3xl sm:bg-white/70 sm:shadow-[0_10px_40px_rgba(2,6,23,0.08)] sm:ring-1 sm:ring-black/5 sm:backdrop-blur">
+        <div className="pointer-events-none absolute -right-24 -top-24 hidden h-80 w-80 rounded-full bg-gradient-to-br from-sky-400/30 via-indigo-400/20 to-fuchsia-300/20 blur-3xl sm:block" />
+        <div className="pointer-events-none absolute -bottom-24 -left-24 hidden h-80 w-80 rounded-full bg-gradient-to-tr from-sky-400/30 via-indigo-400/20 to-fuchsia-300/20 blur-3xl sm:block" />
+
         <div className="relative p-4 sm:p-10">
-          <div className="flex items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start justify-between gap-4 sm:items-center">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-12 rounded-2xl bg-gradient-to-br from-sky-500 to-indigo-500 text-white grid place-items-center text-sm font-extrabold">
+              <div className="grid h-10 w-12 place-items-center rounded-2xl bg-gradient-to-br from-sky-500 to-indigo-500 text-sm font-extrabold text-white">
                 AI
               </div>
               <div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">
-                  영양제 추천 자가진단
+                <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 sm:text-3xl">
+                  영양제 추천 빠른검사
                 </h1>
-                <p className="mt-1 text-xs sm:text-sm text-gray-600">
-                  웰니스박스의 영양제 추천 AI는 ONNX Runtime 기반 딥러닝 모델로
-                  작동합니다.
+                <p className="mt-1 text-xs text-gray-600 sm:text-sm">
+                  웰니스박스 추천 AI가 답변 흐름을 보면서 방향을 먼저 잡아드려요.
                 </p>
-                <p className="mt-2 text-[11px] sm:text-xs text-gray-500">
-                  ※ 각 문항은 일부만 해당되어도 체크해주세요.
+                <p className="mt-2 text-[11px] text-gray-500 sm:text-xs">
+                  전부 답할수록 추천 정확도가 더 안정적으로 올라가요.
                 </p>
               </div>
             </div>
-            <div className="hidden sm:block min-w-[200px]">
+
+            <div className="hidden min-w-[200px] sm:block">
               <div className="flex items-center justify-between text-xs text-gray-600">
-                <span>진행도</span>
-                {/* <span className="tabular-nums">{completion}%</span> */}
+                <span>진행률</span>
+                <span className="font-semibold text-gray-700">{completion}%</span>
               </div>
               <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100 ring-1 ring-inset ring-black/5">
                 <div
@@ -152,8 +79,8 @@ export default function CheckAI() {
 
           <div className="mt-4 sm:hidden">
             <div className="flex items-center justify-between text-xs text-gray-600">
-              <span>진행도</span>
-              {/* <span className="tabular-nums">{completion}%</span> */}
+              <span>진행률</span>
+              <span className="font-semibold text-gray-700">{completion}%</span>
             </div>
             <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100 ring-1 ring-inset ring-black/5">
               <div
@@ -163,156 +90,197 @@ export default function CheckAI() {
             </div>
           </div>
 
-          <form id="check-ai-form" className="mt-6 sm:mt-8 space-y-6 sm:space-y-7">
-            {QUESTIONS.map((q, i) => (
-              <fieldset
-                key={i}
-                className="group rounded-2xl border border-gray-100 p-3 sm:p-5 hover:border-sky-200 transition"
-              >
-                <legend className="px-1 text-[15px] sm:text-base font-semibold text-gray-900">
-                  {q}
-                </legend>
-                <div className="mt-3 grid grid-cols-2 sm:grid-cols-5 gap-2">
-                  {OPTIONS.map((opt) => {
-                    const active = answers[i] === opt.value;
-                    const visualActive =
-                      active || (answers[i] === 0 && opt.value === 3);
-                    return (
-                      <label
-                        key={opt.value}
-                        title={opt.label}
-                        className={[
-                          "relative cursor-pointer select-none rounded-xl px-3 py-0.5 sm:py-1 text-center ring-1 transition",
-                          "bg-white ring-gray-200 hover:bg-gray-50",
-                          visualActive
-                            ? "ring-2 ring-sky-400 bg-sky-50/60"
-                            : "",
-                        ].join(" ")}
-                      >
-                        <input
-                          type="radio"
-                          name={`q-${i}`}
-                          value={opt.value}
-                          checked={active}
-                          onChange={() => handleChange(i, opt.value)}
-                          className="sr-only"
-                        />
-                        <span className="block h-9 leading-9 text-xs sm:text-[13px] text-gray-800 whitespace-nowrap overflow-hidden text-ellipsis break-keep">
-                          {opt.label}
-                        </span>
-                      </label>
-                    );
-                  })}
+          {draftRestored && answeredCount > 0 ? (
+            <div className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-xs text-emerald-800 ring-1 ring-emerald-100">
+              이전에 답하던 내용을 이어서 진행하고 있어요.
+            </div>
+          ) : null}
+
+          {answeredCount > 0 ? (
+            <div className="mt-4 rounded-3xl bg-gradient-to-r from-sky-50 to-indigo-50 px-4 py-4 ring-1 ring-sky-100">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-bold text-gray-900">
+                    {canSubmit
+                      ? "결과를 볼 준비가 됐어요"
+                      : `남은 ${remainingCount}문항만 더 답하면 결과를 더 정확하게 보여드릴 수 있어요`}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-gray-600">
+                    {answeredCount < minPreviewAnswers
+                      ? "몇 문항만 더 답하면 지금 어느 방향을 보고 있는지도 먼저 보여드릴게요."
+                      : previewLabels.length > 0
+                      ? `지금까지는 ${previewLabels.join(", ")} 쪽 가능성을 더 보고 있어요. 끝까지 답하면 추천 품질이 더 안정적이에요.`
+                      : previewLoading
+                      ? "지금까지 답변 흐름으로 추천 방향을 정리하고 있어요."
+                      : "답변이 쌓일수록 추천 방향이 더 또렷해져요."}
+                  </p>
                 </div>
-              </fieldset>
+                <span className="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-semibold text-sky-700 ring-1 ring-sky-100">
+                  {answeredCount}/{QUESTIONS.length}
+                </span>
+              </div>
+
+              {previewLabels.length > 0 ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {previewLabels.map((label) => (
+                    <span
+                      key={label}
+                      className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100"
+                    >
+                      {label}
+                    </span>
+                  ))}
+                  {previewLoading ? (
+                    <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-medium text-sky-700 ring-1 ring-sky-100">
+                      업데이트 중
+                    </span>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          <form id="check-ai-form" className="mt-6 space-y-6 sm:mt-8 sm:space-y-7">
+            {QUESTIONS.map((question, index) => (
+              <CheckAiQuestionField
+                key={index}
+                index={index}
+                question={question}
+                options={OPTIONS}
+                value={answers[index]}
+                onChange={handleChange}
+              />
             ))}
 
-            <div className="flex flex-col items-center sticky bottom-4 sm:bottom-6 mt-8">
+            <div className="sticky bottom-4 mt-8 flex flex-col items-center sm:bottom-6">
               <button
                 type="button"
                 onClick={handleSubmit}
                 disabled={loading}
                 aria-busy={loading}
-                className="w-full sm:w-4/5 rounded-2xl bg-gradient-to-r from-sky-500 to-indigo-500 px-6 py-2.5 sm:py-2.5 text-base font-extrabold text-white shadow-[0_12px_30px_rgba(56,121,255,0.35)] transition-all hover:from-sky-600 hover:to-indigo-600 active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-sky-300 disabled:opacity-60"
+                className="w-full rounded-2xl bg-gradient-to-r from-sky-500 to-indigo-500 px-6 py-2.5 text-base font-extrabold text-white shadow-[0_12px_30px_rgba(56,121,255,0.35)] transition-all hover:from-sky-600 hover:to-indigo-600 focus:outline-none focus:ring-4 focus:ring-sky-300 disabled:opacity-60 sm:w-4/5"
               >
-                {loading ? "AI가 분석 중..." : "AI 추천 결과 보기"}
+                {loading
+                  ? "AI가 분석 중이에요..."
+                  : canSubmit
+                  ? "AI 추천 결과 보기"
+                  : "지금 바로 결과 보기"}
               </button>
               <p className="mt-2 text-center text-[11px] text-gray-500">
-                미선택 문항은 평균값으로 보정하여 분석합니다.
+                {canSubmit
+                  ? "모든 문항을 답한 상태라 결과 신뢰도가 가장 높아요."
+                  : "비어 있는 문항은 보통으로 보고 먼저 결과를 볼 수 있어요. 끝까지 답하면 추천이 더 안정적이에요."}
               </p>
             </div>
           </form>
         </div>
       </div>
 
-      {loading && (
+      {loading ? (
         <div className="fixed inset-0 z-40 overflow-hidden">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
           <div className="absolute inset-0 animate-[pulseGlow_4s_ease-in-out_infinite] bg-[radial-gradient(60%_60%_at_50%_50%,rgba(56,121,255,0.12),transparent_70%)]" />
-          <div className="relative z-10 h-full w-full grid place-items-center p-6">
+          <div className="relative z-10 grid h-full w-full place-items-center p-6">
             <div className="flex flex-col items-center">
               <div className="relative h-28 w-28">
-                <div className="absolute inset-0 rounded-full animate-[spin_2.8s_linear_infinite] [background:conic-gradient(from_0deg,theme(colors.sky.400),theme(colors.indigo.500),theme(colors.sky.400))] [mask:radial-gradient(farthest-side,transparent_64%,#000_65%)]" />
-                <div className="absolute inset-3 rounded-2xl bg-white/10 ring-1 ring-inset ring-white/20 backdrop-blur grid place-items-center text-white text-lg font-extrabold">
+                <div className="absolute inset-0 animate-[spin_2.8s_linear_infinite] rounded-full [background:conic-gradient(from_0deg,theme(colors.sky.400),theme(colors.indigo.500),theme(colors.sky.400))] [mask:radial-gradient(farthest-side,transparent_64%,#000_65%)]" />
+                <div className="absolute inset-3 grid place-items-center rounded-2xl bg-white/10 text-lg font-extrabold text-white ring-1 ring-inset ring-white/20 backdrop-blur">
                   AI
                 </div>
-                <div className="absolute inset-0 rounded-full ring-2 ring-sky-400/30 animate-[ping_2.2s_cubic-bezier(0,0,0.2,1)_infinite]" />
+                <div className="absolute inset-0 animate-[ping_2.2s_cubic-bezier(0,0,0.2,1)_infinite] rounded-full ring-2 ring-sky-400/30" />
               </div>
               <p className="mt-6 text-sm text-white/90">
-                AI가 영양제를 추천하고 있어요
+                AI가 답변 흐름을 바탕으로 추천 방향을 정리하고 있어요.
               </p>
               <div className="mt-3 flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-white/90 animate-[dotBounce_1.2s_ease-in-out_infinite]" />
-                <span className="h-2 w-2 rounded-full bg-white/70 animate-[dotBounce_1.2s_ease-in-out_infinite] [animation-delay:.15s]" />
-                <span className="h-2 w-2 rounded-full bg-white/60 animate-[dotBounce_1.2s_ease-in-out_infinite] [animation-delay:.3s]" />
+                <span className="h-2 w-2 animate-[dotBounce_1.2s_ease-in-out_infinite] rounded-full bg-white/90" />
+                <span className="h-2 w-2 animate-[dotBounce_1.2s_ease-in-out_infinite] rounded-full bg-white/70 [animation-delay:.15s]" />
+                <span className="h-2 w-2 animate-[dotBounce_1.2s_ease-in-out_infinite] rounded-full bg-white/60 [animation-delay:.3s]" />
               </div>
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
-      {modalOpen && Array.isArray(results) && (
+      {modalOpen && Array.isArray(results) ? (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-black/50 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4 backdrop-blur-sm"
           onClick={() => setModalOpen(false)}
         >
           <div
             className="w-full max-w-md scale-100 rounded-2xl bg-white p-6 shadow-[0_20px_60px_rgba(2,6,23,0.25)] ring-1 ring-black/5 animate-[fadeIn_.18s_ease-out]"
             ref={resultModalDrag.panelRef}
             style={resultModalDrag.panelStyle}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
           >
             <div
-              className={`flex items-start justify-between touch-none ${
+              className={`flex touch-none items-start justify-between ${
                 resultModalDrag.isDragging ? "cursor-grabbing" : "cursor-grab"
               }`}
               onPointerDown={resultModalDrag.handleDragPointerDown}
             >
-              <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900">
+              <h2 className="text-xl font-extrabold text-gray-900 sm:text-2xl">
                 AI 추천 결과
               </h2>
               <button
                 onClick={() => setModalOpen(false)}
-                className="h-9 w-9 rounded-full bg-gray-100 text-gray-500 grid place-items-center hover:bg-gray-200 focus:outline-none"
+                className="grid h-9 w-9 place-items-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 focus:outline-none"
               >
                 ×
               </button>
             </div>
 
             <p className="mt-3 text-sm text-gray-600">
-              아래는{" "}
-              <span className="font-semibold text-sky-600">추천 카테고리</span>
-              와 예상 적합도예요.
+              아래 추천 카테고리 순서대로 먼저 비교해보세요.
             </p>
             <p className="mt-1 text-[11px] text-gray-500">
-              웰니스박스 추천 AI는 ONNX Runtime 기반 딥러닝 모델입니다.
+              더 자세한 추천이 필요하면 정밀검사로 이어서 확인할 수 있어요.
             </p>
 
             <ul className="mt-5 space-y-3">
-              {results.map((r) => (
+              {results.map((result) => (
                 <li
-                  key={r.code}
-                  className="relative overflow-hidden rounded-xl ring-1 ring-gray-100 bg-gray-50"
+                  key={result.code ?? result.label}
+                  className="relative overflow-hidden rounded-xl bg-gray-50 ring-1 ring-gray-100"
                 >
                   <div
                     className="absolute inset-y-0 left-0 bg-gradient-to-r from-sky-200 to-indigo-200 transition-all duration-700 ease-out"
                     style={{
                       width: animateBars
-                        ? `${Math.max(8, r.prob * 100)}%`
+                        ? `${Math.max(8, result.prob * 100)}%`
                         : "0%",
                     }}
                   />
                   <div className="relative flex items-center justify-between px-4 py-3">
                     <span className="text-sm font-semibold text-gray-800">
-                      {r.label}
+                      {result.label}
                     </span>
                     <span className="tabular-nums text-sm font-extrabold text-gray-900">
-                      {(r.prob * 100).toFixed(1)}%
+                      {(result.prob * 100).toFixed(1)}%
                     </span>
                   </div>
                 </li>
               ))}
             </ul>
+
+            <PersonalizedValuePropositionCard
+              model={valueProposition}
+              className="mt-5"
+              onPrimaryAction={() =>
+                openValueAction(valueProposition.primaryAction.target)
+              }
+              onSecondaryAction={
+                valueProposition.secondaryAction
+                  ? () => openValueAction(valueProposition.secondaryAction!.target)
+                  : undefined
+              }
+            />
+
+            <PersonalizedTrustPanel summary={trustSummary} className="mt-5" />
+
+            {guestBridgeModel ? (
+              <GuestMemberBridgeCard model={guestBridgeModel} className="mt-5" />
+            ) : null}
 
             <Link
               href={`/explore${
@@ -324,13 +292,13 @@ export default function CheckAI() {
               className="mt-6 block"
               onClick={showLoading}
             >
-              <button className="w-full rounded-xl bg-sky-500 px-6 py-2 text-white font-bold shadow hover:bg-sky-600 active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-sky-300">
-                구매하러 가기
+              <button className="w-full rounded-xl bg-sky-500 px-6 py-2 font-bold text-white shadow hover:bg-sky-600 focus:outline-none focus:ring-4 focus:ring-sky-300">
+                추천 상품 보러 가기
               </button>
             </Link>
           </div>
         </div>
-      )}
+      ) : null}
 
       <CheckAiAnimationStyles />
     </div>

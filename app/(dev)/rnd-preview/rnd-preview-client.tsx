@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
 
 type BootstrapResponse =
   | {
@@ -109,20 +110,18 @@ export default function RndPreviewClient() {
           wellnessbox-rnd recommend preview
         </h1>
         <p className="text-sm text-slate-600">
-          dev-only preview 화면이다. `wellnessbox` 서버가 `wellnessbox-rnd`
-          의 `/v1/recommend` 를 프록시하고 raw JSON 을 그대로 보여준다.
+          dev-only preview 화면입니다. `wellnessbox` 서버가 `wellnessbox-rnd`의
+          `/v1/recommend`를 프록시하고 raw JSON을 그대로 보여줍니다.
         </p>
       </header>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-wrap gap-3 text-sm text-slate-700">
           <span>
-            enabled:{" "}
-            <strong>{bootstrap ? String(bootstrap.enabled) : "loading"}</strong>
+            enabled: <strong>{bootstrap ? String(bootstrap.enabled) : "loading"}</strong>
           </span>
           <span>
-            timeoutMs:{" "}
-            <strong>{bootstrap ? String(bootstrap.timeoutMs) : "-"}</strong>
+            timeoutMs: <strong>{bootstrap ? String(bootstrap.timeoutMs) : "-"}</strong>
           </span>
           <span>
             serviceConfigured:{" "}
@@ -159,7 +158,7 @@ export default function RndPreviewClient() {
                 disabled={loading || disabled}
                 className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-slate-400"
               >
-                {loading ? "요청 중..." : "preview 실행"}
+                {loading ? <InlineSpinnerLabel label="요청 중" /> : "preview 실행"}
               </button>
               {error ? <p className="text-sm text-red-600">{error}</p> : null}
             </div>

@@ -1,3 +1,4 @@
+import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
 import styles from "@/components/b2b/B2bUx.module.css";
 
 type B2bSurveyEditorActionsProps = {
@@ -49,7 +50,7 @@ export default function B2bSurveyEditorActions({
         disabled={busy}
         className={`${styles.buttonPrimary} ${styles.editorPrimaryButton}`}
       >
-        {busy ? "설문 저장 중.." : "설문 저장"}
+        {busy ? <InlineSpinnerLabel label="설문 저장 중" /> : "설문 저장"}
       </button>
     </div>
   );

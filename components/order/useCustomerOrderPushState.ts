@@ -11,6 +11,13 @@ type UseCustomerOrderPushStateInput = {
 export function useCustomerOrderPushState({
   orderId,
 }: UseCustomerOrderPushStateInput) {
+  const browserSupported =
+    typeof window !== "undefined" &&
+    "serviceWorker" in navigator &&
+    "Notification" in window;
+  const [notificationPermission, setNotificationPermission] = useState<
+    NotificationPermission | "unsupported"
+  >(browserSupported ? Notification.permission : "unsupported");
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isSubscriptionStatusLoading, setIsSubscriptionStatusLoading] =
     useState(true);
@@ -20,6 +27,9 @@ export function useCustomerOrderPushState({
 
   const checkSubscriptionStatus = useCallback(async () => {
     if (typeof window === "undefined") return;
+    setNotificationPermission(
+      "Notification" in window ? Notification.permission : "unsupported"
+    );
     if (!("serviceWorker" in navigator)) {
       setIsSubscribed(false);
       setIsSubscriptionStatusLoading(false);
@@ -235,6 +245,8 @@ export function useCustomerOrderPushState({
   }, [isSubscribed, subscribePush, unsubscribePush]);
 
   return {
+    browserSupported,
+    notificationPermission,
     isSubscribed,
     isSubscriptionStatusLoading,
     isSubscribeLoading,

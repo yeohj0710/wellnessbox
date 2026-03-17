@@ -8,6 +8,10 @@ import {
 } from "@/lib/b2b/report-payload";
 import type { B2bReportPayload } from "@/lib/b2b/report-payload";
 import {
+  applyReportCustomizationToPayload,
+  extractReportCustomization,
+} from "@/lib/b2b/report-customization";
+import {
   asJsonValue,
   hasAnyTreatmentRows,
   isCurrentLayoutVersion,
@@ -183,6 +187,7 @@ export async function createB2bReportSnapshot(input: {
   const variantIndex =
     input.variantIndex ?? (await getNextB2bReportVariantIndex(input.employeeId));
   const stylePreset = input.stylePreset ?? pickStylePreset(variantIndex);
+  const latestExistingReport = await getLatestB2bReport(input.employeeId, periodKey);
 
   const latestPeriodAnalysis = await db.b2bAnalysisResult.findFirst({
     where: { employeeId: input.employeeId, periodKey },
@@ -198,12 +203,16 @@ export async function createB2bReportSnapshot(input: {
     });
   }
 
-  const payload = await buildB2bReportPayload({
+  const basePayload = await buildB2bReportPayload({
     employeeId: input.employeeId,
     periodKey,
     variantIndex,
     stylePreset,
   });
+  const payload = applyReportCustomizationToPayload(
+    basePayload,
+    extractReportCustomization(latestExistingReport?.reportPayload)
+  );
   const previewLayoutResult = await runB2bLayoutPipeline({
     payload,
     intent: "export",

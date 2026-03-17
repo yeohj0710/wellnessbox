@@ -33,6 +33,9 @@ const menuItemClasses = (additionalClasses = "") => {
   return `relative transition-transform duration-200 ease-in-out hover:scale-[1.02] ${additionalClasses}`;
 };
 
+const secondaryActionButtonClasses =
+  "inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 shadow-[0_8px_20px_rgba(15,23,42,0.06)] transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 hover:shadow-[0_12px_28px_rgba(15,23,42,0.1)] active:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-200";
+
 export function TopBarHeader({
   loginStatus,
   onRequestLogout,
@@ -131,7 +134,7 @@ export function TopBarHeader({
           <button
             type="button"
             onClick={onOpenCommandPalette}
-            className="hidden md:inline-flex shrink-0 whitespace-nowrap items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+            className={`hidden md:inline-flex whitespace-nowrap ${secondaryActionButtonClasses}`}
             aria-label={TOPBAR_COPY.commandButtonAriaLabel}
             title="Ctrl+K"
           >
@@ -144,7 +147,7 @@ export function TopBarHeader({
           <button
             {...sevenDayIntentHandlers}
             onClick={onGoSevenDays}
-            className="hidden sm:block shrink-0 whitespace-nowrap text-[15px] font-semibold text-slate-600"
+            className="hidden sm:inline-flex shrink-0 whitespace-nowrap items-center rounded-full px-3 py-2 text-[15px] font-semibold text-slate-600 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-50 hover:text-slate-900 active:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-200"
           >
             {TOPBAR_COPY.sevenDayPurchaseText}
           </button>

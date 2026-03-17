@@ -39,6 +39,10 @@ export function normalizeOrderSummary(rawOrder: unknown): OrderAccordionOrder {
               typeof pharmacyProduct.optionType === "string"
                 ? pharmacyProduct.optionType
                 : null,
+            stock:
+              typeof pharmacyProduct.stock === "number"
+                ? pharmacyProduct.stock
+                : null,
             price:
               typeof pharmacyProduct.price === "number"
                 ? pharmacyProduct.price
@@ -65,13 +69,52 @@ export function normalizeOrderSummary(rawOrder: unknown): OrderAccordionOrder {
     };
   });
 
+  const rawMessages = Array.isArray(orderRecord?.messages)
+    ? orderRecord.messages
+    : [];
+
+  const normalizedMessages = rawMessages
+    .map((rawMessage) => {
+      const message = rawMessage as Record<string, unknown> | null;
+      const createdAt =
+        typeof message?.createdAt === "string" || message?.createdAt instanceof Date
+          ? new Date(message.createdAt)
+          : typeof message?.timestamp === "string" || message?.timestamp instanceof Date
+            ? new Date(message.timestamp)
+            : new Date();
+      const safeCreatedAt = Number.isNaN(createdAt.getTime())
+        ? new Date()
+        : createdAt;
+
+      return {
+        id: typeof message?.id === "number" ? message.id : 0,
+        orderId:
+          typeof message?.orderId === "number"
+            ? message.orderId
+            : typeof orderRecord?.id === "number"
+              ? orderRecord.id
+              : 0,
+        pharmacyId:
+          typeof message?.pharmacyId === "number" ? message.pharmacyId : null,
+        content: typeof message?.content === "string" ? message.content : "",
+        createdAt: safeCreatedAt.toISOString(),
+        timestamp: safeCreatedAt.getTime(),
+      };
+    })
+    .sort((left, right) => left.timestamp - right.timestamp);
+
   const pharmacy = orderRecord?.pharmacy as Record<string, unknown> | null | undefined;
+  const counts = orderRecord?._count as Record<string, unknown> | null | undefined;
 
   return {
     id: typeof orderRecord?.id === "number" ? orderRecord.id : 0,
     status: toOrderStatus(orderRecord?.status),
     createdAt: (orderRecord?.createdAt as string | number | Date | null) ?? new Date(),
+    updatedAt:
+      (orderRecord?.updatedAt as string | number | Date | null) ?? undefined,
     orderItems: normalizedItems,
+    messagesPreview: normalizedMessages,
+    messageCount: typeof counts?.messages === "number" ? counts.messages : undefined,
     totalPrice:
       typeof orderRecord?.totalPrice === "number" ? orderRecord.totalPrice : undefined,
     roadAddress:
@@ -83,6 +126,8 @@ export function normalizeOrderSummary(rawOrder: unknown): OrderAccordionOrder {
         ? orderRecord.detailAddress
         : undefined,
     phone: typeof orderRecord?.phone === "string" ? orderRecord.phone : undefined,
+    endpoint:
+      typeof orderRecord?.endpoint === "string" ? orderRecord.endpoint : undefined,
     requestNotes:
       typeof orderRecord?.requestNotes === "string"
         ? orderRecord.requestNotes

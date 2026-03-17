@@ -3,6 +3,7 @@ import PhoneVerifyModal from "@/app/me/phoneVerifyModal";
 
 import { LookupConfig } from "../types";
 import { OrderPhoneContext } from "./orderPhoneContext";
+import { OrderLookupSelfServiceCard } from "./orderLookupSelfServiceCard";
 
 interface OrderDetailsViewProps {
   lookupConfig: LookupConfig;
@@ -45,6 +46,21 @@ export function OrderDetailsView({
           linkedPhoneDisplay={linkedPhoneDisplay}
           onOpenVerify={onOpenVerify}
           onOtherNumber={onOtherNumber}
+        />
+
+        <OrderLookupSelfServiceCard
+          isViewingDetails
+          isPhoneLinked={isPhoneLinked}
+          phoneStatusLoading={false}
+          phoneStatusError={null}
+          linkedPhoneDisplay={linkedPhoneDisplay}
+          manualError=""
+          manualPhoneDisplay={lookupConfig.phone}
+          password={lookupConfig.password ?? ""}
+          onOpenVerify={onOpenVerify}
+          onPrimaryManualAction={onOtherNumber}
+          onPrimaryLinkedAction={() => {}}
+          onSecondaryManualAction={onOtherNumber}
         />
 
         <OrderDetails

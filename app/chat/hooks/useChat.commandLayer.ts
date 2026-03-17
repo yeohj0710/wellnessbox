@@ -3,17 +3,20 @@
 import type { ChatActionType } from "@/lib/chat/agent-actions";
 import type { ChatSession } from "@/types/chat";
 import { getTzOffsetMinutes } from "../utils";
-import { rememberActionMemoryList } from "./useChat.actionMemory";
 import { requestActionExecutionDecision } from "./useChat.api";
 import { createInChatAssessmentHandlers } from "./useChat.assessmentHandlers";
 import { createAssistantTurnHandlers } from "./useChat.assistantTurnHandlers";
 import { isBrowserOnline } from "./useChat.browser";
+import {
+  clearFollowups,
+  rememberExecutedActions,
+  updateAssistantMessage,
+} from "./useChat.commandLayer.helpers";
 import { CHAT_COPY, toAssistantErrorText } from "./useChat.copy";
 import { createInteractiveCommands } from "./useChat.interactiveCommands";
 import { createMessageFlowHandlers } from "./useChat.messageFlowHandlers";
 import type { UseChatRefs } from "./useChat.refs";
 import { createSessionCommands } from "./useChat.sessionCommands";
-import { replaceSessionMessageContent } from "./useChat.sessionState";
 import type { UseChatState } from "./useChat.state";
 
 type CreateChatCommandLayerInput = {
@@ -45,25 +48,15 @@ export function createChatCommandLayer({
   fetchSuggestions,
   fetchInteractiveActions,
 }: CreateChatCommandLayerInput) {
-  function rememberExecutedActions(actions: ChatActionType[]) {
-    if (!Array.isArray(actions) || actions.length === 0) return;
-    state.setActionMemory((prev) => rememberActionMemoryList(actions, prev));
-  }
-
-  function clearFollowups() {
-    state.setSuggestions([]);
-    state.setInteractiveActions([]);
-  }
-
-  function updateAssistantMessage(
+  const rememberActions = (actions: ChatActionType[]) =>
+    rememberExecutedActions(actions, state.setActionMemory);
+  const resetFollowups = () =>
+    clearFollowups(state.setSuggestions, state.setInteractiveActions);
+  const patchAssistantMessage = (
     sessionId: string,
     messageId: string,
     content: string
-  ) {
-    state.setSessions((prev) =>
-      replaceSessionMessageContent(prev, sessionId, messageId, content)
-    );
-  }
+  ) => updateAssistantMessage(state.setSessions, sessionId, messageId, content);
 
   const { finalizeAssistantTurn, generateTitle } = createAssistantTurnHandlers({
     activeId: state.activeId,
@@ -85,8 +78,8 @@ export function createChatCommandLayer({
     createInChatAssessmentHandlers({
       state: state.inChatAssessment,
       setInChatAssessment: state.setInChatAssessment,
-      clearFollowups,
-      updateAssistantMessage,
+      clearFollowups: resetFollowups,
+      updateAssistantMessage: patchAssistantMessage,
       finalizeAssistantTurn,
       setLocalCheckAi: state.setLocalCheckAi,
       setCheckAiResult: state.setCheckAiResult,
@@ -108,10 +101,10 @@ export function createChatCommandLayer({
     setShowSettings: state.setShowSettings,
     setInChatAssessment: state.setInChatAssessment,
     setSessions: state.setSessions,
-    rememberExecutedActions,
+    rememberExecutedActions: rememberActions,
     initializeInChatAssessment,
     finalizeAssistantTurn,
-    updateAssistantMessage,
+    updateAssistantMessage: patchAssistantMessage,
   });
 
   const {
@@ -125,7 +118,7 @@ export function createChatCommandLayer({
     active,
     input: state.input,
     setInput: state.setInput,
-    clearFollowups,
+    clearFollowups: resetFollowups,
     firstUserMessageRef: refs.firstUserMessageRef,
     setSessions: state.setSessions,
     stickToBottomRef: refs.stickToBottomRef,
@@ -134,7 +127,7 @@ export function createChatCommandLayer({
     isBrowserOnline,
     tryHandleAgentActionDecision,
     tryHandleCartCommand,
-    updateAssistantMessage,
+    updateAssistantMessage: patchAssistantMessage,
     setLoading: state.setLoading,
     buildContextPayload,
     buildRuntimeContextPayload,
@@ -179,7 +172,7 @@ export function createChatCommandLayer({
     setInChatAssessment: state.setInChatAssessment,
     setTitleLoading: state.setTitleLoading,
     setTitleError: state.setTitleError,
-    clearFollowups,
+    clearFollowups: resetFollowups,
   });
 
   return {

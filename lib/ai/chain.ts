@@ -2,6 +2,7 @@ import {
   ChatPromptTemplate,
   MessagesPlaceholder,
 } from "@langchain/core/prompts";
+import { resolveGovernedModel } from "./governance";
 import { buildKnownContext } from "./chain-known-context";
 import {
   loadProductBriefCached,
@@ -42,6 +43,7 @@ export async function streamChat(
     orders,
     assessResult,
     checkAiResult,
+    healthLink,
     actorContext,
     runtimeContext,
   } = body || {};
@@ -70,6 +72,7 @@ export async function streamChat(
     orders: Array.isArray(orders) ? (orders as any[]) : [],
     assessResult: (assessResult as any) ?? null,
     checkAiResult: (checkAiResult as any) ?? null,
+    healthLink: (healthLink as any) ?? null,
     chatSessions: Array.isArray((body as any)?.chatSessions)
       ? (body as any).chatSessions
       : [],
@@ -175,7 +178,13 @@ export async function streamChat(
     new MessagesPlaceholder("messages"),
   ]);
 
-  const llm = getChatModel(await getDefaultModel());
+  const llm = getChatModel(
+    resolveGovernedModel({
+      task: "chat_stream",
+      configuredModel: await getDefaultModel(),
+      summary: contextSummary,
+    }).resolvedModel
+  );
   const formatted = await prompt.formatMessages({ messages: allMessages });
   const eventStream = await llm.stream(formatted);
 

@@ -11,8 +11,15 @@ import type {
   CartProduct,
 } from "@/components/order/cart.types";
 import { isCartHostPath } from "@/lib/client/cart-navigation";
-import { writeClientCartItems } from "@/lib/client/cart-storage";
+import {
+  buildClientCartSignature,
+  writeClientCartItems,
+} from "@/lib/client/cart-storage";
 import { MISSING_ADDRESS_ERROR } from "@/components/order/globalCartHost.constants";
+import {
+  recoverCartItemsForPharmacy,
+  type CartStockRecovery,
+} from "@/lib/cart-stock-intelligence";
 import { useGlobalCartVisibility } from "@/components/order/hooks/useGlobalCartVisibility";
 import { useRoadAddressState } from "@/components/order/hooks/useRoadAddressState";
 import { useSyncedClientCartItems } from "@/components/order/hooks/useSyncedClientCartItems";
@@ -35,6 +42,9 @@ export default function GlobalCartHost() {
   const [isPharmacyLoading, setIsPharmacyLoading] = useState(false);
   const [pharmacyError, setPharmacyError] = useState<string | null>(null);
   const [pharmacyResolveToken, setPharmacyResolveToken] = useState(0);
+  const [stockRecovery, setStockRecovery] = useState<CartStockRecovery | null>(
+    null
+  );
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -105,12 +115,14 @@ export default function GlobalCartHost() {
       setSelectedPharmacy(null);
       setPharmacyError(null);
       setIsPharmacyLoading(false);
+      setStockRecovery(null);
       return;
     }
     if (!roadAddress) {
       setSelectedPharmacy(null);
       setPharmacyError(MISSING_ADDRESS_ERROR);
       setIsPharmacyLoading(false);
+      setStockRecovery(null);
       return;
     }
 
@@ -192,22 +204,28 @@ export default function GlobalCartHost() {
     if (!isVisible) return;
     if (!selectedPharmacy || allProducts.length === 0) return;
 
-    const filteredCartItems = cartItems.filter((item) => {
-      const product = allProducts.find((p) => p.id === item.productId);
-      if (!product) return false;
-      return product.pharmacyProducts?.some(
-        (pp) =>
-          (pp.pharmacyId ?? pp.pharmacy?.id) === selectedPharmacy.id &&
-          pp.optionType === item.optionType
-      );
+    const recoveryPlan = recoverCartItemsForPharmacy({
+      cartItems,
+      allProducts,
+      selectedPharmacyId: selectedPharmacy.id,
     });
 
-    if (filteredCartItems.length === cartItems.length) return;
+    if (!recoveryPlan.changed) {
+      setStockRecovery((previous) =>
+        previous && previous.pharmacyId !== selectedPharmacy.id ? null : previous
+      );
+      return;
+    }
 
-    const normalized = writeClientCartItems(filteredCartItems);
+    const currentSignature = buildClientCartSignature(cartItems);
+    const nextSignature = buildClientCartSignature(recoveryPlan.updatedItems);
+    if (currentSignature === nextSignature) return;
+
+    const normalized = writeClientCartItems(recoveryPlan.updatedItems);
     if (setCartItemsIfChanged(normalized)) {
       window.dispatchEvent(new Event("cartUpdated"));
     }
+    setStockRecovery(recoveryPlan.recovery);
   }, [isVisible, selectedPharmacy, allProducts, cartItems, setCartItemsIfChanged]);
 
   const handleUpdateCart = useCallback(
@@ -234,6 +252,7 @@ export default function GlobalCartHost() {
           totalPrice={totalPrice}
           selectedPharmacy={selectedPharmacy}
           allProducts={allProducts}
+          stockRecovery={stockRecovery}
           isPharmacyLoading={isPharmacyLoading}
           pharmacyError={pharmacyError}
           onRetryPharmacyResolve={retryPharmacyResolve}

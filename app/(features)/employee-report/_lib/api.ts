@@ -43,18 +43,26 @@ export async function fetchEmployeeSession() {
 
 export async function upsertEmployeeSession(identity: IdentityInput) {
   const payload = toIdentityPayload(identity);
-  return requestJson<EmployeeSessionUpsertResponse>("/api/b2b/employee/session", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  }, {
-    timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
-  });
+  return requestJson<EmployeeSessionUpsertResponse>(
+    "/api/b2b/employee/session",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    {
+      timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
+    }
+  );
 }
 
 export async function deleteEmployeeSession() {
-  return requestJson("/api/b2b/employee/session", { method: "DELETE" }, {
-    timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
-  });
+  return requestJson(
+    "/api/b2b/employee/session",
+    { method: "DELETE" },
+    {
+      timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
+    }
+  );
 }
 
 export async function postEmployeeSync(input: {
@@ -63,18 +71,21 @@ export async function postEmployeeSync(input: {
   debugOverride?: boolean;
 }) {
   const payload = toIdentityPayload(input.identity);
-  return requestJson<EmployeeSyncResponse>("/api/b2b/employee/sync", {
-    method: "POST",
-    headers: buildEmployeeSyncHeaders(input.debugOverride),
-    body: JSON.stringify({
-      ...payload,
-      forceRefresh: input.forceRefresh,
-    }),
-  }, {
-    timeoutMs: EMPLOYEE_SYNC_TIMEOUT_MS,
-    timeoutMessage:
-      "건강데이터 연동 응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.",
-  });
+  return requestJson<EmployeeSyncResponse>(
+    "/api/b2b/employee/sync",
+    {
+      method: "POST",
+      headers: buildEmployeeSyncHeaders(input.debugOverride),
+      body: JSON.stringify({
+        ...payload,
+        forceRefresh: input.forceRefresh,
+      }),
+    },
+    {
+      timeoutMs: EMPLOYEE_SYNC_TIMEOUT_MS,
+      timeoutMessage: "건강 데이터 연결이 길어지고 있어요. 잠시 뒤 다시 시도해 주세요.",
+    }
+  );
 }
 
 export async function requestNhisInit(input: {
@@ -82,30 +93,38 @@ export async function requestNhisInit(input: {
   forceInit?: boolean;
 }) {
   const payload = toIdentityPayload(input.identity);
-  return requestJson<NhisInitResponse>("/api/health/nhis/init", {
-    method: "POST",
-    body: JSON.stringify({
-      loginMethod: "EASY",
-      loginOrgCd: "kakao",
-      resNm: payload.name,
-      resNo: payload.birthDate,
-      mobileNo: payload.phone,
-      ...(input.forceInit ? { forceInit: true } : {}),
-    }),
-  }, {
-    timeoutMs: NHIS_INIT_TIMEOUT_MS,
-    timeoutMessage: "카카오톡 인증 준비 응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.",
-  });
+  return requestJson<NhisInitResponse>(
+    "/api/health/nhis/init",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        loginMethod: "EASY",
+        loginOrgCd: "kakao",
+        resNm: payload.name,
+        resNo: payload.birthDate,
+        mobileNo: payload.phone,
+        ...(input.forceInit ? { forceInit: true } : {}),
+      }),
+    },
+    {
+      timeoutMs: NHIS_INIT_TIMEOUT_MS,
+      timeoutMessage: "카카오톡 인증 준비가 길어지고 있어요. 잠시 뒤 다시 시도해 주세요.",
+    }
+  );
 }
 
 export async function requestNhisSign() {
-  return requestJson<NhisSignResponse>("/api/health/nhis/sign", {
-    method: "POST",
-    body: JSON.stringify({}),
-  }, {
-    timeoutMs: NHIS_SIGN_TIMEOUT_MS,
-    timeoutMessage: "카카오톡 인증 확인 응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.",
-  });
+  return requestJson<NhisSignResponse>(
+    "/api/health/nhis/sign",
+    {
+      method: "POST",
+      body: JSON.stringify({}),
+    },
+    {
+      timeoutMs: NHIS_SIGN_TIMEOUT_MS,
+      timeoutMessage: "카카오톡 인증 확인이 길어지고 있어요. 잠시 뒤 다시 시도해 주세요.",
+    }
+  );
 }
 
 export async function requestNhisUnlink() {

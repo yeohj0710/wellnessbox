@@ -1,5 +1,6 @@
 "use client";
 
+import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
 import type {
   CSSProperties,
   PointerEvent as ReactPointerEvent,
@@ -38,7 +39,7 @@ export function ProfileImageEditorPreviewPane({
     <div className="mt-4 flex w-full flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-5">
       <div
         ref={previewRef}
-        className="relative h-[320px] w-[320px] overflow-hidden rounded-2xl border border-gray-200 bg-gray-100 select-none"
+        className="relative h-[320px] w-[320px] select-none overflow-hidden rounded-2xl border border-gray-200 bg-gray-100"
         style={{ touchAction: "none" }}
         onPointerDown={onDragStart}
         onPointerMove={onDragMove}
@@ -57,13 +58,21 @@ export function ProfileImageEditorPreviewPane({
             />
             {!isImageReady ? (
               <div className="absolute inset-0 flex items-center justify-center text-xs text-gray-500">
-                이미지 준비 중...
+                <InlineSpinnerLabel
+                  label="이미지 준비 중"
+                  className="text-gray-500"
+                  spinnerClassName="text-sky-500"
+                />
               </div>
             ) : null}
           </>
         ) : (
           <div className="flex h-full items-center justify-center text-xs text-gray-500">
-            이미지 준비 중...
+            <InlineSpinnerLabel
+              label="이미지 준비 중"
+              className="text-gray-500"
+              spinnerClassName="text-sky-500"
+            />
           </div>
         )}
 
@@ -78,11 +87,11 @@ export function ProfileImageEditorPreviewPane({
             style={{ top: "66.666%" }}
           />
           <div
-            className="absolute top-0 bottom-0 border-l border-white/40"
+            className="absolute bottom-0 top-0 border-l border-white/40"
             style={{ left: "33.333%" }}
           />
           <div
-            className="absolute top-0 bottom-0 border-l border-white/40"
+            className="absolute bottom-0 top-0 border-l border-white/40"
             style={{ left: "66.666%" }}
           />
         </div>
@@ -93,12 +102,16 @@ export function ProfileImageEditorPreviewPane({
 
         {isApplying ? (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-white/45 text-xs font-semibold text-sky-800">
-            적용 중...
+            <InlineSpinnerLabel
+              label="적용 중"
+              className="text-sky-800"
+              spinnerClassName="text-sky-600"
+            />
           </div>
         ) : null}
       </div>
 
-      <div className="hidden sm:flex flex-col items-center gap-2 pt-2">
+      <div className="hidden flex-col items-center gap-2 pt-2 sm:flex">
         <span className="text-xs font-semibold text-gray-700">최종 미리보기</span>
         <div className="relative h-32 w-32 overflow-hidden rounded-full border border-gray-200 bg-gray-100 shadow-sm">
           {objectUrl && isImageReady ? (
@@ -113,7 +126,7 @@ export function ProfileImageEditorPreviewPane({
           <div className="pointer-events-none absolute inset-0 ring-2 ring-white/80" />
         </div>
         <p className="text-center text-[11px] leading-relaxed text-gray-500">
-          오른쪽 원형 썸네일이 저장 결과에 그대로 반영됩니다.
+          오른쪽 원형 썸네일이 실제 결과로 반영돼요.
         </p>
       </div>
     </div>

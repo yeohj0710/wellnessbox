@@ -50,10 +50,39 @@ export function buildMessages(input: BuildMessagesInput): PromptMessage[] {
     },
     {
       role: "system",
-      content: `참고 근거 라벨: ${
-        input.contextSummary.evidenceLabels.join(", ") || "없음"
-      }\n추가 확인 필요 항목: ${
-        input.contextSummary.missingData.join(", ") || "없음"
+      content: `context_evidence_labels: ${
+        input.contextSummary.evidenceLabels.join(", ") || "none"
+      }\nmissing_data: ${
+        input.contextSummary.missingData.join(", ") || "none"
+      }\nexplainability_confidence: ${
+        input.contextSummary.explainability.confidenceLabel
+      }\nkey_fit_reasons: ${
+        input.contextSummary.explainability.fitReasons.join(" / ") || "none"
+      }\nuncertainty_notes: ${
+        input.contextSummary.explainability.uncertaintyNotes.join(" / ") ||
+        "none"
+      }\npharmacist_review_points: ${
+        input.contextSummary.explainability.pharmacistReviewPoints.join(" / ") ||
+        "none"
+      }\nsafety_escalation_level: ${
+        input.contextSummary.safetyEscalation.level
+      }\nsafety_escalation_headline: ${
+        input.contextSummary.safetyEscalation.headline || "none"
+      }\nsafety_reason_lines: ${
+        input.contextSummary.safetyEscalation.reasonLines.join(" / ") || "none"
+      }\nneeds_more_info: ${
+        input.contextSummary.safetyEscalation.needsMoreInfo.join(" / ") || "none"
+      }\ncautious_expression_guide: ${
+        input.contextSummary.safetyEscalation.cautiousExpressionGuide.join(" / ") ||
+        "none"
+      }\nconsultation_impact_stage: ${
+        input.contextSummary.consultationImpact.stage
+      }\nconsultation_impact_headline: ${
+        input.contextSummary.consultationImpact.headline || "none"
+      }\nconsultation_impact_insight: ${
+        input.contextSummary.consultationImpact.insight || "none"
+      }\nconsultation_impact_action: ${
+        input.contextSummary.consultationImpact.recommendedActionLabel || "none"
       }`,
     },
   ];
@@ -76,7 +105,7 @@ export function buildMessages(input: BuildMessagesInput): PromptMessage[] {
     messages.push({
       role: "user",
       content:
-        "상담을 시작합니다. user_context_summary를 바탕으로 첫 응답을 작성해 주세요. 길게 분석하지 말고, 먼저 지금 파악된 점을 짧게 말한 뒤 바로 가능한 제안이 있으면 한두 줄로 덧붙여 주세요. 확인 질문이 꼭 필요하면 마지막에 1개만 해 주세요. 사용자가 먼저 요청하지 않았다면 보고서처럼 길게 쓰지 말고, 필요할 때만 markdown 목록을 짧게 사용해 주세요.",
+        "상담을 시작합니다. user_context_summary를 바탕으로 첫 응답을 작성해 주세요. 길게 분석하지 말고, 먼저 지금 파악된 점을 짧게 말한 뒤 바로 가능한 제안을 주세요. 확인 질문이 꼭 필요하면 마지막에 1개만 해주세요. 사용자가 먼저 요청하지 않았다면 보고서처럼 길게 쓰지 말고, 필요할 때만 markdown 목록을 사용해 주세요.",
     });
     return messages;
   }

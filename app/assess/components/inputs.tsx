@@ -79,7 +79,7 @@ export function NumberInput({
           <button
             onClick={submit}
             disabled={val === ""}
-            className="w-full rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-2 font-bold text-white shadow transition-colors hover:from-sky-600 hover:to-indigo-600 active:scale-[0.99] disabled:bg-none disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
+            className="w-full rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-2 font-bold text-white shadow-[0_12px_28px_rgba(56,121,255,0.28)] transition duration-200 ease-out hover:-translate-y-[1px] hover:from-sky-600 hover:to-indigo-600 hover:shadow-[0_16px_34px_rgba(56,121,255,0.34)] active:translate-y-0 active:scale-[0.99] disabled:bg-none disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
           >
             다음
           </button>
@@ -138,10 +138,10 @@ export function MultiSelect({
                   aria-pressed={active}
                   data-selected={active ? "true" : "false"}
                   className={[
-                    "relative flex items-center justify-center gap-2 rounded-xl border p-3 text-sm transition-all whitespace-normal text-center focus:outline-none focus-visible:outline-none min-h-[44px] h-full",
+                    "relative flex items-center justify-center gap-2 rounded-xl border p-3 text-sm whitespace-normal text-center focus:outline-none focus-visible:outline-none min-h-[44px] h-full transition duration-200 ease-out will-change-transform",
                     active
-                      ? "border-transparent bg-sky-50 ring-2 ring-sky-400 ring-offset-1 ring-offset-white focus:ring-0 focus-visible:ring-0"
-                      : "border-gray-200 bg-white supports-[hover:hover]:hover:bg-sky-50 supports-[hover:hover]:hover:border-sky-200 active:bg-sky-50 focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-1 focus-visible:ring-offset-white",
+                      ? "border-transparent bg-sky-50 shadow-[0_10px_24px_rgba(14,165,233,0.14)] ring-2 ring-sky-400 ring-offset-1 ring-offset-white focus:ring-0 focus-visible:ring-0"
+                      : "border-gray-200 bg-white supports-[hover:hover]:hover:-translate-y-[2px] supports-[hover:hover]:hover:bg-sky-50 supports-[hover:hover]:hover:border-sky-200 supports-[hover:hover]:hover:shadow-[0_12px_28px_rgba(15,23,42,0.08)] active:bg-sky-50 active:translate-y-0 focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-1 focus-visible:ring-offset-white",
               ].join(" ")}
             >
               {active && (
@@ -166,7 +166,7 @@ export function MultiSelect({
             onClick={() =>
               onSubmit(selected.length === 0 ? undefined : selected)
             }
-            className="w-full rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-2 font-bold text-white shadow transition-colors hover:from-sky-600 hover:to-indigo-600 active:scale-[0.99] disabled:bg-none disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
+            className="w-full rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-2 font-bold text-white shadow-[0_12px_28px_rgba(56,121,255,0.28)] transition duration-200 ease-out hover:-translate-y-[1px] hover:from-sky-600 hover:to-indigo-600 hover:shadow-[0_16px_34px_rgba(56,121,255,0.34)] active:translate-y-0 active:scale-[0.99] disabled:bg-none disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
           >
             다음
           </button>

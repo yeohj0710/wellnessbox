@@ -1,3 +1,7 @@
+import {
+  resolveGovernedModel,
+  shouldPreferDeterministicSuggestions,
+} from "@/lib/ai/governance";
 import { getDefaultModel } from "@/lib/ai/model";
 import { buildSuggestionMessages } from "@/lib/chat/prompts";
 import {
@@ -42,7 +46,11 @@ async function requestPrimarySuggestions(input: {
   }
 
   const payload = {
-    model: await getDefaultModel(),
+    model: resolveGovernedModel({
+      task: "chat_action_suggestions",
+      configuredModel: await getDefaultModel(),
+      summary: input.contextSummary,
+    }).resolvedModel,
     messages: buildSuggestionMessages({
       contextSummary: input.contextSummary,
       lastAssistantReply: input.text,
@@ -82,16 +90,21 @@ export async function runSuggestRoute(rawBody: unknown, count = 2) {
       : input.fallbackSuggestions.slice(0, input.count);
   }
 
+  const deterministicOnly = shouldPreferDeterministicSuggestions(
+    input.contextSummary
+  );
   const primarySuggestions = apiKey
-    ? await requestPrimarySuggestions({
-        apiKey,
-        count: input.count,
-        text: input.text,
-        recentMessages: input.recentMessages,
-        contextSummary: input.contextSummary,
-        runtimeContextText: input.runtimeContextText,
-        excludeSuggestions: input.excludeSuggestions,
-      })
+    ? deterministicOnly
+      ? []
+      : await requestPrimarySuggestions({
+          apiKey,
+          count: input.count,
+          text: input.text,
+          recentMessages: input.recentMessages,
+          contextSummary: input.contextSummary,
+          runtimeContextText: input.runtimeContextText,
+          excludeSuggestions: input.excludeSuggestions,
+        })
     : [];
 
   return resolveFinalSuggestions({

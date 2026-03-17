@@ -5,6 +5,7 @@ import { labelOf } from "@/lib/categories";
 import type { CategoryLite } from "@/lib/client/categories";
 import type { CSectionResult } from "./components/CSection";
 import { sectionA, sectionB } from "./data/questions";
+import { resolveAssessQuestionGuide } from "./logic/question-flow";
 import { resolveProgressMessage } from "./logic/progress-message";
 import type { AssessSection } from "./useAssessFlow.types";
 
@@ -71,6 +72,11 @@ export function useAssessFlowDerivedState({
   const progressMsg =
     section === "A" || section === "B" ? resolveProgressMessage(answered, total) : "";
 
+  const questionGuide =
+    currentQuestion && (section === "A" || section === "B")
+      ? resolveAssessQuestionGuide(currentQuestion.id, answers)
+      : null;
+
   const sectionTitle = section === "A" ? "기초 건강 데이터" : "생활 습관·증상";
 
   return {
@@ -82,5 +88,6 @@ export function useAssessFlowDerivedState({
     total,
     progressMsg,
     sectionTitle,
+    questionGuide,
   };
 }

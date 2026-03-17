@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
 import {
   sendPhoneOtpRequest,
   verifyPhoneOtpRequest,
@@ -69,19 +70,19 @@ export default function PhoneAuthPage() {
   const verifyHint = useMemo(() => {
     if (verifyStatusCode == null) return undefined;
     if (verifyStatusCode === 200) return undefined;
-    return "인증번호 확인이 실패했습니다. 응답 내용을 확인해주세요.";
+    return "인증번호 확인에 실패했습니다. 응답 내용을 다시 확인해 주세요.";
   }, [verifyStatusCode]);
 
   return (
-    <div className="min-h-screen bg-white py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white px-4 py-12 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-lg">
-        <div className="rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 p-8 space-y-6">
+        <div className="space-y-6 rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-200">
           <header className="space-y-2">
             <h1 className="text-2xl font-semibold text-gray-900">
               휴대폰 OTP 테스트
             </h1>
             <p className="text-sm text-gray-600">
-              휴대폰 번호와 인증번호를 입력해 OTP 발송 및 확인을 테스트하세요.
+              휴대폰 번호와 인증번호를 입력해 OTP 발송과 확인을 테스트해요.
             </p>
           </header>
 
@@ -124,7 +125,11 @@ export default function PhoneAuthPage() {
               disabled={sendLoading || !phone}
               className="inline-flex justify-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-300"
             >
-              {sendLoading ? "발송 중..." : "인증번호 받기"}
+              {sendLoading ? (
+                <InlineSpinnerLabel label="발송 중" />
+              ) : (
+                "인증번호 받기"
+              )}
             </button>
 
             <button
@@ -133,7 +138,11 @@ export default function PhoneAuthPage() {
               disabled={verifyLoading || !phone || !code}
               className="inline-flex justify-center rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
             >
-              {verifyLoading ? "확인 중..." : "인증번호 확인"}
+              {verifyLoading ? (
+                <InlineSpinnerLabel label="확인 중" />
+              ) : (
+                "인증번호 확인"
+              )}
             </button>
           </div>
 
@@ -161,7 +170,7 @@ function ResponsePanel({
   hint?: string;
 }) {
   return (
-    <section className="rounded-xl border border-gray-200 bg-gray-50/80 p-4 space-y-2">
+    <section className="space-y-2 rounded-xl border border-gray-200 bg-gray-50/80 p-4">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-gray-800">{title}</h2>
         {response ? (
@@ -182,7 +191,7 @@ function ResponsePanel({
       <pre className="whitespace-pre-wrap break-words rounded-lg bg-white p-3 text-xs text-gray-800 shadow-inner ring-1 ring-gray-200">
         {response
           ? JSON.stringify(response, null, 2)
-          : "응답을 확인하려면 요청을 보내세요."}
+          : "응답을 확인하려면 요청을 먼저 보내 주세요."}
       </pre>
     </section>
   );

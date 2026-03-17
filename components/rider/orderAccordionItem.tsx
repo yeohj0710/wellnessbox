@@ -1,22 +1,26 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import BetaFeatureGate from "@/components/common/BetaFeatureGate";
+import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
+import OrderAccordionHeader from "@/components/order/orderAccordionHeader";
+import OrderProgressBar from "@/components/order/orderProgressBar";
 import { getOrderById, getOrderStatusById } from "@/lib/order";
 import { updateOrderStatus } from "@/lib/order/mutations";
-import OrderProgressBar from "@/components/order/orderProgressBar";
-import OrderAccordionHeader from "@/components/order/orderAccordionHeader";
 import { ORDER_STATUS, type OrderStatus } from "@/lib/order/orderStatus";
-import { getStreamToken } from "@/lib/streamToken";
 import type {
   OrderAccordionOrder,
   OrderMessage,
 } from "@/components/order/orderAccordion.types";
+import { getStreamToken } from "@/lib/streamToken";
 import {
   RiderOrderCustomerInfoSection,
   RiderOrderItemsSection,
   RiderOrderPharmacyInfoSection,
   RiderOrderStatusActionsSection,
+  RiderOrderStatusCopilotSection,
 } from "./riderOrderAccordionSections";
+import { RiderOrderCopilotStrip } from "./riderOpsCopilot";
 
 const POLL_INTERVAL_MS = 10_000;
 
@@ -166,22 +170,22 @@ export default function OrderAccordionItem({
   };
 
   const handleCancelPickup = () => {
-    if (!window.confirm("정말로 픽업을 취소할까요?")) return;
+    if (!window.confirm("정말로 작업을 취소할까요?")) return;
     void handleUpdateOrderStatus(order.id, ORDER_STATUS.DISPENSE_COMPLETE);
   };
 
   if (isExpanded && !isLoaded) {
     return (
-      <div className="w-full max-w-[640px] mx-auto px-6 py-6 bg-white sm:shadow-md sm:rounded-lg">
+      <div className="mx-auto w-full max-w-[640px] bg-white px-6 py-6 sm:rounded-lg sm:shadow-md">
         <OrderAccordionHeader
           role="rider"
           order={order}
           isExpanded={isExpanded}
           toggle={toggleExpanded}
         />
-        <div className="mt-4 border-t sm:px-4 pt-16 sm:pt-12 pb-4">
-          <div className="flex justify-center items-center mt-2 mb-6">
-            <div className="w-6 h-6 border-2 border-sky-400 border-t-transparent rounded-full animate-spin" />
+        <div className="mt-4 border-t pb-4 pt-16 sm:px-4 sm:pt-12">
+          <div className="mb-6 mt-2 flex items-center justify-center">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-sky-400 border-t-transparent" />
           </div>
         </div>
       </div>
@@ -189,7 +193,7 @@ export default function OrderAccordionItem({
   }
 
   return (
-    <div className="w-full max-w-[640px] mx-auto px-6 py-6 bg-white sm:shadow-md sm:rounded-lg">
+    <div className="mx-auto w-full max-w-[640px] bg-white px-6 py-6 sm:rounded-lg sm:shadow-md">
       <OrderAccordionHeader
         role="rider"
         order={order}
@@ -197,8 +201,19 @@ export default function OrderAccordionItem({
         toggle={toggleExpanded}
       />
       {isExpanded ? (
-        <div className="mt-4 border-t sm:px-4 pt-16 sm:pt-12 pb-4">
+        <div className="mt-4 border-t pb-4 pt-16 sm:px-4 sm:pt-12">
           <OrderProgressBar currentStatus={order.status} />
+
+          <BetaFeatureGate
+            title="Beta 라이더 가이드"
+            helper="코파일럿 요약은 필요할 때만 펼쳐보세요."
+            className="mt-6"
+          >
+            <div className="space-y-4">
+              <RiderOrderCopilotStrip order={order} />
+              <RiderOrderStatusCopilotSection order={order} />
+            </div>
+          </BetaFeatureGate>
 
           <RiderOrderStatusActionsSection
             order={order}
@@ -213,7 +228,15 @@ export default function OrderAccordionItem({
             className="mb-4 text-sm text-sky-500 hover:underline"
             disabled={isStateRefreshing}
           >
-            {isStateRefreshing ? "상태 확인 중..." : "상태 새로고침"}
+            {isStateRefreshing ? (
+              <InlineSpinnerLabel
+                label="상태 확인 중"
+                className="text-sky-500"
+                spinnerClassName="text-sky-500"
+              />
+            ) : (
+              "상태 새로고침"
+            )}
           </button>
 
           <RiderOrderItemsSection order={order} />

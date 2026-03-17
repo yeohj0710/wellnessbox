@@ -38,7 +38,9 @@ function DesktopChatDockPanel({
     profileLoaded,
     assessResult,
     checkAiResult,
+    healthLink,
     orders,
+    userContextSummary,
     suggestions,
     interactiveActions,
     showAgentGuide,
@@ -159,9 +161,11 @@ function DesktopChatDockPanel({
           onCloseProfileBanner={() => setShowProfileBanner(false)}
           bootstrapPending={bootstrapPending}
           active={active}
+          userContextSummary={userContextSummary}
           orders={orders}
           assessResult={assessResult}
           checkAiResult={checkAiResult}
+          healthLink={healthLink}
           assistantLoadingMetaByIndex={assistantLoadingMetaByIndex}
           showAgentCapabilityHub={showAgentCapabilityHub}
           agentCapabilityActions={agentCapabilityActions}

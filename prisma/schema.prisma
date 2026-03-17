@@ -205,6 +205,7 @@ model Client {
   createdAt      DateTime           @default(now())
   lastSeenAt     DateTime           @default(now())
   assessResults  AssessmentResult[]
+  aiExperimentEvents AiExperimentEvent[]
   chatSessions   ChatSession[]
   checkAiResults CheckAiResult[]
   profile        UserProfile?
@@ -281,10 +282,33 @@ model AppUser {
   healthProviderFetchAttempts HealthProviderFetchAttempt[]
   b2bEmployees B2bEmployee[]
   b2bEmployeeAccessLogs B2bEmployeeAccessLog[]
+  aiExperimentEvents AiExperimentEvent[]
 
   @@index([clientId])
   @@index([email])
   @@index([phone])
+}
+
+model AiExperimentEvent {
+  id            String    @id @default(cuid())
+  experimentKey String
+  variantKey    String
+  eventName     String
+  surface       String?
+  route         String?
+  sessionKey    String?
+  appUserId     String?
+  clientId      String?
+  payload       Json?
+  createdAt     DateTime  @default(now())
+  appUser       AppUser?  @relation(fields: [appUserId], references: [id], onDelete: SetNull)
+  client        Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  @@index([experimentKey, createdAt])
+  @@index([experimentKey, variantKey, eventName, createdAt])
+  @@index([surface, createdAt])
+  @@index([appUserId, createdAt])
+  @@index([clientId, createdAt])
 }
 
 model HealthProviderLink {

@@ -1,3 +1,4 @@
+import { resolveGovernedModel } from "@/lib/ai/governance";
 import { getDefaultModel } from "@/lib/ai/model";
 import {
   callOpenAIChatCompletions,
@@ -143,7 +144,10 @@ export async function callOpenAI(
 
 export async function extractTopicByAI(apiKey: string, sourceText: string) {
   const payload = {
-    model: await getDefaultModel(),
+    model: resolveGovernedModel({
+      task: "chat_topic_classifier",
+      configuredModel: await getDefaultModel(),
+    }).resolvedModel,
     response_format: { type: "json_object" as const },
     temperature: 0.2,
     max_tokens: 64,

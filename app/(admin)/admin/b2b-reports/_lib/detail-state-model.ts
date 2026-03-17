@@ -1,5 +1,6 @@
 import type { LayoutDocument } from "@/lib/b2b/export/layout-types";
 import type { LayoutValidationIssue } from "@/lib/b2b/export/validation-types";
+import type { B2bReportPackagedProduct } from "@/lib/b2b/report-customization-types";
 import type {
   LatestReport,
   ReportAudit,
@@ -21,6 +22,8 @@ export type LoadedEmployeeDetailState = {
   note: string;
   recommendations: string;
   cautions: string;
+  reportConsultationSummary: string;
+  reportPackagedProducts: B2bReportPackagedProduct[];
   latestReport: LatestReport | null;
   validationAudit: ReportAudit | null;
   validationIssues: LayoutValidationIssue[];
@@ -41,6 +44,8 @@ export function buildEmptyEmployeeDetailState(): LoadedEmployeeDetailState {
     note: "",
     recommendations: "",
     cautions: "",
+    reportConsultationSummary: "",
+    reportPackagedProducts: [],
     latestReport: null,
     validationAudit: null,
     validationIssues: [],
@@ -73,6 +78,10 @@ export function buildLoadedEmployeeDetailState(
     note: noteData.note?.note ?? "",
     recommendations: noteData.note?.recommendations ?? "",
     cautions: noteData.note?.cautions ?? "",
+    reportConsultationSummary:
+      report.latest?.payload?.reportAddendum?.consultationSummary ?? "",
+    reportPackagedProducts:
+      report.latest?.payload?.reportAddendum?.packagedProducts ?? [],
     latestReport: report.latest,
     validationAudit: (report.latest?.exportAudit ?? null) as ReportAudit | null,
     validationIssues: extractIssuesFromAudit(report.latest?.exportAudit),

@@ -264,6 +264,10 @@ export async function buildB2bReportPayload(input: {
       dosingGuide: toText(pharmacistSummary?.dosingGuide) || null,
       updatedAt: latestNote?.updatedAt?.toISOString() ?? null,
     },
+    reportAddendum: {
+      consultationSummary: null,
+      packagedProducts: [],
+    },
   };
 
   return payload;

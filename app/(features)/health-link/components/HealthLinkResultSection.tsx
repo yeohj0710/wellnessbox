@@ -2,11 +2,12 @@
 
 import React from "react";
 import { useToast } from "@/components/common/toastContext.client";
-import type { NhisAiSummary, NhisFetchFailure } from "../types";
+import type { NhisAiSummary, NhisFetchFailure, NhisStatusResponse } from "../types";
 import { hasNhisSessionExpiredFailure, type LatestCheckupMeta, type MedicationDigest } from "../utils";
 import { HEALTH_LINK_COPY } from "../copy";
 import styles from "../HealthLinkClient.module.css";
 import { HealthLinkFetchActions } from "./HealthLinkFetchActions";
+import { HealthLinkRecoveryCoach } from "./HealthLinkRecoveryCoach";
 import { HealthLinkResultContent } from "./HealthLinkResultContent";
 import { HealthLinkResultFailureNotice } from "./HealthLinkResultFailureNotice";
 import { HealthLinkResultLoadingPanel } from "./HealthLinkResultLoadingPanel";
@@ -14,6 +15,7 @@ import { type LatestCheckupRow } from "./HealthLinkResultSection.helpers";
 import { useHealthLinkResultSectionModel } from "./useHealthLinkResultSectionModel";
 
 type HealthLinkResultSectionProps = {
+  status?: NhisStatusResponse["status"];
   linked: boolean;
   canFetch: boolean;
   switchIdentityDisabled: boolean;
@@ -32,6 +34,7 @@ type HealthLinkResultSectionProps = {
 };
 
 export function HealthLinkResultSection({
+  status,
   linked,
   canFetch,
   switchIdentityDisabled,
@@ -127,6 +130,15 @@ export function HealthLinkResultSection({
         primaryLoading={primaryLoading}
         onSummaryFetch={onSummaryFetch}
         onSwitchIdentity={onSwitchIdentity}
+      />
+      <HealthLinkRecoveryCoach
+        status={status}
+        summaryFetchBlocked={summaryFetchBlocked}
+        summaryFetchBlockedMessage={summaryFetchBlockedMessage}
+        fetchFailures={visibleFailures}
+        hasFetchResult={hasFetchResult}
+        latestCheckupMeta={latestCheckupMeta}
+        medicationDigest={medicationDigest}
       />
 
       {fetchLoading ? (

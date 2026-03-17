@@ -66,6 +66,7 @@ export function prepareSuggestRouteInput(
     orders: Array.isArray(body.orders) ? body.orders : [],
     assessResult: body.assessResult ?? null,
     checkAiResult: body.checkAiResult ?? null,
+    healthLink: body.healthLink ?? null,
     chatSessions: Array.isArray(body.chatSessions) ? body.chatSessions : [],
     currentSessionId: typeof body.sessionId === "string" ? body.sessionId : null,
     localAssessCats: Array.isArray(body.localAssessCats) ? body.localAssessCats : [],

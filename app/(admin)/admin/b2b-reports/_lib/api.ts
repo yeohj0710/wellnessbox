@@ -10,6 +10,7 @@ import type {
   SurveyPutResponse,
   ValidationResponse,
 } from "./client-types";
+import type { B2bReportPackagedProduct } from "@/lib/b2b/report-customization-types";
 import { requestJson } from "./client-utils";
 
 export type EmployeeDetailBundle = {
@@ -143,6 +144,20 @@ export async function saveReportDisplayPeriod(input: {
     method: "PATCH",
     body: JSON.stringify({
       displayPeriodKey: input.displayPeriodKey,
+    }),
+  });
+}
+
+export async function saveReportCustomization(input: {
+  reportId: string;
+  consultationSummary: string;
+  packagedProducts: B2bReportPackagedProduct[];
+}) {
+  return requestJson(`/api/admin/b2b/reports/${input.reportId}/meta`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      consultationSummary: input.consultationSummary,
+      packagedProducts: input.packagedProducts,
     }),
   });
 }

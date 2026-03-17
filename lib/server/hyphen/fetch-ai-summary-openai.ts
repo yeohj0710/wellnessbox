@@ -1,6 +1,7 @@
 import {
   type OpenAiSummaryResult,
 } from "./fetch-ai-summary-model";
+import { resolveGovernedModel } from "@/lib/ai/governance";
 import { getDefaultModel } from "@/lib/ai/models";
 import { callOpenAIChatCompletions } from "@/lib/ai/openai-chat-compat";
 import {
@@ -33,7 +34,10 @@ export async function requestOpenAiSummary(
 ): Promise<OpenAiSummaryResult | null> {
   const apiKey = getOpenAiApiKey();
   if (!apiKey) return null;
-  const model = await getDefaultModel();
+  const model = resolveGovernedModel({
+    task: "nhis_summary",
+    configuredModel: await getDefaultModel(),
+  }).resolvedModel;
 
   try {
     const response = await callOpenAIChatCompletions(apiKey, {

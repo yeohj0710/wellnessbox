@@ -21,11 +21,11 @@ import type {
 
 export function ManagerWorkspaceShell(props: ManagerWorkspaceShellProps) {
   return (
-    <section className="space-y-5">
-      <div className="relative overflow-hidden rounded-[28px] border border-slate-200/70 bg-white/90 p-5 shadow-[0_24px_90px_-40px_rgba(15,23,42,0.35)] backdrop-blur sm:p-7">
+    <section className="space-y-6">
+      <div className="relative overflow-hidden rounded-[30px] border border-slate-200/75 bg-white/95 p-6 shadow-[0_26px_80px_-44px_rgba(15,23,42,0.28)] backdrop-blur sm:p-8 lg:p-9">
         <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-sky-500 to-blue-600" />
-        <div className="absolute -right-10 top-0 h-36 w-36 rounded-full bg-sky-100/70 blur-3xl" />
-        <div className="absolute left-0 top-16 h-32 w-32 rounded-full bg-emerald-100/60 blur-3xl" />
+        <div className="absolute -right-12 top-0 h-32 w-32 rounded-full bg-sky-100/45 blur-3xl" />
+        <div className="absolute -left-2 top-20 h-28 w-28 rounded-full bg-emerald-100/40 blur-3xl" />
         <div className="relative space-y-4">
           <div className="space-y-2">
             <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-sky-700/75">
@@ -207,8 +207,8 @@ export function ManagerEmptyState(props: ManagerEmptyStateProps) {
 
 export function AdminToolPageShell(props: AdminToolPageShellProps) {
   return (
-    <div className="relative left-1/2 right-1/2 min-h-screen w-screen -translate-x-1/2 bg-[radial-gradient(circle_at_12%_0%,rgba(125,211,252,0.65),transparent_34%),radial-gradient(circle_at_88%_0%,rgba(191,219,254,0.8),transparent_28%),linear-gradient(180deg,#f7fbff_0%,#edf4fb_100%)]">
-      <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-6 px-4 pb-16 pt-8 sm:px-6 lg:px-8">
+    <div className="relative left-1/2 right-1/2 min-h-screen w-screen -translate-x-1/2 bg-[radial-gradient(circle_at_12%_0%,rgba(125,211,252,0.28),transparent_34%),radial-gradient(circle_at_88%_0%,rgba(191,219,254,0.38),transparent_30%),linear-gradient(180deg,#fbfdff_0%,#f3f7fb_100%)]">
+      <div className="mx-auto flex w-full max-w-[1240px] flex-col gap-7 px-5 pb-20 pt-10 sm:px-8 lg:px-10">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="space-y-2">
             <p className="text-[11px] font-bold uppercase tracking-[0.26em] text-sky-700/70">

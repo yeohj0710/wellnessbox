@@ -5,23 +5,29 @@ import {
   regenerateReport,
   saveAnalysisPayload,
   saveNote,
+  saveReportCustomization,
   saveSurvey,
 } from "./api";
+import type { B2bReportPackagedProduct } from "@/lib/b2b/report-customization-types";
 import type { B2bAdminReportRunBusyAction } from "./use-b2b-admin-report-busy-action";
 
 type UseB2bAdminReportPersistenceActionsParams = {
   runBusyAction: B2bAdminReportRunBusyAction;
   selectedEmployeeId: string | null;
   selectedPeriodKey: string;
+  latestReportId: string | null;
   surveyAnswers: Record<string, unknown>;
   resolvedSelectedSections: string[];
   analysisText: string;
   note: string;
   recommendations: string;
   cautions: string;
+  reportConsultationSummary: string;
+  reportPackagedProducts: B2bReportPackagedProduct[];
   setSurveyDirty: Dispatch<SetStateAction<boolean>>;
   setAnalysisDirty: Dispatch<SetStateAction<boolean>>;
   setNoteDirty: Dispatch<SetStateAction<boolean>>;
+  setReportCustomizationDirty: Dispatch<SetStateAction<boolean>>;
   setNotice: Dispatch<SetStateAction<string>>;
   reloadCurrentEmployee: () => Promise<void>;
 };
@@ -30,15 +36,19 @@ export function useB2bAdminReportPersistenceActions({
   runBusyAction,
   selectedEmployeeId,
   selectedPeriodKey,
+  latestReportId,
   surveyAnswers,
   resolvedSelectedSections,
   analysisText,
   note,
   recommendations,
   cautions,
+  reportConsultationSummary,
+  reportPackagedProducts,
   setSurveyDirty,
   setAnalysisDirty,
   setNoteDirty,
+  setReportCustomizationDirty,
   setNotice,
   reloadCurrentEmployee,
 }: UseB2bAdminReportPersistenceActionsParams) {
@@ -126,6 +136,32 @@ export function useB2bAdminReportPersistenceActions({
     setNotice,
   ]);
 
+  const handleSaveReportCustomization = useCallback(async () => {
+    if (!latestReportId) return;
+    await runBusyAction({
+      fallbackError: "레포트 마지막 정보를 저장하지 못했습니다.",
+      clearNotice: true,
+      run: async () => {
+        await saveReportCustomization({
+          reportId: latestReportId,
+          consultationSummary: reportConsultationSummary,
+          packagedProducts: reportPackagedProducts,
+        });
+        setReportCustomizationDirty(false);
+        setNotice("레포트 마지막 정보를 저장했습니다.");
+        await reloadCurrentEmployee();
+      },
+    });
+  }, [
+    latestReportId,
+    reloadCurrentEmployee,
+    reportConsultationSummary,
+    reportPackagedProducts,
+    runBusyAction,
+    setNotice,
+    setReportCustomizationDirty,
+  ]);
+
   const handleRecomputeAnalysis = useCallback(
     async (generateAiEvaluation: boolean) => {
       if (!selectedEmployeeId) return;
@@ -170,6 +206,7 @@ export function useB2bAdminReportPersistenceActions({
     handleSaveSurvey,
     handleSaveAnalysisPayload,
     handleSaveNote,
+    handleSaveReportCustomization,
     handleRecomputeAnalysis,
     handleRegenerateReport,
   };

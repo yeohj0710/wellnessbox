@@ -39,6 +39,7 @@ export default function Assess() {
     content = (
       <DoneSection
         cResult={flow.cResult}
+        answers={flow.answers}
         recommendedIds={flow.recommendedIds}
         onBack={flow.goBack}
         onReset={flow.confirmReset}
@@ -58,6 +59,7 @@ export default function Assess() {
         total={flow.total}
         progressMsg={flow.progressMsg}
         currentQuestion={flow.currentQuestion}
+        questionGuide={flow.questionGuide}
         answers={flow.answers}
         current={flow.current}
         handleAnswer={flow.handleAnswer}

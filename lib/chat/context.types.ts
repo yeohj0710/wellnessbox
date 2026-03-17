@@ -35,6 +35,19 @@ export type CheckAiLike = {
   };
 };
 
+export type HealthLinkLike = {
+  fetchedAt?: DateLike;
+  riskLevel?: unknown;
+  headline?: unknown;
+  summary?: unknown;
+  highlights?: unknown;
+  nextSteps?: unknown;
+  topMedicines?: unknown;
+  topConditions?: unknown;
+  recentMedications?: unknown;
+  metricInsights?: unknown;
+};
+
 export type ConsultationLike = {
   id?: string | null;
   title?: string | null;
@@ -47,6 +60,7 @@ export type UserContextSummaryInput = {
   orders?: OrderLike[] | null;
   assessResult?: AssessLike | null;
   checkAiResult?: CheckAiLike | null;
+  healthLink?: HealthLinkLike | null;
   chatSessions?: ConsultationLike[] | ChatSession[] | null;
   currentSessionId?: string | null;
   localAssessCats?: string[] | null;
@@ -83,6 +97,16 @@ export type UserContextSummary = {
     testedAt: string;
     findings: string[];
   } | null;
+  healthLink: {
+    fetchedAt: string;
+    riskLevel: "low" | "medium" | "high" | "unknown";
+    headline: string;
+    summary: string;
+    highlights: string[];
+    nextSteps: string[];
+    topMedicines: string[];
+    topConditions: string[];
+  } | null;
   previousConsultations: Array<{
     title: string;
     updatedAt: string;
@@ -100,6 +124,68 @@ export type UserContextSummary = {
     answer: string;
     signal: "주의" | "보호" | "생활";
   }>;
+  explainability: {
+    confidenceLabel: string;
+    confidenceNote: string;
+    fitReasons: string[];
+    uncertaintyNotes: string[];
+    pharmacistReviewPoints: string[];
+  };
+  safetyEscalation: {
+    level: "routine" | "watch" | "escalate";
+    badgeLabel: string;
+    headline: string;
+    reasonLines: string[];
+    needsMoreInfo: string[];
+    cautiousExpressionGuide: string[];
+    requiresPharmacistReview: boolean;
+  };
+  consultationImpact: {
+    stage:
+      | "early_exploration"
+      | "ready_to_buy"
+      | "stalled_in_consult"
+      | "needs_narrowing"
+      | "retention_ready";
+    headline: string;
+    insight: string;
+    evidence: string[];
+    learnedPattern: string;
+    recommendedActionLabel: string;
+    recommendedActionHref: string;
+    draftPrompt: string;
+  };
+  dataAsset: {
+    stage: "light" | "forming" | "compounding" | "follow_through";
+    strengthLabel: string;
+    headline: string;
+    summary: string;
+    sourceLabels: string[];
+    repeatedThemes: string[];
+    adoptedThemes: string[];
+    opportunityThemes: string[];
+    reasonLines: string[];
+    recommendedActionHint: string;
+  };
+  journeySegment: {
+    id:
+      | "starter_explorer"
+      | "goal_driven_builder"
+      | "guided_decider"
+      | "steady_maintainer"
+      | "drifting_returner"
+      | "safety_first_manager";
+    label: string;
+    headline: string;
+    summary: string;
+    helper: string;
+    reasonLines: string[];
+    homeOrder: Array<"segment" | "focus" | "personalized" | "comeback">;
+    exploreOrder: Array<
+      "router" | "segment" | "focus" | "education" | "comeback" | "nextBest"
+    >;
+    chatPrompt: string;
+  };
   contextCardLines: string[];
   promptSummaryText: string;
 };

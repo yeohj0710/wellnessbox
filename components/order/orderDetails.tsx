@@ -7,6 +7,7 @@ import {
 } from "@/lib/order";
 import { generateOptimizedPageNumbers } from "@/lib/pagination";
 import { ORDER_STATUS, type OrderStatus } from "@/lib/order/orderStatus";
+import SmartRefillActionCard from "@/components/common/SmartRefillActionCard";
 import CustomerOrderAccordionItem from "./customerOrderAccordionItem";
 import type { OrderAccordionOrder } from "./orderAccordion.types";
 
@@ -127,6 +128,12 @@ export default function OrderDetails({
 
   return (
     <div className="flex w-full flex-col gap-0 sm:gap-4">
+      <SmartRefillActionCard
+        orders={orders}
+        surface="orders"
+        className="mx-auto mb-4 w-full max-w-[640px]"
+      />
+
       {isPageLoading ? (
         <div className="flex justify-center py-6">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-sky-400 border-t-transparent" />

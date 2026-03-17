@@ -1,5 +1,7 @@
 "use client";
 
+import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
+
 type ProfileImageEditorControlsProps = {
   minZoom: number;
   maxZoom: number;
@@ -65,7 +67,7 @@ export function ProfileImageEditorControls({
           disabled={!canApply}
           className="rounded-full bg-sky-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-600 disabled:opacity-60"
         >
-          {isApplying ? "적용 중..." : "적용"}
+          {isApplying ? <InlineSpinnerLabel label="적용 중" /> : "적용"}
         </button>
       </div>
     </>

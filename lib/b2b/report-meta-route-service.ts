@@ -5,6 +5,12 @@ import { pickStylePreset } from "@/lib/b2b/export/layout-dsl";
 import { runB2bLayoutPipeline } from "@/lib/b2b/export/pipeline";
 import type { PageSizeKey, StylePreset } from "@/lib/b2b/export/layout-types";
 import type { B2bReportPayload } from "@/lib/b2b/report-payload";
+import {
+  applyReportCustomizationToPayload,
+  extractReportCustomization,
+  normalizeReportCustomization,
+} from "@/lib/b2b/report-customization";
+import type { B2bReportPackagedProduct } from "@/lib/b2b/report-customization-types";
 
 type ReportMetaRouteReport = {
   id: string;
@@ -16,13 +22,13 @@ type ReportMetaRouteReport = {
   periodKey?: string | null;
 };
 
-type UpdateDisplayPeriodFailure = {
+type UpdateReportMetaFailure = {
   ok: false;
   status: number;
   payload: Record<string, unknown>;
 };
 
-type UpdateDisplayPeriodSuccess = {
+type UpdateReportMetaSuccess = {
   ok: true;
   report: {
     id: string;
@@ -35,9 +41,7 @@ type UpdateDisplayPeriodSuccess = {
   };
 };
 
-type UpdateDisplayPeriodResult =
-  | UpdateDisplayPeriodFailure
-  | UpdateDisplayPeriodSuccess;
+type UpdateReportMetaResult = UpdateReportMetaFailure | UpdateReportMetaSuccess;
 
 function asJsonValue(value: unknown) {
   return JSON.parse(JSON.stringify(value));
@@ -48,23 +52,12 @@ function toReportPayload(raw: unknown): B2bReportPayload | null {
   return asJsonValue(raw) as B2bReportPayload;
 }
 
-function withDisplayPeriod(
-  payload: B2bReportPayload,
-  displayPeriodKey: string
-): B2bReportPayload {
-  return {
-    ...payload,
-    meta: {
-      ...(payload.meta ?? {}),
-      periodKey: displayPeriodKey,
-    },
-  };
-}
-
-export async function updateReportDisplayPeriod(input: {
+export async function updateReportMeta(input: {
   report: ReportMetaRouteReport;
-  displayPeriodKey: string;
-}): Promise<UpdateDisplayPeriodResult> {
+  displayPeriodKey?: string;
+  consultationSummary?: string;
+  packagedProducts?: Array<Partial<B2bReportPackagedProduct>>;
+}): Promise<UpdateReportMetaResult> {
   const payload = toReportPayload(input.report.reportPayload);
   if (!payload) {
     return {
@@ -77,7 +70,15 @@ export async function updateReportDisplayPeriod(input: {
     };
   }
 
-  const nextPayload = withDisplayPeriod(payload, input.displayPeriodKey);
+  const currentCustomization = extractReportCustomization(payload);
+  const nextCustomization = normalizeReportCustomization({
+    displayPeriodKey:
+      input.displayPeriodKey ?? currentCustomization.displayPeriodKey ?? payload.meta?.periodKey,
+    consultationSummary:
+      input.consultationSummary ?? currentCustomization.consultationSummary,
+    packagedProducts: input.packagedProducts ?? currentCustomization.packagedProducts,
+  });
+  const nextPayload = applyReportCustomizationToPayload(payload, nextCustomization);
   const pageSize = (input.report.pageSize || "A4") as PageSizeKey;
   const stylePreset = (input.report.stylePreset ||
     pickStylePreset(input.report.variantIndex)) as StylePreset;
@@ -99,7 +100,7 @@ export async function updateReportDisplayPeriod(input: {
         code: "LAYOUT_VALIDATION_FAILED",
         reason: "layout_validation_failed",
         debugId,
-        error: "표시 연월 반영 중 레이아웃 검증에 실패했습니다.",
+        error: "레포트 내용을 반영하는 중 레이아웃 검증에 실패했습니다.",
         audit: layoutResult.audit,
         issues: layoutResult.issues,
       },
@@ -118,12 +119,14 @@ export async function updateReportDisplayPeriod(input: {
 
   await logB2bAdminAction({
     employeeId: input.report.employeeId,
-    action: "report_display_period_update",
+    action: "report_meta_update",
     actorTag: "admin",
     payload: {
       reportId: updated.id,
       periodKey: updated.periodKey ?? null,
-      displayPeriodKey: input.displayPeriodKey,
+      displayPeriodKey: nextCustomization.displayPeriodKey ?? null,
+      hasConsultationSummary: Boolean(nextCustomization.consultationSummary),
+      packagedProductCount: nextCustomization.packagedProducts?.length ?? 0,
     },
   });
 

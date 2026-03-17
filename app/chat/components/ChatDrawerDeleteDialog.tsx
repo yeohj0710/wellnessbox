@@ -1,6 +1,7 @@
 "use client";
 
 import { TrashIcon } from "@heroicons/react/24/outline";
+import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
 import { useDraggableModal } from "@/components/common/useDraggableModal";
 import type { ChatDrawerDeleteDialogProps } from "./ChatDrawer.types";
 
@@ -31,9 +32,7 @@ export default function ChatDrawerDeleteDialog({
         onClick={(e) => e.stopPropagation()}
       >
         <div
-          className={`p-5 touch-none ${
-            drag.isDragging ? "cursor-grabbing" : "cursor-grab"
-          }`}
+          className={`touch-none p-5 ${drag.isDragging ? "cursor-grabbing" : "cursor-grab"}`}
           onPointerDown={drag.handleDragPointerDown}
         >
           <div className="flex items-start gap-4">
@@ -42,12 +41,10 @@ export default function ChatDrawerDeleteDialog({
             </div>
 
             <div className="min-w-0 flex-1">
-              <h2 className="text-base font-semibold text-slate-900">
-                대화를 삭제할까요?
-              </h2>
+              <h2 className="text-base font-semibold text-slate-900">대화를 삭제할까요?</h2>
               <p className="mt-1 text-sm leading-relaxed text-slate-600">
                 <span className="font-semibold text-slate-800">{title}</span>
-                <span> 대화를 삭제하면 복구할 수 없습니다.</span>
+                <span> 대화를 삭제하면 복구할 수 없어요.</span>
               </p>
             </div>
           </div>
@@ -70,13 +67,7 @@ export default function ChatDrawerDeleteDialog({
             disabled={deleting}
           >
             {deleting ? (
-              <>
-                <span
-                  className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
-                  aria-hidden
-                />
-                <span>삭제 중</span>
-              </>
+              <InlineSpinnerLabel label="삭제 중" spinnerClassName="text-white" />
             ) : (
               "삭제"
             )}

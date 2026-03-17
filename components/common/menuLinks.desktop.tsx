@@ -72,7 +72,6 @@ export function DesktopMenuContent({
           onClick={onItemClick}
         >
           <span>AI 맞춤 상담</span>
-          <BetaBadge className="ml-0.5" />
         </IntentPrefetchLink>
 
         {aiOpen && (
@@ -97,25 +96,30 @@ export function DesktopMenuContent({
               }}
             >
               <span>정밀 AI 검사</span>
-              <BetaBadge className="ml-2" />
             </IntentPrefetchLink>
 
             <IntentPrefetchLink
               href="/survey"
-              className="block rounded-lg px-3 py-2 text-slate-800 hover:bg-slate-50"
+              className="flex items-center justify-between rounded-lg px-3 py-2 text-slate-800 hover:bg-slate-50"
               onClick={() => {
                 onCloseAiOpen();
                 onItemClick?.();
               }}
             >
-              건강 설문
+              <span>건강 설문</span>
+              <BetaBadge className="ml-2" />
             </IntentPrefetchLink>
           </div>
         )}
       </div>
 
-      <IntentPrefetchLink href="/column" className={menuItemClasses()} onClick={onItemClick}>
-        건강 칼럼
+      <IntentPrefetchLink
+        href="/column"
+        className={menuItemClasses("inline-flex items-center gap-1")}
+        onClick={onItemClick}
+      >
+        <span>건강 칼럼</span>
+        <BetaBadge className="ml-0.5" />
       </IntentPrefetchLink>
 
       {visibility.isAdminLoggedIn && (

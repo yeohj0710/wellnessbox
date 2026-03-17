@@ -2,14 +2,17 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import BetaFeatureGate from "@/components/common/BetaFeatureGate";
 import { getBasicOrdersByRider } from "@/lib/order";
 import { generateOptimizedPageNumbers } from "@/lib/pagination";
 import FullPageLoader from "@/components/common/fullPageLoader";
 import { getRider } from "@/lib/rider";
 import OrderAccordionItem from "@/components/rider/orderAccordionItem";
+import { RiderOpsQueueCard } from "@/components/rider/riderOpsCopilot";
 import { useRiderPushSubscription } from "@/components/rider/useRiderPushSubscription";
 import type { OrderAccordionOrder } from "@/components/order/orderAccordion.types";
 import { normalizeOrderSummary } from "@/components/order/orderAccordionNormalize";
+import { compareRiderOrdersByOpsPriority } from "@/lib/ops/order-status-copilot";
 
 type RiderIdentity = {
   id: number;
@@ -110,6 +113,7 @@ export default function Rider() {
   const canGoPrev = currentPage > 1;
   const canGoNext = currentPage < totalPages;
   const isSubscriptionUnknown = isSubscribed === null;
+  const rankedOrders = [...orders].sort(compareRiderOrdersByOpsPriority);
 
   if (loading) return <FullPageLoader />;
 
@@ -166,12 +170,21 @@ export default function Rider() {
         </div>
       ) : (
         <>
+          <div className="px-4">
+            <BetaFeatureGate
+              title="Beta 라이더 코파일럿"
+              helper="새로 추가된 우선순위 큐는 필요할 때만 펼쳐보세요."
+            >
+              <RiderOpsQueueCard orders={rankedOrders} />
+            </BetaFeatureGate>
+          </div>
+
           {isPageLoading ? (
             <div className="flex justify-center py-4">
               <div className="w-6 h-6 border-2 border-sky-400 border-t-transparent rounded-full animate-spin" />
             </div>
           ) : (
-            orders.map((order, index) => (
+            rankedOrders.map((order, index) => (
               <OrderAccordionItem
                 key={order.id}
                 initialOrder={order}

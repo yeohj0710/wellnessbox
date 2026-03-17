@@ -1,29 +1,35 @@
 "use client";
 
 import {
-  useEffect,
   useRef,
   useState,
   useCallback,
-  useDeferredValue,
   useMemo,
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useFooter } from "@/components/common/footerContext";
 import { useLoading } from "@/components/common/loadingContext.client";
 import { useToast } from "@/components/common/toastContext.client";
+import { useLandingPersonalization } from "@/components/common/useLandingPersonalization";
+import { useOfferIntelligence } from "@/components/common/useOfferIntelligence";
 import {
   buildClientCartSignature,
   mergeClientCartItems,
   readClientCartItems,
   writeClientCartItems,
 } from "@/lib/client/cart-storage";
+import { rankProductsForLandingPersonalization } from "@/lib/landing-personalization/engine";
+import {
+  resolveHomeOfferCard,
+  type OfferAction,
+} from "@/lib/offer-intelligence/engine";
 import {
   calculateCartTotalForPharmacy,
 } from "./homeProductSection.helpers";
 import {
   HOME_PACKAGE_LABELS,
 } from "./homeProductSection.copy";
+import { useHomeProductFilters } from "./useHomeProductFilters";
 import { useHomeProductPharmacy } from "./useHomeProductPharmacy";
 import {
   useHomeProductComputationEffects,
@@ -74,13 +80,6 @@ export default function HomeProductSection({
     null
   );
   const [isCartVisible, setIsCartVisible] = useState(false);
-  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
-  const [selectedPackage, setSelectedPackage] = useState<string>(
-    HOME_PACKAGE_LABELS.all
-  );
-  const deferredSelectedCategories = useDeferredValue(selectedCategories);
-  const deferredSelectedPackage = useDeferredValue(selectedPackage);
   const [totalPrice, setTotalPrice] = useState(0);
   const [isCartBarLoading, setIsCartBarLoading] = useState(false);
   const [roadAddress, setRoadAddress] = useState("");
@@ -112,10 +111,28 @@ export default function HomeProductSection({
         : next
     );
   }, []);
-  const filterInteractionStartedRef = useRef<number | null>(null);
 
   const { hideLoading } = useLoading();
   const { showToast } = useToast();
+  const { focus } = useLandingPersonalization(categories);
+  const offerIntelligence = useOfferIntelligence(categories.length > 0);
+  const {
+    selectedSymptoms,
+    setSelectedSymptoms,
+    selectedCategories,
+    setSelectedCategories,
+    selectedPackage,
+    setSelectedPackage,
+    deferredSelectedCategories,
+    deferredSelectedPackage,
+    isFilterUpdating,
+    handleCategoryToggle,
+    handleCategoryReset,
+    handlePackageSelect,
+    handleApplyRecommendedCategories,
+    handleApplyRecommendedTrial,
+    handleApplyRecommendedMonth,
+  } = useHomeProductFilters(isLoading);
 
   const scrollPositionRef = useRef(0);
   const cartContainerRef = useRef<HTMLDivElement>(null);
@@ -129,48 +146,6 @@ export default function HomeProductSection({
       replaceRoute: (pathWithSearch) =>
         router.replace(pathWithSearch, { scroll: false }),
     });
-  const isFilterUpdating = useMemo(() => {
-    if (isLoading) return true;
-    if (deferredSelectedPackage !== selectedPackage) return true;
-    if (deferredSelectedCategories.length !== selectedCategories.length) {
-      return true;
-    }
-    return deferredSelectedCategories.some(
-      (categoryId, index) => categoryId !== selectedCategories[index]
-    );
-  }, [
-    deferredSelectedCategories,
-    deferredSelectedPackage,
-    isLoading,
-    selectedCategories,
-    selectedPackage,
-  ]);
-
-  const handleCategoryToggle = useCallback((categoryId: number) => {
-    filterInteractionStartedRef.current = performance.now();
-    setSelectedCategories((prev) =>
-      prev.includes(categoryId)
-        ? prev.filter((id: number) => id !== categoryId)
-        : [...prev, categoryId]
-    );
-  }, []);
-
-  const handleCategoryReset = useCallback(() => {
-    filterInteractionStartedRef.current = performance.now();
-    setSelectedCategories([]);
-  }, []);
-
-  const handlePackageSelect = useCallback((pkg: string) => {
-    filterInteractionStartedRef.current = performance.now();
-    setSelectedPackage(pkg);
-  }, []);
-  useEffect(() => {
-    if (isFilterUpdating) return;
-    if (filterInteractionStartedRef.current === null) return;
-    const elapsedMs = performance.now() - filterInteractionStartedRef.current;
-    console.info(`[perf] home:filter-visible ${elapsedMs.toFixed(1)}ms`);
-    filterInteractionStartedRef.current = null;
-  }, [isFilterUpdating]);
 
   useHomeProductUiSyncEffects({
     syncCartItemsFromStorage,
@@ -253,6 +228,61 @@ export default function HomeProductSection({
       return persistCartItems(updated);
     });
   };
+
+  const displayProducts = useMemo(() => {
+    if (selectedCategories.length > 0) return products;
+    if (selectedPackage !== HOME_PACKAGE_LABELS.all) return products;
+    return rankProductsForLandingPersonalization(
+      products,
+      focus,
+      selectedPharmacy?.id
+    );
+  }, [focus, products, selectedCategories.length, selectedPackage, selectedPharmacy?.id]);
+
+  const homeOffer = useMemo(
+    () =>
+      selectedCategories.length === 0 &&
+      selectedPackage === HOME_PACKAGE_LABELS.all &&
+      !offerIntelligence.loading
+        ? resolveHomeOfferCard({
+            summary: offerIntelligence.summary,
+            remoteResults: offerIntelligence.remoteResults,
+            categories,
+          })
+        : null,
+    [
+      categories,
+      offerIntelligence.loading,
+      offerIntelligence.remoteResults,
+      offerIntelligence.summary,
+      selectedCategories.length,
+      selectedPackage,
+    ]
+  );
+
+  const handleHomeOfferAction = useCallback(
+    (action: OfferAction) => {
+      if (action.type !== "apply_package") return;
+
+      if (action.packageTarget === "7") {
+        handleApplyRecommendedTrial(action.categoryIds);
+        return;
+      }
+
+      if (action.packageTarget === "30") {
+        handleApplyRecommendedMonth(action.categoryIds);
+        return;
+      }
+
+      handleApplyRecommendedCategories(action.categoryIds);
+    },
+    [
+      handleApplyRecommendedCategories,
+      handleApplyRecommendedMonth,
+      handleApplyRecommendedTrial,
+    ]
+  );
+
   return (
     <HomeProductSectionContent
       roadAddress={roadAddress}
@@ -271,10 +301,14 @@ export default function HomeProductSection({
       onToggleCategory={handleCategoryToggle}
       onResetCategories={handleCategoryReset}
       selectedPackage={selectedPackage}
+      onApplyRecommendedCategories={handleApplyRecommendedCategories}
+      onApplyRecommendedTrial={handleApplyRecommendedTrial}
+      homeOffer={homeOffer}
+      onHomeOfferAction={handleHomeOfferAction}
       deferredSelectedPackage={deferredSelectedPackage}
       onSelectPackage={handlePackageSelect}
       isFilterUpdating={isFilterUpdating}
-      products={products}
+      products={displayProducts}
       allProducts={allProducts}
       error={error}
       isRecovering={isRecovering}

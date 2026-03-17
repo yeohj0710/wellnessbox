@@ -12,6 +12,7 @@ export type OrderProduct = {
 export type OrderPharmacyProduct = {
   optionType: string | null;
   price: number | null;
+  stock?: number | null;
   product: OrderProduct | null;
 };
 
@@ -38,11 +39,15 @@ export type OrderAccordionOrder = {
   id: number;
   status: OrderStatus;
   createdAt: string | number | Date;
+  updatedAt?: string | number | Date;
   orderItems: OrderLineItem[];
+  messagesPreview?: OrderMessage[];
+  messageCount?: number;
   totalPrice?: number;
   roadAddress?: string;
   detailAddress?: string;
   phone?: string;
+  endpoint?: string;
   requestNotes?: string | null;
   entrancePassword?: string | null;
   directions?: string | null;

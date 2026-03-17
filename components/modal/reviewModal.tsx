@@ -1,152 +1,61 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { XMarkIcon } from "@heroicons/react/24/outline";
-import { getReviewExistsByOrderItemId, upsertReview } from "@/lib/review";
-import { getOrderForReview } from "@/lib/order";
-import { getUploadUrl } from "@/lib/upload";
+import React from "react";
 import Image from "next/image";
+import { XMarkIcon } from "@heroicons/react/24/outline";
+import WordOfMouthShareCard from "@/components/common/WordOfMouthShareCard";
 import { useDraggableModal } from "@/components/common/useDraggableModal";
+import SatisfactionRecoveryCard from "@/components/order/SatisfactionRecoveryCard";
+import type { ReviewModalProps } from "./reviewModal.types";
+import { useReviewModal } from "./useReviewModal";
 
 export default function ReviewModal({
   initialOrder,
   onClose,
   setAllReviewsCompleted,
-}: any) {
-  const [order, setOrder] = useState<any>(initialOrder);
-  const [reviews, setReviews] = useState<any>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [hoverRate, setHoverRate] = useState<number | null>(null);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [orderItemsLength, setOrderItemsLength] = useState(1);
+}: ReviewModalProps) {
   const { panelRef, panelStyle, handleDragPointerDown, isDragging } =
     useDraggableModal(true);
-  const currentItem =
-    order?.orderItems && order.orderItems[currentIndex]
-      ? order.orderItems[currentIndex]
-      : null;
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const orderData = await getOrderForReview(initialOrder.id);
-        if (!orderData) return;
-        setOrderItemsLength(orderData.orderItems.length);
-        setOrder((prevOrder: any) => ({
-          ...prevOrder,
-          ...orderData,
-        }));
-        const reviewsData: any = {};
-        const remainingItems = [];
-        for (const orderItem of orderData.orderItems) {
-          const review = await getReviewExistsByOrderItemId(orderItem.id);
-          reviewsData[orderItem.id] = review || {
-            rate: 5,
-            content: "",
-            images: [],
-          };
-          if (!review || !review.rate) {
-            remainingItems.push(orderItem);
-          }
-        }
-        if (remainingItems.length === 0) {
-          alert("모든 리뷰를 이미 작성했어요.");
-          onClose();
-          return;
-        }
-        setOrder({
-          ...orderData,
-          orderItems: remainingItems,
-        });
-        setReviews(reviewsData);
-        setCurrentIndex(0);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
-  }, []);
-  useEffect(() => {
-    if (order?.orderItems?.length > 0) {
-      setCurrentIndex(0);
-    }
-  }, [order]);
-  async function handleSubmit(orderItemId: number) {
-    const { rate, content, images } = reviews[orderItemId];
-    const orderId = order.id;
-    const productId = currentItem.pharmacyProduct.productId;
-    setIsSubmitting(true);
-    try {
-      await upsertReview({
-        orderItemId,
-        rate,
-        content,
-        images,
-        orderId,
-        productId,
-      });
-    } catch (err) {
-      console.error(err);
-      alert("리뷰 작성에 실패했습니다.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-  const handleImageUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    setIsUploadingImage(true);
-    const uploadedUrls = [...(reviews[currentItem.id]?.images || [])];
-    for (const file of files) {
-      const { success, result } = await getUploadUrl();
-      if (success) {
-        const formData = new FormData();
-        formData.append("file", file);
-        const response = await fetch(result.uploadURL, {
-          method: "POST",
-          body: formData,
-        });
-        const responseData = await response.json();
-        const fileUrl = responseData.result.variants.find((url: string) =>
-          url.endsWith("/public")
-        );
-        if (fileUrl) {
-          uploadedUrls.push(fileUrl);
-          setReviews((prev: any) => ({
-            ...prev,
-            [currentItem.id]: {
-              ...prev[currentItem.id],
-              images: [...uploadedUrls],
-            },
-          }));
-        }
-      }
-    }
-    setIsUploadingImage(false);
-  };
-  const handleDeleteImage = (index: number) => {
-    setReviews((prev: any) => ({
-      ...prev,
-      [currentItem.id]: {
-        ...prev[currentItem.id],
-        images: prev[currentItem.id].images.filter(
-          (_: string, i: number) => i !== index
-        ),
-      },
-    }));
-  };
+  const {
+    order,
+    currentItem,
+    currentReview,
+    loading,
+    isSubmitting,
+    currentIndex,
+    hoverRate,
+    isUploadingImage,
+    isSendingRecoveryMessage,
+    recoveryMessageSentByItemId,
+    orderItemsLength,
+    wordOfMouthModel,
+    setHoverRate,
+    updateCurrentReview,
+    handleImageUpload,
+    handleDeleteImage,
+    handleSendRecoveryMessage,
+    handleSubmitAndAdvance,
+  } = useReviewModal({
+    initialOrder,
+    onClose,
+    setAllReviewsCompleted,
+  });
+
+  const currentProduct = currentItem?.pharmacyProduct?.product ?? null;
+  const currentProductImage = currentProduct?.images?.[0] ?? null;
+  const currentProductName = currentProduct?.name ?? "상품";
+  const currentOptionType = currentItem?.pharmacyProduct?.optionType ?? "옵션";
+
   return (
     <div
-      className="px-2 sm:px-0 fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 px-2 sm:px-0"
       onClick={onClose}
     >
       <div
-        className="relative bg-white p-6 rounded shadow-md w-96"
+        className="relative w-96 rounded bg-white p-6 shadow-md"
         ref={panelRef}
         style={panelStyle}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
       >
         <div
           onPointerDown={handleDragPointerDown}
@@ -156,45 +65,49 @@ export default function ReviewModal({
           aria-hidden
         />
         <button
-          className="absolute top-4 right-4 text-gray-600 hover:text-gray-900"
+          className="absolute right-4 top-4 text-gray-600 hover:text-gray-900"
           onClick={onClose}
         >
-          <XMarkIcon className="w-6 h-6" />
+          <XMarkIcon className="h-6 w-6" />
         </button>
-        <div className="mb-4 flex flex-row gap-1.5 items-center">
+
+        <div className="mb-4 flex flex-row items-center gap-1.5">
           <span className="text-lg font-bold">리뷰 작성</span>
           <span className="text-sm text-gray-400">
             ({currentIndex + 1} / {orderItemsLength})
           </span>
         </div>
+
         {loading ? (
-          <div className="flex items-center justify-center h-60">
-            <div className="mb-10 w-6 h-6 border-2 border-sky-400 border-t-transparent rounded-full animate-spin" />
+          <div className="flex h-60 items-center justify-center">
+            <div className="mb-10 h-6 w-6 animate-spin rounded-full border-2 border-sky-400 border-t-transparent" />
           </div>
-        ) : (
-          <div className="">
-            <div className="flex flex-col gap-2 text-sm text-gray-600 items-center justify-center">
+        ) : currentItem ? (
+          <div>
+            <div className="flex flex-col items-center justify-center gap-2 text-sm text-gray-600">
               <span className="text-base font-bold text-gray-800">
-                이 제품은 어떠셨나요?
+                이 상품은 어떠셨나요?
               </span>
-              <div className="relative w-full h-24 mt-4">
-                <Image
-                  src={currentItem.pharmacyProduct.product.images[0]}
-                  alt=""
-                  fill
-                  sizes="512px"
-                  className="object-contain"
-                />
-              </div>
-              <p className="font-semibold text-gray-800 text-center">
-                {currentItem.pharmacyProduct.product.name} (
-                {currentItem.pharmacyProduct.optionType})
+              {currentProductImage ? (
+                <div className="relative mt-4 h-24 w-full">
+                  <Image
+                    src={currentProductImage}
+                    alt=""
+                    fill
+                    sizes="512px"
+                    className="object-contain"
+                  />
+                </div>
+              ) : null}
+              <p className="text-center font-semibold text-gray-800">
+                {currentProductName} ({currentOptionType})
               </p>
             </div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 mt-4">
+
+            <label className="mb-1 mt-4 block text-sm font-medium text-gray-700">
               별점
             </label>
-            <div className="flex items-center justify-center gap-1.5 mb-4">
+            <div className="mb-4 flex items-center justify-center gap-1.5">
               {[1, 2, 3, 4, 5].map((star) => (
                 <div
                   key={star}
@@ -203,7 +116,7 @@ export default function ReviewModal({
                 >
                   <span className="text-gray-300">★</span>
                   <span
-                    className="absolute top-0 left-0 text-yellow-400 overflow-hidden"
+                    className="absolute left-0 top-0 overflow-hidden text-yellow-400"
                     style={{
                       width:
                         hoverRate !== null
@@ -212,9 +125,9 @@ export default function ReviewModal({
                             : hoverRate >= star - 0.5
                             ? "50%"
                             : "0%"
-                          : reviews[currentItem.id]?.rate >= star
+                          : (currentReview?.rate ?? 0) >= star
                           ? "100%"
-                          : reviews[currentItem.id]?.rate >= star - 0.5
+                          : (currentReview?.rate ?? 0) >= star - 0.5
                           ? "50%"
                           : "0%",
                     }}
@@ -223,18 +136,10 @@ export default function ReviewModal({
                   </span>
                   <button
                     type="button"
-                    onClick={() =>
-                      setReviews((prev: any) => ({
-                        ...prev,
-                        [currentItem.id]: {
-                          ...prev[currentItem.id],
-                          rate: star - 0.5,
-                        },
-                      }))
-                    }
+                    onClick={() => updateCurrentReview({ rate: star - 0.5 })}
                     onMouseEnter={() => setHoverRate(star - 0.5)}
                     onMouseLeave={() => setHoverRate(null)}
-                    className="absolute top-0 left-0 w-1/2 h-full z-10 cursor-pointer"
+                    className="absolute left-0 top-0 z-10 h-full w-1/2 cursor-pointer"
                     style={{
                       background: "transparent",
                       border: "none",
@@ -242,18 +147,10 @@ export default function ReviewModal({
                   />
                   <button
                     type="button"
-                    onClick={() =>
-                      setReviews((prev: any) => ({
-                        ...prev,
-                        [currentItem.id]: {
-                          ...prev[currentItem.id],
-                          rate: star,
-                        },
-                      }))
-                    }
+                    onClick={() => updateCurrentReview({ rate: star })}
                     onMouseEnter={() => setHoverRate(star)}
                     onMouseLeave={() => setHoverRate(null)}
-                    className="absolute top-0 right-0 w-1/2 h-full z-20 cursor-pointer"
+                    className="absolute right-0 top-0 z-20 h-full w-1/2 cursor-pointer"
                     style={{
                       background: "transparent",
                       border: "none",
@@ -262,81 +159,104 @@ export default function ReviewModal({
                 </div>
               ))}
             </div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 mt-4">
+
+            <label className="mb-1 mt-4 block text-sm font-medium text-gray-700">
               리뷰 내용
             </label>
             <textarea
-              className="border w-full p-2"
+              className="w-full border p-2"
               rows={3}
-              value={reviews[currentItem.id]?.content || ""}
-              onChange={(e) =>
-                setReviews((prev: any) => ({
-                  ...prev,
-                  [currentItem.id]: {
-                    ...prev[currentItem.id],
-                    content: e.target.value,
-                  },
-                }))
+              value={currentReview?.content || ""}
+              onChange={(event) =>
+                updateCurrentReview({ content: event.target.value })
               }
-              placeholder="구매하신 후기를 작성해 주세요."
+              placeholder="구매하신 후기를 작성해 주세요"
             />
-            <div className="flex items-center mt-1">
+
+            <SatisfactionRecoveryCard
+              mode="review"
+              order={order}
+              itemIndex={currentIndex}
+              rate={
+                typeof currentReview?.rate === "number"
+                  ? currentReview.rate
+                  : null
+              }
+              content={currentReview?.content || ""}
+              className="mt-4"
+              onPrimaryAction={handleSendRecoveryMessage}
+              primaryActionLoading={isSendingRecoveryMessage}
+              primaryActionDone={Boolean(
+                recoveryMessageSentByItemId[currentItem.id]
+              )}
+            />
+
+            {wordOfMouthModel ? (
+              <WordOfMouthShareCard model={wordOfMouthModel} className="mt-4" />
+            ) : null}
+
+            <div className="mt-1 flex items-center">
               <button
+                type="button"
                 onClick={() => document.getElementById("imageUpload")?.click()}
-                className="text-sm px-3 py-1 bg-sky-400 text-white rounded hover:bg-sky-500"
+                disabled={isUploadingImage}
+                className={`rounded px-3 py-1 text-sm text-white ${
+                  isUploadingImage
+                    ? "cursor-not-allowed bg-sky-300"
+                    : "bg-sky-400 hover:bg-sky-500"
+                }`}
               >
-                이미지 추가하기
+                {isUploadingImage ? "이미지 업로드 중" : "이미지 추가하기"}
               </button>
               <input
                 type="file"
                 id="imageUpload"
                 accept="image/*"
                 multiple
-                onChange={(e) => handleImageUpload(e.target.files)}
+                onChange={(event) => handleImageUpload(event.target.files)}
                 className="hidden"
               />
             </div>
+
             <div className="mt-4 flex flex-wrap gap-2">
-              {reviews[currentItem.id]?.images?.map(
-                (image: string, index: number) => (
-                  <div key={index} className="relative w-16 h-16">
-                    <Image
-                      src={image}
-                      alt={`이미지 ${index + 1}`}
-                      fill
-                      sizes="256px"
-                      className="object-cover rounded"
-                    />
-                    <button
-                      className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full p-1"
-                      onClick={() => handleDeleteImage(index)}
-                    >
-                      ×
-                    </button>
-                  </div>
-                )
-              )}
+              {currentReview?.images?.map((image, index) => (
+                <div key={`${image}-${index}`} className="relative h-16 w-16">
+                  <Image
+                    src={image}
+                    alt={`리뷰 이미지 ${index + 1}`}
+                    fill
+                    sizes="256px"
+                    className="rounded object-cover"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-0 top-0 rounded-full bg-red-500 p-1 text-xs text-white"
+                    onClick={() => handleDeleteImage(index)}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
             </div>
+
             <div className="flex justify-end">
               <button
-                onClick={async () => {
-                  await handleSubmit(currentItem.id);
-                  if (currentIndex + 1 < order.orderItems.length) {
-                    setCurrentIndex((prev) => prev + 1);
-                  } else {
-                    setAllReviewsCompleted(true);
-                    onClose();
-                    alert("리뷰가 성공적으로 등록되었어요.");
-                  }
-                }}
+                type="button"
+                onClick={handleSubmitAndAdvance}
                 disabled={isSubmitting}
-                className={`px-3 py-1 bg-sky-400 text-white rounded hover:bg-sky-500 ${
-                  isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+                className={`rounded px-3 py-1 text-white ${
+                  isSubmitting
+                    ? "cursor-not-allowed bg-sky-300"
+                    : "bg-sky-400 hover:bg-sky-500"
                 }`}
               >
                 완료
               </button>
             </div>
+          </div>
+        ) : (
+          <div className="py-12 text-center text-sm text-gray-500">
+            리뷰할 상품을 불러오지 못했습니다.
           </div>
         )}
       </div>

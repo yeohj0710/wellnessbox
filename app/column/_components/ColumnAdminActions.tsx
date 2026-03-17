@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
 import OperationLoadingOverlay from "@/components/common/operationLoadingOverlay";
 import { useToast } from "@/components/common/toastContext.client";
 
@@ -78,8 +79,8 @@ export default function ColumnAdminActions({
     <>
       <OperationLoadingOverlay
         visible={isDeleting}
-        title="칼럼을 삭제하고 있어요."
-        description="잠시만 기다려 주세요. 삭제 후 목록이 갱신됩니다."
+        title="칼럼을 삭제하고 있어요"
+        description="잠시만 기다려 주세요. 삭제 후 목록이 새로고침됩니다."
       />
       <div className={`flex flex-wrap items-center gap-2 ${className}`}>
         {showListLink ? (
@@ -123,7 +124,7 @@ export default function ColumnAdminActions({
             <h2 className="text-lg font-bold text-slate-900">칼럼 삭제</h2>
             <p className="mt-2 text-sm leading-6 text-slate-700">
               <span className="font-semibold text-slate-900">{title}</span> 글을 삭제해요.
-              삭제 후 복구할 수 없어요.
+              삭제 후에는 복구할 수 없어요.
             </p>
             <p className="mt-3 text-xs text-slate-500">
               확인을 위해 아래 입력창에 <span className="font-semibold">삭제</span>를
@@ -157,7 +158,7 @@ export default function ColumnAdminActions({
                 onClick={() => void handleDelete()}
                 className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60"
               >
-                {isDeleting ? "삭제 중..." : "삭제 실행"}
+                {isDeleting ? <InlineSpinnerLabel label="삭제 중" /> : "삭제 실행"}
               </button>
             </div>
           </div>

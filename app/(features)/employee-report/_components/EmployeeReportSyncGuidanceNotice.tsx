@@ -1,3 +1,4 @@
+import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
 import styles from "@/components/b2b/B2bUx.module.css";
 import type { SyncGuidance } from "../_lib/client-types";
 import { formatDateTime } from "../_lib/client-utils.format";
@@ -39,7 +40,11 @@ export default function EmployeeReportSyncGuidanceNotice({
               data-testid="employee-report-restart-auth"
               className={styles.buttonPrimary}
             >
-              {busy ? "요청 중..." : "카카오톡으로 인증 보내기"}
+              {busy ? (
+                <InlineSpinnerLabel label="요청 중" />
+              ) : (
+                "카카오톡으로 인증 보내기"
+              )}
             </button>
           ) : null}
 
@@ -52,7 +57,11 @@ export default function EmployeeReportSyncGuidanceNotice({
                 data-testid="employee-report-sign-sync"
                 className={styles.buttonSecondary}
               >
-                {busy ? "확인 중..." : "카카오톡 인증 완료 후 확인"}
+                {busy ? (
+                  <InlineSpinnerLabel label="확인 중" />
+                ) : (
+                  "카카오톡 인증 완료 후 확인"
+                )}
               </button>
               <button
                 type="button"
@@ -61,7 +70,11 @@ export default function EmployeeReportSyncGuidanceNotice({
                 data-testid="employee-report-restart-auth-from-sign"
                 className={styles.buttonGhost}
               >
-                {busy ? "요청 중..." : "카카오톡으로 인증 다시 보내기"}
+                {busy ? (
+                  <InlineSpinnerLabel label="요청 중" />
+                ) : (
+                  "카카오톡으로 인증 다시 보내기"
+                )}
               </button>
             </>
           ) : null}
@@ -74,7 +87,11 @@ export default function EmployeeReportSyncGuidanceNotice({
               data-testid="employee-report-sign-sync"
               className={styles.buttonSecondary}
             >
-              {busy ? "재시도 중..." : "다시 시도"}
+              {busy ? (
+                <InlineSpinnerLabel label="재시도 중" />
+              ) : (
+                "다시 시도"
+              )}
             </button>
           ) : null}
         </div>

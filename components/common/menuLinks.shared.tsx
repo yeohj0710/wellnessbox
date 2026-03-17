@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
 import type { LoginStatus } from "@/lib/useLoginStatus";
 
 export type MenuVisibility = {
@@ -47,7 +48,7 @@ export function getMenuVisibility(loginStatus: LoginStatus | null): MenuVisibili
 export function AiPromptBadge() {
   return (
     <span className="inline-flex shrink-0 whitespace-nowrap rounded-full bg-emerald-50 ring-1 ring-emerald-200">
-      <span className="block px-3 py-1 text-[10px] font-bold text-emerald-600 leading-none text-center whitespace-nowrap">
+      <span className="block px-3 py-1 text-center text-[10px] font-bold leading-none text-emerald-600 whitespace-nowrap">
         {AI_PROMPT_BADGE}
       </span>
     </span>
@@ -57,7 +58,7 @@ export function AiPromptBadge() {
 export function BetaBadge({ className = "" }: { className?: string }) {
   return (
     <span
-      className={`flex items-center justify-center rounded-full bg-indigo-100 w-10 h-5 text-[10px] font-bold text-indigo-600 ${className}`}
+      className={`flex h-5 w-10 items-center justify-center rounded-full bg-indigo-100 text-[10px] font-bold text-indigo-600 ${className}`}
     >
       {BETA_LABEL}
     </span>
@@ -166,11 +167,9 @@ export function IdentityMenuLinks({
       )}
 
       {showAdminMenus && (
-        <>
-          <Link href="/admin" className={menuItemClasses()} onClick={onItemClick}>
-            관리자 페이지
-          </Link>
-        </>
+        <Link href="/admin" className={menuItemClasses()} onClick={onItemClick}>
+          관리자 페이지
+        </Link>
       )}
 
       {kakaoLoggedIn && (
@@ -188,7 +187,7 @@ export function IdentityMenuLinks({
             "inline-flex items-center text-left text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
           )}
         >
-          {logoutPending ? "로그아웃 중..." : "로그아웃"}
+          {logoutPending ? <InlineSpinnerLabel label="로그아웃 중" /> : "로그아웃"}
         </button>
       )}
     </>

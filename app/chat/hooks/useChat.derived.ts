@@ -7,6 +7,7 @@ import type { ChatPageAgentContext } from "@/lib/chat/page-agent-context";
 import type {
   NormalizedAssessResult,
   NormalizedCheckAiResult,
+  NormalizedHealthLinkSummary,
   NormalizedOrderSummary,
 } from "./useChat.results";
 import {
@@ -32,6 +33,7 @@ type UseChatDerivedStateOptions = {
   orders: NormalizedOrderSummary[];
   assessResult: NormalizedAssessResult | null;
   checkAiResult: NormalizedCheckAiResult | null;
+  healthLink: NormalizedHealthLinkSummary | null;
   sessions: ChatSession[];
   localAssessCats: string[];
   localCheckAi: string[];
@@ -72,6 +74,7 @@ export function useChatDerivedState(
     orders,
     assessResult,
     checkAiResult,
+    healthLink,
     sessions,
     localAssessCats,
     localCheckAi,
@@ -149,6 +152,7 @@ export function useChatDerivedState(
       orders,
       assessResult,
       checkAiResult,
+      healthLink,
       sessions,
       currentSessionId: sessionId,
       localAssessCats,
@@ -163,6 +167,7 @@ export function useChatDerivedState(
       actorLoggedIn,
       actorPhoneLinked,
       checkAiResult,
+      healthLink,
       localAssessCats,
       localCheckAi,
       orders,

@@ -28,6 +28,22 @@ export type ReportSummaryMedicationReviewModel = {
   medications: ReportSummaryMedicationRow[];
 };
 
+export type ReportSummaryPackagedProductCard = {
+  id: string;
+  name: string;
+  brand: string;
+  imageUrl: string;
+  description: string;
+  ingredientSummary: string;
+  intakeSummary: string;
+  caution: string;
+};
+
+export type ReportSummaryAddendumModel = {
+  consultationSummary: string;
+  packagedProducts: ReportSummaryPackagedProductCard[];
+};
+
 const EMPTY_PHARMACIST_COMMENT_MESSAGES = new Set([
   "약사 코멘트가 아직 입력되지 않았습니다.",
   "등록된 약사 코멘트가 없습니다.",
@@ -122,5 +138,59 @@ export function buildReportSummaryMedicationReviewModel(
       toTrimmedText(payload.pharmacist?.recommendations)
     ),
     pharmacistCautions: softenAdviceTone(toTrimmedText(payload.pharmacist?.cautions)),
+  };
+}
+
+export function buildReportSummaryAddendumModel(
+  payload: ReportSummaryPayload
+): ReportSummaryAddendumModel {
+  const consultationSummary = softenAdviceTone(
+    toTrimmedText(payload.reportAddendum?.consultationSummary)
+  );
+
+  const packagedProducts = ensureArray(payload.reportAddendum?.packagedProducts)
+    .map((row, index) => {
+      const name = sanitizeTitle(
+        toTrimmedText(row?.name) ||
+          toTrimmedText(row?.brand) ||
+          `구성 제품 ${index + 1}`
+      );
+      const brand = sanitizeTitle(toTrimmedText(row?.brand));
+      const imageUrl = toTrimmedText(row?.imageUrl);
+      const description = softenAdviceTone(toTrimmedText(row?.description));
+      const ingredientSummary = softenAdviceTone(
+        toTrimmedText(row?.ingredientSummary)
+      );
+      const intakeSummary = softenAdviceTone(toTrimmedText(row?.intakeSummary));
+      const caution = softenAdviceTone(toTrimmedText(row?.caution));
+
+      const hasVisibleContent = [
+        name,
+        brand,
+        imageUrl,
+        description,
+        ingredientSummary,
+        intakeSummary,
+        caution,
+      ].some(Boolean);
+
+      if (!hasVisibleContent) return null;
+
+      return {
+        id: toTrimmedText(row?.id) || `packaged-product-${index + 1}`,
+        name,
+        brand,
+        imageUrl,
+        description,
+        ingredientSummary,
+        intakeSummary,
+        caution,
+      };
+    })
+    .filter((item): item is ReportSummaryPackagedProductCard => Boolean(item));
+
+  return {
+    consultationSummary,
+    packagedProducts,
   };
 }

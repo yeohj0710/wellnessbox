@@ -38,7 +38,6 @@ function readApiErrorMessage(payload: unknown) {
 
 type UseOrderCompleteBootstrapOptions = {
   pushHome: () => void;
-  openNotifyModal: () => void;
 };
 
 type UseOrderCompleteBootstrapResult = {
@@ -50,7 +49,6 @@ type UseOrderCompleteBootstrapResult = {
 
 export function useOrderCompleteBootstrap({
   pushHome,
-  openNotifyModal,
 }: UseOrderCompleteBootstrapOptions): UseOrderCompleteBootstrapResult {
   const [order, setOrder] = useState<OrderRecord | null>(null);
   const [loading, setLoading] = useState(true);
@@ -99,12 +97,11 @@ export function useOrderCompleteBootstrap({
 
       const fullOrder = await getOrderByPaymentId(input.paymentId);
       setOrder(fullOrder);
-      openNotifyModal();
       clearOrderCompleteCartStorage();
       clearCheckoutProgressStorage();
       clearPaymentStorage();
     },
-    [openNotifyModal, returnToCart]
+    [returnToCart]
   );
 
   useEffect(() => {
@@ -158,7 +155,6 @@ export function useOrderCompleteBootstrap({
         if (!active) return;
         if (existingOrder) {
           setOrder(existingOrder);
-          openNotifyModal();
           clearPaymentStorage();
           if (existingOrder.status === ORDER_STATUS.PAYMENT_COMPLETE) {
             clearOrderCompleteCartStorage();
@@ -228,7 +224,7 @@ export function useOrderCompleteBootstrap({
     return () => {
       active = false;
     };
-  }, [createOrderFromPaymentOutcome, openNotifyModal, returnToCart]);
+  }, [createOrderFromPaymentOutcome, returnToCart]);
 
   return {
     order,

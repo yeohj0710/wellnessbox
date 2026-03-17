@@ -1,5 +1,6 @@
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import type { ClientCartItem } from "@/lib/client/cart-storage";
+import type { CartStockRecovery } from "@/lib/cart-stock-intelligence";
 
 export type CartLineItem = ClientCartItem & {
   price?: number;
@@ -52,6 +53,7 @@ export type CartProps = {
   totalPrice: number;
   selectedPharmacy: CartPharmacy | null;
   allProducts: CartProduct[];
+  stockRecovery?: CartStockRecovery | null;
   isPharmacyLoading: boolean;
   pharmacyError: string | null;
   onRetryPharmacyResolve: () => void;

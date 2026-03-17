@@ -1,3 +1,4 @@
+import { resolveGovernedModel } from "@/lib/ai/governance";
 import { getDefaultModel } from "@/lib/ai/model";
 import {
   callOpenAIChatCompletions,
@@ -85,7 +86,10 @@ export async function decideExecuteByModel(
   ].join("\n");
 
   const payload = {
-    model: await getDefaultModel(),
+    model: resolveGovernedModel({
+      task: "chat_action_planner",
+      configuredModel: await getDefaultModel(),
+    }).resolvedModel,
     temperature: 0.1,
     max_tokens: 220,
     response_format: { type: "json_object" as const },
@@ -122,7 +126,10 @@ export async function suggestActionsByModel(
   const runtimeContextText = toText(body.runtimeContextText, 320);
 
   const payload = {
-    model: await getDefaultModel(),
+    model: resolveGovernedModel({
+      task: "chat_action_suggestions",
+      configuredModel: await getDefaultModel(),
+    }).resolvedModel,
     temperature: 0.2,
     max_tokens: 200,
     response_format: { type: "json_object" as const },

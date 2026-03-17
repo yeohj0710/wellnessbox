@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import type { LayoutDocument } from "@/lib/b2b/export/layout-types";
 import type { LayoutValidationIssue } from "@/lib/b2b/export/validation-types";
+import type { B2bReportPackagedProduct } from "@/lib/b2b/report-customization-types";
 import { fetchEmployeeDetailBundle } from "./api";
 import {
   buildEmptyEmployeeDetailState,
@@ -28,9 +29,14 @@ export function useB2bAdminReportDetailState() {
   const [note, setNote] = useState("");
   const [recommendations, setRecommendations] = useState("");
   const [cautions, setCautions] = useState("");
+  const [reportConsultationSummary, setReportConsultationSummary] = useState("");
+  const [reportPackagedProducts, setReportPackagedProducts] = useState<
+    B2bReportPackagedProduct[]
+  >([]);
   const [surveyDirty, setSurveyDirty] = useState(false);
   const [analysisDirty, setAnalysisDirty] = useState(false);
   const [noteDirty, setNoteDirty] = useState(false);
+  const [reportCustomizationDirty, setReportCustomizationDirty] = useState(false);
 
   const [latestReport, setLatestReport] = useState<LatestReport | null>(null);
   const [validationAudit, setValidationAudit] = useState<ReportAudit | null>(null);
@@ -53,6 +59,8 @@ export function useB2bAdminReportDetailState() {
     setNote(nextState.note);
     setRecommendations(nextState.recommendations);
     setCautions(nextState.cautions);
+    setReportConsultationSummary(nextState.reportConsultationSummary);
+    setReportPackagedProducts(nextState.reportPackagedProducts);
     setLatestReport(nextState.latestReport);
     setValidationAudit(nextState.validationAudit);
     setValidationIssues(nextState.validationIssues);
@@ -63,6 +71,7 @@ export function useB2bAdminReportDetailState() {
     setSurveyDirty(false);
     setAnalysisDirty(false);
     setNoteDirty(false);
+    setReportCustomizationDirty(false);
   }, []);
 
   const loadEmployeeDetail = useCallback(
@@ -109,12 +118,18 @@ export function useB2bAdminReportDetailState() {
     setRecommendations,
     cautions,
     setCautions,
+    reportConsultationSummary,
+    setReportConsultationSummary,
+    reportPackagedProducts,
+    setReportPackagedProducts,
     surveyDirty,
     setSurveyDirty,
     analysisDirty,
     setAnalysisDirty,
     noteDirty,
     setNoteDirty,
+    reportCustomizationDirty,
+    setReportCustomizationDirty,
     latestReport,
     setLatestReport,
     validationAudit,

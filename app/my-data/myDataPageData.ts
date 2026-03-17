@@ -2,6 +2,7 @@ import type { Prisma, UserProfile } from "@prisma/client";
 import db from "@/lib/db";
 import getSession from "@/lib/session";
 import { resolveActorForServerComponent } from "@/lib/server/actor";
+import { loadLatestNhisChatContext } from "@/lib/server/hyphen/chat-context";
 
 export type SessionUser = {
   kakaoId: number;
@@ -77,6 +78,7 @@ export type MyDataCollections = {
   assessResults: Awaited<ReturnType<typeof db.assessmentResult.findMany>>;
   checkAiResults: Awaited<ReturnType<typeof db.checkAiResult.findMany>>;
   orders: MyDataOrder[];
+  healthLink: Awaited<ReturnType<typeof loadLatestNhisChatContext>>;
   chatSessions: MyDataChatSession[];
 };
 
@@ -134,6 +136,22 @@ function resolveChatSessionQuery(
   return null;
 }
 
+async function resolveHealthLinkAppUserId(
+  isKakaoLoggedIn: boolean,
+  appUserId: string | null,
+  deviceClientId: string | null
+) {
+  if (isKakaoLoggedIn && appUserId) return appUserId;
+  if (!deviceClientId) return null;
+
+  const guestUser = await db.appUser.findUnique({
+    where: { kakaoId: `guest:cid:${deviceClientId}` },
+    select: { id: true },
+  });
+
+  return guestUser?.id ?? null;
+}
+
 export async function loadMyDataActorContext(): Promise<MyDataActorContext> {
   const session = await getSession();
   const user = session.user as Partial<SessionUser> | undefined;
@@ -176,6 +194,7 @@ export async function loadMyDataCollections(input: {
       assessResults: [],
       checkAiResults: [],
       orders: [],
+      healthLink: null,
       chatSessions: [],
     };
   }
@@ -196,8 +215,13 @@ export async function loadMyDataCollections(input: {
     appUserId,
     deviceClientId
   );
+  const healthLinkAppUserId = await resolveHealthLinkAppUserId(
+    isKakaoLoggedIn,
+    appUserId,
+    deviceClientId
+  );
 
-  const [profile, assessResults, checkAiResults, orders, chatSessions] =
+  const [profile, assessResults, checkAiResults, orders, healthLink, chatSessions] =
     await Promise.all([
       deviceClientId
         ? db.userProfile.findUnique({
@@ -217,6 +241,9 @@ export async function loadMyDataCollections(input: {
         orderBy: { createdAt: "desc" },
         include: ORDER_INCLUDE,
       }),
+      healthLinkAppUserId
+        ? loadLatestNhisChatContext(healthLinkAppUserId)
+        : Promise.resolve(null),
       chatSessionQuery
         ? db.chatSession.findMany(chatSessionQuery)
         : Promise.resolve<MyDataChatSession[]>([]),
@@ -227,6 +254,7 @@ export async function loadMyDataCollections(input: {
     assessResults,
     checkAiResults,
     orders,
+    healthLink,
     chatSessions,
   };
 }

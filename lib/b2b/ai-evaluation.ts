@@ -1,5 +1,6 @@
 import "server-only";
 
+import { resolveGovernedModel } from "@/lib/ai/governance";
 import { getDefaultModel } from "@/lib/ai/models";
 import { callOpenAIChatCompletions } from "@/lib/ai/openai-chat-compat";
 import type { B2bAiEvaluation } from "@/lib/b2b/analyzer";
@@ -160,7 +161,10 @@ async function requestOpenAiEvaluation(
 }
 
 export async function generateB2bAiEvaluation(input: GenerateAiEvaluationInput) {
-  const model = await getDefaultModel();
+  const model = resolveGovernedModel({
+    task: "b2b_evaluation",
+    configuredModel: await getDefaultModel(),
+  }).resolvedModel;
   const fallback = buildFallback(input, model);
   const draft = await requestOpenAiEvaluation(input, model);
   if (!draft) return fallback;

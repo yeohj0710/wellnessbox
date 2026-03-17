@@ -1,6 +1,7 @@
 import type { MutableRefObject } from "react";
 import type { LayoutDocument } from "@/lib/b2b/export/layout-types";
 import type { LayoutValidationIssue } from "@/lib/b2b/export/validation-types";
+import type { B2bReportPackagedProduct } from "@/lib/b2b/report-customization-types";
 import type {
   B2bAdminReportPreviewTab,
   CompletionStats,
@@ -37,6 +38,8 @@ export type B2bAdminReportWorkspaceContentState = {
   note: string;
   recommendations: string;
   cautions: string;
+  reportConsultationSummary: string;
+  reportPackagedProducts: B2bReportPackagedProduct[];
   analysisText: string;
   showExportPreview: boolean;
   validationAudit: ReportAudit | null;
@@ -59,6 +62,9 @@ export type B2bAdminReportWorkspaceActions = {
   onRecommendationsChange: (value: string) => void;
   onCautionsChange: (value: string) => void;
   onSaveNote: () => void;
+  onReportConsultationSummaryChange: (value: string) => void;
+  onReportPackagedProductsChange: (products: B2bReportPackagedProduct[]) => void;
+  onSaveReportCustomization: () => void;
   onAnalysisTextChange: (value: string) => void;
   onSaveAnalysis: () => void;
   onRunValidation: () => void;

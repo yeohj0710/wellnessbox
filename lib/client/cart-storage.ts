@@ -5,6 +5,8 @@ export type ClientCartItem = {
   quantity: number;
 };
 
+const CART_UPDATED_AT_STORAGE_KEY = "cartUpdatedAt";
+
 function toTrimmedString(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -103,6 +105,7 @@ export function writeClientCartItems(
   const targetStorage = getStorage(storage);
   if (targetStorage) {
     targetStorage.setItem("cartItems", JSON.stringify(normalized));
+    targetStorage.setItem(CART_UPDATED_AT_STORAGE_KEY, String(Date.now()));
   }
   return normalized;
 }

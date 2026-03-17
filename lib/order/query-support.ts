@@ -31,15 +31,47 @@ export const basicOperatorOrderSelection = {
   id: true,
   status: true,
   createdAt: true,
+  updatedAt: true,
+  totalPrice: true,
+  phone: true,
+  endpoint: true,
+  requestNotes: true,
+  entrancePassword: true,
+  directions: true,
   orderItems: {
     select: {
+      id: true,
       quantity: true,
       pharmacyProduct: {
         select: {
           optionType: true,
+          stock: true,
           product: { select: { name: true } },
         },
       },
+      review: {
+        select: {
+          rate: true,
+          content: true,
+        },
+      },
+    },
+  },
+  messages: {
+    select: {
+      id: true,
+      orderId: true,
+      pharmacyId: true,
+      content: true,
+      createdAt: true,
+      timestamp: true,
+    },
+    orderBy: { id: "desc" as const },
+    take: 4,
+  },
+  _count: {
+    select: {
+      messages: true,
     },
   },
 } satisfies Prisma.OrderSelect;

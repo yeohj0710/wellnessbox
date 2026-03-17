@@ -10,6 +10,8 @@ Keep `useChat.ts` orchestration-focused and push parsing/branching/side-effect d
   - Main chat state machine and hook-level state/effect wiring.
 - `useChat.commandLayer.ts`
   - UI-facing command assembly over assistant-turn, assessment, interactive-action, message-flow, and session handlers.
+- `useChat.commandLayer.helpers.ts`
+  - Shared command-layer state mutations such as follow-up reset, executed-action memory, and assistant message patching.
 - `useChat.api.ts`
   - API wrappers for chat, title, suggestions, actions, save, and delete.
 - `useChat.browser.ts`
@@ -33,7 +35,11 @@ Keep `useChat.ts` orchestration-focused and push parsing/branching/side-effect d
 - `useChat.session.ts`
   - Session draft/merge/title defaults.
 - `useChat.results.ts`
-  - All-results payload normalization.
+  - Public result-normalization entry used by chat and shared personalization layers.
+- `useChat.results.types.ts`
+  - Shared normalized result contracts reused outside the chat hook.
+- `useChat.results.normalize.ts`
+  - All-results payload parsing and local result restoration helpers.
 - `useChat.text.ts`, `useChat.stream.ts`, `useChat.recommendation.ts`
   - Text normalization, stream reader, and recommendation-price hydration orchestration.
 - `useChat.recommendation.catalog.ts`
@@ -64,12 +70,14 @@ Keep `useChat.ts` orchestration-focused and push parsing/branching/side-effect d
   - Chat UX copy constants and assistant error-text formatter.
 - `useChat.lifecycle.ts`
   - Session/profile/results bootstrap data loaders.
+- `useChat.bootstrap.helpers.ts`
+  - Pure bootstrap steps for initial session state, remote session merge, profile resolve, and all-results hydration.
 - `useChat.ui.ts`
   - Drawer/scroll UI helpers.
 - `useChat.interactionGuard.ts`
   - Duplicate interactive-action guard (debounce policy).
 - `useChat.bootstrap.ts`
-  - Bootstrap effect wrappers consumed by `useChat.ts`.
+  - Bootstrap effect wrappers consumed by `useChat.ts`; keep async procedure details in `useChat.bootstrap.helpers.ts`.
 - `useChat.derived.ts`
   - Derived context/state builders (summary, action-context text, guide/capability visibility).
 
@@ -84,6 +92,6 @@ Keep `useChat.ts` orchestration-focused and push parsing/branching/side-effect d
 
 ## Next Safe Targets
 
-1. Split message-row rendering details when feed variants increase again.
+1. Split `ReferenceData.tsx` section JSX into smaller presentational blocks if chat context cards grow again.
 2. Add a lightweight Playwright smoke flow for dock open -> send -> close.
 3. If `useChat.commandLayer.ts` grows again, split actor-aware session commands from assistant-turn/message-flow assembly.

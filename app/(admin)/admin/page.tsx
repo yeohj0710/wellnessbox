@@ -8,6 +8,9 @@ import {
   CubeIcon,
   RectangleStackIcon,
 } from "@heroicons/react/24/outline";
+import AiExperimentInsightsCard from "@/components/admin/AiExperimentInsightsCard";
+import AdminCopyGovernanceCard from "@/components/admin/AdminCopyGovernanceCard";
+import AdminNarrativeBriefingCard from "@/components/admin/AdminNarrativeBriefingCard";
 import ModelManager from "@/components/manager/modelManager";
 
 function HubCard(props: {
@@ -90,11 +93,11 @@ function MiniToolCard(props: {
 
 export default function AdminPage() {
   return (
-    <div className="relative left-1/2 right-1/2 min-h-screen w-screen -translate-x-1/2 bg-[radial-gradient(circle_at_15%_0%,rgba(125,211,252,0.7),transparent_34%),radial-gradient(circle_at_85%_0%,rgba(191,219,254,0.72),transparent_26%),linear-gradient(180deg,#f7fbff_0%,#edf4fb_100%)]">
-      <div className="mx-auto flex w-full max-w-[1220px] flex-col gap-6 px-4 pb-16 pt-8 sm:px-6 lg:px-8">
-        <header className="relative overflow-hidden rounded-[34px] border border-slate-200/80 bg-white/88 px-6 py-8 shadow-[0_30px_90px_-44px_rgba(15,23,42,0.4)] backdrop-blur sm:px-8 sm:py-10">
-          <div className="absolute -left-12 top-0 h-40 w-40 rounded-full bg-emerald-100/80 blur-3xl" />
-          <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-sky-100/80 blur-3xl" />
+    <div className="relative left-1/2 right-1/2 min-h-screen w-screen -translate-x-1/2 bg-[radial-gradient(circle_at_15%_0%,rgba(125,211,252,0.28),transparent_34%),radial-gradient(circle_at_85%_0%,rgba(191,219,254,0.36),transparent_28%),linear-gradient(180deg,#fbfdff_0%,#f3f7fb_100%)]">
+      <div className="mx-auto flex w-full max-w-[1240px] flex-col gap-7 px-5 pb-20 pt-10 sm:px-8 lg:px-10">
+        <header className="relative overflow-hidden rounded-[34px] border border-slate-200/80 bg-white/92 px-7 py-9 shadow-[0_28px_72px_-42px_rgba(15,23,42,0.28)] backdrop-blur sm:px-9 sm:py-11">
+          <div className="absolute -left-12 top-0 h-36 w-36 rounded-full bg-emerald-100/50 blur-3xl" />
+          <div className="absolute right-0 top-0 h-36 w-36 rounded-full bg-sky-100/50 blur-3xl" />
           <div className="relative space-y-4">
             <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-sky-700/75">
               Admin Dashboard
@@ -155,6 +158,10 @@ export default function AdminPage() {
             <ModelManager />
           </HubCard>
         </div>
+
+        <AdminNarrativeBriefingCard />
+        <AdminCopyGovernanceCard />
+        <AiExperimentInsightsCard />
 
         <HubCard
           icon={<BuildingStorefrontIcon className="h-5 w-5" />}

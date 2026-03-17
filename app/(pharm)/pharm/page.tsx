@@ -2,14 +2,23 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getBasicOrdersByPharmacy } from "@/lib/order";
+import BetaFeatureGate from "@/components/common/BetaFeatureGate";
+import { getBasicOrdersByPharmacy, getRecentFeedbackOrdersByPharmacy } from "@/lib/order";
 import { generateOptimizedPageNumbers } from "@/lib/pagination";
 import { getPharmacy } from "@/lib/pharmacy";
 import FullPageLoader from "@/components/common/fullPageLoader";
 import OrderAccordionItem from "@/components/pharm/orderAccordionItem";
+import { PharmAbuseReviewCard } from "@/components/pharm/pharmAbuseReview";
+import { PharmAnomalyRadarCard } from "@/components/pharm/pharmAnomalyRadar";
+import { PharmFeedbackMiningCard } from "@/components/pharm/pharmFeedbackMining";
+import { PharmHumanPriorityCard } from "@/components/pharm/pharmHumanPriority";
+import { PharmNarrativeBriefingCard } from "@/components/pharm/pharmNarrativeBriefing";
+import { PharmRootCauseMiningCard } from "@/components/pharm/pharmRootCauseMining";
+import { PharmInboxTriageCard } from "@/components/pharm/pharmTriage";
 import { usePharmPushSubscription } from "@/components/pharm/usePharmPushSubscription";
 import type { OrderAccordionOrder } from "@/components/order/orderAccordion.types";
 import { normalizeOrderSummary } from "@/components/order/orderAccordionNormalize";
+import { rankOrdersByPharmAbuseReview } from "@/lib/pharm/abuse-review";
 
 type PharmacyIdentity = {
   id: number;
@@ -19,6 +28,7 @@ export default function Pharm() {
   const [loading, setLoading] = useState(true);
   const [pharm, setPharm] = useState<PharmacyIdentity | null>(null);
   const [orders, setOrders] = useState<OrderAccordionOrder[]>([]);
+  const [feedbackOrders, setFeedbackOrders] = useState<OrderAccordionOrder[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isPageLoading, setIsPageLoading] = useState(false);
@@ -64,16 +74,23 @@ export default function Pharm() {
     const fetchOrders = async () => {
       setIsPageLoading(true);
       try {
-        const result = await getBasicOrdersByPharmacy(pharm.id, 1);
+        const [result, feedbackResult] = await Promise.all([
+          getBasicOrdersByPharmacy(pharm.id, 1),
+          getRecentFeedbackOrdersByPharmacy(pharm.id),
+        ]);
         if (cancelled) return;
 
         setOrders(result.orders.map((order) => normalizeOrderSummary(order)));
+        setFeedbackOrders(
+          feedbackResult.map((order) => normalizeOrderSummary(order))
+        );
         setTotalPages(result.totalPages);
       } catch (error) {
         console.error(error);
         if (cancelled) return;
 
         setOrders([]);
+        setFeedbackOrders([]);
         setTotalPages(1);
       } finally {
         if (!cancelled) {
@@ -109,6 +126,10 @@ export default function Pharm() {
   const canGoPrev = currentPage > 1;
   const canGoNext = currentPage < totalPages;
   const isSubscriptionUnknown = isSubscribed === null;
+  const rankedOrders = rankOrdersByPharmAbuseReview({
+    visibleOrders: orders,
+    contextOrders: feedbackOrders.length > 0 ? feedbackOrders : orders,
+  });
 
   if (loading) return <FullPageLoader />;
 
@@ -159,6 +180,30 @@ export default function Pharm() {
         </div>
       </div>
 
+      {orders.length > 0 ? (
+        <div className="px-4">
+          <BetaFeatureGate
+            title="Beta 운영 코파일럿"
+            helper="새로 추가된 브리핑·트리아지 카드는 필요할 때만 펼쳐보세요."
+          >
+            <div className="space-y-4">
+              <PharmHumanPriorityCard orders={rankedOrders} />
+              <PharmAbuseReviewCard
+                orders={feedbackOrders.length > 0 ? feedbackOrders : rankedOrders}
+              />
+              <PharmNarrativeBriefingCard
+                inboxOrders={rankedOrders}
+                feedbackOrders={feedbackOrders}
+              />
+              <PharmAnomalyRadarCard orders={feedbackOrders} />
+              <PharmRootCauseMiningCard orders={feedbackOrders} />
+              <PharmFeedbackMiningCard orders={feedbackOrders} />
+              <PharmInboxTriageCard orders={rankedOrders} />
+            </div>
+          </BetaFeatureGate>
+        </div>
+      ) : null}
+
       {orders.length === 0 ? (
         <div className="flex justify-center items-center w-full max-w-[640px] mx-auto mt-8 mb-12 py-12 bg-white sm:shadow-md sm:rounded-lg">
           <p className="text-gray-500">아직 들어온 주문이 없어요.</p>
@@ -170,7 +215,7 @@ export default function Pharm() {
               <div className="w-6 h-6 border-2 border-sky-400 border-t-transparent rounded-full animate-spin" />
             </div>
           ) : (
-            orders.map((order, index) => (
+            rankedOrders.map((order, index) => (
               <OrderAccordionItem
                 key={order.id}
                 initialOrder={order}

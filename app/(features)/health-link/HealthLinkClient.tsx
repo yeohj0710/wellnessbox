@@ -72,6 +72,7 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
       {showAuthStage ? (
         <HealthLinkAuthSection
           loggedIn={loggedIn}
+          status={status}
           statusError={statusError}
           actionNotice={actionNotice}
           actionError={actionError}
@@ -96,6 +97,7 @@ export default function HealthLinkClient({ loggedIn }: HealthLinkClientProps) {
 
       {!showAuthStage ? (
         <HealthLinkResultSection
+          status={status}
           linked={!!status?.linked}
           canFetch={canFetch}
           fetchLoading={actionLoading === "fetch"}

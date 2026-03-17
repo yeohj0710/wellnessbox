@@ -94,6 +94,8 @@ export function useSurveyPagePanelProps(input: UseSurveyPagePanelPropsInput) {
           needAuthNotice: TEXT.needAuthNotice,
           busyRequest: TEXT.busyRequest,
           busyChecking: TEXT.busyChecking,
+          busyResending: TEXT.busyResending,
+          busySyncing: TEXT.busySyncing,
           completedRestartHint: TEXT.completedRestartHint,
         },
         identity: input.identity,

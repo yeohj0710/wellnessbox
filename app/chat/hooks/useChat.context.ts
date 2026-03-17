@@ -5,6 +5,7 @@ import type { ChatSession, UserProfile } from "@/types/chat";
 import type {
   NormalizedAssessResult,
   NormalizedCheckAiResult,
+  NormalizedHealthLinkSummary,
   NormalizedOrderSummary,
 } from "./useChat.results";
 
@@ -18,6 +19,7 @@ type BuildUserContextInputParams = {
   orders: NormalizedOrderSummary[];
   assessResult: NormalizedAssessResult | null;
   checkAiResult: NormalizedCheckAiResult | null;
+  healthLink: NormalizedHealthLinkSummary | null;
   sessions: ChatSession[];
   currentSessionId: string | null;
   localAssessCats: string[];
@@ -67,6 +69,7 @@ export function buildUserContextInput(
     orders: params.orders,
     assessResult: params.assessResult || null,
     checkAiResult: params.checkAiResult || null,
+    healthLink: params.healthLink || null,
     chatSessions: params.sessions,
     currentSessionId: params.currentSessionId,
     localAssessCats: params.localAssessCats,
@@ -95,6 +98,7 @@ export function buildChatContextPayload(params: BuildChatContextPayloadParams) {
     })),
     assessResult: params.assessResult || null,
     checkAiResult: params.checkAiResult || null,
+    healthLink: params.healthLink || null,
     sessionId: params.currentSessionId || undefined,
     chatSessions: buildContextSessionPayload(
       params.sessions,

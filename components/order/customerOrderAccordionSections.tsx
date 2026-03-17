@@ -85,6 +85,7 @@ type CustomerOrderMessagesSectionProps = {
   isSending: boolean;
   isMessagesRefreshing: boolean;
   messagesContainerRef: RefObject<HTMLDivElement>;
+  messageInputRef: RefObject<HTMLTextAreaElement>;
   refreshMessages: (manual?: boolean) => Promise<void>;
   handleScroll: () => void;
   handleDeleteMessage: (messageId: number) => Promise<void>;
@@ -99,6 +100,7 @@ export function CustomerOrderMessagesSection({
   isSending,
   isMessagesRefreshing,
   messagesContainerRef,
+  messageInputRef,
   refreshMessages,
   handleScroll,
   handleDeleteMessage,
@@ -172,6 +174,7 @@ export function CustomerOrderMessagesSection({
 
       <div className="mt-4 flex gap-2">
         <textarea
+          ref={messageInputRef}
           rows={1}
           value={newMessage}
           onChange={(event) => setNewMessage(event.target.value)}

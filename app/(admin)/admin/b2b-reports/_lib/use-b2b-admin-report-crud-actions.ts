@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { LayoutDocument } from "@/lib/b2b/export/layout-types";
 import type { LayoutValidationIssue } from "@/lib/b2b/export/validation-types";
+import type { B2bReportPackagedProduct } from "@/lib/b2b/report-customization-types";
 import type { LatestReport, ReportAudit } from "./client-types";
 import { useB2bAdminReportEmployeeOpsActions } from "./use-b2b-admin-report-employee-ops-actions";
 import { useB2bAdminReportPersistenceActions } from "./use-b2b-admin-report-persistence-actions";
@@ -32,7 +33,10 @@ type UseB2bAdminReportCrudActionsParams = {
   note: string;
   recommendations: string;
   cautions: string;
+  reportConsultationSummary: string;
+  reportPackagedProducts: B2bReportPackagedProduct[];
   analysisText: string;
+  setReportCustomizationDirty: Dispatch<SetStateAction<boolean>>;
 };
 
 export function useB2bAdminReportCrudActions({
@@ -59,7 +63,10 @@ export function useB2bAdminReportCrudActions({
   note,
   recommendations,
   cautions,
+  reportConsultationSummary,
+  reportPackagedProducts,
   analysisText,
+  setReportCustomizationDirty,
 }: UseB2bAdminReportCrudActionsParams) {
   const reloadCurrentEmployee = useCallback(async () => {
     if (!selectedEmployeeId) return;
@@ -81,15 +88,19 @@ export function useB2bAdminReportCrudActions({
     runBusyAction,
     selectedEmployeeId,
     selectedPeriodKey,
+    latestReportId: latestReport?.id ?? null,
     surveyAnswers,
     resolvedSelectedSections,
     analysisText,
     note,
     recommendations,
     cautions,
+    reportConsultationSummary,
+    reportPackagedProducts,
     setSurveyDirty,
     setAnalysisDirty,
     setNoteDirty,
+    setReportCustomizationDirty,
     setNotice,
     reloadCurrentEmployee,
   });

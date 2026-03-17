@@ -12,10 +12,16 @@ export function buildPromptSummaryText(summary: {
   recentOrders: UserContextSummary["recentOrders"];
   latestAssess: UserContextSummary["latestAssess"];
   latestQuick: UserContextSummary["latestQuick"];
+  healthLink: UserContextSummary["healthLink"];
   previousConsultations: UserContextSummary["previousConsultations"];
   actorContext: UserContextSummary["actorContext"];
   recommendedNutrients: UserContextSummary["recommendedNutrients"];
   notableResponses: UserContextSummary["notableResponses"];
+  explainability: UserContextSummary["explainability"];
+  dataAsset: UserContextSummary["dataAsset"];
+  safetyEscalation: UserContextSummary["safetyEscalation"];
+  consultationImpact: UserContextSummary["consultationImpact"];
+  journeySegment: UserContextSummary["journeySegment"];
 }) {
   const lines: string[] = [];
 
@@ -59,7 +65,7 @@ export function buildPromptSummaryText(summary: {
 
   if (summary.latestAssess) {
     lines.push(
-      `[정밀검사] ${summary.latestAssess.testedAt} · ${summary.latestAssess.findings
+      `[정밀검사] ${summary.latestAssess.testedAt} | ${summary.latestAssess.findings
         .slice(0, 7)
         .join(", ")}`
     );
@@ -69,12 +75,38 @@ export function buildPromptSummaryText(summary: {
 
   if (summary.latestQuick) {
     lines.push(
-      `[빠른검사] ${summary.latestQuick.testedAt} · ${summary.latestQuick.findings
+      `[빠른검사] ${summary.latestQuick.testedAt} | ${summary.latestQuick.findings
         .slice(0, 7)
         .join(", ")}`
     );
   } else {
     lines.push("[빠른검사] 없음");
+  }
+
+  if (summary.healthLink) {
+    const healthLinkParts = [
+      summary.healthLink.fetchedAt && summary.healthLink.fetchedAt !== "-"
+        ? `조회:${summary.healthLink.fetchedAt}`
+        : "",
+      summary.healthLink.riskLevel !== "unknown"
+        ? `위험도:${summary.healthLink.riskLevel}`
+        : "",
+      summary.healthLink.headline ? `헤드라인:${summary.healthLink.headline}` : "",
+      summary.healthLink.topMedicines.length > 0
+        ? `복약:${summary.healthLink.topMedicines.join(", ")}`
+        : "",
+      summary.healthLink.topConditions.length > 0
+        ? `주의:${summary.healthLink.topConditions.join(", ")}`
+        : "",
+      summary.healthLink.highlights.length > 0
+        ? `요약:${summary.healthLink.highlights.join(" / ")}`
+        : summary.healthLink.summary
+        ? `요약:${summary.healthLink.summary}`
+        : "",
+    ].filter(Boolean);
+    lines.push(`[건강링크] ${healthLinkParts.join(" | ")}`);
+  } else {
+    lines.push("[건강링크] 없음");
   }
 
   if (summary.previousConsultations.length > 0) {
@@ -92,21 +124,92 @@ export function buildPromptSummaryText(summary: {
   }
 
   if (summary.recommendedNutrients.length > 0) {
-    lines.push(`[우선영양소] ${summary.recommendedNutrients.slice(0, 5).join(", ")}`);
+    lines.push(`[추천영양소] ${summary.recommendedNutrients.slice(0, 5).join(", ")}`);
   } else {
-    lines.push("[우선영양소] 없음");
+    lines.push("[추천영양소] 없음");
   }
 
   if (summary.notableResponses.length > 0) {
     const notable = summary.notableResponses
-      .map(
-        (item) =>
-          `${item.source}/${item.signal}:${item.question}=${item.answer}`
-      )
+      .map((item) => `${item.source}/${item.signal}:${item.question}=${item.answer}`)
       .join(" / ");
     lines.push(`[문항응답] ${notable}`);
   } else {
     lines.push("[문항응답] 없음");
+  }
+
+  if (summary.explainability.fitReasons.length > 0) {
+    lines.push(
+      `[개인화근거] ${summary.explainability.fitReasons.slice(0, 3).join(" / ")}`
+    );
+  }
+
+  if (summary.explainability.uncertaintyNotes.length > 0) {
+    lines.push(
+      `[불확실성] ${summary.explainability.uncertaintyNotes
+        .slice(0, 2)
+        .join(" / ")}`
+    );
+  }
+
+  if (summary.explainability.pharmacistReviewPoints.length > 0) {
+    lines.push(
+      `[약사검토포인트] ${summary.explainability.pharmacistReviewPoints
+        .slice(0, 2)
+        .join(" / ")}`
+    );
+  }
+
+  lines.push(`[데이터자산] ${summary.dataAsset.strengthLabel} | ${summary.dataAsset.headline}`);
+
+  if (summary.dataAsset.reasonLines.length > 0) {
+    lines.push(
+      `[데이터자산근거] ${summary.dataAsset.reasonLines.slice(0, 3).join(" / ")}`
+    );
+  }
+
+  lines.push(
+    `[안전성에스컬레이션] ${summary.safetyEscalation.badgeLabel} | ${summary.safetyEscalation.headline}`
+  );
+
+  if (summary.safetyEscalation.reasonLines.length > 0) {
+    lines.push(
+      `[안전근거] ${summary.safetyEscalation.reasonLines.slice(0, 3).join(" / ")}`
+    );
+  }
+
+  if (summary.safetyEscalation.needsMoreInfo.length > 0) {
+    lines.push(
+      `[추가확인필요] ${summary.safetyEscalation.needsMoreInfo
+        .slice(0, 2)
+        .join(" / ")}`
+    );
+  }
+
+  lines.push(
+    `[상담영향학습] ${summary.consultationImpact.headline} | ${summary.consultationImpact.insight}`
+  );
+
+  if (summary.consultationImpact.evidence.length > 0) {
+    lines.push(
+      `[상담영향근거] ${summary.consultationImpact.evidence
+        .slice(0, 3)
+        .join(" / ")}`
+    );
+  }
+
+  lines.push(
+    `[상담다음행동] ${summary.consultationImpact.recommendedActionLabel} | ${summary.consultationImpact.learnedPattern}`
+  );
+
+  lines.push(
+    `[행동세그먼트] ${summary.journeySegment.label} | ${summary.journeySegment.headline}`
+  );
+
+  if (summary.journeySegment.reasonLines.length > 0) {
+    lines.push(
+      `[세그먼트근거] ${summary.journeySegment.reasonLines.slice(0, 3).join(" / ")}`
+    );
   }
 
   return lines.join("\n");

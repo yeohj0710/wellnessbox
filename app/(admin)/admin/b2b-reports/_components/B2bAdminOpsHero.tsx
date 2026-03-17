@@ -1,3 +1,4 @@
+import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
 import styles from "@/components/b2b/B2bUx.module.css";
 
 type B2bAdminOpsHeroProps = {
@@ -20,10 +21,10 @@ export default function B2bAdminOpsHero({
   return (
     <header className={styles.heroCard}>
       <p className={styles.kicker}>B2B REPORT OPS</p>
-      <h1 className={styles.title}>임직원 건강 레포트 운영</h1>
+      <h1 className={styles.title}>임직원 건강 리포트 운영</h1>
       <p className={styles.description}>
-        임직원을 선택하면 해당 기간 레포트가 바로 열려요. 필요한 경우에만 설문, 코멘트,
-        레이아웃을 수정한 뒤 PDF로 내려받아 전달해 주세요.
+        임직원을 선택하면 해당 기간 리포트가 바로 열려요. 필요할 때만 설문,
+        코멘트, 레이아웃을 수정하고 PDF까지 이어서 확인할 수 있어요.
       </p>
       <div className={styles.actionRow}>
         <input
@@ -38,7 +39,7 @@ export default function B2bAdminOpsHero({
               onSearchSubmit();
             }
           }}
-          placeholder="이름, 생년월일, 휴대폰 번호 검색"
+          placeholder="이름, 생년월일, 전화번호 검색"
           style={{ minWidth: 280 }}
         />
         <button
@@ -47,7 +48,7 @@ export default function B2bAdminOpsHero({
           disabled={busy}
           className={styles.buttonPrimary}
         >
-          {busy ? "검색 중..." : "검색"}
+          {busy ? <InlineSpinnerLabel label="검색 중" /> : "검색"}
         </button>
         {demoMode ? (
           <button
@@ -56,7 +57,7 @@ export default function B2bAdminOpsHero({
             disabled={busy}
             className={styles.buttonSecondary}
           >
-            {busy ? "생성 중..." : "데모 생성"}
+            {busy ? <InlineSpinnerLabel label="생성 중" /> : "데모 생성"}
           </button>
         ) : null}
       </div>

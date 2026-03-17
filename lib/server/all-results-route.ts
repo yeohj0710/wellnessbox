@@ -9,6 +9,7 @@ import {
   serializeAssessmentResultForRoute,
   serializeCheckAiResultForRoute,
 } from "@/lib/server/result-route-serializers";
+import { loadLatestNhisChatContext } from "@/lib/server/hyphen/chat-context";
 
 type ResultScope = {
   resultWhere: { appUserId: string } | { clientId: string };
@@ -20,6 +21,12 @@ type ResultScope = {
     result: "account" | "device";
     order: "account" | "device" | "none";
   };
+};
+
+const CHAT_SESSION_INCLUDE = {
+  messages: {
+    orderBy: { createdAt: "asc" as const },
+  },
 };
 
 type ResolvedScope =
@@ -84,7 +91,37 @@ export async function loadAllResultsPayload(input: {
   actor: RequestActor;
   scope: ResultScope;
 }) {
-  const [assessRaw, checkAiRaw, orders] = await Promise.all([
+  const chatSessionWhere = input.actor.loggedIn
+    ? {
+        OR: [
+          input.actor.appUserId ? { appUserId: input.actor.appUserId } : { id: "missing" },
+          input.actor.deviceClientId
+            ? { clientId: input.actor.deviceClientId, appUserId: null }
+            : { id: "missing" },
+        ],
+      }
+    : input.actor.deviceClientId
+    ? { clientId: input.actor.deviceClientId, appUserId: null }
+    : null;
+  const healthLinkAppUserId =
+    input.actor.appUserId ??
+    (input.actor.deviceClientId
+      ? (
+          await db.appUser.findUnique({
+            where: { kakaoId: `guest:cid:${input.actor.deviceClientId}` },
+            select: { id: true },
+          })
+        )?.id ??
+        null
+      : null);
+
+  const [profile, assessRaw, checkAiRaw, orders, healthLink, chatSessions] =
+    await Promise.all([
+      input.actor.deviceClientId
+        ? db.userProfile.findUnique({
+            where: { clientId: input.actor.deviceClientId },
+          })
+        : Promise.resolve(null),
     db.assessmentResult.findFirst({
       where: input.scope.resultWhere,
       orderBy: { createdAt: "desc" },
@@ -102,17 +139,39 @@ export async function loadAllResultsPayload(input: {
         },
       },
     }),
+    healthLinkAppUserId
+      ? loadLatestNhisChatContext(healthLinkAppUserId)
+      : Promise.resolve(null),
+    chatSessionWhere
+      ? db.chatSession.findMany({
+          where: chatSessionWhere,
+          orderBy: { updatedAt: "desc" },
+          include: CHAT_SESSION_INCLUDE,
+          take: 5,
+        })
+      : Promise.resolve([]),
   ]);
 
   return {
     clientId: input.actor.deviceClientId,
+    profile: profile?.data ?? null,
     assess: serializeAssessmentResultForRoute(assessRaw, {
       includeNormalized: true,
     }),
     checkAi: serializeCheckAiResultForRoute(checkAiRaw, {
       includeNormalized: true,
     }),
+    healthLink,
     orders,
+    chatSessions: chatSessions.map((session) => ({
+      id: session.id,
+      title: session.title,
+      updatedAt: session.updatedAt,
+      messages: session.messages.map((message) => ({
+        role: message.role,
+        content: message.content,
+      })),
+    })),
     actor: {
       loggedIn: input.actor.loggedIn,
       appUserId: input.actor.appUserId,

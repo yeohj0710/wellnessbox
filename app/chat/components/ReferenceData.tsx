@@ -1,87 +1,85 @@
 "use client";
 
 import { useMemo } from "react";
+import type { UserContextSummary } from "@/lib/chat/context";
 import type {
   NormalizedAssessResult,
   NormalizedCheckAiResult,
+  NormalizedHealthLinkSummary,
   NormalizedOrderSummary,
 } from "../hooks/useChat.results";
+import {
+  buildReferenceDataModel,
+  getReferenceSecondaryActionHref,
+} from "./referenceData.model";
+import {
+  ReferenceDataAssessSection,
+  ReferenceDataConsultationImpactSection,
+  ReferenceDataHealthLinkSection,
+  ReferenceDataJourneySegmentSection,
+  ReferenceDataOrderSection,
+  ReferenceDataQuickSection,
+  ReferenceDataTrustSection,
+  ReferenceDataValuePropositionSection,
+} from "./ReferenceData.sections";
 
-interface ReferenceDataProps {
+export interface ReferenceDataProps {
+  summary: UserContextSummary;
   orders: NormalizedOrderSummary[];
   assessResult: NormalizedAssessResult | null;
   checkAiResult: NormalizedCheckAiResult | null;
-}
-
-function formatKo(dt: string | number | Date | null) {
-  const source = dt ?? Date.now();
-  const resolved = source instanceof Date ? source : new Date(source);
-  try {
-    return new Intl.DateTimeFormat("ko-KR", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-      timeZone: "Asia/Seoul",
-    }).format(resolved);
-  } catch {
-    return resolved.toLocaleString("ko-KR");
-  }
-}
-
-function toTimestamp(value: string | number | Date | null) {
-  if (value instanceof Date) return value.getTime();
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string") {
-    const parsed = Date.parse(value);
-    return Number.isFinite(parsed) ? parsed : 0;
-  }
-  return 0;
-}
-
-function clip(text: string, max = 60) {
-  return text.length > max ? text.slice(0, max) + "…" : text;
+  healthLink: NormalizedHealthLinkSummary | null;
+  onRunPrompt?: (prompt: string) => void;
 }
 
 export default function ReferenceData({
+  summary,
   orders,
   assessResult,
   checkAiResult,
+  healthLink,
+  onRunPrompt,
 }: ReferenceDataProps) {
-  const hasOrders = Array.isArray(orders) && orders.length > 0;
-  const lastOrder = hasOrders
-    ? [...orders].sort(
-        (a, b) => toTimestamp(b.updatedAt) - toTimestamp(a.updatedAt)
-      )[0]
-    : null;
-  const hasAssess =
-    !!assessResult &&
-    Array.isArray(assessResult.summary) &&
-    assessResult.summary.length > 0;
-  const hasQuick =
-    !!checkAiResult &&
-    Array.isArray(checkAiResult.labels) &&
-    checkAiResult.labels.length > 0;
-  const show = hasOrders || hasAssess || hasQuick;
-
-  const assessSummary = useMemo(
-    () => (hasAssess ? assessResult!.summary.slice(0, 5) : []),
-    [hasAssess, assessResult]
+  const {
+    hasOrders,
+    lastOrder,
+    hasAssess,
+    assessSummary,
+    hasQuick,
+    quickLabels,
+    hasHealthLink,
+    healthLinkHighlights,
+    hasConsultationImpact,
+    hasJourneySegment,
+    show,
+    valueProposition,
+  } = useMemo(
+    () =>
+      buildReferenceDataModel({
+        summary,
+        orders,
+        assessResult,
+        checkAiResult,
+        healthLink,
+      }),
+    [summary, orders, assessResult, checkAiResult, healthLink]
   );
 
-  const quickLabels = useMemo(
-    () => (hasQuick ? checkAiResult!.labels.slice(0, 5) : []),
-    [hasQuick, checkAiResult]
-  );
+  const secondaryActionHref = valueProposition.secondaryAction
+    ? getReferenceSecondaryActionHref(valueProposition.secondaryAction.target)
+    : undefined;
+  const handleSecondaryAction = secondaryActionHref
+    ? () => {
+        window.location.href = secondaryActionHref;
+      }
+    : undefined;
 
   if (!show) return null;
 
   return (
     <div className="mb-1 pl-2">
       <details className="group text-[11px] text-slate-500">
-        <summary className="inline-flex items-center gap-1 cursor-pointer hover:text-slate-700">
+        <summary className="inline-flex cursor-pointer items-center gap-1 hover:text-slate-700">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-slate-300 group-open:bg-slate-400" />
           참고 데이터
         </summary>
@@ -101,59 +99,55 @@ export default function ReferenceData({
             group-open:translate-y-0
           "
         >
-          <div className="mb-2 mt-1 inline-block w-auto max-w-[720px] rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 shadow-sm space-y-3">
-            {hasOrders && lastOrder && (
-              <div>
-                <div className="mb-1 flex items-center justify-between">
-                  <div className="font-medium text-slate-600">최근 주문</div>
-                  <div className="text-[10px] text-slate-400">
-                    {formatKo(lastOrder.updatedAt)}
-                  </div>
-                </div>
-                {lastOrder.items.length > 0 && (
-                  <ul className="mt-1 list-disc pl-4 space-y-0.5">
-                    {lastOrder.items.map((item, idx) => (
-                      <li key={idx} className="text-slate-600">
-                        {clip(item.name, 50)}
-                        {item.quantity ? ` x${item.quantity}` : ""}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
+          <div className="mb-2 mt-1 inline-block w-auto max-w-[720px] space-y-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 shadow-sm">
+            {hasOrders && lastOrder ? (
+              <ReferenceDataOrderSection order={lastOrder} />
+            ) : null}
 
-            {hasAssess && (
-              <div className="pt-2 border-t border-slate-200">
-                <div className="mb-1 flex items-center justify-between">
-                  <div className="font-medium text-slate-600">정밀 AI 검사</div>
-                  <div className="text-[10px] text-slate-400">
-                    {formatKo(assessResult!.createdAt)}
-                  </div>
-                </div>
-                <ul className="list-disc pl-4 space-y-0.5">
-                  {assessSummary.map((s, idx) => (
-                    <li key={`assess-${idx}`} className="text-slate-600">
-                      {clip(s, 120)}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            {hasAssess && assessResult ? (
+              <ReferenceDataAssessSection
+                assessResult={assessResult}
+                assessSummary={assessSummary}
+              />
+            ) : null}
 
-            {hasQuick && (
-              <div className="pt-2 border-t border-slate-200">
-                <div className="mb-1 flex items-center justify-between">
-                  <div className="font-medium text-slate-600">빠른 AI 검사</div>
-                  <div className="text-[10px] text-slate-400">
-                    {formatKo(checkAiResult!.createdAt)}
-                  </div>
-                </div>
-                <div className="mt-1 text-slate-600">
-                  {quickLabels.join(", ")}
-                </div>
-              </div>
-            )}
+            {hasQuick && checkAiResult ? (
+              <ReferenceDataQuickSection
+                checkAiResult={checkAiResult}
+                quickLabels={quickLabels}
+              />
+            ) : null}
+
+            {hasHealthLink && healthLink ? (
+              <ReferenceDataHealthLinkSection
+                healthLink={healthLink}
+                highlights={healthLinkHighlights}
+              />
+            ) : null}
+
+            {hasConsultationImpact ? (
+              <ReferenceDataConsultationImpactSection
+                summary={summary}
+                onRunPrompt={onRunPrompt}
+              />
+            ) : null}
+
+            {hasJourneySegment ? (
+              <ReferenceDataValuePropositionSection
+                valueProposition={valueProposition}
+                onRunPrompt={onRunPrompt}
+                onSecondaryAction={handleSecondaryAction}
+              />
+            ) : null}
+
+            {hasJourneySegment ? (
+              <ReferenceDataJourneySegmentSection
+                summary={summary}
+                onRunPrompt={onRunPrompt}
+              />
+            ) : null}
+
+            <ReferenceDataTrustSection summary={summary} />
           </div>
         </div>
       </details>

@@ -68,11 +68,15 @@ export function DrawerMenuContent({
           onClick={onItemClick}
         >
           <span>정밀 AI 검사</span>
-          <BetaBadge className="ml-1" />
         </IntentPrefetchLink>
 
-        <IntentPrefetchLink href="/survey" className={drawerItemClasses} onClick={onItemClick}>
-          건강 설문
+        <IntentPrefetchLink
+          href="/survey"
+          className={`inline-flex items-center gap-1 ${drawerItemClasses}`}
+          onClick={onItemClick}
+        >
+          <span>건강 설문</span>
+          <BetaBadge className="ml-1" />
         </IntentPrefetchLink>
       </div>
 
@@ -82,15 +86,15 @@ export function DrawerMenuContent({
         onClick={onItemClick}
       >
         <span>AI 맞춤 상담</span>
-        <BetaBadge className="ml-2" />
       </IntentPrefetchLink>
 
       <IntentPrefetchLink
         href="/column"
-        className={menuItemClasses("leading-tight")}
+        className={`${menuItemClasses("leading-tight")} inline-flex items-center gap-1`}
         onClick={onItemClick}
       >
-        건강 칼럼
+        <span>건강 칼럼</span>
+        <BetaBadge className="ml-1" />
       </IntentPrefetchLink>
 
       {visibility.isAdminLoggedIn && (

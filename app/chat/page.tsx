@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import dynamic from "next/dynamic";
 import { usePathname, useSearchParams } from "next/navigation";
 import ChatInput from "./components/ChatInput";
@@ -10,26 +10,14 @@ import useChat from "./hooks/useChat";
 import { buildPageAgentContext } from "@/lib/chat/page-agent-context";
 import { buildAssistantLoadingMetaMap } from "@/components/chat/DesktopChatDockPanel.loading";
 
-const MessageBubble = dynamic(() => import("./components/MessageBubble"));
 const ProfileModal = dynamic(() => import("./components/ProfileModal"), {
   ssr: false,
 });
 const ChatDrawer = dynamic(() => import("./components/ChatDrawer"), {
   ssr: false,
 });
-const ReferenceData = dynamic(() => import("./components/ReferenceData"), {
-  ssr: false,
-});
-const RecommendedProductActions = dynamic(
-  () => import("./components/RecommendedProductActions"),
-  { ssr: false }
-);
-const AssessmentActionCard = dynamic(
-  () => import("./components/AssessmentActionCard"),
-  { ssr: false }
-);
-const AgentCapabilityHub = dynamic(
-  () => import("./components/AgentCapabilityHub"),
+const ChatConversationTimeline = dynamic(
+  () => import("./components/ChatConversationTimeline"),
   { ssr: false }
 );
 
@@ -37,6 +25,7 @@ export default function ChatPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const from = searchParams.get("from");
+  const draft = (searchParams.get("draft") || "").trim();
   const pageContext = useMemo(() => {
     const fallbackPath = pathname || "/chat";
     const trimmedFrom = (from || "").trim();
@@ -58,6 +47,7 @@ export default function ChatPage() {
       searchParams: fromQuery ? new URLSearchParams(fromQuery) : searchParams,
     });
   }, [from, pathname, searchParams]);
+
   const {
     sessions,
     activeId,
@@ -74,7 +64,9 @@ export default function ChatPage() {
     closeDrawer,
     assessResult,
     checkAiResult,
+    healthLink,
     orders,
+    userContextSummary,
     titleHighlightId,
     suggestions,
     interactiveActions,
@@ -107,24 +99,33 @@ export default function ChatPage() {
   } = useChat({
     pageContext,
   });
+  const appliedDraftRef = useRef("");
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [active?.messages.length]);
+  }, [active?.messages.length, messagesEndRef]);
+
+  useEffect(() => {
+    if (!draft) return;
+    if (appliedDraftRef.current === draft) return;
+    if (input.trim()) return;
+    setInput(draft);
+    appliedDraftRef.current = draft;
+  }, [draft, input, setInput]);
 
   const assistantLoadingMetaByIndex = useMemo(() => {
     return active ? buildAssistantLoadingMetaMap(active.messages) : new Map();
   }, [active]);
 
   return (
-    <div className="relative flex flex-col w-full min-h-[calc(100vh-56px)] bg-gradient-to-b from-slate-50 to-white">
-      <div className="fixed top-14 left-0 right-0 z-10">
-        <div className="mx-auto max-w-3xl w-full">
+    <div className="relative flex min-h-[calc(100vh-56px)] w-full flex-col bg-gradient-to-b from-slate-50 to-white">
+      <div className="fixed left-0 right-0 top-14 z-10">
+        <div className="mx-auto w-full max-w-3xl">
           <ChatTopBar
             openDrawer={openDrawer}
             newChat={newChat}
             openSettings={() => setShowSettings(true)}
-            title={active?.title || "새 상담"}
+            title={active?.title || "AI 상담"}
             titleLoading={titleLoading}
             titleError={titleError}
             retryTitle={generateTitle}
@@ -133,32 +134,35 @@ export default function ChatPage() {
         </div>
       </div>
       <div className="h-12" />
-      <main className="flex-1 flex flex-col">
+      <main className="flex flex-1 flex-col">
         <div
           className="
             mx-auto max-w-3xl w-full px-5 sm:px-6 md:px-8 flex-1 pt-4
-            pb-[calc(100vh-240px)]     
+            pb-[calc(100vh-240px)]
             sm:pb-[calc(100vh-210px)]
             overflow-y-auto
           "
           ref={messagesContainerRef}
         >
-          {profileLoaded && !profile && (
+          {profileLoaded && !profile ? (
             <ProfileBanner
               profile={profile}
               show={showProfileBanner}
               onEdit={() => setShowSettings(true)}
               onClose={() => setShowProfileBanner(false)}
             />
-          )}
+          ) : null}
+
           <div className="mx-auto max-w-3xl space-y-4">
-            {bootstrapPending &&
-              (!active || active.messages.length === 0) && (
+            <ChatConversationTimeline
+              active={active}
+              bootstrapPending={bootstrapPending}
+              bootstrapFallback={
                 <div className="mx-2 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
                   <div className="flex items-center gap-2">
                     <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-sky-500" />
                     <p className="text-sm font-medium text-slate-700">
-                      AI 상담을 준비 중이에요...
+                      AI 상담을 준비하고 있어요...
                     </p>
                   </div>
                   <div className="mt-3 space-y-2">
@@ -166,47 +170,24 @@ export default function ChatPage() {
                     <div className="h-2.5 w-4/5 animate-pulse rounded bg-slate-200" />
                   </div>
                 </div>
-              )}
-            {active &&
-              active.messages.length > 0 &&
-              active.messages.map((m, i) => (
-                <div key={m.id}>
-                  {i === 0 && (
-                    <ReferenceData
-                      orders={orders}
-                      assessResult={assessResult}
-                      checkAiResult={checkAiResult}
-                    />
-                  )}
-                  <MessageBubble
-                    role={m.role}
-                    content={m.content}
-                    loadingContextText={
-                      m.role === "assistant"
-                        ? assistantLoadingMetaByIndex.get(i)?.contextText || ""
-                        : ""
-                    }
-                  />
-                  {m.role === "assistant" && (
-                    <RecommendedProductActions content={m.content} />
-                  )}
-                </div>
-              ))}
-            <AgentCapabilityHub
-              visible={showAgentCapabilityHub}
-              actions={agentCapabilityActions}
-              disabled={loading || bootstrapPending || actionLoading}
+              }
+              summary={userContextSummary}
+              orders={orders}
+              assessResult={assessResult}
+              checkAiResult={checkAiResult}
+              healthLink={healthLink}
+              assistantLoadingMetaByIndex={assistantLoadingMetaByIndex}
+              showAgentCapabilityHub={showAgentCapabilityHub}
+              agentCapabilityActions={agentCapabilityActions}
+              loading={loading}
+              actionLoading={actionLoading}
               onRunPrompt={(prompt) => sendMessage(prompt)}
               onRunAction={handleInteractiveAction}
+              inChatAssessmentPrompt={inChatAssessmentPrompt}
+              onCancelInChatAssessment={cancelInChatAssessment}
+              onOpenAssessmentPage={openAssessmentPageFromChat}
+              messagesEndRef={messagesEndRef}
             />
-            <AssessmentActionCard
-              prompt={inChatAssessmentPrompt}
-              disabled={loading || bootstrapPending}
-              onSelectOption={(label) => sendMessage(label)}
-              onCancel={cancelInChatAssessment}
-              onOpenPage={openAssessmentPageFromChat}
-            />
-            <div ref={messagesEndRef} />
           </div>
         </div>
         <ChatInput
@@ -217,7 +198,7 @@ export default function ChatPage() {
           disabled={bootstrapPending}
           quickActionLoading={actionLoading}
           suggestions={suggestions}
-          onSelectSuggestion={(q) => sendMessage(q)}
+          onSelectSuggestion={(question) => sendMessage(question)}
           showAgentGuide={showAgentGuide}
           agentExamples={agentGuideExamples}
           onSelectAgentExample={(prompt) => sendMessage(prompt)}
@@ -238,13 +219,13 @@ export default function ChatPage() {
         closeDrawer={closeDrawer}
         highlightId={titleHighlightId}
       />
-      {showSettings && (
+      {showSettings ? (
         <ProfileModal
           profile={profile}
           onClose={() => setShowSettings(false)}
           onChange={handleProfileChange}
         />
-      )}
+      ) : null}
     </div>
   );
 }

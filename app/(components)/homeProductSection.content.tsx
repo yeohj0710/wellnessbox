@@ -1,8 +1,10 @@
 "use client";
 
 import type { RefObject } from "react";
+import { usePathname } from "next/navigation";
 import ProductDetail from "@/components/product/productDetail";
 import Cart from "@/components/order/cart";
+import NaturalLanguageRoutingCard from "@/components/common/NaturalLanguageRoutingCard";
 import { getLowestAverageOptionType } from "@/lib/utils";
 import AddressSection from "@/app/(components)/addressSection";
 import PharmacySelector from "@/app/(components)/pharmacySelector";
@@ -12,7 +14,9 @@ import ProductGrid from "@/app/(components)/productGrid";
 import FooterCartBar from "@/app/(components)/footerCartBar";
 import FooterCartBarLoading from "@/app/(components)/footerCartBarLoading";
 import SymptomFilter from "@/app/(components)/symptomFilter";
+import OfferIntelligenceCard from "@/components/common/OfferIntelligenceCard";
 import { HOME_PACKAGE_LABELS } from "./homeProductSection.copy";
+import HomeAdaptiveEntryStack from "./HomeAdaptiveEntryStack";
 import {
   HomeProductsStatusState,
   SelectedPharmacyNotice,
@@ -24,6 +28,10 @@ import type {
   HomeProduct,
   SetState,
 } from "./homeProductSection.types";
+import type {
+  OfferAction,
+  OfferCardModel,
+} from "@/lib/offer-intelligence/engine";
 
 type HomeProductSectionContentProps = {
   roadAddress: string;
@@ -42,6 +50,10 @@ type HomeProductSectionContentProps = {
   onToggleCategory: (categoryId: number) => void;
   onResetCategories: () => void;
   selectedPackage: string;
+  onApplyRecommendedCategories: (categoryIds: number[]) => void;
+  onApplyRecommendedTrial: (categoryIds: number[]) => void;
+  homeOffer: OfferCardModel | null;
+  onHomeOfferAction: (action: OfferAction) => void;
   deferredSelectedPackage: string;
   onSelectPackage: (pkg: string) => void;
   isFilterUpdating: boolean;
@@ -83,6 +95,10 @@ export function HomeProductSectionContent({
   onToggleCategory,
   onResetCategories,
   selectedPackage,
+  onApplyRecommendedCategories,
+  onApplyRecommendedTrial,
+  homeOffer,
+  onHomeOfferAction,
   deferredSelectedPackage,
   onSelectPackage,
   isFilterUpdating,
@@ -106,6 +122,9 @@ export function HomeProductSectionContent({
   onCloseCart,
   onCartUpdate,
 }: HomeProductSectionContentProps) {
+  const pathname = usePathname();
+  const showNaturalLanguageRouter = !(pathname?.startsWith("/explore") ?? false);
+
   return (
     <div
       id="home-products"
@@ -128,6 +147,33 @@ export function HomeProductSectionContent({
           setSelectedPharmacy={setSelectedPharmacy}
         />
       )}
+
+      {showNaturalLanguageRouter ? (
+        <NaturalLanguageRoutingCard
+          surface="home"
+          categories={categories.map((category) => ({
+            id: category.id,
+            name: category.name || "",
+          }))}
+          className="mb-3"
+        />
+      ) : null}
+
+      <HomeAdaptiveEntryStack
+        categories={categories}
+        selectedCategories={selectedCategories}
+        selectedPackage={selectedPackage}
+        onApplyRecommendedCategories={onApplyRecommendedCategories}
+        onApplyRecommendedTrial={onApplyRecommendedTrial}
+      />
+
+      <div className="px-3 sm:px-4">
+        <OfferIntelligenceCard
+          offer={homeOffer}
+          onAction={onHomeOfferAction}
+          className="mb-4"
+        />
+      </div>
 
       <SymptomFilter
         selectedSymptoms={selectedSymptoms}

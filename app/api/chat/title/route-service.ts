@@ -1,4 +1,5 @@
 import { getDefaultModel } from "@/lib/ai/model";
+import { resolveGovernedModel } from "@/lib/ai/governance";
 import { callOpenAIChatCompletions } from "@/lib/ai/openai-chat-compat";
 import { DEFAULT_CHAT_TITLE } from "@/lib/chat/constants";
 import { buildTitleMessages } from "@/lib/chat/prompts";
@@ -67,10 +68,14 @@ async function requestModelTitle(
   apiKey: string,
   input: TitleInput
 ): Promise<TitleResolveResult> {
+  const model = resolveGovernedModel({
+    task: "chat_title",
+    configuredModel: await getDefaultModel(),
+  }).resolvedModel;
   const response = await callOpenAIChatCompletions(
     apiKey,
     {
-      model: await getDefaultModel(),
+      model,
       messages: buildTitleMessages(input),
       temperature: 0.5,
       top_p: 0.9,

@@ -1,6 +1,10 @@
 import "server-only";
 
 import {
+  buildAiGovernancePreview,
+  getAiGovernanceTaskOptions,
+} from "@/lib/ai/governance";
+import {
   CHAT_MODEL_CONFIG_KEY,
   getChatModelOptions,
   getDefaultModel,
@@ -18,6 +22,8 @@ export async function runAdminModelGetRoute() {
     model,
     options: getChatModelOptions(),
     pricingReference: MODEL_PRICING_REFERENCE,
+    governancePreview: buildAiGovernancePreview(model),
+    governanceTasks: getAiGovernanceTaskOptions(),
   });
 }
 
@@ -45,6 +51,8 @@ export async function runAdminModelPostRoute(req: Request) {
   return Response.json({
     model,
     selected: getChatModelOptions().find((option) => option.id === model) ?? null,
+    governancePreview: buildAiGovernancePreview(model),
+    governanceTasks: getAiGovernanceTaskOptions(),
   });
 }
 

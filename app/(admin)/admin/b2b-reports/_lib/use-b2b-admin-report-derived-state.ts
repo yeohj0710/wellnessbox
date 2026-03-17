@@ -23,6 +23,7 @@ type UseB2bAdminReportDerivedStateParams = {
   surveyDirty: boolean;
   analysisDirty: boolean;
   noteDirty: boolean;
+  reportCustomizationDirty: boolean;
 };
 
 type UseB2bAdminReportDerivedStateResult = {
@@ -45,6 +46,7 @@ export function useB2bAdminReportDerivedState({
   surveyDirty,
   analysisDirty,
   noteDirty,
+  reportCustomizationDirty,
 }: UseB2bAdminReportDerivedStateParams): UseB2bAdminReportDerivedStateResult {
   const maxSelectedSections = surveyTemplate?.rules?.maxSelectedSections ?? 5;
   const wellnessTemplate = useMemo(
@@ -94,6 +96,7 @@ export function useB2bAdminReportDerivedState({
     selectedSectionSet,
     selectedEmployee,
     completionStats,
-    hasUnsavedDraft: surveyDirty || analysisDirty || noteDirty,
+    hasUnsavedDraft:
+      surveyDirty || analysisDirty || noteDirty || reportCustomizationDirty,
   };
 }

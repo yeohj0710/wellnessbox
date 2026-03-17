@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import type { MutableRefObject } from "react";
 import type { LayoutDocument } from "@/lib/b2b/export/layout-types";
 import type { LayoutValidationIssue } from "@/lib/b2b/export/validation-types";
+import type { B2bReportPackagedProduct } from "@/lib/b2b/report-customization-types";
 import type {
   B2bAdminReportPreviewTab,
   CompletionStats,
@@ -41,6 +42,8 @@ type UseB2bAdminReportWorkspaceModelParams = {
   note: string;
   recommendations: string;
   cautions: string;
+  reportConsultationSummary: string;
+  reportPackagedProducts: B2bReportPackagedProduct[];
   analysisText: string;
   showExportPreview: boolean;
   validationAudit: ReportAudit | null;
@@ -60,6 +63,9 @@ type UseB2bAdminReportWorkspaceModelParams = {
   handleRecommendationsChange: (value: string) => void;
   handleCautionsChange: (value: string) => void;
   handleSaveNote: () => Promise<void>;
+  handleReportConsultationSummaryChange: (value: string) => void;
+  handleReportPackagedProductsChange: (products: B2bReportPackagedProduct[]) => void;
+  handleSaveReportCustomization: () => Promise<void>;
   handleAnalysisTextChange: (value: string) => void;
   handleSaveAnalysisPayload: () => Promise<void>;
   handleRunValidation: () => Promise<void>;
@@ -89,6 +95,8 @@ export function useB2bAdminReportWorkspaceModel({
   note,
   recommendations,
   cautions,
+  reportConsultationSummary,
+  reportPackagedProducts,
   analysisText,
   showExportPreview,
   validationAudit,
@@ -108,6 +116,9 @@ export function useB2bAdminReportWorkspaceModel({
   handleRecommendationsChange,
   handleCautionsChange,
   handleSaveNote,
+  handleReportConsultationSummaryChange,
+  handleReportPackagedProductsChange,
+  handleSaveReportCustomization,
   handleAnalysisTextChange,
   handleSaveAnalysisPayload,
   handleRunValidation,
@@ -143,6 +154,8 @@ export function useB2bAdminReportWorkspaceModel({
       note,
       recommendations,
       cautions,
+      reportConsultationSummary,
+      reportPackagedProducts,
       analysisText,
       showExportPreview,
       validationAudit,
@@ -161,6 +174,8 @@ export function useB2bAdminReportWorkspaceModel({
       periodOptions,
       previewTab,
       recommendations,
+      reportConsultationSummary,
+      reportPackagedProducts,
       reportDisplayPeriodKey,
       selectedPeriodKey,
       selectedSectionSet,
@@ -208,6 +223,11 @@ export function useB2bAdminReportWorkspaceModel({
       onSaveNote: () => {
         void handleSaveNote();
       },
+      onReportConsultationSummaryChange: handleReportConsultationSummaryChange,
+      onReportPackagedProductsChange: handleReportPackagedProductsChange,
+      onSaveReportCustomization: () => {
+        void handleSaveReportCustomization();
+      },
       onAnalysisTextChange: handleAnalysisTextChange,
       onSaveAnalysis: () => {
         void handleSaveAnalysisPayload();
@@ -224,6 +244,9 @@ export function useB2bAdminReportWorkspaceModel({
       handleExportLegacyPdf,
       handleExportPdf,
       handleNoteChange,
+      handleReportConsultationSummaryChange,
+      handleReportPackagedProductsChange,
+      handleSaveReportCustomization,
       handleRecommendationsChange,
       handleRecomputeAnalysis,
       handleRegenerateReport,

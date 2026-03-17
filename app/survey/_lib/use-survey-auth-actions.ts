@@ -1,4 +1,4 @@
-import { useCallback, type Dispatch, type SetStateAction } from "react";
+import { useCallback, useRef, type Dispatch, type SetStateAction } from "react";
 import {
   postEmployeeSync,
   requestNhisInit,
@@ -12,12 +12,16 @@ type AuthBusyState = "idle" | "session" | "init" | "sign" | "sync";
 
 type SurveyAuthActionText = {
   errorInvalidIdentity: string;
+  errorAuthRequestStalled: string;
+  errorAuthConfirmStalled: string;
   noticeAuthComplete: string;
   noticeAuthBySession: string;
   noticeAuthByStoredIdentity: string;
   noticeAuthRequested: string;
   noticeNeedResend: string;
 };
+
+const AUTH_REQUEST_FALLBACK_MS = 75_000;
 
 type UseSurveyAuthActionsInput = {
   validIdentity: boolean;
@@ -45,14 +49,32 @@ export function useSurveyAuthActions(input: UseSurveyAuthActionsInput) {
     setIdentityEditable,
     text,
   } = input;
+  const authRequestIdRef = useRef(0);
+
+  const beginAuthRequest = useCallback(() => {
+    const nextRequestId = authRequestIdRef.current + 1;
+    authRequestIdRef.current = nextRequestId;
+    return nextRequestId;
+  }, []);
+
+  const invalidateAuthRequest = useCallback(() => {
+    authRequestIdRef.current += 1;
+  }, []);
+
+  const isAuthRequestActive = useCallback(
+    (requestId: number) => authRequestIdRef.current === requestId,
+    []
+  );
 
   const ensureEmployeeSessionFromIdentity = useCallback(
-    async (nextIdentity: IdentityInput) => {
+    async (nextIdentity: IdentityInput, requestId: number) => {
+      if (!isAuthRequestActive(requestId)) return;
       setAuthBusy("sync");
       const syncResult = await postEmployeeSync({
         identity: nextIdentity,
         forceRefresh: false,
       });
+      if (!isAuthRequestActive(requestId)) return;
       saveSurveyIdentity(nextIdentity);
       emitAuthSyncEvent({
         scope: "b2b-employee-session",
@@ -67,6 +89,7 @@ export function useSurveyAuthActions(input: UseSurveyAuthActionsInput) {
       );
     },
     [
+      isAuthRequestActive,
       saveSurveyIdentity,
       setAuthBusy,
       setAuthErrorText,
@@ -84,12 +107,21 @@ export function useSurveyAuthActions(input: UseSurveyAuthActionsInput) {
       setAuthErrorText(text.errorInvalidIdentity);
       return;
     }
+    const requestId = beginAuthRequest();
+    const fallbackTimer = setTimeout(() => {
+      if (!isAuthRequestActive(requestId)) return;
+      invalidateAuthRequest();
+      setAuthBusy("idle");
+      setAuthNoticeText(null);
+      setAuthErrorText(text.errorAuthRequestStalled);
+    }, AUTH_REQUEST_FALLBACK_MS);
     const payload = identityPayload;
     setAuthBusy("init");
     setAuthErrorText(null);
     setAuthNoticeText(null);
     try {
       const existing = await upsertEmployeeSession(payload).catch(() => null);
+      if (!isAuthRequestActive(requestId)) return;
       if (existing?.found) {
         saveSurveyIdentity(payload);
         emitAuthSyncEvent({
@@ -106,21 +138,29 @@ export function useSurveyAuthActions(input: UseSurveyAuthActionsInput) {
         identity: payload,
         forceInit: true,
       });
+      if (!isAuthRequestActive(requestId)) return;
       if (initResult.linked || initResult.nextStep === "fetch") {
-        await ensureEmployeeSessionFromIdentity(payload);
+        await ensureEmployeeSessionFromIdentity(payload, requestId);
         return;
       }
       setAuthPendingSign(true);
       saveSurveyIdentity(payload);
       setAuthNoticeText(text.noticeAuthRequested);
     } catch (error) {
+      if (!isAuthRequestActive(requestId)) return;
       setAuthErrorText(error instanceof Error ? error.message : "auth_request_failed");
     } finally {
-      setAuthBusy("idle");
+      clearTimeout(fallbackTimer);
+      if (isAuthRequestActive(requestId)) {
+        setAuthBusy("idle");
+      }
     }
   }, [
+    beginAuthRequest,
     ensureEmployeeSessionFromIdentity,
     identityPayload,
+    invalidateAuthRequest,
+    isAuthRequestActive,
     saveSurveyIdentity,
     setAuthBusy,
     setAuthErrorText,
@@ -128,6 +168,7 @@ export function useSurveyAuthActions(input: UseSurveyAuthActionsInput) {
     setAuthPendingSign,
     setAuthVerified,
     setIdentityEditable,
+    text.errorAuthRequestStalled,
     text.errorInvalidIdentity,
     text.noticeAuthByStoredIdentity,
     text.noticeAuthRequested,
@@ -139,19 +180,29 @@ export function useSurveyAuthActions(input: UseSurveyAuthActionsInput) {
       setAuthErrorText(text.errorInvalidIdentity);
       return;
     }
+    const requestId = beginAuthRequest();
+    const fallbackTimer = setTimeout(() => {
+      if (!isAuthRequestActive(requestId)) return;
+      invalidateAuthRequest();
+      setAuthBusy("idle");
+      setAuthNoticeText(text.noticeNeedResend);
+      setAuthErrorText(text.errorAuthConfirmStalled);
+    }, AUTH_REQUEST_FALLBACK_MS);
     const payload = identityPayload;
     setAuthBusy("sign");
     setAuthErrorText(null);
     setAuthNoticeText(null);
     try {
       const signResult = await requestNhisSign();
+      if (!isAuthRequestActive(requestId)) return;
       if (!signResult.linked && !signResult.reused) {
         setAuthPendingSign(true);
         setAuthNoticeText(text.noticeNeedResend);
         return;
       }
-      await ensureEmployeeSessionFromIdentity(payload);
+      await ensureEmployeeSessionFromIdentity(payload, requestId);
     } catch (error) {
+      if (!isAuthRequestActive(requestId)) return;
       const status =
         typeof (error as { status?: unknown })?.status === "number"
           ? (error as { status: number }).status
@@ -163,15 +214,22 @@ export function useSurveyAuthActions(input: UseSurveyAuthActionsInput) {
         setAuthErrorText(error instanceof Error ? error.message : "auth_confirm_failed");
       }
     } finally {
-      setAuthBusy("idle");
+      clearTimeout(fallbackTimer);
+      if (isAuthRequestActive(requestId)) {
+        setAuthBusy("idle");
+      }
     }
   }, [
+    beginAuthRequest,
     ensureEmployeeSessionFromIdentity,
     identityPayload,
+    invalidateAuthRequest,
+    isAuthRequestActive,
     setAuthBusy,
     setAuthErrorText,
     setAuthNoticeText,
     setAuthPendingSign,
+    text.errorAuthConfirmStalled,
     text.errorInvalidIdentity,
     text.noticeNeedResend,
     validIdentity,
