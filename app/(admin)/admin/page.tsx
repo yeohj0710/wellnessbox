@@ -11,6 +11,7 @@ import {
 import AiExperimentInsightsCard from "@/components/admin/AiExperimentInsightsCard";
 import AdminCopyGovernanceCard from "@/components/admin/AdminCopyGovernanceCard";
 import AdminNarrativeBriefingCard from "@/components/admin/AdminNarrativeBriefingCard";
+import BetaFeatureGate from "@/components/common/BetaFeatureGate";
 import ModelManager from "@/components/manager/modelManager";
 
 function HubCard(props: {
@@ -21,6 +22,8 @@ function HubCard(props: {
   ctaLabel?: string;
   children?: ReactNode;
   tone?: "sky" | "emerald" | "slate";
+  descriptionClassName?: string;
+  bodyClassName?: string;
 }) {
   const toneClass =
     props.tone === "emerald"
@@ -40,7 +43,16 @@ function HubCard(props: {
           </div>
           <div className="space-y-2">
             <h2 className="text-xl font-black tracking-[-0.03em] text-slate-950">{props.title}</h2>
-            <p className="max-w-2xl text-sm leading-6 text-slate-600">{props.description}</p>
+            <p
+              className={[
+                "max-w-[52ch] text-sm leading-6 text-slate-600 md:max-w-[56ch]",
+                props.descriptionClassName,
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              {props.description}
+            </p>
           </div>
         </div>
 
@@ -55,7 +67,11 @@ function HubCard(props: {
         ) : null}
       </div>
 
-      {props.children ? <div className="mt-5">{props.children}</div> : null}
+      {props.children ? (
+        <div className={["mt-6 w-full", props.bodyClassName].filter(Boolean).join(" ")}>
+          {props.children}
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -107,7 +123,8 @@ export default function AdminPage() {
                 운영 대시보드
               </h1>
               <p className="max-w-3xl text-sm leading-7 text-slate-600 sm:text-[15px]">
-                B2B 리포트 운영과 데이터 점검, AI 모델 조정, 상품 체계 관리까지 한곳에서 빠르게 접근할 수 있도록 운영 흐름 자체를 다시 정리했습니다.
+                B2B 리포트 운영, 임직원 데이터 관리, AI 모델 조정, 상품 분류 체계 관리까지
+                운영 흐름을 한곳에서 빠르게 확인하고 정리할 수 있도록 묶었습니다.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -115,84 +132,93 @@ export default function AdminPage() {
                 운영 허브
               </span>
               <span className="rounded-full bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-700">
-                상품 UX 리빌드
+                상품 UX 리뉴얼
               </span>
               <span className="rounded-full bg-sky-50 px-4 py-2 text-xs font-bold text-sky-700">
-                검색 · 정렬 · 전용 페이지
+                검색·정렬·전용 페이지 구성
               </span>
             </div>
           </div>
         </header>
 
-        <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-          <HubCard
-            icon={<RectangleStackIcon className="h-5 w-5" />}
-            title="B2B 운영 도구"
-            description="레포트 운영과 임직원 데이터 관리는 즉시 진입 가능한 전용 동선으로 유지했습니다."
-            tone="sky"
-          >
-            <div className="grid gap-4 md:grid-cols-2">
-              <MiniToolCard
-                icon={<RectangleStackIcon className="h-5 w-5" />}
-                title="B2B 임직원 레포트 관리"
-                description="설문, 분석, 코멘트, 레이아웃 점검과 PDF 내보내기를 관리합니다."
-                href="/admin/b2b-reports"
-                meta="리포트 운영"
-              />
-              <MiniToolCard
-                icon={<CircleStackIcon className="h-5 w-5" />}
-                title="B2B 임직원 데이터 운영"
-                description="임직원 기본 정보와 운영 데이터를 직접 수정하고 검검합니다."
-                href="/admin/b2b-employee-data"
-                meta="데이터 운영"
-              />
-            </div>
-          </HubCard>
+        <HubCard
+          icon={<RectangleStackIcon className="h-5 w-5" />}
+          title="B2B 운영 도구"
+          description="리포트 운영과 임직원 데이터 관리는 바로 들어갈 수 있는 전용 동선으로 유지했습니다."
+          tone="sky"
+          bodyClassName="max-w-[860px]"
+        >
+          <div className="grid gap-4 md:grid-cols-2">
+            <MiniToolCard
+              icon={<RectangleStackIcon className="h-5 w-5" />}
+              title="B2B 임직원 레포트 관리"
+              description="설문, 분석, 코멘트, 레이아웃 점검과 PDF 내보내기까지 한 번에 관리합니다."
+              href="/admin/b2b-reports"
+              meta="리포트 운영"
+            />
+            <MiniToolCard
+              icon={<CircleStackIcon className="h-5 w-5" />}
+              title="B2B 임직원 데이터 운영"
+              description="임직원 기본 정보와 운영 데이터를 직접 수정하고 검수합니다."
+              href="/admin/b2b-employee-data"
+              meta="데이터 운영"
+            />
+          </div>
+        </HubCard>
 
-          <HubCard
-            icon={<AdjustmentsHorizontalIcon className="h-5 w-5" />}
-            title="AI 모델 설정"
-            description="챗봇, 제안, 리포트 분석, 요약, 에이전트 실행에 쓰이는 기본 응답 모델을 이곳에서 조정합니다."
-            tone="emerald"
-          >
-            <ModelManager />
-          </HubCard>
-        </div>
-
-        <AdminNarrativeBriefingCard />
-        <AdminCopyGovernanceCard />
-        <AiExperimentInsightsCard />
+        <HubCard
+          icon={<AdjustmentsHorizontalIcon className="h-5 w-5" />}
+          title="AI 모델 설정"
+          description="챗봇, 제안, 리포트 분석, 요약, 에이전트 실행에 쓰이는 기본 모델을 여기서 조정합니다."
+          tone="emerald"
+          bodyClassName="max-w-[980px]"
+        >
+          <ModelManager />
+        </HubCard>
 
         <HubCard
           icon={<BuildingStorefrontIcon className="h-5 w-5" />}
           title="상품 운영 워크스페이스"
-          description="옛 카드형 모달 관리 화면을 전용 페이지형 운영 UX로 재설계했습니다. 검색, 정렬, 큰 편집 패널, 빠른 필터 중심으로 운영 속도를 높였습니다."
+          description="상품, 약국별 옵션, 카테고리 체계를 운영 전용 화면으로 나눠서 빠르게 관리할 수 있게 구성했습니다."
           tone="slate"
+          bodyClassName="max-w-[1040px]"
         >
           <div className="grid gap-4 lg:grid-cols-3">
             <MiniToolCard
               icon={<BuildingStorefrontIcon className="h-5 w-5" />}
               title="약국 상품 운영"
-              description="약국별 판매 옵션, 가격, 재고를 검색과 정렬 중심으로 빠르게 관리합니다."
+              description="약국별 판매 옵션과 가격, 재고성 설정을 한 화면에서 확인하고 관리합니다."
               href="/admin/pharmacy-products"
-              meta="재고 · 가격 · 옵션"
+              meta="약국·가격·옵션"
             />
             <MiniToolCard
               icon={<CubeIcon className="h-5 w-5" />}
               title="상품 마스터 관리"
-              description="공통 상품 정보와 카테고리 연결을 더 큰 편집 패널에서 정리합니다."
+              description="공통 상품 정보와 카테고리 연결, 대표 이미지와 설명 문구를 정리합니다."
               href="/admin/products"
-              meta="상품명 · 설명 · 이미지"
+              meta="상품명·설명·이미지"
             />
             <MiniToolCard
               icon={<RectangleStackIcon className="h-5 w-5" />}
               title="카테고리 체계 관리"
-              description="대표 이미지와 연결 상품 수를 보며 분류 체계를 안정적으로 운영합니다."
+              description="대표 이미지와 연결 상품 수를 함께 보면서 분류 체계를 안정적으로 운영합니다."
               href="/admin/categories"
-              meta="분류 체계 · 대표 이미지"
+              meta="분류 체계·대표 이미지"
             />
           </div>
         </HubCard>
+
+        <BetaFeatureGate
+          title="Beta 운영 인사이트"
+          helper="실험적 운영 보조 카드는 필요할 때만 열어보세요."
+          className="max-w-none border-0 bg-transparent p-0 shadow-none"
+          summaryClassName="rounded-[22px] border border-slate-200/80 bg-white/92 px-4 py-3 shadow-[0_16px_36px_-28px_rgba(15,23,42,0.28)] transition hover:border-slate-300 hover:bg-white"
+          contentClassName="mt-4 space-y-5"
+        >
+          <AdminNarrativeBriefingCard />
+          <AdminCopyGovernanceCard />
+          <AiExperimentInsightsCard />
+        </BetaFeatureGate>
       </div>
     </div>
   );

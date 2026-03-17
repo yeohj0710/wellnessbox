@@ -4,7 +4,6 @@ import {
   recomputeAnalysis,
   regenerateReport,
   saveAnalysisPayload,
-  saveNote,
   saveReportCustomization,
   saveSurvey,
 } from "./api";
@@ -19,14 +18,10 @@ type UseB2bAdminReportPersistenceActionsParams = {
   surveyAnswers: Record<string, unknown>;
   resolvedSelectedSections: string[];
   analysisText: string;
-  note: string;
-  recommendations: string;
-  cautions: string;
   reportConsultationSummary: string;
   reportPackagedProducts: B2bReportPackagedProduct[];
   setSurveyDirty: Dispatch<SetStateAction<boolean>>;
   setAnalysisDirty: Dispatch<SetStateAction<boolean>>;
-  setNoteDirty: Dispatch<SetStateAction<boolean>>;
   setReportCustomizationDirty: Dispatch<SetStateAction<boolean>>;
   setNotice: Dispatch<SetStateAction<string>>;
   reloadCurrentEmployee: () => Promise<void>;
@@ -40,20 +35,17 @@ export function useB2bAdminReportPersistenceActions({
   surveyAnswers,
   resolvedSelectedSections,
   analysisText,
-  note,
-  recommendations,
-  cautions,
   reportConsultationSummary,
   reportPackagedProducts,
   setSurveyDirty,
   setAnalysisDirty,
-  setNoteDirty,
   setReportCustomizationDirty,
   setNotice,
   reloadCurrentEmployee,
 }: UseB2bAdminReportPersistenceActionsParams) {
   const handleSaveSurvey = useCallback(async () => {
     if (!selectedEmployeeId) return;
+
     await runBusyAction({
       fallbackError: "설문 저장에 실패했습니다.",
       clearNotice: true,
@@ -82,6 +74,7 @@ export function useB2bAdminReportPersistenceActions({
 
   const handleSaveAnalysisPayload = useCallback(async () => {
     if (!selectedEmployeeId) return;
+
     await runBusyAction({
       fallbackError: "분석 JSON 저장에 실패했습니다.",
       clearNotice: true,
@@ -106,38 +99,9 @@ export function useB2bAdminReportPersistenceActions({
     setNotice,
   ]);
 
-  const handleSaveNote = useCallback(async () => {
-    if (!selectedEmployeeId) return;
-    await runBusyAction({
-      fallbackError: "의사 코멘트 저장에 실패했습니다.",
-      clearNotice: true,
-      run: async () => {
-        await saveNote({
-          employeeId: selectedEmployeeId,
-          periodKey: selectedPeriodKey || undefined,
-          note,
-          recommendations,
-          cautions,
-        });
-        setNoteDirty(false);
-        setNotice("의사 코멘트를 저장했습니다.");
-        await reloadCurrentEmployee();
-      },
-    });
-  }, [
-    cautions,
-    note,
-    recommendations,
-    reloadCurrentEmployee,
-    runBusyAction,
-    selectedEmployeeId,
-    selectedPeriodKey,
-    setNoteDirty,
-    setNotice,
-  ]);
-
   const handleSaveReportCustomization = useCallback(async () => {
     if (!latestReportId) return;
+
     await runBusyAction({
       fallbackError: "레포트 마지막 정보를 저장하지 못했습니다.",
       clearNotice: true,
@@ -149,7 +113,10 @@ export function useB2bAdminReportPersistenceActions({
         });
         setReportCustomizationDirty(false);
         setNotice("레포트 마지막 정보를 저장했습니다.");
-        await reloadCurrentEmployee();
+
+        queueMicrotask(() => {
+          void reloadCurrentEmployee();
+        });
       },
     });
   }, [
@@ -165,8 +132,9 @@ export function useB2bAdminReportPersistenceActions({
   const handleRecomputeAnalysis = useCallback(
     async (generateAiEvaluation: boolean) => {
       if (!selectedEmployeeId) return;
+
       await runBusyAction({
-        fallbackError: "분석 재계산에 실패했습니다.",
+        fallbackError: "분석 계산에 실패했습니다.",
         clearNotice: true,
         run: async () => {
           await recomputeAnalysis({
@@ -176,8 +144,8 @@ export function useB2bAdminReportPersistenceActions({
           });
           setNotice(
             generateAiEvaluation
-              ? "분석과 AI 평가를 생성했습니다."
-              : "분석 지표를 재계산했습니다."
+              ? "분석과 AI 평가를 다시 생성했습니다."
+              : "분석 지표를 다시 계산했습니다."
           );
           await reloadCurrentEmployee();
         },
@@ -188,15 +156,16 @@ export function useB2bAdminReportPersistenceActions({
 
   const handleRegenerateReport = useCallback(async () => {
     if (!selectedEmployeeId) return;
+
     await runBusyAction({
-      fallbackError: "리포트 재생성에 실패했습니다.",
+      fallbackError: "레포트 재생성에 실패했습니다.",
       clearNotice: true,
       run: async () => {
         await regenerateReport({
           employeeId: selectedEmployeeId,
           periodKey: selectedPeriodKey || undefined,
         });
-        setNotice("리포트를 재생성했습니다.");
+        setNotice("레포트를 다시 생성했습니다.");
         await reloadCurrentEmployee();
       },
     });
@@ -205,7 +174,6 @@ export function useB2bAdminReportPersistenceActions({
   return {
     handleSaveSurvey,
     handleSaveAnalysisPayload,
-    handleSaveNote,
     handleSaveReportCustomization,
     handleRecomputeAnalysis,
     handleRegenerateReport,

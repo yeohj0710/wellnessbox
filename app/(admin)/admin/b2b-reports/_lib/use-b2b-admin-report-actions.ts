@@ -38,17 +38,10 @@ type UseB2bAdminReportActionsParams = {
   setSelectedSections: Dispatch<SetStateAction<string[]>>;
   setSurveyDirty: Dispatch<SetStateAction<boolean>>;
   setAnalysisDirty: Dispatch<SetStateAction<boolean>>;
-  setNoteDirty: Dispatch<SetStateAction<boolean>>;
   setReportCustomizationDirty: Dispatch<SetStateAction<boolean>>;
-  setNote: Dispatch<SetStateAction<string>>;
-  setRecommendations: Dispatch<SetStateAction<string>>;
-  setCautions: Dispatch<SetStateAction<string>>;
   setAnalysisText: Dispatch<SetStateAction<string>>;
   setReportConsultationSummary: Dispatch<SetStateAction<string>>;
   setReportPackagedProducts: Dispatch<SetStateAction<B2bReportPackagedProduct[]>>;
-  note: string;
-  recommendations: string;
-  cautions: string;
   reportConsultationSummary: string;
   reportPackagedProducts: B2bReportPackagedProduct[];
   analysisText: string;
@@ -65,10 +58,6 @@ export function useB2bAdminReportActions(params: UseB2bAdminReportActionsParams)
   });
 
   const editorStateActions = useB2bAdminReportEditorStateActions({
-    setNoteDirty: params.setNoteDirty,
-    setNote: params.setNote,
-    setRecommendations: params.setRecommendations,
-    setCautions: params.setCautions,
     setAnalysisDirty: params.setAnalysisDirty,
     setAnalysisText: params.setAnalysisText,
     setReportCustomizationDirty: params.setReportCustomizationDirty,
@@ -96,14 +85,10 @@ export function useB2bAdminReportActions(params: UseB2bAdminReportActionsParams)
     resolvedSelectedSections: params.resolvedSelectedSections,
     setSurveyDirty: params.setSurveyDirty,
     setAnalysisDirty: params.setAnalysisDirty,
-    setNoteDirty: params.setNoteDirty,
-    setReportCustomizationDirty: params.setReportCustomizationDirty,
-    note: params.note,
-    recommendations: params.recommendations,
-    cautions: params.cautions,
     reportConsultationSummary: params.reportConsultationSummary,
     reportPackagedProducts: params.reportPackagedProducts,
     analysisText: params.analysisText,
+    setReportCustomizationDirty: params.setReportCustomizationDirty,
   });
 
   const exportActions = useB2bAdminReportExportActions({

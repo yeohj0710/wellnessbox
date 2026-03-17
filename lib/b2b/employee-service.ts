@@ -3,6 +3,10 @@ import "server-only";
 import db from "@/lib/db";
 import { resolveB2bEmployeeIdentity } from "@/lib/b2b/identity";
 import {
+  mergeDuplicateB2bEmployeesForIdentity,
+  reconcileMatchedB2bEmployeeIdentity,
+} from "@/lib/b2b/employee-identity-match";
+import {
   DEFAULT_DETAIL_YEAR_LIMIT,
   DEFAULT_NHIS_FETCH_TARGETS,
 } from "@/lib/server/hyphen/fetch-contract";
@@ -85,29 +89,48 @@ export async function upsertB2bEmployee(input: {
     phone: input.phone,
   });
 
-  const employee = await db.b2bEmployee.upsert({
-    where: { identityHash: identity.identityHash },
-    create: {
-      appUserId: input.appUserId,
-      name: identity.name,
-      birthDate: identity.birthDate,
-      phoneNormalized: identity.phoneNormalized,
-      identityHash: identity.identityHash,
-      linkedProvider: HYPHEN_PROVIDER,
-    },
-    update: {
-      appUserId: input.appUserId,
-      name: identity.name,
-      birthDate: identity.birthDate,
-      phoneNormalized: identity.phoneNormalized,
-      linkedProvider: HYPHEN_PROVIDER,
-      updatedAt: new Date(),
-    },
+  const matchedEmployee = await mergeDuplicateB2bEmployeesForIdentity({
+    appUserId: input.appUserId,
+    identityHash: identity.identityHash,
+    name: identity.name,
+    birthDate: identity.birthDate,
+    phoneNormalized: identity.phoneNormalized,
   });
+
+  const employee = matchedEmployee
+    ? await reconcileMatchedB2bEmployeeIdentity({
+        employeeId: matchedEmployee.id,
+        nextIdentity: {
+          appUserId: input.appUserId,
+          identityHash: identity.identityHash,
+          name: identity.name,
+          birthDate: identity.birthDate,
+          phoneNormalized: identity.phoneNormalized,
+        },
+      })
+    : await db.b2bEmployee.create({
+        data: {
+          appUserId: input.appUserId,
+          name: identity.name,
+          birthDate: identity.birthDate,
+          phoneNormalized: identity.phoneNormalized,
+          identityHash: identity.identityHash,
+          linkedProvider: HYPHEN_PROVIDER,
+        },
+      });
+
+  if (!employee) {
+    throw new Error("B2B employee identity reconciliation failed");
+  }
 
   return {
     employee,
-    identity,
+    identity: {
+      name: employee.name,
+      birthDate: employee.birthDate,
+      phoneNormalized: employee.phoneNormalized,
+      identityHash: employee.identityHash,
+    },
   };
 }
 

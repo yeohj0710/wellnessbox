@@ -22,7 +22,6 @@ type UseB2bAdminReportDerivedStateParams = {
   selectedSections: string[];
   surveyDirty: boolean;
   analysisDirty: boolean;
-  noteDirty: boolean;
   reportCustomizationDirty: boolean;
 };
 
@@ -45,7 +44,6 @@ export function useB2bAdminReportDerivedState({
   selectedSections,
   surveyDirty,
   analysisDirty,
-  noteDirty,
   reportCustomizationDirty,
 }: UseB2bAdminReportDerivedStateParams): UseB2bAdminReportDerivedStateResult {
   const maxSelectedSections = surveyTemplate?.rules?.maxSelectedSections ?? 5;
@@ -96,7 +94,6 @@ export function useB2bAdminReportDerivedState({
     selectedSectionSet,
     selectedEmployee,
     completionStats,
-    hasUnsavedDraft:
-      surveyDirty || analysisDirty || noteDirty || reportCustomizationDirty,
+    hasUnsavedDraft: surveyDirty || analysisDirty || reportCustomizationDirty,
   };
 }

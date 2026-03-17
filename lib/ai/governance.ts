@@ -37,53 +37,44 @@ export type AiGovernancePreview = {
 type GovernanceTaskPolicy = {
   label: string;
   purpose: string;
-  mode: "inherit" | "fixed" | "floor";
-  fixedModel?: string;
-  floorModel?: string;
+  mode: "inherit";
 };
 
 const TASK_POLICIES: Record<AiGovernanceTask, GovernanceTaskPolicy> = {
   chat_stream: {
     label: "메인 상담",
     purpose: "사용자와 직접 대화하는 핵심 상담 응답",
-    mode: "floor",
-    floorModel: "gpt-4o-mini",
+    mode: "inherit",
   },
   chat_title: {
     label: "채팅 제목 생성",
     purpose: "짧은 제목 요약처럼 속도와 비용이 중요한 보조 작업",
-    mode: "fixed",
-    fixedModel: "gpt-4.1-nano",
+    mode: "inherit",
   },
   chat_action_planner: {
     label: "채팅 액션 플래너",
     purpose: "짧은 JSON 분류와 UI 액션 결정",
-    mode: "fixed",
-    fixedModel: "gpt-4.1-mini",
+    mode: "inherit",
   },
   chat_action_suggestions: {
     label: "후속 액션 제안",
     purpose: "짧은 후속 질문과 CTA 제안 생성",
-    mode: "fixed",
-    fixedModel: "gpt-4.1-mini",
+    mode: "inherit",
   },
   chat_topic_classifier: {
     label: "주제 분류",
     purpose: "짧은 주제 추출과 라우팅 보조",
-    mode: "fixed",
-    fixedModel: "gpt-4.1-nano",
+    mode: "inherit",
   },
   nhis_summary: {
     label: "건강링크 요약",
     purpose: "건강검진·복약 데이터를 바탕으로 한 안전 민감 요약",
-    mode: "floor",
-    floorModel: "gpt-4.1",
+    mode: "inherit",
   },
   b2b_evaluation: {
     label: "B2B 평가 브리핑",
     purpose: "내부 리포트용 구조화 요약과 행동 문장 생성",
-    mode: "floor",
-    floorModel: "gpt-4.1-mini",
+    mode: "inherit",
   },
   agent_playground: {
     label: "에이전트 플레이그라운드",
@@ -91,59 +82,6 @@ const TASK_POLICIES: Record<AiGovernanceTask, GovernanceTaskPolicy> = {
     mode: "inherit",
   },
 };
-
-const MODEL_QUALITY_RANK: string[] = [
-  "gpt-3.5-turbo",
-  "gpt-4.1-nano",
-  "gpt-5-nano",
-  "gpt-4o-mini",
-  "gpt-4.1-mini",
-  "gpt-5-mini",
-  "gpt-4o",
-  "gpt-4.1",
-  "o4-mini",
-  "gpt-5",
-  "gpt-5.1",
-  "gpt-5.2",
-  "o3",
-];
-
-function getQualityRank(model: string) {
-  const normalized = normalizeChatModel(model);
-  const index = MODEL_QUALITY_RANK.indexOf(normalized);
-  if (index >= 0) return index;
-
-  const option = getChatModelOption(normalized);
-  if (!option) return MODEL_QUALITY_RANK.indexOf(DEFAULT_CHAT_MODEL);
-
-  if (option.family === "gpt-5") return MODEL_QUALITY_RANK.indexOf("gpt-5");
-  if (option.family === "o-series") return MODEL_QUALITY_RANK.indexOf("o4-mini");
-  if (option.family === "gpt-4.1") return MODEL_QUALITY_RANK.indexOf("gpt-4.1-mini");
-  if (option.family === "gpt-4o") return MODEL_QUALITY_RANK.indexOf("gpt-4o-mini");
-  return MODEL_QUALITY_RANK.indexOf(DEFAULT_CHAT_MODEL);
-}
-
-function pickHigherQualityModel(left: string, right: string) {
-  const leftNormalized = normalizeChatModel(left);
-  const rightNormalized = normalizeChatModel(right);
-  return getQualityRank(leftNormalized) >= getQualityRank(rightNormalized)
-    ? leftNormalized
-    : rightNormalized;
-}
-
-function resolveRiskFloor(summary?: UserContextSummary | null) {
-  if (!summary) return null;
-
-  const hasRiskSignals =
-    summary.safetyEscalation.level !== "routine" ||
-    summary.healthLink?.riskLevel === "high" ||
-    summary.healthLink?.riskLevel === "medium" ||
-    (summary.profile?.medications.length ?? 0) > 0 ||
-    (summary.profile?.conditions.length ?? 0) > 0 ||
-    summary.notableResponses.some((item) => item.signal === "주의");
-
-  return hasRiskSignals ? "gpt-4.1-mini" : null;
-}
 
 export function resolveGovernedModel(input: {
   task: AiGovernanceTask;
@@ -154,52 +92,8 @@ export function resolveGovernedModel(input: {
     input.configuredModel || DEFAULT_CHAT_MODEL
   );
   const policy = TASK_POLICIES[input.task];
-  const reasoning: string[] = [];
-  let resolvedModel = configuredModel;
-
-  if (policy.mode === "fixed" && policy.fixedModel) {
-    resolvedModel = normalizeChatModel(policy.fixedModel);
-    if (resolvedModel !== configuredModel) {
-      reasoning.push(
-        `${policy.label}은 짧고 반복적인 작업이라 기본 모델 대신 ${resolvedModel}로 다운시프트합니다.`
-      );
-    } else {
-      reasoning.push(`${policy.label}은 이미 경량 모델 범위 안에 있습니다.`);
-    }
-  }
-
-  if (policy.mode === "floor" && policy.floorModel) {
-    const floored = pickHigherQualityModel(configuredModel, policy.floorModel);
-    if (floored !== configuredModel) {
-      reasoning.push(
-        `${policy.label}은 품질과 안전 기준상 최소 ${policy.floorModel} 이상으로 유지합니다.`
-      );
-    }
-    resolvedModel = floored;
-  }
-
-  if (input.task === "chat_stream") {
-    const riskFloor = resolveRiskFloor(input.summary);
-    if (riskFloor) {
-      const upgraded = pickHigherQualityModel(resolvedModel, riskFloor);
-      if (upgraded !== resolvedModel) {
-        reasoning.push(
-          `현재 상담 맥락에 안전 신호가 있어 메인 상담 모델을 ${upgraded}까지 상향합니다.`
-        );
-        resolvedModel = upgraded;
-      } else {
-        reasoning.push(
-          "현재 상담 맥락에 안전 신호가 있지만 이미 그 기준 이상 모델이 선택되어 있습니다."
-        );
-      }
-    }
-  }
-
-  if (reasoning.length === 0) {
-    reasoning.push(
-      "현재 작업은 기본 모델을 그대로 사용해도 비용, 속도, 품질 균형이 맞습니다."
-    );
-  }
+  const reasoning = ["관리자에서 선택한 기본 모델을 이 작업에도 그대로 사용합니다."];
+  const resolvedModel = configuredModel;
 
   return {
     task: input.task,
@@ -237,7 +131,6 @@ export function buildAiGovernancePreview(configuredModel?: string | null) {
 }
 
 export function getAiGovernanceTaskOptions() {
-  const supportedModels = new Set(getChatModelOptions().map((option) => option.id));
   return (Object.entries(TASK_POLICIES) as Array<
     [AiGovernanceTask, GovernanceTaskPolicy]
   >).map(([task, policy]) => ({
@@ -245,13 +138,7 @@ export function getAiGovernanceTaskOptions() {
     label: policy.label,
     purpose: policy.purpose,
     mode: policy.mode,
-    fixedModel:
-      policy.fixedModel && supportedModels.has(policy.fixedModel)
-        ? policy.fixedModel
-        : null,
-    floorModel:
-      policy.floorModel && supportedModels.has(policy.floorModel)
-        ? policy.floorModel
-        : null,
+    fixedModel: null,
+    floorModel: null,
   }));
 }

@@ -5,6 +5,7 @@ type BetaFeatureGateProps = {
   title?: string;
   helper?: string;
   className?: string;
+  summaryClassName?: string;
   contentClassName?: string;
   defaultOpen?: boolean;
 };
@@ -18,6 +19,7 @@ export default function BetaFeatureGate({
   title = "Beta 기능",
   helper = "필요할 때만 펼쳐보세요.",
   className,
+  summaryClassName,
   contentClassName,
   defaultOpen = false,
 }: BetaFeatureGateProps) {
@@ -29,7 +31,12 @@ export default function BetaFeatureGate({
         className
       )}
     >
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-1 py-0.5">
+      <summary
+        className={joinClassNames(
+          "flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-1 py-0.5",
+          summaryClassName
+        )}
+      >
         <div className="flex min-w-0 items-center gap-2">
           <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.18em] text-white">
             Beta

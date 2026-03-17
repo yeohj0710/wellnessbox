@@ -29,7 +29,7 @@ type ProductFieldKey =
 async function uploadProductImage(file: File) {
   const { success, result } = await getUploadUrl();
   if (!success) {
-    throw new Error("이미지 업로드 URL을 준비하지 못했습니다.");
+    throw new Error("이미지 업로드 주소를 준비하지 못했습니다.");
   }
 
   const formData = new FormData();
@@ -47,7 +47,7 @@ async function uploadProductImage(file: File) {
   const data = await response.json();
   const fileUrl = data.result?.variants?.find((url: string) => url.endsWith("/public"));
   if (!fileUrl) {
-    throw new Error("업로드된 이미지 주소를 확인하지 못했습니다.");
+    throw new Error("업로드한 이미지 주소를 확인하지 못했습니다.");
   }
 
   return fileUrl as string;
@@ -62,6 +62,7 @@ export default function B2bReportCustomizationPanel({
   onSave,
 }: B2bReportCustomizationPanelProps) {
   const [uploadingProductId, setUploadingProductId] = useState<string | null>(null);
+
   const hasContent = useMemo(
     () =>
       consultationSummary.trim().length > 0 ||
@@ -69,7 +70,11 @@ export default function B2bReportCustomizationPanel({
         (product) =>
           product.name.trim().length > 0 ||
           (product.brand || "").trim().length > 0 ||
-          (product.imageUrl || "").trim().length > 0
+          (product.imageUrl || "").trim().length > 0 ||
+          (product.description || "").trim().length > 0 ||
+          (product.ingredientSummary || "").trim().length > 0 ||
+          (product.intakeSummary || "").trim().length > 0 ||
+          (product.caution || "").trim().length > 0
       ),
     [consultationSummary, packagedProducts]
   );
@@ -80,11 +85,7 @@ export default function B2bReportCustomizationPanel({
     onPackagedProductsChange(updater(packagedProducts));
   }
 
-  function handleFieldChange(
-    productId: string,
-    field: ProductFieldKey,
-    value: string
-  ) {
+  function handleFieldChange(productId: string, field: ProductFieldKey, value: string) {
     updateProducts((current) =>
       current.map((product) =>
         product.id === productId
@@ -100,6 +101,7 @@ export default function B2bReportCustomizationPanel({
   async function handleImageFileChange(productId: string, file: File | null) {
     if (!file) return;
     setUploadingProductId(productId);
+
     try {
       const imageUrl = await uploadProductImage(file);
       updateProducts((current) =>
@@ -122,26 +124,25 @@ export default function B2bReportCustomizationPanel({
   return (
     <details className={`${styles.optionalCard} ${styles.editorPanel}`}>
       <summary className={styles.editorPanelSummary}>
-        <span className={styles.editorPanelSummaryTitle}>레포트 마지막 추가 정보</span>
-        <span className={styles.editorPanelSummaryMeta}>
-          있으면만 마지막 페이지에 반영
-        </span>
+        <span className={styles.editorPanelSummaryTitle}>약사 코멘트 편집</span>
+        <span className={styles.editorPanelSummaryMeta}>상담 요약 · 패키지 제품 정보</span>
       </summary>
+
       <div className={styles.editorPanelMotion}>
         <div className={styles.editorPanelBody}>
           <div className={styles.editorGuide}>
-            <p className={styles.editorGuideTitle}>추가 방법</p>
+            <p className={styles.editorGuideTitle}>입력 가이드</p>
             <ul className={styles.editorGuideList}>
-              <li>상담 요약은 2~3줄 정도로 짧게 정리해 주세요.</li>
-              <li>패키징 제품 정보는 실제 레포트에 보일 내용만 남겨 주세요.</li>
-              <li>비워 두면 레포트 마지막에는 이 섹션이 나타나지 않습니다.</li>
+              <li>상담 요약은 레포트 마지막 페이지에 바로 들어갈 문장형 메모로 적어 주세요.</li>
+              <li>패키지 제품은 이번 달 실제 배부 기준으로 보일 정보만 채워 주세요.</li>
+              <li>비어 있는 항목은 레포트에서 자연스럽게 숨겨집니다.</li>
             </ul>
           </div>
 
           <section className={styles.editorFieldGroup}>
-            <p className={styles.editorFieldLabel}>약사 상담 요약 일부</p>
+            <p className={styles.editorFieldLabel}>약사 코멘트</p>
             <p className={styles.editorFieldHint}>
-              레포트 마지막에 짧게 들어갈 상담 메모입니다.
+              레포트 마지막 페이지에서 먼저 보이는 맞춤형 코멘트입니다.
             </p>
             <textarea
               className={styles.textarea}
@@ -149,16 +150,16 @@ export default function B2bReportCustomizationPanel({
               disabled={busy}
               rows={4}
               onChange={(event) => onConsultationSummaryChange(event.target.value)}
-              placeholder="예: 최근 피로감과 식사 리듬을 먼저 정리하면서, 시작 부담이 적은 구성부터 천천히 맞춰 보는 쪽으로 안내했어요."
+              placeholder="바쁜 일정이 이어질수록 컨디션이 전체적으로 쉽게 떨어질 수 있어, 수면과 식사 흐름부터 차근차근 맞춰가 보시면 좋겠습니다."
             />
           </section>
 
           <section className={styles.editorSection}>
             <div className={styles.editorSectionHead}>
               <div>
-                <h4 className={styles.editorSectionTitle}>패키징 제품 정보</h4>
+                <h4 className={styles.editorSectionTitle}>패키지 제품 정보</h4>
                 <p className={styles.editorSectionHint}>
-                  이미지, 제품 설명, 성분, 섭취 포인트를 그대로 레포트에 반영합니다.
+                  상품명, 이미지, 주요 성분, 섭취 안내를 마지막 페이지에 그대로 반영합니다.
                 </p>
               </div>
               <button
@@ -176,20 +177,21 @@ export default function B2bReportCustomizationPanel({
             {packagedProducts.length === 0 ? (
               <div className={styles.editorFieldGroup}>
                 <p className={styles.editorFieldHint}>
-                  아직 추가한 제품이 없습니다. 필요할 때만 넣어 주세요.
+                  아직 추가된 제품이 없습니다. 필요한 경우에만 입력해 주세요.
                 </p>
               </div>
             ) : (
               <div className={styles.reportProductEditorList}>
                 {packagedProducts.map((product, index) => {
                   const isUploading = uploadingProductId === product.id;
+
                   return (
                     <section key={product.id} className={styles.reportProductEditorCard}>
                       <div className={styles.reportProductEditorHead}>
                         <div>
                           <p className={styles.editorFieldLabel}>제품 {index + 1}</p>
                           <p className={styles.editorFieldHint}>
-                            빈 항목은 레포트에서 자연스럽게 생략됩니다.
+                            비어 있는 항목은 레포트에서 자동으로 숨겨집니다.
                           </p>
                         </div>
                         <button
@@ -208,7 +210,7 @@ export default function B2bReportCustomizationPanel({
 
                       <div className={styles.editorTwoCol}>
                         <div className={styles.editorFieldGroup}>
-                          <p className={styles.editorFieldLabel}>제품명</p>
+                          <p className={styles.editorFieldLabel}>상품명</p>
                           <input
                             className={styles.input}
                             value={product.name}
@@ -216,11 +218,11 @@ export default function B2bReportCustomizationPanel({
                             onChange={(event) =>
                               handleFieldChange(product.id, "name", event.target.value)
                             }
-                            placeholder="예: 밀크씨슬 7일 패키지"
+                            placeholder="예: 혈행건강 rTG 오메가3"
                           />
                         </div>
                         <div className={styles.editorFieldGroup}>
-                          <p className={styles.editorFieldLabel}>브랜드/제조사</p>
+                          <p className={styles.editorFieldLabel}>브랜드 / 제조사</p>
                           <input
                             className={styles.input}
                             value={product.brand ?? ""}
@@ -228,7 +230,7 @@ export default function B2bReportCustomizationPanel({
                             onChange={(event) =>
                               handleFieldChange(product.id, "brand", event.target.value)
                             }
-                            placeholder="예: NOW"
+                            placeholder="예: 일동제약"
                           />
                         </div>
                       </div>
@@ -302,7 +304,7 @@ export default function B2bReportCustomizationPanel({
                           onChange={(event) =>
                             handleFieldChange(product.id, "description", event.target.value)
                           }
-                          placeholder="예: 시작 부담을 낮추면서 간 기능 케어를 먼저 챙기기 좋은 구성입니다."
+                          placeholder="이번 달 컨디션 관리에 맞춰 기본적으로 챙기기 좋은 제품입니다."
                         />
                       </div>
 
@@ -321,7 +323,7 @@ export default function B2bReportCustomizationPanel({
                                 event.target.value
                               )
                             }
-                            placeholder="예: 실리마린, 비타민B군"
+                            placeholder="예: EPA 및 DHA 함유 유지, 비타민D"
                           />
                         </div>
                         <div className={styles.editorFieldGroup}>
@@ -345,7 +347,7 @@ export default function B2bReportCustomizationPanel({
                           className={styles.textarea}
                           value={product.caution ?? ""}
                           disabled={busy}
-                          rows={2}
+                          rows={3}
                           onChange={(event) =>
                             handleFieldChange(product.id, "caution", event.target.value)
                           }
@@ -363,18 +365,22 @@ export default function B2bReportCustomizationPanel({
             <button
               type="button"
               onClick={onSave}
-              disabled={busy || uploadingProductId !== null}
+              disabled={busy}
               className={`${styles.buttonPrimary} ${styles.editorPrimaryButton}`}
             >
               {busy ? (
-                <InlineSpinnerLabel label="마지막 정보 저장 중" />
-              ) : hasContent ? (
-                "마지막 정보 저장"
+                <InlineSpinnerLabel label="약사 코멘트 저장 중" />
               ) : (
-                "빈 상태로 저장"
+                "약사 코멘트 저장"
               )}
             </button>
           </div>
+
+          {!hasContent ? (
+            <p className={styles.editorFieldHint}>
+              아직 입력된 내용이 없어 레포트 마지막 추가 페이지는 생성되지 않습니다.
+            </p>
+          ) : null}
         </div>
       </div>
     </details>

@@ -151,7 +151,7 @@ export default function B2bAdminEmployeeDataClient() {
 
   return (
     <div className={styles.pageBackdrop}>
-      <div className={`${styles.page} ${styles.pageNoBg} ${styles.stack}`}>
+      <div className={`${styles.page} ${styles.reportPage} ${styles.pageNoBg} ${styles.stack}`}>
         <B2bEmployeeDataOpsHero
           search={search}
           busy={busy}

@@ -22,9 +22,6 @@ export type ReportSummaryMedicationRow = {
 
 export type ReportSummaryMedicationReviewModel = {
   medicationStatusMessage: string;
-  pharmacistSummary: string;
-  pharmacistRecommendations: string;
-  pharmacistCautions: string;
   medications: ReportSummaryMedicationRow[];
 };
 
@@ -48,9 +45,9 @@ const EMPTY_PHARMACIST_COMMENT_MESSAGES = new Set([
   "약사 코멘트가 아직 입력되지 않았습니다.",
   "등록된 약사 코멘트가 없습니다.",
   "등록된 요약 코멘트가 없습니다.",
-  "등록된 권장안이 없습니다.",
+  "등록된 권장사항이 없습니다.",
   "등록된 주의사항이 없습니다.",
-  "권장안이 없습니다.",
+  "권장사항이 없습니다.",
   "주의사항이 없습니다.",
 ]);
 
@@ -104,18 +101,14 @@ export function buildReportSummaryHealthMetrics(
   }));
 }
 
-export function hasReportSummaryHealthMetricsContent(
-  rows: ReportSummaryHealthMetricRow[]
-) {
+export function hasReportSummaryHealthMetricsContent(rows: ReportSummaryHealthMetricRow[]) {
   return rows.some((row) => {
     const value = row.value.trim();
     return value.length > 0 && value !== "-";
   });
 }
 
-export function resolveReportSummaryFinalPharmacistComment(
-  payload: ReportSummaryPayload
-) {
+export function resolveReportSummaryFinalPharmacistComment(payload: ReportSummaryPayload) {
   const note = toTrimmedText(payload.pharmacist?.note);
   if (note && !EMPTY_PHARMACIST_COMMENT_MESSAGES.has(note)) {
     return softenAdviceTone(note);
@@ -133,11 +126,6 @@ export function buildReportSummaryMedicationReviewModel(
       hospitalName: sanitizeTitle(toTrimmedText(row?.hospitalName)),
       date: toMedicationMetaDate(row?.date),
     })),
-    pharmacistSummary: softenAdviceTone(toTrimmedText(payload.pharmacist?.summary)),
-    pharmacistRecommendations: softenAdviceTone(
-      toTrimmedText(payload.pharmacist?.recommendations)
-    ),
-    pharmacistCautions: softenAdviceTone(toTrimmedText(payload.pharmacist?.cautions)),
   };
 }
 
@@ -153,14 +141,12 @@ export function buildReportSummaryAddendumModel(
       const name = sanitizeTitle(
         toTrimmedText(row?.name) ||
           toTrimmedText(row?.brand) ||
-          `구성 제품 ${index + 1}`
+          `구성 상품 ${index + 1}`
       );
       const brand = sanitizeTitle(toTrimmedText(row?.brand));
       const imageUrl = toTrimmedText(row?.imageUrl);
       const description = softenAdviceTone(toTrimmedText(row?.description));
-      const ingredientSummary = softenAdviceTone(
-        toTrimmedText(row?.ingredientSummary)
-      );
+      const ingredientSummary = softenAdviceTone(toTrimmedText(row?.ingredientSummary));
       const intakeSummary = softenAdviceTone(toTrimmedText(row?.intakeSummary));
       const caution = softenAdviceTone(toTrimmedText(row?.caution));
 

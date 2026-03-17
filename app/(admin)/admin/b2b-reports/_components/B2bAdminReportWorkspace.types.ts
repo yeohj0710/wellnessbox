@@ -35,9 +35,6 @@ export type B2bAdminReportWorkspaceContentState = {
   selectedSectionSet: Set<string>;
   surveyAnswers: Record<string, unknown>;
   maxSelectedSections: number;
-  note: string;
-  recommendations: string;
-  cautions: string;
   reportConsultationSummary: string;
   reportPackagedProducts: B2bReportPackagedProduct[];
   analysisText: string;
@@ -58,10 +55,6 @@ export type B2bAdminReportWorkspaceActions = {
   onToggleSection: (sectionKey: string) => void;
   onSetAnswerValue: (question: SurveyQuestion, value: unknown) => void;
   onSaveSurvey: () => void;
-  onNoteChange: (value: string) => void;
-  onRecommendationsChange: (value: string) => void;
-  onCautionsChange: (value: string) => void;
-  onSaveNote: () => void;
   onReportConsultationSummaryChange: (value: string) => void;
   onReportPackagedProductsChange: (products: B2bReportPackagedProduct[]) => void;
   onSaveReportCustomization: () => void;

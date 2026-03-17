@@ -3,14 +3,13 @@
 import styles from "./B2bUx.module.css";
 import type { ReportSummaryPayload } from "@/lib/b2b/report-summary-payload";
 import { firstOrDash, formatDate } from "./report-summary/helpers";
+import ReportSummaryAddendumPage from "./report-summary/ReportSummaryAddendumPage";
 import {
   buildReportSummaryAddendumModel,
   buildReportSummaryHealthMetrics,
   hasReportSummaryHealthMetricsContent,
-  resolveReportSummaryFinalPharmacistComment,
 } from "./report-summary/detail-data-model";
 import {
-  REPORT_SUMMARY_FINAL_COMMENT_PAGE_TEXT,
   REPORT_SUMMARY_HEALTH_INSIGHT_EMPTY_MESSAGE,
   REPORT_SUMMARY_HEALTH_PAGE_TEXT,
   REPORT_SUMMARY_OVERVIEW_TEXT,
@@ -24,8 +23,6 @@ import {
   REPORT_SUMMARY_RADAR_LEVELS,
 } from "./report-summary/overview-model";
 import {
-  ReportSummaryAddendumPage,
-  ReportSummaryFinalCommentPage,
   ReportSummaryHealthPage,
   ReportSummaryOverviewPage,
 } from "./report-summary/ReportSummaryPages";
@@ -43,7 +40,7 @@ export default function ReportSummaryCards(props: {
   if (!payload) {
     return (
       <section className={styles.sectionCard}>
-        <p className={styles.inlineHint}>아직 생성된 리포트 데이터가 없습니다.</p>
+        <p className={styles.inlineHint}>아직 생성된 레포트 데이터가 없습니다.</p>
       </section>
     );
   }
@@ -72,8 +69,6 @@ export default function ReportSummaryCards(props: {
 
   const healthMetrics = buildReportSummaryHealthMetrics(payload);
   const showHealthPage = hasReportSummaryHealthMetricsContent(healthMetrics);
-  const finalPharmacistComment = resolveReportSummaryFinalPharmacistComment(payload);
-  const showFinalCommentPage = finalPharmacistComment.length > 0;
   const addendumModel = buildReportSummaryAddendumModel(payload);
   const showAddendumPage =
     addendumModel.consultationSummary.length > 0 ||
@@ -81,9 +76,7 @@ export default function ReportSummaryCards(props: {
   const metaEmployeeName = firstOrDash(payload.meta?.employeeName);
   const metaPeriodKey = firstOrDash(payload.meta?.periodKey);
   const metaGeneratedAt = formatDate(payload.meta?.generatedAt);
-  const finalCommentPageNumber = healthDataPageNumber + (showHealthPage ? 1 : 0);
-  const addendumPageNumber =
-    finalCommentPageNumber + (showFinalCommentPage ? 1 : 0);
+  const addendumPageNumber = healthDataPageNumber + (showHealthPage ? 1 : 0);
 
   return (
     <div className={styles.reportDocument} data-report-document="1">
@@ -113,7 +106,9 @@ export default function ReportSummaryCards(props: {
       <SurveyDetailPages
         surveyDetailPageStart={REPORT_SUMMARY_SURVEY_DETAIL_PAGE_START}
         surveyPages={continuationSurveyPages}
-        showSectionAdviceEmptyOnFirstPage={!hasSectionAdviceContent && !hasFirstPageSurveyContent}
+        showSectionAdviceEmptyOnFirstPage={
+          !hasSectionAdviceContent && !hasFirstPageSurveyContent
+        }
       />
 
       {showHealthPage ? (
@@ -122,15 +117,6 @@ export default function ReportSummaryCards(props: {
           healthMetrics={healthMetrics}
           healthInsightEmptyMessage={REPORT_SUMMARY_HEALTH_INSIGHT_EMPTY_MESSAGE}
           text={REPORT_SUMMARY_HEALTH_PAGE_TEXT}
-        />
-      ) : null}
-
-      {showFinalCommentPage ? (
-        <ReportSummaryFinalCommentPage
-          pageNumber={finalCommentPageNumber}
-          comment={finalPharmacistComment}
-          metaEmployeeName={metaEmployeeName}
-          text={REPORT_SUMMARY_FINAL_COMMENT_PAGE_TEXT}
         />
       ) : null}
 

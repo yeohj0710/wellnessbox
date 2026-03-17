@@ -2,8 +2,6 @@ import type {
   AnalysisMutationResponse,
   AnalysisGetResponse,
   EmployeeListResponse,
-  NoteGetResponse,
-  NotePutResponse,
   ReportGetResponse,
   ReportPostResponse,
   SurveyGetResponse,
@@ -16,7 +14,6 @@ import { requestJson } from "./client-utils";
 export type EmployeeDetailBundle = {
   survey: SurveyGetResponse;
   analysis: AnalysisGetResponse;
-  note: NoteGetResponse;
   report: ReportGetResponse;
 };
 
@@ -34,15 +31,14 @@ export async function fetchEmployees(query = "") {
 
 export async function fetchEmployeeDetailBundle(employeeId: string, periodKey?: string) {
   const periodQuery = toPeriodQuery(periodKey);
-  const [survey, analysis, note, report] = await Promise.all([
+  const [survey, analysis, report] = await Promise.all([
     requestJson<SurveyGetResponse>(`/api/admin/b2b/employees/${employeeId}/survey${periodQuery}`),
     requestJson<AnalysisGetResponse>(
       `/api/admin/b2b/employees/${employeeId}/analysis${periodQuery}`
     ),
-    requestJson<NoteGetResponse>(`/api/admin/b2b/employees/${employeeId}/note${periodQuery}`),
     requestJson<ReportGetResponse>(`/api/admin/b2b/employees/${employeeId}/report${periodQuery}`),
   ]);
-  return { survey, analysis, note, report } satisfies EmployeeDetailBundle;
+  return { survey, analysis, report } satisfies EmployeeDetailBundle;
 }
 
 export async function saveSurvey(input: {
@@ -54,12 +50,12 @@ export async function saveSurvey(input: {
   return requestJson<SurveyPutResponse>(
     `/api/admin/b2b/employees/${input.employeeId}/survey`,
     {
-    method: "PUT",
-    body: JSON.stringify({
-      periodKey: input.periodKey,
-      selectedSections: input.selectedSections,
-      answers: input.answers,
-    }),
+      method: "PUT",
+      body: JSON.stringify({
+        periodKey: input.periodKey,
+        selectedSections: input.selectedSections,
+        answers: input.answers,
+      }),
     }
   );
 }
@@ -76,28 +72,6 @@ export async function saveAnalysisPayload(input: {
       body: JSON.stringify({
         periodKey: input.periodKey,
         payload: input.payload,
-      }),
-    }
-  );
-}
-
-export async function saveNote(input: {
-  employeeId: string;
-  periodKey?: string;
-  note: string;
-  recommendations: string;
-  cautions: string;
-}) {
-  return requestJson<NotePutResponse>(
-    `/api/admin/b2b/employees/${input.employeeId}/note`,
-    {
-      method: "PUT",
-      body: JSON.stringify({
-        periodKey: input.periodKey,
-        note: input.note,
-        recommendations: input.recommendations,
-        cautions: input.cautions,
-        actorTag: "admin",
       }),
     }
   );

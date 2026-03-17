@@ -55,13 +55,16 @@ export default function B2bAdminReportPreviewPanel(
             <p>
               {previewTab === "integrated"
                 ? "설문 결과 UI를 기본으로 보여주고, 건강검진 데이터까지 한 번에 확인합니다."
-                : "화면에서 보는 웹 레포트를 그대로 캡쳐해 PDF로 저장합니다."}
+                : "화면에서 보는 레포트를 그대로 캡처해 PDF로 내보냅니다."}
             </p>
           </div>
           <span className={previewTab === "integrated" ? styles.statusWarn : styles.statusOn}>
-            {previewTab === "integrated" ? "관리자 통합 뷰" : "웹/PDF 동일 레이아웃 지향"}
+            {previewTab === "integrated"
+              ? "관리자 통합 뷰"
+              : "PDF와 같은 레이아웃"}
           </span>
         </div>
+
         <div className={`${styles.reportCanvasBoard} ${styles.reportCanvasBoardWide}`}>
           <div
             ref={captureRef}
@@ -80,10 +83,10 @@ export default function B2bAdminReportPreviewPanel(
 
       {previewTab === "report" && latestLayout ? (
         <details className={`${styles.optionalCard} ${styles.reportLegacyPanel}`}>
-          <summary>구버전 미리보기</summary>
+          <summary>구형 DSL 미리보기</summary>
           <div className={styles.optionalBody}>
             <p className={styles.optionalText}>
-              기존 DSL 렌더 결과입니다. 비교 확인이 필요할 때만 펼쳐서 확인해 주세요.
+              기존 DSL 렌더 결과입니다. 비교 확인이 필요할 때만 펼쳐 보세요.
             </p>
             <div className={styles.reportCanvasBoard}>
               <ReportRenderer layout={latestLayout} fitToWidth />

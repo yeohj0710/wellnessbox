@@ -1,27 +1,19 @@
-import type {
-  B2bIntegratedMedication,
-} from "../_lib/b2b-integrated-result-preview-model";
+import type { B2bIntegratedMedication } from "../_lib/b2b-integrated-result-preview-model";
 
 type B2bIntegratedMedicationReviewSectionProps = {
   medicationStatusMessage: string;
   medications: B2bIntegratedMedication[];
-  pharmacistSummary: string;
-  pharmacistRecommendations: string;
-  pharmacistCautions: string;
 };
 
 export default function B2bIntegratedMedicationReviewSection({
   medicationStatusMessage,
   medications,
-  pharmacistSummary,
-  pharmacistRecommendations,
-  pharmacistCautions,
 }: B2bIntegratedMedicationReviewSectionProps) {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-      <h3 className="text-lg font-bold text-slate-900">복약 이력 · 약사 코멘트</h3>
+      <h3 className="text-lg font-bold text-slate-900">복약 이력</h3>
       <p className="mt-1 text-xs text-slate-500">
-        최근 복약 이력과 약사 피드백을 한 번에 확인합니다.
+        최근 복약 이력과 상태 메시지를 한 번에 확인합니다.
       </p>
 
       {medicationStatusMessage ? (
@@ -49,27 +41,6 @@ export default function B2bIntegratedMedicationReviewSection({
           ))}
         </ul>
       ) : null}
-
-      <div className="mt-4 grid gap-2">
-        <article className="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
-          <p className="text-xs font-semibold text-slate-600">요약</p>
-          <p className="mt-1 text-sm text-slate-800">
-            {pharmacistSummary || "등록된 요약 코멘트가 없습니다."}
-          </p>
-        </article>
-        <article className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-3 py-2.5">
-          <p className="text-xs font-semibold text-emerald-700">권장안</p>
-          <p className="mt-1 text-sm text-emerald-900">
-            {pharmacistRecommendations || "권장안이 없습니다."}
-          </p>
-        </article>
-        <article className="rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-2.5">
-          <p className="text-xs font-semibold text-amber-700">주의사항</p>
-          <p className="mt-1 text-sm text-amber-900">
-            {pharmacistCautions || "주의사항이 없습니다."}
-          </p>
-        </article>
-      </div>
     </section>
   );
 }

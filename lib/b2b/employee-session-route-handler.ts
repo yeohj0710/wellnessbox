@@ -56,7 +56,12 @@ export async function runEmployeeSessionLoginRoute(
   }
 
   const identity = resolveB2bEmployeeIdentity(parsed.data);
-  const loginResult = await resolveEmployeeSessionLogin(identity.identityHash);
+  const loginResult = await resolveEmployeeSessionLogin({
+    identityHash: identity.identityHash,
+    name: identity.name,
+    birthDate: identity.birthDate,
+    phoneNormalized: identity.phoneNormalized,
+  });
 
   if (!loginResult.found) {
     return noStoreJson({

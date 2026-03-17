@@ -44,7 +44,12 @@ const {
   resolveEmployeeSessionLogin,
   resolveEmployeeSessionStatus,
 } = require(path.join(ROOT, "lib/b2b/employee-session-route.ts")) as {
-  resolveEmployeeSessionLogin: (identityHash: string) => Promise<{
+  resolveEmployeeSessionLogin: (input: {
+    identityHash: string;
+    name: string;
+    birthDate: string;
+    phoneNormalized: string;
+  }) => Promise<{
     found: boolean;
     token?: { employeeId: string; identityHash: string };
   }>;
@@ -189,7 +194,12 @@ async function runSessionFlowCase(identity: {
   assert.equal(Boolean(sessionLoginPayload?.ok), true);
   assert.equal(Boolean(sessionLoginPayload?.found), true);
 
-  const loginByHash = await resolveEmployeeSessionLogin(identity.identityHash);
+  const loginByHash = await resolveEmployeeSessionLogin({
+    identityHash: identity.identityHash,
+    name: identity.name,
+    birthDate: identity.birthDate,
+    phoneNormalized: identity.phone.replace(/\D/g, ""),
+  });
   assert.equal(loginByHash.found, true);
   assert.ok(loginByHash.token?.employeeId, "Session login should resolve employee token.");
 
@@ -236,6 +246,18 @@ async function run() {
 
     const sameIdentityCount = await countByIdentityHash(first.identity.identityHash);
     assert.equal(sameIdentityCount, 1);
+
+    const renamed = await upsertB2bEmployee({
+      appUserId: appUser.id,
+      name: "Ghost QA User (테스트)",
+      birthDate: "19990101",
+      phone: "01055551234",
+    });
+    assert.equal(
+      renamed.employee.id,
+      first.employee.id,
+      "Same birth date and phone should keep matching even if the name changes."
+    );
 
     await runSessionFlowCase({
       name: "Ghost QA User",

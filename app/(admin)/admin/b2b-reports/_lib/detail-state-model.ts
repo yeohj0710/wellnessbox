@@ -19,9 +19,6 @@ export type LoadedEmployeeDetailState = {
   surveySubmittedAt: string | null;
   surveyUpdatedAt: string | null;
   analysisText: string;
-  note: string;
-  recommendations: string;
-  cautions: string;
   reportConsultationSummary: string;
   reportPackagedProducts: B2bReportPackagedProduct[];
   latestReport: LatestReport | null;
@@ -41,9 +38,6 @@ export function buildEmptyEmployeeDetailState(): LoadedEmployeeDetailState {
     surveySubmittedAt: null,
     surveyUpdatedAt: null,
     analysisText: "{}",
-    note: "",
-    recommendations: "",
-    cautions: "",
     reportConsultationSummary: "",
     reportPackagedProducts: [],
     latestReport: null,
@@ -60,7 +54,7 @@ export function buildLoadedEmployeeDetailState(
   bundle: EmployeeDetailBundle,
   requestedPeriodKey?: string
 ): LoadedEmployeeDetailState {
-  const { survey, analysis, note: noteData, report } = bundle;
+  const { survey, analysis, report } = bundle;
   const nextSelectedPeriod =
     report.latest?.periodKey || report.periodKey || survey.periodKey || analysis.periodKey || "";
   const displayPeriodRaw = report.latest?.payload?.meta?.periodKey ?? nextSelectedPeriod;
@@ -75,9 +69,6 @@ export function buildLoadedEmployeeDetailState(
     surveySubmittedAt: survey.response?.submittedAt ?? null,
     surveyUpdatedAt: survey.response?.updatedAt ?? null,
     analysisText: JSON.stringify(analysis.analysis?.payload ?? {}, null, 2),
-    note: noteData.note?.note ?? "",
-    recommendations: noteData.note?.recommendations ?? "",
-    cautions: noteData.note?.cautions ?? "",
     reportConsultationSummary:
       report.latest?.payload?.reportAddendum?.consultationSummary ?? "",
     reportPackagedProducts:

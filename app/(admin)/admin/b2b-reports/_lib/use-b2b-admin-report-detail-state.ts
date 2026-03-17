@@ -26,16 +26,12 @@ export function useB2bAdminReportDetailState() {
   const [surveyUpdatedAt, setSurveyUpdatedAt] = useState<string | null>(null);
 
   const [analysisText, setAnalysisText] = useState("{}");
-  const [note, setNote] = useState("");
-  const [recommendations, setRecommendations] = useState("");
-  const [cautions, setCautions] = useState("");
   const [reportConsultationSummary, setReportConsultationSummary] = useState("");
   const [reportPackagedProducts, setReportPackagedProducts] = useState<
     B2bReportPackagedProduct[]
   >([]);
   const [surveyDirty, setSurveyDirty] = useState(false);
   const [analysisDirty, setAnalysisDirty] = useState(false);
-  const [noteDirty, setNoteDirty] = useState(false);
   const [reportCustomizationDirty, setReportCustomizationDirty] = useState(false);
 
   const [latestReport, setLatestReport] = useState<LatestReport | null>(null);
@@ -56,9 +52,6 @@ export function useB2bAdminReportDetailState() {
     setSurveySubmittedAt(nextState.surveySubmittedAt);
     setSurveyUpdatedAt(nextState.surveyUpdatedAt);
     setAnalysisText(nextState.analysisText);
-    setNote(nextState.note);
-    setRecommendations(nextState.recommendations);
-    setCautions(nextState.cautions);
     setReportConsultationSummary(nextState.reportConsultationSummary);
     setReportPackagedProducts(nextState.reportPackagedProducts);
     setLatestReport(nextState.latestReport);
@@ -70,7 +63,6 @@ export function useB2bAdminReportDetailState() {
     setReportDisplayPeriodKey(nextState.reportDisplayPeriodKey);
     setSurveyDirty(false);
     setAnalysisDirty(false);
-    setNoteDirty(false);
     setReportCustomizationDirty(false);
   }, []);
 
@@ -112,12 +104,6 @@ export function useB2bAdminReportDetailState() {
     setSurveyUpdatedAt,
     analysisText,
     setAnalysisText,
-    note,
-    setNote,
-    recommendations,
-    setRecommendations,
-    cautions,
-    setCautions,
     reportConsultationSummary,
     setReportConsultationSummary,
     reportPackagedProducts,
@@ -126,8 +112,6 @@ export function useB2bAdminReportDetailState() {
     setSurveyDirty,
     analysisDirty,
     setAnalysisDirty,
-    noteDirty,
-    setNoteDirty,
     reportCustomizationDirty,
     setReportCustomizationDirty,
     latestReport,

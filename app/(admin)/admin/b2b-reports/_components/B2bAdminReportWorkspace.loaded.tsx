@@ -3,7 +3,6 @@ import B2bAdminReportPreviewPanel from "./B2bAdminReportPreviewPanel";
 import B2bAnalysisJsonPanel from "./B2bAnalysisJsonPanel";
 import B2bEmployeeOverviewCard from "./B2bEmployeeOverviewCard";
 import B2bLayoutValidationPanel from "./B2bLayoutValidationPanel";
-import B2bNoteEditorPanel from "./B2bNoteEditorPanel";
 import B2bReportCustomizationPanel from "./B2bReportCustomizationPanel";
 import B2bSurveyEditorPanel from "./B2bSurveyEditorPanel";
 import type { B2bAdminReportWorkspaceLoadedProps } from "./B2bAdminReportWorkspace.types";
@@ -54,17 +53,6 @@ export default function B2bAdminReportWorkspaceLoaded({
         onToggleSection={actions.onToggleSection}
         onSetAnswerValue={actions.onSetAnswerValue}
         onSaveSurvey={actions.onSaveSurvey}
-      />
-
-      <B2bNoteEditorPanel
-        note={content.note}
-        recommendations={content.recommendations}
-        cautions={content.cautions}
-        busy={content.busy}
-        onNoteChange={actions.onNoteChange}
-        onRecommendationsChange={actions.onRecommendationsChange}
-        onCautionsChange={actions.onCautionsChange}
-        onSave={actions.onSaveNote}
       />
 
       <B2bReportCustomizationPanel

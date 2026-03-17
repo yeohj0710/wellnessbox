@@ -10,24 +10,7 @@ export default async function AiExperimentInsightsCard() {
     windowDays: 14,
   });
 
-  if (!summary) {
-    return (
-      <section className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/90 p-5 shadow-[0_24px_70px_-38px_rgba(15,23,42,0.36)]">
-        <div className="space-y-2">
-          <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-sky-700/75">
-            AI Learning Loop
-          </p>
-          <h2 className="text-xl font-black tracking-[-0.03em] text-slate-950">
-            실험 데이터 준비 중
-          </h2>
-          <p className="text-sm leading-6 text-slate-600">
-            실험 로그 테이블이 아직 배포되지 않았거나 표본이 충분하지 않습니다. 마이그레이션
-            적용 뒤 자동으로 보입니다.
-          </p>
-        </div>
-      </section>
-    );
-  }
+  if (!summary) return null;
 
   const winningVariant =
     summary.variants.find((variant) => variant.key === summary.winningVariantKey)

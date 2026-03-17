@@ -86,16 +86,16 @@ export function GovernancePreviewSection({
       <div className="space-y-1">
         <p className="text-sm font-semibold text-slate-800">실제 라우팅 미리보기</p>
         <p className="text-xs text-slate-500">
-          같은 기본 모델을 골라도 작업 성격에 따라 실제 사용 모델은 달라집니다.
+          현재 선택한 모델이 각 작업에 어떻게 반영되는지 빠르게 확인할 수 있습니다.
         </p>
       </div>
-      <div className="mt-3 space-y-2">
+      <div className="mt-3 grid gap-3 lg:grid-cols-2">
         {governancePreview.map((item) => {
           const task = governanceTaskMap.get(item.task);
           return (
             <div
               key={item.task}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-3"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-3 shadow-sm"
             >
               <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
                 <div className="space-y-1">

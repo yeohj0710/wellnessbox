@@ -29,10 +29,6 @@ type UseB2bAdminReportCrudActionsParams = {
   resolvedSelectedSections: string[];
   setSurveyDirty: Dispatch<SetStateAction<boolean>>;
   setAnalysisDirty: Dispatch<SetStateAction<boolean>>;
-  setNoteDirty: Dispatch<SetStateAction<boolean>>;
-  note: string;
-  recommendations: string;
-  cautions: string;
   reportConsultationSummary: string;
   reportPackagedProducts: B2bReportPackagedProduct[];
   analysisText: string;
@@ -59,10 +55,6 @@ export function useB2bAdminReportCrudActions({
   resolvedSelectedSections,
   setSurveyDirty,
   setAnalysisDirty,
-  setNoteDirty,
-  note,
-  recommendations,
-  cautions,
   reportConsultationSummary,
   reportPackagedProducts,
   analysisText,
@@ -92,14 +84,10 @@ export function useB2bAdminReportCrudActions({
     surveyAnswers,
     resolvedSelectedSections,
     analysisText,
-    note,
-    recommendations,
-    cautions,
     reportConsultationSummary,
     reportPackagedProducts,
     setSurveyDirty,
     setAnalysisDirty,
-    setNoteDirty,
     setReportCustomizationDirty,
     setNotice,
     reloadCurrentEmployee,

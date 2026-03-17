@@ -7,10 +7,7 @@ import B2bAdminReportBootstrappingSkeleton from "./_components/B2bAdminReportBoo
 import B2bAdminOpsHero from "./_components/B2bAdminOpsHero";
 import B2bAdminReportWorkspace from "./_components/B2bAdminReportWorkspace";
 import B2bEmployeeSidebar from "./_components/B2bEmployeeSidebar";
-import type {
-  AdminClientProps,
-  EmployeeListItem,
-} from "./_lib/client-types";
+import type { AdminClientProps, EmployeeListItem } from "./_lib/client-types";
 import { fetchEmployees } from "./_lib/api";
 import { useB2bAdminReportBusyAction } from "./_lib/use-b2b-admin-report-busy-action";
 import { useB2bAdminReportActions } from "./_lib/use-b2b-admin-report-actions";
@@ -45,12 +42,6 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     surveyUpdatedAt,
     analysisText,
     setAnalysisText,
-    note,
-    setNote,
-    recommendations,
-    setRecommendations,
-    cautions,
-    setCautions,
     reportConsultationSummary,
     setReportConsultationSummary,
     reportPackagedProducts,
@@ -59,8 +50,6 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     setSurveyDirty,
     analysisDirty,
     setAnalysisDirty,
-    noteDirty,
-    setNoteDirty,
     reportCustomizationDirty,
     setReportCustomizationDirty,
     latestReport,
@@ -98,7 +87,6 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     selectedSections,
     surveyDirty,
     analysisDirty,
-    noteDirty,
     reportCustomizationDirty,
   });
 
@@ -151,7 +139,6 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     handleSearch,
     handleSaveSurvey,
     handleSaveAnalysisPayload,
-    handleSaveNote,
     handleRecomputeAnalysis,
     handleRegenerateReport,
     handleRunValidation,
@@ -162,9 +149,6 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     handleChangePeriod,
     setAnswerValue,
     toggleSection,
-    handleNoteChange,
-    handleRecommendationsChange,
-    handleCautionsChange,
     handleReportConsultationSummaryChange,
     handleReportPackagedProductsChange,
     handleSaveReportCustomization,
@@ -197,17 +181,10 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     setSelectedSections,
     setSurveyDirty,
     setAnalysisDirty,
-    setNoteDirty,
     setReportCustomizationDirty,
-    setNote,
-    setRecommendations,
-    setCautions,
     setAnalysisText,
     setReportConsultationSummary,
     setReportPackagedProducts,
-    note,
-    recommendations,
-    cautions,
     reportConsultationSummary,
     reportPackagedProducts,
     analysisText,
@@ -232,9 +209,6 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     selectedSectionSet,
     surveyAnswers,
     maxSelectedSections,
-    note,
-    recommendations,
-    cautions,
     reportConsultationSummary,
     reportPackagedProducts,
     analysisText,
@@ -252,10 +226,6 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     toggleSection,
     setAnswerValue,
     handleSaveSurvey,
-    handleNoteChange,
-    handleRecommendationsChange,
-    handleCautionsChange,
-    handleSaveNote,
     handleReportConsultationSummaryChange,
     handleReportPackagedProductsChange,
     handleSaveReportCustomization,
@@ -268,7 +238,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
   if (isBootstrapping) {
     return (
       <div className={styles.pageBackdrop}>
-        <div className={`${styles.page} ${styles.pageNoBg} ${styles.stack}`}>
+        <div className={`${styles.page} ${styles.reportPage} ${styles.pageNoBg} ${styles.stack}`}>
           <B2bAdminReportBootstrappingSkeleton />
         </div>
       </div>
@@ -277,7 +247,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
 
   return (
     <div className={styles.pageBackdrop}>
-      <div className={`${styles.page} ${styles.pageNoBg} ${styles.stack}`}>
+      <div className={`${styles.page} ${styles.reportPage} ${styles.pageNoBg} ${styles.stack}`}>
         <B2bAdminOpsHero
           search={search}
           busy={busy}
@@ -287,23 +257,21 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
           onSeedDemo={() => void handleSeedDemo()}
         />
 
-        <div className={styles.splitLayout}>
-          <B2bEmployeeSidebar
-            employees={employees}
-            selectedEmployeeId={selectedEmployeeId}
-            busy={busy}
-            onSelectEmployee={(employeeId) => {
-              if (employeeId === selectedEmployeeId) return;
-              selectEmployeeForLoading(employeeId);
-            }}
-          />
+        <B2bEmployeeSidebar
+          employees={employees}
+          selectedEmployeeId={selectedEmployeeId}
+          busy={busy}
+          onSelectEmployee={(employeeId) => {
+            if (employeeId === selectedEmployeeId) return;
+            selectEmployeeForLoading(employeeId);
+          }}
+        />
 
-          <B2bAdminReportWorkspace
-            selection={workspace.selection}
-            content={workspace.content}
-            actions={workspace.actions}
-          />
-        </div>
+        <B2bAdminReportWorkspace
+          selection={workspace.selection}
+          content={workspace.content}
+          actions={workspace.actions}
+        />
       </div>
     </div>
   );

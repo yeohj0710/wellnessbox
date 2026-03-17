@@ -26,7 +26,7 @@ export const B2B_INTEGRATED_SURVEY_RESULT_TEXT = {
   scoreRisk: "생활습관 위험도",
   editSurvey: "설문 답안 수정",
   restart: "처음부터 다시 시작",
-  viewEmployeeReport: "내 건강 리포트 보기",
+  viewEmployeeReport: "내 건강 레포트 보기",
 } as const;
 
 export type B2bIntegratedHealthMetric = {
@@ -56,9 +56,6 @@ export type B2bIntegratedResultPreviewModel = {
   supplementDesigns: B2bIntegratedSupplementDesign[];
   medicationStatusMessage: string;
   medications: B2bIntegratedMedication[];
-  pharmacistSummary: string;
-  pharmacistRecommendations: string;
-  pharmacistCautions: string;
 };
 
 function ensureArray<T>(value: T[] | null | undefined): T[] {
@@ -149,8 +146,7 @@ function buildSupplementDesigns(
 
   return supplementDesign.map((item, index) => {
     const sectionId = toTrimmedText(item?.sectionId) || `section-${index + 1}`;
-    const sectionTitle =
-      sectionTitleMap.get(sectionId) || sectionId;
+    const sectionTitle = sectionTitleMap.get(sectionId) || sectionId;
     const title = toTrimmedText(item?.title) || sectionTitle;
 
     return {
@@ -338,10 +334,8 @@ export function buildB2bIntegratedResultPreviewModel(
     : {
         medicationStatusMessage: "",
         medications: [],
-        pharmacistSummary: "",
-        pharmacistRecommendations: "",
-        pharmacistCautions: "",
       };
+
   return {
     resultSummary,
     sectionTitleMap,
@@ -349,8 +343,5 @@ export function buildB2bIntegratedResultPreviewModel(
     supplementDesigns: buildSupplementDesigns(payload, sectionTitleMap),
     medicationStatusMessage: medicationReviewModel.medicationStatusMessage,
     medications: buildMedications(payload),
-    pharmacistSummary: medicationReviewModel.pharmacistSummary,
-    pharmacistRecommendations: medicationReviewModel.pharmacistRecommendations,
-    pharmacistCautions: medicationReviewModel.pharmacistCautions,
   };
 }

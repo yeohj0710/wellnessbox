@@ -79,10 +79,6 @@ export type ReportSummaryMedicationPageText = {
   subtitle: string;
   medicationTitle: string;
   medicationEmpty: string;
-  pharmacistTitle: string;
-  pharmacistEmpty: string;
-  recommendationLabel: string;
-  cautionLabel: string;
   generatedLabel: string;
   employeeLabel: string;
   periodLabel: string;
@@ -130,9 +126,6 @@ export type ReportSummaryMedicationPageProps = {
   pageNumber: number;
   medications: ReportSummaryMedicationRow[];
   medicationStatusMessage: string;
-  pharmacistSummary: string;
-  pharmacistRecommendations: string;
-  pharmacistCautions: string;
   viewerMode: "employee" | "admin";
   metaGeneratedAt: string;
   metaEmployeeName: string;

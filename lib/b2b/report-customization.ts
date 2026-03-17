@@ -55,7 +55,7 @@ function normalizePackagedProduct(
 
   return {
     id: trimText(value.id) || `packaged-product-${index + 1}`,
-    name: name || "구성 제품",
+    name: name || "구성 상품",
     brand,
     imageUrl,
     description,
@@ -87,9 +87,7 @@ export function normalizeReportCustomization(
   };
 }
 
-export function extractReportCustomization(
-  rawPayload: unknown
-): B2bReportCustomization {
+export function extractReportCustomization(rawPayload: unknown): B2bReportCustomization {
   if (!rawPayload || typeof rawPayload !== "object") {
     return normalizeReportCustomization(null);
   }

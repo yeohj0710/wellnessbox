@@ -18,11 +18,17 @@ import {
 import { usePathname } from "next/navigation";
 
 type ToastType = "default" | "success" | "error" | "info";
-type Toast = { id: string; message: string; type: ToastType; duration: number };
+type Toast = {
+  id: string;
+  message: string;
+  type: ToastType;
+  duration: number;
+  toastKey?: string;
+};
 type ToastCtx = {
   showToast: (
     message: string,
-    opts?: { type?: ToastType; duration?: number }
+    opts?: { type?: ToastType; duration?: number; toastKey?: string }
   ) => void;
 };
 
@@ -45,16 +51,24 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   const showToast = useCallback(
-    (message: string, opts?: { type?: ToastType; duration?: number }) => {
+    (
+      message: string,
+      opts?: { type?: ToastType; duration?: number; toastKey?: string }
+    ) => {
       const id = Math.random().toString(36).slice(2);
       const t: Toast = {
         id,
         message,
         type: opts?.type ?? "default",
-
+        toastKey: opts?.toastKey,
         duration: Math.max(5000, Math.min(opts?.duration ?? 2600, 8000)),
       };
-      setToasts((prev) => [t, ...prev].slice(0, 4));
+      setToasts((prev) => {
+        const next = t.toastKey
+          ? prev.filter((toast) => toast.toastKey !== t.toastKey)
+          : prev;
+        return [t, ...next].slice(0, 4);
+      });
     },
     []
   );

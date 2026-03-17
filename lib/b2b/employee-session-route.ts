@@ -1,6 +1,11 @@
 import db from "@/lib/db";
 import { NextResponse } from "next/server";
 import {
+  mergeDuplicateB2bEmployeesForIdentity,
+  reconcileMatchedB2bEmployeeIdentity,
+  type B2bEmployeeIdentityMatchInput,
+} from "@/lib/b2b/employee-identity-match";
+import {
   B2B_EMPLOYEE_TOKEN_COOKIE,
   buildB2bEmployeeAccessToken,
   getB2bEmployeeCookieOptions,
@@ -140,17 +145,15 @@ export async function resolveEmployeeSessionStatus(
 }
 
 export async function resolveEmployeeSessionLogin(
-  identityHash: string
+  input: B2bEmployeeIdentityMatchInput
 ): Promise<EmployeeSessionLoginResult> {
-  const employee = await db.b2bEmployee.findUnique({
-    where: { identityHash },
-    select: {
-      id: true,
-      identityHash: true,
-      name: true,
-      appUserId: true,
-    },
-  });
+  const matchedEmployee = await mergeDuplicateB2bEmployeesForIdentity(input);
+  const employee = matchedEmployee
+    ? await reconcileMatchedB2bEmployeeIdentity({
+        employeeId: matchedEmployee.id,
+        nextIdentity: input,
+      })
+    : null;
 
   void logB2bEmployeeSessionAccess({
     employeeId: employee?.id ?? null,
@@ -158,6 +161,12 @@ export async function resolveEmployeeSessionLogin(
     action: "session_login_attempt",
     payload: {
       found: !!employee,
+      matchedBy:
+        employee?.identityHash === input.identityHash
+          ? "identity_hash"
+          : employee
+            ? "birth_phone"
+            : "not_found",
     },
   });
 

@@ -39,9 +39,6 @@ type UseB2bAdminReportWorkspaceModelParams = {
   selectedSectionSet: Set<string>;
   surveyAnswers: Record<string, unknown>;
   maxSelectedSections: number;
-  note: string;
-  recommendations: string;
-  cautions: string;
   reportConsultationSummary: string;
   reportPackagedProducts: B2bReportPackagedProduct[];
   analysisText: string;
@@ -59,10 +56,6 @@ type UseB2bAdminReportWorkspaceModelParams = {
   toggleSection: (sectionKey: string) => void;
   setAnswerValue: (question: SurveyQuestion, value: unknown) => void;
   handleSaveSurvey: () => Promise<void>;
-  handleNoteChange: (value: string) => void;
-  handleRecommendationsChange: (value: string) => void;
-  handleCautionsChange: (value: string) => void;
-  handleSaveNote: () => Promise<void>;
   handleReportConsultationSummaryChange: (value: string) => void;
   handleReportPackagedProductsChange: (products: B2bReportPackagedProduct[]) => void;
   handleSaveReportCustomization: () => Promise<void>;
@@ -92,9 +85,6 @@ export function useB2bAdminReportWorkspaceModel({
   selectedSectionSet,
   surveyAnswers,
   maxSelectedSections,
-  note,
-  recommendations,
-  cautions,
   reportConsultationSummary,
   reportPackagedProducts,
   analysisText,
@@ -112,10 +102,6 @@ export function useB2bAdminReportWorkspaceModel({
   toggleSection,
   setAnswerValue,
   handleSaveSurvey,
-  handleNoteChange,
-  handleRecommendationsChange,
-  handleCautionsChange,
-  handleSaveNote,
   handleReportConsultationSummaryChange,
   handleReportPackagedProductsChange,
   handleSaveReportCustomization,
@@ -151,9 +137,6 @@ export function useB2bAdminReportWorkspaceModel({
       selectedSectionSet,
       surveyAnswers,
       maxSelectedSections,
-      note,
-      recommendations,
-      cautions,
       reportConsultationSummary,
       reportPackagedProducts,
       analysisText,
@@ -165,21 +148,18 @@ export function useB2bAdminReportWorkspaceModel({
       analysisText,
       busy,
       captureRef,
-      cautions,
       completionStats,
       latestLayout,
       latestReport,
       maxSelectedSections,
-      note,
       periodOptions,
       previewTab,
-      recommendations,
       reportConsultationSummary,
-      reportPackagedProducts,
       reportDisplayPeriodKey,
+      reportPackagedProducts,
       selectedPeriodKey,
-      selectedSectionSet,
       selectedSections,
+      selectedSectionSet,
       showExportPreview,
       surveyAnswers,
       surveySubmittedAt,
@@ -217,15 +197,10 @@ export function useB2bAdminReportWorkspaceModel({
       onSaveSurvey: () => {
         void handleSaveSurvey();
       },
-      onNoteChange: handleNoteChange,
-      onRecommendationsChange: handleRecommendationsChange,
-      onCautionsChange: handleCautionsChange,
-      onSaveNote: () => {
-        void handleSaveNote();
-      },
       onReportConsultationSummaryChange: handleReportConsultationSummaryChange,
       onReportPackagedProductsChange: handleReportPackagedProductsChange,
       onSaveReportCustomization: () => {
+        setPreviewTab("report");
         void handleSaveReportCustomization();
       },
       onAnalysisTextChange: handleAnalysisTextChange,
@@ -240,20 +215,16 @@ export function useB2bAdminReportWorkspaceModel({
     [
       handleAnalysisTextChange,
       handleChangePeriod,
-      handleCautionsChange,
       handleExportLegacyPdf,
       handleExportPdf,
-      handleNoteChange,
       handleReportConsultationSummaryChange,
       handleReportPackagedProductsChange,
-      handleSaveReportCustomization,
-      handleRecommendationsChange,
       handleRecomputeAnalysis,
       handleRegenerateReport,
       handleRunValidation,
       handleSaveAnalysisPayload,
       handleSaveDisplayPeriod,
-      handleSaveNote,
+      handleSaveReportCustomization,
       handleSaveSurvey,
       setAnswerValue,
       setPreviewTab,

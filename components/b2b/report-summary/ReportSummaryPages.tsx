@@ -3,7 +3,6 @@
 
 import styles from "../B2bUx.module.css";
 import { clampPercent } from "./card-insights";
-import type { ReportSummaryAddendumModel } from "./detail-data-model";
 import {
   type ReportSummaryFinalCommentPageProps,
   type ReportSummaryHealthPageProps,
@@ -167,7 +166,8 @@ export function ReportSummaryOverviewPage(props: ReportSummaryOverviewPageProps)
             </svg>
           </div>
           <p className={styles.inlineHint}>
-            {text.lifestyleRiskOverallLabel} <span className={styles.riskScoreText}>{lifestyleOverallText}</span>
+            {text.lifestyleRiskOverallLabel}{" "}
+            <span className={styles.riskScoreText}>{lifestyleOverallText}</span>
           </p>
         </article>
 
@@ -229,7 +229,9 @@ export function ReportSummaryHealthPage(props: ReportSummaryHealthPageProps) {
       data-report-page={String(pageNumber)}
     >
       <header className={styles.reportPageHeader}>
-        <p className={styles.reportPageKicker}>{text.pageKicker.replace("{page}", String(pageNumber))}</p>
+        <p className={styles.reportPageKicker}>
+          {text.pageKicker.replace("{page}", String(pageNumber))}
+        </p>
         <h2 className={styles.reportPageTitle}>{text.title}</h2>
         <p className={styles.reportPageSubtitle}>{text.subtitle}</p>
       </header>
@@ -269,7 +271,9 @@ export function ReportSummaryFinalCommentPage(props: ReportSummaryFinalCommentPa
       data-report-page={String(pageNumber)}
     >
       <header className={styles.reportPageHeader}>
-        <p className={styles.reportPageKicker}>{text.pageKicker.replace("{page}", String(pageNumber))}</p>
+        <p className={styles.reportPageKicker}>
+          {text.pageKicker.replace("{page}", String(pageNumber))}
+        </p>
         <h2 className={styles.reportPageTitle}>{text.title}</h2>
         <p className={styles.reportPageSubtitle}>{text.subtitle}</p>
       </header>
@@ -294,9 +298,6 @@ export function ReportSummaryMedicationPage(props: ReportSummaryMedicationPagePr
     pageNumber,
     medications,
     medicationStatusMessage,
-    pharmacistSummary,
-    pharmacistRecommendations,
-    pharmacistCautions,
     viewerMode,
     metaGeneratedAt,
     metaEmployeeName,
@@ -312,7 +313,9 @@ export function ReportSummaryMedicationPage(props: ReportSummaryMedicationPagePr
       data-report-page={String(pageNumber)}
     >
       <header className={styles.reportPageHeader}>
-        <p className={styles.reportPageKicker}>{text.pageKicker.replace("{page}", String(pageNumber))}</p>
+        <p className={styles.reportPageKicker}>
+          {text.pageKicker.replace("{page}", String(pageNumber))}
+        </p>
         <h2 className={styles.reportPageTitle}>{text.title}</h2>
         <p className={styles.reportPageSubtitle}>{text.subtitle}</p>
       </header>
@@ -343,32 +346,13 @@ export function ReportSummaryMedicationPage(props: ReportSummaryMedicationPagePr
             </ul>
           )}
         </article>
-
-        <article className={styles.reportDataCard}>
-          <h3 className={styles.reportDataTitle}>{text.pharmacistTitle}</h3>
-          {pharmacistSummary ? (
-            <p className={styles.reportBlockLead}>{pharmacistSummary}</p>
-          ) : (
-            <p className={styles.reportDataEmpty}>{text.pharmacistEmpty}</p>
-          )}
-          {pharmacistRecommendations ? (
-            <p className={styles.reportDataBody}>
-              <strong>{text.recommendationLabel}</strong> {pharmacistRecommendations}
-            </p>
-          ) : null}
-          {pharmacistCautions ? (
-            <p className={styles.reportDataBody}>
-              <strong>{text.cautionLabel}</strong> {pharmacistCautions}
-            </p>
-          ) : null}
-        </article>
       </div>
 
       <section className={styles.metaFooter}>
         {viewerMode === "admin" ? (
           <>
-            {text.generatedLabel}: {metaGeneratedAt} / {text.employeeLabel}: {metaEmployeeName} / {text.periodLabel}:{" "}
-            {metaPeriodKey}
+            {text.generatedLabel}: {metaGeneratedAt} / {text.employeeLabel}: {metaEmployeeName} /{" "}
+            {text.periodLabel}: {metaPeriodKey}
             {metaIsMockData ? text.mockSuffix : ""}
           </>
         ) : (
@@ -377,97 +361,6 @@ export function ReportSummaryMedicationPage(props: ReportSummaryMedicationPagePr
           </>
         )}
       </section>
-    </section>
-  );
-}
-
-export function ReportSummaryAddendumPage(props: {
-  pageNumber: number;
-  metaEmployeeName: string;
-  addendum: ReportSummaryAddendumModel;
-}) {
-  const { pageNumber, metaEmployeeName, addendum } = props;
-
-  return (
-    <section
-      className={`${styles.reportSheet} ${styles.reportSheetThird}`}
-      data-report-page={String(pageNumber)}
-    >
-      <header className={styles.reportPageHeader}>
-        <p className={styles.reportPageKicker}>{`${pageNumber}페이지 마지막 정리`}</p>
-        <h2 className={styles.reportPageTitle}>상담 메모와 패키징 구성</h2>
-        <p className={styles.reportPageSubtitle}>
-          마지막에 함께 전달하고 싶은 상담 메모와 이번 구성 정보를 한눈에 정리했습니다.
-        </p>
-      </header>
-
-      <div className={styles.reportSecondStack}>
-        {addendum.consultationSummary ? (
-          <article className={styles.reportDataCard}>
-            <h3 className={styles.reportDataTitle}>상담 메모</h3>
-            <p className={styles.reportBlockLead}>{addendum.consultationSummary}</p>
-          </article>
-        ) : null}
-
-        {addendum.packagedProducts.length > 0 ? (
-          <article className={styles.reportDataCard}>
-            <div className={styles.reportDataHeadRow}>
-              <h3 className={styles.reportDataTitle}>이번 패키징 구성</h3>
-            </div>
-            <div className={styles.reportPackagedProductList}>
-              {addendum.packagedProducts.map((product) => (
-                <section
-                  key={product.id}
-                  className={styles.reportPackagedProductCard}
-                >
-                  {product.imageUrl ? (
-                    <div className={styles.reportPackagedProductImageWrap}>
-                      <img
-                        src={product.imageUrl}
-                        alt={product.name}
-                        className={styles.reportPackagedProductImage}
-                      />
-                    </div>
-                  ) : null}
-                  <div className={styles.reportPackagedProductContent}>
-                    <div className={styles.reportPackagedProductHead}>
-                      <div>
-                        <p className={styles.reportPackagedProductName}>{product.name}</p>
-                        {product.brand ? (
-                          <p className={styles.reportPackagedProductBrand}>{product.brand}</p>
-                        ) : null}
-                      </div>
-                    </div>
-                    {product.description ? (
-                      <p className={styles.reportDataBody}>{product.description}</p>
-                    ) : null}
-                    {product.ingredientSummary ? (
-                      <p className={styles.reportDataBody}>
-                        <strong>주요 성분</strong> {product.ingredientSummary}
-                      </p>
-                    ) : null}
-                    {product.intakeSummary ? (
-                      <p className={styles.reportDataBody}>
-                        <strong>섭취 안내</strong> {product.intakeSummary}
-                      </p>
-                    ) : null}
-                    {product.caution ? (
-                      <p className={styles.reportDataBody}>
-                        <strong>함께 확인할 점</strong> {product.caution}
-                      </p>
-                    ) : null}
-                  </div>
-                </section>
-              ))}
-            </div>
-          </article>
-        ) : null}
-      </div>
-
-      <div className={styles.reportFinalCommentFooter}>
-        <span>레포트 마지막 메모</span>
-        <strong>{metaEmployeeName}</strong>
-      </div>
     </section>
   );
 }
