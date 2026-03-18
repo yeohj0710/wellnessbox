@@ -23,7 +23,6 @@ type ProductFieldKey =
   | "imageUrl"
   | "description"
   | "ingredientSummary"
-  | "intakeSummary"
   | "caution";
 
 async function uploadProductImage(file: File) {
@@ -73,7 +72,6 @@ export default function B2bReportCustomizationPanel({
           (product.imageUrl || "").trim().length > 0 ||
           (product.description || "").trim().length > 0 ||
           (product.ingredientSummary || "").trim().length > 0 ||
-          (product.intakeSummary || "").trim().length > 0 ||
           (product.caution || "").trim().length > 0
       ),
     [consultationSummary, packagedProducts]
@@ -133,9 +131,9 @@ export default function B2bReportCustomizationPanel({
           <div className={styles.editorGuide}>
             <p className={styles.editorGuideTitle}>입력 가이드</p>
             <ul className={styles.editorGuideList}>
-              <li>상담 요약은 레포트 마지막 페이지에 바로 들어갈 문장형 메모로 적어 주세요.</li>
-              <li>패키지 제품은 이번 달 실제 배부 기준으로 보일 정보만 채워 주세요.</li>
-              <li>비어 있는 항목은 레포트에서 자연스럽게 숨겨집니다.</li>
+              <li>상담 요약은 레포트 마지막 페이지에 들어갈 문장형 메모로 적어 주세요.</li>
+              <li>패키지 제품은 이번 달 실제 제공 기준으로 보일 정보만 채워 주세요.</li>
+              <li>비어 있는 항목은 레포트에서 자동으로 숨겨집니다.</li>
             </ul>
           </div>
 
@@ -150,7 +148,7 @@ export default function B2bReportCustomizationPanel({
               disabled={busy}
               rows={4}
               onChange={(event) => onConsultationSummaryChange(event.target.value)}
-              placeholder="바쁜 일정이 이어질수록 컨디션이 전체적으로 쉽게 떨어질 수 있어, 수면과 식사 흐름부터 차근차근 맞춰가 보시면 좋겠습니다."
+              placeholder="수면, 피로, 식사 리듬처럼 지금 우선순위가 높은 포인트를 짧고 분명하게 정리해 주세요."
             />
           </section>
 
@@ -159,7 +157,7 @@ export default function B2bReportCustomizationPanel({
               <div>
                 <h4 className={styles.editorSectionTitle}>패키지 제품 정보</h4>
                 <p className={styles.editorSectionHint}>
-                  상품명, 이미지, 주요 성분, 섭취 안내를 마지막 페이지에 그대로 반영합니다.
+                  상품명, 이미지, 주요 성분, 참고 메모를 마지막 페이지에 반영합니다.
                 </p>
               </div>
               <button
@@ -218,7 +216,7 @@ export default function B2bReportCustomizationPanel({
                             onChange={(event) =>
                               handleFieldChange(product.id, "name", event.target.value)
                             }
-                            placeholder="예: 혈행건강 rTG 오메가3"
+                            placeholder="예: 프리미엄 오메가3"
                           />
                         </div>
                         <div className={styles.editorFieldGroup}>
@@ -295,7 +293,7 @@ export default function B2bReportCustomizationPanel({
                       ) : null}
 
                       <div className={styles.editorFieldGroup}>
-                        <p className={styles.editorFieldLabel}>제품 소개</p>
+                        <p className={styles.editorFieldLabel}>상품 소개</p>
                         <textarea
                           className={styles.textarea}
                           value={product.description ?? ""}
@@ -304,45 +302,30 @@ export default function B2bReportCustomizationPanel({
                           onChange={(event) =>
                             handleFieldChange(product.id, "description", event.target.value)
                           }
-                          placeholder="이번 달 컨디션 관리에 맞춰 기본적으로 챙기기 좋은 제품입니다."
+                          placeholder="이번 달 컨디션 관리에 왜 포함됐는지 짧게 설명해 주세요."
                         />
                       </div>
 
-                      <div className={styles.editorTwoCol}>
-                        <div className={styles.editorFieldGroup}>
-                          <p className={styles.editorFieldLabel}>주요 성분</p>
-                          <textarea
-                            className={styles.textarea}
-                            value={product.ingredientSummary ?? ""}
-                            disabled={busy}
-                            rows={3}
-                            onChange={(event) =>
-                              handleFieldChange(
-                                product.id,
-                                "ingredientSummary",
-                                event.target.value
-                              )
-                            }
-                            placeholder="예: EPA 및 DHA 함유 유지, 비타민D"
-                          />
-                        </div>
-                        <div className={styles.editorFieldGroup}>
-                          <p className={styles.editorFieldLabel}>섭취 안내</p>
-                          <textarea
-                            className={styles.textarea}
-                            value={product.intakeSummary ?? ""}
-                            disabled={busy}
-                            rows={3}
-                            onChange={(event) =>
-                              handleFieldChange(product.id, "intakeSummary", event.target.value)
-                            }
-                            placeholder="예: 식후 하루 1회부터 가볍게 시작해 주세요."
-                          />
-                        </div>
+                      <div className={styles.editorFieldGroup}>
+                        <p className={styles.editorFieldLabel}>주요 성분</p>
+                        <textarea
+                          className={styles.textarea}
+                          value={product.ingredientSummary ?? ""}
+                          disabled={busy}
+                          rows={3}
+                          onChange={(event) =>
+                            handleFieldChange(
+                              product.id,
+                              "ingredientSummary",
+                              event.target.value
+                            )
+                          }
+                          placeholder="예: EPA 및 DHA 함유 유지, 비타민E"
+                        />
                       </div>
 
                       <div className={styles.editorFieldGroup}>
-                        <p className={styles.editorFieldLabel}>함께 적을 주의 메모</p>
+                        <p className={styles.editorFieldLabel}>추가 확인 메모</p>
                         <textarea
                           className={styles.textarea}
                           value={product.caution ?? ""}
@@ -351,7 +334,7 @@ export default function B2bReportCustomizationPanel({
                           onChange={(event) =>
                             handleFieldChange(product.id, "caution", event.target.value)
                           }
-                          placeholder="예: 복용 중인 약이 있으면 같이 확인해 주세요."
+                          placeholder="예: 기존 약 복용 여부나 개인차가 있으면 같이 확인해 주세요."
                         />
                       </div>
                     </section>
@@ -378,7 +361,7 @@ export default function B2bReportCustomizationPanel({
 
           {!hasContent ? (
             <p className={styles.editorFieldHint}>
-              아직 입력된 내용이 없어 레포트 마지막 추가 페이지는 생성되지 않습니다.
+              아직 입력된 내용이 없어 마지막 추가 페이지는 생성되지 않습니다.
             </p>
           ) : null}
         </div>

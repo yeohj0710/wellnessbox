@@ -12,6 +12,7 @@ const EXPECTED_EMPLOYEES = [
   "박현철",
   "권태성",
   "박정빈",
+  "형경진",
 ];
 
 function loadEnv() {
@@ -38,6 +39,7 @@ function loadEnv() {
 
 function summarizeAddendum(payload) {
   const addendum = payload?.reportAddendum ?? {};
+  const pharmacist = payload?.pharmacist ?? {};
   const consultationSummary =
     typeof addendum.consultationSummary === "string"
       ? addendum.consultationSummary.trim()
@@ -45,12 +47,15 @@ function summarizeAddendum(payload) {
   const packagedProducts = Array.isArray(addendum.packagedProducts)
     ? addendum.packagedProducts
     : [];
+  const pharmacistNote =
+    typeof pharmacist.note === "string" ? pharmacist.note.trim() : "";
   return {
     consultationSummary,
     packagedProducts: packagedProducts.map((product) => ({
       name: typeof product?.name === "string" ? product.name : "",
       imageUrl: typeof product?.imageUrl === "string" ? product.imageUrl : null,
     })),
+    pharmacistNote,
   };
 }
 
@@ -74,10 +79,14 @@ async function main() {
       select: {
         id: true,
         updatedAt: true,
+        variantIndex: true,
         reportPayload: true,
         employee: {
           select: {
+            id: true,
             name: true,
+            birthDate: true,
+            phoneNormalized: true,
           },
         },
       },
@@ -101,24 +110,17 @@ async function main() {
       const addendum = summarizeAddendum(report.reportPayload);
       return {
         name,
+        employeeId: report.employee.id,
+        birthDate: report.employee.birthDate,
+        phoneNormalized: report.employee.phoneNormalized,
         reportId: report.id,
+        variantIndex: report.variantIndex,
         updatedAt: report.updatedAt,
         hasConsultationSummary: addendum.consultationSummary.length > 0,
         packagedProductCount: addendum.packagedProducts.length,
+        hasPharmacistNote: addendum.pharmacistNote.length > 0,
         packagedProducts: addendum.packagedProducts,
       };
-    });
-
-    const hyungRecord = await db.b2bEmployee.findFirst({
-      where: {
-        name: {
-          contains: "형경진",
-        },
-      },
-      select: {
-        id: true,
-        name: true,
-      },
     });
 
     console.log(
@@ -126,7 +128,6 @@ async function main() {
         {
           periodKey: TARGET_PERIOD_KEY,
           employees: result,
-          hyungKyungJinEmployee: hyungRecord,
         },
         null,
         2

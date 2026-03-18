@@ -5,7 +5,7 @@ import type { ReportSummaryPayload } from "@/lib/b2b/report-summary-payload";
 import { firstOrDash, formatDate } from "./report-summary/helpers";
 import ReportSummaryAddendumPage from "./report-summary/ReportSummaryAddendumPage";
 import {
-  buildReportSummaryAddendumModel,
+  buildReportSummaryAddendumPages,
   buildReportSummaryHealthMetrics,
   hasReportSummaryHealthMetricsContent,
 } from "./report-summary/detail-data-model";
@@ -69,14 +69,11 @@ export default function ReportSummaryCards(props: {
 
   const healthMetrics = buildReportSummaryHealthMetrics(payload);
   const showHealthPage = hasReportSummaryHealthMetricsContent(healthMetrics);
-  const addendumModel = buildReportSummaryAddendumModel(payload);
-  const showAddendumPage =
-    addendumModel.consultationSummary.length > 0 ||
-    addendumModel.packagedProducts.length > 0;
+  const addendumPages = buildReportSummaryAddendumPages(payload);
   const metaEmployeeName = firstOrDash(payload.meta?.employeeName);
   const metaPeriodKey = firstOrDash(payload.meta?.periodKey);
   const metaGeneratedAt = formatDate(payload.meta?.generatedAt);
-  const addendumPageNumber = healthDataPageNumber + (showHealthPage ? 1 : 0);
+  const addendumPageStart = healthDataPageNumber + (showHealthPage ? 1 : 0);
 
   return (
     <div className={styles.reportDocument} data-report-document="1">
@@ -120,13 +117,15 @@ export default function ReportSummaryCards(props: {
         />
       ) : null}
 
-      {showAddendumPage ? (
+      {addendumPages.map((addendum, index) => (
         <ReportSummaryAddendumPage
-          pageNumber={addendumPageNumber}
+          key={`report-addendum-${index + 1}`}
+          pageNumber={addendumPageStart + index}
           metaEmployeeName={metaEmployeeName}
-          addendum={addendumModel}
+          addendum={addendum}
+          isContinuation={index > 0}
         />
-      ) : null}
+      ))}
     </div>
   );
 }

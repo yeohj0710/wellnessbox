@@ -189,7 +189,6 @@ export type B2bReportPayload = {
     recommendations: string | null;
     cautions: string | null;
     summary: string | null;
-    dosingGuide: string | null;
     updatedAt: string | null;
   };
   reportAddendum: {

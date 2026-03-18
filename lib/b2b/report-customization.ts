@@ -38,7 +38,6 @@ function normalizePackagedProduct(
   const imageUrl = toNullableText(value.imageUrl);
   const description = toNullableText(value.description);
   const ingredientSummary = toNullableText(value.ingredientSummary);
-  const intakeSummary = toNullableText(value.intakeSummary);
   const caution = toNullableText(value.caution);
 
   const hasAnyContent = [
@@ -47,7 +46,6 @@ function normalizePackagedProduct(
     imageUrl,
     description,
     ingredientSummary,
-    intakeSummary,
     caution,
   ].some(Boolean);
 
@@ -60,9 +58,16 @@ function normalizePackagedProduct(
     imageUrl,
     description,
     ingredientSummary,
-    intakeSummary,
+    intakeSummary: null,
     caution,
   };
+}
+
+function serializePackagedProducts(
+  products: B2bReportPackagedProduct[] | null | undefined
+) {
+  return (products ?? []).map(({ intakeSummary: _intakeSummary, ...product }) => product) as
+    B2bReportPackagedProduct[];
 }
 
 export function normalizeReportCustomization(
@@ -127,7 +132,7 @@ export function applyReportCustomizationToPayload(
     },
     reportAddendum: {
       consultationSummary: normalized.consultationSummary ?? null,
-      packagedProducts: normalized.packagedProducts ?? [],
+      packagedProducts: serializePackagedProducts(normalized.packagedProducts),
     },
   };
 }

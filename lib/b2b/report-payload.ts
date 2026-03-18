@@ -261,7 +261,6 @@ export async function buildB2bReportPayload(input: {
       recommendations: latestNote?.recommendations ?? null,
       cautions: latestNote?.cautions ?? null,
       summary: toText(pharmacistSummary?.summary) || latestNote?.note || null,
-      dosingGuide: toText(pharmacistSummary?.dosingGuide) || null,
       updatedAt: latestNote?.updatedAt?.toISOString() ?? null,
     },
     reportAddendum: {

@@ -1,17 +1,22 @@
 /* eslint-disable @next/next/no-img-element */
 import styles from "../B2bUx.module.css";
-import type { ReportSummaryAddendumModel } from "./detail-data-model";
+import type { ReportSummaryAddendumPageModel } from "./detail-data-model";
 
 type ReportSummaryAddendumPageProps = {
   pageNumber: number;
   metaEmployeeName: string;
-  addendum: ReportSummaryAddendumModel;
+  addendum: ReportSummaryAddendumPageModel;
+  isContinuation?: boolean;
 };
 
 export default function ReportSummaryAddendumPage(
   props: ReportSummaryAddendumPageProps
 ) {
-  const { pageNumber, metaEmployeeName, addendum } = props;
+  const { pageNumber, metaEmployeeName, addendum, isContinuation = false } = props;
+  const title = isContinuation ? "패키지 제품 정보" : "약사 코멘트와 패키지 구성";
+  const subtitle = isContinuation
+    ? "앞 페이지에 이어 이번 달 패키지 제품 정보를 계속 확인하세요."
+    : "상담 요약과 이번 달 패키지 제품 정보를 마지막 페이지에 정리했습니다.";
 
   return (
     <section
@@ -20,10 +25,8 @@ export default function ReportSummaryAddendumPage(
     >
       <header className={styles.reportPageHeader}>
         <p className={styles.reportPageKicker}>{`${pageNumber}페이지 추가 안내`}</p>
-        <h2 className={styles.reportPageTitle}>약사 코멘트와 패키지 구성</h2>
-        <p className={styles.reportPageSubtitle}>
-          상담 요약과 이번 달 패키지 제품 정보를 마지막 장에 함께 정리했습니다.
-        </p>
+        <h2 className={styles.reportPageTitle}>{title}</h2>
+        <p className={styles.reportPageSubtitle}>{subtitle}</p>
       </header>
 
       <div className={styles.reportSecondStack}>
@@ -39,7 +42,7 @@ export default function ReportSummaryAddendumPage(
             <div className={styles.reportDataHeadRow}>
               <h3 className={styles.reportDataTitle}>이번 패키지 제품 정보</h3>
             </div>
-            <div className={styles.reportPackagedProductList}>
+            <div className={styles.reportPackagedProductGrid}>
               {addendum.packagedProducts.map((product) => (
                 <section key={product.id} className={styles.reportPackagedProductCard}>
                   <div className={styles.reportPackagedProductImageWrap}>
@@ -71,24 +74,21 @@ export default function ReportSummaryAddendumPage(
                       </div>
                     </div>
 
-                    {product.description ? (
-                      <p className={styles.reportDataBody}>{product.description}</p>
-                    ) : null}
-                    {product.ingredientSummary ? (
-                      <p className={styles.reportDataBody}>
-                        <strong>주요 성분</strong> {product.ingredientSummary}
-                      </p>
-                    ) : null}
-                    {product.intakeSummary ? (
-                      <p className={styles.reportDataBody}>
-                        <strong>섭취 안내</strong> {product.intakeSummary}
-                      </p>
-                    ) : null}
-                    {product.caution ? (
-                      <p className={styles.reportDataBody}>
-                        <strong>함께 확인할 점</strong> {product.caution}
-                      </p>
-                    ) : null}
+                    <div className={styles.reportPackagedProductFactList}>
+                      {product.description ? (
+                        <p className={styles.reportPackagedProductFact}>{product.description}</p>
+                      ) : null}
+                      {product.ingredientSummary ? (
+                        <p className={styles.reportPackagedProductFact}>
+                          <strong>주요 성분</strong> {product.ingredientSummary}
+                        </p>
+                      ) : null}
+                      {product.caution ? (
+                        <p className={styles.reportPackagedProductFact}>
+                          <strong>추가 확인</strong> {product.caution}
+                        </p>
+                      ) : null}
+                    </div>
                   </div>
                 </section>
               ))}

@@ -159,12 +159,10 @@ export function extractRecommendations(payload: unknown): string[] {
 
 export function extractPharmacistSummary(payload: unknown): {
   summary: string;
-  dosingGuide: string;
 } {
   const analysis = asRecord(payload);
   const pharmacist = asRecord(analysis?.pharmacist);
   return {
     summary: toText(pharmacist?.summary),
-    dosingGuide: toText(pharmacist?.dosingGuide),
   };
 }

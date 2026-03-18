@@ -32,7 +32,6 @@ export type ReportSummaryPackagedProductCard = {
   imageUrl: string;
   description: string;
   ingredientSummary: string;
-  intakeSummary: string;
   caution: string;
 };
 
@@ -40,6 +39,15 @@ export type ReportSummaryAddendumModel = {
   consultationSummary: string;
   packagedProducts: ReportSummaryPackagedProductCard[];
 };
+
+export type ReportSummaryAddendumPageModel = {
+  consultationSummary: string;
+  packagedProducts: ReportSummaryPackagedProductCard[];
+};
+
+const ADDENDUM_SUMMARY_ONLY_THRESHOLD = 280;
+const ADDENDUM_SUMMARY_SINGLE_PRODUCT_THRESHOLD = 160;
+const ADDENDUM_PRODUCTS_PER_PAGE = 2;
 
 const EMPTY_PHARMACIST_COMMENT_MESSAGES = new Set([
   "약사 코멘트가 아직 입력되지 않았습니다.",
@@ -132,9 +140,9 @@ export function buildReportSummaryMedicationReviewModel(
 export function buildReportSummaryAddendumModel(
   payload: ReportSummaryPayload
 ): ReportSummaryAddendumModel {
-  const consultationSummary = softenAdviceTone(
-    toTrimmedText(payload.reportAddendum?.consultationSummary)
-  );
+  const consultationSummary =
+    softenAdviceTone(toTrimmedText(payload.reportAddendum?.consultationSummary)) ||
+    resolveReportSummaryFinalPharmacistComment(payload);
 
   const packagedProducts = ensureArray(payload.reportAddendum?.packagedProducts)
     .map((row, index) => {
@@ -147,7 +155,6 @@ export function buildReportSummaryAddendumModel(
       const imageUrl = toTrimmedText(row?.imageUrl);
       const description = softenAdviceTone(toTrimmedText(row?.description));
       const ingredientSummary = softenAdviceTone(toTrimmedText(row?.ingredientSummary));
-      const intakeSummary = softenAdviceTone(toTrimmedText(row?.intakeSummary));
       const caution = softenAdviceTone(toTrimmedText(row?.caution));
 
       const hasVisibleContent = [
@@ -156,7 +163,6 @@ export function buildReportSummaryAddendumModel(
         imageUrl,
         description,
         ingredientSummary,
-        intakeSummary,
         caution,
       ].some(Boolean);
 
@@ -169,7 +175,6 @@ export function buildReportSummaryAddendumModel(
         imageUrl,
         description,
         ingredientSummary,
-        intakeSummary,
         caution,
       };
     })
@@ -179,4 +184,69 @@ export function buildReportSummaryAddendumModel(
     consultationSummary,
     packagedProducts,
   };
+}
+
+function chunkPackagedProducts(
+  packagedProducts: ReportSummaryPackagedProductCard[],
+  size: number
+) {
+  const chunks: ReportSummaryPackagedProductCard[][] = [];
+  for (let index = 0; index < packagedProducts.length; index += size) {
+    chunks.push(packagedProducts.slice(index, index + size));
+  }
+  return chunks;
+}
+
+export function buildReportSummaryAddendumPages(
+  payload: ReportSummaryPayload
+): ReportSummaryAddendumPageModel[] {
+  const addendum = buildReportSummaryAddendumModel(payload);
+  if (
+    addendum.consultationSummary.length === 0 &&
+    addendum.packagedProducts.length === 0
+  ) {
+    return [];
+  }
+
+  const pages: ReportSummaryAddendumPageModel[] = [];
+  let remainingProducts = [...addendum.packagedProducts];
+
+  if (addendum.consultationSummary.length > 0) {
+    const firstPageProductCapacity =
+      addendum.consultationSummary.length >= ADDENDUM_SUMMARY_ONLY_THRESHOLD
+        ? 0
+        : addendum.consultationSummary.length >= ADDENDUM_SUMMARY_SINGLE_PRODUCT_THRESHOLD
+          ? 1
+          : ADDENDUM_PRODUCTS_PER_PAGE;
+
+    pages.push({
+      consultationSummary: addendum.consultationSummary,
+      packagedProducts: remainingProducts.slice(0, firstPageProductCapacity),
+    });
+    remainingProducts = remainingProducts.slice(firstPageProductCapacity);
+  }
+
+  const productChunks = chunkPackagedProducts(
+    remainingProducts,
+    ADDENDUM_PRODUCTS_PER_PAGE
+  );
+
+  if (pages.length === 0 && productChunks.length === 0) {
+    pages.push({
+      consultationSummary: addendum.consultationSummary,
+      packagedProducts: [],
+    });
+  }
+
+  for (const chunk of productChunks) {
+    pages.push({
+      consultationSummary: "",
+      packagedProducts: chunk,
+    });
+  }
+
+  return pages.filter(
+    (page) =>
+      page.consultationSummary.length > 0 || page.packagedProducts.length > 0
+  );
 }

@@ -19,7 +19,6 @@ const packagedProductSchema = z.object({
   imageUrl: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
   ingredientSummary: z.string().nullable().optional(),
-  intakeSummary: z.string().nullable().optional(),
   caution: z.string().nullable().optional(),
 });
 

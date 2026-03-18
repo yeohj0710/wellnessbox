@@ -75,15 +75,11 @@ function buildPharmacist(input: B2bAnalyzerInput) {
   const summary = summarySource.length > 140 ? `${summarySource.slice(0, 139)}…` : summarySource;
   const recommendations = splitTextList(note?.recommendations, 4);
   const cautions = splitTextList(note?.cautions, 4);
-  const dosingGuide =
-    splitTextList(note?.note, 2).find((line) => /복용|식전|식후|취침|아침|저녁/i.test(line)) ||
-    "복용 시간과 방법은 제품 라벨 및 약사 안내를 기준으로 지켜 주세요.";
 
   return {
     summary,
     recommendations,
     cautions,
-    dosingGuide,
     updatedAt: formatDateTime(note?.updatedAt) ?? null,
   };
 }
