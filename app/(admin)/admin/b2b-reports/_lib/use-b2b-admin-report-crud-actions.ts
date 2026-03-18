@@ -19,6 +19,7 @@ type UseB2bAdminReportCrudActionsParams = {
   selectedEmployeeId: string | null;
   selectedPeriodKey: string;
   latestReport: LatestReport | null;
+  setLatestReport: Dispatch<SetStateAction<LatestReport | null>>;
   reportDisplayPeriodKey: string;
   setNotice: Dispatch<SetStateAction<string>>;
   setError: Dispatch<SetStateAction<string>>;
@@ -45,6 +46,7 @@ export function useB2bAdminReportCrudActions({
   selectedEmployeeId,
   selectedPeriodKey,
   latestReport,
+  setLatestReport,
   reportDisplayPeriodKey,
   setNotice,
   setError,
@@ -86,6 +88,7 @@ export function useB2bAdminReportCrudActions({
     analysisText,
     reportConsultationSummary,
     reportPackagedProducts,
+    setLatestReport,
     setSurveyDirty,
     setAnalysisDirty,
     setReportCustomizationDirty,

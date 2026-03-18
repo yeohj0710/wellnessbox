@@ -21,6 +21,7 @@ type UseB2bAdminReportActionsParams = {
   selectedEmployee: EmployeeListItem | null;
   selectedPeriodKey: string;
   latestReport: LatestReport | null;
+  setLatestReport: Dispatch<SetStateAction<LatestReport | null>>;
   reportDisplayPeriodKey: string;
   setNotice: Dispatch<SetStateAction<string>>;
   setError: Dispatch<SetStateAction<string>>;
@@ -75,6 +76,7 @@ export function useB2bAdminReportActions(params: UseB2bAdminReportActionsParams)
     selectedEmployeeId: params.selectedEmployeeId,
     selectedPeriodKey: params.selectedPeriodKey,
     latestReport: params.latestReport,
+    setLatestReport: params.setLatestReport,
     reportDisplayPeriodKey: params.reportDisplayPeriodKey,
     setNotice: params.setNotice,
     setError: params.setError,

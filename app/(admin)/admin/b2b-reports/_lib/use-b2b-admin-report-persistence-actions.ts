@@ -8,6 +8,7 @@ import {
   saveSurvey,
 } from "./api";
 import type { B2bReportPackagedProduct } from "@/lib/b2b/report-customization-types";
+import type { LatestReport } from "./client-types";
 import type { B2bAdminReportRunBusyAction } from "./use-b2b-admin-report-busy-action";
 
 type UseB2bAdminReportPersistenceActionsParams = {
@@ -20,6 +21,7 @@ type UseB2bAdminReportPersistenceActionsParams = {
   analysisText: string;
   reportConsultationSummary: string;
   reportPackagedProducts: B2bReportPackagedProduct[];
+  setLatestReport: Dispatch<SetStateAction<LatestReport | null>>;
   setSurveyDirty: Dispatch<SetStateAction<boolean>>;
   setAnalysisDirty: Dispatch<SetStateAction<boolean>>;
   setReportCustomizationDirty: Dispatch<SetStateAction<boolean>>;
@@ -37,6 +39,7 @@ export function useB2bAdminReportPersistenceActions({
   analysisText,
   reportConsultationSummary,
   reportPackagedProducts,
+  setLatestReport,
   setSurveyDirty,
   setAnalysisDirty,
   setReportCustomizationDirty,
@@ -106,17 +109,16 @@ export function useB2bAdminReportPersistenceActions({
       fallbackError: "레포트 마지막 정보를 저장하지 못했습니다.",
       clearNotice: true,
       run: async () => {
-        await saveReportCustomization({
+        const response = await saveReportCustomization({
           reportId: latestReportId,
           consultationSummary: reportConsultationSummary,
           packagedProducts: reportPackagedProducts,
         });
+        setLatestReport(response.report);
         setReportCustomizationDirty(false);
         setNotice("레포트 마지막 정보를 저장했습니다.");
 
-        queueMicrotask(() => {
-          void reloadCurrentEmployee();
-        });
+        await reloadCurrentEmployee();
       },
     });
   }, [
@@ -125,6 +127,7 @@ export function useB2bAdminReportPersistenceActions({
     reportConsultationSummary,
     reportPackagedProducts,
     runBusyAction,
+    setLatestReport,
     setNotice,
     setReportCustomizationDirty,
   ]);

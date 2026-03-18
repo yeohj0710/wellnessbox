@@ -2,6 +2,7 @@ import type {
   AnalysisMutationResponse,
   AnalysisGetResponse,
   EmployeeListResponse,
+  LatestReport,
   ReportGetResponse,
   ReportPostResponse,
   SurveyGetResponse,
@@ -127,13 +128,16 @@ export async function saveReportCustomization(input: {
   consultationSummary: string;
   packagedProducts: B2bReportPackagedProduct[];
 }) {
-  return requestJson(`/api/admin/b2b/reports/${input.reportId}/meta`, {
-    method: "PATCH",
-    body: JSON.stringify({
-      consultationSummary: input.consultationSummary,
-      packagedProducts: input.packagedProducts,
-    }),
-  });
+  return requestJson<{ ok: boolean; report: LatestReport }>(
+    `/api/admin/b2b/reports/${input.reportId}/meta`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        consultationSummary: input.consultationSummary,
+        packagedProducts: input.packagedProducts,
+      }),
+    }
+  );
 }
 
 export async function runLayoutValidation(reportId: string) {
