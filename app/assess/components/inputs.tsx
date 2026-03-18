@@ -68,7 +68,7 @@ export function NumberInput({
           }}
           aria-invalid={Boolean(error)}
           className={[
-            "w-full rounded-xl border p-3 focus:outline-none focus:ring-2",
+            "w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 text-base text-gray-900 focus:outline-none focus:ring-2",
             error
               ? "border-red-300 focus:ring-red-400"
               : "border-gray-200 focus:ring-sky-500",
@@ -79,7 +79,7 @@ export function NumberInput({
           <button
             onClick={submit}
             disabled={val === ""}
-            className="w-full rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-2 font-bold text-white shadow-[0_12px_28px_rgba(56,121,255,0.28)] transition duration-200 ease-out hover:-translate-y-[1px] hover:from-sky-600 hover:to-indigo-600 hover:shadow-[0_16px_34px_rgba(56,121,255,0.34)] active:translate-y-0 active:scale-[0.99] disabled:bg-none disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
+            className="w-full min-h-12 rounded-2xl bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-3 font-bold text-white shadow-[0_12px_28px_rgba(56,121,255,0.28)] transition duration-200 ease-out hover:-translate-y-[1px] hover:from-sky-600 hover:to-indigo-600 hover:shadow-[0_16px_34px_rgba(56,121,255,0.34)] active:translate-y-0 active:scale-[0.99] disabled:bg-none disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
           >
             다음
           </button>
@@ -166,7 +166,7 @@ export function MultiSelect({
             onClick={() =>
               onSubmit(selected.length === 0 ? undefined : selected)
             }
-            className="w-full rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-2 font-bold text-white shadow-[0_12px_28px_rgba(56,121,255,0.28)] transition duration-200 ease-out hover:-translate-y-[1px] hover:from-sky-600 hover:to-indigo-600 hover:shadow-[0_16px_34px_rgba(56,121,255,0.34)] active:translate-y-0 active:scale-[0.99] disabled:bg-none disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
+            className="w-full min-h-12 rounded-2xl bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-3 font-bold text-white shadow-[0_12px_28px_rgba(56,121,255,0.28)] transition duration-200 ease-out hover:-translate-y-[1px] hover:from-sky-600 hover:to-indigo-600 hover:shadow-[0_16px_34px_rgba(56,121,255,0.34)] active:translate-y-0 active:scale-[0.99] disabled:bg-none disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
           >
             다음
           </button>

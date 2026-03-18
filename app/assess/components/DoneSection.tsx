@@ -155,7 +155,7 @@ export default function DoneSection({
         </ul>
 
         <div className="relative z-10 mt-7 sm:mt-8">
-          <PersonalizedTrustPanel summary={trustSummary} />
+          <PersonalizedTrustPanel summary={trustSummary} compact />
         </div>
 
         <p className="relative z-10 mt-5 text-center text-[13px] text-gray-600 sm:mt-6 sm:text-sm">

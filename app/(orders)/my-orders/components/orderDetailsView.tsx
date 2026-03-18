@@ -75,6 +75,7 @@ export function OrderDetailsView({
           onClose={onCloseVerify}
           initialPhone={linkedPhone}
           initialLinkedAt={linkedAt}
+          fallbackToVerifyOnlyOnUnauthorized
           allowUnlink={isPhoneLinked}
           unlinkLoading={unlinkLoading}
           unlinkError={unlinkError}

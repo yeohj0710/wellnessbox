@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { resolvePhoneOtpError } from "@/lib/client/phone-otp-error";
-import { linkPhoneRequest, sendPhoneOtpRequest } from "@/lib/client/phone-api";
+import {
+  linkPhoneRequest,
+  sendPhoneOtpRequest,
+  verifyPhoneOtpRequest,
+} from "@/lib/client/phone-api";
 import { emitAuthSyncEvent } from "@/lib/client/auth-sync";
 import { formatPhoneDisplay } from "@/lib/client/phone-format";
 
@@ -11,6 +15,8 @@ type UsePhoneLinkSectionStateParams = {
   initialLinkedAt?: string;
   onLinked?: (phone: string, linkedAt?: string) => void;
   onBusyChange?: (busy: boolean) => void;
+  mode?: "link" | "verify-only";
+  fallbackToVerifyOnlyOnUnauthorized?: boolean;
 };
 
 function normalizePhoneDigits(value?: string) {
@@ -22,6 +28,8 @@ export function usePhoneLinkSectionState({
   initialLinkedAt,
   onLinked,
   onBusyChange,
+  mode = "link",
+  fallbackToVerifyOnlyOnUnauthorized = false,
 }: UsePhoneLinkSectionStateParams) {
   const [phoneDigits, setPhoneDigits] = useState(() =>
     normalizePhoneDigits(initialPhone)
@@ -110,7 +118,51 @@ export function usePhoneLinkSectionState({
     setStatusMessage(null);
 
     try {
+      if (mode === "verify-only") {
+        const result = await verifyPhoneOtpRequest(normalizedPhone, code);
+        if (!result.ok) {
+          setVerifyError(
+            resolvePhoneOtpError({
+              status: result.status,
+              error: result.data?.error,
+              retryAfterSec: result.data?.retryAfterSec,
+              fallback: "전화번호 인증에 실패했어요.",
+            })
+          );
+          return;
+        }
+
+        onLinked?.(normalizedPhone);
+        setCode("");
+        setStatusMessage("전화번호 인증이 완료됐어요.");
+        return;
+      }
+
       const result = await linkPhoneRequest(normalizedPhone, code);
+      if (
+        !result.ok &&
+        result.status === 401 &&
+        fallbackToVerifyOnlyOnUnauthorized
+      ) {
+        const fallbackResult = await verifyPhoneOtpRequest(normalizedPhone, code);
+        if (!fallbackResult.ok) {
+          setVerifyError(
+            resolvePhoneOtpError({
+              status: fallbackResult.status,
+              error: fallbackResult.data?.error,
+              retryAfterSec: fallbackResult.data?.retryAfterSec,
+              fallback: "전화번호 인증에 실패했어요.",
+            })
+          );
+          return;
+        }
+
+        onLinked?.(normalizedPhone);
+        setCode("");
+        setStatusMessage("전화번호 인증이 완료됐어요.");
+        return;
+      }
+
       if (!result.ok || !result.data.phone) {
         setVerifyError(
           resolvePhoneOtpError({
@@ -132,7 +184,15 @@ export function usePhoneLinkSectionState({
     } finally {
       setVerifyLoading(false);
     }
-  }, [busy, code, isPhoneValid, normalizedPhone, onLinked]);
+  }, [
+    busy,
+    code,
+    fallbackToVerifyOnlyOnUnauthorized,
+    isPhoneValid,
+    mode,
+    normalizedPhone,
+    onLinked,
+  ]);
 
   const handleEditPhone = useCallback(() => {
     if (busy) return;
@@ -144,7 +204,10 @@ export function usePhoneLinkSectionState({
     setVerifyError(null);
   }, [busy]);
 
-  const sendDisabled = useMemo(() => busy || !isPhoneValid, [busy, isPhoneValid]);
+  const sendDisabled = useMemo(
+    () => busy || !isPhoneValid,
+    [busy, isPhoneValid]
+  );
   const verifyDisabled = useMemo(
     () => busy || !isPhoneValid || code.length === 0 || !otpSent,
     [busy, code.length, isPhoneValid, otpSent]

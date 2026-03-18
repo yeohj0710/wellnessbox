@@ -35,7 +35,7 @@ export function ManagerWorkspaceShell(props: ManagerWorkspaceShellProps) {
               <h1 className="text-2xl font-black tracking-[-0.03em] text-slate-900 sm:text-[2rem]">
                 {props.title}
               </h1>
-              <p className="max-w-3xl text-sm leading-6 text-slate-600 sm:text-[15px]">
+              <p className="w-full text-sm leading-6 text-slate-600 sm:text-[15px]">
                 {props.description}
               </p>
             </div>
@@ -208,9 +208,9 @@ export function ManagerEmptyState(props: ManagerEmptyStateProps) {
 export function AdminToolPageShell(props: AdminToolPageShellProps) {
   return (
     <div className="relative left-1/2 right-1/2 min-h-screen w-screen -translate-x-1/2 bg-[radial-gradient(circle_at_12%_0%,rgba(125,211,252,0.28),transparent_34%),radial-gradient(circle_at_88%_0%,rgba(191,219,254,0.38),transparent_30%),linear-gradient(180deg,#fbfdff_0%,#f3f7fb_100%)]">
-      <div className="mx-auto flex w-full max-w-[1240px] flex-col gap-7 px-5 pb-20 pt-10 sm:px-8 lg:px-10">
+      <div className="mx-auto flex w-full max-w-[1120px] flex-col gap-7 px-5 pb-20 pt-10 sm:px-8 lg:px-10">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="space-y-2">
+          <div className="min-w-0 flex-1 space-y-2">
             <p className="text-[11px] font-bold uppercase tracking-[0.26em] text-sky-700/70">
               {props.eyebrow}
             </p>
@@ -218,7 +218,7 @@ export function AdminToolPageShell(props: AdminToolPageShellProps) {
               <h1 className="text-3xl font-black tracking-[-0.04em] text-slate-950 sm:text-[2.4rem]">
                 {props.title}
               </h1>
-              <p className="max-w-3xl text-sm leading-6 text-slate-600 sm:text-[15px]">
+              <p className="w-full text-sm leading-6 text-slate-600 sm:text-[15px]">
                 {props.description}
               </p>
             </div>

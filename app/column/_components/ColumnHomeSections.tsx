@@ -95,8 +95,8 @@ function ColumnResultCard({
       tabIndex={0}
       onClick={(event) => onCardClick(event, column.slug)}
       onKeyDown={(event) => onCardKeyDown(event, column.slug)}
-      className={`group cursor-pointer overflow-hidden rounded-[1.7rem] border border-slate-200/90 bg-white/95 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-[0_20px_45px_-30px_rgba(15,23,42,0.72)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 ${
-        isList ? "p-3 sm:p-4" : "p-4 sm:p-6"
+      className={`group cursor-pointer overflow-hidden rounded-[1.5rem] border border-slate-200/90 bg-white/96 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-[0_18px_38px_-30px_rgba(15,23,42,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 ${
+        isList ? "p-3 sm:p-4" : "p-4 sm:p-5"
       }`}
     >
       <div className={isList ? "grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]" : ""}>
@@ -126,7 +126,7 @@ function ColumnResultCard({
 
           <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <h2
-              className="min-w-0 text-lg font-bold leading-snug text-slate-900 sm:text-2xl"
+              className="min-w-0 text-[1.02rem] font-bold leading-snug text-slate-900 sm:text-[1.25rem]"
               style={buildClampStyle(isList ? 2 : 3)}
             >
               <Link
@@ -146,7 +146,7 @@ function ColumnResultCard({
           </div>
 
           <p
-            className="mt-4 text-sm leading-6 text-slate-700 sm:text-[0.99rem] sm:leading-7"
+            className="mt-3 text-sm leading-6 text-slate-700 sm:text-[0.96rem] sm:leading-7"
             style={buildClampStyle(isList ? 3 : 4)}
           >
             {column.summary}
@@ -190,41 +190,41 @@ export function ColumnHomeHeroSection({
   text: ColumnHomeText;
 }) {
   return (
-    <header className="overflow-hidden rounded-[1.7rem] border border-emerald-200/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.96)_0%,rgba(241,253,248,0.97)_48%,rgba(236,253,245,0.9)_100%)] p-5 shadow-[0_24px_55px_-36px_rgba(6,95,70,0.56)] sm:rounded-[2rem] sm:p-8">
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)] lg:items-end">
+    <header className="overflow-hidden rounded-[1.6rem] border border-emerald-100/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.97)_0%,rgba(248,253,250,0.98)_52%,rgba(243,251,248,0.94)_100%)] p-5 shadow-[0_18px_44px_-36px_rgba(15,23,42,0.34)] sm:rounded-[1.8rem] sm:p-7">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.74fr)] lg:items-start">
         <div>
-          <p className="text-[11px] font-semibold tracking-[0.32em] text-emerald-700">
+          <p className="text-[11px] font-semibold tracking-[0.28em] text-emerald-700">
             WELLNESSBOX COLUMN
           </p>
-          <h1 className="mt-3 max-w-3xl text-[2rem] font-black leading-[1.05] text-slate-900 sm:text-[2.4rem]">
+          <h1 className="mt-3 max-w-[16ch] text-[1.9rem] font-black leading-[1.08] text-slate-900 sm:max-w-[18ch] sm:text-[2.15rem]">
             {text.heroTitle}
           </h1>
-          <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-700 sm:text-[1rem] sm:leading-7">
+          <p className="mt-4 max-w-[42rem] text-sm leading-6 text-slate-700 sm:text-[0.98rem] sm:leading-7">
             {text.heroBody}
           </p>
 
-          <div className="mt-6 grid grid-cols-3 gap-2 sm:gap-3">
-            <div className="rounded-[1.35rem] border border-white/70 bg-white/75 p-3 backdrop-blur sm:rounded-2xl sm:p-4">
-              <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">
+          <div className="mt-6 grid grid-cols-3 gap-2.5 sm:max-w-[34rem] sm:gap-3">
+            <div className="rounded-[1.2rem] border border-white/80 bg-white/82 p-3 backdrop-blur sm:rounded-[1.35rem] sm:p-4">
+              <p className="text-[11px] font-semibold tracking-[0.14em] text-slate-500">
                 {text.totalPosts}
               </p>
-              <p className="mt-2 text-xl font-black text-slate-900 sm:text-2xl">
+              <p className="mt-1.5 text-xl font-black text-slate-900 sm:text-[1.65rem]">
                 {columnsCount}
               </p>
             </div>
-            <div className="rounded-[1.35rem] border border-white/70 bg-white/75 p-3 backdrop-blur sm:rounded-2xl sm:p-4">
-              <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">
+            <div className="rounded-[1.2rem] border border-white/80 bg-white/82 p-3 backdrop-blur sm:rounded-[1.35rem] sm:p-4">
+              <p className="text-[11px] font-semibold tracking-[0.14em] text-slate-500">
                 {text.totalTags}
               </p>
-              <p className="mt-2 text-xl font-black text-slate-900 sm:text-2xl">
+              <p className="mt-1.5 text-xl font-black text-slate-900 sm:text-[1.65rem]">
                 {tagsCount}
               </p>
             </div>
-            <div className="rounded-[1.35rem] border border-white/70 bg-white/75 p-3 backdrop-blur sm:rounded-2xl sm:p-4">
-              <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">
+            <div className="rounded-[1.2rem] border border-white/80 bg-white/82 p-3 backdrop-blur sm:rounded-[1.35rem] sm:p-4">
+              <p className="text-[11px] font-semibold tracking-[0.14em] text-slate-500">
                 {text.latestPublish}
               </p>
-              <p className="mt-2 text-xs font-bold leading-5 text-slate-900 sm:text-sm">
+              <p className="mt-1.5 text-xs font-bold leading-5 text-slate-900 sm:text-sm">
                 {latestPublishedAt ?? text.notReady}
               </p>
             </div>
@@ -234,9 +234,9 @@ export function ColumnHomeHeroSection({
         {featuredColumn ? (
           <Link
             href={`/column/${featuredColumn.slug}`}
-            className="block rounded-[1.45rem] border border-slate-200/80 bg-white/80 p-3 shadow-[0_20px_45px_-36px_rgba(15,23,42,0.75)] transition hover:-translate-y-0.5 hover:border-emerald-300 sm:rounded-[1.75rem]"
+            className="block rounded-[1.35rem] border border-slate-200/85 bg-white/88 p-3 shadow-[0_16px_36px_-32px_rgba(15,23,42,0.34)] transition hover:-translate-y-0.5 hover:border-emerald-300 sm:rounded-[1.55rem]"
           >
-            <div className="overflow-hidden rounded-[1.3rem] border border-slate-200">
+            <div className="overflow-hidden rounded-[1.1rem] border border-slate-200">
               <ColumnThumbnail
                 slug={featuredColumn.slug}
                 title={featuredColumn.title}
@@ -246,19 +246,22 @@ export function ColumnHomeHeroSection({
                 variant="feature"
               />
             </div>
-            <div className="px-1 pb-1 pt-4">
-              <p className="text-xs font-semibold tracking-[0.18em] text-emerald-700">
+            <div className="px-1 pb-1 pt-3">
+              <p className="text-[11px] font-semibold tracking-[0.14em] text-emerald-700">
                 {text.latestColumn}
               </p>
+              <p className="mt-1 text-[12px] text-slate-500">
+                {formatDate(featuredColumn.publishedAt)}
+              </p>
               <p
-                className="mt-2 text-lg font-black leading-snug text-slate-900 sm:text-xl"
+                className="mt-2 text-[1.18rem] font-black leading-snug text-slate-900"
                 style={buildClampStyle(2)}
               >
                 {featuredColumn.title}
               </p>
               <p
-                className="mt-3 text-sm leading-6 text-slate-700"
-                style={buildClampStyle(3)}
+                className="mt-2.5 text-sm leading-6 text-slate-700"
+                style={buildClampStyle(2)}
               >
                 {featuredColumn.summary}
               </p>
@@ -305,7 +308,7 @@ export function ColumnHomeBrowseSection({
   text: ColumnHomeText;
 }) {
   return (
-    <section className="mt-6 rounded-[1.7rem] border border-slate-200 bg-white/95 p-4 shadow-[0_12px_40px_-34px_rgba(15,23,42,0.6)] sm:rounded-[2rem] sm:p-6">
+    <section className="mt-6 rounded-[1.55rem] border border-slate-200 bg-white/95 p-4 shadow-[0_12px_36px_-34px_rgba(15,23,42,0.28)] sm:rounded-[1.75rem] sm:p-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm font-semibold text-slate-900">{text.browseSettings}</p>
@@ -336,7 +339,7 @@ export function ColumnHomeBrowseSection({
         </div>
       </div>
 
-      <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1.2fr)_repeat(3,minmax(0,0.45fr))]">
+      <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1.15fr)_repeat(3,minmax(0,0.48fr))]">
         <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-300 bg-slate-50 px-4 text-sm text-slate-700">
           <span className="shrink-0 font-semibold text-slate-900">{text.search}</span>
           <input
@@ -393,7 +396,7 @@ export function ColumnHomeBrowseSection({
 
       {tags.length > 0 ? (
         <div
-          className="mt-5 rounded-[1.4rem] border border-slate-200 bg-slate-50/80 p-4"
+          className="mt-5 rounded-[1.3rem] border border-slate-200 bg-slate-50/80 p-4"
           id="column-tags"
         >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -496,10 +499,10 @@ export function ColumnHomeResultsSection({
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-semibold tracking-[0.16em] text-emerald-700">
+            <p className="text-sm font-semibold tracking-[0.12em] text-emerald-700">
               {text.resultsEyebrow}
             </p>
-            <h2 className="mt-2 text-2xl font-black text-slate-900">
+            <h2 className="mt-2 text-[1.6rem] font-black text-slate-900">
               {text.resultsTitle}
             </h2>
             <p className="mt-2 text-sm text-slate-600">{resultSummary}</p>

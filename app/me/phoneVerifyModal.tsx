@@ -11,6 +11,8 @@ type PhoneVerifyModalProps = {
   initialPhone?: string;
   initialLinkedAt?: string;
   onLinked: (phone: string, linkedAtValue?: string) => void;
+  verificationMode?: "link" | "verify-only";
+  fallbackToVerifyOnlyOnUnauthorized?: boolean;
 
   allowUnlink?: boolean;
   unlinkLoading?: boolean;
@@ -24,6 +26,8 @@ export default function PhoneVerifyModal({
   initialPhone,
   initialLinkedAt,
   onLinked,
+  verificationMode = "link",
+  fallbackToVerifyOnlyOnUnauthorized = false,
   allowUnlink = false,
   unlinkLoading = false,
   unlinkError = null,
@@ -125,6 +129,10 @@ export default function PhoneVerifyModal({
           <PhoneLinkSection
             initialPhone={initialPhone ?? ""}
             initialLinkedAt={initialLinkedAt}
+            mode={verificationMode}
+            fallbackToVerifyOnlyOnUnauthorized={
+              fallbackToVerifyOnlyOnUnauthorized
+            }
             onBusyChange={setLinkBusy}
             onLinked={(phoneValue, linkedAtValue) => {
               onLinked(phoneValue, linkedAtValue);

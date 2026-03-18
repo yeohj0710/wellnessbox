@@ -63,9 +63,10 @@ export default function HomeAdaptiveEntryStack({
     }
   };
 
-  const segmentSection = (
-    <div key="segment" className="mx-3 mb-3">
+  const sections = {
+    segment: (
       <PersonalizedValuePropositionCard
+        key="segment"
         model={valueProposition}
         onPrimaryAction={() => runValueAction(valueProposition.primaryAction.target)}
         onSecondaryAction={
@@ -74,35 +75,30 @@ export default function HomeAdaptiveEntryStack({
             : undefined
         }
       />
-    </div>
-  );
-
-  const sections = {
-    segment: segmentSection,
+    ),
     focus: (
-      <div key="focus" className="mx-3 mb-3">
-        <LandingPersonalizationCard
-          focus={focus}
-          onApplyPrimary={
-            focus.matchedCategoryIds.length > 0
-              ? () => onApplyRecommendedCategories(focus.matchedCategoryIds)
-              : () => onApplyRecommendedTrial([])
-          }
-          onApplySecondary={() =>
-            onApplyRecommendedTrial(focus.matchedCategoryIds)
-          }
-          primaryLabel={
-            focus.matchedCategoryIds.length > 0
-              ? "지금 맞는 축부터 보기"
-              : "입문용 구성부터 보기"
-          }
-          secondaryLabel={
-            focus.preferredPackage === "7"
-              ? "7일치부터 보기"
-              : "가볍게 비교하기"
-          }
-        />
-      </div>
+      <LandingPersonalizationCard
+        key="focus"
+        focus={focus}
+        onApplyPrimary={
+          focus.matchedCategoryIds.length > 0
+            ? () => onApplyRecommendedCategories(focus.matchedCategoryIds)
+            : () => onApplyRecommendedTrial([])
+        }
+        onApplySecondary={() =>
+          onApplyRecommendedTrial(focus.matchedCategoryIds)
+        }
+        primaryLabel={
+          focus.matchedCategoryIds.length > 0
+            ? "지금 맞는 추천만 보기"
+            : "입문용 구성부터 보기"
+        }
+        secondaryLabel={
+          focus.preferredPackage === "7"
+            ? "7일치부터 보기"
+            : "가볍게 비교하기"
+        }
+      />
     ),
     comeback: (
       <HomeProductSectionComebackJourneyEntry
@@ -135,5 +131,5 @@ export default function HomeAdaptiveEntryStack({
       ? summary.journeySegment.homeOrder
       : ["segment", "focus", "personalized", "comeback"];
 
-  return <>{order.map((key) => sections[key])}</>;
+  return <div className="space-y-3">{order.map((key) => sections[key])}</div>;
 }

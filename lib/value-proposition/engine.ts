@@ -78,7 +78,7 @@ function resolveSurfacePrimaryLabel(
   surface: ValuePropositionSurface
 ) {
   if (target === "chat") {
-    return surface === "chat" ? "이 기준으로 더 물어보기" : "약사와 같이 맞춰보기";
+    return surface === "chat" ? "이 기준으로 더 물어보기" : "AI 상담으로 이어보기";
   }
   if (target === "trial") return "7일치로 가볍게 보기";
   if (target === "explore") return "지금 맞는 축부터 보기";
@@ -134,7 +134,7 @@ export function resolvePersonalizedValueProposition(input: {
           "복용약, 주의 신호, 건강 데이터 맥락이 있으면 무엇을 사는지보다 무엇을 먼저 확인하는지가 신뢰를 만듭니다.",
         helper:
           surface === "check-ai"
-            ? "빠른검사 결과는 방향 참고용으로 보고, 병용 가능성과 주의 포인트는 약사와 같이 좁힐수록 더 안전합니다."
+            ? "빠른검사 결과는 방향 참고용이에요. 함께 나온 주의 포인트는 AI 상담으로 한 번 더 정리해두면 더 안심돼요."
             : "과한 확신보다 조심해서 설명하고, 꼭 확인할 점을 먼저 짚어주는 흐름이 지금 더 잘 맞습니다.",
         reasonLines: pickContextualReasonLines([
           signals.healthRisk === "high" || signals.healthRisk === "medium"

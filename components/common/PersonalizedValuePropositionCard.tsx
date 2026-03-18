@@ -93,7 +93,7 @@ export default function PersonalizedValuePropositionCard({
           {model.badgeLabel}
         </span>
         <span className="text-[11px] font-medium text-slate-500">
-          개인화된 가치 제안
+          지금 상황에 맞춘 제안
         </span>
       </div>
 
@@ -182,7 +182,7 @@ export default function PersonalizedValuePropositionCard({
       {onPrimaryAction || (model.secondaryAction && onSecondaryAction) ? (
         <div
           className={joinClassNames(
-            compact ? "mt-3 grid gap-2" : "mt-4 grid gap-2 sm:grid-cols-2"
+            compact ? "mt-3 grid gap-2.5" : "mt-4 grid gap-2 sm:grid-cols-2"
           )}
         >
           {onPrimaryAction ? (
@@ -190,7 +190,7 @@ export default function PersonalizedValuePropositionCard({
               type="button"
               onClick={onPrimaryAction}
               className={joinClassNames(
-                "rounded-2xl px-4 py-3 text-sm font-bold transition",
+                "min-h-12 rounded-2xl px-4 py-3 text-sm font-bold transition",
                 tone.primary
               )}
             >
@@ -201,7 +201,7 @@ export default function PersonalizedValuePropositionCard({
             <button
               type="button"
               onClick={onSecondaryAction}
-              className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-800 ring-1 ring-slate-200 transition hover:bg-slate-50"
+              className="min-h-12 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-800 ring-1 ring-slate-200 transition hover:bg-slate-50"
             >
               {model.secondaryAction.label}
             </button>
@@ -215,5 +215,15 @@ export default function PersonalizedValuePropositionCard({
     return content;
   }
 
-  return <BetaFeatureGate title="Beta 개인화 가치 제안">{content}</BetaFeatureGate>;
+  return (
+    <BetaFeatureGate
+      title="Beta 개인화 제안"
+      helper="핵심만 짧게 보고 결정해도 괜찮아요."
+      contentViewportClassName={
+        compact ? "max-h-[min(46vh,26rem)] overflow-y-auto pr-1" : undefined
+      }
+    >
+      {content}
+    </BetaFeatureGate>
+  );
 }

@@ -148,33 +148,6 @@ export function HomeProductSectionContent({
         />
       )}
 
-      {showNaturalLanguageRouter ? (
-        <NaturalLanguageRoutingCard
-          surface="home"
-          categories={categories.map((category) => ({
-            id: category.id,
-            name: category.name || "",
-          }))}
-          className="mb-3"
-        />
-      ) : null}
-
-      <HomeAdaptiveEntryStack
-        categories={categories}
-        selectedCategories={selectedCategories}
-        selectedPackage={selectedPackage}
-        onApplyRecommendedCategories={onApplyRecommendedCategories}
-        onApplyRecommendedTrial={onApplyRecommendedTrial}
-      />
-
-      <div className="px-3 sm:px-4">
-        <OfferIntelligenceCard
-          offer={homeOffer}
-          onAction={onHomeOfferAction}
-          className="mb-4"
-        />
-      </div>
-
       <SymptomFilter
         selectedSymptoms={selectedSymptoms}
         setSelectedSymptoms={setSelectedSymptoms}
@@ -219,6 +192,29 @@ export function HomeProductSectionContent({
         hasProducts={allProducts.length > 0}
         onRetry={onRetryLoad}
       />
+
+      <div className="space-y-3 px-3 pb-2 pt-4 sm:px-4">
+        {showNaturalLanguageRouter ? (
+          <NaturalLanguageRoutingCard
+            surface="home"
+            categories={categories.map((category) => ({
+              id: category.id,
+              name: category.name || "",
+            }))}
+            className="!mx-0 !max-w-none !px-0"
+          />
+        ) : null}
+
+        <HomeAdaptiveEntryStack
+          categories={categories}
+          selectedCategories={selectedCategories}
+          selectedPackage={selectedPackage}
+          onApplyRecommendedCategories={onApplyRecommendedCategories}
+          onApplyRecommendedTrial={onApplyRecommendedTrial}
+        />
+
+        <OfferIntelligenceCard offer={homeOffer} onAction={onHomeOfferAction} />
+      </div>
 
       {selectedPharmacy &&
         !selectedProduct &&

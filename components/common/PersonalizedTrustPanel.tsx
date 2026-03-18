@@ -66,7 +66,7 @@ export default function PersonalizedTrustPanel({
               {explainability.confidenceLabel}
             </span>
             <span className="text-[11px] font-medium text-slate-500">
-              결과를 볼 때 같이 참고하면 좋아요
+              같이 보면 덜 헷갈리는 포인트
             </span>
           </div>
           <p className="mt-2 text-sm leading-6 text-slate-700">
@@ -176,7 +176,17 @@ export default function PersonalizedTrustPanel({
     return content;
   }
 
-  return <BetaFeatureGate title="Beta 해석 근거">{content}</BetaFeatureGate>;
+  return (
+    <BetaFeatureGate
+      title="Beta 해석 근거"
+      helper="지금 필요한 근거만 골라 확인해보세요."
+      contentViewportClassName={
+        compact ? "max-h-[min(46vh,26rem)] overflow-y-auto pr-1" : undefined
+      }
+    >
+      {content}
+    </BetaFeatureGate>
+  );
 }
 
 function TrustSection({

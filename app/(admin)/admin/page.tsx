@@ -37,7 +37,7 @@ function HubCard(props: {
       className={`overflow-hidden rounded-[28px] border border-slate-200/80 bg-gradient-to-br ${toneClass} p-5 shadow-[0_24px_70px_-38px_rgba(15,23,42,0.36)]`}
     >
       <div className="flex items-start justify-between gap-4">
-        <div className="space-y-3">
+        <div className="min-w-0 flex-1 space-y-3">
           <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm">
             {props.icon}
           </div>
@@ -45,7 +45,7 @@ function HubCard(props: {
             <h2 className="text-xl font-black tracking-[-0.03em] text-slate-950">{props.title}</h2>
             <p
               className={[
-                "max-w-[52ch] text-sm leading-6 text-slate-600 md:max-w-[56ch]",
+                "w-full text-sm leading-6 text-slate-600",
                 props.descriptionClassName,
               ]
                 .filter(Boolean)
@@ -110,7 +110,7 @@ function MiniToolCard(props: {
 export default function AdminPage() {
   return (
     <div className="relative left-1/2 right-1/2 min-h-screen w-screen -translate-x-1/2 bg-[radial-gradient(circle_at_15%_0%,rgba(125,211,252,0.28),transparent_34%),radial-gradient(circle_at_85%_0%,rgba(191,219,254,0.36),transparent_28%),linear-gradient(180deg,#fbfdff_0%,#f3f7fb_100%)]">
-      <div className="mx-auto flex w-full max-w-[1240px] flex-col gap-7 px-5 pb-20 pt-10 sm:px-8 lg:px-10">
+      <div className="mx-auto flex w-full max-w-[1120px] flex-col gap-7 px-5 pb-20 pt-10 sm:px-8 lg:px-10">
         <header className="relative overflow-hidden rounded-[34px] border border-slate-200/80 bg-white/92 px-7 py-9 shadow-[0_28px_72px_-42px_rgba(15,23,42,0.28)] backdrop-blur sm:px-9 sm:py-11">
           <div className="absolute -left-12 top-0 h-36 w-36 rounded-full bg-emerald-100/50 blur-3xl" />
           <div className="absolute right-0 top-0 h-36 w-36 rounded-full bg-sky-100/50 blur-3xl" />
@@ -122,7 +122,7 @@ export default function AdminPage() {
               <h1 className="text-4xl font-black tracking-[-0.05em] text-slate-950 sm:text-[3.25rem]">
                 운영 대시보드
               </h1>
-              <p className="max-w-3xl text-sm leading-7 text-slate-600 sm:text-[15px]">
+              <p className="w-full text-sm leading-7 text-slate-600 sm:text-[15px]">
                 B2B 리포트 운영, 임직원 데이터 관리, AI 모델 조정, 상품 분류 체계 관리까지
                 운영 흐름을 한곳에서 빠르게 확인하고 정리할 수 있도록 묶었습니다.
               </p>
@@ -146,7 +146,7 @@ export default function AdminPage() {
           title="B2B 운영 도구"
           description="리포트 운영과 임직원 데이터 관리는 바로 들어갈 수 있는 전용 동선으로 유지했습니다."
           tone="sky"
-          bodyClassName="max-w-[860px]"
+          bodyClassName="max-w-[780px]"
         >
           <div className="grid gap-4 md:grid-cols-2">
             <MiniToolCard
@@ -171,7 +171,7 @@ export default function AdminPage() {
           title="AI 모델 설정"
           description="챗봇, 제안, 리포트 분석, 요약, 에이전트 실행에 쓰이는 기본 모델을 여기서 조정합니다."
           tone="emerald"
-          bodyClassName="max-w-[980px]"
+          bodyClassName="max-w-[820px]"
         >
           <ModelManager />
         </HubCard>
@@ -181,7 +181,7 @@ export default function AdminPage() {
           title="상품 운영 워크스페이스"
           description="상품, 약국별 옵션, 카테고리 체계를 운영 전용 화면으로 나눠서 빠르게 관리할 수 있게 구성했습니다."
           tone="slate"
-          bodyClassName="max-w-[1040px]"
+          bodyClassName="max-w-[900px]"
         >
           <div className="grid gap-4 lg:grid-cols-3">
             <MiniToolCard

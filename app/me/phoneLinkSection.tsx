@@ -8,6 +8,8 @@ type PhoneLinkSectionProps = {
   initialLinkedAt?: string;
   onLinked?: (phone: string, linkedAt?: string) => void;
   onBusyChange?: (busy: boolean) => void;
+  mode?: "link" | "verify-only";
+  fallbackToVerifyOnlyOnUnauthorized?: boolean;
 };
 
 export default function PhoneLinkSection({
@@ -15,6 +17,8 @@ export default function PhoneLinkSection({
   initialLinkedAt,
   onLinked,
   onBusyChange,
+  mode = "link",
+  fallbackToVerifyOnlyOnUnauthorized = false,
 }: PhoneLinkSectionProps) {
   const {
     phoneDisplay,
@@ -39,6 +43,8 @@ export default function PhoneLinkSection({
     initialLinkedAt,
     onLinked,
     onBusyChange,
+    mode,
+    fallbackToVerifyOnlyOnUnauthorized,
   });
 
   return (

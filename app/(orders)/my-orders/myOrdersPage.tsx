@@ -116,11 +116,12 @@ export default function MyOrdersPage() {
           onClose={actions.closeVerifyModal}
           initialPhone={linkedState.linkedPhone}
           initialLinkedAt={linkedState.linkedAt}
+          fallbackToVerifyOnlyOnUnauthorized
           allowUnlink={linkedState.isPhoneLinked}
           unlinkLoading={linkedState.unlinkLoading}
           unlinkError={linkedState.unlinkError}
           onUnlink={actions.handleUnlinkPhone}
-          onLinked={actions.handleLinkedFromModal}
+          onLinked={actions.handleLinkedWithDetails}
         />
       </div>
     </div>

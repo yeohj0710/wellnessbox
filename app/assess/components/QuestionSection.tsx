@@ -49,152 +49,144 @@ export default function QuestionSection({
     currentQuestion?.type === "number" ? answers[currentQuestion.id] : undefined;
   const currentMultiAnswerValue =
     currentQuestion?.type === "multi" ? answers[currentQuestion.id] : undefined;
-  const numberInitialValue: number | undefined =
-    typeof currentAnswerValue === "number"
-      ? currentAnswerValue
-      : undefined;
-  const multiInitialValue: any[] | undefined =
-    Array.isArray(currentMultiAnswerValue)
-      ? currentMultiAnswerValue
-      : undefined;
+  const numberInitialValue =
+    typeof currentAnswerValue === "number" ? currentAnswerValue : undefined;
+  const multiInitialValue = Array.isArray(currentMultiAnswerValue)
+    ? currentMultiAnswerValue
+    : undefined;
 
   return (
-    <div className="mx-auto w-full max-w-[820px] px-3 pb-24 sm:px-4 sm:pb-28">
-      <div className="relative mt-4 overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/92 shadow-[0_18px_60px_rgba(15,23,42,0.08)] sm:mt-8 sm:rounded-[34px] sm:ring-1 sm:ring-black/5 sm:backdrop-blur">
+    <div className="mx-auto w-full max-w-[760px] px-4 pb-28">
+      <div className="relative mt-6 overflow-hidden rounded-3xl bg-white/70 p-6 shadow-[0_10px_40px_rgba(2,6,23,0.08)] ring-1 ring-black/5 backdrop-blur sm:mt-10 sm:p-10">
         {loading ? <LoadingOverlay text={loadingText} /> : null}
 
-        <div className="relative p-5 sm:p-8 lg:p-10">
-          <div className="mb-6 flex items-center justify-between text-sm text-slate-500 sm:mb-8">
-            <button
-              onClick={onBack}
-              className="select-none underline underline-offset-4 transition duration-200 hover:text-slate-700 hover:translate-x-[-1px] [-webkit-tap-highlight-color:transparent] touch-manipulation"
-            >
-              이전
-            </button>
-            <button
-              onClick={onReset}
-              className="select-none underline underline-offset-4 transition duration-200 hover:text-slate-700 hover:translate-x-[1px] [-webkit-tap-highlight-color:transparent] touch-manipulation"
-            >
-              처음부터
-            </button>
-          </div>
+        <div className="mb-6 flex justify-between text-xs text-gray-500">
+          <button
+            onClick={onBack}
+            className="underline hover:text-gray-700 [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
+          >
+            이전
+          </button>
+          <button
+            onClick={onReset}
+            className="underline hover:text-gray-700 [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
+          >
+            처음부터
+          </button>
+        </div>
 
-          <div className="grid gap-5 sm:gap-6 md:grid-cols-[minmax(0,1fr)_200px] md:items-start">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-slate-500 sm:text-base">
-                {sectionTitle}
-              </p>
-              {currentQuestion ? (
-                <h1 className="mt-3 max-w-[14ch] text-3xl font-extrabold tracking-[-0.04em] text-slate-900 sm:max-w-none sm:text-4xl sm:leading-tight">
-                  {currentQuestion.text}
-                </h1>
-              ) : null}
-            </div>
-
-            <div className="rounded-2xl border border-slate-200/80 bg-slate-50/90 px-4 py-3">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
-                <span>진행도</span>
-                <span className="tabular-nums text-slate-700">{completion}%</span>
-              </div>
-              <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-white ring-1 ring-slate-200">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 transition-[width] duration-500"
-                  style={{ width: `${completion}%` }}
-                />
-              </div>
-              <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500">
-                <span>
-                  {answered}/{total} 문항
-                </span>
-                <span className="font-medium text-sky-700">{progressMsg}</span>
-              </div>
-            </div>
-          </div>
-
-          {currentQuestion?.type === "choice" ? (
-            <div
-              className={[
-                "mt-8 grid gap-3 sm:mt-10",
-                renderChoiceGridColumnClass(currentQuestion.options?.length ?? 0),
-              ].join(" ")}
-            >
-              {currentQuestion.options?.map((opt) => {
-                const active = answers[current] === opt.value;
-
-                return (
-                  <button
-                    key={`${currentQuestion.id}:${String(opt.value)}`}
-                    onClick={(event) => {
-                      event.currentTarget.blur();
-                      handleAnswer(opt.value);
-                    }}
-                    className={[
-                      "min-h-[58px] rounded-2xl border px-4 py-3 text-sm font-medium leading-6 transition duration-200 ease-out will-change-transform",
-                      "[-webkit-tap-highlight-color:transparent] touch-manipulation select-none focus:outline-none",
-                      active
-                        ? "border-transparent bg-sky-50 text-sky-900 shadow-[0_12px_28px_rgba(14,165,233,0.14)] ring-2 ring-sky-500 ring-offset-2 ring-offset-white"
-                        : "border-slate-200 bg-white text-slate-700 hover:-translate-y-[2px] hover:border-sky-200 hover:bg-sky-50/60 hover:shadow-[0_12px_28px_rgba(15,23,42,0.08)] active:translate-y-0 focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white",
-                    ].join(" ")}
-                  >
-                    {opt.label}
-                  </button>
-                );
-              })}
-            </div>
-          ) : null}
-
-          {currentQuestion?.type === "number" ? (
-            <div className="mt-8 sm:mt-10">
-              <NumberInput
-                key={currentQuestion.id}
-                question={currentQuestion}
-                onSubmit={(value) => handleAnswer(value)}
-                initial={numberInitialValue}
-              />
-            </div>
-          ) : null}
-
-          {currentQuestion?.type === "multi" ? (
-            <div className="mt-8 sm:mt-10">
-              <MultiSelect
-                key={currentQuestion.id}
-                question={currentQuestion}
-                onSubmit={(values) => handleAnswer(values)}
-                initial={multiInitialValue}
-              />
-            </div>
-          ) : null}
-
-          {questionGuide ? (
-            <div className="mt-6 rounded-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-3">
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-sky-500" />
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold tracking-[0.02em] text-slate-700">
-                    {questionGuide.title}
-                  </p>
-                  <p className="mt-1 text-sm leading-6 text-slate-500">
-                    {questionGuide.description}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ) : null}
-
-          <div className="mt-8 flex items-center justify-between gap-3 border-t border-slate-100 pt-5 text-sm">
-            <p className="min-w-0 flex-1 leading-6 text-slate-400">
-              중간에 나갔다 와도 진행 상황이 저장돼요.
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold tracking-[0.16em] text-sky-600">
+              AI ASSESSMENT
             </p>
-            {currentQuestion ? (
-              <button
-                onClick={() => handleAnswer(undefined)}
-                type="button"
-                className="shrink-0 select-none text-slate-500 underline underline-offset-4 transition duration-200 hover:text-slate-700 hover:translate-x-[1px] [-webkit-tap-highlight-color:transparent] touch-manipulation"
-              >
-                이 질문은 건너뛸래요
-              </button>
-            ) : null}
+            <h1 className="mt-2 text-2xl font-extrabold text-gray-900 sm:text-3xl">
+              {sectionTitle}
+            </h1>
+            <p className="mt-3 text-sm leading-6 text-gray-500">
+              {answered}/{total} 문항을 살펴봤어요. 필요한 질문만 이어서
+              보여드릴게요.
+            </p>
           </div>
+
+          <div className="min-w-[120px]">
+            <div className="flex items-center justify-between text-xs text-gray-600">
+              <span>진행도</span>
+            </div>
+            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 transition-[width] duration-500"
+                style={{ width: `${completion}%` }}
+              />
+            </div>
+            <div className="mt-1 text-[10px] text-sky-600">{progressMsg}</div>
+          </div>
+        </div>
+
+        {currentQuestion ? (
+          <h2 className="mt-6 text-xl font-bold text-gray-900">
+            {currentQuestion.text}
+          </h2>
+        ) : null}
+
+        {questionGuide ? (
+          <div className="mt-4 rounded-2xl bg-sky-50/70 px-4 py-3 ring-1 ring-sky-100">
+            <p className="text-xs font-semibold tracking-[0.02em] text-slate-700">
+              {questionGuide.title}
+            </p>
+            <p className="mt-1 text-sm leading-6 text-slate-500">
+              {questionGuide.description}
+            </p>
+          </div>
+        ) : null}
+
+        {currentQuestion?.type === "choice" ? (
+          <div
+            className={[
+              "mt-6 grid gap-2 p-1 items-stretch",
+              renderChoiceGridColumnClass(currentQuestion.options?.length ?? 0),
+            ].join(" ")}
+          >
+            {currentQuestion.options?.map((opt) => {
+              const active = answers[current] === opt.value;
+
+              return (
+                <button
+                  key={`${currentQuestion.id}:${String(opt.value)}`}
+                  onClick={(event) => {
+                    event.currentTarget.blur();
+                    handleAnswer(opt.value);
+                  }}
+                  className={[
+                    "relative flex min-h-[44px] h-full items-center justify-center gap-2 rounded-xl border p-3 text-center text-sm whitespace-normal transition duration-200 ease-out",
+                    "[-webkit-tap-highlight-color:transparent] touch-manipulation select-none focus:outline-none focus-visible:outline-none",
+                    active
+                      ? "border-transparent bg-sky-50 shadow-[0_10px_24px_rgba(14,165,233,0.14)] ring-2 ring-sky-400 ring-offset-1 ring-offset-white"
+                      : "border-gray-200 bg-white supports-[hover:hover]:hover:bg-sky-50 supports-[hover:hover]:hover:border-sky-200 active:bg-sky-50 focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-1 focus-visible:ring-offset-white",
+                  ].join(" ")}
+                >
+                  <span className="leading-tight">{opt.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+
+        {currentQuestion?.type === "number" ? (
+          <div className="mt-6">
+            <NumberInput
+              key={currentQuestion.id}
+              question={currentQuestion}
+              onSubmit={(value) => handleAnswer(value)}
+              initial={numberInitialValue}
+            />
+          </div>
+        ) : null}
+
+        {currentQuestion?.type === "multi" ? (
+          <div className="mt-6">
+            <MultiSelect
+              key={currentQuestion.id}
+              question={currentQuestion}
+              onSubmit={(values) => handleAnswer(values)}
+              initial={multiInitialValue}
+            />
+          </div>
+        ) : null}
+
+        <div className="mt-8 flex items-center justify-between gap-2">
+          <p className="min-w-0 flex-1 truncate text-xs leading-none text-gray-400">
+            중간에 나가도 여기까지 답한 내용은 저장돼요.
+          </p>
+          {currentQuestion ? (
+            <button
+              onClick={() => handleAnswer(undefined)}
+              type="button"
+              className="shrink-0 text-xs leading-none text-gray-500 underline hover:text-gray-700 [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
+            >
+              이 질문은 건너뛸래요
+            </button>
+          ) : null}
         </div>
       </div>
     </div>

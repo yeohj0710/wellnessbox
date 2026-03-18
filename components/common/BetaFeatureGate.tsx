@@ -1,12 +1,13 @@
 import type { ReactNode } from "react";
 
-type BetaFeatureGateProps = {
+export type BetaFeatureGateProps = {
   children: ReactNode;
   title?: string;
   helper?: string;
   className?: string;
   summaryClassName?: string;
   contentClassName?: string;
+  contentViewportClassName?: string;
   defaultOpen?: boolean;
 };
 
@@ -21,37 +22,46 @@ export default function BetaFeatureGate({
   className,
   summaryClassName,
   contentClassName,
+  contentViewportClassName,
   defaultOpen = false,
 }: BetaFeatureGateProps) {
   return (
     <details
       open={defaultOpen}
       className={joinClassNames(
-        "group mx-auto w-full max-w-[640px] rounded-2xl border border-slate-200/80 bg-white/80 p-2.5 shadow-sm [&_summary::-webkit-details-marker]:hidden",
+        "group w-full max-w-full [&_summary::-webkit-details-marker]:hidden",
         className
       )}
     >
       <summary
         className={joinClassNames(
-          "flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-1 py-0.5",
+          "flex cursor-pointer list-none items-center justify-between gap-3 rounded-[1.35rem] border border-slate-200/80 bg-white/95 px-4 py-3.5 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.35)] transition hover:border-slate-300 hover:shadow-[0_18px_32px_-24px_rgba(15,23,42,0.3)]",
           summaryClassName
         )}
       >
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.18em] text-white">
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          <span className="rounded-full bg-slate-900 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white">
             Beta
           </span>
-          <span className="truncate text-xs font-medium text-slate-700">{title}</span>
-          <span className="hidden text-[11px] text-slate-400 group-open:inline">
-            {helper}
-          </span>
+          <div className="min-w-0">
+            <span className="block truncate text-sm font-semibold text-slate-700">
+              {title}
+            </span>
+            <span className="mt-0.5 hidden text-[11px] leading-4 text-slate-400 group-open:block">
+              {helper}
+            </span>
+          </div>
         </div>
         <div className="shrink-0 text-[11px] font-medium text-slate-400">
           <span className="group-open:hidden">열기</span>
           <span className="hidden group-open:inline">접기</span>
         </div>
       </summary>
-      <div className={joinClassNames("mt-2.5", contentClassName)}>{children}</div>
+      <div className={joinClassNames("mt-2.5", contentClassName)}>
+        <div className={joinClassNames("min-w-0", contentViewportClassName)}>
+          {children}
+        </div>
+      </div>
     </details>
   );
 }

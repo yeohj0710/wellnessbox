@@ -49,13 +49,13 @@ export function resolveGuestMemberBridge(input: {
     return {
       tone: "sky",
       badgeLabel: "지금 저장해 두기",
-      title: "이 결과를 그냥 닫기보다 계정에 이어 두면 다음 선택이 훨씬 덜 헷갈립니다",
+      title: "이 결과를 저장해 두면 다음에 다시 볼 때 훨씬 편해요",
       description:
         quickLabel || assessLabel
-          ? `${quickLabel || assessLabel} 흐름이 이미 보였기 때문에, 로그인만 해두면 다음에 돌아와도 같은 고민에서 다시 시작하지 않아도 됩니다.`
+          ? `${quickLabel || assessLabel} 흐름이 이미 보여서, 로그인만 해두면 다음에 돌아와도 같은 고민을 처음부터 다시 설명하지 않아도 돼요.`
           : "지금 막 확인한 결과와 답변 흐름은 회원으로 이어 두는 순간 다음 탐색, 상담, 재방문이 모두 훨씬 매끄러워집니다.",
       helper:
-        "카카오로 이어 두면 지금 기기에서 본 검사 결과와 이후 상담 흐름이 계정 기준으로 묶여 다시 찾기 쉬워져요.",
+        "카카오로 로그인해 두면 지금 본 검사 결과와 이후 상담 흐름이 한 계정에 모여 다시 찾기 쉬워져요.",
       reasonLines: uniqueStrings(
         [
           quickLabel ? `방금 빠른검사에서 ${quickLabel} 방향이 보였어요.` : "",
@@ -65,10 +65,10 @@ export function resolveGuestMemberBridge(input: {
         ],
         3
       ),
-      primaryActionLabel: "카카오로 이어서 저장하기",
+      primaryActionLabel: "카카오로 로그인해 이어보기",
       secondaryAction: {
         href: "/my-data",
-        label: "로그인 후 내 데이터에서 이어보기",
+        label: "내 데이터에서 이어보기",
       },
     } satisfies GuestMemberBridgeModel;
   }

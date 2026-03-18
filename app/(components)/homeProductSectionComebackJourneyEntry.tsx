@@ -37,7 +37,6 @@ export default function HomeProductSectionComebackJourneyEntry({
   return (
     <ComebackJourneyCard
       action={action}
-      className="mx-3 mb-3"
       onPrimaryAction={
         action.actionKind === "apply_trial_filters" ? handlePrimaryAction : null
       }

@@ -28,11 +28,11 @@ const TEXT = {
   totalTags: "태그 수",
   latestPublish: "최신 발행",
   notReady: "준비 중",
-  browseSettings: "탐색 설정",
+  browseSettings: "찾아보기",
   browseBody:
-    "검색, 태그, 보기 밀도를 조합해서 원하는 글만 좁혀보세요.",
-  allList: "전체 목록",
-  jumpToResults: "결과 바로가기",
+    "검색어와 태그를 조합해서 지금 필요한 글부터 가볍게 골라보세요.",
+  allList: "처음으로",
+  jumpToResults: "목록 보기",
   writePost: "글 쓰기",
   search: "검색",
   tag: "태그",
@@ -42,18 +42,18 @@ const TEXT = {
   cardView: "카드형",
   listView: "리스트형",
   searchPlaceholder: "제목, 요약, 태그로 검색",
-  heroTitle: "글이 많아져도 바로 찾히는 건강 칼럼 아카이브",
+  heroTitle: "복용과 생활 습관이 헷갈릴 때 천천히 찾아보는 건강 칼럼",
   heroBody:
-    "복용 시간, 음식-약 상호작용, 생활 습관 이슈를 한 화면에서 정리해서 볼 수 있게 구조를 바꿨습니다. 검색만 하지 않아도 태그, 보기 방식, 페이지 단위로 빠르게 훑을 수 있습니다.",
-  latestColumn: "최신 칼럼",
+    "비타민, 오메가3, 유산균처럼 자주 찾는 주제부터 음식-약 상호작용, 생활 습관 이슈까지 차분하게 모아뒀어요. 필요할 때 부담 없이 훑어보고, 궁금한 주제만 골라 읽기 좋게 정리했습니다.",
+  latestColumn: "최근 올라온 글",
   tagShelfTitle: "자주 찾는 태그",
   tagShelfBody:
-    "태그는 먼저 많이 쓰인 것부터 보여주고, 긴 꼬리 태그는 필요할 때만 펼쳐보는 방식으로 정리했습니다.",
+    "자주 보는 주제부터 먼저 두고, 더 세부적인 태그는 아래에서 천천히 펼쳐볼 수 있게 정리했어요.",
   expandTags: "나머지 태그 펼치기",
   collapseTags: "태그 접기",
   longTailTags: "세부 태그",
   resultsEyebrow: "RESULTS",
-  resultsTitle: "원하는 밀도로 정리한 칼럼 목록",
+  resultsTitle: "지금 읽기 좋은 칼럼 목록",
   emptyNoPosts: "등록된 칼럼이 아직 없습니다.",
   emptyNoResults: "검색어나 태그 조건을 조금 넓혀서 다시 찾아보세요.",
   noMatching: "조건에 맞는 칼럼이 아직 없습니다.",
@@ -164,8 +164,8 @@ export default function ColumnHomeClient({
   }, [activeTag, deferredQuery, filteredColumns.length]);
 
   return (
-    <section className="min-h-[calc(100vh-7rem)] w-full bg-[radial-gradient(circle_at_top_left,_#d8f6eb_0%,_#f8fafc_40%,_#ffffff_100%)]">
-      <div className="mx-auto w-full max-w-6xl px-4 pb-20 pt-6 sm:px-6 sm:pt-10">
+    <section className="min-h-[calc(100vh-7rem)] w-full bg-[radial-gradient(circle_at_top_left,_rgba(220,245,236,0.68)_0%,_#f8fafc_34%,_#ffffff_100%)]">
+      <div className="mx-auto w-full max-w-[1120px] px-4 pb-20 pt-6 sm:px-6 sm:pt-10">
         <ColumnHomeHeroSection
           columnsCount={columns.length}
           tagsCount={tags.length}
