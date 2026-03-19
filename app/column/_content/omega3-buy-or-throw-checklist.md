@@ -62,6 +62,13 @@ _이미지 출처: [Wikimedia Commons - Fish oil capsules](https://commons.wikim
 _이미지 출처: [Wikimedia Commons - Fish Oil Capsules](https://commons.wikimedia.org/wiki/File:Fish%20Oil%20Capsules.jpg)_
 
 
+## 이런 제품은 버리는 쪽이 낫습니다
+
+1. **유통기한이 지났거나, 개봉 후 너무 오래 방치한 제품**: 아깝더라도 정리하세요. 기름은 버티는 성분이 아닙니다.
+2. **한여름 차 안, 욕실, 직사광선 자리에서 오래 둔 제품**: 보관 이력이 불안하면 과감히 버리는 편이 낫습니다.
+3. **캡슐이 달라붙고 끈적이거나 냄새가 역한 제품**: “원래 비린 건가?”라고 버티지 말고 상태 문제를 먼저 의심하세요.
+4. **EPA+DHA 함량이 애매하고 판매처 정보가 흐릿한 제품**: 먹는 동안도 찜찜한 제품은 계속 가져갈 이유가 적습니다.
+
 ## 바로 써먹는 실전 루틴
 
 1. 구매 전엔 1회 섭취량, EPA+DHA 합, 원료 출처, 검증 마크(USP/NSF 등)부터 보세요.

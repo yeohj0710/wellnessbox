@@ -38,6 +38,7 @@ export type CartProduct = {
   id: number;
   name: string;
   images?: string[];
+  detailFacts?: unknown;
   categories?: CartProductCategory[];
   pharmacyProducts?: CartPharmacyProduct[];
   [key: string]: unknown;

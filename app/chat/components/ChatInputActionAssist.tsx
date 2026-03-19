@@ -1,11 +1,13 @@
 "use client";
 
 import { ChevronUpIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import AutoDismissTimerBar from "@/components/common/AutoDismissTimerBar";
 import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
 import type { UnifiedAction } from "./chatInput.actions";
 
 type ChatInputActionAssistProps = {
   showCoachmark: boolean;
+  coachmarkDurationMs: number;
   showHintPill: boolean;
   helperHint: string;
   actionTrayOpen: boolean;
@@ -22,6 +24,7 @@ type ChatInputActionAssistProps = {
 
 export function ChatInputActionAssist({
   showCoachmark,
+  coachmarkDurationMs,
   showHintPill,
   helperHint,
   actionTrayOpen,
@@ -40,14 +43,23 @@ export function ChatInputActionAssist({
       {showCoachmark && (
         <div className="mx-auto flex max-w-[760px] justify-end px-1">
           <div className="relative max-w-[300px] rounded-2xl bg-slate-900 px-3 py-2 text-white shadow-[0_14px_28px_rgba(15,23,42,0.35)]">
-            <p className="text-[12px] font-semibold">
+            <p className="text-[14px] font-semibold leading-5">
               말로 지시하면 실행까지 바로 이어서 도와드려요
             </p>
-            <p className="mt-0.5 text-[11px] text-slate-200">{helperHint}</p>
+            <p className="mt-1 text-[13px] leading-5 text-slate-200">{helperHint}</p>
+            <AutoDismissTimerBar
+              durationMs={coachmarkDurationMs}
+              className="mt-2"
+              label="자동으로 닫혀요"
+              labelClassName="text-slate-300"
+              countdownClassName="text-slate-200"
+              trackClassName="bg-white/10"
+              barClassName="bg-gradient-to-r from-sky-300 via-cyan-300 to-white"
+            />
             <div className="mt-2 flex items-center justify-end gap-2">
               <button
                 type="button"
-                className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-medium hover:bg-white/25"
+                className="rounded-full bg-white/15 px-2.5 py-1 text-[12px] font-medium hover:bg-white/25"
                 onClick={() => {
                   onOpenTray();
                   onDismissCoachmark();
@@ -72,7 +84,7 @@ export function ChatInputActionAssist({
       {showHintPill && (
         <div className="mx-auto max-w-[760px] px-1">
           <div className="flex items-center justify-between gap-2 rounded-full border border-sky-200 bg-sky-50/90 px-3 py-1.5">
-            <p className="truncate text-[11px] font-medium text-sky-800">
+            <p className="truncate text-[13px] font-medium text-sky-800 sm:text-sm">
               장바구니, 주문, 화면 이동까지 빠르게 이어서 도와드릴 수 있어요
             </p>
             <button
@@ -81,7 +93,7 @@ export function ChatInputActionAssist({
                 onOpenTray();
                 onHideCoachmark();
               }}
-              className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-sky-700 hover:bg-sky-100"
+              className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[12px] font-semibold text-sky-700 hover:bg-sky-100"
             >
               보기
             </button>
@@ -92,7 +104,7 @@ export function ChatInputActionAssist({
       {actionTrayOpen && hasActionOptions && (
         <div className="mx-auto max-w-[760px] rounded-2xl border border-slate-200 bg-white/95 px-3 py-2.5 shadow-[0_10px_26px_rgba(15,23,42,0.08)] backdrop-blur">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+            <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-slate-500">
               빠른 실행
             </p>
             <button
@@ -109,7 +121,7 @@ export function ChatInputActionAssist({
               <button
                 key={action.id}
                 type="button"
-                className={`w-full rounded-2xl border px-3 py-2 text-left text-[11px] font-medium leading-5 whitespace-normal break-words sm:text-xs ${
+                className={`w-full rounded-2xl border px-3 py-2.5 text-left text-[13px] font-medium leading-5 whitespace-normal break-words sm:text-sm ${
                   action.kind === "quick"
                     ? "border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100"
                     : action.kind === "agent"
@@ -125,7 +137,7 @@ export function ChatInputActionAssist({
             ))}
           </div>
           {quickActionLoading && (
-            <div className="mt-2 flex justify-center text-[11px] font-medium text-slate-500">
+            <div className="mt-2 flex justify-center text-[13px] font-medium text-slate-500">
               <InlineSpinnerLabel
                 label="요청 동작 실행 중"
                 className="text-slate-500"

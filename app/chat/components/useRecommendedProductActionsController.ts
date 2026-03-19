@@ -19,6 +19,8 @@ import {
   runCartActionWithAddressGuard,
 } from "./recommendedProductActions.utils";
 
+export const RECOMMENDED_ACTION_FEEDBACK_AUTO_HIDE_MS = 1800;
+
 type UseRecommendedProductActionsControllerOptions = {
   content: string;
 };
@@ -53,7 +55,10 @@ export function useRecommendedProductActionsController({
 
   useEffect(() => {
     if (!feedback) return;
-    const timer = window.setTimeout(() => setFeedback(""), 1800);
+    const timer = window.setTimeout(
+      () => setFeedback(""),
+      RECOMMENDED_ACTION_FEEDBACK_AUTO_HIDE_MS
+    );
     return () => window.clearTimeout(timer);
   }, [feedback]);
 
@@ -178,6 +183,7 @@ export function useRecommendedProductActionsController({
     loading,
     expanded,
     feedback,
+    feedbackDurationMs: RECOMMENDED_ACTION_FEEDBACK_AUTO_HIDE_MS,
     shouldRender: parsed.length > 0 && (loading || items.length > 0),
     isAddressModalOpen,
     showAddressGuideModal,

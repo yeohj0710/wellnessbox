@@ -1,5 +1,6 @@
 "use client";
 
+import { pageShellClass } from "@/lib/page-shell";
 import { Question } from "../data/questions";
 import LoadingOverlay from "./LoadingOverlay";
 import { MultiSelect, NumberInput } from "./inputs";
@@ -56,11 +57,11 @@ export default function QuestionSection({
     : undefined;
 
   return (
-    <div className="mx-auto w-full max-w-[760px] px-4 pb-28">
+    <div className={pageShellClass("pb-28")}>
       <div className="relative mt-6 overflow-hidden rounded-3xl bg-white/70 p-6 shadow-[0_10px_40px_rgba(2,6,23,0.08)] ring-1 ring-black/5 backdrop-blur sm:mt-10 sm:p-10">
         {loading ? <LoadingOverlay text={loadingText} /> : null}
 
-        <div className="mb-6 flex justify-between text-xs text-gray-500">
+        <div className="mb-6 flex justify-between text-sm text-gray-500">
           <button
             onClick={onBack}
             className="underline hover:text-gray-700 [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
@@ -77,20 +78,20 @@ export default function QuestionSection({
 
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-xs font-semibold tracking-[0.16em] text-sky-600">
+            <p className="text-sm font-semibold tracking-[0.14em] text-sky-600">
               AI ASSESSMENT
             </p>
             <h1 className="mt-2 text-2xl font-extrabold text-gray-900 sm:text-3xl">
               {sectionTitle}
             </h1>
-            <p className="mt-3 text-sm leading-6 text-gray-500">
+            <p className="mt-3 text-[15px] leading-6 text-gray-500 sm:text-base">
               {answered}/{total} 문항을 살펴봤어요. 필요한 질문만 이어서
               보여드릴게요.
             </p>
           </div>
 
           <div className="min-w-[120px]">
-            <div className="flex items-center justify-between text-xs text-gray-600">
+            <div className="flex items-center justify-between text-sm text-gray-600">
               <span>진행도</span>
             </div>
             <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100">
@@ -99,7 +100,7 @@ export default function QuestionSection({
                 style={{ width: `${completion}%` }}
               />
             </div>
-            <div className="mt-1 text-[10px] text-sky-600">{progressMsg}</div>
+            <div className="mt-1 text-[12px] font-medium text-sky-600">{progressMsg}</div>
           </div>
         </div>
 
@@ -111,10 +112,10 @@ export default function QuestionSection({
 
         {questionGuide ? (
           <div className="mt-4 rounded-2xl bg-sky-50/70 px-4 py-3 ring-1 ring-sky-100">
-            <p className="text-xs font-semibold tracking-[0.02em] text-slate-700">
+            <p className="text-sm font-semibold tracking-[0.01em] text-slate-700">
               {questionGuide.title}
             </p>
-            <p className="mt-1 text-sm leading-6 text-slate-500">
+            <p className="mt-1 text-[15px] leading-6 text-slate-500 sm:text-base">
               {questionGuide.description}
             </p>
           </div>
@@ -175,14 +176,14 @@ export default function QuestionSection({
         ) : null}
 
         <div className="mt-8 flex items-center justify-between gap-2">
-          <p className="min-w-0 flex-1 truncate text-xs leading-none text-gray-400">
+          <p className="min-w-0 flex-1 truncate text-sm leading-none text-gray-400">
             중간에 나가도 여기까지 답한 내용은 저장돼요.
           </p>
           {currentQuestion ? (
             <button
               onClick={() => handleAnswer(undefined)}
               type="button"
-              className="shrink-0 text-xs leading-none text-gray-500 underline hover:text-gray-700 [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
+              className="shrink-0 text-sm leading-none text-gray-500 underline hover:text-gray-700 [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
             >
               이 질문은 건너뛸래요
             </button>

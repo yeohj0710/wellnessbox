@@ -5,6 +5,7 @@ import { refreshClientIdCookieIfNeeded } from "@/lib/client-id";
 import { fetchCategories, type CategoryLite } from "@/lib/client/categories";
 import { useDraggableModal } from "@/components/common/useDraggableModal";
 import { CheckAiAnimationStyles } from "@/components/check-ai/CheckAiAnimationStyles";
+import { pageShellClass } from "@/lib/page-shell";
 import { getTzOffsetMinutes } from "@/lib/timezone";
 import {
   CHECK_AI_RESULT_STORAGE_KEY,
@@ -144,7 +145,7 @@ export default function EnglishCheckAI() {
   };
 
   return (
-    <div className="w-full max-w-[760px] mx-auto px-2 sm:px-4 pb-28">
+    <div className={pageShellClass("pb-28")}>
       <div className="relative mt-6 sm:mt-10 overflow-visible sm:overflow-hidden sm:rounded-3xl sm:bg-white/70 sm:ring-1 sm:ring-black/5 sm:shadow-[0_10px_40px_rgba(2,6,23,0.08)] sm:backdrop-blur">
         <div className="hidden sm:block pointer-events-none absolute -top-24 -right-24 h-80 w-80 rounded-full bg-gradient-to-br from-sky-400/30 via-indigo-400/20 to-fuchsia-300/20 blur-3xl" />
         <div className="hidden sm:block pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-gradient-to-tr from-sky-400/30 via-indigo-400/20 to-fuchsia-300/20 blur-3xl" />

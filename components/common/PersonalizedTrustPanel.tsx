@@ -46,9 +46,9 @@ export default function PersonalizedTrustPanel({
   const explainability = summary.explainability;
   const dataAsset = summary.dataAsset;
   const safetyEscalation = summary.safetyEscalation;
-  const sectionTextSize = compact ? "text-[11px]" : "text-xs sm:text-sm";
-  const titleTextSize = compact ? "text-[11px]" : "text-xs sm:text-sm";
-  const cardPadding = compact ? "p-3" : "p-4 sm:p-5";
+  const sectionTextSize = compact ? "text-[13px] leading-6 sm:text-sm" : "text-xs sm:text-sm";
+  const titleTextSize = compact ? "text-[13px] sm:text-sm" : "text-xs sm:text-sm";
+  const cardPadding = compact ? "p-4" : "p-4 sm:p-5";
   const safetyStyles = resolveSafetyStyles(safetyEscalation.level);
 
   const content = (
@@ -62,14 +62,14 @@ export default function PersonalizedTrustPanel({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-700 ring-1 ring-sky-100">
+            <span className="rounded-full bg-sky-50 px-3 py-1 text-[12px] font-semibold text-sky-700 ring-1 ring-sky-100">
               {explainability.confidenceLabel}
             </span>
-            <span className="text-[11px] font-medium text-slate-500">
+            <span className="text-[12px] font-medium text-slate-500 sm:text-[13px]">
               같이 보면 덜 헷갈리는 포인트
             </span>
           </div>
-          <p className="mt-2 text-sm leading-6 text-slate-700">
+          <p className={joinClassNames("mt-2 text-slate-700", compact ? "text-[14px] leading-6" : "text-sm leading-6")}>
             {explainability.confidenceNote}
           </p>
         </div>
@@ -109,13 +109,13 @@ export default function PersonalizedTrustPanel({
             <div className="flex flex-wrap items-start gap-2">
               <span
                 className={joinClassNames(
-                  "rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1",
+                  "rounded-full px-3 py-1 text-[12px] font-semibold ring-1",
                   safetyStyles.badge
                 )}
               >
                 {safetyEscalation.badgeLabel}
               </span>
-              <p className="flex-1 text-xs leading-5 text-slate-700 sm:text-sm">
+              <p className="flex-1 text-sm leading-6 text-slate-700">
                 {safetyEscalation.headline}
               </p>
             </div>
@@ -212,7 +212,7 @@ function TrustSection({
       <p className={joinClassNames("font-semibold text-slate-800", titleClassName)}>
         {title}
       </p>
-      <ul className="mt-2 space-y-1.5">
+      <ul className="mt-2.5 space-y-2">
         {items.map((item) => (
           <li
             key={`${title}-${item}`}

@@ -63,7 +63,7 @@ export default function DesktopChatDockSessionLayer({
           <button
             type="button"
             onClick={onCreateSession}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-left text-xs font-semibold text-slate-800 hover:bg-slate-50"
+            className="w-full rounded-md border border-slate-300 px-3 py-2 text-left text-sm font-semibold text-slate-800 hover:bg-slate-50"
           >
             + 새 상담 시작
           </button>
@@ -83,7 +83,7 @@ export default function DesktopChatDockSessionLayer({
                   onClick={() => onSelectSession(session.id)}
                   className="min-w-0 flex-1 cursor-pointer rounded-md px-1.5 py-1 text-left"
                 >
-                  <span className="block truncate text-xs font-medium text-slate-800">
+                  <span className="block truncate text-sm font-medium text-slate-800">
                     {session.title || "새 상담"}
                   </span>
                 </button>

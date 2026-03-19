@@ -67,13 +67,13 @@ export default function CSection({
       {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
 
       <div className="mt-8 flex items-center justify-between gap-2">
-        <p className="flex-1 min-w-0 truncate text-xs leading-none text-gray-400">
+        <p className="min-w-0 flex-1 truncate text-sm leading-none text-gray-400">
           {C_SECTION_COPY.skipHintText}
         </p>
         <button
           onClick={skipCurrent}
           type="button"
-          className="shrink-0 text-xs leading-none text-gray-500 underline hover:text-gray-700 [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
+          className="shrink-0 text-sm leading-none text-gray-500 underline hover:text-gray-700 [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
           disabled={submitting || transitioning}
         >
           {C_SECTION_COPY.skipButtonText}

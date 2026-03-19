@@ -6,6 +6,7 @@ import type { NormalizedAssessResult } from "@/app/chat/hooks/useChat.results";
 import PersonalizedTrustPanel from "@/components/common/PersonalizedTrustPanel";
 import { usePersonalizedTrustSummary } from "@/components/common/usePersonalizedTrustSummary";
 import { descOf, labelOf } from "@/lib/categories";
+import { pageShellClass } from "@/lib/page-shell";
 import type { CSectionResult } from "./CSection";
 import { sectionA, sectionB, type Question } from "../data/questions";
 
@@ -113,14 +114,14 @@ export default function DoneSection({
   });
 
   return (
-    <div className="mx-auto w-full px-4 pb-24 sm:w-[640px] sm:pb-28 lg:w-[760px]">
+    <div className={pageShellClass("pb-24 sm:pb-28")}>
       <div
         ref={containerRef}
         className="relative mt-4 overflow-hidden rounded-2xl bg-white/80 p-4 shadow-none sm:mt-10 sm:rounded-3xl sm:p-10 sm:shadow-[0_10px_40px_rgba(2,6,23,0.08)] sm:ring-1 sm:ring-black/5 sm:backdrop-blur"
       >
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_60%_at_20%_-10%,#7dd3fc,transparent_50%),radial-gradient(60%_60%_at_80%_-10%,#a78bfa,transparent_50%)] opacity-50 [mask-image:radial-gradient(70%_60%_at_50%_0%,rgba(0,0,0,0.3),transparent_70%)] sm:opacity-60" />
 
-        <div className="relative z-10 mb-5 flex justify-between text-xs text-gray-500 sm:mb-6">
+        <div className="relative z-10 mb-5 flex justify-between text-sm text-gray-500 sm:mb-6">
           <button
             onClick={onBack}
             className="select-none underline hover:text-gray-700 [-webkit-tap-highlight-color:transparent] touch-manipulation"
@@ -138,7 +139,7 @@ export default function DoneSection({
         <h1 className="relative z-10 mb-1 text-xl font-extrabold text-gray-900 sm:text-2xl">
           맞춤 추천 결과
         </h1>
-        <p className="relative z-10 mb-5 text-[13px] text-gray-600 sm:mb-6 sm:text-sm">
+        <p className="relative z-10 mb-5 text-[15px] leading-6 text-gray-600 sm:mb-6 sm:text-base">
           입력한 답변을 바탕으로 먼저 보기 좋은 방향을 정리했어요. 아래 결과는
           가볍게 비교해보는 기준으로 봐주세요.
         </p>
@@ -158,7 +159,7 @@ export default function DoneSection({
           <PersonalizedTrustPanel summary={trustSummary} compact />
         </div>
 
-        <p className="relative z-10 mt-5 text-center text-[13px] text-gray-600 sm:mt-6 sm:text-sm">
+        <p className="relative z-10 mt-5 text-center text-[15px] leading-6 text-gray-600 sm:mt-6 sm:text-base">
           아래 버튼을 누르면 추천 카테고리가 적용된 상품 목록으로 바로
           이동해요.
         </p>
@@ -251,7 +252,7 @@ function ResultItem({
       <div className="flex items-start justify-between">
         <div className="min-w-0 pr-3">
           <div className="flex items-center gap-2">
-            <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-gray-100 px-2 text-[11px] font-extrabold text-gray-900">
+            <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-gray-100 px-2 text-[12px] font-extrabold text-gray-900">
               {item.rank}
             </span>
             <span className="truncate font-semibold">{item.label}</span>
@@ -295,7 +296,7 @@ function ResultItem({
         </div>
       </div>
 
-      <p className="mt-2 text-[13px] text-gray-600 sm:text-sm">{item.desc}</p>
+      <p className="mt-2 text-[15px] leading-6 text-gray-600 sm:text-base">{item.desc}</p>
     </li>
   );
 }

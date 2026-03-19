@@ -1,5 +1,7 @@
 "use client";
 
+import { pageShellClass } from "@/lib/page-shell";
+
 interface Props {
   onStart: () => void;
 }
@@ -30,7 +32,7 @@ const INTRO_NOTES = [
 
 export default function IntroSection({ onStart }: Props) {
   return (
-    <div className="mx-auto w-full max-w-[760px] px-4 pb-28">
+    <div className={pageShellClass("pb-28")}>
       <div className="relative mt-6 overflow-hidden rounded-3xl bg-white/70 p-6 shadow-[0_10px_40px_rgba(2,6,23,0.08)] ring-1 ring-black/5 backdrop-blur sm:mt-10 sm:p-10">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">

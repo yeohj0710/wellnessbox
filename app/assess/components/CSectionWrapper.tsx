@@ -1,5 +1,6 @@
 "use client";
 
+import { pageShellClass } from "@/lib/page-shell";
 import LoadingOverlay from "./LoadingOverlay";
 import CSection, { CSectionResult } from "./CSection";
 
@@ -35,10 +36,10 @@ export default function CSectionWrapper({
   onLoadingChange,
 }: Props) {
   return (
-    <div className="w-full sm:w-[640px] lg:w-[760px] mx-auto px-4 pb-28">
+    <div className={pageShellClass("pb-28")}>
       <div className="relative mt-6 sm:mt-10 overflow-hidden rounded-3xl bg-white/70 p-6 sm:p-10 shadow-[0_10px_40px_rgba(2,6,23,0.08)] ring-1 ring-black/5 backdrop-blur">
         {loading && <LoadingOverlay text={loadingText} />}
-        <div className="flex justify-between text-xs text-gray-500 mb-6">
+        <div className="mb-6 flex justify-between text-sm text-gray-500">
           <button
             onClick={onPrev}
             className="underline hover:text-gray-700 [-webkit-tap-highlight-color:transparent] touch-manipulation select-none"
@@ -57,7 +58,7 @@ export default function CSectionWrapper({
             세부 진단
           </h1>
           <div className="min-w-[120px]">
-            <div className="flex items-center justify-between text-xs text-gray-600">
+            <div className="flex items-center justify-between text-sm text-gray-600">
               <span>진행도</span>
               {/* <span className="tabular-nums notranslate" translate="no">
                 {cProgress.pct}%
@@ -79,7 +80,7 @@ export default function CSectionWrapper({
               </span>
               문항 남음
             </div> */}
-            <div className="text-[10px] text-sky-600 mt-1">{cProgressMsg}</div>
+            <div className="mt-1 text-[12px] font-medium text-sky-600">{cProgressMsg}</div>
           </div>
         </div>
         <CSection

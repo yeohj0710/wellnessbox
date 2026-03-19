@@ -208,7 +208,7 @@ export function ManagerEmptyState(props: ManagerEmptyStateProps) {
 export function AdminToolPageShell(props: AdminToolPageShellProps) {
   return (
     <div className="relative left-1/2 right-1/2 min-h-screen w-screen -translate-x-1/2 bg-[radial-gradient(circle_at_12%_0%,rgba(125,211,252,0.28),transparent_34%),radial-gradient(circle_at_88%_0%,rgba(191,219,254,0.38),transparent_30%),linear-gradient(180deg,#fbfdff_0%,#f3f7fb_100%)]">
-      <div className="mx-auto flex w-full max-w-[1120px] flex-col gap-7 px-5 pb-20 pt-10 sm:px-8 lg:px-10">
+      <div className="mx-auto flex w-full max-w-[960px] flex-col gap-7 px-5 pb-20 pt-10 sm:px-8 lg:px-10">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0 flex-1 space-y-2">
             <p className="text-[11px] font-bold uppercase tracking-[0.26em] text-sky-700/70">

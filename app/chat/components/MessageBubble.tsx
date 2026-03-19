@@ -3,6 +3,7 @@
 import { CheckIcon, DocumentDuplicateIcon } from "@heroicons/react/24/outline";
 import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import AutoDismissTimerBar from "@/components/common/AutoDismissTimerBar";
 import type { ChatMessage } from "@/types/chat";
 import { normalizeMessageText } from "./messageBubble.format";
 import {
@@ -10,6 +11,8 @@ import {
   getMessageBubbleRehypePlugins,
   getMessageBubbleRemarkPlugins,
 } from "./messageBubble.markdown";
+
+const COPY_FEEDBACK_AUTO_HIDE_MS = 1500;
 
 function buildLoadingHint(contextText: string) {
   const source = contextText.trim();
@@ -79,7 +82,7 @@ export default function MessageBubble({
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      setTimeout(() => setCopied(false), COPY_FEEDBACK_AUTO_HIDE_MS);
     } catch {}
   }
 
@@ -151,6 +154,7 @@ export default function MessageBubble({
           {text ? (
             <div className="h-0 overflow-hidden opacity-0 transition-[height,opacity,margin] duration-200 group-hover/message:mt-0.5 group-hover/message:h-10 group-hover/message:opacity-100">
               <div className="-ms-2.5 -me-1 flex flex-wrap items-center gap-y-1 p-1 select-none pointer-events-none group-hover/message:pointer-events-auto">
+                <div className="relative">
                 <button
                   onClick={handleCopy}
                   className="rounded-lg text-slate-500 hover:bg-slate-100"
@@ -164,6 +168,21 @@ export default function MessageBubble({
                     )}
                   </span>
                 </button>
+                  {copied ? (
+                    <div className="absolute left-10 top-1/2 w-28 -translate-y-1/2 rounded-xl border border-emerald-200 bg-white px-2 py-1.5 shadow-[0_10px_24px_rgba(15,23,42,0.12)]">
+                      <p className="text-[10px] font-semibold text-emerald-700">
+                        복사됨
+                      </p>
+                      <AutoDismissTimerBar
+                        durationMs={COPY_FEEDBACK_AUTO_HIDE_MS}
+                        className="mt-1"
+                        showCountdown={false}
+                        trackClassName="bg-emerald-100"
+                        barClassName="bg-gradient-to-r from-emerald-400 to-teal-400"
+                      />
+                    </div>
+                  ) : null}
+                </div>
               </div>
             </div>
           ) : null}

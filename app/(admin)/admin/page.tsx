@@ -68,7 +68,7 @@ function HubCard(props: {
       </div>
 
       {props.children ? (
-        <div className={["mt-6 w-full", props.bodyClassName].filter(Boolean).join(" ")}>
+        <div className={["mx-auto mt-6 w-full", props.bodyClassName].filter(Boolean).join(" ")}>
           {props.children}
         </div>
       ) : null}
@@ -110,7 +110,7 @@ function MiniToolCard(props: {
 export default function AdminPage() {
   return (
     <div className="relative left-1/2 right-1/2 min-h-screen w-screen -translate-x-1/2 bg-[radial-gradient(circle_at_15%_0%,rgba(125,211,252,0.28),transparent_34%),radial-gradient(circle_at_85%_0%,rgba(191,219,254,0.36),transparent_28%),linear-gradient(180deg,#fbfdff_0%,#f3f7fb_100%)]">
-      <div className="mx-auto flex w-full max-w-[1120px] flex-col gap-7 px-5 pb-20 pt-10 sm:px-8 lg:px-10">
+      <div className="mx-auto flex w-full max-w-[960px] flex-col gap-7 px-5 pb-20 pt-10 sm:px-8 lg:px-10">
         <header className="relative overflow-hidden rounded-[34px] border border-slate-200/80 bg-white/92 px-7 py-9 shadow-[0_28px_72px_-42px_rgba(15,23,42,0.28)] backdrop-blur sm:px-9 sm:py-11">
           <div className="absolute -left-12 top-0 h-36 w-36 rounded-full bg-emerald-100/50 blur-3xl" />
           <div className="absolute right-0 top-0 h-36 w-36 rounded-full bg-sky-100/50 blur-3xl" />
@@ -146,7 +146,7 @@ export default function AdminPage() {
           title="B2B 운영 도구"
           description="리포트 운영과 임직원 데이터 관리는 바로 들어갈 수 있는 전용 동선으로 유지했습니다."
           tone="sky"
-          bodyClassName="max-w-[780px]"
+          bodyClassName="max-w-[760px]"
         >
           <div className="grid gap-4 md:grid-cols-2">
             <MiniToolCard
@@ -171,7 +171,7 @@ export default function AdminPage() {
           title="AI 모델 설정"
           description="챗봇, 제안, 리포트 분석, 요약, 에이전트 실행에 쓰이는 기본 모델을 여기서 조정합니다."
           tone="emerald"
-          bodyClassName="max-w-[820px]"
+          bodyClassName="max-w-[720px]"
         >
           <ModelManager />
         </HubCard>
@@ -181,7 +181,7 @@ export default function AdminPage() {
           title="상품 운영 워크스페이스"
           description="상품, 약국별 옵션, 카테고리 체계를 운영 전용 화면으로 나눠서 빠르게 관리할 수 있게 구성했습니다."
           tone="slate"
-          bodyClassName="max-w-[900px]"
+          bodyClassName="max-w-[860px]"
         >
           <div className="grid gap-4 lg:grid-cols-3">
             <MiniToolCard
@@ -211,7 +211,7 @@ export default function AdminPage() {
         <BetaFeatureGate
           title="Beta 운영 인사이트"
           helper="실험적 운영 보조 카드는 필요할 때만 열어보세요."
-          className="max-w-none border-0 bg-transparent p-0 shadow-none"
+          className="mx-auto max-w-[860px] border-0 bg-transparent p-0 shadow-none"
           summaryClassName="rounded-[22px] border border-slate-200/80 bg-white/92 px-4 py-3 shadow-[0_16px_36px_-28px_rgba(15,23,42,0.28)] transition hover:border-slate-300 hover:bg-white"
           contentClassName="mt-4 space-y-5"
         >

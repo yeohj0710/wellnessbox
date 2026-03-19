@@ -1,9 +1,12 @@
 "use client";
 
+import NaturalLanguageRoutingCard from "@/components/common/NaturalLanguageRoutingCard";
+import OfferIntelligenceCard from "@/components/common/OfferIntelligenceCard";
 import LandingPersonalizationCard from "@/components/common/LandingPersonalizationCard";
 import PersonalizedValuePropositionCard from "@/components/common/PersonalizedValuePropositionCard";
 import { useLandingPersonalization } from "@/components/common/useLandingPersonalization";
 import { resolvePersonalizedValueProposition } from "@/lib/value-proposition/engine";
+import type { OfferAction, OfferCardModel } from "@/lib/offer-intelligence/engine";
 import { HOME_PACKAGE_LABELS } from "./homeProductSection.copy";
 import HomeProductSectionComebackJourneyEntry from "./homeProductSectionComebackJourneyEntry";
 import HomeProductSectionPersonalizedEntry from "./homeProductSectionPersonalizedEntry";
@@ -15,6 +18,9 @@ type HomeAdaptiveEntryStackProps = {
   selectedPackage: string;
   onApplyRecommendedCategories: (categoryIds: number[]) => void;
   onApplyRecommendedTrial: (categoryIds: number[]) => void;
+  showNaturalLanguageRouter: boolean;
+  homeOffer: OfferCardModel | null;
+  onHomeOfferAction: (action: OfferAction) => void;
 };
 
 export default function HomeAdaptiveEntryStack({
@@ -23,6 +29,9 @@ export default function HomeAdaptiveEntryStack({
   selectedPackage,
   onApplyRecommendedCategories,
   onApplyRecommendedTrial,
+  showNaturalLanguageRouter,
+  homeOffer,
+  onHomeOfferAction,
 }: HomeAdaptiveEntryStackProps) {
   const { focus, loading, summary } = useLandingPersonalization(categories);
   const valueProposition = resolvePersonalizedValueProposition({
@@ -68,6 +77,7 @@ export default function HomeAdaptiveEntryStack({
       <PersonalizedValuePropositionCard
         key="segment"
         model={valueProposition}
+        hideBehindBeta={false}
         onPrimaryAction={() => runValueAction(valueProposition.primaryAction.target)}
         onSecondaryAction={
           valueProposition.secondaryAction
@@ -80,6 +90,7 @@ export default function HomeAdaptiveEntryStack({
       <LandingPersonalizationCard
         key="focus"
         focus={focus}
+        hideBehindBeta={false}
         onApplyPrimary={
           focus.matchedCategoryIds.length > 0
             ? () => onApplyRecommendedCategories(focus.matchedCategoryIds)
@@ -107,6 +118,7 @@ export default function HomeAdaptiveEntryStack({
         selectedCategories={selectedCategories}
         selectedPackage={selectedPackage}
         onApplyRecommendedTrial={onApplyRecommendedTrial}
+        hideBehindBeta={false}
       />
     ),
     personalized: (
@@ -117,6 +129,7 @@ export default function HomeAdaptiveEntryStack({
         selectedPackage={selectedPackage}
         onApplyRecommendedCategories={onApplyRecommendedCategories}
         onApplyRecommendedTrial={onApplyRecommendedTrial}
+        hideBehindBeta={false}
       />
     ),
   } as const;
@@ -131,5 +144,69 @@ export default function HomeAdaptiveEntryStack({
       ? summary.journeySegment.homeOrder
       : ["segment", "focus", "personalized", "comeback"];
 
-  return <div className="space-y-3">{order.map((key) => sections[key])}</div>;
+  const heroKey = order[0];
+  const heroCard = sections[heroKey];
+  const secondaryCards = order.slice(1).map((key) => sections[key]);
+  const labCount =
+    secondaryCards.length + (showNaturalLanguageRouter ? 1 : 0) + (homeOffer ? 1 : 0);
+
+  return (
+    <div className="space-y-3">
+      {heroCard}
+
+      {labCount > 0 ? (
+        <details className="group overflow-hidden rounded-[1.6rem] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] shadow-[0_16px_40px_-32px_rgba(15,23,42,0.3)]">
+          <summary className="flex cursor-pointer list-none items-start justify-between gap-4 px-4 py-4 sm:px-5">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-slate-900 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white">
+                  Labs
+                </span>
+                <span className="text-[11px] font-medium text-slate-500">
+                  보조 탐색 흐름 {labCount}개
+                </span>
+              </div>
+              <p className="mt-2 text-base font-bold tracking-tight text-slate-900">
+                더 많은 실험 기능은 한곳에서 가볍게 펼쳐보세요
+              </p>
+              <p className="mt-1 text-sm leading-6 text-slate-600">
+                길찾기, 복귀 제안, 개인화 진입, 맞춤 오퍼를 따로 흩어두지 않고 한
+                묶음으로 정리했습니다.
+              </p>
+            </div>
+            <div className="mt-1 shrink-0 text-xs font-semibold text-slate-400">
+              <span className="group-open:hidden">열기</span>
+              <span className="hidden group-open:inline">접기</span>
+            </div>
+          </summary>
+
+          <div className="border-t border-slate-200/80 px-3 pb-3 pt-3 sm:px-4 sm:pb-4">
+            <div className="space-y-3">
+              {showNaturalLanguageRouter ? (
+                <NaturalLanguageRoutingCard
+                  surface="home"
+                  hideBehindBeta={false}
+                  categories={categories.map((category) => ({
+                    id: category.id,
+                    name: category.name || "",
+                  }))}
+                  className="!mx-0 !max-w-none !px-0"
+                />
+              ) : null}
+
+              {secondaryCards}
+
+              {homeOffer ? (
+                <OfferIntelligenceCard
+                  offer={homeOffer}
+                  onAction={onHomeOfferAction}
+                  hideBehindBeta={false}
+                />
+              ) : null}
+            </div>
+          </div>
+        </details>
+      ) : null}
+    </div>
+  );
 }

@@ -5,21 +5,21 @@ import type {
 } from "./SurveyDetailPages";
 import { hasSurveyDetailPageContent } from "./SurveyDetailPages";
 
-const FIRST_PAGE_SURVEY_CONTENT_UNITS = 700;
-const DETAIL_PAGE_SURVEY_CONTENT_UNITS = 1180;
-const ROUTINE_CARD_BASE_UNITS = 108;
-const ROUTINE_ROW_BASE_UNITS = 48;
-const SECTION_CARD_BASE_UNITS = 112;
-const SECTION_GROUP_BASE_UNITS = 34;
-const SECTION_ROW_BASE_UNITS = 90;
-const SUPPLEMENT_CARD_BASE_UNITS = 122;
-const SUPPLEMENT_ROW_BASE_UNITS = 72;
-const ROUTINE_ROW_CHUNK_MAX_CHARS = 110;
-const SECTION_RECOMMENDATION_CHUNK_MAX_CHARS = 130;
-const SUPPLEMENT_PARAGRAPH_CHUNK_MAX_CHARS = 150;
+const FIRST_PAGE_SURVEY_CONTENT_UNITS = 860;
+const DETAIL_PAGE_SURVEY_CONTENT_UNITS = 1380;
+const ROUTINE_CARD_BASE_UNITS = 84;
+const ROUTINE_ROW_BASE_UNITS = 36;
+const SECTION_CARD_BASE_UNITS = 90;
+const SECTION_GROUP_BASE_UNITS = 22;
+const SECTION_ROW_BASE_UNITS = 74;
+const SUPPLEMENT_CARD_BASE_UNITS = 98;
+const SUPPLEMENT_ROW_BASE_UNITS = 58;
+const ROUTINE_ROW_CHUNK_MAX_CHARS = 134;
+const SECTION_RECOMMENDATION_CHUNK_MAX_CHARS = 156;
+const SUPPLEMENT_PARAGRAPH_CHUNK_MAX_CHARS = 180;
 const SUPPLEMENT_PARAGRAPHS_PER_ROW = 1;
 const SUPPLEMENT_NUTRIENTS_PER_ROW = 6;
-const SUPPLEMENT_ROW_SAFETY_UNITS = 30;
+const SUPPLEMENT_ROW_SAFETY_UNITS = 16;
 
 function estimateTextUnits(text: string, charsPerUnit: number) {
   const normalized = text.trim();
@@ -120,29 +120,29 @@ function resolveSectionGroupKey(line: SectionAdviceLine) {
 }
 
 function estimateRoutineRowUnits(line: string) {
-  return ROUTINE_ROW_BASE_UNITS + estimateWrappedTextUnits(line, 32, 20);
+  return ROUTINE_ROW_BASE_UNITS + estimateWrappedTextUnits(line, 38, 18);
 }
 
 function estimateSectionAdviceRowUnits(line: SectionAdviceLine) {
-  const recommendationWeightMultiplier = line.continuation ? 1.2 : 1;
+  const recommendationWeightMultiplier = line.continuation ? 1.08 : 1;
   return (
     SECTION_ROW_BASE_UNITS +
-    estimateWrappedTextUnits(line.questionText, 30, 19) +
-    estimateWrappedTextUnits(line.answerText, 30, 17) +
-    estimateWrappedTextUnits(line.recommendation, 30, 20) * recommendationWeightMultiplier
+    estimateWrappedTextUnits(line.questionText, 36, 17) +
+    estimateWrappedTextUnits(line.answerText, 36, 15) +
+    estimateWrappedTextUnits(line.recommendation, 36, 17) * recommendationWeightMultiplier
   );
 }
 
 function estimateSupplementRowUnits(row: SupplementRow) {
-  const headingUnits = row.showSectionTitle ? 48 : 34;
-  const continuationUnits = row.continuation ? 20 : 0;
+  const headingUnits = row.showSectionTitle ? 38 : 26;
+  const continuationUnits = row.continuation ? 12 : 0;
   const paragraphUnits = row.paragraphs.reduce((sum, paragraph) => {
-    return sum + estimateWrappedTextUnits(paragraph, 30, 21);
+    return sum + estimateWrappedTextUnits(paragraph, 36, 18);
   }, 0);
   const nutrientCount = row.recommendedNutrients.length;
   const nutrientRows =
     nutrientCount > 0 ? Math.ceil(nutrientCount / SUPPLEMENT_NUTRIENTS_PER_ROW) : 0;
-  const nutrientUnits = nutrientCount > 0 ? 62 + nutrientRows * 24 : 0;
+  const nutrientUnits = nutrientCount > 0 ? 48 + nutrientRows * 18 : 0;
   return (
     SUPPLEMENT_ROW_BASE_UNITS +
     headingUnits +

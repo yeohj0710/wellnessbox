@@ -14,6 +14,7 @@ type PersonalizedEntryProps = {
   selectedPackage: string;
   onApplyRecommendedCategories: (categoryIds: number[]) => void;
   onApplyRecommendedTrial: (categoryIds: number[]) => void;
+  hideBehindBeta?: boolean;
 };
 
 type PersonalizedSignals = {
@@ -128,6 +129,7 @@ export default function HomeProductSectionPersonalizedEntry({
   selectedPackage,
   onApplyRecommendedCategories,
   onApplyRecommendedTrial,
+  hideBehindBeta = true,
 }: PersonalizedEntryProps) {
   const [payload, setPayload] = useState<unknown>(null);
   const [loading, setLoading] = useState(false);
@@ -188,7 +190,7 @@ export default function HomeProductSectionPersonalizedEntry({
       ? "무리 없이 시작하려면 7일치부터 가볍게 비교해보세요."
       : "처음 구매라면 7일치 패키지로 부담 없이 시작할 수 있어요.";
 
-  return (
+  const content = (
     <section className="rounded-[1.75rem] border border-sky-100 bg-gradient-to-br from-sky-50 via-white to-emerald-50 p-4 shadow-[0_16px_36px_-28px_rgba(14,165,233,0.28)]">
       <div className="flex items-start gap-3">
         <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-sky-500 text-white shadow-sm">
@@ -234,4 +236,10 @@ export default function HomeProductSectionPersonalizedEntry({
       <p className="mt-3 text-xs leading-5 text-gray-500">{trialDescription}</p>
     </section>
   );
+
+  if (!hideBehindBeta) {
+    return content;
+  }
+
+  return content;
 }

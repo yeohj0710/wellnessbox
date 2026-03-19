@@ -191,19 +191,19 @@ export function ColumnHomeHeroSection({
 }) {
   return (
     <header className="overflow-hidden rounded-[1.6rem] border border-emerald-100/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.97)_0%,rgba(248,253,250,0.98)_52%,rgba(243,251,248,0.94)_100%)] p-5 shadow-[0_18px_44px_-36px_rgba(15,23,42,0.34)] sm:rounded-[1.8rem] sm:p-7">
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.74fr)] lg:items-start">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.34fr)_minmax(220px,0.5fr)] lg:items-start xl:grid-cols-[minmax(0,1.42fr)_248px]">
         <div>
           <p className="text-[11px] font-semibold tracking-[0.28em] text-emerald-700">
             WELLNESSBOX COLUMN
           </p>
-          <h1 className="mt-3 max-w-[16ch] text-[1.9rem] font-black leading-[1.08] text-slate-900 sm:max-w-[18ch] sm:text-[2.15rem]">
+          <h1 className="mt-3 max-w-[15ch] text-[1.72rem] font-black leading-[1.08] text-slate-900 sm:max-w-[16ch] sm:text-[1.96rem]">
             {text.heroTitle}
           </h1>
-          <p className="mt-4 max-w-[42rem] text-sm leading-6 text-slate-700 sm:text-[0.98rem] sm:leading-7">
+          <p className="mt-4 max-w-[34rem] text-sm leading-6 text-slate-700 sm:text-[0.96rem] sm:leading-7">
             {text.heroBody}
           </p>
 
-          <div className="mt-6 grid grid-cols-3 gap-2.5 sm:max-w-[34rem] sm:gap-3">
+          <div className="mt-6 grid grid-cols-3 gap-2.5 sm:max-w-[27rem] sm:gap-3">
             <div className="rounded-[1.2rem] border border-white/80 bg-white/82 p-3 backdrop-blur sm:rounded-[1.35rem] sm:p-4">
               <p className="text-[11px] font-semibold tracking-[0.14em] text-slate-500">
                 {text.totalPosts}
@@ -234,9 +234,9 @@ export function ColumnHomeHeroSection({
         {featuredColumn ? (
           <Link
             href={`/column/${featuredColumn.slug}`}
-            className="block rounded-[1.35rem] border border-slate-200/85 bg-white/88 p-3 shadow-[0_16px_36px_-32px_rgba(15,23,42,0.34)] transition hover:-translate-y-0.5 hover:border-emerald-300 sm:rounded-[1.55rem]"
+            className="block rounded-[1.2rem] border border-slate-200/85 bg-white/88 p-2 shadow-[0_16px_36px_-32px_rgba(15,23,42,0.24)] transition hover:-translate-y-0.5 hover:border-emerald-300 sm:rounded-[1.35rem] lg:mt-2 lg:max-w-[280px] lg:justify-self-end"
           >
-            <div className="overflow-hidden rounded-[1.1rem] border border-slate-200">
+            <div className="overflow-hidden rounded-[0.95rem] border border-slate-200">
               <ColumnThumbnail
                 slug={featuredColumn.slug}
                 title={featuredColumn.title}
@@ -246,21 +246,21 @@ export function ColumnHomeHeroSection({
                 variant="feature"
               />
             </div>
-            <div className="px-1 pb-1 pt-3">
-              <p className="text-[11px] font-semibold tracking-[0.14em] text-emerald-700">
+            <div className="px-1 pb-1 pt-2">
+              <p className="text-[10px] font-semibold tracking-[0.16em] text-emerald-700">
                 {text.latestColumn}
               </p>
-              <p className="mt-1 text-[12px] text-slate-500">
+              <p className="mt-1 text-[11px] text-slate-500">
                 {formatDate(featuredColumn.publishedAt)}
               </p>
               <p
-                className="mt-2 text-[1.18rem] font-black leading-snug text-slate-900"
+                className="mt-1.5 text-[0.95rem] font-black leading-[1.38] text-slate-900 sm:text-[1.05rem]"
                 style={buildClampStyle(2)}
               >
                 {featuredColumn.title}
               </p>
               <p
-                className="mt-2.5 text-sm leading-6 text-slate-700"
+                className="mt-1.5 text-[12px] leading-5 text-slate-700"
                 style={buildClampStyle(2)}
               >
                 {featuredColumn.summary}

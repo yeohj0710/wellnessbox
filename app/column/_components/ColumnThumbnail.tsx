@@ -15,7 +15,7 @@ type ColumnThumbnailProps = {
 function getFrameClasses(variant: NonNullable<ColumnThumbnailProps["variant"]>) {
   switch (variant) {
     case "feature":
-      return "aspect-[16/10] min-h-[176px] sm:min-h-[280px]";
+      return "aspect-[5/4] min-h-[132px] sm:min-h-[184px]";
     case "list":
       return "h-full min-h-[152px] w-full";
     case "detail":
@@ -29,7 +29,7 @@ function getFrameClasses(variant: NonNullable<ColumnThumbnailProps["variant"]>) 
 function getTitleClasses(variant: NonNullable<ColumnThumbnailProps["variant"]>) {
   switch (variant) {
     case "feature":
-      return "max-w-[18rem] text-xl font-black leading-tight sm:text-[2rem]";
+      return "max-w-[12.5rem] text-base font-black leading-tight sm:max-w-[13rem] sm:text-[1.32rem]";
     case "detail":
       return "max-w-[18rem] text-lg font-black leading-tight sm:text-[1.85rem]";
     case "list":

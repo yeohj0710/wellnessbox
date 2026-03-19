@@ -7,9 +7,13 @@ import {
   ChatBubbleLeftRightIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+import AutoDismissTimerBar from "@/components/common/AutoDismissTimerBar";
 import { buildPageAgentContext } from "@/lib/chat/page-agent-context";
 import DesktopChatDockPanel from "./DesktopChatDockPanel";
-import { useDesktopChatDockLauncher } from "./useDesktopChatDockLauncher";
+import {
+  ROUTE_NUDGE_AUTO_HIDE_MS,
+  useDesktopChatDockLauncher,
+} from "./useDesktopChatDockLauncher";
 
 const DOCK_NUDGE_TEXT_MAP: Record<string, string> = {
   "agent assist": "AI 에이전트",
@@ -88,10 +92,10 @@ export default function DesktopChatDock() {
         <div className="pointer-events-auto absolute bottom-[calc(100%+10px)] right-0 w-[min(88vw,330px)] rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-[0_16px_34px_rgba(15,23,42,0.18)] backdrop-blur">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+              <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-slate-500">
                 AI 에이전트
               </p>
-              <p className="mt-0.5 text-[12px] text-slate-700">
+              <p className="mt-0.5 text-[14px] leading-5 text-slate-700">
                 {localizedRouteTitle}에서 바로 실행할 수 있어요.
               </p>
             </div>
@@ -111,13 +115,22 @@ export default function DesktopChatDock() {
                 key={prompt}
                 type="button"
                 onClick={() => openDockWithPrompt(prompt)}
-                className="max-w-full truncate rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] text-sky-700 hover:bg-sky-100"
+                className="max-w-full truncate rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-[12px] text-sky-700 hover:bg-sky-100"
                 title={prompt}
               >
                 {prompt}
               </button>
             ))}
           </div>
+          <AutoDismissTimerBar
+            durationMs={ROUTE_NUDGE_AUTO_HIDE_MS}
+            className="mt-2.5"
+            label="안내가 잠시 후 사라져요"
+            labelClassName="text-slate-500"
+            countdownClassName="text-slate-500"
+            trackClassName="bg-slate-100"
+            barClassName="bg-gradient-to-r from-sky-400 to-cyan-400"
+          />
         </div>
       )}
 

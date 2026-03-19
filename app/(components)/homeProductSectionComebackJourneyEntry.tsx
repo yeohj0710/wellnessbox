@@ -10,6 +10,7 @@ type HomeProductSectionComebackJourneyEntryProps = {
   selectedCategories: number[];
   selectedPackage: string;
   onApplyRecommendedTrial: (categoryIds: number[]) => void;
+  hideBehindBeta?: boolean;
 };
 
 export default function HomeProductSectionComebackJourneyEntry({
@@ -17,6 +18,7 @@ export default function HomeProductSectionComebackJourneyEntry({
   selectedCategories,
   selectedPackage,
   onApplyRecommendedTrial,
+  hideBehindBeta = true,
 }: HomeProductSectionComebackJourneyEntryProps) {
   const { action, loading } = useComebackJourney({
     surface: "home-products",
@@ -40,6 +42,7 @@ export default function HomeProductSectionComebackJourneyEntry({
       onPrimaryAction={
         action.actionKind === "apply_trial_filters" ? handlePrimaryAction : null
       }
+      hideBehindBeta={hideBehindBeta}
     />
   );
 }

@@ -18,16 +18,16 @@ export default function UserContextSummaryCard({
     <details className="group rounded-2xl border border-slate-200/90 bg-white/95 p-3 shadow-sm" open>
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-slate-700">
         <span>내 데이터 요약</span>
-        <span className="text-xs text-slate-400 group-open:hidden">펼침</span>
-        <span className="text-xs text-slate-400 hidden group-open:inline">접기</span>
+        <span className="text-sm text-slate-400 group-open:hidden">펼침</span>
+        <span className="hidden text-sm text-slate-400 group-open:inline">접기</span>
       </summary>
 
-      <div className="mt-2 space-y-2 text-xs text-slate-600">
+      <div className="mt-2 space-y-2 text-sm leading-6 text-slate-600">
         <div className="flex flex-wrap gap-1.5">
           {badges.map((badge) => (
             <span
               key={badge}
-              className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600"
+              className="rounded-full bg-slate-100 px-2.5 py-1 text-[12px] text-slate-600"
             >
               {badge}
             </span>

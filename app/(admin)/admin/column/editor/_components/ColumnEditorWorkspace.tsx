@@ -3,6 +3,7 @@
 import type { ChangeEvent, ClipboardEvent, RefObject } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import type { EditorialQualityReport } from "../_lib/editorial-quality";
 import type { ColumnPostStatus, EditorForm, EditorTab } from "../_lib/types";
 
 type ColumnEditorWorkspaceProps = {
@@ -21,6 +22,7 @@ type ColumnEditorWorkspaceProps = {
   allowDevFileSave: boolean;
   devSaving: boolean;
   publishBlockReason: string | null;
+  qualityReport: EditorialQualityReport;
   textareaRef: RefObject<HTMLTextAreaElement>;
   fileInputRef: RefObject<HTMLInputElement>;
   onEditorTabChange: (tab: EditorTab) => void;
@@ -60,6 +62,7 @@ export function ColumnEditorWorkspace({
   allowDevFileSave,
   devSaving,
   publishBlockReason,
+  qualityReport,
   textareaRef,
   fileInputRef,
   onEditorTabChange,
@@ -291,6 +294,64 @@ export function ColumnEditorWorkspace({
       {publishBlockReason ? (
         <p className="mt-2 text-xs text-amber-700">발행 불가 사유: {publishBlockReason}</p>
       ) : null}
+
+      <section className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">발행 품질 체크</h3>
+            <p className="mt-1 text-xs text-slate-500">
+              템플릿형 문체, 얕은 분량, 근거 부족을 발행 전에 한 번 더 걸러냅니다.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 sm:grid-cols-4">
+            <span className="rounded-full bg-white px-3 py-1 ring-1 ring-slate-200">
+              본문 {qualityReport.plainTextLength}자
+            </span>
+            <span className="rounded-full bg-white px-3 py-1 ring-1 ring-slate-200">
+              대제목 {qualityReport.levelTwoHeadingCount}개
+            </span>
+            <span className="rounded-full bg-white px-3 py-1 ring-1 ring-slate-200">
+              외부 근거 {qualityReport.externalSourceCount}개
+            </span>
+            <span className="rounded-full bg-white px-3 py-1 ring-1 ring-slate-200">
+              내부 링크 {qualityReport.internalLinkCount}개
+            </span>
+          </div>
+        </div>
+
+        {qualityReport.criticalIssues.length > 0 ? (
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+            <p className="text-xs font-semibold text-amber-800">발행 전 꼭 수정</p>
+            <ul className="mt-2 space-y-1 text-xs leading-5 text-amber-900">
+              {qualityReport.criticalIssues.map((issue) => (
+                <li key={issue}>• {issue}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {qualityReport.warnings.length > 0 ? (
+          <div className="mt-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
+            <p className="text-xs font-semibold text-slate-700">문체 개선 힌트</p>
+            <ul className="mt-2 space-y-1 text-xs leading-5 text-slate-600">
+              {qualityReport.warnings.map((warning) => (
+                <li key={warning}>• {warning}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {qualityReport.strengths.length > 0 ? (
+          <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+            <p className="text-xs font-semibold text-emerald-700">좋은 신호</p>
+            <ul className="mt-2 space-y-1 text-xs leading-5 text-emerald-800">
+              {qualityReport.strengths.map((strength) => (
+                <li key={strength}>• {strength}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </section>
 
       <details className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
         <summary className="cursor-pointer select-none font-semibold text-slate-700">

@@ -20,6 +20,7 @@ import type {
   EditorTab,
   PostListFilterStatus,
 } from "./types";
+import { analyzeEditorialQuality } from "./editorial-quality";
 import {
   applyPostToFormState,
   estimateReadingMinutes,
@@ -208,6 +209,16 @@ export function useColumnEditorController({
     return "";
   }, [deleting, devSaving, loadingDetail, loadingList, publishing, saving, uploading]);
 
+  const qualityReport = useMemo(
+    () =>
+      analyzeEditorialQuality({
+        title: form.title,
+        excerpt: form.excerpt,
+        contentMarkdown: form.contentMarkdown,
+      }),
+    [form.contentMarkdown, form.excerpt, form.title]
+  );
+
   return {
     busyOverlayMessage,
     error,
@@ -242,6 +253,7 @@ export function useColumnEditorController({
       allowDevFileSave,
       devSaving,
       publishBlockReason,
+      qualityReport,
       textareaRef,
       fileInputRef,
       onEditorTabChange: setEditorTab,

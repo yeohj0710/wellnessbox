@@ -105,6 +105,7 @@ function DesktopChatDockPanel({
     isResizing,
     isDragging,
     showResizeHint,
+    resizeHintDurationMs,
     dismissResizeHint,
     startResize,
     startDrag,
@@ -126,6 +127,7 @@ function DesktopChatDockPanel({
     >
       <DesktopChatDockResizeOverlay
         showResizeHint={showResizeHint}
+        resizeHintDurationMs={resizeHintDurationMs}
         onDismissResizeHint={dismissResizeHint}
         onStartResize={startResize}
       />

@@ -37,6 +37,7 @@ export async function runCartProductsPostRoute(req: Request) {
           id: true,
           name: true,
           images: true,
+          detailFacts: true,
           categories: { select: { id: true, name: true } },
           pharmacyProducts: {
             select: {

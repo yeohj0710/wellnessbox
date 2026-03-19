@@ -19,6 +19,7 @@ export default function RecommendedProductActions({
     loading,
     expanded,
     feedback,
+    feedbackDurationMs,
     shouldRender,
     isAddressModalOpen,
     showAddressGuideModal,
@@ -47,6 +48,7 @@ export default function RecommendedProductActions({
         loading={loading}
         expanded={expanded}
         feedback={feedback}
+        feedbackDurationMs={feedbackDurationMs}
         onToggleExpanded={toggleExpanded}
         onAddAll={addAll}
         onBuyAll={() => buyNow(items)}

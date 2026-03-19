@@ -31,10 +31,13 @@ type UseDesktopChatDockLayoutOptions = {
   panelRef: RefObject<HTMLElement | null>;
 };
 
+export const DOCK_RESIZE_HINT_AUTO_HIDE_MS = 9000;
+
 type UseDesktopChatDockLayoutResult = {
   isResizing: boolean;
   isDragging: boolean;
   showResizeHint: boolean;
+  resizeHintDurationMs: number;
   dismissResizeHint: () => void;
   startResize: (
     event: ReactPointerEvent<HTMLElement>,
@@ -269,7 +272,10 @@ export function useDesktopChatDockLayout({
       return;
     }
     setShowResizeHint(true);
-    const timer = window.setTimeout(() => setShowResizeHint(false), 9000);
+    const timer = window.setTimeout(
+      () => setShowResizeHint(false),
+      DOCK_RESIZE_HINT_AUTO_HIDE_MS
+    );
     return () => window.clearTimeout(timer);
   }, [isOpen, isResizing, panelSize.width, resizeHintDismissed]);
 
@@ -301,6 +307,7 @@ export function useDesktopChatDockLayout({
     isResizing,
     isDragging,
     showResizeHint,
+    resizeHintDurationMs: DOCK_RESIZE_HINT_AUTO_HIDE_MS,
     dismissResizeHint,
     startResize,
     startDrag,

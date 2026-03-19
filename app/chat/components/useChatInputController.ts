@@ -8,6 +8,7 @@ import {
 import type { ChatInputProps } from "./chatInput.types";
 
 const AGENT_COACHMARK_DISMISS_KEY = "wb_chat_agent_coachmark_dismissed_v1";
+export const CHAT_INPUT_COACHMARK_AUTO_HIDE_MS = 9000;
 const TEXTAREA_LINE_HEIGHT = 22;
 const TEXTAREA_PADDING_Y = 10;
 const TEXTAREA_SINGLE_HEIGHT = TEXTAREA_LINE_HEIGHT + TEXTAREA_PADDING_Y * 2;
@@ -157,7 +158,10 @@ export function useChatInputController({
       return;
     }
     setShowCoachmark(true);
-    const timer = window.setTimeout(() => setShowCoachmark(false), 9000);
+    const timer = window.setTimeout(
+      () => setShowCoachmark(false),
+      CHAT_INPUT_COACHMARK_AUTO_HIDE_MS
+    );
     return () => window.clearTimeout(timer);
   }, [coachmarkDismissed, quickActionDisabled, shouldOfferAgentHint]);
 
@@ -193,6 +197,7 @@ export function useChatInputController({
     isEmbedded,
     actionTrayOpen,
     showCoachmark,
+    coachmarkDurationMs: CHAT_INPUT_COACHMARK_AUTO_HIDE_MS,
     showHintPill,
     hasActionOptions,
     quickActionDisabled,

@@ -13,6 +13,7 @@ export const PRODUCT_CARD_SELECT = {
   name: true,
   images: true,
   description: true,
+  detailFacts: true,
   importance: true,
   categories: {
     select: {

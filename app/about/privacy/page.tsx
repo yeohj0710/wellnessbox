@@ -6,6 +6,7 @@ export const metadata: Metadata = createPageMetadata({
   description:
     "웰니스박스의 개인정보 수집 항목, 이용 목적, 보관 기간, 이용자 권리와 보호 조치를 확인하세요.",
   path: "/about/privacy",
+  noIndex: true,
 });
 
 export default function Privacy() {

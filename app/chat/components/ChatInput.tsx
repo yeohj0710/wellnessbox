@@ -21,6 +21,7 @@ export default function ChatInput(props: ChatInputProps) {
     isEmbedded,
     actionTrayOpen,
     showCoachmark,
+    coachmarkDurationMs,
     showHintPill,
     hasActionOptions,
     quickActionDisabled,
@@ -52,6 +53,7 @@ export default function ChatInput(props: ChatInputProps) {
       >
         <ChatInputActionAssist
           showCoachmark={showCoachmark}
+          coachmarkDurationMs={coachmarkDurationMs}
           showHintPill={showHintPill}
           helperHint={helperHint}
           actionTrayOpen={actionTrayOpen}

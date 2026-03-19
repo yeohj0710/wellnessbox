@@ -21,14 +21,15 @@ model Category {
 }
 
 model Product {
-  id               Int               @id @default(autoincrement())
-  name             String?
-  images           String[]
-  description      String?
-  rating           Float?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @default(now()) @updatedAt
-  importance       Float?
+    id               Int               @id @default(autoincrement())
+    name             String?
+    images           String[]
+    description      String?
+    detailFacts      Json?
+    rating           Float?
+    createdAt        DateTime          @default(now())
+    updatedAt        DateTime          @default(now()) @updatedAt
+    importance       Float?
   pharmacyProducts PharmacyProduct[]
   reviews          Review[]
   categories       Category[]        @relation("CategoryProductRelation")

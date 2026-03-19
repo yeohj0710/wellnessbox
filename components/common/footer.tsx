@@ -75,12 +75,10 @@ function FooterInner() {
     isEnglish,
   } = useMemo(() => {
     const currentPath =
-      typeof window !== "undefined"
-        ? window.location.pathname
-        : pathname || "/";
+      typeof window !== "undefined" ? window.location.pathname : pathname || "/";
 
-    const isEnglish = currentPath === "/en" || currentPath.startsWith("/en/");
-    const basePath = isEnglish
+    const englishMode = currentPath === "/en" || currentPath.startsWith("/en/");
+    const basePath = englishMode
       ? currentPath.replace(/^\/en(\/)?/, "/") || "/"
       : currentPath === "/"
         ? "/en"
@@ -88,8 +86,8 @@ function FooterInner() {
 
     return {
       href: basePath,
-      label: isEnglish ? "한국어로 보기" : "View in English",
-      isEnglish,
+      label: englishMode ? "한국어로 보기" : "View in English",
+      isEnglish: englishMode,
     };
   }, [pathname]);
 
@@ -121,7 +119,7 @@ function FooterInner() {
     <footer className="w-full bg-slate-900 text-sm text-slate-300">
       <div
         className={[
-          "mx-auto w-full max-w-[1120px] px-5 py-6 sm:px-6 sm:py-7",
+          "mx-auto w-full max-w-[1120px] px-5 py-6 sm:px-6 sm:py-7 lg:pr-56",
           showBusinessInfo
             ? "pb-[calc(6.5rem+env(safe-area-inset-bottom))] sm:pb-7"
             : "",
@@ -206,21 +204,36 @@ function FooterInner() {
             <button
               type="button"
               onClick={() => setShowBusinessInfo((prev) => !prev)}
-              className="flex w-full items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-left transition hover:border-white/20 hover:bg-white/[0.06] sm:justify-end sm:bg-transparent sm:px-0 sm:py-1 sm:hover:bg-transparent"
+              className="group flex w-full max-w-[29rem] items-start justify-between gap-4 text-left transition"
               aria-expanded={showBusinessInfo}
               aria-controls="footer-business-info"
             >
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-100">사업자 정보</p>
-                <p className="mt-0.5 text-xs text-slate-400 sm:hidden">
-                  모바일에서는 전체 폭으로 열어 가리지 않게 보여드려요.
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Business
+                </p>
+                <div className="mt-1 flex items-center gap-2">
+                  <p className="text-sm font-semibold text-slate-100">사업자 정보</p>
+                  <span className="h-1 w-1 rounded-full bg-slate-600" aria-hidden />
+                  <span className="text-xs text-slate-400">
+                    {showBusinessInfo ? "접기" : "자세히 보기"}
+                  </span>
+                </div>
+                <p className="mt-1 max-w-[26rem] text-xs leading-5 text-slate-400">
+                  오른쪽 하단 버튼과 겹치지 않게, 왼쪽 흐름 안에서 바로 확인할 수 있게 배치했어요.
                 </p>
               </div>
-              <ChevronDownIcon
-                className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 ${
-                  showBusinessInfo ? "rotate-180" : ""
-                }`}
-              />
+
+              <div className="mt-1 flex shrink-0 items-center gap-2 text-slate-300 transition group-hover:text-slate-100">
+                <span className="text-xs font-medium">
+                  {showBusinessInfo ? "접기" : "Open"}
+                </span>
+                <ChevronDownIcon
+                  className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
+                    showBusinessInfo ? "rotate-180" : ""
+                  }`}
+                />
+              </div>
             </button>
 
             <div
@@ -229,23 +242,39 @@ function FooterInner() {
               className="overflow-hidden transition-all duration-300 ease-in-out"
               style={{ maxHeight: showBusinessInfo ? "420px" : "0px" }}
             >
-              <div className="mt-3 rounded-2xl border border-white/10 bg-white/[0.06] p-4 sm:p-5">
-                <div className="grid gap-2 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-2">
-                  {businessInfoRows.map((row, index) => (
-                    <p
-                      key={row}
-                      className={[
-                        "text-xs leading-5 text-slate-300",
-                        index === businessInfoRows.length - 1
-                          ? "sm:col-span-2"
-                          : "",
-                      ]
-                        .filter(Boolean)
-                        .join(" ")}
-                    >
-                      {row}
+              <div className="mt-4 rounded-[1.6rem] bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.04))] p-[1px]">
+                <div className="rounded-[calc(1.6rem-1px)] bg-slate-800/90 p-4 shadow-[0_18px_40px_rgba(2,6,23,0.18)] backdrop-blur sm:p-5">
+                  <div className="mb-3 flex flex-col gap-1 border-b border-white/8 pb-3 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-100">
+                        웰니스박스 사업자 정보
+                      </p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        결제, 배송, 민원 대응 주체를 한눈에 확인할 수 있게 정리했어요.
+                      </p>
+                    </div>
+                    <p className="text-[11px] font-medium text-slate-500">
+                      WellnessBox Operator Snapshot
                     </p>
-                  ))}
+                  </div>
+
+                  <div className="grid gap-2 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-2">
+                    {businessInfoRows.map((row, index) => (
+                      <p
+                        key={row}
+                        className={[
+                          "text-xs leading-5 text-slate-300",
+                          index === businessInfoRows.length - 1
+                            ? "sm:col-span-2"
+                            : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
+                      >
+                        {row}
+                      </p>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>

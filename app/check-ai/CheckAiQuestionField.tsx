@@ -53,7 +53,7 @@ function CheckAiQuestionFieldComponent({
                 onChange={() => onChange(index, option.value)}
                 className="sr-only"
               />
-              <span className="block h-9 overflow-hidden text-ellipsis whitespace-nowrap break-keep text-xs leading-9 text-gray-800 sm:text-[13px]">
+              <span className="block h-10 overflow-hidden text-ellipsis whitespace-nowrap break-keep text-sm leading-10 text-gray-800 sm:text-[15px]">
                 {option.label}
               </span>
             </label>

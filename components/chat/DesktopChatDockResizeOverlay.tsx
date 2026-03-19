@@ -1,10 +1,12 @@
 "use client";
 
 import type { PointerEvent as ReactPointerEvent } from "react";
+import AutoDismissTimerBar from "@/components/common/AutoDismissTimerBar";
 import type { DockResizeEdge } from "./DesktopChatDock.layout";
 
 type DesktopChatDockResizeOverlayProps = {
   showResizeHint: boolean;
+  resizeHintDurationMs: number;
   onDismissResizeHint: () => void;
   onStartResize: (
     event: ReactPointerEvent<HTMLElement>,
@@ -14,6 +16,7 @@ type DesktopChatDockResizeOverlayProps = {
 
 export default function DesktopChatDockResizeOverlay({
   showResizeHint,
+  resizeHintDurationMs,
   onDismissResizeHint,
   onStartResize,
 }: DesktopChatDockResizeOverlayProps) {
@@ -28,6 +31,15 @@ export default function DesktopChatDockResizeOverlay({
             <p className="mt-1 text-[11px] leading-4 text-slate-600">
               왼쪽 위 모서리를 드래그하면 대화와 추천 목록이 더 잘 보여요.
             </p>
+            <AutoDismissTimerBar
+              durationMs={resizeHintDurationMs}
+              className="mt-2"
+              label="힌트가 곧 닫혀요"
+              labelClassName="text-slate-500"
+              countdownClassName="text-slate-500"
+              trackClassName="bg-slate-100"
+              barClassName="bg-gradient-to-r from-sky-400 to-indigo-400"
+            />
             <div className="mt-2 flex justify-end">
               <button
                 type="button"

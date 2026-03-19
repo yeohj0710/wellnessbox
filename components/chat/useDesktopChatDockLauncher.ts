@@ -17,7 +17,7 @@ import {
   suppressDockNudgeGlobally,
 } from "./DesktopChatDock.layout";
 
-const ROUTE_NUDGE_AUTO_HIDE_MS = 4800;
+export const ROUTE_NUDGE_AUTO_HIDE_MS = 4800;
 
 type UseDesktopChatDockLauncherOptions = {
   isChatRoute: boolean;

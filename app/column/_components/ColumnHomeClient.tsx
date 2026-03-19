@@ -14,6 +14,7 @@ import {
   ColumnHomeResultsSection,
 } from "./ColumnHomeSections";
 import { useColumnHomeBrowse } from "./useColumnHomeBrowse";
+import { pageShellClass } from "@/lib/page-shell";
 
 type ColumnHomeClientProps = {
   initialColumns: ColumnSummary[];
@@ -165,7 +166,7 @@ export default function ColumnHomeClient({
 
   return (
     <section className="min-h-[calc(100vh-7rem)] w-full bg-[radial-gradient(circle_at_top_left,_rgba(220,245,236,0.68)_0%,_#f8fafc_34%,_#ffffff_100%)]">
-      <div className="mx-auto w-full max-w-[1120px] px-4 pb-20 pt-6 sm:px-6 sm:pt-10">
+      <div className={pageShellClass("pb-20 pt-6 sm:pt-10")}>
         <ColumnHomeHeroSection
           columnsCount={columns.length}
           tagsCount={tags.length}

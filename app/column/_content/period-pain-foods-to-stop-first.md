@@ -62,6 +62,13 @@ _이미지 출처: [Wikimedia Commons - Tea for menstrual pain](https://commons.
 _이미지 출처: [Wikimedia Commons - Experiencing menstrual pain with hot water bottle](https://commons.wikimedia.org/wiki/File:Experiencing%20menstrual%20pain%20with%20hot%20water%20bottle.jpg)_
 
 
+## 통증 심한 날엔 이렇게 바꾸면 낫습니다
+
+1. **커피가 꼭 필요한 날**: 공복 고카페인 대신 식후 작은 양으로 줄이세요. 달달한 라떼나 에너지음료보다 블랙커피 소량이 덜 흔듭니다.
+2. **매운 음식과 라면이 당기는 날**: 완전히 참기보다 국물과 염분이 센 조합을 먼저 줄이고, 따뜻한 밥·국·달걀 같은 단순한 식사로 바꾸세요.
+3. **속이 메스껍고 설사까지 있는 날**: 우유, 술, 자극적인 야식보다 미지근한 물과 부드러운 음식 위주로 가는 편이 훨씬 편합니다.
+4. **통증 때문에 계속 눕기만 하는 날**: 5~10분이라도 몸을 풀고 온찜질을 같이 쓰세요. 식사와 움직임을 둘 다 포기하면 체감 통증이 더 커질 수 있습니다.
+
 ## 바로 써먹는 실전 루틴
 
 1. 생리 전후 2~3일은 아침 공복 카페인부터 줄이세요. 커피를 마신다면 물과 간단한 식사 뒤가 낫습니다.

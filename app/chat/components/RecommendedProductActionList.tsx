@@ -1,5 +1,6 @@
 "use client";
 
+import AutoDismissTimerBar from "@/components/common/AutoDismissTimerBar";
 import {
   type ActionableRecommendation,
   type RecommendationLine,
@@ -13,6 +14,7 @@ type RecommendedProductActionListProps = {
   loading: boolean;
   expanded: boolean;
   feedback: string;
+  feedbackDurationMs: number;
   onToggleExpanded: () => void;
   onAddAll: () => void;
   onBuyAll: () => void;
@@ -26,6 +28,7 @@ export default function RecommendedProductActionList({
   loading,
   expanded,
   feedback,
+  feedbackDurationMs,
   onToggleExpanded,
   onAddAll,
   onBuyAll,
@@ -78,7 +81,16 @@ export default function RecommendedProductActionList({
       </div>
 
       {feedback ? (
-        <p className="mt-1 text-[11px] text-emerald-600">{feedback}</p>
+        <div className="mt-2 rounded-xl border border-emerald-200 bg-emerald-50/90 px-2.5 py-2">
+          <p className="text-[11px] font-medium text-emerald-700">{feedback}</p>
+          <AutoDismissTimerBar
+            durationMs={feedbackDurationMs}
+            className="mt-2"
+            showCountdown={false}
+            trackClassName="bg-emerald-100"
+            barClassName="bg-gradient-to-r from-emerald-400 to-teal-400"
+          />
+        </div>
       ) : null}
 
       {!expanded && !loading && preview.length > 0 && (

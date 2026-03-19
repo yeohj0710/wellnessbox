@@ -45,9 +45,19 @@ export type ReportSummaryAddendumPageModel = {
   packagedProducts: ReportSummaryPackagedProductCard[];
 };
 
-const ADDENDUM_SUMMARY_ONLY_THRESHOLD = 280;
-const ADDENDUM_SUMMARY_SINGLE_PRODUCT_THRESHOLD = 160;
-const ADDENDUM_PRODUCTS_PER_PAGE = 2;
+const ADDENDUM_FIRST_PAGE_CONTENT_UNITS = 1080;
+const ADDENDUM_CONTINUATION_PAGE_CONTENT_UNITS = 1180;
+const ADDENDUM_SUMMARY_CARD_BASE_UNITS = 118;
+const ADDENDUM_SUMMARY_LINE_CHARS = 44;
+const ADDENDUM_SUMMARY_LINE_UNITS = 18;
+const ADDENDUM_PRODUCT_ARTICLE_BASE_UNITS = 104;
+const ADDENDUM_PRODUCT_ROW_GAP_UNITS = 18;
+const ADDENDUM_PRODUCT_COLUMNS = 2;
+const ADDENDUM_PRODUCT_CARD_BASE_UNITS = 154;
+const ADDENDUM_PRODUCT_NAME_LINE_CHARS = 18;
+const ADDENDUM_PRODUCT_BODY_LINE_CHARS = 34;
+const ADDENDUM_PRODUCT_NAME_LINE_UNITS = 15;
+const ADDENDUM_PRODUCT_BODY_LINE_UNITS = 12;
 
 const EMPTY_PHARMACIST_COMMENT_MESSAGES = new Set([
   "약사 코멘트가 아직 입력되지 않았습니다.",
@@ -197,6 +207,96 @@ function chunkPackagedProducts(
   return chunks;
 }
 
+function estimateTextUnits(text: string, charsPerLine: number, lineUnits: number) {
+  const normalized = text.trim();
+  if (!normalized) return 0;
+  return Math.max(1, Math.ceil(normalized.length / Math.max(8, charsPerLine))) * lineUnits;
+}
+
+function estimateAddendumSummaryUnits(summary: string) {
+  return (
+    ADDENDUM_SUMMARY_CARD_BASE_UNITS +
+    estimateTextUnits(
+      summary,
+      ADDENDUM_SUMMARY_LINE_CHARS,
+      ADDENDUM_SUMMARY_LINE_UNITS
+    )
+  );
+}
+
+function estimatePackagedProductCardUnits(product: ReportSummaryPackagedProductCard) {
+  return (
+    ADDENDUM_PRODUCT_CARD_BASE_UNITS +
+    estimateTextUnits(
+      product.name,
+      ADDENDUM_PRODUCT_NAME_LINE_CHARS,
+      ADDENDUM_PRODUCT_NAME_LINE_UNITS
+    ) +
+    estimateTextUnits(
+      product.brand,
+      ADDENDUM_PRODUCT_BODY_LINE_CHARS,
+      ADDENDUM_PRODUCT_BODY_LINE_UNITS
+    ) +
+    estimateTextUnits(
+      product.description,
+      ADDENDUM_PRODUCT_BODY_LINE_CHARS,
+      ADDENDUM_PRODUCT_BODY_LINE_UNITS
+    ) +
+    estimateTextUnits(
+      product.ingredientSummary,
+      ADDENDUM_PRODUCT_BODY_LINE_CHARS,
+      ADDENDUM_PRODUCT_BODY_LINE_UNITS
+    ) +
+    estimateTextUnits(
+      product.caution,
+      ADDENDUM_PRODUCT_BODY_LINE_CHARS,
+      ADDENDUM_PRODUCT_BODY_LINE_UNITS
+    )
+  );
+}
+
+function estimatePackagedProductGridUnits(
+  packagedProducts: ReportSummaryPackagedProductCard[]
+) {
+  if (packagedProducts.length === 0) return 0;
+
+  const rows = chunkPackagedProducts(packagedProducts, ADDENDUM_PRODUCT_COLUMNS);
+  return (
+    ADDENDUM_PRODUCT_ARTICLE_BASE_UNITS +
+    rows.reduce((sum, row, rowIndex) => {
+      const rowUnits = row.reduce((max, product) => {
+        return Math.max(max, estimatePackagedProductCardUnits(product));
+      }, 0);
+      return sum + rowUnits + (rowIndex > 0 ? ADDENDUM_PRODUCT_ROW_GAP_UNITS : 0);
+    }, 0)
+  );
+}
+
+function takePackagedProductsWithinBudget(input: {
+  packagedProducts: ReportSummaryPackagedProductCard[];
+  pageBudget: number;
+  reservedUnits: number;
+}) {
+  const { packagedProducts, pageBudget, reservedUnits } = input;
+  if (packagedProducts.length === 0) return 0;
+
+  let takenCount = 0;
+
+  while (takenCount < packagedProducts.length) {
+    const nextCount = Math.min(
+      packagedProducts.length,
+      takenCount + ADDENDUM_PRODUCT_COLUMNS
+    );
+    const nextUnits =
+      reservedUnits +
+      estimatePackagedProductGridUnits(packagedProducts.slice(0, nextCount));
+    if (nextUnits > pageBudget) break;
+    takenCount = nextCount;
+  }
+
+  return takenCount;
+}
+
 export function buildReportSummaryAddendumPages(
   payload: ReportSummaryPayload
 ): ReportSummaryAddendumPageModel[] {
@@ -212,12 +312,12 @@ export function buildReportSummaryAddendumPages(
   let remainingProducts = [...addendum.packagedProducts];
 
   if (addendum.consultationSummary.length > 0) {
-    const firstPageProductCapacity =
-      addendum.consultationSummary.length >= ADDENDUM_SUMMARY_ONLY_THRESHOLD
-        ? 0
-        : addendum.consultationSummary.length >= ADDENDUM_SUMMARY_SINGLE_PRODUCT_THRESHOLD
-          ? 1
-          : ADDENDUM_PRODUCTS_PER_PAGE;
+    const summaryUnits = estimateAddendumSummaryUnits(addendum.consultationSummary);
+    const firstPageProductCapacity = takePackagedProductsWithinBudget({
+      packagedProducts: remainingProducts,
+      pageBudget: ADDENDUM_FIRST_PAGE_CONTENT_UNITS,
+      reservedUnits: summaryUnits,
+    });
 
     pages.push({
       consultationSummary: addendum.consultationSummary,
@@ -226,22 +326,28 @@ export function buildReportSummaryAddendumPages(
     remainingProducts = remainingProducts.slice(firstPageProductCapacity);
   }
 
-  const productChunks = chunkPackagedProducts(
-    remainingProducts,
-    ADDENDUM_PRODUCTS_PER_PAGE
-  );
+  while (remainingProducts.length > 0) {
+    const takeCount = takePackagedProductsWithinBudget({
+      packagedProducts: remainingProducts,
+      pageBudget: ADDENDUM_CONTINUATION_PAGE_CONTENT_UNITS,
+      reservedUnits: 0,
+    });
+    const safeTakeCount =
+      takeCount > 0
+        ? takeCount
+        : Math.min(remainingProducts.length, ADDENDUM_PRODUCT_COLUMNS);
 
-  if (pages.length === 0 && productChunks.length === 0) {
+    pages.push({
+      consultationSummary: "",
+      packagedProducts: remainingProducts.slice(0, safeTakeCount),
+    });
+    remainingProducts = remainingProducts.slice(safeTakeCount);
+  }
+
+  if (pages.length === 0) {
     pages.push({
       consultationSummary: addendum.consultationSummary,
       packagedProducts: [],
-    });
-  }
-
-  for (const chunk of productChunks) {
-    pages.push({
-      consultationSummary: "",
-      packagedProducts: chunk,
     });
   }
 

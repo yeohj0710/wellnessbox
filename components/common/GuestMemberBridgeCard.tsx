@@ -69,13 +69,13 @@ export default function GuestMemberBridgeCard({
       <div className="flex flex-wrap items-center gap-2">
         <span
           className={joinClassNames(
-            "rounded-full px-2.5 py-1 text-[11px] font-semibold",
+            "rounded-full px-2.5 py-1 text-[12px] font-semibold",
             tone.badge
           )}
         >
           {model.badgeLabel}
         </span>
-        <span className="text-[11px] font-medium text-slate-500">
+        <span className="text-[12px] font-medium text-slate-500 sm:text-[13px]">
           계정에 연결해 두기
         </span>
       </div>
@@ -83,7 +83,7 @@ export default function GuestMemberBridgeCard({
       <h2
         className={joinClassNames(
           compact
-            ? "mt-2.5 text-[1.55rem] font-extrabold tracking-tight text-slate-900"
+            ? "mt-2.5 text-[1.45rem] font-extrabold tracking-tight text-slate-900 sm:text-[1.55rem]"
             : "mt-3 text-lg font-extrabold tracking-tight text-slate-900 sm:text-xl"
         )}
       >
@@ -92,7 +92,7 @@ export default function GuestMemberBridgeCard({
       <p
         className={joinClassNames(
           compact
-            ? "mt-2 text-[13px] leading-5 text-slate-700"
+            ? "mt-2 text-[14px] leading-6 text-slate-700"
             : "mt-2 text-sm leading-6 text-slate-700"
         )}
       >
@@ -101,7 +101,7 @@ export default function GuestMemberBridgeCard({
       <p
         className={joinClassNames(
           compact
-            ? "mt-1.5 text-[11px] leading-5 text-slate-500"
+            ? "mt-1.5 text-[13px] leading-5 text-slate-500"
             : "mt-2 text-xs leading-5 text-slate-500"
         )}
       >
@@ -111,7 +111,7 @@ export default function GuestMemberBridgeCard({
       {model.reasonLines.length > 0 ? (
         <div className={joinClassNames(compact ? "mt-3 space-y-1.5" : "mt-4 space-y-1.5")}>
           {model.reasonLines.map((line) => (
-            <p key={line} className="text-xs leading-5 text-slate-600">
+            <p key={line} className={compact ? "text-[13px] leading-6 text-slate-600" : "text-xs leading-5 text-slate-600"}>
               {line}
             </p>
           ))}
@@ -137,7 +137,9 @@ export default function GuestMemberBridgeCard({
         ) : null}
       </div>
 
-      <p className="mt-3 text-[11px] text-slate-500">{model.primaryActionLabel}</p>
+      <p className={joinClassNames("mt-3 text-slate-500", compact ? "text-[13px] leading-5" : "text-[11px]")}>
+        {model.primaryActionLabel}
+      </p>
     </section>
   );
 

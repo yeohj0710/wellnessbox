@@ -14,6 +14,10 @@ import {
   saveAdminColumnMarkdownFile,
   upsertAdminColumnPost,
 } from "./api";
+import {
+  analyzeEditorialQuality,
+  getEditorialPublishBlockReason,
+} from "./editorial-quality";
 import type { ColumnPostDto, ColumnPostStatus, EditorForm } from "./types";
 import { buildDevFileMarkdown, buildUpsertPayload, slugify } from "./utils";
 
@@ -53,14 +57,23 @@ export function useColumnEditorPostActions({
   const [devSaving, setDevSaving] = useState(false);
 
   const upsertPayload = useMemo(() => buildUpsertPayload(form), [form]);
+  const qualityReport = useMemo(
+    () =>
+      analyzeEditorialQuality({
+        title: upsertPayload.title,
+        excerpt: upsertPayload.excerpt,
+        contentMarkdown: upsertPayload.contentMarkdown,
+      }),
+    [upsertPayload.contentMarkdown, upsertPayload.excerpt, upsertPayload.title]
+  );
 
   const publishBlockReason = useMemo(() => {
     if (publishing) return "발행 처리 중입니다.";
     if (!selectedId) return "먼저 저장해야 발행할 수 있습니다.";
     if (!upsertPayload.title) return "제목을 입력해 주세요.";
     if (!upsertPayload.contentMarkdown.trim()) return "본문을 입력해 주세요.";
-    return null;
-  }, [publishing, selectedId, upsertPayload.contentMarkdown, upsertPayload.title]);
+    return getEditorialPublishBlockReason(qualityReport);
+  }, [publishing, qualityReport, selectedId, upsertPayload.contentMarkdown, upsertPayload.title]);
 
   const handleSave = useCallback(async () => {
     if (!upsertPayload.title) {

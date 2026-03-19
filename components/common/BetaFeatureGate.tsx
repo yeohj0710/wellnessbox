@@ -40,19 +40,19 @@ export default function BetaFeatureGate({
         )}
       >
         <div className="flex min-w-0 flex-1 items-center gap-2.5">
-          <span className="rounded-full bg-slate-900 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white">
+          <span className="rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-white">
             Beta
           </span>
           <div className="min-w-0">
-            <span className="block truncate text-sm font-semibold text-slate-700">
+            <span className="block truncate text-[15px] font-semibold text-slate-700 sm:text-base">
               {title}
             </span>
-            <span className="mt-0.5 hidden text-[11px] leading-4 text-slate-400 group-open:block">
+            <span className="mt-0.5 hidden text-[13px] leading-5 text-slate-500 group-open:block">
               {helper}
             </span>
           </div>
         </div>
-        <div className="shrink-0 text-[11px] font-medium text-slate-400">
+        <div className="shrink-0 text-[12px] font-medium text-slate-500">
           <span className="group-open:hidden">열기</span>
           <span className="hidden group-open:inline">접기</span>
         </div>

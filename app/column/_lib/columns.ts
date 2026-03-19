@@ -37,6 +37,21 @@ const CONTENT_ROOT = path.join(process.cwd(), "app", "column", "_content");
 const KOREA_TIME_ZONE = "Asia/Seoul";
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
+function normalizeEditorialTitle(value: string) {
+  return value.replace(/^웰니스박스 가이드[:：]\s*/u, "").trim();
+}
+
+function normalizeEditorialDescription(value: string) {
+  return value.replace(/^안녕하세요,\s*웰니스박스예요\.?\s*/u, "").trim();
+}
+
+function normalizeEditorialContent(content: string, normalizedTitle: string) {
+  return content
+    .replace(/^#\s+웰니스박스 가이드[:：]\s*(.+)$/mu, `# ${normalizedTitle}`)
+    .replace(/^안녕하세요,\s*웰니스박스예요\.\s*\n+/mu, "")
+    .trim();
+}
+
 function resolveCurrentKoreaScheduleAnchor() {
   const formatter = new Intl.DateTimeFormat("en-CA", {
     timeZone: KOREA_TIME_ZONE,
@@ -69,8 +84,6 @@ function normalizeColumnPublishSchedule(columns: ColumnDetail[]) {
 async function parseColumnFile(absolutePath: string): Promise<ColumnDetail> {
   const [raw, stat] = await Promise.all([fs.readFile(absolutePath, "utf8"), fs.stat(absolutePath)]);
   const { frontmatter, content } = splitFrontmatter(raw);
-  const plainText = stripMarkdown(content);
-  const toc = buildToc(content);
   const fallbackSlug = path
     .relative(CONTENT_ROOT, absolutePath)
     .replace(/\\/g, "/")
@@ -78,12 +91,18 @@ async function parseColumnFile(absolutePath: string): Promise<ColumnDetail> {
   const slug =
     normalizeSlug(frontmatter.slug || "") || normalizeSlug(fallbackSlug);
   const publishedAt = toIsoDate(frontmatter.date, stat.mtime);
-  const title =
+  const rawTitle =
     stripWrappedQuotes(frontmatter.title || "") ||
     humanizeSlug(fallbackSlug) ||
     "웰니스박스 칼럼";
+  const title = normalizeEditorialTitle(rawTitle);
+  const normalizedContent = normalizeEditorialContent(content, title);
+  const plainText = stripMarkdown(normalizedContent);
+  const toc = buildToc(normalizedContent);
+  const descriptionSource =
+    stripWrappedQuotes(frontmatter.description || frontmatter.summary || "") || "";
   const description =
-    stripWrappedQuotes(frontmatter.description || frontmatter.summary || "") ||
+    normalizeEditorialDescription(descriptionSource) ||
     summarize(plainText, 160) ||
     "웰니스박스 칼럼이에요.";
   const tags = parseTagList(frontmatter.tags);
@@ -105,7 +124,7 @@ async function parseColumnFile(absolutePath: string): Promise<ColumnDetail> {
     publishedAt,
     tags,
     coverImageUrl,
-    content,
+    content: normalizedContent,
     toc,
     legacySlugs,
     draft,
@@ -140,15 +159,18 @@ function mapDbPostToColumnDetail(post: {
   coverImageUrl: string | null;
   updatedAt: Date;
 }) {
-  const content = post.contentMarkdown;
+  const title = normalizeEditorialTitle(post.title.trim() || "웰니스박스 칼럼");
+  const content = normalizeEditorialContent(post.contentMarkdown, title);
   const plainText = stripMarkdown(content);
   const description =
-    (post.excerpt || "").trim() || summarize(plainText, 160) || "웰니스박스 칼럼이에요.";
+    normalizeEditorialDescription((post.excerpt || "").trim()) ||
+    summarize(plainText, 160) ||
+    "웰니스박스 칼럼이에요.";
 
   return {
     postId: post.id,
     slug: normalizeSlug(post.slug),
-    title: post.title.trim() || "웰니스박스 칼럼",
+    title,
     description,
     summary: description,
     publishedAt: (post.publishedAt ?? post.updatedAt).toISOString(),

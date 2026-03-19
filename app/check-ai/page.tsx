@@ -6,6 +6,7 @@ import PersonalizedTrustPanel from "@/components/common/PersonalizedTrustPanel";
 import PersonalizedValuePropositionCard from "@/components/common/PersonalizedValuePropositionCard";
 import { useLoading } from "@/components/common/loadingContext.client";
 import { CheckAiAnimationStyles } from "@/components/check-ai/CheckAiAnimationStyles";
+import { pageShellClass } from "@/lib/page-shell";
 import { CheckAiQuestionField } from "./CheckAiQuestionField";
 import { useCheckAiExperience } from "./useCheckAiExperience";
 
@@ -50,7 +51,7 @@ function CheckAiProgressSummary({
               ? "결과를 볼 준비가 됐어요"
               : `남은 ${remainingCount}문항만 더 답하면 결과를 더 정확하게 보여드릴 수 있어요`}
           </p>
-          <p className="mt-1 text-xs leading-5 text-gray-600">
+          <p className="mt-1 text-sm leading-6 text-gray-600">
             {answeredCount < minPreviewAnswers
               ? "몇 문항만 더 답하면 지금 어느 방향을 보고 있는지 먼저 보여드릴게요."
               : previewLabels.length > 0
@@ -60,7 +61,7 @@ function CheckAiProgressSummary({
               : "답변이 쌓일수록 추천 방향이 더 또렷해져요."}
           </p>
         </div>
-        <span className="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-semibold text-sky-700 ring-1 ring-sky-100">
+        <span className="shrink-0 rounded-full bg-white px-3 py-1 text-sm font-semibold text-sky-700 ring-1 ring-sky-100">
           {answeredCount}/{questionCount}
         </span>
       </div>
@@ -70,13 +71,13 @@ function CheckAiProgressSummary({
           {previewLabels.map((label) => (
             <span
               key={label}
-              className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100"
+              className="rounded-full bg-white px-3 py-1 text-sm font-semibold text-indigo-700 ring-1 ring-indigo-100"
             >
               {label}
             </span>
           ))}
           {previewLoading ? (
-            <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-medium text-sky-700 ring-1 ring-sky-100">
+            <span className="rounded-full bg-white/80 px-3 py-1 text-sm font-medium text-sky-700 ring-1 ring-sky-100">
               업데이트 중
             </span>
           ) : null}
@@ -116,12 +117,12 @@ export default function CheckAI() {
   } = useCheckAiExperience({ showLoading });
 
   return (
-    <div className="mx-auto w-full max-w-[1160px] px-2 pb-28 sm:px-4">
+    <div className={pageShellClass("pb-28")}>
       <div className="relative mt-6 overflow-visible sm:mt-10 sm:overflow-hidden sm:rounded-3xl sm:bg-white/70 sm:shadow-[0_10px_40px_rgba(2,6,23,0.08)] sm:ring-1 sm:ring-black/5 sm:backdrop-blur">
         <div className="pointer-events-none absolute -right-24 -top-24 hidden h-80 w-80 rounded-full bg-gradient-to-br from-sky-400/30 via-indigo-400/20 to-fuchsia-300/20 blur-3xl sm:block" />
         <div className="pointer-events-none absolute -bottom-24 -left-24 hidden h-80 w-80 rounded-full bg-gradient-to-tr from-sky-400/30 via-indigo-400/20 to-fuchsia-300/20 blur-3xl sm:block" />
 
-        <div className="relative p-4 sm:p-10">
+        <div className="relative p-4 sm:p-8">
           <div className="flex items-start justify-between gap-4 sm:items-center">
             <div className="flex items-center gap-3">
               <div className="grid h-10 w-12 place-items-center rounded-2xl bg-gradient-to-br from-sky-500 to-indigo-500 text-sm font-extrabold text-white">
@@ -131,17 +132,17 @@ export default function CheckAI() {
                 <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 sm:text-3xl">
                   영양제 추천 빠른검사
                 </h1>
-                <p className="mt-1 text-xs text-gray-600 sm:text-sm">
+                <p className="mt-1 text-sm text-gray-600 sm:text-base">
                   웰니스박스 추천 AI가 답변 흐름을 보면서 방향을 먼저 잡아드려요.
                 </p>
-                <p className="mt-2 text-[11px] text-gray-500 sm:text-xs">
+                <p className="mt-2 text-[13px] leading-5 text-gray-500 sm:text-sm">
                   전부 답할수록 추천 정확도가 더 안정적으로 올라가요.
                 </p>
               </div>
             </div>
 
             <div className="hidden min-w-[200px] sm:block">
-              <div className="flex items-center justify-between text-xs text-gray-600">
+              <div className="flex items-center justify-between text-sm text-gray-600">
                 <span>진행률</span>
                 <span className="font-semibold text-gray-700">{completion}%</span>
               </div>
@@ -155,7 +156,7 @@ export default function CheckAI() {
           </div>
 
           <div className="mt-4 sm:hidden">
-            <div className="flex items-center justify-between text-xs text-gray-600">
+            <div className="flex items-center justify-between text-sm text-gray-600">
               <span>진행률</span>
               <span className="font-semibold text-gray-700">{completion}%</span>
             </div>
@@ -168,12 +169,12 @@ export default function CheckAI() {
           </div>
 
           {draftRestored && answeredCount > 0 ? (
-            <div className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-xs text-emerald-800 ring-1 ring-emerald-100">
+            <div className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-800 ring-1 ring-emerald-100">
               이전에 답하던 내용이 남아 있어 이어서 진행하고 있어요.
             </div>
           ) : null}
 
-          <div className="mt-6 xl:mt-8 xl:grid xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start xl:gap-8">
+          <div className="mt-6 2xl:mt-8 2xl:grid 2xl:grid-cols-[minmax(0,1fr)_280px] 2xl:items-start 2xl:gap-6">
             <div className="min-w-0">
               <CheckAiProgressSummary
                 answeredCount={answeredCount}
@@ -183,7 +184,7 @@ export default function CheckAI() {
                 previewLabels={previewLabels}
                 previewLoading={previewLoading}
                 questionCount={QUESTIONS.length}
-                className="xl:hidden"
+                className="2xl:hidden"
               />
 
               <form
@@ -215,7 +216,7 @@ export default function CheckAI() {
                       ? "AI 추천 결과 보기"
                       : "지금 바로 결과 보기"}
                   </button>
-                  <p className="mt-2 text-center text-[11px] text-gray-500">
+                  <p className="mt-2 text-center text-[13px] leading-5 text-gray-500 sm:text-sm">
                     {canSubmit
                       ? "모든 문항에 답한 상태라 결과 신뢰도가 가장 높아요."
                       : "비어 있는 문항은 보통값으로 보고 먼저 결과를 보여드릴 수 있어요. 끝까지 답하면 추천이 더 안정적이에요."}
@@ -225,7 +226,7 @@ export default function CheckAI() {
             </div>
 
             {answeredCount > 0 ? (
-              <aside className="hidden xl:block">
+              <aside className="hidden 2xl:block">
                 <div className="sticky top-24">
                   <CheckAiProgressSummary
                     answeredCount={answeredCount}
@@ -302,7 +303,7 @@ export default function CheckAI() {
               <p className="text-sm text-gray-600">
                 아래 추천 카테고리 순서대로 먼저 비교해보세요.
               </p>
-              <p className="mt-1 text-[11px] text-gray-500">
+              <p className="mt-1 text-[13px] leading-5 text-gray-500 sm:text-sm">
                 더 자세한 추천이 필요하면 정밀검사로 이어서 확인할 수 있어요.
               </p>
 
@@ -321,10 +322,10 @@ export default function CheckAI() {
                       }}
                     />
                     <div className="relative flex items-center justify-between px-4 py-3">
-                      <span className="text-sm font-semibold text-gray-800">
+                      <span className="text-base font-semibold text-gray-800">
                         {result.label}
                       </span>
-                      <span className="tabular-nums text-sm font-extrabold text-gray-900">
+                      <span className="tabular-nums text-base font-extrabold text-gray-900">
                         {(result.prob * 100).toFixed(1)}%
                       </span>
                     </div>

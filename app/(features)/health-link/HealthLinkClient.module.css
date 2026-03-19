@@ -412,8 +412,8 @@
 }
 
 .optionalLoginButton {
-  min-height: 44px;
-  border-radius: 12px !important;
+  min-height: 48px;
+  border-radius: 999px !important;
   font-size: 14px;
   font-weight: 700;
 }

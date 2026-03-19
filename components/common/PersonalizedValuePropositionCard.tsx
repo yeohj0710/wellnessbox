@@ -86,13 +86,13 @@ export default function PersonalizedValuePropositionCard({
       <div className="flex flex-wrap items-center gap-2">
         <span
           className={joinClassNames(
-            "rounded-full px-2.5 py-1 text-[11px] font-semibold",
+            "rounded-full px-2.5 py-1 text-[12px] font-semibold",
             tone.badge
           )}
         >
           {model.badgeLabel}
         </span>
-        <span className="text-[11px] font-medium text-slate-500">
+        <span className="text-[12px] font-medium text-slate-500 sm:text-[13px]">
           지금 상황에 맞춘 제안
         </span>
       </div>
@@ -100,7 +100,7 @@ export default function PersonalizedValuePropositionCard({
       <h2
         className={joinClassNames(
           compact
-            ? "mt-2.5 text-base font-extrabold tracking-tight text-slate-900"
+            ? "mt-2.5 text-[1.05rem] font-extrabold tracking-tight text-slate-900 sm:text-lg"
             : "mt-3 text-lg font-extrabold tracking-tight text-slate-900 sm:text-xl"
         )}
       >
@@ -109,7 +109,7 @@ export default function PersonalizedValuePropositionCard({
       <p
         className={joinClassNames(
           compact
-            ? "mt-2 text-[13px] leading-5 text-slate-700"
+            ? "mt-2 text-[14px] leading-6 text-slate-700"
             : "mt-2 text-sm leading-6 text-slate-700"
         )}
       >
@@ -118,7 +118,7 @@ export default function PersonalizedValuePropositionCard({
       <p
         className={joinClassNames(
           compact
-            ? "mt-2 text-[11px] leading-5 text-slate-500"
+            ? "mt-2 text-[13px] leading-5 text-slate-500"
             : "mt-2 text-xs leading-5 text-slate-500"
         )}
       >
@@ -133,11 +133,11 @@ export default function PersonalizedValuePropositionCard({
         )}
       >
         <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700">
+          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[12px] font-semibold text-slate-700">
             {model.situationContext.badgeLabel}
           </span>
           {model.situationContext.chips.length > 0 ? (
-            <span className="text-[11px] text-slate-500">
+            <span className="text-[12px] text-slate-500">
               {model.situationContext.chips.join(" / ")}
             </span>
           ) : null}
@@ -145,7 +145,7 @@ export default function PersonalizedValuePropositionCard({
         <p
           className={joinClassNames(
             compact
-              ? "mt-2 text-[12px] font-semibold leading-5 text-slate-800"
+              ? "mt-2 text-[14px] font-semibold leading-6 text-slate-800"
               : "mt-2 text-sm font-semibold leading-6 text-slate-800"
           )}
         >
@@ -154,7 +154,7 @@ export default function PersonalizedValuePropositionCard({
         <p
           className={joinClassNames(
             compact
-              ? "mt-1 text-[11px] leading-5 text-slate-500"
+              ? "mt-1 text-[13px] leading-5 text-slate-500"
               : "mt-1 text-xs leading-5 text-slate-500"
           )}
         >
@@ -169,7 +169,7 @@ export default function PersonalizedValuePropositionCard({
               key={reason}
               className={joinClassNames(
                 compact
-                  ? "text-[11px] leading-5 text-slate-600"
+                  ? "text-[13px] leading-6 text-slate-600"
                   : "text-xs leading-5 text-slate-600"
               )}
             >

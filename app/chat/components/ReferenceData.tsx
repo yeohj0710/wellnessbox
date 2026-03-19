@@ -78,7 +78,7 @@ export default function ReferenceData({
 
   return (
     <div className="mb-1 pl-2">
-      <details className="group text-[11px] text-slate-500">
+      <details className="group text-[13px] text-slate-500 sm:text-sm">
         <summary className="inline-flex cursor-pointer items-center gap-1 hover:text-slate-700">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-slate-300 group-open:bg-slate-400" />
           참고 데이터
@@ -99,7 +99,7 @@ export default function ReferenceData({
             group-open:translate-y-0
           "
         >
-          <div className="mb-2 mt-1 inline-block w-auto max-w-[720px] space-y-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 shadow-sm">
+          <div className="mb-2 mt-1 inline-block w-auto max-w-[720px] space-y-3 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 shadow-sm">
             {hasOrders && lastOrder ? (
               <ReferenceDataOrderSection order={lastOrder} />
             ) : null}

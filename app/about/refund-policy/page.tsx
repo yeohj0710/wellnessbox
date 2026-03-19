@@ -6,6 +6,7 @@ export const metadata: Metadata = createPageMetadata({
   description:
     "웰니스박스 상품 취소 및 환불 가능 조건, 예외 사항, 문의 방법을 확인하세요.",
   path: "/about/refund-policy",
+  noIndex: true,
 });
 
 export default function RefundPolicy() {

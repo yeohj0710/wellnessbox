@@ -11,6 +11,16 @@ import RootLayoutBoot from "@/components/common/rootLayoutBoot.client";
 import RootLayoutEnhancers from "@/components/common/rootLayoutEnhancers.client";
 import RootLayoutGate from "@/components/common/rootLayoutGate.client";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, absoluteUrl } from "@/lib/seo";
+import {
+  BUSINESS_ADDRESS,
+  BUSINESS_CORPORATE_REGISTRATION_NUMBER,
+  BUSINESS_LEGAL_NAME,
+  BUSINESS_MAIL_ORDER_REPORT_NUMBER,
+  BUSINESS_NAME_EN,
+  BUSINESS_REGISTRATION_NUMBER,
+  BUSINESS_SUPPORT_EMAIL,
+  BUSINESS_SUPPORT_PHONE_E164,
+} from "@/lib/site-identity";
 
 export const viewport = {
   themeColor: "#ffffff",
@@ -79,14 +89,42 @@ export default async function RootLayout({
     "@context": "https://schema.org",
     "@type": "Organization",
     name: SITE_NAME,
+    alternateName: BUSINESS_NAME_EN,
+    legalName: BUSINESS_LEGAL_NAME,
     url: SITE_URL,
     logo: absoluteUrl("/logo.png"),
+    description: SITE_DESCRIPTION,
+    email: BUSINESS_SUPPORT_EMAIL,
+    telephone: BUSINESS_SUPPORT_PHONE_E164,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: BUSINESS_ADDRESS,
+      addressLocality: "서울특별시",
+      addressCountry: "KR",
+    },
+    identifier: [
+      {
+        "@type": "PropertyValue",
+        name: "사업자등록번호",
+        value: BUSINESS_REGISTRATION_NUMBER,
+      },
+      {
+        "@type": "PropertyValue",
+        name: "법인등록번호",
+        value: BUSINESS_CORPORATE_REGISTRATION_NUMBER,
+      },
+      {
+        "@type": "PropertyValue",
+        name: "통신판매업신고",
+        value: BUSINESS_MAIL_ORDER_REPORT_NUMBER,
+      },
+    ],
     contactPoint: [
       {
         "@type": "ContactPoint",
         contactType: "customer support",
-        email: "wellnessbox.me@gmail.com",
-        telephone: "+82-2-6241-5530",
+        email: BUSINESS_SUPPORT_EMAIL,
+        telephone: BUSINESS_SUPPORT_PHONE_E164,
         areaServed: "KR",
         availableLanguage: ["Korean"],
       },
@@ -97,9 +135,15 @@ export default async function RootLayout({
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: SITE_NAME,
-    alternateName: "Wellnessbox",
+    alternateName: BUSINESS_NAME_EN,
     url: SITE_URL,
     inLanguage: "ko-KR",
+    description: SITE_DESCRIPTION,
+    publisher: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: SITE_URL,
+    },
   };
 
   return (

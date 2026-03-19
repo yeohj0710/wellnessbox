@@ -54,6 +54,7 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
     title: `#${label} 칼럼 모음 | 웰니스박스`,
     description: `#${label} 관련 웰니스박스 칼럼을 모아 확인해보세요.`,
     alternates: { canonical: `/column/tag/${normalizeTagSlug(label)}` },
+    robots: { index: false, follow: true },
   };
 }
 

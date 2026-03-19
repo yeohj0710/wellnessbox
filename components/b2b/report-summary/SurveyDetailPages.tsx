@@ -1,6 +1,5 @@
 "use client";
 
-import ResultSectionEmptyState from "@/components/common/resultSectionEmptyState";
 import styles from "../B2bUx.module.css";
 import { groupSectionAdviceRows } from "./survey-detail-groups";
 
@@ -47,106 +46,131 @@ export function SurveyDetailCards(props: {
   const showSectionAdviceSection = sectionAdviceGroups.length > 0 || showSectionAdviceEmpty;
 
   return (
-    <div className="space-y-4">
+    <div className={styles.reportSecondStack}>
       {page.routineRows.length > 0 ? (
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-          <h3 className="text-xl font-bold text-slate-900">생활습관 실천 가이드</h3>
-          <ul className="mt-3 space-y-2.5 text-base text-slate-700">
+        <article className={styles.reportDataCard}>
+          <div className={styles.reportDataHeadRow}>
+            <h3 className={styles.reportDataTitle}>생활습관 실천 가이드</h3>
+            <span className={styles.reportInsightBadge}>
+              체크포인트 {page.routineRows.length}개
+            </span>
+          </div>
+
+          <ul className={styles.reportRoutineList}>
             {page.routineRows.map((line, lineIndex) => (
-              <li
-                key={`routine-${pageNumber}-${lineIndex}`}
-                className="flex min-h-[48px] items-center rounded-xl border border-emerald-200 bg-emerald-50/80 px-3.5 py-3"
-              >
-                <p className="text-base leading-7 text-emerald-900">{line}</p>
+              <li key={`routine-${pageNumber}-${lineIndex}`} className={styles.reportRoutineItem}>
+                {line}
               </li>
             ))}
           </ul>
-        </section>
+        </article>
       ) : null}
 
       {showSectionAdviceSection ? (
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-          <h3 className="text-xl font-bold text-slate-900">영역별 분석 코멘트</h3>
+        <article className={styles.reportDataCard}>
+          <div className={styles.reportDataHeadRow}>
+            <h3 className={styles.reportDataTitle}>영역별 분석 코멘트</h3>
+            {sectionAdviceGroups.length > 0 ? (
+              <span className={styles.reportInsightBadge}>
+                분석 영역 {sectionAdviceGroups.length}개
+              </span>
+            ) : null}
+          </div>
+
           {sectionAdviceGroups.length > 0 ? (
-            <div className="mt-3 space-y-3">
+            <div className={styles.reportAdviceGroupList}>
               {sectionAdviceGroups.map((group, groupIndex) => (
-                <article
+                <section
                   key={`section-advice-group-${pageNumber}-${group.sectionTitle}-${groupIndex}`}
-                  className="rounded-xl border border-sky-200/80 bg-sky-50/45 px-3.5 py-3.5"
+                  className={styles.reportAdviceGroup}
                 >
-                  <p className="text-sm font-semibold text-sky-700">{group.sectionTitle}</p>
-                  <ul className="mt-2.5 space-y-2.5 text-base text-slate-700">
+                  <div className={styles.reportAdviceGroupHeader}>
+                    <p className={styles.reportAdviceGroupTitle}>{group.sectionTitle}</p>
+                    <span className={styles.reportMetaItem}>{group.items.length}개 문항</span>
+                  </div>
+
+                  <ul className={styles.reportAdviceEntryList}>
                     {group.items.map((line) => (
                       <li
                         key={`section-advice-${pageNumber}-${line.key}`}
-                        className="rounded-lg border border-slate-200/80 bg-white/80 px-3 py-2.5"
+                        className={styles.reportAdviceEntry}
                       >
                         {line.normalizedQuestionText ? (
                           <>
-                            <p className="text-base font-semibold leading-6 text-slate-900">
+                            <p className={styles.reportAdviceQuestion}>
                               {line.normalizedQuestionText}
                             </p>
-                            <p className="mt-1 text-sm leading-6 text-slate-700">
+                            <p className={styles.reportAdviceAnswer}>
                               응답: {line.answerText || "-"}
                             </p>
                           </>
                         ) : null}
-                        <p
-                          className={`text-base font-medium leading-7 text-rose-700 ${
-                            line.normalizedQuestionText ? "mt-1.5" : ""
-                          }`}
-                        >
+
+                        <p className={styles.reportAdviceRecommendation}>
                           {line.recommendation}
                         </p>
                       </li>
                     ))}
                   </ul>
-                </article>
+                </section>
               ))}
             </div>
           ) : (
-            <ResultSectionEmptyState message="현재 응답 기준으로 표시할 영역별 분석 코멘트가 없습니다. 문항 응답 데이터가 더 수집되면 각 영역별 코멘트가 자동으로 표시됩니다." />
+            <p className={styles.reportDataEmpty}>
+              현재 응답 기준으로 표시할 영역별 분석 코멘트가 없습니다. 문항 응답 데이터가 더
+              수집되면 맞춤 코멘트가 자동으로 반영됩니다.
+            </p>
           )}
-        </section>
+        </article>
       ) : null}
 
       {page.supplementRows.length > 0 ? (
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-          <h3 className="text-xl font-bold text-slate-900">맞춤 영양제 설계</h3>
-          <div className="mt-3 space-y-3">
+        <article className={styles.reportDataCard}>
+          <div className={styles.reportDataHeadRow}>
+            <h3 className={styles.reportDataTitle}>맞춤 영양 설계</h3>
+            <span className={styles.reportInsightBadge}>
+              제안 {page.supplementRows.length}개
+            </span>
+          </div>
+
+          <div className={styles.reportSupplementList}>
             {page.supplementRows.map((row, rowIndex) => (
-              <article
+              <section
                 key={`supplement-${pageNumber}-${row.sectionId}-${rowIndex}`}
-                className="rounded-xl border border-indigo-100 bg-indigo-50/40 px-3.5 py-3.5"
+                className={styles.reportSupplementCard}
               >
                 {row.showSectionTitle ? (
-                  <p className="text-sm font-semibold text-indigo-700">{row.sectionTitle}</p>
+                  <p className={styles.reportSupplementEyebrow}>{row.sectionTitle}</p>
                 ) : null}
-                <h4
-                  className={`${row.showSectionTitle ? "mt-1" : "mt-0"} text-base font-bold leading-6 text-slate-900`}
-                >
+
+                <h4 className={styles.reportSupplementTitle}>
                   {row.title || row.sectionTitle}
                 </h4>
+
                 {row.paragraphs.length > 0 ? (
-                  <div className="mt-2.5 space-y-2 text-base leading-7 text-slate-700">
+                  <div className={styles.reportSupplementParagraphs}>
                     {row.paragraphs.map((paragraph, paragraphIndex) => (
-                      <p key={`supplement-paragraph-${pageNumber}-${rowIndex}-${paragraphIndex}`}>
+                      <p
+                        key={`supplement-paragraph-${pageNumber}-${rowIndex}-${paragraphIndex}`}
+                        className={styles.reportSupplementParagraph}
+                      >
                         {paragraph}
                       </p>
                     ))}
                   </div>
                 ) : null}
+
                 {row.recommendedNutrients.length > 0 ? (
-                  <div className="mt-2.5 rounded-lg border border-indigo-200/80 bg-white/70 px-3 py-2.5">
-                    <p className="text-sm font-semibold text-indigo-700">추천 영양소</p>
-                    <p className="mt-1 text-xs leading-5 text-indigo-600">
-                      현재 결과 기준으로 우선 고려할 성분입니다.
+                  <div className={styles.reportNutrientPanel}>
+                    <p className={styles.reportNutrientTitle}>추천 영양소</p>
+                    <p className={styles.reportNutrientHint}>
+                      현재 결과 기준으로 우선 고려할 성분을 정리했습니다.
                     </p>
-                    <div className="mt-2 flex flex-wrap gap-2">
+                    <div className={styles.reportNutrientTags}>
                       {row.recommendedNutrients.map((nutrient) => (
                         <span
                           key={`nutrient-${pageNumber}-${rowIndex}-${nutrient}`}
-                          className="rounded-full border border-indigo-200 bg-white px-2.5 py-1 text-sm font-medium text-indigo-700"
+                          className={styles.reportNutrientTag}
                         >
                           {nutrient}
                         </span>
@@ -154,10 +178,10 @@ export function SurveyDetailCards(props: {
                     </div>
                   </div>
                 ) : null}
-              </article>
+              </section>
             ))}
           </div>
-        </section>
+        </article>
       ) : null}
     </div>
   );
@@ -189,7 +213,8 @@ export default function SurveyDetailPages(props: {
               <p className={styles.reportPageKicker}>{`${pageNumber}페이지 설문 결과`}</p>
               <h2 className={styles.reportPageTitle}>설문 결과</h2>
               <p className={styles.reportPageSubtitle}>
-                생활습관 실천 가이드와 영역별 분석 코멘트를 정리했습니다.
+                생활습관 실천 가이드와 영역별 분석 코멘트를 한 페이지 흐름 안에서 읽기 쉽게
+                정리했습니다.
               </p>
             </header>
 
