@@ -32,12 +32,7 @@ const businessInfoRows = [
   "통신판매업신고: 제2025-서울동대문-1562호",
   "대표 전화번호: 02-6241-5530",
   "대표 이메일: wellnessbox.me@gmail.com",
-  "주소: 서울특별시 동대문구 경희대로 26, 2층 211호(회기동, 삼의원창업센터)",
-];
-
-const footerNotices = [
-  "웰니스박스는 통신판매중개자로서 상품의 판매 당사자가 아닙니다. 구매 관련 모든 거래는 판매자와 구매자 간에 직접 이루어지며 당사는 중개 역할만 수행합니다.",
-  "모든 거래에 대한 책임과 배송, 환불, 민원 등의 처리는 웰니스박스에서 진행합니다. 민원응대: 권혁찬 02-6241-5530",
+  "주소: 서울특별시 동대문구 경희대로 26, 2층 211호(회기동, 삼익아침상센타)",
 ];
 
 export default function Footer() {
@@ -81,8 +76,8 @@ function FooterInner() {
     const basePath = englishMode
       ? currentPath.replace(/^\/en(\/)?/, "/") || "/"
       : currentPath === "/"
-        ? "/en"
-        : `/en${currentPath}`;
+      ? "/en"
+      : `/en${currentPath}`;
 
     return {
       href: basePath,
@@ -186,17 +181,6 @@ function FooterInner() {
               <p className="mt-4 text-center text-xs text-slate-400 sm:text-left">
                 © 2025 웰니스박스. All rights reserved.
               </p>
-
-              <div className="mt-4 space-y-1.5">
-                {footerNotices.map((notice) => (
-                  <p
-                    key={notice}
-                    className="max-w-[62rem] text-center text-xs leading-5 text-slate-400 sm:text-left"
-                  >
-                    {notice}
-                  </p>
-                ))}
-              </div>
             </div>
           </div>
 
@@ -216,17 +200,14 @@ function FooterInner() {
                   <p className="text-sm font-semibold text-slate-100">사업자 정보</p>
                   <span className="h-1 w-1 rounded-full bg-slate-600" aria-hidden />
                   <span className="text-xs text-slate-400">
-                    {showBusinessInfo ? "접기" : "자세히 보기"}
+                    {showBusinessInfo ? "닫기" : "자세히 보기"}
                   </span>
                 </div>
-                <p className="mt-1 max-w-[26rem] text-xs leading-5 text-slate-400">
-                  오른쪽 하단 버튼과 겹치지 않게, 왼쪽 흐름 안에서 바로 확인할 수 있게 배치했어요.
-                </p>
               </div>
 
               <div className="mt-1 flex shrink-0 items-center gap-2 text-slate-300 transition group-hover:text-slate-100">
                 <span className="text-xs font-medium">
-                  {showBusinessInfo ? "접기" : "Open"}
+                  {showBusinessInfo ? "닫기" : "Open"}
                 </span>
                 <ChevronDownIcon
                   className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
@@ -245,14 +226,9 @@ function FooterInner() {
               <div className="mt-4 rounded-[1.6rem] bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.04))] p-[1px]">
                 <div className="rounded-[calc(1.6rem-1px)] bg-slate-800/90 p-4 shadow-[0_18px_40px_rgba(2,6,23,0.18)] backdrop-blur sm:p-5">
                   <div className="mb-3 flex flex-col gap-1 border-b border-white/8 pb-3 sm:flex-row sm:items-end sm:justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-100">
-                        웰니스박스 사업자 정보
-                      </p>
-                      <p className="mt-1 text-xs text-slate-400">
-                        결제, 배송, 민원 대응 주체를 한눈에 확인할 수 있게 정리했어요.
-                      </p>
-                    </div>
+                    <p className="text-sm font-semibold text-slate-100">
+                      웰니스박스 사업자 정보
+                    </p>
                     <p className="text-[11px] font-medium text-slate-500">
                       WellnessBox Operator Snapshot
                     </p>

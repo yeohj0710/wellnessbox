@@ -32,6 +32,7 @@ type UseDesktopChatDockLauncherResult = {
   isMobileViewport: boolean;
   showRouteNudge: boolean;
   triggerBottomStyle: string | undefined;
+  triggerBottomOffsetPx: number;
   requestOpenDock: () => void;
   closeDock: () => void;
   dismissRouteNudge: () => void;
@@ -65,6 +66,9 @@ export function useDesktopChatDockLauncher({
   const hasViewportMeasurement = viewportWidth > 0;
   const isMobileViewport =
     hasViewportMeasurement && viewportWidth < MOBILE_TRIGGER_BREAKPOINT;
+  const triggerBottomOffsetPx = isMobileViewport
+    ? 24 + mobileFooterCartBarHeight
+    : 28;
   const triggerBottomStyle = isMobileViewport
     ? `calc(max(24px, env(safe-area-inset-bottom)) + ${mobileFooterCartBarHeight}px)`
     : undefined;
@@ -250,6 +254,7 @@ export function useDesktopChatDockLauncher({
     isMobileViewport,
     showRouteNudge,
     triggerBottomStyle,
+    triggerBottomOffsetPx,
     requestOpenDock,
     closeDock,
     dismissRouteNudge,

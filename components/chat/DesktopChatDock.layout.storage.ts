@@ -11,6 +11,7 @@ const DOCK_NUDGE_DISMISS_KEY_PREFIX = "wb_chat_dock_nudge_dismissed_v2:";
 const DOCK_NUDGE_GLOBAL_HIDE_UNTIL_KEY =
   "wb_chat_dock_nudge_global_hide_until_v1";
 const DOCK_POSITION_STORAGE_KEY = "wb_chat_dock_position_v1";
+const DOCK_TRIGGER_OFFSET_STORAGE_KEY = "wb_chat_dock_trigger_offset_v1";
 
 export const DOCK_RESIZE_HINT_DISMISS_KEY = "wb_chat_dock_resize_hint_dismissed_v1";
 export const DOCK_RESIZE_HINT_WIDTH = 420;
@@ -175,6 +176,39 @@ export function saveDockPosition(position: DockPanelPosition) {
     window.localStorage.setItem(
       DOCK_POSITION_STORAGE_KEY,
       JSON.stringify(position)
+    );
+  } catch {
+    // ignore storage failures
+  }
+}
+
+export type DockTriggerOffset = {
+  x: number;
+  y: number;
+};
+
+export function loadDockTriggerOffset(): DockTriggerOffset | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(DOCK_TRIGGER_OFFSET_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<DockTriggerOffset> | null;
+    if (!parsed) return null;
+    const x = Number(parsed.x);
+    const y = Number(parsed.y);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    return { x, y };
+  } catch {
+    return null;
+  }
+}
+
+export function saveDockTriggerOffset(offset: DockTriggerOffset) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(
+      DOCK_TRIGGER_OFFSET_STORAGE_KEY,
+      JSON.stringify(offset)
     );
   } catch {
     // ignore storage failures
