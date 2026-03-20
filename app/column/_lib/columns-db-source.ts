@@ -45,6 +45,10 @@ function isDatabaseUnavailable(error: unknown) {
     error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
   return (
     message.includes("compute time quota") ||
+    message.includes("can't reach database server") ||
+    message.includes("cant reach database server") ||
+    message.includes("please make sure your database server is running") ||
+    message.includes("database server is running at") ||
     message.includes("error querying the database") ||
     message.includes("prismaclientinitializationerror")
   );
