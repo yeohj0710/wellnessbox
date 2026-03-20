@@ -2,48 +2,34 @@
 
 import db from "@/lib/db";
 
-export async function getCategories() {
-  const categories = await db.category.findMany({
+const CATEGORY_SELECT = {
+  id: true,
+  name: true,
+  image: true,
+  importance: true,
+  updatedAt: true,
+  _count: {
     select: {
-      id: true,
-      name: true,
-      image: true,
-      importance: true,
-      updatedAt: true,
-      _count: {
-        select: {
-          products: true,
-        },
-      },
+      products: true,
     },
-    orderBy: [
-      { importance: "desc" },
-      { updatedAt: "desc" },
-    ],
+  },
+};
+
+const CATEGORY_ORDER_BY = [{ importance: "desc" as const }, { updatedAt: "desc" as const }];
+
+async function readCategories() {
+  return db.category.findMany({
+    select: CATEGORY_SELECT,
+    orderBy: CATEGORY_ORDER_BY,
   });
-  return categories;
+}
+
+export async function getCategories() {
+  return readCategories();
 }
 
 export async function getCategoriesByUpdatedAt() {
-  const categories = await db.category.findMany({
-    select: {
-      id: true,
-      name: true,
-      image: true,
-      importance: true,
-      updatedAt: true,
-      _count: {
-        select: {
-          products: true,
-        },
-      },
-    },
-    orderBy: [
-      { importance: "desc" },
-      { updatedAt: "desc" },
-    ],
-  });
-  return categories;
+  return readCategories();
 }
 
 export async function createCategory(data: { name: string; image?: string }) {
@@ -71,14 +57,15 @@ export async function updateCategory(
 }
 
 export async function deleteCategory(categoryId: number) {
-  const relatedProducts = await db.product.findMany({
+  const relatedProduct = await db.product.findFirst({
     where: {
       categories: {
         some: { id: categoryId },
       },
     },
+    select: { id: true },
   });
-  if (relatedProducts.length > 0) return null;
+  if (relatedProduct) return null;
   const deletedCategory = await db.category.delete({
     where: { id: categoryId },
   });

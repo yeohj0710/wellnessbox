@@ -24,8 +24,60 @@ type ResultScope = {
 };
 
 const CHAT_SESSION_INCLUDE = {
+  id: true,
+  title: true,
+  updatedAt: true,
   messages: {
     orderBy: { createdAt: "asc" as const },
+    select: {
+      role: true,
+      content: true,
+    },
+  },
+};
+
+const USER_PROFILE_SELECT = {
+  data: true,
+};
+
+const ASSESSMENT_RESULT_SELECT = {
+  id: true,
+  answers: true,
+  cResult: true,
+  questionSnapshot: true,
+  scoreSnapshot: true,
+  tzOffsetMinutes: true,
+  createdAt: true,
+};
+
+const CHECK_AI_RESULT_SELECT = {
+  id: true,
+  result: true,
+  questionSnapshot: true,
+  scoreSnapshot: true,
+  tzOffsetMinutes: true,
+  createdAt: true,
+  answers: true,
+};
+
+const ORDER_SUMMARY_SELECT = {
+  id: true,
+  status: true,
+  createdAt: true,
+  updatedAt: true,
+  orderItems: {
+    select: {
+      quantity: true,
+      pharmacyProduct: {
+        select: {
+          product: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      },
+    },
   },
 };
 
@@ -120,24 +172,23 @@ export async function loadAllResultsPayload(input: {
       input.actor.deviceClientId
         ? db.userProfile.findUnique({
             where: { clientId: input.actor.deviceClientId },
+            select: USER_PROFILE_SELECT,
           })
         : Promise.resolve(null),
     db.assessmentResult.findFirst({
       where: input.scope.resultWhere,
       orderBy: { createdAt: "desc" },
+      select: ASSESSMENT_RESULT_SELECT,
     }),
     db.checkAiResult.findFirst({
       where: input.scope.resultWhere,
       orderBy: { createdAt: "desc" },
+      select: CHECK_AI_RESULT_SELECT,
     }),
     db.order.findMany({
       where: input.scope.orderWhere,
       orderBy: { updatedAt: "desc" },
-      include: {
-        orderItems: {
-          include: { pharmacyProduct: { include: { product: true } } },
-        },
-      },
+      select: ORDER_SUMMARY_SELECT,
     }),
     healthLinkAppUserId
       ? loadLatestNhisChatContext(healthLinkAppUserId)
@@ -146,7 +197,7 @@ export async function loadAllResultsPayload(input: {
       ? db.chatSession.findMany({
           where: chatSessionWhere,
           orderBy: { updatedAt: "desc" },
-          include: CHAT_SESSION_INCLUDE,
+          select: CHAT_SESSION_INCLUDE,
           take: 5,
         })
       : Promise.resolve([]),

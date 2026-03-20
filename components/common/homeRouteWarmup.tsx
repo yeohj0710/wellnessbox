@@ -6,12 +6,15 @@ import { canRunPrefetch, enqueueRoutePrefetch } from "@/lib/navigation/prefetch"
 
 const HOME_WARMUP_SESSION_KEY = "wb-home-route-warmup:v1";
 const HOME_WARMUP_ROUTES = ["/explore", "/chat"];
+const HOME_ROUTE_WARMUP_ENABLED =
+  process.env.NEXT_PUBLIC_WB_ENABLE_HOME_ROUTE_WARMUP === "1";
 
 export default function HomeRouteWarmup() {
   const router = useRouter();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (!HOME_ROUTE_WARMUP_ENABLED) return;
     if (!canRunPrefetch()) return;
 
     const warmed = window.sessionStorage.getItem(HOME_WARMUP_SESSION_KEY);

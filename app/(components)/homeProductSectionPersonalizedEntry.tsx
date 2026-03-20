@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { SparklesIcon } from "@heroicons/react/24/outline";
+import type { NormalizedAllResults } from "@/app/chat/hooks/useChat.results";
+import { useRemoteUserContextSummary } from "@/components/common/useRemoteUserContextSummary";
 import { CODE_TO_LABEL } from "@/lib/categories";
 import { HOME_PACKAGE_LABELS } from "./homeProductSection.copy";
 import type { HomeCategory } from "./homeProductSection.types";
@@ -22,20 +24,6 @@ type PersonalizedSignals = {
   source: PersonalizedSource;
   riskLevel: "low" | "medium" | "high" | "unknown";
 };
-
-type JsonRecord = Record<string, unknown>;
-
-function asRecord(value: unknown): JsonRecord | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  return value as JsonRecord;
-}
-
-function asStringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value
-    .map((entry) => (typeof entry === "string" ? entry.trim() : ""))
-    .filter(Boolean);
-}
 
 function normalizeLabel(value: string) {
   return value.replace(/\s+/g, "").toLowerCase();
@@ -75,34 +63,20 @@ function resolveMatchedCategories(
 }
 
 function parseSignals(
-  payload: unknown,
+  remoteResults: NormalizedAllResults | null,
   categories: HomeCategory[]
 ): PersonalizedSignals | null {
-  const root = asRecord(payload);
-  if (!root) return null;
-
-  const assess = asRecord(root.assess);
-  const assessNormalized = asRecord(assess?.normalized);
   const assessMatches = resolveMatchedCategories(
-    asStringArray(assessNormalized?.topLabels),
+    remoteResults?.assessResult?.summary ?? [],
     categories
   );
 
-  const checkAi = asRecord(root.checkAi);
-  const checkAiNormalized = asRecord(checkAi?.normalized);
   const checkAiMatches = resolveMatchedCategories(
-    asStringArray(checkAiNormalized?.topLabels),
+    remoteResults?.checkAiResult?.labels ?? [],
     categories
   );
 
-  const healthLink = asRecord(root.healthLink);
-  const riskLevel =
-    healthLink?.riskLevel === "low" ||
-    healthLink?.riskLevel === "medium" ||
-    healthLink?.riskLevel === "high" ||
-    healthLink?.riskLevel === "unknown"
-      ? healthLink.riskLevel
-      : "unknown";
+  const riskLevel = remoteResults?.healthLink?.riskLevel ?? "unknown";
 
   if (assessMatches.length > 0) {
     return {
@@ -131,42 +105,13 @@ export default function HomeProductSectionPersonalizedEntry({
   onApplyRecommendedTrial,
   hideBehindBeta = true,
 }: PersonalizedEntryProps) {
-  const [payload, setPayload] = useState<unknown>(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (categories.length === 0) return;
-
-    const controller = new AbortController();
-    setLoading(true);
-
-    fetch("/api/user/all-results", { signal: controller.signal })
-      .then(async (response) => {
-        if (!response.ok) return null;
-        return response.json();
-      })
-      .then((data) => {
-        if (!controller.signal.aborted) {
-          setPayload(data);
-        }
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) {
-          setPayload(null);
-        }
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
-      });
-
-    return () => controller.abort();
-  }, [categories.length]);
+  const { loading, remoteResults } = useRemoteUserContextSummary({
+    enabled: categories.length > 0,
+  });
 
   const signals = useMemo(
-    () => parseSignals(payload, categories),
-    [categories, payload]
+    () => parseSignals(remoteResults, categories),
+    [categories, remoteResults]
   );
 
   if (loading || !signals) return null;

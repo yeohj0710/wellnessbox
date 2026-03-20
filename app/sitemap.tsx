@@ -44,7 +44,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  const columnSummaries = await getAllColumnSummaries();
+  const columnSummaries = await getAllColumnSummaries().catch((error) => {
+    console.error("[sitemap] failed to load column summaries", error);
+    return [];
+  });
   const detailEntries: MetadataRoute.Sitemap = columnSummaries.map((column) => ({
     url: `${baseUrl}/column/${column.slug}`,
     lastModified: new Date(column.updatedAt || column.publishedAt),

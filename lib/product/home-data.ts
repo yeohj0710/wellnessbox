@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import { getCategories, getProducts } from "@/lib/product";
 import { sortByImportanceDesc } from "@/lib/utils";
 import { measureServerTiming } from "@/lib/perf/timing";
+import { PUBLIC_CACHE_SHARED_MAX_AGE_SECONDS } from "@/lib/server/public-cache";
 
 type HomeCategory = Awaited<ReturnType<typeof getCategories>>[number];
 type HomeProduct = Awaited<ReturnType<typeof getProducts>>[number];
@@ -10,6 +11,12 @@ export type HomePageData = {
   categories: HomeCategory[];
   products: HomeProduct[];
   rankingProducts: HomeProduct[];
+};
+
+const EMPTY_HOME_PAGE_DATA: HomePageData = {
+  categories: [],
+  products: [],
+  rankingProducts: [],
 };
 
 const HOME_DATA_TIMEOUT_MS = Number.parseInt(
@@ -71,6 +78,15 @@ function normalizeErrorMessage(error: unknown) {
   return "unknown";
 }
 
+function shouldUseEmptyHomeDataFallback(error: unknown) {
+  const message = normalizeErrorMessage(error).toLowerCase();
+  return (
+    message.includes("compute time quota") ||
+    message.includes("error querying the database") ||
+    message.includes("prismaclientinitializationerror")
+  );
+}
+
 function wait(ms: number) {
   return new Promise<void>((resolve) => {
     setTimeout(resolve, ms);
@@ -96,7 +112,7 @@ const readHomePageData = unstable_cache(
     });
   },
   ["home-page-data-v1"],
-  { revalidate: 60 }
+  { revalidate: PUBLIC_CACHE_SHARED_MAX_AGE_SECONDS }
 );
 
 export async function getHomePageData(): Promise<HomePageData> {
@@ -123,6 +139,13 @@ export async function getHomePageData(): Promise<HomePageData> {
         reason: normalizeErrorMessage(lastError),
       });
       return lastSuccessfulHomeData;
+    }
+
+    if (shouldUseEmptyHomeDataFallback(lastError)) {
+      console.warn("[perf] home:data fallback: using empty snapshot", {
+        reason: normalizeErrorMessage(lastError),
+      });
+      return EMPTY_HOME_PAGE_DATA;
     }
 
     throw lastError instanceof Error

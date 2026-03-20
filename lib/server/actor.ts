@@ -26,7 +26,10 @@ type ResolveActorOptions = {
 
 async function ensureAppUserForKakao(
   kakaoId: string,
-  deviceClientId: string | null
+  deviceClientId: string | null,
+  options: {
+    allowClientIdUpdate?: boolean;
+  } = {}
 ) {
   const existing = await db.appUser.findUnique({
     where: { kakaoId },
@@ -38,7 +41,7 @@ async function ensureAppUserForKakao(
       select: { id: true, clientId: true, phone: true, phoneLinkedAt: true },
     });
   }
-  if (!existing.clientId && deviceClientId) {
+  if (!existing.clientId && deviceClientId && options.allowClientIdUpdate) {
     await db.appUser.update({
       where: { id: existing.id },
       data: { clientId: deviceClientId },
@@ -78,7 +81,9 @@ async function resolveActorContextForRequest(
   }
 
   const appUser = loggedIn
-    ? await ensureAppUserForKakao(String(user.kakaoId), deviceClientId)
+    ? await ensureAppUserForKakao(String(user.kakaoId), deviceClientId, {
+        allowClientIdUpdate: intent === "write",
+      })
     : null;
 
   return {
@@ -105,7 +110,9 @@ async function resolveActorContextForServerComponent(): Promise<RequestActor> {
   const { getClientIdFromRequest } = await import("@/lib/server/client");
   const deviceClientId = await getClientIdFromRequest();
   const appUser = loggedIn
-    ? await ensureAppUserForKakao(String(user.kakaoId), deviceClientId)
+    ? await ensureAppUserForKakao(String(user.kakaoId), deviceClientId, {
+        allowClientIdUpdate: false,
+      })
     : null;
 
   return {

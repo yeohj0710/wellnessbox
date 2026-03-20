@@ -14,6 +14,8 @@ import AdminNarrativeBriefingCard from "@/components/admin/AdminNarrativeBriefin
 import BetaFeatureGate from "@/components/common/BetaFeatureGate";
 import ModelManager from "@/components/manager/modelManager";
 
+export const dynamic = "force-dynamic";
+
 function HubCard(props: {
   icon: ReactNode;
   title: string;

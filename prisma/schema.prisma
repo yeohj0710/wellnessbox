@@ -21,15 +21,15 @@ model Category {
 }
 
 model Product {
-    id               Int               @id @default(autoincrement())
-    name             String?
-    images           String[]
-    description      String?
-    detailFacts      Json?
-    rating           Float?
-    createdAt        DateTime          @default(now())
-    updatedAt        DateTime          @default(now()) @updatedAt
-    importance       Float?
+  id               Int               @id @default(autoincrement())
+  name             String?
+  images           String[]
+  description      String?
+  detailFacts      Json?
+  rating           Float?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @default(now()) @updatedAt
+  importance       Float?
   pharmacyProducts PharmacyProduct[]
   reviews          Review[]
   categories       Category[]        @relation("CategoryProductRelation")
@@ -94,7 +94,7 @@ model Order {
   orderItems       OrderItem[]
   reviews          Review[]
   subscriptions    Subscription[]
-  appUser          AppUser?        @relation(fields: [appUserId], references: [id], onDelete: SetNull)
+  appUser          AppUser?       @relation(fields: [appUserId], references: [id], onDelete: SetNull)
 
   @@index([appUserId, createdAt])
   @@index([phone, createdAt])
@@ -156,20 +156,20 @@ model Review {
 }
 
 model Subscription {
-  id         Int       @id @default(autoincrement())
-  endpoint   String
-  auth       String
-  p256dh     String
-  orderId    Int?
-  invalidatedAt DateTime?
+  id                Int       @id @default(autoincrement())
+  endpoint          String
+  auth              String
+  p256dh            String
+  orderId           Int?
+  invalidatedAt     DateTime?
   lastFailureStatus Int?
-  createdAt  DateTime  @default(now())
-  pharmacyId Int?
-  role       String
-  riderId    Int?
-  order      Order?    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  pharmacy   Pharmacy? @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
-  rider      Rider?    @relation(fields: [riderId], references: [id], onDelete: Cascade)
+  createdAt         DateTime  @default(now())
+  pharmacyId        Int?
+  role              String
+  riderId           Int?
+  order             Order?    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  pharmacy          Pharmacy? @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
+  rider             Rider?    @relation(fields: [riderId], references: [id], onDelete: Cascade)
 
   @@unique([role, orderId, endpoint])
   @@unique([role, pharmacyId, endpoint])
@@ -199,51 +199,51 @@ model PushDelivery {
 }
 
 model Client {
-  id             String             @id
-  userAgent      String?
-  lastIpHash     String?
-  pushEndpoint   String?
-  createdAt      DateTime           @default(now())
-  lastSeenAt     DateTime           @default(now())
-  assessResults  AssessmentResult[]
+  id                 String              @id
+  userAgent          String?
+  lastIpHash         String?
+  pushEndpoint       String?
+  createdAt          DateTime            @default(now())
+  lastSeenAt         DateTime            @default(now())
+  assessResults      AssessmentResult[]
   aiExperimentEvents AiExperimentEvent[]
-  chatSessions   ChatSession[]
-  checkAiResults CheckAiResult[]
-  profile        UserProfile?
-  appUsers       AppUser[]
+  chatSessions       ChatSession[]
+  checkAiResults     CheckAiResult[]
+  profile            UserProfile?
+  appUsers           AppUser[]
 
   @@index([lastSeenAt])
 }
 
 model AssessmentResult {
-  id              String   @id @default(cuid())
-  clientId        String
-  appUserId       String?
-  answers         Json
-  cResult         Json
+  id               String   @id @default(cuid())
+  clientId         String
+  appUserId        String?
+  answers          Json
+  cResult          Json
   questionSnapshot Json?
-  scoreSnapshot   Json?
-  tzOffsetMinutes Int      @default(0)
-  createdAt       DateTime @default(now())
-  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  appUser         AppUser? @relation(fields: [appUserId], references: [id], onDelete: SetNull)
+  scoreSnapshot    Json?
+  tzOffsetMinutes  Int      @default(0)
+  createdAt        DateTime @default(now())
+  client           Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  appUser          AppUser? @relation(fields: [appUserId], references: [id], onDelete: SetNull)
 
   @@index([clientId, createdAt])
   @@index([appUserId, createdAt])
 }
 
 model CheckAiResult {
-  id              String   @id @default(cuid())
-  clientId        String
-  appUserId       String?
-  result          Json
+  id               String   @id @default(cuid())
+  clientId         String
+  appUserId        String?
+  result           Json
   questionSnapshot Json?
-  scoreSnapshot   Json?
-  tzOffsetMinutes Int      @default(0)
-  createdAt       DateTime @default(now())
-  answers         Json?
-  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  appUser         AppUser? @relation(fields: [appUserId], references: [id], onDelete: SetNull)
+  scoreSnapshot    Json?
+  tzOffsetMinutes  Int      @default(0)
+  createdAt        DateTime @default(now())
+  answers          Json?
+  client           Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  appUser          AppUser? @relation(fields: [appUserId], references: [id], onDelete: SetNull)
 
   @@index([clientId, createdAt])
   @@index([appUserId, createdAt])
@@ -261,29 +261,29 @@ model UserProfile {
 }
 
 model AppUser {
-  id              String    @id @default(cuid())
-  kakaoId         String    @unique
-  clientId        String?
-  nickname        String?
-  email           String?
-  profileImageUrl String?
-  kakaoEmail      String?
-  phone           String?
-  phoneLinkedAt   DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @default(now()) @updatedAt
-  client          Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  assessResults   AssessmentResult[]
-  checkAiResults  CheckAiResult[]
-  emailOtps       EmailOtp[]
-  orders          Order[]
-  chatSessions    ChatSession[]
-  healthProviderLinks HealthProviderLink[]
-  healthProviderFetchCaches HealthProviderFetchCache[]
+  id                          String                       @id @default(cuid())
+  kakaoId                     String                       @unique
+  clientId                    String?
+  nickname                    String?
+  email                       String?
+  profileImageUrl             String?
+  kakaoEmail                  String?
+  phone                       String?
+  phoneLinkedAt               DateTime?
+  createdAt                   DateTime                     @default(now())
+  updatedAt                   DateTime                     @default(now()) @updatedAt
+  client                      Client?                      @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  assessResults               AssessmentResult[]
+  checkAiResults              CheckAiResult[]
+  emailOtps                   EmailOtp[]
+  orders                      Order[]
+  chatSessions                ChatSession[]
+  healthProviderLinks         HealthProviderLink[]
+  healthProviderFetchCaches   HealthProviderFetchCache[]
   healthProviderFetchAttempts HealthProviderFetchAttempt[]
-  b2bEmployees B2bEmployee[]
-  b2bEmployeeAccessLogs B2bEmployeeAccessLog[]
-  aiExperimentEvents AiExperimentEvent[]
+  b2bEmployees                B2bEmployee[]
+  b2bEmployeeAccessLogs       B2bEmployeeAccessLog[]
+  aiExperimentEvents          AiExperimentEvent[]
 
   @@index([clientId])
   @@index([email])
@@ -291,7 +291,7 @@ model AppUser {
 }
 
 model AiExperimentEvent {
-  id            String    @id @default(cuid())
+  id            String   @id @default(cuid())
   experimentKey String
   variantKey    String
   eventName     String
@@ -301,9 +301,9 @@ model AiExperimentEvent {
   appUserId     String?
   clientId      String?
   payload       Json?
-  createdAt     DateTime  @default(now())
-  appUser       AppUser?  @relation(fields: [appUserId], references: [id], onDelete: SetNull)
-  client        Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  createdAt     DateTime @default(now())
+  appUser       AppUser? @relation(fields: [appUserId], references: [id], onDelete: SetNull)
+  client        Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
 
   @@index([experimentKey, createdAt])
   @@index([experimentKey, variantKey, eventName, createdAt])
@@ -313,10 +313,10 @@ model AiExperimentEvent {
 }
 
 model HealthProviderLink {
-  id               String   @id @default(cuid())
+  id               String    @id @default(cuid())
   appUserId        String
   provider         String
-  linked           Boolean  @default(false)
+  linked           Boolean   @default(false)
   loginMethod      String?
   loginOrgCd       String?
   stepMode         String?
@@ -327,9 +327,9 @@ model HealthProviderLink {
   lastFetchedAt    DateTime?
   lastErrorCode    String?
   lastErrorMessage String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @default(now()) @updatedAt
-  appUser          AppUser  @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+  appUser          AppUser   @relation(fields: [appUserId], references: [id], onDelete: Cascade)
 
   @@unique([appUserId, provider])
   @@index([provider, linked])
@@ -337,28 +337,28 @@ model HealthProviderLink {
 }
 
 model HealthProviderFetchCache {
-  id            String   @id @default(cuid())
-  appUserId     String
-  provider      String
-  identityHash  String
-  requestHash   String
-  requestKey    String
-  targets       String[]
-  yearLimit     Int?
-  fromDate      String?
-  toDate        String?
-  subjectType   String?
-  statusCode    Int
-  ok            Boolean
-  partial       Boolean  @default(false)
-  payload       Json
-  fetchedAt     DateTime @default(now())
-  expiresAt     DateTime
-  hitCount      Int      @default(0)
-  lastHitAt     DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @default(now()) @updatedAt
-  appUser       AppUser  @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+  id           String    @id @default(cuid())
+  appUserId    String
+  provider     String
+  identityHash String
+  requestHash  String
+  requestKey   String
+  targets      String[]
+  yearLimit    Int?
+  fromDate     String?
+  toDate       String?
+  subjectType  String?
+  statusCode   Int
+  ok           Boolean
+  partial      Boolean   @default(false)
+  payload      Json
+  fetchedAt    DateTime  @default(now())
+  expiresAt    DateTime
+  hitCount     Int       @default(0)
+  lastHitAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @default(now()) @updatedAt
+  appUser      AppUser   @relation(fields: [appUserId], references: [id], onDelete: Cascade)
 
   @@unique([appUserId, provider, requestHash])
   @@index([appUserId, provider, expiresAt])
@@ -438,18 +438,18 @@ model PhoneOtp {
 }
 
 model EmailOtp {
-  id             String    @id @default(cuid())
-  userId         String
-  email          String
-  codeHash       String
-  createdAt      DateTime  @default(now())
-  expiresAt      DateTime
-  usedAt         DateTime?
-  attemptCount   Int       @default(0)
-  lastAttemptAt  DateTime?
-  sendCount      Int       @default(1)
-  lastSentAt     DateTime  @default(now())
-  user           AppUser   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String    @id @default(cuid())
+  userId        String
+  email         String
+  codeHash      String
+  createdAt     DateTime  @default(now())
+  expiresAt     DateTime
+  usedAt        DateTime?
+  attemptCount  Int       @default(0)
+  lastAttemptAt DateTime?
+  sendCount     Int       @default(1)
+  lastSentAt    DateTime  @default(now())
+  user          AppUser   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, email, createdAt])
   @@index([userId, email, expiresAt])
@@ -457,27 +457,27 @@ model EmailOtp {
 }
 
 model AppLoginTransferToken {
-  id         String   @id @default(cuid())
-  tokenHash  String   @unique
+  id         String    @id @default(cuid())
+  tokenHash  String    @unique
   payload    Json
   expiresAt  DateTime
   consumedAt DateTime?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
 }
 
 model B2bEmployee {
-  id              String   @id @default(cuid())
+  id              String                  @id @default(cuid())
   appUserId       String?
   name            String
   birthDate       String
   phoneNormalized String
-  identityHash    String   @unique
-  linkedProvider  String   @default("HYPHEN_NHIS")
+  identityHash    String                  @unique
+  linkedProvider  String                  @default("HYPHEN_NHIS")
   lastSyncedAt    DateTime?
   lastViewedAt    DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @default(now()) @updatedAt
-  appUser         AppUser? @relation(fields: [appUserId], references: [id], onDelete: SetNull)
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @default(now()) @updatedAt
+  appUser         AppUser?                @relation(fields: [appUserId], references: [id], onDelete: SetNull)
   healthSnapshots B2bHealthDataSnapshot[]
   surveyResponses B2bSurveyResponse[]
   analysisResults B2bAnalysisResult[]
@@ -492,16 +492,16 @@ model B2bEmployee {
 }
 
 model B2bHealthDataSnapshot {
-  id             String   @id @default(cuid())
+  id             String      @id @default(cuid())
   employeeId     String
-  provider       String   @default("HYPHEN_NHIS")
-  sourceMode     String   @default("hyphen")
+  provider       String      @default("HYPHEN_NHIS")
+  sourceMode     String      @default("hyphen")
   rawJson        Json
   normalizedJson Json
   fetchedAt      DateTime
   periodKey      String?
   reportCycle    Int?
-  createdAt      DateTime @default(now())
+  createdAt      DateTime    @default(now())
   employee       B2bEmployee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
   @@index([employeeId, periodKey, fetchedAt])
@@ -510,33 +510,33 @@ model B2bHealthDataSnapshot {
 }
 
 model B2bSurveyTemplate {
-  id        String   @id @default(cuid())
-  version   Int      @unique
+  id        String              @id @default(cuid())
+  version   Int                 @unique
   title     String
   schema    Json
-  isActive  Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  isActive  Boolean             @default(false)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @default(now()) @updatedAt
   responses B2bSurveyResponse[]
 
   @@index([isActive, version])
 }
 
 model B2bSurveyResponse {
-  id              String   @id @default(cuid())
-  employeeId      String
-  templateId      String
-  templateVersion Int
-  selectedSections String[] @default([])
-  answersJson     Json
-  submittedAt     DateTime?
-  periodKey       String?
-  reportCycle     Int?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @default(now()) @updatedAt
-  employee        B2bEmployee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  template        B2bSurveyTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
-  answers         B2bSurveyAnswer[]
+  id               String            @id @default(cuid())
+  employeeId       String
+  templateId       String
+  templateVersion  Int
+  selectedSections String[]          @default([])
+  answersJson      Json
+  submittedAt      DateTime?
+  periodKey        String?
+  reportCycle      Int?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @default(now()) @updatedAt
+  employee         B2bEmployee       @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  template         B2bSurveyTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  answers          B2bSurveyAnswer[]
 
   @@index([employeeId, periodKey, updatedAt])
   @@index([employeeId, updatedAt])
@@ -544,7 +544,7 @@ model B2bSurveyResponse {
 }
 
 model B2bSurveyAnswer {
-  id          String   @id @default(cuid())
+  id          String            @id @default(cuid())
   responseId  String
   questionKey String
   sectionKey  String?
@@ -552,7 +552,7 @@ model B2bSurveyAnswer {
   answerValue String?
   score       Float?
   meta        Json?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime          @default(now())
   response    B2bSurveyResponse @relation(fields: [responseId], references: [id], onDelete: Cascade)
 
   @@index([responseId, questionKey])
@@ -560,16 +560,16 @@ model B2bSurveyAnswer {
 }
 
 model B2bAnalysisResult {
-  id         String   @id @default(cuid())
-  employeeId String
-  version    Int
-  payload    Json
-  computedAt DateTime?
-  periodKey  String?
+  id          String      @id @default(cuid())
+  employeeId  String
+  version     Int
+  payload     Json
+  computedAt  DateTime?
+  periodKey   String?
   reportCycle Int?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @default(now()) @updatedAt
-  employee   B2bEmployee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @default(now()) @updatedAt
+  employee    B2bEmployee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
   @@unique([employeeId, version])
   @@index([employeeId, periodKey, updatedAt])
@@ -577,7 +577,7 @@ model B2bAnalysisResult {
 }
 
 model B2bPharmacistNote {
-  id                String   @id @default(cuid())
+  id                String      @id @default(cuid())
   employeeId        String
   note              String?
   recommendations   String?
@@ -585,8 +585,8 @@ model B2bPharmacistNote {
   createdByAdminTag String?
   periodKey         String?
   reportCycle       Int?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @default(now()) @updatedAt
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @default(now()) @updatedAt
   employee          B2bEmployee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
   @@index([employeeId, periodKey, updatedAt])
@@ -594,20 +594,20 @@ model B2bPharmacistNote {
 }
 
 model B2bReport {
-  id          String   @id @default(cuid())
-  employeeId  String
-  variantIndex Int
-  status      String   @default("draft")
-  pageSize    String   @default("A4")
-  stylePreset String?
+  id            String      @id @default(cuid())
+  employeeId    String
+  variantIndex  Int
+  status        String      @default("draft")
+  pageSize      String      @default("A4")
+  stylePreset   String?
   reportPayload Json
-  layoutDsl   Json?
-  exportAudit Json?
-  periodKey   String?
-  reportCycle Int?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
-  employee    B2bEmployee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  layoutDsl     Json?
+  exportAudit   Json?
+  periodKey     String?
+  reportCycle   Int?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @default(now()) @updatedAt
+  employee      B2bEmployee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
   @@unique([employeeId, variantIndex])
   @@index([employeeId, periodKey, createdAt])
@@ -616,17 +616,17 @@ model B2bReport {
 }
 
 model B2bEmployeeAccessLog {
-  id        String   @id @default(cuid())
+  id         String       @id @default(cuid())
   employeeId String?
-  appUserId String?
-  action    String
-  route     String?
-  ipHash    String?
-  userAgent String?
-  payload   Json?
-  createdAt DateTime @default(now())
-  employee  B2bEmployee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
-  appUser   AppUser?  @relation(fields: [appUserId], references: [id], onDelete: SetNull)
+  appUserId  String?
+  action     String
+  route      String?
+  ipHash     String?
+  userAgent  String?
+  payload    Json?
+  createdAt  DateTime     @default(now())
+  employee   B2bEmployee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  appUser    AppUser?     @relation(fields: [appUserId], references: [id], onDelete: SetNull)
 
   @@index([employeeId, createdAt])
   @@index([appUserId, createdAt])
@@ -634,12 +634,12 @@ model B2bEmployeeAccessLog {
 }
 
 model B2bAdminActionLog {
-  id         String   @id @default(cuid())
+  id         String       @id @default(cuid())
   employeeId String?
   action     String
   actorTag   String?
   payload    Json?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime     @default(now())
   employee   B2bEmployee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
 
   @@index([employeeId, createdAt])
@@ -647,19 +647,19 @@ model B2bAdminActionLog {
 }
 
 model ColumnPost {
-  id              String   @id @default(cuid())
-  slug            String   @unique
+  id              String                @id @default(cuid())
+  slug            String                @unique
   title           String
   excerpt         String?
   contentMarkdown String
   contentHtml     String?
-  tags            String[] @default([])
-  status          String   @default("draft")
+  tags            String[]              @default([])
+  status          String                @default("draft")
   publishedAt     DateTime?
   authorName      String?
   coverImageUrl   String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @default(now()) @updatedAt
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @default(now()) @updatedAt
   slugAliases     ColumnPostSlugAlias[]
 
   @@index([status, publishedAt, updatedAt])
@@ -668,18 +668,60 @@ model ColumnPost {
 }
 
 model ColumnPostSlugAlias {
-  id         String     @id @default(cuid())
-  postId     String
-  slug       String     @unique
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @default(now()) @updatedAt
-  post       ColumnPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  id        String     @id @default(cuid())
+  postId    String
+  slug      String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @default(now()) @updatedAt
+  post      ColumnPost @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@index([postId, createdAt])
 }
 
 /// DB에 이미 있는 vector 테이블 유지 (drop 위험 방지)
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model PaytenPocLeadCapture {
+  id                   Int                         @id @default(autoincrement())
+  submittedAt          DateTime                    @default(now())
+  leadName             String
+  phone                String
+  email                String
+  companyOrAffiliation String?
+  jobTitle             String?
+  customerSegment      PaytenPocCustomerSegment
+  inquiryType          PaytenPocInquiryType
+  ideaTitle            String?
+  ideaSummary          String?
+  industryCategory     String?
+  businessStage        PaytenPocBusinessStage
+  landingPageVariant   String                      @default("LP-2026-03-PAYTEN-A")
+  acquisitionChannel   PaytenPocAcquisitionChannel
+  campaignTag          String?
+  painPointKeywords    String[]                    @default([])
+  expectedPatentCount  Int?
+  targetLaunchWindow   String?
+  budgetRange          PaytenPocBudgetRange?
+  willingnessToPay     PaytenPocWillingnessToPay
+  qualifiedLead        Boolean                     @default(true)
+  leadScore            Int                         @default(0)
+  validationStage      PaytenPocValidationStage    @default(NEW)
+  privacyConsented     Boolean                     @default(true)
+  contactedAt          DateTime?
+  convertedAt          DateTime?
+  resultTag            String?
+  outcomeSummary       String?
+  adminMemo            String?
+  createdAt            DateTime                    @default(now())
+  updatedAt            DateTime                    @default(now()) @updatedAt
+
+  @@index([submittedAt])
+  @@index([inquiryType, submittedAt])
+  @@index([acquisitionChannel, submittedAt])
+  @@index([validationStage, submittedAt])
+  @@index([qualifiedLead, leadScore])
+  @@map("payten_poc_lead_capture")
+}
+
 model rag_chunks {
   id        String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   text      String?
@@ -691,4 +733,66 @@ enum ChatRole {
   system
   user
   assistant
+}
+
+enum PaytenPocInquiryType {
+  FREE_ANALYSIS
+  CONSULTATION
+  PURCHASE
+  GENERAL
+}
+
+enum PaytenPocCustomerSegment {
+  STARTUP_FOUNDER
+  SOLOPRENEUR
+  SMB_OWNER
+  RESEARCH_LAB
+  CREATOR_BRAND
+  IN_HOUSE_TEAM
+  STUDENT_TEAM
+}
+
+enum PaytenPocBusinessStage {
+  IDEA
+  MVP
+  PRE_LAUNCH
+  EARLY_REVENUE
+  OPERATING
+  BUSINESS_EXPANSION
+}
+
+enum PaytenPocAcquisitionChannel {
+  META_AD
+  ORGANIC_SEARCH
+  REFERRAL
+  CONTENT_MARKETING
+  COMMUNITY
+  OUTBOUND_PARTNER
+}
+
+enum PaytenPocBudgetRange {
+  UNDER_100K
+  KRW_100K_300K
+  KRW_300K_500K
+  ABOVE_500K
+  UNDECIDED
+}
+
+enum PaytenPocWillingnessToPay {
+  UNKNOWN
+  LOW
+  MEDIUM
+  HIGH
+  VERY_HIGH
+}
+
+enum PaytenPocValidationStage {
+  NEW
+  CONTACTED
+  INTERVIEWED
+  ANALYZED
+  PROPOSAL_SENT
+  PILOT_RESERVED
+  CONVERTED
+  CLOSED_LOST
 }

@@ -13,7 +13,7 @@ export function OrderPhoneContext({
 }: OrderPhoneContextProps) {
   if (isPhoneLinked) {
     return (
-      <section className="mb-4 rounded-2xl border border-sky-200 bg-gradient-to-b from-sky-50/80 to-white px-5 py-5 shadow-sm">
+      <section className="rounded-2xl border border-sky-200 bg-gradient-to-b from-sky-50/80 to-white px-5 py-5 shadow-sm">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <div className="text-sm font-semibold text-slate-900">인증된 번호</div>
@@ -46,7 +46,7 @@ export function OrderPhoneContext({
   }
 
   return (
-    <section className="mb-4 rounded-2xl border border-slate-200 bg-white/95 px-5 py-5 shadow-sm">
+    <section className="rounded-2xl border border-slate-200 bg-white/95 px-5 py-5 shadow-sm">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="text-sm font-semibold text-slate-900">

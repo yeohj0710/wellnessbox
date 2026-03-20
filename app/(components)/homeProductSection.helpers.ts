@@ -28,7 +28,7 @@ export function parseCachedArray<T = unknown>(raw: string | null): T[] | null {
   }
 }
 
-export const HOME_CACHE_TTL_MS = 60 * 1000;
+export const HOME_CACHE_TTL_MS = 60 * 60 * 1000;
 export const HOME_STALE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 export const HOME_FETCH_TIMEOUT_MS = 8000;
 export const HOME_FETCH_RETRIES = 3;

@@ -9,7 +9,7 @@ import HomeProductSectionServer from "@/app/(components)/homeProductSection.serv
 import { getAllColumnSummaries } from "@/app/column/_lib/columns";
 import { getHomePageData, type HomePageData } from "@/lib/product/home-data";
 
-export const revalidate = 60;
+export const revalidate = 3600;
 
 function CardSectionFallback() {
   return (

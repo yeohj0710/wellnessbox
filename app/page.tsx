@@ -18,7 +18,7 @@ import {
   BUSINESS_SUPPORT_PHONE,
 } from "@/lib/site-identity";
 
-export const revalidate = 60;
+export const revalidate = 3600;
 export const metadata = createPageMetadata({
   title: SITE_TITLE,
   description: SITE_DESCRIPTION,

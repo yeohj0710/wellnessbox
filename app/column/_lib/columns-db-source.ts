@@ -40,6 +40,16 @@ function isColumnPostTableMissing(error: unknown) {
   return message.includes("columnpost") && message.includes("does not exist");
 }
 
+function isDatabaseUnavailable(error: unknown) {
+  const message =
+    error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+  return (
+    message.includes("compute time quota") ||
+    message.includes("error querying the database") ||
+    message.includes("prismaclientinitializationerror")
+  );
+}
+
 function isColumnPostSlugAliasTableMissing(error: unknown) {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
     return error.code === "P2021";
@@ -57,7 +67,7 @@ export async function fetchPublishedDbRows(): Promise<ColumnPostRow[]> {
       select: COLUMN_POST_SELECT,
     });
   } catch (error) {
-    if (isColumnPostTableMissing(error)) {
+    if (isColumnPostTableMissing(error) || isDatabaseUnavailable(error)) {
       return [];
     }
     throw error;
@@ -76,7 +86,7 @@ export async function fetchPublishedDbRowBySlug(
       select: COLUMN_POST_SELECT,
     });
   } catch (error) {
-    if (isColumnPostTableMissing(error)) {
+    if (isColumnPostTableMissing(error) || isDatabaseUnavailable(error)) {
       return null;
     }
     throw error;
@@ -107,7 +117,11 @@ export async function fetchPublishedDbAliasRowBySlug(
     if (!row?.post || row.post.status !== "published") return null;
     return row.post;
   } catch (error) {
-    if (isColumnPostSlugAliasTableMissing(error) || isColumnPostTableMissing(error)) {
+    if (
+      isColumnPostSlugAliasTableMissing(error) ||
+      isColumnPostTableMissing(error) ||
+      isDatabaseUnavailable(error)
+    ) {
       return null;
     }
     throw error;

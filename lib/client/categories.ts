@@ -51,7 +51,6 @@ export async function fetchCategories(
     {
       method: "GET",
       headers: { Accept: "application/json" },
-      cache: "no-store",
     },
     { timeoutMs: 7000, signal }
   );

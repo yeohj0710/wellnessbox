@@ -1,7 +1,7 @@
 import type { ChatSession, UserProfile } from "@/types/chat";
+import { fetchRemoteUserContext } from "@/lib/client/remote-user-context";
 import { loadProfileLocal, loadProfileServer, loadSessions, saveProfileLocal } from "../utils";
 import type { NormalizedAllResults } from "./useChat.results";
-import { normalizeAllResultsPayload } from "./useChat.results";
 import { createNewChatSession } from "./useChat.sessionActions";
 
 export type BootstrapActorState = {
@@ -108,13 +108,10 @@ export async function fetchAllResultsBootstrap(input: {
   signal: AbortSignal;
 }): Promise<NormalizedAllResults | null> {
   if (!input.enabled || !input.online) return null;
+  if (input.signal.aborted) return null;
 
   try {
-    const response = await fetch("/api/user/all-results", { signal: input.signal });
-    if (!response.ok) return normalizeAllResultsPayload({});
-
-    const data = await response.json().catch(() => ({}));
-    return normalizeAllResultsPayload(data);
+    return await fetchRemoteUserContext();
   } catch {
     return null;
   }

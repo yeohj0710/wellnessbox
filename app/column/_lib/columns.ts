@@ -1,5 +1,6 @@
 import "server-only";
 
+import { unstable_cache } from "next/cache";
 import { promises as fs } from "fs";
 import path from "path";
 import {
@@ -29,6 +30,7 @@ import {
 import { fetchPublishedDbAliasRowBySlug, fetchPublishedDbRows } from "./columns-db-source";
 import { collectMarkdownFiles } from "./columns-file-source";
 import type { ColumnDetail, ColumnSummary, ColumnTag, TocItem } from "./columns-types";
+import { PUBLIC_CACHE_SHARED_MAX_AGE_SECONDS } from "@/lib/server/public-cache";
 export type { ColumnDetail, ColumnSummary, ColumnTag, TocItem } from "./columns-types";
 
 export { buildHeadingAnchorId, normalizeTagSlug };
@@ -213,17 +215,25 @@ async function getPublishedDbColumnByAliasSlug(
 }
 
 async function getPublishedColumns(): Promise<ColumnDetail[]> {
-  const [dbColumns, fileColumns] = await Promise.all([
-    getPublishedDbColumns(),
-    getPublishedFileColumns(),
-  ]);
-  const dbSlugSet = new Set(dbColumns.map((column) => column.slug));
-  const merged = [
-    ...dbColumns,
-    ...fileColumns.filter((column) => !dbSlugSet.has(column.slug)),
-  ];
-  return normalizeColumnPublishSchedule(sortColumnsByDateDesc(merged));
+  return readPublishedColumns();
 }
+
+const readPublishedColumns = unstable_cache(
+  async (): Promise<ColumnDetail[]> => {
+    const [dbColumns, fileColumns] = await Promise.all([
+      getPublishedDbColumns(),
+      getPublishedFileColumns(),
+    ]);
+    const dbSlugSet = new Set(dbColumns.map((column) => column.slug));
+    const merged = [
+      ...dbColumns,
+      ...fileColumns.filter((column) => !dbSlugSet.has(column.slug)),
+    ];
+    return normalizeColumnPublishSchedule(sortColumnsByDateDesc(merged));
+  },
+  ["column-published-columns-v1"],
+  { revalidate: PUBLIC_CACHE_SHARED_MAX_AGE_SECONDS }
+);
 
 export async function getAllColumnSummaries(): Promise<ColumnSummary[]> {
   const columns = await getPublishedColumns();

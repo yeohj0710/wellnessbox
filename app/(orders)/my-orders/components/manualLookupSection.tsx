@@ -40,7 +40,7 @@ export function ManualLookupSection({
   return (
     <section
       id="manual-form"
-      className="mt-6 rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-sm sm:p-6"
+      className="rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-sm sm:p-6"
     >
       <div>
         <h2 className="text-base font-bold text-slate-900">다른 전화번호로 조회</h2>

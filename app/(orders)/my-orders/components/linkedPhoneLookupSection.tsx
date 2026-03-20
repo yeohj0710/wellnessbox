@@ -20,7 +20,7 @@ export function LinkedPhoneLookupSection({
   onScrollToManual,
 }: LinkedPhoneLookupSectionProps) {
   return (
-    <section className="mt-6 rounded-2xl border border-sky-200 bg-gradient-to-b from-sky-50/80 to-white p-5 shadow-sm sm:p-6">
+    <section className="rounded-2xl border border-sky-200 bg-gradient-to-b from-sky-50/80 to-white p-5 shadow-sm sm:p-6">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-base font-bold text-slate-900">전화번호 인증으로 조회</h2>

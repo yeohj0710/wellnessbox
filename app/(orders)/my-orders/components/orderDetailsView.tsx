@@ -40,7 +40,7 @@ export function OrderDetailsView({
 }: OrderDetailsViewProps) {
   return (
     <div className="w-full px-3 pb-14 pt-8 sm:px-4">
-      <div className="mx-auto w-full max-w-[720px]">
+      <div className="mx-auto flex w-full max-w-[720px] flex-col gap-5 sm:gap-6">
         <OrderPhoneContext
           isPhoneLinked={isPhoneLinked}
           linkedPhoneDisplay={linkedPhoneDisplay}

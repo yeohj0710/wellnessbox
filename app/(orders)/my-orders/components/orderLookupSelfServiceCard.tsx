@@ -68,7 +68,6 @@ export function OrderLookupSelfServiceCard({
       model={model}
       onPrimaryAction={model.primaryActionLabel ? handlePrimaryAction : null}
       onSecondaryAction={model.secondaryActionLabel ? handleSecondaryAction : null}
-      className="mt-6"
     />
   );
 }

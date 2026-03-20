@@ -3,13 +3,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { buildUserContextSummary } from "@/lib/chat/context";
 import {
-  normalizeAllResultsPayload,
   type NormalizedAllResults,
   type NormalizedAssessResult,
   type NormalizedCheckAiResult,
   type NormalizedHealthLinkSummary,
   type NormalizedOrderSummary,
 } from "@/app/chat/hooks/useChat.results";
+import {
+  fetchRemoteUserContext,
+  getCachedRemoteUserContext,
+} from "@/lib/client/remote-user-context";
 import type { UserProfile } from "@/types/chat";
 
 type RemoteUserContextOverrides = {
@@ -39,29 +42,33 @@ export function useRemoteUserContextSummary({
   overrides,
 }: UseRemoteUserContextSummaryParams) {
   const [remoteResults, setRemoteResults] = useState<NormalizedAllResults | null>(
-    null
+    () => (enabled ? getCachedRemoteUserContext() : null)
   );
-  const [loading, setLoading] = useState(enabled);
+  const [loading, setLoading] = useState(
+    () => enabled && !getCachedRemoteUserContext()
+  );
 
   useEffect(() => {
     if (!enabled) {
+      setRemoteResults(null);
       setLoading(false);
       return;
     }
 
-    const controller = new AbortController();
     let alive = true;
+    const cached = getCachedRemoteUserContext();
+    if (cached) {
+      setRemoteResults(cached);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
 
-    fetch("/api/user/all-results", { signal: controller.signal })
-      .then((response) => (response.ok ? response.json() : {}))
-      .then((payload) => {
+    fetchRemoteUserContext()
+      .then((results) => {
         if (!alive) return;
-        setRemoteResults(normalizeAllResultsPayload(payload));
-      })
-      .catch(() => {
-        if (!alive) return;
-        setRemoteResults(normalizeAllResultsPayload({}));
+        setRemoteResults(results);
       })
       .finally(() => {
         if (!alive) return;
@@ -70,7 +77,6 @@ export function useRemoteUserContextSummary({
 
     return () => {
       alive = false;
-      controller.abort();
     };
   }, [enabled]);
 

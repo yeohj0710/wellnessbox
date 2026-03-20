@@ -1,7 +1,12 @@
 import "server-only";
 
+import { unstable_cache } from "next/cache";
 import { NextResponse } from "next/server";
 import db from "@/lib/db";
+import {
+  buildPublicCacheControl,
+  PUBLIC_CACHE_SHARED_MAX_AGE_SECONDS,
+} from "@/lib/server/public-cache";
 
 type ProductNameRow = {
   id: number;
@@ -19,9 +24,9 @@ function serializeProductNames(products: ProductNameRow[]) {
   }));
 }
 
-export async function runProductNamesGetRoute() {
-  try {
-    const products = await db.product.findMany({
+const readProductNames = unstable_cache(
+  async () =>
+    db.product.findMany({
       where: {
         pharmacyProducts: {
           some: {
@@ -39,11 +44,25 @@ export async function runProductNamesGetRoute() {
         },
       },
       orderBy: [{ importance: "desc" }, { updatedAt: "desc" }],
-    });
+    }),
+  ["api-product-names-v1"],
+  { revalidate: PUBLIC_CACHE_SHARED_MAX_AGE_SECONDS }
+);
 
-    return NextResponse.json({
-      products: serializeProductNames(products),
-    });
+export async function runProductNamesGetRoute() {
+  try {
+    const products = await readProductNames();
+
+    return NextResponse.json(
+      {
+        products: serializeProductNames(products),
+      },
+      {
+        headers: {
+          "Cache-Control": buildPublicCacheControl(),
+        },
+      }
+    );
   } catch {
     return NextResponse.json({ products: [] }, { status: 500 });
   }

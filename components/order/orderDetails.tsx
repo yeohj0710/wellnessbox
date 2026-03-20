@@ -127,7 +127,7 @@ export default function OrderDetails({
   }
 
   return (
-    <div className="flex w-full flex-col gap-0 sm:gap-4">
+    <div className="flex w-full flex-col gap-4 sm:gap-5">
       <SmartRefillActionCard
         orders={orders}
         surface="orders"
