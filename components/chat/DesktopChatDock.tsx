@@ -104,6 +104,13 @@ function clampDockTriggerOffset(input: {
   } satisfies DockTriggerOffset;
 }
 
+function areDockTriggerOffsetsEqual(
+  left: DockTriggerOffset,
+  right: DockTriggerOffset
+) {
+  return left.x === right.x && left.y === right.y;
+}
+
 export default function DesktopChatDock() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -153,11 +160,15 @@ export default function DesktopChatDock() {
   const [triggerOffset, setTriggerOffset] = useState<DockTriggerOffset>(() =>
     loadDockTriggerOffset() ?? { x: 0, y: 0 }
   );
+  const triggerOffsetRef = useRef(triggerOffset);
 
   const clampAndStoreTriggerOffset = useCallback(
     (nextOffset: DockTriggerOffset, persist = false) => {
       if (typeof window === "undefined") {
-        setTriggerOffset(nextOffset);
+        triggerOffsetRef.current = nextOffset;
+        setTriggerOffset((current) =>
+          areDockTriggerOffsetsEqual(current, nextOffset) ? current : nextOffset
+        );
         return nextOffset;
       }
 
@@ -182,7 +193,10 @@ export default function DesktopChatDock() {
         bottomOffsetPx: triggerBottomOffsetPx,
       });
 
-      setTriggerOffset(clamped);
+      triggerOffsetRef.current = clamped;
+      setTriggerOffset((current) =>
+        areDockTriggerOffsetsEqual(current, clamped) ? current : clamped
+      );
       if (persist) {
         saveDockTriggerOffset(clamped);
       }
@@ -192,9 +206,9 @@ export default function DesktopChatDock() {
   );
 
   useEffect(() => {
-    const savedOffset = loadDockTriggerOffset() ?? triggerOffset;
+    const savedOffset = loadDockTriggerOffset() ?? triggerOffsetRef.current;
     clampAndStoreTriggerOffset(savedOffset);
-  }, [clampAndStoreTriggerOffset, triggerOffset]);
+  }, [clampAndStoreTriggerOffset]);
 
   const handleTriggerPointerDown = useCallback(
     (event: ReactPointerEvent<HTMLButtonElement>) => {
@@ -243,13 +257,13 @@ export default function DesktopChatDock() {
       if (state.dragging) {
         suppressOpenRef.current = true;
         if (!cancel) {
-          saveDockTriggerOffset(triggerOffset);
+          saveDockTriggerOffset(triggerOffsetRef.current);
         }
       }
 
       dragStateRef.current = null;
     },
-    [triggerOffset]
+    []
   );
 
   const handleTriggerPointerUp = useCallback(

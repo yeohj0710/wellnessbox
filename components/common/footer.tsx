@@ -12,6 +12,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { navigateWithFallback } from "@/lib/client/navigation-fallback";
 
 const footerLinks = [
   { href: "/about/terms", label: "이용약관" },
@@ -103,7 +104,7 @@ function FooterInner() {
       return;
     }
 
-    router.push(languageToggleHref);
+    navigateWithFallback(router, languageToggleHref);
   }, [isEnglish, languageToggleHref, router]);
 
   const handleForceRefresh = useCallback(() => {

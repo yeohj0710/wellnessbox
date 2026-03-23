@@ -74,7 +74,7 @@ export default function About() {
     "@context": "https://schema.org",
     "@type": "AboutPage",
     name: `${BUSINESS_NAME} 소개`,
-    url: "https://wellnessbox.me/about",
+    url: "https://wellnessbox.kr/about",
     description:
       "웰니스박스의 서비스 방향, 추천이 만들어지는 방식, 운영 주체와 고객 지원 정보를 소개합니다.",
   };
@@ -87,13 +87,13 @@ export default function About() {
         "@type": "ListItem",
         position: 1,
         name: "홈",
-        item: "https://wellnessbox.me/",
+        item: "https://wellnessbox.kr/",
       },
       {
         "@type": "ListItem",
         position: 2,
         name: "웰니스박스 소개",
-        item: "https://wellnessbox.me/about",
+        item: "https://wellnessbox.kr/about",
       },
     ],
   };

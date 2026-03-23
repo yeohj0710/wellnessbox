@@ -13,6 +13,7 @@ import { useLoading } from "@/components/common/loadingContext.client";
 import { usePrefetchOnIntent } from "@/components/common/usePrefetchOnIntent";
 import { clearCartReturnState } from "@/lib/client/cart-navigation";
 import { emitAuthSyncEvent } from "@/lib/client/auth-sync";
+import { navigateWithFallback } from "@/lib/client/navigation-fallback";
 import { TopBarHeader } from "./topBar.header";
 import { TopBarDrawer } from "./topBar.drawer";
 import {
@@ -129,7 +130,7 @@ function TopBarInner() {
         showLoading();
       }
       startTransition(() => {
-        router.push(url);
+        navigateWithFallback(router, url);
       });
     },
     [closeCartOverlay, router, shouldShowLoading, showLoading, startTransition]

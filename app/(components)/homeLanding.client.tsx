@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useLoading } from "@/components/common/loadingContext.client";
 import ComingSoonPopup from "@/components/modal/comingSoonPopup";
 import LandingSection2 from "@/app/(components)/landingSection2";
+import { navigateWithFallback } from "@/lib/client/navigation-fallback";
 
 export default function HomeLanding() {
   const router = useRouter();
@@ -15,7 +16,7 @@ export default function HomeLanding() {
   const handle7Day = () => {
     showLoading();
     startTransition(() => {
-      router.push("/?package=7#home-products");
+      navigateWithFallback(router, "/?package=7#home-products");
     });
   };
 

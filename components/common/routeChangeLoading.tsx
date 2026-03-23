@@ -3,6 +3,10 @@
 import { useEffect, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useLoading } from "@/components/common/loadingContext.client";
+import {
+  clearNavigationFallback,
+  scheduleDocumentNavigationFallback,
+} from "@/lib/client/navigation-fallback";
 
 function normalizePathWithSearch(input: string) {
   try {
@@ -22,6 +26,7 @@ export default function RouteChangeLoading() {
   useEffect(() => {
     const search = searchParams?.toString();
     currentPathRef.current = `${pathname || ""}${search ? `?${search}` : ""}`;
+    clearNavigationFallback();
   }, [pathname, searchParams]);
 
   useEffect(() => {
@@ -55,6 +60,7 @@ export default function RouteChangeLoading() {
       if (nextPath === currentPath) return;
 
       showLoading();
+      scheduleDocumentNavigationFallback(anchor.href);
     }
 
     function handlePopState() {
@@ -68,6 +74,12 @@ export default function RouteChangeLoading() {
       window.removeEventListener("popstate", handlePopState);
     };
   }, [showLoading]);
+
+  useEffect(() => {
+    return () => {
+      clearNavigationFallback();
+    };
+  }, []);
 
   return null;
 }

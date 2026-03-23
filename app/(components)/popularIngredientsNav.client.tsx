@@ -4,6 +4,7 @@ import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import PopularIngredients from "@/app/(components)/popularIngredients";
 import { useLoading } from "@/components/common/loadingContext.client";
+import { navigateWithFallback } from "@/lib/client/navigation-fallback";
 import { enqueueRoutePrefetch } from "@/lib/navigation/prefetch";
 
 interface PopularIngredientsNavProps {
@@ -25,7 +26,7 @@ export default function PopularIngredientsNav({
   const handleSelectCategory = (id: number) => {
     const href = buildCategoryHref(id);
     showLoading();
-    router.push(href);
+    navigateWithFallback(router, href);
   };
 
   const handleCategoryIntent = useCallback(

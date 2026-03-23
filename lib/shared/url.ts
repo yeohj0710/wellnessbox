@@ -2,14 +2,20 @@ function stripTrailingSlash(value: string) {
   return value.replace(/\/$/, "");
 }
 
+function canonicalizePublicBaseUrl(value: string) {
+  return value.replace(/^https:\/\/(?:www\.)?wellnessbox\.me(?=\/|$)/, "https://wellnessbox.kr");
+}
+
 function getEnvBaseUrl() {
   const env = process.env.NEXT_PUBLIC_APP_URL;
   if (!env) return undefined;
   try {
     const parsed = new URL(env);
-    return stripTrailingSlash(parsed.origin + parsed.pathname.replace(/\/$/, ""));
+    return canonicalizePublicBaseUrl(
+      stripTrailingSlash(parsed.origin + parsed.pathname.replace(/\/$/, ""))
+    );
   } catch {
-    return stripTrailingSlash(env);
+    return canonicalizePublicBaseUrl(stripTrailingSlash(env));
   }
 }
 
@@ -18,7 +24,7 @@ export function resolvePublicBaseUrl() {
   if (env) return env;
 
   if (typeof window !== "undefined" && window.location?.origin) {
-    return stripTrailingSlash(window.location.origin);
+    return canonicalizePublicBaseUrl(stripTrailingSlash(window.location.origin));
   }
 
   return undefined;

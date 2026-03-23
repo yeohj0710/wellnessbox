@@ -20,10 +20,32 @@ const nextConfig: NextConfig = {
         has: [
           {
             type: "host",
+            value: "wellnessbox.me",
+          },
+        ],
+        destination: "https://wellnessbox.kr/:path*",
+        permanent: true,
+      },
+      {
+        source: "/:path*",
+        has: [
+          {
+            type: "host",
             value: "www.wellnessbox.me",
           },
         ],
-        destination: "https://wellnessbox.me/:path*",
+        destination: "https://wellnessbox.kr/:path*",
+        permanent: true,
+      },
+      {
+        source: "/:path*",
+        has: [
+          {
+            type: "host",
+            value: "www.wellnessbox.kr",
+          },
+        ],
+        destination: "https://wellnessbox.kr/:path*",
         permanent: true,
       },
 

@@ -36,17 +36,17 @@ const trustHighlights = [
   {
     title: "AI로 먼저 방향을 잡습니다",
     description:
-      "빠른 검사와 단계형 설문으로 현재 상태를 정리하고, 어떤 건강관리 카테고리가 먼저 필요한지 좁혀갑니다.",
+      "빠른 체크부터 설문과 상담까지 연결해 지금 필요한 관리 우선순위를 정리합니다.",
   },
   {
-    title: "복용 맥락을 함께 봅니다",
+    title: "복용 맥락까지 함께 봅니다",
     description:
-      "복용 중인 약, 생활 습관, 건강 데이터처럼 추천 결과를 바꿀 수 있는 변수까지 고려하는 흐름을 지향합니다.",
+      "현재 복용 중인 약, 생활 습관, 건강 데이터 흐름을 함께 보며 추천 이유를 이해하기 쉽게 설명합니다.",
   },
   {
-    title: "읽을 수 있는 가이드를 남깁니다",
+    title: "읽고 끝나지 않게 돕습니다",
     description:
-      "추천 후에도 복용 타이밍, 주의점, 생활 습관 팁을 칼럼과 안내 문구로 이어서 확인할 수 있게 구성합니다.",
+      "추천 이후에도 복용 가이드와 관련 콘텐츠를 이어 보여주어 실제 관리 루틴으로 연결합니다.",
   },
 ] as const;
 
@@ -54,33 +54,33 @@ const faqItems = [
   {
     question: "웰니스박스는 어떤 서비스를 제공하나요?",
     answer:
-      "웰니스박스는 AI 기반 건강 점검, 맞춤형 건강기능식품 추천 흐름, 복용 가이드, 건강 칼럼을 연결해 건강관리 경험을 돕습니다.",
+      "웰니스박스는 AI 기반 건강 점검, 맞춤형 건강기능식품 추천, 복용 가이드, 건강 콘텐츠를 연결해 건강관리 흐름을 돕는 서비스입니다.",
   },
   {
-    question: "의료 진단 서비스인가요?",
+    question: "의료 진단을 대신하는 서비스인가요?",
     answer:
-      "의료 진단을 대체하는 서비스는 아니며, 사용자가 현재 상태를 정리하고 복용 및 생활 습관 정보를 이해하는 데 도움을 주는 방향으로 설계되어 있습니다.",
+      "의료 진단을 대체하는 서비스는 아닙니다. 현재 상태를 정리하고 복용 및 생활 습관 정보를 이해하는 데 도움을 주는 방향으로 설계되어 있습니다.",
   },
   {
     question: "누가 운영하는지 확인할 수 있나요?",
     answer:
-      "웰니스박스 소개와 문의하기 페이지, 푸터에서 운영 사업자명, 사업자등록번호, 통신판매업신고, 대표 연락처를 확인할 수 있습니다.",
+      "소개 페이지와 문의 페이지, 푸터에서 운영 사업자명, 통신판매업신고, 대표 연락처를 확인할 수 있습니다.",
   },
   {
-    question: "어디서 복용 가이드를 볼 수 있나요?",
+    question: "복용 가이드는 어디서 볼 수 있나요?",
     answer:
-      "건강 칼럼에서 비타민, 오메가3, 유산균, 철분 등 자주 찾는 건강기능식품의 복용법과 주의 포인트를 확인할 수 있습니다.",
+      "건강 칼럼과 추천 흐름 안에서 비타민, 오메가3, 유산균, 철분 등 자주 찾는 건강기능식품의 복용 포인트를 확인할 수 있습니다.",
   },
 ] as const;
 
 function CardSectionFallback() {
   return (
-    <section className="w-full max-w-[640px] mx-auto mt-8 px-3 sm:px-4">
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+    <section className="mx-auto mt-8 w-full max-w-[640px] px-3 sm:px-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
         {Array.from({ length: 6 }).map((_, index) => (
           <div
             key={index}
-            className="h-44 rounded-2xl bg-gray-100 animate-pulse ring-1 ring-gray-200"
+            className="h-44 animate-pulse rounded-2xl bg-gray-100 ring-1 ring-gray-200"
           />
         ))}
       </div>
@@ -90,8 +90,8 @@ function CardSectionFallback() {
 
 function HomeProductsFallback() {
   return (
-    <div className="w-full max-w-[640px] mx-auto mt-2 mb-4 bg-white p-6 flex items-center justify-center">
-      <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+    <div className="mx-auto mb-4 mt-2 flex w-full max-w-[640px] items-center justify-center bg-white p-6">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
     </div>
   );
 }
@@ -100,64 +100,70 @@ function HomeSearchHubSection() {
   const items = [
     {
       href: "/check-ai",
-      title: "빠른 AI 검사",
-      description: "1분 안에 건강 상태를 체크하고 맞춤 영양제 카테고리를 빠르게 확인해요.",
+      title: "빠른 AI 체크",
+      description: "1분 안에 현재 상태를 가볍게 확인하고 추천 방향을 잡습니다.",
     },
     {
       href: "/assess",
-      title: "정밀 AI 검사",
-      description: "증상과 생활 습관을 더 자세히 입력해 개인 맞춤형 추천 근거를 살펴볼 수 있어요.",
+      title: "정밀 AI 분석",
+      description: "증상과 생활 정보를 더 자세히 입력해 개인 맞춤 추천 근거를 봅니다.",
     },
     {
       href: "/survey",
       title: "건강 설문",
-      description: "생활 습관과 현재 상태를 정리해두면 이후 검사와 상담에서 더 정확한 안내를 받을 수 있어요.",
+      description: "생활 습관과 현재 상태를 정리해 이후 추천과 상담에 활용합니다.",
     },
     {
       href: "/chat",
       title: "AI 맞춤 상담",
-      description: "검사 결과나 지금 불편한 점을 바탕으로 복용 루틴과 생활 습관을 대화로 정리해보세요.",
+      description: "추천 결과를 바탕으로 복용 루틴과 생활 관리 포인트를 이어서 확인합니다.",
     },
     {
       href: "/column",
       title: "건강 칼럼",
-      description: "비타민, 오메가3, 유산균, 철분 등 건강기능식품 복용 가이드를 읽어보세요.",
+      description: "영양제 복용법과 주의 포인트를 콘텐츠로 빠르게 살펴봅니다.",
     },
     {
       href: "/my-orders",
       title: "내 주문 조회",
-      description: "주문한 상품의 상담, 조제, 배송 상태를 확인하고 진행 흐름을 이어서 관리할 수 있어요.",
+      description: "주문과 배송 상태를 확인하고 필요한 다음 행동을 이어갈 수 있습니다.",
     },
   ];
 
   return (
-    <section className="w-full bg-white py-12 sm:py-14">
+    <section className="w-full bg-white py-10 sm:py-12">
       <div className="mx-auto w-full max-w-5xl px-4 sm:px-6">
-        <div className="rounded-[2rem] border border-slate-200 bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fbff_100%)] p-6 shadow-[0_20px_50px_-40px_rgba(15,23,42,0.45)] sm:p-8">
-          <p className="text-xs font-semibold tracking-[0.18em] text-[#4568F5]">
-            WELLNESS NAVIGATION
-          </p>
-          <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
-            처음 방문했다면 여기서 시작하세요
-          </h2>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base">
-            웰니스박스는 AI 건강 분석, 건강 설문, 맞춤 상담, 주문 조회, 건강 칼럼을 한 곳에서
-            제공합니다.
-          </p>
+        <div className="rounded-[1.75rem] border border-slate-200 bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fbff_100%)] p-5 shadow-[0_18px_45px_-42px_rgba(15,23,42,0.28)] sm:p-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold tracking-[0.18em] text-[#4568F5]">
+                QUICK ACCESS
+              </p>
+              <h2 className="mt-2 text-xl font-black tracking-tight text-slate-900 sm:text-2xl">
+                상품 둘러본 뒤 필요한 기능만 바로 이어서 쓰세요
+              </h2>
+            </div>
+            <p className="max-w-xl text-sm leading-6 text-slate-500">
+              검색, 설문, 상담, 주문 확인 같은 보조 기능을 한곳에 가볍게 모았습니다.
+            </p>
+          </div>
 
-          <nav aria-label="주요 서비스" className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <nav
+            aria-label="주요 서비스"
+            className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+          >
             {items.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="group rounded-2xl border border-slate-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-[#4568F5] hover:shadow-[0_18px_40px_-30px_rgba(59,91,255,0.45)]"
+                className="group rounded-[1.4rem] border border-slate-200 bg-white/95 p-4 transition hover:-translate-y-0.5 hover:border-[#4568F5] hover:shadow-[0_16px_36px_-28px_rgba(59,91,255,0.28)]"
               >
-                <h3 className="text-lg font-bold text-slate-900 group-hover:text-[#3450e5]">
+                <h3 className="text-base font-bold text-slate-900 group-hover:text-[#3450e5]">
                   {item.title}
                 </h3>
                 <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
-                <span className="mt-4 inline-flex text-sm font-semibold text-[#4568F5]">
-                  자세히 보기 →
+                <span className="mt-3 inline-flex text-sm font-semibold text-[#4568F5]">
+                  바로 가기
                 </span>
               </Link>
             ))}
@@ -170,34 +176,31 @@ function HomeSearchHubSection() {
 
 function HomeTrustSection() {
   return (
-    <section className="w-full bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] py-12 sm:py-16">
+    <section className="w-full bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] py-10 sm:py-12">
       <div className="mx-auto w-full max-w-5xl px-4 sm:px-6">
         <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-7 shadow-[0_24px_60px_-50px_rgba(15,23,42,0.35)] sm:p-8">
+          <div className="rounded-[1.8rem] border border-slate-200 bg-white/90 p-6 shadow-[0_18px_45px_-42px_rgba(15,23,42,0.25)] sm:p-7">
             <p className="text-xs font-semibold tracking-[0.18em] text-sky-700">
-              TRUST SIGNALS
+              BASIC INFO
             </p>
-            <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
-              검색에서도 신뢰할 수 있는 서비스 구조를 드러냅니다
+            <h2 className="mt-2 text-xl font-black tracking-tight text-slate-900 sm:text-2xl">
+              필요한 분만 확인하면 되는 운영 정보입니다
             </h2>
-            <p className="mt-4 text-sm leading-7 text-slate-600 sm:text-base">
-              웰니스박스는 서비스 소개, 운영 사업자 정보, 고객 문의 채널, 건강
-              콘텐츠를 공개 페이지에서 일관되게 보여주려고 합니다. 건강 관련
-              서비스는 누가 운영하는지와 어떤 방식으로 안내하는지가 함께 보여야
-              한다고 보기 때문입니다.
+            <p className="mt-3 text-sm leading-7 text-slate-600 sm:text-base">
+              메인 탐색을 방해하지 않도록 운영 주체와 문의 정보는 한곳에 간결하게 모았습니다.
             </p>
 
             <div className="mt-6 grid gap-3">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/90 px-4 py-3 text-sm text-slate-700">
                 운영 사업자: {BUSINESS_LEGAL_NAME}
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                문의: {BUSINESS_SUPPORT_PHONE} · {BUSINESS_SUPPORT_EMAIL}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/90 px-4 py-3 text-sm text-slate-700">
+                문의: {BUSINESS_SUPPORT_PHONE} / {BUSINESS_SUPPORT_EMAIL}
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/90 px-4 py-3 text-sm text-slate-700">
                 통신판매업신고: {BUSINESS_MAIL_ORDER_REPORT_NUMBER}
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/90 px-4 py-3 text-sm text-slate-700">
                 주소: {BUSINESS_ADDRESS}
               </div>
             </div>
@@ -205,7 +208,7 @@ function HomeTrustSection() {
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 href="/about"
-                className="rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+                className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-sky-300 hover:text-sky-700"
               >
                 서비스 소개 보기
               </Link>
@@ -222,10 +225,10 @@ function HomeTrustSection() {
             {trustHighlights.map((item) => (
               <article
                 key={item.title}
-                className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-[0_20px_60px_-50px_rgba(15,23,42,0.35)]"
+                className="rounded-[1.5rem] border border-slate-200 bg-white/90 p-5 shadow-[0_16px_40px_-40px_rgba(15,23,42,0.2)]"
               >
-                <h3 className="text-xl font-bold text-slate-900">{item.title}</h3>
-                <p className="mt-3 text-sm leading-7 text-slate-600">
+                <h3 className="text-lg font-bold text-slate-900">{item.title}</h3>
+                <p className="mt-2 text-sm leading-7 text-slate-600">
                   {item.description}
                 </p>
               </article>
@@ -239,22 +242,46 @@ function HomeTrustSection() {
 
 function HomeFaqSection() {
   return (
-    <section className="w-full bg-white pb-14 pt-2 sm:pb-20">
+    <section className="w-full bg-white pb-14 pt-4 sm:pb-20">
       <div className="mx-auto w-full max-w-5xl px-4 sm:px-6">
-        <div className="rounded-[2rem] border border-slate-200 bg-slate-950 p-7 text-slate-100 shadow-[0_30px_70px_-55px_rgba(15,23,42,0.7)] sm:p-8">
-          <p className="text-xs font-semibold tracking-[0.18em] text-sky-300">FAQ</p>
-          <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">
-            웰니스박스를 처음 찾은 분들이 자주 묻는 질문
-          </h2>
-          <div className="mt-6 grid gap-3">
-            {faqItems.map((item) => (
-              <article
+        <div className="rounded-[1.9rem] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-6 shadow-[0_20px_55px_-45px_rgba(15,23,42,0.22)] sm:p-8">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold tracking-[0.18em] text-sky-700">FAQ</p>
+              <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+                처음 보는 분들이 가장 많이 확인하는 내용
+              </h2>
+            </div>
+            <p className="max-w-xl text-sm leading-6 text-slate-500">
+              메인 구매 흐름 아래에 두고, 필요한 질문만 펼쳐서 볼 수 있게 정리했습니다.
+            </p>
+          </div>
+
+          <div className="mt-6 overflow-hidden rounded-[1.7rem] border border-slate-200 bg-white">
+            {faqItems.map((item, index) => (
+              <details
                 key={item.question}
-                className="rounded-3xl border border-white/10 bg-white/5 p-5"
+                className="group border-b border-slate-200 last:border-b-0"
               >
-                <h3 className="text-lg font-bold text-white">{item.question}</h3>
-                <p className="mt-3 text-sm leading-7 text-slate-300">{item.answer}</p>
-              </article>
+                <summary className="flex cursor-pointer list-none items-start justify-between gap-4 px-5 py-5 text-left marker:content-none sm:px-6">
+                  <div>
+                    <span className="text-xs font-semibold tracking-[0.14em] text-sky-700">
+                      Q{index + 1}
+                    </span>
+                    <h3 className="mt-1 text-lg font-bold text-slate-900">
+                      {item.question}
+                    </h3>
+                  </div>
+                  <span className="mt-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-500 transition group-open:rotate-45 group-open:border-sky-200 group-open:text-sky-700">
+                    +
+                  </span>
+                </summary>
+                <div className="px-5 pb-5 pt-0 sm:px-6">
+                  <p className="rounded-2xl bg-slate-50 px-4 py-4 text-sm leading-7 text-slate-600">
+                    {item.answer}
+                  </p>
+                </div>
+              </details>
             ))}
           </div>
         </div>
@@ -326,19 +353,19 @@ export default function HomePage() {
       <HomeRouteWarmup />
       <HomeLanding />
       <JourneyCtaBridge />
-      <HomeSearchHubSection />
-      <HomeTrustSection />
-      <Suspense fallback={<CardSectionFallback />}>
-        <PopularIngredientsSection homeDataPromise={homeDataPromise} />
-      </Suspense>
-      <SymptomImprovement />
-      <Suspense fallback={<CardSectionFallback />}>
-        <SupplementRankingSection homeDataPromise={homeDataPromise} />
-      </Suspense>
-      <HomeFaqSection />
       <Suspense fallback={<HomeProductsFallback />}>
         <HomeProductSectionServer homeDataPromise={homeDataPromise} />
       </Suspense>
+      <Suspense fallback={<CardSectionFallback />}>
+        <PopularIngredientsSection homeDataPromise={homeDataPromise} />
+      </Suspense>
+      <Suspense fallback={<CardSectionFallback />}>
+        <SupplementRankingSection homeDataPromise={homeDataPromise} />
+      </Suspense>
+      <SymptomImprovement />
+      <HomeSearchHubSection />
+      <HomeTrustSection />
+      <HomeFaqSection />
     </>
   );
 }

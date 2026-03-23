@@ -3,9 +3,13 @@ const config = {
   appName: "웰니스박스",
   webDir: "dist",
   server: {
-    url: "https://wellnessbox.me",
+    url: "https://wellnessbox.kr",
     cleartext: false,
-    allowNavigation: ["wellnessbox.me", "static.cloudflareinsights.com"],
+    allowNavigation: [
+      "wellnessbox.kr",
+      "wellnessbox.me",
+      "static.cloudflareinsights.com",
+    ],
   },
   android: {
     allowMixedContent: false,

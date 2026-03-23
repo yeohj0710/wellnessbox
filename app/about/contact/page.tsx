@@ -24,7 +24,7 @@ export default function Contact() {
     "@context": "https://schema.org",
     "@type": "ContactPage",
     name: "웰니스박스 문의하기",
-    url: "https://wellnessbox.me/about/contact",
+    url: "https://wellnessbox.kr/about/contact",
     about: {
       "@type": "Organization",
       name: BUSINESS_LEGAL_NAME,

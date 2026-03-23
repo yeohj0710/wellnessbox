@@ -32,8 +32,11 @@ export function publicOrigin(origin: string) {
     return "http://localhost:3000";
   }
 
-  if (base.includes("wellnessbox.me")) {
-    return "https://wellnessbox.me";
+  if (
+    base.includes("wellnessbox.kr") ||
+    base.includes("wellnessbox.me")
+  ) {
+    return "https://wellnessbox.kr";
   }
 
   return stripTrailingSlash(base);

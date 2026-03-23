@@ -4,6 +4,7 @@ import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import SupplementRanking from "@/app/(components)/supplementRanking";
 import { useLoading } from "@/components/common/loadingContext.client";
+import { navigateWithFallback } from "@/lib/client/navigation-fallback";
 import { enqueueRoutePrefetch } from "@/lib/navigation/prefetch";
 
 interface SupplementRankingNavProps {
@@ -28,7 +29,7 @@ export default function SupplementRankingNav({
       sessionStorage.setItem("scrollPos", String(window.scrollY));
     }
     showLoading();
-    router.push(href, { scroll: false });
+    navigateWithFallback(router, href, { scroll: false });
   };
 
   const handleProductIntent = useCallback(
