@@ -83,6 +83,24 @@ _이미지 출처: [Wikimedia Commons - Breakfast menu a coffee and toasts](http
 - 수면 부족과 코골이, 무호흡 의심이 같이 있으면서 혈당 조절이 더 안 되는 경우
 - 목 뒤 착색, 쥐젖, 생리 불규칙, 복부비만이 함께 나타나는 경우
 
+## 인슐린저항성은 '밥 때문'이 아니라 몸 전체 리듬의 문제일 때가 많습니다
+
+### 근육을 안 쓰는 생활은 탄수화물보다 더 큰 변수일 수 있습니다
+
+인슐린저항성은 근육, 간, 지방세포가 인슐린 신호에 둔감해진 상태입니다. 그래서 같은 양의 탄수화물을 먹어도 근육을 자주 쓰는 사람과 거의 안 쓰는 사람은 반응이 다를 수 있습니다. 특히 앉아 있는 시간이 길고 식후 바로 다시 앉는 생활은 **혈당을 처리할 근육의 역할**을 줄입니다.
+
+### 수면 부족과 야간 각성은 식욕과 혈당을 동시에 흔듭니다
+
+잠이 부족하면 다음 날 단 음식이 당기고 배고픔 조절이 어려워지는 것뿐 아니라, 인슐린 민감성 자체도 흔들릴 수 있습니다. 그래서 밥 양을 줄였는데도 공복혈당이 애매하게 남는 사람 중에는 수면, 코골이, 교대근무가 더 큰 변수인 경우가 있습니다.
+
+### 체중만이 아니라 '지방이 어디에 붙는가'도 중요합니다
+
+같은 체중이라도 복부지방이 많고 허리둘레가 늘어나는 패턴은 인슐린저항성과 더 밀접하게 연결됩니다. 그래서 숫자 체중보다 허리둘레, 중성지방, HDL, 혈압, 수면 상태를 함께 보는 편이 훨씬 실전적입니다. 살이 조금 빠졌는데도 배가 쉽게 나오고 피곤이 심하다면 방향을 다시 봐야 합니다.
+
+### 식단은 줄이는 기술보다 분배하는 기술이 중요합니다
+
+아침을 굶고 저녁에 몰아 먹는 구조는 총량이 비슷해도 훨씬 흔들릴 수 있습니다. 정제 탄수화물과 단 음료를 줄이되, 단백질과 섬유질을 식사마다 나누고, 식후 가볍게 걷는 습관을 붙이면 탄수화물만 끊는 것보다 지속성이 높습니다.
+
 ## 같이 읽으면 좋은 글
 
 - [목 뒤가 까매졌다면 혈당보다 먼저 이걸 의심해야 합니다](/column/neck-darkness-insulin-resistance-signals)
@@ -93,5 +111,6 @@ _이미지 출처: [Wikimedia Commons - Breakfast menu a coffee and toasts](http
 
 - [NIDDK - Insulin Resistance & Prediabetes](https://www.niddk.nih.gov/health-information/diabetes/overview/what-is-diabetes/prediabetes-insulin-resistance)
 - [NIDDK - Healthy Living with Diabetes](https://www.niddk.nih.gov/health-information/diabetes/overview/healthy-living-with-diabetes)
-- [NIDDK Diabetes in America - Impact of Sleep and Circadian Disturbances on Glucose Metabolism](https://www.niddk.nih.gov/-/media/Files/Strategic-Plans/Diabetes-in-America-3rd-Edition/DIA_Ch25.pdf)
-- [Review - Effects of Diet on Sleep Quality](https://pmc.ncbi.nlm.nih.gov/articles/PMC5015038/)
+- [NIDDK - The Impact of Poor Sleep on Type 2 Diabetes](https://www.niddk.nih.gov/health-information/professionals/diabetes-discoveries-practice/the-impact-of-poor-sleep-on-type-2-diabetes)
+- [NIDDK - Impact of Sleep and Circadian Disturbances on Glucose Metabolism](https://www.niddk.nih.gov/-/media/Files/Strategic-Plans/Diabetes-in-America-3rd-Edition/DIA_Ch25.pdf)
+

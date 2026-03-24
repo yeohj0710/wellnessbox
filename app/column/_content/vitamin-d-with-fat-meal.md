@@ -79,6 +79,24 @@ _이미지 출처: [Wikimedia Commons - Vitamin D Gummies](https://commons.wikim
 
 “완벽한 시간”보다 “계속 가능한 시간”이 건강 관리에서는 더 강력해요.
 
+## 비타민D는 '언제'보다 '얼마나 오래 같은 방식으로 먹을 수 있나'가 핵심입니다
+
+### 아침·저녁 논쟁이 과장된 이유가 있습니다
+
+비타민D는 카페인처럼 즉각 각성을 주는 성분이 아니기 때문에, 시분초 단위의 타이밍보다 **꾸준한 복용 구조**가 훨씬 중요합니다. 인터넷에서 아침파·저녁파가 갈리지만, 실제로 복용이 망가지는 이유는 시간대 논쟁보다 누락과 중복입니다.
+
+### 지방이 조금 있는 식사와 붙이면 실전성이 좋아집니다
+
+비타민D는 지용성 비타민이기 때문에 식사와 함께 복용하면 편한 사람이 많고, 루틴도 더 안정적입니다. 그렇다고 일부러 기름진 식사를 만들 필요는 없습니다. 계란, 요거트, 견과류, 생선, 일반 식사 정도면 충분히 붙이기 쉽습니다.
+
+### 고용량 제품은 더 '느슨하게' 먹으면 안 됩니다
+
+5,000 IU, 10,000 IU처럼 고용량 제품을 습관적으로 오래 먹는 사람도 있는데, 이럴수록 정기적인 점검이 필요합니다. 비타민D는 몸에 쌓일 수 있는 지용성 비타민이기 때문에, 좋다는 이유만으로 오래 올려 두는 건 별개의 문제입니다.
+
+### 비타민D 하나로 피로와 기분을 다 설명하면 안 됩니다
+
+낮은 수치가 문제일 수는 있어도, 모든 피로와 무기력을 비타민D 하나로 설명하는 건 자주 틀립니다. 수면, 빈혈, 갑상선, 우울, 활동량 부족이 더 큰 변수인 경우도 많습니다. 비타민D는 중요한 퍼즐 조각이지만, 전체 그림은 아닙니다.
+
 ## 같이 읽으면 좋은 글
 
 - [오메가3 복용시간: 식전/식후, 무엇이 더 편할까?](/column/omega3-after-meal)
@@ -87,8 +105,10 @@ _이미지 출처: [Wikimedia Commons - Vitamin D Gummies](https://commons.wikim
 
 ## 참고 자료
 
-- [NIH ODS - Vitamin D Fact Sheet for Consumers](https://ods.od.nih.gov/factsheets/VitaminD-Consumer/)
+- [ODS - Vitamin D Fact Sheet for Health Professionals](https://ods.od.nih.gov/factsheets/VitaminD-HealthProfessional/)
+- [ODS - Vitamin D Fact Sheet for Consumers](https://ods.od.nih.gov/factsheets/VitaminD-Consumer/)
 - [NHS - Vitamin D](https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-d/)
+
 
 ## 안내
 

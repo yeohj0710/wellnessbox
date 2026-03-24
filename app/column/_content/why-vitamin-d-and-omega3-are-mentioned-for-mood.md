@@ -76,6 +76,24 @@ _이미지 출처: [Wikimedia Commons - Sleeping woman](https://commons.wikimedi
 - 영양제를 여러 개 겹쳐 먹고도 오히려 속 불편감, 두통, 피곤함이 심해지는 경우
 - 오메가3나 비타민D를 과신해 기본 식사와 수면 교정을 완전히 미루고 있는 경우
 
+## '기분에 좋다'는 말은 흥미롭지만, 해석은 훨씬 조심해야 합니다
+
+### 관련성이 있다는 말과 치료제가 된다는 말은 다릅니다
+
+비타민D와 오메가3가 기분과 자주 함께 언급되는 건, 결핍이나 낮은 섭취 패턴이 우울 증상과 관련 있다는 연구가 많기 때문입니다. 하지만 관련성이 있다고 해서 모든 사람에게 보충제가 치료처럼 작동한다는 뜻은 아닙니다. 여기서 자주 오해가 생깁니다.
+
+### 가장 가능성이 있는 사람부터 따로 봐야 합니다
+
+비타민D는 실제로 낮은 수치가 있는 사람, 햇빛 노출이 적은 사람에서 더 의미 있게 검토할 수 있습니다. 오메가3는 생선 섭취가 적거나, 일부 연구에서 EPA 비중이 높은 제품이 도움을 줄 가능성이 논의됩니다. 즉 '누구에게나 한 통'이 아니라 **결핍과 식습관의 맥락**이 있어야 합니다.
+
+### 항우울제를 대신하는가? 대개는 그렇게 보면 안 됩니다
+
+현재까지의 근거는 일부 사람에게 보조적 역할이 있을 수 있다는 쪽이지, 표준 치료를 대체한다는 뜻은 아닙니다. 특히 자살사고, 심한 무기력, 일상기능 저하가 있는 우울 증상은 보충제로 버틸 문제가 아닙니다. 이 글을 읽고 있다면 **관심은 가질 수 있지만 과신은 피해야 하는 주제**라고 보는 게 맞습니다.
+
+### 그래서 실전에서는 이렇게 접근하는 편이 낫습니다
+
+검사상 비타민D 부족이 있는지, 생선 섭취가 너무 낮은지, 수면과 활동량은 어떤지 먼저 봅니다. 그 다음 보충제를 고민하더라도, 기분 변화만 보고 한두 주 만에 결론내리지 않고 의료적 평가와 함께 가는 편이 훨씬 안전합니다.
+
 ## 같이 읽으면 좋은 글
 
 - [햇빛만 잘 쬐어도 혈당이 달라질 수 있습니다](/column/sunlight-can-change-blood-sugar)
@@ -84,9 +102,8 @@ _이미지 출처: [Wikimedia Commons - Sleeping woman](https://commons.wikimedi
 
 ## 참고 자료
 
-- [JAMA - Vitamin D3 Supplementation vs Placebo on Depression Prevention](https://jamanetwork.com/journals/jama/fullarticle/2768978)
-- [Meta-analysis - Effect of vitamin D supplementation on depression](https://pmc.ncbi.nlm.nih.gov/articles/PMC11650176/)
-- [VITAL-DEP trial design paper](https://pmc.ncbi.nlm.nih.gov/articles/PMC5899680/)
-- [NIH ODS - Omega-3 Fatty Acids Fact Sheet for Consumers](https://ods.od.nih.gov/factsheets/Omega3FattyAcids-Consumer/)
-- [JAMA Network Open - ω-3 Fatty Acids in Pediatric Major Depressive Disorder](https://jamanetwork.com/journals/jamanetworkopen/fullarticle/2843289)
-- [PMC - ω-3 Fatty Acids in Pediatric Major Depressive Disorder](https://pmc.ncbi.nlm.nih.gov/articles/PMC12761337/)
+- [ODS - Vitamin D Fact Sheet for Health Professionals](https://ods.od.nih.gov/factsheets/VitaminD-HealthProfessional/)
+- [ODS - Omega-3 Fatty Acids Fact Sheet for Health Professionals](https://ods.od.nih.gov/factsheets/Omega3FattyAcids-HealthProfessional/)
+- [Meta-analysis - The effect of vitamin D supplementation on depression](https://pmc.ncbi.nlm.nih.gov/articles/PMC11650176/)
+- [Review - Omega-3 Polyunsaturated Fatty Acids in Depression](https://pmc.ncbi.nlm.nih.gov/articles/PMC11354246/)
+

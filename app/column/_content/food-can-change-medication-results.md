@@ -83,6 +83,24 @@ _이미지 출처: [Wikimedia Commons - Grapefruit](https://commons.wikimedia.or
 - 자몽, 술, 카페인을 습관적으로 섭취하면서 여러 약을 동시에 복용하는 경우
 - 아침마다 약을 커피로 넘기고 있는데 컨디션 변동이 큰 경우
 
+## 음식과 약의 관계를 제대로 보려면 '세 가지 질문'이 필요합니다
+
+### 이 약은 물로 먹어야 하는가, 식사와 함께 먹어야 하는가
+
+의외로 많은 약이 “무엇과 함께 삼키는가”에 영향을 받습니다. 커피, 주스, 우유, 단백질 쉐이크가 모두 같은 액체는 아닙니다. 어떤 약은 공복이 중요하고, 어떤 약은 식사와 함께 먹어야 속이 편하며, 어떤 약은 칼슘·철분·마그네슘과 거리를 둬야 합니다. 그래서 가장 먼저 볼 건 인터넷 팁이 아니라 **처방 라벨과 복약지도**입니다.
+
+### 문제는 음식 하나보다 '같은 시간대에 몰아넣는 습관'일 때가 많습니다
+
+아침에 약, 영양제, 라떼, 유산균, 단백질 음료를 한 번에 끝내는 패턴은 편해 보여도 상호작용을 키우기 쉽습니다. 이럴 땐 무엇이 흡수를 방해했는지, 무엇이 속을 불편하게 했는지 구분이 안 됩니다. 약을 잘 먹는 사람은 많이 챙겨 먹는 사람이 아니라 **같은 시간대에 덜 엉키게 먹는 사람**입니다.
+
+### '건강식'이라고 약과 무조건 잘 맞는 건 아닙니다
+
+과일, 채소, 허브, 건강음료도 약과 상호작용할 수 있습니다. 대표적인 게 자몽이고, 어떤 경우에는 칼슘 강화 음료나 고함량 보충제가 변수가 되기도 합니다. 약은 약이고 음식은 음식이라는 식으로 완전히 분리해 생각하면 실수를 반복하기 쉽습니다.
+
+### 약효가 이상하게 느껴질 때는 음식 일기를 같이 봐야 합니다
+
+약이 갑자기 덜 듣거나, 속이 유난히 불편하거나, 평소보다 더 두근거린다면 그날 먹은 음식과 음료, 영양제를 함께 적어 보세요. 약 자체의 문제가 아니라 **복용 맥락**이 문제인 경우가 꽤 많습니다.
+
 ## 같이 읽으면 좋은 글
 
 - [자몽 하나가 약효를 뒤집을 수 있습니다](/column/grapefruit-can-flip-your-medication)
@@ -92,7 +110,9 @@ _이미지 출처: [Wikimedia Commons - Grapefruit](https://commons.wikimedia.or
 ## 참고 자료
 
 - [FDA - Drug Interactions: What You Should Know](https://www.fda.gov/drugs/resources-drugs/drug-interactions-what-you-should-know)
-- [Review - Medications and Food Interfering with Levothyroxine](https://pmc.ncbi.nlm.nih.gov/articles/PMC10295503/)
-- [Mayo Clinic - Levothyroxine (oral route)](https://www.mayoclinic.org/drugs-supplements/levothyroxine-oral-route/description/drg-20072133)
+- [FDA - FDA Pharmacists Help You Use Medicines Safely](https://www.fda.gov/consumers/consumer-updates/fda-pharmacists-help-you-use-medicines-safely)
+- [FDA - Mixing Medications and Dietary Supplements Can Endanger Your Health](https://www.fda.gov/consumers/consumer-updates/mixing-medications-and-dietary-supplements-can-endanger-your-health)
+- [MedlinePlus - Taking iron supplements](https://medlineplus.gov/ency/article/007478.htm)
 - [MedlinePlus - Tetracycline](https://medlineplus.gov/druginfo/meds/a682098.html)
-- [FDA - Grapefruit Juice and Some Drugs Don't Mix](https://www.fda.gov/consumers/consumer-updates/grapefruit-juice-and-some-drugs-dont-mix)
+- [FDA - Grapefruit Juice and Some Drugs Don’t Mix](https://www.fda.gov/consumers/consumer-updates/grapefruit-juice-and-some-drugs-dont-mix)
+

@@ -3,7 +3,6 @@
 import {
   BeakerIcon,
   MagnifyingGlassIcon,
-  UserCircleIcon,
 } from "@heroicons/react/24/outline";
 import {
   LandingFeatureSection,
@@ -16,10 +15,11 @@ interface PharmacistReviewSectionProps {
 
 const PHARMACIST_REVIEW_SECTION_CONFIG: LandingFeatureSectionConfig = {
   eyebrow: "PHARMACIST-APPROVED",
-  title: "전문가",
-  accent: "상담 검토",
+  title: "상담 검토",
+  accent: "전문가",
+  accentFirst: true,
   description:
-    "추천 영양소는 약국 소속 약사가 한 번 더 확인하고, 1:1 상담을 통해 최종 구성을 검토합니다.",
+    "추천된 영양제를 약국 소속 약사가 이중 확인하고, 1:1 상담을 통해 최종 처방합니다.",
   imageSrc: "/landingPage2/pharmacist-review-hero.png",
   imageAlt: "전문가 상담 검토",
   reverse: true,
@@ -33,7 +33,7 @@ const PHARMACIST_REVIEW_SECTION_CONFIG: LandingFeatureSectionConfig = {
   iconClassName: "text-[#6C4DFF]",
   buttonClassName:
     "text-white bg-gradient-to-r from-[#6C4DFF] to-[#8A6BFF] shadow-[0_10px_28px_rgba(108,77,255,0.30)]",
-  icons: [BeakerIcon, UserCircleIcon, MagnifyingGlassIcon],
+  icons: [BeakerIcon, MagnifyingGlassIcon],
 };
 
 export default function PharmacistReviewSection({

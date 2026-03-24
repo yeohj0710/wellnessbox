@@ -12,12 +12,13 @@ interface HealthTrackingSectionProps {
 
 const HEALTH_TRACKING_SECTION_CONFIG: LandingFeatureSectionConfig = {
   eyebrow: "HEALTH TRACKING",
-  title: "지속",
-  accent: "체크와 피드백",
+  title: "케어 및 피드백",
+  accent: "지속",
+  accentFirst: true,
   description:
-    "체감 기반 피드백과 복용 알림으로 복용 흐름을 놓치지 않고, 쌓인 기록으로 건강 변화를 계속 점검합니다. 약사도 그 피드백을 바탕으로 구성을 조정할 수 있습니다.",
+    "챗봇 기반 피드백 시스템과 복약 알림으로 복용을 돕고, 웹·앱에서 건강 변화를 모니터링합니다. 약사가 피드백을 받아 패키지를 조정하면서 진짜 나에게 맞는 조합을 찾아갑니다.",
   imageSrc: "/landingPage2/health-tracking-hero.png",
-  imageAlt: "건강 모니터링 이미지",
+  imageAlt: "지속 케어 및 피드백",
   reverse: true,
   sectionClassName: "bg-gradient-to-b from-[#F6F3FF] via-[#F6F3FF]/50 to-[#F3F6FF]",
   eyebrowClassName: "text-[#4B63E6]",

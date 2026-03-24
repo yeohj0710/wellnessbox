@@ -83,6 +83,24 @@ _이미지 출처: [Wikimedia Commons - Bed](https://commons.wikimedia.org/wiki/
 - 낮을 공복 커피로만 버티고 저녁에 몰아 먹는 패턴이 반복되는 경우
 - 이미 폭식 성향이나 섭식 문제를 겪는데 더 긴 단식을 시도하는 경우
 
+## 간헐적 단식이 안 맞는 건 '여성이라서'보다 특정 상황이 겹쳐 있기 때문일 수 있습니다
+
+### 특히 피해야 할 상황을 먼저 걸러야 합니다
+
+임신·수유 중, 성장기, 섭식장애 병력, 저체중, 당뇨약 사용, 반복적인 어지럼증이 있는 경우에는 긴 공복을 혼자 강하게 밀어붙이는 방식이 더 위험할 수 있습니다. 이런 경우엔 '나한테 의지가 없나'가 아니라 **애초에 이 방법이 우선순위가 아닌 상태**일 수 있습니다.
+
+### 생리 주기와 식욕 변동이 큰 사람은 고정 규칙이 오히려 안 맞을 수 있습니다
+
+어떤 사람은 생리 전후에 식욕과 컨디션 변동이 매우 큽니다. 이때 매일 똑같은 16:8을 강요하면 낮엔 버티고 밤엔 무너지는 구조가 되기 쉽습니다. 이런 사람에게는 단식이 실패한 게 아니라, **너무 경직된 규칙**이 안 맞는 것일 수 있습니다.
+
+### 시작은 16시간보다 12시간이 더 현실적일 때가 많습니다
+
+교대근무, 육아, 수면 부족, 공복 커피 습관이 있는 사람에게 갑자기 긴 단식을 시작하면 성공률이 떨어집니다. 오히려 야식 시간을 앞당기고, 식사 창을 12시간 안쪽으로 정리하는 정도가 훨씬 오래 가는 경우가 많습니다. 단식은 극단성보다 지속성이 중요합니다.
+
+### 밤 폭식과 생리불순이 붙으면 즉시 전략을 바꿔야 합니다
+
+단식을 시작한 뒤 밤마다 폭식하고, 주기가 흔들리고, 수면이 더 나빠진다면 지금 방식은 몸에 안 맞는 겁니다. 이때는 더 강하게 밀어붙일 게 아니라 **규칙 식사로 후퇴하는 것**이 오히려 제대로 된 조정입니다.
+
 ## 같이 읽으면 좋은 글
 
 - [탄수화물 끊었다가 오히려 몸이 더 망가지는 사람들](/column/cutting-carbs-backfires)
@@ -91,7 +109,8 @@ _이미지 출처: [Wikimedia Commons - Bed](https://commons.wikimedia.org/wiki/
 
 ## 참고 자료
 
-- [Commentary - Intermittent fasting and disordered eating risk](https://pmc.ncbi.nlm.nih.gov/articles/PMC10589984/)
+- [Review - Intermittent fasting and disordered eating risk](https://pmc.ncbi.nlm.nih.gov/articles/PMC10589984/)
 - [Review - Intermittent Fasting During Pregnancy and Birth Outcomes](https://www.mdpi.com/2072-6643/17/22/3546)
-- [NIDDK Diabetes in America - Impact of Sleep and Circadian Disturbances on Glucose Metabolism](https://www.niddk.nih.gov/-/media/Files/Strategic-Plans/Diabetes-in-America-3rd-Edition/DIA_Ch25.pdf)
-- [Review - Effects of Diet on Sleep Quality](https://pmc.ncbi.nlm.nih.gov/articles/PMC5015038/)
+- [NIDDK - Impact of Sleep and Circadian Disturbances on Glucose Metabolism](https://www.niddk.nih.gov/-/media/Files/Strategic-Plans/Diabetes-in-America-3rd-Edition/DIA_Ch25.pdf)
+- [ACOG - Amenorrhea: Absence of Periods](https://www.acog.org/womens-health/faqs/amenorrhea-absence-of-periods)
+

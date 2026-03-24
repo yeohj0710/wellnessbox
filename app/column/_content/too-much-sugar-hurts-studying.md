@@ -76,6 +76,24 @@ _이미지 출처: [Wikimedia Commons - Colorful candy](https://commons.wikimedi
 - 체중 증가, 복부비만, 식후 졸림이 같이 붙으면서 집중력까지 떨어지는 경우
 - 야식과 수면 부족이 겹쳐 낮 피로가 계속 악화되는 경우
 
+## 공부할 때 문제는 당 자체보다 '오르는 속도와 꺼지는 속도'일 때가 많습니다
+
+### 단맛은 순간 각성을 주지만, 오래 버티는 집중력과는 다를 수 있습니다
+
+시험기간이나 과제 마감 때 단 음료가 당기는 건 너무 자연스럽습니다. 실제로 당은 빠르게 에너지를 주는 느낌을 만들 수 있습니다. 하지만 그 반등이 빠르면 집중이 오래 가기보다 오히려 졸림, 초조함, 다시 먹고 싶은 욕구로 이어질 수 있습니다. 그래서 “달면 머리가 돈다”와 “오래 집중된다”는 다른 이야기입니다.
+
+### 액체당은 특히 체감 변화가 빠릅니다
+
+탄산, 에너지음료, 달달한 커피, 과즙음료는 씹는 식사보다 빠르게 들어가고 포만감이 약합니다. 그래서 공부 중엔 효율적인 연료처럼 느껴져도, 실제론 혈당 변동과 배고픔을 더 빨리 부를 수 있습니다. 오랫동안 앉아 있어야 하는 날엔 액체당보다 **천천히 먹을 수 있는 간식**이 더 안정적입니다.
+
+### 모든 탄수화물이 같은 건 아닙니다
+
+빵·과자·음료처럼 정제된 당류를 많이 먹는 것과, 밥·과일·통곡물을 적절히 먹는 건 다릅니다. 공부 효율을 위해 필요한 건 '무탄수화물'이 아니라 **너무 급하게 올리지 않는 탄수화물 구조**입니다. 여기에 단백질과 식이섬유가 붙으면 훨씬 덜 흔들립니다.
+
+### 잠이 부족한 상태에 당을 얹으면 더 예민하게 출렁입니다
+
+이미 수면 부족이면 뇌는 더 쉽게 고칼로리 음식을 찾고, 집중력도 약해져 있습니다. 이 상태에서 당으로 버티면 체감 롤러코스터가 더 커질 수 있습니다. 공부를 망치는 건 간식 하나가 아니라 **잠 부족 + 당분 의존 + 카페인 과다**의 조합일 때가 많습니다.
+
 ## 같이 읽으면 좋은 글
 
 - [인슐린저항성은 탄수화물만 줄인다고 해결되지 않습니다](/column/insulin-resistance-is-not-just-carbs)
@@ -85,6 +103,7 @@ _이미지 출처: [Wikimedia Commons - Colorful candy](https://commons.wikimedi
 ## 참고 자료
 
 - [Review - The Impact of Free and Added Sugars on Cognitive Function](https://pmc.ncbi.nlm.nih.gov/articles/PMC10780393/)
-- [Review - Dietary Sugar Intake Associated with Higher Risk of Alzheimer's Disease](https://pmc.ncbi.nlm.nih.gov/articles/PMC10921393/)
-- [Review - Effects of Diet on Sleep Quality](https://pmc.ncbi.nlm.nih.gov/articles/PMC5015038/)
-- [NIDDK Diabetes in America - Impact of Sleep and Circadian Disturbances on Glucose Metabolism](https://www.niddk.nih.gov/-/media/Files/Strategic-Plans/Diabetes-in-America-3rd-Edition/DIA_Ch25.pdf)
+- [Review - Dietary Sugar Intake Associated with a Higher Risk of Poor Cognitive Performance](https://pmc.ncbi.nlm.nih.gov/articles/PMC10921393/)
+- [Review - Diet-Induced Cognitive Deficits: The Role of Fat and Sugar](https://pmc.ncbi.nlm.nih.gov/articles/PMC4555146/)
+- [MedlinePlus - Food labeling](https://medlineplus.gov/ency/article/002459.htm)
+

@@ -83,6 +83,24 @@ _이미지 출처: [Wikimedia Commons - Pill Bottle Spilled](https://commons.wik
 - 알레르기약 먹고 심한 졸림, 두근거림, 소변 불편, 입마름이 계속되는 경우
 - 서로 다른 OTC 제품을 여러 개 겹쳐 먹고 있는데 정확한 성분을 모르는 경우
 
+## 자주 쓰는 약일수록 '왜 계속 쓰게 되는지'를 봐야 합니다
+
+### 진통제는 통증 자체보다 복용 패턴이 문제를 만들 때가 많습니다
+
+두통이나 생리통이 잦으면 진통제를 자주 찾게 됩니다. 문제는 통증 원인이 해결되지 않은 채 복용 빈도만 늘어나는 경우입니다. NSAIDs는 오래, 자주 쓰면 위장 출혈이나 신장 부담이 커질 수 있고, 아세트아미노펜도 여러 감기약과 겹치면 총량을 놓치기 쉽습니다. “가끔 먹는 진통제”와 “거의 매주 먹는 진통제”는 관리 기준이 달라야 합니다.
+
+### 졸리는 항히스타민은 '잠이 와서 좋다'로 끝나지 않습니다
+
+디펜히드라민 같은 1세대 항히스타민은 당장 졸려서 편해 보일 수 있지만, 다음 날 멍함, 입마름, 어지러움, 집중 저하를 남길 수 있습니다. 특히 운전, 공부, 야간근무, 시험 준비가 있는 사람에게는 생각보다 손해가 큽니다. 자꾸 필요하다면 약이 잘 듣는지보다 **왜 매일 필요해졌는지**를 따져야 합니다.
+
+### 코막힘 스프레이는 '효과가 좋아서' 함정이 됩니다
+
+비충혈 완화 스프레이는 즉각적으로 뚫리는 느낌이 강해서, 감기나 비염 때 며칠만 쓰라는 안내를 넘기기 쉽습니다. 그런데 길어지면 반동성 비충혈이 생겨 더 막힌 것처럼 느껴질 수 있습니다. 이때 사람은 약이 약해서가 아니라 **약이 만든 패턴** 때문에 더 찾게 됩니다.
+
+### OTC 약은 안전해서가 아니라, 사용 범위가 명확해서 편의성이 있는 겁니다
+
+처방전이 없다고 무한정 반복 사용해도 된다는 뜻은 아닙니다. OTC 약이 자꾸 필요해지는 순간부터는 ‘약이 효율적이다’보다 **원인을 다시 봐야 하는 시점**으로 보는 게 맞습니다.
+
 ## 같이 읽으면 좋은 글
 
 - [인공눈물, 넣는다고 다 같은 게 아닙니다](/column/artificial-tears-are-not-the-same)
@@ -91,8 +109,9 @@ _이미지 출처: [Wikimedia Commons - Pill Bottle Spilled](https://commons.wik
 
 ## 참고 자료
 
-- [FDA - NSAID warning strengthened](https://www.fda.gov/drugs/drug-safety-and-availability/fda-drug-safety-communication-fda-strengthens-warning-non-aspirin-nonsteroidal-anti-inflammatory)
-- [FDA - NSAIDs, kidney injury and risk mitigation](https://www.fda.gov/drugs/safe-use-initiative/community-based-study-adverse-effects-nsaids-kidney-and-risk-mitigation-reduce-preventable-harm)
-- [AAO - Lubricating Eye Drops for Dry Eyes](https://www.aao.org/eye-health/treatments/lubricating-eye-drops)
-- [Mayo Clinic - Artificial tears: How to select eye drops for dry eyes](https://www.mayoclinic.org/diseases-conditions/dry-eyes/expert-answers/artificial-tears/faq-20058422)
-- [MedlinePlus - Caffeine](https://medlineplus.gov/caffeine.html)
+- [MedlinePlus - Ibuprofen](https://medlineplus.gov/druginfo/meds/a682159.html)
+- [MedlinePlus - Diphenhydramine](https://medlineplus.gov/druginfo/meds/a682539.html)
+- [FDA - Know Which Medication Is Right for Your Seasonal Allergies](https://www.fda.gov/consumers/consumer-updates/know-which-medication-right-your-seasonal-allergies)
+- [FDA - Propylhexedrine nasal decongestant warning](https://www.fda.gov/drugs/drug-safety-and-availability/fda-warns-abuse-and-misuse-nasal-decongestant-propylhexedrine-causes-serious-harm)
+- [MedlinePlus - Over-the-counter pain relievers](https://medlineplus.gov/ency/article/002123.htm)
+

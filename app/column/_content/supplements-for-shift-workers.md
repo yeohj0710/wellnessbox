@@ -83,6 +83,24 @@ _이미지 출처: [Wikimedia Commons - One Page Calendar](https://commons.wikim
 - 카페인 없이는 근무 유지가 안 되고, 카페인 때문에 잠도 못 자는 루프가 생긴 경우
 - 체중 증가, 복부비만, 공복혈당 상승, 기분 저하가 같이 오는 경우
 
+## 교대근무자는 영양제보다 먼저 '리듬 전략'이 있어야 합니다
+
+### 3교대의 핵심 문제는 결핍 하나가 아니라 시간표가 흔들린다는 점입니다
+
+교대근무자는 같은 음식을 먹어도 식사 시간, 수면 시간, 빛 노출이 매번 달라지기 쉽습니다. 그래서 피로를 무조건 영양제 부족으로만 해석하면 자주 틀립니다. 실제로는 수면 빚, 야간 카페인, 햇빛 부족, 불규칙한 첫 끼가 더 큰 경우가 많습니다.
+
+### 그래서 영양제도 '효능'보다 '투입 타이밍'이 중요합니다
+
+예를 들어 비타민D는 야간근무자처럼 햇빛 노출이 부족한 사람에게 점검 대상이 될 수 있지만, 무턱대고 고용량을 오래 먹는 건 별개 문제입니다. 카페인은 근무 시작 초반엔 도움이 될 수 있어도, 잠들기 직전까지 끌고 가면 다음 쉬는 시간 수면을 무너뜨립니다. 교대근무자에겐 성분보다 **언제 쓰고 언제 끊는지**가 더 중요합니다.
+
+### '수면 보충제'를 여러 개 겹치는 건 오히려 리듬을 더 흐립니다
+
+마그네슘, 멜라토닌, 테아닌, 감태, 허브류를 다 붙이는 식의 해결책은 일시적으로는 안심감을 줄 수 있어도, 무엇이 실제로 도움이 되는지 판단하기 어렵습니다. 교대근무자는 원래 수면이 불안정하기 때문에, 더더욱 **성분을 최소화하고 반응을 기록**하는 방식이 낫습니다.
+
+### 먼저 볼 검사는 의외로 기본적인 것들입니다
+
+계속 피곤한데 수면만의 문제로 보기 어렵다면 비타민 D, 철분 상태, B12, 갑상선, 빈혈 같은 기본 평가가 도움이 될 수 있습니다. “교대라 원래 피곤하지”라고 넘기면 교정 가능한 문제를 놓치기 쉽습니다.
+
 ## 같이 읽으면 좋은 글
 
 - [햇빛만 잘 쬐어도 혈당이 달라질 수 있습니다](/column/sunlight-can-change-blood-sugar)
@@ -91,8 +109,8 @@ _이미지 출처: [Wikimedia Commons - One Page Calendar](https://commons.wikim
 
 ## 참고 자료
 
-- [Review - Disturbance of the Circadian System in Shift Work](https://pmc.ncbi.nlm.nih.gov/articles/PMC8832572/)
-- [Review - Relationship between shift work, circadian rhythms, and mental health](https://pmc.ncbi.nlm.nih.gov/articles/PMC11948777/)
-- [IARC - Night Shift Work monograph](https://www.iarc.who.int/news-events/iarc-monographs-volume-124-night-shift-work/)
-- [NIDDK - Healthy Living with Diabetes](https://www.niddk.nih.gov/health-information/diabetes/overview/healthy-living-with-diabetes)
-- [FDA - How Much Caffeine Is Too Much?](https://www.fda.gov/consumers/consumer-updates/spilling-beans-how-much-caffeine-too-much)
+- [NIDDK - Impact of Sleep and Circadian Disturbances on Glucose Metabolism](https://www.niddk.nih.gov/-/media/Files/Strategic-Plans/Diabetes-in-America-3rd-Edition/DIA_Ch25.pdf)
+- [Review - Disturbance of the Circadian System in Shift Work and Its Health Impact](https://pmc.ncbi.nlm.nih.gov/articles/PMC8832572/)
+- [Review - Shift Work and Metabolic Syndrome Updates](https://pmc.ncbi.nlm.nih.gov/articles/PMC10325847/)
+- [ODS - Vitamin D Fact Sheet for Health Professionals](https://ods.od.nih.gov/factsheets/VitaminD-HealthProfessional/)
+

@@ -83,6 +83,24 @@ _이미지 출처: [Wikimedia Commons - Experiencing menstrual pain with hot wat
 - 통증이 해마다 점점 심해지거나 생리 외 기간에도 골반 통증이 있는 경우
 - 관계통, 과다출혈, 생리 불규칙이 같이 나타나는 경우
 
+## 생리통 때 음식은 '통증을 없애는 마법'보다 불편을 덜 얹는 방향이 중요합니다
+
+### 커피가 항상 악당은 아니지만, 민감한 사람에겐 증폭기 역할을 할 수 있습니다
+
+생리통이 있는 날 커피 한 잔이 무조건 나쁜 건 아닙니다. 다만 원래 카페인에 민감하거나, 공복에 마시면 두근거림·불안·속쓰림이 심한 사람은 통증이 더 예민하게 느껴질 수 있습니다. 그래서 핵심은 ‘커피 금지’가 아니라 **언제, 얼마나, 어떤 상태에서 마시느냐**입니다.
+
+### 통증이 심한 날엔 혈당 출렁임도 체감에 영향을 줍니다
+
+단 음료, 디저트, 공복 카페인이 겹치면 잠깐 기운이 오르는 대신 금방 꺼지면서 피로와 예민함이 더 커질 수 있습니다. 생리통이 있는 날엔 원래도 몸이 예민한데, 혈당까지 롤러코스터를 타면 같은 통증도 더 괴롭게 느껴질 수 있습니다. 그래서 달달한 간식보다 **따뜻한 식사+단백질** 조합이 더 안정적입니다.
+
+### 짠 음식은 붓기와 더부룩함을 키워 '통증 총량'을 늘립니다
+
+라면, 과자, 햄류, 배달 야식이 문제인 건 칼로리만이 아닙니다. 염분이 많으면 붓기, 갈증, 더부룩함이 심해져 복부 압박감이 커질 수 있습니다. 이 상태에 통증이 겹치면 자궁 통증만이 아니라 몸 전체가 불편해지는 느낌이 들기 쉽습니다.
+
+### 음식보다 먼저 챙겨야 할 것도 있습니다
+
+통증 조절에는 조기에 진통제를 적절히 쓰는 것, 열찜질, 가벼운 활동, 수면이 함께 중요합니다. 음식은 보조 변수이고, 매달 일상 기능이 무너질 정도로 아프다면 식단으로 버티는 문제가 아니라 **진단이 필요한 생리통**일 수 있습니다.
+
 ## 같이 읽으면 좋은 글
 
 - [갱년기 여성은 살보다 혈당부터 관리해야 합니다](/column/menopause-manage-glucose-first)
@@ -92,6 +110,7 @@ _이미지 출처: [Wikimedia Commons - Experiencing menstrual pain with hot wat
 ## 참고 자료
 
 - [ACOG - Dysmenorrhea: Painful Periods](https://www.acog.org/womens-health/faqs/dysmenorrhea-painful-periods)
-- [Review - Common Beverage Consumption and Benign Gynecological Conditions](https://pmc.ncbi.nlm.nih.gov/articles/PMC11211953/)
+- [ACOG - Premenstrual Syndrome (PMS)](https://www.acog.org/womens-health/faqs/premenstrual-syndrome)
 - [MedlinePlus - Caffeine](https://medlineplus.gov/caffeine.html)
-- [Review - Effects of Diet on Sleep Quality](https://pmc.ncbi.nlm.nih.gov/articles/PMC5015038/)
+- [Review - Common Beverage Consumption and Benign Gynecological Conditions](https://pmc.ncbi.nlm.nih.gov/articles/PMC11211953/)
+

@@ -76,6 +76,24 @@ _이미지 출처: [Wikimedia Commons - Pills in blister pack](https://commons.w
 - 머리·피부·다이어트·남성활력·수면을 한꺼번에 해결한다고 말하는 제품
 - 이미 여러 제품을 먹고 있는데 중복 성분 확인 없이 추가하는 경우
 
+## 전문가가 조심하는 건 '효과가 없어서'보다 관리가 어렵기 때문입니다
+
+### 고함량 비오틴은 머리카락보다 검사실에서 더 큰 문제를 만들 수 있습니다
+
+비오틴은 머리·피부 광고의 단골 성분이지만, 고용량을 오래 먹으면 일부 혈액검사 결과를 왜곡할 수 있다는 점이 중요합니다. 본인은 그냥 비타민이라 생각하지만, 검사 해석엔 변수가 될 수 있어요. 특히 여러 제품에 중복으로 들어 있는 경우 더 헷갈립니다.
+
+### B군은 피로 이미지 때문에 겹치기 쉽습니다
+
+종합비타민, 피로회복제, 에너지드링크, 수면 회복 제품에 B군이 겹쳐 들어 있는 경우가 흔합니다. 그래서 한 제품만 보면 적당해 보여도, 총량을 합치면 생각보다 높아질 수 있습니다. 특히 B6는 장기간 고함량 섭취가 문제가 될 수 있어, “수용성이니 남는 건 다 빠지겠지”라고 보기 어렵습니다.
+
+### 철분과 셀레늄은 '없으면 중요하지만, 남으면 귀찮아지는' 성분입니다
+
+부족한 사람에겐 분명 필요하지만, 증상만 보고 무작정 시작하면 변비, 속불편, 입냄새, 금속 맛, 탈모·손톱 변화 같은 다른 고민으로 돌아올 수 있습니다. 그래서 약사들은 이 성분을 볼 때 “좋다/나쁘다”보다 **정말 부족한 상황인가**를 먼저 봅니다.
+
+### 다이어트·수면·활력 복합제품은 원인 추적이 어렵습니다
+
+성분이 너무 많고 함량이 불투명한 제품은 잘 맞아도 왜 맞는지, 안 맞아도 뭐가 문제인지 파악이 어렵습니다. 가족에게 쉽게 권하지 않는 이유도 결국 여기 있습니다. 관리가 쉬운 제품은 대개 **성분 수가 적고 목적이 분명**합니다.
+
 ## 같이 읽으면 좋은 글
 
 - [가짜 영양제는 생각보다 훨씬 많습니다](/column/fake-supplement-warning-signs)
@@ -84,9 +102,9 @@ _이미지 출처: [Wikimedia Commons - Pills in blister pack](https://commons.w
 
 ## 참고 자료
 
-- [NIH ODS - Vitamin B6 Fact Sheet for Health Professionals](https://ods.od.nih.gov/factsheets/VitaminB6-HealthProfessional/)
-- [FDA - Testing for Biotin Interference in In Vitro Diagnostic Devices](https://www.fda.gov/media/127915/download)
+- [ODS - Vitamin B6 Fact Sheet for Health Professionals](https://ods.od.nih.gov/factsheets/VitaminB6-HealthProfessional/)
 - [FDA - Biotin Interference with Troponin Lab Tests](https://www.fda.gov/medical-devices/in-vitro-diagnostics/biotin-interference-troponin-lab-tests-assays-subject-biotin-interference)
-- [FDA - Tainted Products Marketed as Dietary Supplements](https://www.fda.gov/media/186556/download)
-- [FDA - Health Fraud Product Database](https://www.fda.gov/consumers/health-fraud-scams/health-fraud-product-database)
-- [NSF - Selecting Dietary and Nutritional Supplements](https://www.nsf.org/consumer-resources/articles/selecting-dietary-nutritional-supplements)
+- [ODS - Biotin Fact Sheet for Health Professionals](https://ods.od.nih.gov/factsheets/Biotin-HealthProfessional/)
+- [ODS - Selenium Fact Sheet for Health Professionals](https://ods.od.nih.gov/factsheets/Selenium-HealthProfessional/)
+- [FDA - Tainted Products Marketed as Dietary Supplements and Conventional Foods](https://www.fda.gov/media/186556/download)
+

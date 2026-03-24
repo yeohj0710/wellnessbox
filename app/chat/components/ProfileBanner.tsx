@@ -1,7 +1,10 @@
 "use client";
 
+import { useCallback, useEffect, useRef } from "react";
 import type { UserProfile } from "@/types/chat";
 import { XMarkIcon } from "@heroicons/react/24/outline";
+
+const PROFILE_BANNER_AUTO_HIDE_MS = 6500;
 
 interface ProfileBannerProps {
   profile?: UserProfile;
@@ -16,10 +19,44 @@ export default function ProfileBanner({
   onClose,
   onEdit,
 }: ProfileBannerProps) {
+  const hideTimerRef = useRef<number | null>(null);
+
+  const clearHideTimer = useCallback(() => {
+    if (typeof window === "undefined") return;
+    if (hideTimerRef.current !== null) {
+      window.clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+  }, []);
+
+  const scheduleHide = useCallback(() => {
+    if (typeof window === "undefined") return;
+    clearHideTimer();
+    hideTimerRef.current = window.setTimeout(() => {
+      onClose();
+      hideTimerRef.current = null;
+    }, PROFILE_BANNER_AUTO_HIDE_MS);
+  }, [clearHideTimer, onClose]);
+
+  useEffect(() => {
+    if (!show) {
+      clearHideTimer();
+      return;
+    }
+    scheduleHide();
+    return clearHideTimer;
+  }, [clearHideTimer, scheduleHide, show]);
+
   if (!show) return null;
   return (
     <div className="mx-auto mb-4 max-w-3xl">
-      <div className="flex items-center justify-between gap-2 overflow-hidden rounded-xl border border-slate-200 bg-white/90 px-3 py-2 text-xs text-slate-700 shadow-sm backdrop-blur sm:gap-3 sm:text-sm">
+      <div
+        className="flex items-center justify-between gap-2 overflow-hidden rounded-xl border border-slate-200 bg-white/90 px-3 py-2 text-xs text-slate-700 shadow-sm backdrop-blur sm:gap-3 sm:text-sm"
+        onMouseEnter={clearHideTimer}
+        onMouseLeave={scheduleHide}
+        onTouchStart={clearHideTimer}
+        onTouchEnd={scheduleHide}
+      >
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <div className="h-6 w-6 shrink-0 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600" />
           <div className="min-w-0 px-1 leading-tight">

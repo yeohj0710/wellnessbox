@@ -83,6 +83,24 @@ _이미지 출처: [Wikimedia Commons - Eye drop](https://commons.wikimedia.org/
 - 렌즈를 끼면 통증, 시림, 시야 흐림이 심해지는 경우
 - 눈 통증, 시력 저하, 분비물 증가가 같이 나타나는 경우
 
+## 인공눈물은 '눈 상태'에 맞춰 나눠 보면 실패가 줄어듭니다
+
+### 하루 몇 번 쓰는지부터 따져야 합니다
+
+가끔만 건조한 사람과 하루 종일 넣는 사람은 같은 제품을 고르면 안 맞을 가능성이 큽니다. 사용 횟수가 잦다면 방부제 노출이 누적되면서 따가움이나 자극감이 생길 수 있어서, **자주 쓰는 사람은 무방부제 제품**이 더 편한 경우가 많습니다. 반대로 가끔 쓰는 사람은 휴대성과 가격이 더 중요한 기준이 될 수 있습니다.
+
+### 낮에는 묽은 타입, 밤에는 점도가 있는 타입이 잘 맞는 경우가 많습니다
+
+‘묽으면 약한 제품, 끈적하면 좋은 제품’은 아닙니다. 묽은 타입은 시야 흐림이 덜해서 낮 활동에 좋고, 젤이나 연고형은 오래 남지만 일시적으로 뿌옇게 느껴질 수 있어 자기 전에 더 잘 맞습니다. 그래서 한 제품으로 하루를 다 해결하려 하기보다, **시간대에 따라 역할을 나누는 방식**이 훨씬 실용적입니다.
+
+### 렌즈를 끼는 사람은 더 보수적으로 고르세요
+
+렌즈 착용 중엔 아무 점안액이나 넣는 습관이 문제를 만들기 쉽습니다. 렌즈 착용 중 사용 가능한지, 방부제가 어떤지, 충혈 제거 성분이 섞이지 않았는지 확인해야 합니다. 특히 “눈이 하얘져 보여서 개운하다”는 충혈 제거 안약은 인공눈물과 목적이 다릅니다. 장기간 습관처럼 쓰면 오히려 더 자극적으로 느껴질 수 있습니다.
+
+### 이런 증상은 '건조함'으로만 넘기면 안 됩니다
+
+통증, 빛 번짐, 눈곱이 늘어남, 시력 저하, 한쪽만 심한 충혈, 렌즈를 못 낄 정도의 통증은 단순 건조증만의 문제가 아닐 수 있습니다. 인공눈물로 버티다가 결막염, 각막염, 눈꺼풀염 같은 문제를 놓치는 경우도 있어서, 증상이 질적으로 바뀌면 제품을 바꾸는 게 아니라 **진단부터 다시 확인**하는 게 맞습니다.
+
 ## 같이 읽으면 좋은 글
 
 - [진통제·인공눈물·알레르기약, 맨날 쓰면 오히려 몸이 망가집니다](/column/everyday-otc-meds-can-backfire)
@@ -92,6 +110,8 @@ _이미지 출처: [Wikimedia Commons - Eye drop](https://commons.wikimedia.org/
 ## 참고 자료
 
 - [AAO - Lubricating Eye Drops for Dry Eyes](https://www.aao.org/eye-health/treatments/lubricating-eye-drops)
-- [Mayo Clinic - Artificial tears: How to select eye drops for dry eyes](https://www.mayoclinic.org/diseases-conditions/dry-eyes/expert-answers/artificial-tears/faq-20058422)
-- [Artificial Tears: A Systematic Review](https://pmc.ncbi.nlm.nih.gov/articles/PMC9840372/)
-- [EyeWiki - Preservatives in Topical Ophthalmic Medications](https://eyewiki.org/Preservatives_in_Topical_Ophthalmic_Medications)
+- [AAO - Choosing the Best Lubricant Eye Drops for Dry Eyes](https://www.aao.org/eye-health/tips-prevention/how-to-choose-lubricant-drops-dry-eyes)
+- [AAO - What Is Dry Eye?](https://www.aao.org/eye-health/diseases/what-is-dry-eye)
+- [MedlinePlus - Dry eye syndrome](https://medlineplus.gov/ency/article/000426.htm)
+- [MedlinePlus - Cyclosporine Ophthalmic](https://medlineplus.gov/druginfo/meds/a604009.html)
+

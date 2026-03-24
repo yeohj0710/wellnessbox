@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
 import type { LoginStatus } from "@/lib/useLoginStatus";
 
@@ -21,8 +22,7 @@ export type LinkPressHandlers = {
   onClick?: () => void;
 };
 
-const AI_PROMPT_BADGE = "가입없이 바로";
-const BETA_LABEL = "BETA";
+const ACCESS_BADGE = "가입없이 바로";
 
 export const menuItemClasses = (additionalClasses = "") =>
   `relative shrink-0 whitespace-nowrap font-semibold transition-transform duration-200 ease-in-out hover:scale-105 hover:text-gray-800 ${additionalClasses}`;
@@ -45,22 +45,28 @@ export function getMenuVisibility(loginStatus: LoginStatus | null): MenuVisibili
   };
 }
 
-export function AiPromptBadge() {
+export function AccessBadge() {
   return (
     <span className="inline-flex shrink-0 whitespace-nowrap rounded-full bg-emerald-50 ring-1 ring-emerald-200">
       <span className="block px-3 py-1 text-center text-[10px] font-bold leading-none text-emerald-600 whitespace-nowrap">
-        {AI_PROMPT_BADGE}
+        {ACCESS_BADGE}
       </span>
     </span>
   );
 }
 
-export function BetaBadge({ className = "" }: { className?: string }) {
+export function TimeBadge({
+  children,
+  className = "",
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <span
-      className={`flex h-5 w-10 items-center justify-center rounded-full bg-indigo-100 text-[10px] font-bold text-indigo-600 ${className}`}
+      className={`inline-flex h-5 shrink-0 items-center justify-center rounded-full bg-sky-50 px-2.5 text-[10px] font-bold text-sky-700 ring-1 ring-sky-100 ${className}`}
     >
-      {BETA_LABEL}
+      {children}
     </span>
   );
 }

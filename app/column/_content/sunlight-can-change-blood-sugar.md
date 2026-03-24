@@ -76,6 +76,24 @@ _이미지 출처: [Wikimedia Commons - Sunlight of plane window](https://common
 - 야근·교대근무와 함께 체중 증가, 허리둘레 증가, 혈당 상승이 같이 오는 경우
 - 잠은 자도 개운하지 않고 아침 공복 혈당이나 당화혈색소가 계속 올라가는 경우
 
+## 햇빛은 혈당을 직접 없애는 도구가 아니라, 대사 리듬을 맞추는 배경입니다
+
+### 이 글은 '햇빛만 쬐면 혈당이 내려간다'는 뜻이 아닙니다
+
+이 부분을 너무 단순하게 읽으면 오해가 생깁니다. 자연광은 인슐린 주사나 운동처럼 직접 혈당을 끌어내리는 치료가 아닙니다. 대신 **수면-각성 리듬, 식사 타이밍, 낮 활동량**을 덜 망가지게 만들어 간접적으로 혈당 관리에 도움을 줄 수 있습니다.
+
+### 아침 빛이 중요한 이유는 밤을 덜 무너뜨리기 때문입니다
+
+아침 자연광 노출은 몸의 시계를 낮 시간대로 당겨 줍니다. 이 리듬이 잡혀야 밤에 잠드는 시간이 덜 밀리고, 야식·늦은 카페인·밤 각성이 줄어듭니다. 결국 혈당을 흔드는 건 종종 식단 자체만이 아니라, **계속 뒤로 밀리는 하루 전체**입니다.
+
+### 실내 조명과 실외 자연광은 같은 '밝기'가 아닙니다
+
+햇빛 이야기를 할 때 많은 사람이 창가 자리에 앉아 있는 것만 떠올립니다. 하지만 자연광은 실내 조명과 강도가 크게 다르고, 짧게라도 실제로 밖에 나가는 편이 생체리듬에는 더 효과적입니다. 점심 후 10분 산책이 자주 언급되는 이유도 여기에 있습니다.
+
+### 밤 조명을 안 줄이면 낮 햇빛 효과도 반감됩니다
+
+낮에 밝게 살고 밤에 어둡게 사는 구조가 핵심입니다. 낮빛만 챙기고 밤엔 침대에서 밝은 화면을 오래 보면 몸은 계속 낮처럼 반응합니다. 그래서 혈당 관리에서 빛을 활용하려면 **아침 노출 + 밤 조명 관리**를 세트로 보는 게 맞습니다.
+
 ## 같이 읽으면 좋은 글
 
 - [3교대 하는 사람은 영양제도 다르게 먹어야 합니다](/column/supplements-for-shift-workers)
@@ -84,8 +102,8 @@ _이미지 출처: [Wikimedia Commons - Sunlight of plane window](https://common
 
 ## 참고 자료
 
+- [NIDDK - Impact of Sleep and Circadian Disturbances on Glucose Metabolism](https://www.niddk.nih.gov/-/media/Files/Strategic-Plans/Diabetes-in-America-3rd-Edition/DIA_Ch25.pdf)
+- [NIDDK - Healthy Living with Diabetes](https://www.niddk.nih.gov/health-information/diabetes/overview/healthy-living-with-diabetes)
 - [Lancet Regional Health Europe - Personal light exposure patterns and type 2 diabetes](https://www.thelancet.com/journals/lanepe/article/PIIS2666-7762(24)00110-8/fulltext)
 - [PNAS - Light exposure during sleep impairs cardiometabolic function](https://www.pnas.org/doi/10.1073/pnas.2113290119)
-- [Review - Artificial Light at Night and Type 2 Diabetes Mellitus](https://pmc.ncbi.nlm.nih.gov/articles/PMC11449813/)
-- [NIDDK Diabetes in America - Impact of Sleep and Circadian Disturbances on Glucose Metabolism](https://www.niddk.nih.gov/-/media/Files/Strategic-Plans/Diabetes-in-America-3rd-Edition/DIA_Ch25.pdf)
-- [NIDDK - Healthy Living with Diabetes](https://www.niddk.nih.gov/health-information/diabetes/overview/healthy-living-with-diabetes)
+

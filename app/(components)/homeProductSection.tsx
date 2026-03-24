@@ -11,7 +11,6 @@ import { useFooter } from "@/components/common/footerContext";
 import { useLoading } from "@/components/common/loadingContext.client";
 import { useToast } from "@/components/common/toastContext.client";
 import { useLandingPersonalization } from "@/components/common/useLandingPersonalization";
-import { useOfferIntelligence } from "@/components/common/useOfferIntelligence";
 import {
   buildClientCartSignature,
   mergeClientCartItems,
@@ -19,10 +18,6 @@ import {
   writeClientCartItems,
 } from "@/lib/client/cart-storage";
 import { rankProductsForLandingPersonalization } from "@/lib/landing-personalization/engine";
-import {
-  resolveHomeOfferCard,
-  type OfferAction,
-} from "@/lib/offer-intelligence/engine";
 import {
   calculateCartTotalForPharmacy,
 } from "./homeProductSection.helpers";
@@ -71,6 +66,7 @@ export default function HomeProductSection({
     error,
     isRecovering,
     setIsRecovering,
+    isCatalogPaused,
     fetchData,
   } = useHomeProductSectionData({
     initialCategories,
@@ -115,7 +111,6 @@ export default function HomeProductSection({
   const { hideLoading } = useLoading();
   const { showToast } = useToast();
   const { focus } = useLandingPersonalization(categories);
-  const offerIntelligence = useOfferIntelligence(categories.length > 0);
   const {
     selectedSymptoms,
     setSelectedSymptoms,
@@ -131,7 +126,6 @@ export default function HomeProductSection({
     handlePackageSelect,
     handleApplyRecommendedCategories,
     handleApplyRecommendedTrial,
-    handleApplyRecommendedMonth,
   } = useHomeProductFilters(isLoading);
 
   const scrollPositionRef = useRef(0);
@@ -197,6 +191,7 @@ export default function HomeProductSection({
     isLoading,
     allProductsLength: allProducts.length,
     isRecovering,
+    isCatalogPaused,
   });
 
   useHomeProductComputationEffects({
@@ -239,50 +234,6 @@ export default function HomeProductSection({
     );
   }, [focus, products, selectedCategories.length, selectedPackage, selectedPharmacy?.id]);
 
-  const homeOffer = useMemo(
-    () =>
-      selectedCategories.length === 0 &&
-      selectedPackage === HOME_PACKAGE_LABELS.all &&
-      !offerIntelligence.loading
-        ? resolveHomeOfferCard({
-            summary: offerIntelligence.summary,
-            remoteResults: offerIntelligence.remoteResults,
-            categories,
-          })
-        : null,
-    [
-      categories,
-      offerIntelligence.loading,
-      offerIntelligence.remoteResults,
-      offerIntelligence.summary,
-      selectedCategories.length,
-      selectedPackage,
-    ]
-  );
-
-  const handleHomeOfferAction = useCallback(
-    (action: OfferAction) => {
-      if (action.type !== "apply_package") return;
-
-      if (action.packageTarget === "7") {
-        handleApplyRecommendedTrial(action.categoryIds);
-        return;
-      }
-
-      if (action.packageTarget === "30") {
-        handleApplyRecommendedMonth(action.categoryIds);
-        return;
-      }
-
-      handleApplyRecommendedCategories(action.categoryIds);
-    },
-    [
-      handleApplyRecommendedCategories,
-      handleApplyRecommendedMonth,
-      handleApplyRecommendedTrial,
-    ]
-  );
-
   return (
     <HomeProductSectionContent
       roadAddress={roadAddress}
@@ -301,10 +252,6 @@ export default function HomeProductSection({
       onToggleCategory={handleCategoryToggle}
       onResetCategories={handleCategoryReset}
       selectedPackage={selectedPackage}
-      onApplyRecommendedCategories={handleApplyRecommendedCategories}
-      onApplyRecommendedTrial={handleApplyRecommendedTrial}
-      homeOffer={homeOffer}
-      onHomeOfferAction={handleHomeOfferAction}
       deferredSelectedPackage={deferredSelectedPackage}
       onSelectPackage={handlePackageSelect}
       isFilterUpdating={isFilterUpdating}
@@ -312,6 +259,7 @@ export default function HomeProductSection({
       allProducts={allProducts}
       error={error}
       isRecovering={isRecovering}
+      isCatalogPaused={isCatalogPaused}
       onRetryLoad={() => void fetchData("recovery")}
       totalPrice={totalPrice}
       isCartBarLoading={isCartBarLoading}

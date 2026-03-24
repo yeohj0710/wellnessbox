@@ -80,6 +80,24 @@ CFU 숫자나 광고 문구보다 먼저 볼 건 권장 복용법과 내 증상 
 
 개인 상태에 따라 다릅니다. 복용 약이 있거나 장 질환 치료 중이면 전문가 상담이 우선입니다.
 
+## 공복·식후보다 먼저 볼 것은 균주, 제품 안내, 꾸준함입니다
+
+### '유산균'이라고 다 같은 유산균이 아닙니다
+
+사람들은 제품 이름이 달라도 다 비슷한 유산균이라고 생각하기 쉽습니다. 하지만 실제로는 균주, 함량, 코팅 방식, 보관 조건이 다르고 기대할 수 있는 효과도 다릅니다. 그래서 시간대 하나만 최적화한다고 모든 문제가 해결되지는 않습니다. **제품 자체가 나와 안 맞을 수도 있습니다.**
+
+### 복부 팽만감이 심하면 시간보다 시작 강도를 조절해 보세요
+
+처음부터 고함량 제품을 공복에 넣으면 더부룩함, 가스, 배변 변화가 도드라질 수 있습니다. 이런 경우엔 식후로 옮기거나, 함량이 낮은 제품으로 시작하거나, 며칠 간격으로 적응시키는 쪽이 더 편할 수 있습니다. 중요한 건 이론상 최적 시간보다 **복용 성공률**입니다.
+
+### 항생제와는 같은 시간대에 몰아넣지 않는 편이 실전적입니다
+
+항생제 치료 중 유산균을 같이 쓰는 사람은 많지만, 같은 시간에 한 번에 삼키면 뭐가 불편한지 구분이 안 됩니다. 제품마다 안내가 다를 수 있지만, 일반적으로는 몇 시간 간격을 두는 편이 더 정리하기 쉽습니다. 그래야 설사인지, 항생제 부작용인지, 유산균 초기 반응인지 판단이 쉬워집니다.
+
+### '장에 좋다'는 이유로 무기한 추가하는 습관도 점검해 보세요
+
+유산균은 식사와 수면, 스트레스, 식이섬유가 엉망인 상태를 대신 해결해 주는 마법이 아닙니다. 몇 달째 계속 먹는데도 같은 증상이 반복된다면, 시간대를 바꾸는 게 아니라 **원인 진단과 제품 적합성**을 다시 보는 편이 낫습니다.
+
 ## 같이 읽으면 좋은 글
 
 - [마그네슘 복용시간: 밤 루틴에 넣는 법](/column/magnesium-and-sleep-habit)
@@ -88,8 +106,10 @@ CFU 숫자나 광고 문구보다 먼저 볼 건 권장 복용법과 내 증상 
 
 ## 참고 자료
 
-- [NIH ODS - Probiotics Fact Sheet for Consumers](https://ods.od.nih.gov/factsheets/Probiotics-Consumer/)
-- [NCCIH - Probiotics: Usefulness and Safety](https://www.nccih.nih.gov/health/probiotics-usefulness-and-safety)
+- [ODS - Probiotics Fact Sheet for Health Professionals](https://ods.od.nih.gov/factsheets/Probiotics-HealthProfessional/)
+- [ODS - Probiotics Fact Sheet for Consumers](https://ods.od.nih.gov/factsheets/Probiotics-Consumer/)
+- [ODS - Scoop: Questions and Answers about Probiotics](https://ods.od.nih.gov/pubs/Scoop_August_2024.pdf)
+
 
 ## 안내
 

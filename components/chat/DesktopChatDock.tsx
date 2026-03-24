@@ -116,6 +116,8 @@ export default function DesktopChatDock() {
   const searchParams = useSearchParams();
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const dragStateRef = useRef<TriggerDragState | null>(null);
+  const triggerHintTimerRef = useRef<number | null>(null);
+  const previousIsOpenRef = useRef(false);
   const suppressOpenRef = useRef(false);
   const isChatRoute = pathname?.startsWith("/chat") ?? false;
   const pageAgentContext = useMemo(
@@ -160,26 +162,43 @@ export default function DesktopChatDock() {
   const [triggerOffset, setTriggerOffset] = useState<DockTriggerOffset>(() =>
     loadDockTriggerOffset() ?? { x: 0, y: 0 }
   );
+  const [isTriggerDragging, setIsTriggerDragging] = useState(false);
+  const [showTriggerHint, setShowTriggerHint] = useState(false);
   const triggerOffsetRef = useRef(triggerOffset);
+  const isMobileViewportRef = useRef(isMobileViewport);
+  const triggerBottomOffsetPxRef = useRef(triggerBottomOffsetPx);
+  const triggerViewportRef = useRef<"desktop" | "mobile">(
+    isMobileViewport ? "mobile" : "desktop"
+  );
+
+  useEffect(() => {
+    isMobileViewportRef.current = isMobileViewport;
+    triggerBottomOffsetPxRef.current = triggerBottomOffsetPx;
+    triggerViewportRef.current = isMobileViewport ? "mobile" : "desktop";
+  }, [isMobileViewport, triggerBottomOffsetPx]);
 
   const clampAndStoreTriggerOffset = useCallback(
     (nextOffset: DockTriggerOffset, persist = false) => {
       if (typeof window === "undefined") {
-        triggerOffsetRef.current = nextOffset;
-        setTriggerOffset((current) =>
-          areDockTriggerOffsetsEqual(current, nextOffset) ? current : nextOffset
-        );
-        return nextOffset;
+        if (!areDockTriggerOffsetsEqual(triggerOffsetRef.current, nextOffset)) {
+          triggerOffsetRef.current = nextOffset;
+          setTriggerOffset(nextOffset);
+        }
+        return triggerOffsetRef.current;
       }
 
       const triggerRect = triggerRef.current?.getBoundingClientRect();
       const triggerWidth = Math.round(
         triggerRect?.width ??
-          (isMobileViewport ? MOBILE_TRIGGER_WIDTH_PX : DESKTOP_TRIGGER_WIDTH_PX)
+          (isMobileViewportRef.current
+            ? MOBILE_TRIGGER_WIDTH_PX
+            : DESKTOP_TRIGGER_WIDTH_PX)
       );
       const triggerHeight = Math.round(
         triggerRect?.height ??
-          (isMobileViewport ? MOBILE_TRIGGER_HEIGHT_PX : DESKTOP_TRIGGER_HEIGHT_PX)
+          (isMobileViewportRef.current
+            ? MOBILE_TRIGGER_HEIGHT_PX
+            : DESKTOP_TRIGGER_HEIGHT_PX)
       );
       const clamped = clampDockTriggerOffset({
         offset: nextOffset,
@@ -187,32 +206,75 @@ export default function DesktopChatDock() {
         viewportHeight: window.innerHeight,
         triggerWidth,
         triggerHeight,
-        rightOffsetPx: isMobileViewport
+        rightOffsetPx: isMobileViewportRef.current
           ? MOBILE_TRIGGER_RIGHT_OFFSET_PX
           : DESKTOP_TRIGGER_RIGHT_OFFSET_PX,
-        bottomOffsetPx: triggerBottomOffsetPx,
+        bottomOffsetPx: triggerBottomOffsetPxRef.current,
       });
 
-      triggerOffsetRef.current = clamped;
-      setTriggerOffset((current) =>
-        areDockTriggerOffsetsEqual(current, clamped) ? current : clamped
-      );
-      if (persist) {
-        saveDockTriggerOffset(clamped);
+      if (!areDockTriggerOffsetsEqual(triggerOffsetRef.current, clamped)) {
+        triggerOffsetRef.current = clamped;
+        setTriggerOffset(clamped);
       }
-      return clamped;
+      if (persist) {
+        saveDockTriggerOffset(
+          triggerOffsetRef.current,
+          triggerViewportRef.current
+        );
+      }
+      return triggerOffsetRef.current;
     },
-    [isMobileViewport, triggerBottomOffsetPx]
+    []
+  );
+
+  const showTriggerHintBriefly = useCallback((durationMs = 1200) => {
+    if (typeof window === "undefined") return;
+    setShowTriggerHint(true);
+    if (triggerHintTimerRef.current !== null) {
+      window.clearTimeout(triggerHintTimerRef.current);
+    }
+    triggerHintTimerRef.current = window.setTimeout(() => {
+      setShowTriggerHint(false);
+      triggerHintTimerRef.current = null;
+    }, durationMs);
+  }, []);
+
+  const hideTriggerHint = useCallback(() => {
+    setShowTriggerHint(false);
+    if (typeof window === "undefined") return;
+    if (triggerHintTimerRef.current !== null) {
+      window.clearTimeout(triggerHintTimerRef.current);
+      triggerHintTimerRef.current = null;
+    }
+  }, []);
+
+  const resetTriggerOffsetToDefault = useCallback(
+    (persist = true) => {
+      clampAndStoreTriggerOffset({ x: 0, y: 0 }, persist);
+    },
+    [clampAndStoreTriggerOffset]
   );
 
   useEffect(() => {
-    const savedOffset = loadDockTriggerOffset() ?? triggerOffsetRef.current;
+    const savedOffset =
+      loadDockTriggerOffset(triggerViewportRef.current) ?? { x: 0, y: 0 };
     clampAndStoreTriggerOffset(savedOffset);
-  }, [clampAndStoreTriggerOffset]);
+  }, [clampAndStoreTriggerOffset, isMobileViewport]);
+
+  useEffect(() => {
+    clampAndStoreTriggerOffset(triggerOffsetRef.current);
+  }, [clampAndStoreTriggerOffset, triggerBottomOffsetPx]);
 
   const handleTriggerPointerDown = useCallback(
     (event: ReactPointerEvent<HTMLButtonElement>) => {
       if (isOpen || pendingOpen) return;
+      if (!event.isPrimary) return;
+      if (event.pointerType === "mouse" && event.button !== 0) return;
+
+      suppressOpenRef.current = false;
+      if (event.pointerType !== "mouse") {
+        showTriggerHintBriefly();
+      }
 
       dragStateRef.current = {
         pointerId: event.pointerId,
@@ -222,13 +284,47 @@ export default function DesktopChatDock() {
         startOffsetY: triggerOffset.y,
         dragging: false,
       };
-      event.currentTarget.setPointerCapture(event.pointerId);
+      try {
+        event.currentTarget.setPointerCapture(event.pointerId);
+      } catch {
+        // ignore browsers that fail pointer capture during touch transitions
+      }
     },
-    [isOpen, pendingOpen, triggerOffset.x, triggerOffset.y]
+    [isOpen, pendingOpen, showTriggerHintBriefly, triggerOffset.x, triggerOffset.y]
   );
 
-  const handleTriggerPointerMove = useCallback(
-    (event: ReactPointerEvent<HTMLButtonElement>) => {
+  const finishTriggerDrag = useCallback(
+    (pointerId: number | null, cancel = false) => {
+      const state = dragStateRef.current;
+      if (!state) return;
+      if (pointerId !== null && state.pointerId !== pointerId) return;
+
+      if (state.dragging) {
+        suppressOpenRef.current = true;
+        hideTriggerHint();
+        if (!cancel) {
+          saveDockTriggerOffset(
+            triggerOffsetRef.current,
+            triggerViewportRef.current
+          );
+        }
+      }
+
+      dragStateRef.current = null;
+      setIsTriggerDragging(false);
+      if (pointerId !== null) {
+        try {
+          triggerRef.current?.releasePointerCapture(pointerId);
+        } catch {
+          // ignore browsers that already released pointer capture
+        }
+      }
+    },
+    [hideTriggerHint]
+  );
+
+  useEffect(() => {
+    const handlePointerMove = (event: PointerEvent) => {
       const state = dragStateRef.current;
       if (!state || state.pointerId !== event.pointerId) return;
 
@@ -238,6 +334,8 @@ export default function DesktopChatDock() {
         const distance = Math.hypot(deltaX, deltaY);
         if (distance < TRIGGER_DRAG_THRESHOLD_PX) return;
         state.dragging = true;
+        setIsTriggerDragging(true);
+        hideTriggerHint();
       }
 
       event.preventDefault();
@@ -245,40 +343,47 @@ export default function DesktopChatDock() {
         x: state.startOffsetX + deltaX,
         y: state.startOffsetY + deltaY,
       });
-    },
-    [clampAndStoreTriggerOffset]
-  );
+    };
 
-  const finishTriggerDrag = useCallback(
-    (pointerId: number, cancel = false) => {
-      const state = dragStateRef.current;
-      if (!state || state.pointerId !== pointerId) return;
-
-      if (state.dragging) {
-        suppressOpenRef.current = true;
-        if (!cancel) {
-          saveDockTriggerOffset(triggerOffsetRef.current);
-        }
-      }
-
-      dragStateRef.current = null;
-    },
-    []
-  );
-
-  const handleTriggerPointerUp = useCallback(
-    (event: ReactPointerEvent<HTMLButtonElement>) => {
+    const handlePointerUp = (event: PointerEvent) => {
       finishTriggerDrag(event.pointerId);
-    },
-    [finishTriggerDrag]
-  );
+    };
 
-  const handleTriggerPointerCancel = useCallback(
-    (event: ReactPointerEvent<HTMLButtonElement>) => {
+    const handlePointerCancel = (event: PointerEvent) => {
       finishTriggerDrag(event.pointerId, true);
-    },
-    [finishTriggerDrag]
-  );
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+    window.addEventListener("pointercancel", handlePointerCancel);
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+      window.removeEventListener("pointercancel", handlePointerCancel);
+    };
+  }, [clampAndStoreTriggerOffset, finishTriggerDrag, hideTriggerHint]);
+
+  useEffect(() => {
+    if (!isOpen && !pendingOpen) return;
+    finishTriggerDrag(null, true);
+  }, [finishTriggerDrag, isOpen, pendingOpen]);
+
+  useEffect(() => {
+    if (previousIsOpenRef.current && !isOpen) {
+      resetTriggerOffsetToDefault(true);
+      hideTriggerHint();
+    }
+    previousIsOpenRef.current = isOpen;
+  }, [hideTriggerHint, isOpen, resetTriggerOffsetToDefault]);
+
+  useEffect(() => {
+    return () => {
+      if (typeof window !== "undefined" && triggerHintTimerRef.current !== null) {
+        window.clearTimeout(triggerHintTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleTriggerClick = useCallback(
     (event: ReactMouseEvent<HTMLButtonElement>) => {
@@ -359,11 +464,15 @@ export default function DesktopChatDock() {
           ref={triggerRef}
           type="button"
           onPointerDown={handleTriggerPointerDown}
-          onPointerMove={handleTriggerPointerMove}
-          onPointerUp={handleTriggerPointerUp}
-          onPointerCancel={handleTriggerPointerCancel}
+          onPointerEnter={() => showTriggerHintBriefly(1400)}
+          onPointerLeave={hideTriggerHint}
+          onBlur={hideTriggerHint}
           onClick={handleTriggerClick}
-          className={`group relative z-20 ml-auto flex h-14 w-14 touch-none select-none cursor-pointer items-center justify-center rounded-full border border-slate-200/90 bg-white shadow-[0_10px_28px_rgba(15,23,42,0.18)] transition-[transform,opacity,box-shadow] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(15,23,42,0.22)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 sm:h-16 sm:w-auto sm:gap-2.5 sm:px-5 sm:pr-6 lg:gap-3 lg:px-6 ${
+          className={`group relative z-20 ml-auto flex h-14 w-14 touch-none select-none items-center justify-center rounded-full border border-slate-200/90 bg-white shadow-[0_10px_28px_rgba(15,23,42,0.18)] transition-[transform,opacity,box-shadow] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 sm:h-16 sm:w-auto sm:gap-2.5 sm:px-5 sm:pr-6 lg:gap-3 lg:px-6 ${
+            isTriggerDragging
+              ? "cursor-grabbing scale-[1.03] shadow-[0_18px_42px_rgba(14,165,233,0.24)] duration-75"
+              : "cursor-grab duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(15,23,42,0.22)]"
+          } ${
             isOpen
               ? "translate-y-2 scale-95 opacity-0 pointer-events-none"
               : pendingOpen
@@ -388,6 +497,16 @@ export default function DesktopChatDock() {
             AI 에이전트
           </span>
           <span className="hidden h-2.5 w-2.5 rounded-full bg-emerald-500 sm:inline-block" />
+          <span className="pointer-events-none absolute inset-x-4 bottom-1 hidden h-px bg-gradient-to-r from-transparent via-slate-300/80 to-transparent sm:block" />
+          <span
+            className={`pointer-events-none absolute -top-10 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded-full bg-slate-900/90 px-3 py-1.5 text-[11px] font-medium text-white shadow-[0_12px_24px_rgba(15,23,42,0.22)] transition-all duration-200 sm:inline-flex ${
+              showTriggerHint && !isOpen && !pendingOpen && !isTriggerDragging
+                ? "-translate-y-1 opacity-100"
+                : "translate-y-1 opacity-0"
+            }`}
+          >
+            드래그해서 이동
+          </span>
         </button>
       </div>
 

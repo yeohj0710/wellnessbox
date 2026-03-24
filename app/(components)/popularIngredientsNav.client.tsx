@@ -12,6 +12,8 @@ interface PopularIngredientsNavProps {
   initialCategories?: any[];
 }
 
+type PopularCategoryTarget = number | string;
+
 export default function PopularIngredientsNav({
   basePath,
   initialCategories = [],
@@ -19,19 +21,23 @@ export default function PopularIngredientsNav({
   const router = useRouter();
   const { showLoading } = useLoading();
   const buildCategoryHref = useCallback(
-    (id: number) => `${basePath}?category=${id}#home-products`,
+    (target: PopularCategoryTarget) => {
+      const params = new URLSearchParams();
+      params.set("category", String(target));
+      return `${basePath}?${params.toString()}#home-products`;
+    },
     [basePath]
   );
 
-  const handleSelectCategory = (id: number) => {
-    const href = buildCategoryHref(id);
+  const handleSelectCategory = (target: PopularCategoryTarget) => {
+    const href = buildCategoryHref(target);
     showLoading();
     navigateWithFallback(router, href);
   };
 
   const handleCategoryIntent = useCallback(
-    (id: number) => {
-      const href = buildCategoryHref(id);
+    (target: PopularCategoryTarget) => {
+      const href = buildCategoryHref(target);
       if (typeof window !== "undefined") {
         const currentPath = window.location.pathname || "/";
         if (currentPath === basePath) {

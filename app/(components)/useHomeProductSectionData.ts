@@ -40,8 +40,24 @@ type UseHomeProductSectionDataResult = {
   error: string | null;
   isRecovering: boolean;
   setIsRecovering: SetBoolean;
+  isCatalogPaused: boolean;
   fetchData: (reason?: "initial" | "recovery") => Promise<void>;
 };
+
+function isHomeCatalogUnavailableError(error: unknown) {
+  if (!(error instanceof Error)) return false;
+
+  const message = error.message.toLowerCase();
+  return (
+    message.includes("home-data empty products") ||
+    message.includes("home-data status 503") ||
+    message.includes("compute time quota") ||
+    message.includes("can't reach database server") ||
+    message.includes("cant reach database server") ||
+    message.includes("database server is running") ||
+    message.includes("error querying the database")
+  );
+}
 
 export function useHomeProductSectionData({
   initialCategories = [],
@@ -59,6 +75,7 @@ export function useHomeProductSectionData({
     sortByImportanceDesc(initialProducts)
   );
   const [isRecovering, setIsRecovering] = useState(false);
+  const [isCatalogPaused, setIsCatalogPaused] = useState(false);
   const homeFetchSeqRef = useRef(0);
 
   const applyHomeData = useCallback(
@@ -72,6 +89,7 @@ export function useHomeProductSectionData({
       setCategories(sortedCategories);
       setAllProducts(sortedProducts);
       setProducts(sortedProducts);
+      setIsCatalogPaused(false);
       localStorage.setItem("categories", JSON.stringify(sortedCategories));
       localStorage.setItem("products", JSON.stringify(sortedProducts));
       localStorage.setItem("cacheTimestamp", cacheTimestamp.toString());
@@ -84,6 +102,7 @@ export function useHomeProductSectionData({
       const requestSeq = ++homeFetchSeqRef.current;
       setIsLoading(true);
       setError(null);
+      setIsCatalogPaused(false);
       if (reason === "recovery") setIsRecovering(true);
 
       const freshCache =
@@ -156,7 +175,16 @@ export function useHomeProductSectionData({
         setIsRecovering(false);
       } catch (requestError) {
         if (requestSeq !== homeFetchSeqRef.current) return;
-        console.error("Failed to load home data", requestError);
+        const isCatalogUnavailable = isHomeCatalogUnavailableError(requestError);
+
+        if (isCatalogUnavailable) {
+          console.warn("[home-products] catalog unavailable", {
+            reason:
+              requestError instanceof Error ? requestError.message : String(requestError),
+          });
+        } else {
+          console.warn("[home-products] load failed", requestError);
+        }
 
         if (staleCache) {
           applyHomeData(
@@ -169,7 +197,13 @@ export function useHomeProductSectionData({
           return;
         }
 
-        if (requestError instanceof FetchTimeoutError) {
+        if (isCatalogUnavailable) {
+          setAllProducts([]);
+          setProducts([]);
+          setIsRecovering(false);
+          setIsCatalogPaused(true);
+          setError(HOME_PRODUCT_COPY.salesPausedTitle);
+        } else if (requestError instanceof FetchTimeoutError) {
           setError(HOME_PRODUCT_COPY.loadingTimeout);
         } else {
           setError(HOME_PRODUCT_COPY.loadFailed);
@@ -195,6 +229,7 @@ export function useHomeProductSectionData({
     error,
     isRecovering,
     setIsRecovering,
+    isCatalogPaused,
     fetchData,
   };
 }

@@ -76,6 +76,24 @@ _이미지 출처: [Wikimedia Commons - Colorful candy](https://commons.wikimedi
 - 체지방을 빼는 중인데 매스게이너나 고당류 음료를 습관처럼 마시는 경우
 - 제품 성분표에 고카페인과 다량의 탄수화물 원료가 동시에 들어 있는 경우
 
+## 혈당을 흔드는 건 종종 '운동 보충제'가 아니라 보충제 안에 섞인 다른 것들입니다
+
+### 프리워크아웃과 매스게이너는 같은 카테고리로 보면 안 됩니다
+
+운동 보충제라고 다 혈당에 같은 방식으로 작용하지 않습니다. 프리워크아웃은 카페인과 자극성 성분이 문제일 때가 많고, 매스게이너나 일부 회복용 음료는 당과 탄수화물 양이 예상보다 많아 혈당을 흔들 수 있습니다. 결국 '운동 보충제'라는 큰 이름보다 **제품 목적과 영양구성**을 따로 봐야 합니다.
+
+### '운동용'이라는 말이 저당을 의미하진 않습니다
+
+특히 퍼포먼스 음료, 에너지 젤, 벌크업용 쉐이크는 혈당을 올리는 탄수화물을 의도적으로 넣은 제품도 많습니다. 고강도 운동선수에겐 전략적일 수 있지만, 일반인이나 혈당 관리가 필요한 사람에게는 불필요할 수 있습니다. 제품이 나쁜 게 아니라 **누구를 위한 제품인지**를 구분해야 합니다.
+
+### 자극 성분은 혈당보다 먼저 심장과 수면을 흔들 수 있습니다
+
+카페인, 기타 각성 성분, 다성분 프리워크아웃은 혈당 숫자 그 자체보다 두근거림, 불안, 수면 저하를 통해 다음 날 식욕과 컨디션을 더 흔들 수 있습니다. 그래서 혈당 관리가 목적이라면 보충제를 볼 때 탄수화물뿐 아니라 **카페인량과 혼합 자극 성분**도 같이 봐야 합니다.
+
+### 운동 직후라고 해서 무엇이든 정당화되진 않습니다
+
+운동 후 회복이 중요하다는 말이, 고당 음료와 디저트형 쉐이크를 아무 생각 없이 마셔도 된다는 뜻은 아닙니다. 운동 강도와 시간, 다음 식사까지의 간격, 전체 목표를 같이 보고 결정해야 합니다. 일반적인 웨이트 트레이닝 한 번 후엔 **과한 당류 보충이 꼭 필요한 건 아닌 경우**도 많습니다.
+
 ## 같이 읽으면 좋은 글
 
 - [단백질 쉐이크, 단백질 양만 보면 거의 실패합니다](/column/protein-shake-selection-guide)
@@ -84,8 +102,8 @@ _이미지 출처: [Wikimedia Commons - Colorful candy](https://commons.wikimedi
 
 ## 참고 자료
 
-- [FDA - Highly Concentrated Caffeine in Dietary Supplements](https://www.fda.gov/files/food/published/Guidance-for-Industry--Highly-Concentrated-Caffeine-in-Dietary-Supplements-DOWNLOAD.pdf)
-- [Harvard Nutrition Source - Workout Supplements](https://nutritionsource.hsph.harvard.edu/workout-supplements/)
-- [Review - Pre-Workout Supplements and Their Effects](https://pmc.ncbi.nlm.nih.gov/articles/PMC12028264/)
-- [NSF - Selecting Dietary and Nutritional Supplements](https://www.nsf.org/consumer-resources/articles/selecting-dietary-nutritional-supplements)
-- [NSF - Certified for Sport Program](https://www.nsf.org/consumer-resources/articles/certified-for-sport-program)
+- [ODS - Dietary Supplements for Exercise and Athletic Performance](https://ods.od.nih.gov/factsheets/ExerciseAndAthleticPerformance-HealthProfessional/)
+- [JISSN - International Society of Sports Nutrition position stand: caffeine and exercise](https://jissn.biomedcentral.com/articles/10.1186/s12970-020-00383-4)
+- [JISSN - Multi-ingredient pre-workout supplements, safety implications](https://jissn.biomedcentral.com/articles/10.1186/s12970-018-0247-6)
+- [FDA - DMAA in Products Marketed as Dietary Supplements](https://www.fda.gov/food/information-select-dietary-supplement-ingredients-and-other-substances/dmaa-products-marketed-dietary-supplements)
+

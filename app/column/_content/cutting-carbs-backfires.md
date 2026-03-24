@@ -76,6 +76,24 @@ _이미지 출처: [Wikimedia Commons - Running woman](https://commons.wikimedia
 - 수면이 얕아지고 새벽에 자주 깨는 패턴이 생기는 경우
 - 변비, 무기력, 생리 불규칙 등 전반적인 컨디션 저하가 같이 오는 경우
 
+## 탄수화물을 줄여도 되는 사람과, 방식이 문제인 사람은 다릅니다
+
+### 탄수화물을 '질'이 아니라 '존재'로만 보면 실패하기 쉽습니다
+
+탄수화물을 줄이는 게 항상 나쁜 건 아닙니다. 정제 탄수화물과 단 음료를 줄이는 건 분명 도움이 될 때가 많습니다. 문제는 밥, 과일, 콩, 통곡물, 채소까지 한꺼번에 적으로 돌리면서 **섬유질·포만감·지속성**까지 같이 잃어버리는 방식입니다. 이렇게 되면 체중은 잠깐 빠져도 변비, 폭식, 운동 퍼포먼스 저하, 예민함이 따라오기 쉽습니다.
+
+### 체중은 빠져도 생활이 무너지면 오래 못 갑니다
+
+초반 체중 하락이 빨라서 ‘맞는 식단’처럼 느껴질 수 있습니다. 하지만 오후 집중 저하, 운동 중 힘 빠짐, 밤에 단 음식 폭주, 외식 불가, 변비가 붙으면 유지가 어렵습니다. 결국 중요한 건 **몇 주짜리 감량 속도**가 아니라 몇 달 동안 지킬 수 있는 구조인지입니다.
+
+### 인슐린저항성은 탄수화물만으로 설명되지 않습니다
+
+잠 부족, 복부 비만, 근육량 부족, 활동량 저하, 스트레스도 함께 봐야 합니다. 그래서 탄수화물만 극단적으로 줄였는데 혈당이나 컨디션이 기대만큼 좋아지지 않는 일이 흔합니다. 밥 반 공기를 줄이는 것보다 **식후 걷기, 수면, 단백질과 섬유질 구성**이 더 큰 차이를 만드는 사람도 많습니다.
+
+### 실전에서는 '뺄 것'보다 '바꿀 것'을 정하는 편이 낫습니다
+
+흰빵을 통곡물로, 액상과당 음료를 물이나 무가당 음료로, 과자 야식을 단백질+과일 조합으로 바꾸는 식의 전환이 오래 갑니다. 완전 배제가 아니라 **혈당 반응이 덜 흔들리는 탄수화물 구조**를 만드는 게 핵심입니다.
+
 ## 같이 읽으면 좋은 글
 
 - [인슐린저항성은 탄수화물만 줄인다고 해결되지 않습니다](/column/insulin-resistance-is-not-just-carbs)
@@ -85,6 +103,7 @@ _이미지 출처: [Wikimedia Commons - Running woman](https://commons.wikimedia
 ## 참고 자료
 
 - [NIDDK - Healthy Living with Diabetes](https://www.niddk.nih.gov/health-information/diabetes/overview/healthy-living-with-diabetes)
-- [Review - Effects of Diet on Sleep Quality](https://pmc.ncbi.nlm.nih.gov/articles/PMC5015038/)
-- [NIDDK Diabetes in America - Impact of Sleep and Circadian Disturbances on Glucose Metabolism](https://www.niddk.nih.gov/-/media/Files/Strategic-Plans/Diabetes-in-America-3rd-Edition/DIA_Ch25.pdf)
 - [NIDDK - Insulin Resistance & Prediabetes](https://www.niddk.nih.gov/health-information/diabetes/overview/what-is-diabetes/prediabetes-insulin-resistance)
+- [ADA - Standards of Care in Diabetes—2024](https://diabetesjournals.org/care/article-pdf/47/Supplement_1/S77/746953/dc24s005.pdf)
+- [Cochrane Review - Low-carbohydrate versus balanced-carbohydrate diets](https://pmc.ncbi.nlm.nih.gov/articles/PMC8795871/)
+

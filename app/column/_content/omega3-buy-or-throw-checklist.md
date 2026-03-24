@@ -83,6 +83,24 @@ _이미지 출처: [Wikimedia Commons - Fish Oil Capsules](https://commons.wikim
 - 캡슐이 서로 달라붙거나, 색이 탁하고, 병에서 오래된 기름 냄새가 강하게 나는 경우
 - 개봉 후 더운 곳에 오래 보관했는데도 계속 먹고 있는 경우
 
+## 오메가3는 '유명 브랜드'보다 라벨과 상태를 보면 더 잘 걸러집니다
+
+### 제일 먼저 볼 건 fish oil이 아니라 EPA·DHA 함량입니다
+
+제품 전면에 1,000 mg, 1,200 mg처럼 크게 적혀 있어도 실제로 중요한 건 EPA와 DHA가 몇 mg인지입니다. 이 숫자가 작으면 캡슐은 커도 실질 함량은 기대보다 낮을 수 있습니다. 그래서 비교할 때는 캡슐 수보다 **1회 섭취량 기준 EPA+DHA 총량**을 봐야 합니다.
+
+### 냄새와 보관 상태는 생각보다 중요한 품질 신호입니다
+
+뚜껑을 열었을 때 비린내를 넘어 톡 쏘는 산패 냄새가 심하거나, 캡슐이 서로 달라붙고 끈적거리거나, 열에 오래 노출된 흔적이 보이면 과감하게 버리는 쪽이 낫습니다. 오메가3는 지방이기 때문에 빛·열·산소의 영향을 받기 쉽습니다. 유통기한만 멀쩡하다고 안심하면 안 됩니다.
+
+### 간유는 오메가3 보충제와 같은 취급으로만 보면 안 됩니다
+
+코드리버오일처럼 간유 기반 제품은 비타민 A와 D가 함께 들어 있는 경우가 있습니다. 이게 장점이 될 수도 있지만, 이미 다른 멀티비타민이나 비타민D를 먹고 있다면 중복이 생길 수 있습니다. ‘오메가3만 먹는다’고 생각했는데 실제론 **지용성 비타민까지 같이 올리는 구조**일 수 있다는 뜻입니다.
+
+### 품질 인증은 완벽한 보증이 아니지만, 최소한의 필터가 됩니다
+
+USP, NSF, IFOS 같은 제3자 검증 표시는 제품 선택에서 꽤 유용합니다. 효능을 보장하는 건 아니어도, 오염물질·라벨 일치 여부를 확인하는 데 도움이 되기 때문입니다. 가격만 보지 말고 **함량, 인증, 보관, 냄새**를 함께 보세요.
+
 ## 같이 읽으면 좋은 글
 
 - [약사는 자기 가족에게도 이런 영양제는 쉽게 안 줍니다](/column/pharmacists-dont-give-these-supplements-easily)
@@ -91,8 +109,7 @@ _이미지 출처: [Wikimedia Commons - Fish Oil Capsules](https://commons.wikim
 
 ## 참고 자료
 
-- [NIH ODS - Omega-3 Fatty Acids Fact Sheet for Consumers](https://ods.od.nih.gov/factsheets/Omega3FattyAcids-Consumer/)
-- [NIH ODS - Omega-3 Fatty Acids Fact Sheet for Health Professionals](https://ods.od.nih.gov/factsheets/Omega3FattyAcids-HealthProfessional/)
-- [George Washington University - Tests Find Many Popular Omega-3 Supplements Are Rancid](https://smhs.gwu.edu/news/tests-find-many-popular-omega-3-supplements-are-rancid)
-- [USP - Verified Mark](https://www.usp.org/verification-services/verified-mark)
-- [NSF - Selecting Dietary and Nutritional Supplements](https://www.nsf.org/consumer-resources/articles/selecting-dietary-nutritional-supplements)
+- [ODS - Omega-3 Fatty Acids Fact Sheet for Health Professionals](https://ods.od.nih.gov/factsheets/Omega3FattyAcids-HealthProfessional/)
+- [ODS - Omega-3 Fatty Acids Fact Sheet for Consumers](https://ods.od.nih.gov/factsheets/Omega3FattyAcids-Consumer/)
+- [FDA - Information for Consumers on Using Dietary Supplements](https://www.fda.gov/food/dietary-supplements/information-consumers-using-dietary-supplements)
+

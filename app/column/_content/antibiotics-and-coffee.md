@@ -83,6 +83,24 @@ _이미지 출처: [Wikimedia Commons - Breakfast menu a coffee and toasts](http
 - 속쓰림, 구토감, 설사가 심한데도 공복 커피를 계속 마시는 경우
 - 밤잠이 완전히 무너졌는데 카페인으로 낮을 버티는 패턴이 반복되는 경우
 
+## 항생제마다 포인트가 다르다는 걸 알아두면 덜 꼬입니다
+
+### 모든 항생제가 커피와 정면충돌하는 건 아닙니다
+
+많이 헷갈리는 이유는 “항생제 전체”를 한 덩어리로 보기 때문입니다. 실제로는 항생제마다 주의점이 다릅니다. 예를 들어 시프로플록사신처럼 일부 약은 카페인 체감을 더 세게 만들 수 있고, 테트라사이클린계처럼 일부 약은 **우유·칼슘·철분·제산제와 간격**이 더 중요합니다. 그래서 “항생제 먹는 동안 커피 금지냐 아니냐”보다 **내가 먹는 약 이름**이 먼저입니다.
+
+### 속이 불편한 날은 커피보다 **복용 방식**부터 정리하세요
+
+항생제 자체로도 속쓰림, 메스꺼움, 설사 같은 불편이 생길 수 있습니다. 이때 공복 커피, 라떼, 에너지음료가 붙으면 약 부작용처럼 느껴지는 증상이 더 심해질 수 있습니다. 약은 물로 넘기고, 안내문에 식후 복용인지 공복 복용인지 먼저 맞춘 뒤, 커피는 그다음 문제로 보는 게 순서입니다.
+
+### 라떼, 단백질 음료, 제산제, 철분제가 더 큰 변수일 수 있습니다
+
+실전에서는 블랙커피보다 “아침 약 + 라떼 + 유산균 + 철분” 조합이 더 흔한 실수입니다. 특히 퀴놀론계와 테트라사이클린계는 칼슘, 철, 마그네슘, 알루미늄이 흡수를 방해할 수 있어 한 컵, 한 봉, 한 타이밍에 몰아먹지 않는 게 중요합니다. 몸이 안 좋을수록 생활이 대충 굴러가는데, 이런 날일수록 간격이 더 중요해집니다.
+
+### 회복 중에는 ‘덜 자극적으로 사는 것’이 약효를 도와줍니다
+
+아픈 동안의 피로를 커피로 덮으면 당장은 버틸 수 있어도 밤잠이 깨고 식사가 흐트러집니다. 그러면 회복이 느려지고, 본인은 “항생제가 센가?” “약이 안 맞나?”라고 느끼기 쉽습니다. 감염이 있는 며칠만큼은 커피를 줄여서 **수분·식사·수면을 복구하는 쪽**이 결과가 좋습니다.
+
 ## 같이 읽으면 좋은 글
 
 - [약은 약만 잘 먹는다고 끝이 아닙니다, 음식이 결과를 바꿉니다](/column/food-can-change-medication-results)
@@ -93,6 +111,7 @@ _이미지 출처: [Wikimedia Commons - Breakfast menu a coffee and toasts](http
 
 - [MedlinePlus - Ciprofloxacin](https://medlineplus.gov/druginfo/meds/a688016.html)
 - [MedlinePlus - Tetracycline](https://medlineplus.gov/druginfo/meds/a682098.html)
+- [MedlinePlus - Doxycycline](https://medlineplus.gov/druginfo/meds/a682063.html)
 - [MedlinePlus - Caffeine](https://medlineplus.gov/caffeine.html)
-- [AMA - What doctors wish patients knew about caffeine](https://www.ama-assn.org/public-health/prevention-wellness/what-doctors-wish-patients-knew-about-impact-caffeine)
 - [FDA - Drug Interactions: What You Should Know](https://www.fda.gov/drugs/resources-drugs/drug-interactions-what-you-should-know)
+

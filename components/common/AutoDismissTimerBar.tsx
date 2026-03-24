@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type AutoDismissTimerBarProps = {
   durationMs: number;
@@ -29,23 +29,40 @@ export default function AutoDismissTimerBar({
 }: AutoDismissTimerBarProps) {
   const safeDuration = Math.max(1, durationMs);
   const [remainingMs, setRemainingMs] = useState(safeDuration);
+  const barRef = useRef<HTMLDivElement | null>(null);
+  const animationRef = useRef<Animation | null>(null);
 
   useEffect(() => {
-    const startedAt = Date.now();
     setRemainingMs(safeDuration);
 
+    if (barRef.current) {
+      animationRef.current?.cancel();
+      animationRef.current = barRef.current.animate(
+        [{ transform: "scaleX(1)" }, { transform: "scaleX(0)" }],
+        {
+          duration: safeDuration,
+          easing: "linear",
+          fill: "forwards",
+        }
+      );
+    }
+
+    const startedAt = performance.now();
     const intervalId = window.setInterval(() => {
-      const nextRemaining = Math.max(0, safeDuration - (Date.now() - startedAt));
+      const elapsed = performance.now() - startedAt;
+      const nextRemaining = Math.max(0, safeDuration - elapsed);
       setRemainingMs(nextRemaining);
       if (nextRemaining <= 0) {
         window.clearInterval(intervalId);
       }
-    }, 100);
+    }, 250);
 
-    return () => window.clearInterval(intervalId);
+    return () => {
+      window.clearInterval(intervalId);
+      animationRef.current?.cancel();
+    };
   }, [safeDuration]);
 
-  const progress = Math.max(0, Math.min(100, (remainingMs / safeDuration) * 100));
   const secondsLeft = Math.max(1, Math.ceil(remainingMs / 1000));
 
   return (
@@ -77,15 +94,17 @@ export default function AutoDismissTimerBar({
 
       <div
         className={joinClasses(
-          "h-1.5 w-full overflow-hidden rounded-full bg-white/15",
+          "relative h-2 w-full overflow-hidden rounded-full bg-white/15 ring-1 ring-inset ring-black/5",
           trackClassName
         )}
         aria-hidden="true"
       >
         <div
+          ref={barRef}
           className={joinClasses("h-full rounded-full", barClassName)}
-          style={{ width: `${progress}%` }}
+          style={{ transformOrigin: "left center" }}
         />
+        <div className="pointer-events-none absolute inset-0 rounded-full bg-[linear-gradient(90deg,transparent_0%,rgba(255,255,255,0.08)_35%,transparent_70%)]" />
       </div>
     </div>
   );

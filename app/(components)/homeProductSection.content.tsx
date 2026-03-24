@@ -1,7 +1,6 @@
 "use client";
 
 import type { RefObject } from "react";
-import { usePathname } from "next/navigation";
 import ProductDetail from "@/components/product/productDetail";
 import Cart from "@/components/order/cart";
 import { getLowestAverageOptionType } from "@/lib/utils";
@@ -14,7 +13,6 @@ import FooterCartBar from "@/app/(components)/footerCartBar";
 import FooterCartBarLoading from "@/app/(components)/footerCartBarLoading";
 import SymptomFilter from "@/app/(components)/symptomFilter";
 import { HOME_PACKAGE_LABELS } from "./homeProductSection.copy";
-import HomeAdaptiveEntryStack from "./HomeAdaptiveEntryStack";
 import {
   HomeProductsStatusState,
   SelectedPharmacyNotice,
@@ -26,10 +24,6 @@ import type {
   HomeProduct,
   SetState,
 } from "./homeProductSection.types";
-import type {
-  OfferAction,
-  OfferCardModel,
-} from "@/lib/offer-intelligence/engine";
 
 type HomeProductSectionContentProps = {
   roadAddress: string;
@@ -48,10 +42,6 @@ type HomeProductSectionContentProps = {
   onToggleCategory: (categoryId: number) => void;
   onResetCategories: () => void;
   selectedPackage: string;
-  onApplyRecommendedCategories: (categoryIds: number[]) => void;
-  onApplyRecommendedTrial: (categoryIds: number[]) => void;
-  homeOffer: OfferCardModel | null;
-  onHomeOfferAction: (action: OfferAction) => void;
   deferredSelectedPackage: string;
   onSelectPackage: (pkg: string) => void;
   isFilterUpdating: boolean;
@@ -59,6 +49,7 @@ type HomeProductSectionContentProps = {
   allProducts: HomeProduct[];
   error: string | null;
   isRecovering: boolean;
+  isCatalogPaused: boolean;
   onRetryLoad: () => void;
   totalPrice: number;
   isCartBarLoading: boolean;
@@ -93,10 +84,6 @@ export function HomeProductSectionContent({
   onToggleCategory,
   onResetCategories,
   selectedPackage,
-  onApplyRecommendedCategories,
-  onApplyRecommendedTrial,
-  homeOffer,
-  onHomeOfferAction,
   deferredSelectedPackage,
   onSelectPackage,
   isFilterUpdating,
@@ -104,6 +91,7 @@ export function HomeProductSectionContent({
   allProducts,
   error,
   isRecovering,
+  isCatalogPaused,
   onRetryLoad,
   totalPrice,
   isCartBarLoading,
@@ -120,8 +108,20 @@ export function HomeProductSectionContent({
   onCloseCart,
   onCartUpdate,
 }: HomeProductSectionContentProps) {
-  const pathname = usePathname();
-  const showNaturalLanguageRouter = !(pathname?.startsWith("/explore") ?? false);
+  if (isCatalogPaused) {
+    return (
+      <div id="home-products" className="mx-auto mt-2 w-full max-w-[640px] bg-white">
+        <HomeProductsStatusState
+          error={error}
+          isLoading={isLoading}
+          isRecovering={isRecovering}
+          hasProducts={false}
+          isCatalogPaused
+          onRetry={onRetryLoad}
+        />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -188,21 +188,9 @@ export function HomeProductSectionContent({
         isLoading={isLoading}
         isRecovering={isRecovering}
         hasProducts={allProducts.length > 0}
+        isCatalogPaused={isCatalogPaused}
         onRetry={onRetryLoad}
       />
-
-      <div className="space-y-3 px-3 pb-2 pt-4 sm:px-4">
-        <HomeAdaptiveEntryStack
-          categories={categories}
-          selectedCategories={selectedCategories}
-          selectedPackage={selectedPackage}
-          onApplyRecommendedCategories={onApplyRecommendedCategories}
-          onApplyRecommendedTrial={onApplyRecommendedTrial}
-          showNaturalLanguageRouter={showNaturalLanguageRouter}
-          homeOffer={homeOffer}
-          onHomeOfferAction={onHomeOfferAction}
-        />
-      </div>
 
       {selectedPharmacy &&
         !selectedProduct &&

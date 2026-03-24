@@ -83,6 +83,24 @@ _이미지 출처: [Wikimedia Commons - Grapefruits - whole-halved-segments](htt
 - 약 설명서에 자몽 경고가 있는데도 시간만 띄우면 된다고 생각하고 계속 먹는 경우
 - 복용 중인 약 종류를 모른 채 건강식품과 주스를 습관처럼 추가하는 경우
 
+## 자몽 상호작용은 '무조건 금지 식품'이 아니라 '약 이름 확인 식품'입니다
+
+### 자몽이 문제인 건 산미가 아니라 대사 경로입니다
+
+자몽이 약효를 흔드는 이유는 시고 새콤해서가 아닙니다. 장에서 약물 대사에 관여하는 효소를 막아, 어떤 약은 몸 안에 더 많이 남게 만들 수 있기 때문입니다. 그래서 자몽은 건강식품이면서도 동시에 **약물 상호작용 식품**이 됩니다.
+
+### 모든 약, 모든 감귤류가 문제는 아닙니다
+
+이 부분을 한 줄로 외우려 하면 늘 틀립니다. 어떤 약은 전혀 상관없고, 어떤 약은 주의만 필요하고, 어떤 약은 피해야 합니다. 비슷한 감귤류라고 해서 전부 같은 것도 아닙니다. 결국 정답은 “자몽 먹지 마”가 아니라 **내가 먹는 약 라벨에 자몽 경고가 있는가**입니다.
+
+### 아침 자몽 주스 한 잔도 '적은 양'이라고 안심하기 어렵습니다
+
+자몽 상호작용은 양이 아주 많아야만 생기는 문제가 아닙니다. 어떤 약은 작은 습관으로도 혈중농도 차이가 생길 수 있어 “주말 브런치 때만”, “생과일 말고 주스만” 같은 자기식 예외를 만들면 오히려 헷갈립니다. 자몽 주스, 생과일, 농축액까지 포함해 보는 편이 안전합니다.
+
+### 상호작용이 걱정될 땐 같은 계열 전체를 추측하지 마세요
+
+예를 들어 콜레스테롤약이라고 다 똑같이 반응하는 건 아닙니다. 고혈압약, 항불안약, 이식약도 마찬가지입니다. 계열로 퉁치지 말고 **성분명 기준**으로 확인하는 습관이 실수를 줄입니다.
+
 ## 같이 읽으면 좋은 글
 
 - [약은 약만 잘 먹는다고 끝이 아닙니다, 음식이 결과를 바꿉니다](/column/food-can-change-medication-results)
@@ -91,6 +109,8 @@ _이미지 출처: [Wikimedia Commons - Grapefruits - whole-halved-segments](htt
 
 ## 참고 자료
 
-- [FDA - Grapefruit Juice and Some Drugs Don't Mix](https://www.fda.gov/consumers/consumer-updates/grapefruit-juice-and-some-drugs-dont-mix)
-- [FDA - Drug Interactions: What You Should Know](https://www.fda.gov/drugs/resources-drugs/drug-interactions-what-you-should-know)
-- [Mayo Clinic - Levothyroxine (oral route)](https://www.mayoclinic.org/drugs-supplements/levothyroxine-oral-route/description/drg-20072133)
+- [FDA - Grapefruit Juice and Some Drugs Don’t Mix](https://www.fda.gov/consumers/consumer-updates/grapefruit-juice-and-some-drugs-dont-mix)
+- [FDA - Preventable Adverse Drug Reactions: A Focus on Drug Interactions](https://www.fda.gov/drugs/drug-interactions-labeling/preventable-adverse-drug-reactions-focus-drug-interactions)
+- [FDA - Examples of Drugs that Interact with CYP Enzymes](https://www.fda.gov/drugs/drug-interactions-labeling/healthcare-professionals-fdas-examples-drugs-interact-cyp-enzymes-and-transporter-systems)
+- [FDA - FDA Pharmacists Help You Use Medicines Safely](https://www.fda.gov/consumers/consumer-updates/fda-pharmacists-help-you-use-medicines-safely)
+

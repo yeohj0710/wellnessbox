@@ -35,6 +35,24 @@ function resolveSafetyStyles(level: UserContextSummary["safetyEscalation"]["leve
   };
 }
 
+function filterVisibleItems(items: string[]) {
+  return items
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .filter((item) => {
+      const normalized = item.replace(/\s+/g, " ");
+      return !(
+        normalized.includes("정보가 없") ||
+        normalized.includes("기록이 없") ||
+        normalized.includes("검사 기록이 없") ||
+        normalized.includes("건강링크 정보가 없") ||
+        normalized.includes("아직은 기록이 많지 않아요") ||
+        normalized.includes("아직 기록이 많지 않아요") ||
+        normalized.includes("충분히 반영되지")
+      );
+    });
+}
+
 export default function PersonalizedTrustPanel({
   summary,
   className,
@@ -46,10 +64,37 @@ export default function PersonalizedTrustPanel({
   const explainability = summary.explainability;
   const dataAsset = summary.dataAsset;
   const safetyEscalation = summary.safetyEscalation;
-  const sectionTextSize = compact ? "text-[13px] leading-6 sm:text-sm" : "text-xs sm:text-sm";
+  const sectionTextSize = compact
+    ? "text-[13px] leading-6 sm:text-sm"
+    : "text-xs sm:text-sm";
   const titleTextSize = compact ? "text-[13px] sm:text-sm" : "text-xs sm:text-sm";
   const cardPadding = compact ? "p-4" : "p-4 sm:p-5";
   const safetyStyles = resolveSafetyStyles(safetyEscalation.level);
+
+  const visibleDataAssetItems = filterVisibleItems(
+    [
+      dataAsset.summary,
+      ...dataAsset.reasonLines,
+      dataAsset.adoptedThemes.length > 0
+        ? `실제 선택까지 이어진 내용: ${dataAsset.adoptedThemes.join(", ")}`
+        : "",
+      dataAsset.opportunityThemes.length > 0
+        ? `여러 번 함께 보인 내용: ${dataAsset.opportunityThemes.join(", ")}`
+        : "",
+    ].filter(Boolean)
+  );
+  const visibleSafetyReasonLines = filterVisibleItems(safetyEscalation.reasonLines);
+  const visibleNeedsMoreInfo = filterVisibleItems(safetyEscalation.needsMoreInfo);
+  const visibleFitReasons = filterVisibleItems(explainability.fitReasons);
+  const visibleUncertaintyNotes = filterVisibleItems(explainability.uncertaintyNotes);
+  const visibleReviewPoints = filterVisibleItems(
+    explainability.pharmacistReviewPoints
+  );
+
+  const showDataAssetSection =
+    dataAsset.stage !== "light" && visibleDataAssetItems.length > 0;
+  const showSafetySection =
+    visibleSafetyReasonLines.length > 0 || visibleNeedsMoreInfo.length > 0;
 
   const content = (
     <section
@@ -69,37 +114,31 @@ export default function PersonalizedTrustPanel({
               같이 보면 덜 헷갈리는 포인트
             </span>
           </div>
-          <p className={joinClassNames("mt-2 text-slate-700", compact ? "text-[14px] leading-6" : "text-sm leading-6")}>
-            {explainability.confidenceNote}
-          </p>
+          {explainability.confidenceNote ? (
+            <p
+              className={joinClassNames(
+                "mt-2 text-slate-700",
+                compact ? "text-[14px] leading-6" : "text-sm leading-6"
+              )}
+            >
+              {explainability.confidenceNote}
+            </p>
+          ) : null}
         </div>
       </div>
 
       <div className={joinClassNames("mt-4 space-y-3", compact && "mt-3 space-y-2.5")}>
-        {(dataAsset.reasonLines.length > 0 ||
-          dataAsset.repeatedThemes.length > 0 ||
-          dataAsset.adoptedThemes.length > 0) ? (
+        {showDataAssetSection ? (
           <TrustSection
-            title={`기록을 같이 보면 이런 점이 보여요 · ${dataAsset.strengthLabel}`}
-            items={[
-              dataAsset.summary,
-              ...dataAsset.reasonLines,
-              dataAsset.adoptedThemes.length > 0
-                ? `이미 선택으로 이어진 내용: ${dataAsset.adoptedThemes.join(", ")}`
-                : "",
-              dataAsset.opportunityThemes.length > 0
-                ? `여러 번 보인 내용: ${dataAsset.opportunityThemes.join(", ")}`
-                : "",
-            ].filter(Boolean)}
+            title={`몇 가지 기록을 함께 봤어요 · ${dataAsset.strengthLabel}`}
+            items={visibleDataAssetItems}
             titleClassName={titleTextSize}
             itemClassName={sectionTextSize}
             className="bg-sky-50/80 ring-sky-100"
           />
         ) : null}
 
-        {(safetyEscalation.reasonLines.length > 0 ||
-          safetyEscalation.needsMoreInfo.length > 0 ||
-          safetyEscalation.level !== "routine") ? (
+        {showSafetySection ? (
           <div
             className={joinClassNames(
               "rounded-xl px-3 py-3 ring-1",
@@ -120,20 +159,20 @@ export default function PersonalizedTrustPanel({
               </p>
             </div>
 
-            {safetyEscalation.reasonLines.length > 0 ? (
+            {visibleSafetyReasonLines.length > 0 ? (
               <TrustSection
                 title="먼저 확인할 점"
-                items={safetyEscalation.reasonLines}
+                items={visibleSafetyReasonLines}
                 titleClassName={titleTextSize}
                 itemClassName={sectionTextSize}
                 className="mt-3 bg-white/70 ring-slate-200/70"
               />
             ) : null}
 
-            {safetyEscalation.needsMoreInfo.length > 0 ? (
+            {visibleNeedsMoreInfo.length > 0 ? (
               <TrustSection
                 title="같이 적어주면 좋은 정보"
-                items={safetyEscalation.needsMoreInfo}
+                items={visibleNeedsMoreInfo}
                 titleClassName={titleTextSize}
                 itemClassName={sectionTextSize}
                 className="mt-3 bg-white/70 ring-slate-200/70"
@@ -142,28 +181,28 @@ export default function PersonalizedTrustPanel({
           </div>
         ) : null}
 
-        {explainability.fitReasons.length > 0 ? (
+        {visibleFitReasons.length > 0 ? (
           <TrustSection
             title="왜 이렇게 보였는지"
-            items={explainability.fitReasons}
+            items={visibleFitReasons}
             titleClassName={titleTextSize}
             itemClassName={sectionTextSize}
           />
         ) : null}
 
-        {explainability.uncertaintyNotes.length > 0 ? (
+        {visibleUncertaintyNotes.length > 0 ? (
           <TrustSection
-            title="아직 더 확인이 필요한 점"
-            items={explainability.uncertaintyNotes}
+            title="조금 더 보면 좋은 부분"
+            items={visibleUncertaintyNotes}
             titleClassName={titleTextSize}
             itemClassName={sectionTextSize}
           />
         ) : null}
 
-        {explainability.pharmacistReviewPoints.length > 0 ? (
+        {visibleReviewPoints.length > 0 ? (
           <TrustSection
-            title="같이 보면 좋은 점"
-            items={explainability.pharmacistReviewPoints}
+            title="함께 보면 좋은 점"
+            items={visibleReviewPoints}
             titleClassName={titleTextSize}
             itemClassName={sectionTextSize}
           />
@@ -179,7 +218,7 @@ export default function PersonalizedTrustPanel({
   return (
     <BetaFeatureGate
       title="Beta 해석 근거"
-      helper="지금 필요한 근거만 골라 확인해보세요."
+      helper="지금 필요한 근거만 골라서 편하게 확인해보세요."
       contentViewportClassName={
         compact ? "max-h-[min(46vh,26rem)] overflow-y-auto pr-1" : undefined
       }

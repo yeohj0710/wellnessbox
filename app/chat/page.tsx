@@ -158,16 +158,23 @@ export default function ChatPage() {
               active={active}
               bootstrapPending={bootstrapPending}
               bootstrapFallback={
-                <div className="mx-2 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-sky-500" />
-                    <p className="text-sm font-medium text-slate-700">
+                <div className="mx-2 rounded-[1.5rem] border border-slate-200/90 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.98))] px-4 py-4 shadow-[0_18px_38px_-30px_rgba(15,23,42,0.22)]">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sky-50 ring-1 ring-sky-100">
+                      <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-sky-500" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-sky-600">
+                        Loading
+                      </p>
+                      <p className="mt-1 text-[14px] font-medium leading-6 text-slate-700 sm:text-[15px]">
                       AI 상담을 준비하고 있어요...
-                    </p>
+                      </p>
+                    </div>
                   </div>
-                  <div className="mt-3 space-y-2">
-                    <div className="h-2.5 w-11/12 animate-pulse rounded bg-slate-200" />
-                    <div className="h-2.5 w-4/5 animate-pulse rounded bg-slate-200" />
+                  <div className="mt-3 space-y-2 pl-12">
+                    <div className="h-2.5 w-full animate-pulse rounded-full bg-slate-200/90" />
+                    <div className="h-2.5 w-5/6 animate-pulse rounded-full bg-slate-200/75" />
                   </div>
                 </div>
               }

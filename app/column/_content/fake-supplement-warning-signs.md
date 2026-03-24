@@ -76,6 +76,24 @@ _이미지 출처: [Wikimedia Commons - Fish Oil Capsules](https://commons.wikim
 - 공식 판매처가 아닌데 가격이 비정상적으로 싼 경우
 - 다이어트·성기능·운동 보충제 카테고리에서 즉효를 약속하는 경우
 
+## 라벨만 제대로 읽어도 걸러지는 제품이 많습니다
+
+### 질병을 고치겠다고 말하는 순간부터 의심해야 합니다
+
+영양제는 원래 질병을 진단·치료·예방하는 약처럼 광고할 수 없습니다. 그런데도 “혈당 치료”, “지방간 회복”, “호르몬 정상화”, “탈모 완치” 같은 문구를 전면에 내세우는 제품은 첫 단계부터 경계해야 합니다. 이런 제품은 성분보다 **광고 문장**이 먼저 문제인 경우가 많습니다.
+
+### 함량을 숨기거나 '혼합물'만 강조하는 제품은 추적이 어렵습니다
+
+proprietary blend, matrix, complex 같은 말로 성분을 묶어 두면 어떤 성분이 얼마나 들어 있는지 소비자가 판단하기 어렵습니다. 이런 제품은 부작용이 생겨도 원인을 특정하기 힘들고, 다른 영양제와 중복되는지 확인하기도 어렵습니다. 전문가가 복잡한 제품을 꺼리는 가장 큰 이유가 바로 이 **불확실성**입니다.
+
+### 제3자 품질 인증은 화려한 광고보다 훨씬 중요합니다
+
+USP, NSF, ConsumerLab 같은 독립적인 품질 검증은 광고 카피보다 실질적입니다. 물론 인증이 있다고 모든 효능이 보장되는 건 아니지만, 최소한 **라벨에 적힌 성분과 실제 내용물**이 어느 정도 일치하는지 확인하는 데 도움이 됩니다.
+
+### 해외직구·SNS 공동구매는 리스크가 더 큽니다
+
+몸매 보정, 성기능, 체지방 감소, 운동 퍼포먼스를 전면에 내세우는 제품군은 숨은 약물 성분이 섞인 사례가 반복적으로 나옵니다. “후기가 많다”는 건 안전 근거가 아니라 유통 규모일 뿐입니다. 이름이 그럴듯해도 FDA 공지나 경고 이력이 있는지 먼저 확인하는 습관이 필요합니다.
+
 ## 같이 읽으면 좋은 글
 
 - [오메가3 아무거나 먹지 마세요, 지금 당장 버려야 할 제품도 있습니다](/column/omega3-buy-or-throw-checklist)
@@ -84,9 +102,8 @@ _이미지 출처: [Wikimedia Commons - Fish Oil Capsules](https://commons.wikim
 
 ## 참고 자료
 
-- [FDA - Tainted Products Marketed as Dietary Supplements](https://www.fda.gov/media/186556/download)
+- [FDA - Tainted Products Marketed as Dietary Supplements and Conventional Foods](https://www.fda.gov/media/186556/download)
 - [FDA - Health Fraud Product Database](https://www.fda.gov/consumers/health-fraud-scams/health-fraud-product-database)
-- [FDA - Dietary Supplements](https://www.fda.gov/food/dietary-supplements)
-- [USP - Verified Mark](https://www.usp.org/verification-services/verified-mark)
-- [NSF - Selecting Dietary and Nutritional Supplements](https://www.nsf.org/consumer-resources/articles/selecting-dietary-nutritional-supplements)
-- [NSF - Certified Products Search](https://www.nsfsport.com/certified-products/)
+- [FDA - 10 Facts about What FDA Does and Does Not Approve](https://www.fda.gov/consumers/consumer-updates/10-facts-about-what-fda-does-and-does-not-approve)
+- [FDA - Information for Consumers on Using Dietary Supplements](https://www.fda.gov/food/dietary-supplements/information-consumers-using-dietary-supplements)
+

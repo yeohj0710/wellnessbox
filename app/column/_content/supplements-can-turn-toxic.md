@@ -83,6 +83,24 @@ _이미지 출처: [Wikimedia Commons - Pills in blister pack](https://commons.w
 - 검사 없이 철분이나 고용량 지용성 비타민을 장기간 복용 중인 경우
 - 기분 불안, 두근거림, 위장 불편이 있는데도 에너지 제품과 B군을 계속 올리는 경우
 
+## 영양제가 독이 되는 순간은 보통 '많이 먹는 날'이 아니라 '아무 생각 없이 오래 먹은 날'입니다
+
+### 지용성 비타민과 미네랄은 특히 누적 개념이 중요합니다
+
+비타민 A, D, 셀레늄, 철분 같은 성분은 부족할 때는 필요하지만, 오래 과하게 들어오면 다른 이야기가 됩니다. 문제는 몸이 바로 경고하지 않는다는 점입니다. 피로, 입맛 변화, 위장 불편, 손발 저림, 피부 변화처럼 애매하게 오기 때문에 “나이 들어서 그런가?” 하고 넘기기 쉽습니다.
+
+### 중복 섭취는 생각보다 훨씬 흔합니다
+
+종합비타민 하나, 관절 영양제 하나, 탈모 영양제 하나, 간 건강 제품 하나만 더해도 특정 성분이 겹치기 쉽습니다. 특히 비타민 D, B6, 아연, 셀레늄, 비타민 A는 여러 제품에 중복되기 좋습니다. 그래서 독성은 고함량 단일제 하나보다 **여러 제품의 합**에서 더 자주 생깁니다.
+
+### '천연'과 '독성 없음'은 같은 말이 아닙니다
+
+브랜드가 유명하거나 천연 유래라고 해도 과량 복용 위험이 사라지지는 않습니다. 독성은 출처보다 용량과 기간의 문제인 경우가 많습니다. 오히려 자연, 해독, 항산화 같은 이미지 때문에 더 오래 아무 생각 없이 끌고 가는 경우가 생깁니다.
+
+### 정기 점검은 추가보다 제거에 가깝습니다
+
+영양제를 잘 관리하는 사람은 계속 새 제품을 더하는 사람이 아니라, 한 달에 한 번이라도 “왜 먹는지, 언제 그만둘지, 다른 제품과 겹치지 않는지”를 점검하는 사람입니다. 영양제 실력은 추가가 아니라 **정리하는 능력**에서 드러납니다.
+
 ## 같이 읽으면 좋은 글
 
 - [약사는 자기 가족에게도 이런 영양제는 쉽게 안 줍니다](/column/pharmacists-dont-give-these-supplements-easily)
@@ -91,7 +109,9 @@ _이미지 출처: [Wikimedia Commons - Pills in blister pack](https://commons.w
 
 ## 참고 자료
 
-- [NIH ODS - Vitamin B6 Fact Sheet for Health Professionals](https://ods.od.nih.gov/factsheets/VitaminB6-HealthProfessional/)
-- [FDA - Dietary Supplements](https://www.fda.gov/food/dietary-supplements)
-- [NSF - Selecting Dietary and Nutritional Supplements](https://www.nsf.org/consumer-resources/articles/selecting-dietary-nutritional-supplements)
-- [USP - Dietary Supplements Verification Program](https://www.usp.org/verification-services/dietary-supplements-verification-program)
+- [ODS - Vitamin A Fact Sheet for Health Professionals](https://ods.od.nih.gov/factsheets/VitaminA-HealthProfessional/)
+- [ODS - Vitamin B6 Fact Sheet for Health Professionals](https://ods.od.nih.gov/factsheets/VitaminB6-HealthProfessional/)
+- [ODS - Selenium Fact Sheet for Health Professionals](https://ods.od.nih.gov/factsheets/Selenium-HealthProfessional/)
+- [ODS - Vitamin D Fact Sheet for Health Professionals](https://ods.od.nih.gov/factsheets/VitaminD-HealthProfessional/)
+- [ODS - Iron Fact Sheet for Health Professionals](https://ods.od.nih.gov/factsheets/Iron-HealthProfessional/)
+

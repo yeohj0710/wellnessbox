@@ -50,7 +50,7 @@ export default function KakaoLoginButton({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex min-h-11 items-center justify-center gap-2.5 rounded-full border border-black/5 bg-[#FEE500] px-5 text-black shadow-[0_10px_24px_rgba(17,24,39,0.08)] transition hover:-translate-y-0.5 hover:brightness-[0.98] hover:shadow-[0_14px_30px_rgba(17,24,39,0.12)] active:translate-y-0 active:brightness-95 ${
+      className={`inline-flex min-h-10 items-center justify-center gap-2.5 rounded-full border border-black/5 bg-[#FEE500] px-5 text-black shadow-[0_10px_24px_rgba(17,24,39,0.08)] transition hover:-translate-y-0.5 hover:brightness-[0.98] hover:shadow-[0_14px_30px_rgba(17,24,39,0.12)] active:translate-y-0 active:brightness-95 ${
         compact
           ? "text-[14px] font-bold tracking-[-0.01em]"
           : "text-sm font-semibold tracking-[-0.01em]"

@@ -187,28 +187,81 @@ export type DockTriggerOffset = {
   y: number;
 };
 
-export function loadDockTriggerOffset(): DockTriggerOffset | null {
+type DockTriggerViewport = "desktop" | "mobile";
+
+type DockTriggerOffsetStorage =
+  | Partial<DockTriggerOffset>
+  | {
+      desktop?: Partial<DockTriggerOffset>;
+      mobile?: Partial<DockTriggerOffset>;
+    };
+
+function parseDockTriggerOffset(value: unknown): DockTriggerOffset | null {
+  if (!value || typeof value !== "object") return null;
+  const row = value as Record<string, unknown>;
+  const x = Number(row.x);
+  const y = Number(row.y);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+  return { x, y };
+}
+
+function readDockTriggerOffsetStorage() {
   if (typeof window === "undefined") return null;
   try {
     const raw = window.localStorage.getItem(DOCK_TRIGGER_OFFSET_STORAGE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<DockTriggerOffset> | null;
-    if (!parsed) return null;
-    const x = Number(parsed.x);
-    const y = Number(parsed.y);
-    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
-    return { x, y };
+    return JSON.parse(raw) as DockTriggerOffsetStorage | null;
   } catch {
     return null;
   }
 }
 
-export function saveDockTriggerOffset(offset: DockTriggerOffset) {
+export function loadDockTriggerOffset(
+  viewport: DockTriggerViewport = "desktop"
+): DockTriggerOffset | null {
+  if (typeof window === "undefined") return null;
+  const parsed = readDockTriggerOffsetStorage();
+  if (!parsed) return null;
+  const directOffset = parseDockTriggerOffset(parsed);
+  if (directOffset) return directOffset;
+  const scopedOffset = parseDockTriggerOffset(
+    (parsed as Record<string, unknown>)[viewport]
+  );
+  if (scopedOffset) return scopedOffset;
+  const fallbackViewport = viewport === "mobile" ? "desktop" : "mobile";
+  return parseDockTriggerOffset(
+    (parsed as Record<string, unknown>)[fallbackViewport]
+  );
+}
+
+export function saveDockTriggerOffset(
+  offset: DockTriggerOffset,
+  viewport: DockTriggerViewport = "desktop"
+) {
   if (typeof window === "undefined") return;
   try {
+    const parsed = readDockTriggerOffsetStorage();
+    const legacyOffset = parseDockTriggerOffset(parsed);
+    const nextStorage = {
+      desktop:
+        parseDockTriggerOffset(
+          parsed && typeof parsed === "object"
+            ? (parsed as Record<string, unknown>).desktop
+            : null
+        ) ?? legacyOffset,
+      mobile:
+        parseDockTriggerOffset(
+          parsed && typeof parsed === "object"
+            ? (parsed as Record<string, unknown>).mobile
+            : null
+        ) ?? legacyOffset,
+    };
+
+    nextStorage[viewport] = offset;
+
     window.localStorage.setItem(
       DOCK_TRIGGER_OFFSET_STORAGE_KEY,
-      JSON.stringify(offset)
+      JSON.stringify(nextStorage)
     );
   } catch {
     // ignore storage failures

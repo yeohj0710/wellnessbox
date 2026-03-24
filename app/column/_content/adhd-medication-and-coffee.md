@@ -83,6 +83,32 @@ _이미지 출처: [Wikimedia Commons - Student on the desk](https://commons.wik
 - 식욕 저하와 위장 불편감이 강한데 커피까지 계속 추가하는 경우
 - 약 용량 조절 중인데 카페인 섭취량이 날마다 크게 흔들리는 경우
 
+## 디테일을 더하면 훨씬 덜 흔들립니다
+
+### 카페인을 줄이는 것보다 먼저, **양을 일정하게** 만들어 보세요
+
+약을 먹는 사람에게 제일 안 좋은 패턴은 ‘어제는 반 잔, 오늘은 벤티 두 잔, 내일은 에너지음료’처럼 들쭉날쭉한 카페인입니다. ADHD 약 반응을 보려면 카페인이 0이냐 1이냐보다 **매일 비슷한 조건**이 훨씬 중요합니다. 그래야 약 지속시간, 식욕 저하, 오후 반동, 불안 같은 변수를 구분할 수 있습니다.
+
+### “약이 약한가?”와 “잠이 부족한가?”를 분리해서 봐야 합니다
+
+오후 집중이 떨어질 때 사람들은 곧바로 커피를 추가합니다. 하지만 실제로는 전날 수면 부족, 점심 누락, 탈수, 복용 시간이 뒤로 밀린 문제인 경우가 많습니다. 커피로 덮으면 그날은 버텨도, 다음 날 더 예민해지는 식으로 문제가 길어집니다. 약이 안 맞는지 확인하려면 **커피 추가보다 먼저 수면과 식사 패턴**부터 고정해 보는 편이 정확합니다.
+
+### 자극제 계열과 비자극제 계열도 느낌이 다를 수 있습니다
+
+ADHD 약이라고 다 같은 체감은 아닙니다. 메틸페니데이트나 암페타민 계열처럼 각성 쪽 체감이 분명한 약은 카페인과 겹쳤을 때 두근거림, 손 떨림, 식욕 저하가 더 도드라질 수 있습니다. 반대로 비자극제 계열을 쓰는 사람도 카페인 때문에 불안과 수면 문제가 심해질 수 있어서, “자극제가 아니니까 커피는 아무 상관 없다”는 식으로 보기는 어렵습니다. 결국 핵심은 약 이름보다 **내 몸에서 반복되는 패턴**입니다.
+
+### 이런 식으로 기록하면 약 조절 상담이 쉬워집니다
+
+하루치 메모만 해도 도움이 됩니다.  
+- 약 복용 시간  
+- 첫 카페인 시간과 양  
+- 점심 여부  
+- 오후 3~6시 집중도  
+- 두근거림/불안/손 떨림 여부  
+- 잠든 시간  
+
+이렇게 적어 가면 “커피를 끊으세요” 수준을 넘어, **어느 시간대에 무엇이 문제인지** 훨씬 구체적으로 이야기할 수 있습니다.
+
 ## 같이 읽으면 좋은 글
 
 - [한국인은 커피를 이렇게 마셔야 덜 망가집니다](/column/smarter-coffee-habits-for-koreans)
@@ -93,6 +119,6 @@ _이미지 출처: [Wikimedia Commons - Student on the desk](https://commons.wik
 
 - [MedlinePlus - Dextroamphetamine and Amphetamine](https://medlineplus.gov/druginfo/meds/a601234.html)
 - [MedlinePlus - Methylphenidate](https://medlineplus.gov/druginfo/meds/a682188.html)
-- [AMA - What doctors wish patients knew about caffeine](https://www.ama-assn.org/public-health/prevention-wellness/what-doctors-wish-patients-knew-about-impact-caffeine)
 - [MedlinePlus - Caffeine](https://medlineplus.gov/caffeine.html)
-- [Sleep Foundation - Caffeine and Sleep](https://www.sleepfoundation.org/nutrition/caffeine-and-sleep)
+- [FDA - Spilling the Beans: How Much Caffeine is Too Much?](https://www.fda.gov/consumers/consumer-updates/spilling-beans-how-much-caffeine-too-much)
+

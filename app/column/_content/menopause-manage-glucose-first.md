@@ -77,6 +77,24 @@ _이미지 출처: [Wikimedia Commons - Running woman](https://commons.wikimedia
 - 혈압, 중성지방, 공복혈당 등 대사 수치가 같이 나빠지는 경우
 - 운동과 식사보다 굶기와 커피로 버티는 시간이 길어지는 경우
 
+## 갱년기 체중 변화는 '의지가 약해져서'가 아니라 몸 환경이 바뀌는 문제이기도 합니다
+
+### 에스트로겐 변화는 지방 분포와 수면을 함께 흔듭니다
+
+갱년기에는 단순히 살이 잘 찌는 것만이 아니라, 복부 중심으로 지방이 붙고 잠이 얕아지고 열감 때문에 수면이 깨는 변화가 겹칩니다. 그래서 같은 식사를 해도 예전과 다르게 느껴질 수 있습니다. 이때 칼로리만 더 줄이면 버티기 어려워지고, 근육량까지 줄기 쉬워집니다.
+
+### 혈당을 먼저 보면 왜 힘든지 설명이 쉬워집니다
+
+갱년기 여성의 체중 고민은 종종 “적게 먹는데 왜 배만 나오지?”로 표현됩니다. 이럴 때 공복혈당, 당화혈색소, 중성지방, 허리둘레를 함께 보면 이유가 좀 더 선명해집니다. 단순 체중보다 **대사 패턴이 어떻게 바뀌고 있는지**를 보는 게 중요하기 때문입니다.
+
+### 식사량을 확 줄이기보다 단백질·근력운동을 먼저 챙기세요
+
+이 시기에는 무조건 적게 먹는 전략이 근육 손실과 피로를 키울 수 있습니다. 오히려 식사마다 단백질을 나누고, 근력운동과 일상 활동량을 올리는 편이 혈당과 체형 변화를 같이 다루기 쉽습니다. '덜 먹기'보다 **근육을 지키는 구조**가 먼저입니다.
+
+### 수면과 열감 관리가 식단만큼 중요합니다
+
+밤에 자꾸 깨면 다음 날 식욕 조절이 무너지고, 단 음식이나 카페인 의존이 커집니다. 그래서 갱년기 체중 조절은 식단표만 잘 짠다고 끝나지 않습니다. 수면, 열감, 기분 변화, 스트레스까지 같이 다뤄야 실제로 굴러갑니다.
+
 ## 같이 읽으면 좋은 글
 
 - [인슐린저항성은 탄수화물만 줄인다고 해결되지 않습니다](/column/insulin-resistance-is-not-just-carbs)
@@ -85,7 +103,7 @@ _이미지 출처: [Wikimedia Commons - Running woman](https://commons.wikimedia
 
 ## 참고 자료
 
-- [Diabetes UK - Menopause and diabetes](https://www.diabetes.org.uk/living-with-diabetes/life-with-diabetes/menopause)
-- [NHS - Metabolic syndrome](https://www.nhs.uk/conditions/metabolic-syndrome/)
-- [NIDDK Diabetes in America - Impact of Sleep and Circadian Disturbances on Glucose Metabolism](https://www.niddk.nih.gov/-/media/Files/Strategic-Plans/Diabetes-in-America-3rd-Edition/DIA_Ch25.pdf)
+- [NIA - Research explores the impact of menopause on women’s health and aging](https://www.nia.nih.gov/news/research-explores-impact-menopause-womens-health-and-aging)
+- [NIDDK - Insulin Resistance & Prediabetes](https://www.niddk.nih.gov/health-information/diabetes/overview/what-is-diabetes/prediabetes-insulin-resistance)
 - [NIDDK - Healthy Living with Diabetes](https://www.niddk.nih.gov/health-information/diabetes/overview/healthy-living-with-diabetes)
+

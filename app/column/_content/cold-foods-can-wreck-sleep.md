@@ -76,6 +76,24 @@ _이미지 출처: [Wikimedia Commons - Bed](https://commons.wikimedia.org/wiki/
 - 밤마다 단 음식이 폭식처럼 이어지고 체중 증가나 혈당 문제까지 붙는 경우
 - 수면이 망가진 지 오래됐는데 코골이, 무호흡, 심한 주간 졸림까지 동반되는 경우
 
+## 진짜 문제는 '찬 것'보다 밤에 반복되는 조합일 때가 많습니다
+
+### 온도 자체를 범인으로 몰면 핵심을 놓치기 쉽습니다
+
+차가운 음식이 늘 나쁜 건 아닙니다. 낮에 먹는 냉면, 아이스 아메리카노, 차가운 과일이 모두 수면을 망치는 건 아니죠. 문제는 밤 시간대에 **카페인·당류·탄산·야식·역류**가 한꺼번에 붙는 패턴입니다. 그래서 이 글을 실전적으로 읽으려면 “찬 음식 금지”가 아니라 “밤에 어떤 조합이 반복되는가?”를 먼저 봐야 합니다.
+
+### 밤 아이스크림이 안 맞는 사람은 당보다도 역류와 포만감이 문제일 수 있습니다
+
+자기 전 아이스크림은 달고 차가워서 진정되는 느낌을 줍니다. 하지만 실제론 당과 지방이 함께 들어 있는 경우가 많아 배가 묵직해지고, 누웠을 때 목 이물감이나 속쓰림으로 돌아오기도 합니다. 특히 원래 위산역류가 있거나 늦은 저녁을 자주 먹는 사람은 “단 게 문제인가?”보다 **누운 뒤 불편감이 생기는가**를 관찰하는 편이 정확합니다.
+
+### 탄산과 큰 컵 음료는 '수면 전 팽만감'을 만듭니다
+
+차가운 탄산음료는 갈증을 잠깐 덜어 주지만, 큰 컵으로 빠르게 들어가기 쉬워서 배가 더 차고 부푼 느낌을 남깁니다. 이 팽만감은 잠들기 직전 몸을 편하게 눕히는 걸 방해하고, 새벽에 화장실이나 갈증으로 깨는 패턴과도 연결될 수 있습니다. 결국 문제는 시원함이 아니라 **양과 속도**입니다.
+
+### 바꾸려면 금지보다 교체가 낫습니다
+
+밤마다 시원한 게 당긴다면 무조건 참는 것보다, 카페인 없는 차가운 음료나 소량의 과일, 더 이른 시간대로 이동하는 방식이 현실적입니다. 중요한 건 냉장고 문을 여는 행동을 없애는 게 아니라, **그 행동의 성분과 시간을 바꾸는 것**입니다.
+
 ## 같이 읽으면 좋은 글
 
 - [한국인은 커피를 이렇게 마셔야 덜 망가집니다](/column/smarter-coffee-habits-for-koreans)
@@ -84,8 +102,8 @@ _이미지 출처: [Wikimedia Commons - Bed](https://commons.wikimedia.org/wiki/
 
 ## 참고 자료
 
-- [Review - Effects of Diet on Sleep Quality](https://pmc.ncbi.nlm.nih.gov/articles/PMC5015038/)
-- [Sleep Foundation - How Does Soda Affect Sleep?](https://www.sleepfoundation.org/nutrition/soda-and-sleep)
-- [NHS - Heartburn and acid reflux](https://www.nhs.uk/conditions/heartburn-and-acid-reflux/)
-- [Sleep Foundation - Caffeine and Sleep](https://www.sleepfoundation.org/nutrition/caffeine-and-sleep)
 - [MedlinePlus - Caffeine](https://medlineplus.gov/caffeine.html)
+- [FDA - Spilling the Beans: How Much Caffeine is Too Much?](https://www.fda.gov/consumers/consumer-updates/spilling-beans-how-much-caffeine-too-much)
+- [NHS - Heartburn and acid reflux](https://www.nhs.uk/conditions/heartburn-and-acid-reflux/)
+- [Review - Effects of Diet on Sleep Quality](https://pmc.ncbi.nlm.nih.gov/articles/PMC5015038/)
+

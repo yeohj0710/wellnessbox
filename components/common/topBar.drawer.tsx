@@ -31,8 +31,11 @@ export function TopBarDrawer({
   return (
     <>
       <div
-        className={`fixed bottom-0 z-[70] bg-white shadow-lg w-[260px] transition-[right] duration-300 ${
-          isDrawerOpen ? "right-0" : "-right-[260px]"
+        aria-hidden={!isDrawerOpen}
+        className={`fixed bottom-0 z-[70] w-[260px] bg-white shadow-lg transition-[right,visibility] duration-300 ${
+          isDrawerOpen
+            ? "visible right-0 pointer-events-auto"
+            : "invisible -right-[260px] pointer-events-none"
         }`}
         style={{ top: "3.5rem" }}
       >

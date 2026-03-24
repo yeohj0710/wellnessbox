@@ -83,6 +83,24 @@ _이미지 출처: [Wikimedia Commons - Pill Bottle of Assorted Pills](https://c
 - 음주가 잦은데 멍함과 기억 저하, 근력 저하가 점점 심해지는 경우
 - 메트포르민이나 위산 억제제를 오래 쓰면서 신경 증상이 붙는 경우
 
+## 비타민 B 부족은 '피곤하다' 한 줄로 끝내면 자주 놓칩니다
+
+### B군이라고 한 덩어리로 생각하면 안 보이는 신호가 있습니다
+
+비타민 B는 하나가 아니라 여러 종류입니다. B12는 저림, 빈혈, 기억력 저하 쪽으로, 엽산은 빈혈과 세포 분열, B1은 식사 부족이나 과음 상황에서 신경계·에너지 문제로, B6는 드물지만 특정 약물과 영양 상태에서 변수가 될 수 있습니다. 그래서 ‘B가 부족한가?’보다 **어떤 B가 문제인지**가 먼저입니다.
+
+### 특히 결핍 위험군을 같이 봐야 합니다
+
+채식 위주 식사, 메트포르민 복용, 위산억제제 장기 복용, 잦은 음주, 편식, 체중감량 식단, 장질환이 있는 사람은 특정 B 비타민 결핍 위험이 더 커질 수 있습니다. 증상만 보지 말고 생활과 약물, 수술력까지 같이 봐야 맞는 답에 가까워집니다.
+
+### 피로 말고도 입안·혀·손발 감각을 보세요
+
+입안이 헐고 혀가 아프거나, 손발이 저리거나, 평소보다 쉽게 숨이 차고 창백해지는 변화는 단순 피로와 다르게 볼 필요가 있습니다. 물론 이런 증상이 있다고 모두 B 결핍은 아니지만, 피곤함 하나만 붙잡고 카페인이나 영양제만 늘리면 원인을 놓치기 쉽습니다.
+
+### 자가 복용보다 검사와 맥락이 더 중요합니다
+
+특히 철분 부족, 갑상선 문제, 수면 부족, 우울·불안, 만성질환도 피로와 저림을 만들 수 있습니다. 그래서 B군 영양제를 아무거나 추가하기보다, **어떤 결핍이 실제로 있는지**를 확인하는 편이 더 빠른 길인 경우가 많습니다.
+
 ## 같이 읽으면 좋은 글
 
 - [몸에 좋다고 계속 먹었는데, 6개월 뒤 독이 될 수도 있습니다](/column/supplements-can-turn-toxic)
@@ -91,9 +109,8 @@ _이미지 출처: [Wikimedia Commons - Pill Bottle of Assorted Pills](https://c
 
 ## 참고 자료
 
-- [NIH ODS - Thiamin Fact Sheet for Consumers](https://ods.od.nih.gov/factsheets/Thiamin-Consumer/)
-- [NIH ODS - Riboflavin Fact Sheet for Consumers](https://ods.od.nih.gov/factsheets/Riboflavin-Consumer/)
-- [NIH ODS - Vitamin B6 Fact Sheet for Health Professionals](https://ods.od.nih.gov/factsheets/VitaminB6-HealthProfessional/)
-- [NIH ODS - Folate Fact Sheet for Consumers](https://ods.od.nih.gov/factsheets/Folate-Consumer/)
-- [NIH ODS - Vitamin B12 Fact Sheet for Consumers](https://ods.od.nih.gov/factsheets/VitaminB12-Consumer/)
-- [NIH ODS - Vitamin B12 Fact Sheet for Health Professionals](https://ods.od.nih.gov/factsheets/VitaminB12-HealthProfessional/)
+- [ODS - Vitamin B12 Fact Sheet for Health Professionals](https://ods.od.nih.gov/factsheets/VitaminB12-HealthProfessional/)
+- [ODS - Vitamin B6 Fact Sheet for Health Professionals](https://ods.od.nih.gov/factsheets/VitaminB6-HealthProfessional/)
+- [ODS - Folate Fact Sheet for Health Professionals](https://ods.od.nih.gov/factsheets/Folate-HealthProfessional/)
+- [ODS - Thiamin Fact Sheet for Health Professionals](https://ods.od.nih.gov/factsheets/Thiamin-HealthProfessional/)
+

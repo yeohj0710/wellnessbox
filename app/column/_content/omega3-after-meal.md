@@ -71,6 +71,24 @@ _이미지 출처: [Pexels - Fish oil capsules](https://www.pexels.com/photo/clo
 
 건강 관리에서는 “최고의 플랜”보다 **지속되는 플랜**이 훨씬 강력합니다.
 
+## 오메가3는 '언제'보다 '무엇을 먹는 사람에게 왜 필요한지'가 더 중요합니다
+
+### 1캡슐 = 1그램 = 충분함, 이 공식은 자주 틀립니다
+
+오메가3 제품은 캡슐 무게와 EPA·DHA 실제 함량이 다를 수 있습니다. 즉 1,000 mg fish oil이라고 써 있어도, 그 안의 EPA와 DHA가 생각보다 적을 수 있습니다. 그래서 시간대를 고민하기 전에 **실제 유효성분이 얼마인지**부터 확인하는 게 먼저입니다.
+
+### 식후가 자주 권장되는 이유는 편함과 지속성 때문입니다
+
+오메가3는 식후에 먹으면 속 불편이나 비린 역류를 덜 느끼는 사람이 많습니다. 지방이 조금 있는 식사와 함께하면 흡수 쪽에서도 유리할 수 있어, 공복 고집보다 식사 루틴에 붙이는 편이 실전 성공률이 높습니다. 특히 아침을 자주 거르는 사람은 점심이나 저녁 식후가 더 낫습니다.
+
+### 혈액응고·수술 일정·특정 약 복용 중이면 확인이 필요합니다
+
+일반적인 건강보조 수준의 섭취는 큰 문제가 없는 경우가 많지만, 항응고제·항혈소판제 복용 중이거나 수술을 앞둔 사람은 개인 상황에 따라 조정이 필요할 수 있습니다. “영양제니까 그냥 계속”으로 가지 말고, 특히 고용량을 먹고 있다면 **의료진에게 실제 제품명과 함량**을 보여 주는 게 안전합니다.
+
+### 오메가3가 안 맞는 사람은 시간보다 제품 형태가 문제일 수도 있습니다
+
+비린 냄새, 트림, 속 불편이 심한 사람은 장용성 코팅, 농축도, 보관 상태, 복용 직후 눕는 습관까지 같이 봐야 합니다. 시간만 아침에서 밤으로 바꿔도 해결되는 사람도 있지만, 제품 자체를 바꿔야 편해지는 사람도 있습니다.
+
 ## 같이 읽으면 좋은 글
 
 - [비타민D 복용시간: 아침/저녁보다 중요한 포인트](/column/vitamin-d-with-fat-meal)
@@ -79,8 +97,9 @@ _이미지 출처: [Pexels - Fish oil capsules](https://www.pexels.com/photo/clo
 
 ## 참고 자료
 
-- [NIH ODS - Omega-3 Fatty Acids Fact Sheet for Consumers](https://ods.od.nih.gov/factsheets/Omega3FattyAcids-Consumer/)
-- [NCCIH - Omega-3 Supplements: What You Need To Know](https://www.nccih.nih.gov/health/omega3-supplements-what-you-need-to-know)
+- [ODS - Omega-3 Fatty Acids Fact Sheet for Health Professionals](https://ods.od.nih.gov/factsheets/Omega3FattyAcids-HealthProfessional/)
+- [ODS - Omega-3 Fatty Acids Fact Sheet for Consumers](https://ods.od.nih.gov/factsheets/Omega3FattyAcids-Consumer/)
+
 
 ## 안내
 

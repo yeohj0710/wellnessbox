@@ -131,23 +131,30 @@ export default function MessageBubble({
             <div
               role="status"
               aria-live="polite"
-              className="inline-flex max-w-[95%] rounded-2xl border border-slate-200 bg-white px-3.5 py-3 shadow-sm sm:max-w-[86%] md:max-w-[74%]"
+              className="w-full max-w-[min(92vw,31rem)] rounded-[1.35rem] border border-slate-200/90 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.98))] px-4 py-3.5 shadow-[0_16px_36px_-28px_rgba(15,23,42,0.24)] sm:max-w-[28rem] sm:px-4.5"
             >
-              <div className="flex min-w-0 items-center gap-2">
-                <div className="inline-flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 animate-[wb-dot_1.2s_ease-in-out_infinite] rounded-full bg-sky-500" />
-                  <span
-                    className="h-1.5 w-1.5 animate-[wb-dot_1.2s_ease-in-out_infinite] rounded-full bg-sky-500"
-                    style={{ animationDelay: "0.18s" }}
-                  />
-                  <span
-                    className="h-1.5 w-1.5 animate-[wb-dot_1.2s_ease-in-out_infinite] rounded-full bg-sky-500"
-                    style={{ animationDelay: "0.36s" }}
-                  />
+              <div className="flex min-w-0 items-start gap-3">
+                <div className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-50 ring-1 ring-sky-100">
+                  <div className="inline-flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 animate-[wb-dot_1.2s_ease-in-out_infinite] rounded-full bg-sky-500" />
+                    <span
+                      className="h-1.5 w-1.5 animate-[wb-dot_1.2s_ease-in-out_infinite] rounded-full bg-sky-500"
+                      style={{ animationDelay: "0.18s" }}
+                    />
+                    <span
+                      className="h-1.5 w-1.5 animate-[wb-dot_1.2s_ease-in-out_infinite] rounded-full bg-sky-500"
+                      style={{ animationDelay: "0.36s" }}
+                    />
+                  </div>
                 </div>
-                <p className="min-w-0 break-keep text-[12px] font-medium leading-5 text-slate-700">
-                  {loadingHint}
-                </p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-sky-600">
+                    Loading
+                  </p>
+                  <p className="mt-1 min-w-0 text-pretty break-keep text-[13px] font-medium leading-6 text-slate-700 sm:text-[14px]">
+                    {loadingHint}
+                  </p>
+                </div>
               </div>
             </div>
           )}

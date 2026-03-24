@@ -42,24 +42,30 @@ export function ChatInputActionAssist({
     <>
       {showCoachmark && (
         <div className="mx-auto flex max-w-[760px] justify-end px-1">
-          <div className="relative max-w-[300px] rounded-2xl bg-slate-900 px-3 py-2 text-white shadow-[0_14px_28px_rgba(15,23,42,0.35)]">
+          <div className="relative max-w-[320px] overflow-hidden rounded-[28px] border border-slate-700/70 bg-[radial-gradient(circle_at_top,rgba(103,232,249,0.16),transparent_36%),linear-gradient(180deg,rgba(15,23,42,0.98)_0%,rgba(15,23,42,0.94)_100%)] px-4 py-3 text-white shadow-[0_20px_44px_rgba(15,23,42,0.34)] backdrop-blur-xl">
+            <div className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+
             <p className="text-[14px] font-semibold leading-5">
               말로 지시하면 실행까지 바로 이어서 도와드려요
             </p>
-            <p className="mt-1 text-[13px] leading-5 text-slate-200">{helperHint}</p>
+            <p className="mt-1.5 text-[13px] leading-5 text-slate-200/90">
+              {helperHint}
+            </p>
+
             <AutoDismissTimerBar
               durationMs={coachmarkDurationMs}
-              className="mt-2"
+              className="mt-3"
               label="자동으로 닫혀요"
-              labelClassName="text-slate-300"
-              countdownClassName="text-slate-200"
-              trackClassName="bg-white/10"
-              barClassName="bg-gradient-to-r from-sky-300 via-cyan-300 to-white"
+              labelClassName="text-slate-300/85"
+              countdownClassName="text-slate-100"
+              trackClassName="bg-white/10 ring-1 ring-inset ring-white/8"
+              barClassName="bg-[linear-gradient(90deg,rgba(125,211,252,0.98)_0%,rgba(103,232,249,0.92)_58%,rgba(255,255,255,0.82)_100%)] shadow-[0_0_18px_rgba(103,232,249,0.32)]"
             />
-            <div className="mt-2 flex items-center justify-end gap-2">
+
+            <div className="mt-3 flex items-center justify-end gap-2">
               <button
                 type="button"
-                className="rounded-full bg-white/15 px-2.5 py-1 text-[12px] font-medium hover:bg-white/25"
+                className="rounded-full border border-white/10 bg-white/12 px-3 py-1.5 text-[12px] font-medium text-white/92 transition hover:border-white/20 hover:bg-white/18"
                 onClick={() => {
                   onOpenTray();
                   onDismissCoachmark();
@@ -69,14 +75,15 @@ export function ChatInputActionAssist({
               </button>
               <button
                 type="button"
-                className="rounded-full p-0.5 text-slate-200 hover:bg-white/15 hover:text-white"
+                className="rounded-full p-1 text-slate-200 transition hover:bg-white/12 hover:text-white"
                 onClick={onDismissCoachmark}
                 aria-label="힌트 닫기"
               >
                 <XMarkIcon className="h-3.5 w-3.5" />
               </button>
             </div>
-            <span className="absolute -bottom-1.5 right-8 h-3 w-3 rotate-45 bg-slate-900" />
+
+            <span className="absolute -bottom-1.5 right-8 h-3 w-3 rotate-45 border-b border-r border-slate-700/70 bg-slate-900" />
           </div>
         </div>
       )}

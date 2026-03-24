@@ -1,5 +1,9 @@
 "use client";
 
+import { ChevronDownIcon } from "@heroicons/react/24/outline";
+import { useState } from "react";
+import { usePathname } from "next/navigation";
+import SmoothAccordion from "@/components/common/SmoothAccordion.client";
 import NaturalLanguageRoutingCard from "@/components/common/NaturalLanguageRoutingCard";
 import OfferIntelligenceCard from "@/components/common/OfferIntelligenceCard";
 import LandingPersonalizationCard from "@/components/common/LandingPersonalizationCard";
@@ -33,6 +37,8 @@ export default function HomeAdaptiveEntryStack({
   homeOffer,
   onHomeOfferAction,
 }: HomeAdaptiveEntryStackProps) {
+  const pathname = usePathname();
+  const [labsOpen, setLabsOpen] = useState(false);
   const { focus, loading, summary } = useLandingPersonalization(categories);
   const valueProposition = resolvePersonalizedValueProposition({
     summary,
@@ -101,13 +107,13 @@ export default function HomeAdaptiveEntryStack({
         }
         primaryLabel={
           focus.matchedCategoryIds.length > 0
-            ? "지금 맞는 추천만 보기"
+            ? "지금 잘 맞는 구성부터 보기"
             : "입문용 구성부터 보기"
         }
         secondaryLabel={
           focus.preferredPackage === "7"
             ? "7일치부터 보기"
-            : "가볍게 비교하기"
+            : "가볍게 비교해보기"
         }
       />
     ),
@@ -136,6 +142,7 @@ export default function HomeAdaptiveEntryStack({
 
   type SectionKey = keyof typeof sections;
 
+  if (pathname?.startsWith("/explore")) return null;
   if (loading || categories.length === 0) return null;
 
   const order: SectionKey[] =
@@ -159,53 +166,63 @@ export default function HomeAdaptiveEntryStack({
       {heroCard}
 
       {labCount > 0 ? (
-        <details className="group overflow-hidden rounded-[1.35rem] border border-slate-200 bg-white/95 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.22)]">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 sm:px-5">
+        <SmoothAccordion
+          open={labsOpen}
+          onToggle={() => setLabsOpen((prev) => !prev)}
+          className="overflow-hidden rounded-[1.35rem] border border-slate-200 bg-white/95 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.22)]"
+          buttonClassName="items-center px-4 py-3 sm:px-5"
+          panelClassName="border-t border-slate-200/80"
+          panelInnerClassName="px-3 pb-3 pt-3 sm:px-4 sm:pb-4"
+          summary={
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-slate-900 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white">
-                  Labs
+                  More
                 </span>
                 <span className="text-xs font-medium text-slate-500">
-                  보조 탐색 {labCount}개
+                  추가 안내 {labCount}개
                 </span>
               </div>
               <p className="mt-1 text-sm font-semibold text-slate-700">
-                필요할 때만 보조 탐색을 펼쳐보세요
+                필요하실 때만 더 살펴보세요
               </p>
             </div>
-            <div className="shrink-0 text-xs font-semibold text-slate-400">
-              <span className="group-open:hidden">열기</span>
-              <span className="hidden group-open:inline">닫기</span>
-            </div>
-          </summary>
+          }
+          indicator={
+            <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-500 transition-all duration-300">
+              {labsOpen ? "접기" : "열기"}
+              <ChevronDownIcon
+                className={`h-4 w-4 transition-transform duration-300 ${
+                  labsOpen ? "rotate-180" : ""
+                }`}
+              />
+            </span>
+          }
+        >
+          <div className="space-y-3">
+            {showNaturalLanguageRouter ? (
+              <NaturalLanguageRoutingCard
+                surface="home"
+                hideBehindBeta={false}
+                categories={categories.map((category) => ({
+                  id: category.id,
+                  name: category.name || "",
+                }))}
+                className="!mx-0 !max-w-none !px-0"
+              />
+            ) : null}
 
-          <div className="border-t border-slate-200/80 px-3 pb-3 pt-3 sm:px-4 sm:pb-4">
-            <div className="space-y-3">
-              {showNaturalLanguageRouter ? (
-                <NaturalLanguageRoutingCard
-                  surface="home"
-                  hideBehindBeta={false}
-                  categories={categories.map((category) => ({
-                    id: category.id,
-                    name: category.name || "",
-                  }))}
-                  className="!mx-0 !max-w-none !px-0"
-                />
-              ) : null}
+            {labCards}
 
-              {labCards}
-
-              {homeOffer ? (
-                <OfferIntelligenceCard
-                  offer={homeOffer}
-                  onAction={onHomeOfferAction}
-                  hideBehindBeta={false}
-                />
-              ) : null}
-            </div>
+            {homeOffer ? (
+              <OfferIntelligenceCard
+                offer={homeOffer}
+                onAction={onHomeOfferAction}
+                hideBehindBeta={false}
+              />
+            ) : null}
           </div>
-        </details>
+        </SmoothAccordion>
       ) : null}
     </div>
   );

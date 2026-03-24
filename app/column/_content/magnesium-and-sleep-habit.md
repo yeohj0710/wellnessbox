@@ -69,6 +69,24 @@ _이미지 출처: [Wikimedia Commons - Spinach produce](https://commons.wikimed
 3. 3~4주차: 가장 편한 시간 하나를 고정하고, 다른 영양제와 겹쳐 복용이 복잡해지지 않게 정리합니다.  
 4. 월 1회: 총량과 복용 이유를 다시 봅니다. 수면, 근육 긴장, 변비 등 처음 목표가 달라졌다면 시간표도 다시 바꾸는 편이 낫습니다.
 
+## 마그네슘을 고를 때는 시간보다 형태와 총량도 같이 봐야 합니다
+
+### '밤에 먹는 영양제'라는 이미지가 과장된 부분이 있습니다
+
+마그네슘이 수면 루틴과 자주 같이 언급되다 보니, 마치 밤에 먹어야만 의미가 있는 것처럼 느끼기 쉽습니다. 하지만 실제로는 밤 복용이 절대 기준은 아닙니다. 중요한 건 **복용 후 속이 편한지, 매일 지키기 쉬운지, 다른 약과 안 겹치는지**입니다.
+
+### 제품 형태에 따라 체감이 달라질 수 있습니다
+
+예를 들어 citrate 계열은 장을 더 자극해 변비에는 맞지만 설사 쪽 불편이 생길 수 있고, oxide는 가격이 저렴하지만 위장 불편으로 중단하는 사람도 있습니다. 어떤 형태가 무조건 최고라기보다, 내 목적이 수면 루틴인지 변비 완화인지, 근육 쥐 예방인지에 따라 체감이 달라질 수 있습니다.
+
+### '더 먹으면 더 편해질 것'이라는 생각이 흔한 실수입니다
+
+마그네슘은 과량 섭취 시 설사, 복부 불편으로 먼저 신호가 오는 경우가 많습니다. 특히 종합비타민, 수면 보조제, 변비약, 제산제에 이미 마그네슘이 들어 있는지 확인하지 않으면 총량이 쉽게 커집니다. 루틴을 만들고 싶다면 양을 올리기보다 **누락 없는 시간대**부터 고정하는 편이 낫습니다.
+
+### 신장질환이 있거나 약을 많이 먹는 사람은 더 신중해야 합니다
+
+대부분의 건강한 성인에게는 큰 문제가 없더라도, 신장 기능이 떨어져 있거나 특정 약을 복용 중이라면 보충제 선택이 달라질 수 있습니다. 특히 갑상선약, 일부 항생제, 골다공증약과는 간격이 중요할 수 있어 시간표를 같이 봐야 합니다.
+
 ## 같이 읽으면 좋은 글
 
 - [유산균 복용시간: 공복이 무조건 정답일까요?](/column/probiotic-before-breakfast)
@@ -77,8 +95,9 @@ _이미지 출처: [Wikimedia Commons - Spinach produce](https://commons.wikimed
 
 ## 참고 자료
 
-- [NIH ODS - Magnesium Fact Sheet for Consumers](https://ods.od.nih.gov/factsheets/Magnesium-Consumer/)
-- [NIH ODS - Magnesium Fact Sheet for Health Professionals](https://ods.od.nih.gov/factsheets/Magnesium-HealthProfessional/)
+- [ODS - Magnesium Fact Sheet for Health Professionals](https://ods.od.nih.gov/factsheets/Magnesium-HealthProfessional/)
+- [ODS - Magnesium Fact Sheet for Consumers](https://ods.od.nih.gov/factsheets/Magnesium-Consumer/)
+
 
 ## 안내
 

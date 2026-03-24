@@ -74,6 +74,24 @@ _이미지 출처: [Wikimedia Commons - A cup of coffee milk](https://commons.wi
 - 철분과 칼슘 외에도 여러 약이나 건강기능식품을 함께 먹고 있어서 중복 여부가 헷갈리는 경우  
 - 임신, 수유, 위장 질환, 만성 질환 치료 중이라 복용 계획을 임의로 바꾸기 어려운 경우  
 
+## 철분은 '언제 먹느냐'보다 '무엇과 겹치느냐'가 더 중요합니다
+
+### 빈속이 정답이지만, 못 버티면 식후로 옮기는 게 낫습니다
+
+철분은 공복에서 흡수가 더 잘 되는 경우가 많지만, 속쓰림·메스꺼움·변비 때문에 못 버티는 사람도 많습니다. 이럴 땐 공복 원칙을 억지로 지키다가 중단하는 것보다, **덜 방해되는 식사와 함께라도 꾸준히 먹는 것**이 현실적입니다. 다만 커피, 차, 우유, 칼슘제, 제산제를 같은 타이밍에 붙이지 않는 게 중요합니다.
+
+### 커피와 차는 '양'보다 타이밍이 더 실전적입니다
+
+철분을 먹고 바로 커피를 마시는 습관은 흡수를 흔들 수 있습니다. 그래서 실전에서는 “하루에 커피를 끊어라”보다 **철분 복용 전후 몇 시간만 분리**하는 방식이 더 지켜집니다. 특히 아침 철분+출근길 커피가 묶여 있는 사람은 루틴을 통째로 바꿔야 효과를 보기 쉽습니다.
+
+### 칼슘은 건강식이라서 더 자주 겹칩니다
+
+우유, 요거트, 칼슘 강화 음료, 칼슘제, 제산제까지 생각보다 많은 것이 같은 시간대에 들어옵니다. 문제는 본인은 ‘약을 따로 먹었다’고 생각하지만, 실제론 같은 식사 안에서 겹친다는 점입니다. 철분은 고립된 한 알이 아니라 **같이 들어오는 미네랄과 음료** 속에서 봐야 합니다.
+
+### 변비 때문에 철분을 포기하기 전에 조정할 수 있는 게 있습니다
+
+제품 형태를 바꾸거나, 용량 분할, 물 섭취, 섬유질, 배변 루틴 조정으로 버티기 쉬워지는 경우가 있습니다. 철분은 “먹고 불편해서 끝”보다 **나에게 맞는 방식으로 타협**하는 과정이 필요한 보충제입니다.
+
 ## 같이 읽으면 좋은 글
 
 - [비타민D 복용시간: 식사와 함께가 중요한 이유](/column/vitamin-d-with-fat-meal)
@@ -82,9 +100,10 @@ _이미지 출처: [Wikimedia Commons - A cup of coffee milk](https://commons.wi
 
 ## 참고 자료
 
-- [NIH ODS - Iron Fact Sheet for Consumers](https://ods.od.nih.gov/factsheets/Iron-Consumer/)
-- [NIH ODS - Calcium Fact Sheet for Consumers](https://ods.od.nih.gov/factsheets/Calcium-Consumer/)
-- [NHS - Iron](https://www.nhs.uk/conditions/vitamins-and-minerals/iron/)
+- [MedlinePlus - Taking iron supplements](https://medlineplus.gov/ency/article/007478.htm)
+- [ODS - Iron Fact Sheet for Health Professionals](https://ods.od.nih.gov/factsheets/Iron-HealthProfessional/)
+- [ODS - Iron Fact Sheet for Consumers](https://ods.od.nih.gov/factsheets/Iron-Consumer/)
+
 
 ## 안내
 

@@ -76,6 +76,24 @@ _이미지 출처: [Wikimedia Commons - A small cup of coffee](https://commons.w
 - 검은색 토, 피 섞인 토, 심한 복통이나 흉통이 붙는 경우
 - 소량 음주에도 매번 심한 두근거림, 호흡곤란, 실신 느낌이 반복되는 경우
 
+## 술만 마시면 토하는 건 '술이 약해서'보다 패턴과 체질의 문제일 수 있습니다
+
+### 구토는 몸이 보내는 보호 반응일 수 있습니다
+
+술을 마신 뒤 반복적으로 토하는 건 단순히 민폐 반응이나 예민함이 아니라, 몸이 감당 못 한다는 신호일 수 있습니다. 특히 짧은 시간에 빨리 마시거나, 공복 음주, 폭탄주, 에너지음료 혼합이 있으면 위장 자극과 중추신경 억제가 한꺼번에 와서 구토가 쉽게 유발됩니다.
+
+### 얼굴이 빨개지고 심장이 빨리 뛰는 사람은 더 주의가 필요합니다
+
+동아시아권에서 흔한 알코올 플러시 반응은 얼굴 홍조만이 아니라 메스꺼움, 두근거림, 불편감으로 이어질 수 있습니다. 이런 사람은 '주량이 늘면 괜찮아지겠지'라고 밀어붙일수록 더 힘들어지는 경우가 많습니다. 몸이 약한 게 아니라 **대사 특성이 다른 것**일 수 있습니다.
+
+### 토한다고 해서 덜 취하는 건 아닙니다
+
+“토했으니 괜찮다”는 생각이 위험한 이유가 여기에 있습니다. 이미 흡수된 알코올은 계속 영향을 주고, 반복 구토는 탈수와 흡인 위험을 키웁니다. 특히 의식이 떨어진 사람이 토하는 경우는 단순 숙취가 아니라 응급상황이 될 수 있습니다.
+
+### 반복되는 구토는 음주 방법을 다시 짜야 한다는 뜻입니다
+
+술 종류를 바꾸는 것만으로 해결되는 사람도 있지만, 대부분은 속도, 총량, 공복 여부, 물 섭취, 섞어 마시는 방식이 더 큰 변수입니다. 매번 토할 정도면 주량을 키울 게 아니라 **술과 나의 관계를 재설계**해야 합니다.
+
 ## 같이 읽으면 좋은 글
 
 - [숙취 다음 날 첫 끼가 하루 컨디션을 결정합니다](/column/hangover-first-meal-strategy)
@@ -84,7 +102,8 @@ _이미지 출처: [Wikimedia Commons - A small cup of coffee](https://commons.w
 
 ## 참고 자료
 
+- [NIAAA - Hangovers](https://www.niaaa.nih.gov/publications/brochures-and-fact-sheets/hangovers)
 - [NIAAA - Understanding the Dangers of Alcohol Overdose](https://www.niaaa.nih.gov/publications/brochures-and-fact-sheets/understanding-dangers-of-alcohol-overdose)
-- [NIAAA - Alcohol Metabolism](https://www.niaaa.nih.gov/publications/alcohol-metabolism)
-- [MedlinePlus - Caffeine](https://medlineplus.gov/caffeine.html)
-- [NHS - Heartburn and acid reflux](https://www.nhs.uk/conditions/heartburn-and-acid-reflux/)
+- [NIAAA - Alcohol Flush Reaction](https://www.niaaa.nih.gov/publications/alcohol-flush-reaction-does-drinking-alcohol-make-your-face-red)
+- [NIAAA - Risk Factors: Varied Vulnerability to Alcohol-Related Harm](https://www.niaaa.nih.gov/health-professionals-communities/core-resource-on-alcohol/risk-factors-varied-vulnerability-alcohol-related-harm)
+

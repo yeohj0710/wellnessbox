@@ -83,6 +83,24 @@ _이미지 출처: [Wikimedia Commons - Calendar](https://commons.wikimedia.org/
 - 탈모 진행이 갑자기 매우 빠르거나 두피 염증, 원형탈모 양상이 의심되는 경우
 - 효과를 기대하며 무리하게 양을 늘리거나 다른 제품을 한꺼번에 겹쳐 쓰는 경우
 
+## 미녹시딜은 제품보다 '진단+지속성+사용법'에서 차이가 크게 납니다
+
+### 원형탈모, 휴지기탈모, 안드로겐성 탈모는 접근이 다릅니다
+
+같은 정수리 탈모처럼 보여도 원인이 다르면 미녹시딜 반응이 다를 수 있습니다. 안드로겐성 탈모에는 비교적 대표적인 옵션이지만, 원형탈모처럼 염증성·자가면역성 요소가 큰 경우엔 단독으로 부족할 수 있습니다. 그래서 “같은 제품을 썼는데 나는 왜 별로지?”라는 질문에는 **탈모 원인부터 다시 보는 일**이 포함돼야 합니다.
+
+### 초기 탈락이 있다고 해서 바로 실패로 보지는 마세요
+
+시작 후 몇 주 동안 머리가 더 빠지는 것처럼 느껴지는 시기가 있을 수 있습니다. 이 때문에 많은 사람이 효과가 없다고 중단하지만, 실제론 더 길게 봐야 하는 경우가 적지 않습니다. 다만 자극이 너무 심하거나 패치처럼 비어 가는 탈모, 흉터성 탈모가 의심되면 혼자 버티지 말고 진단이 우선입니다.
+
+### 바르는 위치와 두피 상태도 결과를 흔듭니다
+
+젖은 두피에 대충 바르거나, 필요한 부위보다 머리카락에만 묻히면 생각보다 효과를 보기 어렵습니다. 반대로 과하게 넓게 바르면 얼굴 잔털이나 자극이 신경 쓰일 수 있습니다. 결국 성분 자체 못지않게 **어디에, 얼마나, 얼마나 꾸준히**가 결과를 갈라놓습니다.
+
+### 미녹시딜은 '키워서 끝'이 아니라 유지가 필요한 치료입니다
+
+효과를 보는 사람도 중단하면 다시 빠지는 경우가 있습니다. 그래서 일시적인 이벤트가 아니라, 내가 감당할 수 있는 장기 루틴인지 함께 봐야 합니다. 매일 못 바르는 사람에겐 최선의 선택이 아닐 수도 있습니다.
+
 ## 같이 읽으면 좋은 글
 
 - [가짜 영양제는 생각보다 훨씬 많습니다](/column/fake-supplement-warning-signs)
@@ -91,6 +109,8 @@ _이미지 출처: [Wikimedia Commons - Calendar](https://commons.wikimedia.org/
 
 ## 참고 자료
 
-- [StatPearls - Minoxidil](https://www.ncbi.nlm.nih.gov/books/NBK482378/)
-- [Royal Berkshire NHS - Minoxidil for hair loss](https://www.royalberkshire.nhs.uk/media/n3onzj1d/minoxidil-for-hair-loss_oct25.pdf)
-- [NHS - Hair loss](https://www.nhs.uk/symptoms/hair-loss/)
+- [AAD - Hair loss: Diagnosis and treatment](https://www.aad.org/public/diseases/hair-loss/treatment/diagnosis-treat)
+- [AAD - What is male pattern hair loss, and can it be treated?](https://www.aad.org/public/diseases/hair-loss/treatment/male-pattern-hair-loss-treatment)
+- [AAD - Could it be female pattern hair loss?](https://www.aad.org/public/diseases/hair-loss/types/female-pattern)
+- [AAD - Hair loss: Overview](https://www.aad.org/public/diseases/hair-loss/causes/fall-out)
+

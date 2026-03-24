@@ -6,11 +6,11 @@ import KakaoLoginButton from "@/components/common/kakaoLoginButton";
 import type { LoginStatus } from "@/lib/useLoginStatus";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import {
-  AiPromptBadge,
-  BetaBadge,
+  AccessBadge,
   DesktopOperatorLinks,
   IdentityMenuLinks,
   menuItemClasses,
+  TimeBadge,
   type LinkPressHandlers,
   type MenuVisibility,
 } from "./menuLinks.shared";
@@ -59,32 +59,31 @@ export function DesktopMenuContent({
           aria-haspopup="menu"
           aria-expanded={aiOpen}
         >
-          <span className="inline-flex items-center gap-2">
-            <span>진단 검사</span>
-            <AiPromptBadge />
-          </span>
+          <span>진단 검사</span>
           <ChevronDownIcon className={`h-4 w-4 transition-transform ${aiOpen ? "rotate-180" : ""}`} />
         </button>
 
         <IntentPrefetchLink
           href="/chat"
-          className={menuItemClasses("ml-1.5 inline-flex items-center gap-1 leading-none")}
+          className={menuItemClasses("ml-1.5 inline-flex items-center gap-2 leading-none")}
           onClick={onItemClick}
         >
           <span>AI 맞춤 상담</span>
+          <AccessBadge />
         </IntentPrefetchLink>
 
         {aiOpen && (
           <div className="absolute left-0 top-full z-30 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-lg ring-1 ring-black/5">
             <IntentPrefetchLink
               href="/check-ai"
-              className="block rounded-lg px-3 py-2 text-slate-800 hover:bg-slate-50"
+              className="flex items-center justify-between rounded-lg px-3 py-2 text-slate-800 hover:bg-slate-50"
               onClick={() => {
                 onCloseAiOpen();
                 onItemClick?.();
               }}
             >
-              빠른 AI 검사
+              <span>빠른 AI 검사</span>
+              <TimeBadge className="ml-3">1분</TimeBadge>
             </IntentPrefetchLink>
 
             <IntentPrefetchLink
@@ -96,6 +95,7 @@ export function DesktopMenuContent({
               }}
             >
               <span>정밀 AI 검사</span>
+              <TimeBadge className="ml-3">5~7분</TimeBadge>
             </IntentPrefetchLink>
 
             <IntentPrefetchLink
@@ -107,7 +107,7 @@ export function DesktopMenuContent({
               }}
             >
               <span>건강 설문</span>
-              <BetaBadge className="ml-2" />
+              <TimeBadge className="ml-3">5~7분</TimeBadge>
             </IntentPrefetchLink>
           </div>
         )}
@@ -115,11 +115,10 @@ export function DesktopMenuContent({
 
       <IntentPrefetchLink
         href="/column"
-        className={menuItemClasses("inline-flex items-center gap-1")}
+        className={menuItemClasses("inline-flex items-center")}
         onClick={onItemClick}
       >
         <span>건강 칼럼</span>
-        <BetaBadge className="ml-0.5" />
       </IntentPrefetchLink>
 
       {visibility.isAdminLoggedIn && (

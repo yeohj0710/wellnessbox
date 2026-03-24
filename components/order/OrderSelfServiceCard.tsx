@@ -37,7 +37,7 @@ export function OrderSelfServiceCard({
   onPrimaryAction,
   onSecondaryAction,
   className = "",
-  hideBehindBeta = true,
+  hideBehindBeta = false,
 }: OrderSelfServiceCardProps) {
   const tone = toneClasses[model.tone];
 

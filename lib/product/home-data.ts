@@ -82,6 +82,9 @@ function shouldUseEmptyHomeDataFallback(error: unknown) {
   const message = normalizeErrorMessage(error).toLowerCase();
   return (
     message.includes("compute time quota") ||
+    message.includes("timed out after") ||
+    message.includes("timed out fetching a new connection from the connection pool") ||
+    message.includes("connection pool timeout") ||
     message.includes("can't reach database server") ||
     message.includes("cant reach database server") ||
     message.includes("please make sure your database server is running") ||

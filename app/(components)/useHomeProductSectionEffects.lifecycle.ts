@@ -42,6 +42,7 @@ export function useHomeProductLifecycleEffects(input: {
   isLoading: boolean;
   allProductsLength: number;
   isRecovering: boolean;
+  isCatalogPaused: boolean;
 }) {
   const {
     initialCategories,
@@ -64,6 +65,7 @@ export function useHomeProductLifecycleEffects(input: {
     isLoading,
     allProductsLength,
     isRecovering,
+    isCatalogPaused,
   } = input;
   const missingAddressPromptedRef = useRef(false);
 
@@ -176,6 +178,7 @@ export function useHomeProductLifecycleEffects(input: {
   }, [roadAddress]);
 
   useEffect(() => {
+    if (isCatalogPaused) return;
     if (isLoading) return;
     if (allProductsLength > 0 && !isRecovering) return;
 
@@ -183,11 +186,12 @@ export function useHomeProductLifecycleEffects(input: {
       void fetchData("recovery");
     }, 3500);
     return () => clearTimeout(timer);
-  }, [allProductsLength, fetchData, isLoading, isRecovering]);
+  }, [allProductsLength, fetchData, isCatalogPaused, isLoading, isRecovering]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) return;
+      if (isCatalogPaused) return;
       if (isLoading) return;
       if (allProductsLength > 0 && !isRecovering) return;
       void fetchData("recovery");
@@ -196,5 +200,5 @@ export function useHomeProductLifecycleEffects(input: {
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () =>
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [allProductsLength, fetchData, isLoading, isRecovering]);
+  }, [allProductsLength, fetchData, isCatalogPaused, isLoading, isRecovering]);
 }

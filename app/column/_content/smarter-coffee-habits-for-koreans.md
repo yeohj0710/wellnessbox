@@ -76,6 +76,24 @@ _이미지 출처: [Wikimedia Commons - Bed](https://commons.wikimedia.org/wiki/
 - 오후 카페인을 끊지 못해 밤잠이 망가지고 다음 날 더 피곤해지는 경우
 - 달달한 커피로 끼니를 대신하면서 체중과 혈당까지 흔들리는 경우
 
+## 커피를 줄여야 하는 사람은 양보다 '패턴'부터 봐야 합니다
+
+### 한국식 커피 문제는 종종 총량보다 시간대에 있습니다
+
+아침 한 잔보다, 점심 뒤 한 잔, 퇴근길 한 잔, 야근 중 한 잔처럼 하루가 길어질수록 카페인이 뒤로 밀리는 구조가 더 문제를 만듭니다. 총량이 많지 않아도 **늦은 시간대 섭취**가 잠을 무너뜨리면 다음 날 다시 커피 의존이 커지는 악순환이 생깁니다.
+
+### 커피를 물처럼 마시는 사람은 '컵 수' 대신 mg 감각을 가져야 합니다
+
+연한 아메리카노 두 잔과 진한 콜드브루 두 잔은 카페인량이 같지 않습니다. 에너지음료, 말차, 샷 추가, 편의점 RTD 커피까지 더하면 스스로 생각하는 양보다 쉽게 커질 수 있습니다. 커피 습관을 바꾸려면 “하루 세 잔”보다 **내가 마시는 제품들의 실제 농도**를 의식하는 편이 좋습니다.
+
+### 공복 커피가 안 맞는 사람은 의지가 약한 게 아닙니다
+
+빈속 커피가 괜찮은 사람도 있지만, 불안, 속쓰림, 손 떨림, 묽은 변이 심해지는 사람도 많습니다. 이 경우 커피를 끊는 문제가 아니라 **식사와의 배치**를 바꾸는 게 더 현실적입니다. 반쪽 바나나나 요거트만 먼저 먹어도 체감이 달라지는 사람이 있습니다.
+
+### 커피는 줄이는 것보다 '당기는' 전략이 잘 먹힙니다
+
+오후 커피를 줄이고 싶다면 “오늘부터 금지”보다 첫 잔을 더 이른 시간으로 당기고, 점심 뒤 산책이나 물 섭취를 붙이는 방식이 성공률이 높습니다. 습관은 비워 놓으면 다시 차오르지만, 다른 행동으로 대체하면 오래 갑니다.
+
 ## 같이 읽으면 좋은 글
 
 - [항생제 먹는 동안 커피, 생각보다 더 위험할 수 있습니다](/column/antibiotics-and-coffee)
@@ -84,8 +102,7 @@ _이미지 출처: [Wikimedia Commons - Bed](https://commons.wikimedia.org/wiki/
 
 ## 참고 자료
 
+- [FDA - Spilling the Beans: How Much Caffeine is Too Much?](https://www.fda.gov/consumers/consumer-updates/spilling-beans-how-much-caffeine-too-much)
 - [MedlinePlus - Caffeine](https://medlineplus.gov/caffeine.html)
-- [FDA - How Much Caffeine Is Too Much?](https://www.fda.gov/consumers/consumer-updates/spilling-beans-how-much-caffeine-too-much)
-- [Sleep Foundation - Caffeine and Sleep](https://www.sleepfoundation.org/nutrition/caffeine-and-sleep)
-- [NHS - Heartburn and acid reflux](https://www.nhs.uk/conditions/heartburn-and-acid-reflux/)
-- [AMA - What doctors wish patients knew about caffeine](https://www.ama-assn.org/public-health/prevention-wellness/what-doctors-wish-patients-knew-about-impact-caffeine)
+- [FDA - Highly Concentrated Caffeine in Dietary Supplements](https://www.fda.gov/files/food/published/Guidance-for-Industry--Highly-Concentrated-Caffeine-in-Dietary-Supplements-DOWNLOAD.pdf)
+

@@ -71,7 +71,26 @@ export function useHomeProductQuerySyncEffects(input: {
       }
     } else if (singleCat) {
       const id = parseInt(singleCat, 10);
-      if (!isNaN(id)) setSelectedCategories([id]);
+      if (!isNaN(id)) {
+        setSelectedCategories([id]);
+        return;
+      }
+
+      if (categories.length > 0) {
+        const normalizedSingleCat = singleCat.trim().toLowerCase();
+        const normalizedSingleCatCompact = normalizedSingleCat.replace(/\s+/g, "");
+        const matched = categories.find((category) => {
+          const normalizedName = category.name.trim().toLowerCase();
+          return (
+            normalizedName === normalizedSingleCat ||
+            normalizedName.replace(/\s+/g, "") === normalizedSingleCatCompact
+          );
+        });
+
+        if (matched) {
+          setSelectedCategories([matched.id]);
+        }
+      }
     }
   }, [categories, searchParams, setSelectedCategories, showToast]);
 

@@ -83,6 +83,24 @@ _이미지 출처: [Wikimedia Commons - Running woman](https://commons.wikimedia
 - 생리 불규칙, 턱수염 증가, 여드름 악화가 같이 오면서 복부비만이 심해지는 경우
 - 청소년인데도 목 뒤 착색과 비만, 가족력이 동시에 있는 경우
 
+## 목 뒤 착색은 '때'가 아니라 피부 신호일 수 있습니다
+
+### 세게 밀어도 안 지워지면 방향을 바꿔야 합니다
+
+목 뒤가 까맣고 벨벳처럼 두꺼워 보이면 많은 사람이 때를 미는 쪽으로 반응합니다. 하지만 아칸토시스 니그리칸스는 때가 껴서 생기는 변화가 아닙니다. 세게 문질러도 잘 없어지지 않고, 오히려 자극만 심해질 수 있습니다. 이럴 땐 스크럽보다 **왜 이런 신호가 생겼는지**를 먼저 보는 편이 맞습니다.
+
+### 가장 흔한 배경은 체중 증가와 인슐린저항성입니다
+
+특히 목 뒤, 겨드랑이, 사타구니처럼 접히는 부위에 나타나는 경우가 많고, 체중 증가나 가족력, 피로, 식후 졸림 같은 대사 문제와 같이 보일 수 있습니다. 그래서 피부 자체만 치료하려 하면 한계가 있고, 혈당·체중·생활습관 평가가 같이 가야 합니다.
+
+### 하지만 인슐린저항성만이 전부는 아닙니다
+
+일부 약물, 호르몬 질환, 드물게는 다른 질환이 배경일 수 있습니다. 갑자기 넓게 심해지거나, 체중 변화와 상관없이 빠르게 진행되거나, 입술·손등처럼 비전형적 부위까지 번지면 피부과나 내과 평가가 더 필요합니다. '인터넷에서 봤으니 당뇨 전단계겠지'라고 단정하는 것도 조심해야 합니다.
+
+### 피부를 밝게 하는 것보다 원인을 건드리는 쪽이 더 오래 갑니다
+
+체중 감량, 활동량 증가, 혈당 관리가 좋아지면 피부 변화도 완화되는 경우가 있습니다. 반대로 미백 크림만 바르면 잠깐 덜 보일 수 있어도 두꺼운 질감이나 반복되는 변화는 남기 쉽습니다. 이 신호는 외모 문제가 아니라 **몸의 대사 힌트**로 보는 게 더 유용합니다.
+
 ## 같이 읽으면 좋은 글
 
 - [인슐린저항성은 탄수화물만 줄인다고 해결되지 않습니다](/column/insulin-resistance-is-not-just-carbs)
@@ -92,6 +110,7 @@ _이미지 출처: [Wikimedia Commons - Running woman](https://commons.wikimedia
 ## 참고 자료
 
 - [AAD - Acanthosis nigricans: Overview](https://www.aad.org/public/diseases/a-z/acanthosis-nigricans-overview)
-- [AAD - Acanthosis nigricans: Diagnosis and treatment](https://www.aad.org/public/diseases/a-z/acanthosis-nigricans-treatment)
+- [AAD - Acanthosis nigricans: Tips for managing](https://www.aad.org/public/diseases/a-z/acanthosis-nigricans-self-care)
+- [AAD - Diabetes: 10 warning signs that can appear on your skin](https://www.aad.org/public/diseases/a-z/diabetes-warning-signs)
 - [NIDDK - Insulin Resistance & Prediabetes](https://www.niddk.nih.gov/health-information/diabetes/overview/what-is-diabetes/prediabetes-insulin-resistance)
-- [NIDDK - Healthy Living with Diabetes](https://www.niddk.nih.gov/health-information/diabetes/overview/healthy-living-with-diabetes)
+

@@ -12,10 +12,11 @@ interface CustomizedSupplySectionProps {
 
 const CUSTOMIZED_SUPPLY_SECTION_CONFIG: LandingFeatureSectionConfig = {
   eyebrow: "CUSTOMIZED 7-DAY SUPPLY",
-  title: "맞춤",
-  accent: "소분 패키지",
+  title: "소분 패키징",
+  accent: "맞춤",
+  accentFirst: true,
   description:
-    "일주일 복용을 기준으로 7일치씩 소분 포장해 보내드립니다. 처음 시작하는 분도 최소 단위로 부담 없이 시도할 수 있습니다.",
+    "하루 복용량 기준으로 7일치씩 소분 포장해 배송합니다. 사용자는 최소 7일부터 부담 없이 시작할 수 있습니다.",
   imageSrc: "/landingPage2/customized-supply-hero.png",
   imageAlt: "맞춤 소분 패키지",
   sectionClassName: "bg-gradient-to-b from-white via-[#F6F3FF]/60 to-[#F6F3FF]",

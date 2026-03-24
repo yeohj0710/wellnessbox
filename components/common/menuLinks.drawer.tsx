@@ -2,11 +2,11 @@
 
 import IntentPrefetchLink from "@/components/common/intentPrefetchLink";
 import {
-  AiPromptBadge,
-  BetaBadge,
+  AccessBadge,
   DrawerOperatorLinks,
   IdentityMenuLinks,
   menuItemClasses,
+  TimeBadge,
   type LinkPressHandlers,
   type MenuVisibility,
 } from "./menuLinks.shared";
@@ -54,47 +54,52 @@ export function DrawerMenuContent({
           <span className="h-4 w-1 rounded-full bg-emerald-400/80" aria-hidden="true" />
           <span className="text-sm font-bold tracking-[-0.01em] text-slate-700">진단 검사</span>
         </div>
-        <AiPromptBadge />
       </div>
 
       <div className="mt-0 flex flex-col gap-0.5 pl-3">
-        <IntentPrefetchLink href="/check-ai" className={drawerItemClasses} onClick={onItemClick}>
-          빠른 AI 검사
+        <IntentPrefetchLink
+          href="/check-ai"
+          className={`inline-flex items-center justify-between gap-3 ${drawerItemClasses}`}
+          onClick={onItemClick}
+        >
+          <span>빠른 AI 검사</span>
+          <TimeBadge>1분</TimeBadge>
         </IntentPrefetchLink>
 
         <IntentPrefetchLink
           href="/assess"
-          className={`inline-flex items-center gap-1 ${drawerItemClasses}`}
+          className={`inline-flex items-center justify-between gap-3 ${drawerItemClasses}`}
           onClick={onItemClick}
         >
           <span>정밀 AI 검사</span>
+          <TimeBadge>5~7분</TimeBadge>
         </IntentPrefetchLink>
 
         <IntentPrefetchLink
           href="/survey"
-          className={`inline-flex items-center gap-1 ${drawerItemClasses}`}
+          className={`inline-flex items-center justify-between gap-3 ${drawerItemClasses}`}
           onClick={onItemClick}
         >
           <span>건강 설문</span>
-          <BetaBadge className="ml-1" />
+          <TimeBadge>5~7분</TimeBadge>
         </IntentPrefetchLink>
       </div>
 
       <IntentPrefetchLink
         href="/chat"
-        className={`${menuItemClasses("leading-tight")} mt-1.5 inline-flex items-center`}
+        className={`${menuItemClasses("leading-tight")} mt-1.5 inline-flex items-center gap-2`}
         onClick={onItemClick}
       >
         <span>AI 맞춤 상담</span>
+        <AccessBadge />
       </IntentPrefetchLink>
 
       <IntentPrefetchLink
         href="/column"
-        className={`${menuItemClasses("leading-tight")} inline-flex items-center gap-1`}
+        className={`${menuItemClasses("leading-tight")} inline-flex items-center`}
         onClick={onItemClick}
       >
         <span>건강 칼럼</span>
-        <BetaBadge className="ml-1" />
       </IntentPrefetchLink>
 
       {visibility.isAdminLoggedIn && (

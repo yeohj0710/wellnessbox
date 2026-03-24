@@ -1,14 +1,18 @@
 import Link from "next/link";
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
+import HomeAdaptiveSupportSectionClient from "@/app/(components)/HomeAdaptiveSupportSection.client";
+import HomeColumnPreviewSection from "@/app/(components)/HomeColumnPreviewSection";
+import HomeFaqList from "@/app/(components)/HomeFaqList.client";
 import HomeLanding from "@/app/(components)/homeLanding.client";
+import HomeProductSectionServer from "@/app/(components)/homeProductSection.server";
+import HomeSupportAccordion from "@/app/(components)/HomeSupportAccordion.client";
 import JourneyCtaBridge from "@/app/(components)/journeyCtaBridge";
-import SymptomImprovement from "@/app/(components)/symptomImprovement";
 import PopularIngredientsNav from "@/app/(components)/popularIngredientsNav.client";
 import SupplementRankingNav from "@/app/(components)/supplementRankingNav.client";
-import HomeProductSectionServer from "@/app/(components)/homeProductSection.server";
+import SymptomImprovement from "@/app/(components)/symptomImprovement";
+import HomeRouteWarmup from "@/components/common/homeRouteWarmup";
 import { SITE_URL } from "@/lib/constants";
 import { getHomePageData, type HomePageData } from "@/lib/product/home-data";
-import HomeRouteWarmup from "@/components/common/homeRouteWarmup";
 import { createPageMetadata, SITE_DESCRIPTION, SITE_TITLE } from "@/lib/seo";
 import {
   BUSINESS_ADDRESS,
@@ -34,42 +38,42 @@ export const metadata = createPageMetadata({
 
 const trustHighlights = [
   {
-    title: "AI로 먼저 방향을 잡습니다",
+    title: "AI가 먼저 큰 방향을 정리해드려요",
     description:
-      "빠른 체크부터 설문과 상담까지 연결해 지금 필요한 관리 우선순위를 정리합니다.",
+      "빠른 체크부터 설문, 상담까지 자연스럽게 이어지도록 구성해 지금 어떤 관리가 먼저 필요한지 한눈에 보실 수 있어요.",
   },
   {
-    title: "복용 맥락까지 함께 봅니다",
+    title: "복용 이유를 이해하기 쉽게 보여드려요",
     description:
-      "현재 복용 중인 약, 생활 습관, 건강 데이터 흐름을 함께 보며 추천 이유를 이해하기 쉽게 설명합니다.",
+      "지금 드시고 있는 약, 생활 습관, 건강 데이터 흐름까지 함께 보면서 왜 이런 추천이 나왔는지 납득하실 수 있게 설명해드려요.",
   },
   {
-    title: "읽고 끝나지 않게 돕습니다",
+    title: "추천으로 끝나지 않게 이어드려요",
     description:
-      "추천 이후에도 복용 가이드와 관련 콘텐츠를 이어 보여주어 실제 관리 루틴으로 연결합니다.",
+      "추천을 본 뒤에도 복용 가이드와 관련 콘텐츠를 이어서 확인하실 수 있어서 실제 루틴으로 이어가기 편해요.",
   },
 ] as const;
 
 const faqItems = [
   {
-    question: "웰니스박스는 어떤 서비스를 제공하나요?",
+    question: "웰니스박스에서는 어떤 도움을 받을 수 있나요?",
     answer:
-      "웰니스박스는 AI 기반 건강 점검, 맞춤형 건강기능식품 추천, 복용 가이드, 건강 콘텐츠를 연결해 건강관리 흐름을 돕는 서비스입니다.",
+      "웰니스박스는 AI 기반 건강 점검, 맞춤 건강기능식품 추천, 복용 가이드, 관련 콘텐츠를 한 흐름으로 연결해 건강 관리를 도와드리는 서비스입니다.",
   },
   {
-    question: "의료 진단을 대신하는 서비스인가요?",
+    question: "의료 진단을 대신해주는 서비스인가요?",
     answer:
-      "의료 진단을 대체하는 서비스는 아닙니다. 현재 상태를 정리하고 복용 및 생활 습관 정보를 이해하는 데 도움을 주는 방향으로 설계되어 있습니다.",
+      "의료 진단을 대신하는 서비스는 아닙니다. 현재 상태와 생활 습관을 정리하고, 복용 방향을 이해하는 데 도움을 드리는 방식으로 운영하고 있습니다.",
   },
   {
-    question: "누가 운영하는지 확인할 수 있나요?",
+    question: "누가 운영하는지 바로 확인할 수 있나요?",
     answer:
-      "소개 페이지와 문의 페이지, 푸터에서 운영 사업자명, 통신판매업신고, 대표 연락처를 확인할 수 있습니다.",
+      "네. 소개 페이지와 문의 페이지에서 운영 사업자, 통신판매업 신고 정보, 연락처를 바로 확인하실 수 있습니다.",
   },
   {
-    question: "복용 가이드는 어디서 볼 수 있나요?",
+    question: "복용 가이드는 어디에서 보면 되나요?",
     answer:
-      "건강 칼럼과 추천 흐름 안에서 비타민, 오메가3, 유산균, 철분 등 자주 찾는 건강기능식품의 복용 포인트를 확인할 수 있습니다.",
+      "건강 관리 허브와 관련 콘텐츠에서 비타민, 오메가3, 유산균, 철분처럼 자주 찾는 성분별 복용 가이드를 확인하실 수 있습니다.",
   },
 ] as const;
 
@@ -101,32 +105,38 @@ function HomeSearchHubSection() {
     {
       href: "/check-ai",
       title: "빠른 AI 체크",
-      description: "1분 안에 현재 상태를 가볍게 확인하고 추천 방향을 잡습니다.",
+      description:
+        "1분 안에 현재 상태를 가볍게 확인하고 추천 방향을 먼저 살펴보실 수 있어요.",
     },
     {
       href: "/assess",
       title: "정밀 AI 분석",
-      description: "증상과 생활 정보를 더 자세히 입력해 개인 맞춤 추천 근거를 봅니다.",
+      description:
+        "증상과 생활 정보를 더 자세히 입력해 개인 맞춤 추천 근거를 확인하실 수 있어요.",
     },
     {
       href: "/survey",
       title: "건강 설문",
-      description: "생활 습관과 현재 상태를 정리해 이후 추천과 상담에 활용합니다.",
+      description:
+        "생활 습관과 현재 상태를 정리해두면 이후 추천과 상담 흐름이 더 자연스럽게 이어져요.",
     },
     {
       href: "/chat",
       title: "AI 맞춤 상담",
-      description: "추천 결과를 바탕으로 복용 루틴과 생활 관리 포인트를 이어서 확인합니다.",
+      description:
+        "추천 결과를 바탕으로 복용 루틴과 생활 관리 포인트를 이어서 확인하실 수 있어요.",
     },
     {
       href: "/column",
       title: "건강 칼럼",
-      description: "영양제 복용법과 주의 포인트를 콘텐츠로 빠르게 살펴봅니다.",
+      description:
+        "영양제 복용법과 주의할 점을 콘텐츠로 빠르게 살펴보실 수 있어요.",
     },
     {
       href: "/my-orders",
       title: "내 주문 조회",
-      description: "주문과 배송 상태를 확인하고 필요한 다음 행동을 이어갈 수 있습니다.",
+      description:
+        "주문과 배송 상태를 확인하고 필요한 다음 단계로 바로 이어가실 수 있어요.",
     },
   ];
 
@@ -140,16 +150,16 @@ function HomeSearchHubSection() {
                 QUICK ACCESS
               </p>
               <h2 className="mt-2 text-xl font-black tracking-tight text-slate-900 sm:text-2xl">
-                상품 둘러본 뒤 필요한 기능만 바로 이어서 쓰세요
+                상품을 둘러본 뒤 필요한 기능만 바로 이어보세요
               </h2>
             </div>
             <p className="max-w-xl text-sm leading-6 text-slate-500">
-              검색, 설문, 상담, 주문 확인 같은 보조 기능을 한곳에 가볍게 모았습니다.
+              체크, 설문, 상담, 주문 확인처럼 자주 찾는 기능만 가볍게 모아두었습니다.
             </p>
           </div>
 
           <nav
-            aria-label="주요 서비스"
+            aria-label="주요 서비스 바로가기"
             className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
           >
             {items.map((item) => (
@@ -161,7 +171,9 @@ function HomeSearchHubSection() {
                 <h3 className="text-base font-bold text-slate-900 group-hover:text-[#3450e5]">
                   {item.title}
                 </h3>
-                <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  {item.description}
+                </p>
                 <span className="mt-3 inline-flex text-sm font-semibold text-[#4568F5]">
                   바로 가기
                 </span>
@@ -174,119 +186,93 @@ function HomeSearchHubSection() {
   );
 }
 
+function BottomSupportSection({
+  eyebrow,
+  title,
+  description,
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+  children: ReactNode;
+}) {
+  return (
+    <HomeSupportAccordion
+      eyebrow={eyebrow}
+      title={title}
+      description={description}
+    >
+      {children}
+    </HomeSupportAccordion>
+  );
+}
+
 function HomeTrustSection() {
   return (
-    <section className="w-full bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] py-10 sm:py-12">
-      <div className="mx-auto w-full max-w-5xl px-4 sm:px-6">
-        <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="rounded-[1.8rem] border border-slate-200 bg-white/90 p-6 shadow-[0_18px_45px_-42px_rgba(15,23,42,0.25)] sm:p-7">
-            <p className="text-xs font-semibold tracking-[0.18em] text-sky-700">
-              BASIC INFO
-            </p>
-            <h2 className="mt-2 text-xl font-black tracking-tight text-slate-900 sm:text-2xl">
-              필요한 분만 확인하면 되는 운영 정보입니다
-            </h2>
-            <p className="mt-3 text-sm leading-7 text-slate-600 sm:text-base">
-              메인 탐색을 방해하지 않도록 운영 주체와 문의 정보는 한곳에 간결하게 모았습니다.
-            </p>
-
-            <div className="mt-6 grid gap-3">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50/90 px-4 py-3 text-sm text-slate-700">
-                운영 사업자: {BUSINESS_LEGAL_NAME}
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50/90 px-4 py-3 text-sm text-slate-700">
-                문의: {BUSINESS_SUPPORT_PHONE} / {BUSINESS_SUPPORT_EMAIL}
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50/90 px-4 py-3 text-sm text-slate-700">
-                통신판매업신고: {BUSINESS_MAIL_ORDER_REPORT_NUMBER}
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50/90 px-4 py-3 text-sm text-slate-700">
-                주소: {BUSINESS_ADDRESS}
-              </div>
-            </div>
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link
-                href="/about"
-                className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-sky-300 hover:text-sky-700"
-              >
-                서비스 소개 보기
-              </Link>
-              <Link
-                href="/about/contact"
-                className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-sky-300 hover:text-sky-700"
-              >
-                문의/사업자 정보 보기
-              </Link>
-            </div>
+    <BottomSupportSection
+      eyebrow="BASIC INFO"
+      title="운영 정보와 문의처를 한곳에 모아두었어요"
+      description="회사 정보나 연락처가 필요하실 때 바로 확인하실 수 있도록 간단하게 정리해두었습니다."
+    >
+      <div className="space-y-3">
+        <div className="grid gap-3">
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+            운영 사업자: {BUSINESS_LEGAL_NAME}
           </div>
-
-          <div className="grid gap-4">
-            {trustHighlights.map((item) => (
-              <article
-                key={item.title}
-                className="rounded-[1.5rem] border border-slate-200 bg-white/90 p-5 shadow-[0_16px_40px_-40px_rgba(15,23,42,0.2)]"
-              >
-                <h3 className="text-lg font-bold text-slate-900">{item.title}</h3>
-                <p className="mt-2 text-sm leading-7 text-slate-600">
-                  {item.description}
-                </p>
-              </article>
-            ))}
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+            문의: {BUSINESS_SUPPORT_PHONE} / {BUSINESS_SUPPORT_EMAIL}
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+            통신판매업 신고: {BUSINESS_MAIL_ORDER_REPORT_NUMBER}
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+            주소: {BUSINESS_ADDRESS}
           </div>
         </div>
+
+        <div className="flex flex-wrap gap-2.5">
+          <Link
+            href="/about"
+            className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-sky-300 hover:text-sky-700"
+          >
+            서비스 소개 보기
+          </Link>
+          <Link
+            href="/about/contact"
+            className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-sky-300 hover:text-sky-700"
+          >
+            문의 / 사업자 정보 보기
+          </Link>
+        </div>
+
+        <div className="grid gap-3">
+          {trustHighlights.map((item) => (
+            <article
+              key={item.title}
+              className="rounded-[1.3rem] border border-slate-200 bg-white px-4 py-4 shadow-[0_12px_28px_-28px_rgba(15,23,42,0.22)]"
+            >
+              <h3 className="text-[15px] font-bold text-slate-900">{item.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                {item.description}
+              </p>
+            </article>
+          ))}
+        </div>
       </div>
-    </section>
+    </BottomSupportSection>
   );
 }
 
 function HomeFaqSection() {
   return (
-    <section className="w-full bg-white pb-14 pt-4 sm:pb-20">
-      <div className="mx-auto w-full max-w-5xl px-4 sm:px-6">
-        <div className="rounded-[1.9rem] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-6 shadow-[0_20px_55px_-45px_rgba(15,23,42,0.22)] sm:p-8">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold tracking-[0.18em] text-sky-700">FAQ</p>
-              <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
-                처음 보는 분들이 가장 많이 확인하는 내용
-              </h2>
-            </div>
-            <p className="max-w-xl text-sm leading-6 text-slate-500">
-              메인 구매 흐름 아래에 두고, 필요한 질문만 펼쳐서 볼 수 있게 정리했습니다.
-            </p>
-          </div>
-
-          <div className="mt-6 overflow-hidden rounded-[1.7rem] border border-slate-200 bg-white">
-            {faqItems.map((item, index) => (
-              <details
-                key={item.question}
-                className="group border-b border-slate-200 last:border-b-0"
-              >
-                <summary className="flex cursor-pointer list-none items-start justify-between gap-4 px-5 py-5 text-left marker:content-none sm:px-6">
-                  <div>
-                    <span className="text-xs font-semibold tracking-[0.14em] text-sky-700">
-                      Q{index + 1}
-                    </span>
-                    <h3 className="mt-1 text-lg font-bold text-slate-900">
-                      {item.question}
-                    </h3>
-                  </div>
-                  <span className="mt-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-500 transition group-open:rotate-45 group-open:border-sky-200 group-open:text-sky-700">
-                    +
-                  </span>
-                </summary>
-                <div className="px-5 pb-5 pt-0 sm:px-6">
-                  <p className="rounded-2xl bg-slate-50 px-4 py-4 text-sm leading-7 text-slate-600">
-                    {item.answer}
-                  </p>
-                </div>
-              </details>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
+    <BottomSupportSection
+      eyebrow="FAQ"
+      title="처음 이용하실 때 많이 물어보시는 내용을 모아두었어요"
+      description="메인 흐름을 먼저 보신 뒤, 궁금한 점만 빠르게 확인하실 수 있도록 정리했습니다."
+    >
+      <HomeFaqList items={faqItems} />
+    </BottomSupportSection>
   );
 }
 
@@ -307,6 +293,22 @@ async function SupplementRankingSection({
   const { rankingProducts } = await homeDataPromise;
   return (
     <SupplementRankingNav basePath="/" initialProducts={rankingProducts} />
+  );
+}
+
+async function HomeBottomAdaptiveSection({
+  homeDataPromise,
+}: {
+  homeDataPromise: Promise<HomePageData>;
+}) {
+  const { categories } = await homeDataPromise;
+  return (
+    <HomeAdaptiveSupportSectionClient
+      categories={categories.map((category) => ({
+        ...category,
+        name: category.name ?? "",
+      }))}
+    />
   );
 }
 
@@ -362,8 +364,14 @@ export default function HomePage() {
       <Suspense fallback={<CardSectionFallback />}>
         <SupplementRankingSection homeDataPromise={homeDataPromise} />
       </Suspense>
+      <Suspense fallback={null}>
+        <HomeColumnPreviewSection />
+      </Suspense>
       <SymptomImprovement />
       <HomeSearchHubSection />
+      <Suspense fallback={null}>
+        <HomeBottomAdaptiveSection homeDataPromise={homeDataPromise} />
+      </Suspense>
       <HomeTrustSection />
       <HomeFaqSection />
     </>

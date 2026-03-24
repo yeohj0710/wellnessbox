@@ -76,6 +76,24 @@ _이미지 출처: [Wikimedia Commons - Korean abalone porridge](https://commons
 - 의식이 흐리거나 두근거림, 호흡 이상이 심한 경우
 - 숙취가 아니라 금단처럼 손 떨림, 식은땀, 극심한 불안이 반복되는 경우
 
+## 첫 끼는 '해장 메뉴'보다 몸이 지금 무엇을 견디는지에 맞춰야 합니다
+
+### 숙취 다음 날 몸은 대개 세 가지에 시달립니다
+
+대부분의 숙취는 **탈수, 위장 자극, 수면 질 저하**가 한 번에 겹친 상태입니다. 그래서 첫 끼가 중요한 이유도 단순합니다. 배를 채우는 행위 자체보다, 물과 전해질을 보충하고 속을 덜 긁는 방향으로 들어가야 몸이 버팁니다. 이 상태에서 기름진 해장국이나 맵고 짠 음식이 맞는 사람도 있지만, 속이 예민한 사람에게는 오히려 역효과가 날 수 있습니다.
+
+### 공복 카페인은 해장이 아니라 각성에 가깝습니다
+
+숙취 때 커피가 당기는 건 너무 자연스럽습니다. 그런데 위가 예민하고 탈수가 있는 상태에 공복 카페인을 넣으면 두근거림, 속쓰림, 손 떨림이 더 크게 느껴질 수 있습니다. 커피를 꼭 마시고 싶다면 물과 부드러운 식사를 어느 정도 넣은 뒤 반 컵 수준으로 보는 편이 낫습니다.
+
+### '자극적인 해장 음식'이 맞는 사람과 안 맞는 사람을 구분하세요
+
+뜨겁고 얼큰한 국물이 풀리는 느낌을 주는 사람도 있습니다. 하지만 구토감이 남아 있거나 설사가 있는 사람은 맵고 기름진 국물보다 바나나, 토스트, 죽, 계란, 미음처럼 **단순하고 소화가 쉬운 음식**이 훨씬 낫습니다. 해장 성공률은 음식의 유명세보다 **내 위가 지금 감당 가능한가**에 달려 있습니다.
+
+### 반복되는 폭음 뒤 구토는 '해장 스킬'로 해결할 문제가 아닙니다
+
+한 번의 숙취는 누구에게나 올 수 있지만, 술을 마실 때마다 토하거나 다음 날 아무것도 못 먹을 정도라면 단순 해장법이 아니라 음주 패턴 자체를 봐야 합니다. 물, 음식, 속도, 양, 공복 여부를 매번 무시하는 패턴이라면 몸이 보내는 경고에 가깝습니다.
+
 ## 같이 읽으면 좋은 글
 
 - [술만 마시면 토하는 사람들, 그냥 주량 문제가 아닐 수 있습니다](/column/vomiting-after-drinking-not-just-tolerance)
@@ -84,7 +102,7 @@ _이미지 출처: [Wikimedia Commons - Korean abalone porridge](https://commons
 
 ## 참고 자료
 
+- [NIAAA - Hangovers](https://www.niaaa.nih.gov/publications/brochures-and-fact-sheets/hangovers)
 - [NIAAA - Understanding the Dangers of Alcohol Overdose](https://www.niaaa.nih.gov/publications/brochures-and-fact-sheets/understanding-dangers-of-alcohol-overdose)
-- [NIAAA - Alcohol Metabolism](https://www.niaaa.nih.gov/publications/alcohol-metabolism)
-- [MedlinePlus - Caffeine](https://medlineplus.gov/caffeine.html)
-- [NHS - Heartburn and acid reflux](https://www.nhs.uk/conditions/heartburn-and-acid-reflux/)
+- [NIAAA - Harmful Interactions: Mixing Alcohol With Medicines](https://www.niaaa.nih.gov/publications/brochures-and-fact-sheets/harmful-interactions-mixing-alcohol-with-medicines)
+

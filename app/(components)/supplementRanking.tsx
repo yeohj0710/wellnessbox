@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import CatalogSectionEmptyState from "./catalogSectionEmptyState";
 import Skeleton from "./skeleton";
 import { sortByImportanceDesc } from "@/lib/utils";
 import { fetchJsonWithTimeout } from "@/lib/client/fetch-utils";
@@ -96,6 +97,8 @@ export default function SupplementRanking({
 
   useEffect(() => clearIntentTimer, []);
 
+  const hasVisibleProducts = products.length > 0;
+
   return (
     <section className="w-full max-w-[640px] mx-auto mt-8">
       <div className="px-4">
@@ -106,12 +109,17 @@ export default function SupplementRanking({
         </h1>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 p-3 sm:p-4">
-        {isLoading
-          ? Array(6)
-              .fill(0)
-              .map((_, i) => <Skeleton key={i} />)
-          : products.map((product, index) => (
+      {isLoading ? (
+        <div className="grid grid-cols-2 gap-3 p-3 sm:grid-cols-3 sm:gap-4 sm:p-4">
+          {Array(6)
+            .fill(0)
+            .map((_, i) => (
+              <Skeleton key={i} />
+            ))}
+        </div>
+      ) : hasVisibleProducts ? (
+        <div className="grid grid-cols-2 gap-3 p-3 sm:grid-cols-3 sm:gap-4 sm:p-4">
+          {products.map((product, index) => (
               <button
                 key={product.id}
                 onPointerEnter={() => scheduleProductIntent(product.id)}
@@ -171,7 +179,14 @@ export default function SupplementRanking({
                 <div className="pointer-events-none absolute inset-x-0 -bottom-6 h-12 bg-gradient-to-t from-[#6C4DFF]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               </button>
             ))}
-      </div>
+        </div>
+      ) : (
+        <CatalogSectionEmptyState
+          badge="STORE NOTICE"
+          title="지금은 인기 영양제 판매를 진행하지 않고 있어요"
+          description="바로 구매하실 수 있는 인기 상품 구성은 잠시 쉬어두고 있어요. 판매가 다시 열리기 전까지는 빠른 검사와 추천 흐름부터 편하게 둘러보실 수 있어요."
+        />
+      )}
     </section>
   );
 }

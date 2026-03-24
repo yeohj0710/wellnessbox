@@ -83,6 +83,24 @@ _이미지 출처: [Wikimedia Commons - Container of Protein Powder](https://com
 - 체중 증가가 필요한 게 아닌데 매스게이너 성격의 제품을 고른 경우
 - 품질 검증 정보가 전혀 없고 판매처만 화려한 경우
 
+## 좋은 단백질 쉐이크는 '운동하는 느낌'이 아니라 라벨에서 갈립니다
+
+### 1스쿱당 단백질과 1회 섭취량을 먼저 분리해서 보세요
+
+전면에 30 g, 40 g처럼 크게 써 있어도 그 숫자가 단백질인지, 제품 전체 중량인지, 두 스쿱 기준인지 헷갈리는 경우가 많습니다. 비교할 때는 광고 문구보다 **1회 제공량당 단백질이 실제로 몇 g인지**를 먼저 봐야 합니다. 그래야 같은 가격대 제품끼리 제대로 비교가 됩니다.
+
+### 내 소화력과 식습관에 맞는 원료가 더 중요합니다
+
+유청단백이 잘 맞는 사람도 있지만, 유당 민감성이 있으면 복부팽만과 설사를 만들 수 있습니다. 식물성 단백질은 알레르기나 기호 면에 장점이 있지만, 단일 원료보단 블렌드가 더 균형이 좋을 수 있습니다. 결국 '최고의 단백질'보다 **내가 계속 먹을 수 있는 형태**가 더 중요합니다.
+
+### 단백질 함량 뒤에 숨어 있는 당·칼로리도 봐야 합니다
+
+특히 벌크업용, 식사대용, 카페형 음료는 단백질 못지않게 당과 지방이 붙어 있는 경우가 많습니다. 운동 후 한 잔이라고 생각했는데 실제론 디저트에 가까운 제품일 수도 있습니다. 단백질을 보충하려는 건지, 열량을 크게 올리려는 건지 목적부터 분명해야 합니다.
+
+### 운동선수나 도핑 이슈가 있는 사람은 검증 표시가 중요합니다
+
+NSF Certified for Sport 같은 제3자 인증은 일반 사용자에게도 의미가 있지만, 선수나 대회 준비 중인 사람에겐 특히 중요합니다. 단백질 쉐이크는 식품처럼 보여도, 제조 품질 차이가 생각보다 큽니다.
+
 ## 같이 읽으면 좋은 글
 
 - [운동하려고 먹은 보충제가 혈당을 더 올릴 수도 있습니다](/column/workout-supplements-can-spike-blood-sugar)
@@ -91,8 +109,7 @@ _이미지 출처: [Wikimedia Commons - Container of Protein Powder](https://com
 
 ## 참고 자료
 
-- [Harvard Nutrition Source - Workout Supplements](https://nutritionsource.hsph.harvard.edu/workout-supplements/)
-- [Consumer Reports - Protein Powders and Shakes Contain High Levels of Lead](https://www.consumerreports.org/lead/protein-powders-and-shakes-contain-high-levels-of-lead-a4206364640/)
-- [Risk assessment - Heavy metal ingestion from protein powders](https://pmc.ncbi.nlm.nih.gov/articles/PMC7509468/)
-- [NSF - Selecting Dietary and Nutritional Supplements](https://www.nsf.org/consumer-resources/articles/selecting-dietary-nutritional-supplements)
-- [NSF - Certified for Sport Program](https://www.nsf.org/consumer-resources/articles/certified-for-sport-program)
+- [JISSN - International Society of Sports Nutrition Position Stand: protein and exercise](https://jissn.biomedcentral.com/articles/10.1186/s12970-017-0177-8)
+- [ODS - Dietary Supplements for Exercise and Athletic Performance](https://ods.od.nih.gov/factsheets/ExerciseAndAthleticPerformance-HealthProfessional/)
+- [FDA - FDA 101: Dietary Supplements](https://www.fda.gov/consumers/consumer-updates/fda-101-dietary-supplements)
+

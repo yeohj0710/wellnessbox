@@ -76,6 +76,24 @@ _이미지 출처: [Wikimedia Commons - Sleeping woman](https://commons.wikimedi
 - 복부비만, 수면 부족, 음주, 활동 부족이 겹친 상태에서 컨디션 저하가 심한 경우
 - 염증을 핑계로 극단적인 식단이나 보충제를 과하게 추가하는 경우
 
+## 염증을 제대로 이해하려면 '붓고 아픈 염증'과 '조용한 염증'을 나눠 봐야 합니다
+
+### 급성 염증은 나쁜 것만이 아닙니다
+
+감염이나 상처가 생겼을 때 나타나는 염증 반응은 몸이 회복을 시작하는 과정이기도 합니다. 열이 나고 붓고 아픈 모든 반응을 무조건 없애야 하는 적으로만 보면 염증을 너무 단순하게 보게 됩니다. 중요한 건 **언제 필요한 반응이고, 언제 오래 끌면서 문제를 만드는가**입니다.
+
+### 만성 염증은 대개 한 가지 음식으로 설명되지 않습니다
+
+사람들은 염증을 마치 설탕 하나, 밀가루 하나, 씨앗오일 하나로 설명하고 싶어 합니다. 하지만 실제 생활에서는 수면 부족, 흡연, 복부 비만, 치주질환, 활동량 부족, 만성 스트레스가 같이 얽혀 있는 경우가 더 많습니다. 그래서 '항염 식품'을 추가하는 것보다 **염증을 계속 밀어 올리는 생활 요소**를 줄이는 편이 더 중요합니다.
+
+### 검사 수치 하나로 몸 상태를 전부 해석하면 안 됩니다
+
+CRP 같은 지표는 유용하지만, 하나의 숫자가 곧 전체 건강 상태는 아닙니다. 수치가 높아도 원인이 감염인지, 비만·수면 문제인지, 만성질환 때문인지 맥락을 봐야 하고, 수치가 정상이더라도 생활이 완벽하다는 뜻은 아닙니다. 염증은 단일 검사보다 **패턴과 배경**을 함께 읽어야 합니다.
+
+### '항염'은 뭔가를 더 먹는 기술보다 덜 망가뜨리는 습관에 가깝습니다
+
+규칙 수면, 활동량 확보, 흡연 중단, 체중 관리, 구강건강, 과도한 음주 줄이기가 기본입니다. 여기에 식사는 채소와 과일, 통곡물, 생선, 콩류 중심으로 정리하는 편이 실전적입니다. 화려한 가루 하나보다 덜 화려한 생활수정이 훨씬 오래 갑니다.
+
 ## 같이 읽으면 좋은 글
 
 - [인슐린저항성은 탄수화물만 줄인다고 해결되지 않습니다](/column/insulin-resistance-is-not-just-carbs)
@@ -84,7 +102,7 @@ _이미지 출처: [Wikimedia Commons - Sleeping woman](https://commons.wikimedi
 
 ## 참고 자료
 
-- [UCLA Health - Acute vs. chronic inflammation](https://www.uclahealth.org/news/article/acute-vs-chronic-inflammation)
-- [MedlinePlus - Acute vs. chronic conditions](https://medlineplus.gov/ency/imagepages/18126.htm)
+- [NHLBI - Inflammation](https://www.nhlbi.nih.gov/health/inflammation)
+- [NIDDK - Healthy Living with Diabetes](https://www.niddk.nih.gov/health-information/diabetes/overview/healthy-living-with-diabetes)
 - [Review - Effects of Diet on Sleep Quality](https://pmc.ncbi.nlm.nih.gov/articles/PMC5015038/)
-- [NIDDK Diabetes in America - Impact of Sleep and Circadian Disturbances on Glucose Metabolism](https://www.niddk.nih.gov/-/media/Files/Strategic-Plans/Diabetes-in-America-3rd-Edition/DIA_Ch25.pdf)
+

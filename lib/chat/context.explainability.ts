@@ -37,7 +37,7 @@ function buildConfidence(input: ExplainabilityInput) {
   if (sourceCount >= 3) {
     return {
       label: "몇 가지 기록을 함께 봤어요",
-      note: "한 가지 답변만 본 건 아니고, 최근에 남아 있는 기록을 같이 참고했어요.",
+      note: "",
     };
   }
 

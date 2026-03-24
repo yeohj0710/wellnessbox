@@ -15,7 +15,7 @@ const AI_ANALYSIS_SECTION_CONFIG: LandingFeatureSectionConfig = {
   title: "건강 데이터",
   accent: "분석",
   description:
-    "건강검진 결과와 복용 중인 약 정보를 입력하면 AI가 필요한 영양 축을 먼저 정리해 드립니다.",
+    "건강검진 결과·복용중인 약·증상 등을 입력하면 AI가 필요한 영양소를 추천합니다.",
   imageSrc: "/landingPage2/ai-analysis-hero.png",
   imageAlt: "AI 건강 데이터 분석",
   sectionClassName: "bg-gradient-to-b from-white via-[#F3F6FF] to-white",

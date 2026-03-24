@@ -83,6 +83,24 @@ _이미지 출처: [Wikimedia Commons - Calendar](https://commons.wikimedia.org/
 - 초기 부작용이 아니라 일상 기능을 방해할 정도로 불편감이 지속되는 경우
 - 피임약 외 다른 약을 같이 먹는데 복용 원칙을 전혀 확인하지 않은 경우
 
+## 피임약은 '먹기 시작했다'보다 '어떻게 이어 가느냐'가 더 중요합니다
+
+### 복합제와 미니필은 규칙성이 다르게 중요할 수 있습니다
+
+사람들이 자주 놓치는 게 종류 차이입니다. 에스트로겐+프로게스틴이 함께 들어 있는 복합 피임약과, 프로게스틴만 들어 있는 미니필은 **늦게 먹었을 때의 허용 범위**가 다를 수 있습니다. 그래서 친구가 “나 한두 시간 늦어도 괜찮더라”라고 말해도, 같은 규칙이 그대로 적용되지 않을 수 있습니다. 내 제품 설명서나 약국 상담이 필요한 이유가 여기에 있습니다.
+
+### 구토·설사·약물 상호작용은 생각보다 흔한 변수입니다
+
+피임약을 제시간에 먹어도 흡수가 흔들릴 수 있습니다. 복용 직후 구토를 하거나 심한 설사가 이어지면 복용 실패처럼 취급해야 하는 상황이 생길 수 있고, 일부 약물은 피임 효과를 떨어뜨릴 수 있습니다. 여행, 장염, 다이어트약, 특정 항경련제나 리팜핀 계열 약을 함께 쓰는 시기엔 평소보다 더 보수적으로 생각하는 편이 안전합니다.
+
+### 처음 몇 팩은 몸이 적응하는 기간으로 보는 편이 낫습니다
+
+초기에는 메스꺼움, 유방 압통, 소량 출혈, 패턴 변화가 생길 수 있습니다. 이때 바로 “나랑 안 맞는다”로 결론내리기보다, 어느 정도가 흔한 초기 적응인지, 어느 증상이 위험 신호인지 구분해 두는 게 중요합니다. 다만 **심한 흉통, 호흡곤란, 한쪽 다리 붓기, 갑작스러운 심한 두통이나 시야 이상**은 기다리지 말고 바로 확인해야 합니다.
+
+### 피임약의 성공률은 결국 생활패턴과 붙어 있습니다
+
+매일 같은 시간 복용이 어려운 사람에게는 pill 자체가 최선이 아닐 수도 있습니다. 야근, 교대근무, 잦은 출장 때문에 자꾸 빼먹는다면 “의지가 약해서”가 아니라 **방법이 생활과 안 맞는 것**일 수 있습니다. 그럴 땐 질링, 패치, 장기지속형 피임법까지 함께 검토하는 게 현실적입니다.
+
 ## 같이 읽으면 좋은 글
 
 - [약은 약만 잘 먹는다고 끝이 아닙니다, 음식이 결과를 바꿉니다](/column/food-can-change-medication-results)
@@ -91,7 +109,9 @@ _이미지 출처: [Wikimedia Commons - Calendar](https://commons.wikimedia.org/
 
 ## 참고 자료
 
+- [ACOG - Combined Hormonal Birth Control: Pill, Patch, and Ring](https://www.acog.org/womens-health/faqs/combined-hormonal-birth-control-pill-patch-ring)
+- [ACOG - Progestin-Only Hormonal Birth Control: Pill and Injection](https://www.acog.org/womens-health/faqs/progestin-only-hormonal-birth-control-pill-and-injection)
+- [ACOG - Emergency Contraception](https://www.acog.org/womens-health/faqs/emergency-contraception)
 - [NHS - Combined pill](https://www.nhs.uk/contraception/methods-of-contraception/combined-pill/)
-- [NHS - What to do if you miss a combined pill](https://www.nhs.uk/contraception/methods-of-contraception/combined-pill/missed-or-extra-pill/)
-- [NHS - Side effects and risks of the combined pill](https://www.nhs.uk/contraception/methods-of-contraception/combined-pill/side-effects/)
-- [FDA - Drug Interactions: What You Should Know](https://www.fda.gov/drugs/resources-drugs/drug-interactions-what-you-should-know)
+- [CDC - U.S. Selected Practice Recommendations for Contraceptive Use, 2024](https://www.cdc.gov/mmwr/volumes/73/rr/rr7303a1.htm)
+
