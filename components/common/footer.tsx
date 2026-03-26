@@ -4,7 +4,8 @@ import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useMemo, useState } from "react";
+import SmoothAccordion from "@/components/common/SmoothAccordion.client";
 import { navigateWithFallback } from "@/lib/client/navigation-fallback";
 import {
   BUSINESS_ADDRESS,
@@ -52,18 +53,6 @@ function FooterInner() {
   const [showBusinessInfo, setShowBusinessInfo] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-
-  useEffect(() => {
-    if (!showBusinessInfo) return;
-    const timer = window.setTimeout(() => {
-      window.scrollTo({
-        top: document.body.scrollHeight,
-        behavior: "smooth",
-      });
-    }, 220);
-
-    return () => window.clearTimeout(timer);
-  }, [showBusinessInfo]);
 
   const quietLinkClass =
     "text-sm text-slate-300 transition-colors duration-200 hover:text-white";
@@ -170,36 +159,33 @@ function FooterInner() {
         </div>
 
         <section className="mt-8 border-t border-white/8 pt-6">
-          <button
-            type="button"
-            onClick={() => setShowBusinessInfo((prev) => !prev)}
-            className="group flex w-full items-start justify-between gap-6 text-left"
-            aria-expanded={showBusinessInfo}
-            aria-controls="footer-business-info"
+          <SmoothAccordion
+            open={showBusinessInfo}
+            onToggle={() => setShowBusinessInfo((prev) => !prev)}
+            className="overflow-hidden rounded-[1.35rem] border border-white/10 bg-white/[0.02] shadow-[0_18px_40px_-30px_rgba(15,23,42,0.6)] backdrop-blur-sm"
+            buttonClassName="group px-4 py-4 sm:px-5"
+            panelClassName="border-t border-white/8"
+            panelInnerClassName="px-4 pb-4 pt-4 sm:px-5 sm:pb-5"
+            summary={
+              <>
+                <p className="text-base font-semibold text-white">사업자 정보</p>
+                <p className="mt-1 text-sm leading-6 text-slate-400">
+                  운영 주체와 등록 정보, 연락처를 한 번에 확인하실 수 있어요.
+                </p>
+              </>
+            }
+            indicator={
+              <span className="inline-flex min-w-[5.5rem] items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm font-medium text-slate-200 transition-[border-color,background-color,color] duration-300 group-hover:border-sky-300/30 group-hover:bg-sky-300/10 group-hover:text-white">
+                <span>{showBusinessInfo ? "접기" : "열기"}</span>
+                <ChevronDownIcon
+                  className={`h-4 w-4 transition-transform duration-300 ${
+                    showBusinessInfo ? "rotate-180" : ""
+                  }`}
+                />
+              </span>
+            }
           >
-            <div className="min-w-0 flex-1">
-              <p className="text-base font-semibold text-white">사업자 정보</p>
-            </div>
-
-            <span className="inline-flex shrink-0 items-center gap-2 pt-0.5 text-sm font-medium text-slate-300 transition-colors duration-200 group-hover:text-white">
-              <span>{showBusinessInfo ? "접기" : "열기"}</span>
-              <ChevronDownIcon
-                className={`h-4 w-4 transition-transform duration-300 ${
-                  showBusinessInfo ? "rotate-180" : ""
-                }`}
-              />
-            </span>
-          </button>
-
-          <div
-            id="footer-business-info"
-            className="overflow-hidden transition-all duration-300 ease-out"
-            style={{
-              maxHeight: showBusinessInfo ? "560px" : "0px",
-              opacity: showBusinessInfo ? 1 : 0,
-            }}
-          >
-            <div className="mt-5 grid gap-x-8 gap-y-4 pb-1 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-x-8 gap-y-4 pb-1 sm:grid-cols-2 lg:grid-cols-3">
               {businessInfoRows.map((row, index) => (
                 <div
                   key={row.label}
@@ -214,7 +200,7 @@ function FooterInner() {
                 </div>
               ))}
             </div>
-          </div>
+          </SmoothAccordion>
         </section>
       </div>
     </footer>

@@ -20,6 +20,8 @@ const HEALTH_TRACKING_SECTION_CONFIG: LandingFeatureSectionConfig = {
   imageSrc: "/landingPage2/health-tracking-hero.png",
   imageAlt: "지속 케어 및 피드백",
   reverse: true,
+  imageColumnClassName: "max-w-[35rem]",
+  imageFrameClassName: "aspect-[596/637]",
   sectionClassName: "bg-gradient-to-b from-[#F6F3FF] via-[#F6F3FF]/50 to-[#F3F6FF]",
   eyebrowClassName: "text-[#4B63E6]",
   accentClassName: "text-[#3B5BFF]",

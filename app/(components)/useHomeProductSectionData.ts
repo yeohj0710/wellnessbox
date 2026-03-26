@@ -44,6 +44,18 @@ type UseHomeProductSectionDataResult = {
   fetchData: (reason?: "initial" | "recovery") => Promise<void>;
 };
 
+type HomeCatalogFetchResult =
+  | {
+      status: "live";
+      fetchedCategories: HomeCategory[];
+      fetchedProducts: HomeProduct[];
+    }
+  | {
+      status: "paused";
+      fetchedCategories: [];
+      fetchedProducts: [];
+    };
+
 function isHomeCatalogUnavailableError(error: unknown) {
   if (!(error instanceof Error)) return false;
 
@@ -57,6 +69,12 @@ function isHomeCatalogUnavailableError(error: unknown) {
     message.includes("database server is running") ||
     message.includes("error querying the database")
   );
+}
+
+function isHomeCatalogPausedError(error: unknown) {
+  if (!(error instanceof Error)) return false;
+  const message = error.message.toLowerCase();
+  return message.includes("compute time quota");
 }
 
 export function useHomeProductSectionData({
@@ -128,7 +146,7 @@ export function useHomeProductSectionData({
           : readCachedHomeData(HOME_STALE_CACHE_TTL_MS);
 
       try {
-        const result = await runWithRetry(
+        const result = await runWithRetry<HomeCatalogFetchResult>(
           async () => {
             const { response, payload } =
               await fetchJsonWithTimeout<HomeDataResponse>(
@@ -147,6 +165,19 @@ export function useHomeProductSectionData({
             const fetchedProducts = Array.isArray(payload?.products)
               ? payload.products
               : [];
+            const catalogState = payload?.catalogState;
+            const errorCode = payload?.errorCode;
+
+            if (
+              catalogState === "paused" ||
+              errorCode === "db_quota_exceeded"
+            ) {
+              return {
+                status: "paused",
+                fetchedCategories: [],
+                fetchedProducts: [],
+              };
+            }
 
             if (!response.ok) {
               throw new Error(`home-data status ${response.status}`);
@@ -155,7 +186,11 @@ export function useHomeProductSectionData({
               throw new Error("home-data empty products");
             }
 
-            return { fetchedCategories, fetchedProducts };
+            return {
+              status: "live",
+              fetchedCategories,
+              fetchedProducts,
+            };
           },
           {
             retries: HOME_FETCH_RETRIES,
@@ -171,10 +206,20 @@ export function useHomeProductSectionData({
         );
 
         if (requestSeq !== homeFetchSeqRef.current) return;
+        if (result.status === "paused") {
+          setCategories([]);
+          setAllProducts([]);
+          setProducts([]);
+          setIsRecovering(false);
+          setIsCatalogPaused(true);
+          setError(HOME_PRODUCT_COPY.salesPausedTitle);
+          return;
+        }
         applyHomeData(result.fetchedCategories, result.fetchedProducts);
         setIsRecovering(false);
       } catch (requestError) {
         if (requestSeq !== homeFetchSeqRef.current) return;
+        const isCatalogPausedError = isHomeCatalogPausedError(requestError);
         const isCatalogUnavailable = isHomeCatalogUnavailableError(requestError);
 
         if (isCatalogUnavailable) {
@@ -197,7 +242,8 @@ export function useHomeProductSectionData({
           return;
         }
 
-        if (isCatalogUnavailable) {
+        if (isCatalogPausedError) {
+          setCategories([]);
           setAllProducts([]);
           setProducts([]);
           setIsRecovering(false);

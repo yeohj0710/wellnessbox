@@ -267,3 +267,12 @@ export function saveDockTriggerOffset(
     // ignore storage failures
   }
 }
+
+export function clearDockTriggerOffset() {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(DOCK_TRIGGER_OFFSET_STORAGE_KEY);
+  } catch {
+    // ignore storage failures
+  }
+}

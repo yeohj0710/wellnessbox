@@ -23,8 +23,7 @@ import {
   useDesktopChatDockLauncher,
 } from "./useDesktopChatDockLauncher";
 import {
-  loadDockTriggerOffset,
-  saveDockTriggerOffset,
+  clearDockTriggerOffset,
   type DockTriggerOffset,
 } from "./DesktopChatDock.layout.storage";
 
@@ -159,26 +158,23 @@ export default function DesktopChatDock() {
     routeKey,
     hasNudgePrompts: nudgePrompts.length > 0,
   });
-  const [triggerOffset, setTriggerOffset] = useState<DockTriggerOffset>(() =>
-    loadDockTriggerOffset() ?? { x: 0, y: 0 }
-  );
+  const [triggerOffset, setTriggerOffset] = useState<DockTriggerOffset>({
+    x: 0,
+    y: 0,
+  });
   const [isTriggerDragging, setIsTriggerDragging] = useState(false);
   const [showTriggerHint, setShowTriggerHint] = useState(false);
   const triggerOffsetRef = useRef(triggerOffset);
   const isMobileViewportRef = useRef(isMobileViewport);
   const triggerBottomOffsetPxRef = useRef(triggerBottomOffsetPx);
-  const triggerViewportRef = useRef<"desktop" | "mobile">(
-    isMobileViewport ? "mobile" : "desktop"
-  );
 
   useEffect(() => {
     isMobileViewportRef.current = isMobileViewport;
     triggerBottomOffsetPxRef.current = triggerBottomOffsetPx;
-    triggerViewportRef.current = isMobileViewport ? "mobile" : "desktop";
   }, [isMobileViewport, triggerBottomOffsetPx]);
 
   const clampAndStoreTriggerOffset = useCallback(
-    (nextOffset: DockTriggerOffset, persist = false) => {
+    (nextOffset: DockTriggerOffset) => {
       if (typeof window === "undefined") {
         if (!areDockTriggerOffsetsEqual(triggerOffsetRef.current, nextOffset)) {
           triggerOffsetRef.current = nextOffset;
@@ -216,12 +212,6 @@ export default function DesktopChatDock() {
         triggerOffsetRef.current = clamped;
         setTriggerOffset(clamped);
       }
-      if (persist) {
-        saveDockTriggerOffset(
-          triggerOffsetRef.current,
-          triggerViewportRef.current
-        );
-      }
       return triggerOffsetRef.current;
     },
     []
@@ -249,17 +239,20 @@ export default function DesktopChatDock() {
   }, []);
 
   const resetTriggerOffsetToDefault = useCallback(
-    (persist = true) => {
-      clampAndStoreTriggerOffset({ x: 0, y: 0 }, persist);
+    () => {
+      clampAndStoreTriggerOffset({ x: 0, y: 0 });
     },
     [clampAndStoreTriggerOffset]
   );
 
   useEffect(() => {
-    const savedOffset =
-      loadDockTriggerOffset(triggerViewportRef.current) ?? { x: 0, y: 0 };
-    clampAndStoreTriggerOffset(savedOffset);
-  }, [clampAndStoreTriggerOffset, isMobileViewport]);
+    clearDockTriggerOffset();
+    resetTriggerOffsetToDefault();
+  }, [resetTriggerOffsetToDefault]);
+
+  useEffect(() => {
+    resetTriggerOffsetToDefault();
+  }, [isMobileViewport, resetTriggerOffsetToDefault]);
 
   useEffect(() => {
     clampAndStoreTriggerOffset(triggerOffsetRef.current);
@@ -294,7 +287,7 @@ export default function DesktopChatDock() {
   );
 
   const finishTriggerDrag = useCallback(
-    (pointerId: number | null, cancel = false) => {
+    (pointerId: number | null) => {
       const state = dragStateRef.current;
       if (!state) return;
       if (pointerId !== null && state.pointerId !== pointerId) return;
@@ -302,12 +295,6 @@ export default function DesktopChatDock() {
       if (state.dragging) {
         suppressOpenRef.current = true;
         hideTriggerHint();
-        if (!cancel) {
-          saveDockTriggerOffset(
-            triggerOffsetRef.current,
-            triggerViewportRef.current
-          );
-        }
       }
 
       dragStateRef.current = null;
@@ -350,7 +337,7 @@ export default function DesktopChatDock() {
     };
 
     const handlePointerCancel = (event: PointerEvent) => {
-      finishTriggerDrag(event.pointerId, true);
+      finishTriggerDrag(event.pointerId);
     };
 
     window.addEventListener("pointermove", handlePointerMove);
@@ -366,16 +353,21 @@ export default function DesktopChatDock() {
 
   useEffect(() => {
     if (!isOpen && !pendingOpen) return;
-    finishTriggerDrag(null, true);
+    finishTriggerDrag(null);
   }, [finishTriggerDrag, isOpen, pendingOpen]);
 
   useEffect(() => {
     if (previousIsOpenRef.current && !isOpen) {
-      resetTriggerOffsetToDefault(true);
+      resetTriggerOffsetToDefault();
       hideTriggerHint();
     }
     previousIsOpenRef.current = isOpen;
   }, [hideTriggerHint, isOpen, resetTriggerOffsetToDefault]);
+
+  useEffect(() => {
+    if (isOpen || pendingOpen) return;
+    resetTriggerOffsetToDefault();
+  }, [pathname, isOpen, pendingOpen, resetTriggerOffsetToDefault]);
 
   useEffect(() => {
     return () => {

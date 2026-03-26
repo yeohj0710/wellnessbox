@@ -13,6 +13,17 @@ export type HomePageData = {
   rankingProducts: HomeProduct[];
 };
 
+export type HomeDataRouteCatalogState = "live" | "paused" | "unavailable";
+export type HomeDataRouteErrorCode =
+  | "db_quota_exceeded"
+  | "temporary_unavailable";
+
+type HomePageDataLoadResult = {
+  data: HomePageData;
+  catalogState: HomeDataRouteCatalogState;
+  errorCode: HomeDataRouteErrorCode | null;
+};
+
 const EMPTY_HOME_PAGE_DATA: HomePageData = {
   categories: [],
   products: [],
@@ -78,6 +89,14 @@ function normalizeErrorMessage(error: unknown) {
   return "unknown";
 }
 
+function isHomeDataQuotaExceededError(error: unknown) {
+  const message = normalizeErrorMessage(error).toLowerCase();
+  return (
+    message.includes("compute time quota") ||
+    message.includes("exceeded the compute time quota")
+  );
+}
+
 function shouldUseEmptyHomeDataFallback(error: unknown) {
   const message = normalizeErrorMessage(error).toLowerCase();
   return (
@@ -123,6 +142,26 @@ const readHomePageData = unstable_cache(
 );
 
 export async function getHomePageData(): Promise<HomePageData> {
+  const result = await getHomePageDataLoadResult();
+  return result.data;
+}
+
+export async function getHomePageDataRouteSnapshot(): Promise<{
+  categories: HomeCategory[];
+  products: HomeProduct[];
+  catalogState: HomeDataRouteCatalogState;
+  errorCode?: HomeDataRouteErrorCode;
+}> {
+  const result = await getHomePageDataLoadResult();
+  return {
+    categories: result.data.categories,
+    products: result.data.products,
+    catalogState: result.catalogState,
+    ...(result.errorCode ? { errorCode: result.errorCode } : {}),
+  };
+}
+
+async function getHomePageDataLoadResult(): Promise<HomePageDataLoadResult> {
   return measureServerTiming("home:data:total", async () => {
     let lastError: unknown;
 
@@ -130,7 +169,11 @@ export async function getHomePageData(): Promise<HomePageData> {
       try {
         const data = await withTimeout(readHomePageData, HOME_DATA_TIMEOUT_MS);
         lastSuccessfulHomeData = data;
-        return data;
+        return {
+          data,
+          catalogState: "live",
+          errorCode: null,
+        };
       } catch (error) {
         lastError = error;
         if (attempt >= HOME_DATA_RETRY_COUNT) break;
@@ -145,14 +188,33 @@ export async function getHomePageData(): Promise<HomePageData> {
       console.warn("[perf] home:data fallback: using last snapshot", {
         reason: normalizeErrorMessage(lastError),
       });
-      return lastSuccessfulHomeData;
+      return {
+        data: lastSuccessfulHomeData,
+        catalogState: "live",
+        errorCode: null,
+      };
     }
 
     if (shouldUseEmptyHomeDataFallback(lastError)) {
+      if (isHomeDataQuotaExceededError(lastError)) {
+        console.warn("[perf] home:data fallback: catalog paused by db quota", {
+          reason: normalizeErrorMessage(lastError),
+        });
+        return {
+          data: EMPTY_HOME_PAGE_DATA,
+          catalogState: "paused",
+          errorCode: "db_quota_exceeded",
+        };
+      }
+
       console.warn("[perf] home:data fallback: using empty snapshot", {
         reason: normalizeErrorMessage(lastError),
       });
-      return EMPTY_HOME_PAGE_DATA;
+      return {
+        data: EMPTY_HOME_PAGE_DATA,
+        catalogState: "unavailable",
+        errorCode: "temporary_unavailable",
+      };
     }
 
     throw lastError instanceof Error

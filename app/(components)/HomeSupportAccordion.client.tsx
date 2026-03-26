@@ -10,6 +10,7 @@ type HomeSupportAccordionProps = {
   description: string;
   children: ReactNode;
   defaultOpen?: boolean;
+  sectionClassName?: string;
 };
 
 export default function HomeSupportAccordion({
@@ -18,11 +19,14 @@ export default function HomeSupportAccordion({
   description,
   children,
   defaultOpen = false,
+  sectionClassName = "",
 }: HomeSupportAccordionProps) {
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <section className="mx-auto mt-6 w-full max-w-4xl px-4 sm:mt-8 sm:px-6">
+    <section
+      className={`mx-auto mt-6 w-full max-w-4xl px-4 sm:mt-8 sm:px-6 ${sectionClassName}`}
+    >
       <SmoothAccordion
         open={open}
         onToggle={() => setOpen((prev) => !prev)}

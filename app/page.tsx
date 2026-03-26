@@ -92,6 +92,49 @@ function CardSectionFallback() {
   );
 }
 
+function PopularIngredientsSectionFallback() {
+  return (
+    <section className="mx-auto mt-8 w-full max-w-[640px]">
+      <div className="px-4">
+        <h1 className="text-xl font-extrabold tracking-tight">
+          <span className="bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] bg-clip-text text-transparent">
+            인기 성분
+          </span>
+        </h1>
+        <p className="mt-3 text-sm leading-6 text-slate-500">
+          많이 찾는 성분 구성을 차분하게 불러오고 있어요.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 p-3 sm:grid-cols-3 sm:gap-4 sm:p-4">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div
+            key={index}
+            className="overflow-hidden rounded-[1.6rem] border border-[#E3EAFE] bg-white/90 shadow-[0_18px_40px_-34px_rgba(67,103,230,0.25)]"
+          >
+            <div className="relative aspect-[4/3] overflow-hidden bg-[radial-gradient(circle_at_top,rgba(120,150,255,0.16),transparent_55%),linear-gradient(180deg,#f9fbff_0%,#eef3ff_100%)]">
+              <div className="absolute left-3 top-3 rounded-full bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] px-2.5 py-1 text-[11px] font-bold text-white shadow-[0_10px_24px_-12px_rgba(69,104,245,0.8)]">
+                #{index + 1}
+              </div>
+              <div className="absolute right-4 top-4 h-11 w-11 animate-pulse rounded-2xl bg-white/80 ring-1 ring-white/70" />
+              <div className="absolute left-4 top-[4.6rem] h-3 w-20 animate-pulse rounded-full bg-white/75" />
+              <div className="absolute left-4 bottom-5 h-6 w-28 animate-pulse rounded-full bg-white/70" />
+            </div>
+
+            <div className="px-4 pb-4 pt-3">
+              <div className="h-5 w-24 animate-pulse rounded-full bg-[#E9EEFF]" />
+              <div className="mt-3 flex items-center gap-2">
+                <div className="h-2 w-2 animate-pulse rounded-full bg-[#96A7FF]" />
+                <div className="h-3 w-20 animate-pulse rounded-full bg-[#EEF2FF]" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function HomeProductsFallback() {
   return (
     <div className="mx-auto mb-4 mt-2 flex w-full max-w-[640px] items-center justify-center bg-white p-6">
@@ -191,17 +234,20 @@ function BottomSupportSection({
   title,
   description,
   children,
+  sectionClassName,
 }: {
   eyebrow: string;
   title: string;
   description: string;
   children: ReactNode;
+  sectionClassName?: string;
 }) {
   return (
     <HomeSupportAccordion
       eyebrow={eyebrow}
       title={title}
       description={description}
+      sectionClassName={sectionClassName}
     >
       {children}
     </HomeSupportAccordion>
@@ -270,6 +316,7 @@ function HomeFaqSection() {
       eyebrow="FAQ"
       title="처음 이용하실 때 많이 물어보시는 내용을 모아두었어요"
       description="메인 흐름을 먼저 보신 뒤, 궁금한 점만 빠르게 확인하실 수 있도록 정리했습니다."
+      sectionClassName="pb-8 sm:pb-10 lg:pb-12"
     >
       <HomeFaqList items={faqItems} />
     </BottomSupportSection>
@@ -358,7 +405,7 @@ export default function HomePage() {
       <Suspense fallback={<HomeProductsFallback />}>
         <HomeProductSectionServer homeDataPromise={homeDataPromise} />
       </Suspense>
-      <Suspense fallback={<CardSectionFallback />}>
+      <Suspense fallback={<PopularIngredientsSectionFallback />}>
         <PopularIngredientsSection homeDataPromise={homeDataPromise} />
       </Suspense>
       <Suspense fallback={<CardSectionFallback />}>

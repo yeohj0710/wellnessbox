@@ -33,6 +33,8 @@ export type HomeCartItem = CartLineItem;
 export type HomeDataResponse = {
   categories?: HomeCategory[];
   products?: HomeProduct[];
+  catalogState?: "live" | "paused" | "unavailable";
+  errorCode?: "db_quota_exceeded" | "temporary_unavailable";
 };
 
 export type SetState<T> = Dispatch<SetStateAction<T>>;

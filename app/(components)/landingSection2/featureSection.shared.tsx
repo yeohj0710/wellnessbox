@@ -15,6 +15,9 @@ export type LandingFeatureSectionConfig = {
   imageSrc: string;
   imageAlt: string;
   reverse?: boolean;
+  imageColumnClassName?: string;
+  imageFrameClassName?: string;
+  imageClassName?: string;
   sectionClassName: string;
   dividerClassName?: string;
   eyebrowClassName: string;
@@ -34,13 +37,13 @@ function FeatureIcons({
   "icons" | "iconFrameClassName" | "iconClassName"
 >) {
   return (
-    <div className="mt-4 flex gap-3">
+    <div className="mt-6 flex gap-4 sm:gap-5">
       {icons.map((Icon, index) => (
         <div
           key={`${Icon.displayName ?? Icon.name ?? "icon"}-${index}`}
-          className={`grid h-12 w-12 place-items-center rounded-xl border ${iconFrameClassName} ${iconClassName}`}
+          className={`grid h-14 w-14 place-items-center rounded-2xl border ${iconFrameClassName} ${iconClassName} sm:h-[4.5rem] sm:w-[4.5rem]`}
         >
-          <Icon className="h-6 w-6" />
+          <Icon className="h-7 w-7 sm:h-8 sm:w-8" />
         </div>
       ))}
     </div>
@@ -55,7 +58,13 @@ export function LandingFeatureSection({
   onSelect7Day: () => void;
 }) {
   const textColumnClassName = config.reverse ? "order-2 md:order-2" : "order-2 md:order-1";
-  const imageColumnClassName = config.reverse ? "order-1 md:order-1" : "order-1 md:order-2";
+  const textColumnPositionClassName = config.reverse
+    ? "md:ml-auto md:mr-0"
+    : "md:mr-auto md:ml-0";
+  const imageOrderClassName = config.reverse ? "order-1 md:order-1" : "order-1 md:order-2";
+  const imageColumnClassName = config.imageColumnClassName ?? "max-w-[36rem]";
+  const imageFrameClassName = config.imageFrameClassName ?? "aspect-[613/511]";
+  const imageClassName = config.imageClassName ?? "object-contain";
 
   return (
     <section
@@ -68,14 +77,16 @@ export function LandingFeatureSection({
       ) : null}
 
       <div className="relative mx-auto max-w-[1200px] px-6 pb-10 pt-8 sm:px-8 md:px-10 md:pb-12 md:pt-10">
-        <div className="grid grid-cols-1 items-center gap-10 md:grid-cols-2 md:gap-16">
-          <div className={`${textColumnClassName} mx-auto w-full max-w-[31rem]`}>
+        <div className="grid grid-cols-1 items-center gap-10 md:grid-cols-2 md:gap-14 lg:gap-16 xl:gap-20">
+          <div
+            className={`${textColumnClassName} ${textColumnPositionClassName} mx-auto w-full max-w-[28rem]`}
+          >
             <p
-              className={`text-[10px] font-semibold tracking-[0.18em] sm:text-xs ${config.eyebrowClassName}`}
+              className={`text-[11px] font-semibold tracking-[0.04em] sm:text-[0.95rem] ${config.eyebrowClassName}`}
             >
               {config.eyebrow}
             </p>
-            <h3 className="mt-2 text-[2.15rem] font-extrabold tracking-tight text-[#0F1222] sm:text-[2.6rem] md:text-[3rem]">
+            <h3 className="mt-4 max-w-[24rem] text-balance text-[2.35rem] font-extrabold leading-[1.06] tracking-[-0.045em] text-[#0F1222] sm:text-[2.85rem] md:text-[3.12rem]">
               {config.accentFirst ? (
                 <>
                   <span className={config.accentClassName}>{config.accent}</span>{" "}
@@ -88,11 +99,11 @@ export function LandingFeatureSection({
                 </>
               )}
             </h3>
-            <p className="mt-4 max-w-[29rem] text-[13px] leading-7 text-[#6F7690] sm:text-sm md:text-[15px]">
+            <p className="mt-6 max-w-[26.5rem] text-pretty text-[15px] leading-[1.9] text-[#6F7690] sm:text-[1.02rem] md:text-[1.08rem]">
               {config.description}
             </p>
 
-            <div className="mt-5">
+            <div className="mt-1">
               <FeatureIcons
                 icons={config.icons}
                 iconFrameClassName={config.iconFrameClassName}
@@ -100,9 +111,9 @@ export function LandingFeatureSection({
               />
             </div>
 
-            <div className="mt-6 h-px w-full max-w-[18.5rem] bg-[#E7E5FF]" />
+            <div className="mt-8 h-px w-full max-w-[27rem] bg-[#D8E3FF]" />
 
-            <div className="mt-6">
+            <div className="mt-8">
               <button
                 className={`h-11 rounded-full px-6 text-sm font-semibold transition duration-300 hover:scale-105 sm:h-12 sm:px-7 sm:text-base ${config.buttonClassName}`}
                 onClick={onSelect7Day}
@@ -112,14 +123,14 @@ export function LandingFeatureSection({
             </div>
           </div>
 
-          <div className={`${imageColumnClassName} relative mx-auto w-full max-w-[36rem]`}>
-            <div className="relative aspect-[613/511] w-full overflow-hidden rounded-[28px]">
+          <div className={`${imageOrderClassName} relative mx-auto w-full ${imageColumnClassName}`}>
+            <div className={`relative w-full overflow-hidden rounded-[28px] ${imageFrameClassName}`}>
               <Image
                 src={config.imageSrc}
                 alt={config.imageAlt}
                 fill
                 sizes="(min-width:1280px) 560px, (min-width:1024px) 520px, 80vw"
-                className="object-contain"
+                className={imageClassName}
               />
             </div>
           </div>
