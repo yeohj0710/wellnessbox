@@ -159,7 +159,7 @@ const PAGE_FOCUS_ACTIONS: Partial<Record<ChatActionType, PageFocusActionConfig>>
 
 const EXTERNAL_LINK_ACTIONS: Partial<Record<ChatActionType, ExternalLinkActionConfig>> = {
   open_support_email: {
-    url: "mailto:wellnessbox.me@gmail.com",
+    url: "mailto:contact@wellnessbox.kr",
     message: "문의 이메일 작성 창을 열어둘게요.",
   },
   open_support_call: {

@@ -22,7 +22,7 @@ import { requireAdminSession, requireB2bEmployeeToken } from "@/lib/server/route
 type EmployeeReportPdfMode = "web" | "legacy";
 const B2B_EMPLOYEE_REPORT_ADMIN_ONLY_CODE = "B2B_REPORT_ADMIN_ONLY";
 const B2B_EMPLOYEE_REPORT_ADMIN_ONLY_ERROR =
-  "현재 건강 레포트는 관리자만 열람할 수 있습니다. 문의: wellnessbox.me@gmail.com";
+  "현재 건강 레포트는 관리자만 열람할 수 있습니다. 문의: contact@wellnessbox.kr";
 
 function allowLegacyPdfMode() {
   const raw = (process.env.B2B_ENABLE_LEGACY_PDF_EXPORT || "").trim().toLowerCase();

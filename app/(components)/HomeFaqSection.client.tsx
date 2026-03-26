@@ -33,7 +33,7 @@ export default function HomeFaqSection({
 
   return (
     <section className="w-full bg-[linear-gradient(180deg,#ffffff_0%,#fbfcfe_100%)] pb-16 pt-6 sm:pb-24">
-      <div className="mx-auto w-full max-w-5xl px-4 sm:px-6">
+      <div className="w-full max-w-[640px] mx-auto px-4">
         <div className="grid gap-4 lg:grid-cols-[0.78fr_1.22fr] lg:gap-5">
           <div className="rounded-[1.9rem] border border-[#e7edf6] bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(247,250,255,0.96)_100%)] p-6 shadow-[0_20px_55px_-48px_rgba(15,23,42,0.3)] sm:p-7">
             <p className="text-[11px] font-semibold tracking-[0.2em] text-[#4a78ff]">

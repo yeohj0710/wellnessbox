@@ -7,7 +7,7 @@ export const BUSINESS_CORPORATE_REGISTRATION_NUMBER = "110111-0932570";
 export const BUSINESS_MAIL_ORDER_REPORT_NUMBER = "제2025-서울동대문-1562호";
 export const BUSINESS_SUPPORT_PHONE = "02-6241-5530";
 export const BUSINESS_SUPPORT_PHONE_E164 = "+82-2-6241-5530";
-export const BUSINESS_SUPPORT_EMAIL = "wellnessbox.me@gmail.com";
+export const BUSINESS_SUPPORT_EMAIL = "contact@wellnessbox.kr";
 export const BUSINESS_ADDRESS =
   "서울특별시 동대문구 경희대로 26, 2층 211호(회기동, 삼의원창업센터)";
 

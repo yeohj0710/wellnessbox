@@ -107,8 +107,8 @@ function FooterInner() {
     <footer className="relative w-full overflow-hidden border-t border-slate-800/80 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.06),transparent_24%),linear-gradient(180deg,#101728_0%,#0b1220_100%)] text-sm text-slate-300">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-300/30 to-transparent" />
 
-      <div className="mx-auto w-full max-w-[1120px] px-5 py-8 sm:px-6 sm:py-10">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-14">
+      <div className="w-full max-w-[640px] mx-auto px-4 py-8 sm:py-10">
+        <div className="grid gap-8 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start sm:gap-10">
           <div className="min-w-0">
             <Link href="/" className="inline-flex items-center gap-3">
               <span className="relative h-11 w-11 overflow-hidden rounded-2xl bg-white/[0.04] ring-1 ring-white/6">
@@ -153,7 +153,7 @@ function FooterInner() {
             </p>
           </div>
 
-          <div className="grid gap-8 lg:min-w-[12rem]">
+          <div className="grid gap-8 sm:min-w-[10.5rem] sm:justify-items-start">
             <FooterLinkBlock title="Operator" links={operatorLinks} />
           </div>
         </div>

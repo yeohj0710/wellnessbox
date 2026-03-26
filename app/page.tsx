@@ -94,39 +94,58 @@ function CardSectionFallback() {
 
 function PopularIngredientsSectionFallback() {
   return (
-    <section className="mx-auto mt-8 w-full max-w-[640px]">
+    <section className="w-full max-w-[640px] mx-auto mt-10">
       <div className="px-4">
-        <h1 className="text-xl font-extrabold tracking-tight">
-          <span className="bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] bg-clip-text text-transparent">
-            인기 성분
-          </span>
-        </h1>
-        <p className="mt-3 text-sm leading-6 text-slate-500">
-          많이 찾는 성분 구성을 차분하게 불러오고 있어요.
-        </p>
+        <div className="overflow-hidden rounded-[2rem] border border-[#E5EBF8] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(245,248,255,0.96))] px-5 py-5 shadow-[0_24px_56px_-44px_rgba(67,103,230,0.3)]">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div className="max-w-[28rem]">
+              <p className="text-[11px] font-semibold tracking-[0.22em] text-[#4568F5]">
+                POPULAR INGREDIENTS
+              </p>
+              <h1 className="mt-2 text-[clamp(1.8rem,5vw,2.35rem)] font-black tracking-[-0.05em] text-[#1F2A44]">
+                인기 성분
+              </h1>
+              <p className="mt-2 text-sm leading-6 text-[#5D6984]">
+                많이 찾는 성분부터 먼저 둘러보고, 바로 제품 흐름으로
+                이어지도록 가볍게 정리했어요.
+              </p>
+            </div>
+
+            <div className="inline-flex w-fit items-center rounded-full border border-[#DBE5FF] bg-white/90 px-3 py-1.5 text-[11px] font-semibold text-[#5A6C96]">
+              빠르게 많이 찾는 구성부터 보여드려요
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-[1.4rem] border border-[#DDE6FF] bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(239,244,255,0.95))] px-4 py-3.5">
+            <div className="h-4 w-56 animate-pulse rounded-full bg-white/95" />
+            <div className="mt-2 h-3 w-48 animate-pulse rounded-full bg-white/80" />
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 p-3 sm:grid-cols-3 sm:gap-4 sm:p-4">
+      <div className="grid grid-cols-1 gap-3 p-4 min-[520px]:grid-cols-2 sm:grid-cols-3 sm:gap-4">
         {Array.from({ length: 6 }).map((_, index) => (
           <div
             key={index}
-            className="overflow-hidden rounded-[1.6rem] border border-[#E3EAFE] bg-white/90 shadow-[0_18px_40px_-34px_rgba(67,103,230,0.25)]"
+            className="overflow-hidden rounded-[1.75rem] border border-[#E5EBF8] bg-white shadow-[0_22px_44px_-36px_rgba(67,103,230,0.34)]"
           >
-            <div className="relative aspect-[4/3] overflow-hidden bg-[radial-gradient(circle_at_top,rgba(120,150,255,0.16),transparent_55%),linear-gradient(180deg,#f9fbff_0%,#eef3ff_100%)]">
-              <div className="absolute left-3 top-3 rounded-full bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] px-2.5 py-1 text-[11px] font-bold text-white shadow-[0_10px_24px_-12px_rgba(69,104,245,0.8)]">
+            <div className="relative min-h-[13.5rem] overflow-hidden bg-[linear-gradient(180deg,#FCFDFF_0%,#F1F5FF_100%)] px-4 py-4">
+              <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top,rgba(99,116,241,0.18),transparent_68%)]" />
+              <div className="absolute left-3 top-3 rounded-full bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] px-2.5 py-1 text-[11px] font-bold text-white shadow-[0_14px_28px_-18px_rgba(76,93,198,0.72)]">
                 #{index + 1}
               </div>
-              <div className="absolute right-4 top-4 h-11 w-11 animate-pulse rounded-2xl bg-white/80 ring-1 ring-white/70" />
-              <div className="absolute left-4 top-[4.6rem] h-3 w-20 animate-pulse rounded-full bg-white/75" />
-              <div className="absolute left-4 bottom-5 h-6 w-28 animate-pulse rounded-full bg-white/70" />
+              <div className="ml-auto h-11 w-11 animate-pulse rounded-[1.1rem] bg-white ring-1 ring-[#E1E9FB]" />
+              <div className="mt-10 h-3 w-24 animate-pulse rounded-full bg-white/90" />
+              <div className="mt-4 h-11 w-32 animate-pulse rounded-[1rem] bg-white" />
+              <div className="mt-2 h-5 w-20 animate-pulse rounded-full bg-white/80" />
             </div>
 
-            <div className="px-4 pb-4 pt-3">
-              <div className="h-5 w-24 animate-pulse rounded-full bg-[#E9EEFF]" />
-              <div className="mt-3 flex items-center gap-2">
-                <div className="h-2 w-2 animate-pulse rounded-full bg-[#96A7FF]" />
-                <div className="h-3 w-20 animate-pulse rounded-full bg-[#EEF2FF]" />
+            <div className="flex items-center justify-between gap-3 border-t border-[#E9EEF9] px-4 py-3">
+              <div className="min-w-0 flex-1">
+                <div className="h-4 w-24 animate-pulse rounded-full bg-[#E9EEFF]" />
+                <div className="mt-2 h-3 w-20 animate-pulse rounded-full bg-[#F1F4FF]" />
               </div>
+              <div className="h-9 w-9 animate-pulse rounded-full bg-[#EEF2FF]" />
             </div>
           </div>
         ))}
@@ -184,11 +203,11 @@ function HomeSearchHubSection() {
   ];
 
   return (
-    <section className="w-full bg-white py-10 sm:py-12">
-      <div className="mx-auto w-full max-w-5xl px-4 sm:px-6">
+    <section className="w-full bg-white pb-2 pt-10 sm:pb-4 sm:pt-12">
+      <div className="w-full max-w-[640px] mx-auto px-4">
         <div className="rounded-[1.75rem] border border-slate-200 bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fbff_100%)] p-5 shadow-[0_18px_45px_-42px_rgba(15,23,42,0.28)] sm:p-6">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div className="max-w-2xl">
               <p className="text-xs font-semibold tracking-[0.18em] text-[#4568F5]">
                 QUICK ACCESS
               </p>
@@ -196,14 +215,14 @@ function HomeSearchHubSection() {
                 상품을 둘러본 뒤 필요한 기능만 바로 이어보세요
               </h2>
             </div>
-            <p className="max-w-xl text-sm leading-6 text-slate-500">
+            <p className="max-w-md text-sm leading-6 text-slate-500">
               체크, 설문, 상담, 주문 확인처럼 자주 찾는 기능만 가볍게 모아두었습니다.
             </p>
           </div>
 
           <nav
             aria-label="주요 서비스 바로가기"
-            className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+            className="mt-5 grid gap-3 sm:grid-cols-2 sm:gap-4"
           >
             {items.map((item) => (
               <Link
@@ -316,7 +335,7 @@ function HomeFaqSection() {
       eyebrow="FAQ"
       title="처음 이용하실 때 많이 물어보시는 내용을 모아두었어요"
       description="메인 흐름을 먼저 보신 뒤, 궁금한 점만 빠르게 확인하실 수 있도록 정리했습니다."
-      sectionClassName="pb-8 sm:pb-10 lg:pb-12"
+      sectionClassName="pb-10 sm:pb-12"
     >
       <HomeFaqList items={faqItems} />
     </BottomSupportSection>

@@ -61,12 +61,12 @@ export default function Contact() {
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <a
                     href={`mailto:${BUSINESS_SUPPORT_EMAIL}`}
-                    className="rounded-2xl bg-white p-4 shadow-[0_16px_30px_-24px_rgba(37,99,235,0.55)] ring-1 ring-sky-100"
+                    className="min-w-0 rounded-2xl bg-white p-4 shadow-[0_16px_30px_-24px_rgba(37,99,235,0.55)] ring-1 ring-sky-100"
                   >
                     <p className="text-xs font-semibold tracking-[0.16em] text-sky-700">
                       EMAIL
                     </p>
-                    <p className="mt-2 text-lg font-bold text-slate-900">
+                    <p className="mt-2 break-all text-[1.05rem] font-bold leading-tight text-slate-900 sm:text-lg">
                       {BUSINESS_SUPPORT_EMAIL}
                     </p>
                     <p className="mt-2 text-sm leading-6 text-slate-600">

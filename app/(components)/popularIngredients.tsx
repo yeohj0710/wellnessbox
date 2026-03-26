@@ -4,6 +4,7 @@ import type { ComponentType, SVGProps } from "react";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import {
+  ArrowUpRightIcon,
   BeakerIcon,
   BoltIcon,
   EyeIcon,
@@ -36,10 +37,14 @@ type PopularCategoryBootstrap = {
 
 type IngredientPreviewVisual = {
   icon: ComponentType<SVGProps<SVGSVGElement>>;
-  eyebrow: string;
-  accent: string;
+  caption: string;
   surfaceClassName: string;
   iconClassName: string;
+};
+
+type IngredientDisplayName = {
+  primary: string;
+  secondary?: string;
 };
 
 const FALLBACK_POPULAR_CATEGORIES: PopularCategory[] = [
@@ -101,86 +106,102 @@ function getIngredientPreviewVisual(name: string): IngredientPreviewVisual {
   if (name.includes("루테인")) {
     return {
       icon: EyeIcon,
-      eyebrow: "눈 건강 루틴",
-      accent: "가볍게 둘러보기",
-      surfaceClassName:
-        "bg-[radial-gradient(circle_at_20%_18%,rgba(122,160,255,0.32),transparent_32%),radial-gradient(circle_at_82%_22%,rgba(176,188,255,0.32),transparent_24%),linear-gradient(145deg,#f8fbff_0%,#edf2ff_55%,#e5ecff_100%)]",
-      iconClassName: "text-[#5B72F7]",
+      caption: "눈 건강 루틴",
+      surfaceClassName: "bg-[linear-gradient(180deg,#FBFCFF_0%,#F1F5FF_100%)]",
+      iconClassName: "border-[#DCE4FF] bg-white text-[#5871F7]",
     };
   }
 
   if (name.includes("오메가")) {
     return {
       icon: SparklesIcon,
-      eyebrow: "데일리 밸런스",
-      accent: "자주 찾는 기본 성분",
-      surfaceClassName:
-        "bg-[radial-gradient(circle_at_18%_18%,rgba(111,150,255,0.34),transparent_28%),radial-gradient(circle_at_84%_28%,rgba(142,120,255,0.22),transparent_24%),linear-gradient(145deg,#f8fbff_0%,#edf3ff_52%,#e8edff_100%)]",
-      iconClassName: "text-[#536CF4]",
+      caption: "데일리 밸런스",
+      surfaceClassName: "bg-[linear-gradient(180deg,#FBFCFF_0%,#F0F4FF_100%)]",
+      iconClassName: "border-[#DCE4FF] bg-white text-[#526BF4]",
     };
   }
 
   if (name.includes("비타민D")) {
     return {
       icon: SunIcon,
-      eyebrow: "햇빛 루틴",
-      accent: "부담 없이 시작하기",
-      surfaceClassName:
-        "bg-[radial-gradient(circle_at_18%_18%,rgba(130,162,255,0.34),transparent_28%),radial-gradient(circle_at_82%_24%,rgba(255,222,134,0.24),transparent_22%),linear-gradient(145deg,#f9fbff_0%,#edf2ff_52%,#e7ecff_100%)]",
-      iconClassName: "text-[#5972F5]",
+      caption: "햇빛 루틴",
+      surfaceClassName: "bg-[linear-gradient(180deg,#FBFCFF_0%,#F2F5FF_100%)]",
+      iconClassName: "border-[#DCE4FF] bg-white text-[#5D73F5]",
     };
   }
 
   if (name.includes("프로바이오틱스") || name.includes("유산균")) {
     return {
       icon: ShieldCheckIcon,
-      eyebrow: "편안한 데일리",
-      accent: "많이 찾는 루틴",
-      surfaceClassName:
-        "bg-[radial-gradient(circle_at_18%_18%,rgba(124,163,255,0.34),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(108,77,255,0.18),transparent_22%),linear-gradient(145deg,#f8fbff_0%,#edf3ff_52%,#e8edff_100%)]",
-      iconClassName: "text-[#5670F4]",
+      caption: "편안한 데일리",
+      surfaceClassName: "bg-[linear-gradient(180deg,#FBFCFF_0%,#F0F4FF_100%)]",
+      iconClassName: "border-[#DCE4FF] bg-white text-[#5670F4]",
     };
   }
 
   if (name.includes("마그네슘")) {
     return {
       icon: BoltIcon,
-      eyebrow: "리듬 밸런스",
-      accent: "자주 둘러보는 성분",
-      surfaceClassName:
-        "bg-[radial-gradient(circle_at_16%_18%,rgba(118,154,255,0.34),transparent_28%),radial-gradient(circle_at_84%_22%,rgba(136,120,255,0.22),transparent_24%),linear-gradient(145deg,#f8fbff_0%,#edf2ff_52%,#e5ebff_100%)]",
-      iconClassName: "text-[#4F68F4]",
+      caption: "리듬 밸런스",
+      surfaceClassName: "bg-[linear-gradient(180deg,#FBFCFF_0%,#F1F4FF_100%)]",
+      iconClassName: "border-[#DCE4FF] bg-white text-[#4F68F4]",
     };
   }
 
   return {
     icon: BeakerIcon,
-    eyebrow: "인기 탐색",
-    accent: "지금 많이 찾는 성분",
-    surfaceClassName:
-      "bg-[radial-gradient(circle_at_18%_18%,rgba(118,156,255,0.34),transparent_28%),radial-gradient(circle_at_82%_22%,rgba(108,77,255,0.2),transparent_24%),linear-gradient(145deg,#f8fbff_0%,#edf2ff_52%,#e6ecff_100%)]",
-    iconClassName: "text-[#5470F5]",
+    caption: "기본 인기 성분",
+    surfaceClassName: "bg-[linear-gradient(180deg,#FBFCFF_0%,#F1F4FF_100%)]",
+    iconClassName: "border-[#DCE4FF] bg-white text-[#5470F5]",
   };
+}
+
+function getIngredientDisplayName(name: string): IngredientDisplayName {
+  const trimmed = name.replace(/\s+/g, " ").trim();
+  const withParentheses = trimmed.match(/^(.+?)\s*\((.+?)\)$/);
+
+  if (withParentheses) {
+    return {
+      primary: withParentheses[1],
+      secondary: withParentheses[2],
+    };
+  }
+
+  const dotSeparated = trimmed
+    .split(/[·/]/)
+    .map((token) => token.trim())
+    .filter(Boolean);
+
+  if (dotSeparated.length > 1) {
+    return {
+      primary: dotSeparated[0],
+      secondary: dotSeparated.slice(1).join(" · "),
+    };
+  }
+
+  return { primary: trimmed };
 }
 
 function PopularIngredientsLoadingCard({ index }: { index: number }) {
   return (
-    <div className="overflow-hidden rounded-[1.6rem] border border-[#E3EAFE] bg-white/90 shadow-[0_18px_40px_-34px_rgba(67,103,230,0.25)]">
-      <div className="relative aspect-[4/3] overflow-hidden bg-[radial-gradient(circle_at_top,rgba(120,150,255,0.16),transparent_55%),linear-gradient(180deg,#f9fbff_0%,#eef3ff_100%)]">
-        <div className="absolute left-3 top-3 rounded-full bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] px-2.5 py-1 text-[11px] font-bold text-white shadow-[0_10px_24px_-12px_rgba(69,104,245,0.8)]">
+    <div className="overflow-hidden rounded-[1.75rem] border border-[#E5EBF8] bg-white shadow-[0_22px_44px_-36px_rgba(67,103,230,0.34)]">
+      <div className="relative min-h-[13.5rem] overflow-hidden bg-[linear-gradient(180deg,#FCFDFF_0%,#F1F5FF_100%)] px-4 py-4">
+        <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top,rgba(99,116,241,0.18),transparent_68%)]" />
+        <div className="absolute left-3 top-3 rounded-full bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] px-2.5 py-1 text-[11px] font-bold text-white shadow-[0_14px_28px_-18px_rgba(76,93,198,0.72)]">
           #{index + 1}
         </div>
-        <div className="absolute right-4 top-4 h-11 w-11 animate-pulse rounded-2xl bg-white/80 ring-1 ring-white/70" />
-        <div className="absolute left-4 top-[4.6rem] h-3 w-20 animate-pulse rounded-full bg-white/75" />
-        <div className="absolute left-4 bottom-5 h-6 w-28 animate-pulse rounded-full bg-white/70" />
+        <div className="ml-auto h-11 w-11 animate-pulse rounded-[1.1rem] bg-white ring-1 ring-[#E1E9FB]" />
+        <div className="mt-10 h-3 w-24 animate-pulse rounded-full bg-white/90" />
+        <div className="mt-4 h-11 w-32 animate-pulse rounded-[1rem] bg-white" />
+        <div className="mt-2 h-5 w-20 animate-pulse rounded-full bg-white/80" />
       </div>
 
-      <div className="px-4 pb-4 pt-3">
-        <div className="h-5 w-24 animate-pulse rounded-full bg-[#E9EEFF]" />
-        <div className="mt-3 flex items-center gap-2">
-          <div className="h-2 w-2 animate-pulse rounded-full bg-[#96A7FF]" />
-          <div className="h-3 w-20 animate-pulse rounded-full bg-[#EEF2FF]" />
+      <div className="flex items-center justify-between gap-3 border-t border-[#E9EEF9] px-4 py-3">
+        <div className="min-w-0 flex-1">
+          <div className="h-4 w-24 animate-pulse rounded-full bg-[#E9EEFF]" />
+          <div className="mt-2 h-3 w-20 animate-pulse rounded-full bg-[#F1F4FF]" />
         </div>
+        <div className="h-9 w-9 animate-pulse rounded-full bg-[#EEF2FF]" />
       </div>
     </div>
   );
@@ -244,54 +265,65 @@ export default function PopularIngredients({
 
     fetchData();
     return () => controller.abort();
-  }, [initialCategories]);
+  }, [bootstrap.source, initialCategories]);
 
   useEffect(() => clearIntentTimer, []);
 
   const hasVisibleCategories = categories.length > 0;
   const isPreviewMode =
-    !isLoading && hasVisibleCategories && categories.every((category) => !category.image);
+    !isLoading &&
+    hasVisibleCategories &&
+    categories.every((category) => !category.image);
 
   return (
-    <section className="mx-auto mt-8 w-full max-w-[640px]">
+    <section className="w-full max-w-[640px] mx-auto mt-10">
       <div className="px-4">
-        <h1 className="text-xl font-extrabold tracking-tight">
-          <span className="bg-gradient-to-r from-[#4568F5] to-[#6C4DFF] bg-clip-text text-transparent">
-            인기 성분
-          </span>
-        </h1>
-      </div>
+        <div className="overflow-hidden rounded-[2rem] border border-[#E5EBF8] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(245,248,255,0.96))] px-5 py-5 shadow-[0_24px_56px_-44px_rgba(67,103,230,0.3)]">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div className="max-w-[28rem]">
+              <p className="text-[11px] font-semibold tracking-[0.22em] text-[#4568F5]">
+                POPULAR INGREDIENTS
+              </p>
+              <h1 className="mt-2 text-[clamp(1.8rem,5vw,2.35rem)] font-black tracking-[-0.05em] text-[#1F2A44]">
+                인기 성분
+              </h1>
+              <p className="mt-2 text-sm leading-6 text-[#5D6984]">
+                많이 찾는 성분부터 먼저 둘러보고, 바로 제품 흐름으로
+                이어지도록 가볍게 정리했어요.
+              </p>
+            </div>
 
-      {isPreviewMode ? (
-        <div className="px-4 pt-3">
-          <div className="rounded-[1.35rem] border border-[#DCE5FF] bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(239,244,255,0.96))] px-4 py-3 shadow-[0_18px_38px_-34px_rgba(67,103,230,0.28)]">
-            <div className="flex items-start gap-3">
-              <div className="grid h-10 w-10 flex-none place-items-center rounded-2xl bg-[linear-gradient(135deg,#EEF3FF,#FFFFFF)] text-[#5B72F7] ring-1 ring-[#D8E2FF]">
-                <SparklesIcon className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-[13px] font-semibold text-[#1F2A44]">
-                  실시간 인기 성분을 다시 불러오는 동안 자주 찾는 성분부터 먼저 보여드릴게요.
-                </p>
-                <p className="mt-1 text-[12px] leading-5 text-[#667089]">
-                  이미지와 구성 데이터가 준비되면 같은 자리에서 자연스럽게 바뀝니다.
-                </p>
-              </div>
+            <div className="inline-flex w-fit items-center rounded-full border border-[#DBE5FF] bg-white/90 px-3 py-1.5 text-[11px] font-semibold text-[#5A6C96]">
+              빠르게 많이 찾는 구성부터 보여드려요
             </div>
           </div>
+
+          {isPreviewMode ? (
+            <div className="mt-4 rounded-[1.4rem] border border-[#DDE6FF] bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(239,244,255,0.95))] px-4 py-3.5">
+              <p className="text-[13px] font-semibold text-[#26334E]">
+                실시간 데이터를 불러오는 동안 많이 찾는 성분부터 먼저
+                보여드릴게요.
+              </p>
+              <p className="mt-1 text-[12px] leading-5 text-[#66728B]">
+                준비가 끝나면 같은 자리에서 자연스럽게 최신 구성으로
+                바뀝니다.
+              </p>
+            </div>
+          ) : null}
         </div>
-      ) : null}
+      </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-2 gap-3 p-3 sm:grid-cols-3 sm:gap-4 sm:p-4">
+        <div className="grid grid-cols-1 gap-3 p-4 min-[520px]:grid-cols-2 sm:grid-cols-3 sm:gap-4">
           {Array.from({ length: 6 }).map((_, index) => (
             <PopularIngredientsLoadingCard key={index} index={index} />
           ))}
         </div>
       ) : hasVisibleCategories ? (
-        <div className="grid grid-cols-2 gap-3 p-3 sm:grid-cols-3 sm:gap-4 sm:p-4">
+        <div className="grid grid-cols-1 gap-3 p-4 min-[520px]:grid-cols-2 sm:grid-cols-3 sm:gap-4">
           {categories.map((category, index) => {
             const visual = getIngredientPreviewVisual(category.name);
+            const displayName = getIngredientDisplayName(category.name);
             const PreviewIcon = visual.icon;
 
             return (
@@ -310,70 +342,77 @@ export default function PopularIngredients({
                   }
                   onSelectCategory(category.id ?? category.name);
                 }}
-                className={`group relative overflow-hidden rounded-2xl bg-white ring-1 ring-gray-100 shadow-[0_6px_20px_rgba(67,103,230,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(67,103,230,0.18)] focus:outline-none focus:ring-2 focus:ring-[#6C4DFF]/50 ${
+                className={`group relative flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-[#E5EBF8] bg-white text-left shadow-[0_22px_44px_-36px_rgba(67,103,230,0.34)] transition-all duration-300 hover:-translate-y-1 hover:border-[#D7E2FF] hover:shadow-[0_28px_56px_-36px_rgba(67,103,230,0.38)] focus:outline-none focus:ring-2 focus:ring-[#6C4DFF]/45 ${
                   typeof category.id === "number" &&
                   pressedCategoryId === category.id
-                    ? "scale-[0.99] ring-[#6C4DFF]/60"
+                    ? "scale-[0.99] ring-[#6C4DFF]/55"
                     : ""
                 }`}
               >
-                <div className="relative aspect-[4/3] w-full">
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#4568F5]/0 via-[#6C4DFF]/0 to-[#6C4DFF]/0 opacity-0 transition-opacity group-hover:opacity-10" />
+                <div className="relative min-h-[13.5rem] overflow-hidden">
+                  <span className="absolute left-3 top-3 z-10 rounded-full bg-gradient-to-r from-[#3B82F6] to-[#6C4DFF] px-2.5 py-1 text-[11px] font-bold text-white shadow-[0_14px_28px_-18px_rgba(76,93,198,0.72)]">
+                    #{index + 1}
+                  </span>
                   {category.image ? (
-                    <Image
-                      src={category.image}
-                      alt={category.name || "Category"}
-                      fill
-                      sizes="512px"
-                      unoptimized={shouldBypassNextImageOptimizer(
-                        category.image
-                      )}
-                      className="object-contain p-3 transition-transform duration-300 group-hover:scale-[1.03]"
-                    />
-                  ) : (
-                    <div className={`absolute inset-0 overflow-hidden px-4 ${visual.surfaceClassName}`}>
-                      <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-white/60 blur-2xl" />
-                      <div className="absolute inset-x-4 top-4 flex items-start justify-between gap-3">
-                        <div className="rounded-full border border-white/70 bg-white/82 px-2.5 py-1 text-[10px] font-semibold tracking-[0.08em] text-slate-500 shadow-[0_10px_22px_-18px_rgba(15,23,42,0.4)]">
-                          {visual.eyebrow}
+                    <>
+                      <Image
+                        src={category.image}
+                        alt={category.name || "Category"}
+                        fill
+                        sizes="512px"
+                        unoptimized={shouldBypassNextImageOptimizer(
+                          category.image
+                        )}
+                        className="object-contain p-4 transition-transform duration-300 group-hover:scale-[1.05]"
+                      />
+                      <div className="absolute inset-x-0 bottom-0 bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.88)_38%,rgba(255,255,255,0.98)_100%)] px-4 pb-4 pt-10">
+                        <div className="line-clamp-2 text-[1.02rem] font-bold leading-6 tracking-[-0.03em] text-[#21304D]">
+                          {category.name}
                         </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div
+                      className={`absolute inset-0 flex h-full flex-col px-4 py-4 ${visual.surfaceClassName}`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="rounded-full bg-white/82 px-2.5 py-1 text-[10px] font-semibold tracking-[0.14em] text-[#70809E] ring-1 ring-white/80">
+                          {visual.caption}
+                        </span>
                         <div
-                          className={`grid h-11 w-11 flex-none place-items-center rounded-2xl border border-white/75 bg-white/84 shadow-[0_18px_28px_-24px_rgba(15,23,42,0.45)] ${visual.iconClassName}`}
+                          className={`grid h-11 w-11 place-items-center rounded-[1.1rem] border ${visual.iconClassName} shadow-[0_14px_28px_-22px_rgba(31,42,68,0.28)]`}
                         >
                           <PreviewIcon className="h-5 w-5" />
                         </div>
                       </div>
 
-                      <div className="absolute left-4 top-[5.15rem] h-2 w-16 rounded-full bg-white/70" />
-
-                      <div className="absolute inset-x-4 bottom-4 text-left">
-                        <div className="inline-flex rounded-full border border-white/75 bg-white/82 px-3 py-1 text-[10px] font-semibold text-slate-500">
-                          {visual.accent}
+                      <div className="mt-auto max-w-[11.5rem] pb-1">
+                        <div className="break-keep text-[clamp(1.75rem,5vw,2.45rem)] font-black leading-[0.9] tracking-[-0.07em] text-[#223150]">
+                          {displayName.primary}
                         </div>
-                        <div className="mt-3 pr-10 text-lg font-black tracking-tight text-[#23304F]">
-                          {category.name}
-                        </div>
+                        {displayName.secondary ? (
+                          <div className="mt-2 break-keep text-[0.95rem] font-semibold leading-5 text-[#42527A]">
+                            {displayName.secondary}
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   )}
-                  <span className="absolute left-2 top-2 rounded-full bg-gradient-to-r from-[#3B82F6] to-[#6C4DFF] px-2 py-0.5 text-[11px] font-bold text-white shadow-sm">
-                    #{index + 1}
+                </div>
+
+                <div className="flex items-center justify-between gap-3 border-t border-[#E9EEF9] bg-white px-4 py-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-[#223150]">
+                      추천 제품 보기
+                    </div>
+                    <div className="mt-1 line-clamp-1 text-[11px] text-[#72819E]">
+                      {category.name}
+                    </div>
+                  </div>
+                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#EEF2FF] text-[#4568F5] transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5">
+                    <ArrowUpRightIcon className="h-4 w-4" />
                   </span>
                 </div>
-
-                <div className="px-3 pb-3">
-                  <h3 className="line-clamp-2 text-sm font-semibold text-gray-900">
-                    {category.name}
-                  </h3>
-                  <div className="mt-2 flex items-center gap-1.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#6C4DFF] opacity-70 transition-opacity group-hover:opacity-100" />
-                    <span className="text-[11px] text-gray-500">
-                      {category.image ? "클릭하여 제품 보기" : "성분 흐름 바로 보기"}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="pointer-events-none absolute inset-x-0 -bottom-6 h-12 bg-gradient-to-t from-[#6C4DFF]/10 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
               </button>
             );
           })}
@@ -382,7 +421,7 @@ export default function PopularIngredients({
         <CatalogSectionEmptyState
           badge="INGREDIENT NOTICE"
           title="지금은 인기 성분 구성을 따로 보여드리고 있지 않아요"
-          description="판매 구성을 다시 여는 동안에는 인기 성분 목록 대신 빠른 검사와 추천 흐름부터 가볍게 둘러보실 수 있어요."
+          description="실시간 구성을 다시 불러오는 동안에는 인기 성분 목록 대신 빠른 검색과 추천 흐름부터 가볍게 둘러보실 수 있어요."
         />
       )}
     </section>

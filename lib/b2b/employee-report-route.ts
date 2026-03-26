@@ -16,7 +16,7 @@ const B2B_EMPLOYEE_NOT_FOUND_ERROR =
   "\uC9C1\uC6D0 \uC815\uBCF4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.";
 const B2B_EMPLOYEE_REPORT_ADMIN_ONLY_CODE = "B2B_REPORT_ADMIN_ONLY";
 const B2B_EMPLOYEE_REPORT_ADMIN_ONLY_ERROR =
-  "현재 건강 레포트는 관리자만 열람할 수 있습니다. 문의: wellnessbox.me@gmail.com";
+  "현재 건강 레포트는 관리자만 열람할 수 있습니다. 문의: contact@wellnessbox.kr";
 
 export async function runB2bEmployeeReportGetRoute(req: Request) {
   const auth = await requireB2bEmployeeToken();
