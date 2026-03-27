@@ -489,7 +489,6 @@ export default function DesktopChatDock() {
             AI 에이전트
           </span>
           <span className="hidden h-2.5 w-2.5 rounded-full bg-emerald-500 sm:inline-block" />
-          <span className="pointer-events-none absolute inset-x-4 bottom-1 hidden h-px bg-gradient-to-r from-transparent via-slate-300/80 to-transparent sm:block" />
           <span
             className={`pointer-events-none absolute -top-10 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded-full bg-slate-900/90 px-3 py-1.5 text-[11px] font-medium text-white shadow-[0_12px_24px_rgba(15,23,42,0.22)] transition-all duration-200 sm:inline-flex ${
               showTriggerHint && !isOpen && !pendingOpen && !isTriggerDragging

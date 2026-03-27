@@ -15,7 +15,6 @@ import { shouldBypassNextImageOptimizer } from "@/lib/shared/image";
 import { formatPriceRange } from "@/lib/utils";
 import { getCuratedProductDetailFacts } from "@/lib/product/product-detail-facts-catalog";
 import {
-  getSourceHostLabel,
   normalizeProductDetailFacts,
   type ProductDetailFactRow,
 } from "@/lib/product/product-detail-facts";
@@ -188,8 +187,6 @@ export default function ProductDetail({
     return groups.filter((group) => group.rows.length > 0);
   }, [optionRows, resolvedDetailFacts?.groups, selectedOption, selectedOptionCapacity]);
 
-  const sourceUrls = resolvedDetailFacts?.sourceUrls || [];
-
   const handleQuantityChange = (delta: number) => {
     setQuantity((prev) => Math.max(1, prev + delta));
   };
@@ -202,7 +199,7 @@ export default function ProductDetail({
   return (
     <div className="fixed inset-0 z-20 flex items-center justify-center bg-white">
       <div
-        className="fixed inset-x-0 max-h-screen w-full max-w-[720px] overflow-y-auto bg-white"
+        className="fixed left-1/2 max-h-screen w-full max-w-[720px] -translate-x-1/2 overflow-y-auto bg-white"
         style={{
           top: "calc(env(safe-area-inset-top) + 4.25rem)",
           maxHeight: "calc(100dvh - env(safe-area-inset-top) - 4.25rem)",
@@ -423,28 +420,10 @@ export default function ProductDetail({
                 </div>
               </section>
 
-              {sourceUrls.length > 0 ? (
-                <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_48px_-36px_rgba(15,23,42,0.4)]">
-                  <h2 className="text-[16px] font-semibold text-slate-950">기준 출처</h2>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {sourceUrls.map((sourceUrl) => (
-                      <a
-                        key={sourceUrl}
-                        href={sourceUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="rounded-full border border-slate-200 px-3 py-1.5 text-[13px] text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                      >
-                        {getSourceHostLabel(sourceUrl)}
-                      </a>
-                    ))}
-                  </div>
-                </section>
-              ) : null}
             </div>
           </div>
 
-          <div className="fixed bottom-0 left-0 right-0 mx-auto flex w-full max-w-[720px] items-center justify-between gap-4 border-t border-slate-200 bg-white/95 px-5 py-4 backdrop-blur-sm sm:px-7">
+          <div className="fixed bottom-0 left-1/2 flex w-full max-w-[720px] -translate-x-1/2 items-center justify-between gap-4 border-t border-slate-200 bg-white/95 px-5 py-4 backdrop-blur-sm sm:px-7">
             <div>
               <div className="text-[12px] font-semibold tracking-[0.08em] text-slate-500">
                 총 결제 예상 금액

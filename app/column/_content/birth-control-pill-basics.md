@@ -1,7 +1,7 @@
 ---
 title: "피임약, 그냥 먹기 시작하면 놓치는 게 너무 많습니다"
 description: "경구 피임약의 기본 원리, 복용법, 흔한 부작용, 놓쳤을 때 대처, 시작 전에 알아야 할 핵심만 현실적으로 정리했습니다."
-date: 2026-03-30
+date: 2026-03-29
 draft: false
 tags:
   - "피임약"
@@ -114,4 +114,3 @@ _이미지 출처: [Wikimedia Commons - Calendar](https://commons.wikimedia.org/
 - [ACOG - Emergency Contraception](https://www.acog.org/womens-health/faqs/emergency-contraception)
 - [NHS - Combined pill](https://www.nhs.uk/contraception/methods-of-contraception/combined-pill/)
 - [CDC - U.S. Selected Practice Recommendations for Contraceptive Use, 2024](https://www.cdc.gov/mmwr/volumes/73/rr/rr7303a1.htm)
-

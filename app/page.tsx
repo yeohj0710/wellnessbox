@@ -97,7 +97,7 @@ function PopularIngredientsSectionFallback() {
     <section className="w-full max-w-[640px] mx-auto mt-10">
       <div className="px-4">
         <div className="overflow-hidden rounded-[2rem] border border-[#E5EBF8] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(245,248,255,0.96))] px-5 py-5 shadow-[0_24px_56px_-44px_rgba(67,103,230,0.3)]">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div className="max-w-[28rem]">
               <p className="text-[11px] font-semibold tracking-[0.22em] text-[#4568F5]">
                 POPULAR INGREDIENTS
@@ -111,7 +111,7 @@ function PopularIngredientsSectionFallback() {
               </p>
             </div>
 
-            <div className="inline-flex w-fit items-center rounded-full border border-[#DBE5FF] bg-white/90 px-3 py-1.5 text-[11px] font-semibold text-[#5A6C96]">
+            <div className="inline-flex w-fit max-w-full items-center self-start rounded-full border border-[#DBE5FF] bg-white/90 px-3 py-1.5 text-[11px] font-semibold text-[#5A6C96] md:self-end">
               빠르게 많이 찾는 구성부터 보여드려요
             </div>
           </div>

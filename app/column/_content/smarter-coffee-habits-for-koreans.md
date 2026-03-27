@@ -1,7 +1,7 @@
 ---
 title: "한국인은 커피를 이렇게 마셔야 덜 망가집니다"
 description: "공복 커피, 오후 늦은 카페인, 수면 질, 위장 부담, 개인 민감도까지 고려한 한국인 맞춤 커피 섭취 가이드라인을 정리했습니다."
-date: 2026-03-29
+date: 2026-03-30
 draft: false
 tags:
   - "커피"
@@ -105,4 +105,3 @@ _이미지 출처: [Wikimedia Commons - Bed](https://commons.wikimedia.org/wiki/
 - [FDA - Spilling the Beans: How Much Caffeine is Too Much?](https://www.fda.gov/consumers/consumer-updates/spilling-beans-how-much-caffeine-too-much)
 - [MedlinePlus - Caffeine](https://medlineplus.gov/caffeine.html)
 - [FDA - Highly Concentrated Caffeine in Dietary Supplements](https://www.fda.gov/files/food/published/Guidance-for-Industry--Highly-Concentrated-Caffeine-in-Dietary-Supplements-DOWNLOAD.pdf)
-
