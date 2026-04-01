@@ -98,7 +98,7 @@ function PopularIngredientsSectionFallback() {
     <section className="w-full max-w-[640px] mx-auto mt-10">
       <div className="px-4">
         <div className="overflow-hidden rounded-[2rem] border border-[#E5EBF8] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(245,248,255,0.96))] px-5 py-5 shadow-[0_24px_56px_-44px_rgba(67,103,230,0.3)]">
-          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div className="flex flex-col gap-3">
             <div className="max-w-[28rem]">
               <p className="text-[11px] font-semibold tracking-[0.22em] text-[#4568F5]">
                 POPULAR INGREDIENTS
@@ -110,10 +110,6 @@ function PopularIngredientsSectionFallback() {
                 많이 찾는 성분부터 먼저 둘러보고, 바로 제품 흐름으로
                 이어지도록 가볍게 정리했어요.
               </p>
-            </div>
-
-            <div className="inline-flex w-fit max-w-full items-center self-start rounded-full border border-[#DBE5FF] bg-white/90 px-3 py-1.5 text-[11px] font-semibold text-[#5A6C96] md:self-end">
-              빠르게 많이 찾는 구성부터 보여드려요
             </div>
           </div>
 
@@ -207,8 +203,8 @@ function HomeSearchHubSection() {
     <section className="w-full bg-white pb-2 pt-10 sm:pb-4 sm:pt-12">
       <div className="w-full max-w-[640px] mx-auto px-4">
         <div className="rounded-[1.75rem] border border-slate-200 bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fbff_100%)] p-5 shadow-[0_18px_45px_-42px_rgba(15,23,42,0.28)] sm:p-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div className="max-w-2xl">
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,18rem)] items-start gap-x-6 gap-y-2">
+            <div className="min-w-0 max-w-2xl">
               <p className="text-xs font-semibold tracking-[0.18em] text-[#4568F5]">
                 QUICK ACCESS
               </p>
@@ -216,7 +212,7 @@ function HomeSearchHubSection() {
                 상품을 둘러본 뒤 필요한 기능만 바로 이어보세요
               </h2>
             </div>
-            <p className="max-w-md text-sm leading-6 text-slate-500">
+            <p className="max-w-md self-center text-sm leading-6 text-slate-500">
               체크, 설문, 상담, 주문 확인처럼 자주 찾는 기능만 가볍게 모아두었습니다.
             </p>
           </div>
@@ -229,15 +225,15 @@ function HomeSearchHubSection() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="group flex h-full min-h-[12.75rem] flex-col rounded-[1.4rem] border border-slate-200 bg-white/95 p-4 transition hover:-translate-y-0.5 hover:border-[#4568F5] hover:shadow-[0_16px_36px_-28px_rgba(59,91,255,0.28)]"
+                className="group flex h-full min-h-[9.25rem] flex-col rounded-[1.4rem] border border-slate-200 bg-white/95 px-4 py-3 transition hover:-translate-y-0.5 hover:border-[#4568F5] hover:shadow-[0_16px_36px_-28px_rgba(59,91,255,0.28)]"
               >
-                <h3 className="min-h-[3rem] text-base font-bold leading-6 text-slate-900 group-hover:text-[#3450e5]">
+                <h3 className="min-h-[2rem] text-base font-bold leading-6 text-slate-900 group-hover:text-[#3450e5]">
                   {item.title}
                 </h3>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
+                <p className="mt-1 text-sm leading-6 text-slate-600">
                   {item.description}
                 </p>
-                <span className="mt-auto inline-flex items-center gap-1.5 pt-4 text-sm font-semibold text-[#4568F5]">
+                <span className="mt-auto inline-flex items-center gap-1.5 pt-2 text-sm font-semibold text-[#4568F5]">
                   <span>바로 가기</span>
                   <ChevronRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                 </span>
@@ -281,6 +277,7 @@ function HomeTrustSection() {
       eyebrow="BASIC INFO"
       title="운영 정보와 문의처를 한곳에 모아두었어요"
       description="회사 정보나 연락처가 필요하실 때 바로 확인하실 수 있도록 간단하게 정리해두었습니다."
+      sectionClassName="mt-3 pb-10 sm:mt-4 sm:pb-12"
     >
       <div className="space-y-3">
         <div className="grid gap-3">
@@ -337,7 +334,6 @@ function HomeFaqSection() {
       eyebrow="FAQ"
       title="처음 이용하실 때 많이 물어보시는 내용을 모아두었어요"
       description="메인 흐름을 먼저 보신 뒤, 궁금한 점만 빠르게 확인하실 수 있도록 정리했습니다."
-      sectionClassName="pb-10 sm:pb-12"
     >
       <HomeFaqList items={faqItems} />
     </BottomSupportSection>

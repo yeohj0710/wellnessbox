@@ -7,6 +7,6 @@ export const TOPBAR_COPY = {
   commandButtonLabel: "빠른 메뉴 실행",
   commandButtonAriaLabel: "빠른 메뉴 실행 열기",
   sevenDayPurchaseText: "7일치 구매하기",
-  startText: "시작하기",
+  startText: "7일치 구매하기",
   drawerButtonAriaLabel: "메뉴 열기",
 } as const;

@@ -33,7 +33,7 @@ function getTitleClasses(variant: NonNullable<ColumnThumbnailProps["variant"]>) 
     case "detail":
       return "max-w-[18rem] text-lg font-black leading-tight sm:text-[1.85rem]";
     case "list":
-      return "max-w-[13rem] text-base font-black leading-tight sm:text-lg";
+      return "max-w-none text-[0.92rem] font-black leading-[1.28] [display:-webkit-box] overflow-hidden [-webkit-box-orient:vertical] [-webkit-line-clamp:3] sm:text-[1rem]";
     case "card":
     default:
       return "max-w-[14rem] text-lg font-black leading-tight sm:text-xl";
@@ -56,6 +56,7 @@ export default function ColumnThumbnail({
     coverImageUrl,
   });
   const usePoster = imageFailed || presentation.mode === "poster" || !coverImageUrl;
+  const isCompactPoster = variant === "list";
 
   if (usePoster) {
     return (
@@ -85,10 +86,16 @@ export default function ColumnThumbnail({
               "linear-gradient(180deg, rgba(15,23,42,0) 0%, rgba(15,23,42,0.38) 100%)",
           }}
         />
-        <div className="relative flex h-full flex-col justify-between p-3.5 text-white sm:p-5">
+        <div
+          className={`relative flex h-full flex-col justify-between text-white ${
+            isCompactPoster ? "p-3" : "p-3.5 sm:p-5"
+          }`}
+        >
           <div className="flex items-start justify-between gap-3">
             <span
-              className="rounded-full px-3 py-1 text-[11px] font-semibold tracking-[0.18em]"
+              className={`whitespace-nowrap rounded-full font-semibold tracking-[0.18em] ${
+                isCompactPoster ? "px-2.5 py-1 text-[10px]" : "px-3 py-1 text-[11px]"
+              }`}
               style={{
                 backgroundColor: presentation.palette.chipBackground,
                 color: presentation.palette.chipText,
@@ -96,13 +103,19 @@ export default function ColumnThumbnail({
             >
               {presentation.eyebrow.toUpperCase()}
             </span>
-            <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/72">
-              WellnessBox
+            <span
+              className={`shrink-0 font-semibold uppercase text-white/72 ${
+                isCompactPoster
+                  ? "text-[9px] tracking-[0.16em]"
+                  : "text-[11px] tracking-[0.24em]"
+              }`}
+            >
+              {isCompactPoster ? "WB" : "WellnessBox"}
             </span>
           </div>
           <div>
             <p className={getTitleClasses(variant)}>{title}</p>
-            {tags.length > 1 ? (
+            {!isCompactPoster && tags.length > 1 ? (
               <p className="mt-3 text-xs font-medium text-white/78">
                 {tags.slice(0, 3).join(" · ")}
               </p>

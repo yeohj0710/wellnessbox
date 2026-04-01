@@ -23,6 +23,8 @@ const PHARMACIST_REVIEW_SECTION_CONFIG: LandingFeatureSectionConfig = {
   imageSrc: "/landingPage2/pharmacist-review-hero.png",
   imageAlt: "전문가 상담 검토",
   reverse: true,
+  gridClassName:
+    "grid grid-cols-1 items-center gap-8 md:grid-cols-2 md:gap-7 lg:gap-8 xl:gap-10",
   sectionClassName: "bg-gradient-to-b from-white via-[#F6F3FF] to-white",
   dividerClassName:
     "bg-gradient-to-r from-transparent via-[#B7A9FF] to-transparent opacity-70",

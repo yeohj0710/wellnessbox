@@ -2,6 +2,7 @@
 
 import KakaoLoginButton from "@/components/common/kakaoLoginButton";
 import { MenuLinks } from "./menuLinks";
+import { TOPBAR_COPY } from "./topBar.copy";
 import type { LoginStatus } from "@/lib/useLoginStatus";
 import type { TopBarIntentHandlers } from "./topBar.header";
 
@@ -12,7 +13,7 @@ type TopBarDrawerProps = {
   isDrawerOpen: boolean;
   sevenDayIntentHandlers: TopBarIntentHandlers;
   onGoSevenDays: () => void;
-  onOpenCommandPalette: () => void;
+  // onOpenCommandPalette: () => void;
   onCloseDrawer: () => void;
   onMenuItemClick: () => void;
 };
@@ -24,7 +25,7 @@ export function TopBarDrawer({
   isDrawerOpen,
   sevenDayIntentHandlers,
   onGoSevenDays,
-  onOpenCommandPalette,
+  // onOpenCommandPalette,
   onCloseDrawer,
   onMenuItemClick,
 }: TopBarDrawerProps) {
@@ -50,28 +51,32 @@ export function TopBarDrawer({
 
           <div className="mt-2 h-px bg-slate-100" />
 
+          {/* 중복 CTA 정리 전까지 보관합니다.
           <button
             {...sevenDayIntentHandlers}
             onClick={onGoSevenDays}
             className="rounded-xl px-2 py-1 text-left text-slate-500 transition-all duration-200 hover:bg-slate-50 hover:px-3 hover:text-slate-900 active:scale-[0.99] focus:outline-none focus-visible:bg-slate-50 focus-visible:px-3 focus-visible:text-slate-900"
           >
-            <span className="font-semibold">7일치 구매하기</span>
+            <span className="font-semibold">{TOPBAR_COPY.sevenDayPurchaseText}</span>
           </button>
+          */}
 
+          {/* 빠른 메뉴 실행은 현재 우선순위가 낮아 비활성화해 둡니다.
           <button
             type="button"
             onClick={onOpenCommandPalette}
             className="rounded-xl px-2 py-1 text-left text-slate-500 transition-all duration-200 hover:bg-slate-50 hover:px-3 hover:text-slate-900 active:scale-[0.99] focus:outline-none focus-visible:bg-slate-50 focus-visible:px-3 focus-visible:text-slate-900"
           >
-            <span className="font-semibold">빠른 메뉴 실행 (Ctrl+K)</span>
+            <span className="font-semibold">{TOPBAR_COPY.commandButtonLabel} (Ctrl+K)</span>
           </button>
+          */}
 
           <button
             {...sevenDayIntentHandlers}
             onClick={onGoSevenDays}
             className="group relative inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#59C1FF] to-[#7B61FF] px-5 py-2 text-sm font-semibold !text-white shadow-[0_10px_30px_rgba(86,115,255,0.35)] transition-all duration-300 ease-out will-change-transform hover:scale-[1.03] hover:shadow-[0_14px_36px_rgba(86,115,255,0.5)] hover:saturate-150 hover:brightness-110 hover:from-[#6BD1FF] hover:to-[#6E58FF] active:translate-y-[1px] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#6E58FF] after:absolute after:inset-0 after:rounded-full after:bg-white/20 after:opacity-0 after:content-[''] hover:after:opacity-10"
           >
-            시작하기
+            {TOPBAR_COPY.startText}
           </button>
 
           {loginStatus !== null && loginStatus.isUserLoggedIn !== true && (

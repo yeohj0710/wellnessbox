@@ -13,11 +13,6 @@ import FirstModal from "@/components/product/FirstModal";
 import { useDraggableModal } from "@/components/common/useDraggableModal";
 import { shouldBypassNextImageOptimizer } from "@/lib/shared/image";
 import { formatPriceRange } from "@/lib/utils";
-import { getCuratedProductDetailFacts } from "@/lib/product/product-detail-facts-catalog";
-import {
-  normalizeProductDetailFacts,
-  type ProductDetailFactRow,
-} from "@/lib/product/product-detail-facts";
 import {
   getCapacityByOptionType,
   getRelevantPharmacyProducts,
@@ -51,19 +46,6 @@ type ProductDetailProps = {
   pharmacy?: { id?: number } | null;
   onAddressSaved?: (address: string) => void;
 };
-
-const HIGHLIGHT_LABEL_PRIORITY = ["유형", "형태", "일반 상품 기준", "표기 성분"] as const;
-
-function FactRow({ label, value }: ProductDetailFactRow) {
-  return (
-    <div className="grid grid-cols-[108px_minmax(0,1fr)] gap-3 border-b border-slate-100 py-3 last:border-b-0 last:pb-0 first:pt-0">
-      <div className="text-[12px] font-semibold tracking-[0.04em] text-slate-500">
-        {label}
-      </div>
-      <div className="text-[14px] leading-6 text-slate-900">{value}</div>
-    </div>
-  );
-}
 
 export default function ProductDetail({
   product,
@@ -140,76 +122,7 @@ export default function ProductDetail({
     return sortOptionTypes(uniqueOptionTypes);
   }, [relevantPharmacyProducts]);
 
-  const optionRows = useMemo(
-    () =>
-      sortedOptionTypes.map((option) => {
-        const capacity = getCapacityByOptionType(relevantPharmacyProducts, option);
-        return {
-          label: option,
-          value: capacity ? `${capacity}` : "용량 표기 없음",
-        };
-      }),
-    [relevantPharmacyProducts, sortedOptionTypes]
-  );
-
-  const selectedOptionCapacity = useMemo(() => {
-    if (!selectedOption) return null;
-    return getCapacityByOptionType(relevantPharmacyProducts, selectedOption) || null;
-  }, [relevantPharmacyProducts, selectedOption]);
-
-  const resolvedDetailFacts = useMemo(() => {
-    return (
-      normalizeProductDetailFacts(product.detailFacts) ||
-      getCuratedProductDetailFacts(product) ||
-      null
-    );
-  }, [product]);
-
-  const summarizedHighlights = useMemo(() => {
-    const highlights = resolvedDetailFacts?.highlights || [];
-
-    return HIGHLIGHT_LABEL_PRIORITY.map((label) =>
-      highlights.find((item) => item.label === label)
-    )
-      .filter((item): item is ProductDetailFactRow => item != null)
-      .slice(0, 3);
-  }, [resolvedDetailFacts?.highlights]);
-
   const images = product.images || [];
-
-  const detailGroups = useMemo(() => {
-    const groups = resolvedDetailFacts?.groups ? [...resolvedDetailFacts.groups] : [];
-
-    if (selectedOption || optionRows.length > 0) {
-      groups.unshift({
-        title: "판매 정보",
-        rows: [
-          ...(selectedOption
-            ? [
-                {
-                  label: "선택 옵션",
-                  value: selectedOptionCapacity
-                    ? `${selectedOption} · ${selectedOptionCapacity}`
-                    : selectedOption,
-                },
-              ]
-            : []),
-          ...(optionRows.length > 0
-            ? [
-                {
-                  label: "판매 옵션",
-                  value: optionRows
-                    .map((row) => `${row.label} (${row.value})`)
-                    .join(" / "),
-                },
-              ]
-            : []),
-        ],
-      });
-    }
-
-    return groups.filter((group) => group.rows.length > 0);
-  }, [optionRows, resolvedDetailFacts?.groups, selectedOption, selectedOptionCapacity]);
 
   const handleQuantityChange = (delta: number) => {
     setQuantity((prev) => Math.max(1, prev + delta));
@@ -236,7 +149,7 @@ export default function ProductDetail({
 
   return (
     <div className="fixed inset-x-0 bottom-0 top-14 z-20 bg-white/98 backdrop-blur-sm">
-      <div className="mx-auto flex h-full w-full max-w-[720px] flex-col overflow-hidden bg-white sm:border-x sm:border-slate-200 sm:shadow-[0_28px_80px_-48px_rgba(15,23,42,0.4)]">
+      <div className="mx-auto flex h-full w-full max-w-[640px] flex-col overflow-hidden bg-white sm:shadow-[0_28px_80px_-48px_rgba(15,23,42,0.4)]">
         <header className="flex items-center justify-between gap-4 border-b border-slate-200 bg-white/92 px-5 py-3 backdrop-blur-sm sm:px-6">
           <div className="min-w-0">
             <div className="text-[11px] font-semibold tracking-[0.12em] text-sky-600">
@@ -344,33 +257,12 @@ export default function ProductDetail({
           <div className="px-5 pb-10 pt-6 sm:px-6">
             <div className="flex flex-col gap-5">
               <section className="rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-5 shadow-[0_18px_48px_-36px_rgba(15,23,42,0.4)]">
-                <div className="flex flex-col gap-5">
-                  <div className="space-y-2">
+                <div className="flex flex-col gap-4">
+                  <div>
                     <h1 className="text-[24px] font-bold leading-tight text-slate-950 sm:text-[30px]">
                       {product.name}
                     </h1>
-                    <p className="text-[13px] leading-6 text-slate-500">
-                      옵션, 표기 성분, 복용 기준만 빠르게 확인할 수 있게 정리했어요.
-                    </p>
                   </div>
-
-                  {summarizedHighlights.length > 0 ? (
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                      {summarizedHighlights.map((item) => (
-                        <div
-                          key={`${item.label}-${item.value}`}
-                          className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3"
-                        >
-                          <div className="text-[11px] font-semibold tracking-[0.08em] text-slate-500">
-                            {item.label}
-                          </div>
-                          <div className="mt-1 text-[14px] font-semibold leading-5 text-slate-900">
-                            {item.value}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
 
                   <div className="rounded-[24px] border border-slate-200 bg-white p-4">
                     <div className="flex flex-col gap-4">
@@ -439,27 +331,7 @@ export default function ProductDetail({
                 </div>
               </section>
 
-              <div className="space-y-4">
-                {detailGroups.map((group) => (
-                  <section
-                    key={group.title}
-                    className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_48px_-36px_rgba(15,23,42,0.4)]"
-                  >
-                    <h2 className="text-[16px] font-semibold text-slate-950">
-                      {group.title}
-                    </h2>
-                    <div className="mt-4">
-                      {group.rows.map((row) => (
-                        <FactRow
-                          key={`${group.title}-${row.label}-${row.value}`}
-                          label={row.label}
-                          value={row.value}
-                        />
-                      ))}
-                    </div>
-                  </section>
-                ))}
-
+              <div>
                 <section className="rounded-[28px] border border-slate-200 bg-slate-50 px-5 py-4">
                   <div className="space-y-1 text-[13px] leading-6 text-slate-600">
                     <p>주소 입력 후 가까운 약국이 선택되면 정확한 상품 가격을 안내해드려요.</p>
@@ -516,7 +388,7 @@ export default function ProductDetail({
             onClick={() => setSelectedImage(null)}
           >
             <div
-              className="relative h-full w-full max-w-[720px]"
+              className="relative h-full w-full max-w-[640px]"
               ref={imagePreviewDrag.panelRef}
               style={imagePreviewDrag.panelStyle}
             >

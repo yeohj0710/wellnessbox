@@ -99,10 +99,11 @@ function TopBarInner() {
     window.dispatchEvent(new Event("closeCart"));
   }, []);
 
-  const openCommandPalette = useCallback(() => {
-    if (typeof window === "undefined") return;
-    window.dispatchEvent(new Event("wb:open-command-palette"));
-  }, []);
+  // 빠른 메뉴 실행은 현재 사용하지 않아 연결만 남겨 두고 비활성화합니다.
+  // const openCommandPalette = useCallback(() => {
+  //   if (typeof window === "undefined") return;
+  //   window.dispatchEvent(new Event("wb:open-command-palette"));
+  // }, []);
 
   const closeDrawer = useCallback(() => {
     setIsDrawerOpen(false);
@@ -158,10 +159,10 @@ function TopBarInner() {
     window.dispatchEvent(new Event("openCart"));
   }, []);
 
-  const closeDrawerAndOpenCommandPalette = useCallback(() => {
-    setIsDrawerOpen(false);
-    openCommandPalette();
-  }, [openCommandPalette]);
+  // const closeDrawerAndOpenCommandPalette = useCallback(() => {
+  //   setIsDrawerOpen(false);
+  //   openCommandPalette();
+  // }, [openCommandPalette]);
 
   const requestLogout = useCallback(async () => {
     if (logoutPending) return;
@@ -210,7 +211,7 @@ function TopBarInner() {
         onGoHome={goHome}
         onGoSevenDays={goSevenDays}
         onOpenCart={openCartFromOutside}
-        onOpenCommandPalette={openCommandPalette}
+        // onOpenCommandPalette={openCommandPalette}
         onToggleDrawer={() => setIsDrawerOpen((value) => !value)}
         onMenuItemClick={handleMenuItemClick}
         onDrawerModeChange={setIsDrawerMode}
@@ -223,7 +224,7 @@ function TopBarInner() {
         isDrawerOpen={isDrawerMode && isDrawerOpen}
         sevenDayIntentHandlers={sevenDayIntentHandlers}
         onGoSevenDays={goSevenDays}
-        onOpenCommandPalette={closeDrawerAndOpenCommandPalette}
+        // onOpenCommandPalette={closeDrawerAndOpenCommandPalette}
         onCloseDrawer={closeDrawer}
         onMenuItemClick={handleMenuItemClick}
       />

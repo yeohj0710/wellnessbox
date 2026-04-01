@@ -169,9 +169,6 @@ function FooterInner() {
             summary={
               <>
                 <p className="text-base font-semibold text-white">사업자 정보</p>
-                <p className="mt-1 text-sm leading-6 text-slate-400">
-                  운영 주체와 등록 정보, 연락처를 한 번에 확인하실 수 있어요.
-                </p>
               </>
             }
             indicator={

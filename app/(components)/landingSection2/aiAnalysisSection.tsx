@@ -18,6 +18,8 @@ const AI_ANALYSIS_SECTION_CONFIG: LandingFeatureSectionConfig = {
     "건강검진 결과·복용중인 약·증상 등을 입력하면 AI가 필요한 영양소를 추천합니다.",
   imageSrc: "/landingPage2/ai-analysis-hero.png",
   imageAlt: "AI 건강 데이터 분석",
+  gridClassName:
+    "grid grid-cols-1 items-center gap-8 md:grid-cols-2 md:gap-7 lg:gap-8 xl:gap-10",
   sectionClassName: "bg-gradient-to-b from-white via-[#F3F6FF] to-white",
   dividerClassName:
     "bg-gradient-to-r from-transparent via-[#9DB7FF] to-transparent opacity-70",

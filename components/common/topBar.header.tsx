@@ -23,7 +23,7 @@ type TopBarHeaderProps = {
   onGoHome: () => void;
   onGoSevenDays: () => void;
   onOpenCart: () => void;
-  onOpenCommandPalette: () => void;
+  // onOpenCommandPalette: () => void;
   onToggleDrawer: () => void;
   onMenuItemClick: () => void;
   onDrawerModeChange?: (enabled: boolean) => void;
@@ -46,7 +46,7 @@ export function TopBarHeader({
   onGoHome,
   onGoSevenDays,
   onOpenCart,
-  onOpenCommandPalette,
+  // onOpenCommandPalette,
   onToggleDrawer,
   onMenuItemClick,
   onDrawerModeChange,
@@ -131,6 +131,7 @@ export function TopBarHeader({
             )}
           </button>
 
+          {/* 빠른 메뉴 실행은 현재 우선순위가 낮아 비활성화해 둡니다.
           <button
             type="button"
             onClick={onOpenCommandPalette}
@@ -143,7 +144,9 @@ export function TopBarHeader({
               Ctrl+K
             </kbd>
           </button>
+          */}
 
+          {/* 중복 CTA 정리 전까지 보관합니다.
           <button
             {...sevenDayIntentHandlers}
             onClick={onGoSevenDays}
@@ -151,6 +154,7 @@ export function TopBarHeader({
           >
             {TOPBAR_COPY.sevenDayPurchaseText}
           </button>
+          */}
 
           <button
             {...sevenDayIntentHandlers}

@@ -19,6 +19,8 @@ const CUSTOMIZED_SUPPLY_SECTION_CONFIG: LandingFeatureSectionConfig = {
     "하루 복용량 기준으로 7일치씩 소분 포장해 배송합니다. 사용자는 최소 7일부터 부담 없이 시작할 수 있습니다.",
   imageSrc: "/landingPage2/customized-supply-hero.png",
   imageAlt: "맞춤 소분 패키지",
+  gridClassName:
+    "grid grid-cols-1 items-center gap-8 md:grid-cols-2 md:gap-7 lg:gap-8 xl:gap-10",
   sectionClassName: "bg-gradient-to-b from-white via-[#F6F3FF]/60 to-[#F6F3FF]",
   dividerClassName:
     "bg-gradient-to-r from-transparent via-[#B7A9FF] to-transparent opacity-70",
