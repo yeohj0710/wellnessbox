@@ -135,14 +135,14 @@ export default function MessageBubble({
             >
               <div className="flex min-w-0 items-start gap-3">
                 <div className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-50 ring-1 ring-sky-100">
-                  <div className="inline-flex items-center gap-1.5">
-                    <span className="h-1.5 w-1.5 animate-[wb-dot_1.2s_ease-in-out_infinite] rounded-full bg-sky-500" />
+                  <div className="inline-flex items-center justify-center gap-1">
+                    <span className="h-1.25 w-1.25 animate-[wb-dot_1.2s_ease-in-out_infinite] rounded-full bg-sky-500" />
                     <span
-                      className="h-1.5 w-1.5 animate-[wb-dot_1.2s_ease-in-out_infinite] rounded-full bg-sky-500"
+                      className="h-1.25 w-1.25 animate-[wb-dot_1.2s_ease-in-out_infinite] rounded-full bg-sky-500"
                       style={{ animationDelay: "0.18s" }}
                     />
                     <span
-                      className="h-1.5 w-1.5 animate-[wb-dot_1.2s_ease-in-out_infinite] rounded-full bg-sky-500"
+                      className="h-1.25 w-1.25 animate-[wb-dot_1.2s_ease-in-out_infinite] rounded-full bg-sky-500"
                       style={{ animationDelay: "0.36s" }}
                     />
                   </div>

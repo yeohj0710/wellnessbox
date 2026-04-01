@@ -8,7 +8,7 @@ import {
 import type { ChatInputProps } from "./chatInput.types";
 
 const AGENT_COACHMARK_DISMISS_KEY = "wb_chat_agent_coachmark_dismissed_v1";
-export const CHAT_INPUT_COACHMARK_AUTO_HIDE_MS = 9000;
+export const CHAT_INPUT_COACHMARK_AUTO_HIDE_MS = 5000;
 const TEXTAREA_LINE_HEIGHT = 22;
 const TEXTAREA_PADDING_Y = 10;
 const TEXTAREA_SINGLE_HEIGHT = TEXTAREA_LINE_HEIGHT + TEXTAREA_PADDING_Y * 2;

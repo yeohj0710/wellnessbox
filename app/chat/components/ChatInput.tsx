@@ -49,7 +49,7 @@ export default function ChatInput(props: ChatInputProps) {
       <div
         className={`pointer-events-auto w-full space-y-2 ${
           isEmbedded ? "" : "mx-auto max-w-[720px] sm:max-w-[740px] md:max-w-[760px]"
-        }`}
+        } relative`}
       >
         <ChatInputActionAssist
           showCoachmark={showCoachmark}

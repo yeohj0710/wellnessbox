@@ -15,14 +15,14 @@ type ColumnThumbnailProps = {
 function getFrameClasses(variant: NonNullable<ColumnThumbnailProps["variant"]>) {
   switch (variant) {
     case "feature":
-      return "aspect-[5/4] min-h-[132px] sm:min-h-[184px]";
+      return "aspect-[5/4] w-full";
     case "list":
-      return "h-full min-h-[152px] w-full";
+      return "aspect-[4/3] w-full";
     case "detail":
       return "h-44 sm:h-72";
     case "card":
     default:
-      return "aspect-[16/9] min-h-[148px] sm:min-h-[176px]";
+      return "aspect-[16/9] w-full";
   }
 }
 
@@ -119,9 +119,10 @@ export default function ColumnThumbnail({
       <img
         src={coverImageUrl}
         alt={alt}
-        className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+        className="block h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
         style={{ objectPosition: presentation.objectPosition }}
         loading="lazy"
+        decoding="async"
         onError={() => setImageFailed(true)}
       />
     </div>

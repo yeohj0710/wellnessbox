@@ -78,7 +78,7 @@ export default async function HomeColumnPreviewSection() {
               href={`/column/${featured.slug}`}
               className="group block overflow-hidden rounded-[1.75rem] border border-[#dfe6f1] bg-white/96 p-4 shadow-[0_22px_44px_-36px_rgba(23,32,51,0.22)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_28px_52px_-36px_rgba(23,32,51,0.28)] sm:p-5"
             >
-              <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_15rem] md:items-stretch">
+              <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_14rem] md:items-start">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2 text-xs text-[#718093]">
                     <span className="rounded-full bg-[#172033] px-2.5 py-1 font-semibold tracking-[0.14em] text-white">
@@ -98,10 +98,10 @@ export default async function HomeColumnPreviewSection() {
                     ) : null}
                   </div>
 
-                  <h3 className="mt-4 max-w-[18ch] text-[1.45rem] font-semibold leading-tight tracking-[-0.04em] text-[#172033] sm:text-[1.85rem]">
+                  <h3 className="mt-4 max-w-none text-[1.45rem] font-semibold leading-tight tracking-[-0.04em] text-[#172033] sm:max-w-[16ch] sm:text-[1.85rem]">
                     {featured.title}
                   </h3>
-                  <p className="mt-4 max-w-3xl text-sm leading-7 text-[#5f6878] sm:text-[15px]">
+                  <p className="mt-4 max-w-3xl text-sm leading-7 text-[#5f6878] sm:line-clamp-3 sm:text-[15px]">
                     {featured.description}
                   </p>
 
@@ -126,7 +126,7 @@ export default async function HomeColumnPreviewSection() {
                   </div>
                 </div>
 
-                <div className="overflow-hidden rounded-[1.35rem] border border-[#dfe6f1] bg-white/90 shadow-[0_20px_38px_-34px_rgba(23,32,51,0.28)]">
+                <div className="self-start overflow-hidden rounded-[1.35rem] border border-[#dfe6f1] bg-white/90 shadow-[0_20px_38px_-34px_rgba(23,32,51,0.28)]">
                   <ColumnThumbnail
                     slug={featured.slug}
                     title={featured.title}
@@ -145,8 +145,8 @@ export default async function HomeColumnPreviewSection() {
                 href={`/column/${column.slug}`}
                 className="group block overflow-hidden rounded-[1.55rem] border border-[#e1e7f0] bg-[linear-gradient(180deg,#fcfcfa_0%,#f8fbff_100%)] p-4 transition duration-300 hover:-translate-y-0.5 hover:border-[#d4def7] hover:bg-white hover:shadow-[0_20px_36px_-32px_rgba(23,32,51,0.18)] sm:p-5"
               >
-                <div className="grid gap-4 sm:grid-cols-[11rem_minmax(0,1fr)] sm:items-center">
-                  <div className="overflow-hidden rounded-[1.2rem] border border-[#dfe6f1] bg-white/90">
+                <div className="grid gap-4 sm:grid-cols-[10.5rem_minmax(0,1fr)] sm:items-start">
+                  <div className="self-start overflow-hidden rounded-[1.2rem] border border-[#dfe6f1] bg-white/90">
                     <ColumnThumbnail
                       slug={column.slug}
                       title={column.title}

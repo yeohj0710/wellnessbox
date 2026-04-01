@@ -41,8 +41,8 @@ export function ChatInputActionAssist({
   return (
     <>
       {showCoachmark && (
-        <div className="mx-auto flex max-w-[760px] justify-end px-1">
-          <div className="relative max-w-[320px] overflow-hidden rounded-[28px] border border-slate-700/70 bg-[radial-gradient(circle_at_top,rgba(103,232,249,0.16),transparent_36%),linear-gradient(180deg,rgba(15,23,42,0.98)_0%,rgba(15,23,42,0.94)_100%)] px-4 py-3 text-white shadow-[0_20px_44px_rgba(15,23,42,0.34)] backdrop-blur-xl">
+        <div className="pointer-events-none absolute bottom-full right-0 z-20 mb-3 flex justify-end">
+          <div className="pointer-events-auto relative w-[min(19.5rem,calc(100vw-2rem))] overflow-hidden rounded-[28px] border border-slate-700/70 bg-[radial-gradient(circle_at_top,rgba(103,232,249,0.16),transparent_36%),linear-gradient(180deg,rgba(15,23,42,0.98)_0%,rgba(15,23,42,0.94)_100%)] px-4 py-3 text-white shadow-[0_20px_44px_rgba(15,23,42,0.34)] backdrop-blur-xl">
             <div className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
 
             <p className="text-[14px] font-semibold leading-5">
@@ -91,7 +91,7 @@ export function ChatInputActionAssist({
       {showHintPill && (
         <div className="mx-auto max-w-[760px] px-1">
           <div className="flex items-center justify-between gap-2 rounded-full border border-sky-200 bg-sky-50/90 px-3 py-1.5">
-            <p className="truncate text-[13px] font-medium text-sky-800 sm:text-sm">
+            <p className="min-w-0 flex-1 pr-1 text-[13px] font-medium leading-5 text-sky-800 sm:text-sm">
               장바구니, 주문, 화면 이동까지 빠르게 이어서 도와드릴 수 있어요
             </p>
             <button

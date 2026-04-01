@@ -39,7 +39,7 @@ export function useHomeProductQuerySyncEffects(input: {
     syncCartItemsFromStorage,
     setIsCartVisible,
   } = input;
-  const toastShownRef = useRef(false);
+  const lastCategoryToastKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     const resolvedPackage = resolvePackageFromQueryParam(
@@ -51,25 +51,40 @@ export function useHomeProductQuerySyncEffects(input: {
   }, [searchParams, setSelectedPackage]);
 
   useEffect(() => {
-    if (toastShownRef.current) return;
     const catsParam = searchParams.get("categories");
     const singleCat = searchParams.get("category");
+
     if (catsParam) {
-      const ids = catsParam
+      const ids = Array.from(
+        new Set(
+          catsParam
         .split(",")
         .map((n) => parseInt(n, 10))
-        .filter((n) => !isNaN(n));
+            .filter((n) => !isNaN(n))
+        )
+      );
+      if (ids.length === 0) return;
+
       setSelectedCategories(ids);
+
       if (categories.length) {
-        showToast(
-          buildCategoryRecommendationToast({
-            categoryIds: ids,
-            categories,
-          })
-        );
-        toastShownRef.current = true;
+        const toastKey = `categories:${ids.join(",")}`;
+        if (lastCategoryToastKeyRef.current !== toastKey) {
+          showToast(
+            buildCategoryRecommendationToast({
+              categoryIds: ids,
+              categories,
+            })
+          );
+          lastCategoryToastKeyRef.current = toastKey;
+        }
       }
-    } else if (singleCat) {
+      return;
+    }
+
+    lastCategoryToastKeyRef.current = null;
+
+    if (singleCat) {
       const id = parseInt(singleCat, 10);
       if (!isNaN(id)) {
         setSelectedCategories([id]);

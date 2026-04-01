@@ -25,7 +25,7 @@ export default function HomeSupportAccordion({
 
   return (
     <section
-      className={`w-full max-w-[640px] mx-auto mt-6 px-4 sm:mt-8 ${sectionClassName}`}
+      className={`w-full max-w-[640px] mx-auto mt-4 px-4 sm:mt-5 ${sectionClassName}`}
     >
       <SmoothAccordion
         open={open}

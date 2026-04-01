@@ -31,7 +31,7 @@ type UseDesktopChatDockLayoutOptions = {
   panelRef: RefObject<HTMLElement | null>;
 };
 
-export const DOCK_RESIZE_HINT_AUTO_HIDE_MS = 9000;
+export const DOCK_RESIZE_HINT_AUTO_HIDE_MS = 4000;
 
 type UseDesktopChatDockLayoutResult = {
   isResizing: boolean;
