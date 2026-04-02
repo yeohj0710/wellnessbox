@@ -8,7 +8,7 @@ tags:
   - "식습관"
   - "여성건강"
 slug: "period-pain-foods-to-stop-first"
-coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/c/c8/Experiencing_menstrual_pain_with_hot_water_bottle.jpg"
+coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/b/b0/Experiencing_menstrual_pain.jpg"
 ---
 
 # 생리통 심한 사람들, 의외로 이 음식부터 끊어야 합니다

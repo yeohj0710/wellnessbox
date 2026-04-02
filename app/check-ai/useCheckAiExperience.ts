@@ -2,10 +2,8 @@
 
 import {
   useCallback,
-  useDeferredValue,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import { usePersonalizedTrustSummary } from "@/components/common/usePersonalizedTrustSummary";
@@ -31,7 +29,6 @@ import { resolvePersonalizedValueProposition } from "@/lib/value-proposition/eng
 import type { NormalizedCheckAiResult } from "@/app/chat/hooks/useChat.results";
 
 const CHECK_AI_PROGRESS_STORAGE_KEY = "wb_check_ai_progress_v1";
-const CHECK_AI_MIN_PREVIEW_ANSWERS = 4;
 
 type CheckAiDraft = {
   answers: number[];
@@ -133,31 +130,17 @@ export function useCheckAiExperience({
   const [animateBars, setAnimateBars] = useState(false);
   const [categories, setCategories] = useState<CategoryLite[]>([]);
   const [draftRestored, setDraftRestored] = useState(false);
-  const [previewScores, setPreviewScores] = useState<CheckAiClientScore[]>([]);
-  const [previewLoading, setPreviewLoading] = useState(false);
   const [isUserLoggedIn, setIsUserLoggedIn] = useState<boolean | null>(null);
-  const previewRequestIdRef = useRef(0);
-  const previewScoresRef = useRef<CheckAiClientScore[]>([]);
   const resultModalDrag = useDraggableModal(modalOpen, { resetOnOpen: true });
-  const deferredAnswers = useDeferredValue(answers);
 
   const answeredCount = useMemo(
     () => answers.filter((value) => value > 0).length,
     [answers]
   );
-  const deferredAnsweredCount = useMemo(
-    () => deferredAnswers.filter((value) => value > 0).length,
-    [deferredAnswers]
-  );
-  const remainingCount = QUESTIONS.length - answeredCount;
-  const isComplete = remainingCount === 0;
+  const isComplete = answeredCount === QUESTIONS.length;
   const completion = useMemo(
     () => Math.round((answeredCount / QUESTIONS.length) * 100),
     [answeredCount]
-  );
-  const previewLabels = useMemo(
-    () => previewScores.slice(0, 2).map((score) => score.label),
-    [previewScores]
   );
 
   useEffect(() => {
@@ -221,10 +204,6 @@ export function useCheckAiExperience({
   }, [isUserLoggedIn, results, trustSummary]);
 
   useEffect(() => {
-    previewScoresRef.current = previewScores;
-  }, [previewScores]);
-
-  useEffect(() => {
     if (answeredCount === 0) {
       clearCheckAiDraft();
       return;
@@ -260,53 +239,6 @@ export function useCheckAiExperience({
       alive = false;
     };
   }, []);
-
-  useEffect(() => {
-    if (deferredAnsweredCount < CHECK_AI_MIN_PREVIEW_ANSWERS || isComplete) {
-      setPreviewLoading(false);
-      return;
-    }
-
-    const controller = new AbortController();
-    const requestId = previewRequestIdRef.current + 1;
-    previewRequestIdRef.current = requestId;
-    const hasStablePreview = previewScoresRef.current.length > 0;
-    const timeoutId = window.setTimeout(() => {
-      const loadingStartedAt = Date.now();
-      setPreviewLoading(true);
-
-      const filled = deferredAnswers.map((value) => (value > 0 ? value : 3));
-
-      requestCheckAiPredictScores(
-        filled,
-        getApiUrl("/api/predict"),
-        3,
-        controller.signal
-      )
-        .then((scores) => {
-          if (previewRequestIdRef.current !== requestId) return;
-          setPreviewScores(scores.slice(0, 3));
-        })
-        .catch((error) => {
-          if (previewRequestIdRef.current !== requestId) return;
-          if (error instanceof DOMException && error.name === "AbortError") {
-            return;
-          }
-          setPreviewScores([]);
-        })
-        .finally(() => {
-          void ensureMinimumDelay(loadingStartedAt, 180).then(() => {
-            if (previewRequestIdRef.current !== requestId) return;
-            setPreviewLoading(false);
-          });
-        });
-    }, hasStablePreview ? 420 : 260);
-
-    return () => {
-      controller.abort();
-      window.clearTimeout(timeoutId);
-    };
-  }, [deferredAnswers, deferredAnsweredCount, isComplete]);
 
   const handleChange = useCallback((index: number, value: number) => {
     setAnswers((current) => {
@@ -395,15 +327,11 @@ export function useCheckAiExperience({
     modalOpen,
     animateBars,
     draftRestored,
-    previewLoading,
     resultModalDrag,
     answeredCount,
-    remainingCount,
     canSubmit: isComplete,
     completion,
-    previewLabels,
     recommendedIds,
-    minPreviewAnswers: CHECK_AI_MIN_PREVIEW_ANSWERS,
     trustSummary,
     valueProposition,
     guestBridgeModel,

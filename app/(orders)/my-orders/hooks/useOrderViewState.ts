@@ -5,13 +5,13 @@ import { useCallback, useEffect, useState } from "react";
 import { LookupConfig } from "../types";
 
 interface UseOrderViewStateOptions {
-  isPhoneLinked: boolean;
+  hasVerifiedPhone: boolean;
   phoneStatusLoading: boolean;
   linkedPhoneNormalized: string;
 }
 
 export function useOrderViewState({
-  isPhoneLinked,
+  hasVerifiedPhone,
   phoneStatusLoading,
   linkedPhoneNormalized,
 }: UseOrderViewStateOptions) {
@@ -22,7 +22,7 @@ export function useOrderViewState({
 
   useEffect(() => {
     if (
-      isPhoneLinked &&
+      hasVerifiedPhone &&
       !phoneStatusLoading &&
       !isViewingDetails &&
       !dismissedLinkedView
@@ -35,21 +35,21 @@ export function useOrderViewState({
     }
   }, [
     dismissedLinkedView,
-    isPhoneLinked,
+    hasVerifiedPhone,
     isViewingDetails,
     linkedPhoneNormalized,
     phoneStatusLoading,
   ]);
 
   const viewLinkedOrders = useCallback(() => {
-    if (!isPhoneLinked || phoneStatusLoading) return;
+    if (!hasVerifiedPhone || phoneStatusLoading) return;
     setDismissedLinkedView(false);
     setIsViewingDetails({
       phone: linkedPhoneNormalized,
       password: "",
       mode: "phone-only",
     });
-  }, [isPhoneLinked, linkedPhoneNormalized, phoneStatusLoading]);
+  }, [hasVerifiedPhone, linkedPhoneNormalized, phoneStatusLoading]);
 
   const viewLinkedOrdersWithPhone = useCallback((phone: string) => {
     setDismissedLinkedView(false);

@@ -8,7 +8,7 @@ tags:
   - 복용시간
   - 심혈관기초
 slug: omega3-after-meal
-coverImageUrl: https://images.pexels.com/photos/24554130/pexels-photo-24554130.jpeg
+coverImageUrl: "https://images.pexels.com/photos/24554130/pexels-photo-24554130.jpeg"
 ---
 
 # 오메가3는 왜 식후가 편할까, 복용 시간을 고를 때 봐야 할 기준
@@ -31,6 +31,9 @@ _이미지 출처: [Pexels - Fish oil capsules](https://www.pexels.com/photo/clo
 복용을 중단하는 가장 흔한 이유가 “몸에 좋다는데 먹을 때마다 불편하다”는 점입니다. 그래서 오메가3는 좋은 시간보다 **불편이 덜한 시간**을 먼저 찾는 편이 오래 갑니다.
 
 ## 어느 식사 뒤가 좋을까
+
+![지방이 포함된 식사와 오메가3 루틴](https://images.pexels.com/photos/27837166/pexels-photo-27837166.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - A plate with salmon avocado and onions](https://www.pexels.com/photo/a-plate-with-salmon-avocado-and-onions-27837166/)_
 
 정답은 가장 잘 지킬 수 있는 식사 직후입니다.
 
@@ -56,6 +59,9 @@ _이미지 출처: [Pexels - Fish oil capsules](https://www.pexels.com/photo/clo
 기저질환 약을 복용 중이면 전문가 상담이 먼저입니다. 특히 출혈 관련 약물 등은 개인별 확인이 필요합니다.
 
 ## 이런 경우엔 이렇게 바꿔 보세요
+
+![오메가3 제품과 복용 타이밍](https://images.pexels.com/photos/24554111/pexels-photo-24554111.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - Blue bottle of fish oil capsules](https://www.pexels.com/photo/blue-bottle-of-fish-oil-capsules-24554111/)_
 
 1. **비린 트림이 올라오는 경우**: 가장 큰 식사 직후로 옮기고, 한 번에 몰아 먹고 있다면 나눠 먹는 방법을 고려하세요.
 2. **공복에 더부룩한 경우**: 공복 복용을 고집하지 말고 식사와 붙이세요. 오메가3는 “빈속에 참아가며” 먹는 영양제가 아닙니다.

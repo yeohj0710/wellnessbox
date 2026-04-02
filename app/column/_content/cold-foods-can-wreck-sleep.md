@@ -58,8 +58,8 @@ _이미지 출처: [Wikimedia Commons - Ice cream from Bergamo](https://commons.
 
 낮에 먹는 냉면, 아이스 아메리카노, 차가운 과일이 모두 나쁜 건 아닙니다. 문제는 **밤 9시 이후에 반복되는 찬 음료 습관**입니다. 같은 음식도 먹는 시간대가 바뀌면 위장 반응과 수면 영향이 완전히 달라집니다.
 
-![수면 환경과 잠의 질](https://upload.wikimedia.org/wikipedia/commons/3/30/Bed.jpg)
-_이미지 출처: [Wikimedia Commons - Bed](https://commons.wikimedia.org/wiki/File:Bed.jpg)_
+![밤 루틴과 수면 시간 관리](https://images.pexels.com/photos/17378218/pexels-photo-17378218.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - Lamp and alarm clock in bedroom](https://www.pexels.com/photo/lamp-and-alarm-clock-in-bedroom-17378218/)_
 
 
 ## 바로 써먹는 실전 루틴

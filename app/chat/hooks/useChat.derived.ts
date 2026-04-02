@@ -22,7 +22,10 @@ import {
   type AgentCapabilityItem,
   type AgentGuideExample,
 } from "./useChat.agentGuide";
-import { pickLatestAssistantText } from "./useChat.agentActions";
+import {
+  hasRecommendationSection,
+  pickLatestAssistantText,
+} from "./useChat.agentActions";
 import type { ActionMemoryMap } from "./useChat.actionMemory";
 import type { InChatAssessmentState } from "./useChat.assessment";
 
@@ -91,6 +94,19 @@ export function useChatDerivedState(
     [active?.messages]
   );
 
+  const hasAssistantRecommendation = useMemo(
+    () => {
+      const normalized = latestAssistantTextInActive.replace(/\s+/g, " ").trim();
+      return (
+        hasRecommendationSection(latestAssistantTextInActive) ||
+        normalized.includes("추천 상품") ||
+        normalized.includes("바로 구매") ||
+        normalized.includes("장바구니에 담")
+      );
+    },
+    [latestAssistantTextInActive]
+  );
+
   const runtimeContextText = useMemo(
     () =>
       typeof pageContext?.runtimeContextText === "string"
@@ -140,11 +156,16 @@ export function useChatDerivedState(
   const showAgentCapabilityHub = useMemo(() => {
     if (!active) return false;
     if (inChatAssessment && inChatAssessment.sessionId === active.id) return false;
+    if (hasAssistantRecommendation) return false;
+    const assistantMessageCount = active.messages.filter(
+      (message) => message.role === "assistant"
+    ).length;
+    if (assistantMessageCount > 0) return false;
     const userMessageCount = active.messages.filter(
       (message) => message.role === "user"
     ).length;
-    return userMessageCount <= 8;
-  }, [active, inChatAssessment]);
+    return userMessageCount <= 3;
+  }, [active, hasAssistantRecommendation, inChatAssessment]);
 
   const buildContextDeps = useCallback(
     (sessionId: string | null) => ({

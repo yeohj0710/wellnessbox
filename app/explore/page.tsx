@@ -65,13 +65,15 @@ export default function ExplorePage() {
       <Suspense fallback={<CardSectionFallback />}>
         <ExplorePopularIngredientsSection homeDataPromise={homeDataPromise} />
       </Suspense>
-      <SymptomImprovement />
       <Suspense fallback={<CardSectionFallback />}>
         <ExploreSupplementRankingSection homeDataPromise={homeDataPromise} />
       </Suspense>
-      <Suspense fallback={<HomeProductsFallback />}>
-        <HomeProductSectionServer homeDataPromise={homeDataPromise} />
-      </Suspense>
+      <div className="mt-6 sm:mt-8">
+        <Suspense fallback={<HomeProductsFallback />}>
+          <HomeProductSectionServer homeDataPromise={homeDataPromise} />
+        </Suspense>
+      </div>
+      <SymptomImprovement />
     </>
   );
 }

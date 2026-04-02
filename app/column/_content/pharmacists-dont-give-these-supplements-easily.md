@@ -8,7 +8,7 @@ tags:
   - "약사"
   - "주의제품"
 slug: "pharmacists-dont-give-these-supplements-easily"
-coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/6/63/Pill_Bottle_Spilled.jpg"
+coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/d/db/Medication_blister_pack.jpg"
 ---
 
 # 약사는 자기 가족에게도 이런 영양제는 쉽게 안 줍니다

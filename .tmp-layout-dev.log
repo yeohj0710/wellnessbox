@@ -1,0 +1,82 @@
+
+> wellnessbox@0.1.0 predev
+> node -e "try{require('fs').rmSync('.next',{recursive:true,force:true})}catch(e){}" && npm run prisma:generate && npm run prepare:assets && npm run audit:encoding && npm run audit:route-method-exports
+
+
+> wellnessbox@0.1.0 prisma:generate
+> node scripts/prisma-generate-safe.cjs
+
+Prisma schema loaded from prisma\schema.prisma
+
+✔ Generated Prisma Client (v6.19.1) to .\node_modules\@prisma\client in 604ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Need your database queries to be 1000x faster? Accelerate offers you that and more: https://pris.ly/tip-2-accelerate
+
+
+> wellnessbox@0.1.0 prepare:assets
+> node copy_wasm.js
+
+
+> wellnessbox@0.1.0 audit:encoding
+> ts-node scripts/audit-encoding.ts
+
+Encoding audit passed: no suspicious mojibake patterns found.
+
+> wellnessbox@0.1.0 audit:route-method-exports
+> ts-node scripts/audit-route-method-exports.ts
+
+Route method export audit passed: no missing HTTP method exports found.
+
+> wellnessbox@0.1.0 dev
+> next dev --port 3001 --hostname 127.0.0.1 --port 3001
+
+   ▲ Next.js 15.0.5
+   - Local:        http://127.0.0.1:3001
+   - Network:      http://127.0.0.1:3001
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 2.5s
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 790ms (93 modules)
+ ○ Compiling / ...
+ ✓ Compiled / in 18s (3410 modules)
+ GET / 200 in 19170ms
+ ✓ Compiled in 1462ms (1604 modules)
+ ✓ Compiled in 257ms (1590 modules)
+[perf] home:data:db: 2482.4ms
+[perf] home:data:total: 3176.1ms
+[perf] home:data:total: 14.8ms
+ GET / 200 in 581ms
+ ○ Compiling /manifest.webmanifest ...
+ ✓ Compiled /api/auth/login-status in 6s (1796 modules)
+ ✓ Compiled in 2.4s (1590 modules)
+ GET /manifest.webmanifest 200 in 9356ms
+ GET /api/auth/login-status 200 in 5076ms
+[perf] home:data:total: 13.0ms
+ GET / 200 in 5537ms
+ POST /api/get-sorted-pharmacies 200 in 6835ms
+ POST /api/get-sorted-pharmacies 200 in 400ms
+ GET /api/user/all-results 200 in 7603ms
+[perf] home:data:total: 9.6ms
+ GET / 200 in 235ms
+ GET /manifest.webmanifest 200 in 165ms
+ GET /api/auth/login-status 200 in 84ms
+ POST /api/get-sorted-pharmacies 200 in 409ms
+ POST /api/get-sorted-pharmacies 200 in 393ms
+ ○ Compiling /explore ...
+ ✓ Compiled /explore in 2.1s (3375 modules)
+[perf] home:data:total: 11.6ms
+ GET /explore 200 in 2659ms
+ ○ Compiling /manifest.webmanifest ...
+ ✓ Compiled /manifest.webmanifest in 731ms (1801 modules)
+ GET /manifest.webmanifest 200 in 936ms
+ ○ Compiling /api/get-sorted-pharmacies ...
+ ✓ Compiled /api/auth/login-status in 894ms (2012 modules)
+ ✓ Compiled (2017 modules)
+ GET /api/auth/login-status 200 in 972ms
+ POST /api/get-sorted-pharmacies 200 in 2441ms
+ POST /api/get-sorted-pharmacies 200 in 431ms
+[?25h

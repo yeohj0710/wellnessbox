@@ -1,0 +1,21 @@
+Environment variables loaded from .env
+[db-env] conflicting db url env detected {
+  conflicts: [
+    'DATABASE URL host mismatch detected. (WELLNESSBOX_PRISMA_URL=>ep-withered-lake-a1f76tup-pooler.ap-southeast-1.aws.neon.tech, POSTGRES_PRISMA_URL=>ep-bold-water-a1537fwi-pooler.ap-southeast-1.aws.neon.tech)',
+    'DIRECT URL host mismatch detected. (WELLNESSBOX_URL_NON_POOLING=>ep-withered-lake-a1f76tup.ap-southeast-1.aws.neon.tech, POSTGRES_URL_NON_POOLING=>ep-bold-water-a1537fwi.ap-southeast-1.aws.neon.tech)'
+  ],
+  selected: {
+    databaseKey: 'WELLNESSBOX_PRISMA_URL',
+    directKey: 'WELLNESSBOX_URL_NON_POOLING'
+  }
+}
+[db-env] conflicting db url env detected {
+  conflicts: [
+    'DATABASE URL host mismatch detected. (WELLNESSBOX_PRISMA_URL=>ep-withered-lake-a1f76tup-pooler.ap-southeast-1.aws.neon.tech, DATABASE_URL=>ep-withered-lake-a1f76tup-pooler.ap-southeast-1.aws.neon.tech, POSTGRES_PRISMA_URL=>ep-bold-water-a1537fwi-pooler.ap-southeast-1.aws.neon.tech)',
+    'DIRECT URL host mismatch detected. (WELLNESSBOX_URL_NON_POOLING=>ep-withered-lake-a1f76tup.ap-southeast-1.aws.neon.tech, DIRECT_URL=>ep-withered-lake-a1f76tup.ap-southeast-1.aws.neon.tech, POSTGRES_URL_NON_POOLING=>ep-bold-water-a1537fwi.ap-southeast-1.aws.neon.tech)'
+  ],
+  selected: {
+    databaseKey: 'WELLNESSBOX_PRISMA_URL',
+    directKey: 'WELLNESSBOX_URL_NON_POOLING'
+  }
+}

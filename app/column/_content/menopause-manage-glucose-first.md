@@ -8,7 +8,7 @@ tags:
   - "혈당"
   - "여성건강"
 slug: "menopause-manage-glucose-first"
-coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/4/41/Woman_silhouette_(Unsplash).jpg"
+coverImageUrl: "https://images.pexels.com/photos/7991942/pexels-photo-7991942.jpeg?auto=compress&cs=tinysrgb&w=1200"
 ---
 
 # 갱년기 여성은 살보다 혈당부터 관리해야 합니다
@@ -17,8 +17,8 @@ coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/4/41/Woman_silhou
 
 이 시기에는 체중보다 먼저 **혈당과 리듬**을 봐야 합니다. 에스트로겐 변화, 수면의 질 저하, 복부지방 증가, 근육 감소, 스트레스 반응 변화가 겹치면서 같은 식사를 해도 혈당이 더 흔들리기 쉬워지기 때문입니다. 쉽게 말해, ‘살찌는 시기’라기보다 **몸이 당 처리에 예민해지는 시기**에 가깝습니다. 그래서 갱년기 관리의 핵심은 적게 먹는 게 아니라, 덜 출렁이게 사는 겁니다.
 
-![중년 여성 건강](https://upload.wikimedia.org/wikipedia/commons/4/41/Woman_silhouette_(Unsplash).jpg)
-_이미지 출처: [Wikimedia Commons - Woman silhouette](https://commons.wikimedia.org/wiki/File:Woman%20silhouette%20%28Unsplash%29.jpg)_
+![허리둘레 변화와 대사 신호](https://images.pexels.com/photos/7991942/pexels-photo-7991942.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - Woman measuring waist](https://www.pexels.com/photo/woman-measuring-waist-7991942/)_
 
 
 ## 핵심만 먼저
@@ -36,8 +36,8 @@ _이미지 출처: [Wikimedia Commons - Woman silhouette](https://commons.wikime
 
 또 하나는 **근육 감소**입니다. 나이가 들수록 가만히 있으면 근육이 줄고, 근육이 줄면 포도당을 처리하는 창고도 작아집니다. 결국 ‘전보다 똑같이 먹는데 더 찌고 더 피곤한’ 이유가 생기는 거죠. 그래서 갱년기 관리의 핵심은 적게 먹는 게 아니라 **근육을 지키고 밤을 망치지 않는 생활**입니다.
 
-![수면과 호르몬 변화](https://upload.wikimedia.org/wikipedia/commons/3/30/Bed.jpg)
-_이미지 출처: [Wikimedia Commons - Bed](https://commons.wikimedia.org/wiki/File:Bed.jpg)_
+![혈당 확인과 생활 리듬 관리](https://images.pexels.com/photos/17071590/pexels-photo-17071590.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - A person holding a blood glucose meter on a table](https://www.pexels.com/photo/a-person-holding-a-blood-glucose-meter-on-a-table-17071590/)_
 
 
 ## 사람들이 제일 많이 놓치는 포인트
@@ -58,8 +58,8 @@ _이미지 출처: [Wikimedia Commons - Bed](https://commons.wikimedia.org/wiki/
 
 낮에 너무 안 먹으면 저녁 이후 허기가 커지고, 결국 야식과 수면 질 저하로 이어집니다. 이 시기엔 참는 식단보다 안정적인 식사가 더 강합니다.
 
-![활동량과 혈당 관리](https://upload.wikimedia.org/wikipedia/commons/3/3e/Running_woman.jpg)
-_이미지 출처: [Wikimedia Commons - Running woman](https://commons.wikimedia.org/wiki/File:Running%20woman.jpg)_
+![근력운동과 혈당 관리](https://images.pexels.com/photos/8417517/pexels-photo-8417517.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - A woman working out using a resistance band](https://www.pexels.com/photo/a-woman-working-out-using-a-resistance-band-8417517/)_
 
 
 ## 바로 써먹는 실전 루틴

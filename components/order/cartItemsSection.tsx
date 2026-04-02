@@ -1,11 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import BetaFeatureGate from "@/components/common/BetaFeatureGate";
 import CartBulkChangeControls from "./CartBulkChangeControls";
-import CartBundleIntelligenceCard from "./CartBundleIntelligenceCard";
-import CartCompositionExplainabilityCard from "./CartCompositionExplainabilityCard";
-import CartStockIntelligenceCard from "./CartStockIntelligenceCard";
 import CartItemsSectionStatusContent from "./CartItemsSectionStatusContent";
 import { CART_ITEMS_SECTION_COPY } from "./cartItemsSection.copy";
 import {
@@ -51,8 +47,6 @@ export default function CartItemsSection({
   onRetryResolve,
   isAddressMissing = false,
   onOpenAddressModal,
-  userSummary = null,
-  stockRecovery = null,
 }: CartItemsSectionProps) {
   const {
     products,
@@ -98,12 +92,12 @@ export default function CartItemsSection({
   return (
     <>
       <div className="px-4 sm:mt-2">
-        <h2 className="text-lg font-bold pb-4 border-b mb-4 mt-4">
+        <h2 className="mb-4 mt-4 border-b pb-4 text-lg font-bold">
           {CART_ITEMS_SECTION_COPY.sectionTitle}
         </h2>
       </div>
 
-      <div className="space-y-4 px-4 mb-2 min-h-28">
+      <div className="mb-2 min-h-28 space-y-4 px-4">
         <CartItemsSectionStatusContent
           resolving={resolving}
           cartProductsError={cartProductsError}
@@ -121,40 +115,7 @@ export default function CartItemsSection({
           onProductClick={onProductClick}
         />
 
-        {!resolving && items.length > 0 ? (
-          <BetaFeatureGate
-            title="Beta 장바구니 가이드"
-            helper="새로 추가된 재고·구성·설명 카드는 필요할 때만 펼쳐보세요."
-          >
-            <div className="space-y-4">
-              <CartStockIntelligenceCard
-                items={items}
-                cartItems={cartItems}
-                allProducts={allProducts}
-                selectedPharmacyId={selectedPharmacy?.id}
-                summary={userSummary}
-                recovery={stockRecovery}
-                isAddressMissing={isAddressMissing}
-                onUpdateCart={onUpdateCart}
-                onBulkChange={handleBulkChange}
-                onRetryResolve={onRetryResolve}
-                onOpenAddressModal={onOpenAddressModal}
-              />
-              <CartCompositionExplainabilityCard
-                items={items}
-                summary={userSummary}
-              />
-              <CartBundleIntelligenceCard
-                items={items}
-                cartItems={cartItems}
-                allProducts={allProducts}
-                selectedPharmacy={selectedPharmacy}
-                onUpdateCart={onUpdateCart}
-                onBulkChange={handleBulkChange}
-              />
-            </div>
-          </BetaFeatureGate>
-        ) : null}
+        {/* Beta cart guide block hidden for now per current checkout UI cleanup request. */}
       </div>
 
       <CartBulkChangeControls

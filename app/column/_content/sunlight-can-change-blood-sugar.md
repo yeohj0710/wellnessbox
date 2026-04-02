@@ -8,7 +8,7 @@ tags:
   - "혈당관리"
   - "생체리듬"
 slug: "sunlight-can-change-blood-sugar"
-coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/2/25/Sunlight_in_a_winter_morning.jpg"
+coverImageUrl: "https://images.pexels.com/photos/8353689/pexels-photo-8353689.jpeg?auto=compress&cs=tinysrgb&w=1200"
 ---
 
 # 햇빛만 잘 쬐어도 혈당이 달라질 수 있습니다
@@ -17,8 +17,8 @@ coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/2/25/Sunlight_in_
 
 햇빛이 혈당을 직접 태워 없애 준다는 얘기는 아닙니다. 대신 몸의 시계를 맞춰 줍니다. 이 시계가 맞아야 밤에 잠이 오고, 늦은 야식이 줄고, 아침 공복 스트레스가 덜하고, 낮 시간 인슐린 민감성이 덜 망가집니다. 결국 빛은 혈당을 돌아서 만지는 변수입니다.
 
-![창문으로 들어오는 햇빛](https://upload.wikimedia.org/wikipedia/commons/7/79/Pattern_of_light_on_wall_by_sun_through_blinds_plus_window.JPG)
-_이미지 출처: [Wikimedia Commons - Sunlight through blinds](https://commons.wikimedia.org/wiki/File:Pattern%20of%20light%20on%20wall%20by%20sun%20through%20blinds%20plus%20window.JPG)_
+![아침 햇빛이 드는 실내 환경](https://images.pexels.com/photos/8353689/pexels-photo-8353689.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - Sunlight shining through the window curtains](https://www.pexels.com/photo/sunlight-shining-through-the-window-curtains-8353689/)_
 
 
 ## 핵심만 먼저
@@ -58,8 +58,8 @@ _이미지 출처: [Wikimedia Commons - Morning Sun Rays](https://commons.wikime
 
 점심이나 저녁 먹고 10분 정도 햇빛 받으며 걷는 습관은 두 가지를 한 번에 잡습니다. 식후 움직임과 자연광 노출을 동시에 챙기는 방식이라, 바쁜 사람에게 특히 효율적입니다.
 
-![자연광 이미지](https://upload.wikimedia.org/wikipedia/commons/c/ca/Sunlight_of_plane_window.jpg)
-_이미지 출처: [Wikimedia Commons - Sunlight of plane window](https://commons.wikimedia.org/wiki/File:Sunlight%20of%20plane%20window.jpg)_
+![식후 산책과 낮빛 노출](https://images.pexels.com/photos/34903294/pexels-photo-34903294.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - Sunlit morning walk in Nanjing park](https://www.pexels.com/photo/sunlit-morning-walk-in-nanjing-park-34903294/)_
 
 
 ## 바로 써먹는 실전 루틴

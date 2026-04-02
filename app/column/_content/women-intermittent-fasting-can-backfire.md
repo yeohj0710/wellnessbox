@@ -8,7 +8,7 @@ tags:
   - "여성건강"
   - "수면"
 slug: "women-intermittent-fasting-can-backfire"
-coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/5/59/CALENDAR.png"
+coverImageUrl: "https://images.pexels.com/photos/29509426/pexels-photo-29509426.jpeg?auto=compress&cs=tinysrgb&w=1200"
 ---
 
 # 이런 여성분들은 간헐적 단식, 오히려 몸을 더 망칠 수 있습니다
@@ -17,8 +17,8 @@ coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/5/59/CALENDAR.png
 
 겉으로는 ‘식사 시간이 줄어든 것’처럼 보이지만, 실제 몸에서는 **오전 내내 버티다가 오후~밤에 허기가 폭발하고, 카페인으로 낮을 버티고, 생리 전후 식욕 변화와 겹치고, 수면이 망가지는 패턴**으로 흘러가는 경우가 적지 않습니다. 그래서 간헐적 단식은 의지의 문제가 아니라, 내 몸이 그 리듬을 감당할 수 있는지의 문제입니다.
 
-![식사 시간 제한](https://upload.wikimedia.org/wikipedia/commons/5/59/CALENDAR.png)
-_이미지 출처: [Wikimedia Commons - Calendar](https://commons.wikimedia.org/wiki/File:CALENDAR.png)_
+![복용 시간표와 커피 루틴 정리](https://images.pexels.com/photos/29509426/pexels-photo-29509426.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - Open planner with coffee and plant on desk](https://www.pexels.com/photo/open-planner-with-coffee-and-plant-on-desk-29509426/)_
 
 
 ## 핵심만 먼저
@@ -36,8 +36,8 @@ _이미지 출처: [Wikimedia Commons - Calendar](https://commons.wikimedia.org/
 
 또 하나는 **수면 부족**입니다. 잠이 부족하면 식욕 조절 자체가 흔들리는데, 그 상태에서 긴 공복을 얹으면 낮엔 버티고 밤엔 무너질 가능성이 커집니다. 즉 단식이 문제라기보다, 단식이 안 맞는 몸 상태에서 억지로 밀고 가는 게 문제입니다.
 
-![여성 건강과 리듬](https://upload.wikimedia.org/wikipedia/commons/4/41/Woman_silhouette_(Unsplash).jpg)
-_이미지 출처: [Wikimedia Commons - Woman silhouette](https://commons.wikimedia.org/wiki/File:Woman%20silhouette%20%28Unsplash%29.jpg)_
+![생리 주기와 식욕 변화를 함께 보는 달력](https://commons.wikimedia.org/wiki/Special:FilePath/Typical%20mentrual%20monthly%20cycle.png)
+_이미지 출처: [Wikimedia Commons - Typical mentrual monthly cycle](https://commons.wikimedia.org/wiki/File:Typical_mentrual_monthly_cycle.png)_
 
 
 ## 사람들이 제일 많이 놓치는 포인트
@@ -58,8 +58,8 @@ _이미지 출처: [Wikimedia Commons - Woman silhouette](https://commons.wikime
 
 누군가는 16:8이 잘 맞고, 누군가는 12시간만 줄여도 힘듭니다. 안 맞는 사람에게 더 세게 하라고 하는 건 맞지 않습니다. 몸 반응이 답입니다.
 
-![수면 부족과 단식의 한계](https://upload.wikimedia.org/wikipedia/commons/3/30/Bed.jpg)
-_이미지 출처: [Wikimedia Commons - Bed](https://commons.wikimedia.org/wiki/File:Bed.jpg)_
+![수면 부족과 무너지는 단식 루틴](https://images.pexels.com/photos/7888733/pexels-photo-7888733.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - Tired woman sleeping on desk](https://www.pexels.com/photo/tired-woman-sleeping-on-desk-7888733/)_
 
 
 ## 그래서 실제로는 이렇게 조정해야 합니다

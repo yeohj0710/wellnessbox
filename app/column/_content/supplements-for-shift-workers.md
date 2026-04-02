@@ -8,7 +8,7 @@ tags:
   - "영양제"
   - "수면리듬"
 slug: "supplements-for-shift-workers"
-coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/b/b9/Night_work_(9475975716).jpg"
+coverImageUrl: "https://images.pexels.com/photos/32690225/pexels-photo-32690225.jpeg?auto=compress&cs=tinysrgb&w=1200"
 ---
 
 # 3교대 하는 사람은 영양제도 다르게 먹어야 합니다
@@ -17,8 +17,8 @@ coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/b/b9/Night_work_(
 
 그래서 교대근무자에게 영양제는 '좋다는 것 다 먹기'가 아니라 **무너지는 부분을 먼저 받치는 순서**가 중요합니다. 수면이 망가진 사람에게 집중력용 자극제만 얹으면 더 깨지고, 낮에 햇빛 못 보는 사람에게 피곤하다고 커피만 늘리면 밤낮이 더 꼬입니다. 우선순위가 핵심입니다.
 
-![야간 근무 포스터](https://upload.wikimedia.org/wikipedia/commons/9/91/P02-Work-The-Night-Shift-NASA-Recruitment-Poster.jpg)
-_이미지 출처: [Wikimedia Commons - Work the Night Shift poster](https://commons.wikimedia.org/wiki/File:P02-Work-The-Night-Shift-NASA-Recruitment-Poster.jpg)_
+![야간 근무 환경과 리듬 관리](https://images.pexels.com/photos/32690225/pexels-photo-32690225.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - Nighttime street sweeper in urban environment](https://www.pexels.com/photo/nighttime-street-sweeper-in-urban-environment-32690225/)_
 
 
 ## 핵심만 먼저
@@ -36,8 +36,8 @@ _이미지 출처: [Wikimedia Commons - Work the Night Shift poster](https://com
 
 결국 교대근무자에게 필요한 건 '피로회복 만능 영양제'가 아니라, **햇빛 부족을 메우는 것**, **잠드는 전환을 돕는 것**, **식사 질이 망가질 때 최소한을 지키는 것**, **각성제를 덜 망하게 쓰는 것**입니다.
 
-![아침 자연광 이미지](https://upload.wikimedia.org/wikipedia/commons/c/ca/Sunlight_of_plane_window.jpg)
-_이미지 출처: [Wikimedia Commons - Sunlight of plane window](https://commons.wikimedia.org/wiki/File:Sunlight%20of%20plane%20window.jpg)_
+![창문으로 들어오는 아침 자연광](https://images.pexels.com/photos/30669567/pexels-photo-30669567.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - Morning sunlight through frosted window pane](https://www.pexels.com/photo/morning-sunlight-through-frosted-window-pane-30669567/)_
 
 
 ## 사람들이 제일 많이 놓치는 포인트
@@ -58,8 +58,8 @@ _이미지 출처: [Wikimedia Commons - Sunlight of plane window](https://common
 
 많은 교대근무자가 카페인을 보충제처럼 씁니다. 하지만 이건 에너지를 넣는 게 아니라 졸림을 잠깐 미루는 겁니다. 근무 후 잠들기 직전까지 카페인을 끌고 가면, 다음 근무를 위해 또 카페인을 늘려야 하는 구조가 만들어집니다.
 
-![일정 관리 달력 이미지](https://upload.wikimedia.org/wikipedia/commons/4/48/One_Page_Calendar_2021.jpg)
-_이미지 출처: [Wikimedia Commons - One Page Calendar](https://commons.wikimedia.org/wiki/File:One%20Page%20Calendar%202021.jpg)_
+![교대근무 일정과 카페인 컷오프 계획](https://images.pexels.com/photos/29509462/pexels-photo-29509462.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - 2025 desk calendar with coffee and sticky notes](https://www.pexels.com/photo/2025-desk-calendar-with-coffee-and-sticky-notes-29509462/)_
 
 
 ## 그래서 교대근무자는 이렇게 배치하는 게 낫습니다

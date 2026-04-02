@@ -8,7 +8,7 @@ tags:
   - "진통제"
   - "안약"
 slug: "everyday-otc-meds-can-backfire"
-coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/1/18/Pill_Bottle_of_Assorted_Pills.JPG"
+coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/7/77/Eye_drop.jpg"
 ---
 
 # 진통제·인공눈물·알레르기약, 맨날 쓰면 오히려 몸이 망가집니다

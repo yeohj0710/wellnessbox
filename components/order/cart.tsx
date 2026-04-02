@@ -4,9 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
-import BetaFeatureGate from "@/components/common/BetaFeatureGate";
 import CartItemsSection from "./cartItemsSection";
-import CartRecoveryCoachCard from "./CartRecoveryCoachCard";
 import AddressSection from "./addressSection";
 import PharmacyInfoSection from "./pharmacyInfoSection";
 import PaymentSection from "./paymentSection";
@@ -19,7 +17,6 @@ import { useCartLoginStatus } from "./hooks/useCartLoginStatus";
 import { useCartOverlayCloseBehavior } from "./hooks/useCartOverlayCloseBehavior";
 import { useCartClientPersistence } from "./hooks/useCartClientPersistence";
 import { useCartCheckoutOffer } from "./hooks/useCartCheckoutOffer";
-import { useCartRecovery } from "./hooks/useCartRecovery";
 import { usePhoneStatus } from "./hooks/usePhoneStatus";
 import type { CartProps } from "./cart.types";
 
@@ -147,18 +144,14 @@ export default function Cart({
 
   const deliveryFee = 3000;
   const totalPriceWithDelivery = totalPrice + deliveryFee;
-  const {
-    checkoutOfferItems,
-    checkoutOffer,
-    offerSummary,
-    handleCheckoutOfferAction,
-  } = useCartCheckoutOffer({
-    cartItems,
-    allProducts,
-    selectedPharmacy,
-    totalPrice,
-    onBulkChange: handleBulkChange,
-  });
+  const { checkoutOffer, offerSummary, handleCheckoutOfferAction } =
+    useCartCheckoutOffer({
+      cartItems,
+      allProducts,
+      selectedPharmacy,
+      totalPrice,
+      onBulkChange: handleBulkChange,
+    });
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -175,21 +168,6 @@ export default function Cart({
 
     window.localStorage.removeItem("preferredPaymentMethod");
   }, [safeLoginStatus.isTestLoggedIn]);
-  const { cartRecoveryModel, handleCartRecoveryAction } = useCartRecovery({
-    itemCount: cartItems.length,
-    totalPriceWithDelivery,
-    roadAddress,
-    selectedPaymentMethod,
-    setSelectedPaymentMethod,
-    phone,
-    isPhoneLinked,
-    phoneStatusLoading,
-    password,
-    checkoutOfferItems,
-    onBulkChange: handleBulkChange,
-    onOpenAddressModal: openAddressModal,
-    onOpenPhoneModal: openPhoneModal,
-  });
 
   const { handleRequestPayment, handlePayment } = useCartPayment({
     router,
@@ -211,7 +189,7 @@ export default function Cart({
   });
 
   return (
-    <div className="w-full pt-12 sm:pt-14 mb-8 max-w-[640px] mx-auto bg-white min-h-[100vh]">
+    <div className="mb-8 min-h-[100vh] w-full max-w-[640px] mx-auto bg-white pt-12 sm:pt-14">
       <Script
         src="https://cdn.iamport.kr/js/iamport.payment-1.2.0.js"
         onLoad={() => {
@@ -219,7 +197,9 @@ export default function Cart({
         }}
         strategy="afterInteractive"
       />
+
       <CartTopHeader onBack={onBack} />
+
       <CartItemsSection
         cartItems={cartItems}
         allProducts={allProducts}
@@ -264,20 +244,7 @@ export default function Cart({
         onShowDetail={openPharmacyDetail}
       />
 
-      {cartRecoveryModel ? (
-        <div className="mt-4 px-4">
-          <BetaFeatureGate
-            title="Beta 구매 회복 가이드"
-            helper="새로 추가된 장바구니 회복 제안은 필요할 때만 펼쳐보세요."
-          >
-            <CartRecoveryCoachCard
-              model={cartRecoveryModel}
-              onAction={handleCartRecoveryAction}
-              hideBehindBeta={false}
-            />
-          </BetaFeatureGate>
-        </div>
-      ) : null}
+      {/* Beta cart recovery block hidden for now per current checkout UI cleanup request. */}
 
       {showPharmacyDetail && (
         <PharmacyDetailModal
@@ -332,6 +299,7 @@ export default function Cart({
       {isAddressModalOpen && (
         <AddressModal onClose={closeAddressModal} onSave={handleAddressSave} />
       )}
+
       <CheckoutConfirmModal
         visible={showCheckoutConfirm}
         roadAddress={roadAddress}
@@ -343,6 +311,7 @@ export default function Cart({
           handlePayment();
         }}
       />
+
       {detailProduct && (
         <ProductDetail
           product={detailProduct.product}

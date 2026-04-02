@@ -8,7 +8,7 @@ tags:
   - "해장"
   - "식사전략"
 slug: "hangover-first-meal-strategy"
-coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/a/a7/Korean_abalone_porridge-Jeonbokjuk-03.jpg"
+coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/2/21/Wine_glass.jpg"
 ---
 
 # 숙취 다음 날 첫 끼가 하루 컨디션을 결정합니다

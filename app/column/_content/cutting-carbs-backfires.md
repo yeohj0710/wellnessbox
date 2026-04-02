@@ -36,8 +36,8 @@ _이미지 출처: [Wikimedia Commons - Breakfast porridge](https://commons.wiki
 
 또한 많은 사람이 탄수화물을 줄이는 대신 **커피와 단백질 파우더로 버티는 식**으로 갑니다. 그러면 당장은 적게 먹는 것처럼 보여도 위는 예민해지고 수면은 더 깨지고, 결국 다음 날 더 자극적인 음식을 찾게 됩니다. 그래서 탄수화물 제한은 식단의 문제가 아니라 하루 리듬 전체의 문제입니다.
 
-![수면 부족과 피로](https://upload.wikimedia.org/wikipedia/commons/3/30/Bed.jpg)
-_이미지 출처: [Wikimedia Commons - Bed](https://commons.wikimedia.org/wiki/File:Bed.jpg)_
+![수면 시간과 피로 누적](https://images.pexels.com/photos/6940873/pexels-photo-6940873.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - Alarm clock on a table](https://www.pexels.com/photo/alarm-clock-on-a-table-6940873/)_
 
 
 ## 사람들이 제일 많이 놓치는 포인트
@@ -58,8 +58,8 @@ _이미지 출처: [Wikimedia Commons - Bed](https://commons.wikimedia.org/wiki/
 
 쌀밥, 감자, 고구마, 오트밀, 과일처럼 비교적 덜 자극적인 탄수화물은 남기고, 액상당류와 야식 디저트, 빈속 빵과 커피 조합을 줄이는 편이 훨씬 오래 갑니다.
 
-![운동과 에너지](https://upload.wikimedia.org/wikipedia/commons/3/3e/Running_woman.jpg)
-_이미지 출처: [Wikimedia Commons - Running woman](https://commons.wikimedia.org/wiki/File:Running%20woman.jpg)_
+![가벼운 움직임과 에너지 회복](https://images.pexels.com/photos/35460207/pexels-photo-35460207.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - Peaceful morning walk in lush park](https://www.pexels.com/photo/peaceful-morning-walk-in-lush-park-35460207/)_
 
 
 ## 바로 써먹는 실전 루틴

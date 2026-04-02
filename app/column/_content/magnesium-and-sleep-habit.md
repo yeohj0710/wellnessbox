@@ -8,7 +8,7 @@ tags:
   - 수면루틴
   - 복용시간
 slug: magnesium-and-sleep-habit
-coverImageUrl: https://upload.wikimedia.org/wikipedia/commons/3/36/Spinach_produce-1.jpg
+coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/3/36/Spinach_produce-1.jpg"
 ---
 
 # 마그네슘은 꼭 밤에 먹어야 할까, 생활패턴에 맞는 시간 고르기
@@ -42,6 +42,9 @@ _이미지 출처: [Wikimedia Commons - Spinach produce](https://commons.wikimed
 
 ## 시간을 정할 때 같이 봐야 할 것
 
+![밤 루틴과 수면 시간 관리](https://images.pexels.com/photos/17378218/pexels-photo-17378218.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - Lamp and alarm clock in bedroom](https://www.pexels.com/photo/lamp-and-alarm-clock-in-bedroom-17378218/)_
+
 ### 제품 라벨의 1일 섭취량
 
 단일 제품 + 종합 제품을 함께 먹는 경우 총량이 늘어날 수 있어요.
@@ -70,6 +73,9 @@ _이미지 출처: [Wikimedia Commons - Spinach produce](https://commons.wikimed
 4. 월 1회: 총량과 복용 이유를 다시 봅니다. 수면, 근육 긴장, 변비 등 처음 목표가 달라졌다면 시간표도 다시 바꾸는 편이 낫습니다.
 
 ## 마그네슘을 고를 때는 시간보다 형태와 총량도 같이 봐야 합니다
+
+![마그네슘 보충제와 캡슐 구성](https://images.pexels.com/photos/14744699/pexels-photo-14744699.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - Supplements beside white plastic bottle](https://www.pexels.com/photo/supplements-beside-white-plastic-bottle-14744699/)_
 
 ### '밤에 먹는 영양제'라는 이미지가 과장된 부분이 있습니다
 

@@ -1,31 +1,31 @@
 interface LinkedPhoneLookupSectionProps {
-  isPhoneLinked: boolean;
+  hasVerifiedPhone: boolean;
   phoneStatusLoading: boolean;
   phoneStatusError: string | null;
   linkedPhoneDisplay: string;
   onOpenVerify: () => void;
   onLinkedLookup: () => void;
   onDismissLinkedView: () => void;
-  onScrollToManual: () => void;
 }
 
 export function LinkedPhoneLookupSection({
-  isPhoneLinked,
+  hasVerifiedPhone,
   phoneStatusLoading,
   phoneStatusError,
   linkedPhoneDisplay,
   onOpenVerify,
   onLinkedLookup,
   onDismissLinkedView,
-  onScrollToManual,
 }: LinkedPhoneLookupSectionProps) {
   return (
     <section className="rounded-2xl border border-sky-200 bg-gradient-to-b from-sky-50/80 to-white p-5 shadow-sm sm:p-6">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-base font-bold text-slate-900">전화번호 인증으로 조회</h2>
+          <h2 className="text-base font-bold text-slate-900">
+            전화번호 인증으로 조회
+          </h2>
           <p className="mt-1 text-sm leading-relaxed text-slate-600">
-            카카오 로그인 계정과 연결된 번호가 있다면 즉시 주문 내역을 확인할 수 있어요.
+            인증된 번호가 있으면 비밀번호 없이 바로 주문 내역을 확인할 수 있어요.
           </p>
         </div>
         {phoneStatusLoading ? (
@@ -40,22 +40,22 @@ export function LinkedPhoneLookupSection({
           </p>
         ) : null}
 
-        {isPhoneLinked ? (
+        {hasVerifiedPhone ? (
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
-              <div className="text-sm text-slate-500">연결된 번호</div>
+              <div className="text-sm text-slate-500">인증된 번호</div>
               <div className="mt-1 text-xl font-black tracking-tight text-slate-900">
                 {linkedPhoneDisplay}
               </div>
               <p className="mt-1 text-xs text-slate-500">
-                아래 버튼으로 비밀번호 입력 없이 주문 내역을 조회할 수 있어요.
+                이 번호로 바로 주문 내역을 조회할 수 있어요.
               </p>
               <button
                 type="button"
                 onClick={onOpenVerify}
                 className="mt-3 inline-flex items-center text-xs font-semibold text-sky-700 hover:text-sky-800"
               >
-                번호 변경/재인증
+                전화번호 다시 인증하기
               </button>
             </div>
             <div className="flex flex-col gap-2 sm:items-end">
@@ -72,7 +72,7 @@ export function LinkedPhoneLookupSection({
                 onClick={onDismissLinkedView}
                 className="text-xs font-semibold text-slate-600 hover:text-slate-800"
               >
-                다른 전화번호로 조회
+                다른 번호로 조회
               </button>
             </div>
           </div>
@@ -93,13 +93,6 @@ export function LinkedPhoneLookupSection({
                 className="inline-flex h-10 items-center justify-center rounded-xl bg-sky-500 px-4 text-sm font-semibold text-white shadow-sm hover:bg-sky-600"
               >
                 전화번호 인증하기
-              </button>
-              <button
-                type="button"
-                onClick={onScrollToManual}
-                className="text-xs font-semibold text-slate-600 hover:text-slate-800"
-              >
-                수동 조회로 이동
               </button>
             </div>
           </div>

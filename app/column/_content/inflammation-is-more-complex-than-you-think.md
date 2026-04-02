@@ -8,7 +8,7 @@ tags:
   - "면역"
   - "만성피로"
 slug: "inflammation-is-more-complex-than-you-think"
-coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/3/3e/Running_woman.jpg"
+coverImageUrl: "https://images.pexels.com/photos/6519904/pexels-photo-6519904.jpeg?auto=compress&cs=tinysrgb&w=1200"
 ---
 
 # 우리는 염증을 너무 단순하게 알고 있습니다
@@ -17,8 +17,8 @@ coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/3/3e/Running_woma
 
 염증은 원래 **몸의 구조적 반응**입니다. 다쳤을 때 붓고 뜨거워지는 것도 염증이고, 감염이 왔을 때 열이 나는 것도 염증입니다. 문제는 염증 자체가 아니라 **필요할 때 잠깐 쓰고 끝나느냐**, 아니면 **몸이 계속 경계 상태로 타오르느냐**입니다. 그래서 염증을 무조건 나쁜 것으로만 보면, 오히려 만성 염증이 왜 생기는지 이해하기 더 어려워집니다.
 
-![몸의 회복과 염증](https://upload.wikimedia.org/wikipedia/commons/3/3e/Running_woman.jpg)
-_이미지 출처: [Wikimedia Commons - Running woman](https://commons.wikimedia.org/wiki/File:Running%20woman.jpg)_
+![상처 회복과 급성 염증](https://images.pexels.com/photos/6519904/pexels-photo-6519904.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - Person putting bandage on another person's hand](https://www.pexels.com/photo/person-putting-bandage-on-another-person-s-hand-6519904/)_
 
 
 ## 핵심만 먼저
@@ -58,8 +58,8 @@ _이미지 출처: [Wikimedia Commons - Experiencing menstrual pain](https://com
 
 운동하고 나서 유난히 오래 뻐근하고, 상처가 잘 아물지 않고, 감기 후 회복이 더디고, 피로가 오래 끌리면 생활 구조를 돌아볼 가치가 있습니다.
 
-![수면 부족과 만성 염증](https://upload.wikimedia.org/wikipedia/commons/f/f0/Renoir_sleeping-woman-1897.jpg)
-_이미지 출처: [Wikimedia Commons - Sleeping woman](https://commons.wikimedia.org/wiki/File:Renoir%20sleeping-woman-1897.jpg)_
+![밤 루틴과 수면 시간 관리](https://images.pexels.com/photos/17378218/pexels-photo-17378218.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - Lamp and alarm clock in bedroom](https://www.pexels.com/photo/lamp-and-alarm-clock-in-bedroom-17378218/)_
 
 
 ## 바로 써먹는 실전 루틴

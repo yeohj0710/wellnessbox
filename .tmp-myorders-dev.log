@@ -1,0 +1,60 @@
+
+> wellnessbox@0.1.0 predev
+> node -e "try{require('fs').rmSync('.next',{recursive:true,force:true})}catch(e){}" && npm run prisma:generate && npm run prepare:assets && npm run audit:encoding && npm run audit:route-method-exports
+
+
+> wellnessbox@0.1.0 prisma:generate
+> node scripts/prisma-generate-safe.cjs
+
+Prisma schema loaded from prisma\schema.prisma
+
+✔ Generated Prisma Client (v6.19.1) to .\node_modules\@prisma\client in 533ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Interested in query caching in just a few lines of code? Try Accelerate today! https://pris.ly/tip-3-accelerate
+
+
+> wellnessbox@0.1.0 prepare:assets
+> node copy_wasm.js
+
+
+> wellnessbox@0.1.0 audit:encoding
+> ts-node scripts/audit-encoding.ts
+
+Encoding audit passed: no suspicious mojibake patterns found.
+
+> wellnessbox@0.1.0 audit:route-method-exports
+> ts-node scripts/audit-route-method-exports.ts
+
+Route method export audit passed: no missing HTTP method exports found.
+
+> wellnessbox@0.1.0 dev
+> next dev --port 3001
+
+   ▲ Next.js 15.0.5
+   - Local:        http://localhost:3001
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 2s
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 1792ms (93 modules)
+ ○ Compiling /my-orders ...
+ ✓ Compiled /my-orders in 23.2s (3407 modules)
+ GET /my-orders 200 in 25485ms
+ ○ Compiling /manifest.webmanifest ...
+ ✓ Compiled /api/auth/login-status in 18.4s (3397 modules)
+ GET /my-orders 200 in 418ms
+ ✓ Compiled in 2.1s (1558 modules)
+ ✓ Compiled in 389ms (1558 modules)
+ GET /api/me/phone-status 401 in 15159ms
+ GET /manifest.webmanifest 200 in 19541ms
+ GET /api/auth/login-status 200 in 14642ms
+ GET /my-orders 200 in 785ms
+ GET /manifest.webmanifest 200 in 462ms
+ GET /api/me/phone-status 401 in 318ms
+ POST /my-orders 200 in 2912ms
+ POST /my-orders 200 in 1492ms
+ GET /api/auth/login-status 200 in 191ms
+[?25h

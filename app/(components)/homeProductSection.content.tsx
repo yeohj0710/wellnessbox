@@ -128,7 +128,7 @@ export function HomeProductSectionContent({
       id="home-products"
       data-filter-updating={isFilterUpdating ? "true" : "false"}
       className={`w-full max-w-[640px] mx-auto mt-2 bg-white ${
-        totalPrice > 0 ? "pb-20" : ""
+        totalPrice > 0 && !isCartVisible ? "pb-20" : ""
       }`}
     >
       <AddressSection
@@ -194,6 +194,7 @@ export function HomeProductSectionContent({
 
       {selectedPharmacy &&
         !selectedProduct &&
+        !isCartVisible &&
         (totalPrice > 0 || isCartBarLoading) &&
         (isCartBarLoading ? (
           <FooterCartBarLoading />

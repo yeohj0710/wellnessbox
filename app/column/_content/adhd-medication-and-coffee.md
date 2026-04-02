@@ -58,8 +58,8 @@ _이미지 출처: [Wikimedia Commons - Pills in blister pack](https://commons.w
 
 누군가는 약 먹고도 아메리카노 두 잔이 괜찮다며 후기 쓰지만, 본인 몸은 전혀 다를 수 있습니다. ADHD 약과 커피는 특히 개인차가 큽니다.
 
-![집중과 공부 환경](https://upload.wikimedia.org/wikipedia/commons/7/7a/Student_on_the_desk.jpg)
-_이미지 출처: [Wikimedia Commons - Student on the desk](https://commons.wikimedia.org/wiki/File:Student%20on%20the%20desk.jpg)_
+![집중 루틴과 커피 조절 메모](https://images.pexels.com/photos/30457088/pexels-photo-30457088.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - Cozy study setup with book, laptop and coffee](https://www.pexels.com/photo/cozy-study-setup-with-book-laptop-and-coffee-30457088/)_
 
 
 ## 그래서 실제로는 이렇게 테스트하세요

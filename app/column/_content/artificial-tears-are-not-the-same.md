@@ -8,7 +8,7 @@ tags:
   - "안구건조"
   - "안약"
 slug: "artificial-tears-are-not-the-same"
-coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/7/77/Eye_drop.jpg"
+coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/3/3e/Apply-eye-drops.jpg"
 ---
 
 # 인공눈물, 넣는다고 다 같은 게 아닙니다

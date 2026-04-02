@@ -8,7 +8,7 @@ tags:
   - "과다복용"
   - "장기복용"
 slug: "supplements-can-turn-toxic"
-coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/d/db/Medication_blister_pack.jpg"
+coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/6/63/Pill_Bottle_Spilled.jpg"
 ---
 
 # 몸에 좋다고 계속 먹었는데, 6개월 뒤 독이 될 수도 있습니다

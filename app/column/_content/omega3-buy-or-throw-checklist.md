@@ -8,7 +8,7 @@ tags:
   - "산패"
   - "영양제선택"
 slug: "omega3-buy-or-throw-checklist"
-coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/2/2f/Fish_Oil_Capsules.jpg"
+coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/2/2c/Omega_3_Fish_oil_softgel_capsules.jpg"
 ---
 
 # 오메가3 아무거나 먹지 마세요, 지금 당장 버려야 할 제품도 있습니다

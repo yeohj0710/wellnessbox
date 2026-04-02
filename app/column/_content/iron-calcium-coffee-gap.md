@@ -8,7 +8,7 @@ tags:
   - 칼슘
   - 복용간격
 slug: iron-calcium-coffee-gap
-coverImageUrl: https://upload.wikimedia.org/wikipedia/commons/5/50/A_cup_of_coffee_milk.jpg
+coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/5/50/A_cup_of_coffee_milk.jpg"
 ---
 
 # 철분 먹는 시간, 칼슘과 커피를 어디까지 띄워야 할까
@@ -33,6 +33,9 @@ _이미지 출처: [Wikimedia Commons - A cup of coffee milk](https://commons.wi
 실전에서는 “흡수율을 1%라도 더 높이는 완벽한 조합”보다 **누락을 줄이는 일정한 루틴**이 훨씬 중요합니다. 커피를 매일 마신다면 커피를 끊는 계획보다, 철분과 커피가 안 부딪히는 시간을 먼저 정하는 편이 더 현실적입니다.
 
 ## 이렇게 시간표를 잡아보세요
+
+![복용 시간대를 나누는 약통 정리](https://images.pexels.com/photos/11349878/pexels-photo-11349878.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - Medicine inside a pill organizer](https://www.pexels.com/photo/medicine-inside-a-pill-organizer-11349878/)_
 
 ### 커피를 매일 마시는 사람
 
@@ -61,6 +64,9 @@ _이미지 출처: [Wikimedia Commons - A cup of coffee milk](https://commons.wi
 아침 7시 10분, 오전 10시 40분처럼 지나치게 세밀하게 짜면 며칠 못 갑니다. “아침 커피, 오후 철분, 저녁 칼슘”처럼 큰 구획으로 잡는 편이 오래 갑니다.
 
 ## 그래서 실제로는 이렇게 짜면 편합니다
+
+![복용 시간표와 커피 루틴 정리](https://images.pexels.com/photos/29509426/pexels-photo-29509426.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - Open planner with coffee and plant on desk](https://www.pexels.com/photo/open-planner-with-coffee-and-plant-on-desk-29509426/)_
 
 1. **아침 커피를 꼭 마시는 사람**: 아침 식사와 커피를 먼저 끝내고, 철분은 오전 늦게나 자기 전으로 분리하세요. 칼슘은 저녁 식사 쪽으로 보내면 충돌이 줄어듭니다.
 2. **철분을 빈속에 먹으면 속이 뒤집히는 사람**: 커피나 우유 없는 가벼운 식사 뒤로 옮기고, 같은 시간대에 칼슘만 피하세요. “공복을 참느냐”보다 “복용을 계속하느냐”가 더 중요합니다.

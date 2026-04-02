@@ -8,7 +8,7 @@ tags:
   - 복용시간
   - 건강기초
 slug: vitamin-d-with-fat-meal
-coverImageUrl: https://upload.wikimedia.org/wikipedia/commons/4/49/Vitamin_D_Gummies.jpg
+coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/4/49/Vitamin_D_Gummies.jpg"
 ---
 
 # 비타민D는 아침보다 식사와 루틴이 중요하다
@@ -27,6 +27,9 @@ _이미지 출처: [Wikimedia Commons - Vitamin D Gummies](https://commons.wikim
 3. 너무 고용량을 오래 먹지 말고, 정기 검진으로 현재 상태를 확인하세요.
 
 ## 왜 식사와 함께가 더 중요할까
+
+![지방이 포함된 식사와 비타민D 루틴](https://images.pexels.com/photos/34347263/pexels-photo-34347263.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - Healthy breakfast avocado toast with eggs and vegetables](https://www.pexels.com/photo/healthy-breakfast-avocado-toast-with-eggs-and-vegetables-34347263/)_
 
 비타민D는 지용성 비타민이라 공복보다 식사와 함께 복용할 때 더 편한 사람이 많습니다. 또 식사에 붙여 두면 “오늘은 언제 먹지?”라는 고민이 줄어들어서 누락도 적어집니다.
 
@@ -71,6 +74,9 @@ _이미지 출처: [Wikimedia Commons - Vitamin D Gummies](https://commons.wikim
 4. **하루를 놓친 사람**: 생각난 같은 날 식사 때 보충하고, 여러 날 누락했다고 한꺼번에 몰아먹는 방식은 피하세요.
 
 ## 이렇게 루틴을 잡아보세요
+
+![복용 루틴을 고정하는 기록 습관](https://images.pexels.com/photos/29509435/pexels-photo-29509435.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - Minimalist desk setup with journal and coffee](https://www.pexels.com/photo/minimalist-desk-setup-with-journal-and-coffee-29509435/)_
 
 1. 복용 시간 하나만 고정: 예) 저녁 식사 직후  
 2. 2주 동안 알림 + 체크리스트로 누락률 확인  

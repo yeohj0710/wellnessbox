@@ -8,7 +8,7 @@ tags:
   - "설탕"
   - "공부"
 slug: "too-much-sugar-hurts-studying"
-coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/7/7a/Student_on_the_desk.jpg"
+coverImageUrl: "https://images.pexels.com/photos/30703810/pexels-photo-30703810.jpeg?auto=compress&cs=tinysrgb&w=1200"
 ---
 
 # 단 걸 많이 먹을수록 공부가 안 되는 이유
@@ -17,8 +17,8 @@ coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/7/7a/Student_on_t
 
 그런데 진짜 문제는 그 다음입니다. 잠깐 올라간 각성이 금방 꺼지고, 30분 뒤부터 집중이 쭉 처지고, 같은 페이지를 세 번 읽는데도 머리에 안 들어옵니다. 심지어 밤에는 더 배가 고프고, 더 자극적인 걸 찾게 되죠. 공부를 오래 하는 사람일수록 알아야 합니다. **뇌가 당을 쓴다**는 말과 **달달한 간식을 계속 넣는 게 공부에 좋다**는 말은 완전히 다른 얘기입니다.
 
-![공부와 집중력](https://upload.wikimedia.org/wikipedia/commons/7/7a/Student_on_the_desk.jpg)
-_이미지 출처: [Wikimedia Commons - Student on the desk](https://commons.wikimedia.org/wiki/File:Student%20on%20the%20desk.jpg)_
+![공부 루틴과 간식 환경](https://images.pexels.com/photos/30703810/pexels-photo-30703810.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - Cozy workspace with coffee and notebooks](https://www.pexels.com/photo/cozy-workspace-with-coffee-and-notebooks-30703810/)_
 
 
 ## 핵심만 먼저

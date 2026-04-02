@@ -7,7 +7,6 @@ import { useChatPageActionListener } from "@/lib/chat/useChatPageActionListener"
 import { ManualLookupSection } from "./components/manualLookupSection";
 import { LinkedPhoneLookupSection } from "./components/linkedPhoneLookupSection";
 import { OrderDetailsView } from "./components/orderDetailsView";
-import { OrderLookupSelfServiceCard } from "./components/orderLookupSelfServiceCard";
 import { useMyOrdersController } from "./hooks/useMyOrdersController";
 
 export default function MyOrdersPage() {
@@ -33,18 +32,15 @@ export default function MyOrdersPage() {
       <OrderDetailsView
         lookupConfig={viewConfig}
         isPhoneLinked={linkedState.isPhoneLinked}
-        linkedPhoneDisplay={linkedState.linkedPhoneDisplay}
-        linkedPhone={linkedState.linkedPhone}
+        linkedPhone={linkedState.linkedPhoneNormalized}
         linkedAt={linkedState.linkedAt}
         isVerifyOpen={linkedState.isVerifyOpen}
         unlinkLoading={linkedState.unlinkLoading}
         unlinkError={linkedState.unlinkError}
-        onOpenVerify={actions.openVerifyModal}
         onCloseVerify={actions.closeVerifyModal}
         onUnlink={actions.handleUnlinkFromDetails}
         onLinked={actions.handleLinkedWithDetails}
         onBack={actions.handleBackFromDetails}
-        onOtherNumber={actions.handleOtherNumberFromDetails}
       />
     );
   }
@@ -66,7 +62,7 @@ export default function MyOrdersPage() {
 
           <div className="mt-6 space-y-5 sm:space-y-6">
             <LinkedPhoneLookupSection
-              isPhoneLinked={linkedState.isPhoneLinked}
+              hasVerifiedPhone={linkedState.hasVerifiedPhone}
               phoneStatusLoading={linkedState.phoneStatusLoading}
               phoneStatusError={linkedState.phoneStatusError}
               linkedPhoneDisplay={linkedState.linkedPhoneDisplay}
@@ -76,22 +72,6 @@ export default function MyOrdersPage() {
                 actions.dismissLinkedView();
                 scrollToManual();
               }}
-              onScrollToManual={scrollToManual}
-            />
-
-            <OrderLookupSelfServiceCard
-              isViewingDetails={false}
-              isPhoneLinked={linkedState.isPhoneLinked}
-              phoneStatusLoading={linkedState.phoneStatusLoading}
-              phoneStatusError={linkedState.phoneStatusError}
-              linkedPhoneDisplay={linkedState.linkedPhoneDisplay}
-              manualError={manualLookup.error}
-              manualPhoneDisplay={manualLookup.manualPhoneDisplay}
-              password={manualLookup.password}
-              onOpenVerify={actions.openVerifyModal}
-              onPrimaryManualAction={scrollToManual}
-              onPrimaryLinkedAction={actions.handleLinkedLookup}
-              onSecondaryManualAction={scrollToManual}
             />
 
             <ManualLookupSection
@@ -116,7 +96,7 @@ export default function MyOrdersPage() {
         <PhoneVerifyModal
           open={linkedState.isVerifyOpen}
           onClose={actions.closeVerifyModal}
-          initialPhone={linkedState.linkedPhone}
+          initialPhone={linkedState.linkedPhoneNormalized}
           initialLinkedAt={linkedState.linkedAt}
           fallbackToVerifyOnlyOnUnauthorized
           allowUnlink={linkedState.isPhoneLinked}

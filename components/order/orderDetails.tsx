@@ -7,7 +7,6 @@ import {
 } from "@/lib/order";
 import { generateOptimizedPageNumbers } from "@/lib/pagination";
 import { ORDER_STATUS, type OrderStatus } from "@/lib/order/orderStatus";
-import SmartRefillActionCard from "@/components/common/SmartRefillActionCard";
 import CustomerOrderAccordionItem from "./customerOrderAccordionItem";
 import type { OrderAccordionOrder } from "./orderAccordion.types";
 
@@ -128,11 +127,7 @@ export default function OrderDetails({
 
   return (
     <div className="flex w-full flex-col gap-4 sm:gap-5">
-      <SmartRefillActionCard
-        orders={orders}
-        surface="orders"
-        className="mx-auto mb-4 w-full max-w-[640px]"
-      />
+      {/* 주문조회 상단 리필 타이밍 카드는 현재 흐름에서 숨김 */}
 
       {isPageLoading ? (
         <div className="flex justify-center py-6">

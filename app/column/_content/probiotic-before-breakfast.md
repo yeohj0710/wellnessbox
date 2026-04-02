@@ -8,7 +8,7 @@ tags:
   - 장건강
   - 복용시간
 slug: probiotic-before-breakfast
-coverImageUrl: https://upload.wikimedia.org/wikipedia/commons/a/ae/Yogurt_%281%29.jpg
+coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/a/ae/Yogurt_%281%29.jpg"
 ---
 
 # 유산균은 꼭 공복에 먹어야 할까, 식후가 더 나은 사람도 있다
@@ -34,6 +34,9 @@ _이미지 출처: [Wikimedia Commons - Yogurt (1)](https://commons.wikimedia.or
 - 제품 설명서에 공복 복용 권장 문구가 있는 경우
 
 ## 식후가 더 나은 사람
+
+![과일을 곁들인 요거트 볼](https://images.pexels.com/photos/31472330/pexels-photo-31472330.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - Delicious breakfast yogurt bowl with fruits](https://www.pexels.com/photo/delicious-breakfast-yogurt-bowl-with-fruits-31472330/)_
 
 - 공복에 먹으면 속이 쓰리거나 더부룩한 분
 - 아침을 자주 거르고 점심/저녁이 더 일정한 분
@@ -81,6 +84,9 @@ CFU 숫자나 광고 문구보다 먼저 볼 건 권장 복용법과 내 증상 
 개인 상태에 따라 다릅니다. 복용 약이 있거나 장 질환 치료 중이면 전문가 상담이 우선입니다.
 
 ## 공복·식후보다 먼저 볼 것은 균주, 제품 안내, 꾸준함입니다
+
+![캡슐형 보충제와 제품 선택](https://images.pexels.com/photos/13787561/pexels-photo-13787561.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - Capsules in the plastic bottle](https://www.pexels.com/photo/capsules-in-the-plastic-bottle-13787561/)_
 
 ### '유산균'이라고 다 같은 유산균이 아닙니다
 

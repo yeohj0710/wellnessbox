@@ -29,15 +29,45 @@ function getFrameClasses(variant: NonNullable<ColumnThumbnailProps["variant"]>) 
 function getTitleClasses(variant: NonNullable<ColumnThumbnailProps["variant"]>) {
   switch (variant) {
     case "feature":
-      return "max-w-[12.5rem] text-base font-black leading-tight sm:max-w-[13rem] sm:text-[1.32rem]";
+      return "text-base font-black leading-[1.22] sm:text-[1.28rem]";
     case "detail":
-      return "max-w-[18rem] text-lg font-black leading-tight sm:text-[1.85rem]";
+      return "text-lg font-black leading-[1.18] sm:text-[1.9rem]";
     case "list":
-      return "max-w-none text-[0.92rem] font-black leading-[1.28] [display:-webkit-box] overflow-hidden [-webkit-box-orient:vertical] [-webkit-line-clamp:3] sm:text-[1rem]";
+      return "text-[0.95rem] font-black leading-[1.3] [display:-webkit-box] overflow-hidden [-webkit-box-orient:vertical] [-webkit-line-clamp:3]";
     case "card":
     default:
-      return "max-w-[14rem] text-lg font-black leading-tight sm:text-xl";
+      return "text-lg font-black leading-[1.22] sm:text-xl";
   }
+}
+
+function getPosterPadding(variant: NonNullable<ColumnThumbnailProps["variant"]>) {
+  switch (variant) {
+    case "detail":
+      return "p-4 sm:p-6";
+    case "feature":
+      return "p-3.5 sm:p-[1.125rem]";
+    case "list":
+      return "p-3";
+    case "card":
+    default:
+      return "p-3.5 sm:p-4";
+  }
+}
+
+function getPosterMeta(tags: string[], compact: boolean) {
+  const visibleTags = tags.filter(Boolean).slice(0, compact ? 2 : 3);
+
+  if (visibleTags.length > 1) {
+    return visibleTags.join(" / ");
+  }
+
+  if (visibleTags.length === 1) {
+    return `웰니스박스 ${visibleTags[0]}`;
+  }
+
+  return compact
+    ? "웰니스박스 칼럼"
+    : "복용 팁 / 생활 습관 / 성분 포인트";
 }
 
 export default function ColumnThumbnail({
@@ -57,11 +87,12 @@ export default function ColumnThumbnail({
   });
   const usePoster = imageFailed || presentation.mode === "poster" || !coverImageUrl;
   const isCompactPoster = variant === "list";
+  const posterMeta = getPosterMeta(tags, isCompactPoster);
 
   if (usePoster) {
     return (
       <div
-        className={`relative overflow-hidden rounded-[inherit] border ${getFrameClasses(variant)}`}
+        className={`relative isolate overflow-hidden rounded-[inherit] border ${getFrameClasses(variant)}`}
         style={{
           background: presentation.palette.background,
           borderColor: presentation.palette.border,
@@ -72,28 +103,29 @@ export default function ColumnThumbnail({
           className="absolute inset-0"
           style={{
             background:
-              "radial-gradient(circle at top right, rgba(255,255,255,0.22), transparent 36%), radial-gradient(circle at bottom left, rgba(255,255,255,0.14), transparent 30%)",
+              "linear-gradient(145deg, rgba(255,255,255,0.58) 0%, rgba(255,255,255,0.12) 55%, rgba(255,255,255,0) 100%)",
           }}
         />
         <div
-          className="absolute -right-8 top-6 h-28 w-28 rounded-full blur-2xl"
+          className="absolute right-3 top-2 h-16 w-16 rounded-full blur-2xl sm:right-4 sm:top-3 sm:h-24 sm:w-24"
           style={{ backgroundColor: presentation.palette.accent }}
         />
         <div
-          className="absolute bottom-0 left-0 right-0 top-auto h-20"
+          className="absolute -bottom-6 left-0 h-20 w-20 rounded-full blur-2xl sm:h-28 sm:w-28"
+          style={{ backgroundColor: presentation.palette.accent }}
+        />
+        <div
+          className="absolute inset-x-0 top-0 h-px"
           style={{
-            background:
-              "linear-gradient(180deg, rgba(15,23,42,0) 0%, rgba(15,23,42,0.38) 100%)",
+            background: `linear-gradient(90deg, transparent, ${presentation.palette.line}, transparent)`,
           }}
         />
         <div
-          className={`relative flex h-full flex-col justify-between text-white ${
-            isCompactPoster ? "p-3" : "p-3.5 sm:p-5"
-          }`}
+          className={`relative flex h-full flex-col justify-between ${getPosterPadding(variant)}`}
         >
           <div className="flex items-start justify-between gap-3">
             <span
-              className={`whitespace-nowrap rounded-full font-semibold tracking-[0.18em] ${
+              className={`max-w-[70%] truncate rounded-full font-semibold ${
                 isCompactPoster ? "px-2.5 py-1 text-[10px]" : "px-3 py-1 text-[11px]"
               }`}
               style={{
@@ -101,25 +133,61 @@ export default function ColumnThumbnail({
                 color: presentation.palette.chipText,
               }}
             >
-              {presentation.eyebrow.toUpperCase()}
+              {presentation.eyebrow}
             </span>
             <span
-              className={`shrink-0 font-semibold uppercase text-white/72 ${
-                isCompactPoster
-                  ? "text-[9px] tracking-[0.16em]"
-                  : "text-[11px] tracking-[0.24em]"
+              className={`rounded-full border px-2 py-1 font-semibold ${
+                isCompactPoster ? "text-[9px]" : "text-[10px]"
               }`}
+              style={{
+                borderColor: presentation.palette.line,
+                color: presentation.palette.body,
+                background: "rgba(255,255,255,0.38)",
+              }}
             >
-              {isCompactPoster ? "WB" : "WellnessBox"}
+              칼럼
             </span>
           </div>
-          <div>
-            <p className={getTitleClasses(variant)}>{title}</p>
-            {!isCompactPoster && tags.length > 1 ? (
-              <p className="mt-3 text-xs font-medium text-white/78">
-                {tags.slice(0, 3).join(" · ")}
-              </p>
-            ) : null}
+
+          <div
+            className={`relative overflow-hidden rounded-[1.15rem] border ${
+              isCompactPoster ? "p-3" : "p-4 sm:p-[1.125rem]"
+            }`}
+            style={{
+              background: presentation.palette.panel,
+              borderColor: presentation.palette.line,
+              boxShadow: "0 16px 34px -30px rgba(15,23,42,0.32)",
+            }}
+          >
+            <div
+              className="absolute inset-x-0 top-0 h-px"
+              style={{
+                background: `linear-gradient(90deg, transparent, ${presentation.palette.line}, transparent)`,
+              }}
+            />
+            <div className="flex items-center gap-2">
+              <span
+                className="h-1.5 w-1.5 rounded-full"
+                style={{ backgroundColor: presentation.palette.chipText }}
+              />
+              <span
+                className={`font-medium ${isCompactPoster ? "text-[10px]" : "text-[11px]"}`}
+                style={{ color: presentation.palette.body }}
+              >
+                웰니스박스 에디토리얼
+              </span>
+            </div>
+
+            <p className={`mt-3 ${getTitleClasses(variant)}`} style={{ color: presentation.palette.title }}>
+              {title}
+            </p>
+
+            <p
+              className={`mt-3 font-medium ${isCompactPoster ? "text-[10px] leading-4" : "text-[11px] leading-5"}`}
+              style={{ color: presentation.palette.body }}
+            >
+              {posterMeta}
+            </p>
           </div>
         </div>
       </div>

@@ -8,7 +8,7 @@ tags:
   - "구토"
   - "위장건강"
 slug: "vomiting-after-drinking-not-just-tolerance"
-coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/2/21/Wine_glass.jpg"
+coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/0/0f/Wine_Glass_(224989471).jpeg"
 ---
 
 # 술만 마시면 토하는 사람들, 그냥 주량 문제가 아닐 수 있습니다

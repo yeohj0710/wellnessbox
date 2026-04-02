@@ -5,29 +5,59 @@ import {
   fetchMyPhoneStatusRequest,
   unlinkMyPhoneRequest,
 } from "@/lib/client/phone-api";
-import { emitAuthSyncEvent, subscribeAuthSyncEvent } from "@/lib/client/auth-sync";
+import {
+  emitAuthSyncEvent,
+  subscribeAuthSyncEvent,
+} from "@/lib/client/auth-sync";
 
 import { formatPhoneDisplay } from "../utils/formatPhoneDisplay";
+
+const VERIFIED_LOOKUP_PHONE_STORAGE_KEY = "wbVerifiedLookupPhone";
+
+function readVerifiedLookupPhone() {
+  if (typeof window === "undefined") return "";
+  return sessionStorage.getItem(VERIFIED_LOOKUP_PHONE_STORAGE_KEY) ?? "";
+}
+
+function writeVerifiedLookupPhone(phone: string) {
+  if (typeof window === "undefined") return;
+  if (phone) {
+    sessionStorage.setItem(VERIFIED_LOOKUP_PHONE_STORAGE_KEY, phone);
+    return;
+  }
+  sessionStorage.removeItem(VERIFIED_LOOKUP_PHONE_STORAGE_KEY);
+}
 
 export function useLinkedPhoneStatus() {
   const [linkedPhone, setLinkedPhone] = useState("");
   const [linkedAt, setLinkedAt] = useState<string | undefined>();
+  const [verifiedLookupPhone, setVerifiedLookupPhone] = useState("");
   const [isVerifyOpen, setIsVerifyOpen] = useState(false);
   const [phoneStatusLoading, setPhoneStatusLoading] = useState(true);
   const [phoneStatusError, setPhoneStatusError] = useState<string | null>(null);
   const [unlinkLoading, setUnlinkLoading] = useState(false);
   const [unlinkError, setUnlinkError] = useState<string | null>(null);
 
+  useEffect(() => {
+    setVerifiedLookupPhone(readVerifiedLookupPhone());
+  }, []);
+
+  const activePhone = useMemo(
+    () => linkedPhone || verifiedLookupPhone,
+    [linkedPhone, verifiedLookupPhone]
+  );
+
   const linkedPhoneDisplay = useMemo(
-    () => formatPhoneDisplay(linkedPhone),
-    [linkedPhone]
+    () => formatPhoneDisplay(activePhone),
+    [activePhone]
   );
 
   const linkedPhoneNormalized = useMemo(
-    () => linkedPhone.replace(/\D/g, ""),
-    [linkedPhone]
+    () => activePhone.replace(/\D/g, ""),
+    [activePhone]
   );
 
+  const hasVerifiedPhone = useMemo(() => Boolean(activePhone), [activePhone]);
   const isPhoneLinked = useMemo(
     () => Boolean(linkedPhone && linkedAt),
     [linkedPhone, linkedAt]
@@ -44,6 +74,8 @@ export function useLinkedPhoneStatus() {
         setLinkedPhone("");
         setLinkedAt(undefined);
         if (result.status !== 401) {
+          setVerifiedLookupPhone("");
+          writeVerifiedLookupPhone("");
           setPhoneStatusError(
             result.data?.ok === false
               ? "전화번호 정보를 불러오지 못했어요."
@@ -53,14 +85,17 @@ export function useLinkedPhoneStatus() {
         return;
       }
 
-      setLinkedPhone(
-        typeof result.data.phone === "string" ? result.data.phone : ""
-      );
-      setLinkedAt(
+      const nextPhone =
+        typeof result.data.phone === "string" ? result.data.phone : "";
+      const nextLinkedAt =
         typeof result.data.linkedAt === "string"
           ? result.data.linkedAt
-          : undefined
-      );
+          : undefined;
+
+      setLinkedPhone(nextPhone);
+      setLinkedAt(nextLinkedAt);
+      setVerifiedLookupPhone(nextPhone);
+      writeVerifiedLookupPhone(nextPhone);
     } catch (err) {
       setPhoneStatusError(err instanceof Error ? err.message : String(err));
       setLinkedPhone("");
@@ -71,7 +106,7 @@ export function useLinkedPhoneStatus() {
   }, []);
 
   useEffect(() => {
-    fetchPhoneStatus();
+    void fetchPhoneStatus();
   }, [fetchPhoneStatus]);
 
   const openVerifyModal = useCallback(() => {
@@ -95,14 +130,18 @@ export function useLinkedPhoneStatus() {
       const data = result.data;
 
       if (!result.ok) {
-        setUnlinkError(data.error || "전화번호 연결 해제에 실패했어요.");
+        setUnlinkError(
+          data.error || "전화번호 연결 해제에 실패했어요."
+        );
         return;
       }
 
       setLinkedPhone("");
       setLinkedAt(undefined);
+      setVerifiedLookupPhone("");
+      writeVerifiedLookupPhone("");
       setIsVerifyOpen(false);
-      fetchPhoneStatus();
+      void fetchPhoneStatus();
       emitAuthSyncEvent({ scope: "phone-link", reason: "unlink" });
     } catch (err) {
       setUnlinkError(err instanceof Error ? err.message : String(err));
@@ -115,9 +154,11 @@ export function useLinkedPhoneStatus() {
     (nextPhone: string, nextLinkedAt?: string) => {
       setLinkedPhone(nextPhone);
       setLinkedAt(nextLinkedAt);
+      setVerifiedLookupPhone(nextPhone);
+      writeVerifiedLookupPhone(nextPhone);
       setIsVerifyOpen(false);
       setUnlinkError(null);
-      fetchPhoneStatus();
+      void fetchPhoneStatus();
       emitAuthSyncEvent({ scope: "phone-link", reason: "link" });
     },
     [fetchPhoneStatus]
@@ -136,6 +177,7 @@ export function useLinkedPhoneStatus() {
   return {
     linkedPhone,
     linkedAt,
+    hasVerifiedPhone,
     linkedPhoneDisplay,
     linkedPhoneNormalized,
     isPhoneLinked,

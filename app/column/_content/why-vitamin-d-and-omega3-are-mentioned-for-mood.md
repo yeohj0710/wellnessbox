@@ -58,8 +58,8 @@ _이미지 출처: [Wikimedia Commons - Fish Oil Capsules](https://commons.wikim
 
 이 둘은 갑자기 기분을 끌어올리는 부스터가 아닙니다. 결핍을 메우고 생활 리듬을 안정시키는 쪽의 보조 도구에 가깝습니다. 체감이 있다면 보통 ‘조용하게 조금 나아지는’ 쪽으로 옵니다.
 
-![기분과 수면 상태](https://upload.wikimedia.org/wikipedia/commons/f/f0/Renoir_sleeping-woman-1897.jpg)
-_이미지 출처: [Wikimedia Commons - Sleeping woman](https://commons.wikimedia.org/wiki/File:Renoir%20sleeping-woman-1897.jpg)_
+![밤 루틴과 수면 시간 관리](https://images.pexels.com/photos/17378218/pexels-photo-17378218.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - Lamp and alarm clock in bedroom](https://www.pexels.com/photo/lamp-and-alarm-clock-in-bedroom-17378218/)_
 
 
 ## 바로 써먹는 실전 루틴

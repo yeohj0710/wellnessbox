@@ -131,7 +131,7 @@ export function ManualLookupSection({
               autoComplete="current-password"
               value={password}
               onChange={(e) => onChangePassword(e.target.value)}
-              placeholder="주문 때 입력한 비밀번호"
+              placeholder="주문 시 입력한 비밀번호"
               className="h-11 w-full rounded-xl border border-slate-300 px-3 pr-10 text-slate-800 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
               disabled={loading}
             />

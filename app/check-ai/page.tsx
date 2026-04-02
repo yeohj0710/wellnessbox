@@ -10,84 +10,6 @@ import { pageShellClass } from "@/lib/page-shell";
 import { CheckAiQuestionField } from "./CheckAiQuestionField";
 import { useCheckAiExperience } from "./useCheckAiExperience";
 
-type CheckAiProgressSummaryProps = {
-  answeredCount: number;
-  remainingCount: number;
-  canSubmit: boolean;
-  minPreviewAnswers: number;
-  previewLabels: string[];
-  previewLoading: boolean;
-  questionCount: number;
-  className?: string;
-};
-
-function CheckAiProgressSummary({
-  answeredCount,
-  remainingCount,
-  canSubmit,
-  minPreviewAnswers,
-  previewLabels,
-  previewLoading,
-  questionCount,
-  className,
-}: CheckAiProgressSummaryProps) {
-  if (answeredCount <= 0) {
-    return null;
-  }
-
-  return (
-    <div
-      className={[
-        "rounded-[28px] border border-sky-100/80 bg-[linear-gradient(180deg,rgba(249,252,255,0.98),rgba(241,246,255,0.95))] p-5 shadow-[0_20px_60px_rgba(74,110,255,0.10)] backdrop-blur",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-lg font-extrabold leading-8 text-slate-900">
-            {canSubmit
-              ? "답변이 모두 모여 결과를 바로 확인하실 수 있어요"
-              : `남은 ${remainingCount}문항만 더 답하면 결과를 더 정확하게 보여드릴 수 있어요`}
-          </p>
-          <p className="mt-3 text-sm leading-7 text-slate-600">
-            {answeredCount < minPreviewAnswers
-              ? "몇 문항만 더 답해주시면 지금 보이는 방향이 조금 더 또렷해져요."
-              : previewLabels.length > 0
-              ? `지금까지는 ${previewLabels.join(", ")} 쪽 가능성을 먼저 보고 있어요. 끝까지 답하시면 추천 이유를 더 안정적으로 정리해드릴게요.`
-              : previewLoading
-              ? "지금까지 답해주신 내용을 바탕으로 추천 방향을 정리하고 있어요."
-              : "답변 흐름을 바탕으로 추천 방향을 차분히 정리하고 있어요."}
-          </p>
-        </div>
-
-        <span className="shrink-0 rounded-full border border-sky-100 bg-white px-3 py-1.5 text-base font-extrabold text-sky-700 shadow-sm">
-          {answeredCount}/{questionCount}
-        </span>
-      </div>
-
-      {previewLabels.length > 0 || previewLoading ? (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {previewLabels.map((label) => (
-            <span
-              key={label}
-              className="rounded-full border border-indigo-100 bg-white px-3 py-1.5 text-sm font-semibold text-indigo-700 shadow-sm"
-            >
-              {label}
-            </span>
-          ))}
-          {previewLoading ? (
-            <span className="rounded-full border border-sky-100 bg-white/90 px-3 py-1.5 text-sm font-medium text-sky-700">
-              업데이트 중
-            </span>
-          ) : null}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 function CheckAiProgressBar({ completion }: { completion: number }) {
   return (
     <div className="w-full rounded-2xl border border-slate-200/70 bg-white/80 p-3 shadow-[0_10px_24px_rgba(15,23,42,0.05)] backdrop-blur sm:min-w-[220px] sm:max-w-[240px]">
@@ -114,15 +36,11 @@ export default function CheckAI() {
     modalOpen,
     animateBars,
     draftRestored,
-    previewLoading,
     resultModalDrag,
     answeredCount,
-    remainingCount,
     canSubmit,
     completion,
-    previewLabels,
     recommendedIds,
-    minPreviewAnswers,
     trustSummary,
     valueProposition,
     guestBridgeModel,
@@ -135,7 +53,7 @@ export default function CheckAI() {
   } = useCheckAiExperience({ showLoading });
 
   return (
-    <div className={pageShellClass("pb-28")}>
+    <div className={pageShellClass("max-w-[72rem] pb-28")}>
       <section className="relative mt-6 overflow-hidden rounded-[32px] border border-black/5 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(247,250,255,0.92))] shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur sm:mt-10">
         <div className="pointer-events-none absolute -right-24 -top-24 hidden h-80 w-80 rounded-full bg-gradient-to-br from-sky-400/25 via-indigo-300/20 to-cyan-200/20 blur-3xl sm:block" />
         <div className="pointer-events-none absolute -bottom-24 -left-24 hidden h-80 w-80 rounded-full bg-gradient-to-tr from-white via-sky-200/30 to-indigo-300/15 blur-3xl sm:block" />
@@ -154,12 +72,10 @@ export default function CheckAI() {
                   영양제 추천 빠른검사
                 </h1>
                 <p className="mt-2 text-sm leading-7 text-slate-600 sm:text-base">
-                  웰니스박스 추천 AI가 답변 흐름을 보면서 먼저 방향을
-                  잡아드려요.
+                  웰니스박스 추천 AI가 답변 흐름을 보면서 먼저 방향을 잡아드려요.
                 </p>
                 <p className="mt-1 text-[13px] leading-6 text-slate-500 sm:text-sm">
-                  가볍게 시작하셔도 되고, 끝까지 답하실수록 추천 정확도가 더
-                  안정적으로 올라가요.
+                  가볍게 시작하셔도 되고, 끝까지 답하실수록 추천 정확도가 더 안정적으로 올라가요.
                 </p>
               </div>
             </div>
@@ -171,82 +87,50 @@ export default function CheckAI() {
 
           {draftRestored && answeredCount > 0 ? (
             <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50/90 px-4 py-3 text-sm leading-6 text-emerald-800">
-              이전에 답하신 내용이 남아 있어 이어서 진행하실 수 있어요.
+              이전에 답하던 내용이 남아 있어 이어서 진행하실 수 있어요.
             </div>
           ) : null}
         </div>
       </section>
 
-      <div className="mt-6 xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(0,48rem)_320px_minmax(0,1fr)] xl:items-start xl:gap-8">
-        <section className="min-w-0 xl:col-start-2">
-          <div className="mx-auto w-full max-w-3xl">
-            <CheckAiProgressSummary
-              answeredCount={answeredCount}
-              remainingCount={remainingCount}
-              canSubmit={canSubmit}
-              minPreviewAnswers={minPreviewAnswers}
-              previewLabels={previewLabels}
-              previewLoading={previewLoading}
-              questionCount={QUESTIONS.length}
-              className="mb-5 xl:hidden"
-            />
+      <div className="mt-6">
+        <section className="w-full">
+          <div className="rounded-[32px] border border-black/5 bg-white/92 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.06)] backdrop-blur sm:p-6">
+            <form id="check-ai-form" className="space-y-6 sm:space-y-7">
+              {QUESTIONS.map((question, index) => (
+                <CheckAiQuestionField
+                  key={index}
+                  index={index}
+                  question={question}
+                  options={OPTIONS}
+                  value={answers[index]}
+                  onChange={handleChange}
+                />
+              ))}
 
-            <div className="rounded-[32px] border border-black/5 bg-white/92 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.06)] backdrop-blur sm:p-6">
-              <form
-                id="check-ai-form"
-                className="space-y-6 sm:space-y-7"
-              >
-                {QUESTIONS.map((question, index) => (
-                  <CheckAiQuestionField
-                    key={index}
-                    index={index}
-                    question={question}
-                    options={OPTIONS}
-                    value={answers[index]}
-                    onChange={handleChange}
-                  />
-                ))}
-
-                <div className="sticky bottom-3 z-10 -mx-1 rounded-[28px] bg-white/92 px-1 pb-1 pt-4 backdrop-blur supports-[backdrop-filter]:bg-white/78 sm:bottom-5 sm:bg-white/90">
-                  <button
-                    type="button"
-                    onClick={handleSubmit}
-                    disabled={loading}
-                    aria-busy={loading}
-                    className="w-full rounded-2xl bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-500 px-6 py-3 text-base font-extrabold text-white shadow-[0_14px_36px_rgba(56,121,255,0.32)] transition-all hover:from-sky-600 hover:via-blue-600 hover:to-indigo-600 focus:outline-none focus:ring-4 focus:ring-sky-300 disabled:opacity-60"
-                  >
-                    {loading
-                      ? "AI가 답변을 정리하고 있어요..."
-                      : canSubmit
-                      ? "AI 추천 결과 보기"
-                      : "지금 답변으로 먼저 결과 보기"}
-                  </button>
-                  <p className="mt-3 text-center text-[13px] leading-6 text-slate-500 sm:text-sm">
-                    {canSubmit
-                      ? "모든 문항을 답해주셔서 결과를 더 안정적으로 보여드릴 수 있어요."
-                      : "비어 있는 문항은 보통값으로 보고 먼저 결과를 보여드려요. 끝까지 답하시면 추천 이유를 더 또렷하게 정리해드릴게요."}
-                  </p>
-                </div>
-              </form>
-            </div>
+              <div className="sticky bottom-3 z-10 -mx-1 rounded-[28px] bg-white/92 px-1 pb-1 pt-4 backdrop-blur supports-[backdrop-filter]:bg-white/78 sm:bottom-5 sm:bg-white/90">
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  aria-busy={loading}
+                  className="w-full rounded-2xl bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-500 px-6 py-3 text-base font-extrabold text-white shadow-[0_14px_36px_rgba(56,121,255,0.32)] transition-all hover:from-sky-600 hover:via-blue-600 hover:to-indigo-600 focus:outline-none focus:ring-4 focus:ring-sky-300 disabled:opacity-60"
+                >
+                  {loading
+                    ? "AI가 답변을 정리하고 있어요..."
+                    : canSubmit
+                    ? "AI 추천 결과 보기"
+                    : "지금 답변으로 먼저 결과 보기"}
+                </button>
+                <p className="mt-3 text-center text-[13px] leading-6 text-slate-500 sm:text-sm">
+                  {canSubmit
+                    ? "모든 문항에 답하셔서 결과를 더 안정적으로 보여드릴 수 있어요."
+                    : "비어 있는 문항은 보통값으로 보고 먼저 결과를 보여드려요. 끝까지 답하시면 추천 이유를 더 선명하게 정리해드릴게요."}
+                </p>
+              </div>
+            </form>
           </div>
         </section>
-
-        {answeredCount > 0 ? (
-          <aside className="hidden xl:col-start-3 xl:block xl:self-start">
-            <div className="sticky top-24">
-              <CheckAiProgressSummary
-                answeredCount={answeredCount}
-                remainingCount={remainingCount}
-                canSubmit={canSubmit}
-                minPreviewAnswers={minPreviewAnswers}
-                previewLabels={previewLabels}
-                previewLoading={previewLoading}
-                questionCount={QUESTIONS.length}
-              />
-            </div>
-          </aside>
-        ) : null}
       </div>
 
       {loading ? (
@@ -309,8 +193,7 @@ export default function CheckAI() {
                 아래 추천 카테고리 순서대로 먼저 비교해보시면 좋아요.
               </p>
               <p className="mt-1 text-[13px] leading-5 text-gray-500 sm:text-sm">
-                상품 구성과 복용 맥락은 탐색 화면에서 이어서 자세히 확인하실 수
-                있어요.
+                상품 구성과 복용 맥락은 탐색 화면에서 이어서 자세히 확인하실 수 있어요.
               </p>
 
               <ul className="mt-5 space-y-3">

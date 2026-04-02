@@ -97,16 +97,16 @@ function PopularIngredientsSectionFallback() {
   return (
     <section className="w-full max-w-[640px] mx-auto mt-10">
       <div className="px-4">
-        <div className="overflow-hidden rounded-[2rem] border border-[#E5EBF8] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(245,248,255,0.96))] px-5 py-5 shadow-[0_24px_56px_-44px_rgba(67,103,230,0.3)]">
+        <div className="px-0 py-0">
           <div className="flex flex-col gap-3">
             <div className="max-w-[28rem]">
-              <p className="text-[11px] font-semibold tracking-[0.22em] text-[#4568F5]">
+              <p className="hidden text-[11px] font-semibold tracking-[0.22em] text-[#4568F5]">
                 POPULAR INGREDIENTS
               </p>
-              <h1 className="mt-2 text-[clamp(1.8rem,5vw,2.35rem)] font-black tracking-[-0.05em] text-[#1F2A44]">
+              <h1 className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-[#3B82F6] to-[#6C4DFF] bg-clip-text text-transparent">
                 인기 성분
               </h1>
-              <p className="mt-2 text-sm leading-6 text-[#5D6984]">
+              <p className="hidden mt-2 text-sm leading-6 text-[#5D6984]">
                 많이 찾는 성분부터 먼저 둘러보고, 바로 제품 흐름으로
                 이어지도록 가볍게 정리했어요.
               </p>
@@ -419,15 +419,17 @@ export default function HomePage() {
       <HomeRouteWarmup />
       <HomeLanding />
       <JourneyCtaBridge />
-      <Suspense fallback={<HomeProductsFallback />}>
-        <HomeProductSectionServer homeDataPromise={homeDataPromise} />
-      </Suspense>
       <Suspense fallback={<PopularIngredientsSectionFallback />}>
         <PopularIngredientsSection homeDataPromise={homeDataPromise} />
       </Suspense>
       <Suspense fallback={<CardSectionFallback />}>
         <SupplementRankingSection homeDataPromise={homeDataPromise} />
       </Suspense>
+      <div className="mt-6 sm:mt-8">
+        <Suspense fallback={<HomeProductsFallback />}>
+          <HomeProductSectionServer homeDataPromise={homeDataPromise} />
+        </Suspense>
+      </div>
       <Suspense fallback={null}>
         <HomeColumnPreviewSection />
       </Suspense>

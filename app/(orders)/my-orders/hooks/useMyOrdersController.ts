@@ -10,7 +10,7 @@ export function useMyOrdersController() {
   const linkedPhone = useLinkedPhoneStatus();
 
   const orderView = useOrderViewState({
-    isPhoneLinked: linkedPhone.isPhoneLinked,
+    hasVerifiedPhone: linkedPhone.hasVerifiedPhone,
     phoneStatusLoading: linkedPhone.phoneStatusLoading,
     linkedPhoneNormalized: linkedPhone.linkedPhoneNormalized,
   });
@@ -74,11 +74,13 @@ export function useMyOrdersController() {
     viewConfig: orderView.isViewingDetails,
     manualLookup,
     linkedState: {
+      hasVerifiedPhone: linkedPhone.hasVerifiedPhone,
       isPhoneLinked: linkedPhone.isPhoneLinked,
       phoneStatusLoading: linkedPhone.phoneStatusLoading,
       phoneStatusError: linkedPhone.phoneStatusError,
       linkedPhoneDisplay: linkedPhone.linkedPhoneDisplay,
       linkedPhone: linkedPhone.linkedPhone,
+      linkedPhoneNormalized: linkedPhone.linkedPhoneNormalized,
       linkedAt: linkedPhone.linkedAt,
       isVerifyOpen: linkedPhone.isVerifyOpen,
       unlinkLoading: linkedPhone.unlinkLoading,

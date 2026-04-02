@@ -36,8 +36,8 @@ _이미지 출처: [Wikimedia Commons - Pills in blister pack](https://commons.w
 
 또 하나 중요한 건 ‘먹는 양’보다 **흡수와 소모**입니다. 메트포르민은 B12와 자주 같이 거론되고, 위산 억제제 장기 복용은 B12 흡수에 영향을 줄 수 있습니다. 술은 B1 상태를 망치기 쉽고, 극단적인 식사 제한은 B군 전체를 흔들기 쉽죠. 많이 먹어도 흡수가 안 되거나, 필요량이 늘거나, 소모가 커지면 결핍은 생각보다 쉽게 옵니다.
 
-![집중력 저하와 피로](https://upload.wikimedia.org/wikipedia/commons/7/7a/Student_on_the_desk.jpg)
-_이미지 출처: [Wikimedia Commons - Student on the desk](https://commons.wikimedia.org/wiki/File:Student%20on%20the%20desk.jpg)_
+![피로 누적과 집중 저하](https://images.pexels.com/photos/8086364/pexels-photo-8086364.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - Tired woman sleeping on desk](https://www.pexels.com/photo/tired-woman-sleeping-on-desk-8086364/)_
 
 
 ## 사람들이 제일 많이 놓치는 포인트

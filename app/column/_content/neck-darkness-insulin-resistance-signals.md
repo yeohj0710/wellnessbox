@@ -8,7 +8,7 @@ tags:
   - "피부신호"
   - "혈당"
 slug: "neck-darkness-insulin-resistance-signals"
-coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/1/1d/NeckAcrochordons.jpg"
+coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/2/2d/Female_Skin_and_neck.png"
 ---
 
 # 목 뒤가 까매졌다면 혈당보다 먼저 이걸 의심해야 합니다
@@ -58,8 +58,8 @@ _이미지 출처: [Wikimedia Commons - Neck acrochordons](https://commons.wikim
 
 생리 불규칙이나 다낭성난소증후군(PCOS) 경향이 있는 여성, 코골이와 수면 부족이 심한 사람, 배만 먼저 나오는 사람은 인슐린저항성이 피부에 먼저 드러날 확률이 높습니다. 이런 경우에는 '나는 많이 안 먹는데 왜 이러지?'라는 말이 자주 나옵니다. 실제 문제는 양보다 **리듬과 민감도**인 경우가 많습니다.
 
-![활동량을 늘리는 습관](https://upload.wikimedia.org/wikipedia/commons/3/3e/Running_woman.jpg)
-_이미지 출처: [Wikimedia Commons - Running woman](https://commons.wikimedia.org/wiki/File:Running%20woman.jpg)_
+![활동량을 늘리는 습관](https://images.pexels.com/photos/34903294/pexels-photo-34903294.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - Sunlit morning walk in Nanjing park](https://www.pexels.com/photo/sunlit-morning-walk-in-nanjing-park-34903294/)_
 
 
 ## 그래서 실제로는 이렇게 확인해야 합니다

@@ -58,8 +58,8 @@ _이미지 출처: [Wikimedia Commons - A small cup of coffee](https://commons.w
 
 예전엔 밤 8시에 마셔도 멀쩡했는데 요즘은 오후 2시 커피도 오래 가는 사람이 있습니다. 수면, 스트레스, 호르몬 상태가 바뀌면 카페인 체감도 바뀝니다.
 
-![커피와 수면의 관계](https://upload.wikimedia.org/wikipedia/commons/3/30/Bed.jpg)
-_이미지 출처: [Wikimedia Commons - Bed](https://commons.wikimedia.org/wiki/File:Bed.jpg)_
+![수면 시간과 피로 누적](https://images.pexels.com/photos/6940873/pexels-photo-6940873.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - Alarm clock on a table](https://www.pexels.com/photo/alarm-clock-on-a-table-6940873/)_
 
 
 ## 바로 써먹는 실전 루틴

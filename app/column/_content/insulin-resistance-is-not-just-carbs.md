@@ -8,7 +8,7 @@ tags:
   - "혈당"
   - "생활습관"
 slug: "insulin-resistance-is-not-just-carbs"
-coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/3/3e/Running_woman.jpg"
+coverImageUrl: "https://images.pexels.com/photos/8417517/pexels-photo-8417517.jpeg?auto=compress&cs=tinysrgb&w=1200"
 ---
 
 # 인슐린저항성은 탄수화물만 줄인다고 해결되지 않습니다
@@ -17,8 +17,8 @@ coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/3/3e/Running_woma
 
 왜냐하면 인슐린저항성은 단순히 ‘탄수화물을 많이 먹어서’ 생기는 현상이 아니기 때문입니다. **잠이 부족하고, 스트레스가 높고, 복부지방이 늘고, 근육을 안 쓰고, 식사 시간이 밀리고, 낮에 빛을 안 보고, 밤에 단 음식과 카페인으로 버티는 생활**이 겹치면 몸은 점점 인슐린 말을 안 듣는 쪽으로 갑니다. 밥만 미워해서는 잘 안 풀립니다.
 
-![활동량과 근육의 중요성](https://upload.wikimedia.org/wikipedia/commons/3/3e/Running_woman.jpg)
-_이미지 출처: [Wikimedia Commons - Running woman](https://commons.wikimedia.org/wiki/File:Running%20woman.jpg)_
+![근력운동과 혈당 관리](https://images.pexels.com/photos/8417517/pexels-photo-8417517.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - A woman working out using a resistance band](https://www.pexels.com/photo/a-woman-working-out-using-a-resistance-band-8417517/)_
 
 
 ## 핵심만 먼저
@@ -36,8 +36,8 @@ _이미지 출처: [Wikimedia Commons - Running woman](https://commons.wikimedia
 
 또 하나는 **근육 사용량**입니다. 근육은 포도당을 써 주는 큰 창고인데, 오래 앉아 있고 식후 바로 움직이지 않으면 혈당 처리 효율이 떨어지기 쉽습니다. 그래서 인슐린저항성은 식단표 한 장으로 해결되는 병이 아니라, **하루 전체의 사용 리듬**을 손보는 문제에 가깝습니다.
 
-![수면과 혈당](https://upload.wikimedia.org/wikipedia/commons/3/30/Bed.jpg)
-_이미지 출처: [Wikimedia Commons - Bed](https://commons.wikimedia.org/wiki/File:Bed.jpg)_
+![밤 루틴과 수면 시간 관리](https://images.pexels.com/photos/17378218/pexels-photo-17378218.jpeg?auto=compress&cs=tinysrgb&w=1200)
+_이미지 출처: [Pexels - Lamp and alarm clock in bedroom](https://www.pexels.com/photo/lamp-and-alarm-clock-in-bedroom-17378218/)_
 
 
 ## 사람들이 제일 많이 놓치는 포인트

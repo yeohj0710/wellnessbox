@@ -24,10 +24,16 @@ function normalizeText(value: string) {
   return value.trim().toLowerCase();
 }
 
-export default function CommandPalette() {
+type CommandPaletteProps = {
+  initiallyOpen?: boolean;
+};
+
+export default function CommandPalette({
+  initiallyOpen = false,
+}: CommandPaletteProps) {
   const router = useRouter();
   const pathname = usePathname() || "/";
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initiallyOpen);
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement | null>(null);
