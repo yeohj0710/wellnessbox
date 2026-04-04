@@ -34,12 +34,12 @@ export default function IntroSection({ onStart }: Props) {
   return (
     <div className={pageShellClass("pb-28")}>
       <div className="relative mt-6 overflow-hidden rounded-3xl bg-white/70 p-6 shadow-[0_10px_40px_rgba(2,6,23,0.08)] ring-1 ring-black/5 backdrop-blur sm:mt-10 sm:p-10">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <p className="text-xs font-semibold tracking-[0.16em] text-sky-600">
               AI ASSESSMENT
             </p>
-            <h1 className="mt-2 text-2xl font-extrabold text-gray-900 sm:text-3xl">
+            <h1 className="mt-2 break-keep text-2xl font-extrabold text-gray-900 sm:text-3xl">
               정밀 AI 진단
             </h1>
             <p className="mt-3 max-w-[32rem] text-sm leading-6 text-gray-600">
@@ -48,7 +48,7 @@ export default function IntroSection({ onStart }: Props) {
             </p>
           </div>
 
-          <div className="min-w-[120px]">
+          <div className="w-full max-w-[220px] sm:min-w-[120px] sm:max-w-none">
             <div className="flex items-center justify-between text-xs text-gray-600">
               <span>구성</span>
               <span>3단계</span>

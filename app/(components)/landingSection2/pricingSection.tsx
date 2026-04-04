@@ -13,10 +13,10 @@ export default function PricingSection({
 }: PricingSectionProps) {
   return (
     <section
-      className={`relative isolate -mt-px w-full overflow-visible bg-gradient-to-b from-[#F3F6FF] via-[#E6ECFF] to-white pt-20 sm:pt-24 md:pt-28 ${pretendard.className}`}
+      className={`relative isolate -mt-px w-full overflow-x-hidden overflow-y-visible bg-gradient-to-b from-[#F3F6FF] via-[#E6ECFF] to-white pt-20 sm:pt-24 md:pt-28 ${pretendard.className}`}
     >
       <div className="pointer-events-none absolute inset-x-0 -top-8 h-14 bg-gradient-to-b from-[#F3F6FF] to-transparent" />
-      <div className="absolute inset-x-0 top-4 sm:top-6 md:top-8 pointer-events-none overflow-visible">
+      <div className="absolute inset-x-0 top-4 overflow-x-hidden overflow-y-visible pointer-events-none sm:top-6 md:top-8">
         <div className="relative mx-auto h-[5.5rem]">
           <div className="absolute left-1/2 -translate-x-1/2 -top-2 rotate-[-8deg] w-[230vw]">
             <div className="mx-auto flex h-10 items-center justify-center rounded-full bg-gradient-to-r from-[#59C1FF] to-[#7B61FF] shadow-[0_10px_30px_rgba(86,120,255,0.35)]">

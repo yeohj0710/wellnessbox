@@ -24,24 +24,24 @@ export default async function HomeColumnPreviewSection() {
     <section className="w-full bg-[linear-gradient(180deg,#ffffff_0%,#fbfcff_52%,#ffffff_100%)] pb-8 pt-6 sm:pb-10 sm:pt-8">
       <div className="w-full max-w-[640px] mx-auto px-4">
         <div className="overflow-hidden rounded-[2rem] bg-[linear-gradient(180deg,rgba(248,250,255,0.98)_0%,rgba(255,253,248,0.96)_100%)] px-5 py-6 shadow-[0_30px_60px_-46px_rgba(23,32,51,0.18)] ring-1 ring-[#e6ebf5] sm:px-7 sm:py-7">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3">
-            <div className="min-w-0 max-w-3xl">
+          <div className="grid gap-x-4 gap-y-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+            <div className="min-w-0 max-w-none sm:max-w-3xl">
               <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#4960e8]">
                 WELLNESS COLUMN
               </p>
-              <h2 className="mt-2 text-[1.7rem] font-semibold tracking-[-0.05em] text-[#172033] sm:text-[2rem]">
+              <h2 className="mt-2 max-w-[15ch] break-keep text-[1.55rem] font-semibold tracking-[-0.05em] text-[#172033] sm:text-[2rem]">
                 상품을 둘러본 뒤 잠깐 쉬어 읽기 좋은 칼럼
               </h2>
             </div>
 
             <Link
               href="/column"
-              className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-full bg-white/92 px-5 text-sm font-semibold text-[#172033] ring-1 ring-[#dde4dc] transition duration-300 hover:-translate-y-0.5 hover:bg-[#eef2ff] hover:text-[#4960e8]"
+              className="inline-flex h-12 w-full items-center justify-center rounded-full bg-white/92 px-5 text-sm font-semibold text-[#172033] ring-1 ring-[#dde4dc] transition duration-300 hover:-translate-y-0.5 hover:bg-[#eef2ff] hover:text-[#4960e8] sm:w-auto sm:whitespace-nowrap"
             >
               칼럼 전체 보기
             </Link>
 
-            <p className="col-span-2 text-sm leading-7 text-[#5f6878] sm:text-[15px]">
+            <p className="break-keep text-sm leading-7 text-[#5f6878] sm:col-span-2 sm:text-[15px]">
               복용 팁, 생활 습관, 성분 포인트처럼 바로 도움이 되는 내용만 골라
               짧고 편하게 이어두었어요.
             </p>

@@ -14,17 +14,17 @@ export default function PackageFilter({
   return (
     <section
       data-horizontal-scroll-area="true"
-      className="px-4 py-2 bg-gray-100 overflow-x-auto scrollbar-hide touch-pan-x"
+      className="max-w-full overflow-x-auto bg-gray-100 px-4 py-2 scrollbar-hide touch-pan-x"
       style={{
         WebkitOverflowScrolling: "touch",
         touchAction: "pan-x",
       }}
     >
-      <div className="flex flex-nowrap items-center gap-2 w-max">
+      <div className="flex w-max min-w-full flex-nowrap items-center gap-2 pr-4">
         {packages.map((pkg) => (
           <button
             key={pkg}
-            className={`px-4 py-2 border rounded-full text-sm transition-transform duration-300 ${
+            className={`shrink-0 rounded-full border px-4 py-2 text-sm transition-transform duration-300 ${
               selectedPackage === pkg
                 ? "bg-gray-200 font-bold shadow-sm"
                 : "bg-white md:hover:bg-gray-100"

@@ -270,6 +270,7 @@ export default function PopularIngredients({
   useEffect(() => clearIntentTimer, []);
 
   const hasVisibleCategories = categories.length > 0;
+  const visibleCategories = categories.slice(0, 6);
   const isPreviewMode =
     !isLoading &&
     hasVisibleCategories &&
@@ -310,14 +311,14 @@ export default function PopularIngredients({
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 gap-3 p-4 min-[520px]:grid-cols-2 sm:grid-cols-3 sm:gap-4">
+        <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 sm:gap-4">
           {Array.from({ length: 6 }).map((_, index) => (
             <PopularIngredientsLoadingCard key={index} index={index} />
           ))}
         </div>
       ) : hasVisibleCategories ? (
-        <div className="grid grid-cols-1 gap-3 p-4 min-[520px]:grid-cols-2 sm:grid-cols-3 sm:gap-4">
-          {categories.map((category, index) => {
+        <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 sm:gap-4">
+          {visibleCategories.map((category, index) => {
             const visual = getIngredientPreviewVisual(category.name);
             const displayName = getIngredientDisplayName(category.name);
             const PreviewIcon = visual.icon;

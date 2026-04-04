@@ -147,9 +147,9 @@ export default async function RootLayout({
   };
 
   return (
-    <html lang="ko">
+    <html lang="ko" className="overflow-x-hidden">
       <body
-        className={`${pretendard.className} overflow-x-hidden flex flex-col bg-white`}
+        className={`${pretendard.className} flex max-w-full flex-col overflow-x-hidden bg-white`}
       >
         <a
           href="#wb-main-content"
@@ -167,7 +167,7 @@ export default async function RootLayout({
                 </Suspense>
                 <main
                   id="wb-main-content"
-                  className="min-h-[105vh] flex flex-col items-center"
+                  className="flex min-h-[105vh] w-full flex-col items-center overflow-x-hidden"
                   style={{
                     paddingTop: "3.5rem",
                   }}

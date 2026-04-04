@@ -57,7 +57,7 @@ export default function AddressSection({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsAddressModalOpen(true)}
-                className="h-8 min-w-12 rounded-xl bg-sky-500 px-3 text-sm font-medium text-white transition duration-200 hover:bg-sky-600"
+                className="h-8 min-w-12 whitespace-nowrap rounded-xl bg-sky-500 px-3 text-sm font-medium text-white transition duration-200 hover:bg-sky-600"
               >
                 수정
               </button>

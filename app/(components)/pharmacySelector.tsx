@@ -12,11 +12,11 @@ export default function PharmacySelector({
   setSelectedPharmacy,
 }: PharmacySelectorProps) {
   return (
-    <div className="flex gap-2 px-2 mx-1 sm:mx-0 mb-1 -mt-1 overflow-x-auto scrollbar-hide">
+    <div className="mx-1 mb-1 -mt-1 flex max-w-full gap-2 overflow-x-auto px-2 scrollbar-hide sm:mx-0">
       {pharmacies.map((pharmacy: any) => (
         <div
           key={pharmacy.id}
-          className={`flex flex-col items-center justify-center min-w-[120px] max-w-[120px] flex-grow p-2 mb-2 border rounded-lg shadow-sm cursor-pointer 
+          className={`mb-2 flex min-w-[120px] max-w-[120px] shrink-0 flex-col items-center justify-center rounded-lg border p-2 shadow-sm cursor-pointer 
             hover:bg-gray-100 transition 
             ${selectedPharmacy?.id === pharmacy.id ? "bg-gray-100" : ""}`}
           onClick={() => setSelectedPharmacy(pharmacy)}

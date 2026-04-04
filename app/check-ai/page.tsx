@@ -6,7 +6,7 @@ import PersonalizedTrustPanel from "@/components/common/PersonalizedTrustPanel";
 import PersonalizedValuePropositionCard from "@/components/common/PersonalizedValuePropositionCard";
 import { useLoading } from "@/components/common/loadingContext.client";
 import { CheckAiAnimationStyles } from "@/components/check-ai/CheckAiAnimationStyles";
-import { pageShellClass } from "@/lib/page-shell";
+import { AI_FLOW_MAX_WIDTH_CLASS } from "@/lib/page-shell";
 import { CheckAiQuestionField } from "./CheckAiQuestionField";
 import { useCheckAiExperience } from "./useCheckAiExperience";
 
@@ -53,7 +53,8 @@ export default function CheckAI() {
   } = useCheckAiExperience({ showLoading });
 
   return (
-    <div className={pageShellClass("max-w-[72rem] pb-28")}>
+    <div className={AI_FLOW_MAX_WIDTH_CLASS}>
+      <div className="px-4 pb-28 sm:px-6">
       <section className="relative mt-6 overflow-hidden rounded-[32px] border border-black/5 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(247,250,255,0.92))] shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur sm:mt-10">
         <div className="pointer-events-none absolute -right-24 -top-24 hidden h-80 w-80 rounded-full bg-gradient-to-br from-sky-400/25 via-indigo-300/20 to-cyan-200/20 blur-3xl sm:block" />
         <div className="pointer-events-none absolute -bottom-24 -left-24 hidden h-80 w-80 rounded-full bg-gradient-to-tr from-white via-sky-200/30 to-indigo-300/15 blur-3xl sm:block" />
@@ -266,6 +267,7 @@ export default function CheckAI() {
       ) : null}
 
       <CheckAiAnimationStyles />
+      </div>
     </div>
   );
 }

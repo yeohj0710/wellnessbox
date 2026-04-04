@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import JourneyCtaBridge from "@/app/(components)/journeyCtaBridge";
 import SymptomImprovement from "@/app/(components)/symptomImprovement";
 import PopularIngredientsNav from "@/app/(components)/popularIngredientsNav.client";
 import SupplementRankingNav from "@/app/(components)/supplementRankingNav.client";
@@ -60,8 +59,7 @@ export default function ExplorePage() {
   const homeDataPromise = getHomePageData();
 
   return (
-    <>
-      <JourneyCtaBridge />
+    <div className="w-full overflow-x-hidden">
       <Suspense fallback={<CardSectionFallback />}>
         <ExplorePopularIngredientsSection homeDataPromise={homeDataPromise} />
       </Suspense>
@@ -74,6 +72,6 @@ export default function ExplorePage() {
         </Suspense>
       </div>
       <SymptomImprovement />
-    </>
+    </div>
   );
 }

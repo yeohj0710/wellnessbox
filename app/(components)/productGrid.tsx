@@ -26,7 +26,7 @@ export default function ProductGrid({
   const showSkeleton = isLoading && products.length === 0;
 
   return (
-    <section className="relative mb-4 grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 p-3 sm:p-4">
+    <section className="relative mb-4 grid min-w-0 grid-cols-2 gap-3 overflow-x-hidden p-3 sm:grid-cols-3 sm:gap-4 sm:p-4">
       {showSkeleton
         ? Array(12)
             .fill(0)
@@ -53,7 +53,7 @@ export default function ProductGrid({
                 key={`${product.id}-${index}`}
                 type="button"
                 onClick={() => setSelectedProduct(product)}
-                className="group relative flex h-full flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-gray-100 shadow-[0_6px_20px_rgba(67,103,230,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(67,103,230,0.18)] focus:outline-none focus:ring-2 focus:ring-[#6C4DFF]/50"
+                className="group relative flex h-full min-w-0 flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-gray-100 shadow-[0_6px_20px_rgba(67,103,230,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(67,103,230,0.18)] focus:outline-none focus:ring-2 focus:ring-[#6C4DFF]/50"
               >
                 {imageSrc ? (
                   <div className="relative w-full aspect-[4/3] bg-white">
@@ -72,23 +72,23 @@ export default function ProductGrid({
                   </div>
                 )}
 
-                <div className="px-3 py-2 flex flex-1 flex-col">
-                  <span className="text-[12px] sm:text-[13px] text-gray-600 leading-5 line-clamp-1 text-center">
+                <div className="flex min-w-0 flex-1 flex-col px-3 py-2">
+                  <span className="line-clamp-1 min-w-0 text-center text-[12px] leading-5 text-gray-600 sm:text-[13px]">
                     {product.categories.map((c) => c.name).join(", ")}
                   </span>
 
-                  <span className="mt-0.5 text-[15px] font-semibold text-gray-900 leading-snug line-clamp-2 min-h-[2.4rem] text-center">
+                  <span className="mt-0.5 min-w-0 break-keep text-center text-[15px] font-semibold leading-snug text-gray-900 line-clamp-2 min-h-[2.4rem]">
                     {product.name}
                   </span>
 
-                  <div className="mt-1 flex justify-center items-center gap-2 text-center">
+                  <div className="mt-1 flex min-w-0 items-center justify-center gap-2 text-center">
                     {capacity ? (
                       <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[12px] text-gray-700">
                         {capacity}
                       </span>
                     ) : null}
                     <span className="h-1 w-1 rounded-full bg-gray-300" />
-                    <span className="text-[12px] sm:text-[13px] text-sky-700">
+                    <span className="min-w-0 truncate text-[12px] text-sky-700 sm:text-[13px]">
                       {optionType} 기준
                     </span>
                   </div>

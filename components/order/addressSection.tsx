@@ -40,7 +40,7 @@ export default function AddressSection({
             </p>
             <button
               onClick={() => setIsAddressModalOpen(true)}
-              className="min-w-12 rounded bg-sky-400 px-1.5 py-1 text-sm font-normal text-white transition duration-200 hover:bg-sky-500 sm:px-3"
+              className="min-w-12 whitespace-nowrap rounded bg-sky-400 px-1.5 py-1 text-sm font-normal text-white transition duration-200 hover:bg-sky-500 sm:px-3"
             >
               수정
             </button>

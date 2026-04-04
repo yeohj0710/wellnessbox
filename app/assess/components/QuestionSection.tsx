@@ -76,21 +76,17 @@ export default function QuestionSection({
           </button>
         </div>
 
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <p className="text-sm font-semibold tracking-[0.14em] text-sky-600">
               AI ASSESSMENT
             </p>
-            <h1 className="mt-2 text-2xl font-extrabold text-gray-900 sm:text-3xl">
+            <h1 className="mt-2 break-keep text-2xl font-extrabold text-gray-900 sm:text-3xl">
               {sectionTitle}
             </h1>
-            <p className="mt-3 text-[15px] leading-6 text-gray-500 sm:text-base">
-              {answered}/{total} 문항을 살펴봤어요. 필요한 질문만 이어서
-              보여드릴게요.
-            </p>
           </div>
 
-          <div className="min-w-[120px]">
+          <div className="w-full max-w-[220px] sm:min-w-[120px] sm:max-w-none">
             <div className="flex items-center justify-between text-sm text-gray-600">
               <span>진행도</span>
             </div>
@@ -108,17 +104,6 @@ export default function QuestionSection({
           <h2 className="mt-6 text-xl font-bold text-gray-900">
             {currentQuestion.text}
           </h2>
-        ) : null}
-
-        {questionGuide ? (
-          <div className="mt-4 rounded-2xl bg-sky-50/70 px-4 py-3 ring-1 ring-sky-100">
-            <p className="text-sm font-semibold tracking-[0.01em] text-slate-700">
-              {questionGuide.title}
-            </p>
-            <p className="mt-1 text-[15px] leading-6 text-slate-500 sm:text-base">
-              {questionGuide.description}
-            </p>
-          </div>
         ) : null}
 
         {currentQuestion?.type === "choice" ? (
@@ -175,8 +160,8 @@ export default function QuestionSection({
           </div>
         ) : null}
 
-        <div className="mt-8 flex items-center justify-between gap-2">
-          <p className="min-w-0 flex-1 truncate text-sm leading-none text-gray-400">
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="min-w-0 flex-1 break-keep text-sm leading-6 text-gray-400 sm:leading-none">
             중간에 나가도 여기까지 답한 내용은 저장돼요.
           </p>
           {currentQuestion ? (

@@ -11,9 +11,9 @@ import { pretendard } from "@/app/fonts";
 export default function ProcessSection() {
   return (
     <section
-      className={`relative isolate w-full min-h-[90vh] sm:min-h-[92vh] md:min-h-screen overflow-visible bg-gradient-to-b from-[#C7D2FE] via-[#DDE7FF] to-white ${pretendard.className}`}
+      className={`relative isolate w-full min-h-[90vh] overflow-x-hidden overflow-y-visible sm:min-h-[92vh] md:min-h-screen bg-gradient-to-b from-[#C7D2FE] via-[#DDE7FF] to-white ${pretendard.className}`}
     >
-      <div className="absolute inset-x-0 z-10 -top-4 pointer-events-none overflow-visible">
+      <div className="absolute inset-x-0 z-10 -top-4 overflow-x-hidden overflow-y-visible pointer-events-none">
         <div className="relative mx-auto min-h-[9.5rem] md:min-h-[11rem]">
           <div className="absolute left-1/2 -translate-x-1/2 -top-2 rotate-[-8deg] w-[220vw]">
             <div className="mx-auto flex h-10 sm:h-12 items-center justify-center rounded-full bg-gradient-to-r from-[#59C1FF] to-[#7B61FF] shadow-[0_10px_30px_rgba(86,120,255,0.35)]">

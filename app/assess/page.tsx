@@ -6,6 +6,7 @@ import QuestionSection from "./components/QuestionSection";
 import CSectionWrapper from "./components/CSectionWrapper";
 import DoneSection from "./components/DoneSection";
 import ConfirmResetModal from "./components/ConfirmResetModal";
+import { AI_FLOW_MAX_WIDTH_CLASS } from "@/lib/page-shell";
 import { ASSESS_C_PERSIST_KEY } from "./lib/assessStorage";
 import { useAssessFlow } from "./useAssessFlow";
 
@@ -69,7 +70,9 @@ export default function Assess() {
 
   return (
     <>
-      <div id="assess-flow">{content}</div>
+      <div className={AI_FLOW_MAX_WIDTH_CLASS}>
+        <div id="assess-flow">{content}</div>
+      </div>
       <ConfirmResetModal
         open={flow.confirmOpen}
         cancelBtnRef={flow.cancelBtnRef}

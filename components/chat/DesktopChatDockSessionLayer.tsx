@@ -27,14 +27,12 @@ export default function DesktopChatDockSessionLayer({
   onRenameSession,
   onDeleteSession,
 }: DesktopChatDockSessionLayerProps) {
+  if (!sessionsOpen) return null;
+
   return (
     <div
       ref={sessionsLayerRef}
-      className={`absolute inset-0 z-[80] transition-opacity duration-200 ${
-        sessionsOpen
-          ? "pointer-events-auto opacity-100"
-          : "pointer-events-none opacity-0"
-      }`}
+      className="absolute inset-0 z-[80] pointer-events-auto opacity-100 transition-opacity duration-200"
     >
       <button
         type="button"
@@ -44,9 +42,7 @@ export default function DesktopChatDockSessionLayer({
       />
 
       <div
-        className={`absolute inset-y-0 left-0 z-[82] w-[min(78%,260px)] border-r border-slate-200 bg-white transition-transform duration-200 ${
-          sessionsOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className="absolute inset-y-0 left-0 z-[82] w-[min(78%,260px)] translate-x-0 border-r border-slate-200 bg-white transition-transform duration-200"
       >
         <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2">
           <p className="text-sm font-semibold text-slate-900">대화 목록</p>

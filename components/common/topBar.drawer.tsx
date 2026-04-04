@@ -29,15 +29,13 @@ export function TopBarDrawer({
   onCloseDrawer,
   onMenuItemClick,
 }: TopBarDrawerProps) {
+  if (!isDrawerOpen) return null;
+
   return (
     <>
       <div
-        aria-hidden={!isDrawerOpen}
-        className={`fixed bottom-0 z-[70] w-[260px] bg-white shadow-lg transition-[right,visibility] duration-300 ${
-          isDrawerOpen
-            ? "visible right-0 pointer-events-auto"
-            : "invisible -right-[260px] pointer-events-none"
-        }`}
+        aria-hidden={false}
+        className="fixed bottom-0 right-0 z-[70] w-[260px] bg-white shadow-lg transition-transform duration-300 translate-x-0"
         style={{ top: "3.5rem" }}
       >
         <div className="flex flex-col gap-4 p-6 text-[15px] font-medium text-slate-600 [&_a]:text-slate-700 [&_a]:hover:text-slate-900">
@@ -85,13 +83,11 @@ export function TopBarDrawer({
         </div>
       </div>
 
-      {isDrawerOpen && (
-        <div
-          className="fixed inset-x-0 bottom-0 z-[69] bg-black/40"
-          style={{ top: "3.5rem" }}
-          onClick={onCloseDrawer}
-        />
-      )}
+      <div
+        className="fixed inset-x-0 bottom-0 z-[69] bg-black/40"
+        style={{ top: "3.5rem" }}
+        onClick={onCloseDrawer}
+      />
     </>
   );
 }

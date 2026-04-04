@@ -202,17 +202,17 @@ function HomeSearchHubSection() {
   return (
     <section className="w-full bg-white pb-2 pt-10 sm:pb-4 sm:pt-12">
       <div className="w-full max-w-[640px] mx-auto px-4">
-        <div className="rounded-[1.75rem] border border-slate-200 bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fbff_100%)] p-5 shadow-[0_18px_45px_-42px_rgba(15,23,42,0.28)] sm:p-6">
-          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,18rem)] items-start gap-x-6 gap-y-2">
-            <div className="min-w-0 max-w-2xl">
+        <div className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fbff_100%)] p-5 shadow-[0_18px_45px_-42px_rgba(15,23,42,0.28)] sm:p-6">
+          <div className="grid gap-x-6 gap-y-3 md:grid-cols-[minmax(0,1fr)_minmax(0,18rem)] md:items-start">
+            <div className="min-w-0 max-w-none md:max-w-2xl">
               <p className="text-xs font-semibold tracking-[0.18em] text-[#4568F5]">
                 QUICK ACCESS
               </p>
-              <h2 className="mt-2 text-xl font-black tracking-tight text-slate-900 sm:text-2xl">
+              <h2 className="mt-2 max-w-[15ch] break-keep text-[1.4rem] font-black leading-[1.18] tracking-tight text-slate-900 sm:text-2xl">
                 상품을 둘러본 뒤 필요한 기능만 바로 이어보세요
               </h2>
             </div>
-            <p className="max-w-md self-center text-sm leading-6 text-slate-500">
+            <p className="max-w-none self-start break-keep text-sm leading-6 text-slate-500 md:max-w-md md:self-center">
               체크, 설문, 상담, 주문 확인처럼 자주 찾는 기능만 가볍게 모아두었습니다.
             </p>
           </div>
@@ -225,12 +225,12 @@ function HomeSearchHubSection() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="group flex h-full min-h-[9.25rem] flex-col rounded-[1.4rem] border border-slate-200 bg-white/95 px-4 py-3 transition hover:-translate-y-0.5 hover:border-[#4568F5] hover:shadow-[0_16px_36px_-28px_rgba(59,91,255,0.28)]"
+                className="group flex h-full min-h-[8.75rem] min-w-0 flex-col rounded-[1.4rem] border border-slate-200 bg-white/95 px-4 py-3 transition hover:-translate-y-0.5 hover:border-[#4568F5] hover:shadow-[0_16px_36px_-28px_rgba(59,91,255,0.28)] sm:min-h-[9.25rem]"
               >
-                <h3 className="min-h-[2rem] text-base font-bold leading-6 text-slate-900 group-hover:text-[#3450e5]">
+                <h3 className="min-h-[2rem] break-keep text-base font-bold leading-6 text-slate-900 group-hover:text-[#3450e5]">
                   {item.title}
                 </h3>
-                <p className="mt-1 text-sm leading-6 text-slate-600">
+                <p className="mt-1 break-keep text-sm leading-6 text-slate-600">
                   {item.description}
                 </p>
                 <span className="mt-auto inline-flex items-center gap-1.5 pt-2 text-sm font-semibold text-[#4568F5]">
@@ -416,30 +416,32 @@ export default function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }}
       />
-      <HomeRouteWarmup />
-      <HomeLanding />
-      <JourneyCtaBridge />
-      <Suspense fallback={<PopularIngredientsSectionFallback />}>
-        <PopularIngredientsSection homeDataPromise={homeDataPromise} />
-      </Suspense>
-      <Suspense fallback={<CardSectionFallback />}>
-        <SupplementRankingSection homeDataPromise={homeDataPromise} />
-      </Suspense>
-      <div className="mt-6 sm:mt-8">
-        <Suspense fallback={<HomeProductsFallback />}>
-          <HomeProductSectionServer homeDataPromise={homeDataPromise} />
+      <div className="w-full overflow-x-hidden">
+        <HomeRouteWarmup />
+        <HomeLanding />
+        <JourneyCtaBridge />
+        <Suspense fallback={<PopularIngredientsSectionFallback />}>
+          <PopularIngredientsSection homeDataPromise={homeDataPromise} />
         </Suspense>
+        <Suspense fallback={<CardSectionFallback />}>
+          <SupplementRankingSection homeDataPromise={homeDataPromise} />
+        </Suspense>
+        <div className="mt-6 sm:mt-8">
+          <Suspense fallback={<HomeProductsFallback />}>
+            <HomeProductSectionServer homeDataPromise={homeDataPromise} />
+          </Suspense>
+        </div>
+        <Suspense fallback={null}>
+          <HomeColumnPreviewSection />
+        </Suspense>
+        <SymptomImprovement />
+        <HomeSearchHubSection />
+        <Suspense fallback={null}>
+          <HomeBottomAdaptiveSection homeDataPromise={homeDataPromise} />
+        </Suspense>
+        <HomeFaqSection />
+        <HomeTrustSection />
       </div>
-      <Suspense fallback={null}>
-        <HomeColumnPreviewSection />
-      </Suspense>
-      <SymptomImprovement />
-      <HomeSearchHubSection />
-      <Suspense fallback={null}>
-        <HomeBottomAdaptiveSection homeDataPromise={homeDataPromise} />
-      </Suspense>
-      <HomeFaqSection />
-      <HomeTrustSection />
     </>
   );
 }

@@ -127,7 +127,7 @@ export function HomeProductSectionContent({
     <div
       id="home-products"
       data-filter-updating={isFilterUpdating ? "true" : "false"}
-      className={`w-full max-w-[640px] mx-auto mt-2 bg-white ${
+      className={`mx-auto mt-2 w-full max-w-[640px] overflow-x-hidden bg-white ${
         totalPrice > 0 && !isCartVisible ? "pb-20" : ""
       }`}
     >

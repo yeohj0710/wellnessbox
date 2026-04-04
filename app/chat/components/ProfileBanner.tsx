@@ -70,7 +70,7 @@ export default function ProfileBanner({
         </div>
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <button
-            className="max-w-[96px] shrink-0 rounded-full bg-slate-900 px-3 py-1.5 text-center text-white text-xs font-semibold leading-tight whitespace-normal break-keep hover:opacity-90 active:opacity-95 sm:max-w-none sm:text-sm"
+            className="shrink-0 whitespace-nowrap rounded-full bg-slate-900 px-3 py-1.5 text-center text-xs font-semibold leading-tight text-white hover:opacity-90 active:opacity-95 sm:text-sm"
             onClick={onEdit}
           >
             프로필 설정

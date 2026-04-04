@@ -56,18 +56,18 @@ export default function CategoryFilter({
   };
 
   return (
-    <section className="py-2 bg-white">
-      <div className="relative">
+    <section className="max-w-full overflow-x-hidden bg-white py-2">
+      <div className="relative max-w-full">
         <div
           ref={scrollRef}
           data-horizontal-scroll-area="true"
-          className="overflow-x-auto scrollbar-hide touch-pan-x"
+          className="w-full max-w-full overflow-x-auto scrollbar-hide touch-pan-x"
           style={{
             WebkitOverflowScrolling: "touch",
             touchAction: "pan-x",
           }}
         >
-          <div className="mx-3 flex flex-nowrap items-start gap-2 w-max min-w-full">
+          <div className="mx-3 flex w-max min-w-full flex-nowrap items-start gap-2 pr-4">
             <button
               onClick={onResetCategories}
               className={`flex flex-col items-center justify-center h-12 shrink-0 px-4 border rounded-full ${
@@ -125,8 +125,6 @@ export default function CategoryFilter({
                     </span>
                   </button>
                 ))}
-
-            <span className="text-white text-xs cursor-default">_</span>
           </div>
         </div>
         {showChevron && (

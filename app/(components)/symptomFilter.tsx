@@ -87,17 +87,17 @@ export default function SymptomFilter({
   };
 
   return (
-    <section className="relative py-2 bg-gray-100">
+    <section className="relative max-w-full overflow-x-hidden bg-gray-100 py-2">
       <div
         ref={scrollRef}
         data-horizontal-scroll-area="true"
-        className="overflow-x-auto scrollbar-hide touch-pan-x"
+        className="w-full max-w-full overflow-x-auto scrollbar-hide touch-pan-x"
         style={{
           WebkitOverflowScrolling: "touch",
           touchAction: "pan-x",
         }}
       >
-        <div className="mx-3 flex flex-nowrap items-center gap-2">
+        <div className="mx-3 flex w-max min-w-full flex-nowrap items-center gap-2 pr-4">
           <button
             onClick={clearSelection}
             className={`flex flex-col items-center justify-center h-12 shrink-0 px-4 border rounded-full ${
@@ -128,7 +128,6 @@ export default function SymptomFilter({
               </button>
             );
           })}
-          <span className="text-gray-100 text-xs cursor-default">_</span>
         </div>
       </div>
       {showChevron && (
