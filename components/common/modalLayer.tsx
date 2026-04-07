@@ -18,6 +18,10 @@ let previousBodyTouchAction = "";
 let previousRootOverflow = "";
 let previousRootOverscrollBehavior = "";
 
+export function getActiveModalLayerCount() {
+  return activeModalLayerCount;
+}
+
 function applyModalDocumentState() {
   if (typeof document === "undefined") return;
   const { body, documentElement } = document;

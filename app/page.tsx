@@ -225,7 +225,7 @@ function HomeSearchHubSection() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="group flex h-full min-h-[8.75rem] min-w-0 flex-col rounded-[1.4rem] border border-slate-200 bg-white/95 px-4 py-3 transition hover:-translate-y-0.5 hover:border-[#4568F5] hover:shadow-[0_16px_36px_-28px_rgba(59,91,255,0.28)] sm:min-h-[9.25rem]"
+                className="group flex h-full min-h-[8.25rem] min-w-0 flex-col rounded-[1.4rem] border border-slate-200 bg-white/95 px-4 py-3 transition hover:-translate-y-0.5 hover:border-[#4568F5] hover:shadow-[0_16px_36px_-28px_rgba(59,91,255,0.28)] sm:min-h-[8.75rem]"
               >
                 <h3 className="min-h-[2rem] break-keep text-base font-bold leading-6 text-slate-900 group-hover:text-[#3450e5]">
                   {item.title}
@@ -233,7 +233,7 @@ function HomeSearchHubSection() {
                 <p className="mt-1 break-keep text-sm leading-6 text-slate-600">
                   {item.description}
                 </p>
-                <span className="mt-auto inline-flex items-center gap-1.5 pt-2 text-sm font-semibold text-[#4568F5]">
+                <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-[#4568F5]">
                   <span>바로 가기</span>
                   <ChevronRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                 </span>

@@ -4,6 +4,7 @@ import type {
   ChatActionType,
   ChatAgentExecuteDecision,
 } from "@/lib/chat/agent-actions";
+import { CHAT_ACTION_LABELS, CHAT_ACTION_PROMPTS } from "@/lib/chat/agent-action-catalog";
 import type { ChatMessage, ChatSession } from "@/types/chat";
 import { uid } from "../utils";
 import type {
@@ -76,6 +77,16 @@ type CreateInteractiveCommandsInput = {
 };
 
 export function createInteractiveCommands(input: CreateInteractiveCommandsInput) {
+  function resolveInteractiveActionUserText(action: ChatActionType) {
+    const prompt = CHAT_ACTION_PROMPTS[action]?.trim();
+    if (prompt) return prompt;
+
+    const label = CHAT_ACTION_LABELS[action]?.trim();
+    if (label) return `${label} 해줘`;
+
+    return "이 작업 바로 실행해줘";
+  }
+
   async function executeCartCommandText(params: {
     commandText: string;
     sessionMessages: ChatMessage[];
@@ -180,11 +191,11 @@ export function createInteractiveCommands(input: CreateInteractiveCommandsInput)
       })
     ) {
       return;
-    }
-    input.lastInteractiveActionRef.current = nextInteractiveActionMark(
-      actionType,
-      now
-    );
+      }
+      input.lastInteractiveActionRef.current = nextInteractiveActionMark(
+        actionType,
+        now
+      );
 
     input.setActionLoading(true);
     try {
@@ -194,6 +205,13 @@ export function createInteractiveCommands(input: CreateInteractiveCommandsInput)
       );
       if (!result.executed) return;
       input.rememberExecutedActions([actionType]);
+
+      const userMessage: ChatMessage = {
+        id: uid(),
+        role: "user",
+        content: resolveInteractiveActionUserText(actionType),
+        createdAt: now,
+      };
 
       const assistantMessage: ChatMessage = {
         id: uid(),
@@ -205,13 +223,17 @@ export function createInteractiveCommands(input: CreateInteractiveCommandsInput)
       };
 
       input.setSessions((prev) =>
-        appendMessagesToSession(prev, activeSession.id, [assistantMessage])
+        appendMessagesToSession(prev, activeSession.id, [
+          userMessage,
+          assistantMessage,
+        ])
       );
 
       await input.finalizeAssistantTurn({
         sessionId: activeSession.id,
         content: assistantMessage.content,
         assistantMessage,
+        userMessage,
       });
     } finally {
       input.setActionLoading(false);

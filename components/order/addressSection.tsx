@@ -5,6 +5,29 @@ import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
 import { ExpandableSection } from "@/components/common/expandableSection";
 
+type AddressSectionProps = {
+  roadAddress: string;
+  setIsAddressModalOpen: (open: boolean) => void;
+  detailAddress: string;
+  setDetailAddress: (value: string) => void;
+  requestNotes: string;
+  setRequestNotes: (value: string) => void;
+  entrancePassword: string;
+  setEntrancePassword: (value: string) => void;
+  directions: string;
+  setDirections: (value: string) => void;
+  phoneDisplay: string;
+  linkedAt?: string;
+  hasVerifiedPhone: boolean;
+  onOpenPhoneModal: () => void;
+  phoneStatusLoading: boolean;
+  phoneStatusError: string | null;
+  isUserLoggedIn: boolean;
+  password: string;
+  setPassword: (value: string) => void;
+  unlinkError: string | null;
+};
+
 export default function AddressSection({
   roadAddress,
   setIsAddressModalOpen,
@@ -18,6 +41,7 @@ export default function AddressSection({
   setDirections,
   phoneDisplay,
   linkedAt,
+  hasVerifiedPhone,
   onOpenPhoneModal,
   phoneStatusLoading,
   phoneStatusError,
@@ -25,7 +49,7 @@ export default function AddressSection({
   password,
   setPassword,
   unlinkError,
-}: any) {
+}: AddressSectionProps) {
   const [showPw, setShowPw] = useState(true);
 
   return (
@@ -36,7 +60,7 @@ export default function AddressSection({
           <label className="text-sm font-medium text-gray-700">도로명 주소</label>
           <div className="flex items-center gap-2">
             <p className="flex-1 rounded-md border bg-gray-100 px-2.5 py-2 text-base text-gray-500">
-              {roadAddress || "선택한 도로명 주소가 없어요."}
+              {roadAddress || "선택된 도로명 주소가 없어요"}
             </p>
             <button
               onClick={() => setIsAddressModalOpen(true)}
@@ -118,7 +142,7 @@ export default function AddressSection({
                     spinnerClassName="text-sky-500"
                   />
                 ) : (
-                  phoneDisplay || "연결된 번호가 없어요"
+                  phoneDisplay || "인증된 번호가 없어요"
                 )}
               </div>
             </div>
@@ -134,19 +158,26 @@ export default function AddressSection({
           </div>
 
           <p className="text-xs text-gray-600">
-            결제 때 사용하는 휴대폰 번호로 주문 내역을 더 쉽게 확인할 수 있어요.
+            결제에 사용하는 전화번호로 주문 내역을 쉽게 확인할 수 있어요.
           </p>
 
           {!isUserLoggedIn ? (
-            <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700 ring-1 ring-amber-100">
-              카카오로 로그인하면 더 많은 기능과 함께 편하게 이어서 사용할 수 있어요.
+            <p className="rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-700 ring-1 ring-sky-100">
+              카카오 로그인 없이도 전화번호 인증만 완료하면 구매할 수 있어요.
             </p>
           ) : null}
 
-          {!linkedAt && phoneDisplay ? (
+          {!hasVerifiedPhone && phoneDisplay ? (
             <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700 ring-1 ring-rose-100">
-              휴대폰 번호가 아직 확인되지 않았어요. "{phoneDisplay}" 번호로 다시 인증해
-              주세요.
+              휴대폰 번호 인증이 아직 끝나지 않았어요. "{phoneDisplay}" 번호로 다시
+              인증해 주세요.
+            </p>
+          ) : null}
+
+          {hasVerifiedPhone && !linkedAt && phoneDisplay ? (
+            <p className="rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-700 ring-1 ring-sky-100">
+              이 번호는 현재 결제용으로 인증됐어요. 카카오 로그인 후 다시 인증하면
+              계정에도 연결할 수 있어요.
             </p>
           ) : null}
 
@@ -173,13 +204,13 @@ export default function AddressSection({
             autoComplete="off"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="주문 조회 때 필요한 비밀번호예요."
+            placeholder="주문 조회에 필요한 비밀번호예요."
             className="w-full rounded-md border px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-sky-400"
           />
           <button
             type="button"
-            onClick={() => setShowPw((v) => !v)}
-            className="absolute right-2 top-1/2 rounded p-1 -translate-y-1/2 hover:bg-gray-100"
+            onClick={() => setShowPw((value) => !value)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 hover:bg-gray-100"
             aria-label={showPw ? "비밀번호 숨기기" : "비밀번호 보기"}
           >
             {showPw ? (

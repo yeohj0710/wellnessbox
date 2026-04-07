@@ -12,7 +12,7 @@ type CartBulkChangeControlsProps = {
 const BULK_CHANGE_ACTIONS = [
   { key: "\u0037\uC77C\uCE58", label: "\uC804\uCCB4 \u0037\uC77C\uCE58" },
   { key: "\u0033\u0030\uC77C\uCE58", label: "\uC804\uCCB4 \u0033\u0030\uC77C\uCE58" },
-  { key: "\uC77C\uBC18", label: "\uC804\uCCB4 \uD1B5\uC0C1" },
+  { key: "\uC77C\uBC18", label: "\uC804\uCCB4 \uD1B5\uC0C1\uD488" },
 ] as const;
 
 const BULK_CHANGE_COPY = {

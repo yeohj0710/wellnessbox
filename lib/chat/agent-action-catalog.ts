@@ -287,3 +287,12 @@ export const CHAT_ACTION_LABELS: Record<ChatActionType, string> =
     },
     {} as Record<ChatActionType, string>
   );
+
+export const CHAT_ACTION_PROMPTS: Record<ChatActionType, string> =
+  CHAT_CAPABILITY_ACTIONS.reduce(
+    (acc, item) => {
+      acc[item.type] = item.prompt;
+      return acc;
+    },
+    {} as Record<ChatActionType, string>
+  );

@@ -3,6 +3,7 @@
 import type { RefObject } from "react";
 import ProductDetail from "@/components/product/productDetail";
 import Cart from "@/components/order/cart";
+import CartOverlayPortal from "@/components/order/cartOverlayPortal";
 import { getLowestAverageOptionType } from "@/lib/utils";
 import AddressSection from "@/app/(components)/addressSection";
 import PharmacySelector from "@/app/(components)/pharmacySelector";
@@ -223,28 +224,30 @@ export function HomeProductSectionContent({
       )}
 
       {isCartVisible && (
-        <div className="fixed inset-x-0 bottom-0 top-14 z-[90] isolate flex overscroll-none bg-white">
-          <div
-            className="h-full w-full overflow-y-auto overscroll-contain bg-white"
-            ref={cartContainerRef}
-          >
-            <Cart
-              cartItems={cartItems}
-              totalPrice={totalPrice}
-              selectedPharmacy={selectedPharmacy}
-              allProducts={allProducts}
-              isPharmacyLoading={isPharmacyLoading}
-              pharmacyError={pharmacyError}
-              onRetryPharmacyResolve={onRetryPharmacyResolve}
-              roadAddress={roadAddress}
-              setRoadAddress={setRoadAddress}
-              setSelectedPharmacy={setSelectedPharmacy}
-              containerRef={cartContainerRef}
-              onBack={onCloseCart}
-              onUpdateCart={onCartUpdate}
-            />
+        <CartOverlayPortal>
+          <div className="fixed inset-x-0 bottom-0 top-14 z-[140] isolate flex overscroll-none bg-white [contain:paint]">
+            <div
+              className="h-full w-full overflow-y-auto overscroll-contain bg-white"
+              ref={cartContainerRef}
+            >
+              <Cart
+                cartItems={cartItems}
+                totalPrice={totalPrice}
+                selectedPharmacy={selectedPharmacy}
+                allProducts={allProducts}
+                isPharmacyLoading={isPharmacyLoading}
+                pharmacyError={pharmacyError}
+                onRetryPharmacyResolve={onRetryPharmacyResolve}
+                roadAddress={roadAddress}
+                setRoadAddress={setRoadAddress}
+                setSelectedPharmacy={setSelectedPharmacy}
+                containerRef={cartContainerRef}
+                onBack={onCloseCart}
+                onUpdateCart={onCartUpdate}
+              />
+            </div>
           </div>
-        </div>
+        </CartOverlayPortal>
       )}
     </div>
   );

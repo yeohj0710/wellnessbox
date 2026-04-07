@@ -1,7 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import type { OfferAction, OfferCardModel } from "@/lib/offer-intelligence/engine";
+import type {
+  OfferAction,
+  OfferCardModel,
+} from "@/lib/offer-intelligence/engine";
 
 type PaymentSectionProps = {
   selectedPaymentMethod: string;
@@ -18,7 +21,7 @@ type PaymentSectionProps = {
   roadAddress: string;
   phoneStatusLoading: boolean;
   phone: string;
-  isPhoneLinked: boolean;
+  hasVerifiedPhone: boolean;
   password: string;
   itemCount: number;
   hasDeliveryContext: boolean;
@@ -37,12 +40,12 @@ export default function PaymentSection({
   deliveryFee,
   totalPriceWithDelivery,
   phoneStatusLoading,
-  isPhoneLinked,
+  hasVerifiedPhone,
   onOpenPhoneModal,
   onRequestPayment,
 }: PaymentSectionProps) {
   const showTotalAmount = totalPrice > 0;
-  const needsPhoneVerification = !phoneStatusLoading && !isPhoneLinked;
+  const needsPhoneVerification = !phoneStatusLoading && !hasVerifiedPhone;
 
   return (
     <>
@@ -57,9 +60,7 @@ export default function PaymentSection({
             checked={selectedPaymentMethod === "inicis"}
             onChange={() => setSelectedPaymentMethod("inicis")}
           />
-          <span className="text-base font-medium text-gray-700">
-            신용/체크카드
-          </span>
+          <span className="text-base font-medium text-gray-700">신용/체크카드</span>
         </label>
 
         {loginStatus.isTestLoggedIn ? (
@@ -100,9 +101,7 @@ export default function PaymentSection({
                 className="object-contain"
               />
             </div>
-            <span className="text-base font-medium text-gray-700">
-              카카오페이
-            </span>
+            <span className="text-base font-medium text-gray-700">카카오페이</span>
             {loginStatus.isTestLoggedIn ? (
               <div className="rounded-full bg-orange-400 px-2">
                 <span className="text-xs font-bold text-white">테스트 결제</span>
@@ -138,18 +137,18 @@ export default function PaymentSection({
                 전화번호 인증 상태를 확인하고 있어요. 잠시만 기다려 주세요.
               </div>
             ) : needsPhoneVerification ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 shadow-[0_12px_28px_-24px_rgba(217,119,6,0.55)]">
-                <div className="text-sm font-bold text-amber-900">
+              <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-4 shadow-[0_12px_28px_-24px_rgba(14,165,233,0.4)]">
+                <div className="text-sm font-bold text-sky-900">
                   전화번호 인증을 해야 구매할 수 있어요
                 </div>
-                <p className="mt-1 text-sm leading-6 text-amber-800">
-                  결제에 사용할 전화번호를 먼저 인증해 주세요. 인증이 완료되면
-                  바로 아래에서 결제를 진행할 수 있어요.
+                <p className="mt-1 text-sm leading-6 text-sky-800">
+                  결제에 사용할 전화번호를 먼저 인증해 주세요. 로그인 없이도 인증만
+                  완료하면 바로 아래에서 결제를 진행할 수 있어요.
                 </p>
                 <button
                   type="button"
                   onClick={onOpenPhoneModal}
-                  className="mt-3 inline-flex h-11 w-full items-center justify-center rounded-xl bg-amber-500 text-sm font-semibold text-white transition hover:bg-amber-600"
+                  className="mt-3 inline-flex h-11 w-full items-center justify-center rounded-xl bg-sky-500 text-sm font-semibold text-white transition hover:bg-sky-600"
                 >
                   전화번호 인증하기
                 </button>

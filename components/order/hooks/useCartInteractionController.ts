@@ -30,6 +30,7 @@ type UseCartInteractionControllerInput = {
   fetchPhoneStatus: () => Promise<void>;
   setPhone: (value: string) => void;
   setLinkedAt: (value: string | undefined) => void;
+  markPhoneVerified: (value: string) => void;
 };
 
 export function useCartInteractionController({
@@ -46,6 +47,7 @@ export function useCartInteractionController({
   fetchPhoneStatus,
   setPhone,
   setLinkedAt,
+  markPhoneVerified,
 }: UseCartInteractionControllerInput) {
   const [showPharmacyDetail, setShowPharmacyDetail] = useState(false);
   const [showCheckoutConfirm, setShowCheckoutConfirm] = useState(false);
@@ -187,13 +189,24 @@ export function useCartInteractionController({
 
   const handlePhoneLinked = useCallback(
     (nextPhone: string, nextLinkedAt: string | undefined) => {
-      setPhone(nextPhone);
-      setLinkedAt(nextLinkedAt);
+      if (nextLinkedAt) {
+        setPhone(nextPhone);
+        setLinkedAt(nextLinkedAt);
+        void fetchPhoneStatus();
+      } else {
+        markPhoneVerified(nextPhone);
+      }
       closePhoneModal();
       setUnlinkError(null);
-      void fetchPhoneStatus();
     },
-    [closePhoneModal, fetchPhoneStatus, setLinkedAt, setPhone, setUnlinkError]
+    [
+      closePhoneModal,
+      fetchPhoneStatus,
+      markPhoneVerified,
+      setLinkedAt,
+      setPhone,
+      setUnlinkError,
+    ]
   );
 
   return {

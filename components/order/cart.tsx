@@ -80,6 +80,7 @@ export default function Cart({
     setPhone,
     linkedAt,
     setLinkedAt,
+    hasVerifiedPhone,
     phoneDisplay,
     isPhoneLinked,
     phoneStatusLoading,
@@ -88,6 +89,7 @@ export default function Cart({
     unlinkError,
     setUnlinkError,
     fetchPhoneStatus,
+    markPhoneVerified,
     unlinkPhone,
   } = usePhoneStatus(loginStatus);
   const userContact = useMemo(
@@ -139,6 +141,7 @@ export default function Cart({
     fetchPhoneStatus,
     setPhone,
     setLinkedAt,
+    markPhoneVerified,
   });
 
   useCartOverlayCloseBehavior({
@@ -182,7 +185,7 @@ export default function Cart({
     sdkLoaded,
     phoneStatusLoading,
     phone,
-    isPhoneLinked,
+    hasVerifiedPhone,
     password,
     userContact,
     roadAddress,
@@ -234,6 +237,7 @@ export default function Cart({
         setDirections={setDirections}
         phoneDisplay={phoneDisplay}
         linkedAt={linkedAt}
+        hasVerifiedPhone={hasVerifiedPhone}
         onOpenPhoneModal={openPhoneModal}
         phoneStatusLoading={phoneStatusLoading}
         phoneStatusError={phoneStatusError}
@@ -270,7 +274,7 @@ export default function Cart({
         roadAddress={roadAddress}
         phoneStatusLoading={phoneStatusLoading}
         phone={phone}
-        isPhoneLinked={isPhoneLinked}
+        hasVerifiedPhone={hasVerifiedPhone}
         password={password}
         itemCount={cartItems.length}
         hasDeliveryContext={
@@ -293,6 +297,7 @@ export default function Cart({
         }}
         initialPhone={phone}
         initialLinkedAt={linkedAt}
+        fallbackToVerifyOnlyOnUnauthorized
         isUserLoggedIn={loginStatus?.isUserLoggedIn ?? null}
         allowUnlink={isPhoneLinked}
         unlinkLoading={unlinkLoading}

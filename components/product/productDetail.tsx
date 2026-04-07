@@ -148,8 +148,8 @@ export default function ProductDetail({
   });
 
   return (
-    <div className="fixed inset-x-0 bottom-0 top-14 z-20 bg-white/98 backdrop-blur-sm">
-      <div className="mx-auto flex h-full w-full max-w-[640px] flex-col overflow-hidden bg-white sm:shadow-[0_28px_80px_-48px_rgba(15,23,42,0.4)]">
+    <div className="fixed inset-x-0 bottom-0 top-14 z-20 overflow-y-auto bg-white/98 backdrop-blur-sm">
+      <div className="flex min-h-full w-full flex-col bg-white">
         <header className="flex items-center justify-between gap-4 border-b border-slate-200 bg-white/92 px-5 py-3 backdrop-blur-sm sm:px-6">
           <div className="min-w-0">
             <div className="text-[11px] font-semibold tracking-[0.12em] text-sky-600">
@@ -169,7 +169,7 @@ export default function ProductDetail({
           </button>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="flex-1">
           <div className="relative">
             {images.length > 0 ? (
               <div className="relative h-[18rem] w-full overflow-hidden bg-gradient-to-b from-slate-50 via-white to-slate-50 sm:h-[24rem]">
@@ -256,16 +256,15 @@ export default function ProductDetail({
 
           <div className="px-5 pb-10 pt-6 sm:px-6">
             <div className="flex flex-col gap-5">
-              <section className="rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-5 shadow-[0_18px_48px_-36px_rgba(15,23,42,0.4)]">
-                <div className="flex flex-col gap-4">
-                  <div>
-                    <h1 className="text-[24px] font-bold leading-tight text-slate-950 sm:text-[30px]">
-                      {product.name}
-                    </h1>
-                  </div>
+              <section className="space-y-4">
+                <div>
+                  <h1 className="text-[24px] font-bold leading-tight text-slate-950 sm:text-[30px]">
+                    {product.name}
+                  </h1>
+                </div>
 
-                  <div className="rounded-[24px] border border-slate-200 bg-white p-4">
-                    <div className="flex flex-col gap-4">
+                <div className="rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-4 shadow-[0_18px_48px_-36px_rgba(15,23,42,0.28)] sm:p-5">
+                  <div className="flex flex-col gap-4">
                       <div>
                         <div className="mb-2 text-[12px] font-semibold tracking-[0.08em] text-slate-500">
                           옵션 선택
@@ -327,7 +326,6 @@ export default function ProductDetail({
                         </div>
                       </div>
                     </div>
-                  </div>
                 </div>
               </section>
 
@@ -343,7 +341,7 @@ export default function ProductDetail({
           </div>
         </div>
 
-        <div className="border-t border-slate-200 bg-white/96 px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-4 backdrop-blur-sm sm:px-6">
+        <div className="sticky bottom-0 border-t border-slate-200 bg-white/96 px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-4 backdrop-blur-sm sm:px-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="text-[12px] font-semibold tracking-[0.08em] text-slate-500">

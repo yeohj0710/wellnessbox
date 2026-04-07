@@ -15,7 +15,7 @@ type UseCartPaymentParams = {
   sdkLoaded: boolean;
   phoneStatusLoading: boolean;
   phone: string;
-  isPhoneLinked: boolean;
+  hasVerifiedPhone: boolean;
   password: string;
   userContact: string;
   roadAddress: string;
@@ -29,18 +29,22 @@ export function useCartPayment(params: UseCartPaymentParams) {
   const handleKGInicisPayment = useCallback(() => {
     const IMP = (window as any).IMP;
     if (!IMP) {
-      alert("결제 모듈을 불러오는 데 실패하였습니다.");
+      alert("결제 모듈을 불러오지 못했어요.");
       return;
     }
+
     const paymentId = `payment${Date.now()}`;
     localStorage.setItem("paymentId", paymentId);
     const redirect = `${window.location.origin}/order-complete?method=inicis`;
+
     IMP.init(process.env.NEXT_PUBLIC_MERCHANT_ID);
+
     const paymentAmount =
       params.safeLoginStatus.isTestLoggedIn &&
       params.selectedPaymentMethod === "inicis"
         ? params.customTestAmount
         : params.totalPriceWithDelivery;
+
     IMP.request_pay(
       {
         pg: "html5_inicis",
@@ -73,9 +77,11 @@ export function useCartPayment(params: UseCartPaymentParams) {
   const handleKpnAndKakaoPayment = useCallback(
     async (payMethod: string, channelKey: string) => {
       const PortOne: any = await import("@portone/browser-sdk/v2");
+
       try {
         const paymentId = `payment${Date.now()}`;
         localStorage.setItem("paymentId", paymentId);
+
         const response = await PortOne.requestPayment({
           storeId: process.env.NEXT_PUBLIC_PORTONE_STORE_ID!,
           paymentId,
@@ -92,6 +98,7 @@ export function useCartPayment(params: UseCartPaymentParams) {
           },
           redirectUrl: `${window.location.origin}/order-complete?paymentId=${paymentId}&method=${params.selectedPaymentMethod}`,
         });
+
         if (!response.code) {
           params.router.push(
             `/order-complete?paymentId=${paymentId}&method=${params.selectedPaymentMethod}`
@@ -103,7 +110,7 @@ export function useCartPayment(params: UseCartPaymentParams) {
         }
       } catch (error) {
         console.error("결제 요청 중 오류 발생:", error);
-        alert(`결제 요청 중 오류가 발생했습니다: ${JSON.stringify(error)}`);
+        alert(`결제 요청 중 오류가 발생했어요: ${JSON.stringify(error)}`);
       }
     },
     [params]
@@ -114,41 +121,42 @@ export function useCartPayment(params: UseCartPaymentParams) {
       params.selectedPaymentMethod === "inicis" &&
       (!params.sdkLoaded || !(window as any).IMP)
     ) {
-      alert(
-        "결제 모듈을 불러오는 데 실패하였습니다. 페이지를 새로고침해 주세요."
-      );
+      alert("결제 모듈을 불러오지 못했어요. 페이지를 새로고침한 뒤 다시 시도해 주세요.");
       return;
     }
-    if (!params.safeLoginStatus.isUserLoggedIn) {
-      alert("카카오 로그인이 필요해요. 로그인 후 다시 시도해 주세요.");
-      return;
-    }
+
     if (params.phoneStatusLoading) {
-      alert("전화번호 정보를 불러오는 중이에요. 잠시 후 다시 시도해 주세요.");
+      alert("휴대폰 정보를 확인하고 있어요. 잠시 후 다시 시도해 주세요.");
       return;
     }
+
     if (!params.phone) {
-      alert("전화번호 인증을 진행해 주세요.");
+      alert("전화번호 인증을 먼저 진행해 주세요.");
       params.onOpenPhoneModal();
       return;
     }
-    if (!params.isPhoneLinked) {
+
+    if (!params.hasVerifiedPhone) {
       alert("전화번호 인증을 완료해 주세요.");
       params.onOpenPhoneModal();
       return;
     }
+
     if (!params.password) {
       alert("주문 조회 비밀번호를 입력해 주세요.");
       return;
     }
+
     if (params.password.length < 4) {
-      alert("비밀번호는 최소한 4자리 이상으로 입력해 주세요.");
+      alert("비밀번호는 최소 4자리 이상으로 입력해 주세요.");
       return;
     }
+
     if (!params.selectedPaymentMethod) {
       alert("결제 수단을 선택해 주세요.");
       return;
     }
+
     params.onOpenConfirmModal();
   }, [params]);
 

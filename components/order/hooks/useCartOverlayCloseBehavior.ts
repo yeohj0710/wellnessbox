@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { getActiveModalLayerCount } from "@/components/common/modalLayer";
 
 type UseCartOverlayCloseBehaviorParams = {
   onBack: () => void;
@@ -21,6 +22,7 @@ export function useCartOverlayCloseBehavior({
     if (isDetailProductOpen) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (getActiveModalLayerCount() > 0) return;
       if (event.key === "Escape") {
         onBack();
       }

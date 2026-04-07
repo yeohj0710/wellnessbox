@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import { usePathname } from "next/navigation";
 import Cart from "@/components/order/cart";
+import CartOverlayPortal from "@/components/order/cartOverlayPortal";
 import { filterRegisteredPharmacies } from "@/components/order/cart.helpers";
 import type {
   CartLineItem,
@@ -245,25 +246,27 @@ export default function GlobalCartHost() {
   if (!isVisible || !canRenderGlobalCart) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 top-14 z-[90] flex">
-      <div className="h-full w-full overflow-y-auto bg-white" ref={containerRef}>
-        <Cart
-          cartItems={cartItems}
-          totalPrice={totalPrice}
-          selectedPharmacy={selectedPharmacy}
-          allProducts={allProducts}
-          stockRecovery={stockRecovery}
-          isPharmacyLoading={isPharmacyLoading}
-          pharmacyError={pharmacyError}
-          onRetryPharmacyResolve={retryPharmacyResolve}
-          roadAddress={roadAddress}
-          setRoadAddress={setRoadAddress}
-          setSelectedPharmacy={setSelectedPharmacy}
-          containerRef={containerRef}
-          onBack={closeGlobalCart}
-          onUpdateCart={handleUpdateCart}
-        />
+    <CartOverlayPortal>
+      <div className="fixed inset-x-0 bottom-0 top-14 z-[140] isolate flex bg-white [contain:paint]">
+        <div className="h-full w-full overflow-y-auto bg-white" ref={containerRef}>
+          <Cart
+            cartItems={cartItems}
+            totalPrice={totalPrice}
+            selectedPharmacy={selectedPharmacy}
+            allProducts={allProducts}
+            stockRecovery={stockRecovery}
+            isPharmacyLoading={isPharmacyLoading}
+            pharmacyError={pharmacyError}
+            onRetryPharmacyResolve={retryPharmacyResolve}
+            roadAddress={roadAddress}
+            setRoadAddress={setRoadAddress}
+            setSelectedPharmacy={setSelectedPharmacy}
+            containerRef={containerRef}
+            onBack={closeGlobalCart}
+            onUpdateCart={handleUpdateCart}
+          />
+        </div>
       </div>
-    </div>
+    </CartOverlayPortal>
   );
 }

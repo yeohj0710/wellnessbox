@@ -13,12 +13,12 @@ export default function PricingSection({
 }: PricingSectionProps) {
   return (
     <section
-      className={`relative isolate -mt-px w-full overflow-hidden bg-gradient-to-b from-[#F3F6FF] via-[#E6ECFF] to-white pt-20 sm:pt-24 md:pt-28 ${pretendard.className}`}
+      className={`relative z-10 isolate -mt-px w-full overflow-visible bg-gradient-to-b from-[#F3F6FF] via-[#E6ECFF] to-white pt-20 sm:pt-24 md:pt-28 ${pretendard.className}`}
     >
       <div className="pointer-events-none absolute inset-x-0 -top-8 h-14 bg-gradient-to-b from-[#F3F6FF] to-transparent" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[6.5rem] overflow-hidden sm:h-[7rem] md:h-[7.5rem]">
+      <div className="pointer-events-none absolute inset-x-0 -top-16 z-30 h-[15rem] overflow-visible sm:-top-20 sm:h-[17rem] md:-top-24 md:h-[19rem]">
         <div className="relative mx-auto h-full">
-          <div className="absolute left-1/2 top-2 -translate-x-1/2 rotate-[-8deg] w-[230vw]">
+          <div className="absolute left-1/2 top-8 -translate-x-1/2 rotate-[-8deg] w-[230vw]">
             <div className="mx-auto flex h-10 items-center justify-center rounded-full bg-gradient-to-r from-[#59C1FF] to-[#7B61FF] shadow-[0_10px_30px_rgba(86,120,255,0.35)]">
               <div className="flex gap-10 text-white/95 text-xs sm:text-sm tracking-widest font-semibold whitespace-nowrap">
                 <span>WELLNESS BOX</span>
@@ -34,7 +34,7 @@ export default function PricingSection({
               </div>
             </div>
           </div>
-          <div className="absolute left-1/2 top-8 -translate-x-1/2 rotate-[7deg] w-[235vw] opacity-95 sm:top-9">
+          <div className="absolute left-1/2 top-20 -translate-x-1/2 rotate-[7deg] w-[235vw] opacity-95 sm:top-24 md:top-28">
             <div className="mx-auto flex h-10 items-center justify-center rounded-full bg-gradient-to-r from-[#4AA8FF] to-[#6C4DFF] shadow-[0_8px_24px_rgba(86,120,255,0.28)]">
               <div className="flex gap-10 text-white/95 text-xs sm:text-sm tracking-widest font-semibold whitespace-nowrap">
                 <span>WELLNESS BOX</span>
@@ -53,7 +53,7 @@ export default function PricingSection({
         </div>
       </div>
 
-      <div className="relative mx-auto max-w-[48rem] md:max-w-[50rem] lg:max-w-[52rem] px-4 sm:px-6 md:px-8 pt-12 sm:pt-14 md:pt-16 pb-12 sm:pb-14 md:pb-16">
+      <div className="relative z-10 mx-auto max-w-[48rem] px-4 pb-12 pt-32 sm:max-w-[50rem] sm:px-6 sm:pb-14 sm:pt-36 md:max-w-[52rem] md:px-8 md:pb-16 md:pt-40 lg:max-w-[52rem]">
         <div className="text-center">
           <p className="text-xs sm:text-sm font-semibold tracking-widest text-[#4B63E6]">
             START NOW

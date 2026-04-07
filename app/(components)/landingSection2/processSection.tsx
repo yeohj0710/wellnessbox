@@ -11,11 +11,11 @@ import { pretendard } from "@/app/fonts";
 export default function ProcessSection() {
   return (
     <section
-      className={`relative isolate w-full min-h-[90vh] overflow-hidden sm:min-h-[92vh] md:min-h-screen bg-gradient-to-b from-[#C7D2FE] via-[#DDE7FF] to-white ${pretendard.className}`}
+      className={`relative z-10 isolate w-full min-h-[90vh] overflow-visible sm:min-h-[92vh] md:min-h-screen bg-gradient-to-b from-[#C7D2FE] via-[#DDE7FF] to-white ${pretendard.className}`}
     >
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[8.5rem] overflow-hidden sm:h-[9.5rem] md:h-[10.5rem]">
+      <div className="pointer-events-none absolute inset-x-0 -top-16 z-30 h-[15rem] overflow-visible sm:-top-20 sm:h-[17rem] md:-top-24 md:h-[19rem]">
         <div className="relative mx-auto h-full">
-          <div className="absolute left-1/2 top-1 -translate-x-1/2 rotate-[-8deg] w-[220vw]">
+          <div className="absolute left-1/2 top-8 -translate-x-1/2 rotate-[-8deg] w-[220vw]">
             <div className="mx-auto flex h-10 sm:h-12 items-center justify-center rounded-full bg-gradient-to-r from-[#59C1FF] to-[#7B61FF] shadow-[0_10px_30px_rgba(86,120,255,0.35)]">
               <div className="flex gap-10 text-white/95 text-xs sm:text-sm tracking-widest font-semibold whitespace-nowrap">
                 <span>WELLNESS BOX</span>
@@ -31,7 +31,7 @@ export default function ProcessSection() {
               </div>
             </div>
           </div>
-          <div className="absolute left-1/2 top-10 -translate-x-1/2 rotate-[8deg] w-[230vw] opacity-90 sm:top-12">
+          <div className="absolute left-1/2 top-20 -translate-x-1/2 rotate-[8deg] w-[230vw] opacity-90 sm:top-24 md:top-28">
             <div className="mx-auto flex h-9 sm:h-11 items-center justify-center rounded-full bg-gradient-to-r from-[#4AA8FF] to-[#6C4DFF] shadow-[0_8px_24px_rgba(86,120,255,0.28)]">
               <div className="flex gap-10 text-white/95 text-[11px] sm:text-xs tracking-widest font-semibold whitespace-nowrap">
                 <span>WELLNESS BOX</span>
@@ -50,8 +50,8 @@ export default function ProcessSection() {
         </div>
       </div>
 
-      <div className="relative mx-auto max-w-[90rem] px-4 sm:px-6 md:px-10 pt-16 sm:pt-20 md:pt-24 pb-12 sm:pb-14 md:pb-16">
-        <div className="relative -mt-8 sm:-mt-12 md:-mt-16 mx-auto w-full max-w-[72rem] rounded-[28px] bg-white px-4 sm:px-6 md:px-8 py-10 md:py-12 shadow-[0_24px_64px_-18px_rgba(67,103,230,0.22)] ring-1 ring-white/60">
+      <div className="relative z-10 mx-auto max-w-[90rem] px-4 pb-12 pt-32 sm:px-6 sm:pb-14 sm:pt-36 md:px-10 md:pb-16 md:pt-40">
+        <div className="relative mx-auto -mt-2 w-full max-w-[72rem] rounded-[28px] bg-white px-4 py-10 shadow-[0_24px_64px_-18px_rgba(67,103,230,0.22)] ring-1 ring-white/60 sm:px-6 md:px-8 md:py-12">
           <div className="text-center">
             <p className="text-[11px] sm:text-xs font-semibold tracking-widest text-[#4B63E6]">
               PERSONALIZED PROCESS
