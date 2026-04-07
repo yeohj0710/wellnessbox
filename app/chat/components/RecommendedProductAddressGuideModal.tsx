@@ -5,6 +5,7 @@ import type {
   MutableRefObject,
   PointerEvent as ReactPointerEvent,
 } from "react";
+import ModalLayer from "@/components/common/modalLayer";
 
 type RecommendedProductAddressGuideModalProps = {
   open: boolean;
@@ -28,16 +29,17 @@ export default function RecommendedProductAddressGuideModal({
   if (!open) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50"
-      onClick={onClose}
-    >
+    <ModalLayer open={open}>
       <div
-        className="relative m-3 w-[min(32rem,calc(100%-1.5rem))] rounded-xl bg-white px-6 py-8 shadow-2xl sm:px-8"
-        ref={panelRef}
-        style={panelStyle}
-        onClick={(event) => event.stopPropagation()}
+        className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50"
+        onClick={onClose}
       >
+        <div
+          className="relative m-3 w-[min(32rem,calc(100%-1.5rem))] rounded-xl bg-white px-6 py-8 shadow-2xl sm:px-8"
+          ref={panelRef}
+          style={panelStyle}
+          onClick={(event) => event.stopPropagation()}
+        >
         <div
           onPointerDown={onDragPointerDown}
           className={`absolute left-0 right-0 top-0 h-10 touch-none ${
@@ -70,7 +72,8 @@ export default function RecommendedProductAddressGuideModal({
             주소를 입력할게요
           </button>
         </div>
+        </div>
       </div>
-    </div>
+    </ModalLayer>
   );
 }

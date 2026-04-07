@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
+import ModalLayer from "@/components/common/modalLayer";
 import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 type ConfirmDialogProps = {
@@ -51,97 +52,98 @@ export default function ConfirmDialog({
   useEffect(() => {
     if (!open) return;
 
-    const t = window.setTimeout(() => cancelRef.current?.focus(), 0);
-
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
+    const timer = window.setTimeout(() => cancelRef.current?.focus(), 0);
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
       if (confirmLoading) return;
       onClose();
     };
 
     window.addEventListener("keydown", onKeyDown);
     return () => {
-      window.clearTimeout(t);
+      window.clearTimeout(timer);
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [open, confirmLoading, onClose]);
+  }, [confirmLoading, onClose, open]);
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center px-4">
-      {closeOnBackdrop ? (
-        <button
-          type="button"
-          aria-label="닫기"
-          disabled={confirmLoading}
-          onClick={() => {
-            if (!confirmLoading) onClose();
-          }}
-          className="absolute inset-0 bg-black/40 backdrop-blur-sm disabled:cursor-not-allowed"
-        />
-      ) : (
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        />
-      )}
+    <ModalLayer open={open}>
+      <div className="fixed inset-0 z-[60] flex items-center justify-center px-4">
+        {closeOnBackdrop ? (
+          <button
+            type="button"
+            aria-label="닫기"
+            disabled={confirmLoading}
+            onClick={() => {
+              if (!confirmLoading) onClose();
+            }}
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm disabled:cursor-not-allowed"
+          />
+        ) : (
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+          />
+        )}
 
-      <div
-        role="dialog"
-        aria-modal="true"
-        className="relative w-full max-w-[420px] overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5"
-        ref={panelRef}
-        style={panelStyle}
-        onMouseDown={(e) => e.stopPropagation()}
-        onClick={(e) => e.stopPropagation()}
-      >
         <div
-          className={`px-6 py-5 touch-none ${
-            isDragging ? "cursor-grabbing" : "cursor-grab"
-          }`}
-          onPointerDown={handleDragPointerDown}
+          role="dialog"
+          aria-modal="true"
+          className="relative w-full max-w-[420px] overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5"
+          ref={panelRef}
+          style={panelStyle}
+          onMouseDown={(event) => event.stopPropagation()}
+          onClick={(event) => event.stopPropagation()}
         >
-          <div className="text-lg font-bold text-gray-900">{title}</div>
-          {description ? (
-            <div className="mt-2 text-sm text-gray-600">{description}</div>
-          ) : null}
-        </div>
+          <div
+            className={`px-6 py-5 touch-none ${
+              isDragging ? "cursor-grabbing" : "cursor-grab"
+            }`}
+            onPointerDown={handleDragPointerDown}
+          >
+            <div className="text-lg font-bold text-gray-900">{title}</div>
+            {description ? (
+              <div className="mt-2 text-sm text-gray-600">{description}</div>
+            ) : null}
+          </div>
 
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-end gap-2">
-            <button
-              ref={cancelRef}
-              type="button"
-              onClick={() => {
-                if (!confirmLoading) onClose();
-              }}
-              disabled={confirmLoading}
-              className="inline-flex h-8 min-w-[56px] items-center justify-center whitespace-nowrap rounded-full bg-gray-100 px-3 text-sm font-semibold text-gray-700 hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {cancelText}
-            </button>
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-end gap-2">
+              <button
+                ref={cancelRef}
+                type="button"
+                onClick={() => {
+                  if (!confirmLoading) onClose();
+                }}
+                disabled={confirmLoading}
+                className="inline-flex h-8 min-w-[56px] items-center justify-center whitespace-nowrap rounded-full bg-gray-100 px-3 text-sm font-semibold text-gray-700 hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {cancelText}
+              </button>
 
-            <button
-              type="button"
-              onClick={onConfirm}
-              disabled={confirmLoading}
-              aria-busy={confirmLoading}
-              className={`relative inline-flex h-8 min-w-[56px] items-center justify-center whitespace-nowrap rounded-full px-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${confirmBtnClass}`}
-            >
-              <span className={confirmLoading ? "opacity-0" : "opacity-100"}>
-                {confirmText}
-              </span>
-
-              {confirmLoading ? (
-                <span className="absolute inset-0 grid place-items-center">
-                  <Spinner />
+              <button
+                type="button"
+                onClick={onConfirm}
+                disabled={confirmLoading}
+                aria-busy={confirmLoading}
+                className={`relative inline-flex h-8 min-w-[56px] items-center justify-center whitespace-nowrap rounded-full px-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${confirmBtnClass}`}
+              >
+                <span className={confirmLoading ? "opacity-0" : "opacity-100"}>
+                  {confirmText}
                 </span>
-              ) : null}
-            </button>
+
+                {confirmLoading ? (
+                  <span className="absolute inset-0 grid place-items-center">
+                    <Spinner />
+                  </span>
+                ) : null}
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </ModalLayer>
   );
 }

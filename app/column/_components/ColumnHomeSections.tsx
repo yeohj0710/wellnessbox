@@ -11,14 +11,7 @@ const CARD_TAG_PREVIEW_LIMIT = 3;
 const DOT = "\u2022";
 
 type ColumnHomeText = {
-  totalPosts: string;
-  totalTags: string;
-  latestPublish: string;
-  notReady: string;
   browseSettings: string;
-  browseBody: string;
-  allList: string;
-  jumpToResults: string;
   writePost: string;
   search: string;
   tag: string;
@@ -32,11 +25,8 @@ type ColumnHomeText = {
   heroBody: string;
   latestColumn: string;
   tagShelfTitle: string;
-  tagShelfBody: string;
   expandTags: string;
   collapseTags: string;
-  longTailTags: string;
-  resultsEyebrow: string;
   resultsTitle: string;
   emptyNoPosts: string;
   emptyNoResults: string;
@@ -66,6 +56,31 @@ function buildClampStyle(lines: number) {
 
 function formatPageSize(value: number, text: ColumnHomeText) {
   return value >= 1000000 ? text.all : `${value}개`;
+}
+
+function compactColumnSummary(value: string) {
+  const normalized = value.replace(/\s+/g, " ").trim();
+  if (!normalized) return "";
+
+  const cleaned = normalized
+    .replace(/(현실적으로|구체적으로|실전 위주로|쉽게|차분하게)\s*/gu, "")
+    .replace(/(정리했습니다|설명했습니다|풀었습니다)\.?$/u, "")
+    .replace(/(한 번에|중심으로)\s*$/u, "")
+    .trim();
+
+  const candidates = cleaned
+    .split(/,\s*/u)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const picked = candidates.length > 1 ? candidates[candidates.length - 1] : cleaned;
+  const shortened =
+    picked.length > 34 ? `${picked.slice(0, 32).trimEnd()}...` : picked;
+
+  if (/[.!?]$/u.test(shortened)) {
+    return shortened;
+  }
+
+  return `${shortened}.`;
 }
 
 function ColumnResultCard({
@@ -126,8 +141,8 @@ function ColumnResultCard({
 
           <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <h2
-              className="min-w-0 text-[1.02rem] font-bold leading-snug text-slate-900 sm:text-[1.25rem]"
-              style={buildClampStyle(isList ? 2 : 3)}
+              className="min-w-0 text-[1.02rem] font-bold leading-snug text-slate-900 sm:text-[1.18rem]"
+              style={buildClampStyle(2)}
             >
               <Link
                 href={`/column/${column.slug}`}
@@ -146,10 +161,10 @@ function ColumnResultCard({
           </div>
 
           <p
-            className="mt-3 text-sm leading-6 text-slate-700 sm:text-[0.96rem] sm:leading-7"
-            style={buildClampStyle(isList ? 3 : 4)}
+            className="mt-3 text-sm leading-6 text-slate-700"
+            style={buildClampStyle(2)}
           >
-            {column.summary}
+            {compactColumnSummary(column.summary)}
           </p>
 
           {previewTags.length > 0 ? (
@@ -177,64 +192,31 @@ function ColumnResultCard({
 }
 
 export function ColumnHomeHeroSection({
-  columnsCount,
-  tagsCount,
-  latestPublishedAt,
   featuredColumn,
   text,
 }: {
-  columnsCount: number;
-  tagsCount: number;
-  latestPublishedAt: string | null;
   featuredColumn: ColumnSummary | null;
   text: ColumnHomeText;
 }) {
   return (
-    <header className="overflow-hidden rounded-[1.6rem] border border-emerald-100/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.97)_0%,rgba(248,253,250,0.98)_52%,rgba(243,251,248,0.94)_100%)] p-5 shadow-[0_18px_44px_-36px_rgba(15,23,42,0.34)] sm:rounded-[1.8rem] sm:p-7">
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.34fr)_minmax(220px,0.5fr)] lg:items-start xl:grid-cols-[minmax(0,1.42fr)_248px]">
+    <header className="overflow-hidden rounded-[1.6rem] border border-emerald-100/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.97)_0%,rgba(248,253,250,0.98)_52%,rgba(243,251,248,0.94)_100%)] p-5 shadow-[0_18px_44px_-36px_rgba(15,23,42,0.34)] sm:rounded-[1.8rem] sm:p-6">
+      <div className="grid gap-4 md:grid-cols-[minmax(0,1.1fr)_minmax(220px,0.9fr)] md:items-start">
         <div>
-          <p className="text-[11px] font-semibold tracking-[0.28em] text-emerald-700">
-            WELLNESSBOX COLUMN
+          <p className="text-[11px] font-semibold tracking-[0.2em] text-emerald-700">
+            건강 칼럼
           </p>
-          <h1 className="mt-3 max-w-[15ch] text-[1.72rem] font-black leading-[1.08] text-slate-900 sm:max-w-[16ch] sm:text-[1.96rem]">
+          <h1 className="mt-3 text-[1.55rem] font-black leading-[1.14] text-slate-900 sm:text-[1.75rem]">
             {text.heroTitle}
           </h1>
-          <p className="mt-4 max-w-[34rem] text-sm leading-6 text-slate-700 sm:text-[0.96rem] sm:leading-7">
+          <p className="mt-3 max-w-[34rem] text-sm leading-6 text-slate-700">
             {text.heroBody}
           </p>
-
-          <div className="mt-6 grid grid-cols-3 gap-2.5 sm:max-w-[27rem] sm:gap-3">
-            <div className="rounded-[1.2rem] border border-white/80 bg-white/82 p-3 backdrop-blur sm:rounded-[1.35rem] sm:p-4">
-              <p className="text-[11px] font-semibold tracking-[0.14em] text-slate-500">
-                {text.totalPosts}
-              </p>
-              <p className="mt-1.5 text-xl font-black text-slate-900 sm:text-[1.65rem]">
-                {columnsCount}
-              </p>
-            </div>
-            <div className="rounded-[1.2rem] border border-white/80 bg-white/82 p-3 backdrop-blur sm:rounded-[1.35rem] sm:p-4">
-              <p className="text-[11px] font-semibold tracking-[0.14em] text-slate-500">
-                {text.totalTags}
-              </p>
-              <p className="mt-1.5 text-xl font-black text-slate-900 sm:text-[1.65rem]">
-                {tagsCount}
-              </p>
-            </div>
-            <div className="rounded-[1.2rem] border border-white/80 bg-white/82 p-3 backdrop-blur sm:rounded-[1.35rem] sm:p-4">
-              <p className="text-[11px] font-semibold tracking-[0.14em] text-slate-500">
-                {text.latestPublish}
-              </p>
-              <p className="mt-1.5 text-xs font-bold leading-5 text-slate-900 sm:text-sm">
-                {latestPublishedAt ?? text.notReady}
-              </p>
-            </div>
-          </div>
         </div>
 
         {featuredColumn ? (
           <Link
             href={`/column/${featuredColumn.slug}`}
-            className="block rounded-[1.2rem] border border-slate-200/85 bg-white/88 p-2 shadow-[0_16px_36px_-32px_rgba(15,23,42,0.24)] transition hover:-translate-y-0.5 hover:border-emerald-300 sm:rounded-[1.35rem] lg:mt-2 lg:max-w-[280px] lg:justify-self-end"
+            className="block rounded-[1.2rem] border border-slate-200/85 bg-white/88 p-2 shadow-[0_16px_36px_-32px_rgba(15,23,42,0.24)] transition hover:-translate-y-0.5 hover:border-emerald-300 sm:rounded-[1.35rem] md:justify-self-end"
           >
             <div className="overflow-hidden rounded-[0.95rem] border border-slate-200">
               <ColumnThumbnail
@@ -263,7 +245,7 @@ export function ColumnHomeHeroSection({
                 className="mt-1.5 text-[12px] leading-5 text-slate-700"
                 style={buildClampStyle(2)}
               >
-                {featuredColumn.summary}
+                {compactColumnSummary(featuredColumn.summary)}
               </p>
             </div>
           </Link>
@@ -309,24 +291,9 @@ export function ColumnHomeBrowseSection({
 }) {
   return (
     <section className="mt-6 rounded-[1.55rem] border border-slate-200 bg-white/95 p-4 shadow-[0_12px_36px_-34px_rgba(15,23,42,0.28)] sm:rounded-[1.75rem] sm:p-5">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p className="text-sm font-semibold text-slate-900">{text.browseSettings}</p>
-          <p className="mt-1 text-sm text-slate-600">{text.browseBody}</p>
-        </div>
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-semibold text-slate-900">{text.browseSettings}</p>
         <div className="flex flex-wrap gap-2">
-          <Link
-            href="/column"
-            className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-emerald-300 hover:text-emerald-700"
-          >
-            {text.allList}
-          </Link>
-          <a
-            href="#column-results"
-            className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-emerald-300 hover:text-emerald-700"
-          >
-            {text.jumpToResults}
-          </a>
           {isAdmin ? (
             <Link
               href="/admin/column/editor"
@@ -339,7 +306,7 @@ export function ColumnHomeBrowseSection({
         </div>
       </div>
 
-      <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1.15fr)_repeat(3,minmax(0,0.48fr))]">
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
         <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-300 bg-slate-50 px-4 text-sm text-slate-700">
           <span className="shrink-0 font-semibold text-slate-900">{text.search}</span>
           <input
@@ -399,25 +366,15 @@ export function ColumnHomeBrowseSection({
           className="mt-5 rounded-[1.3rem] border border-slate-200 bg-slate-50/80 p-4"
           id="column-tags"
         >
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm font-semibold text-slate-900">{text.tagShelfTitle}</p>
-              <p className="mt-1 text-xs leading-5 text-slate-600">
-                {text.tagShelfBody}
-                {tagGroups.hidden.length > 0
-                  ? ` ${text.longTailTags} ${tagGroups.hidden.length}개`
-                  : ""}
-              </p>
-            </div>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-semibold text-slate-900">{text.tagShelfTitle}</p>
             {tagGroups.hidden.length > 0 ? (
               <button
                 type="button"
                 onClick={() => setShowAllTags((prev) => !prev)}
                 className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-emerald-300 hover:text-emerald-700"
               >
-                {showAllTags
-                  ? text.collapseTags
-                  : `${text.expandTags} ${tagGroups.hidden.length}개`}
+                {showAllTags ? text.collapseTags : text.expandTags}
               </button>
             ) : null}
           </div>
@@ -445,7 +402,7 @@ export function ColumnHomeBrowseSection({
                     : "bg-white text-slate-700 hover:bg-emerald-50 hover:text-emerald-700"
                 }`}
               >
-                {`#${tag.label} (${tag.count})`}
+                {`#${tag.label}`}
               </button>
             ))}
           </div>
@@ -499,13 +456,10 @@ export function ColumnHomeResultsSection({
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-semibold tracking-[0.12em] text-emerald-700">
-              {text.resultsEyebrow}
-            </p>
-            <h2 className="mt-2 text-[1.6rem] font-black text-slate-900">
+            <h2 className="text-[1.45rem] font-black text-slate-900">
               {text.resultsTitle}
             </h2>
-            <p className="mt-2 text-sm text-slate-600">{resultSummary}</p>
+            <p className="mt-1 text-sm text-slate-600">{resultSummary}</p>
           </div>
           <div className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600">
             {filteredColumns.length > 0
@@ -526,7 +480,7 @@ export function ColumnHomeResultsSection({
         <>
           <ul
             className={`mt-6 ${
-              viewMode === "grid" ? "grid gap-5 lg:grid-cols-2" : "grid gap-4"
+              viewMode === "grid" ? "grid gap-5 md:grid-cols-2" : "grid gap-4"
             }`}
           >
             {pagedColumns.map((column) => (

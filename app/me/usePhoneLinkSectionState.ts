@@ -9,6 +9,7 @@ import {
 } from "@/lib/client/phone-api";
 import { emitAuthSyncEvent } from "@/lib/client/auth-sync";
 import { formatPhoneDisplay } from "@/lib/client/phone-format";
+import { getLoginStatus } from "@/lib/useLoginStatus";
 
 type UsePhoneLinkSectionStateParams = {
   initialPhone?: string;
@@ -17,7 +18,11 @@ type UsePhoneLinkSectionStateParams = {
   onBusyChange?: (busy: boolean) => void;
   mode?: "link" | "verify-only";
   fallbackToVerifyOnlyOnUnauthorized?: boolean;
+  isUserLoggedIn?: boolean | null;
 };
+
+export const LOGIN_REQUIRED_LINK_MESSAGE =
+  "전화번호를 계정에 연결하려면 먼저 카카오 로그인해 주세요.";
 
 function normalizePhoneDigits(value?: string) {
   return (value ?? "").replace(/\D/g, "").slice(0, 11);
@@ -30,6 +35,7 @@ export function usePhoneLinkSectionState({
   onBusyChange,
   mode = "link",
   fallbackToVerifyOnlyOnUnauthorized = false,
+  isUserLoggedIn,
 }: UsePhoneLinkSectionStateParams) {
   const [phoneDigits, setPhoneDigits] = useState(() =>
     normalizePhoneDigits(initialPhone)
@@ -54,6 +60,10 @@ export function usePhoneLinkSectionState({
     [normalizedPhone.length]
   );
   const busy = sendLoading || verifyLoading;
+  const linkingBlocked =
+    mode === "link" &&
+    fallbackToVerifyOnlyOnUnauthorized !== true &&
+    isUserLoggedIn === false;
 
   useEffect(() => {
     onBusyChange?.(busy);
@@ -77,8 +87,36 @@ export function usePhoneLinkSectionState({
     setCode(value.replace(/\D/g, "").slice(0, 6));
   }, []);
 
+  const resolveVerificationMode = useCallback(async () => {
+    if (mode === "verify-only") return "verify-only" as const;
+
+    if (isUserLoggedIn === true) return "link" as const;
+    if (isUserLoggedIn === false) {
+      return fallbackToVerifyOnlyOnUnauthorized ? ("verify-only" as const) : null;
+    }
+
+    try {
+      const latestLoginStatus = await getLoginStatus();
+      if (latestLoginStatus.isUserLoggedIn) {
+        return "link" as const;
+      }
+    } catch {
+      // Keep the fallback path below for expired or unavailable sessions.
+    }
+
+    return fallbackToVerifyOnlyOnUnauthorized ? ("verify-only" as const) : null;
+  }, [fallbackToVerifyOnlyOnUnauthorized, isUserLoggedIn, mode]);
+
   const handleSendOtp = useCallback(async () => {
     if (!isPhoneValid || busy) return;
+
+    const effectiveMode = await resolveVerificationMode();
+    if (!effectiveMode) {
+      setSendError(LOGIN_REQUIRED_LINK_MESSAGE);
+      setVerifyError(null);
+      setStatusMessage(null);
+      return;
+    }
 
     setSendLoading(true);
     setSendError(null);
@@ -107,10 +145,18 @@ export function usePhoneLinkSectionState({
     } finally {
       setSendLoading(false);
     }
-  }, [busy, isPhoneValid, normalizedPhone]);
+  }, [busy, isPhoneValid, normalizedPhone, resolveVerificationMode]);
 
   const handleVerify = useCallback(async () => {
     if (!isPhoneValid || code.length === 0 || busy) return;
+
+    const effectiveMode = await resolveVerificationMode();
+    if (!effectiveMode) {
+      setVerifyError(LOGIN_REQUIRED_LINK_MESSAGE);
+      setSendError(null);
+      setStatusMessage(null);
+      return;
+    }
 
     setVerifyLoading(true);
     setVerifyError(null);
@@ -118,7 +164,7 @@ export function usePhoneLinkSectionState({
     setStatusMessage(null);
 
     try {
-      if (mode === "verify-only") {
+      if (effectiveMode === "verify-only") {
         const result = await verifyPhoneOtpRequest(normalizedPhone, code);
         if (!result.ok) {
           setVerifyError(
@@ -189,9 +235,9 @@ export function usePhoneLinkSectionState({
     code,
     fallbackToVerifyOnlyOnUnauthorized,
     isPhoneValid,
-    mode,
     normalizedPhone,
     onLinked,
+    resolveVerificationMode,
   ]);
 
   const handleEditPhone = useCallback(() => {
@@ -205,12 +251,12 @@ export function usePhoneLinkSectionState({
   }, [busy]);
 
   const sendDisabled = useMemo(
-    () => busy || !isPhoneValid,
-    [busy, isPhoneValid]
+    () => busy || !isPhoneValid || linkingBlocked,
+    [busy, isPhoneValid, linkingBlocked]
   );
   const verifyDisabled = useMemo(
-    () => busy || !isPhoneValid || code.length === 0 || !otpSent,
-    [busy, code.length, isPhoneValid, otpSent]
+    () => busy || !isPhoneValid || code.length === 0 || !otpSent || linkingBlocked,
+    [busy, code.length, isPhoneValid, linkingBlocked, otpSent]
   );
 
   return {
@@ -224,6 +270,7 @@ export function usePhoneLinkSectionState({
     otpSent,
     phoneLocked,
     busy,
+    linkingBlocked,
     sendDisabled,
     verifyDisabled,
     handlePhoneChange,

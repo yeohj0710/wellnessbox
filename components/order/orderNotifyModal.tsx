@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import ModalLayer from "@/components/common/modalLayer";
 import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 interface OrderNotifyModalProps {
@@ -24,29 +25,27 @@ export default function OrderNotifyModal({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
-    const original = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     document.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = original;
       document.removeEventListener("keydown", onKey);
     };
   }, [onClose]);
 
   return (
-    <div
-      className="fixed inset-0 z-[120] flex items-center justify-center"
-      role="dialog"
-      aria-modal="true"
-      onClick={onClose}
-    >
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+    <ModalLayer>
       <div
-        className="relative w-full max-w-sm mx-3 transition-all duration-200 ease-out max-h-[85vh] overflow-y-auto rounded-2xl"
-        ref={panelRef}
-        style={panelStyle}
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-[120] flex items-center justify-center"
+        role="dialog"
+        aria-modal="true"
+        onClick={onClose}
       >
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        <div
+          className="relative w-full max-w-sm mx-3 transition-all duration-200 ease-out max-h-[85vh] overflow-y-auto rounded-2xl"
+          ref={panelRef}
+          style={panelStyle}
+          onClick={(e) => e.stopPropagation()}
+        >
         <div
           onPointerDown={handleDragPointerDown}
           className={`absolute left-0 right-12 top-0 z-20 h-12 touch-none ${
@@ -119,7 +118,8 @@ export default function OrderNotifyModal({
           aria-hidden
           className="pointer-events-none absolute -inset-8 -z-10 blur-2xl opacity-40 bg-[radial-gradient(22rem_12rem_at_50%_-20%,rgba(108,77,255,0.22),transparent)]"
         />
+        </div>
       </div>
-    </div>
+    </ModalLayer>
   );
 }

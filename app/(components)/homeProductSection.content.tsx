@@ -223,9 +223,9 @@ export function HomeProductSectionContent({
       )}
 
       {isCartVisible && (
-        <div className="fixed inset-x-0 bottom-0 top-14 flex">
+        <div className="fixed inset-x-0 bottom-0 top-14 z-[90] isolate flex overscroll-none bg-white">
           <div
-            className="bg-white w-full h-full overflow-y-auto"
+            className="h-full w-full overflow-y-auto overscroll-contain bg-white"
             ref={cartContainerRef}
           >
             <Cart

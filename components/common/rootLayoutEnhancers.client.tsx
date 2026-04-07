@@ -222,10 +222,14 @@ export default function RootLayoutEnhancers() {
       <RouteChangeLoading />
       <RouteScrollPolicy />
       <AppBackHandler />
-      <TopBar />
+      <div className="wb-global-chrome">
+        <TopBar />
+      </div>
       <LazyGlobalCartHost />
       <LazyChatCartActionHost />
-      <LazyDesktopChatDock />
+      <div className="wb-global-chrome">
+        <LazyDesktopChatDock />
+      </div>
       <LazyCommandPalette />
     </>
   );

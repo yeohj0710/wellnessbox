@@ -6,6 +6,7 @@ import {
   MapPinIcon,
   PhoneIcon,
 } from "@heroicons/react/24/solid";
+import ModalLayer from "@/components/common/modalLayer";
 import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 interface CheckoutConfirmModalProps {
@@ -29,18 +30,19 @@ export default function CheckoutConfirmModal({
     useDraggableModal(visible, { resetOnOpen: true });
   if (!visible) return null;
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center p-4">
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onCancel}
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        className="relative w-full max-w-md origin-center rounded-3xl p-1 shadow-2xl transition-all bg-gradient-to-br from-sky-400/70 via-indigo-500/60 to-fuchsia-500/60 max-h-[90vh] overflow-hidden"
-        ref={panelRef}
-        style={panelStyle}
-      >
+    <ModalLayer open={visible}>
+      <div className="fixed inset-0 z-50 grid place-items-center p-4">
+        <div
+          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          onClick={onCancel}
+        />
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="relative w-full max-w-md origin-center rounded-3xl p-1 shadow-2xl transition-all bg-gradient-to-br from-sky-400/70 via-indigo-500/60 to-fuchsia-500/60 max-h-[90vh] overflow-hidden"
+          ref={panelRef}
+          style={panelStyle}
+        >
         <div
           onPointerDown={handleDragPointerDown}
           className={`absolute left-0 right-14 top-0 z-20 h-12 touch-none ${
@@ -108,7 +110,8 @@ export default function CheckoutConfirmModal({
             </div>
           </div>
         </div>
+        </div>
       </div>
-    </div>
+    </ModalLayer>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { XMarkIcon } from "@heroicons/react/24/outline";
+import ModalLayer from "@/components/common/modalLayer";
 import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 type AddressModalProps = {
@@ -123,10 +124,11 @@ export default function AddressModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[120] flex items-end justify-center bg-slate-900/45 p-3 backdrop-blur-[1.5px] sm:items-center sm:p-5"
-      onClick={onClose}
-    >
+    <ModalLayer>
+      <div
+        className="fixed inset-0 z-[120] flex items-end justify-center bg-slate-900/45 p-3 backdrop-blur-[1.5px] sm:items-center sm:p-5"
+        onClick={onClose}
+      >
       <section
         ref={addressDrag.panelRef}
         style={addressDrag.panelStyle}
@@ -309,5 +311,6 @@ export default function AddressModal({
         </div>
       </section>
     </div>
+    </ModalLayer>
   );
 }

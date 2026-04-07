@@ -15,9 +15,9 @@ type ColumnThumbnailProps = {
 function getFrameClasses(variant: NonNullable<ColumnThumbnailProps["variant"]>) {
   switch (variant) {
     case "feature":
-      return "aspect-[5/4] w-full";
+      return "aspect-[16/9] w-full";
     case "list":
-      return "aspect-[4/3] w-full";
+      return "aspect-[16/9] w-full";
     case "detail":
       return "h-44 sm:h-72";
     case "card":

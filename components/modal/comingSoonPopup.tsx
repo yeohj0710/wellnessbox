@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import ModalLayer from "@/components/common/modalLayer";
 import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 interface ComingSoonPopupProps {
@@ -23,10 +24,7 @@ export default function ComingSoonPopup({
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKeyDown);
-    const original = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = original;
       document.removeEventListener("keydown", onKeyDown);
       setVisible(false);
     };
@@ -35,21 +33,22 @@ export default function ComingSoonPopup({
   if (!open) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center"
-      onClick={onClose}
-      aria-modal="true"
-      role="dialog"
-    >
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+    <ModalLayer open={open}>
       <div
-        className={`relative w-full max-w-md px-6 transition-all duration-200 ease-out ${
-          visible
-            ? "opacity-100 translate-y-0 scale-100"
-            : "opacity-0 translate-y-2 scale-95"
-        }`}
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-[100] flex items-center justify-center"
+        onClick={onClose}
+        aria-modal="true"
+        role="dialog"
       >
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        <div
+          className={`relative w-full max-w-md px-6 transition-all duration-200 ease-out ${
+            visible
+              ? "opacity-100 translate-y-0 scale-100"
+              : "opacity-0 translate-y-2 scale-95"
+          }`}
+          onClick={(e) => e.stopPropagation()}
+        >
         <div
           className="p-[1.5px] rounded-2xl bg-[conic-gradient(at_50%_50%,#6C4DFF_0deg,#3B5BFF_120deg,#56CCF2_240deg,#6C4DFF_360deg)] shadow-[0_20px_60px_rgba(0,0,0,0.35)]"
           ref={panelRef}
@@ -99,7 +98,8 @@ export default function ComingSoonPopup({
           aria-hidden
           className="pointer-events-none absolute -inset-6 -z-10 blur-2xl opacity-40 bg-[radial-gradient(20rem_12rem_at_50%_-20%,rgba(108,77,255,0.25),transparent)]"
         />
+        </div>
       </div>
-    </div>
+    </ModalLayer>
   );
 }

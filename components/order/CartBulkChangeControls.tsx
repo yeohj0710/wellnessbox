@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import ModalLayer from "@/components/common/modalLayer";
 import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 type CartBulkChangeControlsProps = {
@@ -49,16 +50,17 @@ export default function CartBulkChangeControls({
       </div>
 
       {confirmType && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-          onClick={() => setConfirmType(null)}
-        >
+        <ModalLayer>
           <div
-            className="relative bg-gradient-to-br from-sky-400/90 via-indigo-500/90 to-fuchsia-500/90 rounded-2xl shadow-2xl w-full max-w-sm mx-4 animate-scaleIn"
-            ref={confirmModalDrag.panelRef}
-            style={confirmModalDrag.panelStyle}
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+            onClick={() => setConfirmType(null)}
           >
+            <div
+              className="relative bg-gradient-to-br from-sky-400/90 via-indigo-500/90 to-fuchsia-500/90 rounded-2xl shadow-2xl w-full max-w-sm mx-4 animate-scaleIn"
+              ref={confirmModalDrag.panelRef}
+              style={confirmModalDrag.panelStyle}
+              onClick={(e) => e.stopPropagation()}
+            >
             <div
               onPointerDown={confirmModalDrag.handleDragPointerDown}
               className={`absolute left-0 right-0 top-0 h-10 touch-none ${
@@ -93,8 +95,9 @@ export default function CartBulkChangeControls({
                 </button>
               </div>
             </div>
+            </div>
           </div>
-        </div>
+        </ModalLayer>
       )}
     </>
   );

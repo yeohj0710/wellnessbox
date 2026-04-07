@@ -121,3 +121,18 @@ html {
 :where(h1, h2, h3, h4, [id]) {
   scroll-margin-top: 72px;
 }
+
+.wb-global-chrome {
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease,
+    visibility 180ms ease;
+}
+
+html[data-wb-modal-open="true"] .wb-global-chrome,
+body[data-wb-modal-open="true"] .wb-global-chrome {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-6px);
+}

@@ -23,6 +23,9 @@ import type { CartProps } from "./cart.types";
 const CheckoutConfirmModal = dynamic(() => import("./checkoutConfirmModal"), {
   ssr: false,
 });
+const CheckoutPausedModal = dynamic(() => import("./checkoutPausedModal"), {
+  ssr: false,
+});
 const AddressModal = dynamic(() => import("@/components/modal/addressModal"), {
   ssr: false,
 });
@@ -55,6 +58,7 @@ export default function Cart({
   const router = useRouter();
   const { loginStatus, safeLoginStatus } = useCartLoginStatus();
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("inicis");
+  const [showCheckoutPausedModal, setShowCheckoutPausedModal] = useState(false);
   const [customTestAmount, setCustomTestAmount] = useState<number>(
     Number(process.env.NEXT_PUBLIC_TEST_PAYMENT_AMOUNT) || 1
   );
@@ -169,7 +173,7 @@ export default function Cart({
     window.localStorage.removeItem("preferredPaymentMethod");
   }, [safeLoginStatus.isTestLoggedIn]);
 
-  const { handleRequestPayment, handlePayment } = useCartPayment({
+  const { handleRequestPayment } = useCartPayment({
     router,
     selectedPaymentMethod,
     customTestAmount,
@@ -289,6 +293,7 @@ export default function Cart({
         }}
         initialPhone={phone}
         initialLinkedAt={linkedAt}
+        isUserLoggedIn={loginStatus?.isUserLoggedIn ?? null}
         allowUnlink={isPhoneLinked}
         unlinkLoading={unlinkLoading}
         unlinkError={unlinkError}
@@ -308,7 +313,14 @@ export default function Cart({
         onCancel={closeCheckoutConfirm}
         onConfirm={() => {
           closeCheckoutConfirm();
-          handlePayment();
+          setShowCheckoutPausedModal(true);
+        }}
+      />
+
+      <CheckoutPausedModal
+        visible={showCheckoutPausedModal}
+        onClose={() => {
+          setShowCheckoutPausedModal(false);
         }}
       />
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import ModalLayer from "@/components/common/modalLayer";
 import AddressModal from "@/components/modal/addressModal";
 import { useDraggableModal } from "@/components/common/useDraggableModal";
 import {
@@ -110,19 +111,20 @@ export default function ChatCartActionHost() {
   return (
     <>
       {showAddressGuideModal && (
-        <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50"
-          onClick={() => {
-            setShowAddressGuideModal(false);
-            setPendingAction(null);
-          }}
-        >
+        <ModalLayer>
           <div
-            className="relative m-3 w-[min(32rem,calc(100%-1.5rem))] rounded-xl bg-white px-6 py-8 shadow-2xl sm:px-8"
-            ref={guideModalDrag.panelRef}
-            style={guideModalDrag.panelStyle}
-            onClick={(event) => event.stopPropagation()}
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50"
+            onClick={() => {
+              setShowAddressGuideModal(false);
+              setPendingAction(null);
+            }}
           >
+            <div
+              className="relative m-3 w-[min(32rem,calc(100%-1.5rem))] rounded-xl bg-white px-6 py-8 shadow-2xl sm:px-8"
+              ref={guideModalDrag.panelRef}
+              style={guideModalDrag.panelStyle}
+              onClick={(event) => event.stopPropagation()}
+            >
             <div
               onPointerDown={guideModalDrag.handleDragPointerDown}
               className={`absolute left-0 right-0 top-0 h-10 touch-none ${
@@ -161,8 +163,9 @@ export default function ChatCartActionHost() {
                 주소를 입력할게요
               </button>
             </div>
+            </div>
           </div>
-        </div>
+        </ModalLayer>
       )}
 
       {isAddressModalOpen && (

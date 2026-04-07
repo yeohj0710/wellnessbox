@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import ModalLayer from "@/components/common/modalLayer";
 import AddressModal from "@/components/modal/addressModal";
 import { useDraggableModal } from "@/components/common/useDraggableModal";
 
@@ -25,10 +26,11 @@ export default function FirstModal({
   return (
     <>
       {!isAddressModalOpen ? (
-        <div
-          className="fixed inset-0 z-[110] flex items-end justify-center bg-slate-900/45 p-3 backdrop-blur-[1.5px] sm:items-center sm:p-5"
-          onClick={handleBackgroundClick}
-        >
+        <ModalLayer>
+          <div
+            className="fixed inset-0 z-[110] flex items-end justify-center bg-slate-900/45 p-3 backdrop-blur-[1.5px] sm:items-center sm:p-5"
+            onClick={handleBackgroundClick}
+          >
           <section
             className="relative w-full max-w-lg overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-[0_24px_64px_rgba(15,23,42,0.28)] sm:p-6"
             ref={panelRef}
@@ -72,6 +74,7 @@ export default function FirstModal({
             </div>
           </section>
         </div>
+        </ModalLayer>
       ) : (
         <AddressModal
           onClose={() => {
@@ -102,9 +105,11 @@ export default function FirstModal({
         />
       )}
       {isSaving && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-white border-t-transparent" />
-        </div>
+        <ModalLayer>
+          <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-white border-t-transparent" />
+          </div>
+        </ModalLayer>
       )}
     </>
   );

@@ -3,6 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import { XMarkIcon } from "@heroicons/react/24/outline";
+import ModalLayer from "@/components/common/modalLayer";
 import WordOfMouthShareCard from "@/components/common/WordOfMouthShareCard";
 import { useDraggableModal } from "@/components/common/useDraggableModal";
 import SatisfactionRecoveryCard from "@/components/order/SatisfactionRecoveryCard";
@@ -47,16 +48,17 @@ export default function ReviewModal({
   const currentOptionType = currentItem?.pharmacyProduct?.optionType ?? "옵션";
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 px-2 sm:px-0"
-      onClick={onClose}
-    >
+    <ModalLayer>
       <div
-        className="relative w-96 rounded bg-white p-6 shadow-md"
-        ref={panelRef}
-        style={panelStyle}
-        onClick={(event) => event.stopPropagation()}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 px-2 sm:px-0"
+        onClick={onClose}
       >
+        <div
+          className="relative w-96 rounded bg-white p-6 shadow-md"
+          ref={panelRef}
+          style={panelStyle}
+          onClick={(event) => event.stopPropagation()}
+        >
         <div
           onPointerDown={handleDragPointerDown}
           className={`absolute left-0 right-12 top-0 h-10 touch-none ${
@@ -259,7 +261,8 @@ export default function ReviewModal({
             리뷰할 상품을 불러오지 못했습니다.
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </ModalLayer>
   );
 }

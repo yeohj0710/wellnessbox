@@ -1,5 +1,6 @@
 "use client";
 
+import ModalLayer from "@/components/common/modalLayer";
 import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 export default function PharmacyDetailModal({
@@ -12,17 +13,18 @@ export default function PharmacyDetailModal({
   const { panelRef, panelStyle, handleDragPointerDown, isDragging } =
     useDraggableModal(true);
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      onClick={onClose}
-    >
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+    <ModalLayer>
       <div
-        className="relative w-full max-w-xl mx-3 max-h-[90vh] overflow-y-auto rounded-2xl transition-all duration-200 ease-out"
-        ref={panelRef}
-        style={panelStyle}
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-50 flex items-center justify-center"
+        onClick={onClose}
       >
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        <div
+          className="relative w-full max-w-xl mx-3 max-h-[90vh] overflow-y-auto rounded-2xl transition-all duration-200 ease-out"
+          ref={panelRef}
+          style={panelStyle}
+          onClick={(e) => e.stopPropagation()}
+        >
         <div
           onPointerDown={handleDragPointerDown}
           className={`absolute left-0 right-12 top-0 z-20 h-12 touch-none ${
@@ -102,7 +104,8 @@ export default function PharmacyDetailModal({
             </div>
           </div>
         </div>
+        </div>
       </div>
-    </div>
+    </ModalLayer>
   );
 }

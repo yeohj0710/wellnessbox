@@ -15,17 +15,12 @@ export function useProfileModalState({
 }: UseProfileModalStateInput) {
   const [local, setLocal] = useState<UserProfile>({ ...(profile || {}) });
   const [confirmReset, setConfirmReset] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-  const modalDrag = useDraggableModal(isMounted, { resetOnOpen: true });
+  const modalDrag = useDraggableModal(true, { resetOnOpen: true });
   const resetDialogDrag = useDraggableModal(confirmReset, { resetOnOpen: true });
 
   useEffect(() => {
     setLocal({ ...(profile || {}) });
   }, [profile]);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -37,15 +32,6 @@ export function useProfileModalState({
     return () => window.removeEventListener("keydown", onKey);
   }, [confirmReset, onClose]);
 
-  useEffect(() => {
-    if (!isMounted) return;
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prevOverflow;
-    };
-  }, [isMounted]);
-
   const setField = useCallback(<K extends keyof UserProfile>(key: K, value: UserProfile[K]) => {
     setLocal((prev) => ({ ...(prev || {}), [key]: value }));
   }, []);
@@ -56,7 +42,6 @@ export function useProfileModalState({
     setField,
     confirmReset,
     setConfirmReset,
-    isMounted,
     modalDrag,
     resetDialogDrag,
   };

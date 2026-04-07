@@ -1,6 +1,7 @@
 "use client";
 
 import { TrashIcon } from "@heroicons/react/24/outline";
+import ModalLayer from "@/components/common/modalLayer";
 import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
 import { useDraggableModal } from "@/components/common/useDraggableModal";
 import type { ChatDrawerDeleteDialogProps } from "./ChatDrawer.types";
@@ -17,20 +18,21 @@ export default function ChatDrawerDeleteDialog({
   if (!open) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-30 flex items-center justify-center p-4"
-      role="dialog"
-      aria-modal="true"
-      onClick={onCancel}
-    >
-      <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-sm" />
-
+    <ModalLayer open={open}>
       <div
-        className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_20px_60px_rgba(2,6,23,0.25)]"
-        ref={drag.panelRef}
-        style={drag.panelStyle}
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-30 flex items-center justify-center p-4"
+        role="dialog"
+        aria-modal="true"
+        onClick={onCancel}
       >
+        <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-sm" />
+
+        <div
+          className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_20px_60px_rgba(2,6,23,0.25)]"
+          ref={drag.panelRef}
+          style={drag.panelStyle}
+          onClick={(e) => e.stopPropagation()}
+        >
         <div
           className={`touch-none p-5 ${drag.isDragging ? "cursor-grabbing" : "cursor-grab"}`}
           onPointerDown={drag.handleDragPointerDown}
@@ -73,7 +75,8 @@ export default function ChatDrawerDeleteDialog({
             )}
           </button>
         </div>
+        </div>
       </div>
-    </div>
+    </ModalLayer>
   );
 }

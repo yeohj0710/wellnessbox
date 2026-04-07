@@ -14,6 +14,7 @@ import {
   ShieldCheckIcon,
   ChartPieIcon,
 } from "@heroicons/react/24/outline";
+import ModalLayer from "@/components/common/modalLayer";
 import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 interface SearchModalProps {
@@ -68,16 +69,17 @@ export default function SymptomModal({ onSelect, onClose }: SearchModalProps) {
     };
   }, [onClose]);
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
-      onClick={onClose}
-    >
+    <ModalLayer>
       <div
-        className="mx-2 relative bg-white rounded-lg px-6 pt-8 pb-6 max-w-lg w-full"
-        ref={panelRef}
-        style={panelStyle}
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+        onClick={onClose}
       >
+        <div
+          className="mx-2 relative bg-white rounded-lg px-6 pt-8 pb-6 max-w-lg w-full"
+          ref={panelRef}
+          style={panelStyle}
+          onClick={(e) => e.stopPropagation()}
+        >
         <div
           onPointerDown={handleDragPointerDown}
           className={`absolute left-0 right-12 top-0 h-10 touch-none ${
@@ -131,7 +133,8 @@ export default function SymptomModal({ onSelect, onClose }: SearchModalProps) {
             선택
           </button>
         </div>
+        </div>
       </div>
-    </div>
+    </ModalLayer>
   );
 }

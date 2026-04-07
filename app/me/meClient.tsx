@@ -232,6 +232,7 @@ export default function MeClient({
           }}
           initialPhone={phone}
           initialLinkedAt={linkedAt}
+          isUserLoggedIn={true}
           allowUnlink={isLinked}
           unlinkLoading={unlinkLoading}
           unlinkError={unlinkError}

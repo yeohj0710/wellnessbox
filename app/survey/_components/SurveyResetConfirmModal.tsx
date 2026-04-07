@@ -1,3 +1,5 @@
+import ModalLayer from "@/components/common/modalLayer";
+
 type SurveyResetConfirmModalProps = {
   open: boolean;
   title: string;
@@ -20,11 +22,12 @@ export default function SurveyResetConfirmModal({
   if (!open) return null;
 
   return (
-    <div
-      data-testid="survey-reset-confirm-modal"
-      className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-900/55 px-4 backdrop-blur-[2px]"
-    >
-      <div className="w-full max-w-md rounded-3xl border border-sky-100 bg-white p-6">
+    <ModalLayer open={open}>
+      <div
+        data-testid="survey-reset-confirm-modal"
+        className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-900/55 px-4 backdrop-blur-[2px]"
+      >
+        <div className="w-full max-w-md rounded-3xl border border-sky-100 bg-white p-6">
         <h3 className="text-xl font-extrabold text-slate-900">{title}</h3>
         <p className="mt-2 text-sm text-slate-600">{description}</p>
         <div className="mt-6 flex items-center justify-end gap-2">
@@ -45,7 +48,8 @@ export default function SurveyResetConfirmModal({
             {confirmText}
           </button>
         </div>
+        </div>
       </div>
-    </div>
+    </ModalLayer>
   );
 }

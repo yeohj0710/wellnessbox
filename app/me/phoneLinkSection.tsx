@@ -1,7 +1,10 @@
 "use client";
 
 import ModalSpinner from "./modalSpinner";
-import { usePhoneLinkSectionState } from "./usePhoneLinkSectionState";
+import {
+  LOGIN_REQUIRED_LINK_MESSAGE,
+  usePhoneLinkSectionState,
+} from "./usePhoneLinkSectionState";
 
 type PhoneLinkSectionProps = {
   initialPhone?: string;
@@ -10,6 +13,7 @@ type PhoneLinkSectionProps = {
   onBusyChange?: (busy: boolean) => void;
   mode?: "link" | "verify-only";
   fallbackToVerifyOnlyOnUnauthorized?: boolean;
+  isUserLoggedIn?: boolean | null;
 };
 
 export default function PhoneLinkSection({
@@ -19,6 +23,7 @@ export default function PhoneLinkSection({
   onBusyChange,
   mode = "link",
   fallbackToVerifyOnlyOnUnauthorized = false,
+  isUserLoggedIn,
 }: PhoneLinkSectionProps) {
   const {
     phoneDisplay,
@@ -31,6 +36,7 @@ export default function PhoneLinkSection({
     otpSent,
     phoneLocked,
     busy,
+    linkingBlocked,
     sendDisabled,
     verifyDisabled,
     handlePhoneChange,
@@ -45,10 +51,17 @@ export default function PhoneLinkSection({
     onBusyChange,
     mode,
     fallbackToVerifyOnlyOnUnauthorized,
+    isUserLoggedIn,
   });
 
   return (
     <div className="space-y-4">
+      {linkingBlocked ? (
+        <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 ring-1 ring-amber-100">
+          {LOGIN_REQUIRED_LINK_MESSAGE}
+        </div>
+      ) : null}
+
       <div className="space-y-2">
         <div className="text-sm font-semibold text-gray-900">전화번호</div>
 

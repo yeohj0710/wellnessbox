@@ -5,6 +5,7 @@ import type {
   MutableRefObject,
   PointerEvent as ReactPointerEvent,
 } from "react";
+import ModalLayer from "@/components/common/modalLayer";
 import type { RecommendedProductActionConfirmDialog } from "./recommendedProductActions.controller-support";
 
 type RecommendedProductConfirmDialogProps = {
@@ -27,16 +28,17 @@ export default function RecommendedProductConfirmDialog({
   onConfirm,
 }: RecommendedProductConfirmDialogProps) {
   return (
-    <div
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40"
-      onClick={onCancel}
-    >
+    <ModalLayer>
       <div
-        className="relative m-3 w-[min(28rem,calc(100%-1.5rem))] rounded-2xl bg-white p-5 shadow-2xl ring-1 ring-slate-100"
-        ref={panelRef}
-        style={panelStyle}
-        onClick={(event) => event.stopPropagation()}
+        className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40"
+        onClick={onCancel}
       >
+        <div
+          className="relative m-3 w-[min(28rem,calc(100%-1.5rem))] rounded-2xl bg-white p-5 shadow-2xl ring-1 ring-slate-100"
+          ref={panelRef}
+          style={panelStyle}
+          onClick={(event) => event.stopPropagation()}
+        >
         <div
           onPointerDown={onDragPointerDown}
           className={`absolute left-0 right-0 top-0 h-10 touch-none ${
@@ -66,7 +68,8 @@ export default function RecommendedProductConfirmDialog({
             {dialog.confirmLabel}
           </button>
         </div>
+        </div>
       </div>
-    </div>
+    </ModalLayer>
   );
 }

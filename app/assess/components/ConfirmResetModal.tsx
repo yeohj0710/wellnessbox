@@ -1,6 +1,7 @@
 "use client";
 
 import { RefObject } from "react";
+import ModalLayer from "@/components/common/modalLayer";
 import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 interface Props {
@@ -15,14 +16,15 @@ export default function ConfirmResetModal({ open, cancelBtnRef, onCancel, onConf
     useDraggableModal(open, { resetOnOpen: true });
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true">
-      <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
-      <div
-        className="relative mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl ring-1 ring-black/5"
-        ref={panelRef}
-        style={panelStyle}
-        onClick={(e) => e.stopPropagation()}
-      >
+    <ModalLayer open={open}>
+      <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true">
+        <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
+        <div
+          className="relative mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl ring-1 ring-black/5"
+          ref={panelRef}
+          style={panelStyle}
+          onClick={(e) => e.stopPropagation()}
+        >
         <div
           onPointerDown={handleDragPointerDown}
           className={`touch-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
@@ -45,8 +47,8 @@ export default function ConfirmResetModal({ open, cancelBtnRef, onCancel, onConf
             처음부터
           </button>
         </div>
+        </div>
       </div>
-    </div>
+    </ModalLayer>
   );
 }
-

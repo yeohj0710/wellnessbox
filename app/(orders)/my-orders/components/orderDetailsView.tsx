@@ -1,7 +1,6 @@
-import OrderDetails from "@/components/order/orderDetails";
 import PhoneVerifyModal from "@/app/me/phoneVerifyModal";
-
-import { LookupConfig } from "../types";
+import OrderDetails from "@/components/order/orderDetails";
+import type { LookupConfig } from "../types";
 
 interface OrderDetailsViewProps {
   lookupConfig: LookupConfig;
@@ -31,10 +30,8 @@ export function OrderDetailsView({
   onBack,
 }: OrderDetailsViewProps) {
   return (
-    <div className="w-full px-3 pb-14 pt-8 sm:px-4">
-      <div className="mx-auto flex w-full max-w-[720px] flex-col gap-5 sm:gap-6">
-        {/* 주문조회 상단 전화번호 안내 카드는 중복이라 숨김 */}
-
+    <section className="mx-auto w-full max-w-[640px] px-4 pb-14 pt-8 sm:px-5">
+      <div className="flex flex-col gap-5">
         <OrderDetails
           phone={lookupConfig.phone}
           password={lookupConfig.password}
@@ -59,6 +56,6 @@ export function OrderDetailsView({
           }}
         />
       </div>
-    </div>
+    </section>
   );
 }

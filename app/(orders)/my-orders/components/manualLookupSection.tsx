@@ -1,5 +1,5 @@
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
-import { FormEvent } from "react";
+import type { FormEvent } from "react";
 import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
 
 interface ManualLookupSectionProps {
@@ -40,138 +40,140 @@ export function ManualLookupSection({
   return (
     <section
       id="manual-form"
-      className="rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-sm sm:p-6"
+      className="rounded-[1.6rem] border border-slate-200 bg-white p-5 shadow-[0_16px_36px_-34px_rgba(15,23,42,0.4)] sm:p-6"
     >
-      <div>
-        <h2 className="text-base font-bold text-slate-900">다른 전화번호로 조회</h2>
-        <p className="mt-1 text-sm leading-relaxed text-slate-600">
-          결제 때 입력한 번호와 주문 조회 비밀번호로 찾을 수 있어요.
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-black tracking-tight text-slate-950">
+            전화번호 + 비밀번호로 조회
+          </h2>
+          <p className="mt-1 text-sm text-slate-500">
+            결제할 때 쓴 정보로 찾아보세요.
+          </p>
+        </div>
+        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">
+          보조 조회
+        </span>
       </div>
 
-      <form className="mt-6 space-y-5" onSubmit={onSubmitManual}>
+      <form className="mt-5 space-y-5" onSubmit={onSubmitManual}>
         <div>
-          <h3 className="text-sm font-semibold text-slate-900">전화번호</h3>
-          <div className="mt-2 flex items-center gap-2">
-            <input
-              type="text"
-              autoComplete="tel"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={3}
-              value={phonePart1}
-              onChange={(e) => {
-                const newValue = e.target.value.replace(/\D/g, "");
-                onChangePhonePart1(newValue);
-                if (newValue.length === 3) {
-                  document.getElementById("phonePart2")?.focus();
-                }
-              }}
-              className={`h-11 w-14 rounded-xl border border-slate-300 px-2 text-center text-sm transition focus:outline-none focus:ring-2 focus:ring-sky-300 ${
-                phonePart1.length === 3
-                  ? "bg-slate-100 text-slate-500"
-                  : "text-slate-800"
-              }`}
-              placeholder="010"
-            />
-            <span className="text-slate-400">-</span>
-            <input
-              id="phonePart2"
-              type="text"
-              autoComplete="tel"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={4}
-              value={phonePart2}
-              onChange={(e) => {
-                const newValue = e.target.value.replace(/\D/g, "");
-                onChangePhonePart2(newValue);
-                if (newValue.length === 4) {
-                  document.getElementById("phonePart3")?.focus();
-                }
-              }}
-              className={`h-11 w-20 rounded-xl border border-slate-300 px-2 text-center text-sm transition focus:outline-none focus:ring-2 focus:ring-sky-300 ${
-                phonePart2.length === 4
-                  ? "bg-slate-100 text-slate-500"
-                  : "text-slate-800"
-              }`}
-              placeholder="1234"
-            />
-            <span className="text-slate-400">-</span>
-            <input
-              id="phonePart3"
-              type="text"
-              autoComplete="tel"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={4}
-              value={phonePart3}
-              onChange={(e) => {
-                const newValue = e.target.value.replace(/\D/g, "");
-                onChangePhonePart3(newValue);
-              }}
-              className={`h-11 w-20 rounded-xl border border-slate-300 px-2 text-center text-sm transition focus:outline-none focus:ring-2 focus:ring-sky-300 ${
-                phonePart3.length === 4
-                  ? "bg-slate-100 text-slate-500"
-                  : "text-slate-800"
-              }`}
-              placeholder="5678"
-            />
+          <label className="text-sm font-semibold text-slate-900">
+            전화번호
+          </label>
+
+          <div className="mt-2 overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-sm transition focus-within:border-sky-400 focus-within:ring-4 focus-within:ring-sky-100">
+            <div className="grid grid-cols-[4.4rem_1px_1fr_1px_1fr] items-center">
+              <input
+                type="text"
+                autoComplete="tel"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={3}
+                value={phonePart1}
+                onChange={(event) => {
+                  const nextValue = event.target.value.replace(/\D/g, "");
+                  onChangePhonePart1(nextValue);
+                  if (nextValue.length === 3) {
+                    document.getElementById("phonePart2")?.focus();
+                  }
+                }}
+                className="h-12 w-full border-0 bg-transparent px-3 text-center text-sm font-semibold text-slate-800 outline-none"
+                placeholder="010"
+              />
+              <div className="h-6 bg-slate-200" />
+              <input
+                id="phonePart2"
+                type="text"
+                autoComplete="tel"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={4}
+                value={phonePart2}
+                onChange={(event) => {
+                  const nextValue = event.target.value.replace(/\D/g, "");
+                  onChangePhonePart2(nextValue);
+                  if (nextValue.length === 4) {
+                    document.getElementById("phonePart3")?.focus();
+                  }
+                }}
+                className="h-12 w-full border-0 bg-transparent px-3 text-center text-sm font-semibold text-slate-800 outline-none"
+                placeholder="1234"
+              />
+              <div className="h-6 bg-slate-200" />
+              <input
+                id="phonePart3"
+                type="text"
+                autoComplete="tel"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={4}
+                value={phonePart3}
+                onChange={(event) => {
+                  const nextValue = event.target.value.replace(/\D/g, "");
+                  onChangePhonePart3(nextValue);
+                }}
+                className="h-12 w-full border-0 bg-transparent px-3 text-center text-sm font-semibold text-slate-800 outline-none"
+                placeholder="5678"
+              />
+            </div>
           </div>
+
           {isPhoneComplete && manualPhoneDisplay ? (
-            <p className="mt-1 text-xs text-slate-500">{manualPhoneDisplay}</p>
+            <p className="mt-2 text-xs text-slate-500">{manualPhoneDisplay}</p>
           ) : null}
         </div>
 
         <div>
-          <h3 className="text-sm font-semibold text-slate-900">주문 조회 비밀번호</h3>
+          <label className="text-sm font-semibold text-slate-900">
+            주문 조회 비밀번호
+          </label>
+
           <div className="relative mt-2">
             <input
               type={showPw ? "text" : "password"}
               autoComplete="current-password"
               value={password}
-              onChange={(e) => onChangePassword(e.target.value)}
-              placeholder="주문 시 입력한 비밀번호"
-              className="h-11 w-full rounded-xl border border-slate-300 px-3 pr-10 text-slate-800 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+              onChange={(event) => onChangePassword(event.target.value)}
+              placeholder="결제할 때 입력한 비밀번호"
+              className="h-12 w-full rounded-2xl border border-slate-300 px-4 pr-11 text-slate-800 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
               disabled={loading}
             />
             <button
               type="button"
               onClick={onToggleShowPw}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 hover:bg-slate-100"
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
               aria-label={showPw ? "비밀번호 숨기기" : "비밀번호 보기"}
               tabIndex={-1}
             >
               {showPw ? (
-                <EyeSlashIcon className="h-5 w-5 text-slate-600" />
+                <EyeSlashIcon className="h-5 w-5" />
               ) : (
-                <EyeIcon className="h-5 w-5 text-slate-600" />
+                <EyeIcon className="h-5 w-5" />
               )}
             </button>
           </div>
         </div>
 
-        <div className="pt-1">
-          <button
-            type="submit"
-            className={`h-11 w-full rounded-xl bg-slate-900 text-sm font-semibold text-white transition hover:bg-slate-800 ${
-              loading ? "cursor-not-allowed opacity-60" : ""
-            }`}
-            disabled={loading}
-          >
-            {loading ? (
-              <InlineSpinnerLabel label="주문 조회 중" />
-            ) : (
-              "입력한 정보로 주문 조회"
-            )}
-          </button>
-        </div>
-
         {error ? (
-          <p className="text-sm text-rose-600" role="alert">
+          <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-600" role="alert">
             {error}
           </p>
         ) : null}
+
+        <button
+          type="submit"
+          className={`inline-flex h-12 w-full items-center justify-center rounded-2xl bg-slate-900 text-sm font-semibold text-white transition hover:bg-slate-800 ${
+            loading ? "cursor-not-allowed opacity-60" : ""
+          }`}
+          disabled={loading}
+        >
+          {loading ? (
+            <InlineSpinnerLabel label="주문 조회 중" />
+          ) : (
+            "입력한 정보로 조회"
+          )}
+        </button>
       </form>
     </section>
   );
