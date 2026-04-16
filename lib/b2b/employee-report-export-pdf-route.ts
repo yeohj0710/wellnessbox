@@ -20,6 +20,7 @@ import { noStoreJson } from "@/lib/server/no-store";
 import { requireAdminSession, requireB2bEmployeeToken } from "@/lib/server/route-auth";
 
 type EmployeeReportPdfMode = "web" | "legacy";
+const DEFAULT_WEB_PDF_CAPTURE_WIDTH_PX = 760;
 const B2B_EMPLOYEE_REPORT_ADMIN_ONLY_CODE = "B2B_REPORT_ADMIN_ONLY";
 const B2B_EMPLOYEE_REPORT_ADMIN_ONLY_ERROR =
   "현재 건강 레포트는 관리자만 열람할 수 있습니다. 문의: contact@wellnessbox.kr";
@@ -73,6 +74,13 @@ function buildPdfFilename(payload: unknown, periodKey: string) {
   const employeeLabel = normalizeFilenameToken(reportPayload?.meta?.employeeName, "직원");
   const periodLabel = normalizeFilenameToken(reportPayload?.meta?.periodKey, periodKey);
   return `웰니스박스_건강리포트_${employeeLabel}_${periodLabel}.pdf`;
+}
+
+function buildPdfDocumentTitle(payload: unknown, periodKey: string) {
+  const reportPayload = payload as ReportSummaryPayload | null | undefined;
+  const employeeLabel = normalizeFilenameToken(reportPayload?.meta?.employeeName, "직원");
+  const periodLabel = normalizeFilenameToken(reportPayload?.meta?.periodKey, periodKey);
+  return `웰니스박스 건강리포트 | ${employeeLabel} | ${periodLabel}`;
 }
 
 async function runLegacyEmployeeReportPdfExport(input: {
@@ -173,20 +181,22 @@ async function runWebEmployeeReportPdfExport(input: {
   userAgent: string | null;
 }) {
   const origin = resolveRequestOrigin(input.req);
+  const effectiveCaptureWidthPx = input.captureWidthPx ?? DEFAULT_WEB_PDF_CAPTURE_WIDTH_PX;
   const exportViewUrl = new URL("/employee-report/export-view", origin);
   exportViewUrl.searchParams.set("period", input.periodKey);
-  if (input.captureWidthPx) {
-    exportViewUrl.searchParams.set("w", String(input.captureWidthPx));
-  }
+  exportViewUrl.searchParams.set("w", String(effectiveCaptureWidthPx));
   if (input.captureViewportWidthPx) {
     exportViewUrl.searchParams.set("vw", String(input.captureViewportWidthPx));
   }
+  const pdfFilename = buildPdfFilename(input.reportPayload, input.periodKey);
+  const pdfDocumentTitle = buildPdfDocumentTitle(input.reportPayload, input.periodKey);
 
   const conversion = await exportPdfFromWebRoute({
     url: exportViewUrl.toString(),
     cookieHeader: input.req.headers.get("cookie"),
     waitForTestId: "report-capture-surface",
     viewportWidthPx: input.captureViewportWidthPx,
+    documentTitle: pdfDocumentTitle,
   });
   if (!conversion.ok) {
     const engineUnavailable = shouldReturnInstallGuide(conversion.reason);
@@ -216,7 +226,6 @@ async function runWebEmployeeReportPdfExport(input: {
     );
   }
 
-  const pdfFilename = buildPdfFilename(input.reportPayload, input.periodKey);
   await logB2bEmployeeAccess({
     employeeId: input.employeeId,
     action: "report_export_pdf",

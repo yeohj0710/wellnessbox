@@ -5,6 +5,7 @@ import path from "path";
 import { spawn } from "child_process";
 import type { LayoutDocument } from "@/lib/b2b/export/layout-types";
 import { buildLayoutHtml } from "@/lib/b2b/export/layout-html";
+import { launchPlaywrightChromium } from "@/lib/b2b/export/playwright-runtime";
 
 const A4_WIDTH_PX = 794;
 const A4_HEIGHT_PX = 1123;
@@ -98,32 +99,16 @@ function toErrorReason(error: unknown, fallback: string) {
     : fallback;
 }
 
-async function loadPlaywrightModule() {
-  try {
-    return await import("playwright");
-  } catch {
-    return null;
-  }
-}
-
 async function tryConvertByPlaywright(layout: LayoutDocument) {
-  const playwright = await loadPlaywrightModule();
-  if (!playwright?.chromium) {
+  const launched = await launchPlaywrightChromium();
+  if (!launched.ok) {
     return {
       ok: false as const,
-      reason: "Playwright is not available",
+      reason: launched.reason,
     };
   }
 
-  let browser: any;
-  try {
-    browser = await playwright.chromium.launch({ headless: true });
-  } catch (error) {
-    return {
-      ok: false as const,
-      reason: toErrorReason(error, "Playwright browser launch failed"),
-    };
-  }
+  const { browser } = launched;
   try {
     const page = await browser.newPage();
     await page.setViewportSize({

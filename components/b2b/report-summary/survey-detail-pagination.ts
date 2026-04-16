@@ -5,21 +5,21 @@ import type {
 } from "./SurveyDetailPages";
 import { hasSurveyDetailPageContent } from "./SurveyDetailPages";
 
-const FIRST_PAGE_SURVEY_CONTENT_UNITS = 860;
-const DETAIL_PAGE_SURVEY_CONTENT_UNITS = 1380;
+const FIRST_PAGE_SURVEY_CONTENT_UNITS = 840;
+const DETAIL_PAGE_SURVEY_CONTENT_UNITS = 1320;
 const ROUTINE_CARD_BASE_UNITS = 84;
-const ROUTINE_ROW_BASE_UNITS = 36;
+const ROUTINE_ROW_BASE_UNITS = 38;
 const SECTION_CARD_BASE_UNITS = 90;
-const SECTION_GROUP_BASE_UNITS = 22;
-const SECTION_ROW_BASE_UNITS = 74;
+const SECTION_GROUP_BASE_UNITS = 12;
+const SECTION_ROW_BASE_UNITS = 76;
 const SUPPLEMENT_CARD_BASE_UNITS = 98;
 const SUPPLEMENT_ROW_BASE_UNITS = 58;
 const ROUTINE_ROW_CHUNK_MAX_CHARS = 134;
-const SECTION_RECOMMENDATION_CHUNK_MAX_CHARS = 156;
+const SECTION_RECOMMENDATION_CHUNK_MAX_CHARS = 112;
 const SUPPLEMENT_PARAGRAPH_CHUNK_MAX_CHARS = 180;
 const SUPPLEMENT_PARAGRAPHS_PER_ROW = 1;
 const SUPPLEMENT_NUTRIENTS_PER_ROW = 6;
-const SUPPLEMENT_ROW_SAFETY_UNITS = 16;
+const SUPPLEMENT_ROW_SAFETY_UNITS = 18;
 
 function estimateTextUnits(text: string, charsPerUnit: number) {
   const normalized = text.trim();
@@ -120,16 +120,16 @@ function resolveSectionGroupKey(line: SectionAdviceLine) {
 }
 
 function estimateRoutineRowUnits(line: string) {
-  return ROUTINE_ROW_BASE_UNITS + estimateWrappedTextUnits(line, 38, 18);
+  return ROUTINE_ROW_BASE_UNITS + estimateWrappedTextUnits(line, 34, 19);
 }
 
 function estimateSectionAdviceRowUnits(line: SectionAdviceLine) {
   const recommendationWeightMultiplier = line.continuation ? 1.08 : 1;
   return (
     SECTION_ROW_BASE_UNITS +
-    estimateWrappedTextUnits(line.questionText, 36, 17) +
-    estimateWrappedTextUnits(line.answerText, 36, 15) +
-    estimateWrappedTextUnits(line.recommendation, 36, 17) * recommendationWeightMultiplier
+    estimateWrappedTextUnits(line.questionText, 34, 18) +
+    estimateWrappedTextUnits(line.answerText, 34, 16) +
+    estimateWrappedTextUnits(line.recommendation, 34, 18) * recommendationWeightMultiplier
   );
 }
 
@@ -137,7 +137,7 @@ function estimateSupplementRowUnits(row: SupplementRow) {
   const headingUnits = row.showSectionTitle ? 38 : 26;
   const continuationUnits = row.continuation ? 12 : 0;
   const paragraphUnits = row.paragraphs.reduce((sum, paragraph) => {
-    return sum + estimateWrappedTextUnits(paragraph, 36, 18);
+    return sum + estimateWrappedTextUnits(paragraph, 34, 18);
   }, 0);
   const nutrientCount = row.recommendedNutrients.length;
   const nutrientRows =

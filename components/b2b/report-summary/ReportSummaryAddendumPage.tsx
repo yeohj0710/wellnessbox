@@ -4,7 +4,6 @@ import type { ReportSummaryAddendumPageModel } from "./detail-data-model";
 
 type ReportSummaryAddendumPageProps = {
   pageNumber: number;
-  metaEmployeeName: string;
   addendum: ReportSummaryAddendumPageModel;
   isContinuation?: boolean;
 };
@@ -12,11 +11,17 @@ type ReportSummaryAddendumPageProps = {
 export default function ReportSummaryAddendumPage(
   props: ReportSummaryAddendumPageProps
 ) {
-  const { pageNumber, metaEmployeeName, addendum, isContinuation = false } = props;
-  const title = isContinuation ? "패키지 제품 정보" : "약사 코멘트와 패키지 구성";
-  const subtitle = isContinuation
-    ? "앞 페이지에 이어 이번 달 패키지 제품 정보를 계속 확인하세요."
-    : "상담 요약과 이번 달 패키지 제품 정보를 마지막 페이지에 정리했습니다.";
+  const { pageNumber, addendum, isContinuation = false } = props;
+  const title = "약사 코멘트";
+  const subtitle = addendum.consultationSummary
+    ? isContinuation
+      ? "이전 페이지에 이어 담당 약사의 코멘트를 계속 확인하세요."
+      : "담당 약사의 코멘트를 읽기 편한 흐름으로 정리했습니다."
+    : "필요한 안내를 이어서 확인하세요.";
+  const commentParagraphs = addendum.consultationSummary
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
 
   return (
     <section
@@ -31,16 +36,25 @@ export default function ReportSummaryAddendumPage(
 
       <div className={styles.reportSecondStack}>
         {addendum.consultationSummary ? (
-          <article className={styles.reportDataCard}>
-            <h3 className={styles.reportDataTitle}>약사 코멘트</h3>
-            <p className={styles.reportBlockLead}>{addendum.consultationSummary}</p>
+          <article className={styles.reportPharmacistCommentCard}>
+            <p className={styles.reportPharmacistCommentEyebrow}>담당 약사 코멘트</p>
+            <div className={styles.reportPharmacistCommentBody}>
+              {commentParagraphs.map((paragraph, index) => (
+                <p
+                  key={`pharmacist-comment-${pageNumber}-${index + 1}`}
+                  className={styles.reportPharmacistCommentParagraph}
+                >
+                  {paragraph}
+                </p>
+              ))}
+            </div>
           </article>
         ) : null}
 
         {addendum.packagedProducts.length > 0 ? (
           <article className={styles.reportDataCard}>
             <div className={styles.reportDataHeadRow}>
-              <h3 className={styles.reportDataTitle}>이번 패키지 제품 정보</h3>
+              <h3 className={styles.reportDataTitle}>패키지 구성</h3>
             </div>
             <div className={styles.reportPackagedProductGrid}>
               {addendum.packagedProducts.map((product) => (
@@ -95,11 +109,6 @@ export default function ReportSummaryAddendumPage(
             </div>
           </article>
         ) : null}
-      </div>
-
-      <div className={styles.reportFinalCommentFooter}>
-        <span>맞춤 안내 대상</span>
-        <strong>{metaEmployeeName}</strong>
       </div>
     </section>
   );

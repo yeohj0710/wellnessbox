@@ -134,7 +134,7 @@ export default function ColumnHomeClient({
 
   return (
     <section className="min-h-[calc(100vh-7rem)] w-full bg-[radial-gradient(circle_at_top_left,_rgba(220,245,236,0.68)_0%,_#f8fafc_34%,_#ffffff_100%)]">
-      <section className="mx-auto w-full max-w-[640px] px-4 pb-20 pt-6 sm:px-6 sm:pt-10">
+      <section className="mx-auto w-full max-w-[640px] px-4 pb-20 pt-6 sm:px-6 md:max-w-[760px] sm:pt-10 xl:max-w-[960px]">
         <ColumnHomeHeroSection
           featuredColumn={featuredColumn}
           text={TEXT}

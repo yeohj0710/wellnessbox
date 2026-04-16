@@ -53,11 +53,11 @@ export default function CSectionWrapper({
             처음부터
           </button>
         </div>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
           <h1 className="break-keep text-2xl font-extrabold text-gray-900 sm:flex-none sm:text-3xl sm:whitespace-nowrap">
             세부 진단
           </h1>
-          <div className="w-full sm:min-w-0 sm:flex-1">
+          <div className="w-full max-w-[22rem] sm:min-w-0 sm:flex-none">
             <div className="flex items-center justify-between text-sm text-gray-600">
               <span>진행도</span>
               {/* <span className="tabular-nums notranslate" translate="no">

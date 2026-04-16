@@ -15,6 +15,7 @@ import {
   shouldIgnoreOverlap,
   toBounds,
 } from "@/lib/b2b/export/validation-geometry";
+import { launchPlaywrightChromium } from "@/lib/b2b/export/playwright-runtime";
 
 export type LayoutValidationResult = {
   ok: boolean;
@@ -193,14 +194,6 @@ function runtimeValidateByHeuristic(layout: LayoutDocument) {
   return issues;
 }
 
-async function loadPlaywrightModule() {
-  try {
-    return await import("playwright");
-  } catch {
-    return null;
-  }
-}
-
 function toErrorReason(error: unknown, fallback: string) {
   if (error instanceof Error && error.message.trim().length > 0) {
     return error.message;
@@ -209,20 +202,16 @@ function toErrorReason(error: unknown, fallback: string) {
 }
 
 async function runtimeValidateByPlaywright(layout: LayoutDocument) {
-  const playwright = await loadPlaywrightModule();
-  if (!playwright?.chromium) return null;
-
-  let browser: any;
-  try {
-    browser = await playwright.chromium.launch({ headless: true });
-  } catch (error) {
-    const reason = toErrorReason(error, "Playwright browser launch failed");
+  const launched = await launchPlaywrightChromium();
+  if (!launched.ok) {
+    const reason = launched.reason;
     console.warn("[b2b][layout-validation] playwright runtime validation skipped", {
       reason,
       fallback: "heuristic",
     });
     return null;
   }
+  const { browser } = launched;
 
   try {
     const page = await browser.newPage();

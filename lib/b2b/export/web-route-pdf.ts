@@ -14,25 +14,19 @@ import {
   applyWebRoutePdfRenderOverrides,
   resolveWebRouteReportPageSize,
 } from "@/lib/b2b/export/web-route-pdf-page";
+import { launchPlaywrightChromium } from "@/lib/b2b/export/playwright-runtime";
 
 type ExportPdfFromWebRouteInput = {
   url: string;
   cookieHeader: string | null;
   waitForTestId?: string;
   viewportWidthPx?: number | null;
+  documentTitle?: string | null;
 };
 
 type ExportPdfFromWebRouteResult =
   | { ok: true; pdfBuffer: Buffer }
   | { ok: false; reason: string };
-
-async function loadPlaywrightModule() {
-  try {
-    return await import("playwright");
-  } catch {
-    return null;
-  }
-}
 
 function toErrorReason(error: unknown, fallback: string) {
   if (error instanceof Error && error.message.trim().length > 0) {
@@ -77,6 +71,7 @@ async function capturePdfFromWebRoute(input: {
   cookieHeader: string | null;
   waitForTestId?: string;
   viewportWidthPx?: number | null;
+  documentTitle?: string | null;
   deviceScaleFactor: number;
 }): Promise<CapturePdfFromWebRouteResult> {
   try {
@@ -121,6 +116,11 @@ async function capturePdfFromWebRoute(input: {
       const reportPageSize = await resolveWebRouteReportPageSize(page);
       const pageMarginPx = resolveWebRoutePdfPageMarginPx();
       await applyWebRoutePdfRenderOverrides(page, reportPageSize, pageMarginPx);
+      if (typeof input.documentTitle === "string" && input.documentTitle.trim().length > 0) {
+        await page.evaluate((title: string) => {
+          document.title = title;
+        }, input.documentTitle.trim());
+      }
       await waitForFontsAndFrames(page);
       const pdfBuffer = await buildPdfFromWebPage(page);
       return {
@@ -142,23 +142,14 @@ async function capturePdfFromWebRoute(input: {
 export async function exportPdfFromWebRoute(
   input: ExportPdfFromWebRouteInput
 ): Promise<ExportPdfFromWebRouteResult> {
-  const playwright = await loadPlaywrightModule();
-  if (!playwright?.chromium) {
+  const launched = await launchPlaywrightChromium();
+  if (!launched.ok) {
     return {
       ok: false,
-      reason: "Playwright is not available",
+      reason: launched.reason,
     };
   }
-
-  let browser: any;
-  try {
-    browser = await playwright.chromium.launch({ headless: true });
-  } catch (error) {
-    return {
-      ok: false,
-      reason: toErrorReason(error, "Playwright browser launch failed"),
-    };
-  }
+  const { browser } = launched;
 
   try {
     const viewportWidth = normalizeWebRoutePdfViewportWidthPx(input.viewportWidthPx);
@@ -169,6 +160,7 @@ export async function exportPdfFromWebRoute(
       cookieHeader: input.cookieHeader,
       waitForTestId: input.waitForTestId,
       viewportWidthPx: viewportWidth,
+      documentTitle: input.documentTitle,
       deviceScaleFactor: primaryScaleFactor,
     });
     if (!primary.ok) {
@@ -196,6 +188,7 @@ export async function exportPdfFromWebRoute(
       cookieHeader: input.cookieHeader,
       waitForTestId: input.waitForTestId,
       viewportWidthPx: viewportWidth,
+      documentTitle: input.documentTitle,
       deviceScaleFactor: WEB_ROUTE_PDF_MIN_DEVICE_SCALE_FACTOR,
     });
     if (!compact.ok) {

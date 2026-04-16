@@ -121,7 +121,6 @@ export default function ReportSummaryCards(props: {
         <ReportSummaryAddendumPage
           key={`report-addendum-${index + 1}`}
           pageNumber={addendumPageStart + index}
-          metaEmployeeName={metaEmployeeName}
           addendum={addendum}
           isContinuation={index > 0}
         />

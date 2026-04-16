@@ -3,6 +3,9 @@ import "server-only";
 const MIN_REPORT_PAGE_SIZE_PX = 240;
 const MAX_REPORT_PAGE_SIZE_PX = 8192;
 const REPORT_PAGE_SIZE_PADDING_PX = 2;
+const A4_PAGE_WIDTH_PX = 794;
+const A4_PAGE_HEIGHT_PX = 1123;
+const MAX_PDF_SAFE_MARGIN_PX = 40;
 
 export type WebRouteReportPageSize = {
   widthPx: number;
@@ -80,13 +83,22 @@ export async function applyWebRoutePdfRenderOverrides(
   reportPageSize: WebRouteReportPageSize,
   pageMarginPx: number
 ) {
-  const pageWidthPx = clampReportPageSizePx(
-    reportPageSize.widthPx + pageMarginPx * 2,
-    reportPageSize.widthPx
+  const safeHorizontalMarginPx = Math.max(
+    0,
+    Math.min(MAX_PDF_SAFE_MARGIN_PX, Math.round(pageMarginPx))
   );
-  const pageHeightPx = clampReportPageSizePx(
-    reportPageSize.heightPx + pageMarginPx * 2,
-    reportPageSize.heightPx
+  const safeVerticalMarginPx = Math.max(
+    0,
+    Math.min(
+      MAX_PDF_SAFE_MARGIN_PX,
+      Math.max(safeHorizontalMarginPx + 10, Math.round(pageMarginPx + 12))
+    )
+  );
+  const contentWidthPx = A4_PAGE_WIDTH_PX - safeHorizontalMarginPx * 2;
+  const contentHeightPx = A4_PAGE_HEIGHT_PX - safeVerticalMarginPx * 2;
+  const baseScaleValue = Math.min(
+    contentWidthPx / reportPageSize.widthPx,
+    contentHeightPx / reportPageSize.heightPx
   );
 
   await page.evaluate(() => {
@@ -110,16 +122,72 @@ export async function applyWebRoutePdfRenderOverrides(
     }
   });
 
+  await page.evaluate(
+    ({
+      pageWidthPx,
+      pageHeightPx,
+      pageMarginInlinePx: safeMarginInline,
+      pageMarginBlockPx: safeMarginBlock,
+      baseScaleValue: baseScale,
+    }: {
+      pageWidthPx: number;
+      pageHeightPx: number;
+      pageMarginInlinePx: number;
+      pageMarginBlockPx: number;
+      baseScaleValue: number;
+    }) => {
+      const frames = Array.from(
+        document.querySelectorAll<HTMLElement>(
+          '[data-report-export-root="1"] [data-testid="report-capture-surface"] [data-report-page-frame="1"]'
+        )
+      );
+
+      for (const frame of frames) {
+        const reportPage = frame.querySelector<HTMLElement>("[data-report-page]");
+        if (!reportPage) continue;
+
+        reportPage.style.setProperty("--report-page-print-scale", String(baseScale));
+        const horizontalOverflow =
+          reportPage.scrollWidth > 0 ? frame.clientWidth / reportPage.scrollWidth : 1;
+        const verticalOverflow =
+          reportPage.scrollHeight > 0 ? frame.clientHeight / reportPage.scrollHeight : 1;
+        const overflowScale = Math.min(1, horizontalOverflow, verticalOverflow);
+        const finalScale = Math.max(0.58, Math.min(1.18, baseScale * overflowScale));
+
+        reportPage.style.setProperty("--report-page-print-scale", String(finalScale));
+      }
+
+      document.documentElement.style.width = `${pageWidthPx}px`;
+      document.documentElement.style.minWidth = `${pageWidthPx}px`;
+      document.documentElement.style.minHeight = `${pageHeightPx}px`;
+      document.body.style.width = `${pageWidthPx}px`;
+      document.body.style.minWidth = `${pageWidthPx}px`;
+      document.body.style.minHeight = `${pageHeightPx}px`;
+      document.body.style.margin = "0";
+      document.body.style.padding = "0";
+      document.body.style.background = "#ffffff";
+      document.body.style.setProperty("--report-page-frame-padding-inline", `${safeMarginInline}px`);
+      document.body.style.setProperty("--report-page-frame-padding-block", `${safeMarginBlock}px`);
+    },
+    {
+      pageWidthPx: A4_PAGE_WIDTH_PX,
+      pageHeightPx: A4_PAGE_HEIGHT_PX,
+      pageMarginInlinePx: safeHorizontalMarginPx,
+      pageMarginBlockPx: safeVerticalMarginPx,
+      baseScaleValue,
+    }
+  );
+
   await page.addStyleTag({
     content: `
       @page {
-        size: ${pageWidthPx}px ${pageHeightPx}px;
+        size: A4;
         margin: 0;
       }
 
       html, body {
-        width: ${pageWidthPx}px !important;
-        min-width: ${pageWidthPx}px !important;
+        width: ${A4_PAGE_WIDTH_PX}px !important;
+        min-width: ${A4_PAGE_WIDTH_PX}px !important;
         margin: 0 !important;
         padding: 0 !important;
         background: #ffffff !important;
@@ -131,29 +199,31 @@ export async function applyWebRoutePdfRenderOverrides(
       }
 
       [data-report-export-root="1"] {
-        width: ${pageWidthPx}px !important;
-        min-width: ${pageWidthPx}px !important;
+        width: ${A4_PAGE_WIDTH_PX}px !important;
+        min-width: ${A4_PAGE_WIDTH_PX}px !important;
         min-height: 0 !important;
         margin: 0 !important;
         padding: 0 !important;
       }
 
       [data-testid="report-capture-surface"] {
-        width: ${pageWidthPx}px !important;
-        max-width: ${pageWidthPx}px !important;
+        width: ${A4_PAGE_WIDTH_PX}px !important;
+        max-width: ${A4_PAGE_WIDTH_PX}px !important;
         margin: 0 !important;
         padding: 0 !important;
         display: block !important;
       }
 
       [data-report-export-root="1"] [data-testid="report-capture-surface"] [data-report-page-frame="1"] {
-        width: ${pageWidthPx}px !important;
-        min-height: ${pageHeightPx}px !important;
-        height: ${pageHeightPx}px !important;
-        max-height: ${pageHeightPx}px !important;
+        width: ${A4_PAGE_WIDTH_PX}px !important;
+        min-height: ${A4_PAGE_HEIGHT_PX}px !important;
+        height: ${A4_PAGE_HEIGHT_PX}px !important;
+        max-height: ${A4_PAGE_HEIGHT_PX}px !important;
         box-sizing: border-box !important;
         margin: 0 !important;
-        padding: ${pageMarginPx}px 0 !important;
+        padding:
+          var(--report-page-frame-padding-block, 0px)
+          var(--report-page-frame-padding-inline, 0px) !important;
         display: flex !important;
         align-items: flex-start !important;
         justify-content: center !important;
@@ -174,6 +244,8 @@ export async function applyWebRoutePdfRenderOverrides(
         max-height: ${reportPageSize.heightPx}px !important;
         margin: 0 !important;
         overflow: hidden !important;
+        transform: scale(var(--report-page-print-scale, 1)) !important;
+        transform-origin: top center !important;
       }
 
       [data-report-export-root="1"] [data-testid="report-capture-surface"] [data-report-page-frame="1"] + [data-report-page-frame="1"] {

@@ -3,6 +3,7 @@ import "server-only";
 import PptxGenJS from "pptxgenjs";
 import type { LayoutDocument, LayoutNode } from "@/lib/b2b/export/layout-types";
 import { buildLayoutHtml, MM_TO_PX } from "@/lib/b2b/export/layout-html";
+import { launchPlaywrightChromium } from "@/lib/b2b/export/playwright-runtime";
 import { REPORT_PPTX_FONT_FACE } from "@/lib/b2b/export/render-style";
 
 function mmToInch(mm: number) {
@@ -36,14 +37,6 @@ function nodeToText(slide: PptxGenJS.Slide, node: LayoutNode) {
   });
 }
 
-async function loadPlaywrightModule() {
-  try {
-    return await import("playwright");
-  } catch {
-    return null;
-  }
-}
-
 function toErrorReason(error: unknown, fallback: string) {
   if (error instanceof Error && error.message.trim().length > 0) {
     return error.message;
@@ -60,23 +53,14 @@ type RasterizedPagesResult =
   | { ok: false; reason: string };
 
 async function renderLayoutToPngDataUris(layout: LayoutDocument): Promise<RasterizedPagesResult> {
-  const playwright = await loadPlaywrightModule();
-  if (!playwright?.chromium) {
+  const launched = await launchPlaywrightChromium();
+  if (!launched.ok) {
     return {
       ok: false,
-      reason: "Playwright is not available",
+      reason: launched.reason,
     };
   }
-
-  let browser: any;
-  try {
-    browser = await playwright.chromium.launch({ headless: true });
-  } catch (error) {
-    return {
-      ok: false,
-      reason: toErrorReason(error, "Playwright browser launch failed"),
-    };
-  }
+  const { browser } = launched;
   try {
     const viewportWidth = Math.max(
       1,
