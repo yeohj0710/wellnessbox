@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const path = require("path");
+const fs = require("fs");
 const { spawnSync } = require("child_process");
 
 function isTruthy(value) {
@@ -17,8 +18,15 @@ function resolveInstallMode() {
     };
   }
 
+  const isVercel = isTruthy(process.env.VERCEL) || String(process.env.VERCEL_ENV || "").trim().length > 0;
+  if (isVercel) {
+    return {
+      shouldInstall: false,
+      reason: "vercel-skip",
+    };
+  }
+
   const shouldAutoInstall =
-    isTruthy(process.env.VERCEL) ||
     isTruthy(process.env.CI) ||
     process.env.NODE_ENV === "production";
 
@@ -28,9 +36,28 @@ function resolveInstallMode() {
   };
 }
 
+function cleanupLocalBrowsers() {
+  const candidates = [
+    path.join(process.cwd(), "node_modules", "playwright-core", ".local-browsers"),
+    path.join(process.cwd(), "node_modules", "playwright", ".local-browsers"),
+  ];
+
+  for (const candidate of candidates) {
+    try {
+      fs.rmSync(candidate, { recursive: true, force: true });
+      console.log(`[playwright:install] removed cached browsers at ${candidate}`);
+    } catch (error) {
+      console.warn(
+        `[playwright:install] failed to remove cached browsers at ${candidate}: ${error.message}`
+      );
+    }
+  }
+}
+
 const installMode = resolveInstallMode();
 const shouldInstall = installMode.shouldInstall;
 if (!shouldInstall) {
+  cleanupLocalBrowsers();
   console.log(
     `[playwright:install] skipped (${installMode.reason}; set B2B_INSTALL_PLAYWRIGHT_CHROMIUM=1 to force install)`
   );

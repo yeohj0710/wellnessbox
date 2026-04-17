@@ -41,12 +41,8 @@ export function useRemoteUserContextSummary({
   enabled = true,
   overrides,
 }: UseRemoteUserContextSummaryParams) {
-  const [remoteResults, setRemoteResults] = useState<NormalizedAllResults | null>(
-    () => (enabled ? getCachedRemoteUserContext() : null)
-  );
-  const [loading, setLoading] = useState(
-    () => enabled && !getCachedRemoteUserContext()
-  );
+  const [remoteResults, setRemoteResults] = useState<NormalizedAllResults | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!enabled) {
