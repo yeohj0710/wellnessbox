@@ -521,6 +521,368 @@
   min-width: 118px;
 }
 
+.workflowOverview {
+  border-radius: 18px;
+  border: 1px solid #cfe0f6;
+  background:
+    radial-gradient(circle at 96% -12%, rgba(78, 145, 255, 0.16), transparent 40%),
+    linear-gradient(180deg, #fbfdff 0%, #f3f8ff 100%);
+  padding: 15px 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.workflowOverviewTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.workflowOverviewEyebrow {
+  margin: 0;
+  color: #3f6ba3;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.workflowOverviewTitle {
+  margin: 4px 0 0;
+  color: #14396f;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.workflowOverviewText {
+  margin: 6px 0 0;
+  color: #5b7598;
+  font-size: 13px;
+  line-height: 1.58;
+}
+
+.workflowCoreCount {
+  border-radius: 16px;
+  border: 1px solid #c8dbf8;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 12px 14px;
+  min-width: 132px;
+  display: grid;
+  gap: 2px;
+  justify-items: end;
+  box-shadow: 0 10px 18px rgba(15, 42, 92, 0.06);
+}
+
+.workflowCoreCount strong {
+  color: #14407b;
+  font-size: 26px;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.workflowCoreCount span {
+  color: #5b7698;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.workflowCoreBar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.workflowCorePill {
+  border-radius: 14px;
+  border: 1px solid #d3e0f3;
+  padding: 12px 13px;
+  display: grid;
+  gap: 4px;
+}
+
+.workflowCorePill strong {
+  color: #173c72;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.workflowCorePill span {
+  color: #56769e;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.workflowCorePillDone {
+  border-color: #b8e7cf;
+  background: linear-gradient(180deg, #effcf4 0%, #e7f8ee 100%);
+}
+
+.workflowCorePillActive {
+  border-color: #b7d0fb;
+  background: linear-gradient(180deg, #f5f9ff 0%, #ebf3ff 100%);
+}
+
+.workflowCorePillWarn {
+  border-color: #ffd8ad;
+  background: linear-gradient(180deg, #fff8ef 0%, #fff4e7 100%);
+}
+
+.workflowCorePillPending {
+  border-color: #d9e3f2;
+  background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+}
+
+.workflowBanner {
+  border-radius: 18px;
+  border: 1px solid #d4e0f2;
+  padding: 14px 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.workflowBannerTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.workflowBannerTitle {
+  margin: 0;
+  color: #15386f;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.workflowBannerText {
+  margin: 0;
+  color: #557196;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.workflowGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.workflowCard {
+  border-radius: 18px;
+  border: 1px solid #d6e1f2;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.workflowCardOn {
+  border-color: #bfe0cf;
+  background:
+    radial-gradient(circle at 100% -10%, rgba(16, 185, 129, 0.08), transparent 42%),
+    linear-gradient(180deg, #ffffff 0%, #f5fcf7 100%);
+}
+
+.workflowCardWarn {
+  border-color: #f2cfaa;
+  background:
+    radial-gradient(circle at 100% -10%, rgba(255, 183, 77, 0.12), transparent 40%),
+    linear-gradient(180deg, #ffffff 0%, #fffaf4 100%);
+}
+
+.workflowCardOff {
+  border-color: #d6e1f2;
+  background:
+    radial-gradient(circle at 100% -10%, rgba(78, 145, 255, 0.08), transparent 40%),
+    linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+}
+
+.workflowCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.workflowLabelBlock {
+  display: grid;
+  gap: 5px;
+}
+
+.workflowIndex {
+  width: fit-content;
+  border-radius: 999px;
+  border: 1px solid #cfe0f8;
+  background: rgba(255, 255, 255, 0.92);
+  color: #4a6c97;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.workflowCardTitle {
+  margin: 0;
+  color: #163a70;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.workflowLead {
+  margin: 0;
+  color: #163a70;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.55;
+}
+
+.workflowText {
+  margin: 0;
+  color: #5a7598;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.workflowStepList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.workflowStep {
+  border-radius: 14px;
+  border: 1px solid #d7e3f6;
+  padding: 10px 11px;
+  display: grid;
+  gap: 4px;
+  min-height: 78px;
+}
+
+.workflowStep strong {
+  color: #173a70;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.workflowStep span {
+  color: #607999;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.workflowStepDone {
+  border-color: #bde4cb;
+  background: linear-gradient(180deg, #effcf4 0%, #e7f8ee 100%);
+}
+
+.workflowStepCurrent {
+  border-color: #aecdff;
+  background: linear-gradient(180deg, #f3f8ff 0%, #e9f2ff 100%);
+  box-shadow: 0 10px 18px rgba(29, 88, 194, 0.08);
+}
+
+.workflowStepPending {
+  border-color: #d8e1ef;
+  background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+}
+
+.workflowStepError {
+  border-color: #ffd2c7;
+  background: linear-gradient(180deg, #fff7f5 0%, #fff0ed 100%);
+}
+
+.workflowActionStack {
+  display: grid;
+  gap: 8px;
+}
+
+.workflowMetaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.workflowMetaItem {
+  border-radius: 999px;
+  border: 1px solid #cfddf2;
+  background: rgba(255, 255, 255, 0.92);
+  color: #557298;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.workflowLiveRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.workflowLiveBadge {
+  border-radius: 999px;
+  border: 1px solid #b9d2fb;
+  background: #f2f7ff;
+  color: #225cbf;
+  padding: 6px 11px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.workflowLiveDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #2f7dff;
+  box-shadow: 0 0 0 0 rgba(47, 125, 255, 0.28);
+  animation: wb-live-dot-pulse 1.6s ease infinite;
+  flex: 0 0 auto;
+}
+
+.workflowReportCard {
+  border-radius: 18px;
+  border: 1px solid #d6e1f2;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.workflowReportTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.workflowReportSelector {
+  display: grid;
+  gap: 8px;
+}
+
+.workflowAuxRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  align-items: center;
+}
+
 .reportHeaderTop {
   display: flex;
   align-items: center;
@@ -774,16 +1136,19 @@
     0 12px 24px rgba(14, 37, 87, 0.08);
 }
 
-.reportCanvasBoard::-webkit-scrollbar {
+.reportCanvasBoard::-webkit-scrollbar,
+.embeddedSurveyViewport::-webkit-scrollbar {
   width: 10px;
 }
 
-.reportCanvasBoard::-webkit-scrollbar-track {
+.reportCanvasBoard::-webkit-scrollbar-track,
+.embeddedSurveyViewport::-webkit-scrollbar-track {
   border-radius: 999px;
   background: rgba(140, 167, 214, 0.18);
 }
 
-.reportCanvasBoard::-webkit-scrollbar-thumb {
+.reportCanvasBoard::-webkit-scrollbar-thumb,
+.embeddedSurveyViewport::-webkit-scrollbar-thumb {
   border-radius: 999px;
   border: 2px solid transparent;
   background-clip: padding-box;
@@ -800,6 +1165,25 @@
   max-width: 1120px;
   max-height: none;
   padding: 18px;
+}
+
+.reportCanvasBoardScrollable {
+  max-height: min(72vh, 980px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+}
+
+.embeddedSurveyViewport {
+  max-height: min(76vh, 1120px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+  padding-right: 4px;
 }
 
 .reportCaptureSurface {
@@ -4329,6 +4713,18 @@
   }
 }
 
+@keyframes wb-live-dot-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(47, 125, 255, 0.28);
+  }
+  70% {
+    box-shadow: 0 0 0 9px rgba(47, 125, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(47, 125, 255, 0);
+  }
+}
+
 @media (max-width: 768px) {
   .page {
     padding: 24px 18px 68px;
@@ -4422,6 +4818,29 @@
     justify-self: stretch;
   }
 
+  .workflowOverview {
+    padding: 12px;
+  }
+
+  .workflowCoreBar,
+  .workflowGrid,
+  .workflowStepList {
+    grid-template-columns: 1fr;
+  }
+
+  .workflowCoreCount {
+    width: 100%;
+    justify-items: start;
+  }
+
+  .workflowReportSelector {
+    gap: 6px;
+  }
+
+  .workflowAuxRow > * {
+    flex: 1 1 140px;
+  }
+
   .summarySecondaryActions > * {
     flex: 1 1 140px;
   }
@@ -4467,6 +4886,15 @@
   .reportCanvasBoardWide {
     max-width: 100%;
     padding: 8px;
+  }
+
+  .reportCanvasBoardScrollable {
+    max-height: min(68dvh, 760px);
+  }
+
+  .embeddedSurveyViewport {
+    max-height: min(72dvh, 920px);
+    padding-right: 0;
   }
 
   .reportCaptureSurface {

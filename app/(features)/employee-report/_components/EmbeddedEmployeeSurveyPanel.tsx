@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
+import styles from "@/components/b2b/B2bUx.module.css";
 import { loadWellnessTemplateForB2b } from "@/lib/wellness/data-loader";
 import type { WellnessSurveyQuestionForTemplate } from "@/lib/wellness/data-template-types";
 import { TEXT, CALCULATING_MESSAGES } from "@/app/survey/_lib/survey-page-copy";
@@ -453,62 +454,64 @@ export default function EmbeddedEmployeeSurveyPanel({
           </button>
         </div>
 
-        {phase === "calculating" ? (
-          <SurveyCalculatingPanel
-            title={TEXT.resultTitle}
-            message={CALCULATING_MESSAGES[calcMessageIndex]}
-            percent={calcPercent}
-          />
-        ) : phase === "result" ? (
-          <div className="rounded-3xl border border-cyan-200 bg-cyan-50/80 px-5 py-6 text-center">
-            <p className="text-base font-semibold text-cyan-800">
-              설문 제출이 완료되었습니다.
-            </p>
-            <p className="mt-2 text-sm text-cyan-700">
-              최신 리포트를 여는 중입니다.
-            </p>
-          </div>
-        ) : (
-          <SurveySectionPanel
-            text={{
-              commonSection: TEXT.commonSection,
-              sectionGuide: TEXT.sectionGuide,
-              restart: TEXT.restart,
-              progressBarLabel: TEXT.progressBarLabel,
-              sectionTransitionTitle: TEXT.sectionTransitionTitle,
-              sectionTransitionDesc: TEXT.sectionTransitionDesc,
-              commonBadge: TEXT.commonBadge,
-              requiredBadge: TEXT.requiredBadge,
-              optionalBadge: TEXT.optionalBadge,
-              optionalHint: TEXT.optionalHint,
-            }}
-            currentSectionIndex={currentSectionIndex}
-            currentSection={currentSection}
-            surveySections={surveySections}
-            progressPercent={progressPercent}
-            progressDoneCount={progressDisplayDoneCount}
-            progressTotalCount={progressTotalCount}
-            progressMessage={progressMessage}
-            isSectionTransitioning={isSectionTransitioning}
-            isCommonSurveySection={isCommonSurveySection}
-            hasPrevStep={hasPrevStep}
-            prevButtonLabel={prevButtonLabel}
-            nextButtonLabel={nextButtonLabel}
-            focusedQuestionKey={focusedQuestionKey}
-            errorQuestionKey={errorQuestionKey}
-            errorText={errorText}
-            onReset={handleOpenResetConfirm}
-            onMoveToSection={moveToSection}
-            onMovePreviousSection={handleMovePreviousSection}
-            onMoveNextSection={handleMoveNextSection}
-            onQuestionRef={setQuestionRef}
-            renderQuestionInput={renderQuestionInput}
-            resolveQuestionText={toDisplayQuestionText}
-            resolveQuestionHelpText={resolveQuestionHelpText}
-            isQuestionRequired={isQuestionEffectivelyRequired}
-            shouldShowQuestionOptionalHint={isOptionalSelectionQuestion}
-          />
-        )}
+        <div className={styles.embeddedSurveyViewport}>
+          {phase === "calculating" ? (
+            <SurveyCalculatingPanel
+              title={TEXT.resultTitle}
+              message={CALCULATING_MESSAGES[calcMessageIndex]}
+              percent={calcPercent}
+            />
+          ) : phase === "result" ? (
+            <div className="rounded-3xl border border-cyan-200 bg-cyan-50/80 px-5 py-6 text-center">
+              <p className="text-base font-semibold text-cyan-800">
+                설문 제출이 완료되었습니다.
+              </p>
+              <p className="mt-2 text-sm text-cyan-700">
+                최신 리포트를 여는 중입니다.
+              </p>
+            </div>
+          ) : (
+            <SurveySectionPanel
+              text={{
+                commonSection: TEXT.commonSection,
+                sectionGuide: TEXT.sectionGuide,
+                restart: TEXT.restart,
+                progressBarLabel: TEXT.progressBarLabel,
+                sectionTransitionTitle: TEXT.sectionTransitionTitle,
+                sectionTransitionDesc: TEXT.sectionTransitionDesc,
+                commonBadge: TEXT.commonBadge,
+                requiredBadge: TEXT.requiredBadge,
+                optionalBadge: TEXT.optionalBadge,
+                optionalHint: TEXT.optionalHint,
+              }}
+              currentSectionIndex={currentSectionIndex}
+              currentSection={currentSection}
+              surveySections={surveySections}
+              progressPercent={progressPercent}
+              progressDoneCount={progressDisplayDoneCount}
+              progressTotalCount={progressTotalCount}
+              progressMessage={progressMessage}
+              isSectionTransitioning={isSectionTransitioning}
+              isCommonSurveySection={isCommonSurveySection}
+              hasPrevStep={hasPrevStep}
+              prevButtonLabel={prevButtonLabel}
+              nextButtonLabel={nextButtonLabel}
+              focusedQuestionKey={focusedQuestionKey}
+              errorQuestionKey={errorQuestionKey}
+              errorText={errorText}
+              onReset={handleOpenResetConfirm}
+              onMoveToSection={moveToSection}
+              onMovePreviousSection={handleMovePreviousSection}
+              onMoveNextSection={handleMoveNextSection}
+              onQuestionRef={setQuestionRef}
+              renderQuestionInput={renderQuestionInput}
+              resolveQuestionText={toDisplayQuestionText}
+              resolveQuestionHelpText={resolveQuestionHelpText}
+              isQuestionRequired={isQuestionEffectivelyRequired}
+              shouldShowQuestionOptionalHint={isOptionalSelectionQuestion}
+            />
+          )}
+        </div>
       </section>
 
       <SurveyResetConfirmModal

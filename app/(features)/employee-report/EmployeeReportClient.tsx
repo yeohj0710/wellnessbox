@@ -25,6 +25,15 @@ import {
 } from "./_lib/client-utils.identity";
 import { formatDateTime, formatRelativeTime } from "./_lib/client-utils.format";
 
+type WorkflowTone = "on" | "warn" | "off";
+type WorkflowStepState = "done" | "current" | "pending" | "error";
+
+type WorkflowStepItem = {
+  label: string;
+  caption: string;
+  state: WorkflowStepState;
+};
+
 function syncStatusText(workspace: EmployeeWorkspaceResponse | null) {
   const sync = workspace?.sync;
   if (!sync) {
@@ -68,6 +77,14 @@ function syncStatusText(workspace: EmployeeWorkspaceResponse | null) {
         "백엔드에서 건강검진 데이터와 복약 이력을 수집하고 있습니다.",
     };
   }
+  if (sync.step === "report") {
+    return {
+      badge: "리포트 반영 중",
+      tone: "on" as const,
+      message:
+        "수집한 건강 데이터를 정리해서 현재 리포트에 반영하고 있습니다.",
+    };
+  }
   return {
     badge: "연동 준비 중",
     tone: "off" as const,
@@ -84,6 +101,238 @@ function reportOptionLabel(input: {
 }) {
   const periodLabel = input.periodKey || "최근";
   return `${periodLabel} · v${input.variantIndex} · ${formatDateTime(input.updatedAt)}`;
+}
+
+function getHealthWorkflowToneBadgeClass(
+  tone: WorkflowTone,
+  allStyles: typeof styles
+) {
+  if (tone === "on") return allStyles.statusOn;
+  if (tone === "warn") return allStyles.statusWarn;
+  return allStyles.statusOff;
+}
+
+function getHealthWorkflowCardClass(
+  tone: WorkflowTone,
+  allStyles: typeof styles
+) {
+  if (tone === "on") return allStyles.workflowCardOn;
+  if (tone === "warn") return allStyles.workflowCardWarn;
+  return allStyles.workflowCardOff;
+}
+
+function buildHealthWorkflowSteps(
+  workspace: EmployeeWorkspaceResponse | null
+): WorkflowStepItem[] {
+  const sync = workspace?.sync;
+  const isHealthComplete =
+    workspace?.currentStatus?.health.complete === true || sync?.status === "completed";
+  const currentIndex = isHealthComplete
+    ? 4
+    : sync?.step === "report"
+      ? 4
+      : sync?.step === "fetch"
+        ? 3
+        : sync?.status === "awaiting_sign" || sync?.step === "sign"
+          ? 2
+          : sync?.active
+            ? 1
+            : 0;
+  const failedIndex =
+    sync?.step === "report"
+      ? 4
+      : sync?.step === "fetch"
+        ? 3
+        : sync?.status === "awaiting_sign" || sync?.step === "sign"
+          ? 2
+          : 1;
+
+  const steps = [
+    { label: "요청 접수", caption: "백엔드 작업 큐에 저장" },
+    { label: "카카오 인증", caption: "확인되면 자동으로 진행" },
+    { label: "데이터 수집", caption: "건강검진·복약 이력 정리" },
+    { label: "저장 완료", caption: "리포트에 쓸 데이터 준비" },
+  ];
+
+  return steps.map((step, index) => {
+    const stepIndex = index + 1;
+    let state: WorkflowStepState = "pending";
+
+    if (isHealthComplete) {
+      state = "done";
+    } else if (sync?.status === "failed") {
+      state =
+        stepIndex < failedIndex
+          ? "done"
+          : stepIndex === failedIndex
+            ? "error"
+            : "pending";
+    } else if (currentIndex > 0) {
+      state =
+        stepIndex < currentIndex
+          ? "done"
+          : stepIndex === currentIndex
+            ? "current"
+            : "pending";
+    }
+
+    return {
+      ...step,
+      state,
+    };
+  });
+}
+
+function buildHealthWorkflow(workspace: EmployeeWorkspaceResponse | null) {
+  const sync = workspace?.sync;
+  const isHealthComplete =
+    workspace?.currentStatus?.health.complete === true || sync?.status === "completed";
+
+  if (isHealthComplete) {
+    return {
+      badge: "완료",
+      tone: "on" as const,
+      active: false,
+      stepLabel: "저장 완료",
+      title: "건강 데이터 준비가 끝났습니다.",
+      description:
+        "건강검진 데이터와 복약 이력이 준비되었고, 현재 리포트 갱신에 바로 사용할 수 있습니다.",
+    };
+  }
+
+  if (sync?.status === "failed") {
+    return {
+      badge: "재시도 필요",
+      tone: "warn" as const,
+      active: false,
+      stepLabel: null,
+      title: "건강 데이터 연동이 중간에 멈췄습니다.",
+      description:
+        sync.lastErrorMessage ||
+        "다시 요청하면 사용자가 화면을 열어두지 않아도 백엔드가 이어서 처리합니다.",
+    };
+  }
+
+  if (sync?.step === "report") {
+    return {
+      badge: "마무리 중",
+      tone: "on" as const,
+      active: true,
+      stepLabel: "저장 완료 직전",
+      title: "수집한 건강 데이터를 리포트에 반영하는 중입니다.",
+      description:
+        "거의 끝났습니다. 반영이 끝나면 최신 리포트가 자동으로 갱신됩니다.",
+    };
+  }
+
+  if (sync?.step === "fetch") {
+    return {
+      badge: "수집 중",
+      tone: "on" as const,
+      active: true,
+      stepLabel: "데이터 수집",
+      title: "건강검진과 복약 이력을 가져오고 있습니다.",
+      description:
+        "브라우저를 닫아도 백엔드에서 계속 진행되며, 준비되면 바로 반영됩니다.",
+    };
+  }
+
+  if (sync?.status === "awaiting_sign" || sync?.step === "sign") {
+    return {
+      badge: "인증 대기",
+      tone: "warn" as const,
+      active: true,
+      stepLabel: "카카오 인증 확인",
+      title: "카카오 인증 확인을 기다리고 있습니다.",
+      description:
+        "인증이 확인되는 즉시 건강검진 데이터와 복약 이력 수집 단계로 넘어갑니다.",
+    };
+  }
+
+  if (sync?.active) {
+    return {
+      badge: "연동 시작됨",
+      tone: "off" as const,
+      active: true,
+      stepLabel: "요청 접수",
+      title: "건강 데이터 연동을 준비하고 있습니다.",
+      description:
+        "요청은 이미 접수되었고, 다음 단계가 자동으로 이어지고 있습니다.",
+    };
+  }
+
+  return {
+    badge: "진행 필요",
+    tone: "off" as const,
+    active: false,
+    stepLabel: null,
+    title: "건강 데이터 연동을 먼저 시작해 주세요.",
+    description:
+      "버튼 한 번이면 이후 과정은 백엔드가 계속 처리하고, 사용자는 설문을 이어서 진행할 수 있습니다.",
+  };
+}
+
+function buildSurveyWorkflow(
+  workspace: EmployeeWorkspaceResponse | null,
+  showSurvey: boolean
+) {
+  if (showSurvey) {
+    return {
+      badge: "작성 중",
+      tone: "on" as const,
+      title: "같은 페이지에서 설문을 이어서 진행하고 있습니다.",
+      description:
+        "답변은 자동 저장되며, 제출이 끝나면 최신 리포트로 바로 돌아갑니다.",
+    };
+  }
+
+  if (workspace?.currentStatus?.survey.complete) {
+    return {
+      badge: "제출 완료",
+      tone: "on" as const,
+      title: "이번 주기 설문이 제출되었습니다.",
+      description:
+        "건강 데이터가 준비되면 최신 리포트에 자동으로 합쳐집니다.",
+    };
+  }
+
+  return {
+    badge: "진행 필요",
+    tone: "warn" as const,
+    title: "건강 데이터 연동을 기다리는 동안 설문을 먼저 끝내둘 수 있습니다.",
+    description:
+      "라우트 이동 없이 이 페이지에서 바로 작성하고 자동 저장됩니다.",
+  };
+}
+
+function buildReportWorkflow(workspace: EmployeeWorkspaceResponse | null) {
+  if (workspace?.currentStatus?.ready) {
+    return {
+      badge: "최신본 준비 완료",
+      tone: "on" as const,
+      title: "건강 데이터와 설문이 모두 반영된 최신 리포트입니다.",
+      description:
+        "이전 버전도 남아 있으니 아래에서 원하는 시점의 리포트를 선택할 수 있습니다.",
+    };
+  }
+
+  if (workspace?.currentStatus?.report.available) {
+    return {
+      badge: "이전 버전 열람 가능",
+      tone: "warn" as const,
+      title: "먼저 만들어진 리포트를 지금 바로 볼 수 있습니다.",
+      description:
+        "건강 데이터나 설문이 갱신되면 새 버전이 추가되어 이전 버전과 함께 보관됩니다.",
+    };
+  }
+
+  return {
+    badge: "준비 중",
+    tone: "off" as const,
+    title: "핵심 두 단계를 마치면 리포트가 자동으로 생성됩니다.",
+    description:
+      "건강 데이터와 설문 중 하나를 먼저 완료해 두면 준비가 훨씬 빨라집니다.",
+  };
 }
 
 export default function EmployeeReportClient({
@@ -106,12 +355,28 @@ export default function EmployeeReportClient({
   const [showSurvey, setShowSurvey] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [polling, setPolling] = useState(false);
+  const [pendingAction, setPendingAction] = useState<
+    "start" | "health" | "refresh" | "report" | null
+  >(null);
 
   const validIdentity = useMemo(
     () => isValidIdentityInput(toIdentityPayload(identity)),
     [identity]
   );
   const syncStatus = useMemo(() => syncStatusText(workspace), [workspace]);
+  const healthWorkflow = useMemo(() => buildHealthWorkflow(workspace), [workspace]);
+  const healthWorkflowSteps = useMemo(
+    () => buildHealthWorkflowSteps(workspace),
+    [workspace]
+  );
+  const surveyWorkflow = useMemo(
+    () => buildSurveyWorkflow(workspace, showSurvey),
+    [workspace, showSurvey]
+  );
+  const reportWorkflow = useMemo(() => buildReportWorkflow(workspace), [workspace]);
+  const healthComplete = workspace?.currentStatus?.health.complete === true;
+  const surveyComplete = workspace?.currentStatus?.survey.complete === true;
+  const coreStepCount = Number(healthComplete) + Number(surveyComplete);
 
   const applyWorkspace = useCallback(
     (next: EmployeeWorkspaceResponse | null, options?: { preserveSurvey?: boolean }) => {
@@ -248,6 +513,7 @@ export default function EmployeeReportClient({
         return;
       }
 
+      setPendingAction(options?.restartHealth ? "health" : "start");
       setBusy(true);
       setError("");
       setNotice("");
@@ -280,6 +546,7 @@ export default function EmployeeReportClient({
             : "직원 리포트 작업을 시작하지 못했습니다."
         );
       } finally {
+        setPendingAction(null);
         setBusy(false);
       }
     },
@@ -288,6 +555,7 @@ export default function EmployeeReportClient({
 
   const handleSelectReport = useCallback(
     async (nextReportId: string) => {
+      setPendingAction("report");
       setBusy(true);
       setError("");
       try {
@@ -303,6 +571,7 @@ export default function EmployeeReportClient({
             : "선택한 리포트를 불러오지 못했습니다."
         );
       } finally {
+        setPendingAction(null);
         setBusy(false);
       }
     },
@@ -334,6 +603,7 @@ export default function EmployeeReportClient({
   );
 
   const handleRefreshWorkspace = useCallback(async () => {
+    setPendingAction("refresh");
     setBusy(true);
     setError("");
     try {
@@ -348,9 +618,41 @@ export default function EmployeeReportClient({
           : "최신 상태를 불러오지 못했습니다."
       );
     } finally {
+      setPendingAction(null);
       setBusy(false);
     }
   }, [loadWorkspace, selectedReportId, showSurvey]);
+
+  const healthToneBadgeClass = getHealthWorkflowToneBadgeClass(
+    healthWorkflow.tone,
+    styles
+  );
+  const healthToneCardClass = getHealthWorkflowCardClass(healthWorkflow.tone, styles);
+  const surveyToneBadgeClass = getHealthWorkflowToneBadgeClass(
+    surveyWorkflow.tone,
+    styles
+  );
+  const surveyToneCardClass = getHealthWorkflowCardClass(surveyWorkflow.tone, styles);
+  const reportToneBadgeClass = getHealthWorkflowToneBadgeClass(
+    reportWorkflow.tone,
+    styles
+  );
+  const reportToneCardClass = getHealthWorkflowCardClass(reportWorkflow.tone, styles);
+  const healthButtonLabel =
+    pendingAction === "health"
+      ? "연동 요청 중..."
+      : healthWorkflow.active && healthWorkflow.stepLabel
+        ? `${healthWorkflow.stepLabel} 진행 중`
+        : healthComplete
+          ? "건강 데이터 다시 연동"
+          : "건강 데이터 연동 시작";
+  const surveyButtonLabel = showSurvey
+    ? "설문 닫기"
+    : surveyComplete
+      ? "설문 다시하기"
+      : "설문 진행하기";
+  const healthButtonDisabled =
+    busy || pendingAction === "health" || workspace?.sync?.active === true;
 
   if (booting) {
     return <EmployeeReportBootSkeleton />;
@@ -458,108 +760,263 @@ export default function EmployeeReportClient({
                 </div>
               </div>
 
-              <div className={styles.formGrid}>
-                <div className={styles.optionalCard}>
-                  <strong>건강 데이터</strong>
-                  <p className={styles.optionalText}>
-                    {workspace.currentStatus?.health.complete
-                      ? `완료 · ${formatDateTime(
-                          workspace.currentStatus.health.fetchedAt
-                        )}`
-                      : syncStatus.message}
-                  </p>
+              <div className={styles.workflowOverview}>
+                <div className={styles.workflowOverviewTop}>
+                  <div>
+                    <p className={styles.workflowOverviewEyebrow}>이번 리포트 준비</p>
+                    <h3 className={styles.workflowOverviewTitle}>
+                      건강 데이터와 설문 두 단계를 먼저 완료해 주세요.
+                    </h3>
+                    <p className={styles.workflowOverviewText}>
+                      둘 다 끝나면 최신 리포트가 자동으로 갱신되고, 이전 버전도 계속 볼 수
+                      있습니다.
+                    </p>
+                  </div>
+                  <div className={styles.workflowCoreCount}>
+                    <strong>{coreStepCount}/2</strong>
+                    <span>핵심 단계 완료</span>
+                  </div>
                 </div>
-                <div className={styles.optionalCard}>
-                  <strong>설문</strong>
-                  <p className={styles.optionalText}>
-                    {workspace.currentStatus?.survey.complete
-                      ? `완료 · ${formatDateTime(
-                          workspace.currentStatus.survey.submittedAt
-                        )}`
-                      : "아직 제출되지 않았습니다. 아래에서 바로 진행할 수 있습니다."}
-                  </p>
-                </div>
-                <div className={styles.optionalCard}>
-                  <strong>현재 리포트</strong>
-                  <p className={styles.optionalText}>
-                    {workspace.currentStatus?.ready
-                      ? "건강 데이터와 설문이 모두 반영된 최신 리포트를 볼 수 있습니다."
-                      : "둘 중 하나라도 먼저 완료되면 기존 리포트를 열고, 완료 후에는 최신 버전이 추가됩니다."}
-                  </p>
-                </div>
-              </div>
-
-              <div className={styles.actionRow}>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => {
-                    setShowSurvey((prev) => !prev);
-                  }}
-                  className={styles.buttonPrimary}
-                >
-                  {showSurvey
-                    ? "설문 닫기"
-                    : workspace.currentStatus?.survey.complete
-                      ? "설문 다시하기"
-                      : "설문 진행하기"}
-                </button>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => {
-                    void handleStartWorkspace({ restartHealth: true });
-                  }}
-                  className={styles.buttonSecondary}
-                >
-                  건강 데이터 다시 연동
-                </button>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => {
-                    void handleRefreshWorkspace();
-                  }}
-                  className={styles.buttonGhost}
-                >
-                  상태 새로고침
-                </button>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => {
-                    void resetIdentityFlow();
-                  }}
-                  className={styles.buttonGhost}
-                >
-                  다른 이름으로 조회
-                </button>
-              </div>
-
-              {workspace.reports && workspace.reports.length > 0 ? (
-                <div className={styles.summaryControlPanel}>
-                  <select
-                    className={`${styles.select} ${styles.summaryPeriodSelect}`}
-                    value={workspace.selectedReportId ?? ""}
-                    disabled={busy}
-                    onChange={(event) => {
-                      void handleSelectReport(event.target.value);
-                    }}
+                <div className={styles.workflowCoreBar}>
+                  <div
+                    className={`${styles.workflowCorePill} ${
+                      healthComplete
+                        ? styles.workflowCorePillDone
+                        : healthWorkflow.active
+                          ? styles.workflowCorePillActive
+                          : healthWorkflow.tone === "warn"
+                            ? styles.workflowCorePillWarn
+                            : styles.workflowCorePillPending
+                    }`}
                   >
-                    {workspace.reports.map((report) => (
-                      <option key={report.id} value={report.id}>
-                        {reportOptionLabel(report)}
-                      </option>
-                    ))}
-                  </select>
+                    <strong>1. 건강 데이터</strong>
+                    <span>
+                      {healthComplete
+                        ? "완료"
+                        : healthWorkflow.stepLabel || healthWorkflow.badge}
+                    </span>
+                  </div>
+                  <div
+                    className={`${styles.workflowCorePill} ${
+                      surveyComplete
+                        ? styles.workflowCorePillDone
+                        : showSurvey
+                          ? styles.workflowCorePillActive
+                          : styles.workflowCorePillWarn
+                    }`}
+                  >
+                    <strong>2. 설문</strong>
+                    <span>{showSurvey ? "작성 중" : surveyComplete ? "완료" : "진행 필요"}</span>
+                  </div>
+                </div>
+              </div>
+
+              {workspace.sync &&
+              (workspace.sync.active ||
+                workspace.sync.status === "failed" ||
+                workspace.sync.status === "completed") ? (
+                <div className={`${styles.workflowBanner} ${healthToneCardClass}`}>
+                  <div className={styles.workflowBannerTop}>
+                    <div className={styles.workflowLiveRow}>
+                      {healthWorkflow.active ? (
+                        <span className={styles.workflowLiveBadge}>
+                          <span className={styles.workflowLiveDot} />
+                          현재 단계 {healthWorkflow.stepLabel}
+                        </span>
+                      ) : null}
+                      <span className={healthToneBadgeClass}>{healthWorkflow.badge}</span>
+                    </div>
+                    {workspace.sync.nextRetryAt ? (
+                      <span className={styles.workflowMetaItem}>
+                        다음 재시도 {formatDateTime(workspace.sync.nextRetryAt)}
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className={styles.workflowBannerTitle}>{healthWorkflow.title}</p>
+                  <p className={styles.workflowBannerText}>{syncStatus.message}</p>
                 </div>
               ) : null}
 
-              <p className={styles.inlineHint}>
-                {workspace.sync?.nextRetryAt
-                  ? `다음 백엔드 재시도 예정 시각 ${formatDateTime(workspace.sync.nextRetryAt)}`
-                  : syncStatus.message}
-              </p>
+              <div className={styles.workflowGrid}>
+                <article className={`${styles.workflowCard} ${healthToneCardClass}`}>
+                  <div className={styles.workflowCardHeader}>
+                    <div className={styles.workflowLabelBlock}>
+                      <span className={styles.workflowIndex}>필수 1</span>
+                      <h3 className={styles.workflowCardTitle}>건강 데이터</h3>
+                    </div>
+                    <span className={healthToneBadgeClass}>{healthWorkflow.badge}</span>
+                  </div>
+
+                  <p className={styles.workflowLead}>{healthWorkflow.title}</p>
+                  <p className={styles.workflowText}>{healthWorkflow.description}</p>
+
+                  <div className={styles.workflowStepList}>
+                    {healthWorkflowSteps.map((step) => (
+                      <div
+                        key={step.label}
+                        className={`${styles.workflowStep} ${
+                          step.state === "done"
+                            ? styles.workflowStepDone
+                            : step.state === "current"
+                              ? styles.workflowStepCurrent
+                              : step.state === "error"
+                                ? styles.workflowStepError
+                                : styles.workflowStepPending
+                        }`}
+                      >
+                        <strong>{step.label}</strong>
+                        <span>{step.caption}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className={styles.workflowActionStack}>
+                    <button
+                      type="button"
+                      disabled={healthButtonDisabled}
+                      onClick={() => {
+                        void handleStartWorkspace({ restartHealth: true });
+                      }}
+                      className={
+                        healthComplete || healthWorkflow.active
+                          ? styles.buttonSecondary
+                          : styles.buttonPrimary
+                      }
+                    >
+                      {healthButtonLabel}
+                    </button>
+                    <div className={styles.workflowMetaRow}>
+                      {workspace.sync?.requestedAt ? (
+                        <span className={styles.workflowMetaItem}>
+                          요청 {formatDateTime(workspace.sync.requestedAt)}
+                        </span>
+                      ) : null}
+                      {workspace.currentStatus?.health.fetchedAt ? (
+                        <span className={styles.workflowMetaItem}>
+                          반영 {formatDateTime(workspace.currentStatus.health.fetchedAt)}
+                        </span>
+                      ) : null}
+                      {!workspace.currentStatus?.health.fetchedAt && workspace.sync?.nextRetryAt ? (
+                        <span className={styles.workflowMetaItem}>
+                          다음 확인 {formatDateTime(workspace.sync.nextRetryAt)}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                </article>
+
+                <article className={`${styles.workflowCard} ${surveyToneCardClass}`}>
+                  <div className={styles.workflowCardHeader}>
+                    <div className={styles.workflowLabelBlock}>
+                      <span className={styles.workflowIndex}>필수 2</span>
+                      <h3 className={styles.workflowCardTitle}>설문</h3>
+                    </div>
+                    <span className={surveyToneBadgeClass}>{surveyWorkflow.badge}</span>
+                  </div>
+
+                  <p className={styles.workflowLead}>{surveyWorkflow.title}</p>
+                  <p className={styles.workflowText}>{surveyWorkflow.description}</p>
+
+                  <div className={styles.workflowMetaRow}>
+                    <span className={styles.workflowMetaItem}>같은 페이지에서 진행</span>
+                    <span className={styles.workflowMetaItem}>자동 저장</span>
+                    <span className={styles.workflowMetaItem}>완료 즉시 리포트 갱신</span>
+                    {workspace.currentStatus?.survey.submittedAt ? (
+                      <span className={styles.workflowMetaItem}>
+                        제출 {formatDateTime(workspace.currentStatus.survey.submittedAt)}
+                      </span>
+                    ) : null}
+                  </div>
+
+                  <div className={styles.workflowActionStack}>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => {
+                        setShowSurvey((prev) => !prev);
+                      }}
+                      className={
+                        showSurvey || !surveyComplete
+                          ? styles.buttonPrimary
+                          : styles.buttonSecondary
+                      }
+                    >
+                      {surveyButtonLabel}
+                    </button>
+                    <p className={styles.workflowText}>
+                      {showSurvey
+                        ? "아래 설문 영역 안에서 스크롤하며 바로 이어서 작성할 수 있습니다."
+                        : "건강 데이터 연동을 기다리는 동안 먼저 설문을 끝내 두면 최신 리포트가 더 빨리 준비됩니다."}
+                    </p>
+                  </div>
+                </article>
+              </div>
+
+              <article className={`${styles.workflowReportCard} ${reportToneCardClass}`}>
+                <div className={styles.workflowReportTop}>
+                  <div className={styles.workflowLabelBlock}>
+                    <span className={styles.workflowIndex}>리포트</span>
+                    <h3 className={styles.workflowCardTitle}>현재 리포트와 버전 히스토리</h3>
+                  </div>
+                  <span className={reportToneBadgeClass}>{reportWorkflow.badge}</span>
+                </div>
+
+                <p className={styles.workflowLead}>{reportWorkflow.title}</p>
+                <p className={styles.workflowText}>{reportWorkflow.description}</p>
+
+                {workspace.reports && workspace.reports.length > 0 ? (
+                  <div className={styles.workflowReportSelector}>
+                    <label className={styles.field}>
+                      <span className={styles.fieldLabel}>저장된 리포트 버전</span>
+                      <select
+                        className={`${styles.select} ${styles.summaryPeriodSelect}`}
+                        value={workspace.selectedReportId ?? ""}
+                        disabled={busy}
+                        onChange={(event) => {
+                          void handleSelectReport(event.target.value);
+                        }}
+                      >
+                        {workspace.reports.map((report) => (
+                          <option key={report.id} value={report.id}>
+                            {reportOptionLabel(report)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                ) : null}
+
+                <div className={styles.workflowAuxRow}>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => {
+                      void handleRefreshWorkspace();
+                    }}
+                    className={styles.buttonGhost}
+                  >
+                    {pendingAction === "refresh" ? "상태 확인 중..." : "상태 새로고침"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => {
+                      void resetIdentityFlow();
+                    }}
+                    className={styles.buttonGhost}
+                  >
+                    다른 이름으로 조회
+                  </button>
+                </div>
+
+                <p className={styles.inlineHint}>
+                  {workspace.currentStatus?.ready
+                    ? "현재 주기의 최신본을 보고 있습니다."
+                    : workspace.sync?.nextRetryAt
+                      ? `다음 백엔드 재시도 예정 시각 ${formatDateTime(workspace.sync.nextRetryAt)}`
+                      : syncStatus.message}
+                </p>
+              </article>
             </section>
 
             {showSurvey ? (
@@ -593,7 +1050,7 @@ export default function EmployeeReportClient({
                   </div>
                 </div>
                 <div
-                  className={`${styles.reportCanvasBoard} ${styles.reportCanvasBoardWide}`}
+                  className={`${styles.reportCanvasBoard} ${styles.reportCanvasBoardWide} ${styles.reportCanvasBoardScrollable}`}
                 >
                   <div className={styles.reportCaptureSurface}>
                     <ReportSummaryCards payload={workspace.report.payload} />
