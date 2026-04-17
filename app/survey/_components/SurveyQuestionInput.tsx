@@ -52,15 +52,19 @@ export default function SurveyQuestionInput(props: SurveyQuestionInputProps) {
               }}
               className={`rounded-xl border transition ${
                 optionLayout.compact
-                  ? "h-[40px] px-2 py-1.5 text-center text-[12px] font-semibold leading-tight break-keep sm:h-[44px] sm:px-3 sm:py-2 sm:text-[13px]"
-                  : "h-[44px] px-3 py-1.5 text-left text-[12px] font-medium leading-tight break-keep sm:h-[48px] sm:px-4 sm:py-2 sm:text-[13px]"
+                  ? optionLayout.denseText
+                    ? "flex h-[40px] items-center justify-center px-2 py-1 text-center text-[11px] font-semibold leading-[1.15] break-keep sm:h-[44px] sm:px-3 sm:py-1.5 sm:text-[12px]"
+                    : "flex h-[40px] items-center justify-center px-2 py-1.5 text-center text-[12px] font-semibold leading-tight break-keep sm:h-[44px] sm:px-3 sm:py-2 sm:text-[13px]"
+                  : optionLayout.denseText
+                    ? "flex h-[44px] items-center px-3 py-1.5 text-left text-[11px] font-medium leading-[1.15] break-keep sm:h-[48px] sm:px-4 sm:py-2 sm:text-[12px]"
+                    : "flex h-[44px] items-center px-3 py-1.5 text-left text-[12px] font-medium leading-tight break-keep sm:h-[48px] sm:px-4 sm:py-2 sm:text-[13px]"
               } ${
                 active
                   ? "border-sky-300 bg-sky-50 text-slate-900 ring-1 ring-sky-200 shadow-[0_8px_18px_-14px_rgba(14,116,144,0.35)]"
                   : "border-slate-300 bg-white text-slate-800 hover:border-sky-300 hover:bg-sky-50"
               }`}
             >
-              <span className="block max-h-[2.2em] overflow-hidden leading-tight">{option.label}</span>
+              <span className="block w-full whitespace-normal">{option.label}</span>
             </button>
           );
         })}
@@ -101,15 +105,19 @@ export default function SurveyQuestionInput(props: SurveyQuestionInputProps) {
                 }
                 className={`rounded-xl border transition ${
                   optionLayout.compact
-                    ? "h-[40px] px-2 py-1.5 text-center text-[12px] font-semibold leading-tight break-keep sm:h-[44px] sm:px-3 sm:py-2 sm:text-[13px]"
-                    : "h-[44px] px-3 py-1.5 text-left text-[12px] font-medium leading-tight break-keep sm:h-[48px] sm:px-4 sm:py-2 sm:text-[13px]"
+                    ? optionLayout.denseText
+                      ? "flex h-[40px] items-center justify-center px-2 py-1 text-center text-[11px] font-semibold leading-[1.15] break-keep sm:h-[44px] sm:px-3 sm:py-1.5 sm:text-[12px]"
+                      : "flex h-[40px] items-center justify-center px-2 py-1.5 text-center text-[12px] font-semibold leading-tight break-keep sm:h-[44px] sm:px-3 sm:py-2 sm:text-[13px]"
+                    : optionLayout.denseText
+                      ? "flex h-[44px] items-center px-3 py-1.5 text-left text-[11px] font-medium leading-[1.15] break-keep sm:h-[48px] sm:px-4 sm:py-2 sm:text-[12px]"
+                      : "flex h-[44px] items-center px-3 py-1.5 text-left text-[12px] font-medium leading-tight break-keep sm:h-[48px] sm:px-4 sm:py-2 sm:text-[13px]"
                 } ${
                   active
                     ? "border-sky-300 bg-sky-50 text-slate-900 ring-1 ring-sky-200 shadow-[0_8px_18px_-14px_rgba(14,116,144,0.35)]"
                     : "border-slate-300 bg-white text-slate-800 hover:border-sky-300 hover:bg-sky-50"
                 }`}
               >
-                <span className="block max-h-[2.2em] overflow-hidden leading-tight">{option.label}</span>
+                <span className="block w-full whitespace-normal">{option.label}</span>
               </button>
             );
           })}

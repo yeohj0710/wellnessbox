@@ -199,22 +199,54 @@ export function resolveOptionLayout(options: Array<{ label?: string | null }>) {
       : 0;
   const shortLabelRatio =
     lengths.length > 0 ? lengths.filter((len) => len <= 7).length / lengths.length : 0;
+  const prefersWideCards = maxLabelLength >= 9 || avgLabelLength >= 7;
+  const denseText = maxLabelLength >= 10 || avgLabelLength >= 8;
 
-  if (count <= 1) return { gridClass: "grid-cols-1", compact: false };
-  if (count === 2) return { gridClass: "grid-cols-2", compact: false };
+  if (count <= 1) return { gridClass: "grid-cols-1", compact: false, denseText: false };
+  if (count === 2) return { gridClass: "grid-cols-2", compact: false, denseText: false };
 
   const canUseThreeColsOnMobile =
     count >= 12 && shortLabelRatio >= 0.65 && avgLabelLength <= 8;
   if (canUseThreeColsOnMobile) {
-    if (count >= 12) return { gridClass: "grid-cols-3 sm:grid-cols-4 lg:grid-cols-5", compact: true };
-    if (count >= 9) return { gridClass: "grid-cols-3 sm:grid-cols-4", compact: true };
-    return { gridClass: "grid-cols-3 sm:grid-cols-3 lg:grid-cols-4", compact: true };
+    if (prefersWideCards) {
+      return {
+        gridClass: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4",
+        compact: true,
+        denseText,
+      };
+    }
+    if (count >= 12) {
+      return {
+        gridClass: "grid-cols-3 sm:grid-cols-4 lg:grid-cols-5",
+        compact: true,
+        denseText,
+      };
+    }
+    if (count >= 9) {
+      return {
+        gridClass: "grid-cols-3 sm:grid-cols-4",
+        compact: true,
+        denseText,
+      };
+    }
+    return {
+      gridClass: "grid-cols-3 sm:grid-cols-3 lg:grid-cols-4",
+      compact: true,
+      denseText,
+    };
   }
 
-  if (count <= 6) return { gridClass: "grid-cols-2 sm:grid-cols-3", compact: false };
+  if (count <= 6) {
+    return {
+      gridClass: "grid-cols-2 sm:grid-cols-3",
+      compact: false,
+      denseText,
+    };
+  }
   return {
-    gridClass: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4",
+    gridClass: prefersWideCards ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-3" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4",
     compact: count >= 10 && maxLabelLength <= 10,
+    denseText,
   };
 }
 
