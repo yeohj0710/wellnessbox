@@ -7,6 +7,8 @@ import type {
   LoginStatusResponse,
   NhisInitResponse,
   NhisSignResponse,
+  EmployeeWorkspaceResponse,
+  EmployeeWorkspaceStartResponse,
 } from "./client-types";
 import { toIdentityPayload } from "./client-utils.identity";
 import { requestJson } from "./client-utils.request";
@@ -35,6 +37,23 @@ export async function fetchEmployeeReport(periodKey?: string) {
   });
 }
 
+export async function fetchEmployeeWorkspace(input?: {
+  periodKey?: string;
+  reportId?: string;
+}) {
+  const searchParams = new URLSearchParams();
+  if (input?.periodKey) searchParams.set("period", input.periodKey);
+  if (input?.reportId) searchParams.set("reportId", input.reportId);
+  const query = searchParams.toString();
+  return requestJson<EmployeeWorkspaceResponse>(
+    `/api/b2b/employee/workspace${query ? `?${query}` : ""}`,
+    undefined,
+    {
+      timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
+    }
+  );
+}
+
 export async function fetchEmployeeSession() {
   return requestJson<EmployeeSessionGetResponse>("/api/b2b/employee/session", undefined, {
     timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
@@ -59,6 +78,28 @@ export async function deleteEmployeeSession() {
   return requestJson(
     "/api/b2b/employee/session",
     { method: "DELETE" },
+    {
+      timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
+    }
+  );
+}
+
+export async function startEmployeeWorkspace(input: {
+  identity: IdentityInput;
+  periodKey?: string;
+  restartHealth?: boolean;
+}) {
+  const payload = toIdentityPayload(input.identity);
+  return requestJson<EmployeeWorkspaceStartResponse>(
+    "/api/b2b/employee/workspace",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        ...payload,
+        ...(input.periodKey ? { periodKey: input.periodKey } : {}),
+        ...(input.restartHealth === true ? { restartHealth: true } : {}),
+      }),
+    },
     {
       timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
     }

@@ -282,6 +282,7 @@ model AppUser {
   healthProviderFetchCaches   HealthProviderFetchCache[]
   healthProviderFetchAttempts HealthProviderFetchAttempt[]
   b2bEmployees                B2bEmployee[]
+  b2bEmployeeSyncStates       B2bEmployeeSyncState[]
   b2bEmployeeAccessLogs       B2bEmployeeAccessLog[]
   aiExperimentEvents          AiExperimentEvent[]
 
@@ -483,12 +484,42 @@ model B2bEmployee {
   analysisResults B2bAnalysisResult[]
   pharmacistNotes B2bPharmacistNote[]
   reports         B2bReport[]
+  syncState       B2bEmployeeSyncState?
   accessLogs      B2bEmployeeAccessLog[]
   adminActionLogs B2bAdminActionLog[]
 
   @@index([appUserId, updatedAt])
   @@index([name, birthDate, phoneNormalized])
   @@index([phoneNormalized, updatedAt])
+}
+
+model B2bEmployeeSyncState {
+  employeeId         String      @id
+  appUserId          String
+  periodKey          String?
+  status             String      @default("idle")
+  step               String?
+  forceRefresh       Boolean     @default(false)
+  requestedAt        DateTime?
+  startedAt          DateTime?
+  lastAttemptAt      DateTime?
+  nextRetryAt        DateTime?
+  completedAt        DateTime?
+  attemptCount       Int         @default(0)
+  runnerToken        String?
+  runnerHeartbeatAt  DateTime?
+  lastErrorCode      String?
+  lastErrorMessage   String?
+  lastResultSource   String?
+  lastSnapshotId     String?
+  lastReportId       String?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @default(now()) @updatedAt
+  employee           B2bEmployee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  appUser            AppUser     @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+
+  @@index([appUserId, updatedAt])
+  @@index([status, nextRetryAt, updatedAt])
 }
 
 model B2bHealthDataSnapshot {
