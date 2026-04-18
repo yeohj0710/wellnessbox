@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import styles from "@/components/b2b/B2bUx.module.css";
+import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
 import { loadWellnessTemplateForB2b } from "@/lib/wellness/data-loader";
 import type { WellnessSurveyQuestionForTemplate } from "@/lib/wellness/data-template-types";
 import { TEXT, CALCULATING_MESSAGES } from "@/app/survey/_lib/survey-page-copy";
@@ -31,7 +32,12 @@ import SurveyQuestionInput from "@/app/survey/_components/SurveyQuestionInput";
 import SurveyResetConfirmModal from "@/app/survey/_components/SurveyResetConfirmModal";
 import SurveySectionPanel from "@/app/survey/_components/SurveySectionPanel";
 
-const STORAGE_KEY = "b2b-public-survey-state.v4";
+export const EMPLOYEE_SURVEY_STORAGE_KEY = "b2b-public-survey-state.v4";
+
+export function clearEmployeeSurveyDraftState() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(EMPLOYEE_SURVEY_STORAGE_KEY);
+}
 
 type EmbeddedEmployeeSurveyPanelProps = {
   onCompleted: (periodKey: string | null) => void;
@@ -133,7 +139,7 @@ export default function EmbeddedEmployeeSurveyPanel({
   ]);
 
   useSurveyPagePersistenceEffects({
-    storageKey: STORAGE_KEY,
+    storageKey: EMPLOYEE_SURVEY_STORAGE_KEY,
     template,
     maxSelectedSections,
     sectionTitleMap,
@@ -347,7 +353,7 @@ export default function EmbeddedEmployeeSurveyPanel({
 
   const handleConfirmReset = useCallback(() => {
     resetSurveyFlowState({
-      storageKey: STORAGE_KEY,
+      storageKey: EMPLOYEE_SURVEY_STORAGE_KEY,
       restoredSnapshotUpdatedAtRef,
       lastRemoteSavedSignatureRef,
       lastVisitedSectionIndexRef,
@@ -427,7 +433,20 @@ export default function EmbeddedEmployeeSurveyPanel({
   if (!hydrated) {
     return (
       <section className="rounded-[28px] border border-cyan-200/70 bg-white/92 p-5 shadow-[0_24px_58px_-36px_rgba(15,23,42,0.48)]">
-        <p className="text-sm text-slate-500">설문을 불러오는 중입니다.</p>
+        <InlineSpinnerLabel
+          label="설문 준비 중"
+          size="md"
+          className="text-sm font-semibold text-slate-800"
+          spinnerClassName="text-cyan-500"
+        />
+        <div className="mt-4 grid gap-3">
+          <div className="h-3 w-28 animate-pulse rounded-full bg-slate-200/80" />
+          <div className="h-10 animate-pulse rounded-2xl bg-slate-100" />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="h-24 animate-pulse rounded-[20px] bg-slate-100" />
+            <div className="h-24 animate-pulse rounded-[20px] bg-slate-100" />
+          </div>
+        </div>
       </section>
     );
   }

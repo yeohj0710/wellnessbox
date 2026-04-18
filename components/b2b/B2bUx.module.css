@@ -564,32 +564,56 @@
   color: #5b7598;
   font-size: 12px;
   line-height: 1.55;
-  display: none;
+  display: block;
 }
 
 .workflowCoreCount {
-  border-radius: 16px;
+  border-radius: 18px;
   border: 1px solid #c8dbf8;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 10px 12px;
-  min-width: 118px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(246, 250, 255, 0.96) 100%);
+  padding: 11px 13px;
+  min-width: 144px;
   display: grid;
-  gap: 2px;
-  justify-items: end;
+  gap: 4px;
+  justify-items: start;
   box-shadow: 0 10px 18px rgba(15, 42, 92, 0.06);
+}
+
+.workflowCoreCountLabel {
+  color: #5f7a9b;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
 }
 
 .workflowCoreCount strong {
   color: #14407b;
-  font-size: 26px;
+  font-size: 28px;
   line-height: 1;
   font-weight: 900;
 }
 
-.workflowCoreCount span {
+.workflowCoreCountMeta {
   color: #5b7698;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 800;
+}
+
+.workflowCoreCountBar {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(188, 209, 241, 0.45);
+  overflow: hidden;
+}
+
+.workflowCoreCountBarFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #3b82f6 0%, #1d9bf0 55%, #22c55e 100%);
+  transition: width 180ms ease;
 }
 
 .workflowCoreBar {
@@ -815,6 +839,83 @@
   color: #557196;
   font-size: 13px;
   line-height: 1.6;
+}
+
+.workflowBannerActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.workflowSyncToggle {
+  border-radius: 999px;
+  border: 1px solid #bfd3f4;
+  background: rgba(255, 255, 255, 0.92);
+  color: #225cbf;
+  padding: 7px 12px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
+}
+
+.workflowSyncToggle:hover {
+  border-color: #9fc0f4;
+  background: #f4f8ff;
+}
+
+.workflowSyncToggle:focus-visible {
+  outline: 3px solid rgba(59, 130, 246, 0.18);
+  outline-offset: 2px;
+}
+
+.workflowSyncDetails {
+  border-top: 1px solid rgba(191, 211, 242, 0.85);
+  padding-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.workflowSyncDetailGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.workflowSyncDetailItem {
+  border-radius: 14px;
+  border: 1px solid #d8e3f4;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 10px 11px;
+  display: grid;
+  gap: 4px;
+}
+
+.workflowSyncDetailLabel {
+  color: #6a7f9e;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.workflowSyncDetailValue {
+  color: #173d74;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.workflowSyncHint {
+  margin: 0;
+  color: #5e7899;
+  font-size: 12px;
+  line-height: 1.55;
 }
 
 .workflowGrid {
@@ -4331,29 +4432,30 @@
 }
 
 [data-report-pdf-parity="1"] .reportSheet {
-  padding: 14px 14px 12px;
-  gap: 8px;
+  padding: 20px 14px 18px;
+  gap: 9px;
 }
 
 [data-report-pdf-parity="1"] .reportPageHeader {
-  gap: 5px;
-  padding-bottom: 6px;
+  gap: 4px;
+  padding-bottom: 7px;
 }
 
 [data-report-pdf-parity="1"] .reportPageKicker {
-  padding: 5px 11px;
-  font-size: 13px;
+  padding: 4px 10px;
+  font-size: 11.5px;
   letter-spacing: 0;
 }
 
 [data-report-pdf-parity="1"] .reportPageTitle {
-  font-size: 27px;
+  font-size: 23px;
+  line-height: 1.22;
   letter-spacing: 0;
 }
 
 [data-report-pdf-parity="1"] .reportPageSubtitle {
-  font-size: 15.8px;
-  line-height: 1.44;
+  font-size: 13.2px;
+  line-height: 1.46;
   letter-spacing: 0;
 }
 
@@ -4363,17 +4465,18 @@
 
 [data-report-pdf-parity="1"] .reportMetaItem {
   padding: 4px 9px;
-  font-size: 13px;
+  font-size: 11.6px;
   letter-spacing: 0;
 }
 
 [data-report-pdf-parity="1"] .sectionTitle {
-  font-size: 22px;
+  font-size: 16.6px;
+  line-height: 1.28;
   letter-spacing: 0;
 }
 
 [data-report-pdf-parity="1"] .reportFormula {
-  font-size: 11.8px;
+  font-size: 10.4px;
   letter-spacing: 0;
 }
 
@@ -4383,38 +4486,40 @@
 }
 
 [data-report-pdf-parity="1"] .reportTopCard {
-  padding: 9px;
+  padding: 10px;
   gap: 6px;
 }
 
 [data-report-pdf-parity="1"] .reportBlock {
-  padding: 8px 9px;
+  padding: 9px 10px;
   gap: 4px;
 }
 
 [data-report-pdf-parity="1"] .reportBlockTitle {
-  font-size: 20px;
+  font-size: 16.4px;
+  line-height: 1.28;
   letter-spacing: 0;
 }
 
 [data-report-pdf-parity="1"] .reportBlockLead {
-  font-size: 15.6px;
+  font-size: 12.2px;
   line-height: 1.5;
   letter-spacing: 0;
 }
 
 [data-report-pdf-parity="1"] .reportFriendlyList {
   gap: 4px;
-  font-size: 13.6px;
+  font-size: 11.2px;
   letter-spacing: 0;
 }
 
 [data-report-pdf-parity="1"] .reportDataCard {
-  padding: 9px;
+  padding: 10px;
 }
 
 [data-report-pdf-parity="1"] .reportDataTitle {
-  font-size: 18px;
+  font-size: 16.2px;
+  line-height: 1.28;
   letter-spacing: 0;
 }
 
@@ -4422,7 +4527,8 @@
 [data-report-pdf-parity="1"] .reportDataLabel,
 [data-report-pdf-parity="1"] .reportDataValue,
 [data-report-pdf-parity="1"] .reportDataEmpty {
-  font-size: 14.8px;
+  font-size: 12.1px;
+  line-height: 1.48;
   letter-spacing: 0;
 }
 
@@ -4437,23 +4543,23 @@
 }
 
 [data-report-pdf-parity="1"] .inlineHint {
-  font-size: 14.6px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 1.48;
   letter-spacing: 0;
 }
 
 [data-report-pdf-parity="1"] .donutWrap,
 [data-report-pdf-parity="1"] .donutSvg {
-  width: 136px;
-  height: 136px;
+  width: 124px;
+  height: 124px;
 }
 
 [data-report-pdf-parity="1"] .donutCenter strong {
-  font-size: 31px;
+  font-size: 27px;
 }
 
 [data-report-pdf-parity="1"] .scoreUnit {
-  font-size: 17.5px;
+  font-size: 15px;
 }
 
 [data-report-pdf-parity="1"] .radarSvg {
@@ -4467,7 +4573,7 @@
 
 [data-report-pdf-parity="1"] .riskBarHead,
 [data-report-pdf-parity="1"] .needHead {
-  font-size: 13.8px;
+  font-size: 11.9px;
   letter-spacing: 0;
 }
 
@@ -4483,8 +4589,8 @@
 
 [data-report-pdf-parity="1"] .reportRoutineItem {
   padding: 9px 11px;
-  font-size: 13.8px;
-  line-height: 1.58;
+  font-size: 12px;
+  line-height: 1.52;
   letter-spacing: 0;
 }
 
@@ -4498,19 +4604,19 @@
 
 [data-report-pdf-parity="1"] .reportAdviceGroupTitle,
 [data-report-pdf-parity="1"] .reportSupplementEyebrow {
-  font-size: 13px;
+  font-size: 11.8px;
   letter-spacing: 0;
 }
 
 [data-report-pdf-parity="1"] .reportAdviceQuestion {
-  font-size: 13.8px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 1.46;
   letter-spacing: 0;
 }
 
 [data-report-pdf-parity="1"] .reportAdviceAnswer,
 [data-report-pdf-parity="1"] .reportMedicationMeta {
-  font-size: 12.8px;
+  font-size: 11.1px;
   line-height: 1.45;
   letter-spacing: 0;
 }
@@ -4518,26 +4624,26 @@
 [data-report-pdf-parity="1"] .reportAdviceRecommendation,
 [data-report-pdf-parity="1"] .reportRecommendation,
 [data-report-pdf-parity="1"] .reportSupplementParagraph {
-  font-size: 13.8px;
-  line-height: 1.54;
+  font-size: 12px;
+  line-height: 1.5;
   letter-spacing: 0;
 }
 
 [data-report-pdf-parity="1"] .reportSupplementTitle,
 [data-report-pdf-parity="1"] .reportMedicationName {
-  font-size: 13.6px;
-  line-height: 1.45;
+  font-size: 12px;
+  line-height: 1.42;
   letter-spacing: 0;
 }
 
 [data-report-pdf-parity="1"] .reportMetricLabel {
-  font-size: 13.4px;
+  font-size: 11.4px;
   letter-spacing: 0;
 }
 
 [data-report-pdf-parity="1"] .reportMetricValue {
-  font-size: 14.4px;
-  line-height: 1.45;
+  font-size: 12.2px;
+  line-height: 1.42;
   letter-spacing: 0;
 }
 
@@ -4563,8 +4669,8 @@
 }
 
 [data-report-pdf-parity="1"] .reportPharmacistCommentParagraph {
-  font-size: 15.2px;
-  line-height: 1.72;
+  font-size: 12.6px;
+  line-height: 1.62;
   letter-spacing: 0;
 }
 
@@ -4579,18 +4685,18 @@
 }
 
 [data-report-pdf-parity="1"] .reportPackagedProductName {
-  font-size: 16.6px;
-  line-height: 1.36;
+  font-size: 13.4px;
+  line-height: 1.34;
   letter-spacing: 0;
 }
 
 [data-report-pdf-parity="1"] .reportPackagedProductBrand {
-  font-size: 12.4px;
+  font-size: 10.8px;
   letter-spacing: 0;
 }
 
 [data-report-pdf-parity="1"] .reportPackagedProductFact {
-  font-size: 12px;
+  font-size: 10.8px;
   line-height: 1.48;
   letter-spacing: 0;
 }
@@ -5102,6 +5208,15 @@
   .workflowCoreCount {
     width: 100%;
     justify-items: start;
+  }
+
+  .workflowBannerActions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .workflowSyncDetailGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .workflowReportSelector {

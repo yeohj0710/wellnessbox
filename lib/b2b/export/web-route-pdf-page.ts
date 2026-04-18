@@ -91,7 +91,7 @@ export async function applyWebRoutePdfRenderOverrides(
     0,
     Math.min(
       MAX_PDF_SAFE_MARGIN_PX,
-      Math.max(safeHorizontalMarginPx + 10, Math.round(pageMarginPx + 12))
+      Math.max(safeHorizontalMarginPx + 14, Math.round(pageMarginPx + 18))
     )
   );
   const contentWidthPx = A4_PAGE_WIDTH_PX - safeHorizontalMarginPx * 2;

@@ -106,10 +106,13 @@ async function capturePdfFromWebRoute(input: {
         state: "visible",
         timeout: WEB_ROUTE_PDF_RENDER_TIMEOUT_MS,
       });
+      await page.waitForSelector(
+        '[data-testid="report-capture-surface"] [data-report-document="1"]',
+        {
+          timeout: WEB_ROUTE_PDF_RENDER_TIMEOUT_MS,
+        }
+      );
       await page.waitForSelector('[data-testid="report-capture-surface"] [data-report-page="1"]', {
-        timeout: WEB_ROUTE_PDF_RENDER_TIMEOUT_MS,
-      });
-      await page.waitForSelector('[data-testid="report-capture-surface"] [data-report-page="2"]', {
         timeout: WEB_ROUTE_PDF_RENDER_TIMEOUT_MS,
       });
       await page.emulateMedia({ media: "screen" });

@@ -1,7 +1,6 @@
 import "server-only";
 
 import { randomUUID } from "crypto";
-import { unstable_after } from "next/server";
 import db from "@/lib/db";
 import {
   B2bEmployeeSyncError,
@@ -20,7 +19,9 @@ const INTERNAL_ROUTE_ORIGIN = "https://wellnessbox.internal";
 const SIGN_RETRY_DELAY_MS = 12_000;
 const INIT_RETRY_DELAY_MS = 5_000;
 const FAILURE_RETRY_DELAY_MS = 20_000;
-const RUNNER_HEARTBEAT_TIMEOUT_MS = 90_000;
+const RUNNER_HEARTBEAT_INTERVAL_MS = 10_000;
+const RUNNER_HEARTBEAT_TIMEOUT_MS = 40_000;
+const LEGACY_RUNNING_INIT_STALE_MS = 15_000;
 const MAX_BACKGROUND_LOOPS_PER_RUN = 20;
 const MAX_INLINE_WAIT_MS = 20_000;
 
@@ -182,10 +183,18 @@ async function claimEmployeeSyncState(employeeId: string) {
   if (!isEmployeeSyncStateActive(currentStatus)) return null;
 
   const staleBefore = addMs(now(), -RUNNER_HEARTBEAT_TIMEOUT_MS);
+  const legacyRunningInitStaleBefore = addMs(now(), -LEGACY_RUNNING_INIT_STALE_MS);
+  const legacyRunningInitLikelyStuck =
+    currentStatus === "running" &&
+    current.step === "init" &&
+    current.lastAttemptAt == null &&
+    current.startedAt != null &&
+    current.startedAt < legacyRunningInitStaleBefore;
   const runnerAvailable =
     !current.runnerToken ||
     !current.runnerHeartbeatAt ||
-    current.runnerHeartbeatAt < staleBefore;
+    current.runnerHeartbeatAt < staleBefore ||
+    legacyRunningInitLikelyStuck;
   if (!runnerAvailable) {
     return null;
   }
@@ -221,6 +230,44 @@ async function touchSyncRunner(employeeId: string, runnerToken: string) {
       runnerHeartbeatAt: now(),
     },
   });
+}
+
+async function markRunningStep(input: {
+  employeeId: string;
+  runnerToken: string;
+  periodKey: string;
+  step: EmployeeSyncStateStep;
+}) {
+  await db.b2bEmployeeSyncState.update({
+    where: { employeeId: input.employeeId },
+    data: {
+      periodKey: input.periodKey,
+      status: "running",
+      step: input.step,
+      lastAttemptAt: now(),
+      nextRetryAt: null,
+      lastErrorCode: null,
+      lastErrorMessage: null,
+      runnerToken: input.runnerToken,
+      runnerHeartbeatAt: now(),
+    },
+  });
+}
+
+async function runWithRunnerHeartbeat<T>(input: {
+  employeeId: string;
+  runnerToken: string;
+  run: () => Promise<T>;
+}) {
+  const timer = setInterval(() => {
+    void touchSyncRunner(input.employeeId, input.runnerToken).catch(() => undefined);
+  }, RUNNER_HEARTBEAT_INTERVAL_MS);
+
+  try {
+    return await input.run();
+  } finally {
+    clearInterval(timer);
+  }
 }
 
 async function releaseSyncRunner(employeeId: string, runnerToken: string) {
@@ -376,63 +423,88 @@ async function attemptInit(input: {
     phoneNormalized: string;
   };
 }) {
-  const response = await runNhisInitRoute(
-    buildJsonRequest("/api/health/nhis/init", {
-      loginMethod: "EASY",
-      loginOrgCd: "kakao",
-      resNm: input.identity.name,
-      resNo: input.identity.birthDate,
-      mobileNo: input.identity.phoneNormalized,
-    }),
-    input.appUserId
-  );
-  const payload = (await readJsonSafe(response)) as {
-    ok?: boolean;
-    linked?: boolean;
-    nextStep?: string;
-    error?: string;
-    code?: string;
-    nextAction?: string;
-  };
-
-  if (response.ok && (payload.linked === true || payload.nextStep === "fetch")) {
-    await markQueuedFetch({
+  try {
+    await markRunningStep({
       employeeId: input.employeeId,
       runnerToken: input.runnerToken,
       periodKey: input.periodKey,
+      step: "init",
     });
-    return { continueNow: true };
-  }
-
-  if (response.ok && payload.nextStep === "sign") {
-    await markAwaitingSign({
+    const response = await runWithRunnerHeartbeat({
       employeeId: input.employeeId,
       runnerToken: input.runnerToken,
-      periodKey: input.periodKey,
+      run: () =>
+        runNhisInitRoute(
+          buildJsonRequest("/api/health/nhis/init", {
+            loginMethod: "EASY",
+            loginOrgCd: "kakao",
+            resNm: input.identity.name,
+            resNo: input.identity.birthDate,
+            mobileNo: input.identity.phoneNormalized,
+          }),
+          input.appUserId
+        ),
     });
-    return { continueNow: false };
-  }
+    const payload = (await readJsonSafe(response)) as {
+      ok?: boolean;
+      linked?: boolean;
+      nextStep?: string;
+      error?: string;
+      code?: string;
+      nextAction?: string;
+    };
 
-  if (payload.nextAction === "sign") {
-    await markAwaitingSign({
+    if (response.ok && (payload.linked === true || payload.nextStep === "fetch")) {
+      await markQueuedFetch({
+        employeeId: input.employeeId,
+        runnerToken: input.runnerToken,
+        periodKey: input.periodKey,
+      });
+      return { continueNow: true };
+    }
+
+    if (response.ok && payload.nextStep === "sign") {
+      await markAwaitingSign({
+        employeeId: input.employeeId,
+        runnerToken: input.runnerToken,
+        periodKey: input.periodKey,
+      });
+      return { continueNow: false };
+    }
+
+    if (payload.nextAction === "sign") {
+      await markAwaitingSign({
+        employeeId: input.employeeId,
+        runnerToken: input.runnerToken,
+        periodKey: input.periodKey,
+        code: payload.code ?? null,
+        message: payload.error ?? null,
+      });
+      return { continueNow: false };
+    }
+
+    await markFailed({
       employeeId: input.employeeId,
       runnerToken: input.runnerToken,
       periodKey: input.periodKey,
       code: payload.code ?? null,
-      message: payload.error ?? null,
+      message:
+        payload.error ?? "건강검진 연동 준비를 시작하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+    });
+    return { continueNow: false };
+  } catch (error) {
+    await markFailed({
+      employeeId: input.employeeId,
+      runnerToken: input.runnerToken,
+      periodKey: input.periodKey,
+      message: normalizeErrorMessage(
+        error,
+        "건강검진 연동 준비 중 알 수 없는 오류가 발생했습니다."
+      ),
+      retryable: true,
     });
     return { continueNow: false };
   }
-
-  await markFailed({
-    employeeId: input.employeeId,
-    runnerToken: input.runnerToken,
-    periodKey: input.periodKey,
-    code: payload.code ?? null,
-    message:
-      payload.error ?? "건강검진 연동 준비를 시작하지 못했습니다. 잠시 후 다시 시도해 주세요.",
-  });
-  return { continueNow: false };
 }
 
 async function attemptSign(input: {
@@ -441,66 +513,91 @@ async function attemptSign(input: {
   appUserId: string;
   periodKey: string;
 }) {
-  const response = await runNhisSignRoute({
-    req: buildJsonRequest("/api/health/nhis/sign", {}),
-    appUserId: input.appUserId,
-    signFailureMessage:
-      "카카오 인증 확인을 완료하지 못했습니다. 카카오 인증 상태를 확인한 뒤 다시 시도해 주세요.",
-  });
-  const payload = (await readJsonSafe(response)) as {
-    ok?: boolean;
-    linked?: boolean;
-    error?: string;
-    code?: string;
-    nextAction?: string;
-    retryAfterSec?: number;
-  };
-
-  if (response.ok && payload.linked === true) {
-    await markQueuedFetch({
+  try {
+    await markRunningStep({
       employeeId: input.employeeId,
       runnerToken: input.runnerToken,
       periodKey: input.periodKey,
+      step: "sign",
     });
-    return { continueNow: true };
-  }
+    const response = await runWithRunnerHeartbeat({
+      employeeId: input.employeeId,
+      runnerToken: input.runnerToken,
+      run: () =>
+        runNhisSignRoute({
+          req: buildJsonRequest("/api/health/nhis/sign", {}),
+          appUserId: input.appUserId,
+          signFailureMessage:
+            "카카오 인증 확인을 완료하지 못했습니다. 카카오 인증 상태를 확인한 뒤 다시 시도해 주세요.",
+        }),
+    });
+    const payload = (await readJsonSafe(response)) as {
+      ok?: boolean;
+      linked?: boolean;
+      error?: string;
+      code?: string;
+      nextAction?: string;
+      retryAfterSec?: number;
+    };
 
-  if (payload.nextAction === "init") {
-    await markQueuedInit({
+    if (response.ok && payload.linked === true) {
+      await markQueuedFetch({
+        employeeId: input.employeeId,
+        runnerToken: input.runnerToken,
+        periodKey: input.periodKey,
+      });
+      return { continueNow: true };
+    }
+
+    if (payload.nextAction === "init") {
+      await markQueuedInit({
+        employeeId: input.employeeId,
+        runnerToken: input.runnerToken,
+        periodKey: input.periodKey,
+        code: payload.code ?? null,
+        message: payload.error ?? null,
+      });
+      return { continueNow: false };
+    }
+
+    if (payload.nextAction === "sign" || response.status === 429) {
+      await markAwaitingSign({
+        employeeId: input.employeeId,
+        runnerToken: input.runnerToken,
+        periodKey: input.periodKey,
+        retryDelayMs:
+          typeof payload.retryAfterSec === "number" && payload.retryAfterSec > 0
+            ? payload.retryAfterSec * 1000
+            : SIGN_RETRY_DELAY_MS,
+        code: payload.code ?? null,
+        message: payload.error ?? null,
+      });
+      return { continueNow: false };
+    }
+
+    await markFailed({
       employeeId: input.employeeId,
       runnerToken: input.runnerToken,
       periodKey: input.periodKey,
       code: payload.code ?? null,
-      message: payload.error ?? null,
+      message:
+        payload.error ??
+        "카카오 인증 상태를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.",
     });
     return { continueNow: false };
-  }
-
-  if (payload.nextAction === "sign" || response.status === 429) {
-    await markAwaitingSign({
+  } catch (error) {
+    await markFailed({
       employeeId: input.employeeId,
       runnerToken: input.runnerToken,
       periodKey: input.periodKey,
-      retryDelayMs:
-        typeof payload.retryAfterSec === "number" && payload.retryAfterSec > 0
-          ? payload.retryAfterSec * 1000
-          : SIGN_RETRY_DELAY_MS,
-      code: payload.code ?? null,
-      message: payload.error ?? null,
+      message: normalizeErrorMessage(
+        error,
+        "카카오 인증 확인 중 알 수 없는 오류가 발생했습니다."
+      ),
+      retryable: true,
     });
     return { continueNow: false };
   }
-
-  await markFailed({
-    employeeId: input.employeeId,
-    runnerToken: input.runnerToken,
-    periodKey: input.periodKey,
-    code: payload.code ?? null,
-    message:
-      payload.error ??
-      "카카오 인증 상태를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.",
-  });
-  return { continueNow: false };
 }
 
 async function attemptFetch(input: {
@@ -516,11 +613,22 @@ async function attemptFetch(input: {
   };
 }) {
   try {
-    const syncResult = await fetchAndStoreB2bHealthSnapshot({
-      appUserId: input.appUserId,
+    await markRunningStep({
       employeeId: input.employeeId,
-      identity: input.identity,
-      forceRefresh: false,
+      runnerToken: input.runnerToken,
+      periodKey: input.periodKey,
+      step: "fetch",
+    });
+    const syncResult = await runWithRunnerHeartbeat({
+      employeeId: input.employeeId,
+      runnerToken: input.runnerToken,
+      run: () =>
+        fetchAndStoreB2bHealthSnapshot({
+          appUserId: input.appUserId,
+          employeeId: input.employeeId,
+          identity: input.identity,
+          forceRefresh: false,
+        }),
     });
 
     const report = await regenerateB2bReport({
@@ -760,12 +868,18 @@ export async function processDueEmployeeBackgroundSyncStates(input?: {
 }
 
 export function scheduleEmployeeBackgroundSyncAfterResponse(employeeId: string) {
-  unstable_after(async () => {
+  const run = async () => {
     await processEmployeeBackgroundSyncState(employeeId).catch((error) => {
       console.error("[b2b][employee-sync-state] after-response process failed", {
         employeeId,
         message: normalizeErrorMessage(error, "unknown_after_response_sync_error"),
       });
     });
-  });
+  };
+
+  // Run outside the request body via timer. Cron remains the durable fallback
+  // for retries and environments where this immediate kick does not finish.
+  setTimeout(() => {
+    void run();
+  }, 0);
 }

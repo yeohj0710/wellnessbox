@@ -129,9 +129,14 @@ export function hasReportSummaryHealthMetricsContent(rows: ReportSummaryHealthMe
 }
 
 export function resolveReportSummaryFinalPharmacistComment(payload: ReportSummaryPayload) {
-  const note = toTrimmedText(payload.pharmacist?.note);
-  if (note && !EMPTY_PHARMACIST_COMMENT_MESSAGES.has(note)) {
-    return softenAdviceTone(note);
+  const candidates = [
+    toTrimmedText(payload.pharmacist?.note),
+    toTrimmedText(payload.pharmacist?.summary),
+  ];
+  for (const candidate of candidates) {
+    if (candidate && !EMPTY_PHARMACIST_COMMENT_MESSAGES.has(candidate)) {
+      return softenAdviceTone(candidate);
+    }
   }
   return "";
 }

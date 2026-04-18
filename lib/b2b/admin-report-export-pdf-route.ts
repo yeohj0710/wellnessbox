@@ -26,7 +26,9 @@ const DEFAULT_WEB_PDF_CAPTURE_WIDTH_PX = 760;
 
 function allowLegacyPdfMode() {
   const raw = (process.env.B2B_ENABLE_LEGACY_PDF_EXPORT || "").trim().toLowerCase();
-  return raw === "1" || raw === "true" || raw === "y";
+  if (raw === "0" || raw === "false" || raw === "n") return false;
+  if (raw === "1" || raw === "true" || raw === "y") return true;
+  return process.env.NODE_ENV !== "production";
 }
 
 function shouldReturnInstallGuide(reason: string | undefined) {

@@ -74,14 +74,28 @@ export function useB2bAdminReportExportActions({
           window.innerWidth || document.documentElement?.clientWidth || 0
         );
         const queryString = buildPdfCaptureQuery(captureWidthPx, viewportWidthPx);
-
-        await downloadFromApi(
+        const webExportUrl =
           "/api/admin/b2b/reports/" +
-            latestReport.id +
-            "/export/pdf" +
-            (queryString.length > 0 ? `?${queryString}` : ""),
-          downloadFileName
-        );
+          latestReport.id +
+          "/export/pdf" +
+          (queryString.length > 0 ? `?${queryString}` : "");
+
+        try {
+          await downloadFromApi(webExportUrl, downloadFileName);
+        } catch (error) {
+          const shouldSkipLegacyFallback =
+            error instanceof ExportApiError &&
+            error.payload.code === "LAYOUT_VALIDATION_FAILED";
+          if (shouldSkipLegacyFallback) {
+            throw error;
+          }
+
+          await downloadFromApi(
+            "/api/admin/b2b/reports/" + latestReport.id + "/export/pdf?mode=legacy",
+            downloadFileName
+          );
+        }
+
         setNotice("PDF 다운로드가 완료되었습니다.");
       },
     });

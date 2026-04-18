@@ -258,6 +258,7 @@ export async function runAdminEmployeeDeleteRoute(
     id: target.id,
     name: target.name,
     appUserId: target.appUserId,
+    identityHash: target.identityHash,
     counts: target._count,
   });
 
@@ -293,6 +294,8 @@ export async function runAdminEmployeeOpsPostRoute(
   if (parsed.data.action === "reset_all_b2b_data") {
     const deleted = await resetAllB2bDataForEmployee({
       employeeId: employee.id,
+      appUserId: employee.appUserId,
+      identityHash: employee.identityHash,
       includeAccessLogs: parsed.data.includeAccessLogs === true,
       includeAdminLogs: parsed.data.includeAdminLogs === true,
     });

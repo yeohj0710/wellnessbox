@@ -21,7 +21,7 @@ export default function B2bAdminOpsHero({
   return (
     <header className={styles.heroCard}>
       <p className={styles.kicker}>B2B REPORT OPS</p>
-      <h1 className={styles.title}>임직원 건강 리포트 운영</h1>
+      <h1 className={styles.title}>임직원 건강 리포트 관리</h1>
       <p className={styles.description}>
         임직원을 선택하면 해당 기간 리포트가 바로 열려요. 필요할 때만 설문,
         코멘트, 레이아웃을 수정하고 PDF까지 이어서 확인할 수 있어요.

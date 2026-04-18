@@ -43,7 +43,9 @@ function HubCard(props: {
             {props.icon}
           </div>
           <div className="space-y-2">
-            <h2 className="text-xl font-black tracking-[-0.03em] text-slate-950">{props.title}</h2>
+            <h2 className="text-xl font-black tracking-[-0.03em] text-slate-950">
+              {props.title}
+            </h2>
             <p
               className={[
                 "w-full text-sm leading-6 text-slate-600",
@@ -69,7 +71,11 @@ function HubCard(props: {
       </div>
 
       {props.children ? (
-        <div className={["mx-auto mt-6 w-full", props.bodyClassName].filter(Boolean).join(" ")}>
+        <div
+          className={["mx-auto mt-6 w-full", props.bodyClassName]
+            .filter(Boolean)
+            .join(" ")}
+        >
           {props.children}
         </div>
       ) : null}
@@ -97,7 +103,9 @@ function MiniToolCard(props: {
       </div>
 
       <div className="mt-5 space-y-2">
-        <h3 className="text-lg font-black tracking-[-0.03em] text-slate-950">{props.title}</h3>
+        <h3 className="text-lg font-black tracking-[-0.03em] text-slate-950">
+          {props.title}
+        </h3>
         <p className="text-sm leading-6 text-slate-600">{props.description}</p>
       </div>
 
@@ -124,8 +132,9 @@ export default function AdminPage() {
                 운영 대시보드
               </h1>
               <p className="w-full text-sm leading-7 text-slate-600 sm:text-[15px]">
-                B2B 리포트 운영, 임직원 데이터 관리, AI 모델 조정, 상품 분류 체계 관리까지
-                운영 흐름을 한곳에서 빠르게 확인하고 정리할 수 있도록 묶었습니다.
+                B2B 리포트 관리, 임직원 데이터 관리, AI 모델 조정, 상품 분류
+                체계 관리까지 운영 흐름을 한곳에서 빠르게 확인하고 정리할 수
+                있도록 묶었습니다.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -153,7 +162,7 @@ export default function AdminPage() {
             <MiniToolCard
               icon={<RectangleStackIcon className="h-5 w-5" />}
               title="B2B 통합 운영"
-              description="리포트 운영과 임직원 데이터 정리를 같은 페이지에서 바로 이어서 처리합니다."
+              description="리포트 관리과 임직원 데이터 정리를 같은 페이지에서 바로 이어서 처리합니다."
               href="/admin/b2b-reports"
               meta="리포트 · 직원 데이터"
             />

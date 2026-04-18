@@ -26,6 +26,7 @@ export const employeeDeleteTargetSelect = {
   id: true,
   name: true,
   appUserId: true,
+  identityHash: true,
   _count: {
     select: {
       healthSnapshots: true,
@@ -43,6 +44,7 @@ export const employeeOpsTargetSelect = {
   id: true,
   name: true,
   appUserId: true,
+  identityHash: true,
 } satisfies Prisma.B2bEmployeeSelect;
 
 export type ManagedEmployeeRow = Prisma.B2bEmployeeGetPayload<{

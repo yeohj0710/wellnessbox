@@ -5,7 +5,6 @@ import type {
 } from "@/lib/server/hyphen/fetch-contract";
 import {
   getLatestNhisFetchCacheByIdentity,
-  getLatestNhisFetchCacheByIdentityGlobal,
   getValidNhisFetchCache,
   markNhisFetchCacheHit,
 } from "@/lib/server/hyphen/fetch-cache";
@@ -87,28 +86,6 @@ export async function resolveSummaryPatchCachedPayload(
   });
   if (historyCache) {
     const parsed = parseCachedPayload(historyCache.payload);
-    if (
-      parsed &&
-      isUsableSummaryPatchCachedPayload({
-        payload: parsed,
-        targets: input.targets,
-        requireMedicationNames: input.requireMedicationNames,
-        hasRequiredMedicationNames: input.hasRequiredMedicationNames,
-      })
-    ) {
-      return { payload: parsed, usedNetwork: false as const };
-    }
-  }
-
-  const globalHistoryCache = await getLatestNhisFetchCacheByIdentityGlobal({
-    identityHash: input.identityHash,
-    targets: input.targets,
-    yearLimit: input.effectiveYearLimit,
-    subjectType: input.subjectType,
-    excludeAppUserId: input.appUserId,
-  });
-  if (globalHistoryCache) {
-    const parsed = parseCachedPayload(globalHistoryCache.payload);
     if (
       parsed &&
       isUsableSummaryPatchCachedPayload({

@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { Prisma } from "@prisma/client";
 import db from "@/lib/db";
 import {
   type AdminEmployeeRecordType,
@@ -14,12 +15,56 @@ export const APP_USER_REQUIRED_ERROR =
   "이 직원은 appUserId가 없어 하이픈 캐시/연동 정보를 정리할 수 없습니다.";
 export const RECORD_NOT_FOUND_ERROR = "삭제할 레코드를 찾을 수 없습니다.";
 
+async function clearEmployeeScopedHyphenArtifactsInTx(input: {
+  tx: Prisma.TransactionClient;
+  appUserId: string | null;
+  identityHash: string;
+}) {
+  if (!input.appUserId) {
+    return {
+      healthFetchCaches: 0,
+      healthFetchAttempts: 0,
+    };
+  }
+
+  const provider = HYPHEN_PROVIDER;
+  const [cacheDeleteResult, attemptDeleteResult] = await Promise.all([
+    input.tx.healthProviderFetchCache.deleteMany({
+      where: {
+        appUserId: input.appUserId,
+        provider,
+        identityHash: input.identityHash,
+      },
+    }),
+    input.tx.healthProviderFetchAttempt.deleteMany({
+      where: {
+        appUserId: input.appUserId,
+        provider,
+        identityHash: input.identityHash,
+      },
+    }),
+  ]);
+
+  return {
+    healthFetchCaches: cacheDeleteResult.count,
+    healthFetchAttempts: attemptDeleteResult.count,
+  };
+}
+
 export async function resetAllB2bDataForEmployee(input: {
   employeeId: string;
+  appUserId: string | null;
+  identityHash: string;
   includeAccessLogs: boolean;
   includeAdminLogs: boolean;
 }) {
-  return db.$transaction(async (tx) => {
+  const deleted = await db.$transaction(async (tx) => {
+    const hyphenDeleted = await clearEmployeeScopedHyphenArtifactsInTx({
+      tx,
+      appUserId: input.appUserId,
+      identityHash: input.identityHash,
+    });
+
     const deleted = {
       healthSnapshots: (
         await tx.b2bHealthDataSnapshot.deleteMany({
@@ -60,6 +105,12 @@ export async function resetAllB2bDataForEmployee(input: {
             })
           ).count
         : 0,
+      syncState: (
+        await tx.b2bEmployeeSyncState.deleteMany({
+          where: { employeeId: input.employeeId },
+        })
+      ).count,
+      ...hyphenDeleted,
     };
 
     await tx.b2bEmployee.update({
@@ -81,6 +132,12 @@ export async function resetAllB2bDataForEmployee(input: {
 
     return deleted;
   });
+
+  if (input.appUserId) {
+    clearNhisFetchMemoryCacheForUser(input.appUserId);
+  }
+
+  return deleted;
 }
 
 export async function resetPeriodDataForEmployee(input: {
@@ -313,6 +370,7 @@ export async function deleteEmployeeWithAudit(target: {
   id: string;
   name: string;
   appUserId: string | null;
+  identityHash: string;
   counts: {
     healthSnapshots: number;
     surveyResponses: number;
@@ -324,6 +382,12 @@ export async function deleteEmployeeWithAudit(target: {
   };
 }) {
   await db.$transaction(async (tx) => {
+    const hyphenDeleted = await clearEmployeeScopedHyphenArtifactsInTx({
+      tx,
+      appUserId: target.appUserId,
+      identityHash: target.identityHash,
+    });
+
     await tx.b2bAdminActionLog.create({
       data: {
         employeeId: target.id,
@@ -334,6 +398,7 @@ export async function deleteEmployeeWithAudit(target: {
           employeeName: target.name,
           appUserId: target.appUserId,
           counts: target.counts,
+          deleted: hyphenDeleted,
         },
       },
     });
@@ -341,4 +406,8 @@ export async function deleteEmployeeWithAudit(target: {
       where: { id: target.id },
     });
   });
+
+  if (target.appUserId) {
+    clearNhisFetchMemoryCacheForUser(target.appUserId);
+  }
 }

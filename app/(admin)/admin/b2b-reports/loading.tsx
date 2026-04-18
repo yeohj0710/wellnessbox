@@ -1,97 +1,112 @@
 import styles from "@/components/b2b/B2bUx.module.css";
 
-const sidebarSkeletonItems = Array.from({ length: 6 });
-const detailPanelSkeletonItems = Array.from({ length: 4 });
+const employeeSkeletonItems = Array.from({ length: 6 });
+const editorSkeletonRows = Array.from({ length: 3 });
 
 export default function AdminB2bReportsLoading() {
   return (
     <div className={styles.pageBackdrop}>
-      <div className={`${styles.page} ${styles.reportPage} ${styles.pageNoBg} ${styles.stack}`}>
-        <header className={`${styles.heroCard} ${styles.reportHeroShell}`}>
-          <div className={styles.reportHeroMain}>
-            <span className={`${styles.skeletonPill} ${styles.skeletonBlock}`} style={{ width: 138 }} />
-            <span className={`${styles.skeletonLine} ${styles.skeletonBlock}`} style={{ width: "58%" }} />
-            <span className={`${styles.skeletonLineShort} ${styles.skeletonBlock}`} style={{ width: "76%" }} />
-            <div className={styles.reportHeroSearchRow}>
-              <span className={styles.skeletonBlock} style={{ width: "100%", height: 44, borderRadius: 12 }} />
-              <span className={`${styles.skeletonPill} ${styles.skeletonBlock}`} style={{ width: "100%", maxWidth: 90, height: 38 }} />
-              <span className={`${styles.skeletonPill} ${styles.skeletonBlock}`} style={{ width: "100%", maxWidth: 116, height: 38 }} />
-            </div>
+      <div className={`${styles.page} ${styles.pageNoBg} ${styles.compactPage} ${styles.stack}`}>
+        <header className={styles.heroCard}>
+          <span className={`${styles.skeletonPill} ${styles.skeletonBlock}`} style={{ width: 144 }} />
+          <span className={`${styles.skeletonLine} ${styles.skeletonBlock}`} style={{ width: "42%" }} />
+          <span className={`${styles.skeletonLineShort} ${styles.skeletonBlock}`} style={{ width: "78%" }} />
+          <div className={styles.actionRow}>
+            <span className={styles.skeletonBlock} style={{ flex: "1 1 280px", height: 44, borderRadius: 12 }} />
+            <span className={styles.skeletonBlock} style={{ width: 88, height: 44, borderRadius: 12 }} />
           </div>
-          <aside className={styles.reportHeroSide}>
-            <div className={styles.kvRow}>
-              <span className={`${styles.skeletonBlock}`} style={{ minHeight: 56 }} />
-              <span className={`${styles.skeletonBlock}`} style={{ minHeight: 56 }} />
-            </div>
-            <div className={styles.kvRow}>
-              <span className={`${styles.skeletonBlock}`} style={{ minHeight: 56 }} />
-              <span className={`${styles.skeletonBlock}`} style={{ minHeight: 56 }} />
-            </div>
-            <span className={`${styles.skeletonLineShort} ${styles.skeletonBlock}`} style={{ width: "64%" }} />
-          </aside>
         </header>
 
         <section className={`${styles.sectionCard} ${styles.employeeBrowserCard}`}>
-          <div className={styles.skeletonRow}>
-            <span className={`${styles.skeletonLineShort} ${styles.skeletonBlock}`} style={{ width: "34%", height: 16 }} />
-            <span className={`${styles.skeletonPill} ${styles.skeletonBlock}`} style={{ width: 74, height: 22 }} />
-          </div>
-          <div className={styles.employeeBrowserSummaryRow}>
-            <span className={styles.skeletonBlock} style={{ width: "100%", minHeight: 96, borderRadius: 18 }} />
-            <span className={styles.skeletonBlock} style={{ width: "100%", minHeight: 96, borderRadius: 18 }} />
-          </div>
-          <div className={styles.employeeBrowserGrid}>
-            {sidebarSkeletonItems.map((_, index) => (
-              <span
-                key={`sidebar-skeleton-${index}`}
-                className={styles.skeletonBlock}
-                style={{ width: "100%", minHeight: 86, borderRadius: 16 }}
-              />
-            ))}
-          </div>
-        </section>
-
-        <div className={styles.stack}>
-          <section className={styles.sectionCard}>
+          <div className={styles.employeeBrowserHead}>
             <div className={styles.skeletonRow}>
-              <span className={`${styles.skeletonLine} ${styles.skeletonBlock}`} style={{ width: "48%" }} />
-              <span className={`${styles.skeletonPill} ${styles.skeletonBlock}`} style={{ width: 96 }} />
+              <span className={`${styles.skeletonLineShort} ${styles.skeletonBlock}`} style={{ width: 132, height: 16 }} />
+              <span className={`${styles.skeletonPill} ${styles.skeletonBlock}`} style={{ width: 76, height: 24 }} />
             </div>
-            <span className={`${styles.skeletonLineShort} ${styles.skeletonBlock}`} style={{ width: "72%" }} />
-            <div className={styles.loadingKpiRow}>
-              {Array.from({ length: 4 }).map((_, index) => (
+            <span className={`${styles.skeletonLineShort} ${styles.skeletonBlock}`} style={{ width: 220 }} />
+          </div>
+
+          <div className={styles.employeeBrowserSummaryRow}>
+            <span className={styles.skeletonBlock} style={{ width: "100%", minHeight: 162, borderRadius: 20 }} />
+            <span className={styles.skeletonBlock} style={{ width: "100%", minHeight: 162, borderRadius: 20 }} />
+          </div>
+
+          <div className={styles.employeeBrowserScroller}>
+            <div className={`${styles.listWrap} ${styles.employeeBrowserGrid}`}>
+              {employeeSkeletonItems.map((_, index) => (
                 <span
-                  key={`overview-kpi-skeleton-${index}`}
-                  className={`${styles.skeletonBlock} ${styles.loadingKpi}`}
+                  key={`employee-loading-card-${index}`}
+                  className={styles.skeletonBlock}
+                  style={{ width: "100%", minHeight: 126, borderRadius: 18 }}
                 />
               ))}
             </div>
-          </section>
+          </div>
+        </section>
 
-          <section className={styles.reportCanvas}>
-            <div className={styles.reportCanvasHeader}>
-              <div>
-                <span className={`${styles.skeletonLine} ${styles.skeletonBlock}`} style={{ width: 220 }} />
-                <span className={`${styles.skeletonLineShort} ${styles.skeletonBlock}`} style={{ width: 320, marginTop: 8 }} />
-              </div>
-              <span className={`${styles.skeletonPill} ${styles.skeletonBlock}`} style={{ width: 160, height: 30 }} />
-            </div>
-            <div className={`${styles.reportCanvasBoard} ${styles.reportCanvasBoardWide}`}>
-              <span className={styles.skeletonBlock} style={{ width: "100%", minHeight: 560, borderRadius: 20 }} />
-            </div>
-          </section>
+        <section className={styles.sectionCard}>
+          <div className={styles.skeletonRow}>
+            <span className={`${styles.skeletonLine} ${styles.skeletonBlock}`} style={{ width: "34%" }} />
+            <span className={`${styles.skeletonPill} ${styles.skeletonBlock}`} style={{ width: 104, height: 28 }} />
+          </div>
+          <span className={`${styles.skeletonLineShort} ${styles.skeletonBlock}`} style={{ width: "58%" }} />
+          <div className={styles.actionRow}>
+            <span className={styles.skeletonBlock} style={{ width: 150, height: 44, borderRadius: 12 }} />
+            <span className={styles.skeletonBlock} style={{ width: 154, height: 44, borderRadius: 12 }} />
+            <span className={styles.skeletonBlock} style={{ width: 120, height: 44, borderRadius: 12 }} />
+          </div>
+          <span className={styles.skeletonBlock} style={{ width: "100%", minHeight: 204, borderRadius: 18 }} />
+        </section>
 
-          {detailPanelSkeletonItems.map((_, index) => (
-            <section key={`detail-panel-skeleton-${index}`} className={styles.sectionCard}>
+        <section className={styles.reportCanvas}>
+          <div className={styles.reportCanvasHeader}>
+            <div>
+              <span className={`${styles.skeletonLine} ${styles.skeletonBlock}`} style={{ width: 248 }} />
+              <span className={`${styles.skeletonLineShort} ${styles.skeletonBlock}`} style={{ width: 356, marginTop: 8 }} />
+            </div>
+            <span className={`${styles.skeletonPill} ${styles.skeletonBlock}`} style={{ width: 132, height: 30 }} />
+          </div>
+          <div className={`${styles.reportCanvasBoard} ${styles.reportCanvasBoardWide}`}>
+            <span className={styles.skeletonBlock} style={{ width: "100%", minHeight: 640, borderRadius: 20 }} />
+          </div>
+        </section>
+
+        <section className={`${styles.optionalCard} ${styles.editorPanel}`}>
+          <div className={styles.editorPanelMotion}>
+            <div className={styles.editorPanelBody}>
               <div className={styles.skeletonRow}>
-                <span className={`${styles.skeletonLine} ${styles.skeletonBlock}`} style={{ width: "44%" }} />
-                <span className={`${styles.skeletonPill} ${styles.skeletonBlock}`} style={{ width: 88 }} />
+                <span className={`${styles.skeletonLineShort} ${styles.skeletonBlock}`} style={{ width: 136, height: 18 }} />
+                <span className={`${styles.skeletonLineShort} ${styles.skeletonBlock}`} style={{ width: 180 }} />
               </div>
-              <span className={`${styles.skeletonLineShort} ${styles.skeletonBlock}`} style={{ width: "84%" }} />
-              <span className={`${styles.skeletonLineShort} ${styles.skeletonBlock}`} style={{ width: "68%" }} />
-            </section>
-          ))}
-        </div>
+              <span className={styles.skeletonBlock} style={{ width: "100%", minHeight: 98, borderRadius: 18 }} />
+              <div className={styles.actionRow}>
+                <span className={styles.skeletonBlock} style={{ flex: "1 1 180px", height: 44, borderRadius: 12 }} />
+                <span className={styles.skeletonBlock} style={{ flex: "1 1 180px", height: 44, borderRadius: 12 }} />
+                <span className={styles.skeletonBlock} style={{ flex: "1 1 180px", height: 44, borderRadius: 12 }} />
+              </div>
+              <span className={styles.skeletonBlock} style={{ width: "100%", minHeight: 44, borderRadius: 12 }} />
+              <span className={styles.skeletonBlock} style={{ width: "100%", minHeight: 220, borderRadius: 18 }} />
+            </div>
+          </div>
+        </section>
+
+        {editorSkeletonRows.map((_, index) => (
+          <section key={`ops-editor-loading-${index}`} className={`${styles.optionalCard} ${styles.editorPanel}`}>
+            <div className={styles.editorPanelMotion}>
+              <div className={styles.editorPanelBody}>
+                <div className={styles.skeletonRow}>
+                  <span className={`${styles.skeletonLineShort} ${styles.skeletonBlock}`} style={{ width: 148, height: 18 }} />
+                  <span className={`${styles.skeletonLineShort} ${styles.skeletonBlock}`} style={{ width: 188 }} />
+                </div>
+                <span className={styles.skeletonBlock} style={{ width: "100%", minHeight: index === 0 ? 240 : 180, borderRadius: 18 }} />
+                <div className={styles.actionRow}>
+                  <span className={styles.skeletonBlock} style={{ width: 138, height: 44, borderRadius: 12 }} />
+                  <span className={styles.skeletonBlock} style={{ width: 120, height: 44, borderRadius: 12 }} />
+                </div>
+              </div>
+            </div>
+          </section>
+        ))}
       </div>
     </div>
   );
