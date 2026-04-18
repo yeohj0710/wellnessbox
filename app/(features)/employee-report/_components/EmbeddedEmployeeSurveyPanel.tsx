@@ -42,6 +42,7 @@ export default function EmbeddedEmployeeSurveyPanel({
   onCompleted,
   onClose,
 }: EmbeddedEmployeeSurveyPanelProps) {
+  const surveyViewportRef = useRef<HTMLDivElement | null>(null);
   const template = useMemo(() => loadWellnessTemplateForB2b(), []);
   const c27Key = template.rules.selectSectionByCommonQuestionKey || "C27";
   const maxSelectedSections = Math.max(1, template.rules.maxSelectedSections || 5);
@@ -228,6 +229,7 @@ export default function EmbeddedEmployeeSurveyPanel({
     currentSectionIndex,
     focusedQuestionBySection,
     isSectionTransitioning,
+    scrollContainerRef: surveyViewportRef,
     setCurrentSectionIndex,
     setFocusedQuestionBySection,
     setErrorText,
@@ -454,7 +456,7 @@ export default function EmbeddedEmployeeSurveyPanel({
           </button>
         </div>
 
-        <div className={styles.embeddedSurveyViewport}>
+        <div ref={surveyViewportRef} className={styles.embeddedSurveyViewport}>
           {phase === "calculating" ? (
             <SurveyCalculatingPanel
               title={TEXT.resultTitle}

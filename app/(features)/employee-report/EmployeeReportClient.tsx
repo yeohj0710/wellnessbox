@@ -38,58 +38,58 @@ function syncStatusText(workspace: EmployeeWorkspaceResponse | null) {
   const sync = workspace?.sync;
   if (!sync) {
     return {
-      badge: "대기",
+      badge: "준비 전",
       tone: "off" as const,
-      message: "건강 데이터 연동 상태를 확인하는 중입니다.",
+      message: "건강 정보를 확인할 준비를 하고 있어요.",
     };
   }
 
   if (sync.status === "completed") {
     return {
-      badge: "연동 완료",
+      badge: "확인 완료",
       tone: "on" as const,
       message:
-        "건강검진 데이터와 복약 이력이 반영되었습니다. 설문을 마치면 최신 리포트가 바로 갱신됩니다.",
+        "건강검진과 복약 정보 확인이 끝났어요. 설문까지 마치면 최신 리포트가 준비됩니다.",
     };
   }
   if (sync.status === "failed") {
     return {
-      badge: "재시도 필요",
+      badge: "다시 확인 필요",
       tone: "warn" as const,
       message:
         sync.lastErrorMessage ||
-        "건강 데이터 연동이 멈췄습니다. 버튼을 눌러 다시 요청할 수 있습니다.",
+        "건강 정보를 아직 확인하지 못했어요. 다시 시도해 주세요.",
     };
   }
   if (sync.status === "awaiting_sign") {
     return {
-      badge: "인증 대기",
+      badge: "인증 확인 중",
       tone: "warn" as const,
       message:
-        "카카오 인증이 확인되면 백엔드가 창을 닫아도 이어서 건강검진/복약 이력을 가져옵니다.",
+        "카카오 인증이 끝나면 다음 단계가 바로 이어집니다.",
     };
   }
   if (sync.step === "fetch") {
     return {
-      badge: "데이터 수집 중",
+      badge: "정보 확인 중",
       tone: "on" as const,
       message:
-        "백엔드에서 건강검진 데이터와 복약 이력을 수집하고 있습니다.",
+        "건강검진과 복약 정보를 확인하고 있어요.",
     };
   }
   if (sync.step === "report") {
     return {
-      badge: "리포트 반영 중",
+      badge: "리포트 정리 중",
       tone: "on" as const,
       message:
-        "수집한 건강 데이터를 정리해서 현재 리포트에 반영하고 있습니다.",
+        "확인한 내용을 바탕으로 리포트를 정리하고 있어요.",
     };
   }
   return {
-    badge: "연동 준비 중",
+    badge: "진행 중",
     tone: "off" as const,
     message:
-      "건강 데이터 연동 요청이 접수되었습니다. 카카오 인증과 연동 단계를 순서대로 진행하고 있습니다.",
+      "건강 정보 확인을 시작했어요. 안내에 따라 차례대로 진행됩니다.",
   };
 }
 
@@ -148,10 +148,10 @@ function buildHealthWorkflowSteps(
           : 1;
 
   const steps = [
-    { label: "요청 접수", caption: "백엔드 작업 큐에 저장" },
-    { label: "카카오 인증", caption: "확인되면 자동으로 진행" },
-    { label: "데이터 수집", caption: "건강검진·복약 이력 정리" },
-    { label: "저장 완료", caption: "리포트에 쓸 데이터 준비" },
+    { label: "시작", caption: "건강 정보 확인을 시작했어요." },
+    { label: "카카오 인증", caption: "인증이 끝나면 다음 단계로 넘어가요." },
+    { label: "정보 확인", caption: "건강검진과 복약 정보를 확인해요." },
+    { label: "리포트 정리", caption: "확인한 내용을 리포트에 담아요." },
   ];
 
   return steps.map((step, index) => {
@@ -193,23 +193,22 @@ function buildHealthWorkflow(workspace: EmployeeWorkspaceResponse | null) {
       badge: "완료",
       tone: "on" as const,
       active: false,
-      stepLabel: "저장 완료",
-      title: "건강 데이터 준비가 끝났습니다.",
-      description:
-        "건강검진 데이터와 복약 이력이 준비되었고, 현재 리포트 갱신에 바로 사용할 수 있습니다.",
+      stepLabel: "리포트 정리 완료",
+      title: "건강 정보 확인이 끝났어요.",
+      description: "이제 최신 리포트를 바로 확인할 수 있어요.",
     };
   }
 
   if (sync?.status === "failed") {
     return {
-      badge: "재시도 필요",
+      badge: "다시 확인 필요",
       tone: "warn" as const,
       active: false,
       stepLabel: null,
-      title: "건강 데이터 연동이 중간에 멈췄습니다.",
+      title: "건강 정보를 아직 확인하지 못했어요.",
       description:
         sync.lastErrorMessage ||
-        "다시 요청하면 사용자가 화면을 열어두지 않아도 백엔드가 이어서 처리합니다.",
+        "다시 시도하면 이어서 확인할 수 있어요.",
     };
   }
 
@@ -218,46 +217,42 @@ function buildHealthWorkflow(workspace: EmployeeWorkspaceResponse | null) {
       badge: "마무리 중",
       tone: "on" as const,
       active: true,
-      stepLabel: "저장 완료 직전",
-      title: "수집한 건강 데이터를 리포트에 반영하는 중입니다.",
-      description:
-        "거의 끝났습니다. 반영이 끝나면 최신 리포트가 자동으로 갱신됩니다.",
+      stepLabel: "리포트 정리",
+      title: "리포트를 거의 다 정리했어요.",
+      description: "조금만 기다리면 최신 내용이 반영됩니다.",
     };
   }
 
   if (sync?.step === "fetch") {
     return {
-      badge: "수집 중",
+      badge: "확인 중",
       tone: "on" as const,
       active: true,
-      stepLabel: "데이터 수집",
-      title: "건강검진과 복약 이력을 가져오고 있습니다.",
-      description:
-        "브라우저를 닫아도 백엔드에서 계속 진행되며, 준비되면 바로 반영됩니다.",
+      stepLabel: "건강 정보 확인",
+      title: "건강검진과 복약 정보를 확인하고 있어요.",
+      description: "확인이 끝나면 리포트에 차례대로 반영됩니다.",
     };
   }
 
   if (sync?.status === "awaiting_sign" || sync?.step === "sign") {
     return {
-      badge: "인증 대기",
+      badge: "인증 필요",
       tone: "warn" as const,
       active: true,
-      stepLabel: "카카오 인증 확인",
-      title: "카카오 인증 확인을 기다리고 있습니다.",
-      description:
-        "인증이 확인되는 즉시 건강검진 데이터와 복약 이력 수집 단계로 넘어갑니다.",
+      stepLabel: "카카오 인증",
+      title: "카카오 인증을 마쳐 주세요.",
+      description: "인증이 확인되면 바로 다음 단계로 넘어갑니다.",
     };
   }
 
   if (sync?.active) {
     return {
-      badge: "연동 시작됨",
+      badge: "시작됨",
       tone: "off" as const,
       active: true,
-      stepLabel: "요청 접수",
-      title: "건강 데이터 연동을 준비하고 있습니다.",
-      description:
-        "요청은 이미 접수되었고, 다음 단계가 자동으로 이어지고 있습니다.",
+      stepLabel: "확인 시작",
+      title: "건강 정보 확인을 준비하고 있어요.",
+      description: "안내에 따라 차례대로 진행됩니다.",
     };
   }
 
@@ -266,9 +261,8 @@ function buildHealthWorkflow(workspace: EmployeeWorkspaceResponse | null) {
     tone: "off" as const,
     active: false,
     stepLabel: null,
-    title: "건강 데이터 연동을 먼저 시작해 주세요.",
-    description:
-      "버튼 한 번이면 이후 과정은 백엔드가 계속 처리하고, 사용자는 설문을 이어서 진행할 수 있습니다.",
+    title: "건강 정보 확인을 먼저 시작해 주세요.",
+    description: "먼저 시작해 두면 설문과 함께 리포트를 더 빨리 볼 수 있어요.",
   };
 }
 
@@ -280,9 +274,8 @@ function buildSurveyWorkflow(
     return {
       badge: "작성 중",
       tone: "on" as const,
-      title: "같은 페이지에서 설문을 이어서 진행하고 있습니다.",
-      description:
-        "답변은 자동 저장되며, 제출이 끝나면 최신 리포트로 바로 돌아갑니다.",
+      title: "설문을 이어서 작성하고 있어요.",
+      description: "답변은 자동 저장되고 제출 후 리포트로 돌아옵니다.",
     };
   }
 
@@ -291,17 +284,15 @@ function buildSurveyWorkflow(
       badge: "제출 완료",
       tone: "on" as const,
       title: "이번 주기 설문이 제출되었습니다.",
-      description:
-        "건강 데이터가 준비되면 최신 리포트에 자동으로 합쳐집니다.",
+      description: "확인된 내용이 최신 리포트에 반영됩니다.",
     };
   }
 
   return {
     badge: "진행 필요",
     tone: "warn" as const,
-    title: "건강 데이터 연동을 기다리는 동안 설문을 먼저 끝내둘 수 있습니다.",
-    description:
-      "라우트 이동 없이 이 페이지에서 바로 작성하고 자동 저장됩니다.",
+    title: "설문을 먼저 끝내 두면 좋아요.",
+    description: "지금 여기서 바로 작성할 수 있고 답변은 자동 저장됩니다.",
   };
 }
 
@@ -310,28 +301,25 @@ function buildReportWorkflow(workspace: EmployeeWorkspaceResponse | null) {
     return {
       badge: "최신본 준비 완료",
       tone: "on" as const,
-      title: "건강 데이터와 설문이 모두 반영된 최신 리포트입니다.",
-      description:
-        "이전 버전도 남아 있으니 아래에서 원하는 시점의 리포트를 선택할 수 있습니다.",
+      title: "지금 보고 있는 내용이 최신 리포트예요.",
+      description: "필요하면 아래에서 지난 리포트도 같이 볼 수 있어요.",
     };
   }
 
   if (workspace?.currentStatus?.report.available) {
     return {
-      badge: "이전 버전 열람 가능",
+      badge: "이전 리포트 있음",
       tone: "warn" as const,
-      title: "먼저 만들어진 리포트를 지금 바로 볼 수 있습니다.",
-      description:
-        "건강 데이터나 설문이 갱신되면 새 버전이 추가되어 이전 버전과 함께 보관됩니다.",
+      title: "먼저 만들어진 리포트를 볼 수 있어요.",
+      description: "새 내용이 반영되면 다음 리포트가 이어서 추가돼요.",
     };
   }
 
   return {
     badge: "준비 중",
     tone: "off" as const,
-    title: "핵심 두 단계를 마치면 리포트가 자동으로 생성됩니다.",
-    description:
-      "건강 데이터와 설문 중 하나를 먼저 완료해 두면 준비가 훨씬 빨라집니다.",
+    title: "건강 정보 확인과 설문이 끝나면 리포트가 준비돼요.",
+    description: "두 단계 중 하나라도 먼저 끝내 두면 다음 진행이 한결 빨라집니다.",
   };
 }
 
@@ -461,7 +449,7 @@ export default function EmployeeReportClient({
         setError(
           bootstrapError instanceof Error
             ? bootstrapError.message
-            : "직원 리포트 상태를 불러오지 못했습니다."
+            : "리포트 상태를 불러오지 못했습니다."
         );
       } finally {
         if (mounted) {
@@ -528,22 +516,22 @@ export default function EmployeeReportClient({
         if (options?.restartHealth) {
           setShowSurvey(false);
           setNotice(
-            "건강 데이터 재연동 요청을 보냈습니다. 창을 닫아도 백엔드에서 계속 진행합니다."
+            "건강 정보를 다시 확인하고 있어요. 준비되면 이 화면에서 이어서 볼 수 있습니다."
           );
         } else if (next.currentStatus?.hasAnyWorkspaceData) {
           setShowSurvey(false);
-          setNotice("기존 데이터와 리포트를 불러왔습니다.");
+          setNotice("이전에 확인한 내용을 불러왔어요.");
         } else {
           setShowSurvey(true);
           setNotice(
-            "건강 데이터 연동은 백엔드에서 계속 진행합니다. 이 페이지에서 바로 설문을 이어서 진행해 주세요."
+            "건강 정보 확인을 시작했어요. 설문도 이어서 작성해 주세요."
           );
         }
       } catch (workspaceError) {
         setError(
           workspaceError instanceof Error
             ? workspaceError.message
-            : "직원 리포트 작업을 시작하지 못했습니다."
+            : "리포트를 시작하지 못했습니다."
         );
       } finally {
         setPendingAction(null);
@@ -582,13 +570,13 @@ export default function EmployeeReportClient({
     async (_periodKey: string | null) => {
       setShowSurvey(false);
       setSelectedReportId(null);
-      setNotice("설문이 저장되었습니다. 최신 리포트를 다시 불러오고 있습니다.");
+      setNotice("설문이 저장되었어요. 리포트를 새로 확인하고 있어요.");
       setPolling(true);
       try {
         const nextWorkspace = await loadWorkspace({ reportId: null });
         if (!nextWorkspace.currentStatus?.ready && nextWorkspace.sync?.active !== true) {
           setNotice(
-            "설문은 저장되었고, 건강 데이터가 준비되는 대로 최신 리포트가 이어서 갱신됩니다."
+            "설문은 저장되었어요. 건강 정보 확인이 끝나면 최신 리포트가 준비됩니다."
           );
         }
       } catch (completionError) {
@@ -640,12 +628,12 @@ export default function EmployeeReportClient({
   const reportToneCardClass = getHealthWorkflowCardClass(reportWorkflow.tone, styles);
   const healthButtonLabel =
     pendingAction === "health"
-      ? "연동 요청 중..."
+      ? "다시 확인 중..."
       : healthWorkflow.active && healthWorkflow.stepLabel
         ? `${healthWorkflow.stepLabel} 진행 중`
         : healthComplete
-          ? "건강 데이터 다시 연동"
-          : "건강 데이터 연동 시작";
+          ? "건강 정보 다시 확인"
+          : "건강 정보 확인 시작";
   const surveyButtonLabel = showSurvey
     ? "설문 닫기"
     : surveyComplete
@@ -653,6 +641,128 @@ export default function EmployeeReportClient({
       : "설문 진행하기";
   const healthButtonDisabled =
     busy || pendingAction === "health" || workspace?.sync?.active === true;
+  const healthCoreActionText = workspace?.sync?.active
+    ? "상태 새로고침"
+    : healthComplete
+      ? "다시 확인"
+      : "확인 시작";
+  const surveyCoreActionText = showSurvey
+    ? "입력 접기"
+    : surveyComplete
+      ? "다시 작성"
+      : "작성 시작";
+  const healthCoreHint = workspace?.sync?.active
+    ? "지금 진행 중인 연동 상태를 다시 불러옵니다."
+    : healthComplete
+      ? "최근 반영 시간과 최신 상태를 다시 확인합니다."
+      : "연동을 시작하고 반영 여부를 이 화면에서 바로 보여드립니다.";
+  const surveyCoreHint = showSurvey
+    ? "열려 있는 설문 입력 영역을 잠시 접습니다."
+    : "같은 화면 아래에서 설문을 바로 이어서 작성합니다.";
+  const workflowFeedback = useMemo(() => {
+    if (error) {
+      return {
+        tone: "error" as const,
+        label: "확인 필요",
+        message: error,
+      };
+    }
+    if (pendingAction === "health" || pendingAction === "start") {
+      return {
+        tone: "info" as const,
+        label: "건강 정보 확인 중",
+        message: "연동 상태를 확인하고 있어요. 반영되면 진행 상태와 반영 시간이 여기에 표시됩니다.",
+      };
+    }
+    if (pendingAction === "refresh") {
+      return {
+        tone: "info" as const,
+        label: "상태 새로고침 중",
+        message: "최신 연동 상태와 리포트 준비 여부를 다시 확인하고 있어요.",
+      };
+    }
+    if (showSurvey) {
+      return {
+        tone: "info" as const,
+        label: "설문 입력 열림",
+        message:
+          "바로 아래 설문 영역에서 이어서 작성할 수 있어요. 저장하면 최신 리포트 준비 상태가 다시 갱신됩니다.",
+      };
+    }
+    if (workspace?.currentStatus?.health.fetchedAt) {
+      return {
+        tone: "success" as const,
+        label: "건강 정보 반영됨",
+        message: `${formatDateTime(workspace.currentStatus.health.fetchedAt)} 기준 건강 정보가 반영되었어요.`,
+      };
+    }
+    if (notice) {
+      return {
+        tone: "info" as const,
+        label: "안내",
+        message: notice,
+      };
+    }
+    return {
+      tone: "info" as const,
+      label: "다음 단계 안내",
+      message:
+        "건강 정보 확인을 먼저 눌러 연동 상태를 확인하고, 설문은 같은 화면에서 이어서 작성해 주세요.",
+    };
+  }, [
+    error,
+    notice,
+    pendingAction,
+    showSurvey,
+    workspace?.currentStatus?.health.fetchedAt,
+  ]);
+
+  const handleHealthCoreClick = useCallback(() => {
+    if (busy && pendingAction !== "refresh") {
+      return;
+    }
+
+    setError("");
+    setNotice(
+      workspace?.sync?.active
+        ? "최신 연동 상태를 다시 확인하고 있어요. 반영되면 이 자리에서 바로 보여드릴게요."
+        : healthComplete
+          ? "건강 정보를 다시 확인하고 있어요. 최신 반영 시간을 곧 보여드릴게요."
+          : "건강 정보 확인을 시작했어요. 연동되면 진행 상태와 반영 시간이 바로 표시됩니다."
+    );
+    setShowSurvey(false);
+
+    if (workspace?.sync?.active) {
+      void handleRefreshWorkspace();
+      return;
+    }
+
+    void handleStartWorkspace({ restartHealth: true });
+  }, [
+    busy,
+    handleRefreshWorkspace,
+    handleStartWorkspace,
+    healthComplete,
+    pendingAction,
+    workspace?.sync?.active,
+  ]);
+
+  const handleSurveyCoreClick = useCallback(() => {
+    setError("");
+    setNotice(
+      showSurvey
+        ? "설문 입력을 접어두었어요. 다시 누르면 이어서 작성할 수 있어요."
+        : "설문 입력을 열었어요. 아래 영역에서 바로 이어서 작성해 주세요."
+    );
+    setShowSurvey((prev) => !prev);
+  }, [showSurvey]);
+
+  const workflowFeedbackClass =
+    workflowFeedback.tone === "success"
+      ? styles.workflowFeedbackSuccess
+      : workflowFeedback.tone === "error"
+        ? styles.workflowFeedbackError
+        : styles.workflowFeedbackInfo;
 
   if (booting) {
     return <EmployeeReportBootSkeleton />;
@@ -667,14 +777,14 @@ export default function EmployeeReportClient({
           <p className={styles.kicker}>EMPLOYEE REPORT</p>
           <h1 className={styles.title}>직원 건강 리포트</h1>
           <p className={styles.description}>
-            이름과 생년월일, 전화번호를 입력하면 건강검진 데이터와 복약 이력 연동은 백엔드에서
-            이어서 진행되고, 설문은 이 페이지에서 바로 계속할 수 있습니다.
+            이름, 생년월일, 전화번호를 입력하면 먼저 확인 가능한 리포트를 보여드리고,
+            필요한 다음 단계도 바로 이어서 진행할 수 있어요.
           </p>
           <div className={styles.statusRow}>
             {!workspace ? (
               <span className={styles.statusOff}>본인 확인 필요</span>
             ) : workspace.currentStatus?.ready ? (
-              <span className={styles.statusOn}>현재 주기 리포트 준비 완료</span>
+              <span className={styles.statusOn}>현재 주기 리포트 확인 가능</span>
             ) : (
               <span className={styles.statusWarn}>{syncStatus.badge}</span>
             )}
@@ -690,8 +800,8 @@ export default function EmployeeReportClient({
               <div>
                 <h2 className={styles.sectionTitle}>1. 본인 정보 입력</h2>
                 <p className={styles.sectionDescription}>
-                  조회를 시작하면 건강 데이터 연동은 백엔드에서 계속 진행되고, 설문은 이 페이지에서
-                  바로 이어집니다.
+                  정보를 입력하면 먼저 확인 가능한 내용을 보여드리고, 필요한 단계도 바로
+                  이어서 안내해 드려요.
                 </p>
               </div>
             </div>
@@ -763,13 +873,12 @@ export default function EmployeeReportClient({
               <div className={styles.workflowOverview}>
                 <div className={styles.workflowOverviewTop}>
                   <div>
-                    <p className={styles.workflowOverviewEyebrow}>이번 리포트 준비</p>
+                    <p className={styles.workflowOverviewEyebrow}>이번 리포트</p>
                     <h3 className={styles.workflowOverviewTitle}>
-                      건강 데이터와 설문 두 단계를 먼저 완료해 주세요.
+                      건강 정보 확인과 설문을 차례로 마쳐 주세요.
                     </h3>
                     <p className={styles.workflowOverviewText}>
-                      둘 다 끝나면 최신 리포트가 자동으로 갱신되고, 이전 버전도 계속 볼 수
-                      있습니다.
+                      두 단계가 끝나면 최신 내용이 반영되고, 이전 버전도 함께 볼 수 있어요.
                     </p>
                   </div>
                   <div className={styles.workflowCoreCount}>
@@ -778,7 +887,10 @@ export default function EmployeeReportClient({
                   </div>
                 </div>
                 <div className={styles.workflowCoreBar}>
-                  <div
+                  <button
+                    type="button"
+                    onClick={handleHealthCoreClick}
+                    aria-label={`건강 정보 ${healthCoreActionText}`}
                     className={`${styles.workflowCorePill} ${
                       healthComplete
                         ? styles.workflowCorePillDone
@@ -789,14 +901,27 @@ export default function EmployeeReportClient({
                             : styles.workflowCorePillPending
                     }`}
                   >
-                    <strong>1. 건강 데이터</strong>
-                    <span>
+                    <span className={styles.workflowCorePillTop}>
+                      <strong>1. 건강 정보</strong>
+                      <span className={styles.workflowCorePillCaret} aria-hidden>
+                        →
+                      </span>
+                    </span>
+                    <span className={styles.workflowCorePillStatus}>
                       {healthComplete
                         ? "완료"
                         : healthWorkflow.stepLabel || healthWorkflow.badge}
                     </span>
-                  </div>
-                  <div
+                    <span className={styles.workflowCorePillFooter}>
+                      <small className={styles.workflowCorePillHint}>{healthCoreHint}</small>
+                      <span className={styles.workflowCorePillAction}>{healthCoreActionText}</span>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSurveyCoreClick}
+                    aria-label={`설문 ${surveyCoreActionText}`}
+                    aria-pressed={showSurvey}
                     className={`${styles.workflowCorePill} ${
                       surveyComplete
                         ? styles.workflowCorePillDone
@@ -805,9 +930,24 @@ export default function EmployeeReportClient({
                           : styles.workflowCorePillWarn
                     }`}
                   >
-                    <strong>2. 설문</strong>
-                    <span>{showSurvey ? "작성 중" : surveyComplete ? "완료" : "진행 필요"}</span>
-                  </div>
+                    <span className={styles.workflowCorePillTop}>
+                      <strong>2. 설문</strong>
+                      <span className={styles.workflowCorePillCaret} aria-hidden>
+                        →
+                      </span>
+                    </span>
+                    <span className={styles.workflowCorePillStatus}>
+                      {showSurvey ? "작성 중" : surveyComplete ? "완료" : "진행 필요"}
+                    </span>
+                    <span className={styles.workflowCorePillFooter}>
+                      <small className={styles.workflowCorePillHint}>{surveyCoreHint}</small>
+                      <span className={styles.workflowCorePillAction}>{surveyCoreActionText}</span>
+                    </span>
+                  </button>
+                </div>
+                <div className={`${styles.workflowFeedback} ${workflowFeedbackClass}`}>
+                  <span className={styles.workflowFeedbackLabel}>{workflowFeedback.label}</span>
+                  <p className={styles.workflowFeedbackText}>{workflowFeedback.message}</p>
                 </div>
               </div>
 
@@ -842,7 +982,7 @@ export default function EmployeeReportClient({
                   <div className={styles.workflowCardHeader}>
                     <div className={styles.workflowLabelBlock}>
                       <span className={styles.workflowIndex}>필수 1</span>
-                      <h3 className={styles.workflowCardTitle}>건강 데이터</h3>
+                      <h3 className={styles.workflowCardTitle}>건강 정보</h3>
                     </div>
                     <span className={healthToneBadgeClass}>{healthWorkflow.badge}</span>
                   </div>
@@ -946,17 +1086,24 @@ export default function EmployeeReportClient({
                     <p className={styles.workflowText}>
                       {showSurvey
                         ? "아래 설문 영역 안에서 스크롤하며 바로 이어서 작성할 수 있습니다."
-                        : "건강 데이터 연동을 기다리는 동안 먼저 설문을 끝내 두면 최신 리포트가 더 빨리 준비됩니다."}
+                        : "설문을 먼저 마치면 최신 리포트를 더 빨리 확인할 수 있어요."}
                     </p>
                   </div>
                 </article>
               </div>
 
+              {showSurvey ? (
+                <EmbeddedEmployeeSurveyPanel
+                  onCompleted={handleSurveyCompleted}
+                  onClose={() => setShowSurvey(false)}
+                />
+              ) : null}
+
               <article className={`${styles.workflowReportCard} ${reportToneCardClass}`}>
                 <div className={styles.workflowReportTop}>
                   <div className={styles.workflowLabelBlock}>
                     <span className={styles.workflowIndex}>리포트</span>
-                    <h3 className={styles.workflowCardTitle}>현재 리포트와 버전 히스토리</h3>
+                    <h3 className={styles.workflowCardTitle}>리포트 기록</h3>
                   </div>
                   <span className={reportToneBadgeClass}>{reportWorkflow.badge}</span>
                 </div>
@@ -967,7 +1114,7 @@ export default function EmployeeReportClient({
                 {workspace.reports && workspace.reports.length > 0 ? (
                   <div className={styles.workflowReportSelector}>
                     <label className={styles.field}>
-                      <span className={styles.fieldLabel}>저장된 리포트 버전</span>
+                      <span className={styles.fieldLabel}>저장된 리포트</span>
                       <select
                         className={`${styles.select} ${styles.summaryPeriodSelect}`}
                         value={workspace.selectedReportId ?? ""}
@@ -1013,22 +1160,17 @@ export default function EmployeeReportClient({
                   {workspace.currentStatus?.ready
                     ? "현재 주기의 최신본을 보고 있습니다."
                     : workspace.sync?.nextRetryAt
-                      ? `다음 백엔드 재시도 예정 시각 ${formatDateTime(workspace.sync.nextRetryAt)}`
+                      ? `다음 확인 예정 시각 ${formatDateTime(workspace.sync.nextRetryAt)}`
                       : syncStatus.message}
                 </p>
               </article>
             </section>
 
-            {showSurvey ? (
-              <EmbeddedEmployeeSurveyPanel
-                onCompleted={handleSurveyCompleted}
-                onClose={() => setShowSurvey(false)}
-              />
-            ) : workspace.report ? (
+            {!showSurvey && workspace.report ? (
               <section className={styles.reportCanvas}>
                 <div className={styles.reportCanvasHeader}>
                   <div className={styles.reportCanvasMeta}>
-                    <p className={styles.reportCanvasEyebrow}>Report</p>
+                    <p className={styles.reportCanvasEyebrow}>리포트</p>
                     <h3>
                       {workspace.selectedPeriodKey || workspace.report.periodKey || "최근"} 리포트
                     </h3>
@@ -1063,7 +1205,7 @@ export default function EmployeeReportClient({
                   <div>
                     <h2 className={styles.sectionTitle}>리포트 준비 중</h2>
                     <p className={styles.sectionDescription}>
-                      건강 데이터 연동과 설문 제출 상태에 따라 최신 리포트가 자동으로 추가됩니다.
+                      건강 정보 확인과 설문 진행 상황에 따라 최신 리포트가 추가됩니다.
                     </p>
                   </div>
                 </div>
@@ -1073,12 +1215,12 @@ export default function EmployeeReportClient({
           </>
         )}
 
-        {notice ? (
+        {!workspace && notice ? (
           <section className={styles.sectionCard}>
             <p className={styles.inlineHint}>{notice}</p>
           </section>
         ) : null}
-        {error ? (
+        {!workspace && error ? (
           <section className={styles.sectionCard}>
             <p className={styles.statusWarn}>{error}</p>
           </section>

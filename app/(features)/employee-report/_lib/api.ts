@@ -124,7 +124,7 @@ export async function postEmployeeSync(input: {
     },
     {
       timeoutMs: EMPLOYEE_SYNC_TIMEOUT_MS,
-      timeoutMessage: "건강 데이터 연결이 길어지고 있어요. 잠시 뒤 다시 시도해 주세요.",
+      timeoutMessage: "건강 정보 확인이 길어지고 있어요. 잠시 뒤 다시 시도해 주세요.",
     }
   );
 }

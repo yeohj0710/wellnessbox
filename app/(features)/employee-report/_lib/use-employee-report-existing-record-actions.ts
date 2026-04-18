@@ -95,7 +95,7 @@ export function useEmployeeReportExistingRecordActions({
       return;
     }
 
-    beginBusy("기존 조회 기록을 확인하고 있어요.");
+    beginBusy("이전에 확인한 내용을 찾고 있어요.");
     setError("");
     setNotice("");
 
@@ -105,7 +105,7 @@ export function useEmployeeReportExistingRecordActions({
       if (response.status === "not-found") {
         applyMissingReportState(
           response.result.message ||
-            "조회 가능한 기록이 없습니다. 카카오 인증 후 연동을 진행해 주세요."
+            "바로 확인할 수 있는 기록이 없어요. 카카오 인증 후 새로 확인해 주세요."
         );
         return;
       }
@@ -113,17 +113,17 @@ export function useEmployeeReportExistingRecordActions({
       if (response.status === "no-report") {
         applyMissingReportState(
           response.result.message ||
-            "저장된 리포트가 없어 다시 인증 후 연동이 필요합니다."
+            "이전에 확인한 리포트가 없어 다시 본인 확인이 필요합니다."
         );
         return;
       }
 
       if (response.status === "loaded") {
-        setNotice("기존 레포트를 불러왔습니다.");
+        setNotice("이전에 확인한 리포트를 불러왔어요.");
       }
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "기존 정보 조회에 실패했습니다."
+        err instanceof Error ? err.message : "이전 정보를 확인하지 못했습니다."
       );
     } finally {
       endBusy();
@@ -149,7 +149,7 @@ export function useEmployeeReportExistingRecordActions({
         if (options?.showNotFoundNotice) {
           setNotice(
             response.result.message ||
-              "조회 가능한 기록이 없어 카카오 인증 후 연동이 필요합니다."
+              "바로 확인할 수 있는 기록이 없어 카카오 인증 후 새로 확인해 주세요."
           );
         }
         return false;
@@ -160,14 +160,14 @@ export function useEmployeeReportExistingRecordActions({
         if (options?.showNotFoundNotice) {
           setNotice(
             response.result.message ||
-              "저장된 리포트가 없어 다시 인증 후 연동이 필요합니다."
+              "이전에 확인한 리포트가 없어 다시 본인 확인이 필요합니다."
           );
         }
         return false;
       }
 
       if (response.status === "loaded") {
-        setNotice(options?.successNotice || "기존 레포트를 불러왔어요.");
+        setNotice(options?.successNotice || "이전에 확인한 리포트를 불러왔어요.");
       }
       return true;
     },

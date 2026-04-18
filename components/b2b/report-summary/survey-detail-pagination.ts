@@ -5,12 +5,15 @@ import type {
 } from "./SurveyDetailPages";
 import { hasSurveyDetailPageContent } from "./SurveyDetailPages";
 
-const FIRST_PAGE_SURVEY_CONTENT_UNITS = 840;
-const DETAIL_PAGE_SURVEY_CONTENT_UNITS = 1320;
+const FIRST_PAGE_SURVEY_CONTENT_UNITS = 760;
+const DETAIL_PAGE_SURVEY_CONTENT_UNITS = 1200;
 const ROUTINE_CARD_BASE_UNITS = 84;
 const ROUTINE_ROW_BASE_UNITS = 38;
-const SECTION_CARD_BASE_UNITS = 90;
-const SECTION_GROUP_BASE_UNITS = 12;
+// Section advice cards carry noticeably more chrome in the in-app employee preview
+// (card head, section header, badge, wrapper padding) than the old budget assumed.
+// Keeping these bases conservative prevents the last group from being clipped.
+const SECTION_CARD_BASE_UNITS = 102;
+const SECTION_GROUP_BASE_UNITS = 32;
 const SECTION_ROW_BASE_UNITS = 76;
 const SUPPLEMENT_CARD_BASE_UNITS = 98;
 const SUPPLEMENT_ROW_BASE_UNITS = 58;

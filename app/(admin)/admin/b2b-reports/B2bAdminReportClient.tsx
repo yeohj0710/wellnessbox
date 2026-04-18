@@ -67,8 +67,6 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     periodOptions,
     reportDisplayPeriodKey,
     setReportDisplayPeriodKey,
-    previewTab,
-    setPreviewTab,
     loadEmployeeDetail,
     clearEmployeeDetailState,
   } = useB2bAdminReportDetailState();
@@ -109,7 +107,6 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     setSelectedEmployeeId,
     setSelectedPeriodKey,
     setReportDisplayPeriodKey,
-    setPreviewTab,
     clearEmployeeDetailState,
     loadEmployees,
     loadEmployeeDetail,
@@ -200,7 +197,6 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     periodOptions,
     reportDisplayPeriodKey,
     busy,
-    previewTab,
     latestLayout,
     captureRef: webReportCaptureRef,
     completionStats,
@@ -224,7 +220,6 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
     handleExportLegacyPdf,
     handleRegenerateReport,
     handleRecomputeAnalysis,
-    setPreviewTab,
     toggleSection,
     setAnswerValue,
     handleSaveSurvey,
@@ -240,7 +235,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
   if (isBootstrapping) {
     return (
       <div className={styles.pageBackdrop}>
-        <div className={`${styles.page} ${styles.reportPage} ${styles.pageNoBg} ${styles.stack}`}>
+        <div className={`${styles.page} ${styles.pageNoBg} ${styles.compactPage} ${styles.stack}`}>
           <B2bAdminReportBootstrappingSkeleton />
         </div>
       </div>
@@ -249,7 +244,7 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
 
   return (
     <div className={styles.pageBackdrop}>
-      <div className={`${styles.page} ${styles.reportPage} ${styles.pageNoBg} ${styles.stack}`}>
+      <div className={`${styles.page} ${styles.pageNoBg} ${styles.compactPage} ${styles.stack}`}>
         <B2bAdminOpsHero
           search={search}
           busy={busy}
@@ -262,7 +257,10 @@ export default function B2bAdminReportClient({ demoMode = false }: AdminClientPr
         <B2bEmployeeSidebar
           employees={employees}
           selectedEmployeeId={selectedEmployeeId}
+          searchQuery={search}
           busy={busy}
+          setSelectedEmployeeId={setSelectedEmployeeId}
+          loadEmployees={loadEmployees}
           onSelectEmployee={(employeeId) => {
             if (employeeId === selectedEmployeeId) return;
             selectEmployeeForLoading(employeeId);

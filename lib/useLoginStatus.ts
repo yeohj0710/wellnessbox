@@ -27,8 +27,11 @@ export function normalizeLoginStatusResponse(
 }
 
 const NETWORK_ERROR_COOLDOWN_MS = 4000;
+const SUCCESS_STATUS_CACHE_MS = 1200;
 let networkErrorUntil = 0;
 let lastKnownStatus: LoginStatus = EMPTY_LOGIN_STATUS;
+let lastResolvedAt = 0;
+let inFlightLoginStatusRequest: Promise<LoginStatus> | null = null;
 
 export async function getLoginStatus(
   signal?: AbortSignal
@@ -43,35 +46,52 @@ export async function getLoginStatus(
     return lastKnownStatus;
   }
 
-  const res = await fetch("/api/auth/login-status", {
-    method: "GET",
-    cache: "no-store",
-    headers: {
-      "Cache-Control": "no-store",
-      Pragma: "no-cache",
-    },
-    credentials: "include",
-    signal,
-  }).catch((error: unknown) => {
-    if (
-      typeof error === "object" &&
-      error &&
-      "name" in error &&
-      (error as { name?: string }).name === "AbortError"
-    ) {
-      throw error;
-    }
+  if (now - lastResolvedAt < SUCCESS_STATUS_CACHE_MS) {
+    return lastKnownStatus;
+  }
 
-    networkErrorUntil = Date.now() + NETWORK_ERROR_COOLDOWN_MS;
-    return null;
-  });
+  if (inFlightLoginStatusRequest) {
+    return inFlightLoginStatusRequest;
+  }
 
-  if (!res) return lastKnownStatus;
-  if (!res.ok) return lastKnownStatus;
+  inFlightLoginStatusRequest = (async () => {
+    const res = await fetch("/api/auth/login-status", {
+      method: "GET",
+      cache: "no-store",
+      headers: {
+        "Cache-Control": "no-store",
+        Pragma: "no-cache",
+      },
+      credentials: "include",
+      signal,
+    }).catch((error: unknown) => {
+      if (
+        typeof error === "object" &&
+        error &&
+        "name" in error &&
+        (error as { name?: string }).name === "AbortError"
+      ) {
+        throw error;
+      }
 
-  const raw = (await res.json()) as Partial<Record<keyof LoginStatus, unknown>>;
-  const normalized = normalizeLoginStatusResponse(raw);
-  lastKnownStatus = normalized;
-  networkErrorUntil = 0;
-  return normalized;
+      networkErrorUntil = Date.now() + NETWORK_ERROR_COOLDOWN_MS;
+      return null;
+    });
+
+    if (!res) return lastKnownStatus;
+    if (!res.ok) return lastKnownStatus;
+
+    const raw = (await res.json()) as Partial<Record<keyof LoginStatus, unknown>>;
+    const normalized = normalizeLoginStatusResponse(raw);
+    lastKnownStatus = normalized;
+    lastResolvedAt = Date.now();
+    networkErrorUntil = 0;
+    return normalized;
+  })();
+
+  try {
+    return await inFlightLoginStatusRequest;
+  } finally {
+    inFlightLoginStatusRequest = null;
+  }
 }

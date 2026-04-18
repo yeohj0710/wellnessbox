@@ -3,7 +3,6 @@ import type { LayoutDocument } from "@/lib/b2b/export/layout-types";
 import type { LayoutValidationIssue } from "@/lib/b2b/export/validation-types";
 import type { B2bReportPackagedProduct } from "@/lib/b2b/report-customization-types";
 import type {
-  B2bAdminReportPreviewTab,
   CompletionStats,
   EmployeeListItem,
   LatestReport,
@@ -24,7 +23,6 @@ export type B2bAdminReportWorkspaceContentState = {
   periodOptions: string[];
   reportDisplayPeriodKey: string;
   busy: boolean;
-  previewTab: B2bAdminReportPreviewTab;
   latestLayout: LayoutDocument | null;
   captureRef: MutableRefObject<HTMLDivElement | null>;
   completionStats: CompletionStats;
@@ -51,7 +49,6 @@ export type B2bAdminReportWorkspaceActions = {
   onExportLegacyPdf: () => void;
   onRegenerateReport: () => void;
   onRecomputeAnalysis: (generateAiEvaluation: boolean) => void;
-  onPreviewTabChange: (nextTab: B2bAdminReportPreviewTab) => void;
   onToggleSection: (sectionKey: string) => void;
   onSetAnswerValue: (question: SurveyQuestion, value: unknown) => void;
   onSaveSurvey: () => void;

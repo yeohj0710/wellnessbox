@@ -31,11 +31,8 @@ export default function B2bAdminReportWorkspaceLoaded({
       />
 
       <B2bAdminReportPreviewPanel
-        previewTab={content.previewTab}
-        latestLayout={content.latestLayout}
         latestPayload={content.latestReport?.payload}
         captureRef={content.captureRef}
-        onPreviewTabChange={actions.onPreviewTabChange}
       />
 
       <B2bAdminHiddenReportDataPanel payload={content.latestReport?.payload} />

@@ -107,7 +107,7 @@ function FooterInner() {
     <footer className="relative w-full overflow-hidden border-t border-slate-800/80 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.06),transparent_24%),linear-gradient(180deg,#101728_0%,#0b1220_100%)] text-sm text-slate-300">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-300/30 to-transparent" />
 
-      <div className="w-full max-w-[640px] mx-auto px-4 py-8 sm:py-10">
+      <div className="mx-auto w-full max-w-[640px] px-4 py-8 pb-28 sm:py-10 sm:pb-10">
         <div className="grid gap-8 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start sm:gap-10">
           <div className="min-w-0">
             <Link href="/" className="inline-flex items-center gap-3">
@@ -163,16 +163,18 @@ function FooterInner() {
             open={showBusinessInfo}
             onToggle={() => setShowBusinessInfo((prev) => !prev)}
             className="overflow-hidden rounded-[1.35rem] border border-white/10 bg-white/[0.02] shadow-[0_18px_40px_-30px_rgba(15,23,42,0.6)] backdrop-blur-sm"
-            buttonClassName="group px-4 py-4 sm:px-5"
+            buttonClassName="group items-center px-4 py-4 sm:px-5"
             panelClassName="border-t border-white/8"
             panelInnerClassName="px-4 pb-4 pt-4 sm:px-5 sm:pb-5"
             summary={
               <>
-                <p className="text-base font-semibold text-white">사업자 정보</p>
+                <p className="text-base font-semibold leading-none text-white sm:leading-none">
+                  사업자 정보
+                </p>
               </>
             }
             indicator={
-              <span className="inline-flex min-w-[5.5rem] items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm font-medium text-slate-200 transition-[border-color,background-color,color] duration-300 group-hover:border-sky-300/30 group-hover:bg-sky-300/10 group-hover:text-white">
+              <span className="inline-flex min-w-[5.5rem] items-center justify-center gap-2 self-center rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm font-medium text-slate-200 transition-[border-color,background-color,color] duration-300 group-hover:border-sky-300/30 group-hover:bg-sky-300/10 group-hover:text-white">
                 <span>{showBusinessInfo ? "접기" : "열기"}</span>
                 <ChevronDownIcon
                   className={`h-4 w-4 transition-transform duration-300 ${

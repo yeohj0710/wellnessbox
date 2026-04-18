@@ -51,7 +51,7 @@ export function useEmployeeReportReportLoading({
       try {
         const data = await fetchEmployeeReport(periodKey);
         if (!data.ok) {
-          throw new Error(data.error || "레포트 조회에 실패했습니다.");
+          throw new Error(data.error || "리포트 조회에 실패했습니다.");
         }
         if (!data.report) {
           resetReportState();

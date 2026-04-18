@@ -4,7 +4,6 @@ import type { LayoutDocument } from "@/lib/b2b/export/layout-types";
 import type { LayoutValidationIssue } from "@/lib/b2b/export/validation-types";
 import type { B2bReportPackagedProduct } from "@/lib/b2b/report-customization-types";
 import type {
-  B2bAdminReportPreviewTab,
   CompletionStats,
   EmployeeListItem,
   LatestReport,
@@ -28,7 +27,6 @@ type UseB2bAdminReportWorkspaceModelParams = {
   periodOptions: string[];
   reportDisplayPeriodKey: string;
   busy: boolean;
-  previewTab: B2bAdminReportPreviewTab;
   latestLayout: LayoutDocument | null;
   captureRef: MutableRefObject<HTMLDivElement | null>;
   completionStats: CompletionStats;
@@ -52,7 +50,6 @@ type UseB2bAdminReportWorkspaceModelParams = {
   handleExportLegacyPdf: () => Promise<void>;
   handleRegenerateReport: () => Promise<void>;
   handleRecomputeAnalysis: (generateAiEvaluation: boolean) => Promise<void>;
-  setPreviewTab: (nextTab: B2bAdminReportPreviewTab) => void;
   toggleSection: (sectionKey: string) => void;
   setAnswerValue: (question: SurveyQuestion, value: unknown) => void;
   handleSaveSurvey: () => Promise<void>;
@@ -74,7 +71,6 @@ export function useB2bAdminReportWorkspaceModel({
   periodOptions,
   reportDisplayPeriodKey,
   busy,
-  previewTab,
   latestLayout,
   captureRef,
   completionStats,
@@ -98,7 +94,6 @@ export function useB2bAdminReportWorkspaceModel({
   handleExportLegacyPdf,
   handleRegenerateReport,
   handleRecomputeAnalysis,
-  setPreviewTab,
   toggleSection,
   setAnswerValue,
   handleSaveSurvey,
@@ -126,7 +121,6 @@ export function useB2bAdminReportWorkspaceModel({
       periodOptions,
       reportDisplayPeriodKey,
       busy,
-      previewTab,
       latestLayout,
       captureRef,
       completionStats,
@@ -153,7 +147,6 @@ export function useB2bAdminReportWorkspaceModel({
       latestReport,
       maxSelectedSections,
       periodOptions,
-      previewTab,
       reportConsultationSummary,
       reportDisplayPeriodKey,
       reportPackagedProducts,
@@ -191,7 +184,6 @@ export function useB2bAdminReportWorkspaceModel({
       onRecomputeAnalysis: (generateAiEvaluation) => {
         void handleRecomputeAnalysis(generateAiEvaluation);
       },
-      onPreviewTabChange: setPreviewTab,
       onToggleSection: toggleSection,
       onSetAnswerValue: setAnswerValue,
       onSaveSurvey: () => {
@@ -200,7 +192,6 @@ export function useB2bAdminReportWorkspaceModel({
       onReportConsultationSummaryChange: handleReportConsultationSummaryChange,
       onReportPackagedProductsChange: handleReportPackagedProductsChange,
       onSaveReportCustomization: () => {
-        setPreviewTab("report");
         void handleSaveReportCustomization();
       },
       onAnalysisTextChange: handleAnalysisTextChange,
@@ -227,7 +218,6 @@ export function useB2bAdminReportWorkspaceModel({
       handleSaveReportCustomization,
       handleSaveSurvey,
       setAnswerValue,
-      setPreviewTab,
       setReportDisplayPeriodKey,
       toggleSection,
       toggleValidationPreview,

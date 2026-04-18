@@ -10,12 +10,7 @@ import {
   buildLoadedEmployeeDetailState,
   type LoadedEmployeeDetailState,
 } from "./detail-state-model";
-import type {
-  B2bAdminReportPreviewTab,
-  LatestReport,
-  ReportAudit,
-  SurveyTemplateSchema,
-} from "./client-types";
+import type { LatestReport, ReportAudit, SurveyTemplateSchema } from "./client-types";
 import { parseLayoutDsl } from "./client-utils";
 
 export function useB2bAdminReportDetailState() {
@@ -43,7 +38,6 @@ export function useB2bAdminReportDetailState() {
   const [selectedPeriodKey, setSelectedPeriodKey] = useState("");
   const [availablePeriods, setAvailablePeriods] = useState<string[]>([]);
   const [reportDisplayPeriodKey, setReportDisplayPeriodKey] = useState("");
-  const [previewTab, setPreviewTab] = useState<B2bAdminReportPreviewTab>("integrated");
 
   const applyDetailState = useCallback((nextState: LoadedEmployeeDetailState) => {
     setSurveyTemplate(nextState.surveyTemplate);
@@ -70,6 +64,9 @@ export function useB2bAdminReportDetailState() {
     async (employeeId: string, periodKey?: string) => {
       const bundle = await fetchEmployeeDetailBundle(employeeId, periodKey);
       applyDetailState(buildLoadedEmployeeDetailState(bundle, periodKey));
+      if (bundle.reportError) {
+        throw bundle.reportError;
+      }
     },
     [applyDetailState]
   );
@@ -77,7 +74,6 @@ export function useB2bAdminReportDetailState() {
   const clearEmployeeDetailState = useCallback(() => {
     applyDetailState(buildEmptyEmployeeDetailState());
     setShowExportPreview(false);
-    setPreviewTab("integrated");
   }, [applyDetailState]);
 
   const latestLayout = useMemo(
@@ -132,8 +128,6 @@ export function useB2bAdminReportDetailState() {
     periodOptions,
     reportDisplayPeriodKey,
     setReportDisplayPeriodKey,
-    previewTab,
-    setPreviewTab,
     loadEmployeeDetail,
     clearEmployeeDetailState,
   };

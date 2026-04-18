@@ -41,6 +41,17 @@ ios/DerivedData/
 !.vscode/settings.json
 !.vscode/extensions.json
 
+# Local dev artifacts
+/.codex-*.log
+/.codex-*.pid
+/.next-dev*.log
+/.next-dev*.err.log
+/.tmp-*.log
+/.tmp-*.err.log
+.tmp/
+tmp/*.log
+tmp/*.err.log
+
 # R&D AI training artifacts
 tmp/
 tmp/rnd/

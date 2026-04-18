@@ -4,7 +4,6 @@ import {
   AdjustmentsHorizontalIcon,
   ArrowTopRightOnSquareIcon,
   BuildingStorefrontIcon,
-  CircleStackIcon,
   CubeIcon,
   RectangleStackIcon,
 } from "@heroicons/react/24/outline";
@@ -146,24 +145,17 @@ export default function AdminPage() {
         <HubCard
           icon={<RectangleStackIcon className="h-5 w-5" />}
           title="B2B 운영 도구"
-          description="리포트 운영과 임직원 데이터 관리는 바로 들어갈 수 있는 전용 동선으로 유지했습니다."
+          description="임직원 선택, 리포트 편집, 직원 데이터 관리까지 한 화면에서 이어서 처리합니다."
           tone="sky"
-          bodyClassName="max-w-[760px]"
+          bodyClassName="max-w-[420px]"
         >
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4">
             <MiniToolCard
               icon={<RectangleStackIcon className="h-5 w-5" />}
-              title="B2B 임직원 레포트 관리"
-              description="설문, 분석, 코멘트, 레이아웃 점검과 PDF 내보내기까지 한 번에 관리합니다."
+              title="B2B 통합 운영"
+              description="리포트 운영과 임직원 데이터 정리를 같은 페이지에서 바로 이어서 처리합니다."
               href="/admin/b2b-reports"
-              meta="리포트 운영"
-            />
-            <MiniToolCard
-              icon={<CircleStackIcon className="h-5 w-5" />}
-              title="B2B 임직원 데이터 운영"
-              description="임직원 기본 정보와 운영 데이터를 직접 수정하고 검수합니다."
-              href="/admin/b2b-employee-data"
-              meta="데이터 운영"
+              meta="리포트 · 직원 데이터"
             />
           </div>
         </HubCard>

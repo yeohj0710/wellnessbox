@@ -5,8 +5,6 @@ import type {
 
 export type AdminClientProps = { demoMode?: boolean };
 
-export type B2bAdminReportPreviewTab = "integrated" | "report";
-
 export type EmployeeListItem = SharedEmployeeListItem;
 
 export type EmployeeListResponse = AdminEmployeeListResponse;

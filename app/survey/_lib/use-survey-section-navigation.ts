@@ -3,6 +3,7 @@ import {
   useEffect,
   useMemo,
   useRef,
+  type MutableRefObject,
   type Dispatch,
   type SetStateAction,
 } from "react";
@@ -23,6 +24,7 @@ type UseSurveySectionNavigationInput = {
   currentSectionIndex: number;
   focusedQuestionBySection: Record<string, string>;
   isSectionTransitioning: boolean;
+  scrollContainerRef?: MutableRefObject<HTMLElement | null>;
   setCurrentSectionIndex: Dispatch<SetStateAction<number>>;
   setFocusedQuestionBySection: Dispatch<SetStateAction<Record<string, string>>>;
   setErrorText: Dispatch<SetStateAction<string | null>>;
@@ -36,6 +38,7 @@ export function useSurveySectionNavigation(input: UseSurveySectionNavigationInpu
     currentSectionIndex,
     focusedQuestionBySection,
     isSectionTransitioning,
+    scrollContainerRef,
     setCurrentSectionIndex,
     setFocusedQuestionBySection,
     setErrorText,
@@ -90,6 +93,50 @@ export function useSurveySectionNavigation(input: UseSurveySectionNavigationInpu
             return;
           }
 
+          const scrollContainer = scrollContainerRef?.current;
+          if (scrollContainer) {
+            const containerRect = scrollContainer.getBoundingClientRect();
+            const rect = node.getBoundingClientRect();
+            const topPadding = 20;
+            const bottomPadding = 28;
+            const safeTop = 12;
+            const safeBottom = 20;
+            const safeHeight = Math.max(
+              1,
+              scrollContainer.clientHeight - safeTop - safeBottom
+            );
+            const relativeTop = rect.top - containerRect.top;
+
+            if (align === "center") {
+              const centeredOffset =
+                safeTop + (safeHeight - Math.min(rect.height, safeHeight)) / 2;
+              const targetTop = scrollContainer.scrollTop + relativeTop - centeredOffset;
+              if (Math.abs(targetTop - scrollContainer.scrollTop) > 6) {
+                scrollContainer.scrollTo({
+                  top: Math.max(0, targetTop),
+                  behavior: "smooth",
+                });
+              }
+            } else {
+              const inComfortZone =
+                rect.top >= containerRect.top + topPadding &&
+                rect.bottom <= containerRect.bottom - bottomPadding;
+              if (!inComfortZone) {
+                const targetTop = scrollContainer.scrollTop + relativeTop - topPadding;
+                scrollContainer.scrollTo({
+                  top: Math.max(0, targetTop),
+                  behavior: "smooth",
+                });
+              }
+            }
+
+            const focusable = node.querySelector<HTMLElement>(
+              "input,button,select,textarea"
+            );
+            focusable?.focus({ preventScroll: true });
+            return;
+          }
+
           const isMobileViewport = window.innerWidth < 640;
           const topPadding = isMobileViewport ? 84 : 116;
           const bottomPadding = isMobileViewport ? 104 : 170;
@@ -134,7 +181,7 @@ export function useSurveySectionNavigation(input: UseSurveySectionNavigationInpu
       };
       run(0);
     },
-    []
+    [scrollContainerRef]
   );
 
   const moveToSection = useCallback(

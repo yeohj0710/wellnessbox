@@ -1,7 +1,7 @@
-import B2bAdminEmployeeDataClient from "./B2bAdminEmployeeDataClient";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 export default function B2bAdminEmployeeDataPage() {
-  return <B2bAdminEmployeeDataClient />;
+  redirect("/admin/b2b-reports");
 }

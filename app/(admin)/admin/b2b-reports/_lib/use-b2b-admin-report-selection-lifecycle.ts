@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
-import type {
-  B2bAdminReportPreviewTab,
-  EmployeeListItem,
-} from "./client-types";
+import type { EmployeeListItem } from "./client-types";
 import type { B2bAdminReportRunBusyAction } from "./use-b2b-admin-report-busy-action";
 
 type UseB2bAdminReportSelectionLifecycleParams = {
@@ -13,7 +10,6 @@ type UseB2bAdminReportSelectionLifecycleParams = {
   setSelectedEmployeeId: Dispatch<SetStateAction<string | null>>;
   setSelectedPeriodKey: Dispatch<SetStateAction<string>>;
   setReportDisplayPeriodKey: Dispatch<SetStateAction<string>>;
-  setPreviewTab: Dispatch<SetStateAction<B2bAdminReportPreviewTab>>;
   clearEmployeeDetailState: () => void;
   loadEmployees: (query?: string) => Promise<void>;
   loadEmployeeDetail: (employeeId: string, periodKey?: string) => Promise<void>;
@@ -27,7 +23,6 @@ export function useB2bAdminReportSelectionLifecycle({
   setSelectedEmployeeId,
   setSelectedPeriodKey,
   setReportDisplayPeriodKey,
-  setPreviewTab,
   clearEmployeeDetailState,
   loadEmployees,
   loadEmployeeDetail,
@@ -42,13 +37,11 @@ export function useB2bAdminReportSelectionLifecycle({
       setSelectedEmployeeId(nextEmployeeId);
       setSelectedPeriodKey("");
       setReportDisplayPeriodKey("");
-      setPreviewTab("integrated");
       clearEmployeeDetailState();
       setIsDetailLoading(Boolean(nextEmployeeId));
     },
     [
       clearEmployeeDetailState,
-      setPreviewTab,
       setReportDisplayPeriodKey,
       setSelectedEmployeeId,
       setSelectedPeriodKey,

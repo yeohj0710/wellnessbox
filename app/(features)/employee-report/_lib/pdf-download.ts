@@ -140,8 +140,8 @@ export async function downloadEmployeeReportPdf(input: {
       target: input.captureTarget,
       fileName,
       viewportWidthPx,
-      busyMessage: "모바일 화면 기준으로 PDF를 저장하고 있어요.",
-      noticeMessage: "모바일 화면 기준으로 PDF 저장을 완료했습니다.",
+      busyMessage: "화면 그대로 PDF를 저장하고 있어요.",
+      noticeMessage: "PDF 저장이 완료되었어요.",
       updateBusy: input.updateBusy,
     });
     if ("ok" in captureResult && captureResult.ok) {
@@ -158,7 +158,7 @@ export async function downloadEmployeeReportPdf(input: {
     );
     return {
       ok: true,
-      notice: "PDF 다운로드가 완료되었습니다.",
+      notice: "PDF 다운로드가 완료되었어요.",
     };
   } catch (error) {
     const payload = toPdfErrorPayload(error);
@@ -167,8 +167,8 @@ export async function downloadEmployeeReportPdf(input: {
         target: input.captureTarget,
         fileName,
         viewportWidthPx,
-        busyMessage: "서버 PDF 엔진을 사용할 수 없어 화면 캡처로 저장하고 있어요.",
-        noticeMessage: "브라우저 화면 캡처로 PDF를 저장했습니다.",
+        busyMessage: "화면 그대로 PDF를 저장하고 있어요.",
+        noticeMessage: "PDF 저장이 완료되었어요.",
         updateBusy: input.updateBusy,
       });
       if ("ok" in captureResult && captureResult.ok) {
@@ -212,7 +212,7 @@ export async function downloadEmployeeReportLegacyPdf(input: {
     );
     return {
       ok: true,
-      notice: "기존 PDF 엔진 다운로드가 완료되었습니다.",
+      notice: "PDF 다운로드가 완료되었어요.",
     };
   } catch (error) {
     return {

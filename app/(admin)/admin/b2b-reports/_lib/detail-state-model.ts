@@ -56,8 +56,12 @@ export function buildLoadedEmployeeDetailState(
 ): LoadedEmployeeDetailState {
   const { survey, analysis, report } = bundle;
   const nextSelectedPeriod =
-    report.latest?.periodKey || report.periodKey || survey.periodKey || analysis.periodKey || "";
-  const displayPeriodRaw = report.latest?.payload?.meta?.periodKey ?? nextSelectedPeriod;
+    report?.latest?.periodKey ||
+    report?.periodKey ||
+    survey.periodKey ||
+    analysis.periodKey ||
+    "";
+  const displayPeriodRaw = report?.latest?.payload?.meta?.periodKey ?? nextSelectedPeriod;
 
   return {
     surveyTemplate: survey.template.schema,
@@ -70,18 +74,18 @@ export function buildLoadedEmployeeDetailState(
     surveyUpdatedAt: survey.response?.updatedAt ?? null,
     analysisText: JSON.stringify(analysis.analysis?.payload ?? {}, null, 2),
     reportConsultationSummary:
-      report.latest?.payload?.reportAddendum?.consultationSummary ?? "",
+      report?.latest?.payload?.reportAddendum?.consultationSummary ?? "",
     reportPackagedProducts:
-      report.latest?.payload?.reportAddendum?.packagedProducts ?? [],
-    latestReport: report.latest,
-    validationAudit: (report.latest?.exportAudit ?? null) as ReportAudit | null,
-    validationIssues: extractIssuesFromAudit(report.latest?.exportAudit),
-    validatedLayout: parseLayoutDsl(report.latest?.layoutDsl),
+      report?.latest?.payload?.reportAddendum?.packagedProducts ?? [],
+    latestReport: report?.latest ?? null,
+    validationAudit: (report?.latest?.exportAudit ?? null) as ReportAudit | null,
+    validationIssues: extractIssuesFromAudit(report?.latest?.exportAudit),
+    validatedLayout: parseLayoutDsl(report?.latest?.layoutDsl),
     availablePeriods: mergePeriods(
-      report.availablePeriods,
+      report?.availablePeriods,
       survey.availablePeriods,
       analysis.availablePeriods,
-      report.latest?.periodKey ? [String(report.latest.periodKey)] : [],
+      report?.latest?.periodKey ? [String(report.latest.periodKey)] : [],
       requestedPeriodKey ? [requestedPeriodKey] : []
     ),
     selectedPeriodKey: nextSelectedPeriod,

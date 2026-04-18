@@ -10,12 +10,14 @@ import type {
   ValidationResponse,
 } from "./client-types";
 import type { B2bReportPackagedProduct } from "@/lib/b2b/report-customization-types";
+import { runWithRetry } from "@/lib/client/fetch-utils";
 import { requestJson } from "./client-utils";
 
 export type EmployeeDetailBundle = {
   survey: SurveyGetResponse;
   analysis: AnalysisGetResponse;
-  report: ReportGetResponse;
+  report: ReportGetResponse | null;
+  reportError: Error | null;
 };
 
 function toPeriodQuery(periodKey?: string) {
@@ -32,14 +34,34 @@ export async function fetchEmployees(query = "") {
 
 export async function fetchEmployeeDetailBundle(employeeId: string, periodKey?: string) {
   const periodQuery = toPeriodQuery(periodKey);
-  const [survey, analysis, report] = await Promise.all([
+  const [survey, analysis, reportResult] = await Promise.all([
     requestJson<SurveyGetResponse>(`/api/admin/b2b/employees/${employeeId}/survey${periodQuery}`),
     requestJson<AnalysisGetResponse>(
       `/api/admin/b2b/employees/${employeeId}/analysis${periodQuery}`
     ),
-    requestJson<ReportGetResponse>(`/api/admin/b2b/employees/${employeeId}/report${periodQuery}`),
+    runWithRetry(
+      () =>
+        requestJson<ReportGetResponse>(
+          `/api/admin/b2b/employees/${employeeId}/report${periodQuery}`
+        ),
+      {
+        retries: 2,
+        baseDelayMs: 300,
+        maxDelayMs: 1200,
+      }
+    )
+      .then((report) => ({ report, error: null }))
+      .catch((error: unknown) => ({
+        report: null,
+        error: error instanceof Error ? error : new Error("리포트 조회에 실패했습니다."),
+      })),
   ]);
-  return { survey, analysis, report } satisfies EmployeeDetailBundle;
+  return {
+    survey,
+    analysis,
+    report: reportResult.report,
+    reportError: reportResult.error,
+  } satisfies EmployeeDetailBundle;
 }
 
 export async function saveSurvey(input: {

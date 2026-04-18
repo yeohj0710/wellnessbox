@@ -68,7 +68,7 @@ export function useEmployeeReportSessionBootstrap({
           }
           if (!session.latestReport) {
             applyMissingReportState(
-              "저장된 리포트가 없어 다시 인증 후 연동이 필요합니다."
+              "이전에 확인한 리포트가 없어 다시 본인 확인이 필요합니다."
             );
             return;
           }
@@ -96,11 +96,11 @@ export function useEmployeeReportSessionBootstrap({
               if (!loginResult.hasReport) {
                 applyMissingReportState(
                   loginResult.message ||
-                    "저장된 리포트가 없어 다시 인증 후 연동이 필요합니다."
+                    "이전에 확인한 리포트가 없어 다시 본인 확인이 필요합니다."
                 );
                 return;
               }
-              setNotice("이전에 조회한 정보로 자동 로그인했습니다.");
+              setNotice("이전에 입력한 정보로 다시 연결했어요.");
               clearSyncFlowState();
               await loadReport();
               return;
@@ -114,7 +114,7 @@ export function useEmployeeReportSessionBootstrap({
         const message =
           err instanceof Error
             ? err.message
-            : "세션 확인 중 오류가 발생했습니다.";
+            : "확인 중 문제가 발생했습니다.";
         setError(message);
       } finally {
         if (!options?.silent) {

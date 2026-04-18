@@ -84,7 +84,7 @@ export function useEmployeeReportToastEffects(input: {
     const key = `${reportData.report.id}:mock`;
     if (lastMockNoticeKeyRef.current === key) return;
     lastMockNoticeKeyRef.current = key;
-    showToast("현재 레포트는 데모 데이터 기반으로 생성되었습니다.", {
+    showToast("현재 리포트는 데모 데이터 기반으로 생성되었습니다.", {
       type: "info",
       duration: 3600,
     });
