@@ -12,16 +12,12 @@ export default function ReportSummaryAddendumPage(
   props: ReportSummaryAddendumPageProps
 ) {
   const { pageNumber, addendum, isContinuation = false } = props;
-  const title = "약사 코멘트";
+  const title = "종합 의견";
   const subtitle = addendum.consultationSummary
     ? isContinuation
       ? "이전 페이지에 이어 담당 약사의 코멘트를 계속 확인하세요."
       : "담당 약사의 코멘트를 읽기 편한 흐름으로 정리했습니다."
     : "필요한 안내를 이어서 확인하세요.";
-  const commentParagraphs = addendum.consultationSummary
-    .split(/\n{2,}/)
-    .map((paragraph) => paragraph.trim())
-    .filter(Boolean);
 
   return (
     <section
@@ -39,14 +35,9 @@ export default function ReportSummaryAddendumPage(
           <article className={styles.reportPharmacistCommentCard}>
             <p className={styles.reportPharmacistCommentEyebrow}>담당 약사 코멘트</p>
             <div className={styles.reportPharmacistCommentBody}>
-              {commentParagraphs.map((paragraph, index) => (
-                <p
-                  key={`pharmacist-comment-${pageNumber}-${index + 1}`}
-                  className={styles.reportPharmacistCommentParagraph}
-                >
-                  {paragraph}
-                </p>
-              ))}
+              <p className={styles.reportPharmacistCommentParagraph}>
+                {addendum.consultationSummary}
+              </p>
             </div>
           </article>
         ) : null}

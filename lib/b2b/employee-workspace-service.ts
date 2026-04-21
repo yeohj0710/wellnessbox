@@ -19,33 +19,54 @@ type LoadEmployeeWorkspaceInput = {
   periodKey?: string | null;
 };
 
+type EmployeeWorkspaceReportRow = {
+  id: string;
+  variantIndex: number;
+  status: string;
+  pageSize: string;
+  stylePreset: string | null;
+  periodKey: string | null;
+  reportCycle: number | null;
+  reportPayload: unknown;
+  layoutDsl: unknown;
+  exportAudit: unknown;
+  updatedAt: Date;
+};
+
+const EMPLOYEE_WORKSPACE_REPORT_ROW_SELECT = {
+  id: true,
+  variantIndex: true,
+  status: true,
+  pageSize: true,
+  stylePreset: true,
+  periodKey: true,
+  reportCycle: true,
+  reportPayload: true,
+  layoutDsl: true,
+  exportAudit: true,
+  updatedAt: true,
+} as const;
+
 async function loadSelectedReportPayload(input: {
   employeeId: string;
-  report:
-    | {
-        id: string;
-        variantIndex: number;
-        status: string;
-        pageSize: string;
-        stylePreset: string | null;
-        periodKey: string | null;
-        reportCycle: number | null;
-        reportPayload: unknown;
-        layoutDsl: unknown;
-        exportAudit: unknown;
-        updatedAt: Date;
-      }
-    | null;
+  report: EmployeeWorkspaceReportRow | null;
   fallbackPeriodKey: string;
 }) {
   if (!input.report) return null;
 
-  const payload =
-    (await resolveReportPayloadWithLatestNote({
+  const payload = await resolveReportPayloadWithLatestNote({
       employeeId: input.employeeId,
       periodKey: input.report.periodKey ?? input.fallbackPeriodKey,
       rawPayload: input.report.reportPayload,
-    })) ?? input.report.reportPayload;
+    })
+      .catch((error) => {
+        console.error("[b2b][employee-workspace] latest-note payload skipped", {
+          employeeId: input.employeeId,
+          reportId: input.report?.id ?? null,
+          message: error instanceof Error ? error.message : String(error),
+        });
+        return null;
+      }) ?? input.report.reportPayload;
 
   return serializeB2bReportDetail(
     {
@@ -141,18 +162,14 @@ export async function loadEmployeeWorkspace(input: LoadEmployeeWorkspaceInput) {
         periodKey: requestedPeriodKey,
       },
       orderBy: [{ variantIndex: "desc" }, { createdAt: "desc" }],
-      select: {
-        id: true,
-      },
+      select: EMPLOYEE_WORKSPACE_REPORT_ROW_SELECT,
     }),
     db.b2bReport.findFirst({
       where: {
         employeeId: input.employeeId,
       },
       orderBy: [{ periodKey: "desc" }, { variantIndex: "desc" }, { createdAt: "desc" }],
-      select: {
-        id: true,
-      },
+      select: EMPLOYEE_WORKSPACE_REPORT_ROW_SELECT,
     }),
     db.b2bEmployeeSyncState.findUnique({
       where: { employeeId: input.employeeId },
@@ -164,38 +181,15 @@ export async function loadEmployeeWorkspace(input: LoadEmployeeWorkspaceInput) {
   }
 
   const hasAnyWorkspaceData = Boolean(latestHealth || latestSurvey || latestOverallReport);
-  let selectedReportRow:
-    | {
-        id: string;
-        variantIndex: number;
-        status: string;
-        pageSize: string;
-        stylePreset: string | null;
-        periodKey: string | null;
-        reportCycle: number | null;
-        reportPayload: unknown;
-        layoutDsl: unknown;
-        exportAudit: unknown;
-        updatedAt: Date;
-      }
-    | null = null;
+  let selectedReportRow: EmployeeWorkspaceReportRow | null = null;
 
   if (input.reportId) {
     const reportById = await db.b2bReport.findUnique({
       where: { id: input.reportId },
       select: {
+        ...EMPLOYEE_WORKSPACE_REPORT_ROW_SELECT,
         id: true,
         employeeId: true,
-        variantIndex: true,
-        status: true,
-        pageSize: true,
-        stylePreset: true,
-        periodKey: true,
-        reportCycle: true,
-        reportPayload: true,
-        layoutDsl: true,
-        exportAudit: true,
-        updatedAt: true,
       },
     });
     if (reportById?.employeeId === input.employeeId) {
@@ -220,40 +214,31 @@ export async function loadEmployeeWorkspace(input: LoadEmployeeWorkspaceInput) {
       currentHealth || currentSurvey || currentPeriodReport
     );
     if (shouldEnsureCurrentReport) {
-      const ensured = await ensureLatestB2bReport(input.employeeId, requestedPeriodKey);
-      selectedReportRow = {
-        id: ensured.id,
-        variantIndex: ensured.variantIndex,
-        status: ensured.status,
-        pageSize: ensured.pageSize,
-        stylePreset: ensured.stylePreset ?? null,
-        periodKey: ensured.periodKey ?? requestedPeriodKey,
-        reportCycle: ensured.reportCycle ?? null,
-        reportPayload: ensured.reportPayload,
-        layoutDsl: ensured.layoutDsl,
-        exportAudit: ensured.exportAudit,
-        updatedAt: ensured.updatedAt,
-      };
-    } else if (latestOverallReport) {
-      const latest = await db.b2bReport.findUnique({
-        where: { id: latestOverallReport.id },
-        select: {
-          id: true,
-          variantIndex: true,
-          status: true,
-          pageSize: true,
-          stylePreset: true,
-          periodKey: true,
-          reportCycle: true,
-          reportPayload: true,
-          layoutDsl: true,
-          exportAudit: true,
-          updatedAt: true,
-        },
-      });
-      if (latest) {
-        selectedReportRow = latest;
+      try {
+        const ensured = await ensureLatestB2bReport(input.employeeId, requestedPeriodKey);
+        selectedReportRow = {
+          id: ensured.id,
+          variantIndex: ensured.variantIndex,
+          status: ensured.status,
+          pageSize: ensured.pageSize,
+          stylePreset: ensured.stylePreset ?? null,
+          periodKey: ensured.periodKey ?? requestedPeriodKey,
+          reportCycle: ensured.reportCycle ?? null,
+          reportPayload: ensured.reportPayload,
+          layoutDsl: ensured.layoutDsl,
+          exportAudit: ensured.exportAudit,
+          updatedAt: ensured.updatedAt,
+        };
+      } catch (error) {
+        console.error("[b2b][employee-workspace] report ensure skipped", {
+          employeeId: input.employeeId,
+          periodKey: requestedPeriodKey,
+          message: error instanceof Error ? error.message : String(error),
+        });
+        selectedReportRow = currentPeriodReport ?? latestOverallReport ?? null;
       }
+    } else if (latestOverallReport) {
+      selectedReportRow = latestOverallReport;
     }
   }
 

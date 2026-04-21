@@ -433,7 +433,7 @@ export default function EmbeddedEmployeeSurveyPanel({
 
   if (!hydrated) {
     return (
-      <section className="bg-transparent p-0 sm:rounded-[24px] sm:border sm:border-cyan-200/70 sm:bg-white/92 sm:p-5 sm:shadow-[0_24px_58px_-36px_rgba(15,23,42,0.48)]">
+      <section className={styles.embeddedSurveyModalLoadingFrame}>
         <InlineSpinnerLabel
           label="설문 준비 중"
           size="md"
@@ -454,9 +454,9 @@ export default function EmbeddedEmployeeSurveyPanel({
 
   return (
     <>
-      <section className="bg-transparent p-0 sm:rounded-[24px] sm:border sm:border-cyan-200/70 sm:bg-white/92 sm:p-5 sm:shadow-[0_24px_58px_-36px_rgba(15,23,42,0.48)]">
-        <div className="sticky top-0 z-30 -mx-3 -mt-3 mb-4 flex items-start justify-between gap-3 border-b border-slate-200/90 bg-white px-5 pb-4 pt-5 shadow-[0_10px_24px_-22px_rgba(15,23,42,0.45)] sm:static sm:mx-0 sm:mt-0 sm:mb-4 sm:bg-transparent sm:px-0 sm:pt-0 sm:shadow-none">
-          <div className="min-w-0 pr-12">
+      <section className={styles.embeddedSurveyModalFrame}>
+        <div className={styles.embeddedSurveyModalTopbar}>
+          <div className={styles.embeddedSurveyModalTopbarText}>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700">
               Survey
             </p>
@@ -471,7 +471,7 @@ export default function EmbeddedEmployeeSurveyPanel({
             type="button"
             onClick={onClose}
             aria-label="설문 닫기"
-            className="absolute right-4 top-4 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white pb-0.5 text-[22px] font-semibold leading-none text-slate-600 shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 sm:right-0 sm:top-0"
+            className={styles.embeddedSurveyModalCloseButton}
           >
             ×
           </button>

@@ -232,8 +232,11 @@ export function buildReportSummaryMedicationReviewModel(
 export function buildReportSummaryAddendumModel(
   payload: ReportSummaryPayload
 ): ReportSummaryAddendumModel {
+  const customConsultationSummary = toTrimmedText(
+    payload.reportAddendum?.consultationSummary
+  ).replace(/\r\n?/g, "\n");
   const consultationSummary =
-    softenAdviceTone(toTrimmedText(payload.reportAddendum?.consultationSummary)) ||
+    customConsultationSummary ||
     resolveReportSummaryFinalPharmacistComment(payload);
 
   const packagedProducts = ensureArray(payload.reportAddendum?.packagedProducts)
@@ -292,71 +295,41 @@ function chunkPackagedProducts(
 function estimateTextUnits(text: string, charsPerLine: number, lineUnits: number) {
   const normalized = text.trim();
   if (!normalized) return 0;
-  return Math.max(1, Math.ceil(normalized.length / Math.max(8, charsPerLine))) * lineUnits;
+  const lineCount = normalized.split("\n").reduce((sum, line) => {
+    return sum + Math.max(1, Math.ceil(line.length / Math.max(8, charsPerLine)));
+  }, 0);
+  return Math.max(1, lineCount) * lineUnits;
 }
 
 function splitLongTextForPagination(text: string, maxCharsPerChunk: number) {
-  const normalized = text.replace(/\s+/g, " ").trim();
+  const normalized = text.replace(/\r\n?/g, "\n").trim();
   if (!normalized) return [] as string[];
   if (normalized.length <= maxCharsPerChunk) return [normalized];
 
-  const sentenceParts = (normalized.match(/[^.!?]+[.!?]?/g) ?? [])
-    .map((part) => part.trim())
-    .filter(Boolean);
-
-  const parts = sentenceParts.length > 0 ? sentenceParts : [normalized];
   const chunks: string[] = [];
-  let buffer = "";
+  let cursor = normalized;
 
-  const flushBuffer = () => {
-    const value = buffer.trim();
-    if (value) chunks.push(value);
-    buffer = "";
-  };
-
-  for (const part of parts) {
-    if (part.length > maxCharsPerChunk) {
-      flushBuffer();
-      let cursor = part;
-      while (cursor.length > maxCharsPerChunk) {
-        let cut = cursor.lastIndexOf(" ", maxCharsPerChunk);
-        if (cut < Math.floor(maxCharsPerChunk * 0.55)) {
-          cut = cursor.lastIndexOf(",", maxCharsPerChunk);
-        }
-        if (cut < Math.floor(maxCharsPerChunk * 0.45)) {
-          cut = maxCharsPerChunk;
-        }
-        const head = cursor.slice(0, cut).trim();
-        if (head) chunks.push(head);
-        cursor = cursor.slice(cut).trim();
-      }
-      if (cursor) {
-        buffer = cursor;
-      }
-      continue;
+  while (cursor.length > maxCharsPerChunk) {
+    let cut = cursor.lastIndexOf("\n", maxCharsPerChunk);
+    if (cut < Math.floor(maxCharsPerChunk * 0.45)) {
+      cut = cursor.lastIndexOf(" ", maxCharsPerChunk);
     }
-
-    const candidate = buffer ? `${buffer} ${part}` : part;
-    if (candidate.length > maxCharsPerChunk && buffer) {
-      flushBuffer();
-      buffer = part;
-      continue;
+    if (cut < Math.floor(maxCharsPerChunk * 0.45)) {
+      cut = maxCharsPerChunk;
     }
-    buffer = candidate;
+    const head = cursor.slice(0, cut).trimEnd();
+    if (head) chunks.push(head);
+    cursor = cursor.slice(cut).trimStart();
   }
 
-  flushBuffer();
+  if (cursor) chunks.push(cursor);
   return chunks.length > 0 ? chunks : [normalized];
 }
 
 function buildAddendumSummaryParagraphs(summary: string) {
-  return summary
-    .split(/\n{2,}/)
-    .flatMap((paragraph) =>
-      splitLongTextForPagination(paragraph.trim(), ADDENDUM_SUMMARY_CHUNK_MAX_CHARS)
-    )
-    .map((paragraph) => paragraph.trim())
-    .filter(Boolean);
+  return splitLongTextForPagination(summary, ADDENDUM_SUMMARY_CHUNK_MAX_CHARS).filter(
+    Boolean
+  );
 }
 
 function estimateAddendumSummaryParagraphUnits(paragraph: string) {
