@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import KakaoLoginButton from "@/components/common/kakaoLoginButton";
 import { MenuLinks } from "./menuLinks";
 import { TOPBAR_COPY } from "./topBar.copy";
@@ -29,13 +30,56 @@ export function TopBarDrawer({
   onCloseDrawer,
   onMenuItemClick,
 }: TopBarDrawerProps) {
-  if (!isDrawerOpen) return null;
+  const [shouldRender, setShouldRender] = useState(isDrawerOpen);
+  const [isAnimatingOpen, setIsAnimatingOpen] = useState(false);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openFrameRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+    if (openFrameRef.current !== null) {
+      cancelAnimationFrame(openFrameRef.current);
+      openFrameRef.current = null;
+    }
+
+    if (isDrawerOpen) {
+      setShouldRender(true);
+      setIsAnimatingOpen(false);
+      openFrameRef.current = requestAnimationFrame(() => {
+        openFrameRef.current = requestAnimationFrame(() => {
+          setIsAnimatingOpen(true);
+          openFrameRef.current = null;
+        });
+      });
+      return;
+    }
+
+    setIsAnimatingOpen(false);
+    closeTimerRef.current = setTimeout(() => {
+      setShouldRender(false);
+      closeTimerRef.current = null;
+    }, 300);
+  }, [isDrawerOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+      if (openFrameRef.current !== null) cancelAnimationFrame(openFrameRef.current);
+    };
+  }, []);
+
+  if (!shouldRender) return null;
 
   return (
     <>
       <div
-        aria-hidden={false}
-        className="fixed bottom-0 right-0 z-[70] w-[260px] bg-white shadow-lg transition-transform duration-300 translate-x-0"
+        aria-hidden={!isAnimatingOpen}
+        className={`fixed bottom-0 right-0 z-[70] w-[260px] bg-white shadow-lg transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
+          isAnimatingOpen ? "translate-x-0" : "translate-x-full"
+        }`}
         style={{ top: "3.5rem" }}
       >
         <div className="flex flex-col gap-4 p-6 text-[15px] font-medium text-slate-600 [&_a]:text-slate-700 [&_a]:hover:text-slate-900">
@@ -84,7 +128,9 @@ export function TopBarDrawer({
       </div>
 
       <div
-        className="fixed inset-x-0 bottom-0 z-[69] bg-black/40"
+        className={`fixed inset-x-0 bottom-0 z-[69] bg-black/40 transition-opacity duration-300 ease-out motion-reduce:transition-none ${
+          isAnimatingOpen ? "opacity-100" : "opacity-0"
+        }`}
         style={{ top: "3.5rem" }}
         onClick={onCloseDrawer}
       />
