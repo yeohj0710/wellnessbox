@@ -8,6 +8,7 @@ import {
   scheduleEmployeeBackgroundSync,
   scheduleEmployeeBackgroundSyncAfterResponse,
   isEmployeeSyncStateActive,
+  nudgeEmployeeAwaitingSignSyncNow,
 } from "@/lib/b2b/employee-background-sync";
 import { loadEmployeeWorkspace } from "@/lib/b2b/employee-workspace-service";
 import { resolveCurrentPeriodKey, B2B_PERIOD_KEY_REGEX } from "@/lib/b2b/period";
@@ -56,6 +57,9 @@ export async function runEmployeeWorkspaceGetRoute(req: Request) {
     .catch(() => undefined);
 
   if (isEmployeeSyncStateActive(workspace.sync.status)) {
+    if (workspace.sync.status === "awaiting_sign" || workspace.sync.step === "sign") {
+      await nudgeEmployeeAwaitingSignSyncNow(auth.data.employeeId);
+    }
     scheduleEmployeeBackgroundSyncAfterResponse(auth.data.employeeId);
   }
 
@@ -107,6 +111,7 @@ export async function runEmployeeWorkspacePostRoute(req: Request) {
       employeeId: upserted.employee.id,
       appUserId: auth.data.appUserId,
       periodKey,
+      forceRefresh: true,
     });
     scheduleEmployeeBackgroundSyncAfterResponse(upserted.employee.id);
   }

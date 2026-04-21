@@ -71,6 +71,71 @@ const EMPTY_PHARMACIST_COMMENT_MESSAGES = new Set([
   "주의사항이 없습니다.",
 ]);
 
+function isCheckupDateMetric(label: string) {
+  const normalized = label.replace(/\s+/g, "");
+  return (
+    normalized.includes("검진일자") ||
+    normalized.includes("검진일") ||
+    normalized.includes("수검일")
+  );
+}
+
+function resolveCheckupReferenceDate(payload: ReportSummaryPayload) {
+  const candidates = [payload.health?.fetchedAt, payload.meta?.generatedAt];
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    const date = new Date(candidate);
+    if (!Number.isNaN(date.getTime())) return date;
+  }
+  return null;
+}
+
+function formatCheckupDateValue(value: string, payload: ReportSummaryPayload) {
+  const trimmed = value.trim();
+  const compactDateMatch = trimmed.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (compactDateMatch) {
+    return `${compactDateMatch[1]}. ${Number(
+      compactDateMatch[2]
+    )}. ${Number(compactDateMatch[3])}.`;
+  }
+
+  const fullDateMatch = trimmed.match(/^(\d{4})\D+(\d{1,2})\D+(\d{1,2})\D*$/);
+  if (fullDateMatch) {
+    return `${fullDateMatch[1]}. ${Number(fullDateMatch[2])}. ${Number(
+      fullDateMatch[3]
+    )}.`;
+  }
+
+  const monthDayMatch = trimmed.match(/^(\d{1,2})\D+(\d{1,2})\D*$/);
+  if (!monthDayMatch) return value;
+
+  const reference = resolveCheckupReferenceDate(payload);
+  if (!reference) return value;
+
+  const month = Number(monthDayMatch[1]);
+  const day = Number(monthDayMatch[2]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return value;
+
+  let year = reference.getFullYear();
+  const inferred = new Date(year, month - 1, day);
+  if (inferred.getTime() > reference.getTime()) {
+    year -= 1;
+  }
+
+  return `${year}. ${month}. ${day}.`;
+}
+
+function formatHealthMetricValue(input: {
+  label: string;
+  value?: string;
+  unit?: string | null;
+  payload: ReportSummaryPayload;
+}) {
+  const value = formatMetricValue(input.value, input.unit);
+  if (value === "-" || !isCheckupDateMetric(input.label)) return value;
+  return formatCheckupDateValue(value, input.payload);
+}
+
 export function toMedicationMetaDate(value: unknown) {
   if (typeof value !== "string") return "";
   const text = value.trim();
@@ -108,7 +173,12 @@ export function buildReportSummaryHealthMetrics(
       const label = sanitizeTitle(firstOrDash(row?.metric));
       return {
         label,
-        value: formatMetricValue(row?.value, row?.unit),
+        value: formatHealthMetricValue({
+          label,
+          value: row?.value,
+          unit: row?.unit,
+          payload,
+        }),
         statusLabel: coreMetricStatusByLabel.get(label) ?? "참고",
       };
     });
@@ -116,7 +186,12 @@ export function buildReportSummaryHealthMetrics(
 
   return ensureArray(payload.health?.coreMetrics).map((row) => ({
     label: sanitizeTitle(firstOrDash(row?.label)),
-    value: formatMetricValue(row?.value, row?.unit),
+    value: formatHealthMetricValue({
+      label: sanitizeTitle(firstOrDash(row?.label)),
+      value: row?.value,
+      unit: row?.unit,
+      payload,
+    }),
     statusLabel: resolveMetricStatusLabel(row?.status),
   }));
 }

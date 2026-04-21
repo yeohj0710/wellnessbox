@@ -149,32 +149,33 @@ export function useSurveyProgressionActions({
       }, 420);
 
       calcTimeoutRef.current = window.setTimeout(() => {
+        void (async () => {
         try {
-          setResult(
-            computeSurveyResultFromAnswers({
-              template,
-              answers: resolvedAnswers,
-              selectedSections: finalSections,
-            })
-          );
+          const computedResult = computeSurveyResultFromAnswers({
+            template,
+            answers: resolvedAnswers,
+            selectedSections: finalSections,
+          });
           setCalcPercent(100);
-          setHasCompletedSubmission(true);
           if (authVerified) {
-            void persistSurveySnapshot({
+            await persistSurveySnapshot({
               answers: resolvedAnswers,
               selectedSections: finalSections,
               finalize: true,
               periodKey: surveyPeriodKey,
-            }).catch(() => null);
+            });
           }
+          setResult(computedResult);
+          setHasCompletedSubmission(true);
           setPhase("result");
         } catch {
           setPhase("survey");
-          setErrorText("analysis_failed");
+          setErrorText("설문 저장에 실패했습니다. 잠시 후 다시 제출해 주세요.");
         } finally {
           if (calcTickerRef.current != null) window.clearInterval(calcTickerRef.current);
           if (calcTimeoutRef.current != null) window.clearTimeout(calcTimeoutRef.current);
         }
+        })();
       }, 1700);
     },
     [

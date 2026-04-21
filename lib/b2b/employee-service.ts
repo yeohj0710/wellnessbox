@@ -18,6 +18,7 @@ import {
   runWithNhisFetchDedup,
   saveNhisFetchCache,
 } from "@/lib/server/hyphen/fetch-cache";
+import { clearNhisFetchMemoryCacheForUser } from "@/lib/server/hyphen/fetch-memory-cache";
 import { getNhisLink } from "@/lib/server/hyphen/link";
 import { buildNhisRequestDefaults } from "@/lib/server/hyphen/request-defaults";
 import { HYPHEN_PROVIDER } from "@/lib/server/hyphen/client";
@@ -199,6 +200,7 @@ export async function fetchAndStoreB2bHealthSnapshot(input: {
     };
 
     if (input.forceRefresh) {
+      clearNhisFetchMemoryCacheForUser(input.appUserId);
       await clearNhisFetchCaches(input.appUserId).catch((error) => {
         console.error("[b2b][employee-sync] failed to clear NHIS cache before force refresh", {
           appUserId: input.appUserId,

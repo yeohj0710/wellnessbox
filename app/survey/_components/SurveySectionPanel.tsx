@@ -55,12 +55,26 @@ export default function SurveySectionPanel(props: {
   resolveQuestionHelpText: (question: WellnessSurveyQuestionForTemplate) => string;
   isQuestionRequired: (question: WellnessSurveyQuestionForTemplate) => boolean;
   shouldShowQuestionOptionalHint: (question: WellnessSurveyQuestionForTemplate) => boolean;
+  compact?: boolean;
 }) {
   const { text, currentSection, surveySections } = props;
+  const compact = props.compact === true;
 
   return (
-    <div className="overflow-visible rounded-[30px] border border-sky-200/70 bg-white/90 p-4 shadow-[0_24px_58px_-36px_rgba(15,23,42,0.48)] backdrop-blur sm:p-7">
-      <header className="grid gap-4 border-b border-slate-200/80 pb-5 sm:pb-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <div
+      className={
+        compact
+          ? "overflow-visible bg-transparent p-0"
+          : "overflow-visible rounded-[30px] border border-sky-200/70 bg-white/90 p-4 shadow-[0_24px_58px_-36px_rgba(15,23,42,0.48)] backdrop-blur sm:p-7"
+      }
+    >
+      <header
+        className={
+          compact
+            ? "grid gap-3 border-b border-slate-200/80 pb-4 sm:gap-4 sm:pb-5 lg:grid-cols-[minmax(0,1fr)_300px]"
+            : "grid gap-4 border-b border-slate-200/80 pb-5 sm:pb-6 lg:grid-cols-[minmax(0,1fr)_320px]"
+        }
+      >
         <div className="space-y-1.5">
           <span className="inline-flex rounded-full border border-cyan-300 bg-cyan-50 px-2.5 py-1 text-xs font-semibold text-cyan-700">
             {props.currentSectionIndex + 1}. {currentSection?.title ?? text.commonSection}
@@ -78,7 +92,13 @@ export default function SurveySectionPanel(props: {
               {text.restart}
             </button>
           </div>
-          <div className="rounded-2xl border border-cyan-200/80 bg-white/85 px-3 py-3">
+          <div
+            className={
+              compact
+                ? "rounded-xl border border-cyan-200/80 bg-white/85 px-3 py-2.5"
+                : "rounded-2xl border border-cyan-200/80 bg-white/85 px-3 py-3"
+            }
+          >
             <div className="mb-1.5 flex items-center justify-between text-sm text-slate-600">
               <span>{text.progressBarLabel}</span>
               <span className="font-semibold text-cyan-700">{props.progressPercent}%</span>
@@ -103,7 +123,7 @@ export default function SurveySectionPanel(props: {
       </header>
 
       {surveySections.length > 1 ? (
-        <nav className="mt-5 flex flex-wrap gap-2.5">
+        <nav className={compact ? "mt-4 flex flex-wrap gap-2" : "mt-5 flex flex-wrap gap-2.5"}>
           {surveySections.map((section, index) => (
             <button
               key={section.key}
@@ -129,7 +149,7 @@ export default function SurveySectionPanel(props: {
         </div>
       ) : null}
 
-      <section className="mt-6 space-y-3.5 overflow-visible max-h-none">
+      <section className={compact ? "mt-4 space-y-3 overflow-visible max-h-none" : "mt-6 space-y-3.5 overflow-visible max-h-none"}>
         {currentSection?.questions.map((node, sectionQuestionIndex) => {
           const question = node.question;
           const questionText = props.resolveQuestionText(question);
@@ -149,7 +169,9 @@ export default function SurveySectionPanel(props: {
               ref={(nodeRef) => {
                 props.onQuestionRef(question.key, nodeRef);
               }}
-              className={`rounded-3xl border bg-gradient-to-b from-white to-slate-50/60 p-4 transition sm:p-6 ${
+              className={`border bg-gradient-to-b from-white to-slate-50/60 transition ${
+                compact ? "rounded-2xl p-3 sm:p-5" : "rounded-3xl p-4 sm:p-6"
+              } ${
                 isFocused
                   ? "border-cyan-300 shadow-[0_16px_36px_-24px_rgba(34,211,238,0.85)]"
                   : "border-slate-200/90"
@@ -171,7 +193,13 @@ export default function SurveySectionPanel(props: {
               </div>
 
               <div className="w-full text-left">
-                <h3 className="text-xl font-extrabold leading-tight text-slate-900 sm:text-2xl sm:leading-tight">
+                <h3
+                  className={
+                    compact
+                      ? "text-lg font-extrabold leading-tight text-slate-900 sm:text-2xl sm:leading-tight"
+                      : "text-xl font-extrabold leading-tight text-slate-900 sm:text-2xl sm:leading-tight"
+                  }
+                >
                   {questionNumber}. {questionText || question.key}
                 </h3>
               </div>
@@ -191,7 +219,7 @@ export default function SurveySectionPanel(props: {
       </section>
 
       <footer
-        className={`mt-7 flex items-center ${
+        className={`${compact ? "mt-5" : "mt-7"} flex items-center ${
           props.isCommonSurveySection ? "justify-end" : "justify-between"
         }`}
       >

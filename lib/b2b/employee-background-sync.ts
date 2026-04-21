@@ -133,9 +133,11 @@ export async function scheduleEmployeeBackgroundSync(input: {
   employeeId: string;
   appUserId: string;
   periodKey?: string | null;
+  forceRefresh?: boolean;
 }) {
   const requestedAt = now();
   const periodKey = input.periodKey ?? resolveCurrentPeriodKey();
+  const forceRefresh = input.forceRefresh === true;
 
   return db.b2bEmployeeSyncState.upsert({
     where: { employeeId: input.employeeId },
@@ -145,6 +147,7 @@ export async function scheduleEmployeeBackgroundSync(input: {
       periodKey,
       status: "queued",
       step: "init",
+      forceRefresh,
       requestedAt,
       nextRetryAt: requestedAt,
       attemptCount: 0,
@@ -162,6 +165,7 @@ export async function scheduleEmployeeBackgroundSync(input: {
       periodKey,
       status: "queued",
       step: "init",
+      forceRefresh,
       requestedAt,
       nextRetryAt: requestedAt,
       completedAt: null,
@@ -605,6 +609,7 @@ async function attemptFetch(input: {
   runnerToken: string;
   appUserId: string;
   periodKey: string;
+  forceRefresh: boolean;
   identity: {
     identityHash: string;
     name: string;
@@ -627,7 +632,7 @@ async function attemptFetch(input: {
           appUserId: input.appUserId,
           employeeId: input.employeeId,
           identity: input.identity,
-          forceRefresh: false,
+          forceRefresh: input.forceRefresh,
         }),
     });
 
@@ -768,6 +773,7 @@ async function runSingleEmployeeSyncAttempt(input: {
       runnerToken: input.runnerToken,
       appUserId: employee.appUserId,
       periodKey,
+      forceRefresh: state.forceRefresh,
       identity: {
         identityHash: employee.identityHash,
         name: employee.name,
@@ -882,4 +888,18 @@ export function scheduleEmployeeBackgroundSyncAfterResponse(employeeId: string) 
   setTimeout(() => {
     void run();
   }, 0);
+}
+
+export async function nudgeEmployeeAwaitingSignSyncNow(employeeId: string) {
+  await db.b2bEmployeeSyncState
+    .updateMany({
+      where: {
+        employeeId,
+        OR: [{ status: "awaiting_sign" }, { step: "sign" }],
+      },
+      data: {
+        nextRetryAt: now(),
+      },
+    })
+    .catch(() => undefined);
 }

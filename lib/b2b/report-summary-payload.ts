@@ -114,6 +114,7 @@ export type ReportSummaryPayload = {
     }>;
   };
   health?: {
+    fetchedAt?: string | null;
     metrics?: Array<{
       metric?: string;
       value?: string;

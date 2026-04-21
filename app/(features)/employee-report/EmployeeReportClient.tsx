@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styles from "@/components/b2b/B2bUx.module.css";
 import ReportSummaryCards from "@/components/b2b/ReportSummaryCards";
 import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
@@ -350,9 +350,15 @@ export default function EmployeeReportClient({
   const [showSyncDetails, setShowSyncDetails] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [polling, setPolling] = useState(false);
+  const [optimisticHealthState, setOptimisticHealthState] = useState<
+    "checking" | "refreshing" | "verifying" | null
+  >(null);
   const [pendingAction, setPendingAction] = useState<
     "start" | "health" | "refresh" | "report" | null
   >(null);
+  const localHealthRequestRef = useRef(false);
+  const autoResentKakaoAuthRef = useRef(false);
+  const surveyPanelRef = useRef<HTMLDivElement | null>(null);
 
   const validIdentity = useMemo(
     () => isValidIdentityInput(toIdentityPayload(identity)),
@@ -396,6 +402,17 @@ export default function EmployeeReportClient({
             ? "리포트 반영 중"
             : "대기 중";
 
+  const isAwaitingKakaoAuth =
+    workspace?.sync?.status === "awaiting_sign" ||
+    workspace?.sync?.step === "sign";
+  const isHealthRequestPending =
+    optimisticHealthState !== null ||
+    pendingAction === "start" ||
+    pendingAction === "health" ||
+    pendingAction === "refresh";
+  const healthCoreIsActive =
+    !healthComplete && (healthWorkflow.active || isHealthRequestPending);
+
   const applyWorkspace = useCallback(
     (
       next: EmployeeWorkspaceResponse | null,
@@ -433,6 +450,9 @@ export default function EmployeeReportClient({
     setSelectedReportId(null);
     setShowSurvey(false);
     setPolling(false);
+    setOptimisticHealthState(null);
+    localHealthRequestRef.current = false;
+    autoResentKakaoAuthRef.current = false;
     setNotice("");
     setError("");
     setIdentity({
@@ -527,19 +547,48 @@ export default function EmployeeReportClient({
   }, [workspace?.sync?.active, workspace?.sync?.status]);
 
   useEffect(() => {
+    if (!showSurvey) return;
+    const timer = window.setTimeout(() => {
+      surveyPanelRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 80);
+    return () => window.clearTimeout(timer);
+  }, [showSurvey]);
+
+  useEffect(() => {
     if (!polling) return;
-    const refreshWorkspace = () =>
-      loadWorkspace({
+    const refreshWorkspace = () => {
+      const verifyingSign =
+        workspace?.sync?.status === "awaiting_sign" ||
+        workspace?.sync?.step === "sign";
+
+      if (verifyingSign) {
+        setOptimisticHealthState("verifying");
+      }
+
+      return loadWorkspace({
         reportId: selectedReportId,
         preserveSurvey: showSurvey,
-      }).catch((pollError) => {
-        setError(
-          pollError instanceof Error
-            ? pollError.message
-            : "최신 상태를 다시 불러오지 못했습니다."
-        );
-        setPolling(false);
-      });
+      })
+        .catch((pollError) => {
+          setError(
+            pollError instanceof Error
+              ? pollError.message
+              : "최신 상태를 다시 불러오지 못했습니다."
+          );
+          setPolling(false);
+        })
+        .finally(() => {
+          if (!verifyingSign) return;
+          window.setTimeout(() => {
+            setOptimisticHealthState((current) =>
+              current === "verifying" ? null : current
+            );
+          }, 4500);
+        });
+    };
 
     const visible = document.visibilityState === "visible";
     const intervalMs =
@@ -570,7 +619,14 @@ export default function EmployeeReportClient({
       window.removeEventListener("pageshow", handleResume);
       document.removeEventListener("visibilitychange", handleResume);
     };
-  }, [loadWorkspace, polling, selectedReportId, showSurvey, workspace?.sync?.status]);
+  }, [
+    loadWorkspace,
+    polling,
+    selectedReportId,
+    showSurvey,
+    workspace?.sync?.status,
+    workspace?.sync?.step,
+  ]);
 
   const handleIdentityChange = useCallback(
     (key: keyof IdentityInput, value: string) => {
@@ -593,6 +649,8 @@ export default function EmployeeReportClient({
       }
 
       setPendingAction(options?.restartHealth ? "health" : "start");
+      setOptimisticHealthState("checking");
+      localHealthRequestRef.current = true;
       setBusy(true);
       setError("");
       setNotice("");
@@ -629,11 +687,35 @@ export default function EmployeeReportClient({
         );
       } finally {
         setPendingAction(null);
+        setOptimisticHealthState(null);
         setBusy(false);
       }
     },
     [applyWorkspace, identity, validIdentity]
   );
+
+  useEffect(() => {
+    if (!isAwaitingKakaoAuth) {
+      localHealthRequestRef.current = false;
+      autoResentKakaoAuthRef.current = false;
+      return;
+    }
+    if (localHealthRequestRef.current) return;
+    if (autoResentKakaoAuthRef.current) return;
+    if (busy || pendingAction || !validIdentity) return;
+
+    autoResentKakaoAuthRef.current = true;
+    setNotice(
+      "이전 인증 대기 상태라 카카오톡 인증 요청을 다시 보냈어요. 휴대폰에서 인증을 완료해 주세요."
+    );
+    void handleStartWorkspace({ restartHealth: true });
+  }, [
+    busy,
+    handleStartWorkspace,
+    isAwaitingKakaoAuth,
+    pendingAction,
+    validIdentity,
+  ]);
 
   const handleSelectReport = useCallback(
     async (nextReportId: string) => {
@@ -689,6 +771,7 @@ export default function EmployeeReportClient({
 
   const handleRefreshWorkspace = useCallback(async () => {
     setPendingAction("refresh");
+    setOptimisticHealthState(isAwaitingKakaoAuth ? "verifying" : "refreshing");
     setBusy(true);
     setError("");
     try {
@@ -704,9 +787,10 @@ export default function EmployeeReportClient({
       );
     } finally {
       setPendingAction(null);
+      setOptimisticHealthState(null);
       setBusy(false);
     }
-  }, [loadWorkspace, selectedReportId, showSurvey]);
+  }, [isAwaitingKakaoAuth, loadWorkspace, selectedReportId, showSurvey]);
 
   const healthToneBadgeClass = getHealthWorkflowToneBadgeClass(
     healthWorkflow.tone,
@@ -776,6 +860,24 @@ export default function EmployeeReportClient({
         loading: false,
       };
     }
+    if (optimisticHealthState === "verifying") {
+      return {
+        tone: "info" as const,
+        label: "인증 완료 여부 확인 중",
+        message:
+          "카카오톡 인증 완료 여부를 다시 확인하고 있어요. 확인되면 건강 정보 조회로 바로 이어집니다.",
+        loading: true,
+      };
+    }
+    if (isAwaitingKakaoAuth) {
+      return {
+        tone: "success" as const,
+        label: "카카오톡 인증을 완료해 주세요",
+        message:
+          "휴대폰 카카오톡에서 인증을 완료하면 이 화면이 자동으로 다음 단계를 확인합니다.",
+        loading: false,
+      };
+    }
     if (pendingAction === "health" || pendingAction === "start") {
       return {
         tone: "info" as const,
@@ -831,8 +933,10 @@ export default function EmployeeReportClient({
   }, [
     error,
     notice,
+    optimisticHealthState,
     pendingAction,
     showSurvey,
+    isAwaitingKakaoAuth,
     workspace?.currentStatus?.health.fetchedAt,
   ]);
 
@@ -852,10 +956,12 @@ export default function EmployeeReportClient({
     setShowSurvey(false);
 
     if (workspace?.sync?.active) {
+      setOptimisticHealthState("refreshing");
       void handleRefreshWorkspace();
       return;
     }
 
+    setOptimisticHealthState("checking");
     void handleStartWorkspace({ restartHealth: true });
   }, [
     busy,
@@ -1050,7 +1156,7 @@ export default function EmployeeReportClient({
                     className={`${styles.workflowCorePill} ${
                       healthComplete
                         ? styles.workflowCorePillDone
-                        : healthWorkflow.active
+                        : healthCoreIsActive
                         ? styles.workflowCorePillActive
                         : healthWorkflow.tone === "warn"
                         ? styles.workflowCorePillWarn
@@ -1067,9 +1173,33 @@ export default function EmployeeReportClient({
                       </span>
                     </span>
                     <span className={styles.workflowCorePillStatus}>
-                      {healthComplete
-                        ? "완료"
-                        : healthWorkflow.stepLabel || healthWorkflow.badge}
+                      {optimisticHealthState === "verifying" ? (
+                        <InlineSpinnerLabel
+                          label="인증 완료 확인 중"
+                          size="sm"
+                          className={styles.workflowInlineSpinnerLabel}
+                          spinnerClassName="text-sky-500"
+                        />
+                      ) : isAwaitingKakaoAuth ? (
+                        <span className={styles.workflowAuthCompleteLabel}>
+                          카카오톡 인증을 완료해 주세요
+                        </span>
+                      ) : isHealthRequestPending ? (
+                        <InlineSpinnerLabel
+                          label={
+                            optimisticHealthState === "refreshing"
+                              ? "상태 확인 중"
+                              : "인증 요청 중"
+                          }
+                          size="sm"
+                          className={styles.workflowInlineSpinnerLabel}
+                          spinnerClassName="text-sky-500"
+                        />
+                      ) : healthComplete ? (
+                        "완료"
+                      ) : (
+                        healthWorkflow.stepLabel || healthWorkflow.badge
+                      )}
                     </span>
                     <span className={styles.workflowCorePillFooter}>
                       <small className={styles.workflowCorePillHint}>
@@ -1119,6 +1249,17 @@ export default function EmployeeReportClient({
                     </span>
                   </button>
                 </div>
+                {showSurvey ? (
+                  <div
+                    ref={surveyPanelRef}
+                    className={styles.workflowInlineSurveyPanel}
+                  >
+                    <EmbeddedEmployeeSurveyPanel
+                      onCompleted={handleSurveyCompleted}
+                      onClose={() => setShowSurvey(false)}
+                    />
+                  </div>
+                ) : null}
                 <div
                   className={`${styles.workflowFeedback} ${workflowFeedbackClass}`}
                   aria-live="polite"
@@ -1138,6 +1279,32 @@ export default function EmployeeReportClient({
                     {workflowFeedback.message}
                   </p>
                 </div>
+                {isAwaitingKakaoAuth ? (
+                  <div className={styles.kakaoAuthWaitPanel} aria-live="polite">
+                    <div
+                      className={`${styles.kakaoAuthWaitSpinner} ${
+                        optimisticHealthState === "verifying"
+                          ? styles.kakaoAuthWaitSpinnerChecking
+                          : ""
+                      }`}
+                      aria-hidden
+                    >
+                      <span />
+                    </div>
+                    <div>
+                      <strong>
+                        {optimisticHealthState === "verifying"
+                          ? "인증 완료 여부를 확인하고 있어요."
+                          : "카카오톡 인증을 완료해 주세요."}
+                      </strong>
+                      <p>
+                        {optimisticHealthState === "verifying"
+                          ? "확인되면 건강 정보 조회로 바로 이어집니다. 잠시만 기다려 주세요."
+                          : "휴대폰에서 인증을 완료하면 자동으로 다음 단계로 넘어갑니다. 보통 몇 초 안에 반영돼요."}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
               </div>
 
               {workspace.sync &&
@@ -1378,13 +1545,6 @@ export default function EmployeeReportClient({
                   </div>
                 </article>
               </div>
-
-              {showSurvey ? (
-                <EmbeddedEmployeeSurveyPanel
-                  onCompleted={handleSurveyCompleted}
-                  onClose={() => setShowSurvey(false)}
-                />
-              ) : null}
 
               <article
                 className={`${styles.workflowReportCard} ${reportToneCardClass}`}

@@ -433,7 +433,7 @@ export default function EmbeddedEmployeeSurveyPanel({
 
   if (!hydrated) {
     return (
-      <section className="rounded-[28px] border border-cyan-200/70 bg-white/92 p-5 shadow-[0_24px_58px_-36px_rgba(15,23,42,0.48)]">
+      <section className="bg-transparent p-0 sm:rounded-[24px] sm:border sm:border-cyan-200/70 sm:bg-white/92 sm:p-5 sm:shadow-[0_24px_58px_-36px_rgba(15,23,42,0.48)]">
         <InlineSpinnerLabel
           label="설문 준비 중"
           size="md"
@@ -454,8 +454,8 @@ export default function EmbeddedEmployeeSurveyPanel({
 
   return (
     <>
-      <section className="rounded-[28px] border border-cyan-200/70 bg-white/92 p-4 shadow-[0_24px_58px_-36px_rgba(15,23,42,0.48)] sm:p-5">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <section className="bg-transparent p-0 sm:rounded-[24px] sm:border sm:border-cyan-200/70 sm:bg-white/92 sm:p-5 sm:shadow-[0_24px_58px_-36px_rgba(15,23,42,0.48)]">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3 sm:mb-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700">
               Survey
@@ -531,6 +531,7 @@ export default function EmbeddedEmployeeSurveyPanel({
               resolveQuestionHelpText={resolveQuestionHelpText}
               isQuestionRequired={isQuestionEffectivelyRequired}
               shouldShowQuestionOptionalHint={isOptionalSelectionQuestion}
+              compact
             />
           )}
         </div>
