@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import db from "@/lib/db";
 import {
   type AdminEmployeeRecordType,
@@ -10,6 +10,7 @@ import { noStoreJson } from "@/lib/server/no-store";
 import { HYPHEN_PROVIDER } from "@/lib/server/hyphen/client";
 import { clearNhisFetchMemoryCacheForUser } from "@/lib/server/hyphen/fetch-memory-cache";
 import { clearNhisLink } from "@/lib/server/hyphen/link";
+import { clearPendingEasyAuth } from "@/lib/server/hyphen/session";
 
 export const APP_USER_REQUIRED_ERROR =
   "이 직원은 appUserId가 없어 하이픈 캐시/연동 정보를 정리할 수 없습니다.";
@@ -24,31 +25,65 @@ async function clearEmployeeScopedHyphenArtifactsInTx(input: {
     return {
       healthFetchCaches: 0,
       healthFetchAttempts: 0,
+      healthProviderLinks: 0,
     };
   }
 
   const provider = HYPHEN_PROVIDER;
-  const [cacheDeleteResult, attemptDeleteResult] = await Promise.all([
-    input.tx.healthProviderFetchCache.deleteMany({
-      where: {
-        appUserId: input.appUserId,
-        provider,
-        identityHash: input.identityHash,
-      },
-    }),
-    input.tx.healthProviderFetchAttempt.deleteMany({
-      where: {
-        appUserId: input.appUserId,
-        provider,
-        identityHash: input.identityHash,
-      },
-    }),
-  ]);
+  const [cacheDeleteResult, attemptDeleteResult, linkClearResult] =
+    await Promise.all([
+      input.tx.healthProviderFetchCache.deleteMany({
+        where: {
+          appUserId: input.appUserId,
+          provider,
+          identityHash: input.identityHash,
+        },
+      }),
+      input.tx.healthProviderFetchAttempt.deleteMany({
+        where: {
+          appUserId: input.appUserId,
+          provider,
+          identityHash: input.identityHash,
+        },
+      }),
+      input.tx.healthProviderLink.updateMany({
+        where: {
+          appUserId: input.appUserId,
+          provider,
+          OR: [
+            { lastIdentityHash: input.identityHash },
+            { lastIdentityHash: null },
+          ],
+        },
+        data: {
+          linked: false,
+          loginMethod: null,
+          loginOrgCd: null,
+          stepMode: null,
+          stepData: Prisma.JsonNull,
+          cookieData: Prisma.JsonNull,
+          lastIdentityHash: null,
+          lastLinkedAt: null,
+          lastFetchedAt: null,
+          lastErrorCode: null,
+          lastErrorMessage: null,
+        },
+      }),
+    ]);
 
   return {
     healthFetchCaches: cacheDeleteResult.count,
     healthFetchAttempts: attemptDeleteResult.count,
+    healthProviderLinks: linkClearResult.count,
   };
+}
+
+async function clearCurrentHyphenEasyAuthSession() {
+  try {
+    await clearPendingEasyAuth();
+  } catch {
+    // Some maintenance callers run outside a request session. DB cleanup above is authoritative.
+  }
 }
 
 export async function resetAllB2bDataForEmployee(input: {
@@ -135,6 +170,7 @@ export async function resetAllB2bDataForEmployee(input: {
 
   if (input.appUserId) {
     clearNhisFetchMemoryCacheForUser(input.appUserId);
+    await clearCurrentHyphenEasyAuthSession();
   }
 
   return deleted;
@@ -223,6 +259,7 @@ export async function clearHyphenCachesForEmployee(input: {
 
   if (input.clearLink) {
     await clearNhisLink(input.appUserId);
+    await clearCurrentHyphenEasyAuthSession();
   } else if (input.clearFetchCache) {
     clearNhisFetchMemoryCacheForUser(input.appUserId);
   }
@@ -409,5 +446,6 @@ export async function deleteEmployeeWithAudit(target: {
 
   if (target.appUserId) {
     clearNhisFetchMemoryCacheForUser(target.appUserId);
+    await clearCurrentHyphenEasyAuthSession();
   }
 }

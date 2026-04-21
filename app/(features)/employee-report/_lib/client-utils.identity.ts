@@ -1,11 +1,12 @@
 import type { IdentityInput } from "./client-types";
+import {
+  clearEmployeeReportIdentityStorage,
+  EMPLOYEE_REPORT_IDENTITY_STORAGE_KEY,
+  EMPLOYEE_REPORT_LEGACY_IDENTITY_STORAGE_KEYS,
+} from "@/lib/b2b/employee-report-browser-storage";
 
-const LS_KEY = "wb:b2b:employee:last-input:v2";
-const LEGACY_LS_KEYS = [
-  "wb:b2b:employee:last-input:v1",
-  "wb:b2b:employee:last-input",
-  "wb:b2b:survey:identity:v1",
-] as const;
+const LS_KEY = EMPLOYEE_REPORT_IDENTITY_STORAGE_KEY;
+const LEGACY_LS_KEYS = EMPLOYEE_REPORT_LEGACY_IDENTITY_STORAGE_KEYS;
 const IDENTITY_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 
 export type StoredIdentitySource =
@@ -212,9 +213,5 @@ export function saveStoredIdentity(identity: IdentityInput) {
 }
 
 export function clearStoredIdentity() {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem(LS_KEY);
-  for (const key of LEGACY_LS_KEYS) {
-    localStorage.removeItem(key);
-  }
+  clearEmployeeReportIdentityStorage();
 }

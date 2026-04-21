@@ -31,8 +31,9 @@ import SurveyCalculatingPanel from "@/app/survey/_components/SurveyCalculatingPa
 import SurveyQuestionInput from "@/app/survey/_components/SurveyQuestionInput";
 import SurveyResetConfirmModal from "@/app/survey/_components/SurveyResetConfirmModal";
 import SurveySectionPanel from "@/app/survey/_components/SurveySectionPanel";
+import { EMPLOYEE_REPORT_SURVEY_STORAGE_KEY } from "@/lib/b2b/employee-report-browser-storage";
 
-export const EMPLOYEE_SURVEY_STORAGE_KEY = "b2b-public-survey-state.v4";
+export const EMPLOYEE_SURVEY_STORAGE_KEY = EMPLOYEE_REPORT_SURVEY_STORAGE_KEY;
 
 export function clearEmployeeSurveyDraftState() {
   if (typeof window === "undefined") return;

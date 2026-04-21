@@ -7,6 +7,7 @@ import {
   resetAllB2bData,
   resetPeriodData,
 } from "./api";
+import { broadcastEmployeeReportReset } from "@/lib/b2b/employee-report-browser-storage";
 import { EMPLOYEE_DATA_COPY, withTemplate } from "./employee-data-copy";
 import type { DeleteRecordType, EmployeeOpsResponse } from "./client-types";
 import type { B2bEmployeeDataRunBusyAction } from "./use-b2b-employee-data-busy-action";
@@ -162,6 +163,7 @@ export function useB2bEmployeeDataDestructiveActions({
       successNotice: EMPLOYEE_DATA_COPY.action.deleteEmployee.successNotice,
       run: async () => {
         await deleteEmployee(selectedEmployeeId, deleteConfirmName.trim());
+        broadcastEmployeeReportReset("admin-delete");
         await loadEmployeeList(search.trim());
         setOpsData(null);
       },

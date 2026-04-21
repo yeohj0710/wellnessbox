@@ -95,6 +95,8 @@ export async function clearNhisLink(appUserId: string) {
     stepData: Prisma.JsonNull,
     cookieData: Prisma.JsonNull,
     lastIdentityHash: null,
+    lastLinkedAt: null,
+    lastFetchedAt: null,
     lastErrorCode: null,
     lastErrorMessage: null,
     loginMethod: null,

@@ -24,6 +24,7 @@ import {
 } from "@/lib/b2b/admin-employee-management-route-employee";
 import { loadAdminEmployeeOpsPayload } from "@/lib/b2b/admin-employee-management-route-get";
 import { serializeEmployeeRow } from "@/lib/b2b/admin-employee-management-route-response";
+import { B2B_EMPLOYEE_TOKEN_COOKIE } from "@/lib/b2b/employee-token";
 import { b2bEmployeeIdentityInputSchema } from "@/lib/b2b/employee-route-schema";
 import { logB2bAdminAction } from "@/lib/b2b/employee-service";
 import { B2B_PERIOD_KEY_REGEX } from "@/lib/b2b/period";
@@ -262,13 +263,15 @@ export async function runAdminEmployeeDeleteRoute(
     counts: target._count,
   });
 
-  return noStoreJson({
+  const response = noStoreJson({
     ok: true,
     deleted: {
       employeeId: target.id,
       employeeName: target.name,
     },
   });
+  response.cookies.delete(B2B_EMPLOYEE_TOKEN_COOKIE);
+  return response;
 }
 
 export async function runAdminEmployeeOpsPostRoute(

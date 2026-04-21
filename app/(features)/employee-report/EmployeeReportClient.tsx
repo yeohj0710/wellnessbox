@@ -8,6 +8,7 @@ import EmployeeReportBootSkeleton from "./_components/EmployeeReportBootSkeleton
 import EmbeddedEmployeeSurveyPanel, {
   clearEmployeeSurveyDraftState,
 } from "./_components/EmbeddedEmployeeSurveyPanel";
+import { EMPLOYEE_REPORT_RESET_EVENT_KEY } from "@/lib/b2b/employee-report-browser-storage";
 import {
   deleteEmployeeSession,
   fetchEmployeeSession,
@@ -504,6 +505,20 @@ export default function EmployeeReportClient({
       mounted = false;
     };
   }, [loadWorkspace]);
+
+  useEffect(() => {
+    const handleResetEvent = (event: StorageEvent) => {
+      if (event.key !== EMPLOYEE_REPORT_RESET_EVENT_KEY || !event.newValue) {
+        return;
+      }
+      void resetIdentityFlow();
+    };
+
+    window.addEventListener("storage", handleResetEvent);
+    return () => {
+      window.removeEventListener("storage", handleResetEvent);
+    };
+  }, [resetIdentityFlow]);
 
   useEffect(() => {
     if (workspace?.sync?.active || workspace?.sync?.status === "failed") {
