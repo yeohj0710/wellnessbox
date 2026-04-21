@@ -385,14 +385,16 @@ function getHealthSyncModalCopy(input: {
   if (sync?.step === "fetch") {
     return {
       title: "인증이 확인되어 건강 정보를 가져오고 있어요.",
-      description: "건강검진과 복약 정보를 조회하는 중입니다. 이 화면에서 완료까지 확인합니다.",
+      description:
+        "건강검진과 복약 정보 조회는 보통 5분 정도 걸릴 수 있어요. 이 화면을 켜둔 채 기다려 주세요.",
       status: "정보 조회 중",
     };
   }
   if (sync?.step === "report") {
     return {
       title: "가져온 정보를 리포트에 반영하고 있어요.",
-      description: "거의 끝났습니다. 완료되면 자동으로 최신 상태가 표시됩니다.",
+      description:
+        "마지막 정리 단계입니다. 잠시만 더 기다리면 자동으로 최신 상태가 표시됩니다.",
       status: "리포트 반영 중",
     };
   }
@@ -1968,6 +1970,13 @@ export default function EmployeeReportClient({
             <p className={styles.healthSyncModalProgressText}>
               {healthSyncProgress}% · {syncStepLabel}
             </p>
+            <div className={styles.healthSyncModalPatienceCard}>
+              <strong>보통 5분 정도 걸릴 수 있어요.</strong>
+              <span>
+                국민건강보험/복약 정보를 외부 기관에서 확인하는 단계라 화면 변화가
+                적어 보여도 처리 중일 수 있습니다. 이 창을 켜둔 채 기다려 주세요.
+              </span>
+            </div>
             <div className={styles.healthSyncModalSteps}>
               {healthWorkflowSteps.map((step) => (
                 <div
@@ -1982,7 +1991,12 @@ export default function EmployeeReportClient({
                       : styles.healthSyncModalStepPending
                   }`}
                 >
-                  <strong>{step.label}</strong>
+                  <strong>
+                    {step.state === "current" ? (
+                      <span className={styles.healthSyncModalStepSpinner} aria-hidden />
+                    ) : null}
+                    {step.label}
+                  </strong>
                   <span>{step.caption}</span>
                 </div>
               ))}
@@ -2042,7 +2056,7 @@ export default function EmployeeReportClient({
             </div>
             {healthSyncModalLocked ? (
               <p className={styles.healthSyncModalLockText}>
-                연동이 끝나거나 실패 응답이 오면 이 창을 닫을 수 있습니다.
+                조금만 기다려 주세요. 완료되거나 실패 응답이 오면 이 창에서 바로 안내합니다.
               </p>
             ) : null}
           </div>
