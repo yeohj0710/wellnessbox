@@ -26,6 +26,15 @@ type SurveyQuestionInputProps = {
   onAdvance: (params?: { fromQuestionKey?: string; answerOverride?: unknown }) => void;
 };
 
+function releaseTouchFocus(target: HTMLElement) {
+  if (
+    typeof window !== "undefined" &&
+    window.matchMedia("(pointer: coarse)").matches
+  ) {
+    target.blur();
+  }
+}
+
 export default function SurveyQuestionInput(props: SurveyQuestionInputProps) {
   const { question, answers, maxSelectedSections, applyAnswer, onAdvance } = props;
 
@@ -44,7 +53,8 @@ export default function SurveyQuestionInput(props: SurveyQuestionInputProps) {
               key={`${question.key}-${option.value}`}
               data-testid="survey-option"
               type="button"
-              onClick={() => {
+              onClick={(event) => {
+                releaseTouchFocus(event.currentTarget);
                 const nextValue = active ? "" : option.value;
                 applyAnswer(question, nextValue);
                 if (!nextValue) return;
@@ -61,7 +71,7 @@ export default function SurveyQuestionInput(props: SurveyQuestionInputProps) {
               } ${
                 active
                   ? "border-sky-300 bg-sky-50 text-slate-900 ring-1 ring-sky-200 shadow-[0_8px_18px_-14px_rgba(14,116,144,0.35)]"
-                  : "border-slate-300 bg-white text-slate-800 hover:border-sky-300 hover:bg-sky-50"
+                  : "border-slate-300 bg-white text-slate-800 focus-visible:border-sky-300 focus-visible:ring-2 focus-visible:ring-sky-200 md:hover:border-sky-300 md:hover:bg-sky-50"
               }`}
             >
               <span className="block w-full whitespace-normal break-words [overflow-wrap:anywhere]">
@@ -94,7 +104,8 @@ export default function SurveyQuestionInput(props: SurveyQuestionInputProps) {
                 key={`${question.key}-${option.value}`}
                 data-testid="survey-multi-option"
                 type="button"
-                onClick={() =>
+                onClick={(event) => {
+                  releaseTouchFocus(event.currentTarget);
                   applyAnswer(
                     question,
                     toggleSurveyMultiValue(
@@ -103,8 +114,8 @@ export default function SurveyQuestionInput(props: SurveyQuestionInputProps) {
                       option.value,
                       maxSelectedSections
                     )
-                  )
-                }
+                  );
+                }}
                 className={`rounded-xl border transition ${
                   optionLayout.compact
                     ? optionLayout.denseText
@@ -116,7 +127,7 @@ export default function SurveyQuestionInput(props: SurveyQuestionInputProps) {
                 } ${
                   active
                     ? "border-sky-300 bg-sky-50 text-slate-900 ring-1 ring-sky-200 shadow-[0_8px_18px_-14px_rgba(14,116,144,0.35)]"
-                    : "border-slate-300 bg-white text-slate-800 hover:border-sky-300 hover:bg-sky-50"
+                    : "border-slate-300 bg-white text-slate-800 focus-visible:border-sky-300 focus-visible:ring-2 focus-visible:ring-sky-200 md:hover:border-sky-300 md:hover:bg-sky-50"
                 }`}
               >
                 <span className="block w-full whitespace-normal break-words [overflow-wrap:anywhere]">

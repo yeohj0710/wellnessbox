@@ -145,7 +145,9 @@ export function useSurveyProgressionActions({
 
       calcTickerRef.current = window.setInterval(() => {
         setCalcPercent((prev) => (prev >= 92 ? prev : prev + (prev < 70 ? 8 : 4)));
-        setCalcMessageIndex((prev) => (prev + 1) % CALCULATING_MESSAGES.length);
+        setCalcMessageIndex((prev) =>
+          Math.min(prev + 1, CALCULATING_MESSAGES.length - 1)
+        );
       }, 420);
 
       calcTimeoutRef.current = window.setTimeout(() => {
@@ -313,7 +315,7 @@ export function useSurveyProgressionActions({
         scrollToQuestion(nextKey, {
           align:
             isAutoAdvanceFromAnswer &&
-            currentNode.question.type !== "multi" &&
+            currentNode.question.type === "single" &&
             !nextAlreadyAnswered
               ? "center"
               : "comfort",
@@ -342,7 +344,7 @@ export function useSurveyProgressionActions({
           setFocusedQuestionBySection((prev) => ({ ...prev, [nextSection.key]: nextKey }));
           const align =
             isAutoAdvanceFromAnswer &&
-            currentNode.question.type !== "multi" &&
+            currentNode.question.type === "single" &&
             !nextAlreadyAnswered
               ? "center"
               : "comfort";

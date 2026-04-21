@@ -18,6 +18,61 @@ import {
 
 type QuestionAlign = "comfort" | "center";
 
+function canScrollElement(node: HTMLElement | null | undefined) {
+  if (!node) return false;
+  return node.scrollHeight - node.clientHeight > 4;
+}
+
+function isScrollableY(node: HTMLElement) {
+  const style = window.getComputedStyle(node);
+  return /(auto|scroll|overlay)/.test(style.overflowY) && canScrollElement(node);
+}
+
+function findScrollableAncestor(node: HTMLElement) {
+  let parent = node.parentElement;
+  while (parent && parent !== document.body) {
+    if (isScrollableY(parent)) return parent;
+    parent = parent.parentElement;
+  }
+  return null;
+}
+
+function resolveScrollContainer(
+  node: HTMLElement,
+  preferred?: HTMLElement | null
+) {
+  if (preferred && isScrollableY(preferred)) return preferred;
+  return findScrollableAncestor(node);
+}
+
+function resolveStickyTopPadding(scrollContainer: HTMLElement) {
+  const containerRect = scrollContainer.getBoundingClientRect();
+  const stickyCandidates = Array.from(
+    scrollContainer.querySelectorAll<HTMLElement>("*")
+  ).slice(0, 8);
+  const stickyHeader = stickyCandidates.find((candidate) => {
+    const style = window.getComputedStyle(candidate);
+    return style.position === "sticky" && Number.parseFloat(style.top || "0") === 0;
+  });
+
+  if (!stickyHeader) return 20;
+  const stickyRect = stickyHeader.getBoundingClientRect();
+  const coveredTop = stickyRect.bottom - containerRect.top;
+  return Math.max(20, coveredTop + 14);
+}
+
+function focusQuestionControl(node: HTMLElement) {
+  const focusable = node.querySelector<HTMLElement>(
+    "input,button,select,textarea"
+  );
+  if (!focusable) return;
+  const isCoarsePointer =
+    typeof window !== "undefined" &&
+    window.matchMedia("(pointer: coarse)").matches;
+  if (isCoarsePointer && focusable.tagName === "BUTTON") return;
+  focusable.focus({ preventScroll: true });
+}
+
 type UseSurveySectionNavigationInput = {
   surveySections: SurveySectionGroup[];
   answers: PublicSurveyAnswers;
@@ -93,13 +148,16 @@ export function useSurveySectionNavigation(input: UseSurveySectionNavigationInpu
             return;
           }
 
-          const scrollContainer = scrollContainerRef?.current;
+          const scrollContainer = resolveScrollContainer(
+            node,
+            scrollContainerRef?.current
+          );
           if (scrollContainer) {
             const containerRect = scrollContainer.getBoundingClientRect();
             const rect = node.getBoundingClientRect();
-            const topPadding = 20;
+            const topPadding = resolveStickyTopPadding(scrollContainer);
             const bottomPadding = 28;
-            const safeTop = 12;
+            const safeTop = topPadding;
             const safeBottom = 20;
             const safeHeight = Math.max(
               1,
@@ -130,10 +188,7 @@ export function useSurveySectionNavigation(input: UseSurveySectionNavigationInpu
               }
             }
 
-            const focusable = node.querySelector<HTMLElement>(
-              "input,button,select,textarea"
-            );
-            focusable?.focus({ preventScroll: true });
+            focusQuestionControl(node);
             return;
           }
 
@@ -160,10 +215,7 @@ export function useSurveySectionNavigation(input: UseSurveySectionNavigationInpu
             const inComfortZone =
               rect.top >= topPadding && rect.bottom <= viewportHeight - bottomPadding;
             if (inComfortZone) {
-              const focusable = node.querySelector<HTMLElement>(
-                "input,button,select,textarea"
-              );
-              focusable?.focus({ preventScroll: true });
+              focusQuestionControl(node);
               return;
             }
             const targetTop = window.scrollY + rect.top - topPadding;
@@ -173,10 +225,7 @@ export function useSurveySectionNavigation(input: UseSurveySectionNavigationInpu
             });
           }
 
-          const focusable = node.querySelector<HTMLElement>(
-            "input,button,select,textarea"
-          );
-          focusable?.focus({ preventScroll: true });
+          focusQuestionControl(node);
         });
       };
       run(0);

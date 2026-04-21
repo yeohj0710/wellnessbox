@@ -12,6 +12,10 @@ export default function SurveyCalculatingPanel(props: {
     >
       <p className="text-sm font-semibold text-cyan-700">{props.title}</p>
       <h2 className="mt-2 text-xl font-extrabold text-slate-900 sm:text-2xl">{props.message}</h2>
+      <div
+        className="mx-auto mt-5 h-9 w-9 animate-spin rounded-full border-4 border-cyan-100 border-t-cyan-500"
+        aria-hidden
+      />
       <div className="mx-auto mt-6 h-2 w-full max-w-xl rounded-full bg-cyan-100">
         <div
           className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-[width] duration-300"

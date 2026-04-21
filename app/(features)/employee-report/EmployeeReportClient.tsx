@@ -72,6 +72,14 @@ function syncStatusText(workspace: EmployeeWorkspaceResponse | null) {
       message: "카카오 인증이 끝나면 다음 단계가 바로 이어집니다.",
     };
   }
+  if (sync.step === "init" || (sync.status === "queued" && !sync.step)) {
+    return {
+      badge: "인증 요청 중",
+      tone: "warn" as const,
+      message:
+        "먼저 카카오톡 인증 요청을 준비하고 있어요. 휴대폰 알림이 오면 인증을 완료해 주세요.",
+    };
+  }
   if (sync.step === "fetch") {
     return {
       badge: "정보 확인 중",
@@ -245,6 +253,18 @@ function buildHealthWorkflow(workspace: EmployeeWorkspaceResponse | null) {
       stepLabel: "카카오 인증",
       title: "카카오 인증을 마쳐 주세요.",
       description: "인증이 확인되면 바로 다음 단계로 넘어갑니다.",
+    };
+  }
+
+  if (sync?.step === "init" || (sync?.status === "queued" && !sync?.step)) {
+    return {
+      badge: "인증 요청 중",
+      tone: "warn" as const,
+      active: true,
+      stepLabel: "카카오톡 인증 요청",
+      title: "카카오톡 인증 요청을 준비하고 있어요.",
+      description:
+        "휴대폰 알림이 오면 인증을 완료해 주세요. 인증 전에는 건강 정보를 조회하지 않습니다.",
     };
   }
 
@@ -866,6 +886,15 @@ export default function EmployeeReportClient({
           message:
             "카카오톡 인증을 완료하면 이 화면이 자동으로 완료 여부를 확인합니다. 웹 탭으로 돌아와도 새 인증을 다시 보내지 않고 이어서 확인해요.",
           loading: optimisticHealthState === "verifying",
+        };
+      }
+      if (sync.step === "init" || (sync.status === "queued" && !sync.step)) {
+        return {
+          tone: "info" as const,
+          label: "카카오톡 인증 요청 중",
+          message:
+            "먼저 휴대폰 카카오톡 인증을 요청하고 있어요. 인증을 완료하기 전에는 건강 정보를 조회하지 않습니다.",
+          loading: true,
         };
       }
       if (sync.step === "fetch") {
