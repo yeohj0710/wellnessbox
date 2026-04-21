@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import styles from "@/components/b2b/B2bUx.module.css";
 import ReportSummaryCards from "@/components/b2b/ReportSummaryCards";
 import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
@@ -350,14 +350,13 @@ export default function EmployeeReportClient({
   const [showSyncDetails, setShowSyncDetails] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [polling, setPolling] = useState(false);
+  const [pollingError, setPollingError] = useState("");
   const [optimisticHealthState, setOptimisticHealthState] = useState<
     "checking" | "refreshing" | "verifying" | null
   >(null);
   const [pendingAction, setPendingAction] = useState<
     "start" | "health" | "refresh" | "report" | null
   >(null);
-  const localHealthRequestRef = useRef(false);
-  const autoResentKakaoAuthRef = useRef(false);
 
   const validIdentity = useMemo(
     () => isValidIdentityInput(toIdentityPayload(identity)),
@@ -435,6 +434,7 @@ export default function EmployeeReportClient({
       const next = await fetchEmployeeWorkspace({
         reportId: input?.reportId ?? undefined,
       });
+      setPollingError("");
       applyWorkspace(next, { preserveSurvey: input?.preserveSurvey });
       return next;
     },
@@ -449,9 +449,8 @@ export default function EmployeeReportClient({
     setSelectedReportId(null);
     setShowSurvey(false);
     setPolling(false);
+    setPollingError("");
     setOptimisticHealthState(null);
-    localHealthRequestRef.current = false;
-    autoResentKakaoAuthRef.current = false;
     setNotice("");
     setError("");
     setIdentity({
@@ -578,13 +577,16 @@ export default function EmployeeReportClient({
         reportId: selectedReportId,
         preserveSurvey: showSurvey,
       })
+        .then((nextWorkspace) => {
+          setPollingError("");
+          return nextWorkspace;
+        })
         .catch((pollError) => {
-          setError(
+          setPollingError(
             pollError instanceof Error
               ? pollError.message
-              : "최신 상태를 다시 불러오지 못했습니다."
+              : "최신 진행 상태 확인이 잠시 지연되고 있어요."
           );
-          setPolling(false);
         })
         .finally(() => {
           if (!verifyingSign) return;
@@ -656,9 +658,9 @@ export default function EmployeeReportClient({
 
       setPendingAction(options?.restartHealth ? "health" : "start");
       setOptimisticHealthState("checking");
-      localHealthRequestRef.current = true;
       setBusy(true);
       setError("");
+      setPollingError("");
       setNotice("");
 
       try {
@@ -699,29 +701,6 @@ export default function EmployeeReportClient({
     },
     [applyWorkspace, identity, validIdentity]
   );
-
-  useEffect(() => {
-    if (!isAwaitingKakaoAuth) {
-      localHealthRequestRef.current = false;
-      autoResentKakaoAuthRef.current = false;
-      return;
-    }
-    if (localHealthRequestRef.current) return;
-    if (autoResentKakaoAuthRef.current) return;
-    if (busy || pendingAction || !validIdentity) return;
-
-    autoResentKakaoAuthRef.current = true;
-    setNotice(
-      "이전 인증 대기 상태라 카카오톡 인증 요청을 다시 보냈어요. 휴대폰에서 인증을 완료해 주세요."
-    );
-    void handleStartWorkspace({ restartHealth: true });
-  }, [
-    busy,
-    handleStartWorkspace,
-    isAwaitingKakaoAuth,
-    pendingAction,
-    validIdentity,
-  ]);
 
   const handleSelectReport = useCallback(
     async (nextReportId: string) => {
@@ -780,23 +759,34 @@ export default function EmployeeReportClient({
     setOptimisticHealthState(isAwaitingKakaoAuth ? "verifying" : "refreshing");
     setBusy(true);
     setError("");
+    setPollingError("");
     try {
       await loadWorkspace({
         reportId: selectedReportId,
         preserveSurvey: showSurvey,
       });
     } catch (refreshError) {
-      setError(
+      const message =
         refreshError instanceof Error
           ? refreshError.message
-          : "최신 상태를 불러오지 못했습니다."
-      );
+          : "최신 상태를 불러오지 못했습니다.";
+      if (workspace?.sync?.active) {
+        setPollingError(message);
+      } else {
+        setError(message);
+      }
     } finally {
       setPendingAction(null);
       setOptimisticHealthState(null);
       setBusy(false);
     }
-  }, [isAwaitingKakaoAuth, loadWorkspace, selectedReportId, showSurvey]);
+  }, [
+    isAwaitingKakaoAuth,
+    loadWorkspace,
+    selectedReportId,
+    showSurvey,
+    workspace?.sync?.active,
+  ]);
 
   const healthToneBadgeClass = getHealthWorkflowToneBadgeClass(
     healthWorkflow.tone,
@@ -858,6 +848,52 @@ export default function EmployeeReportClient({
     ? "열려 있는 설문 창을 닫습니다."
     : "설문 창을 열고 바로 이어서 작성합니다.";
   const workflowFeedback = useMemo(() => {
+    const sync = workspace?.sync;
+    if (sync?.active) {
+      if (pollingError) {
+        return {
+          tone: "info" as const,
+          label: "서버 처리 계속 확인 중",
+          message:
+            "방금 상태 확인이 잠시 지연됐지만 건강정보 연동은 서버에서 이어지고 있어요. 화면을 닫거나 새로고침해도 같은 상태에서 다시 확인합니다.",
+          loading: true,
+        };
+      }
+      if (sync.status === "awaiting_sign" || sync.step === "sign") {
+        return {
+          tone: "success" as const,
+          label: "카카오톡 인증 대기 중",
+          message:
+            "카카오톡 인증을 완료하면 이 화면이 자동으로 완료 여부를 확인합니다. 웹 탭으로 돌아와도 새 인증을 다시 보내지 않고 이어서 확인해요.",
+          loading: optimisticHealthState === "verifying",
+        };
+      }
+      if (sync.step === "fetch") {
+        return {
+          tone: "info" as const,
+          label: "건강 정보 조회 중",
+          message:
+            "인증은 확인됐고 건강검진/복약 정보를 서버에서 가져오고 있어요. 페이지를 새로고침해도 이 단계에서 이어집니다.",
+          loading: true,
+        };
+      }
+      if (sync.step === "report") {
+        return {
+          tone: "info" as const,
+          label: "리포트 반영 중",
+          message:
+            "받아온 건강 정보를 리포트에 반영하고 있어요. 완료되면 진행 상태와 리포트가 자동으로 갱신됩니다.",
+          loading: true,
+        };
+      }
+      return {
+        tone: "info" as const,
+        label: "서버에서 연동 준비 중",
+        message:
+          "건강정보 연동 작업을 서버에서 이어가고 있어요. 설문을 작성하거나 페이지를 다시 열어도 현재 상태를 계속 불러옵니다.",
+        loading: true,
+      };
+    }
     if (error) {
       return {
         tone: "error" as const,
@@ -941,9 +977,11 @@ export default function EmployeeReportClient({
     notice,
     optimisticHealthState,
     pendingAction,
+    pollingError,
     showSurvey,
     isAwaitingKakaoAuth,
     workspace?.currentStatus?.health.fetchedAt,
+    workspace?.sync,
   ]);
 
   const handleHealthCoreClick = useCallback(() => {
