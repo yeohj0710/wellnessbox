@@ -11,6 +11,8 @@ import {
 } from "./page-contracts";
 import { SurveyDetailCards } from "./SurveyDetailPages";
 
+const MAX_HEALTH_METRICS_ON_PAGE = 20;
+
 export function ReportSummaryOverviewPage(props: ReportSummaryOverviewPageProps) {
   const {
     donutRadius,
@@ -222,6 +224,7 @@ export function ReportSummaryOverviewPage(props: ReportSummaryOverviewPageProps)
 
 export function ReportSummaryHealthPage(props: ReportSummaryHealthPageProps) {
   const { pageNumber, healthMetrics, text } = props;
+  const visibleHealthMetrics = healthMetrics.slice(0, MAX_HEALTH_METRICS_ON_PAGE);
 
   return (
     <section
@@ -245,7 +248,7 @@ export function ReportSummaryHealthPage(props: ReportSummaryHealthPageProps) {
             <p className={styles.reportDataEmpty}>{text.metricsEmpty}</p>
           ) : (
             <ul className={styles.reportMetricGrid}>
-              {healthMetrics.map((metric, index) => (
+              {visibleHealthMetrics.map((metric, index) => (
                 <li key={`metric-${index}`} className={styles.reportMetricItem}>
                   <div className={styles.reportMetricHead}>
                     <span className={styles.reportMetricLabel}>{metric.label}</span>

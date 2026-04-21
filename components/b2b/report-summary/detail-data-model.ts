@@ -48,10 +48,10 @@ export type ReportSummaryAddendumPageModel = {
 const ADDENDUM_FIRST_PAGE_CONTENT_UNITS = 940;
 const ADDENDUM_CONTINUATION_PAGE_CONTENT_UNITS = 1040;
 const ADDENDUM_SUMMARY_CARD_BASE_UNITS = 138;
-const ADDENDUM_SUMMARY_LINE_CHARS = 30;
-const ADDENDUM_SUMMARY_LINE_UNITS = 24;
-const ADDENDUM_SUMMARY_PARAGRAPH_GAP_UNITS = 14;
-const ADDENDUM_SUMMARY_CHUNK_MAX_CHARS = 280;
+const ADDENDUM_SUMMARY_LINE_CHARS = 26;
+const ADDENDUM_SUMMARY_LINE_UNITS = 27;
+const ADDENDUM_SUMMARY_PARAGRAPH_GAP_UNITS = 12;
+const ADDENDUM_SUMMARY_CHUNK_MAX_CHARS = 220;
 const ADDENDUM_PRODUCT_ARTICLE_BASE_UNITS = 124;
 const ADDENDUM_PRODUCT_ROW_GAP_UNITS = 22;
 const ADDENDUM_PRODUCT_COLUMNS = 2;
@@ -308,13 +308,28 @@ function splitLongTextForPagination(text: string, maxCharsPerChunk: number) {
 
   const chunks: string[] = [];
   let cursor = normalized;
+  const minCut = Math.floor(maxCharsPerChunk * 0.45);
+
+  const findSentenceCut = (value: string) => {
+    const slice = value.slice(0, maxCharsPerChunk + 1);
+    let candidate = -1;
+    const sentenceEndPattern = /[.!?。！？]/g;
+    let match: RegExpExecArray | null;
+    while ((match = sentenceEndPattern.exec(slice)) !== null) {
+      candidate = match.index + 1;
+    }
+    return candidate;
+  };
 
   while (cursor.length > maxCharsPerChunk) {
     let cut = cursor.lastIndexOf("\n", maxCharsPerChunk);
-    if (cut < Math.floor(maxCharsPerChunk * 0.45)) {
+    if (cut < minCut) {
+      cut = findSentenceCut(cursor);
+    }
+    if (cut < minCut) {
       cut = cursor.lastIndexOf(" ", maxCharsPerChunk);
     }
-    if (cut < Math.floor(maxCharsPerChunk * 0.45)) {
+    if (cut < minCut) {
       cut = maxCharsPerChunk;
     }
     const head = cursor.slice(0, cut).trimEnd();
@@ -462,8 +477,8 @@ function takeConsultationSummaryWithinBudget(input: {
 
   const safeTakenCount = Math.max(1, takenCount);
   return {
-    takenSummary: paragraphs.slice(0, safeTakenCount).join("\n\n"),
-    remainingSummary: paragraphs.slice(safeTakenCount).join("\n\n"),
+    takenSummary: paragraphs.slice(0, safeTakenCount).join("\n"),
+    remainingSummary: paragraphs.slice(safeTakenCount).join("\n"),
   };
 }
 
