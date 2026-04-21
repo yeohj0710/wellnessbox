@@ -13,6 +13,7 @@ import {
   deleteEmployeeSession,
   fetchEmployeeSession,
   fetchEmployeeWorkspace,
+  requestNhisSign,
   startEmployeeWorkspace,
   upsertEmployeeSession,
 } from "./_lib/api";
@@ -439,7 +440,7 @@ export default function EmployeeReportClient({
     "checking" | "refreshing" | "verifying" | null
   >(null);
   const [pendingAction, setPendingAction] = useState<
-    "start" | "health" | "refresh" | "report" | null
+    "start" | "health" | "refresh" | "report" | "sign" | null
   >(null);
 
   const validIdentity = useMemo(
@@ -908,6 +909,67 @@ export default function EmployeeReportClient({
     showHealthSyncModal,
     showSurvey,
     workspace?.sync?.active,
+  ]);
+
+  const handleConfirmKakaoAuth = useCallback(async () => {
+    setPendingAction("sign");
+    setOptimisticHealthState("verifying");
+    setShowHealthSyncModal(true);
+    setShowSurvey(false);
+    setError("");
+    setPollingError("");
+    setBusy(true);
+
+    try {
+      const signResult = await requestNhisSign();
+      if (!signResult.linked) {
+        setPollingError(
+          "카카오톡 인증 완료가 아직 확인되지 않았어요. 휴대폰에서 인증을 마친 뒤 다시 눌러 주세요."
+        );
+        return;
+      }
+
+      setPolling(true);
+      await loadWorkspace({
+        reportId: selectedReportId,
+        preserveSurvey: false,
+        driveSync: true,
+      });
+    } catch (signError) {
+      setPollingError(
+        signError instanceof Error
+          ? signError.message
+          : "카카오톡 인증 완료 여부를 확인하지 못했습니다."
+      );
+    } finally {
+      setPendingAction(null);
+      setOptimisticHealthState(null);
+      setBusy(false);
+    }
+  }, [loadWorkspace, selectedReportId]);
+
+  useEffect(() => {
+    if (!showHealthSyncModal || !isAwaitingKakaoAuth || busy) return;
+
+    const confirmOnReturn = () => {
+      if (document.visibilityState !== "visible") return;
+      void handleConfirmKakaoAuth();
+    };
+
+    window.addEventListener("focus", confirmOnReturn);
+    window.addEventListener("pageshow", confirmOnReturn);
+    document.addEventListener("visibilitychange", confirmOnReturn);
+
+    return () => {
+      window.removeEventListener("focus", confirmOnReturn);
+      window.removeEventListener("pageshow", confirmOnReturn);
+      document.removeEventListener("visibilitychange", confirmOnReturn);
+    };
+  }, [
+    busy,
+    handleConfirmKakaoAuth,
+    isAwaitingKakaoAuth,
+    showHealthSyncModal,
   ]);
 
   const healthToneBadgeClass = getHealthWorkflowToneBadgeClass(
@@ -1929,6 +1991,25 @@ export default function EmployeeReportClient({
               <p className={styles.healthSyncModalWarning}>{pollingError}</p>
             ) : null}
             <div className={styles.healthSyncModalActions}>
+              {isAwaitingKakaoAuth ? (
+                <button
+                  type="button"
+                  className={styles.buttonPrimary}
+                  disabled={busy}
+                  onClick={() => {
+                    void handleConfirmKakaoAuth();
+                  }}
+                >
+                  {pendingAction === "sign" ? (
+                    <InlineSpinnerLabel
+                      label="인증 확인 중"
+                      spinnerClassName="text-current"
+                    />
+                  ) : (
+                    "인증 완료했어요"
+                  )}
+                </button>
+              ) : null}
               <button
                 type="button"
                 className={styles.buttonSecondary}
