@@ -9,6 +9,7 @@ import {
   scheduleEmployeeBackgroundSyncAfterResponse,
   isEmployeeSyncStateActive,
   nudgeEmployeeAwaitingSignSyncNow,
+  processEmployeeBackgroundSyncState,
 } from "@/lib/b2b/employee-background-sync";
 import { loadEmployeeWorkspace } from "@/lib/b2b/employee-workspace-service";
 import { resolveCurrentPeriodKey, B2B_PERIOD_KEY_REGEX } from "@/lib/b2b/period";
@@ -36,7 +37,8 @@ export async function runEmployeeWorkspaceGetRoute(req: Request) {
   if (!auth.ok) return auth.response;
 
   const { searchParams } = new URL(req.url);
-  const workspace = await loadEmployeeWorkspace({
+  const driveSync = searchParams.get("driveSync") === "1";
+  let workspace = await loadEmployeeWorkspace({
     employeeId: auth.data.employeeId,
     reportId: searchParams.get("reportId"),
     periodKey: searchParams.get("period"),
@@ -60,6 +62,20 @@ export async function runEmployeeWorkspaceGetRoute(req: Request) {
     if (workspace.sync.status === "awaiting_sign" || workspace.sync.step === "sign") {
       await nudgeEmployeeAwaitingSignSyncNow(auth.data.employeeId);
     }
+    if (driveSync) {
+      await processEmployeeBackgroundSyncState(auth.data.employeeId);
+      const refreshedWorkspace = await loadEmployeeWorkspace({
+        employeeId: auth.data.employeeId,
+        reportId: searchParams.get("reportId"),
+        periodKey: searchParams.get("period"),
+      });
+      if (refreshedWorkspace) {
+        workspace = refreshedWorkspace;
+      }
+    }
+  }
+
+  if (isEmployeeSyncStateActive(workspace.sync.status)) {
     scheduleEmployeeBackgroundSyncAfterResponse(auth.data.employeeId);
   }
 

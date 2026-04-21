@@ -888,6 +888,197 @@
   scrollbar-gutter: auto;
 }
 
+.healthSyncModalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: clamp(22px, 5dvh, 56px) 14px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(73, 171, 255, 0.2), transparent 38%),
+    rgba(15, 23, 42, 0.56);
+  backdrop-filter: blur(6px);
+}
+
+.healthSyncModalShell {
+  width: min(640px, calc(100vw - 22px));
+  max-height: calc(100dvh - clamp(44px, 10dvh, 112px));
+  overflow-x: hidden;
+  overflow-y: auto;
+  border-radius: 24px;
+  border: 1px solid rgba(186, 230, 253, 0.76);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(59, 130, 246, 0.11), transparent 32%),
+    #ffffff;
+  padding: 20px;
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.34);
+}
+
+.healthSyncModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.healthSyncModalCloseButton {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid #d9e2ee;
+  background: #ffffff;
+  color: #596677;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.healthSyncModalHero {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+}
+
+.healthSyncModalHero h2 {
+  margin: 0;
+  color: #133a70;
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.healthSyncModalHero p {
+  margin: 6px 0 0;
+  color: #557196;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.healthSyncModalSpinner {
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  border: 1px solid #cfe0f6;
+  background: #f3f8ff;
+  display: grid;
+  place-items: center;
+}
+
+.healthSyncModalSpinner span {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 3px solid rgba(37, 99, 235, 0.18);
+  border-top-color: #2563eb;
+  animation: kakaoAuthWaitSpin 820ms linear infinite;
+}
+
+.healthSyncModalProgressTrack {
+  margin-top: 18px;
+  height: 9px;
+  border-radius: 999px;
+  background: #dbeafe;
+  overflow: hidden;
+}
+
+.healthSyncModalProgressFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2563eb 0%, #0ea5e9 58%, #22c55e 100%);
+  transition: width 260ms ease;
+}
+
+.healthSyncModalProgressText {
+  margin: 8px 0 0;
+  color: #4b6f9e;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.healthSyncModalSteps {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.healthSyncModalStep {
+  border-radius: 14px;
+  border: 1px solid #d7e3f6;
+  padding: 10px 11px;
+  display: grid;
+  gap: 4px;
+  min-height: 72px;
+}
+
+.healthSyncModalStep strong {
+  color: #173a70;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.3;
+}
+
+.healthSyncModalStep span {
+  color: #607999;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.healthSyncModalStepDone {
+  border-color: #bde4cb;
+  background: #effcf4;
+}
+
+.healthSyncModalStepCurrent {
+  border-color: #aecdff;
+  background: #eef6ff;
+}
+
+.healthSyncModalStepPending {
+  border-color: #d8e1ef;
+  background: #f8fbff;
+}
+
+.healthSyncModalStepError {
+  border-color: #ffd2c7;
+  background: #fff3ef;
+}
+
+.healthSyncModalWarning {
+  margin: 14px 0 0;
+  border-radius: 12px;
+  border: 1px solid #ffd2c7;
+  background: #fff7f5;
+  color: #9f4b3f;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.healthSyncModalActions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.healthSyncModalLockText {
+  margin: 12px 0 0;
+  color: #6b7f9e;
+  font-size: 12px;
+  line-height: 1.55;
+  text-align: right;
+}
+
 @media (max-width: 640px) {
   .surveyModalOverlay {
     align-items: stretch;
@@ -920,6 +1111,36 @@
 
   .surveyModalShell .embeddedSurveyViewport {
     padding: 14px 12px 18px;
+  }
+
+  .healthSyncModalOverlay {
+    align-items: stretch;
+    padding: 18px 10px 26px;
+  }
+
+  .healthSyncModalShell {
+    width: calc(100vw - 20px);
+    max-height: calc(100dvh - 44px);
+    border-radius: 20px;
+    padding: 16px;
+  }
+
+  .healthSyncModalHero {
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .healthSyncModalHero h2 {
+    font-size: 18px;
+  }
+
+  .healthSyncModalSpinner {
+    width: 40px;
+    height: 40px;
+  }
+
+  .healthSyncModalSteps {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1625,7 +1846,7 @@
   max-height: min(140dvh, 1180px);
   overflow-x: hidden;
   overflow-y: auto;
-  overscroll-behavior: contain;
+  overscroll-behavior: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-gutter: stable;
 }

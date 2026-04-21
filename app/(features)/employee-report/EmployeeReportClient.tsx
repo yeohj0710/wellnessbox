@@ -347,6 +347,69 @@ function buildReportWorkflow(workspace: EmployeeWorkspaceResponse | null) {
   };
 }
 
+function getHealthSyncProgress(workspace: EmployeeWorkspaceResponse | null) {
+  const sync = workspace?.sync;
+  if (workspace?.currentStatus?.health.complete || sync?.status === "completed") {
+    return 100;
+  }
+  if (sync?.status === "failed") return 100;
+  if (sync?.step === "report") return 88;
+  if (sync?.step === "fetch") return 68;
+  if (sync?.status === "awaiting_sign" || sync?.step === "sign") return 42;
+  if (sync?.step === "init" || sync?.status === "queued") return 22;
+  if (sync?.active) return 12;
+  return 0;
+}
+
+function getHealthSyncModalCopy(input: {
+  workspace: EmployeeWorkspaceResponse | null;
+  healthComplete: boolean;
+}) {
+  const sync = input.workspace?.sync;
+  if (input.healthComplete || sync?.status === "completed") {
+    return {
+      title: "건강 정보 연동이 완료됐어요.",
+      description: "최신 리포트에 반영할 준비가 끝났습니다.",
+      status: "완료",
+    };
+  }
+  if (sync?.status === "failed") {
+    return {
+      title: "건강 정보 연동을 완료하지 못했어요.",
+      description:
+        sync.lastErrorMessage || "다시 시작하면 카카오톡 인증부터 이어서 확인합니다.",
+      status: "확인 필요",
+    };
+  }
+  if (sync?.step === "fetch") {
+    return {
+      title: "인증이 확인되어 건강 정보를 가져오고 있어요.",
+      description: "건강검진과 복약 정보를 조회하는 중입니다. 이 화면에서 완료까지 확인합니다.",
+      status: "정보 조회 중",
+    };
+  }
+  if (sync?.step === "report") {
+    return {
+      title: "가져온 정보를 리포트에 반영하고 있어요.",
+      description: "거의 끝났습니다. 완료되면 자동으로 최신 상태가 표시됩니다.",
+      status: "리포트 반영 중",
+    };
+  }
+  if (sync?.status === "awaiting_sign" || sync?.step === "sign") {
+    return {
+      title: "휴대폰 카카오톡 인증을 완료해 주세요.",
+      description: "인증이 끝나면 이 화면이 자동으로 확인하고 다음 단계로 넘어갑니다.",
+      status: "인증 대기 중",
+    };
+  }
+  return {
+    title: "카카오톡 인증 요청을 준비하고 있어요.",
+    description:
+      "인증 전에는 건강 정보를 조회하지 않습니다. 휴대폰 알림이 오면 인증을 완료해 주세요.",
+    status: "인증 요청 중",
+  };
+}
+
 export default function EmployeeReportClient({
   initialIsAdminLoggedIn,
 }: {
@@ -367,6 +430,7 @@ export default function EmployeeReportClient({
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [showSurvey, setShowSurvey] = useState(false);
+  const [showHealthSyncModal, setShowHealthSyncModal] = useState(false);
   const [showSyncDetails, setShowSyncDetails] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [polling, setPolling] = useState(false);
@@ -430,6 +494,14 @@ export default function EmployeeReportClient({
     pendingAction === "refresh";
   const healthCoreIsActive =
     !healthComplete && (healthWorkflow.active || isHealthRequestPending);
+  const healthSyncProgress = useMemo(
+    () => getHealthSyncProgress(workspace),
+    [workspace]
+  );
+  const healthSyncModalCopy = useMemo(
+    () => getHealthSyncModalCopy({ workspace, healthComplete }),
+    [healthComplete, workspace]
+  );
 
   const applyWorkspace = useCallback(
     (
@@ -450,9 +522,14 @@ export default function EmployeeReportClient({
   );
 
   const loadWorkspace = useCallback(
-    async (input?: { reportId?: string | null; preserveSurvey?: boolean }) => {
+    async (input?: {
+      reportId?: string | null;
+      preserveSurvey?: boolean;
+      driveSync?: boolean;
+    }) => {
       const next = await fetchEmployeeWorkspace({
         reportId: input?.reportId ?? undefined,
+        driveSync: input?.driveSync,
       });
       setPollingError("");
       applyWorkspace(next, { preserveSurvey: input?.preserveSurvey });
@@ -468,6 +545,7 @@ export default function EmployeeReportClient({
     setWorkspace(null);
     setSelectedReportId(null);
     setShowSurvey(false);
+    setShowHealthSyncModal(false);
     setPolling(false);
     setPollingError("");
     setOptimisticHealthState(null);
@@ -565,12 +643,12 @@ export default function EmployeeReportClient({
   }, [workspace?.sync?.active, workspace?.sync?.status]);
 
   useEffect(() => {
-    if (!showSurvey) return;
+    if (!showSurvey && !showHealthSyncModal) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
+      if (event.key === "Escape" && showSurvey) {
         setShowSurvey(false);
       }
     };
@@ -580,7 +658,21 @@ export default function EmployeeReportClient({
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [showSurvey]);
+  }, [showHealthSyncModal, showSurvey]);
+
+  useEffect(() => {
+    if (workspace?.sync?.active && !healthComplete) {
+      setShowSurvey(false);
+      setShowHealthSyncModal(true);
+      return;
+    }
+    if (healthComplete) {
+      const timer = window.setTimeout(() => {
+        setShowHealthSyncModal(false);
+      }, 900);
+      return () => window.clearTimeout(timer);
+    }
+  }, [healthComplete, workspace?.sync?.active]);
 
   useEffect(() => {
     if (!polling) return;
@@ -596,6 +688,7 @@ export default function EmployeeReportClient({
       return loadWorkspace({
         reportId: selectedReportId,
         preserveSurvey: showSurvey,
+        driveSync: showHealthSyncModal,
       })
         .then((nextWorkspace) => {
           setPollingError("");
@@ -620,7 +713,11 @@ export default function EmployeeReportClient({
 
     const visible = document.visibilityState === "visible";
     const intervalMs =
-      workspace?.sync?.status === "awaiting_sign"
+      showHealthSyncModal
+        ? visible
+          ? 1200
+          : 4000
+        : workspace?.sync?.status === "awaiting_sign"
         ? visible
           ? 3000
           : 8000
@@ -651,6 +748,7 @@ export default function EmployeeReportClient({
     loadWorkspace,
     polling,
     selectedReportId,
+    showHealthSyncModal,
     showSurvey,
     workspace?.sync?.status,
     workspace?.sync?.step,
@@ -678,6 +776,8 @@ export default function EmployeeReportClient({
 
       setPendingAction(options?.restartHealth ? "health" : "start");
       setOptimisticHealthState("checking");
+      setShowHealthSyncModal(true);
+      setShowSurvey(false);
       setBusy(true);
       setError("");
       setPollingError("");
@@ -784,6 +884,7 @@ export default function EmployeeReportClient({
       await loadWorkspace({
         reportId: selectedReportId,
         preserveSurvey: showSurvey,
+        driveSync: showHealthSyncModal || workspace?.sync?.active === true,
       });
     } catch (refreshError) {
       const message =
@@ -804,6 +905,7 @@ export default function EmployeeReportClient({
     isAwaitingKakaoAuth,
     loadWorkspace,
     selectedReportId,
+    showHealthSyncModal,
     showSurvey,
     workspace?.sync?.active,
   ]);
@@ -1027,6 +1129,7 @@ export default function EmployeeReportClient({
         : "건강 정보 확인을 시작했어요. 연동되면 진행 상태와 반영 시간이 바로 표시됩니다."
     );
     setShowSurvey(false);
+    setShowHealthSyncModal(true);
 
     if (workspace?.sync?.active) {
       setOptimisticHealthState("refreshing");
@@ -1061,6 +1164,8 @@ export default function EmployeeReportClient({
       : workflowFeedback.tone === "error"
       ? styles.workflowFeedbackError
       : styles.workflowFeedbackInfo;
+  const healthSyncModalLocked =
+    workspace?.sync?.active === true && !healthComplete;
 
   if (booting) {
     return <EmployeeReportBootSkeleton />;
@@ -1760,6 +1865,108 @@ export default function EmployeeReportClient({
           </section>
         ) : null}
       </div>
+      {workspace && showHealthSyncModal ? (
+        <div
+          className={styles.healthSyncModalOverlay}
+          role="dialog"
+          aria-modal="true"
+          aria-label="건강 정보 연동"
+        >
+          <div className={styles.healthSyncModalShell}>
+            <div className={styles.healthSyncModalHeader}>
+              <span className={healthToneBadgeClass}>
+                {healthSyncModalCopy.status}
+              </span>
+              {!healthSyncModalLocked ? (
+                <button
+                  type="button"
+                  className={styles.healthSyncModalCloseButton}
+                  onClick={() => setShowHealthSyncModal(false)}
+                  aria-label="건강 정보 연동 창 닫기"
+                >
+                  ×
+                </button>
+              ) : null}
+            </div>
+            <div className={styles.healthSyncModalHero}>
+              <div className={styles.healthSyncModalSpinner} aria-hidden>
+                <span />
+              </div>
+              <div>
+                <h2>{healthSyncModalCopy.title}</h2>
+                <p>{healthSyncModalCopy.description}</p>
+              </div>
+            </div>
+            <div className={styles.healthSyncModalProgressTrack}>
+              <span
+                className={styles.healthSyncModalProgressFill}
+                style={{ width: `${healthSyncProgress}%` }}
+              />
+            </div>
+            <p className={styles.healthSyncModalProgressText}>
+              {healthSyncProgress}% · {syncStepLabel}
+            </p>
+            <div className={styles.healthSyncModalSteps}>
+              {healthWorkflowSteps.map((step) => (
+                <div
+                  key={`health-sync-modal-${step.label}`}
+                  className={`${styles.healthSyncModalStep} ${
+                    step.state === "done"
+                      ? styles.healthSyncModalStepDone
+                      : step.state === "current"
+                      ? styles.healthSyncModalStepCurrent
+                      : step.state === "error"
+                      ? styles.healthSyncModalStepError
+                      : styles.healthSyncModalStepPending
+                  }`}
+                >
+                  <strong>{step.label}</strong>
+                  <span>{step.caption}</span>
+                </div>
+              ))}
+            </div>
+            {pollingError ? (
+              <p className={styles.healthSyncModalWarning}>{pollingError}</p>
+            ) : null}
+            <div className={styles.healthSyncModalActions}>
+              <button
+                type="button"
+                className={styles.buttonSecondary}
+                disabled={busy}
+                onClick={() => {
+                  void handleRefreshWorkspace();
+                }}
+              >
+                {pendingAction === "refresh" ? (
+                  <InlineSpinnerLabel
+                    label="다시 확인 중"
+                    spinnerClassName="text-current"
+                  />
+                ) : (
+                  "지금 다시 확인"
+                )}
+              </button>
+              {workspace.sync?.status === "failed" ? (
+                <button
+                  type="button"
+                  className={styles.buttonPrimary}
+                  disabled={busy}
+                  onClick={() => {
+                    void handleStartWorkspace({ restartHealth: true });
+                  }}
+                >
+                  다시 시작
+                </button>
+              ) : null}
+            </div>
+            {healthSyncModalLocked ? (
+              <p className={styles.healthSyncModalLockText}>
+                연동이 끝나거나 실패 응답이 오면 이 창을 닫을 수 있습니다.
+              </p>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
       {workspace && showSurvey ? (
         <div
           className={styles.surveyModalOverlay}

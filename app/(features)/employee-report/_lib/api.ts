@@ -40,16 +40,20 @@ export async function fetchEmployeeReport(periodKey?: string) {
 export async function fetchEmployeeWorkspace(input?: {
   periodKey?: string;
   reportId?: string;
+  driveSync?: boolean;
 }) {
   const searchParams = new URLSearchParams();
   if (input?.periodKey) searchParams.set("period", input.periodKey);
   if (input?.reportId) searchParams.set("reportId", input.reportId);
+  if (input?.driveSync) searchParams.set("driveSync", "1");
   const query = searchParams.toString();
   return requestJson<EmployeeWorkspaceResponse>(
     `/api/b2b/employee/workspace${query ? `?${query}` : ""}`,
     undefined,
     {
-      timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
+      timeoutMs: input?.driveSync ? 90_000 : DEFAULT_REQUEST_TIMEOUT_MS,
+      timeoutMessage:
+        "건강정보 연동 확인이 길어지고 있어요. 화면을 유지한 채 잠시 뒤 다시 확인해 주세요.",
     }
   );
 }

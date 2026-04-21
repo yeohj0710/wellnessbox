@@ -367,7 +367,7 @@
           "label": "갱년기 여성"
         },
         {
-          "label": "호홉기"
+          "label": "호흡기"
         },
         {
           "label": "갱년기 남성"
@@ -432,10 +432,7 @@
       ],
       "scoring": {
         "enabled": true,
-        "scoreRange": [
-          0,
-          1
-        ],
+        "scoreRange": [0, 1],
         "higherIsWorse": true,
         "method": "option_score"
       }
@@ -465,10 +462,7 @@
       ],
       "scoring": {
         "enabled": true,
-        "scoreRange": [
-          0,
-          1
-        ],
+        "scoreRange": [0, 1],
         "higherIsWorse": true,
         "method": "option_score"
       }
@@ -498,10 +492,7 @@
       ],
       "scoring": {
         "enabled": true,
-        "scoreRange": [
-          0,
-          1
-        ],
+        "scoreRange": [0, 1],
         "higherIsWorse": true,
         "method": "option_score"
       }
@@ -531,10 +522,7 @@
       ],
       "scoring": {
         "enabled": true,
-        "scoreRange": [
-          0,
-          1
-        ],
+        "scoreRange": [0, 1],
         "higherIsWorse": true,
         "method": "option_score"
       }
@@ -564,10 +552,7 @@
       ],
       "scoring": {
         "enabled": true,
-        "scoreRange": [
-          0,
-          1
-        ],
+        "scoreRange": [0, 1],
         "higherIsWorse": true,
         "method": "option_score"
       }
@@ -597,10 +582,7 @@
       ],
       "scoring": {
         "enabled": true,
-        "scoreRange": [
-          0,
-          1
-        ],
+        "scoreRange": [0, 1],
         "higherIsWorse": true,
         "method": "option_score"
       }
@@ -630,10 +612,7 @@
       ],
       "scoring": {
         "enabled": true,
-        "scoreRange": [
-          0,
-          1
-        ],
+        "scoreRange": [0, 1],
         "higherIsWorse": true,
         "method": "option_score"
       }
@@ -663,10 +642,7 @@
       ],
       "scoring": {
         "enabled": true,
-        "scoreRange": [
-          0,
-          1
-        ],
+        "scoreRange": [0, 1],
         "higherIsWorse": true,
         "method": "option_score"
       }
@@ -691,10 +667,7 @@
       ],
       "scoring": {
         "enabled": true,
-        "scoreRange": [
-          0,
-          1
-        ],
+        "scoreRange": [0, 1],
         "higherIsWorse": true,
         "method": "option_score"
       }
@@ -734,10 +707,7 @@
       ],
       "scoring": {
         "enabled": true,
-        "scoreRange": [
-          0,
-          1
-        ],
+        "scoreRange": [0, 1],
         "higherIsWorse": true,
         "method": "option_score"
       }
@@ -777,10 +747,7 @@
       ],
       "scoring": {
         "enabled": true,
-        "scoreRange": [
-          0,
-          1
-        ],
+        "scoreRange": [0, 1],
         "higherIsWorse": true,
         "method": "option_score"
       }
@@ -815,10 +782,7 @@
       ],
       "scoring": {
         "enabled": true,
-        "scoreRange": [
-          0,
-          1
-        ],
+        "scoreRange": [0, 1],
         "higherIsWorse": true,
         "method": "option_score"
       }
@@ -843,10 +807,7 @@
       ],
       "scoring": {
         "enabled": true,
-        "scoreRange": [
-          0,
-          1
-        ],
+        "scoreRange": [0, 1],
         "higherIsWorse": true,
         "method": "option_score"
       }
@@ -871,10 +832,7 @@
       ],
       "scoring": {
         "enabled": true,
-        "scoreRange": [
-          0,
-          1
-        ],
+        "scoreRange": [0, 1],
         "higherIsWorse": true,
         "method": "option_score"
       }
@@ -899,10 +857,7 @@
       ],
       "scoring": {
         "enabled": true,
-        "scoreRange": [
-          0,
-          1
-        ],
+        "scoreRange": [0, 1],
         "higherIsWorse": true,
         "method": "option_score"
       }
@@ -927,10 +882,7 @@
       ],
       "scoring": {
         "enabled": true,
-        "scoreRange": [
-          0,
-          1
-        ],
+        "scoreRange": [0, 1],
         "higherIsWorse": true,
         "method": "option_score"
       }
@@ -970,10 +922,7 @@
       ],
       "scoring": {
         "enabled": true,
-        "scoreRange": [
-          0,
-          1
-        ],
+        "scoreRange": [0, 1],
         "higherIsWorse": true,
         "method": "option_score"
       }
@@ -985,195 +934,129 @@
       "type": "multi_select_limited",
       "constraints": {
         "maxSelections": 5,
-        "recommendedSelectionsRange": [
-          4,
-          5
-        ]
+        "recommendedSelectionsRange": [4, 5]
       },
       "options": [
         {
           "value": "S01",
           "label": "기억력/인지능력 향상",
-          "aliases": [
-            "기억력/인지능력 향상"
-          ]
+          "aliases": ["기억력/인지능력 향상"]
         },
         {
           "value": "S02",
           "label": "수면&피로 개선",
-          "aliases": [
-            "수면&피로 개선",
-            "수면, 피로 개선"
-          ]
+          "aliases": ["수면&피로 개선", "수면, 피로 개선"]
         },
         {
           "value": "S03",
           "label": "스트레스 완화",
-          "aliases": [
-            "스트레스 완화"
-          ]
+          "aliases": ["스트레스 완화"]
         },
         {
           "value": "S04",
           "label": "구강/치아/잇몸 건강",
-          "aliases": [
-            "구강/치아/잇몸 건강",
-            "구강·치아"
-          ]
+          "aliases": ["구강/치아/잇몸 건강", "구강·치아"]
         },
         {
           "value": "S05",
           "label": "눈 건강",
-          "aliases": [
-            "눈 건강"
-          ]
+          "aliases": ["눈 건강"]
         },
         {
           "value": "S06",
           "label": "피부 개선",
-          "aliases": [
-            "피부 개선"
-          ]
+          "aliases": ["피부 개선"]
         },
         {
           "value": "S07",
           "label": "간 건강",
-          "aliases": [
-            "간 건강"
-          ]
+          "aliases": ["간 건강"]
         },
         {
           "value": "S08",
           "label": "위 건강",
-          "aliases": [
-            "위 건강"
-          ]
+          "aliases": ["위 건강"]
         },
         {
           "value": "S09",
           "label": "장 건강",
-          "aliases": [
-            "장 건강"
-          ]
+          "aliases": ["장 건강"]
         },
         {
           "value": "S10",
           "label": "체지방 감소",
-          "aliases": [
-            "체지방 감소",
-            "체지방"
-          ]
+          "aliases": ["체지방 감소", "체지방"]
         },
         {
           "value": "S11",
           "label": "혈당 조절",
-          "aliases": [
-            "혈당 조절",
-            "혈당"
-          ]
+          "aliases": ["혈당 조절", "혈당"]
         },
         {
           "value": "S12",
           "label": "갱년기 여성",
-          "aliases": [
-            "갱년기 여성"
-          ]
+          "aliases": ["갱년기 여성"]
         },
         {
           "value": "S24",
-          "label": "호홉기",
-          "aliases": [
-            "호흡기",
-            "호흡기 건강",
-            "호홉기"
-          ],
-          "labelPaper": "호홉기"
+          "label": "호흡기",
+          "aliases": ["호흡기", "호흡기 건강", "호흡기"],
+          "labelPaper": "호흡기"
         },
         {
           "value": "S13",
           "label": "갱년기 남성",
-          "aliases": [
-            "갱년기 남성"
-          ]
+          "aliases": ["갱년기 남성"]
         },
         {
           "value": "S14",
           "label": "월경전증후군 개선",
-          "aliases": [
-            "월경전증후군 개선",
-            "월경전 증후군"
-          ]
+          "aliases": ["월경전증후군 개선", "월경전 증후군"]
         },
         {
           "value": "S15",
           "label": "혈중 콜레스테롤 & 중성지방 개선",
-          "aliases": [
-            "혈중 콜레스테롤 & 중성지방 개선",
-            "콜레스테롤, 중성지방"
-          ]
+          "aliases": ["혈중 콜레스테롤 & 중성지방 개선", "콜레스테롤, 중성지방"]
         },
         {
           "value": "S16",
           "label": "혈압 조절",
-          "aliases": [
-            "혈압 조절",
-            "혈압"
-          ]
+          "aliases": ["혈압 조절", "혈압"]
         },
         {
           "value": "S17",
           "label": "면역 기능 개선",
-          "aliases": [
-            "면역 기능 개선",
-            "면역력"
-          ]
+          "aliases": ["면역 기능 개선", "면역력"]
         },
         {
           "value": "S18",
           "label": "항산화",
-          "aliases": [
-            "항산화"
-          ]
+          "aliases": ["항산화"]
         },
         {
           "value": "S19",
           "label": "관절/뼈 건강",
-          "aliases": [
-            "관절/뼈 건강",
-            "관절, 뼈"
-          ]
+          "aliases": ["관절/뼈 건강", "관절, 뼈"]
         },
         {
           "value": "S20",
           "label": "근육 증진",
-          "aliases": [
-            "근육 증진",
-            "근육"
-          ]
+          "aliases": ["근육 증진", "근육"]
         },
         {
           "value": "S21",
           "label": "전립선 건강",
-          "aliases": [
-            "전립선 건강",
-            "전립선"
-          ]
+          "aliases": ["전립선 건강", "전립선"]
         },
         {
           "value": "S22",
           "label": "배뇨 기능 개선(방광)",
-          "aliases": [
-            "배뇨 기능 개선(방광)",
-            "방광"
-          ]
+          "aliases": ["배뇨 기능 개선(방광)", "방광"]
         },
         {
           "value": "S23",
           "label": "요로 건강(요도염)",
-          "aliases": [
-            "요로 건강(요도염)",
-            "요로"
-          ]
+          "aliases": ["요로 건강(요도염)", "요로"]
         }
       ],
       "scoring": {
