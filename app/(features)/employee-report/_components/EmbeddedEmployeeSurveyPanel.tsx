@@ -455,24 +455,25 @@ export default function EmbeddedEmployeeSurveyPanel({
   return (
     <>
       <section className="bg-transparent p-0 sm:rounded-[24px] sm:border sm:border-cyan-200/70 sm:bg-white/92 sm:p-5 sm:shadow-[0_24px_58px_-36px_rgba(15,23,42,0.48)]">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3 sm:mb-4">
-          <div>
+        <div className="sticky top-0 z-30 -mx-3 -mt-3 mb-4 flex items-start justify-between gap-3 border-b border-slate-200/90 bg-white px-5 pb-4 pt-5 shadow-[0_10px_24px_-22px_rgba(15,23,42,0.45)] sm:static sm:mx-0 sm:mt-0 sm:mb-4 sm:bg-transparent sm:px-0 sm:pt-0 sm:shadow-none">
+          <div className="min-w-0 pr-12">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700">
               Survey
             </p>
             <h2 className="mt-1 text-lg font-bold text-slate-900">
-              같은 페이지에서 설문을 이어서 진행합니다
+              건강 설문
             </h2>
             <p className="mt-1 text-sm text-slate-600">
-              답변은 자동 저장되며, 제출이 끝나면 최신 리포트로 바로 돌아갑니다.
+              답변은 자동 저장되고, 제출하면 최신 리포트에 바로 반영됩니다.
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700"
+            aria-label="설문 닫기"
+            className="absolute right-4 top-4 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white pb-0.5 text-[22px] font-semibold leading-none text-slate-600 shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 sm:right-0 sm:top-0"
           >
-            리포트로 돌아가기
+            ×
           </button>
         </div>
 

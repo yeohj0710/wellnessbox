@@ -793,6 +793,55 @@
   scrollbar-gutter: auto;
 }
 
+.surveyModalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: clamp(22px, 5dvh, 56px) 14px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(73, 171, 255, 0.2), transparent 38%),
+    rgba(15, 23, 42, 0.52);
+  backdrop-filter: blur(6px);
+}
+
+.surveyModalShell {
+  width: min(760px, calc(100vw - 20px));
+  max-height: calc(100dvh - clamp(44px, 10dvh, 112px));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 24px;
+  border: 1px solid rgba(186, 230, 253, 0.72);
+  background: rgba(255, 255, 255, 0.98);
+  background-clip: padding-box;
+  padding: 16px;
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.32);
+}
+
+.surveyModalShell .embeddedSurveyViewport {
+  max-height: none;
+  overflow: visible;
+  padding-right: 0;
+  scrollbar-gutter: auto;
+}
+
+@media (max-width: 640px) {
+  .surveyModalOverlay {
+    align-items: stretch;
+    padding: 18px 10px 26px;
+  }
+
+  .surveyModalShell {
+    width: calc(100vw - 20px);
+    max-height: calc(100dvh - 44px);
+    border-radius: 20px;
+    padding: 12px 12px 16px;
+  }
+}
+
 .workflowFeedback {
   border-radius: 14px;
   border: 1px solid #d6e1f3;

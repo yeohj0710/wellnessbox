@@ -358,7 +358,6 @@ export default function EmployeeReportClient({
   >(null);
   const localHealthRequestRef = useRef(false);
   const autoResentKakaoAuthRef = useRef(false);
-  const surveyPanelRef = useRef<HTMLDivElement | null>(null);
 
   const validIdentity = useMemo(
     () => isValidIdentityInput(toIdentityPayload(identity)),
@@ -548,13 +547,20 @@ export default function EmployeeReportClient({
 
   useEffect(() => {
     if (!showSurvey) return;
-    const timer = window.setTimeout(() => {
-      surveyPanelRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }, 80);
-    return () => window.clearTimeout(timer);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowSurvey(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [showSurvey]);
 
   useEffect(() => {
@@ -839,7 +845,7 @@ export default function EmployeeReportClient({
     ? "다시 확인"
     : "확인 시작";
   const surveyCoreActionText = showSurvey
-    ? "입력 접기"
+    ? "설문 닫기"
     : surveyComplete
     ? "다시 작성"
     : "작성 시작";
@@ -849,8 +855,8 @@ export default function EmployeeReportClient({
     ? "최근 반영 시간과 최신 상태를 다시 확인합니다."
     : "연동을 시작하고 반영 여부를 이 화면에서 바로 보여드립니다.";
   const surveyCoreHint = showSurvey
-    ? "열려 있는 설문 입력 영역을 잠시 접습니다."
-    : "같은 화면 아래에서 설문을 바로 이어서 작성합니다.";
+    ? "열려 있는 설문 창을 닫습니다."
+    : "설문 창을 열고 바로 이어서 작성합니다.";
   const workflowFeedback = useMemo(() => {
     if (error) {
       return {
@@ -901,7 +907,7 @@ export default function EmployeeReportClient({
         tone: "info" as const,
         label: "\uC124\uBB38 \uC785\uB825 \uC548\uB0B4",
         message:
-          "\uBC14\uB85C \uC544\uB798 \uC124\uBB38 \uC601\uC5ED\uC5D0\uC11C \uC774\uC5B4\uC11C \uC791\uC131\uD560 \uC218 \uC788\uC5B4\uC694. \uC81C\uCD9C\uB418\uBA74 \uCD5C\uC2E0 \uB9AC\uD3EC\uD2B8 \uC900\uBE44 \uC0C1\uD0DC\uAC00 \uB2E4\uC2DC \uAC31\uC2E0\uB429\uB2C8\uB2E4.",
+          "설문 창에서 이어서 작성할 수 있어요. 제출되면 최신 리포트 준비 상태가 다시 갱신됩니다.",
         loading: false,
       };
     }
@@ -976,8 +982,8 @@ export default function EmployeeReportClient({
     setError("");
     setNotice(
       showSurvey
-        ? "설문 입력을 접어두었어요. 다시 누르면 이어서 작성할 수 있어요."
-        : "설문 입력을 열었어요. 아래 영역에서 바로 이어서 작성해 주세요."
+        ? "설문 입력창을 닫았어요. 다시 누르면 이어서 작성할 수 있어요."
+        : "설문 입력창을 열었어요. 작성 후 제출하면 최신 리포트에 바로 반영됩니다."
     );
     setShowSurvey((prev) => !prev);
   }, [showSurvey]);
@@ -1249,17 +1255,6 @@ export default function EmployeeReportClient({
                     </span>
                   </button>
                 </div>
-                {showSurvey ? (
-                  <div
-                    ref={surveyPanelRef}
-                    className={styles.workflowInlineSurveyPanel}
-                  >
-                    <EmbeddedEmployeeSurveyPanel
-                      onCompleted={handleSurveyCompleted}
-                      onClose={() => setShowSurvey(false)}
-                    />
-                  </div>
-                ) : null}
                 <div
                   className={`${styles.workflowFeedback} ${workflowFeedbackClass}`}
                   aria-live="polite"
@@ -1632,7 +1627,7 @@ export default function EmployeeReportClient({
               </article>
             </section>
 
-            {!showSurvey && workspace.report ? (
+            {workspace.report ? (
               <section className={styles.reportCanvas}>
                 <div className={styles.reportCanvasHeader}>
                   <div className={styles.reportCanvasMeta}>
@@ -1698,6 +1693,21 @@ export default function EmployeeReportClient({
           </section>
         ) : null}
       </div>
+      {workspace && showSurvey ? (
+        <div
+          className={styles.surveyModalOverlay}
+          role="dialog"
+          aria-modal="true"
+          aria-label="임직원 건강 설문"
+        >
+          <div className={styles.surveyModalShell}>
+            <EmbeddedEmployeeSurveyPanel
+              onCompleted={handleSurveyCompleted}
+              onClose={() => setShowSurvey(false)}
+            />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
