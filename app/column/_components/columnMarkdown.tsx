@@ -17,8 +17,16 @@ function toPlainText(node: ReactNode): string {
   return "";
 }
 
+function removeImageSourceLines(markdown: string) {
+  return markdown
+    .split(/\r?\n/)
+    .filter((line) => !/^\s*_?\s*이미지\s*출처\s*:/i.test(line))
+    .join("\n");
+}
+
 export default function ColumnMarkdown({ content }: { content: string }) {
   const headingIdCounter = new Map<string, number>();
+  const displayContent = removeImageSourceLines(content);
 
   const resolveHeadingId = (children: ReactNode) => {
     const headingText = toPlainText(children);
@@ -90,7 +98,7 @@ export default function ColumnMarkdown({ content }: { content: string }) {
         },
       }}
     >
-      {content}
+      {displayContent}
     </ReactMarkdown>
   );
 }

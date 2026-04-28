@@ -10,7 +10,6 @@ import {
 } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import FirstModal from "@/components/product/FirstModal";
-import { useDraggableModal } from "@/components/common/useDraggableModal";
 import { shouldBypassNextImageOptimizer } from "@/lib/shared/image";
 import { formatPriceRange } from "@/lib/utils";
 import {
@@ -57,31 +56,20 @@ export default function ProductDetail({
 }: ProductDetailProps) {
   const [quantity, setQuantity] = useState(1);
   const [isFirstModalOpen, setIsFirstModalOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedOption, setSelectedOption] = useState<string | null>(
     optionType ?? null
   );
   const [isImageLoading, setIsImageLoading] = useState(true);
   const [currentIdx, setCurrentIdx] = useState(0);
-  const selectedImageRef = useRef<string | null>(null);
   const firstModalRef = useRef(false);
-  const imagePreviewDrag = useDraggableModal(Boolean(selectedImage), {
-    resetOnOpen: true,
-  });
 
   useProductDetailDismissGuards({
     onClose,
     imageCount: product.images?.length || 1,
-    selectedImageRef,
-    setSelectedImage,
     firstModalRef,
     setIsFirstModalOpen,
     setCurrentIdx,
   });
-
-  useEffect(() => {
-    selectedImageRef.current = selectedImage;
-  }, [selectedImage]);
 
   useEffect(() => {
     firstModalRef.current = isFirstModalOpen;
@@ -148,8 +136,8 @@ export default function ProductDetail({
   });
 
   return (
-    <div className="fixed inset-x-0 bottom-0 top-14 z-20 overflow-y-auto bg-white/98 backdrop-blur-sm">
-      <div className="flex min-h-full w-full flex-col bg-white">
+    <div className="fixed bottom-0 left-1/2 top-14 z-20 w-full max-w-[640px] -translate-x-1/2 overflow-y-auto bg-white/98 backdrop-blur-sm">
+      <div className="flex min-h-full w-full flex-col bg-white shadow-[0_0_0_1px_rgba(15,23,42,0.06),0_24px_80px_-48px_rgba(15,23,42,0.45)]">
         <header className="flex items-center justify-between gap-4 border-b border-slate-200 bg-white/92 px-5 py-3 backdrop-blur-sm sm:px-6">
           <div className="min-w-0">
             <div className="text-[11px] font-semibold tracking-[0.12em] text-sky-600">
@@ -180,14 +168,12 @@ export default function ProductDetail({
                 )}
 
                 {images.map((src, index) => (
-                  <button
+                  <div
                     key={`${src}-${index}`}
-                    type="button"
-                    onClick={() => setSelectedImage(src)}
                     className={`absolute inset-0 transition-opacity duration-300 ${
                       index === currentIdx ? "opacity-100" : "pointer-events-none opacity-0"
                     }`}
-                    aria-label={`${product.name || "상품"} 이미지 ${index + 1} 보기`}
+                    aria-hidden={index !== currentIdx}
                   >
                     <Image
                       src={src}
@@ -200,7 +186,7 @@ export default function ProductDetail({
                         if (index === currentIdx) setIsImageLoading(false);
                       }}
                     />
-                  </button>
+                  </div>
                 ))}
 
                 {images.length > 1 ? (
@@ -379,44 +365,6 @@ export default function ProductDetail({
             </button>
           </div>
         </div>
-
-        {selectedImage ? (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-2 sm:px-0"
-            onClick={() => setSelectedImage(null)}
-          >
-            <div
-              className="relative h-full w-full max-w-[640px]"
-              ref={imagePreviewDrag.panelRef}
-              style={imagePreviewDrag.panelStyle}
-            >
-              <div
-                onPointerDown={imagePreviewDrag.handleDragPointerDown}
-                className={`absolute left-0 right-12 top-0 z-20 h-12 touch-none ${
-                  imagePreviewDrag.isDragging ? "cursor-grabbing" : "cursor-grab"
-                }`}
-                aria-hidden
-              />
-              <button
-                type="button"
-                className="absolute right-3 top-3 z-20 grid h-9 w-9 place-items-center rounded-full bg-white shadow"
-                onClick={() => setSelectedImage(null)}
-              >
-                <XMarkIcon className="h-5 w-5 text-slate-700" />
-              </button>
-              <div className="absolute inset-0">
-                <Image
-                  src={selectedImage}
-                  alt={`${product.name || "상품"} 확대 이미지`}
-                  fill
-                  sizes="1024px"
-                  unoptimized={shouldBypassNextImageOptimizer(selectedImage)}
-                  className="rounded-lg object-contain"
-                />
-              </div>
-            </div>
-          </div>
-        ) : null}
 
         {isFirstModalOpen ? (
           <FirstModal

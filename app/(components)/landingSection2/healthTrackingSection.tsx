@@ -23,7 +23,8 @@ const HEALTH_TRACKING_SECTION_CONFIG: LandingFeatureSectionConfig = {
   imageColumnClassName: "max-w-[30rem] md:mx-0 md:mr-auto md:-ml-6 lg:-ml-8",
   imageFrameClassName: "aspect-[596/637]",
   imageClassName: "object-contain object-[18%_center]",
-  sectionClassName: "bg-gradient-to-b from-[#F6F3FF] via-[#F6F3FF]/50 to-[#F3F6FF]",
+  sectionClassName:
+    "bg-gradient-to-b from-[#F6F3FF] via-[#F6F3FF]/50 to-[#F3F6FF] pb-14 sm:pb-16 md:pb-20",
   eyebrowClassName: "text-[#4B63E6]",
   accentClassName: "text-[#3B5BFF]",
   iconFrameClassName:

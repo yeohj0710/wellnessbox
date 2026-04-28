@@ -5,8 +5,6 @@ import { useEffect, type Dispatch, type MutableRefObject, type SetStateAction } 
 export function useProductDetailDismissGuards(input: {
   onClose: () => void;
   imageCount: number;
-  selectedImageRef: MutableRefObject<string | null>;
-  setSelectedImage: Dispatch<SetStateAction<string | null>>;
   firstModalRef: MutableRefObject<boolean>;
   setIsFirstModalOpen: Dispatch<SetStateAction<boolean>>;
   setCurrentIdx: Dispatch<SetStateAction<number>>;
@@ -14,8 +12,6 @@ export function useProductDetailDismissGuards(input: {
   const {
     onClose,
     imageCount,
-    selectedImageRef,
-    setSelectedImage,
     firstModalRef,
     setIsFirstModalOpen,
     setCurrentIdx,
@@ -24,10 +20,6 @@ export function useProductDetailDismissGuards(input: {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        if (selectedImageRef.current) {
-          setSelectedImage(null);
-          return;
-        }
         if (firstModalRef.current) {
           setIsFirstModalOpen(false);
           return;
@@ -46,11 +38,6 @@ export function useProductDetailDismissGuards(input: {
 
     const isMobile = /Mobi|Android/i.test(navigator.userAgent);
     const handlePopState = () => {
-      if (selectedImageRef.current) {
-        setSelectedImage(null);
-        window.history.pushState(null, "", window.location.href);
-        return;
-      }
       if (firstModalRef.current) {
         setIsFirstModalOpen(false);
         window.history.pushState(null, "", window.location.href);
@@ -74,9 +61,7 @@ export function useProductDetailDismissGuards(input: {
     firstModalRef,
     imageCount,
     onClose,
-    selectedImageRef,
     setCurrentIdx,
     setIsFirstModalOpen,
-    setSelectedImage,
   ]);
 }
