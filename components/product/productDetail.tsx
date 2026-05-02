@@ -138,7 +138,7 @@ export default function ProductDetail({
   return (
     <div className="scrollbar-hide fixed bottom-0 left-1/2 top-14 z-20 w-full max-w-[640px] -translate-x-1/2 overflow-y-auto bg-white/98 backdrop-blur-sm">
       <div className="flex min-h-full w-full flex-col bg-white shadow-[0_0_0_1px_rgba(15,23,42,0.06),0_24px_80px_-48px_rgba(15,23,42,0.45)]">
-        <header className="flex items-center justify-between gap-4 border-b border-slate-200 bg-white/92 px-5 py-3 backdrop-blur-sm sm:px-6">
+        <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-slate-200 bg-white/92 px-5 py-3 backdrop-blur-sm sm:px-6">
           <div className="min-w-0">
             <div className="text-[11px] font-semibold tracking-[0.12em] text-sky-600">
               상품 상세
