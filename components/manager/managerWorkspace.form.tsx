@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { XMarkIcon } from "@heroicons/react/24/outline";
+import ModalLayer from "@/components/common/modalLayer";
 import type {
   ManagerActionRowProps,
   ManagerButtonProps,
@@ -20,10 +21,11 @@ export function ManagerModal(props: ManagerModalProps) {
   if (!props.open) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm"
-      onClick={props.onClose}
-    >
+    <ModalLayer open={props.open} className="fixed inset-0 z-50">
+      <div
+        className="flex h-full w-full items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm"
+        onClick={props.onClose}
+      >
       <div
         className="w-[min(96vw,72rem)] max-h-[88vh] overflow-hidden rounded-[30px] border border-white/50 bg-white shadow-[0_40px_120px_-35px_rgba(15,23,42,0.55)]"
         onClick={(event) => event.stopPropagation()}
@@ -44,7 +46,8 @@ export function ManagerModal(props: ManagerModalProps) {
         </div>
         <div className="max-h-[calc(88vh-92px)] overflow-y-auto px-6 py-6">{props.children}</div>
       </div>
-    </div>
+      </div>
+    </ModalLayer>
   );
 }
 
