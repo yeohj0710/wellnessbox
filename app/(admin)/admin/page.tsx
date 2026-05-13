@@ -7,10 +7,6 @@ import {
   CubeIcon,
   RectangleStackIcon,
 } from "@heroicons/react/24/outline";
-import AiExperimentInsightsCard from "@/components/admin/AiExperimentInsightsCard";
-import AdminCopyGovernanceCard from "@/components/admin/AdminCopyGovernanceCard";
-import AdminNarrativeBriefingCard from "@/components/admin/AdminNarrativeBriefingCard";
-import BetaFeatureGate from "@/components/common/BetaFeatureGate";
 import ModelManager from "@/components/manager/modelManager";
 
 export const dynamic = "force-dynamic";
@@ -211,17 +207,6 @@ export default function AdminPage() {
           </div>
         </HubCard>
 
-        <BetaFeatureGate
-          title="Beta 운영 인사이트"
-          helper="실험적 운영 보조 카드는 필요할 때만 열어보세요."
-          className="mx-auto max-w-[860px] border-0 bg-transparent p-0 shadow-none"
-          summaryClassName="rounded-[22px] border border-slate-200/80 bg-white/92 px-4 py-3 shadow-[0_16px_36px_-28px_rgba(15,23,42,0.28)] transition hover:border-slate-300 hover:bg-white"
-          contentClassName="mt-4 space-y-5"
-        >
-          <AdminNarrativeBriefingCard />
-          <AdminCopyGovernanceCard />
-          <AiExperimentInsightsCard />
-        </BetaFeatureGate>
       </div>
     </div>
   );

@@ -5,14 +5,11 @@ import OrderProgressBar from "@/components/order/orderProgressBar";
 import OrderAccordionHeader from "@/components/order/orderAccordionHeader";
 import type { OrderAccordionOrder } from "@/components/order/orderAccordion.types";
 import {
-  PharmOrderCopilotSection,
   PharmOrderCustomerInfoSection,
   PharmOrderItemsSection,
   PharmOrderMessagesSection,
   PharmOrderStatusActionsSection,
-  PharmUser360Section,
 } from "./pharmOrderAccordionSections";
-import { PharmOrderTriageStrip } from "./pharmTriage";
 import { usePharmOrderAccordionItem } from "./hooks/usePharmOrderAccordionItem";
 
 type PharmActor = {
@@ -35,7 +32,6 @@ export default function OrderAccordionItem({
     order,
     isLoaded,
     messages,
-    user360,
     newMessage,
     isSending,
     isMessagesRefreshing,
@@ -82,10 +78,6 @@ export default function OrderAccordionItem({
         isExpanded={isExpanded}
         toggle={toggleExpanded}
       />
-      <PharmOrderTriageStrip
-        order={order}
-        messages={messages.length > 0 ? messages : order.messagesPreview}
-      />
       {isExpanded ? (
         <div className="mt-4 border-t pb-4 pt-16 sm:px-4 sm:pt-12">
           <OrderProgressBar currentStatus={order.status} />
@@ -98,14 +90,6 @@ export default function OrderAccordionItem({
           />
 
           <PharmOrderItemsSection order={order} />
-
-          <PharmUser360Section summary={user360} />
-
-          <PharmOrderCopilotSection
-            order={order}
-            messages={messages}
-            onApplyDraft={setNewMessage}
-          />
 
           <PharmOrderMessagesSection
             order={order}

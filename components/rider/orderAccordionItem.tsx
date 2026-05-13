@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import BetaFeatureGate from "@/components/common/BetaFeatureGate";
 import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
 import OrderAccordionHeader from "@/components/order/orderAccordionHeader";
 import OrderProgressBar from "@/components/order/orderProgressBar";
@@ -18,9 +17,7 @@ import {
   RiderOrderItemsSection,
   RiderOrderPharmacyInfoSection,
   RiderOrderStatusActionsSection,
-  RiderOrderStatusCopilotSection,
 } from "./riderOrderAccordionSections";
-import { RiderOrderCopilotStrip } from "./riderOpsCopilot";
 
 const POLL_INTERVAL_MS = 10_000;
 
@@ -203,17 +200,6 @@ export default function OrderAccordionItem({
       {isExpanded ? (
         <div className="mt-4 border-t pb-4 pt-16 sm:px-4 sm:pt-12">
           <OrderProgressBar currentStatus={order.status} />
-
-          <BetaFeatureGate
-            title="Beta 라이더 가이드"
-            helper="코파일럿 요약은 필요할 때만 펼쳐보세요."
-            className="mt-6"
-          >
-            <div className="space-y-4">
-              <RiderOrderCopilotStrip order={order} />
-              <RiderOrderStatusCopilotSection order={order} />
-            </div>
-          </BetaFeatureGate>
 
           <RiderOrderStatusActionsSection
             order={order}

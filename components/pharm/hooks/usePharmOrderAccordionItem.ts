@@ -17,10 +17,6 @@ import type {
   OrderAccordionOrder,
   OrderMessage,
 } from "@/components/order/orderAccordion.types";
-import {
-  getPharmUser360ByOrderId,
-  type PharmUser360Summary,
-} from "@/lib/pharm/user-360";
 
 const POLL_INTERVAL_MS = 10_000;
 
@@ -71,7 +67,6 @@ export function usePharmOrderAccordionItem(params: {
   const [order, setOrder] = useState<OrderAccordionOrder>(initialOrder);
   const [isLoaded, setIsLoaded] = useState(false);
   const [messages, setMessages] = useState<OrderMessage[]>([]);
-  const [user360, setUser360] = useState<PharmUser360Summary | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isMessagesRefreshing, setIsMessagesRefreshing] = useState(false);
@@ -111,10 +106,9 @@ export function usePharmOrderAccordionItem(params: {
 
     async function fetchDetailsAndMessages() {
       try {
-        const [detailedOrder, incomingMessages, user360Summary] = await Promise.all([
+        const [detailedOrder, incomingMessages] = await Promise.all([
           getOrderById(initialOrder.id),
           getMessagesByOrder(initialOrder.id),
-          getPharmUser360ByOrderId(initialOrder.id),
         ]);
 
         if (cancelled) return;
@@ -136,7 +130,6 @@ export function usePharmOrderAccordionItem(params: {
           incomingMessages as OrderMessage[]
         );
         setMessages(sortedMessages);
-        setUser360(user360Summary);
         lastSeenIdRef.current = getLastMessageId(sortedMessages);
         setIsLoaded(true);
       } catch (error) {
@@ -374,7 +367,6 @@ export function usePharmOrderAccordionItem(params: {
     order,
     isLoaded,
     messages,
-    user360,
     newMessage,
     isSending,
     isMessagesRefreshing,
