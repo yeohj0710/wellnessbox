@@ -57,7 +57,7 @@ export default function ManageProducts() {
   if (isLoading || !pharm) return <FullPageLoader />;
 
   return (
-    <div className="relative left-1/2 right-1/2 min-h-screen w-screen -translate-x-1/2 bg-[radial-gradient(circle_at_15%_0%,rgba(125,211,252,0.7),transparent_34%),radial-gradient(circle_at_85%_0%,rgba(191,219,254,0.72),transparent_26%),linear-gradient(180deg,#f7fbff_0%,#edf4fb_100%)]">
+    <div className="relative left-1/2 right-1/2 min-h-screen w-screen -translate-x-1/2 bg-[radial-gradient(circle_at_15%_0%,rgba(125,211,252,0.28),transparent_34%),radial-gradient(circle_at_85%_0%,rgba(191,219,254,0.36),transparent_28%),linear-gradient(180deg,#fbfdff_0%,#f3f7fb_100%)]">
       <div className="mx-auto flex w-full max-w-[1220px] flex-col gap-6 px-4 pb-16 pt-8 sm:px-6 lg:px-8">
         <header className="rounded-[32px] border border-slate-200/80 bg-white/88 px-6 py-8 shadow-[0_30px_90px_-44px_rgba(15,23,42,0.4)] backdrop-blur sm:px-8">
           <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-sky-700/75">
