@@ -23,5 +23,16 @@ WB_RND_INTERIM_PSEUDONYM_SALT=replace-with-long-random-secret
 - 약사: `/pharm/tips`
 - 관리자: `/admin/tips`
 
+## 사이트 단독 연구실
+
+사용자용 `/tips`는 학습된 프록시 모델의 계수를 versioned JSON snapshot으로 포함한다.
+`/test-login?redirect=/tips`의 비공개 테스트 세션 또는 로그인 세션 사용자는 별도 Python
+프로세스나 R&D API 환경변수 없이 추천·안전·Agent 흐름을
+웹에서 바로 시험할 수 있다. 이 경로는 navigation에 넣지 않고 `noindex, nofollow`로 유지한다.
+
+`WB_RND_INTERIM_*` 설정은 약사·관리자 운영 화면과 원격 R&D API 전체 경로를 연결할 때만
+필요하다. embedded snapshot은 실제 연구자료가 들어오면 새 model hash로 다시 export하고
+QA에서 고정 hash를 갱신해야 한다.
+
 외부 시험, 실제 약사 라벨, 실제 PRO, 12개월 ADR, 생산 기기 세션이 준비되기 전에는
 시뮬레이션 배지를 제거하지 않는다.
