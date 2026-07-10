@@ -79,6 +79,10 @@ assert.match(page, /index: false/);
 assert.match(page, /redirect\("\/test-login\?redirect=\/tips"\)/);
 assert.match(consoleUi, /\/api\/tips\/lab/);
 assert.match(consoleUi, /별도 Python 서버 없이/);
+assert.match(consoleUi, /aria-live="polite"/);
+assert.match(consoleUi, /aria-pressed=/);
+assert.match(consoleUi, /scrollIntoView/);
+assert.match(consoleUi, /blockedIngredients/);
 
 const navigationFiles = [
   "components/common/topBar.header.tsx",
