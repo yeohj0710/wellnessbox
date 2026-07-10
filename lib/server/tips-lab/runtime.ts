@@ -1,11 +1,13 @@
 import "server-only";
 
 import {
-  predictProxyRecommendations,
+  explainProxyRecommendations,
   proxyModelMetadata,
   type TipsLabProfile,
 } from "@/lib/server/tips-lab/model";
+import interimResearchSummaryJson from "@/data/tips/interim-research-summary.json";
 import { canRunTipsLabAction, type TipsLabState } from "@/lib/server/tips-lab/state";
+import { checkTipsSafety } from "@/lib/tips/safety-engine";
 
 export const TIPS_LAB_ACTIONS = [
   "initialize",
@@ -27,12 +29,6 @@ type LabInput = {
   payload?: Record<string, unknown>;
 };
 
-type SafetyDecision = {
-  decision: "ALLOW" | "REVIEW" | "STOP_AND_ESCALATE";
-  reasons: string[];
-  blockedIngredients: string[];
-};
-
 const DISCLOSURE =
   "AI 생성 프록시 데이터로 학습·검증한 연구용 시뮬레이션이며 실제 약사 또는 의료 판단을 대신하지 않습니다.";
 
@@ -43,6 +39,8 @@ const EVIDENCE = [
     status: "APPROVED_SIMULATION_EVIDENCE",
   },
 ];
+
+export const interimResearchSummary = Object.freeze(interimResearchSummaryJson);
 
 function strings(value: unknown, limit = 20) {
   if (!Array.isArray(value)) return [];
@@ -65,50 +63,6 @@ function profile(value: LabInput["profile"]): TipsLabProfile {
     allergies: strings(value?.allergies, 10),
     currentSupplements: strings(value?.currentSupplements, 10),
     riskFlags: strings(value?.riskFlags, 10),
-  };
-}
-
-function safety(profileValue: TipsLabProfile): SafetyDecision {
-  const reasons: string[] = [];
-  const blocked = new Set<string>();
-  const flags = new Set(profileValue.riskFlags);
-  const conditions = new Set(profileValue.conditions);
-  const medications = new Set(profileValue.medicationClasses);
-
-  if (
-    flags.has("red_flag_chest_pain") ||
-    flags.has("red_flag_severe_abdominal_pain")
-  ) {
-    return {
-      decision: "STOP_AND_ESCALATE",
-      reasons: ["응급 위험 신호가 있어 추천을 중단하고 의료기관 확인이 필요합니다."],
-      blockedIngredients: [],
-    };
-  }
-  if (profileValue.pregnant) {
-    reasons.push("임신 중에는 성분·용량별 전문가 검토가 필요합니다.");
-  }
-  if (conditions.has("chronic_kidney_disease")) {
-    blocked.add("ING:MAGNESIUM");
-    blocked.add("ING:POTASSIUM");
-    reasons.push("신장질환 정보가 있어 마그네슘 등 전해질 관련 성분을 보류합니다.");
-  }
-  if (conditions.has("hemochromatosis")) {
-    blocked.add("ING:IRON");
-    reasons.push("철 과부하 위험 정보가 있어 철분을 제외합니다.");
-  }
-  if (medications.has("warfarin")) {
-    blocked.add("ING:OMEGA3");
-    reasons.push("와파린 복용 정보가 있어 오메가3는 약사 검토 전 보류합니다.");
-  }
-  if (profileValue.allergies.includes("fish")) {
-    blocked.add("ING:OMEGA3");
-    reasons.push("어류 알레르기 정보가 있어 오메가3 원료 확인이 필요합니다.");
-  }
-  return {
-    decision: reasons.length ? "REVIEW" : "ALLOW",
-    reasons,
-    blockedIngredients: [...blocked],
   };
 }
 
@@ -148,22 +102,35 @@ export function runTipsLab(input: LabInput) {
       };
     case "recommend": {
       if (!currentProfile.goals.length) throw new Error("goal_required");
-      const safetyDecision = safety(currentProfile);
+      const safetyDecision = checkTipsSafety(currentProfile);
       if (safetyDecision.decision === "STOP_AND_ESCALATE") {
         return {
           ...base(input.action, "ESCALATED"),
           safety: safetyDecision,
           recommendations: [],
+          inferenceSkipped: "STOP_AND_ESCALATE_BEFORE_MODEL",
+          research: interimResearchSummary,
           next: "seek_urgent_care",
         };
       }
-      const recommendations = predictProxyRecommendations(currentProfile).filter(
+      const inference = explainProxyRecommendations(currentProfile);
+      const recommendations = inference.selectedCandidates.filter(
         (item) => !safetyDecision.blockedIngredients.includes(item.ingredientId)
-      );
+      ).map(({ ingredientId, label, score }) => ({ ingredientId, label, score }));
       return {
         ...base(input.action, "CANDIDATES_READY"),
         safety: safetyDecision,
         recommendations,
+        inference: {
+          ...inference,
+          candidateScores: inference.candidateScores.map((item) => ({
+            ...item,
+            blockedBySafety: safetyDecision.blockedIngredients.includes(item.ingredientId),
+          })),
+          preSafetySelection: inference.selectedCandidates,
+          postSafetySelection: recommendations,
+        },
+        research: interimResearchSummary,
         evidence: EVIDENCE,
         next: "retrieve_evidence",
       };

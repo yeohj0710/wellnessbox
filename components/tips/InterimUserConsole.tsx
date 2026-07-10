@@ -1,6 +1,10 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import ResearchOverview from "./ResearchOverview";
+import InferenceWorkbench from "./InferenceWorkbench";
+import ResearchEvidencePanel from "./ResearchEvidencePanel";
+import type { InferenceExplanation } from "./research-types";
 import styles from "./interim.module.css";
 
 type JsonRecord = Record<string, unknown>;
@@ -122,6 +126,10 @@ export default function InterimUserConsole() {
     recommendationResult?.safety && typeof recommendationResult.safety === "object"
       ? (recommendationResult.safety as Safety)
       : null;
+  const inference =
+    recommendationResult?.inference && typeof recommendationResult.inference === "object"
+      ? (recommendationResult.inference as InferenceExplanation)
+      : null;
 
   function describeResult(action: LabAction, result: JsonRecord): Feedback {
     if (action === "recommend") {
@@ -218,6 +226,8 @@ export default function InterimUserConsole() {
             </dl>
           </div>
         </header>
+
+        <ResearchOverview />
 
         <section className={styles.section}>
           <p className={styles.sectionLabel}>1. 프로필</p>
@@ -319,8 +329,10 @@ export default function InterimUserConsole() {
           </div>
         </section>
 
+        {inference && <InferenceWorkbench inference={inference} />}
+
         <section className={styles.section}>
-          <p className={styles.sectionLabel}>3. 폐쇄루프 Agent</p>
+          <p className={styles.sectionLabel}>4. 폐쇄루프 Agent</p>
           <h2 className={styles.sectionTitle}>추천 뒤의 변화까지 같은 흐름에서 봐요</h2>
           <p className={styles.sectionBody}>기록 동의가 있는 동작만 실행됩니다. 중대한 이상사례는 추천 흐름을 즉시 멈추고 에스컬레이션 상태로 바꿉니다.</p>
           <div className={styles.consentGrid}>
@@ -350,6 +362,8 @@ export default function InterimUserConsole() {
             )}
           </div>
         </section>
+
+        <ResearchEvidencePanel />
 
         <details className={styles.trace}>
           <summary>연구용 실행 추적 보기</summary>

@@ -1,0 +1,162 @@
+{
+  "schemaVersion": "2026-07-10.v1",
+  "mode": "PROXY_GOLD_SIMULATION",
+  "proxyResearchComplete": true,
+  "realResearchComplete": false,
+  "generatedAt": "2026-07-10T00:00:00Z",
+  "dataset": {
+    "total": 150000,
+    "splits": {
+      "train": 120000,
+      "validation": 15000,
+      "calibration": 10000,
+      "blindTest": 5000
+    },
+    "scenarioFamilies": 41,
+    "generatorVerifierDisagreements": 6624,
+    "adjudications": 6624,
+    "teacherSessions": {
+      "generation": "A/B",
+      "verification": "C",
+      "adjudication": "C2",
+      "blindTest": "D"
+    }
+  },
+  "model": {
+    "name": "Proxy recommendation model",
+    "type": "One-vs-rest SGD logistic classifier",
+    "countClassifier": "Multiclass SGD logistic classifier",
+    "featureCount": 93,
+    "ingredientClasses": 14,
+    "trainRecords": 120000,
+    "blindTestRecords": 5000,
+    "labelClass": "PROXY_GOLD_SIMULATION",
+    "recommendationSetPrecisionPercent": 100,
+    "recommendationSetPrecisionCi95": [100, 100],
+    "microPrecision": 1,
+    "microRecall": 1,
+    "microF1": 1,
+    "exactMatch": 1,
+    "recommendationCountAccuracy": 1
+  },
+  "cohorts": {
+    "effectProxy": 240,
+    "adrExposure": 1200,
+    "adrMonths": 12,
+    "adrRelatedCases": 3,
+    "linkageSessions": 180
+  },
+  "kpis": [
+    {
+      "id": "KPI-1",
+      "name": "추천 정확도",
+      "n": 5000,
+      "displayValue": "100.00%",
+      "proxyValue": 100,
+      "ci95": [100, 100],
+      "threshold": "80%",
+      "guardband": "88%",
+      "proxyPass": true,
+      "replacementStatus": "PENDING_PHARMACIST_GOLD_AND_EXTERNAL_BLIND"
+    },
+    {
+      "id": "KPI-2",
+      "name": "효과 개선",
+      "n": 240,
+      "displayValue": "+6.05%p",
+      "proxyValue": 6.045902943022853,
+      "ci95": [5.773969917825849, 6.302398471890288],
+      "threshold": "95% CI 하한 > 0",
+      "guardband": "95% CI 하한 > 0",
+      "proxyPass": true,
+      "replacementStatus": "PENDING_REAL_WORLD_OUTCOME"
+    },
+    {
+      "id": "KPI-3",
+      "name": "다음 행동 판단·실행",
+      "n": 1500,
+      "displayValue": "99.93%",
+      "proxyValue": 99.93333333333334,
+      "ci95": [99.8, 100],
+      "threshold": "80%",
+      "guardband": "90%, 고위험 오류 0",
+      "proxyPass": true,
+      "highRiskWrong": 0,
+      "replacementStatus": "PENDING_EXTERNAL_AGENT_BLIND_SET"
+    },
+    {
+      "id": "KPI-4",
+      "name": "상담 답변 정확도",
+      "n": 1500,
+      "displayValue": "98.53%",
+      "proxyValue": 98.53333333333333,
+      "ci95": [97.86666666666666, 99.13333333333334],
+      "threshold": "91%",
+      "guardband": "96%, 중대 안전 오류 0",
+      "proxyPass": true,
+      "criticalSafetyErrors": 0,
+      "replacementStatus": "PENDING_PHARMACIST_BLIND_REVIEW"
+    },
+    {
+      "id": "KPI-5",
+      "name": "안전엔진 label+근거",
+      "n": 2000,
+      "displayValue": "99.90%",
+      "proxyValue": 99.9,
+      "ci95": [99.75, 100],
+      "threshold": "95%",
+      "guardband": "99%, hard FN 0",
+      "proxyPass": true,
+      "hardFalseNegatives": 0,
+      "replacementStatus": "PENDING_APPROVED_PHARMACIST_RULE_GOLD"
+    },
+    {
+      "id": "KPI-6",
+      "name": "추천 관련 ADR",
+      "n": 1200,
+      "displayValue": "3건/12개월",
+      "proxyValue": 3,
+      "ci95": null,
+      "threshold": "5건 이하",
+      "guardband": "전 사례 포착",
+      "proxyPass": true,
+      "replacementStatus": "PENDING_12_MONTH_REAL_OPERATION"
+    },
+    {
+      "id": "KPI-7",
+      "name": "W/C/G 연동률",
+      "n": 180,
+      "displayValue": "97.78%",
+      "proxyValue": 97.77777777777777,
+      "ci95": null,
+      "threshold": "90%",
+      "guardband": "97%",
+      "proxyPass": true,
+      "sourceRates": { "wearable": 98.33333333333333, "cgm": 98.33333333333333, "genetic": 96.66666666666667 },
+      "replacementStatus": "PENDING_PRODUCTION_DEVICE_SESSIONS"
+    }
+  ],
+  "provenance": {
+    "fileCount": 19,
+    "manifestSha256": "2a430ac5899544885d4be923213b50d526ffd0df016b2b34bf57a077d4c650a4",
+    "modelArtifactSha256": "41786a4dabcdab36517d9991049621f26c217106dfb61004fede88f36a0a1aa4",
+    "proxyKpiReportSha256": "7e7f02ae84de54575d68ff356419f4a4be7a285426a7a3f1eec1ebd20993f095",
+    "sourceArtifact": "artifacts/interim_proxy_research_full",
+    "bundledEvidenceManifest": "data/tips/evidence-manifest.json",
+    "bundledKpiReport": "data/tips/proxy-kpi-report.json"
+  },
+  "limitations": [
+    "모든 라벨은 인간 약사가 아닌 proxy teacher 세션에서 생성되었습니다.",
+    "100% blind proxy 성능은 동일 시나리오 ontology 안의 teacher 일반화 결과이며 임상 정확도가 아닙니다.",
+    "효과·ADR·기기 연동 수치는 합성 proxy 관찰값이며 실제 사용자 결과가 아닙니다.",
+    "외부 blind 평가, 약사 검토, 실제 12개월 운영 검증이 남아 있습니다."
+  ],
+  "replacementPlan": [
+    "PROXY_GOLD_SIMULATION 라벨을 PHARMACIST_GOLD로 교체",
+    "합성 효과 cohort를 REAL_WORLD_OUTCOME으로 교체",
+    "ADR proxy ledger를 실제 12개월 운영 기록으로 교체",
+    "W/C/G proxy 세션을 production device 세션으로 교체",
+    "동일 계약으로 재학습·calibration·외부 blind 평가 수행"
+  ],
+  "disclosure": "모든 값은 중간 개발검증용 proxy simulation 결과이며 인간 라벨 또는 실제 임상·운영 근거가 아닙니다."
+}
