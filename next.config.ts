@@ -2,9 +2,6 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   compress: true,
-  experimental: {
-    after: true,
-  },
   serverExternalPackages: ["playwright", "playwright-core"],
   images: {
     formats: ["image/avif", "image/webp"],
