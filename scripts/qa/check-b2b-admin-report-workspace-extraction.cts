@@ -77,7 +77,7 @@ function run() {
     "<B2bEmployeeOverviewCard",
     "<B2bAdminReportPreviewPanel",
     "<B2bSurveyEditorPanel",
-    "<B2bNoteEditorPanel",
+    "<B2bReportCustomizationPanel",
     "<B2bAnalysisJsonPanel",
     "<B2bLayoutValidationPanel",
   ]) {
@@ -120,7 +120,7 @@ function run() {
     "<B2bEmployeeOverviewCard",
     "<B2bAdminReportPreviewPanel",
     "<B2bSurveyEditorPanel",
-    "<B2bNoteEditorPanel",
+    "<B2bReportCustomizationPanel",
     "<B2bAnalysisJsonPanel",
     "<B2bLayoutValidationPanel",
   ]) {
