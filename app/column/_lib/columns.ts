@@ -1,6 +1,7 @@
 import "server-only";
 
 import { unstable_cache } from "next/cache";
+import { COLUMN_PUBLIC_CACHE_TAG } from "@/lib/column/revalidate";
 import { promises as fs } from "fs";
 import path from "path";
 import {
@@ -232,7 +233,10 @@ const readPublishedColumns = unstable_cache(
     return normalizeColumnPublishSchedule(sortColumnsByDateDesc(merged));
   },
   ["column-published-columns-v1"],
-  { revalidate: PUBLIC_CACHE_SHARED_MAX_AGE_SECONDS }
+  {
+    revalidate: PUBLIC_CACHE_SHARED_MAX_AGE_SECONDS,
+    tags: [COLUMN_PUBLIC_CACHE_TAG],
+  }
 );
 
 export async function getAllColumnSummaries(): Promise<ColumnSummary[]> {

@@ -1438,6 +1438,7 @@ export default function EmployeeReportClient({
                   <div className={styles.workflowActionStack}>
                     <button
                       type="button"
+                      data-testid="employee-report-restart-auth"
                       disabled={healthButtonDisabled}
                       onClick={() => {
                         void handleStartWorkspace({ restartHealth: true });
@@ -1592,6 +1593,7 @@ export default function EmployeeReportClient({
                 <div className={styles.workflowAuxRow}>
                   <button
                     type="button"
+                    data-testid="employee-report-refresh-workspace"
                     disabled={busy}
                     onClick={() => {
                       void handleRefreshWorkspace();
@@ -1632,7 +1634,10 @@ export default function EmployeeReportClient({
             </section>
 
             {workspace.report ? (
-              <section className={styles.reportCanvas}>
+              <section
+                className={styles.reportCanvas}
+                data-testid="employee-report-summary-section"
+              >
                 <div className={styles.reportCanvasHeader}>
                   <div className={styles.reportCanvasMeta}>
                     <p className={styles.reportCanvasEyebrow}>리포트</p>

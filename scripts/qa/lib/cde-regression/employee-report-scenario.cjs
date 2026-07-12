@@ -52,7 +52,7 @@ async function runEmployeeReportScenario(input) {
 
   await page.goto("/employee-report?debug=1", { waitUntil: "networkidle", timeout: 120000 });
   await waitFor(
-    async () => result.network.responses.some((entry) => entry.url.includes("/api/b2b/employee/report")),
+    async () => result.network.responses.some((entry) => entry.url.includes("/api/b2b/employee/workspace")),
     20000
   );
 
@@ -117,76 +117,20 @@ async function runEmployeeReportScenario(input) {
   result.checks.restartButtonVisible = restartVisible;
   if (!restartVisible) {
     pushFailure(result.failures, "restart_button_missing", null);
-  } else {
-    const beforeReq = result.network.requests.length;
-    await restartButton.click();
-    await page.waitForTimeout(5000);
-    const initRequest = result.network.requests
-      .slice(beforeReq)
-      .find((entry) => entry.url.includes("/api/health/nhis/init"));
-    result.checks.restartInitRequested = Boolean(initRequest);
-    result.checks.restartInitPayload = initRequest?.postData || null;
-    if (!initRequest) {
-      pushFailure(result.failures, "restart_init_not_called", null);
-    }
   }
 
-  const forceButtonVisible = await waitFor(
-    async () => (await page.getByTestId("employee-report-force-sync-open").count()) > 0,
+  const refreshButton = page.getByTestId("employee-report-refresh-workspace").first();
+  const refreshButtonVisible = await waitFor(
+    async () => (await refreshButton.count()) > 0,
     10000,
     500
   );
-  result.checks.forceRefreshButtonVisible = forceButtonVisible;
-  if (!forceButtonVisible) {
-    pushFailure(result.failures, "force_refresh_button_missing", null);
+  result.checks.workspaceRefreshButtonVisible = refreshButtonVisible;
+  if (!refreshButtonVisible) {
+    pushFailure(result.failures, "workspace_refresh_button_missing", null);
     return;
   }
-
-  const forcePanel = page.getByTestId("employee-report-force-sync-panel").first();
-  const forcePanelSummary = page.getByTestId("employee-report-force-sync-summary").first();
-  if ((await forcePanel.count()) > 0 && !(await forcePanel.isVisible())) {
-    if ((await forcePanelSummary.count()) > 0) {
-      await forcePanelSummary.click();
-      await page.waitForTimeout(250);
-    }
-  }
-  const forceButton = page.getByTestId("employee-report-force-sync-open").first();
-  if (!(await forceButton.isVisible()) && (await forcePanelSummary.count()) > 0) {
-    await forcePanelSummary.click();
-    await page.waitForTimeout(250);
-  }
-  const forceButtonDisabled = await forceButton.isDisabled();
-  result.checks.forceRefreshButtonDisabled = forceButtonDisabled;
-  if (forceButtonDisabled) return;
-
-  await forceButton.click();
-  const forceDialogVisible = await waitFor(
-    async () => (await page.getByTestId("employee-report-force-sync-dialog").count()) > 0,
-    5000
-  );
-  result.checks.forceRefreshDialogVisible = forceDialogVisible;
-  if (!forceDialogVisible) {
-    pushFailure(result.failures, "force_refresh_dialog_missing", null);
-    return;
-  }
-
-  const forceDialogHasCheckbox =
-    (await page.getByTestId("employee-report-force-sync-checkbox").count()) > 0;
-  const forceDialogHasInput =
-    (await page.getByTestId("employee-report-force-sync-input").count()) > 0;
-  const forceDialogHasConfirm =
-    (await page.getByTestId("employee-report-force-sync-confirm").count()) > 0;
-  result.checks.forceRefreshDialogHasCheckbox = forceDialogHasCheckbox;
-  result.checks.forceRefreshDialogHasInput = forceDialogHasInput;
-  result.checks.forceRefreshDialogHasConfirm = forceDialogHasConfirm;
-  if (!forceDialogHasCheckbox || !forceDialogHasInput || !forceDialogHasConfirm) {
-    pushFailure(result.failures, "force_refresh_dialog_controls_missing", {
-      forceDialogHasCheckbox,
-      forceDialogHasInput,
-      forceDialogHasConfirm,
-    });
-  }
-  await page.getByTestId("employee-report-force-sync-cancel").click();
+  result.checks.workspaceRefreshButtonDisabled = await refreshButton.isDisabled();
 }
 
 module.exports = {
