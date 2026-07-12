@@ -23,8 +23,8 @@ export default function InferenceWorkbench({ inference }: { inference: Inference
 
   return (
     <section className={`${styles.section} ${styles.inferenceSection}`} aria-labelledby="inference-title">
-      <p className={styles.sectionLabel}>3. 모델 추론 해부</p>
-      <h2 id="inference-title" className={styles.sectionTitle}>{top ? `${top.label} ${(top.score * 100).toFixed(1)}%가 나온 계산을 펼쳐봐요` : "모델 계산을 단계별로 펼쳐봐요"}</h2>
+      <p className={styles.sectionLabel}>3. 모델 추론 분석</p>
+      <h2 id="inference-title" className={styles.sectionTitle}>{top ? `${top.label} 예측 확률 ${(top.score * 100).toFixed(1)}% 산출 근거` : "모델 추론 단계 및 산출 근거"}</h2>
 
       <div className={styles.pipeline}>
         <article><span>01</span><strong>입력 벡터화</strong><p>93개 vocabulary 중 {inference.activeFeatures.length}개 활성</p></article>

@@ -106,7 +106,7 @@ export default function BlindTestExplorer() {
       if (requestId !== requestSequence.current) return;
       const list = data.blindTest as ListResult;
       setResult(list); setPage(list.page); setSelected((current) => current && list.rows.some((row) => row.caseId === current.caseId) ? current : list.rows[0] ?? null);
-    } catch (cause) { if (requestId === requestSequence.current) setError(cause instanceof Error ? cause.message : "테스트 데이터를 불러오지 못했어요."); }
+    } catch (cause) { if (requestId === requestSequence.current) setError(cause instanceof Error ? cause.message : "블라인드 테스트 데이터 조회 실패"); }
     finally { if (requestId === requestSequence.current) setBusy(false); }
   }, []);
 
@@ -119,7 +119,7 @@ export default function BlindTestExplorer() {
     try {
       const data = await callLab("verify_blind_tests", { filter: "all" });
       setVerified(data.verification.summary as Summary);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "전체 재검증에 실패했어요."); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "전체 블라인드 테스트 재검증 실패"); }
     finally { setBusy(false); }
   }
 
@@ -137,8 +137,8 @@ export default function BlindTestExplorer() {
   return (
     <section className={`${styles.section} ${styles.blindExplorer}`} aria-labelledby="blind-test-title">
       <p className={styles.sectionLabel}>BLIND TEST REPLAY</p>
-      <h2 id="blind-test-title" className={styles.sectionTitle}>테스트 데이터 5,000건을<br />직접 열어보고 검증해요</h2>
-      <p className={styles.sectionBody}>학습에 쓰지 않은 Blind D 케이스입니다. 원본 입력을 배포 모델에 다시 넣어 실시간 예측하고, 프록시 정답·당시 저장 예측과 나란히 비교해요.</p>
+      <h2 id="blind-test-title" className={styles.sectionTitle}>독립 블라인드 테스트 재현</h2>
+      <p className={styles.sectionBody}>학습에 사용하지 않은 Blind D 데이터 5,000건을 배포 모델에 재입력하여 현재 예측, 프록시 기준값 및 저장 예측을 비교합니다.</p>
 
       <div className={styles.replaySummary}>
         <div><span>검증 대상</span><strong>{format(verified?.evaluated ?? result?.summary.evaluated ?? 5000)}건</strong></div>

@@ -78,7 +78,7 @@ async function runLab(body: JsonRecord) {
     const message = String(payload.error ?? `request_${response.status}`);
     throw new Error(
       response.status === 401
-        ? "비공개 연구실 로그인이 필요해요. /test-login?redirect=/tips 에서 접속해 주세요."
+        ? "접근 권한이 필요합니다. /test-login?redirect=/tips 경로에서 인증하십시오."
         : message
     );
   }
@@ -102,7 +102,7 @@ export default function InterimUserConsole() {
   const resultRef = useRef<HTMLElement>(null);
   const actionFeedbackRef = useRef<HTMLDivElement>(null);
   const [trace, setTrace] = useState<JsonRecord>({
-    안내: "프로필을 확인하고 추천 시뮬레이션을 시작해 주세요.",
+    안내: "시험 프로필 설정 후 추천 모델을 실행하십시오.",
   });
 
   const profile = useMemo(
@@ -138,19 +138,19 @@ export default function InterimUserConsole() {
       const resultSafety = result.safety as Safety | undefined;
       const items = Array.isArray(result.recommendations) ? result.recommendations : [];
       if (resultSafety?.decision === "STOP_AND_ESCALATE") {
-        return { tone: "error", title: "추천을 중단했어요", detail: "응급 위험 신호가 감지되어 안전 절차로 전환했어요." };
+        return { tone: "error", title: "추천 절차 중단", detail: "응급 위험 신호 감지에 따라 안전 절차로 전환되었습니다." };
       }
       if (items.length === 0 && resultSafety?.blockedIngredients.length) {
         const names = resultSafety.blockedIngredients.map((id) => INGREDIENT_LABELS[id] ?? id).join(", ");
-        return { tone: "warning", title: "안전 조건으로 추천이 보류됐어요", detail: `${names} 성분이 현재 조건과 충돌해 추천 목록에서 제외됐어요.` };
+        return { tone: "warning", title: "안전 조건에 따른 추천 보류", detail: `${names} 성분은 입력 조건과의 충돌로 추천 목록에서 제외되었습니다.` };
       }
-      return { tone: "success", title: `추천 후보 ${items.length}개를 만들었어요`, detail: "아래 판단 결과에서 안전 검토와 모델 점수를 확인하세요." };
+      return { tone: "success", title: `추천 후보 ${items.length}개 산출`, detail: "안전성 판정 및 모델 점수가 아래에 표시됩니다." };
     }
-    if (action === "retrieve_evidence") return { tone: "success", title: "근거 상담을 확인했어요", detail: String(result.answer ?? "연구 근거 응답을 생성했어요.") };
-    if (action === "create_followup") return { tone: "success", title: "2주 후속 확인을 만들었어요", detail: "14일 뒤 수면 점수와 복용 여부를 확인하도록 설정했어요." };
-    if (action === "ingest_pro") return { tone: "success", title: "PRO 기록을 반영했어요", detail: "4주 시점 자가보고 결과를 조정 검토 상태로 보냈어요." };
-    if (action === "ingest_device") return { tone: "success", title: "웨어러블 기록을 반영했어요", detail: "기기 데이터를 활성 계획에 연결했어요." };
-    return { tone: "error", title: "추천 흐름을 즉시 중단했어요", detail: "중대한 이상사례를 기록하고 긴급 검토 상태로 전환했어요." };
+    if (action === "retrieve_evidence") return { tone: "success", title: "근거 조회 완료", detail: String(result.answer ?? "연구 근거 응답이 생성되었습니다.") };
+    if (action === "create_followup") return { tone: "success", title: "2주 후속 평가 생성", detail: "14일 후 점수와 복용 여부를 확인하도록 설정되었습니다." };
+    if (action === "ingest_pro") return { tone: "success", title: "PRO 기록 반영 완료", detail: "4주 시점 자가보고 결과가 조정 검토 상태로 반영되었습니다." };
+    if (action === "ingest_device") return { tone: "success", title: "웨어러블 기록 반영 완료", detail: "기기 데이터가 활성 계획에 연결되었습니다." };
+    return { tone: "error", title: "추천 절차 중단", detail: "중대한 이상사례 기록에 따라 긴급 검토 상태로 전환되었습니다." };
   }
 
   async function execute(action: LabAction, payload: JsonRecord = {}) {
@@ -188,9 +188,9 @@ export default function InterimUserConsole() {
       setTrace({ error: message });
       setFeedback({
         tone: "error",
-        title: "실행하지 못했어요",
+        title: "실행 실패",
         detail: message.startsWith("consent_scope_required")
-          ? "먼저 해당 기록 동의 항목을 선택해 주세요."
+          ? "해당 기록 동의 항목을 먼저 선택하십시오."
           : message,
       });
       requestAnimationFrame(() => actionFeedbackRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }));
@@ -204,7 +204,7 @@ export default function InterimUserConsole() {
     setStateToken("");
     setRecommendationResult(null);
     setFeedback(null);
-    setTrace({ 안내: "새 시뮬레이션을 시작할 수 있어요." });
+    setTrace({ 안내: "새 시험 세션이 초기화되었습니다." });
   }
 
   return (
@@ -212,18 +212,18 @@ export default function InterimUserConsole() {
       <div className={styles.shell}>
         <header className={styles.hero}>
           <div>
-            <p className={styles.eyebrow}>비공개 TIPS 연구실</p>
-            <h1 className={styles.title}>추천이 아니라,<br />판단 과정을 시험해요</h1>
+            <p className={styles.eyebrow}>TIPS 연구개발 성과 검증 시스템</p>
+            <h1 className={styles.title}>개인 맞춤형 건강기능식품<br />추천 모델 검증</h1>
             <p className={styles.lead}>
-              학습된 프록시 모델과 결정적 안전엔진, 폐쇄루프 Agent를 웹에서 바로
-              실행합니다. 별도 Python 서버 없이 WellnessBox 서버 안에서 동작해요.
+              AI 생성 프록시 데이터로 학습한 추천 모델, 안전 규칙 엔진 및 폐쇄루프 Agent의
+              성능과 실행 결과를 검증합니다.
             </p>
           </div>
           <div className={styles.statusPanel}>
             <span className={styles.badge}>PROXY_GOLD_SIMULATION</span>
             <dl className={styles.statusList}>
-              <div><dt>Agent 상태</dt><dd>{state}</dd></div>
-              <div><dt>모델</dt><dd>학습 스냅샷 연결</dd></div>
+              <div><dt>실행 상태</dt><dd>{state}</dd></div>
+              <div><dt>모델 상태</dt><dd>학습 스냅샷 적용</dd></div>
             </dl>
           </div>
         </header>
@@ -233,8 +233,8 @@ export default function InterimUserConsole() {
         <BlindTestExplorer />
 
         <section className={styles.section}>
-          <p className={styles.sectionLabel}>1. 프로필</p>
-          <h2 className={styles.sectionTitle}>조건이 달라지면 결과도 달라져요</h2>
+          <p className={styles.sectionLabel}>1. 시험 입력</p>
+          <h2 className={styles.sectionTitle}>시험 대상 프로필 및 조건 설정</h2>
           <div className={styles.formGrid}>
             <label className={styles.control}>
               <span>나이</span>
@@ -297,14 +297,14 @@ export default function InterimUserConsole() {
         </section>
 
         <section ref={resultRef} className={`${styles.section} ${styles.softSection}`}>
-          <p className={styles.sectionLabel}>2. 판단 결과</p>
-          <h2 className={styles.sectionTitle}>모델 점수보다 안전 조건이 먼저예요</h2>
+          <p className={styles.sectionLabel}>2. 판정 결과</p>
+          <h2 className={styles.sectionTitle}>추천 모델 및 안전 규칙 판정 결과</h2>
           {safety ? (
             <div className={safety.decision === "STOP_AND_ESCALATE" ? styles.stopBanner : styles.safetyBanner}>
               <strong>{safety.decision}</strong>
-              <p>{safety.reasons.length ? safety.reasons.join(" ") : "현재 입력에서 결정적 차단 조건이 발견되지 않았어요."}</p>
+              <p>{safety.reasons.length ? safety.reasons.join(" ") : "입력 조건에서 차단 규칙이 확인되지 않았습니다."}</p>
             </div>
-          ) : <p className={styles.empty}>아직 실행 결과가 없어요.</p>}
+          ) : <p className={styles.empty}>실행 결과 없음</p>}
 
           {feedback && recommendationResult && trace.action === "recommend" && (
             <div className={`${styles.feedback} ${styles[feedback.tone]}`} aria-live="polite">
@@ -315,8 +315,8 @@ export default function InterimUserConsole() {
 
           {safety && recommendations.length === 0 && safety.blockedIngredients.length > 0 && (
             <div className={styles.noCandidates}>
-              <strong>표시할 추천 후보가 없어요</strong>
-              <p>모델 후보는 생성됐지만 안전 규칙이 우선 적용되어 제외됐어요. 건강 상태나 복용 약물을 바꾸면 다시 계산할 수 있어요.</p>
+              <strong>최종 추천 후보 없음</strong>
+              <p>모델 후보 산출 후 안전 규칙 적용에 따라 전체 후보가 제외되었습니다.</p>
             </div>
           )}
 
@@ -335,9 +335,9 @@ export default function InterimUserConsole() {
         {inference && <InferenceWorkbench inference={inference} />}
 
         <section className={styles.section}>
-          <p className={styles.sectionLabel}>4. 폐쇄루프 Agent</p>
-          <h2 className={styles.sectionTitle}>추천 뒤의 변화까지 같은 흐름에서 봐요</h2>
-          <p className={styles.sectionBody}>기록 동의가 있는 동작만 실행됩니다. 중대한 이상사례는 추천 흐름을 즉시 멈추고 에스컬레이션 상태로 바꿉니다.</p>
+          <p className={styles.sectionLabel}>4. 폐쇄루프 Agent 시험</p>
+          <h2 className={styles.sectionTitle}>후속 평가 및 상태 전이 검증</h2>
+          <p className={styles.sectionBody}>동의 범위에 따라 후속 평가, PRO 및 웨어러블 기록을 처리합니다. 중대한 이상사례 입력 시 추천 절차를 중단하고 에스컬레이션 상태로 전환합니다.</p>
           <div className={styles.consentGrid}>
             {CONSENTS.map(([scope, label]) => (
               <label key={scope} data-selected={consents.includes(scope)}>

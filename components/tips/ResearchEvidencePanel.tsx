@@ -7,8 +7,8 @@ const research = researchJson as ResearchSummary;
 export default function ResearchEvidencePanel() {
   return (
     <section className={`${styles.section} ${styles.evidenceSection}`} aria-labelledby="evidence-title">
-      <p className={styles.sectionLabel}>5. 모델 카드와 증적</p>
-      <h2 id="evidence-title" className={styles.sectionTitle}>모델 구조와 산출물 계보를 확인해요</h2>
+      <p className={styles.sectionLabel}>5. 모델 명세 및 증적</p>
+      <h2 id="evidence-title" className={styles.sectionTitle}>모델 구조 및 산출물 추적성</h2>
       <div className={styles.researchPanel}>
           <span className={styles.panelKicker}>MODEL CARD</span><h3>{research.model.type}</h3>
           <dl className={styles.modelFacts}>

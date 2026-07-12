@@ -17,8 +17,8 @@ function formatNumber(value: number) {
 export default function ResearchOverview() {
   return (
     <section className={`${styles.section} ${styles.researchOverview}`} aria-labelledby="research-overview-title">
-      <p className={styles.sectionLabel}>연구 전체 결과</p>
-      <h2 id="research-overview-title" className={styles.sectionTitle}>무엇을 만들고, 어디까지 검증했는지 먼저 봐요</h2>
+      <p className={styles.sectionLabel}>연구 개요</p>
+      <h2 id="research-overview-title" className={styles.sectionTitle}>연구 데이터 구성 및 성능 평가 결과</h2>
       <div className={styles.researchStats}>
         <article><strong>{formatNumber(research.dataset.total)}</strong><span>Proxy gold 전체 데이터</span></article>
         <article><strong>7 / 7</strong><span>계획서 Proxy KPI 통과</span></article>
@@ -28,7 +28,7 @@ export default function ResearchOverview() {
 
       <div className={styles.researchPanel}>
         <div className={styles.panelHeading}>
-          <div><span>DATASET</span><h3>15만 건이 학습과 평가에 이렇게 나뉘었어요</h3></div>
+          <div><span>DATASET</span><h3>데이터셋 분할 구성</h3></div>
           <p>41개 시나리오군 · 생성/검증 불일치 {formatNumber(research.dataset.generatorVerifierDisagreements)}건 · 전건 adjudication</p>
         </div>
         <div className={styles.splitBar} aria-label="데이터셋 분할 비율">
@@ -45,7 +45,7 @@ export default function ResearchOverview() {
       </div>
 
       <div className={styles.kpiHeading}>
-        <div><span>PLAN KPI</span><h3>7개 지표의 수치와 표본을 함께 공개해요</h3></div>
+        <div><span>PLAN KPI</span><h3>연구계획서 기준 핵심 성과지표</h3></div>
       </div>
       <div className={styles.kpiGrid}>
         {research.kpis.map((kpi) => (

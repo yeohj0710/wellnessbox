@@ -2,8 +2,8 @@
 .shell { width: min(100% - 48px, 1049px); margin: 0 auto; padding: 52px 0 120px; }
 .hero { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(280px, .7fr); gap: 80px; align-items: center; padding: 48px 0 72px; }
 .eyebrow,.sectionLabel { margin: 0 0 20px; color: #3182f6; font-size: 22px; line-height: 1.3; font-weight: 700; }
-.title { margin: 0; font-size: clamp(44px, 6vw, 68px); line-height: 1.22; letter-spacing: -.045em; }
-.lead { max-width: 690px; margin: 28px 0 0; color: #6b7684; font-size: 21px; line-height: 1.65; font-weight: 600; }
+.title { margin: 0; font-size: clamp(38px, 5vw, 52px); line-height: 1.28; letter-spacing: -.035em; }
+.lead { max-width: 720px; margin: 24px 0 0; color: #6b7684; font-size: 18px; line-height: 1.65; font-weight: 600; }
 .statusPanel { padding: 28px; border-radius: 24px; background: #f9fafb; }
 .badge { display: inline-flex; padding: 8px 12px; border-radius: 999px; background: #e8f3ff; color: #1b64da; font-size: 12px; font-weight: 800; }
 .statusList { margin: 24px 0 0; }
@@ -13,7 +13,7 @@
 .statusList dd { margin: 0; color: #333d4b; font-weight: 700; text-align: right; }
 .section { margin: 0 -48px; padding: 104px 48px; scroll-margin-top: 72px; }
 .softSection { background: #f9fafb; border-radius: 36px; }
-.sectionTitle { max-width: 760px; margin: 0 0 48px; font-size: clamp(34px, 5vw, 50px); line-height: 1.35; letter-spacing: -.04em; }
+.sectionTitle { max-width: 820px; margin: 0 0 42px; font-size: clamp(32px, 4vw, 42px); line-height: 1.35; letter-spacing: -.035em; }
 .sectionBody { max-width: 720px; margin: -24px 0 40px; color: #6b7684; font-size: 19px; line-height: 1.65; font-weight: 600; }
 .formGrid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 18px; }
 .control { display: grid; gap: 10px; color: #4e5968; font-weight: 700; }

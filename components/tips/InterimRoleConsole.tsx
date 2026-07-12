@@ -62,7 +62,7 @@ export default function InterimRoleConsole({ role }: Props) {
       <div className={styles.shell}>
         <p className={styles.eyebrow}>{isAdmin ? "관리자 연구 현황" : "약사 검토함"}</p>
         <h1 className={styles.title}>
-          {isAdmin ? "프록시와 실제 연구 상태를 나눠 봐요" : "시뮬레이션 검토 요청만 모았어요"}
+          {isAdmin ? "연구 운영 현황 및 성과지표" : "시뮬레이션 검토 요청 목록"}
         </h1>
         <p className={styles.lead}>
           {isAdmin
