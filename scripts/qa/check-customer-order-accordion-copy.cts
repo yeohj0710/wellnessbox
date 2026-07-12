@@ -5,7 +5,7 @@ import path from "node:path";
 const ROOT_DIR = process.cwd();
 const TARGET_PATH = path.resolve(
   ROOT_DIR,
-  "components/order/customerOrderAccordionItem.tsx"
+  "components/order/useCustomerOrderAccordionItem.ts"
 );
 
 function run() {

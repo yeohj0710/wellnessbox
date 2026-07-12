@@ -25,7 +25,7 @@ function run() {
   ];
   const requiredDialogTokens = [
     "대화를 삭제할까요?",
-    "대화를 삭제하면 복구할 수 없습니다.",
+    "대화를 삭제하면 복구할 수 없어요.",
     "삭제 중",
   ];
 

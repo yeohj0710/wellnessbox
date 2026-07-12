@@ -20,7 +20,7 @@ function run() {
 
   assert.match(
     dockSource,
-    /import \{ useDesktopChatDockLauncher \} from "\.\/useDesktopChatDockLauncher";/,
+    /import \{[\s\S]*useDesktopChatDockLauncher,[\s\S]*\} from "\.\/useDesktopChatDockLauncher";/,
     "DesktopChatDock must import the launcher hook."
   );
   for (const token of [

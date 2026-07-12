@@ -69,7 +69,6 @@ function run() {
     "validatePreparedOrderDraft(draft)",
     "await createOrder({",
     "await getOrderByPaymentId(input.paymentId)",
-    "openNotifyModal();",
     "clearOrderCompleteCartStorage();",
   ]) {
     assert.ok(
@@ -78,6 +77,10 @@ function run() {
     );
   }
   checks.push("bootstrap_hook_owns_payment_verification_and_order_create_flow");
+  assert.ok(
+    pageSource.includes('notificationPlan.mode !== "modal"'),
+    "order-complete page should own the post-load notification prompt decision"
+  );
 
   for (const token of [
     "export function useOrderCompleteNotifications(",

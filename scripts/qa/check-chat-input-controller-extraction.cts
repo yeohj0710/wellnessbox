@@ -84,8 +84,8 @@ function run() {
 
   for (const token of [
     "export function ChatInputActionAssist(",
-    "말로 지시하면 실행까지 바로 도와드려요.",
-    "장바구니/주문/화면 이동까지 대화로 실행할 수 있어요",
+    "말로 지시하면 실행까지 바로 이어서 도와드려요",
+    "장바구니, 주문, 화면 이동까지 빠르게 이어서 도와드릴 수 있어요",
     "빠른 실행",
   ]) {
     assert.ok(
