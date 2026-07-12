@@ -192,7 +192,7 @@ export default function BlindTestExplorer() {
           </> : <p>조건에 맞는 케이스가 없습니다.</p>}
         </article>
       </div>
-      <div className={styles.proxyCaution}><strong>이 화면이 입증하는 범위</strong><p>모델이 AI 생성 프록시 정답을 재현했는지 확인합니다. 실제 환자에게 효과가 있는지, 약사가 만든 정답과 일치하는지는 별도 외부 검증이 필요합니다.</p><small>원본 SHA-256: {result?.source?.cases?.sha256 ?? "불러오는 중"}</small></div>
+      <div className={styles.sourceHash}><strong>원본 SHA-256</strong><code>{result?.source?.cases?.sha256 ?? "불러오는 중"}</code></div>
     </section>
   );
 }

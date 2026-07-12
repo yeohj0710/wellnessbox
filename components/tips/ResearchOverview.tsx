@@ -19,11 +19,6 @@ export default function ResearchOverview() {
     <section className={`${styles.section} ${styles.researchOverview}`} aria-labelledby="research-overview-title">
       <p className={styles.sectionLabel}>연구 전체 결과</p>
       <h2 id="research-overview-title" className={styles.sectionTitle}>무엇을 만들고, 어디까지 검증했는지 먼저 봐요</h2>
-      <div className={styles.proxyDisclosure}>
-        <strong>중간 개발검증 완료 · 실제 과학적 검증 대기</strong>
-        <p>{research.disclosure}</p>
-      </div>
-
       <div className={styles.researchStats}>
         <article><strong>{formatNumber(research.dataset.total)}</strong><span>Proxy gold 전체 데이터</span></article>
         <article><strong>7 / 7</strong><span>계획서 Proxy KPI 통과</span></article>
@@ -51,7 +46,6 @@ export default function ResearchOverview() {
 
       <div className={styles.kpiHeading}>
         <div><span>PLAN KPI</span><h3>7개 지표의 수치와 표본을 함께 공개해요</h3></div>
-        <p>PASS는 proxy 데이터 기준입니다. 각 카드의 교체 상태가 실제 검증에서 남은 일을 뜻해요.</p>
       </div>
       <div className={styles.kpiGrid}>
         {research.kpis.map((kpi) => (
@@ -64,7 +58,6 @@ export default function ResearchOverview() {
               <div><dt>95% CI</dt><dd>{kpi.ci95 ? `${kpi.ci95[0].toFixed(2)}–${kpi.ci95[1].toFixed(2)}` : "해당 없음"}</dd></div>
               <div><dt>내부 기준</dt><dd>{kpi.guardband}</dd></div>
             </dl>
-            <small>{kpi.replacementStatus}</small>
           </article>
         ))}
       </div>

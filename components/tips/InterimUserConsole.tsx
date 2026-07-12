@@ -131,6 +131,7 @@ export default function InterimUserConsole() {
     recommendationResult?.inference && typeof recommendationResult.inference === "object"
       ? (recommendationResult.inference as InferenceExplanation)
       : null;
+  const terminalState = state === "ESCALATED" || state === "STOPPED" || state === "ADVERSE_EVENT";
 
   function describeResult(action: LabAction, result: JsonRecord): Feedback {
     if (action === "recommend") {
@@ -223,7 +224,6 @@ export default function InterimUserConsole() {
             <dl className={styles.statusList}>
               <div><dt>Agent 상태</dt><dd>{state}</dd></div>
               <div><dt>모델</dt><dd>학습 스냅샷 연결</dd></div>
-              <div><dt>실제 연구</dt><dd>미완료</dd></div>
             </dl>
           </div>
         </header>
@@ -347,13 +347,13 @@ export default function InterimUserConsole() {
             ))}
           </div>
           <div className={styles.actionGrid}>
-            <button onClick={() => execute("retrieve_evidence", { query: `${goal} 근거` })} disabled={busyAction !== null}>{busyAction === "retrieve_evidence" ? "확인 중…" : "근거 상담"}</button>
-            <button onClick={() => execute("create_followup")} disabled={busyAction !== null}>{busyAction === "create_followup" ? "생성 중…" : "2주 후속 확인"}</button>
-            <button onClick={() => execute("ingest_pro")} disabled={busyAction !== null}>{busyAction === "ingest_pro" ? "기록 중…" : "PRO 기록"}</button>
-            <button onClick={() => execute("ingest_device", { source: "wearable" })} disabled={busyAction !== null}>{busyAction === "ingest_device" ? "기록 중…" : "웨어러블 기록"}</button>
-            <button className={styles.dangerButton} onClick={() => execute("log_adverse_event", { serious: true })} disabled={busyAction !== null}>{busyAction === "log_adverse_event" ? "중단 처리 중…" : "중대한 이상사례 시험"}</button>
-            {(state === "ESCALATED" || state === "STOPPED" || state === "ADVERSE_EVENT") && (
-              <button onClick={resetLab} disabled={busyAction !== null}>새 시뮬레이션</button>
+            <button onClick={() => execute("retrieve_evidence", { query: `${goal} 근거` })} disabled={busyAction !== null || terminalState}>{busyAction === "retrieve_evidence" ? "확인 중…" : "근거 상담"}</button>
+            <button onClick={() => execute("create_followup")} disabled={busyAction !== null || terminalState}>{busyAction === "create_followup" ? "생성 중…" : "2주 후속 확인"}</button>
+            <button onClick={() => execute("ingest_pro")} disabled={busyAction !== null || terminalState}>{busyAction === "ingest_pro" ? "기록 중…" : "PRO 기록"}</button>
+            <button onClick={() => execute("ingest_device", { source: "wearable" })} disabled={busyAction !== null || terminalState}>{busyAction === "ingest_device" ? "기록 중…" : "웨어러블 기록"}</button>
+            <button className={styles.dangerButton} onClick={() => execute("log_adverse_event", { serious: true })} disabled={busyAction !== null || terminalState}>{busyAction === "log_adverse_event" ? "중단 처리 중…" : "중대한 이상사례 시험"}</button>
+            {terminalState && (
+              <button className={styles.resetButton} onClick={resetLab} disabled={busyAction !== null}>새 시뮬레이션</button>
             )}
           </div>
           <div ref={actionFeedbackRef} className={styles.feedbackSlot}>
@@ -373,10 +373,6 @@ export default function InterimUserConsole() {
           <pre className={styles.output}>{JSON.stringify(trace, null, 2)}</pre>
         </details>
 
-        <div className={styles.notice}>
-          이 화면은 메뉴·검색엔진에 노출하지 않는 연구용 경로입니다. 실제 의료 판단을 대신하지 않으며,
-          흉통·호흡곤란·심한 출혈 등 응급 증상은 즉시 119 또는 응급실을 이용하세요.
-        </div>
       </div>
     </main>
   );

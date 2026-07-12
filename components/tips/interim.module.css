@@ -57,6 +57,7 @@
 .actionGrid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
 .actionGrid button { background: #f2f4f6; color: #333d4b; }
 .actionGrid .dangerButton { background: #f04452; color: #fff; }
+.actionGrid .resetButton { background: #3182f6; color: #fff; }
 .feedbackSlot { margin-top: 22px; scroll-margin-top: 96px; }
 .feedbackSlot:empty { margin-top: 0; }
 .trace { margin: 0 0 28px; border: 1px solid #e5e8eb; border-radius: 18px; background: #fff; }
@@ -100,7 +101,7 @@
 .answerCompare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 24px 0; }
 .answerCompare>div { min-height: 110px; padding: 20px; border-radius: 18px; background: #f2f7ff; box-sizing: border-box; }.answerCompare span { display: block; margin-bottom: 12px; color: #3182f6; font-size: 12px; font-weight: 800; }.answerCompare strong { font-size: 15px; line-height: 1.55; }
 .caseAudit { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 0 24px; margin: 0; }
-.proxyCaution { margin-top: 18px; padding: 22px 24px; border-left: 4px solid #ffb020; border-radius: 14px; background: #fff8e7; color: #5c471b; }.proxyCaution p { margin: 8px 0; line-height: 1.6; }.proxyCaution small { display: block; overflow: hidden; color: #8a6d2f; font-family: ui-monospace,SFMono-Regular,Consolas,monospace; text-overflow: ellipsis; white-space: nowrap; }
+.sourceHash { display: grid; grid-template-columns: 130px minmax(0,1fr); gap: 16px; margin-top: 18px; padding: 18px 20px; border: 1px solid #e5e8eb; border-radius: 14px; background: #fff; color: #4e5968; }.sourceHash code { overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .proxyDisclosure { margin-bottom: 34px; padding: 22px 24px; border-left: 4px solid #3182f6; border-radius: 14px; background: #f2f7ff; color: #1b64da; }
 .proxyDisclosure strong { display: block; font-size: 18px; }
 .proxyDisclosure p { margin: 7px 0 0; color: #4e5968; line-height: 1.6; }

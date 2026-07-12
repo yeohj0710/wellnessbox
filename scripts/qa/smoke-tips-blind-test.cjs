@@ -25,6 +25,14 @@ require("dotenv").config({ path: path.join(process.cwd(), ".env") });
   await page.getByText("1,648건", { exact: true }).first().waitFor();
   await page.getByRole("button", { name: "무작위 1건" }).click();
   await page.locator("[class*='caseDetail']").getByText(/case_proxy_blind_test_/).waitFor();
+  await page.getByRole("button", { name: "안전 검사 후 추천 보기" }).click();
+  await page.getByText(/추천 후보 .*개를 만들었어요/).waitFor();
+  await page.getByText("이상사례 기록", { exact: true }).click();
+  await page.getByRole("button", { name: "중대한 이상사례 시험" }).click();
+  await page.getByRole("button", { name: "새 시뮬레이션" }).waitFor();
+  if (await page.getByRole("button", { name: "근거 상담" }).isEnabled()) throw new Error("terminal_action_not_disabled");
+  await page.getByRole("button", { name: "새 시뮬레이션" }).click();
+  if (!(await page.getByRole("button", { name: "근거 상담" }).isEnabled())) throw new Error("reset_did_not_unlock_actions");
   await page.screenshot({ path: path.join(output, "tips-blind-test-desktop.png"), fullPage: true });
 
   const mobile = await browser.newContext({ viewport: { width: 390, height: 844 } });
