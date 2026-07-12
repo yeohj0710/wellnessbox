@@ -18,12 +18,17 @@ const MEDICATION_SECTION_PATH = path.resolve(
   process.cwd(),
   "app/(admin)/admin/b2b-reports/_components/B2bIntegratedMedicationReviewSection.tsx"
 );
+const HIDDEN_DATA_PANEL_PATH = path.resolve(
+  process.cwd(),
+  "app/(admin)/admin/b2b-reports/_components/B2bAdminHiddenReportDataPanel.tsx"
+);
 
 function run() {
   const previewSource = fs.readFileSync(PREVIEW_PATH, "utf8");
   const modelSource = fs.readFileSync(MODEL_PATH, "utf8");
   const healthSectionSource = fs.readFileSync(HEALTH_SECTION_PATH, "utf8");
   const medicationSectionSource = fs.readFileSync(MEDICATION_SECTION_PATH, "utf8");
+  const hiddenDataPanelSource = fs.readFileSync(HIDDEN_DATA_PANEL_PATH, "utf8");
   const checks: string[] = [];
 
   assert.match(
@@ -37,11 +42,11 @@ function run() {
     "B2bIntegratedResultPreview must import the extracted health-metrics section."
   );
   assert.match(
-    previewSource,
+    hiddenDataPanelSource,
     /import B2bIntegratedMedicationReviewSection from "\.\/B2bIntegratedMedicationReviewSection";/,
-    "B2bIntegratedResultPreview must import the extracted medication-review section."
+    "The dedicated hidden-data panel must import the extracted medication-review section."
   );
-  checks.push("preview_shell_imports_model_and_sections");
+  checks.push("preview_and_hidden_data_shells_import_model_and_sections");
 
   for (const legacyToken of [
     "function ensureArray(",
@@ -96,8 +101,8 @@ function run() {
 
   for (const token of [
     "export default function B2bIntegratedMedicationReviewSection(",
-    "복약 이력 · 약사 코멘트",
-    "등록된 권장안이 없습니다.",
+    "최근 복약 이력과 상태 메시지를 한 번에 확인합니다.",
+    "복약 이력이 없습니다.",
   ]) {
     assert.ok(
       medicationSectionSource.includes(token),

@@ -23,8 +23,8 @@ function run() {
   );
   assert.match(
     clientSource,
-    /<EmployeeReportHeroCard[\s\S]*reportReady=\{Boolean\(reportData\?\.report\)\}[\s\S]*selectedPeriodKey=\{selectedPeriodKey\}[\s\S]*\/>/,
-    "EmployeeReportClient should render EmployeeReportHeroCard with reportReady and selectedPeriodKey props."
+    /<EmployeeReportHeroCard[\s\S]*hasWorkspace=\{Boolean\(workspace\)\}[\s\S]*currentReportReady=\{Boolean\(workspace\?\.currentStatus\?\.ready\)\}[\s\S]*periodKey=\{workspace\?\.currentPeriodKey \?\? ""\}[\s\S]*\/>/,
+    "EmployeeReportClient should render EmployeeReportHeroCard with current workspace status props."
   );
   checks.push("client_uses_hero_component");
 

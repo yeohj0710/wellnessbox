@@ -14,11 +14,16 @@ const PREVIEW_PANEL_PATH = path.resolve(
   process.cwd(),
   "app/(admin)/admin/b2b-reports/_components/B2bAdminReportPreviewPanel.tsx"
 );
+const LOADED_WORKSPACE_PATH = path.resolve(
+  process.cwd(),
+  "app/(admin)/admin/b2b-reports/_components/B2bAdminReportWorkspace.loaded.tsx"
+);
 
 function run() {
   const checks: string[] = [];
   const clientSource = fs.readFileSync(CLIENT_PATH, "utf8");
   const workspaceSource = fs.readFileSync(WORKSPACE_PATH, "utf8");
+  const loadedWorkspaceSource = fs.readFileSync(LOADED_WORKSPACE_PATH, "utf8");
   const previewPanelSource = fs.readFileSync(PREVIEW_PANEL_PATH, "utf8");
 
   assert.match(
@@ -35,14 +40,14 @@ function run() {
   checks.push("client_delegates_preview_panel_to_workspace");
 
   assert.match(
-    workspaceSource,
+    loadedWorkspaceSource,
     /import B2bAdminReportPreviewPanel from "\.\/B2bAdminReportPreviewPanel";/,
-    "B2bAdminReportWorkspace must import B2bAdminReportPreviewPanel."
+    "The loaded workspace must import B2bAdminReportPreviewPanel."
   );
   assert.match(
-    workspaceSource,
-    /<B2bAdminReportPreviewPanel[\s\S]*previewTab=\{previewTab\}[\s\S]*onPreviewTabChange=\{onPreviewTabChange\}[\s\S]*\/>/,
-    "B2bAdminReportWorkspace should render preview panel with tab control props."
+    loadedWorkspaceSource,
+    /<B2bAdminReportPreviewPanel[\s\S]*latestPayload=\{content\.latestReport\?\.payload\}[\s\S]*captureRef=\{content\.captureRef\}[\s\S]*\/>/,
+    "The loaded workspace should render the preview panel with report and capture props."
   );
   checks.push("workspace_owns_preview_panel_mount");
 

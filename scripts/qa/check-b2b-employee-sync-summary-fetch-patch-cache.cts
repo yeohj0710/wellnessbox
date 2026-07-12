@@ -32,8 +32,8 @@ function run() {
     "cache support should own identity history lookup"
   );
   assert.ok(
-    cacheSupportSource.includes("getLatestNhisFetchCacheByIdentityGlobal"),
-    "cache support should own global identity history lookup"
+    !cacheSupportSource.includes("getLatestNhisFetchCacheByIdentityGlobal"),
+    "cache support must not cross tenant boundaries through global identity history lookup"
   );
   assert.ok(
     cacheSupportSource.includes("markNhisFetchCacheHit"),

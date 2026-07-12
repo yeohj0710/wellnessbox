@@ -5,6 +5,7 @@ import styles from "@/components/b2b/B2bUx.module.css";
 import ReportSummaryCards from "@/components/b2b/ReportSummaryCards";
 import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
 import EmployeeReportBootSkeleton from "./_components/EmployeeReportBootSkeleton";
+import EmployeeReportHeroCard from "./_components/EmployeeReportHeroCard";
 import EmbeddedEmployeeSurveyPanel, {
   clearEmployeeSurveyDraftState,
 } from "./_components/EmbeddedEmployeeSurveyPanel";
@@ -1240,28 +1241,12 @@ export default function EmployeeReportClient({
       <div
         className={`${styles.page} ${styles.pageNoBg} ${styles.compactPage} ${styles.stack}`}
       >
-        <header className={styles.heroCard}>
-          <p className={styles.kicker}>EMPLOYEE REPORT</p>
-          <h1 className={styles.title}>임직원 건강 리포트</h1>
-          <p className={styles.description}>
-            이름, 생년월일, 전화번호를 입력하면 먼저 확인 가능한 리포트를
-            보여드리고, 필요한 다음 단계도 바로 이어서 진행할 수 있어요.
-          </p>
-          <div className={styles.statusRow}>
-            {!workspace ? (
-              <span className={styles.statusOff}>본인 확인 필요</span>
-            ) : workspace.currentStatus?.ready ? (
-              <span className={styles.statusOn}>
-                현재 주기 리포트 확인 가능
-              </span>
-            ) : (
-              <span className={styles.statusWarn}>{syncStatus.badge}</span>
-            )}
-            {workspace?.currentPeriodKey ? (
-              <span className={styles.pill}>{workspace.currentPeriodKey}</span>
-            ) : null}
-          </div>
-        </header>
+        <EmployeeReportHeroCard
+          hasWorkspace={Boolean(workspace)}
+          currentReportReady={Boolean(workspace?.currentStatus?.ready)}
+          statusBadge={syncStatus.badge}
+          periodKey={workspace?.currentPeriodKey ?? ""}
+        />
 
         {!workspace ? (
           <section className={styles.sectionCard}>

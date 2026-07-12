@@ -141,7 +141,7 @@ export async function downloadEmployeeReportPdf(input: {
       fileName,
       viewportWidthPx,
       busyMessage: "화면 그대로 PDF를 저장하고 있어요.",
-      noticeMessage: "PDF 저장이 완료되었어요.",
+      noticeMessage: "브라우저 화면 캡처로 PDF를 저장했습니다.",
       updateBusy: input.updateBusy,
     });
     if ("ok" in captureResult && captureResult.ok) {
@@ -168,7 +168,7 @@ export async function downloadEmployeeReportPdf(input: {
         fileName,
         viewportWidthPx,
         busyMessage: "화면 그대로 PDF를 저장하고 있어요.",
-        noticeMessage: "PDF 저장이 완료되었어요.",
+        noticeMessage: "브라우저 화면 캡처로 PDF를 저장했습니다.",
         updateBusy: input.updateBusy,
       });
       if ("ok" in captureResult && captureResult.ok) {

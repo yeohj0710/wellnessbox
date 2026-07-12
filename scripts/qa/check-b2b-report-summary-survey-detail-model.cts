@@ -45,8 +45,8 @@ function run() {
     "survey-detail-model should own survey detail pagination inputs"
   );
   assert.ok(
-    surveyDetailModelSource.includes("const supplementRows = buildSupplementRows"),
-    "survey-detail-model should own supplement-row transformation"
+    surveyDetailModelSource.includes("supplementRows: []"),
+    "survey-detail-model should keep supplement rows out of survey pages after medication-page separation"
   );
   assert.ok(
     surveyDetailModelSource.includes("REPORT_SUMMARY_SURVEY_DETAIL_PAGE_START"),

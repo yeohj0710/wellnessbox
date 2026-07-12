@@ -14,12 +14,17 @@ const DETAIL_SKELETON_PATH = path.resolve(
   process.cwd(),
   "app/(admin)/admin/b2b-reports/_components/B2bAdminReportDetailSkeleton.tsx"
 );
+const WORKSPACE_PATH = path.resolve(
+  process.cwd(),
+  "app/(admin)/admin/b2b-reports/_components/B2bAdminReportWorkspace.tsx"
+);
 
 function run() {
   const checks: string[] = [];
   const clientSource = fs.readFileSync(CLIENT_PATH, "utf8");
   const bootstrapSkeletonSource = fs.readFileSync(BOOTSTRAP_SKELETON_PATH, "utf8");
   const detailSkeletonSource = fs.readFileSync(DETAIL_SKELETON_PATH, "utf8");
+  const workspaceSource = fs.readFileSync(WORKSPACE_PATH, "utf8");
 
   assert.match(
     clientSource,
@@ -27,9 +32,9 @@ function run() {
     "B2bAdminReportClient must import B2bAdminReportBootstrappingSkeleton."
   );
   assert.match(
-    clientSource,
-    /import B2bAdminReportDetailSkeleton from "\.\/_components\/B2bAdminReportDetailSkeleton";/,
-    "B2bAdminReportClient must import B2bAdminReportDetailSkeleton."
+    workspaceSource,
+    /import B2bAdminReportDetailSkeleton from "\.\/B2bAdminReportDetailSkeleton";/,
+    "B2bAdminReportWorkspace must import B2bAdminReportDetailSkeleton."
   );
   assert.match(
     clientSource,
@@ -37,9 +42,9 @@ function run() {
     "B2bAdminReportClient should render B2bAdminReportBootstrappingSkeleton for initial loading."
   );
   assert.match(
-    clientSource,
+    workspaceSource,
     /<B2bAdminReportDetailSkeleton \/>/,
-    "B2bAdminReportClient should render B2bAdminReportDetailSkeleton for detail loading."
+    "B2bAdminReportWorkspace should render B2bAdminReportDetailSkeleton for detail loading."
   );
   checks.push("client_uses_extracted_skeleton_components");
 

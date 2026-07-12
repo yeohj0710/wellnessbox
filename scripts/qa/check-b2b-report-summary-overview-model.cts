@@ -22,8 +22,8 @@ function run() {
     "ReportSummaryCards should build first-page overview state through the shared overview-model"
   );
   assert.ok(
-    cardsSource.includes("sectionTitleById"),
-    "ReportSummaryCards should reuse section titles from the shared overview-model"
+    cardsSource.includes("const overviewModel = buildReportSummaryOverviewModel(payload)"),
+    "ReportSummaryCards should retain the shared overview model as the single overview source"
   );
   assert.ok(
     !cardsSource.includes("const DONUT_RADIUS = 52;"),
