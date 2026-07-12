@@ -92,6 +92,9 @@ const runtimeModule = read("lib/server/tips-lab/runtime.ts");
 const route = read("app/api/tips/lab/route.ts");
 const page = read("app/(features)/tips/page.tsx");
 const consoleUi = read("components/tips/InterimUserConsole.tsx");
+const advancedProfileUi = read("components/tips/AdvancedProfileFields.tsx");
+assert.match(advancedProfileUi, /<details className=\{styles\.advancedDetails\}>/);
+assert.match(advancedProfileUi, /검사·증상·식이 등 상세 입력/);
 for (const token of ["대표 시나리오 원클릭 시연", "전체 자동 시연", "DEMO_SCENARIOS", "runScenario", "추천부터 추적 기록까지 자동 실행"]) assert.match(consoleUi, new RegExp(token));
 const researchOverviewUi = read("components/tips/ResearchOverview.tsx");
 const inferenceUi = read("components/tips/InferenceWorkbench.tsx");
@@ -99,7 +102,6 @@ const evidenceUi = read("components/tips/ResearchEvidencePanel.tsx");
 const blindTestUi = read("components/tips/BlindTestExplorer.tsx");
 const proStudyUi = read("components/tips/ProStudySimulation.tsx");
 assert.match(proStudyUi, /PRO 전체 과정 원클릭 시연/);
-const advancedProfileUi = read("components/tips/AdvancedProfileFields.tsx");
 const blindTestBundle = JSON.parse(read("data/tips/blind-test-cases.json"));
 const tipsCss = read("components/tips/interim.module.css");
 

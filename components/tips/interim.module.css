@@ -163,6 +163,8 @@
 .demoPanel>div:first-child>strong { font-size: 18px; }.demoPanel>div:first-child>p { margin: 6px 0 18px; color: #6b7684; line-height: 1.55; }
 .demoScenarios { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }.demoScenarios article { padding: 17px; border: 1px solid #e5e8eb; border-radius: 15px; background: #fff; }.demoScenarios h3 { margin: 0; font-size: 16px; }.demoScenarios p { min-height: 42px; margin: 7px 0 14px; color: #6b7684; font-size: 12px; line-height: 1.45; }.demoScenarios article>div { display: flex; gap: 7px; }.demoScenarios button { min-height: 38px; padding: 0 11px; border: 1px solid #d1d6db; border-radius: 10px; background: #fff; color: #4e5968; font: inherit; font-size: 12px; font-weight: 750; cursor: pointer; }.demoScenarios .demoRun { border-color: #3182f6; background: #3182f6; color: #fff; }.demoScenarios button:disabled { opacity: .5; cursor: wait; }.demoProgress { margin-top: 14px; padding: 12px 14px; border-radius: 10px; background: #e8f3ff; color: #1b64da; font-size: 13px; font-weight: 800; }
 
+.advancedDetails { margin-top: 18px; border-top: 1px solid #dbe5f5; }.advancedDetails summary { display: flex; justify-content: space-between; align-items: center; padding: 18px 2px 2px; color: #4e5968; font-weight: 800; cursor: pointer; }.advancedDetails summary b { padding: 5px 9px; border-radius: 999px; background: #e8f3ff; color: #1b64da; font-size: 11px; }.advancedDetails[open] summary { margin-bottom: 18px; }.advancedDetails>.advancedGrid { margin-top: 0; }
+
 @media (max-width: 760px) {
   .shell { width: auto; margin: 0 24px; padding: 54px 0 84px; }
   .hero { grid-template-columns: 1fr; gap: 36px; padding: 24px 0 64px; }
