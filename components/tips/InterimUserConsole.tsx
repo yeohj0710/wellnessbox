@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import ResearchOverview from "./ResearchOverview";
 import BlindTestExplorer from "./BlindTestExplorer";
 import ProStudySimulation from "./ProStudySimulation";
-import AdvancedProfileFields, { DEFAULT_ADVANCED } from "./AdvancedProfileFields";
+import AdvancedProfileFields, { DEFAULT_ADVANCED, type AdvancedProfile } from "./AdvancedProfileFields";
 import InferenceWorkbench from "./InferenceWorkbench";
 import ResearchEvidencePanel from "./ResearchEvidencePanel";
 import type { InferenceExplanation } from "./research-types";
@@ -23,6 +23,12 @@ type LabAction =
 type Candidate = { ingredientId: string; label: string; score: number };
 type Safety = { decision: string; reasons: string[]; blockedIngredients: string[] };
 type Feedback = { tone: "success" | "warning" | "error"; title: string; detail: string };
+type DemoScenario = { id:string; title:string; description:string; age:number; goal:string; conditions:string[]; medications:string[]; fishAllergy:boolean; redFlag:boolean; advanced:AdvancedProfile };
+const DEMO_SCENARIOS: DemoScenario[] = [
+  {id:"standard",title:"일반 추천",description:"비타민 D 저하와 수면 목표의 정상 추천 경로",age:41,goal:"sleep_quality",conditions:[],medications:[],fishAllergy:false,redFlag:false,advanced:{...DEFAULT_ADVANCED,sex:"female",monthlyBudgetKrw:70000,maxDailyPills:4,preferredForm:"powder",dietPatterns:["low_fortified_food"],wearableFeatures:["low_hrv"],symptoms:[{code:"fatigue",severity:"moderate"}],labs:{vitamin_d:"low"}}},
+  {id:"interaction",title:"상호작용 차단",description:"와파린 복용 조건에서 후보 차단 재현",age:67,goal:"cardiovascular_wellbeing",conditions:["hypertension"],medications:["warfarin"],fishAllergy:false,redFlag:false,advanced:{...DEFAULT_ADVANCED,sex:"male",pregnancyStatus:"not_applicable",monthlyBudgetKrw:100000,dietPatterns:["low_fish"],labs:{triglycerides:"high"}}},
+  {id:"escalation",title:"응급 중단",description:"흉통 입력 후 추천 중단과 에스컬레이션 재현",age:54,goal:"energy",conditions:["hypertension"],medications:[],fishAllergy:false,redFlag:true,advanced:{...DEFAULT_ADVANCED,sex:"male",pregnancyStatus:"not_applicable",symptoms:[{code:"chest_pain",severity:"moderate"}],labs:{}}},
+];
 
 const INGREDIENT_LABELS: Record<string, string> = {
   "ING:MAGNESIUM": "마그네슘",
@@ -108,6 +114,7 @@ export default function InterimUserConsole() {
   const [stateToken, setStateToken] = useState("");
   const [recommendationResult, setRecommendationResult] = useState<JsonRecord | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [demoProgress, setDemoProgress] = useState("");
   const resultRef = useRef<HTMLElement>(null);
   const actionFeedbackRef = useRef<HTMLDivElement>(null);
   const [trace, setTrace] = useState<JsonRecord>({
@@ -224,6 +231,26 @@ export default function InterimUserConsole() {
     setTrace({ 안내: "새 시험 세션이 초기화되었습니다." });
   }
 
+  function applyScenario(s: DemoScenario) {
+    setAge(s.age); setGoal(s.goal); setConditions(s.conditions); setMedications(s.medications);
+    setFishAllergy(s.fishAllergy); setRedFlag(s.redFlag); setAdvanced(s.advanced); setConsents([]); resetLab();
+    setDemoProgress(`${s.title} 입력값 적용 완료`);
+  }
+
+  async function runScenario(s: DemoScenario) {
+    applyScenario(s); setBusyAction("initialize");
+    const scopes=["followup:write","pro:write","ae:write","device:write"];
+    const p={age:s.age,sex:s.advanced.sex,pregnant:s.advanced.pregnancyStatus==="pregnant",pregnancyStatus:s.advanced.pregnancyStatus,monthlyBudgetKrw:s.advanced.monthlyBudgetKrw,maxDailyPills:s.advanced.maxDailyPills,preferredForm:s.advanced.preferredForm,goals:[s.goal],conditions:s.conditions,medicationClasses:s.medications,allergies:s.fishAllergy?["fish"]:[],dietPatterns:s.advanced.dietPatterns,currentSupplements:s.advanced.currentSupplements,wearableFeatures:s.advanced.wearableFeatures,symptoms:s.advanced.symptoms,labs:s.advanced.labs,riskFlags:[...s.advanced.riskFlags,...(s.redFlag?["red_flag_chest_pain"]:[])]};
+    try {
+      setConsents(scopes); setDemoProgress("1/6 세션 초기화"); let r=await runLab({action:"initialize",profile:p,consentScopes:scopes}); let token=String(r.stateToken??"");
+      setDemoProgress("2/6 추천·안전 판정"); r=await runLab({action:"recommend",stateToken:token,profile:p,consentScopes:scopes}); setRecommendationResult(r); setTrace(r); setFeedback(describeResult("recommend",r)); setState(String(r.state??"")); token=String(r.stateToken??token); setStateToken(token);
+      if (["ESCALATED","STOPPED","ADVERSE_EVENT"].includes(String(r.state))) { setDemoProgress("완료 · 안전 중단 경로 재현"); return; }
+      for (const [i,action] of (["retrieve_evidence","create_followup","ingest_pro","ingest_device"] as LabAction[]).entries()) { setDemoProgress(`${i+3}/6 ${action}`); r=await runLab({action,stateToken:token,profile:p,consentScopes:scopes,payload:action==="retrieve_evidence"?{query:`${s.goal} 근거`}:action==="ingest_device"?{source:"wearable"}:{}}); token=String(r.stateToken??token); setTrace(r); setState(String(r.state??"")); setStateToken(token); }
+      setDemoProgress("완료 · 추천부터 추적 기록까지 자동 실행"); requestAnimationFrame(()=>resultRef.current?.scrollIntoView({behavior:"smooth",block:"start"}));
+    } catch(error) { const message=error instanceof Error?error.message:"unknown_error"; setDemoProgress(`실패 · ${message}`); setTrace({error:message}); }
+    finally { setBusyAction(null); }
+  }
+
   return (
     <main className={styles.page}>
       <div className={styles.shell}>
@@ -255,6 +282,11 @@ export default function InterimUserConsole() {
         <section className={styles.section}>
           <p className={styles.sectionLabel}>1. 시험 입력</p>
           <h2 className={styles.sectionTitle}>시험 대상 프로필 및 조건 설정</h2>
+          <div className={styles.demoPanel}>
+            <div><strong>대표 시나리오 원클릭 시연</strong><p>입력만 적용하거나 추천, 안전 판정, 근거 조회, 추적 PRO, 웨어러블 기록까지 자동 실행할 수 있습니다.</p></div>
+            <div className={styles.demoScenarios}>{DEMO_SCENARIOS.map(s=><article key={s.id}><h3>{s.title}</h3><p>{s.description}</p><div><button type="button" onClick={()=>applyScenario(s)} disabled={busyAction!==null}>입력만 적용</button><button type="button" className={styles.demoRun} onClick={()=>runScenario(s)} disabled={busyAction!==null}>전체 자동 시연</button></div></article>)}</div>
+            {demoProgress&&<div className={styles.demoProgress} aria-live="polite">{demoProgress}</div>}
+          </div>
           <div className={styles.formGrid}>
             <label className={styles.control}>
               <span>나이</span>
