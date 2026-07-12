@@ -28,20 +28,8 @@ function run() {
   checks.push("client_uses_report_loading_hook");
 
   assert.ok(
-    !clientSource.includes("async function loadReport("),
-    "EmployeeReportClient should not inline loadReport after extraction."
-  );
-  assert.ok(
-    !clientSource.includes("async function syncEmployeeReport("),
-    "EmployeeReportClient should not inline syncEmployeeReport after extraction."
-  );
-  assert.ok(
-    !clientSource.includes("fetchEmployeeReport("),
-    "EmployeeReportClient should not call fetchEmployeeReport directly after extraction."
-  );
-  assert.ok(
-    !clientSource.includes("syncEmployeeReportAndReloadFlow("),
-    "EmployeeReportClient should not call syncEmployeeReportAndReloadFlow directly after extraction."
+    !clientSource.includes("fetchEmployeeWorkspace("),
+    "EmployeeReportClient should not call the workspace endpoint directly after extraction."
   );
   checks.push("client_has_no_inline_report_loading_flow");
 
@@ -51,20 +39,20 @@ function run() {
     "Report loading hook should export useEmployeeReportReportLoading."
   );
   assert.ok(
-    hookSource.includes("const loadReport = useCallback("),
-    "Report loading hook should expose loadReport callback."
+    hookSource.includes("const loadWorkspace = useCallback("),
+    "Report loading hook should expose loadWorkspace callback."
   );
   assert.ok(
-    hookSource.includes("const syncEmployeeReport = useCallback("),
-    "Report loading hook should expose syncEmployeeReport callback."
+    hookSource.includes("const applyWorkspace = useCallback("),
+    "Report loading hook should own workspace state application."
   );
   assert.ok(
-    hookSource.includes("fetchEmployeeReport("),
-    "Report loading hook should own fetchEmployeeReport flow."
+    hookSource.includes("fetchEmployeeWorkspace("),
+    "Report loading hook should own fetchEmployeeWorkspace flow."
   );
   assert.ok(
-    hookSource.includes("syncEmployeeReportAndReloadFlow("),
-    "Report loading hook should own syncEmployeeReportAndReloadFlow orchestration."
+    hookSource.includes("setPolling(next?.sync?.active === true)"),
+    "Report loading hook should synchronize polling state from workspace state."
   );
   checks.push("hook_owns_report_loading_flow");
 

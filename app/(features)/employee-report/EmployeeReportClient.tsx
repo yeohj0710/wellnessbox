@@ -13,11 +13,8 @@ import EmbeddedEmployeeSurveyPanel, {
 import { EMPLOYEE_REPORT_RESET_EVENT_KEY } from "@/lib/b2b/employee-report-browser-storage";
 import {
   deleteEmployeeSession,
-  fetchEmployeeSession,
-  fetchEmployeeWorkspace,
   requestNhisSign,
   startEmployeeWorkspace,
-  upsertEmployeeSession,
 } from "./_lib/api";
 import type {
   EmployeeWorkspaceResponse,
@@ -26,11 +23,13 @@ import type {
 import {
   clearStoredIdentity,
   isValidIdentityInput,
-  readStoredIdentityWithSource,
   saveStoredIdentity,
   toIdentityPayload,
 } from "./_lib/client-utils.identity";
 import { formatDateTime, formatRelativeTime } from "./_lib/client-utils.format";
+import { useEmployeeReportSessionBootstrap } from "./_lib/use-employee-report-session-bootstrap";
+import { useEmployeeReportSessionEffects } from "./_lib/use-employee-report-session-effects";
+import { useEmployeeReportReportLoading } from "./_lib/use-employee-report-report-loading";
 
 type WorkflowTone = "on" | "warn" | "off";
 type WorkflowStepState = "done" | "current" | "pending" | "error";
@@ -508,40 +507,13 @@ export default function EmployeeReportClient({
     [healthComplete, workspace]
   );
 
-  const applyWorkspace = useCallback(
-    (
-      next: EmployeeWorkspaceResponse | null,
-      options?: { preserveSurvey?: boolean }
-    ) => {
-      setWorkspace(next);
-      setSelectedReportId(next?.selectedReportId ?? null);
-      setPolling(next?.sync?.active === true);
-      if (
-        !options?.preserveSurvey &&
-        next?.currentStatus?.hasAnyWorkspaceData === true
-      ) {
-        setShowSurvey(false);
-      }
-    },
-    []
-  );
-
-  const loadWorkspace = useCallback(
-    async (input?: {
-      reportId?: string | null;
-      preserveSurvey?: boolean;
-      driveSync?: boolean;
-    }) => {
-      const next = await fetchEmployeeWorkspace({
-        reportId: input?.reportId ?? undefined,
-        driveSync: input?.driveSync,
-      });
-      setPollingError("");
-      applyWorkspace(next, { preserveSurvey: input?.preserveSurvey });
-      return next;
-    },
-    [applyWorkspace]
-  );
+  const { applyWorkspace, loadWorkspace } = useEmployeeReportReportLoading({
+    setWorkspace,
+    setSelectedReportId,
+    setPolling,
+    setPollingError,
+    setShowSurvey,
+  });
 
   const resetIdentityFlow = useCallback(async () => {
     await deleteEmployeeSession().catch(() => null);
@@ -565,69 +537,32 @@ export default function EmployeeReportClient({
     });
   }, []);
 
-  useEffect(() => {
-    let mounted = true;
-
-    async function bootstrap() {
-      try {
-        const session = await fetchEmployeeSession();
-        if (!mounted) return;
-
-        if (session.authenticated && session.employee) {
-          const nextIdentity = {
-            name: session.employee.name,
-            birthDate: session.employee.birthDate,
-            phone: session.employee.phoneNormalized,
-          };
-          setIdentity(nextIdentity);
-          saveStoredIdentity(nextIdentity);
-          const nextWorkspace = await loadWorkspace();
-          if (!mounted) return;
-          if (!nextWorkspace.currentStatus?.hasAnyWorkspaceData) {
-            clearEmployeeSurveyDraftState();
-            setShowSurvey(false);
-          }
-          return;
-        }
-
-        const stored = readStoredIdentityWithSource().identity;
-        if (stored) {
-          setIdentity(stored);
-          const loginResult = await upsertEmployeeSession(stored).catch(
-            () => null
-          );
-          if (!mounted) return;
-          if (loginResult?.found) {
-            saveStoredIdentity(stored);
-            const nextWorkspace = await loadWorkspace();
-            if (!mounted) return;
-            if (!nextWorkspace.currentStatus?.hasAnyWorkspaceData) {
-              clearEmployeeSurveyDraftState();
-              setShowSurvey(false);
-            }
-            return;
-          }
-        }
-      } catch (bootstrapError) {
-        if (!mounted) return;
-        setError(
-          bootstrapError instanceof Error
-            ? bootstrapError.message
-            : "리포트 상태를 불러오지 못했습니다."
-        );
-      } finally {
-        if (mounted) {
-          setBooting(false);
-        }
+  const handleBootstrapWorkspaceLoaded = useCallback(
+    (nextWorkspace: EmployeeWorkspaceResponse) => {
+      if (!nextWorkspace.currentStatus?.hasAnyWorkspaceData) {
+        clearEmployeeSurveyDraftState();
+        setShowSurvey(false);
       }
-    }
+    },
+    []
+  );
+  const checkSessionAndMaybeAutoLogin = useEmployeeReportSessionBootstrap({
+    loadWorkspace,
+    onWorkspaceLoaded: handleBootstrapWorkspaceLoaded,
+    setBooting,
+    setError,
+    setIdentity,
+  });
 
-    void bootstrap();
-
-    return () => {
-      mounted = false;
-    };
-  }, [loadWorkspace]);
+  useEffect(() => {
+    void checkSessionAndMaybeAutoLogin();
+  }, [checkSessionAndMaybeAutoLogin]);
+  useEmployeeReportSessionEffects({
+    busy,
+    hasWorkspace: Boolean(workspace),
+    loadWorkspace,
+    checkSessionAndMaybeAutoLogin,
+  });
 
   useEffect(() => {
     const handleResetEvent = (event: StorageEvent) => {

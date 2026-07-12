@@ -43,10 +43,14 @@ function run() {
     "Session effects hook should own auth-sync subscription behavior."
   );
   assert.ok(
-    hookSource.includes("if (!isAdminLoggedIn || !adminOnlyReportBlocked || busy) return;"),
-    "Session effects hook should own admin re-check gating behavior."
+    hookSource.includes('scopes: ["user-session", "b2b-employee-session", "nhis-link"]'),
+    "Session effects hook should subscribe to every session source used by the workspace."
   );
-  checks.push("hook_owns_admin_recheck_and_auth_sync_effects");
+  assert.ok(
+    hookSource.includes('detail.scope === "nhis-link" && hasWorkspace'),
+    "Session effects hook should refresh an active workspace after NHIS link changes."
+  );
+  checks.push("hook_owns_workspace_auth_sync_effects");
 
   console.log(JSON.stringify({ ok: true, checks }, null, 2));
 }

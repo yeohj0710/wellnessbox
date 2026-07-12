@@ -28,12 +28,15 @@ function runSessionRouteChecks() {
 
 function runClientChecks() {
   const source = read("app/(features)/employee-report/EmployeeReportClient.tsx");
+  const bootstrapSource = read(
+    "app/(features)/employee-report/_lib/use-employee-report-session-bootstrap.ts"
+  );
   assert.ok(
-    source.includes("const session = await fetchEmployeeSession()"),
+    bootstrapSource.includes("const session = await fetchEmployeeSession()"),
     "client boot flow should resolve the server session before loading report state"
   );
   assert.ok(
-    source.includes("const nextWorkspace = await loadWorkspace()"),
+    bootstrapSource.includes("onWorkspaceLoaded(await loadWorkspace())"),
     "client boot flow should load report state from the server workspace"
   );
   assert.ok(
@@ -41,7 +44,8 @@ function runClientChecks() {
     "client should handle an existing DB identity with no report workspace data"
   );
   assert.ok(
-    !source.includes("ensureLatestB2bReport("),
+    !source.includes("ensureLatestB2bReport(") &&
+      !bootstrapSource.includes("ensureLatestB2bReport("),
     "client must not generate a report locally when DB report state is missing"
   );
   console.log("[qa:employee-report-db-priority] PASS client checks");
