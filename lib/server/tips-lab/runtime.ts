@@ -8,6 +8,7 @@ import {
 import interimResearchSummaryJson from "@/data/tips/interim-research-summary.json";
 import { canRunTipsLabAction, type TipsLabState } from "@/lib/server/tips-lab/state";
 import { checkTipsSafety } from "@/lib/tips/safety-engine";
+import { listBlindTests, verifyBlindTests } from "@/lib/server/tips-lab/blind-tests";
 
 export const TIPS_LAB_ACTIONS = [
   "initialize",
@@ -17,6 +18,8 @@ export const TIPS_LAB_ACTIONS = [
   "ingest_pro",
   "log_adverse_event",
   "ingest_device",
+  "list_blind_tests",
+  "verify_blind_tests",
 ] as const;
 
 export type TipsLabAction = (typeof TIPS_LAB_ACTIONS)[number];
@@ -99,6 +102,16 @@ export function runTipsLab(input: LabInput) {
         profile: currentProfile,
         consentScopes: scopes,
         next: "recommend",
+      };
+    case "list_blind_tests":
+      return {
+        ...base(input.action, currentState),
+        blindTest: listBlindTests(input.payload ?? {}),
+      };
+    case "verify_blind_tests":
+      return {
+        ...base(input.action, currentState),
+        verification: verifyBlindTests(input.payload ?? {}),
       };
     case "recommend": {
       if (!currentProfile.goals.length) throw new Error("goal_required");

@@ -6,7 +6,9 @@ import { join } from "node:path";
 const { canAccessTipsLab } = require("../../lib/server/tips-lab/access");
 const { canRunTipsLabAction } = require("../../lib/server/tips-lab/state");
 const { explainProxySnapshot } = require("../../lib/tips/proxy-model-engine");
+const { blindProfileTokens, predictProxyTokens } = require("../../lib/tips/proxy-model-engine");
 const { checkTipsSafety } = require("../../lib/tips/safety-engine");
+const { selectBlindTestRows, summarizeBlindTests } = require("../../lib/tips/blind-test-engine");
 
 const root = process.cwd();
 const read = (path: string) => readFileSync(join(root, path), "utf8");
@@ -92,6 +94,9 @@ const consoleUi = read("components/tips/InterimUserConsole.tsx");
 const researchOverviewUi = read("components/tips/ResearchOverview.tsx");
 const inferenceUi = read("components/tips/InferenceWorkbench.tsx");
 const evidenceUi = read("components/tips/ResearchEvidencePanel.tsx");
+const blindTestUi = read("components/tips/BlindTestExplorer.tsx");
+const blindTestBundle = JSON.parse(read("data/tips/blind-test-cases.json"));
+const tipsCss = read("components/tips/interim.module.css");
 
 assert.match(modelModule, /predictProxyRecommendations/);
 assert.match(modelModule, /explainProxyRecommendations/);
@@ -108,6 +113,8 @@ assert.match(runtimeModule, /interimResearchSummary/);
 assert.match(runtimeModule, /preSafetySelection/);
 assert.match(runtimeModule, /postSafetySelection/);
 assert.match(runtimeModule, /STOP_AND_ESCALATE_BEFORE_MODEL/);
+assert.match(runtimeModule, /list_blind_tests/);
+assert.match(runtimeModule, /verify_blind_tests/);
 assert.equal(canAccessTipsLab({}), false);
 assert.equal(canAccessTipsLab({ pharm: { loggedIn: true } }), false);
 assert.equal(canAccessTipsLab({ rider: { loggedIn: true } }), false);
@@ -135,6 +142,16 @@ assert.match(consoleUi, /blockedIngredients/);
 assert.match(consoleUi, /ResearchOverview/);
 assert.match(consoleUi, /InferenceWorkbench/);
 assert.match(consoleUi, /ResearchEvidencePanel/);
+assert.match(consoleUi, /BlindTestExplorer/);
+assert.match(blindTestUi, /5,000건 전체 다시 계산/);
+assert.match(blindTestUi, /무작위 1건/);
+assert.match(blindTestUi, /프록시 정답/);
+assert.match(blindTestUi, /현재 모델 재추론/);
+assert.match(blindTestUi, /원본 SHA-256/);
+assert.match(blindTestUi, /requestSequence/);
+assert.match(blindTestUi, /role="group"/);
+assert.match(blindTestUi, /aria-pressed=\{selected\?\.caseId === row\.caseId\}/);
+assert.doesNotMatch(tipsCss, /min-height:\s*520px/);
 assert.match(researchOverviewUi, /15만 건이 학습과 평가에 이렇게 나뉘었어요/);
 assert.match(researchOverviewUi, /PROXY PASS/);
 assert.match(researchOverviewUi, /실제 과학적 검증 대기/);
@@ -180,6 +197,23 @@ assert.deepEqual(kidneySafety.blockedIngredients, ["ING:MAGNESIUM", "ING:POTASSI
 const emergencySafety = checkTipsSafety({ ...baseProfile, riskFlags: ["red_flag_chest_pain"] });
 assert.equal(emergencySafety.decision, "STOP_AND_ESCALATE");
 assert.deepEqual(emergencySafety.blockedIngredients, []);
+
+assert.equal(blindTestBundle.rows.length, 5000);
+assert.equal(blindTestBundle.summary.exactMatches, 5000);
+assert.equal(blindTestBundle.summary.safetyCases, 1648);
+const allBlindTests = summarizeBlindTests(blindTestBundle.rows);
+assert.equal(allBlindTests.evaluated, 5000);
+assert.equal(allBlindTests.exactMatches, 5000);
+assert.equal(allBlindTests.setPrecisionPercent, 100);
+const safetyBlindTests = selectBlindTestRows(blindTestBundle.rows, { filter: "safety" });
+assert.equal(safetyBlindTests.length, 1648);
+const directBlindTest = selectBlindTestRows(blindTestBundle.rows, { query: "case_proxy_blind_test_0000001" });
+assert.equal(directBlindTest.length, 1);
+assert.equal(directBlindTest[0].caseId, "case_proxy_blind_test_0000001");
+for (const row of blindTestBundle.rows) {
+  const live = predictProxyTokens(snapshot, blindProfileTokens(row.profile));
+  assert.deepEqual([...live.predicted].sort(), [...row.predicted].sort(), `live blind inference mismatch: ${row.caseId}`);
+}
 
 const navigationFiles = [
   "components/common/topBar.header.tsx",

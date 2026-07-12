@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import ResearchOverview from "./ResearchOverview";
+import BlindTestExplorer from "./BlindTestExplorer";
 import InferenceWorkbench from "./InferenceWorkbench";
 import ResearchEvidencePanel from "./ResearchEvidencePanel";
 import type { InferenceExplanation } from "./research-types";
@@ -228,6 +229,8 @@ export default function InterimUserConsole() {
         </header>
 
         <ResearchOverview />
+
+        <BlindTestExplorer />
 
         <section className={styles.section}>
           <p className={styles.sectionLabel}>1. 프로필</p>

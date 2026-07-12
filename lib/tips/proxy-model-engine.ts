@@ -46,6 +46,50 @@ function sigmoid(value: number) {
   return exp / (1 + exp);
 }
 
+export type BlindProfile = {
+  age_band: string; sex_at_birth: string; pregnancy_status: string;
+  preferences: { monthly_budget_krw: number; max_daily_pills: number; preferred_form: string };
+  goals: string[]; conditions: string[]; medication_classes: string[]; allergies: string[];
+  diet_patterns: string[]; current_supplements: string[]; wearable_features: string[];
+  genetic_features: string[]; risk_flags: string[];
+  symptoms: Array<{ code: string; severity: string; red_flag?: boolean }>;
+  labs: Record<string, string>;
+};
+
+export function blindProfileTokens(profile: BlindProfile) {
+  const tokens = new Set<string>([
+    `age=${profile.age_band}`, `sex=${profile.sex_at_birth}`, `pregnancy=${profile.pregnancy_status}`,
+    `budget=${profile.preferences.monthly_budget_krw}`, `pill_limit=${profile.preferences.max_daily_pills}`,
+    `form=${profile.preferences.preferred_form}`,
+  ]);
+  const lists: Array<[string, string[]]> = [
+    ["goals", profile.goals], ["conditions", profile.conditions], ["medication_classes", profile.medication_classes],
+    ["allergies", profile.allergies], ["diet_patterns", profile.diet_patterns], ["current_supplements", profile.current_supplements],
+    ["wearable_features", profile.wearable_features], ["genetic_features", profile.genetic_features], ["risk_flags", profile.risk_flags],
+  ];
+  for (const [key, values] of lists) for (const value of values) tokens.add(`${key}:${value}`);
+  for (const symptom of profile.symptoms) {
+    tokens.add(`symptom:${symptom.code}`); tokens.add(`symptom_severity:${symptom.severity}`);
+    if (symptom.red_flag) tokens.add("symptom:red_flag");
+  }
+  for (const [name, status] of Object.entries(profile.labs)) tokens.add(`lab:${name}=${status}`);
+  return [...tokens].sort();
+}
+
+export function predictProxyTokens(snapshot: ProxyModelSnapshot, tokens: string[]) {
+  const indices = [...new Set(tokens.map((token) => snapshot.vocabulary[token]).filter(Number.isInteger))].sort((a, b) => a - b);
+  const countScores = snapshot.countClassifier.classes.map((rawClass, rowIndex) => ({
+    count: Math.max(0, Math.min(2, rawClass)),
+    score: indices.reduce((sum, index) => sum + (snapshot.countClassifier.coefficients[rowIndex]?.[index] ?? 0), snapshot.countClassifier.intercepts[rowIndex] ?? 0),
+  })).sort((a, b) => b.score - a.score);
+  const predictedCount = countScores[0]?.count ?? 0;
+  const ranked = snapshot.ingredientClassifiers.map((classifier, index) => ({
+    ingredientId: snapshot.ingredients[index],
+    probability: sigmoid(indices.reduce((sum, featureIndex) => sum + (classifier.coefficients[0]?.[featureIndex] ?? 0), classifier.intercepts[0] ?? 0)),
+  })).sort((a, b) => b.probability - a.probability);
+  return { tokens, activeFeatureCount: indices.length, predictedCount, predicted: ranked.slice(0, predictedCount).map((row) => row.ingredientId), ranked };
+}
+
 function profileTokens(profile: TipsLabProfile) {
   const result = new Set<string>([
     `age=${ageBand(profile.age)}`,

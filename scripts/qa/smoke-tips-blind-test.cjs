@@ -1,0 +1,41 @@
+const { chromium } = require("playwright");
+const fs = require("node:fs");
+const path = require("node:path");
+require("dotenv").config({ path: path.join(process.cwd(), ".env") });
+
+(async () => {
+  const baseURL = process.env.TIPS_SMOKE_BASE_URL || "http://127.0.0.1:3012";
+  const output = path.join(process.cwd(), "output", "playwright");
+  fs.mkdirSync(output, { recursive: true });
+  const browser = await chromium.launch({ headless: true, executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" });
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const password = process.env.TIPS_SMOKE_PASSWORD || process.env.TEST_PASSWORD;
+  if (!password) throw new Error("TEST_PASSWORD_missing");
+  const login = await context.request.post(`${baseURL}/api/verify-password`, { data: { password, loginType: "test" } });
+  if (!login.ok()) throw new Error(`login_${login.status()}`);
+  const page = await context.newPage();
+  await page.goto(`${baseURL}/tips`, { waitUntil: "networkidle" });
+  await page.getByRole("heading", { name: /추천이 아니라/ }).waitFor();
+  const hero = await page.locator("main header").first().boundingBox();
+  const blindHeading = page.getByRole("heading", { name: /테스트 데이터 5,000건/ });
+  await blindHeading.scrollIntoViewIfNeeded();
+  await page.getByRole("button", { name: "5,000건 전체 다시 계산" }).click();
+  await page.getByText(/원본 5,000건 모델 재추론 완료/).waitFor();
+  await page.getByRole("button", { name: "안전 개입" }).click();
+  await page.getByText("1,648건", { exact: true }).first().waitFor();
+  await page.getByRole("button", { name: "무작위 1건" }).click();
+  await page.locator("[class*='caseDetail']").getByText(/case_proxy_blind_test_/).waitFor();
+  await page.screenshot({ path: path.join(output, "tips-blind-test-desktop.png"), fullPage: true });
+
+  const mobile = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const mobileLogin = await mobile.request.post(`${baseURL}/api/verify-password`, { data: { password, loginType: "test" } });
+  if (!mobileLogin.ok()) throw new Error(`mobile_login_${mobileLogin.status()}`);
+  const mobilePage = await mobile.newPage();
+  await mobilePage.goto(`${baseURL}/tips`, { waitUntil: "networkidle" });
+  await mobilePage.getByRole("heading", { name: /추천이 아니라/ }).waitFor();
+  await mobilePage.getByRole("heading", { name: /테스트 데이터 5,000건/ }).scrollIntoViewIfNeeded();
+  await mobilePage.screenshot({ path: path.join(output, "tips-blind-test-mobile.png"), fullPage: true });
+  const overflow = await mobilePage.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  console.log(JSON.stringify({ ok: true, heroTop: hero?.y, heroHeight: hero?.height, desktopInteraction: true, mobileOverflowPx: overflow }, null, 2));
+  await browser.close();
+})().catch((error) => { console.error(error); process.exit(1); });
