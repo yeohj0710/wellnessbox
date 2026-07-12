@@ -46,18 +46,9 @@ function run() {
     /export function useEmployeeReportExistingRecordActions\(/,
     "Existing record actions hook should export useEmployeeReportExistingRecordActions."
   );
-  assert.ok(
-    hookSource.includes("upsertEmployeeSession("),
-    "Existing record actions hook should own upsertEmployeeSession flow."
-  );
-  assert.ok(
-    hookSource.includes("const handleFindExisting = useCallback(async () => {"),
-    "Existing record actions hook should expose handleFindExisting callback."
-  );
-  assert.ok(
-    hookSource.includes("const tryLoadExistingReport = useCallback("),
-    "Existing record actions hook should expose tryLoadExistingReport callback."
-  );
+  assert.ok(hookSource.includes("const resetIdentityFlow = useCallback(async () => {"));
+  assert.ok(hookSource.includes("deleteEmployeeSession("));
+  assert.ok(hookSource.includes("clearStoredIdentity()"));
   checks.push("hook_owns_existing_record_action_flow");
 
   console.log(JSON.stringify({ ok: true, checks }, null, 2));

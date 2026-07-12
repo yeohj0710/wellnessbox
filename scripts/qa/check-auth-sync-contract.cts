@@ -71,12 +71,12 @@ function runEmitterChecks() {
       label: "survey identity switch should emit b2b employee sync",
     },
     {
-      file: "app/(features)/employee-report/EmployeeReportClient.tsx",
+      file: "app/(features)/employee-report/_lib/use-employee-report-existing-record-actions.ts",
       pattern: 'emitAuthSyncEvent({ scope: "b2b-employee-session"',
       label: "employee-report should emit b2b employee sync",
     },
     {
-      file: "app/(features)/employee-report/EmployeeReportClient.tsx",
+      file: "app/(features)/employee-report/_lib/use-employee-report-sync-actions.ts",
       pattern: 'emitAuthSyncEvent({ scope: "nhis-link"',
       label: "employee-report should emit nhis sync",
     },

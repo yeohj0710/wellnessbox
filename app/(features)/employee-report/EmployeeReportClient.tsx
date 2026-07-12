@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { emitAuthSyncEvent } from "@/lib/client/auth-sync";
 import styles from "@/components/b2b/B2bUx.module.css";
 import ReportSummaryCards from "@/components/b2b/ReportSummaryCards";
 import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
@@ -11,15 +10,11 @@ import EmbeddedEmployeeSurveyPanel, {
   clearEmployeeSurveyDraftState,
 } from "./_components/EmbeddedEmployeeSurveyPanel";
 import { EMPLOYEE_REPORT_RESET_EVENT_KEY } from "@/lib/b2b/employee-report-browser-storage";
-import {
-  deleteEmployeeSession,
-} from "./_lib/api";
 import type {
   EmployeeWorkspaceResponse,
   IdentityInput,
 } from "./_lib/client-types";
 import {
-  clearStoredIdentity,
   isValidIdentityInput,
   toIdentityPayload,
 } from "./_lib/client-utils.identity";
@@ -29,6 +24,7 @@ import { useEmployeeReportSessionEffects } from "./_lib/use-employee-report-sess
 import { useEmployeeReportReportLoading } from "./_lib/use-employee-report-report-loading";
 import { useEmployeeReportReportActions } from "./_lib/use-employee-report-report-actions";
 import { useEmployeeReportSyncActions } from "./_lib/use-employee-report-sync-actions";
+import { useEmployeeReportExistingRecordActions } from "./_lib/use-employee-report-existing-record-actions";
 
 type WorkflowTone = "on" | "warn" | "off";
 type WorkflowStepState = "done" | "current" | "pending" | "error";
@@ -514,27 +510,19 @@ export default function EmployeeReportClient({
     setShowSurvey,
   });
 
-  const resetIdentityFlow = useCallback(async () => {
-    await deleteEmployeeSession().catch(() => null);
-    emitAuthSyncEvent({ scope: "b2b-employee-session", reason: "employee-report-reset" });
-    emitAuthSyncEvent({ scope: "nhis-link", reason: "employee-report-reset" });
-    clearStoredIdentity();
-    clearEmployeeSurveyDraftState();
-    setWorkspace(null);
-    setSelectedReportId(null);
-    setShowSurvey(false);
-    setShowHealthSyncModal(false);
-    setPolling(false);
-    setPollingError("");
-    setOptimisticHealthState(null);
-    setNotice("");
-    setError("");
-    setIdentity({
-      name: "",
-      birthDate: "",
-      phone: "",
-    });
-  }, []);
+  const { resetIdentityFlow } = useEmployeeReportExistingRecordActions({
+    clearSurveyDraft: clearEmployeeSurveyDraftState,
+    setWorkspace,
+    setSelectedReportId,
+    setShowSurvey,
+    setShowHealthSyncModal,
+    setPolling,
+    setPollingError,
+    setOptimisticHealthState,
+    setNotice,
+    setError,
+    setIdentity,
+  });
 
   const handleBootstrapWorkspaceLoaded = useCallback(
     (nextWorkspace: EmployeeWorkspaceResponse) => {
