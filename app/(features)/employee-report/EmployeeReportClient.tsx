@@ -1897,7 +1897,7 @@ export default function EmployeeReportClient({
                   className={`${styles.reportCanvasBoard} ${styles.reportCanvasBoardWide} ${styles.reportCanvasBoardScrollable}`}
                 >
                   <div className={styles.reportCaptureSurface}>
-                    <ReportSummaryCards payload={workspace.report.payload} />
+                    <ReportSummaryCards payload={workspace.report.payload} viewerMode="employee" />
                   </div>
                 </div>
               </section>

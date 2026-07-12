@@ -31,7 +31,7 @@ export default function B2bAdminReportPreviewPanel(
             data-testid="report-capture-surface"
             data-report-pdf-parity="0"
           >
-            <ReportSummaryCards payload={latestPayload} />
+            <ReportSummaryCards payload={latestPayload} viewerMode="admin" />
           </div>
         </div>
       </div>

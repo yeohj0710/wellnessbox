@@ -37,7 +37,7 @@ export default function EmployeeReportCapturePreview(
           data-report-pdf-parity="1"
           data-report-screen-preview="1"
         >
-          <ReportSummaryCards payload={props.reportData.report?.payload} />
+          <ReportSummaryCards payload={props.reportData.report?.payload} viewerMode="employee" />
         </div>
       </div>
     </section>

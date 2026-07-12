@@ -7,10 +7,13 @@ import ReportSummaryAddendumPage from "./report-summary/ReportSummaryAddendumPag
 import {
   buildReportSummaryAddendumPages,
   buildReportSummaryHealthMetrics,
+  buildReportSummaryMedicationReviewModel,
+  buildMedicationMetaLine,
   hasReportSummaryHealthMetricsContent,
 } from "./report-summary/detail-data-model";
 import {
   REPORT_SUMMARY_HEALTH_PAGE_TEXT,
+  REPORT_SUMMARY_MEDICATION_PAGE_TEXT,
   REPORT_SUMMARY_OVERVIEW_TEXT,
 } from "./report-summary/copy";
 import {
@@ -23,6 +26,7 @@ import {
 } from "./report-summary/overview-model";
 import {
   ReportSummaryHealthPage,
+  ReportSummaryMedicationPage,
   ReportSummaryOverviewPage,
 } from "./report-summary/ReportSummaryPages";
 import {
@@ -33,6 +37,7 @@ import SurveyDetailPages from "./report-summary/SurveyDetailPages";
 
 export default function ReportSummaryCards(props: {
   payload: ReportSummaryPayload | null | undefined;
+  viewerMode?: "employee" | "admin";
 }) {
   const payload = props.payload;
 
@@ -68,11 +73,16 @@ export default function ReportSummaryCards(props: {
 
   const healthMetrics = buildReportSummaryHealthMetrics(payload);
   const showHealthPage = hasReportSummaryHealthMetricsContent(healthMetrics);
+  const medicationReview = buildReportSummaryMedicationReviewModel(payload);
+  const medicationsAll = medicationReview.medications;
+  const medications = medicationsAll;
+  const showMedicationPage = medications.length > 0 || medicationReview.medicationStatusMessage.length > 0;
+  const medicationPageNumber = healthDataPageNumber + (showHealthPage ? 1 : 0);
   const addendumPages = buildReportSummaryAddendumPages(payload);
   const metaEmployeeName = firstOrDash(payload.meta?.employeeName);
   const metaPeriodKey = firstOrDash(payload.meta?.periodKey);
   const metaGeneratedAt = formatDate(payload.meta?.generatedAt);
-  const addendumPageStart = healthDataPageNumber + (showHealthPage ? 1 : 0);
+  const addendumPageStart = medicationPageNumber + (showMedicationPage ? 1 : 0);
 
   return (
     <div className={styles.reportDocument} data-report-document="1">
@@ -112,6 +122,21 @@ export default function ReportSummaryCards(props: {
           pageNumber={healthDataPageNumber}
           healthMetrics={healthMetrics}
           text={REPORT_SUMMARY_HEALTH_PAGE_TEXT}
+        />
+      ) : null}
+
+      {showMedicationPage ? (
+        <ReportSummaryMedicationPage
+          pageNumber={medicationPageNumber}
+          medications={medications}
+          medicationStatusMessage={medicationReview.medicationStatusMessage}
+          viewerMode={props.viewerMode ?? "employee"}
+          metaGeneratedAt={metaGeneratedAt}
+          metaEmployeeName={metaEmployeeName}
+          metaPeriodKey={metaPeriodKey}
+          metaIsMockData={payload.meta?.isMockData === true}
+          buildMedicationMetaLine={buildMedicationMetaLine}
+          text={REPORT_SUMMARY_MEDICATION_PAGE_TEXT}
         />
       ) : null}
 
