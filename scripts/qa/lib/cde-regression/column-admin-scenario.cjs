@@ -150,7 +150,22 @@ async function runColumnAndAdminCrudScenario(input) {
     });
     throw new Error("column_editor_content_missing");
   }
-  await contentField.fill("## QA auto body");
+  const qaParagraph =
+    "자동 회귀 검증은 편집, 저장, 발행, 목록 노출, 상세 이동을 하나의 흐름으로 확인합니다. " +
+    "각 단계는 사용자 입력과 서버 응답이 일치하는지 검증하고, 문제가 생기면 해당 단계에서 즉시 실패하도록 구성합니다. ";
+  await contentField.fill(
+    [
+      "## 작성 및 저장 검증",
+      qaParagraph.repeat(5),
+      "## 발행 상태 검증",
+      qaParagraph.repeat(5),
+      "## 목록 및 상세 이동 검증",
+      qaParagraph.repeat(5),
+      "## 참고 자료",
+      "- [Next.js Documentation](https://nextjs.org/docs)",
+      "- [Playwright Documentation](https://playwright.dev/docs/intro)",
+    ].join("\n\n")
+  );
 
   await page.getByTestId("column-editor-save-draft").click();
   await page.waitForTimeout(1000);
