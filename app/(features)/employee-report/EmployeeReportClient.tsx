@@ -13,8 +13,6 @@ import EmbeddedEmployeeSurveyPanel, {
 import { EMPLOYEE_REPORT_RESET_EVENT_KEY } from "@/lib/b2b/employee-report-browser-storage";
 import {
   deleteEmployeeSession,
-  requestNhisSign,
-  startEmployeeWorkspace,
 } from "./_lib/api";
 import type {
   EmployeeWorkspaceResponse,
@@ -23,7 +21,6 @@ import type {
 import {
   clearStoredIdentity,
   isValidIdentityInput,
-  saveStoredIdentity,
   toIdentityPayload,
 } from "./_lib/client-utils.identity";
 import { formatDateTime, formatRelativeTime } from "./_lib/client-utils.format";
@@ -31,6 +28,7 @@ import { useEmployeeReportSessionBootstrap } from "./_lib/use-employee-report-se
 import { useEmployeeReportSessionEffects } from "./_lib/use-employee-report-session-effects";
 import { useEmployeeReportReportLoading } from "./_lib/use-employee-report-report-loading";
 import { useEmployeeReportReportActions } from "./_lib/use-employee-report-report-actions";
+import { useEmployeeReportSyncActions } from "./_lib/use-employee-report-sync-actions";
 
 type WorkflowTone = "on" | "warn" | "off";
 type WorkflowStepState = "done" | "current" | "pending" | "error";
@@ -710,62 +708,24 @@ export default function EmployeeReportClient({
     []
   );
 
-  const handleStartWorkspace = useCallback(
-    async (options?: { restartHealth?: boolean }) => {
-      if (!validIdentity) {
-        setError("이름, 생년월일 8자리, 전화번호를 정확히 입력해 주세요.");
-        return;
-      }
-
-      setPendingAction(options?.restartHealth ? "health" : "start");
-      setOptimisticHealthState("checking");
-      setShowHealthSyncModal(true);
-      setShowSurvey(false);
-      setBusy(true);
-      setError("");
-      setPollingError("");
-      setNotice("");
-
-      try {
-        const next = await startEmployeeWorkspace({
-          identity,
-          restartHealth: options?.restartHealth === true,
-        });
-        emitAuthSyncEvent({ scope: "b2b-employee-session", reason: "employee-report-start" });
-        emitAuthSyncEvent({ scope: "nhis-link", reason: "employee-report-health-start" });
-        saveStoredIdentity(identity);
-        applyWorkspace(next);
-        if (options?.restartHealth) {
-          setShowSurvey(false);
-          setNotice(
-            "건강 정보를 다시 확인하고 있어요. 준비되면 이 화면에서 이어서 볼 수 있습니다."
-          );
-        } else if (next.currentStatus?.hasAnyWorkspaceData) {
-          setShowSurvey(false);
-          setNotice("이전에 확인한 내용을 불러왔어요.");
-        } else {
-          clearEmployeeSurveyDraftState();
-          setShowSurvey(false);
-          setNotice(
-            next.scheduledHealthSync
-              ? "건강 정보 확인을 백그라운드에서 시작했어요. 아래에서 진행 상황을 보면서 설문도 이어서 작성할 수 있어요."
-              : "기록을 확인했어요. 건강 정보 확인이나 설문 중 원하는 단계부터 진행해 주세요."
-          );
-        }
-      } catch (workspaceError) {
-        setError(
-          workspaceError instanceof Error
-            ? workspaceError.message
-            : "리포트를 시작하지 못했습니다."
-        );
-      } finally {
-        setPendingAction(null);
-        setOptimisticHealthState(null);
-        setBusy(false);
-      }
-    },
-    [applyWorkspace, identity, validIdentity]
-  );
+  const { handleStartWorkspace, handleConfirmKakaoAuth } =
+    useEmployeeReportSyncActions({
+      identity,
+      validIdentity,
+      selectedReportId,
+      applyWorkspace,
+      loadWorkspace,
+      clearSurveyDraft: clearEmployeeSurveyDraftState,
+      setPendingAction,
+      setOptimisticHealthState,
+      setShowHealthSyncModal,
+      setShowSurvey,
+      setBusy,
+      setError,
+      setPollingError,
+      setNotice,
+      setPolling,
+    });
 
   const { handleSelectReport, handleSurveyCompleted, handleRefreshWorkspace } =
     useEmployeeReportReportActions({
@@ -785,44 +745,6 @@ export default function EmployeeReportClient({
       setNotice,
       setPolling,
     });
-
-  const handleConfirmKakaoAuth = useCallback(async () => {
-    setPendingAction("sign");
-    setOptimisticHealthState("verifying");
-    setShowHealthSyncModal(true);
-    setShowSurvey(false);
-    setError("");
-    setPollingError("");
-    setBusy(true);
-
-    try {
-      const signResult = await requestNhisSign();
-      emitAuthSyncEvent({ scope: "nhis-link", reason: "employee-report-sign-check" });
-      if (!signResult.linked) {
-        setPollingError(
-          "카카오톡 인증 완료가 아직 확인되지 않았어요. 휴대폰에서 인증을 마친 뒤 다시 눌러 주세요."
-        );
-        return;
-      }
-
-      setPolling(true);
-      await loadWorkspace({
-        reportId: selectedReportId,
-        preserveSurvey: false,
-        driveSync: true,
-      });
-    } catch (signError) {
-      setPollingError(
-        signError instanceof Error
-          ? signError.message
-          : "카카오톡 인증 완료 여부를 확인하지 못했습니다."
-      );
-    } finally {
-      setPendingAction(null);
-      setOptimisticHealthState(null);
-      setBusy(false);
-    }
-  }, [loadWorkspace, selectedReportId]);
 
   useEffect(() => {
     if (!showHealthSyncModal || !isAwaitingKakaoAuth || busy) return;

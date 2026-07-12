@@ -60,25 +60,11 @@ function run() {
     /export function useEmployeeReportSyncActions\(/,
     "Sync actions hook should export useEmployeeReportSyncActions."
   );
-  assert.ok(
-    hookSource.includes(
-      "const handleRestartAuth = useEmployeeReportRestartAuthAction({"
-    ),
-    "Sync actions hook should expose handleRestartAuth via restart-auth subhook."
-  );
-  assert.ok(
-    hookSource.includes("const handleSignAndSync = useEmployeeReportSignSyncAction({"),
-    "Sync actions hook should expose handleSignAndSync via sign-sync subhook."
-  );
-  assert.ok(
-    hookSource.includes("useEmployeeReportRestartAuthAction({"),
-    "Sync actions hook should compose useEmployeeReportRestartAuthAction."
-  );
-  assert.ok(
-    hookSource.includes("useEmployeeReportSignSyncAction({"),
-    "Sync actions hook should compose useEmployeeReportSignSyncAction."
-  );
-  checks.push("hook_composes_sync_action_subhooks");
+  assert.ok(hookSource.includes("const handleStartWorkspace = useCallback("));
+  assert.ok(hookSource.includes("const handleConfirmKakaoAuth = useCallback("));
+  assert.ok(hookSource.includes("startEmployeeWorkspace("));
+  assert.ok(hookSource.includes("requestNhisSign("));
+  checks.push("hook_owns_workspace_and_sign_actions");
 
   assert.match(
     restartSubhookSource,
@@ -98,7 +84,7 @@ function run() {
     signSubhookSource.includes("runSyncFlowWithRecovery("),
     "Sign-sync subhook should own runSyncFlowWithRecovery orchestration."
   );
-  checks.push("subhooks_own_restart_and_sign_sync_orchestration");
+  checks.push("legacy_subhooks_remain_isolated_for_legacy_flow");
 
   console.log(JSON.stringify({ ok: true, checks }, null, 2));
 }
