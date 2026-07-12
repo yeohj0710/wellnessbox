@@ -15,6 +15,7 @@ function run() {
   const systemSource = read("lib/chat/prompt-system.ts");
   const followupSource = read("lib/chat/prompt-followups.ts");
   const docSource = read("docs/maintenance/chat-prompt-modules.md");
+  const chatTextSource = read("app/chat/hooks/useChat.text.ts");
 
   const rootTokens = [
     'from "./prompt-helpers"',
@@ -72,8 +73,7 @@ function run() {
     "function buildDataRules(",
     "function buildRagRules(",
     "export function buildSystemPrompt(",
-    "추천 제품(7일 기준 가격)",
-    "반드시 존댓말 '~요'로 답변합니다.",
+    "기본 종결은 부드러운 구어체로 맞추고 실제 사람의 톤처럼 자연스럽게 답합니다.",
   ];
   for (const token of systemTokens) {
     assert.ok(
@@ -81,6 +81,7 @@ function run() {
       `prompt-system.ts should own system prompt token: ${token}`
     );
   }
+  assert.ok(chatTextSource.includes("추천 제품(7일 기준 가격)"), "useChat.text.ts should own recommendation display heading normalization.");
 
   const followupTokens = [
     "export function buildSuggestionTopicClassifierMessages(",

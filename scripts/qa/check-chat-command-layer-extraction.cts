@@ -7,10 +7,12 @@ const COMMAND_LAYER_PATH = path.resolve(
   process.cwd(),
   "app/chat/hooks/useChat.commandLayer.ts"
 );
+const COMMAND_HELPERS_PATH = path.resolve(process.cwd(), "app/chat/hooks/useChat.commandLayer.helpers.ts");
 
 function run() {
   const useChatSource = fs.readFileSync(USE_CHAT_PATH, "utf8");
   const commandLayerSource = fs.readFileSync(COMMAND_LAYER_PATH, "utf8");
+  const commandHelpersSource = fs.readFileSync(COMMAND_HELPERS_PATH, "utf8");
   const checks: string[] = [];
 
   assert.match(
@@ -31,7 +33,6 @@ function run() {
     'import { createInChatAssessmentHandlers } from "./useChat.assessmentHandlers";',
     'import { createAssistantTurnHandlers } from "./useChat.assistantTurnHandlers";',
     'import { createMessageFlowHandlers } from "./useChat.messageFlowHandlers";',
-    "function rememberExecutedActions(actions: ChatActionType[]) {",
     "function clearFollowups() {",
     "function updateAssistantMessage(sessionId: string, messageId: string, content: string) {",
   ]) {
@@ -40,13 +41,14 @@ function run() {
       `useChat should not keep legacy inline command-layer token: ${legacyToken}`
     );
   }
+  assert.match(commandLayerSource, /rememberExecutedActions\(actions, state\.setActionMemory\)/);
+  assert.match(commandHelpersSource, /export function rememberExecutedActions\(/);
+  assert.match(commandHelpersSource, /export function clearFollowups\(/);
+  assert.match(commandHelpersSource, /export function updateAssistantMessage\(/);
   checks.push("usechat_no_longer_keeps_inline_command_layer_helpers");
 
   for (const token of [
     "export function createChatCommandLayer(",
-    "function rememberExecutedActions(actions: ChatActionType[]) {",
-    "function clearFollowups() {",
-    "function updateAssistantMessage(",
     "const { finalizeAssistantTurn, generateTitle } = createAssistantTurnHandlers({",
     "const interactiveCommands = createInteractiveCommands({",
     "const { sendMessage, startInitialAssistantMessage } = createMessageFlowHandlers({",
