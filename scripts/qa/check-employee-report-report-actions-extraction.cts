@@ -62,34 +62,13 @@ function run() {
     /export function useEmployeeReportReportActions\(/,
     "Report actions hook should export useEmployeeReportReportActions."
   );
-  assert.ok(
-    hookSource.includes("const handleDownloadPdf = useCallback(async () => {"),
-    "Report actions hook should expose handleDownloadPdf callback."
-  );
-  assert.ok(
-    hookSource.includes("const handleDownloadLegacyPdf = useCallback(async () => {"),
-    "Report actions hook should expose handleDownloadLegacyPdf callback."
-  );
-  assert.ok(
-    hookSource.includes("const handleLogout = useCallback(async () => {"),
-    "Report actions hook should expose handleLogout callback."
-  );
-  assert.ok(
-    hookSource.includes("const handleChangePeriod = useCallback("),
-    "Report actions hook should expose handleChangePeriod callback."
-  );
-  assert.ok(
-    hookSource.includes("downloadEmployeeReportPdf("),
-    "Report actions hook should own downloadEmployeeReportPdf flow."
-  );
-  assert.ok(
-    hookSource.includes("downloadEmployeeReportLegacyPdf("),
-    "Report actions hook should own downloadEmployeeReportLegacyPdf flow."
-  );
-  assert.ok(
-    hookSource.includes("requestNhisUnlink("),
-    "Report actions hook should own requestNhisUnlink flow."
-  );
+  for (const token of [
+    "const handleSelectReport = useCallback(",
+    "const handleSurveyCompleted = useCallback(",
+    "const handleRefreshWorkspace = useCallback(",
+  ]) {
+    assert.ok(hookSource.includes(token), `Report actions hook should own ${token}`);
+  }
   checks.push("hook_owns_report_actions_flow");
 
   console.log(JSON.stringify({ ok: true, checks }, null, 2));

@@ -30,6 +30,7 @@ import { formatDateTime, formatRelativeTime } from "./_lib/client-utils.format";
 import { useEmployeeReportSessionBootstrap } from "./_lib/use-employee-report-session-bootstrap";
 import { useEmployeeReportSessionEffects } from "./_lib/use-employee-report-session-effects";
 import { useEmployeeReportReportLoading } from "./_lib/use-employee-report-report-loading";
+import { useEmployeeReportReportActions } from "./_lib/use-employee-report-report-actions";
 
 type WorkflowTone = "on" | "warn" | "off";
 type WorkflowStepState = "done" | "current" | "pending" | "error";
@@ -766,93 +767,24 @@ export default function EmployeeReportClient({
     [applyWorkspace, identity, validIdentity]
   );
 
-  const handleSelectReport = useCallback(
-    async (nextReportId: string) => {
-      setPendingAction("report");
-      setBusy(true);
-      setError("");
-      try {
-        const nextWorkspace = await loadWorkspace({
-          reportId: nextReportId || null,
-          preserveSurvey: false,
-        });
-        setSelectedReportId(nextWorkspace.selectedReportId ?? null);
-      } catch (selectError) {
-        setError(
-          selectError instanceof Error
-            ? selectError.message
-            : "선택한 리포트를 불러오지 못했습니다."
-        );
-      } finally {
-        setPendingAction(null);
-        setBusy(false);
-      }
-    },
-    [loadWorkspace]
-  );
-
-  const handleSurveyCompleted = useCallback(
-    async (_periodKey: string | null) => {
-      setShowSurvey(false);
-      setSelectedReportId(null);
-      setNotice("설문이 저장되었어요. 리포트를 새로 확인하고 있어요.");
-      setPolling(true);
-      try {
-        const nextWorkspace = await loadWorkspace({ reportId: null });
-        if (
-          !nextWorkspace.currentStatus?.ready &&
-          nextWorkspace.sync?.active !== true
-        ) {
-          setNotice(
-            "설문은 저장됐어요. 이제 건강 정보 확인을 시작하면 최신 리포트가 준비됩니다."
-          );
-        }
-      } catch (completionError) {
-        setError(
-          completionError instanceof Error
-            ? completionError.message
-            : "최신 리포트를 다시 불러오지 못했습니다."
-        );
-      }
-    },
-    [loadWorkspace]
-  );
-
-  const handleRefreshWorkspace = useCallback(async () => {
-    setPendingAction("refresh");
-    setOptimisticHealthState(isAwaitingKakaoAuth ? "verifying" : "refreshing");
-    setBusy(true);
-    setError("");
-    setPollingError("");
-    try {
-      await loadWorkspace({
-        reportId: selectedReportId,
-        preserveSurvey: showSurvey,
-        driveSync: showHealthSyncModal || workspace?.sync?.active === true,
-      });
-    } catch (refreshError) {
-      const message =
-        refreshError instanceof Error
-          ? refreshError.message
-          : "최신 상태를 불러오지 못했습니다.";
-      if (workspace?.sync?.active) {
-        setPollingError(message);
-      } else {
-        setError(message);
-      }
-    } finally {
-      setPendingAction(null);
-      setOptimisticHealthState(null);
-      setBusy(false);
-    }
-  }, [
-    isAwaitingKakaoAuth,
-    loadWorkspace,
-    selectedReportId,
-    showHealthSyncModal,
-    showSurvey,
-    workspace?.sync?.active,
-  ]);
+  const { handleSelectReport, handleSurveyCompleted, handleRefreshWorkspace } =
+    useEmployeeReportReportActions({
+      loadWorkspace,
+      selectedReportId,
+      showSurvey,
+      showHealthSyncModal,
+      workspaceSyncActive: workspace?.sync?.active === true,
+      isAwaitingKakaoAuth,
+      setPendingAction,
+      setOptimisticHealthState,
+      setBusy,
+      setError,
+      setPollingError,
+      setSelectedReportId,
+      setShowSurvey,
+      setNotice,
+      setPolling,
+    });
 
   const handleConfirmKakaoAuth = useCallback(async () => {
     setPendingAction("sign");
