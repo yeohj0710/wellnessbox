@@ -8,6 +8,7 @@ const { canRunTipsLabAction } = require("../../lib/server/tips-lab/state");
 const { explainProxySnapshot } = require("../../lib/tips/proxy-model-engine");
 const { blindProfileTokens, predictProxyTokens } = require("../../lib/tips/proxy-model-engine");
 const { checkTipsSafety } = require("../../lib/tips/safety-engine");
+const { proScore, participantResult, cohortKpis } = require("../../lib/tips/pro-study-engine");
 const { selectBlindTestRows, summarizeBlindTests } = require("../../lib/tips/blind-test-engine");
 
 const root = process.cwd();
@@ -95,6 +96,7 @@ const researchOverviewUi = read("components/tips/ResearchOverview.tsx");
 const inferenceUi = read("components/tips/InferenceWorkbench.tsx");
 const evidenceUi = read("components/tips/ResearchEvidencePanel.tsx");
 const blindTestUi = read("components/tips/BlindTestExplorer.tsx");
+const proStudyUi = read("components/tips/ProStudySimulation.tsx");
 const blindTestBundle = JSON.parse(read("data/tips/blind-test-cases.json"));
 const tipsCss = read("components/tips/interim.module.css");
 
@@ -145,6 +147,12 @@ assert.match(consoleUi, /ResearchOverview/);
 assert.match(consoleUi, /InferenceWorkbench/);
 assert.match(consoleUi, /ResearchEvidencePanel/);
 assert.match(consoleUi, /BlindTestExplorer/);
+assert.match(consoleUi, /ProStudySimulation/);
+assert.match(proStudyUi, /테스터 PRO 평가 및 성과지표 산출/);
+assert.match(proStudyUi, /시연 데이터 8명 생성/);
+assert.match(proStudyUi, /원자료 CSV 내보내기/);
+assert.match(proStudyUi, /2주/);
+assert.match(proStudyUi, /4주/);
 assert.match(blindTestUi, /5,000건 전체 다시 계산/);
 assert.match(blindTestUi, /무작위 1건/);
 assert.match(blindTestUi, /프록시 정답/);
@@ -206,6 +214,14 @@ assert.deepEqual(kidneySafety.blockedIngredients, ["ING:MAGNESIUM", "ING:POTASSI
 const emergencySafety = checkTipsSafety({ ...baseProfile, riskFlags: ["red_flag_chest_pain"] });
 assert.equal(emergencySafety.decision, "STOP_AND_ESCALATE");
 assert.deepEqual(emergencySafety.blockedIngredients, []);
+assert.equal(proScore({ sleep: 5, fatigue: 5, stress: 5, wellbeing: 5 }), 50);
+const studySample = { id: "T-1", name: "tester", age: 41, goal: "sleep_quality", enrolledAt: "2026-07-12", baseline: { sleep: 4, fatigue: 7, stress: 6, wellbeing: 4 }, recommendation: ["ING:MAGNESIUM"], followups: [{ week: 4 as const, answers: { sleep: 7, fatigue: 4, stress: 3, wellbeing: 7 }, adherencePercent: 90, adverseEvent: false }] };
+assert.equal(participantResult(studySample).change, 30);
+assert.equal(participantResult(studySample).responder, true);
+assert.equal(cohortKpis([studySample]).completed, 1);
+assert.equal(cohortKpis([studySample]).meanAdherencePercent, 90);
+assert.equal(cohortKpis([{ ...studySample, followups: [{ ...studySample.followups[0], week: 2 as const }] }]).completed, 0);
+assert.equal(cohortKpis([{ ...studySample, followups: [{ ...studySample.followups[0], week: 2 as const }] }]).week2Completed, 1);
 
 assert.equal(blindTestBundle.rows.length, 5000);
 assert.equal(blindTestBundle.summary.exactMatches, 5000);
